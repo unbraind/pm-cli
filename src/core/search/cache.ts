@@ -3,7 +3,8 @@ import { pathExists, removeFileIfExists } from "../fs/fs-utils.js";
 import { locateItem, readLocatedItem } from "../store/item-store.js";
 import { getSettingsPath } from "../store/paths.js";
 import { readSettings } from "../store/settings.js";
-import { executeEmbeddingRequest, resolveEmbeddingProviders } from "./providers.js";
+import { executeEmbeddingBatchesWithRetry } from "./embedding-batches.js";
+import { resolveEmbeddingProviders } from "./providers.js";
 import type { EmbeddingProviderConfig } from "./providers.js";
 import { executeVectorDelete, executeVectorUpsert, resolveVectorStores } from "./vector-stores.js";
 import type { VectorStoreConfig } from "./vector-stores.js";
@@ -172,6 +173,7 @@ async function collectSemanticRefreshWorkload(
 }
 
 async function refreshLocatedSemanticVectors(
+  settings: Awaited<ReturnType<typeof readSettings>>,
   provider: EmbeddingProviderConfig,
   vectorStore: VectorStoreConfig,
   documents: Array<{ id: string; document: ItemDocument }>,
@@ -182,19 +184,19 @@ async function refreshLocatedSemanticVectors(
 
   try {
     const corpusInputs = documents.map((entry) => buildSemanticCorpusInput(entry.document));
-    const vectors = await executeEmbeddingRequest(provider, corpusInputs);
+    const embeddingResult = await executeEmbeddingBatchesWithRetry(provider, settings, corpusInputs);
     await executeVectorUpsert(
       vectorStore,
       documents.map((entry, index) => ({
         id: entry.id,
-        vector: vectors[index],
+        vector: embeddingResult.vectors[index],
         payload: buildVectorPayload(entry.document.front_matter),
       })),
     );
     return {
       refreshed: documents.map((entry) => entry.id),
       skipped: [],
-      warnings: [],
+      warnings: embeddingResult.warnings,
     };
   } catch (error: unknown) {
     return {
@@ -274,6 +276,7 @@ export async function refreshSemanticEmbeddingsForMutatedItems(
     normalizedItemIds,
   );
   const refreshedResult = await refreshLocatedSemanticVectors(
+    runtimeContext.settings,
     runtimeContext.provider,
     runtimeContext.vectorStore,
     workload.documents,

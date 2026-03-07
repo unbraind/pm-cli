@@ -3,7 +3,8 @@ import path from "node:path";
 import { runActiveOnIndexHooks, runActiveOnReadHooks, runActiveOnWriteHooks } from "../../core/extensions/index.js";
 import { pathExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
-import { executeEmbeddingRequest, resolveEmbeddingProviders } from "../../core/search/providers.js";
+import { executeEmbeddingBatchesWithRetry } from "../../core/search/embedding-batches.js";
+import { resolveEmbeddingProviders } from "../../core/search/providers.js";
 import { executeVectorUpsert, resolveVectorStores } from "../../core/search/vector-stores.js";
 import { EXIT_CODE, TYPE_TO_FOLDER } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -137,14 +138,16 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
   const embeddingsPath = path.join(pmRoot, EMBEDDINGS_PATH);
 
   const embeddingsLines = documents.map((document) => JSON.stringify(buildKeywordRecord(document, mode))).join("\n");
+  const semanticWarnings: string[] = [];
   if (mode !== "keyword" && documents.length > 0 && activeEmbeddingProvider && activeVectorStore) {
     const corpusInputs = documents.map((document) => buildSemanticCorpusInput(document));
-    const vectors = await executeEmbeddingRequest(activeEmbeddingProvider, corpusInputs);
+    const embeddingResult = await executeEmbeddingBatchesWithRetry(activeEmbeddingProvider, settings, corpusInputs);
+    semanticWarnings.push(...embeddingResult.warnings);
     await executeVectorUpsert(
       activeVectorStore,
       documents.map((document, index) => ({
         id: document.front_matter.id,
-        vector: vectors[index],
+        vector: embeddingResult.vectors[index],
         payload: {
           id: document.front_matter.id,
           type: document.front_matter.type,
@@ -182,7 +185,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
       manifest: MANIFEST_PATH,
       embeddings: EMBEDDINGS_PATH,
     },
-    warnings: hookWarnings,
+    warnings: [...semanticWarnings, ...hookWarnings],
     generated_at: generatedAt,
   };
 }

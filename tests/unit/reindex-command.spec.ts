@@ -266,6 +266,73 @@ describe("runReindex", () => {
     });
   });
 
+  it("honors embedding batch size and retry settings for semantic reindex", async () => {
+    await withTempPmPath(async (context) => {
+      createSeedItem(context, "Retry Alpha", "alpha body", false);
+      createSeedItem(context, "Retry Beta", "beta body", false);
+      createSeedItem(context, "Retry Gamma", "gamma body", false);
+
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
+      settings.search.embedding_batch_size = 2;
+      settings.search.scanner_max_batch_retries = 1;
+      await writeSettings(context.pmPath, settings);
+
+      const originalFetch = globalThis.fetch;
+      let embeddingAttempts = 0;
+      globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
+        const target = String(url);
+        if (target.endsWith("/v1/embeddings")) {
+          embeddingAttempts += 1;
+          if (embeddingAttempts === 1) {
+            return {
+              ok: false,
+              status: 503,
+              statusText: "Service Unavailable",
+              json: async () => ({}),
+              text: async () => "retry me",
+            } as unknown as Response;
+          }
+          const body = JSON.parse(String(init?.body ?? "{}")) as { input?: string[] | string };
+          const inputCount = Array.isArray(body.input) ? body.input.length : 1;
+          return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            json: async () => ({
+              data: Array.from({ length: inputCount }, (_entry, index) => ({
+                index,
+                embedding: [index + 0.1, index + 0.2],
+              })),
+            }),
+            text: async () => "",
+          } as unknown as Response;
+        }
+        if (target.endsWith("/collections/pm_items/points?wait=true")) {
+          return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            json: async () => ({ result: { status: "acknowledged" } }),
+            text: async () => "",
+          } as unknown as Response;
+        }
+        throw new Error(`Unexpected fetch target: ${target}`);
+      }) as typeof globalThis.fetch;
+
+      try {
+        const result = await runReindex({ mode: "semantic" }, { path: context.pmPath });
+        expect(result.ok).toBe(true);
+        expect(result.warnings).toContain("search_embedding_batch_retry_succeeded:batch=1:attempt=2:size=2");
+        expect(embeddingAttempts).toBe(3);
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+  });
+
   it("dispatches active read/write/index hooks and reports hook warnings", async () => {
     await withTempPmPath(async (context) => {
       createSeedItem(context, "Hook Reindex Item", "hook body", false);

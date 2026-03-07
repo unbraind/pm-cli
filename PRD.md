@@ -712,6 +712,7 @@ Keyword/hybrid lexical scoring baseline also applies a deterministic exact-title
   - `index/manifest.json` (indexed item metadata summary)
   - `search/embeddings.jsonl` (line-delimited keyword corpus records)
 - `pm reindex --mode semantic|hybrid` baseline generates deterministic provider embeddings for canonical item corpus records and upserts vector records to the active vector store.
+- Semantic embedding generation in `pm reindex --mode semantic|hybrid` and mutation-triggered refresh paths executes in deterministic batches sized by `search.embedding_batch_size`, and each batch retries failed embedding requests up to `search.scanner_max_batch_retries` before surfacing deterministic warnings/errors.
 - Successful item-mutation command paths invalidate stale keyword cache artifacts (`index/manifest.json` and `search/embeddings.jsonl`) as best-effort non-fatal cleanup before the next explicit `reindex`.
 - Successful item-mutation command paths also perform best-effort semantic embedding refresh for affected item IDs when embedding-provider and vector-store configuration are available; when an affected ID no longer exists (for example after delete), refresh attempts prune the stale vector entry from the active store. Refresh failures degrade to deterministic warnings.
 - Settings support:

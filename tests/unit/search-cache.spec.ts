@@ -410,6 +410,72 @@ describe("core/search/cache", () => {
     });
   });
 
+  it("honors embedding batch size and retry settings during mutation semantic refresh", async () => {
+    await withTempPmPath(async (context) => {
+      const itemA = createSeedItem(context, "Retry refresh A");
+      const itemB = createSeedItem(context, "Retry refresh B");
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
+      settings.search.embedding_batch_size = 1;
+      settings.search.scanner_max_batch_retries = 1;
+      await writeSettings(context.pmPath, settings);
+
+      const originalFetch = globalThis.fetch;
+      let embeddingAttempts = 0;
+      globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
+        const target = String(url);
+        if (target.endsWith("/v1/embeddings")) {
+          embeddingAttempts += 1;
+          if (embeddingAttempts === 1) {
+            return {
+              ok: false,
+              status: 500,
+              statusText: "Internal Server Error",
+              json: async () => ({}),
+              text: async () => "transient failure",
+            } as unknown as Response;
+          }
+          const body = JSON.parse(String(init?.body ?? "{}")) as { input?: string | string[] };
+          const inputCount = Array.isArray(body.input) ? body.input.length : 1;
+          return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            json: async () => ({
+              data: Array.from({ length: inputCount }, (_entry, index) => ({
+                index,
+                embedding: [index + 0.1, index + 0.2],
+              })),
+            }),
+            text: async () => "",
+          } as unknown as Response;
+        }
+        if (target.endsWith("/collections/pm_items/points?wait=true")) {
+          return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            json: async () => ({ result: { status: "acknowledged" } }),
+            text: async () => "",
+          } as unknown as Response;
+        }
+        throw new Error(`Unexpected fetch target: ${target}`);
+      }) as typeof globalThis.fetch;
+
+      try {
+        const result = await refreshSemanticEmbeddingsForMutatedItems(context.pmPath, [itemA, itemB]);
+        expect(result.refreshed).toEqual([itemA, itemB].sort((left, right) => left.localeCompare(right)));
+        expect(result.skipped).toEqual([]);
+        expect(result.warnings).toContain("search_embedding_batch_retry_succeeded:batch=1:attempt=2:size=1");
+        expect(embeddingAttempts).toBe(3);
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+  });
+
   it("reports deterministic warning when missing-id vector prune fails", async () => {
     await withTempPmPath(async (context) => {
       const settings = await readSettings(context.pmPath);

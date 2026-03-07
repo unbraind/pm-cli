@@ -51,6 +51,7 @@ export default defineConfig({
         "src/core/output/output.ts",
         "src/core/shared/command-types.ts",
         "src/core/search/cache.ts",
+        "src/core/search/embedding-batches.ts",
         "src/core/search/providers.ts",
         "src/core/search/vector-stores.ts",
         "src/core/shared/index.ts",
