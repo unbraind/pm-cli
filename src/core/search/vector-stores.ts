@@ -1,4 +1,6 @@
 import type { PmSettings } from "../../types/index.js";
+import { mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
+import { basename, dirname, join, resolve } from "node:path";
 
 export type VectorStoreName = "qdrant" | "lancedb";
 
@@ -100,6 +102,8 @@ type VectorSettingsInput = {
 
 const DEFAULT_COLLECTION = "pm_items";
 const DEFAULT_VECTOR_TIMEOUT_MS = 30_000;
+const LANCE_DB_LOCAL_SNAPSHOT_DIR = ".pm-cli-local-vectors";
+const LANCE_DB_LOCAL_SNAPSHOT_VERSION = 1;
 const lanceDbLocalTables = new Map<string, Map<string, VectorRecord>>();
 
 function toNonEmptyString(value: unknown): string | null {
@@ -340,7 +344,154 @@ function resolveQdrantDeleteTarget(upsertTarget: string): string {
 }
 
 function getLanceDbLocalTableKey(storePath: string, table: string): string {
-  return `${storePath}::${table}`;
+  return getLanceDbSnapshotPath(storePath, table);
+}
+
+function getLanceDbSnapshotPath(storePath: string, table: string): string {
+  return join(resolve(storePath), LANCE_DB_LOCAL_SNAPSHOT_DIR, `${table}.json`);
+}
+
+function isNodeErrorWithCode(error: unknown, code: string): boolean {
+  return typeof error === "object" && error !== null && (error as { code?: unknown }).code === code;
+}
+
+function normalizeSnapshotRecord(entry: unknown, index: number, snapshotPath: string): VectorRecord {
+  const id = toNonEmptyString((entry as { id?: unknown }).id);
+  if (!id) {
+    throw new Error(`LanceDB local snapshot '${snapshotPath}' record at index ${index} is missing a non-empty id`);
+  }
+  const vector = normalizeVector((entry as { vector?: unknown }).vector);
+  const payload = (entry as { payload?: unknown }).payload;
+  if (payload !== undefined && (typeof payload !== "object" || payload === null || Array.isArray(payload))) {
+    throw new Error(
+      `LanceDB local snapshot '${snapshotPath}' record '${id}' must provide payload as an object when set`,
+    );
+  }
+  return {
+    id,
+    vector,
+    ...(payload ? { payload: payload as Record<string, unknown> } : {}),
+  };
+}
+
+function parseLanceDbSnapshot(snapshotPath: string, expectedTable: string, raw: string): Map<string, VectorRecord> {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw) as unknown;
+  } catch (error) {
+    throw new Error(`LanceDB local snapshot at '${snapshotPath}' is not valid JSON: ${toErrorMessage(error)}`);
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    throw new Error(`LanceDB local snapshot at '${snapshotPath}' must be a JSON object`);
+  }
+
+  const version = (parsed as { version?: unknown }).version;
+  if (version !== LANCE_DB_LOCAL_SNAPSHOT_VERSION) {
+    throw new Error(
+      `LanceDB local snapshot at '${snapshotPath}' must include version=${LANCE_DB_LOCAL_SNAPSHOT_VERSION}`,
+    );
+  }
+
+  const table = toNonEmptyString((parsed as { table?: unknown }).table);
+  if (!table) {
+    throw new Error(`LanceDB local snapshot at '${snapshotPath}' must include a non-empty table value`);
+  }
+  if (table !== expectedTable) {
+    throw new Error(
+      `LanceDB local snapshot at '${snapshotPath}' table mismatch: expected '${expectedTable}', received '${table}'`,
+    );
+  }
+
+  const recordsValue = (parsed as { records?: unknown }).records;
+  if (!Array.isArray(recordsValue)) {
+    throw new TypeError(`LanceDB local snapshot at '${snapshotPath}' must include a records array`);
+  }
+
+  const tableRecords = new Map<string, VectorRecord>();
+  for (let index = 0; index < recordsValue.length; index += 1) {
+    const record = normalizeSnapshotRecord(recordsValue[index], index, snapshotPath);
+    tableRecords.set(record.id, record);
+  }
+  return tableRecords;
+}
+
+async function loadLanceDbLocalTable(storePath: string, table: string): Promise<Map<string, VectorRecord>> {
+  const key = getLanceDbLocalTableKey(storePath, table);
+  const cached = lanceDbLocalTables.get(key);
+  if (cached) {
+    return cached;
+  }
+
+  const snapshotPath = getLanceDbSnapshotPath(storePath, table);
+  let loaded = new Map<string, VectorRecord>();
+  try {
+    const raw = await readFile(snapshotPath, "utf8");
+    loaded = parseLanceDbSnapshot(snapshotPath, table, raw);
+  } catch (error) {
+    if (!isNodeErrorWithCode(error, "ENOENT")) {
+      throw error;
+    }
+  }
+  lanceDbLocalTables.set(key, loaded);
+  return loaded;
+}
+
+function buildSnapshotRecords(table: Map<string, VectorRecord>): VectorRecord[] {
+  const records = [...table.values()];
+  records.sort((left, right) => left.id.localeCompare(right.id));
+  return records.map((record) => ({
+    id: record.id,
+    vector: [...record.vector],
+    ...(record.payload ? { payload: record.payload } : {}),
+  }));
+}
+
+async function removeSnapshotFile(snapshotPath: string): Promise<void> {
+  try {
+    await unlink(snapshotPath);
+  } catch (error) {
+    if (!isNodeErrorWithCode(error, "ENOENT")) {
+      throw new Error(`LanceDB local snapshot delete failed at '${snapshotPath}': ${toErrorMessage(error)}`);
+    }
+  }
+}
+
+async function persistLanceDbLocalTable(storePath: string, tableName: string, table: Map<string, VectorRecord>): Promise<void> {
+  const snapshotPath = getLanceDbSnapshotPath(storePath, tableName);
+  if (table.size === 0) {
+    await removeSnapshotFile(snapshotPath);
+    return;
+  }
+
+  const snapshotDir = dirname(snapshotPath);
+  try {
+    await mkdir(snapshotDir, { recursive: true });
+  } catch (error) {
+    throw new Error(
+      `LanceDB local snapshot directory create failed at '${snapshotDir}': ${toErrorMessage(error)}`,
+    );
+  }
+
+  const tempPath = join(
+    snapshotDir,
+    `${basename(snapshotPath)}.tmp-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+  );
+  const serialized = `${JSON.stringify(
+    {
+      version: LANCE_DB_LOCAL_SNAPSHOT_VERSION,
+      table: tableName,
+      records: buildSnapshotRecords(table),
+    },
+    null,
+    2,
+  )}\n`;
+  try {
+    await writeFile(tempPath, serialized, "utf8");
+    await rename(tempPath, snapshotPath);
+  } catch (error) {
+    await unlink(tempPath).catch(() => {});
+    throw new Error(`LanceDB local snapshot write failed at '${snapshotPath}': ${toErrorMessage(error)}`);
+  }
 }
 
 function dotProduct(left: number[], right: number[]): number {
@@ -477,9 +628,8 @@ export async function executeVectorQuery(
       vector: number[];
       limit: number;
     };
-    const key = getLanceDbLocalTableKey(lanceDbStore.path, queryBody.table);
-    const table = lanceDbLocalTables.get(key);
-    if (!table) {
+    const table = await loadLanceDbLocalTable(lanceDbStore.path, queryBody.table);
+    if (table.size === 0) {
       return [];
     }
     const queryVector = normalizeVector(queryBody.vector);
@@ -534,10 +684,11 @@ export async function executeVectorUpsert(
       records: VectorRecord[];
     };
     const key = getLanceDbLocalTableKey(lanceDbStore.path, upsertBody.table);
-    const table = lanceDbLocalTables.get(key) ?? new Map<string, VectorRecord>();
+    const table = await loadLanceDbLocalTable(lanceDbStore.path, upsertBody.table);
     for (const record of upsertBody.records) {
       table.set(record.id, record);
     }
+    await persistLanceDbLocalTable(lanceDbStore.path, upsertBody.table, table);
     lanceDbLocalTables.set(key, table);
     return { status: "ok" };
   }
@@ -570,13 +721,14 @@ export async function executeVectorDelete(
       ids: string[];
     };
     const key = getLanceDbLocalTableKey(lanceDbStore.path, deleteBody.table);
-    const table = lanceDbLocalTables.get(key);
-    if (!table) {
+    const table = await loadLanceDbLocalTable(lanceDbStore.path, deleteBody.table);
+    if (table.size === 0) {
       return { status: "ok" };
     }
     for (const id of deleteBody.ids) {
       table.delete(id);
     }
+    await persistLanceDbLocalTable(lanceDbStore.path, deleteBody.table, table);
     if (table.size === 0) {
       lanceDbLocalTables.delete(key);
     } else {

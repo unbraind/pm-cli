@@ -1,4 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { describe, expect, it, vi } from "vitest";
 import { SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
 import {
   buildVectorDeletePlan,
@@ -11,6 +14,8 @@ import {
   resolveVectorStores,
 } from "../../src/core/search/vector-stores.js";
 import type { PmSettings } from "../../src/types.js";
+
+const LANCE_DB_SNAPSHOT_DIR = ".pm-cli-local-vectors";
 
 function makeSettings(): PmSettings {
   return structuredClone(SETTINGS_DEFAULTS);
@@ -416,8 +421,16 @@ describe("executeVectorQuery", () => {
   it("uses global fetch when no explicit fetcher is provided", async () => {
     const originalFetch = globalThis.fetch;
     const calls: string[] = [];
-    globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
-      calls.push(String(url));
+    globalThis.fetch = (async (url: RequestInfo | URL, init?: RequestInit) => {
+      let normalizedUrl: string;
+      if (typeof url === "string") {
+        normalizedUrl = url;
+      } else if (url instanceof URL) {
+        normalizedUrl = url.toString();
+      } else {
+        normalizedUrl = url.url;
+      }
+      calls.push(normalizedUrl);
       expect(init?.method).toBe("POST");
       return {
         ok: true,
@@ -617,7 +630,7 @@ describe("executeVectorQuery", () => {
           fetcher: () =>
             new Promise((_resolve, reject) => {
               setTimeout(() => {
-                reject(404);
+                reject(404 as unknown as Error);
               }, 0);
             }),
         },
@@ -1029,5 +1042,422 @@ describe("executeVectorDelete", () => {
         },
       ),
     ).rejects.toThrow("Vector delete request failed with status 500 Internal Server Error");
+  });
+});
+
+describe("LanceDB local snapshot persistence", () => {
+  it("persists deterministic local snapshots and reloads data after module reset", async () => {
+    const sandboxRoot = await mkdtemp(join(tmpdir(), "pm-cli-lancedb-store-"));
+    const storePath = join(sandboxRoot, "store");
+    const snapshotPath = join(resolve(storePath), LANCE_DB_SNAPSHOT_DIR, "pm_items.json");
+    try {
+      await expect(
+        executeVectorUpsert(
+          {
+            name: "lancedb",
+            path: storePath,
+          },
+          [
+            { id: "pm-b2", vector: [0.2, 0.8] },
+            { id: "pm-a1", vector: [0.9, 0.1], payload: { kind: "Task" } },
+          ],
+        ),
+      ).resolves.toEqual({ status: "ok" });
+
+      await expect(readFile(snapshotPath, "utf8")).resolves.toBeTruthy();
+      await expect(readFile(snapshotPath, "utf8")).resolves.toContain("\"version\": 1");
+      await expect(readFile(snapshotPath, "utf8")).resolves.toContain("\"table\": \"pm_items\"");
+      const snapshot = JSON.parse(await readFile(snapshotPath, "utf8")) as {
+        version: number;
+        table: string;
+        records: Array<{ id: string; vector: number[]; payload?: Record<string, unknown> }>;
+      };
+      expect(snapshot).toEqual({
+        version: 1,
+        table: "pm_items",
+        records: [
+          { id: "pm-a1", vector: [0.9, 0.1], payload: { kind: "Task" } },
+          { id: "pm-b2", vector: [0.2, 0.8] },
+        ],
+      });
+
+      vi.resetModules();
+      const reloadedModule = await import("../../src/core/search/vector-stores.js");
+      const reloadedHits = await reloadedModule.executeVectorQuery(
+        {
+          name: "lancedb",
+          path: storePath,
+        },
+        [1, 0],
+        5,
+      );
+      expect(reloadedHits.map((hit) => hit.id)).toEqual(["pm-a1", "pm-b2"]);
+      expect(reloadedHits[0]?.score).toBeCloseTo(0.9);
+      expect(reloadedHits[1]?.score).toBeCloseTo(0.2);
+      expect(reloadedHits[0]?.payload).toEqual({ kind: "Task" });
+    } finally {
+      await rm(sandboxRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("reports deterministic errors for malformed local snapshot files", async () => {
+    const sandboxRoot = await mkdtemp(join(tmpdir(), "pm-cli-lancedb-store-"));
+    const storePath = join(sandboxRoot, "store");
+    const snapshotDir = join(resolve(storePath), LANCE_DB_SNAPSHOT_DIR);
+    const snapshotPath = join(snapshotDir, "pm_items.json");
+    try {
+      await mkdir(snapshotDir, { recursive: true });
+      await writeFile(snapshotPath, "{ malformed-json", "utf8");
+
+      vi.resetModules();
+      const reloadedModule = await import("../../src/core/search/vector-stores.js");
+      await expect(
+        reloadedModule.executeVectorQuery(
+          {
+            name: "lancedb",
+            path: storePath,
+          },
+          [1, 0],
+          1,
+        ),
+      ).rejects.toThrow(`LanceDB local snapshot at '${snapshotPath}' is not valid JSON`);
+    } finally {
+      await rm(sandboxRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("reports deterministic snapshot schema mismatches for table and records metadata", async () => {
+    const sandboxRoot = await mkdtemp(join(tmpdir(), "pm-cli-lancedb-store-"));
+    const storePath = join(sandboxRoot, "store");
+    const snapshotDir = join(resolve(storePath), LANCE_DB_SNAPSHOT_DIR);
+    const snapshotPath = join(snapshotDir, "pm_items.json");
+    try {
+      await mkdir(snapshotDir, { recursive: true });
+      await writeFile(
+        snapshotPath,
+        JSON.stringify({
+          version: 1,
+          table: "other_table",
+          records: [],
+        }),
+        "utf8",
+      );
+      await expect(
+        executeVectorQuery(
+          {
+            name: "lancedb",
+            path: storePath,
+          },
+          [1, 0],
+          1,
+        ),
+      ).rejects.toThrow(
+        `LanceDB local snapshot at '${snapshotPath}' table mismatch: expected 'pm_items', received 'other_table'`,
+      );
+
+      await writeFile(
+        snapshotPath,
+        JSON.stringify({
+          version: 1,
+          table: "pm_items",
+          records: [{ id: "", vector: [1, 0] }],
+        }),
+        "utf8",
+      );
+      await expect(
+        executeVectorQuery(
+          {
+            name: "lancedb",
+            path: storePath,
+          },
+          [1, 0],
+          1,
+        ),
+      ).rejects.toThrow(`LanceDB local snapshot '${snapshotPath}' record at index 0 is missing a non-empty id`);
+
+      await writeFile(
+        snapshotPath,
+        JSON.stringify({
+          version: 1,
+          table: "pm_items",
+          records: [{ id: "pm-a1", vector: [1, 0], payload: [] }],
+        }),
+        "utf8",
+      );
+      await expect(
+        executeVectorQuery(
+          {
+            name: "lancedb",
+            path: storePath,
+          },
+          [1, 0],
+          1,
+        ),
+      ).rejects.toThrow(
+        `LanceDB local snapshot '${snapshotPath}' record 'pm-a1' must provide payload as an object when set`,
+      );
+
+      await writeFile(
+        snapshotPath,
+        JSON.stringify({
+          version: 2,
+          table: "pm_items",
+          records: [],
+        }),
+        "utf8",
+      );
+      await expect(
+        executeVectorQuery(
+          {
+            name: "lancedb",
+            path: storePath,
+          },
+          [1, 0],
+          1,
+        ),
+      ).rejects.toThrow(`LanceDB local snapshot at '${snapshotPath}' must include version=1`);
+
+      await writeFile(
+        snapshotPath,
+        JSON.stringify({
+          version: 1,
+          table: " ",
+          records: [],
+        }),
+        "utf8",
+      );
+      await expect(
+        executeVectorQuery(
+          {
+            name: "lancedb",
+            path: storePath,
+          },
+          [1, 0],
+          1,
+        ),
+      ).rejects.toThrow(`LanceDB local snapshot at '${snapshotPath}' must include a non-empty table value`);
+
+      await writeFile(snapshotPath, JSON.stringify([]), "utf8");
+      await expect(
+        executeVectorQuery(
+          {
+            name: "lancedb",
+            path: storePath,
+          },
+          [1, 0],
+          1,
+        ),
+      ).rejects.toThrow(`LanceDB local snapshot at '${snapshotPath}' must be a JSON object`);
+
+      await writeFile(
+        snapshotPath,
+        JSON.stringify({
+          version: 1,
+          table: "pm_items",
+          records: { bad: true },
+        }),
+        "utf8",
+      );
+      await expect(
+        executeVectorQuery(
+          {
+            name: "lancedb",
+            path: storePath,
+          },
+          [1, 0],
+          1,
+        ),
+      ).rejects.toThrow(`LanceDB local snapshot at '${snapshotPath}' must include a records array`);
+    } finally {
+      await rm(sandboxRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("surfaces deterministic directory creation failures while persisting snapshots", async () => {
+    const sandboxRoot = await mkdtemp(join(tmpdir(), "pm-cli-lancedb-store-"));
+    const storePath = join(sandboxRoot, "store");
+    const snapshotDir = join(resolve(storePath), LANCE_DB_SNAPSHOT_DIR);
+    try {
+      vi.resetModules();
+      vi.doMock("node:fs/promises", async () => {
+        const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+        return {
+          ...actual,
+          readFile: async () => {
+            const missing = new Error("missing") as NodeJS.ErrnoException;
+            missing.code = "ENOENT";
+            throw missing;
+          },
+          mkdir: async () => {
+            throw new Error("mkdir-boom");
+          },
+        };
+      });
+      const reloadedModule = await import("../../src/core/search/vector-stores.js");
+      await expect(
+        reloadedModule.executeVectorUpsert(
+          {
+            name: "lancedb",
+            path: storePath,
+          },
+          [{ id: "pm-a1", vector: [1, 0] }],
+        ),
+      ).rejects.toThrow(`LanceDB local snapshot directory create failed at '${snapshotDir}': mkdir-boom`);
+    } finally {
+      vi.unmock("node:fs/promises");
+      vi.resetModules();
+      await rm(sandboxRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("surfaces deterministic snapshot write failures when atomic rename fails", async () => {
+    const sandboxRoot = await mkdtemp(join(tmpdir(), "pm-cli-lancedb-store-"));
+    const storePath = join(sandboxRoot, "store");
+    const snapshotPath = join(resolve(storePath), LANCE_DB_SNAPSHOT_DIR, "pm_items.json");
+    try {
+      const unlinkMock = vi.fn(async () => {
+        throw new Error("cleanup-failed");
+      });
+      vi.resetModules();
+      vi.doMock("node:fs/promises", async () => {
+        const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+        return {
+          ...actual,
+          readFile: async () => {
+            const missing = new Error("missing") as NodeJS.ErrnoException;
+            missing.code = "ENOENT";
+            throw missing;
+          },
+          rename: async () => {
+            throw new Error("rename-boom");
+          },
+          unlink: unlinkMock,
+        };
+      });
+      const reloadedModule = await import("../../src/core/search/vector-stores.js");
+      await expect(
+        reloadedModule.executeVectorUpsert(
+          {
+            name: "lancedb",
+            path: storePath,
+          },
+          [{ id: "pm-a1", vector: [1, 0] }],
+        ),
+      ).rejects.toThrow(`LanceDB local snapshot write failed at '${snapshotPath}': rename-boom`);
+      expect(unlinkMock).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.unmock("node:fs/promises");
+      vi.resetModules();
+      await rm(sandboxRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("ignores ENOENT cleanup errors when deleting an emptied persisted table", async () => {
+    const sandboxRoot = await mkdtemp(join(tmpdir(), "pm-cli-lancedb-store-"));
+    const storePath = join(sandboxRoot, "store");
+    try {
+      vi.resetModules();
+      vi.doMock("node:fs/promises", async () => {
+        const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+        return {
+          ...actual,
+          readFile: async () =>
+            JSON.stringify({
+              version: 1,
+              table: "pm_items",
+              records: [{ id: "pm-a1", vector: [1, 0] }],
+            }),
+          unlink: async () => {
+            const missing = new Error("missing") as NodeJS.ErrnoException;
+            missing.code = "ENOENT";
+            throw missing;
+          },
+        };
+      });
+      const reloadedModule = await import("../../src/core/search/vector-stores.js");
+      await expect(
+        reloadedModule.executeVectorDelete(
+          {
+            name: "lancedb",
+            path: storePath,
+          },
+          ["pm-a1"],
+        ),
+      ).resolves.toEqual({ status: "ok" });
+    } finally {
+      vi.unmock("node:fs/promises");
+      vi.resetModules();
+      await rm(sandboxRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("surfaces deterministic snapshot delete failures when persisted table removal fails", async () => {
+    const sandboxRoot = await mkdtemp(join(tmpdir(), "pm-cli-lancedb-store-"));
+    const storePath = join(sandboxRoot, "store");
+    const snapshotPath = join(resolve(storePath), LANCE_DB_SNAPSHOT_DIR, "pm_items.json");
+    try {
+      vi.resetModules();
+      vi.doMock("node:fs/promises", async () => {
+        const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+        return {
+          ...actual,
+          readFile: async () =>
+            JSON.stringify({
+              version: 1,
+              table: "pm_items",
+              records: [{ id: "pm-a1", vector: [1, 0] }],
+            }),
+          unlink: async () => {
+            throw new Error("unlink-boom");
+          },
+        };
+      });
+      const reloadedModule = await import("../../src/core/search/vector-stores.js");
+      await expect(
+        reloadedModule.executeVectorDelete(
+          {
+            name: "lancedb",
+            path: storePath,
+          },
+          ["pm-a1"],
+        ),
+      ).rejects.toThrow(`LanceDB local snapshot delete failed at '${snapshotPath}': unlink-boom`);
+    } finally {
+      vi.unmock("node:fs/promises");
+      vi.resetModules();
+      await rm(sandboxRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("propagates non-object snapshot read failures after node error-code checks", async () => {
+    const sandboxRoot = await mkdtemp(join(tmpdir(), "pm-cli-lancedb-store-"));
+    const storePath = join(sandboxRoot, "store");
+    try {
+      vi.resetModules();
+      vi.doMock("node:fs/promises", async () => {
+        const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+        return {
+          ...actual,
+          readFile: async () => {
+            throw new Error("non-errno-read-failure");
+          },
+        };
+      });
+      const reloadedModule = await import("../../src/core/search/vector-stores.js");
+      await expect(
+        reloadedModule.executeVectorQuery(
+          {
+            name: "lancedb",
+            path: storePath,
+          },
+          [1, 0],
+          1,
+        ),
+      ).rejects.toThrow("non-errno-read-failure");
+    } finally {
+      vi.unmock("node:fs/promises");
+      vi.resetModules();
+      await rm(sandboxRoot, { recursive: true, force: true });
+    }
   });
 });
