@@ -1,12 +1,17 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { runInit } from "../../src/cli/commands/init.js";
 import { PM_REQUIRED_SUBDIRS } from "../../src/constants.js";
+import { clearActiveExtensionHooks, setActiveExtensionHooks, type ExtensionHookRegistry } from "../../src/core/extensions/index.js";
 import { readSettings } from "../../src/settings.js";
 
 describe("runInit", () => {
+  afterEach(() => {
+    clearActiveExtensionHooks();
+  });
+
   it("initializes a new tracker path with normalized prefix", async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-create-"));
     try {
@@ -53,6 +58,51 @@ describe("runInit", () => {
 
       const persisted = await readSettings(tempRoot);
       expect(persisted.id_prefix).toBe("next-");
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("dispatches onWrite hooks for init directory ensure operations", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-hooks-"));
+    try {
+      const trace: string[] = [];
+      const hooks: ExtensionHookRegistry = {
+        beforeCommand: [],
+        afterCommand: [],
+        onWrite: [
+          {
+            layer: "project",
+            name: "init-write-trace",
+            run: (context) => {
+              trace.push(`${context.op}:${context.path}`);
+            },
+          },
+          {
+            layer: "project",
+            name: "init-write-boom",
+            run: () => {
+              throw new Error("boom");
+            },
+          },
+        ],
+        onRead: [],
+        onIndex: [],
+      };
+      setActiveExtensionHooks(hooks);
+
+      const result = await runInit("pm", { path: tempRoot });
+      const expectedTargets = PM_REQUIRED_SUBDIRS.map((subdir) => (subdir ? path.join(tempRoot, subdir) : tempRoot));
+      const settingsPath = path.join(tempRoot, "settings.json");
+
+      expect(trace).toEqual([
+        ...expectedTargets.map((target) => `init:ensure_dir:${target}`),
+        `settings:write:${settingsPath}`,
+      ]);
+      expect(result.warnings).toContain(`already_exists:${tempRoot}`);
+      expect(
+        result.warnings.filter((warning) => warning === "extension_hook_failed:project:init-write-boom:onWrite"),
+      ).toHaveLength(PM_REQUIRED_SUBDIRS.length);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

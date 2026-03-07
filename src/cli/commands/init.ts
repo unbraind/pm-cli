@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { runActiveOnWriteHooks } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { normalizePrefix } from "../../core/item/id.js";
 import { PM_REQUIRED_SUBDIRS, SETTINGS_DEFAULTS } from "../../core/shared/constants.js";
@@ -35,6 +36,13 @@ export async function runInit(prefixArg: string | undefined, global: GlobalOptio
     } else {
       createdDirs.push(target);
     }
+    warnings.push(
+      ...(await runActiveOnWriteHooks({
+        path: target,
+        scope: "project",
+        op: "init:ensure_dir",
+      })),
+    );
   }
 
   const settingsPath = path.join(pmRoot, "settings.json");
@@ -42,11 +50,7 @@ export async function runInit(prefixArg: string | undefined, global: GlobalOptio
   const normalizedPrefix = normalizePrefix(prefixArg);
 
   let settings: PmSettings;
-  if (!settingsExists) {
-    settings = cloneDefaults();
-    settings.id_prefix = normalizedPrefix;
-    await writeSettings(pmRoot, settings);
-  } else {
+  if (settingsExists) {
     settings = await readSettings(pmRoot);
     warnings.push(`already_exists:${settingsPath}`);
     if (prefixArg !== undefined && settings.id_prefix !== normalizedPrefix) {
@@ -54,6 +58,10 @@ export async function runInit(prefixArg: string | undefined, global: GlobalOptio
       await writeSettings(pmRoot, settings);
       warnings.push(`updated:id_prefix:${normalizedPrefix}`);
     }
+  } else {
+    settings = cloneDefaults();
+    settings.id_prefix = normalizedPrefix;
+    await writeSettings(pmRoot, settings);
   }
 
   return {
