@@ -130,6 +130,19 @@ export interface PmSettings {
     embedding_model: string;
     embedding_batch_size: number;
     scanner_max_batch_retries: number;
+    tuning?: {
+      title_exact_bonus?: number;
+      title_weight?: number;
+      description_weight?: number;
+      tags_weight?: number;
+      status_weight?: number;
+      body_weight?: number;
+      comments_weight?: number;
+      notes_weight?: number;
+      learnings_weight?: number;
+      dependencies_weight?: number;
+      linked_content_weight?: number;
+    };
   };
   providers: {
     openai: {

@@ -670,7 +670,7 @@ Determinism requirements:
 
 Initial flags:
 
-- `--mode <keyword|semantic|hybrid>` (all modes implemented baseline; advanced tuning planned)
+- `--mode <keyword|semantic|hybrid>` (all modes implemented baseline; advanced semantic/hybrid tuning planned)
 - `--include-linked` (keyword mode and hybrid lexical component: include readable linked docs/files/tests content in corpus scoring)
 - `--limit <n>`
 - shared list-like filters where applicable (`--type`, `--tag`, `--priority`, `--deadline-before`, `--deadline-after`)
@@ -723,6 +723,7 @@ Keyword/hybrid lexical scoring baseline also applies a deterministic exact-title
   - `embedding_model`
   - `embedding_batch_size`
   - `scanner_max_batch_retries`
+  - `tuning` (optional object: `title_exact_bonus`, `title_weight`, `description_weight`, `tags_weight`, `status_weight`, `body_weight`, `comments_weight`, `notes_weight`, `learnings_weight`, `dependencies_weight`, `linked_content_weight`)
 - `search.score_threshold` runtime semantics:
   - keyword mode compares against raw lexical score
   - semantic mode compares against vector similarity score
@@ -732,6 +733,10 @@ Keyword/hybrid lexical scoring baseline also applies a deterministic exact-title
   - numeric range `0..1` (out-of-range or non-numeric values fall back to default)
   - hybrid combined score uses: `(semantic_normalized * hybrid_semantic_weight) + (keyword_normalized * (1 - hybrid_semantic_weight))`
   - default `0.7` keeps semantic ranking primary while preserving deterministic lexical influence
+- `search.tuning` runtime semantics:
+  - optional object controlling deterministic multi-factor lexical weighting in keyword mode and the hybrid lexical component
+  - non-numeric/negative tuning values fall back to deterministic defaults per field
+  - default weights when unset: `title_exact_bonus=10`, `title_weight=8`, `description_weight=5`, `tags_weight=6`, `status_weight=2`, `body_weight=1`, `comments_weight=1`, `notes_weight=1`, `learnings_weight=1`, `dependencies_weight=3`, `linked_content_weight=1`
 
 ### 13.4 Providers and vector stores (semantic/hybrid execution baseline)
 
@@ -970,6 +975,7 @@ Wrapper behavior must remain aligned with CLI semantics and exit conditions.
 - `search.embedding_model`
 - `search.embedding_batch_size`
 - `search.scanner_max_batch_retries`
+- `search.tuning` (optional object)
 - `providers.openai`
 - `providers.ollama`
 - `vector_store.qdrant`
@@ -977,6 +983,7 @@ Wrapper behavior must remain aligned with CLI semantics and exit conditions.
 
 `search.score_threshold` defaults to `0` and applies mode-specific minimum-score filtering as defined in section `13.3`.
 `search.hybrid_semantic_weight` defaults to `0.7` and controls semantic-vs-lexical blend weight in hybrid mode as defined in section `13.3`.
+`search.tuning` is optional; when unset or partially invalid, lexical scoring defaults remain deterministic (`title_exact_bonus=10`, `title_weight=8`, `description_weight=5`, `tags_weight=6`, `status_weight=2`, `body_weight=1`, `comments_weight=1`, `notes_weight=1`, `learnings_weight=1`, `dependencies_weight=3`, `linked_content_weight=1`).
 
 Default `settings.json` object written by `pm init`:
 
@@ -1178,7 +1185,7 @@ Checklist:
 - [~] keyword indexing + search command (keyword command surface + deterministic reindex artifact rebuild baseline implemented)
 - [~] embedding provider abstraction (deterministic provider configuration resolution, request-target planning including OpenAI-compatible `base_url` normalization for root/`/v1`/`/embeddings`, provider-specific request payload/response normalization with deterministic OpenAI data-entry index ordering, deterministic request-execution helper behavior, deterministic embedding cardinality validation, deterministic per-request normalized-input dedupe with output fan-out, command-path embedding execution baseline, and mutation-triggered embedding refresh baseline are implemented; additional advanced provider optimizations remain pending)
 - [~] vector store adapters (Qdrant/LanceDB deterministic configuration resolution, request-target planning, request payload/response normalization, deterministic request-execution helpers, deterministic LanceDB local query/upsert/delete execution helper behavior, deterministic local snapshot persistence + reload across process boundaries, query-hit ordering normalization, and command-path vector query/upsert integration baseline implemented; broader adapter optimization remains pending)
-- [~] hybrid ranking + include-linked option (`--include-linked` lexical baseline implemented for keyword mode and hybrid lexical blending; deterministic hybrid lexical+semantic blend baseline implemented with configurable `search.hybrid_semantic_weight`; deterministic exact-title token lexical boost baseline implemented; broader multi-factor tuning remains pending)
+- [~] hybrid ranking + include-linked option (`--include-linked` lexical baseline implemented for keyword mode and hybrid lexical blending; deterministic hybrid lexical+semantic blend baseline implemented with configurable `search.hybrid_semantic_weight`; deterministic exact-title token lexical boost baseline implemented; configurable multi-factor lexical tuning via `search.tuning` implemented; broader advanced semantic/hybrid tuning remains pending)
 - [~] reindex command (keyword baseline complete; semantic/hybrid embedding+vector upsert baseline implemented; mutation command paths now invalidate stale keyword artifacts, trigger best-effort semantic embedding refresh for affected item IDs, and prune vectors for missing/deleted IDs when semantic configuration is available)
 
 Definition of Done:

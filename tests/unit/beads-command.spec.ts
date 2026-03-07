@@ -113,9 +113,21 @@ describe("runBeadsImport", () => {
       expect(result).toEqual({
         ok: true,
         source: sourcePath,
-        imported: 2,
+        imported: 11,
         skipped: 0,
-        ids: ["pm-legacy.1", "pm-legacy.2"],
+        ids: [
+          "pm-legacy.1",
+          "pm-legacy.2",
+          "pm-legacy.3",
+          "pm-legacy.4",
+          "pm-legacy.5",
+          "pm-legacy.6",
+          "pm-legacy.7",
+          "pm-legacy.8",
+          "pm-legacy.9",
+          "pm-legacy.10",
+          "pm-legacy.11",
+        ],
         warnings: [],
       });
 
@@ -133,6 +145,9 @@ describe("runBeadsImport", () => {
           comments: Array<{ text: string }>;
           notes: Array<{ text: string }>;
           learnings: Array<{ text: string }>;
+          files: Array<{ path: string; scope: string; note?: string }>;
+          tests: Array<{ command?: string; path?: string; scope: string; timeout_seconds?: number; note?: string }>;
+          docs: Array<{ path: string; scope: string; note?: string }>;
         };
         body: string;
       };
@@ -146,6 +161,17 @@ describe("runBeadsImport", () => {
       expect(firstJson.item.comments).toEqual([{ created_at: createdAt, author: "beads", text: "comment-1" }]);
       expect(firstJson.item.notes).toEqual([{ created_at: createdAt, author: "unit-beads-author", text: "note-1" }]);
       expect(firstJson.item.learnings).toEqual([{ created_at: createdAt, author: "unit-beads-author", text: "learning-1" }]);
+      expect(firstJson.item.files).toEqual([
+        { path: "src/foo.ts", scope: "global", note: "global file" },
+        { path: "src/bar.ts", scope: "project" },
+      ]);
+      expect(firstJson.item.tests).toEqual([
+        { command: "pnpm test", scope: "project", timeout_seconds: 120, note: "run tests" },
+      ]);
+      expect(firstJson.item.docs).toEqual([
+        { path: "docs/design.md", scope: "project" },
+        { path: "docs/readme.md", scope: "project" },
+      ]);
       expect(firstJson.body).toBe("beads-body");
 
       const second = context.runCli(["get", "pm-legacy.2", "--json"], { expectJson: true });
@@ -159,10 +185,48 @@ describe("runBeadsImport", () => {
       expect(secondJson.item.description).toBe("");
       expect(secondJson.item.author).toBe("source-author");
 
+      const ninth = context.runCli(["get", "pm-legacy.9", "--json"], { expectJson: true });
+      expect(ninth.code).toBe(0);
+      const ninthJson = ninth.json as any;
+      expect(ninthJson.item.tags).toEqual(["bug", "ui"]);
+      expect(ninthJson.item.status).toBe("closed");
+      expect(ninthJson.item.close_reason).toBe("Closed at 2026-01-05T00:00:00.000Z");
+      expect(ninthJson.item.dependencies).toEqual([
+        { id: "pm-legacy.1", kind: "related", created_at: ninthJson.item.created_at },
+      ]);
+      expect(ninthJson.item.author).toBe("original_creator");
+      expect(ninthJson.body).toBe("## Design\n\nThis is the design doc\n\n## External Reference\nJIRA-123");
+
+      const tenth = context.runCli(["get", "pm-legacy.10", "--json"], { expectJson: true });
+      expect(tenth.code).toBe(0);
+      const tenthJson = tenth.json as { body: string };
+      expect(tenthJson.body).toBe("Existing body\n\n## Design\n\nDesign details\n\n## External Reference\nEXT-456");
+
+      const eleventh = context.runCli(["get", "pm-legacy.11", "--json"], { expectJson: true });
+      expect(eleventh.code).toBe(0);
+      const eleventhJson = eleventh.json as { body: string };
+      expect(eleventhJson.body).toBe("## External Reference\nEXT-ONLY");
+
       const history = context.runCli(["history", "pm-legacy.1", "--json"], { expectJson: true });
       expect(history.code).toBe(0);
       const historyJson = history.json as { history: Array<{ op: string }> };
       expect(historyJson.history.some((entry) => entry.op === "import")).toBe(true);
+    });
+  });
+
+  it("covers specific mapping branches for arrays", async () => {
+    await withTempPmPath(async (context) => {
+      const sourcePath = path.join(context.tempRoot, "branch-arrays.jsonl");
+      const lines = [
+        JSON.stringify({ id: "b1", title: "B1", docs: "   ", tests: "   ", files: "   " }),
+        JSON.stringify({ id: "b2", title: "B2", docs: "doc-str", tests: "test-str", files: "file-str" }),
+        JSON.stringify({ id: "b3", title: "B3", docs: [" ", {}], tests: [" ", {}], files: [" ", {}] }),
+        JSON.stringify({ id: "b4", title: "B4", docs: [{doc: "d", scope: "global"}], tests: [{test: "t", scope: "global"}], files: [{file: "f", scope: "global"}] }),
+        JSON.stringify({ id: "b5", title: "B5", docs: [{path: "p"}], tests: [{path: "p"}], files: [{path: "p"}] }),
+      ];
+      await writeFile(sourcePath, `${lines.join("\n")}\n`, "utf8");
+      const result = await runBeadsImport({ file: sourcePath }, { path: context.pmPath });
+      expect(result.imported).toBe(5);
     });
   });
 

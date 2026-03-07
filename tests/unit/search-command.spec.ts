@@ -1005,4 +1005,65 @@ describe("runSearch", () => {
     expect(result.items.map((entry) => entry.item.id)).toEqual(["pm-exact-token", "pm-substring-token"]);
     expect(result.items[0]?.score).toBeGreaterThan(result.items[1]?.score ?? 0);
   });
+
+  it("resolves search tuning parameters from settings", async () => {
+    const { resolveSearchTuning } = await import("../../src/cli/commands/search.js");
+    const defaultTuning = resolveSearchTuning({});
+    expect(defaultTuning.title_weight).toBe(8);
+
+    const customTuning = resolveSearchTuning({
+      search: {
+        tuning: {
+          title_weight: 42,
+          body_weight: -1,
+          tags_weight: "not-a-num",
+        },
+      },
+    });
+    expect(customTuning.title_weight).toBe(42);
+    expect(customTuning.body_weight).toBe(1);
+    expect(customTuning.tags_weight).toBe(6);
+  });
+
+  it("applies multi-factor tuning weights to influence ranking", async () => {
+    const titleHit = makeFrontMatter({
+      id: "pm-tuning-title",
+      title: "tunetoken",
+      updated_at: "2026-02-18T00:00:00.000Z",
+    });
+    const bodyHit = makeFrontMatter({
+      id: "pm-tuning-body",
+      title: "different",
+      updated_at: "2026-02-18T00:00:00.000Z",
+    });
+
+    const allItems = [titleHit, bodyHit];
+    listAllFrontMatterMock.mockResolvedValue(allItems);
+    readFileMock.mockImplementation(async (targetPath) => {
+      const match = allItems.find((item) => targetPath.endsWith(`${item.id}.md`));
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(match, match.id === "pm-tuning-body" ? "tunetoken tunetoken" : "no token here");
+    });
+
+    const { runSearch } = await import("../../src/cli/commands/search.js");
+
+    readSettingsMock.mockResolvedValueOnce({ id_prefix: "pm-" });
+    const defaultResult = await runSearch("tunetoken", { mode: "keyword" }, { path: "/tmp/pm-search" });
+    expect(defaultResult.items[0]?.item.id).toBe("pm-tuning-title");
+
+    readSettingsMock.mockResolvedValueOnce({
+      id_prefix: "pm-",
+      search: {
+        tuning: {
+          title_weight: 1,
+          title_exact_bonus: 0,
+          body_weight: 20,
+        },
+      },
+    } as unknown as { id_prefix: string });
+    const tunedResult = await runSearch("tunetoken", { mode: "keyword" }, { path: "/tmp/pm-search" });
+    expect(tunedResult.items[0]?.item.id).toBe("pm-tuning-body");
+  });
 });

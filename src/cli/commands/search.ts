@@ -40,7 +40,7 @@ export interface SearchResult {
   now: string;
 }
 
-const TITLE_EXACT_TOKEN_BONUS = 10;
+
 
 const ITEM_TYPES_BY_LOWER = new Map<string, ItemType>([
   ["epic", "Epic"],
@@ -243,27 +243,41 @@ async function loadLinkedCorpus(
   return chunks.join("\n");
 }
 
-function scoreDocument(document: ItemDocument, tokens: string[], linkedCorpus: string): SearchHit | null {
+export interface SearchTuning {
+  title_exact_bonus: number;
+  title_weight: number;
+  description_weight: number;
+  tags_weight: number;
+  status_weight: number;
+  body_weight: number;
+  comments_weight: number;
+  notes_weight: number;
+  learnings_weight: number;
+  dependencies_weight: number;
+  linked_content_weight: number;
+}
+
+function scoreDocument(document: ItemDocument, tokens: string[], linkedCorpus: string, tuning: SearchTuning): SearchHit | null {
   const item = document.front_matter;
   const titleTokenCounts = new Map<string, number>();
   for (const token of tokenizeForExactTokenMatch(item.title)) {
     titleTokenCounts.set(token, (titleTokenCounts.get(token) ?? 0) + 1);
   }
   const searchableFields: Array<{ name: string; value: string; weight: number }> = [
-    { name: "title", value: item.title, weight: 8 },
-    { name: "description", value: item.description, weight: 5 },
-    { name: "tags", value: item.tags.join(" "), weight: 6 },
-    { name: "status", value: item.status, weight: 2 },
-    { name: "body", value: document.body, weight: 1 },
-    { name: "comments", value: (item.comments ?? []).map((entry) => entry.text).join(" "), weight: 1 },
-    { name: "notes", value: (item.notes ?? []).map((entry) => entry.text).join(" "), weight: 1 },
-    { name: "learnings", value: (item.learnings ?? []).map((entry) => entry.text).join(" "), weight: 1 },
+    { name: "title", value: item.title, weight: tuning.title_weight },
+    { name: "description", value: item.description, weight: tuning.description_weight },
+    { name: "tags", value: item.tags.join(" "), weight: tuning.tags_weight },
+    { name: "status", value: item.status, weight: tuning.status_weight },
+    { name: "body", value: document.body, weight: tuning.body_weight },
+    { name: "comments", value: (item.comments ?? []).map((entry) => entry.text).join(" "), weight: tuning.comments_weight },
+    { name: "notes", value: (item.notes ?? []).map((entry) => entry.text).join(" "), weight: tuning.notes_weight },
+    { name: "learnings", value: (item.learnings ?? []).map((entry) => entry.text).join(" "), weight: tuning.learnings_weight },
     {
       name: "dependencies",
       value: (item.dependencies ?? []).map((entry) => `${entry.id} ${entry.kind}`).join(" "),
-      weight: 3,
+      weight: tuning.dependencies_weight,
     },
-    { name: "linked_content", value: linkedCorpus, weight: 1 },
+    { name: "linked_content", value: linkedCorpus, weight: tuning.linked_content_weight },
   ];
 
   let score = 0;
@@ -271,7 +285,7 @@ function scoreDocument(document: ItemDocument, tokens: string[], linkedCorpus: s
   for (const token of tokens) {
     const exactTitleMatches = titleTokenCounts.get(token) ?? 0;
     if (exactTitleMatches > 0) {
-      score += exactTitleMatches * TITLE_EXACT_TOKEN_BONUS;
+      score += exactTitleMatches * tuning.title_exact_bonus;
       matched.add("title");
     }
     for (const field of searchableFields) {
@@ -317,11 +331,13 @@ function buildHybridLexicalScore(
   tokens: string[],
   includeLinked: boolean,
   linkedCorpusById: Map<string, string>,
+  tuning: SearchTuning,
 ): SearchHit | null {
   return scoreDocument(
     document,
     tokens,
     includeLinked ? linkedCorpusById.get(document.front_matter.id) ?? "" : "",
+    tuning,
   );
 }
 
@@ -364,6 +380,45 @@ export function resolveHybridSemanticWeight(settings: unknown): number {
     return candidate;
   }
   return 0.7;
+}
+
+export function resolveSearchTuning(settings: unknown): SearchTuning {
+  const defaults: SearchTuning = {
+    title_exact_bonus: 10,
+    title_weight: 8,
+    description_weight: 5,
+    tags_weight: 6,
+    status_weight: 2,
+    body_weight: 1,
+    comments_weight: 1,
+    notes_weight: 1,
+    learnings_weight: 1,
+    dependencies_weight: 3,
+    linked_content_weight: 1,
+  };
+  const tuning = (settings as { search?: { tuning?: Partial<SearchTuning> } }).search?.tuning;
+  if (!tuning) return defaults;
+
+  const resolveWeight = (candidate: unknown, fallback: number) => {
+    if (typeof candidate === "number" && Number.isFinite(candidate) && candidate >= 0) {
+      return candidate;
+    }
+    return fallback;
+  };
+
+  return {
+    title_exact_bonus: resolveWeight(tuning.title_exact_bonus, defaults.title_exact_bonus),
+    title_weight: resolveWeight(tuning.title_weight, defaults.title_weight),
+    description_weight: resolveWeight(tuning.description_weight, defaults.description_weight),
+    tags_weight: resolveWeight(tuning.tags_weight, defaults.tags_weight),
+    status_weight: resolveWeight(tuning.status_weight, defaults.status_weight),
+    body_weight: resolveWeight(tuning.body_weight, defaults.body_weight),
+    comments_weight: resolveWeight(tuning.comments_weight, defaults.comments_weight),
+    notes_weight: resolveWeight(tuning.notes_weight, defaults.notes_weight),
+    learnings_weight: resolveWeight(tuning.learnings_weight, defaults.learnings_weight),
+    dependencies_weight: resolveWeight(tuning.dependencies_weight, defaults.dependencies_weight),
+    linked_content_weight: resolveWeight(tuning.linked_content_weight, defaults.linked_content_weight),
+  };
 }
 
 function emptySearchResult(
@@ -422,6 +477,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   const settings = await readSettings(pmRoot);
   const scoreThreshold = resolveSearchScoreThreshold(settings);
   const hybridSemanticWeight = resolveHybridSemanticWeight(settings);
+  const tuning = resolveSearchTuning(settings);
   const providerResolution = resolveEmbeddingProviders(settings);
   const vectorResolution = resolveVectorStores(settings);
   const requestedMode = parseMode(options.mode, {
@@ -444,7 +500,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   }
 
   const keywordHits = filteredDocuments
-    .map((document) => buildHybridLexicalScore(document, tokens, requestedMode !== "semantic", linkedCorpusById))
+    .map((document) => buildHybridLexicalScore(document, tokens, requestedMode !== "semantic", linkedCorpusById, tuning))
     .filter((entry): entry is SearchHit => entry !== null);
 
   let hits = keywordHits;

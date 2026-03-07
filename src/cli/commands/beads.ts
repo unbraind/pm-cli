@@ -13,7 +13,7 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import type { Dependency, ItemDocument, ItemFrontMatter, ItemStatus, ItemType, LogNote } from "../../types/index.js";
+import type { Dependency, ItemDocument, ItemFrontMatter, ItemStatus, ItemType, LogNote, LinkedFile, LinkedTest, LinkedDoc } from "../../types/index.js";
 import { DEPENDENCY_KIND_VALUES, STATUS_VALUES } from "../../types/index.js";
 
 const DEFAULT_BEADS_FILE = ".beads/issues.jsonl";
@@ -42,19 +42,27 @@ interface BeadsRecord extends Record<string, unknown> {
   status?: unknown;
   priority?: unknown;
   tags?: unknown;
+  labels?: unknown;
   body?: unknown;
   created_at?: unknown;
   updated_at?: unknown;
+  closed_at?: unknown;
   deadline?: unknown;
   assignee?: unknown;
   author?: unknown;
+  created_by?: unknown;
   estimated_minutes?: unknown;
   acceptance_criteria?: unknown;
+  design?: unknown;
+  external_ref?: unknown;
   close_reason?: unknown;
   dependencies?: unknown;
   comments?: unknown;
   notes?: unknown;
   learnings?: unknown;
+  files?: unknown;
+  tests?: unknown;
+  docs?: unknown;
 }
 
 function toNonEmptyString(value: unknown): string | undefined {
@@ -175,7 +183,7 @@ function toDependencies(value: unknown, fallbackCreatedAt: string, prefix: strin
       continue;
     }
     const candidate = entry as Record<string, unknown>;
-    const id = toNonEmptyString(candidate.id) ?? toNonEmptyString(candidate.item_id);
+    const id = toNonEmptyString(candidate.id) ?? toNonEmptyString(candidate.item_id) ?? toNonEmptyString(candidate.depends_on_id);
     if (!id) {
       continue;
     }
@@ -242,6 +250,121 @@ function toLogEntries(value: unknown, fallbackCreatedAt: string, fallbackAuthor:
   }
 
   return entries.length > 0 ? entries : undefined;
+}
+
+function toLinkedFiles(value: unknown): LinkedFile[] | undefined {
+  if (typeof value === "string") {
+    const p = toNonEmptyString(value);
+    if (!p) return undefined;
+    return [{ path: p, scope: "project" }];
+  }
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const files: LinkedFile[] = [];
+  for (const entry of value) {
+    if (typeof entry === "string") {
+      const p = toNonEmptyString(entry);
+      if (p) files.push({ path: p, scope: "project" });
+      continue;
+    }
+    if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
+      continue;
+    }
+    const candidate = entry as Record<string, unknown>;
+    const p = toNonEmptyString(candidate.path) ?? toNonEmptyString(candidate.file);
+    if (!p) continue;
+    
+    files.push({
+      path: p,
+      scope: toNonEmptyString(candidate.scope) === "global" ? "global" : "project",
+      note: toNonEmptyString(candidate.note),
+    });
+  }
+
+  return files.length > 0 ? files : undefined;
+}
+
+function toLinkedTests(value: unknown): LinkedTest[] | undefined {
+  if (typeof value === "string") {
+    const c = toNonEmptyString(value);
+    if (!c) return undefined;
+    return [{ command: c, scope: "project" }];
+  }
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const tests: LinkedTest[] = [];
+  for (const entry of value) {
+    if (typeof entry === "string") {
+      const c = toNonEmptyString(entry);
+      if (c) tests.push({ command: c, scope: "project" });
+      continue;
+    }
+    if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
+      continue;
+    }
+    const candidate = entry as Record<string, unknown>;
+    const command = toNonEmptyString(candidate.command) ?? toNonEmptyString(candidate.test);
+    const p = toNonEmptyString(candidate.path);
+    if (!command && !p) continue;
+
+    let timeout: number | undefined;
+    if (typeof candidate.timeout_seconds === "number" && Number.isFinite(candidate.timeout_seconds)) {
+      timeout = candidate.timeout_seconds;
+    } else if (typeof candidate.timeout_seconds === "string") {
+      const parsed = Number(candidate.timeout_seconds);
+      if (Number.isFinite(parsed) && parsed >= 0) {
+        timeout = parsed;
+      }
+    }
+
+    tests.push({
+      command,
+      path: p,
+      scope: toNonEmptyString(candidate.scope) === "global" ? "global" : "project",
+      timeout_seconds: timeout,
+      note: toNonEmptyString(candidate.note),
+    });
+  }
+
+  return tests.length > 0 ? tests : undefined;
+}
+
+function toLinkedDocs(value: unknown): LinkedDoc[] | undefined {
+  if (typeof value === "string") {
+    const p = toNonEmptyString(value);
+    if (!p) return undefined;
+    return [{ path: p, scope: "project" }];
+  }
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const docs: LinkedDoc[] = [];
+  for (const entry of value) {
+    if (typeof entry === "string") {
+      const p = toNonEmptyString(entry);
+      if (p) docs.push({ path: p, scope: "project" });
+      continue;
+    }
+    if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
+      continue;
+    }
+    const candidate = entry as Record<string, unknown>;
+    const p = toNonEmptyString(candidate.path) ?? toNonEmptyString(candidate.doc);
+    if (!p) continue;
+    
+    docs.push({
+      path: p,
+      scope: toNonEmptyString(candidate.scope) === "global" ? "global" : "project",
+      note: toNonEmptyString(candidate.note),
+    });
+  }
+
+  return docs.length > 0 ? docs : undefined;
 }
 
 function selectAuthor(explicitAuthor: string | undefined, settingsAuthor: string): string {
@@ -337,23 +460,36 @@ export async function runBeadsImport(options: BeadsImportOptions, global: Global
       type,
       status: toStatus(record.status),
       priority: toPriority(record.priority),
-      tags: toTags(record.tags),
+      tags: toTags(record.tags ?? record.labels),
       created_at: createdAt,
       updated_at: updatedAt,
       deadline: toIsoString(record.deadline),
       assignee: toNonEmptyString(record.assignee),
-      author: toNonEmptyString(record.author) ?? author,
+      author: toNonEmptyString(record.author) ?? toNonEmptyString(record.created_by) ?? author,
       estimated_minutes: toEstimatedMinutes(record.estimated_minutes),
       acceptance_criteria: toNonEmptyString(record.acceptance_criteria),
-      close_reason: toNonEmptyString(record.close_reason),
+      close_reason: toNonEmptyString(record.close_reason) ?? (toIsoString(record.closed_at) ? `Closed at ${toIsoString(record.closed_at)}` : undefined),
       dependencies: toDependencies(record.dependencies, createdAt, settings.id_prefix),
       comments: toLogEntries(record.comments, createdAt, author),
       notes: toLogEntries(record.notes, createdAt, author),
       learnings: toLogEntries(record.learnings, createdAt, author),
+      files: toLinkedFiles(record.files),
+      tests: toLinkedTests(record.tests),
+      docs: toLinkedDocs(record.docs),
     });
+    const rawBody = toNonEmptyString(record.body) ?? "";
+    const design = toNonEmptyString(record.design);
+    const externalRef = toNonEmptyString(record.external_ref);
+    let finalBody = rawBody;
+    if (design) {
+      finalBody += (finalBody ? "\n\n" : "") + "## Design\n\n" + design;
+    }
+    if (externalRef) {
+      finalBody += (finalBody ? "\n\n" : "") + "## External Reference\n" + externalRef;
+    }
     const afterDocument = canonicalDocument({
       front_matter: frontMatter,
-      body: toNonEmptyString(record.body) ?? "",
+      body: finalBody,
     });
     const itemPath = getItemPath(pmRoot, type, id);
     if (await pathExists(itemPath)) {
