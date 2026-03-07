@@ -354,7 +354,7 @@ pm create \
   --body "..." \
   --deadline +1d \
   --estimate 60 \
-  --acceptance-criteria "..." \
+  --acceptance-criteria/--ac "..." \
   --author "..." \
   --message "..." \
   --assignee none \
@@ -380,7 +380,7 @@ pm create \
   --body "..." \
   --deadline +7d \
   --estimate 240 \
-  --acceptance-criteria "..." \
+  --acceptance-criteria/--ac "..." \
   --author "..." \
   --message "MESSAGE" \
   --assignee none \

@@ -801,7 +801,9 @@ function normalizeCreateOptions(commandOptions: Record<string, unknown>): Create
     body: requiredString("body", "--body"),
     deadline: requiredString("deadline", "--deadline"),
     estimatedMinutes,
-    acceptanceCriteria: requiredString("acceptanceCriteria", "--acceptance-criteria"),
+    acceptanceCriteria:
+      (typeof commandOptions.acceptanceCriteria === "string" ? commandOptions.acceptanceCriteria : undefined) ??
+      requiredString("ac", "--acceptance-criteria/--ac"),
     author: requiredString("author", "--author"),
     message: requiredString("message", "--message"),
     assignee: requiredString("assignee", "--assignee"),
@@ -961,7 +963,8 @@ program
   .requiredOption("--body, -b <value>", "Item markdown body (allow empty string)")
   .requiredOption("--deadline <value>", "ISO deadline, relative +6h/+1d/+2w, or none")
   .requiredOption("--estimate, --estimated-minutes <value>", "Estimated minutes, or none")
-  .requiredOption("--acceptance-criteria <value>", "Acceptance criteria (allow empty string)")
+  .option("--acceptance-criteria <value>", "Acceptance criteria (allow empty string)")
+  .option("--ac <value>", "Alias for --acceptance-criteria")
   .requiredOption("--author <value>", "Mutation author, or none")
   .requiredOption("--message <value>", "History message (allow empty string)")
   .requiredOption("--assignee <value>", "Item assignee, or none")

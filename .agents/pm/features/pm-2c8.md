@@ -12,7 +12,7 @@
     "release-readiness"
   ],
   "created_at": "2026-02-17T23:37:26.647Z",
-  "updated_at": "2026-02-18T21:55:12.730Z",
+  "updated_at": "2026-03-07T00:36:48.513Z",
   "deadline": "2026-02-21T23:37:26.647Z",
   "author": "cursor-agent",
   "estimated_minutes": 360,
@@ -261,6 +261,11 @@
       "created_at": "2026-02-18T21:55:12.360Z",
       "author": "maintainer-agent",
       "text": "Implemented tests/unit/command-wrapper-exports.spec.ts to verify every src/commands/*.ts module is a strict runtime re-export of the matching src/cli/commands/*.ts module. Evidence: pm test pm-2c8 --run --timeout 1800 --json passed all linked tests (count=6); pm test-all --status in_progress --timeout 1800 --json totals items=4 linked_tests=20 passed=19 failed=0 skipped=1; pm test-all --status closed --timeout 1800 --json totals items=11 linked_tests=25 passed=22 failed=0 skipped=3; coverage from linked run-tests coverage output remains 100% statements/branches/functions/lines."
+    },
+    {
+      "created_at": "2026-03-07T00:36:48.513Z",
+      "author": "maintainer-agent",
+      "text": "Maintenance fix: removed stale linked test command for deleted tests/unit/command-wrapper-exports.spec.ts after closed regression sweep surfaced deterministic missing-file failure in pm test-all."
     }
   ],
   "files": [
@@ -689,12 +694,6 @@
       "scope": "project",
       "timeout_seconds": 300,
       "note": "targeted claim command regression"
-    },
-    {
-      "command": "node scripts/run-tests.mjs test -- tests/unit/command-wrapper-exports.spec.ts",
-      "scope": "project",
-      "timeout_seconds": 300,
-      "note": "wrapper parity contract regression"
     },
     {
       "command": "pnpm build",

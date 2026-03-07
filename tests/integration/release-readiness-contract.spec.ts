@@ -160,6 +160,7 @@ const REQUIRED_CREATE_FLAGS = [
   "--deadline",
   "--estimate",
   "--acceptance-criteria",
+  "--ac",
   "--author",
   "--message",
   "--assignee",

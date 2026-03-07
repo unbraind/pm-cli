@@ -266,7 +266,7 @@ Format:
   - `--body/-b` (explicit empty allowed)
   - `--deadline` (ISO, relative, or none)
   - `--estimate/--estimated-minutes` (supports `0`)
-  - `--acceptance-criteria` (explicit empty allowed)
+  - `--acceptance-criteria`, `--ac` (explicit empty allowed)
   - `--author` (fallbacks still exist, but explicit is recommended)
   - `--message`
   - `--assignee` (explicit; use `none` to clear)

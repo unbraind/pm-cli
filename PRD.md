@@ -544,7 +544,7 @@ Mutating `create` (all schema fields MUST be passable explicitly):
 - `--body`, `-b` (required; explicit empty allowed)
 - `--deadline` (explicit; accepts ISO, relative `+6h/+1d/+2w`, or none)
 - `--estimate`, `--estimated-minutes` (explicit; accepts `0`)
-- `--acceptance-criteria` (explicit; empty allowed)
+- `--acceptance-criteria`, `--ac` (explicit; empty allowed)
 - `--author` (explicit; fallback `PM_AUTHOR`/settings allowed)
 - `--message` (explicit history message; empty allowed)
 - `--assignee` (explicit; use `none` to unset)

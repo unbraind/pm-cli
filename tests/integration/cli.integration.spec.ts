@@ -10,6 +10,63 @@ function distCliPath(): string {
 }
 
 describe("CLI integration (sandboxed PM_PATH)", () => {
+  it("accepts --ac as create alias for acceptance criteria", async () => {
+    await withTempPmPath(async (context) => {
+      const createResult = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Alias contract item",
+          "--description",
+          "Validate create acceptance criteria alias",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,contract",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "15",
+          "--ac",
+          "Alias flag is accepted",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create with ac alias",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+
+      expect(createResult.code).toBe(0);
+      expect((createResult.json as { item: { acceptance_criteria: string } }).item.acceptance_criteria).toBe(
+        "Alias flag is accepted",
+      );
+    });
+  });
+
   it("requires explicit repeatable seed flags for create contract parity", async () => {
     await withTempPmPath(async (context) => {
       const createWithoutRepeatables = context.runCli([
