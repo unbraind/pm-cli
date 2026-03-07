@@ -128,6 +128,32 @@ function normalizeEmbeddingInputs(input: string | string[]): string[] {
   return inputs;
 }
 
+interface DedupedEmbeddingInputs {
+  uniqueInputs: string[];
+  originalToUniqueIndex: number[];
+}
+
+function dedupeEmbeddingInputs(inputs: string[]): DedupedEmbeddingInputs {
+  const uniqueInputs: string[] = [];
+  const originalToUniqueIndex: number[] = [];
+  const uniqueIndexByInput = new Map<string, number>();
+  for (const entry of inputs) {
+    const existingUniqueIndex = uniqueIndexByInput.get(entry);
+    if (existingUniqueIndex === undefined) {
+      const nextUniqueIndex = uniqueInputs.length;
+      uniqueInputs.push(entry);
+      uniqueIndexByInput.set(entry, nextUniqueIndex);
+      originalToUniqueIndex.push(nextUniqueIndex);
+      continue;
+    }
+    originalToUniqueIndex.push(existingUniqueIndex);
+  }
+  return {
+    uniqueInputs,
+    originalToUniqueIndex,
+  };
+}
+
 function isFiniteNumberArray(value: unknown): value is number[] {
   return Array.isArray(value) && value.every((entry) => typeof entry === "number" && Number.isFinite(entry));
 }
@@ -299,7 +325,8 @@ export async function executeEmbeddingRequest(
   const timeoutMs = normalizeTimeoutMs(options.timeout_ms);
   const fetcher = resolveEmbeddingFetcher(options.fetcher);
   const normalizedInputs = normalizeEmbeddingInputs(input);
-  const requestPlan = buildEmbeddingRequestPlan(provider, normalizedInputs);
+  const dedupedInputs = dedupeEmbeddingInputs(normalizedInputs);
+  const requestPlan = buildEmbeddingRequestPlan(provider, dedupedInputs.uniqueInputs);
   const controller = new AbortController();
   const timeoutHandle = setTimeout(() => {
     controller.abort();
@@ -334,12 +361,12 @@ export async function executeEmbeddingRequest(
       throw new Error(`Embedding response JSON parse failed: ${toErrorMessage(error)}`);
     }
     const vectors = normalizeEmbeddingResponse(provider, payload);
-    if (vectors.length !== normalizedInputs.length) {
+    if (vectors.length !== dedupedInputs.uniqueInputs.length) {
       throw new Error(
-        `Embedding response cardinality mismatch: expected ${normalizedInputs.length} vector(s), received ${vectors.length}`,
+        `Embedding response cardinality mismatch: expected ${dedupedInputs.uniqueInputs.length} vector(s), received ${vectors.length}`,
       );
     }
-    return vectors;
+    return dedupedInputs.originalToUniqueIndex.map((uniqueIndex) => [...vectors[uniqueIndex]]);
   } finally {
     clearTimeout(timeoutHandle);
   }

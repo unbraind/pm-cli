@@ -281,6 +281,46 @@ describe("executeEmbeddingRequest", () => {
     ]);
   });
 
+  it("deduplicates normalized duplicate inputs per request and fans out returned vectors", async () => {
+    let capturedBody: unknown = null;
+    const fetcher = async (_url: string, init: { body: string }) => {
+      capturedBody = JSON.parse(init.body) as unknown;
+      return {
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: async () => ({
+          data: [
+            { index: 0, embedding: [0.11, 0.22] },
+            { index: 1, embedding: [0.33, 0.44] },
+          ],
+        }),
+        text: async () => "",
+      };
+    };
+
+    const vectors = await executeEmbeddingRequest(
+      {
+        name: "openai",
+        base_url: "https://api.example.test/v1",
+        model: "text-embedding-3-small",
+      },
+      [" alpha ", "beta", "alpha", " beta "],
+      { fetcher, timeout_ms: 50 },
+    );
+
+    expect(capturedBody).toEqual({
+      model: "text-embedding-3-small",
+      input: ["alpha", "beta"],
+    });
+    expect(vectors).toEqual([
+      [0.11, 0.22],
+      [0.33, 0.44],
+      [0.11, 0.22],
+      [0.33, 0.44],
+    ]);
+  });
+
   it("fails when normalized input count and response vector count differ", async () => {
     const fetcher = async () => ({
       ok: true,
