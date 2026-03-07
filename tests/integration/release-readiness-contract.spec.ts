@@ -199,6 +199,7 @@ const REQUIRED_COMMENTS_FLAGS = ["--add", "--limit", "--author", "--message", "-
 
 const REQUIRED_CLAIM_RELEASE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_CLOSE_FLAGS = ["--author", "--message", "--force"];
+const REQUIRED_APPEND_FLAGS = ["--body", "--author", "--message", "--force"];
 const REQUIRED_PI_CREATE_EXAMPLE_KEYS = [
   "action",
   "title",
@@ -738,6 +739,21 @@ describe("release readiness baseline contract", () => {
       expect(closeHelp.stdout).toContain("Close an item with required reason text.");
       for (const flag of REQUIRED_CLOSE_FLAGS) {
         expect(closeHelp.stdout).toContain(flag);
+      }
+    });
+  });
+
+  it("keeps append mutation metadata contract aligned across PRD and CLI help", async () => {
+    const prd = await readRepoText("PRD.md");
+    expect(prd).toContain("| `pm append <ID> --body` | id + appended markdown | `{ item, appended, changed_fields }` |");
+
+    await withTempPmPath(async (context) => {
+      const appendHelp = context.runCli(["append", "--help"]);
+      expect(appendHelp.code).toBe(0);
+      expect(appendHelp.stdout).toContain("Usage: pm append [options] <id>");
+      expect(appendHelp.stdout).toContain("Append text to an item body.");
+      for (const flag of REQUIRED_APPEND_FLAGS) {
+        expect(appendHelp.stdout).toContain(flag);
       }
     });
   });
