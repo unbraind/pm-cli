@@ -129,12 +129,19 @@ export interface ExtensionHookRegistry {
 export interface CommandOverrideContext {
   command: string;
   args: string[];
+  options?: Record<string, unknown>;
+  global?: GlobalOptions;
   pm_root: string;
   result: unknown;
 }
 
 export interface RendererOverrideContext {
   format: OutputRendererFormat;
+  command?: string;
+  args?: string[];
+  options?: Record<string, unknown>;
+  global?: GlobalOptions;
+  pm_root?: string;
   result: unknown;
 }
 
@@ -750,6 +757,23 @@ function normalizeCommandName(command: string): string {
     .join(" ");
 }
 
+function defaultGlobalOptions(): GlobalOptions {
+  return {
+    json: false,
+    quiet: false,
+    noExtensions: false,
+    profile: false,
+  };
+}
+
+function cloneCommandOptionsSnapshot(options: Record<string, unknown> | undefined): Record<string, unknown> {
+  return options ? cloneContextSnapshot(options) : {};
+}
+
+function cloneGlobalOptionsSnapshot(options: GlobalOptions | undefined): GlobalOptions {
+  return options ? cloneContextSnapshot(options) : defaultGlobalOptions();
+}
+
 function cloneContextSnapshot<T>(value: T): T {
   return structuredClone(value);
 }
@@ -1239,9 +1263,13 @@ export function runCommandOverride(
   }
 
   try {
+    const overrideOptions = cloneCommandOptionsSnapshot(context.options);
+    const overrideGlobal = cloneGlobalOptionsSnapshot(context.global);
     const overrideResult = matched.run({
       command,
       args: cloneContextSnapshot(context.args),
+      options: overrideOptions,
+      global: overrideGlobal,
       pm_root: context.pm_root,
       result: cloneContextSnapshot(context.result),
     });
@@ -1286,8 +1314,18 @@ export function runRendererOverride(
   }
 
   try {
+    const rendererCommand = typeof context.command === "string" ? normalizeCommandName(context.command) : "";
+    const rendererArgs = Array.isArray(context.args) ? cloneContextSnapshot(context.args) : [];
+    const rendererOptions = cloneCommandOptionsSnapshot(context.options);
+    const rendererGlobal = cloneGlobalOptionsSnapshot(context.global);
+    const rendererPmRoot = typeof context.pm_root === "string" ? context.pm_root : "";
     const rendered = matched.run({
       format: context.format,
+      command: rendererCommand,
+      args: rendererArgs,
+      options: rendererOptions,
+      global: rendererGlobal,
+      pm_root: rendererPmRoot,
       result: cloneContextSnapshot(context.result),
     });
     if (typeof rendered !== "string") {

@@ -79,6 +79,8 @@ export function runActiveCommandOverride(result: unknown): CommandOverrideResult
   return runCommandOverride(activeExtensionCommands, {
     command: activeCommandContext.command,
     args: [...activeCommandContext.args],
+    options: activeCommandContext.options ? { ...activeCommandContext.options } : {},
+    global: activeCommandContext.global ? { ...activeCommandContext.global } : undefined,
     pm_root: activeCommandContext.pm_root,
     result,
   });
@@ -105,6 +107,11 @@ export function runActiveRendererOverride(format: OutputRendererFormat, result: 
   }
   return runRendererOverride(activeExtensionRenderers, {
     format,
+    command: activeCommandContext?.command,
+    args: activeCommandContext ? [...activeCommandContext.args] : [],
+    options: activeCommandContext?.options ? { ...activeCommandContext.options } : {},
+    global: activeCommandContext?.global ? { ...activeCommandContext.global } : undefined,
+    pm_root: activeCommandContext?.pm_root,
     result,
   });
 }

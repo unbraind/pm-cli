@@ -586,12 +586,21 @@ async function runRequiredExtensionCommand(
   globalOptions: GlobalOptions,
 ): Promise<unknown> {
   const commandPath = getCommandPath(command);
+  const commandArgs = command.args.map(String);
+  const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
+  setActiveCommandContext({
+    command: commandPath,
+    args: commandArgs,
+    options: { ...options },
+    global: { ...globalOptions },
+    pm_root: pmRoot,
+  });
   const extensionCommandResult = await runActiveCommandHandler({
     command: commandPath,
-    args: command.args.map(String),
+    args: commandArgs,
     options,
     global: globalOptions,
-    pm_root: resolvePmRoot(process.cwd(), globalOptions.path),
+    pm_root: pmRoot,
   });
   if (globalOptions.profile && extensionCommandResult.warnings.length > 0) {
     printError(`profile:extensions command_handler_warnings=${formatHookWarnings(extensionCommandResult.warnings)}`);
@@ -830,9 +839,12 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
   setActiveExtensionHooks(runtimeExtensions.hooks);
   setActiveExtensionCommands(runtimeExtensions.commands);
   setActiveExtensionRenderers(runtimeExtensions.renderers);
+  const commandOptions = actionCommand.optsWithGlobals();
   setActiveCommandContext({
     command: commandPath,
     args: commandArgs,
+    options: { ...commandOptions },
+    global: { ...globalOptions },
     pm_root: runtimeExtensions.pmRoot,
   });
 

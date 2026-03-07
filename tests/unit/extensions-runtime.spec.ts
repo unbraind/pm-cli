@@ -181,6 +181,8 @@ describe("core/extensions runtime wrappers", () => {
             ...(context.result as Record<string, unknown>),
             overridden: true,
             command: context.command,
+            limit: context.options.limit,
+            json: context.global.json,
           }),
         },
       ],
@@ -189,6 +191,13 @@ describe("core/extensions runtime wrappers", () => {
     setActiveCommandContext({
       command: "list-open",
       args: ["--limit", "1"],
+      options: { limit: "1" },
+      global: {
+        json: true,
+        quiet: false,
+        noExtensions: false,
+        profile: false,
+      },
       pm_root: "/tmp/project",
     });
 
@@ -198,6 +207,8 @@ describe("core/extensions runtime wrappers", () => {
         count: 1,
         overridden: true,
         command: "list-open",
+        limit: "1",
+        json: true,
       },
       warnings: [],
     });
@@ -273,14 +284,39 @@ describe("core/extensions runtime wrappers", () => {
           layer: "project",
           name: "renderer-override-ext",
           format: "json",
-          run: (context) => JSON.stringify({ wrapped: context.result }),
+          run: (context) =>
+            JSON.stringify({
+              wrapped: context.result,
+              command: context.command,
+              limit: context.options.limit,
+              json: context.global.json,
+              pm_root: context.pm_root,
+            }),
         },
       ],
+    });
+    setActiveCommandContext({
+      command: "list-open",
+      args: ["--limit", "1"],
+      options: { limit: "1" },
+      global: {
+        json: true,
+        quiet: false,
+        noExtensions: false,
+        profile: false,
+      },
+      pm_root: "/tmp/project",
     });
 
     expect(runActiveRendererOverride("json", { ok: true })).toEqual({
       overridden: true,
-      rendered: JSON.stringify({ wrapped: { ok: true } }),
+      rendered: JSON.stringify({
+        wrapped: { ok: true },
+        command: "list-open",
+        limit: "1",
+        json: true,
+        pm_root: "/tmp/project",
+      }),
       warnings: [],
     });
 

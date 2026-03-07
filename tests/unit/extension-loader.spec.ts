@@ -865,15 +865,44 @@ describe("extension loader", () => {
             activate(api: {
               registerCommand: (
                 command: string,
-                run: (context: { result: unknown; command: string; args: string[]; pm_root: string }) => unknown,
+                run: (context: {
+                  result: unknown;
+                  command: string;
+                  args: string[];
+                  options: Record<string, unknown>;
+                  global: { json: boolean; quiet: boolean; noExtensions: boolean; profile: boolean };
+                  pm_root: string;
+                }) => unknown,
               ) => void;
-              registerRenderer: (format: "toon" | "json", run: (context: { result: unknown }) => string) => void;
+              registerRenderer: (
+                format: "toon" | "json",
+                run: (context: {
+                  format: "toon" | "json";
+                  command: string;
+                  args: string[];
+                  options: Record<string, unknown>;
+                  global: { json: boolean; quiet: boolean; noExtensions: boolean; profile: boolean };
+                  pm_root: string;
+                  result: unknown;
+                }) => string,
+              ) => void;
             }) {
               api.registerCommand("list-open", (context) => ({
                 ...(context.result as Record<string, unknown>),
                 source: "global",
+                limit: context.options.limit,
+                json: context.global.json,
               }));
-              api.registerRenderer("json", (context) => JSON.stringify({ source: "global", result: context.result }));
+              api.registerRenderer("json", (context) =>
+                JSON.stringify({
+                  source: "global",
+                  command: context.command,
+                  limit: context.options.limit,
+                  json: context.global.json,
+                  pm_root: context.pm_root,
+                  result: context.result,
+                }),
+              );
             },
           },
         },
@@ -890,15 +919,44 @@ describe("extension loader", () => {
             activate(api: {
               registerCommand: (
                 command: string,
-                run: (context: { result: unknown; command: string; args: string[]; pm_root: string }) => unknown,
+                run: (context: {
+                  result: unknown;
+                  command: string;
+                  args: string[];
+                  options: Record<string, unknown>;
+                  global: { json: boolean; quiet: boolean; noExtensions: boolean; profile: boolean };
+                  pm_root: string;
+                }) => unknown,
               ) => void;
-              registerRenderer: (format: "toon" | "json", run: (context: { result: unknown }) => string) => void;
+              registerRenderer: (
+                format: "toon" | "json",
+                run: (context: {
+                  format: "toon" | "json";
+                  command: string;
+                  args: string[];
+                  options: Record<string, unknown>;
+                  global: { json: boolean; quiet: boolean; noExtensions: boolean; profile: boolean };
+                  pm_root: string;
+                  result: unknown;
+                }) => string,
+              ) => void;
             }) {
               api.registerCommand("list-open", (context) => ({
                 ...(context.result as Record<string, unknown>),
                 source: "project",
+                limit: context.options.limit,
+                json: context.global.json,
               }));
-              api.registerRenderer("json", (context) => JSON.stringify({ source: "project", result: context.result }));
+              api.registerRenderer("json", (context) =>
+                JSON.stringify({
+                  source: "project",
+                  command: context.command,
+                  limit: context.options.limit,
+                  json: context.global.json,
+                  pm_root: context.pm_root,
+                  result: context.result,
+                }),
+              );
             },
           },
         },
@@ -913,22 +971,46 @@ describe("extension loader", () => {
     const commandResult = runCommandOverride(activation.commands, {
       command: "list-open",
       args: ["--limit", "1"],
+      options: { limit: "1" },
+      global: {
+        json: true,
+        quiet: false,
+        noExtensions: false,
+        profile: false,
+      },
       pm_root: "/tmp/project",
       result: { count: 1 },
     });
     expect(commandResult).toEqual({
       overridden: true,
-      result: { count: 1, source: "project" },
+      result: { count: 1, source: "project", limit: "1", json: true },
       warnings: [],
     });
 
     const rendererResult = runRendererOverride(activation.renderers, {
       format: "json",
+      command: "list-open",
+      args: ["--limit", "1"],
+      options: { limit: "1" },
+      global: {
+        json: true,
+        quiet: false,
+        noExtensions: false,
+        profile: false,
+      },
+      pm_root: "/tmp/project",
       result: { ok: true },
     });
     expect(rendererResult).toEqual({
       overridden: true,
-      rendered: JSON.stringify({ source: "project", result: { ok: true } }),
+      rendered: JSON.stringify({
+        source: "project",
+        command: "list-open",
+        limit: "1",
+        json: true,
+        pm_root: "/tmp/project",
+        result: { ok: true },
+      }),
       warnings: [],
     });
   });
