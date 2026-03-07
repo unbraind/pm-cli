@@ -186,6 +186,15 @@ const REQUIRED_UPDATE_FLAGS = [
   "--message",
   "--force",
 ];
+const REQUIRED_TEST_FLAGS = [
+  "--add",
+  "--remove",
+  "--run",
+  "--timeout",
+  "--author",
+  "--message",
+  "--force",
+];
 
 const REQUIRED_CLAIM_RELEASE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_PI_CREATE_EXAMPLE_KEYS = [
@@ -596,6 +605,18 @@ describe("release readiness baseline contract", () => {
       expect(help.stdout).not.toContain("Seed linked file entry (required; use none for empty) (default: [])");
       expect(help.stdout).not.toContain("Seed linked test entry (required; use none for empty) (default: [])");
       expect(help.stdout).not.toContain("Seed linked doc entry (required; use none for empty) (default: [])");
+    });
+  });
+
+  it("keeps pm test help aligned without synthetic default-array text", async () => {
+    await withTempPmPath(async (context) => {
+      const help = context.runCli(["test", "--help"]);
+      expect(help.code).toBe(0);
+      for (const flag of REQUIRED_TEST_FLAGS) {
+        expect(help.stdout).toContain(flag);
+      }
+      expect(help.stdout).not.toContain("Add linked test entry (default: [])");
+      expect(help.stdout).not.toContain("Remove linked test entry by command/path (default: [])");
     });
   });
 

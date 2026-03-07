@@ -1408,8 +1408,8 @@ program
 program
   .command("test")
   .argument("<id>", "Item id")
-  .option("--add <value>", "Add linked test entry", collect, [])
-  .option("--remove <value>", "Remove linked test entry by command/path", collect, [])
+  .option("--add <value>", "Add linked test entry", collect)
+  .option("--remove <value>", "Remove linked test entry by command/path", collect)
   .option("--run", "Run linked test commands")
   .option("--timeout <seconds>", "Default run timeout in seconds")
   .option("--author <value>", "Mutation author")
