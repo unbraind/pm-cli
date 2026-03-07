@@ -199,6 +199,7 @@ const REQUIRED_COMMENTS_FLAGS = ["--add", "--limit", "--author", "--message", "-
 
 const REQUIRED_CLAIM_RELEASE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_CLOSE_FLAGS = ["--author", "--message", "--force"];
+const REQUIRED_DELETE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_APPEND_FLAGS = ["--body", "--author", "--message", "--force"];
 const REQUIRED_PI_CREATE_EXAMPLE_KEYS = [
   "action",
@@ -739,6 +740,21 @@ describe("release readiness baseline contract", () => {
       expect(closeHelp.stdout).toContain("Close an item with required reason text.");
       for (const flag of REQUIRED_CLOSE_FLAGS) {
         expect(closeHelp.stdout).toContain(flag);
+      }
+    });
+  });
+
+  it("keeps delete mutation metadata contract aligned across PRD and CLI help", async () => {
+    const prd = await readRepoText("PRD.md");
+    expect(prd).toContain("| `pm delete <ID>` | id + optional `--author`/`--message`/`--force` |");
+
+    await withTempPmPath(async (context) => {
+      const deleteHelp = context.runCli(["delete", "--help"]);
+      expect(deleteHelp.code).toBe(0);
+      expect(deleteHelp.stdout).toContain("Usage: pm delete [options] <id>");
+      expect(deleteHelp.stdout).toContain("Delete an item and append a delete history entry.");
+      for (const flag of REQUIRED_DELETE_FLAGS) {
+        expect(deleteHelp.stdout).toContain(flag);
       }
     });
   });
