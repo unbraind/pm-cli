@@ -261,6 +261,7 @@ function addCreateFlags(args: string[], params: PmToolParameters): void {
 }
 
 function addUpdateFlags(args: string[], params: PmToolParameters): void {
+  pushOption(args, "--title", params.title);
   pushOption(args, "--description", params.description, true);
   pushOption(args, "--status", params.status);
   pushOption(args, "--priority", params.priority);

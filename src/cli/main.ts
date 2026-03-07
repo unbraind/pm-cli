@@ -1201,6 +1201,7 @@ program
   .command("update")
   .argument("<id>", "Item id")
   .description("Update item front-matter fields.")
+  .option("--title, -t <value>", "Set title")
   .option("--description, -d <value>", "Set description")
   .option("--status, -s <value>", "Set status (use close command for closed)")
   .option("--priority, -p <value>", "Set priority")

@@ -10,6 +10,7 @@ import { readSettings } from "../../core/store/settings.js";
 import { ITEM_TYPE_VALUES, STATUS_VALUES } from "../../types/index.js";
 
 export interface UpdateCommandOptions {
+  title?: string;
   description?: string;
   status?: string;
   priority?: string;
@@ -60,6 +61,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   const author = toAuthor(options.author, settings.author_default);
 
   const changedFlags = [
+    options.title !== undefined,
     options.description !== undefined,
     options.status !== undefined,
     options.priority !== undefined,
@@ -86,6 +88,10 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     mutate(document) {
       const changedFields: string[] = [];
 
+      if (options.title !== undefined) {
+        document.front_matter.title = options.title;
+        changedFields.push("title");
+      }
       if (options.description !== undefined) {
         document.front_matter.description = options.description;
         changedFields.push("description");

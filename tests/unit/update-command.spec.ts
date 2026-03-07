@@ -103,6 +103,7 @@ describe("runUpdate", () => {
       const result = await runUpdate(
         id,
         {
+          title: "updated title",
           description: "updated description",
           status: "blocked",
           priority: "4",
@@ -121,6 +122,7 @@ describe("runUpdate", () => {
       expect(result.warnings).toEqual([]);
       expect(result.changed_fields).toEqual(
         expect.arrayContaining([
+          "title",
           "description",
           "status",
           "priority",
@@ -134,6 +136,7 @@ describe("runUpdate", () => {
       );
 
       const item = result.item as Record<string, unknown>;
+      expect(item.title).toBe("updated title");
       expect(item.description).toBe("updated description");
       expect(item.status).toBe("blocked");
       expect(item.priority).toBe(4);

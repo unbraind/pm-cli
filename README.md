@@ -289,6 +289,7 @@ Explicit unset behavior:
 
 `pm update <ID>` accepts explicit mutation flags for canonical front-matter fields:
 
+- `--title/-t`
 - `--description/-d`
 - `--status/-s` (supports non-terminal values and `canceled`; use `pm close <ID> <TEXT>` for closure)
 - `--priority/-p`

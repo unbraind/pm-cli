@@ -104,6 +104,7 @@ describe("Pi agent extension wrapper for pm", () => {
     const updateArgs = buildPmCliArgs({
       action: "update",
       id: "pm-a1b2",
+      title: "new title",
       description: "",
       tags: "",
       acceptanceCriteria: "",
@@ -111,6 +112,8 @@ describe("Pi agent extension wrapper for pm", () => {
     });
     expect(updateArgs).toEqual(
       expect.arrayContaining([
+        "--title",
+        "new title",
         "--description",
         "",
         "--tags",

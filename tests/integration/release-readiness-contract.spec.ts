@@ -173,6 +173,7 @@ const REQUIRED_CREATE_FLAGS = [
   "--doc",
 ];
 const REQUIRED_UPDATE_FLAGS = [
+  "--title",
   "--description",
   "--status",
   "--priority",

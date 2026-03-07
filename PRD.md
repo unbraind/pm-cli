@@ -561,6 +561,7 @@ Mutating `create` flags (repeatable, each required at least once; use `none` for
 
 Mutating `update` (v0.1 baseline):
 
+- `--title`, `-t`
 - `--description`, `-d`
 - `--status`, `-s`
 - `--priority`, `-p`
