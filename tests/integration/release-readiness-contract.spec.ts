@@ -198,6 +198,7 @@ const REQUIRED_TEST_FLAGS = [
 const REQUIRED_COMMENTS_FLAGS = ["--add", "--limit", "--author", "--message", "--force"];
 
 const REQUIRED_CLAIM_RELEASE_FLAGS = ["--author", "--message", "--force"];
+const REQUIRED_CLOSE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_PI_CREATE_EXAMPLE_KEYS = [
   "action",
   "title",
@@ -722,6 +723,21 @@ describe("release readiness baseline contract", () => {
       expect(releaseHelp.code).toBe(0);
       for (const flag of REQUIRED_CLAIM_RELEASE_FLAGS) {
         expect(releaseHelp.stdout).toContain(flag);
+      }
+    });
+  });
+
+  it("keeps close mutation metadata contract aligned across PRD and CLI help", async () => {
+    const prd = await readRepoText("PRD.md");
+    expect(prd).toContain("| `pm close <ID> <TEXT>` | id + close reason text + optional `--author/--message/--force` |");
+
+    await withTempPmPath(async (context) => {
+      const closeHelp = context.runCli(["close", "--help"]);
+      expect(closeHelp.code).toBe(0);
+      expect(closeHelp.stdout).toContain("Usage: pm close [options] <id> <text>");
+      expect(closeHelp.stdout).toContain("Close an item with required reason text.");
+      for (const flag of REQUIRED_CLOSE_FLAGS) {
+        expect(closeHelp.stdout).toContain(flag);
       }
     });
   });
