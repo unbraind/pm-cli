@@ -195,6 +195,7 @@ const REQUIRED_TEST_FLAGS = [
   "--message",
   "--force",
 ];
+const REQUIRED_COMMENTS_FLAGS = ["--add", "--limit", "--author", "--message", "--force"];
 
 const REQUIRED_CLAIM_RELEASE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_PI_CREATE_EXAMPLE_KEYS = [
@@ -635,6 +636,17 @@ describe("release readiness baseline contract", () => {
       expect(docsHelp.stdout).toContain("--remove");
       expect(docsHelp.stdout).not.toContain("Add linked doc entry (default: [])");
       expect(docsHelp.stdout).not.toContain("Remove linked doc by path (default: [])");
+    });
+  });
+
+  it("keeps pm comments help aligned without synthetic default-array text", async () => {
+    await withTempPmPath(async (context) => {
+      const commentsHelp = context.runCli(["comments", "--help"]);
+      expect(commentsHelp.code).toBe(0);
+      for (const flag of REQUIRED_COMMENTS_FLAGS) {
+        expect(commentsHelp.stdout).toContain(flag);
+      }
+      expect(commentsHelp.stdout).not.toContain("Add one comment entry (default: [])");
     });
   });
 
