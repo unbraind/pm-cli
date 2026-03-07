@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Build/Test (${{ matrix.os }}, Node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            node: 20
+          - os: macos-latest
+            node: 20
+          - os: windows-latest
+            node: 20
+          - os: ubuntu-latest
+            node: 22
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Test with coverage gate
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 20
+        run: pnpm test:coverage
+
+      - name: Sandboxed PM regression (coverage)
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 20
+        run: node scripts/run-tests.mjs coverage
+
+      - name: Packaging smoke check
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 20
+        run: npm pack --dry-run
+
+      - name: Upload coverage artifact
+        if: always() && matrix.os == 'ubuntu-latest' && matrix.node == 20
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-node${{ matrix.node }}-${{ matrix.os }}
+          path: coverage
+          if-no-files-found: ignore

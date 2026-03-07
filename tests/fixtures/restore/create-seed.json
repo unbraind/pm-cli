@@ -1,0 +1,19 @@
+{
+  "status": "open",
+  "priority": "1",
+  "tags": "restore,unit",
+  "body": "initial body",
+  "deadline": "none",
+  "estimate": "15",
+  "acceptance_criteria": "restore succeeds",
+  "author": "test-author",
+  "message": "create restore fixture",
+  "assignee": "none",
+  "dep": "none",
+  "comment": "none",
+  "note": "none",
+  "learning": "none",
+  "file": "none",
+  "test": "none",
+  "doc": "none"
+}

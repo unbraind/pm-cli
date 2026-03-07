@@ -1,0 +1,6 @@
+{"id":"typed-epic","title":"Type via record.type","type":"epic","created_at":"not-an-iso","updated_at":"also-not-iso","priority":1,"estimated_minutes":"30","dependencies":["",42,{"kind":"blocks"},{"item_id":"dep-item","kind":"unexpected-kind","created_at":"bad-ts"}],"comments":"   ","notes":["",99,{},{"comment":"note-comment","author":" ","created_at":"bad-ts"}],"learnings":[{"learning":"learning-text","created_at":"bad-ts"}]}
+{"id":"typed-task","title":"Task branch","issue_type":"task"}
+{"id":"typed-chore","title":"Chore branch","issue_type":"chore"}
+{"id":"typed-issue","title":"Issue branch","issue_type":"issue"}
+{"id":"typed-feature-nullish","title":"Feature nullish branch","issue_type":null,"type":"feature"}
+{"title":"Generated id branch","issue_type":"feature"}

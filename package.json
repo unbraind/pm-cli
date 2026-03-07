@@ -1,0 +1,53 @@
+{
+  "name": "pm-cli",
+  "version": "0.1.0",
+  "description": "Git-native project management CLI for humans and agents.",
+  "type": "module",
+  "bin": {
+    "pm": "dist/cli.js"
+  },
+  "files": [
+    "dist/**",
+    "README.md",
+    "LICENSE",
+    "AGENTS.md",
+    "PRD.md",
+    ".pi/extensions/pm-cli/index.ts",
+    "scripts/install.sh",
+    "scripts/install.ps1"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "start": "node dist/cli.js",
+    "dev": "tsx src/cli.ts",
+    "test": "pnpm build && vitest run",
+    "test:coverage": "pnpm build && vitest run --coverage",
+    "prepublishOnly": "pnpm build"
+  },
+  "keywords": [
+    "cli",
+    "project-management",
+    "agents",
+    "typescript"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@toon-format/toon": "latest",
+    "commander": "latest",
+    "fast-json-patch": "latest",
+    "undici": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@vitest/coverage-v8": "^4.0.18",
+    "c8": "^10.1.3",
+    "tsx": "latest",
+    "typescript": "latest",
+    "vitest": "^4.0.18"
+  }
+}
