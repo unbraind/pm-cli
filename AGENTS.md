@@ -53,7 +53,7 @@ Rules:
 Populate metadata early:
 
 - `pm update <ID> --description "..."`
-- `pm update <ID> --acceptance-criteria "..."`
+- `pm update <ID> --acceptance-criteria/--ac "..."`
 - `pm update <ID> --estimate <minutes>`
 - `pm update <ID> --deadline +1d` (resolved to ISO at write)
 

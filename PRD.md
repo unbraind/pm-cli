@@ -568,7 +568,7 @@ Mutating `update` (v0.1 baseline):
 - `--tags`
 - `--deadline`
 - `--estimate`
-- `--acceptance-criteria`
+- `--acceptance-criteria`, `--ac`
 - `--assignee`
 - `--author`
 - `--message`

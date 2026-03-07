@@ -181,6 +181,7 @@ const REQUIRED_UPDATE_FLAGS = [
   "--deadline",
   "--estimate",
   "--acceptance-criteria",
+  "--ac",
   "--assignee",
   "--author",
   "--message",

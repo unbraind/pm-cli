@@ -296,7 +296,7 @@ Explicit unset behavior:
 - `--tags`
 - `--deadline`
 - `--estimate/--estimated-minutes`
-- `--acceptance-criteria`
+- `--acceptance-criteria`, `--ac`
 - `--assignee`
 - `--author`
 - `--message`

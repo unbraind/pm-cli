@@ -24,9 +24,10 @@ describe("scripts/run-tests.mjs", () => {
 
       const combinedOutput = `${result.stdout}\n${result.stderr}`;
       expect(result.status).toBe(0);
-      expect(combinedOutput).toContain("tests/unit/list-sort-branches.spec.ts");
-      expect(combinedOutput).not.toContain("tests/unit/health-command.spec.ts");
-      expect(combinedOutput).toContain("Test Files  1 passed");
+      const cleanOutput = combinedOutput.replace(/\x1b\[[0-9;]*m/g, "");
+      expect(cleanOutput).toContain("tests/unit/list-sort-branches.spec.ts");
+      expect(cleanOutput).not.toContain("tests/unit/health-command.spec.ts");
+      expect(cleanOutput).toMatch(/Test Files\s+1 passed/);
     },
     120_000,
   );

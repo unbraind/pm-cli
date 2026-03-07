@@ -67,6 +67,79 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("accepts --ac as update alias for acceptance criteria", async () => {
+    await withTempPmPath(async (context) => {
+      const createResult = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Update alias contract item",
+          "--description",
+          "Validate update acceptance criteria alias seed",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,contract",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "15",
+          "--ac",
+          "Seed flag",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create seed",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(createResult.code).toBe(0);
+      const id = (createResult.json as { item: { id: string } }).item.id;
+
+      const updateResult = context.runCli(
+        [
+          "update",
+          id,
+          "--json",
+          "--ac",
+          "Alias flag is updated via ac",
+          "--author",
+          "integration-test",
+          "--message",
+          "Update with ac alias",
+        ],
+        { expectJson: true },
+      );
+      expect(updateResult.code).toBe(0);
+      expect((updateResult.json as { item: { acceptance_criteria: string } }).item.acceptance_criteria).toBe(
+        "Alias flag is updated via ac",
+      );
+    });
+  });
+
   it("requires explicit repeatable seed flags for create contract parity", async () => {
     await withTempPmPath(async (context) => {
       const createWithoutRepeatables = context.runCli([

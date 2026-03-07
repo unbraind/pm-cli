@@ -832,7 +832,8 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
     deadline: typeof commandOptions.deadline === "string" ? commandOptions.deadline : undefined,
     estimatedMinutes,
     acceptanceCriteria:
-      typeof commandOptions.acceptanceCriteria === "string" ? commandOptions.acceptanceCriteria : undefined,
+      (typeof commandOptions.acceptanceCriteria === "string" ? commandOptions.acceptanceCriteria : undefined) ??
+      (typeof commandOptions.ac === "string" ? commandOptions.ac : undefined),
     author: typeof commandOptions.author === "string" ? commandOptions.author : undefined,
     message: typeof commandOptions.message === "string" ? commandOptions.message : undefined,
     force: Boolean(commandOptions.force),
@@ -1208,6 +1209,7 @@ program
   .option("--deadline <value>", "Set deadline (or none)")
   .option("--estimate, --estimated-minutes <value>", "Set estimated minutes (or none)")
   .option("--acceptance-criteria <value>", "Set acceptance criteria (or none)")
+  .option("--ac <value>", "Alias for --acceptance-criteria")
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "Mutation message")
   .option("--assignee <value>", "Set assignee (or none)")
