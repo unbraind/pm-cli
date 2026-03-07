@@ -620,6 +620,24 @@ describe("release readiness baseline contract", () => {
     });
   });
 
+  it("keeps pm files and pm docs help aligned without synthetic default-array text", async () => {
+    await withTempPmPath(async (context) => {
+      const filesHelp = context.runCli(["files", "--help"]);
+      expect(filesHelp.code).toBe(0);
+      expect(filesHelp.stdout).toContain("--add");
+      expect(filesHelp.stdout).toContain("--remove");
+      expect(filesHelp.stdout).not.toContain("Add linked file entry (default: [])");
+      expect(filesHelp.stdout).not.toContain("Remove linked file by path (default: [])");
+
+      const docsHelp = context.runCli(["docs", "--help"]);
+      expect(docsHelp.code).toBe(0);
+      expect(docsHelp.stdout).toContain("--add");
+      expect(docsHelp.stdout).toContain("--remove");
+      expect(docsHelp.stdout).not.toContain("Add linked doc entry (default: [])");
+      expect(docsHelp.stdout).not.toContain("Remove linked doc by path (default: [])");
+    });
+  });
+
   it("keeps PRD and README update mutation contracts aligned with pm update --help", async () => {
     const prd = await readRepoText("PRD.md");
     const readme = await readRepoText("README.md");

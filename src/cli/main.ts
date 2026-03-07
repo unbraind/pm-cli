@@ -1340,8 +1340,8 @@ program
 program
   .command("files")
   .argument("<id>", "Item id")
-  .option("--add <value>", "Add linked file entry", collect, [])
-  .option("--remove <value>", "Remove linked file by path", collect, [])
+  .option("--add <value>", "Add linked file entry", collect)
+  .option("--remove <value>", "Remove linked file by path", collect)
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
   .option("--force", "Force ownership override")
@@ -1374,8 +1374,8 @@ program
 program
   .command("docs")
   .argument("<id>", "Item id")
-  .option("--add <value>", "Add linked doc entry", collect, [])
-  .option("--remove <value>", "Remove linked doc by path", collect, [])
+  .option("--add <value>", "Add linked doc entry", collect)
+  .option("--remove <value>", "Remove linked doc by path", collect)
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
   .option("--force", "Force ownership override")
