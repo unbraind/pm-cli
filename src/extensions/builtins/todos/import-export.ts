@@ -261,7 +261,14 @@ async function importTodoCandidate(candidate: ParsedTodoCandidate, runtime: Todo
       estimated_minutes: toEstimatedMinutes(candidate.frontMatter.estimated_minutes),
       acceptance_criteria: toNonEmptyString(candidate.frontMatter.acceptance_criteria),
       close_reason: toNonEmptyString(candidate.frontMatter.close_reason),
-    }),
+      dependencies: Array.isArray(candidate.frontMatter.dependencies) ? (candidate.frontMatter.dependencies as any[]) : undefined,
+      comments: Array.isArray(candidate.frontMatter.comments) ? (candidate.frontMatter.comments as any[]) : undefined,
+      notes: Array.isArray(candidate.frontMatter.notes) ? (candidate.frontMatter.notes as any[]) : undefined,
+      learnings: Array.isArray(candidate.frontMatter.learnings) ? (candidate.frontMatter.learnings as any[]) : undefined,
+      files: Array.isArray(candidate.frontMatter.files) ? (candidate.frontMatter.files as any[]) : undefined,
+      docs: Array.isArray(candidate.frontMatter.docs) ? (candidate.frontMatter.docs as any[]) : undefined,
+      tests: Array.isArray(candidate.frontMatter.tests) ? (candidate.frontMatter.tests as any[]) : undefined,
+    } as ItemFrontMatter),
     body: candidate.body,
   });
 
@@ -404,16 +411,7 @@ export async function runTodosExport(options: TodosExportOptions, global: Global
 
     try {
       const { document } = await readLocatedItem(located);
-      const todoFrontMatter: Record<string, unknown> = {
-        id: document.front_matter.id,
-        title: document.front_matter.title,
-        tags: document.front_matter.tags,
-        status: document.front_matter.status,
-        created_at: document.front_matter.created_at,
-      };
-      if (document.front_matter.assignee) {
-        todoFrontMatter.assignee = document.front_matter.assignee;
-      }
+      const todoFrontMatter: Record<string, unknown> = { ...document.front_matter };
       const frontMatter = JSON.stringify(todoFrontMatter, null, 2);
       const body = normalizeBody(document.body);
       const serialized = body.length > 0 ? `${frontMatter}\n\n${body}\n` : `${frontMatter}\n`;
