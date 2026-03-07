@@ -589,6 +589,13 @@ describe("release readiness baseline contract", () => {
         expect(help.stdout).toContain(flag);
       }
       expect(help.stdout).toContain("--estimated-minutes");
+      expect(help.stdout).not.toContain("Seed dependency entry (required; use none for empty) (default: [])");
+      expect(help.stdout).not.toContain("Seed comment entry (required; use none for empty) (default: [])");
+      expect(help.stdout).not.toContain("Seed note entry (required; use none for empty) (default: [])");
+      expect(help.stdout).not.toContain("Seed learning entry (required; use none for empty) (default: [])");
+      expect(help.stdout).not.toContain("Seed linked file entry (required; use none for empty) (default: [])");
+      expect(help.stdout).not.toContain("Seed linked test entry (required; use none for empty) (default: [])");
+      expect(help.stdout).not.toContain("Seed linked doc entry (required; use none for empty) (default: [])");
     });
   });
 

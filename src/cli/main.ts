@@ -60,9 +60,10 @@ import type { GlobalOptions } from "../core/shared/command-types.js";
 import { getEnabledBuiltInExtensions } from "../core/extensions/builtins.js";
 import type { ItemStatus, PmSettings } from "../types/index.js";
 
-function collect(value: string, previous: string[]): string[] {
-  previous.push(value);
-  return previous;
+function collect(value: string, previous: string[] | undefined): string[] {
+  const next = previous ?? [];
+  next.push(value);
+  return next;
 }
 
 function getGlobalOptions(command: Command): GlobalOptions {
@@ -968,13 +969,13 @@ program
   .requiredOption("--author <value>", "Mutation author, or none")
   .requiredOption("--message <value>", "History message (allow empty string)")
   .requiredOption("--assignee <value>", "Item assignee, or none")
-  .option("--dep <value>", "Seed dependency entry (required; use none for empty)", collect, [])
-  .option("--comment <value>", "Seed comment entry (required; use none for empty)", collect, [])
-  .option("--note <value>", "Seed note entry (required; use none for empty)", collect, [])
-  .option("--learning <value>", "Seed learning entry (required; use none for empty)", collect, [])
-  .option("--file <value>", "Seed linked file entry (required; use none for empty)", collect, [])
-  .option("--test <value>", "Seed linked test entry (required; use none for empty)", collect, [])
-  .option("--doc <value>", "Seed linked doc entry (required; use none for empty)", collect, [])
+  .option("--dep <value>", "Seed dependency entry (required; use none for empty)", collect)
+  .option("--comment <value>", "Seed comment entry (required; use none for empty)", collect)
+  .option("--note <value>", "Seed note entry (required; use none for empty)", collect)
+  .option("--learning <value>", "Seed learning entry (required; use none for empty)", collect)
+  .option("--file <value>", "Seed linked file entry (required; use none for empty)", collect)
+  .option("--test <value>", "Seed linked test entry (required; use none for empty)", collect)
+  .option("--doc <value>", "Seed linked doc entry (required; use none for empty)", collect)
   .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
