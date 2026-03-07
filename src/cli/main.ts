@@ -696,9 +696,10 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command): Promi
 function normalizeCreateOptions(commandOptions: Record<string, unknown>): CreateCommandOptions {
   const estimatedMinutes =
     (typeof commandOptions.estimate === "string" ? commandOptions.estimate : undefined) ??
-    (typeof commandOptions.estimatedMinutes === "string" ? commandOptions.estimatedMinutes : undefined);
+    (typeof commandOptions.estimatedMinutes === "string" ? commandOptions.estimatedMinutes : undefined) ??
+    (typeof commandOptions.estimated_minutes === "string" ? commandOptions.estimated_minutes : undefined);
   if (estimatedMinutes === undefined) {
-    throw new PmCliError("Missing required option --estimate/--estimated-minutes", EXIT_CODE.USAGE);
+    throw new PmCliError("Missing required option --estimate/--estimated-minutes/--estimated_minutes", EXIT_CODE.USAGE);
   }
 
   const requiredString = (key: string, display: string): string => {
@@ -729,6 +730,7 @@ function normalizeCreateOptions(commandOptions: Record<string, unknown>): Create
     estimatedMinutes,
     acceptanceCriteria:
       (typeof commandOptions.acceptanceCriteria === "string" ? commandOptions.acceptanceCriteria : undefined) ??
+      (typeof commandOptions.acceptance_criteria === "string" ? commandOptions.acceptance_criteria : undefined) ??
       requiredString("ac", "--acceptance-criteria/--ac"),
     author: requiredString("author", "--author"),
     message: requiredString("message", "--message"),
@@ -746,7 +748,8 @@ function normalizeCreateOptions(commandOptions: Record<string, unknown>): Create
 function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record<string, unknown> {
   const estimatedMinutes =
     (typeof commandOptions.estimate === "string" ? commandOptions.estimate : undefined) ??
-    (typeof commandOptions.estimatedMinutes === "string" ? commandOptions.estimatedMinutes : undefined);
+    (typeof commandOptions.estimatedMinutes === "string" ? commandOptions.estimatedMinutes : undefined) ??
+    (typeof commandOptions.estimated_minutes === "string" ? commandOptions.estimated_minutes : undefined);
 
   return {
     description: typeof commandOptions.description === "string" ? commandOptions.description : undefined,
@@ -758,6 +761,7 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
     estimatedMinutes,
     acceptanceCriteria:
       (typeof commandOptions.acceptanceCriteria === "string" ? commandOptions.acceptanceCriteria : undefined) ??
+      (typeof commandOptions.acceptance_criteria === "string" ? commandOptions.acceptance_criteria : undefined) ??
       (typeof commandOptions.ac === "string" ? commandOptions.ac : undefined),
     author: typeof commandOptions.author === "string" ? commandOptions.author : undefined,
     message: typeof commandOptions.message === "string" ? commandOptions.message : undefined,
@@ -892,8 +896,10 @@ program
   .requiredOption("--tags <value>", "Comma-separated tags, or 'none'")
   .requiredOption("--body, -b <value>", "Item markdown body (allow empty string)")
   .requiredOption("--deadline <value>", "ISO deadline, relative +6h/+1d/+2w, or none")
-  .requiredOption("--estimate, --estimated-minutes <value>", "Estimated minutes, or none")
+  .option("--estimate, --estimated-minutes <value>", "Estimated minutes, or none")
+  .option("--estimated_minutes <value>", "Alias for --estimated-minutes")
   .option("--acceptance-criteria <value>", "Acceptance criteria (allow empty string)")
+  .option("--acceptance_criteria <value>", "Alias for --acceptance-criteria")
   .option("--ac <value>", "Alias for --acceptance-criteria")
   .requiredOption("--author <value>", "Mutation author, or none")
   .requiredOption("--message <value>", "History message (allow empty string)")
@@ -1137,7 +1143,9 @@ program
   .option("--tags <value>", "Set comma-separated tags")
   .option("--deadline <value>", "Set deadline (or none)")
   .option("--estimate, --estimated-minutes <value>", "Set estimated minutes (or none)")
+  .option("--estimated_minutes <value>", "Alias for --estimated-minutes")
   .option("--acceptance-criteria <value>", "Set acceptance criteria (or none)")
+  .option("--acceptance_criteria <value>", "Alias for --acceptance-criteria")
   .option("--ac <value>", "Alias for --acceptance-criteria")
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "Mutation message")

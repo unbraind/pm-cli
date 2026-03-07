@@ -543,8 +543,8 @@ Mutating `create` (all schema fields MUST be passable explicitly):
 - `--tags` (required; explicit empty allowed)
 - `--body`, `-b` (required; explicit empty allowed)
 - `--deadline` (explicit; accepts ISO, relative `+6h/+1d/+2w`, or none)
-- `--estimate`, `--estimated-minutes` (explicit; accepts `0`)
-- `--acceptance-criteria`, `--ac` (explicit; empty allowed)
+- `--estimate`, `--estimated-minutes`, `--estimated_minutes` (explicit; accepts `0`)
+- `--acceptance-criteria`, `--acceptance_criteria`, `--ac` (explicit; empty allowed)
 - `--author` (explicit; fallback `PM_AUTHOR`/settings allowed)
 - `--message` (explicit history message; empty allowed)
 - `--assignee` (explicit; use `none` to unset)
@@ -568,8 +568,8 @@ Mutating `update` (v0.1 baseline):
 - `--type`
 - `--tags`
 - `--deadline`
-- `--estimate`
-- `--acceptance-criteria`, `--ac`
+- `--estimate`, `--estimated-minutes`, `--estimated_minutes`
+- `--acceptance-criteria`, `--acceptance_criteria`, `--ac`
 - `--assignee`
 - `--author`
 - `--message`

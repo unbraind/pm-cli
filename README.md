@@ -265,8 +265,8 @@ Format:
   - `--tags` (explicit empty allowed)
   - `--body/-b` (explicit empty allowed)
   - `--deadline` (ISO, relative, or none)
-  - `--estimate/--estimated-minutes` (supports `0`)
-  - `--acceptance-criteria`, `--ac` (explicit empty allowed)
+  - `--estimate/--estimated-minutes/--estimated_minutes` (supports `0`)
+  - `--acceptance-criteria`, `--acceptance_criteria`, `--ac` (explicit empty allowed)
   - `--author` (fallbacks still exist, but explicit is recommended)
   - `--message`
   - `--assignee` (explicit; use `none` to clear)
@@ -296,8 +296,8 @@ Explicit unset behavior:
 - `--type`
 - `--tags`
 - `--deadline`
-- `--estimate/--estimated-minutes`
-- `--acceptance-criteria`, `--ac`
+- `--estimate/--estimated-minutes/--estimated_minutes`
+- `--acceptance-criteria`, `--acceptance_criteria`, `--ac`
 - `--assignee`
 - `--author`
 - `--message`

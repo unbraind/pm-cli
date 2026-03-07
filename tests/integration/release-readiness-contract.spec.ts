@@ -597,6 +597,23 @@ describe("release readiness baseline contract", () => {
   });
 
   it("keeps pm create help aligned with required explicit create flags", async () => {
+    const prd = await readRepoText("PRD.md");
+    const readme = await readRepoText("README.md");
+    const prdCreateSection = extractSection(
+      prd,
+      "Mutating `create` (all schema fields MUST be passable explicitly):",
+      "Mutating `update` (v0.1 baseline):",
+    );
+    const readmeCreateSection = extractSection(
+      readme,
+      "### `pm create` explicit-field contract",
+      "### `pm update` explicit-field contract",
+    );
+    expect(prdCreateSection).toContain("--estimated_minutes");
+    expect(prdCreateSection).toContain("--acceptance_criteria");
+    expect(readmeCreateSection).toContain("--estimated_minutes");
+    expect(readmeCreateSection).toContain("--acceptance_criteria");
+
     await withTempPmPath(async (context) => {
       const help = context.runCli(["create", "--help"]);
       expect(help.code).toBe(0);
@@ -604,6 +621,8 @@ describe("release readiness baseline contract", () => {
         expect(help.stdout).toContain(flag);
       }
       expect(help.stdout).toContain("--estimated-minutes");
+      expect(help.stdout).toContain("--estimated_minutes");
+      expect(help.stdout).toContain("--acceptance_criteria");
       expect(help.stdout).not.toContain("Seed dependency entry (required; use none for empty) (default: [])");
       expect(help.stdout).not.toContain("Seed comment entry (required; use none for empty) (default: [])");
       expect(help.stdout).not.toContain("Seed note entry (required; use none for empty) (default: [])");
@@ -663,6 +682,10 @@ describe("release readiness baseline contract", () => {
 
     expectSectionContainsTokens(prdUpdateSection, REQUIRED_UPDATE_FLAGS.filter((flag) => flag !== "--force"));
     expectSectionContainsTokens(readmeUpdateSection, REQUIRED_UPDATE_FLAGS);
+    expect(prdUpdateSection).toContain("--estimated_minutes");
+    expect(prdUpdateSection).toContain("--acceptance_criteria");
+    expect(readmeUpdateSection).toContain("--estimated_minutes");
+    expect(readmeUpdateSection).toContain("--acceptance_criteria");
     expect(readmeUpdateSection).toContain("pm close <ID> <TEXT>");
 
     await withTempPmPath(async (context) => {
@@ -672,6 +695,8 @@ describe("release readiness baseline contract", () => {
         expect(updateHelp.stdout).toContain(flag);
       }
       expect(updateHelp.stdout).toContain("--estimated-minutes");
+      expect(updateHelp.stdout).toContain("--estimated_minutes");
+      expect(updateHelp.stdout).toContain("--acceptance_criteria");
     });
   });
 

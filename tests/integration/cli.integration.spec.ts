@@ -140,6 +140,138 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("accepts snake_case create aliases for estimate and acceptance criteria", async () => {
+    await withTempPmPath(async (context) => {
+      const createResult = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Snake case create alias item",
+          "--description",
+          "Validate create snake_case aliases",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,contract",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimated_minutes",
+          "27",
+          "--acceptance_criteria",
+          "Snake case aliases are accepted for create",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create with snake_case aliases",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+
+      expect(createResult.code).toBe(0);
+      const item = (createResult.json as { item: { estimated_minutes: number; acceptance_criteria: string } }).item;
+      expect(item.estimated_minutes).toBe(27);
+      expect(item.acceptance_criteria).toBe("Snake case aliases are accepted for create");
+    });
+  });
+
+  it("accepts snake_case update aliases for estimate and acceptance criteria", async () => {
+    await withTempPmPath(async (context) => {
+      const createResult = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Snake case update alias item",
+          "--description",
+          "Validate update snake_case aliases seed",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,contract",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "15",
+          "--acceptance-criteria",
+          "Seed flag",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create seed for snake_case update aliases",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(createResult.code).toBe(0);
+      const id = (createResult.json as { item: { id: string } }).item.id;
+
+      const updateResult = context.runCli(
+        [
+          "update",
+          id,
+          "--json",
+          "--estimated_minutes",
+          "41",
+          "--acceptance_criteria",
+          "Snake case aliases are accepted for update",
+          "--author",
+          "integration-test",
+          "--message",
+          "Update with snake_case aliases",
+        ],
+        { expectJson: true },
+      );
+      expect(updateResult.code).toBe(0);
+      const item = (updateResult.json as { item: { estimated_minutes: number; acceptance_criteria: string } }).item;
+      expect(item.estimated_minutes).toBe(41);
+      expect(item.acceptance_criteria).toBe("Snake case aliases are accepted for update");
+    });
+  });
+
   it("requires explicit repeatable seed flags for create contract parity", async () => {
     await withTempPmPath(async (context) => {
       const createWithoutRepeatables = context.runCli([
