@@ -1251,8 +1251,38 @@ describe("extension loader", () => {
                 version: 2,
                 run: () => "ok",
               });
-              api.registerImporter("  beads   jsonl  ", () => "imported");
-              api.registerExporter("  todos   markdown  ", () => "exported");
+              api.registerImporter("  beads   jsonl  ", (context) => {
+                const importerContext = context as {
+                  registration: string;
+                  action: string;
+                  command: string;
+                  options: Record<string, unknown>;
+                  global: { json: boolean };
+                };
+                return {
+                  registration: importerContext.registration,
+                  action: importerContext.action,
+                  command: importerContext.command,
+                  file: importerContext.options.file,
+                  json: importerContext.global.json,
+                };
+              });
+              api.registerExporter("  todos   markdown  ", (context) => {
+                const exporterContext = context as {
+                  registration: string;
+                  action: string;
+                  command: string;
+                  options: Record<string, unknown>;
+                  global: { json: boolean };
+                };
+                return {
+                  registration: exporterContext.registration,
+                  action: exporterContext.action,
+                  command: exporterContext.command,
+                  folder: exporterContext.options.folder,
+                  json: exporterContext.global.json,
+                };
+              });
               api.registerSearchProvider({
                 metadata: [null, { tags: ["x", "y"] }],
                 name: "semantic-provider",
@@ -1280,6 +1310,11 @@ describe("extension loader", () => {
       search_providers: 1,
       vector_store_adapters: 1,
     });
+    expect(activation.command_handler_count).toBe(2);
+    expect(activation.commands.handlers.map((entry) => entry.command)).toEqual([
+      "beads jsonl import",
+      "todos markdown export",
+    ]);
     expect(activation.registrations.flags).toEqual([
       {
         layer: "project",
@@ -1342,6 +1377,54 @@ describe("extension loader", () => {
         },
       },
     ]);
+
+    const importerResult = await runCommandHandler(activation.commands, {
+      command: "beads jsonl import",
+      args: ["--file", "source.jsonl"],
+      options: { file: "source.jsonl" },
+      global: {
+        json: true,
+        quiet: false,
+        noExtensions: false,
+        profile: false,
+      },
+      pm_root: "/tmp/project",
+    });
+    expect(importerResult).toEqual({
+      handled: true,
+      result: {
+        registration: "beads jsonl",
+        action: "import",
+        command: "beads jsonl import",
+        file: "source.jsonl",
+        json: true,
+      },
+      warnings: [],
+    });
+
+    const exporterResult = await runCommandHandler(activation.commands, {
+      command: "todos markdown export",
+      args: ["--folder", ".pi/todos"],
+      options: { folder: ".pi/todos" },
+      global: {
+        json: false,
+        quiet: false,
+        noExtensions: false,
+        profile: false,
+      },
+      pm_root: "/tmp/project",
+    });
+    expect(exporterResult).toEqual({
+      handled: true,
+      result: {
+        registration: "todos markdown",
+        action: "export",
+        command: "todos markdown export",
+        folder: ".pi/todos",
+        json: false,
+      },
+      warnings: [],
+    });
   });
 
   it("fails activation when extended registration APIs receive invalid input", async () => {

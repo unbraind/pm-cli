@@ -12,7 +12,7 @@
     "pm-cli"
   ],
   "created_at": "2026-02-17T23:01:12.207Z",
-  "updated_at": "2026-03-04T20:49:24.559Z",
+  "updated_at": "2026-03-07T22:35:00.964Z",
   "deadline": "2026-03-13T23:01:12.207Z",
   "author": "steve",
   "estimated_minutes": 540,
@@ -81,6 +81,11 @@
       "created_at": "2026-03-04T20:49:24.087Z",
       "author": "cursor-maintainer",
       "text": "Evidence: pm test pm-b1w --run --timeout 2400 passed (node scripts/run-tests.mjs coverage; 48/48 files and 358/358 tests). Regression sweeps passed via pm test-all --status in_progress --timeout 2400 (items=1, passed=1, failed=0, skipped=0) and pm test-all --status closed --timeout 2400 (items=58, passed=57, failed=0, skipped=132 deterministic dedupe). Coverage remains 100% lines/branches/functions/statements."
+    },
+    {
+      "created_at": "2026-03-07T22:35:00.964Z",
+      "author": "maintainer-agent",
+      "text": "Progress update: closed follow-up task pm-jvfw after implementing docs-first runtime wiring for registerImporter/registerExporter command-path handlers ('<name> import|export') with isolated context snapshots, extension-loader regression tests, and passing pm test + both pm test-all sweeps at 100% coverage."
     }
   ],
   "notes": [

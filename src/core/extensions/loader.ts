@@ -810,6 +810,10 @@ function normalizeRegistrationName(name: string): string {
     .join(" ");
 }
 
+function toRegistrationCommandPath(name: string, action: "import" | "export"): string {
+  return normalizeCommandName(`${name} ${action}`);
+}
+
 function sanitizeRegistrationValue(value: unknown): unknown {
   if (value === null) {
     return null;
@@ -982,20 +986,52 @@ function createExtensionApi(
     assertExtensionCapability(extension, "importers", "registerImporter");
     const normalizedName = normalizeRegistrationName(assertNonEmptyString("registerImporter name", name));
     assertFunctionHandler("registerImporter importer", importer);
+    const commandPath = toRegistrationCommandPath(normalizedName, "import");
     registrations.importers.push({
       layer: extension.layer,
       name: extension.name,
       importer: normalizedName,
+    });
+    commands.handlers.push({
+      layer: extension.layer,
+      name: extension.name,
+      command: commandPath,
+      run: async (context) =>
+        importer({
+          registration: normalizedName,
+          action: "import",
+          command: context.command,
+          args: cloneContextSnapshot(context.args),
+          options: cloneContextSnapshot(context.options),
+          global: cloneContextSnapshot(context.global),
+          pm_root: context.pm_root,
+        }),
     });
   };
   const registerExporter = (name: string, exporter: Exporter): void => {
     assertExtensionCapability(extension, "importers", "registerExporter");
     const normalizedName = normalizeRegistrationName(assertNonEmptyString("registerExporter name", name));
     assertFunctionHandler("registerExporter exporter", exporter);
+    const commandPath = toRegistrationCommandPath(normalizedName, "export");
     registrations.exporters.push({
       layer: extension.layer,
       name: extension.name,
       exporter: normalizedName,
+    });
+    commands.handlers.push({
+      layer: extension.layer,
+      name: extension.name,
+      command: commandPath,
+      run: async (context) =>
+        exporter({
+          registration: normalizedName,
+          action: "export",
+          command: context.command,
+          args: cloneContextSnapshot(context.args),
+          options: cloneContextSnapshot(context.options),
+          global: cloneContextSnapshot(context.global),
+          pm_root: context.pm_root,
+        }),
     });
   };
   const registerSearchProvider = (provider: SearchProviderDefinition): void => {
