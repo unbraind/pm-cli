@@ -393,6 +393,7 @@ For search parity, wrapper parameters support `includeLinked` and map it to `pm 
 For command-shape parity, explicit empty-string values are forwarded for empty-allowed flags (for example `--description ""` and `--body ""`) instead of being dropped.
 For numeric-flag parity, wrapper parameters accept either JSON numbers or strings for `priority`, `estimate`, `limit`, and `timeout`, and stringify them before CLI invocation.
 For claim/release parity, wrapper parameters `author`, `message`, and `force` are forwarded to `pm claim|release --author/--message/--force`.
+For packaging resilience, the wrapper attempts `pm` first and falls back to `node <package-root>/dist/cli.js` when `pm` is unavailable.
 
 ## FAQ
 

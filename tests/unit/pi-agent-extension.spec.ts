@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -277,9 +278,12 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(execSpy.mock.calls[0]?.[0]).toBe("pm");
     expect(execSpy.mock.calls[1]?.[0]).toBe("node");
     const nodeFallbackArgs = execSpy.mock.calls[1]?.[1];
-    expect(nodeFallbackArgs?.[0]).toBeDefined();
-    expect(path.isAbsolute(String(nodeFallbackArgs?.[0]))).toBe(true);
-    expect(String(nodeFallbackArgs?.[0])).toMatch(/[\\/]dist[\\/]cli\.js$/);
+    const fallbackCliPath = String(nodeFallbackArgs?.[0] ?? "");
+    const normalizedFallbackCliPath = fallbackCliPath.replaceAll("\\", "/");
+    expect(fallbackCliPath.length).toBeGreaterThan(0);
+    expect(path.isAbsolute(fallbackCliPath)).toBe(true);
+    expect(normalizedFallbackCliPath).toMatch(/\/pm-cli\/dist\/cli\.js$/);
+    expect(fs.existsSync(fallbackCliPath)).toBe(true);
     expect(nodeFallbackArgs).toEqual(expect.arrayContaining(["--json", "stats"]));
     expect(result.isError).toBe(false);
     expect(result.content[0]?.text).toBe("{\"ok\":true}");

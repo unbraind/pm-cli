@@ -39,7 +39,7 @@ export const PM_TOOL_ACTIONS = [
 export type PmToolAction = (typeof PM_TOOL_ACTIONS)[number];
 type NumericFlagInput = string | number;
 
-const NODE_FALLBACK_CLI_PATH = fileURLToPath(new URL("../../../../dist/cli.js", import.meta.url));
+const NODE_FALLBACK_CLI_PATH = fileURLToPath(new URL("../../../dist/cli.js", import.meta.url));
 
 export interface PmToolParameters {
   action: string;
