@@ -13,54 +13,59 @@ function createItem(context: TempPmContext, params: {
   priority: string;
   tags: string;
   deadline: string;
+  assignee?: string;
+  sprint?: string;
+  release?: string;
 }): void {
-  const result = context.runCli(
-    [
-      "create",
-      "--json",
-      "--title",
-      params.title,
-      "--description",
-      `${params.title} description`,
-      "--type",
-      "Task",
-      "--status",
-      params.status,
-      "--priority",
-      params.priority,
-      "--tags",
-      params.tags,
-      "--body",
-      "",
-      "--deadline",
-      params.deadline,
-      "--estimate",
-      "15",
-      "--acceptance-criteria",
-      `${params.title} acceptance`,
-      "--author",
-      "test-author",
-      "--message",
-      `Create ${params.title}`,
-      "--assignee",
-      "none",
-      "--dep",
-      "none",
-      "--comment",
-      "none",
-      "--note",
-      "none",
-      "--learning",
-      "none",
-      "--file",
-      "none",
-      "--test",
-      "none",
-      "--doc",
-      "none",
-    ],
-    { expectJson: true },
-  );
+  const args = [
+    "create",
+    "--json",
+    "--title",
+    params.title,
+    "--description",
+    `${params.title} description`,
+    "--type",
+    "Task",
+    "--status",
+    params.status,
+    "--priority",
+    params.priority,
+    "--tags",
+    params.tags,
+    "--body",
+    "",
+    "--deadline",
+    params.deadline,
+    "--estimate",
+    "15",
+    "--acceptance-criteria",
+    `${params.title} acceptance`,
+    "--author",
+    "test-author",
+    "--message",
+    `Create ${params.title}`,
+    "--assignee",
+    params.assignee ?? "none",
+    "--sprint",
+    params.sprint ?? "none",
+    "--release",
+    params.release ?? "none",
+    "--dep",
+    "none",
+    "--comment",
+    "none",
+    "--note",
+    "none",
+    "--learning",
+    "none",
+    "--file",
+    "none",
+    "--test",
+    "none",
+    "--doc",
+    "none",
+  ];
+  const result = context.runCli(args, { expectJson: true });
   expect(result.code).toBe(0);
 }
 
@@ -175,6 +180,77 @@ describe("runList", () => {
 
       const wrongPriority = await runList(undefined, { priority: "4" }, { path: context.pmPath });
       expect(wrongPriority.count).toBe(0);
+    });
+  });
+
+  it("applies assignee filter including none sentinel for unassigned", async () => {
+    await withTempPmPath(async (context) => {
+      createItem(context, {
+        title: "Assigned Item",
+        status: "open",
+        priority: "1",
+        tags: "test",
+        deadline: "+1d",
+        assignee: "agent-a",
+      });
+      createItem(context, {
+        title: "Unassigned Item",
+        status: "open",
+        priority: "2",
+        tags: "test",
+        deadline: "+1d",
+      });
+
+      const byAssignee = await runList(undefined, { assignee: "agent-a" }, { path: context.pmPath });
+      expect(byAssignee.count).toBe(1);
+      expect(byAssignee.items[0].assignee).toBe("agent-a");
+      expect(byAssignee.filters.assignee).toBe("agent-a");
+
+      const unassigned = await runList(undefined, { assignee: "none" }, { path: context.pmPath });
+      expect(unassigned.count).toBe(1);
+      expect(unassigned.items[0].title).toBe("Unassigned Item");
+
+      const noMatch = await runList(undefined, { assignee: "agent-z" }, { path: context.pmPath });
+      expect(noMatch.count).toBe(0);
+    });
+  });
+
+  it("applies sprint and release filters", async () => {
+    await withTempPmPath(async (context) => {
+      createItem(context, {
+        title: "Sprint Item",
+        status: "open",
+        priority: "1",
+        tags: "test",
+        deadline: "+1d",
+        sprint: "sprint-1",
+        release: "v1.0",
+      });
+      createItem(context, {
+        title: "Other Sprint Item",
+        status: "open",
+        priority: "2",
+        tags: "test",
+        deadline: "+1d",
+        sprint: "sprint-2",
+        release: "v2.0",
+      });
+
+      const bySprint = await runList(undefined, { sprint: "sprint-1" }, { path: context.pmPath });
+      expect(bySprint.count).toBe(1);
+      expect(bySprint.items[0].title).toBe("Sprint Item");
+      expect(bySprint.filters.sprint).toBe("sprint-1");
+
+      const byRelease = await runList(undefined, { release: "v2.0" }, { path: context.pmPath });
+      expect(byRelease.count).toBe(1);
+      expect(byRelease.items[0].title).toBe("Other Sprint Item");
+      expect(byRelease.filters.release).toBe("v2.0");
+
+      const noSprintMatch = await runList(undefined, { sprint: "sprint-99" }, { path: context.pmPath });
+      expect(noSprintMatch.count).toBe(0);
+
+      const noReleaseMatch = await runList(undefined, { release: "v99.0" }, { path: context.pmPath });
+      expect(noReleaseMatch.count).toBe(0);
     });
   });
 });

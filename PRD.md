@@ -708,6 +708,9 @@ List/search filters:
 - `--priority`
 - `--deadline-before`
 - `--deadline-after`
+- `--assignee` (exact match on `assignee` field; use `none` to filter for unassigned items)
+- `--sprint` (exact match on `sprint` field)
+- `--release` (exact match on `release` field)
 
 Mutation safety:
 
@@ -724,8 +727,8 @@ All commands return deterministic top-level objects (TOON by default, JSON with 
 | `pm init [PREFIX]` | optional prefix, `--path` | `{ ok, path, settings, created_dirs, warnings }` |
 | `pm list` | optional filter flags | `{ items, count, filters, now }` |
 | `pm list-all` | optional filter flags | `{ items, count, filters, now }` |
-| `pm list-draft` | optional type/tag/priority/deadline filters | `{ items, count, filters, now }` |
-| `pm list-open` | optional type/tag/priority/deadline filters | `{ items, count, filters, now }` |
+| `pm list-draft` | optional type/tag/priority/deadline/assignee/sprint/release filters | `{ items, count, filters, now }` |
+| `pm list-open` | optional type/tag/priority/deadline/assignee/sprint/release filters | `{ items, count, filters, now }` |
 | `pm list-in-progress` | same as above | `{ items, count, filters, now }` |
 | `pm list-blocked` | same as above | `{ items, count, filters, now }` |
 | `pm list-closed` | same as above | `{ items, count, filters, now }` |

@@ -241,6 +241,20 @@ Format:
 - `pm test <ID> --add` rejects sandbox-unsafe test-runner commands (for example `pnpm test`, `pnpm test:coverage`, `npm test`, `npm run test`, `pnpm run test`, `yarn run test`, `bun run test`, `vitest`) unless they use `node scripts/run-tests.mjs ...` or explicitly set both `PM_PATH` and `PM_GLOBAL_PATH`; chained direct test-runner segments are validated independently, so each direct runner segment must be explicitly sandboxed
 - `pm test-all` deduplicates identical linked command/path entries per invocation (keyed by scope+normalized command or scope+path), reports duplicates as skipped, and uses the maximum `timeout_seconds` when duplicate keys disagree on timeout metadata
 
+### `pm list` filters
+
+All `list*` commands accept these filter flags:
+
+- `--type <value>` — `Epic|Feature|Task|Chore|Issue`
+- `--tag <value>` — exact tag match (case-insensitive)
+- `--priority <value>` — integer `0..4`
+- `--deadline-before <value>` — ISO or relative deadline upper bound
+- `--deadline-after <value>` — ISO or relative deadline lower bound
+- `--assignee <value>` — exact match on `assignee` field; use `none` to filter for unassigned items
+- `--sprint <value>` — exact match on `sprint` field
+- `--release <value>` — exact match on `release` field
+- `--limit <n>` — max items returned
+
 ### Roadmap (post-v0.1 / partial areas)
 
 - semantic/hybrid search enhancements (advanced hybrid relevance tuning, incremental embedding refresh, adapter optimizations)

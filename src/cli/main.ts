@@ -882,6 +882,9 @@ function normalizeListOptions(options: Record<string, unknown>): Record<string, 
     priority: typeof options.priority === "string" ? options.priority : undefined,
     deadlineBefore: typeof options.deadlineBefore === "string" ? options.deadlineBefore : undefined,
     deadlineAfter: typeof options.deadlineAfter === "string" ? options.deadlineAfter : undefined,
+    assignee: typeof options.assignee === "string" ? options.assignee : undefined,
+    sprint: typeof options.sprint === "string" ? options.sprint : undefined,
+    release: typeof options.release === "string" ? options.release : undefined,
     limit: typeof options.limit === "string" ? options.limit : undefined,
   };
 }
@@ -1104,6 +1107,9 @@ function registerListCommand(name: string, description: string, status?: ItemSta
     .option("--priority <value>", "Filter by priority")
     .option("--deadline-before <value>", "Filter by deadline upper bound")
     .option("--deadline-after <value>", "Filter by deadline lower bound")
+    .option("--assignee <value>", "Filter by assignee (use 'none' for unassigned)")
+    .option("--sprint <value>", "Filter by sprint")
+    .option("--release <value>", "Filter by release")
     .option("--limit <n>", "Limit returned item count")
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);

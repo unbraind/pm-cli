@@ -14,6 +14,9 @@ export interface ListOptions {
   priority?: string;
   deadlineBefore?: string;
   deadlineAfter?: string;
+  assignee?: string;
+  sprint?: string;
+  release?: string;
   limit?: string;
 }
 
@@ -89,6 +92,9 @@ function applyFilters(items: ItemFrontMatter[], status: ItemStatus | undefined, 
   const priorityFilter = parsePriority(options.priority);
   const deadlineBefore = parseDeadline(options.deadlineBefore);
   const deadlineAfter = parseDeadline(options.deadlineAfter);
+  const assigneeFilter = options.assignee?.trim();
+  const sprintFilter = options.sprint?.trim();
+  const releaseFilter = options.release?.trim();
 
   return items.filter((item) => {
     if (status && item.status !== status) return false;
@@ -97,6 +103,15 @@ function applyFilters(items: ItemFrontMatter[], status: ItemStatus | undefined, 
     if (priorityFilter !== undefined && item.priority !== priorityFilter) return false;
     if (deadlineBefore && (!item.deadline || item.deadline > deadlineBefore)) return false;
     if (deadlineAfter && (!item.deadline || item.deadline < deadlineAfter)) return false;
+    if (assigneeFilter !== undefined) {
+      if (assigneeFilter.toLowerCase() === "none") {
+        if (item.assignee) return false;
+      } else {
+        if (item.assignee !== assigneeFilter) return false;
+      }
+    }
+    if (sprintFilter !== undefined && item.sprint !== sprintFilter) return false;
+    if (releaseFilter !== undefined && item.release !== releaseFilter) return false;
     return true;
   });
 }
@@ -123,6 +138,9 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
       priority: options.priority ?? null,
       deadline_before: options.deadlineBefore ?? null,
       deadline_after: options.deadlineAfter ?? null,
+      assignee: options.assignee ?? null,
+      sprint: options.sprint ?? null,
+      release: options.release ?? null,
       limit: options.limit ?? null,
     },
     now,
