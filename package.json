@@ -3,6 +3,15 @@
   "version": "0.1.0",
   "description": "Git-native project management CLI for humans and agents.",
   "type": "module",
+  "author": "unbraind",
+  "homepage": "https://github.com/unbraind/pm-cli#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/unbraind/pm-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/unbraind/pm-cli/issues"
+  },
   "bin": {
     "pm": "dist/cli.js"
   },
@@ -29,7 +38,11 @@
     "cli",
     "project-management",
     "agents",
-    "typescript"
+    "ai",
+    "git-native",
+    "typescript",
+    "task-tracker",
+    "coding-agents"
   ],
   "license": "MIT",
   "engines": {

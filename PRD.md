@@ -1360,7 +1360,7 @@ Definition of Done:
 
 Checklist:
 
-- [x] CI matrix finalized
+- [x] CI matrix finalized (ubuntu/macos/windows Node 20, ubuntu Node 22, ubuntu Node 24)
 - [x] fixture corpus for restore/import/search
 - [x] command help and README examples validated in tests
 - [x] repository layout refactor (`src/cli`, `src/core`, `src/types`)
@@ -1370,6 +1370,7 @@ Checklist:
 - [x] npm packaging allowlist + prepublish build guard
 - [x] community docs baseline (`LICENSE`, `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`)
 - [x] shell completion command (`pm completion bash|zsh|fish`)
+- [x] automated npm release workflow (`.github/workflows/release.yml`) triggered on `v*.*.*` tags
 
 Definition of Done:
 

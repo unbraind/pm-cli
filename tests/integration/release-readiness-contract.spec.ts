@@ -1430,6 +1430,10 @@ describe("release readiness baseline contract", () => {
     const packageJson = JSON.parse(await readRepoText("package.json")) as {
       files?: string[];
       scripts?: Record<string, string | undefined>;
+      repository?: { type?: string; url?: string };
+      bugs?: { url?: string };
+      homepage?: string;
+      author?: string;
     };
 
     const requiredPublishFiles = [
@@ -1449,6 +1453,19 @@ describe("release readiness baseline contract", () => {
     }
 
     expect(packageJson.scripts?.prepublishOnly).toBe("pnpm build");
+
+    expect(packageJson.repository).toBeDefined();
+    expect(packageJson.repository?.type).toBe("git");
+    expect(packageJson.repository?.url).toContain("github.com");
+
+    expect(packageJson.bugs).toBeDefined();
+    expect(packageJson.bugs?.url).toContain("github.com");
+
+    expect(typeof packageJson.homepage).toBe("string");
+    expect(packageJson.homepage?.length).toBeGreaterThan(0);
+
+    expect(typeof packageJson.author).toBe("string");
+    expect((packageJson.author as string).length).toBeGreaterThan(0);
   });
 
   it("keeps 100% coverage gate wiring aligned in config and scripts", async () => {

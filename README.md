@@ -614,7 +614,18 @@ Manual smoke checks:
 - run `bash scripts/install.sh`
 - run `pwsh scripts/install.ps1`
 
+### Automated Release
+
+Pushing a version tag triggers the automated npm publish workflow:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The `.github/workflows/release.yml` workflow runs the full CI suite and publishes to npm when all checks pass. Requires `NPM_TOKEN` secret configured in the repository settings.
+
 ## Project Status
 
-Release-hardening is active.  
+Release-hardening is active.
 `PRD.md`, `AGENTS.md`, and this README define the current public and contributor contracts.

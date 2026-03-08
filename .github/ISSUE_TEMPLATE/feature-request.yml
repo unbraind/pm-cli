@@ -1,0 +1,58 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for pm-cli
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting an improvement. Please fill out the sections below to help us understand your request.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: Describe the problem you are trying to solve or the use case for this feature.
+      placeholder: "When I try to do X, I cannot because..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe your proposed solution or feature. Include example command invocations if applicable.
+      placeholder: |
+        Add a new flag `--foo` to `pm list` that filters by...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe any alternative solutions or workarounds you have considered.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Feature area
+      description: Which area of pm-cli does this relate to?
+      options:
+        - Core commands (create/update/get/list/etc.)
+        - History and restore
+        - Search (keyword/semantic/hybrid)
+        - Extensions and hooks
+        - Configuration and settings
+        - Shell completion
+        - Pi agent integration
+        - CI/CD and packaging
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Any other context, screenshots, or relevant information.

@@ -1,28 +1,22 @@
-name: Nightly Validation
+name: Release
 
 on:
-  schedule:
-    - cron: "0 4 * * *"
-  workflow_dispatch:
+  push:
+    tags:
+      - "v*.*.*"
 
 permissions:
   contents: read
+  id-token: write
 
 concurrency:
-  group: nightly-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  nightly:
-    name: Nightly (Node ${{ matrix.node }})
+  release:
+    name: Build, Test, Publish
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node:
-          - 20
-          - 22
-          - 24
 
     steps:
       - name: Checkout
@@ -36,8 +30,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 20
           cache: pnpm
+          registry-url: https://registry.npmjs.org
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -49,13 +44,23 @@ jobs:
         run: pnpm typecheck
 
       - name: Test with coverage gate
-        if: matrix.node == 20
         run: pnpm test:coverage
 
       - name: Sandboxed PM regression (coverage)
-        if: matrix.node == 20
         run: node scripts/run-tests.mjs coverage
 
-      - name: Test
-        if: matrix.node != 20
-        run: pnpm test
+      - name: Packaging smoke check
+        run: npm pack --dry-run
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-release-${{ github.ref_name }}
+          path: coverage
+          if-no-files-found: ignore
+
+      - name: Publish to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

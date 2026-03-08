@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### CI and Release Automation
+- Automated npm publish workflow (`.github/workflows/release.yml`) triggered on `v*.*.*` version tags: runs full build, typecheck, test, and coverage suite before publishing to npm; requires `NPM_TOKEN` secret.
+- Node 24 added to CI matrix (`ci.yml` and `nightly.yml`) ensuring forward compatibility with the upcoming Node 24 LTS line.
+- Dependabot configured (`.github/dependabot.yml`) for weekly npm and GitHub Actions dependency updates.
+
+#### Community and npm Package Hygiene
+- `package.json` now includes `repository`, `bugs`, `homepage`, and `author` fields for proper npm page display and discoverability.
+- Keywords expanded: added `ai`, `git-native`, `task-tracker`, `coding-agents`.
+- GitHub issue templates added (`.github/ISSUE_TEMPLATE/bug-report.yml` and `feature-request.yml`) for structured bug reports and feature requests.
+- Pull request template added (`.github/PULL_REQUEST_TEMPLATE.md`) to guide contributors through the checklist including pm item links, test evidence, and docs updates.
+
 #### Shell Completion
 - `pm completion bash` — outputs a bash tab-completion script. Source it or add `eval "$(pm completion bash)"` to `~/.bashrc`.
 - `pm completion zsh` — outputs a zsh tab-completion script. Add `eval "$(pm completion zsh)"` to `~/.zshrc`.

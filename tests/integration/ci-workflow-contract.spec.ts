@@ -50,6 +50,7 @@ describe("GitHub workflow contract", () => {
       "- os: windows-latest",
       "node: 20",
       "node: 22",
+      "node: 24",
       "run: pnpm build",
       "run: pnpm typecheck",
       "run: pnpm test",
@@ -81,6 +82,7 @@ describe("GitHub workflow contract", () => {
       "matrix:",
       "- 20",
       "- 22",
+      "- 24",
       "run: pnpm build",
       "run: pnpm typecheck",
       "if: matrix.node == 20",
@@ -91,5 +93,30 @@ describe("GitHub workflow contract", () => {
     ]);
 
     expectContainsNone(nightlyWorkflow, PUBLISH_OR_RELEASE_PATTERNS);
+  });
+
+  it("keeps release workflow aligned with tag-trigger npm publish contract", async () => {
+    const releasePath = path.resolve(repoRoot, ".github/workflows/release.yml");
+    const releaseWorkflow = normalizeWorkflow(await readFile(releasePath, "utf8"));
+
+    expectContainsAll(releaseWorkflow, [
+      "on:",
+      "tags:",
+      "v*.*.*",
+      "permissions:",
+      "contents: read",
+      "concurrency:",
+      "cancel-in-progress: false",
+      "run: pnpm build",
+      "run: pnpm typecheck",
+      "run: pnpm test:coverage",
+      "run: node scripts/run-tests.mjs coverage",
+      "run: npm pack --dry-run",
+      "run: npm publish",
+      "NPM_TOKEN",
+      "uses: actions/upload-artifact@v4",
+      "path: coverage",
+      "if-no-files-found: ignore",
+    ]);
   });
 });
