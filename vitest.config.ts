@@ -28,6 +28,7 @@ export default defineConfig({
         "src/cli/commands/get.ts",
         "src/cli/commands/health.ts",
         "src/cli/commands/history.ts",
+        "src/cli/commands/install.ts",
         "src/cli/commands/list.ts",
         "src/cli/commands/search.ts",
         "src/cli/commands/reindex.ts",

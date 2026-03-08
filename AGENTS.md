@@ -226,6 +226,7 @@ pm restore pm-a1b2 2026-02-17T11:15:03.120Z
 
 The built-in Pi wrapper exposes one tool: `pm`.
 Reference implementation source lives at `.pi/extensions/pm-cli/index.ts` as a Pi agent extension module.
+Install the bundled Pi extension with `pm install pi --project` (default) or `pm install pi --global`.
 Load it in Pi with `pi -e ./.pi/extensions/pm-cli/index.ts` (or copy to `.pi/extensions/`).
 Use `action: "completion"` with `shell: "bash"|"zsh"|"fish"` to forward to `pm completion <shell>`.
 For `create` and `update`, use camelCase wrapper parameters for the canonical CLI scalar fields such as `parent`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blockedBy`, `blockedReason`, `unblockNote`, `definitionOfReady`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `whyNow`, `reporter`, `severity`, `environment`, `reproSteps`, `resolution`, `expectedResult`, `actualResult`, `affectedVersion`, `fixedVersion`, `component`, `regression`, and `customerImpact`.

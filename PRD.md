@@ -556,6 +556,7 @@ If any step fails, return non-zero exit code and preserve prior item bytes.
 ### 11.3 Core commands (required for v0.1 release-ready scope)
 
 - `pm init [<PREFIX>]`
+- `pm install pi [--project|--global]`
 - `pm list`
 - `pm list-all`
 - `pm list-draft`
@@ -726,6 +727,7 @@ All commands return deterministic top-level objects (TOON by default, JSON with 
 | Command | Key inputs | Output object |
 | --- | --- | --- |
 | `pm init [PREFIX]` | optional prefix, `--path` | `{ ok, path, settings, created_dirs, warnings }` |
+| `pm install pi [--project\|--global]` | install target (`pi`) + optional scope flags (`--project` default, `--global` uses `PI_CODING_AGENT_DIR` or `~/.pi/agent`) | `{ ok, target, scope, source_path, destination_path, overwritten, warnings }` |
 | `pm list` | optional filter flags | `{ items, count, filters, now }` |
 | `pm list-all` | optional filter flags | `{ items, count, filters, now }` |
 | `pm list-draft` | optional type/tag/priority/deadline/assignee/sprint/release filters | `{ items, count, filters, now }` |

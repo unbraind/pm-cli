@@ -659,6 +659,24 @@ describe("release readiness baseline contract", () => {
     expect(agents).toContain("action: \"completion\"");
   });
 
+  it("keeps pm install pi command contract aligned across docs and CLI help", async () => {
+    const prd = await readRepoText("PRD.md");
+    const readme = await readRepoText("README.md");
+    const agents = await readRepoText("AGENTS.md");
+
+    expect(prd).toContain("`pm install pi [--project|--global]`");
+    expect(readme).toContain("`pm install pi [--project|--global]`");
+    expect(agents).toContain("pm install pi --project");
+
+    await withTempPmPath(async (context) => {
+      const help = context.runCli(["install", "--help"]);
+      expect(help.code).toBe(0);
+      expect(help.stdout).toContain("Install target: pi");
+      expect(help.stdout).toContain("--project");
+      expect(help.stdout).toContain("--global");
+    });
+  });
+
   it("keeps pm create help aligned with required explicit create flags", async () => {
     const prd = await readRepoText("PRD.md");
     const readme = await readRepoText("README.md");

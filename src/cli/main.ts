@@ -20,6 +20,7 @@ import {
   runHealth,
   runHistory,
   runInit,
+  runInstall,
   runList,
   runSearch,
   runReindex,
@@ -1017,6 +1018,29 @@ program
     printResult(result, globalOptions);
     if (globalOptions.profile) {
       printError(`profile:command=config took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+program
+  .command("install")
+  .argument("<target>", "Install target: pi")
+  .option("--project", "Install Pi extension into current project .pi/extensions (default)")
+  .option("--global", "Install Pi extension into global PI_CODING_AGENT_DIR or ~/.pi/agent")
+  .description("Install supported integrations (currently: pi).")
+  .action(async (target: string, options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const result = await runInstall(
+      target,
+      {
+        project: options.project === true,
+        global: options.global === true,
+      },
+      globalOptions,
+    );
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=install took_ms=${Date.now() - startedAt}`);
     }
   });
 

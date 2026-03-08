@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import os from "node:os";
 import { describe, expect, it } from "vitest";
 import { splitFrontMatter } from "../../src/core/item/item-format.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
@@ -64,6 +65,50 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect((createResult.json as { item: { acceptance_criteria: string } }).item.acceptance_criteria).toBe(
         "Alias flag is accepted",
       );
+    });
+  });
+
+  it("installs Pi extension into project and global scopes", async () => {
+    await withTempPmPath(async (context) => {
+      const projectRoot = path.join(context.tempRoot, "workspace");
+      await mkdir(projectRoot, { recursive: true });
+
+      const projectInstall = context.runCli(["install", "pi", "--json"], { expectJson: true, cwd: projectRoot });
+      expect(projectInstall.code).toBe(0);
+      const projectPayload = projectInstall.json as {
+        scope: string;
+        destination_path: string;
+      };
+      expect(projectPayload.scope).toBe("project");
+      expect(projectPayload.destination_path).toBe(path.join(projectRoot, ".pi", "extensions", "pm-cli", "index.ts"));
+
+      const globalRoot = path.join(context.tempRoot, "pi-agent-global", os.platform());
+      const previousAgentDir = context.env.PI_CODING_AGENT_DIR;
+      context.env.PI_CODING_AGENT_DIR = globalRoot;
+      try {
+        const globalInstall = context.runCli(["install", "pi", "--global", "--json"], { expectJson: true });
+        expect(globalInstall.code).toBe(0);
+        const globalPayload = globalInstall.json as {
+          scope: string;
+          destination_path: string;
+        };
+        expect(globalPayload.scope).toBe("global");
+        expect(globalPayload.destination_path).toBe(path.join(globalRoot, "extensions", "pm-cli", "index.ts"));
+      } finally {
+        if (previousAgentDir === undefined) {
+          delete context.env.PI_CODING_AGENT_DIR;
+        } else {
+          context.env.PI_CODING_AGENT_DIR = previousAgentDir;
+        }
+      }
+    });
+  });
+
+  it("rejects mutually exclusive install scope flags", async () => {
+    await withTempPmPath(async (context) => {
+      const result = context.runCli(["install", "pi", "--project", "--global"]);
+      expect(result.code).toBe(2);
+      expect(result.stderr).toContain("mutually exclusive");
     });
   });
 

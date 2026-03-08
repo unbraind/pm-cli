@@ -22,6 +22,7 @@ describe("generateBashScript", () => {
     const script = generateBashScript();
     for (const cmd of [
       "init",
+      "install",
       "create",
       "get",
       "update",
@@ -136,6 +137,7 @@ describe("generateZshScript", () => {
   it("includes all pm subcommand descriptions", () => {
     const script = generateZshScript();
     expect(script).toContain("init:Initialize");
+    expect(script).toContain("install:Install supported integrations");
     expect(script).toContain("create:Create a new item");
     expect(script).toContain("completion:Generate shell completion script");
     expect(script).toContain("beads:Built-in Beads extension commands");
@@ -212,6 +214,7 @@ describe("generateFishScript", () => {
     const script = generateFishScript();
     for (const [cmd, desc] of [
       ["init", "Initialize"],
+      ["install", "Install supported integrations"],
       ["create", "Create"],
       ["get", "Get item details"],
       ["search", "Search items"],
@@ -251,6 +254,14 @@ describe("generateFishScript", () => {
     const script = generateFishScript();
     expect(script).toContain("__fish_seen_subcommand_from completion");
     expect(script).toContain("bash zsh fish");
+  });
+
+  it("includes install target and scope completions", () => {
+    const script = generateFishScript();
+    expect(script).toContain("__fish_seen_subcommand_from install");
+    expect(script).toContain("Install pm Pi extension");
+    expect(script).toContain("-l project");
+    expect(script).toContain("-l global");
   });
 
   it("includes beads and todos subcommand completions", () => {

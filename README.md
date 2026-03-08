@@ -212,6 +212,7 @@ Format:
 ### Core (implemented in v0.1)
 
 - `pm init [PREFIX]`
+- `pm install pi [--project|--global]` (install bundled Pi extension to `.pi/extensions/pm-cli/index.ts` or global `PI_CODING_AGENT_DIR/extensions/pm-cli/index.ts`)
 - `pm list`, `pm list-all`
 - `pm list-draft`, `pm list-open`, `pm list-in-progress`, `pm list-blocked`, `pm list-closed`, `pm list-canceled`
 - `pm get <ID>`
@@ -466,6 +467,19 @@ Extension API baseline now includes deterministic command result override regist
 
 `pm-cli` ships a Pi agent extension source module at `.pi/extensions/pm-cli/index.ts`.
 
+Install it via `pm` (recommended):
+
+```bash
+# current project scope (default)
+pm install pi
+
+# explicit project scope
+pm install pi --project
+
+# global Pi scope (~/.pi/agent unless PI_CODING_AGENT_DIR is set)
+pm install pi --global
+```
+
 Load it in Pi:
 
 ```bash
@@ -480,6 +494,7 @@ The extension registers one tool, `pm`, with action-based parameters and returns
 - `details: { ... }`
 
 For search parity, wrapper parameters support `includeLinked` and map it to `pm search --include-linked`.
+For project tracking access in Pi TUI, run Pi from the project root (so `pm` resolves the repo `.agents/pm`), or pass wrapper `path` to target another PM store.
 For command-shape parity, explicit empty-string values are forwarded for empty-allowed flags (for example `--description ""` and `--body ""`) instead of being dropped.
 For numeric-flag parity, wrapper parameters accept either JSON numbers or strings for `priority`, `estimate`, `limit`, and `timeout`, and stringify them before CLI invocation.
 For claim/release parity, wrapper parameters `author`, `message`, and `force` are forwarded to `pm claim|release --author/--message/--force`.

@@ -14,6 +14,7 @@ const VALID_SHELLS: CompletionShell[] = ["bash", "zsh", "fish"];
 const ALL_COMMANDS = [
   "init",
   "config",
+  "install",
   "create",
   "list",
   "list-all",
@@ -108,6 +109,9 @@ export function generateBashScript(): string {
     "    config)",
     `      COMPREPLY=(${compgen("--criterion --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
+    "    install)",
+    `      COMPREPLY=(${compgen("pi --project --global --json --quiet --path --no-extensions --profile --help")})`,
+    "      ;;",
     "    comments)",
     `      COMPREPLY=(${compgen("--add --limit --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
@@ -157,6 +161,7 @@ _pm_commands() {
   commands=(
     'init:Initialize .agents/pm storage and settings'
     'config:Read or update deterministic pm settings'
+    'install:Install supported integrations'
     'create:Create a new item'
     'list:List items with optional filters'
     'list-all:List all items with optional filters'
@@ -287,6 +292,14 @@ _pm() {
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
+        install)
+          _arguments \\
+            '--project[Install Pi extension into current project .pi/extensions]' \\
+            '--global[Install Pi extension into global PI_CODING_AGENT_DIR or ~/.pi/agent]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]' \\
+            '1:target:(pi)'
+          ;;
         completion)
           _arguments '1:shell:(bash zsh fish)'
           ;;
@@ -337,12 +350,13 @@ complete -c pm -s h -l help -d 'Display help'
 
 # Helper: true when no subcommand has been given yet
 function __pm_no_subcommand
-  not __fish_seen_subcommand_from init config create list list-all list-draft list-open list-in-progress list-blocked list-closed list-canceled get search reindex history activity restore update close delete append comments files docs test test-all stats health gc claim release beads todos completion help
+  not __fish_seen_subcommand_from init config install create list list-all list-draft list-open list-in-progress list-blocked list-closed list-canceled get search reindex history activity restore update close delete append comments files docs test test-all stats health gc claim release beads todos completion help
 end
 
 # Subcommands
 complete -c pm -n __pm_no_subcommand -a init          -d 'Initialize .agents/pm storage and settings'
 complete -c pm -n __pm_no_subcommand -a config        -d 'Read or update deterministic pm settings'
+complete -c pm -n __pm_no_subcommand -a install       -d 'Install supported integrations'
 complete -c pm -n __pm_no_subcommand -a create        -d 'Create a new item'
 complete -c pm -n __pm_no_subcommand -a list          -d 'List items with optional filters'
 complete -c pm -n __pm_no_subcommand -a list-all      -d 'List all items with optional filters'
@@ -435,6 +449,11 @@ complete -c pm -n '__fish_seen_subcommand_from test-all' -l timeout -d 'Default 
 
 # completion shell argument
 complete -c pm -n '__fish_seen_subcommand_from completion' -a 'bash zsh fish' -d 'Shell type'
+
+# install target and flags
+complete -c pm -n '__fish_seen_subcommand_from install' -a 'pi' -d 'Install pm Pi extension'
+complete -c pm -n '__fish_seen_subcommand_from install' -l project -d 'Install into current project .pi/extensions'
+complete -c pm -n '__fish_seen_subcommand_from install' -l global -d 'Install into PI_CODING_AGENT_DIR or ~/.pi/agent'
 
 # beads subcommands
 complete -c pm -n '__fish_seen_subcommand_from beads' -a import -d 'Import Beads JSONL records'
