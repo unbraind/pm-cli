@@ -40,6 +40,7 @@ export interface UpdateCommandOptions {
   release?: string;
   blockedBy?: string;
   blockedReason?: string;
+  unblockNote?: string;
   reporter?: string;
   severity?: string;
   environment?: string;
@@ -153,6 +154,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     options.release !== undefined,
     options.blockedBy !== undefined,
     options.blockedReason !== undefined,
+    options.unblockNote !== undefined,
     options.reporter !== undefined,
     options.severity !== undefined,
     options.environment !== undefined,
@@ -386,6 +388,14 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
           document.front_matter.blocked_reason = options.blockedReason.trim();
         }
         changedFields.push("blocked_reason");
+      }
+      if (options.unblockNote !== undefined) {
+        if (isNoneToken(options.unblockNote)) {
+          delete document.front_matter.unblock_note;
+        } else {
+          document.front_matter.unblock_note = options.unblockNote.trim();
+        }
+        changedFields.push("unblock_note");
       }
       if (options.reporter !== undefined) {
         if (isNoneToken(options.reporter)) {

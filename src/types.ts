@@ -103,6 +103,7 @@ export interface ItemFrontMatter {
   release?: string;
   blocked_by?: string;
   blocked_reason?: string;
+  unblock_note?: string;
   reporter?: string;
   severity?: IssueSeverity;
   environment?: string;

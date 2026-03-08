@@ -336,6 +336,8 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "pm-block-create",
           "--blocked_reason",
           "blocked reason create",
+          "--unblock_note",
+          "unblocked note create",
           "--reporter",
           "reporter-create",
           "--severity",
@@ -397,6 +399,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           why_now: string;
           blocked_by: string;
           blocked_reason: string;
+          unblock_note: string;
           reporter: string;
           severity: string;
           environment: string;
@@ -427,6 +430,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(createdItem.why_now).toBe("why-now-create");
       expect(createdItem.blocked_by).toBe("pm-block-create");
       expect(createdItem.blocked_reason).toBe("blocked reason create");
+      expect(createdItem.unblock_note).toBe("unblocked note create");
       expect(createdItem.reporter).toBe("reporter-create");
       expect(createdItem.severity).toBe("medium");
       expect(createdItem.environment).toBe("linux-create");
@@ -477,6 +481,8 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "pm-block-update",
           "--blocked-reason",
           "blocked reason update",
+          "--unblock-note",
+          "unblocked note update",
           "--reporter",
           "reporter-update",
           "--severity",
@@ -527,6 +533,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           why_now: string;
           blocked_by: string;
           blocked_reason: string;
+          unblock_note: string;
           reporter: string;
           severity: string;
           environment: string;
@@ -557,6 +564,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(updatedItem.why_now).toBe("why-now-update");
       expect(updatedItem.blocked_by).toBe("pm-block-update");
       expect(updatedItem.blocked_reason).toBe("blocked reason update");
+      expect(updatedItem.unblock_note).toBe("unblocked note update");
       expect(updatedItem.reporter).toBe("reporter-update");
       expect(updatedItem.severity).toBe("high");
       expect(updatedItem.environment).toBe("linux-update");
@@ -606,6 +614,8 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "--blocked_by",
           "none",
           "--blocked_reason",
+          "none",
+          "--unblock_note",
           "none",
           "--reporter",
           "none",
@@ -657,6 +667,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           why_now?: string;
           blocked_by?: string;
           blocked_reason?: string;
+          unblock_note?: string;
           reporter?: string;
           severity?: string;
           environment?: string;
@@ -687,6 +698,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(unsetItem.why_now).toBeUndefined();
       expect(unsetItem.blocked_by).toBeUndefined();
       expect(unsetItem.blocked_reason).toBeUndefined();
+      expect(unsetItem.unblock_note).toBeUndefined();
       expect(unsetItem.reporter).toBeUndefined();
       expect(unsetItem.severity).toBeUndefined();
       expect(unsetItem.environment).toBeUndefined();

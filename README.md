@@ -280,6 +280,7 @@ Format:
   - `--release`
   - `--blocked-by/--blocked_by` (item ID or free-text)
   - `--blocked-reason/--blocked_reason`
+  - `--unblock-note/--unblock_note` (unblock rationale note)
   - `--reporter`
   - `--severity` (`low|med|medium|high|critical`; `med` persists as `medium`)
   - `--environment`
@@ -337,6 +338,7 @@ Explicit unset behavior:
 - `--release`
 - `--blocked-by/--blocked_by`
 - `--blocked-reason/--blocked_reason`
+- `--unblock-note/--unblock_note`
 - `--reporter`
 - `--severity` (`low|med|medium|high|critical`; `med` persists as `medium`)
 - `--environment`

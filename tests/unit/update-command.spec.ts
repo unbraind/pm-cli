@@ -129,6 +129,7 @@ describe("runUpdate", () => {
           release: " release-next ",
           blockedBy: " pm-blocking-next ",
           blockedReason: " blocked waiting reason ",
+          unblockNote: " unblocked after dependency update ",
           reporter: " reporter-next ",
           severity: "med",
           environment: " linux:node25 ",
@@ -176,6 +177,7 @@ describe("runUpdate", () => {
           "release",
           "blocked_by",
           "blocked_reason",
+          "unblock_note",
           "reporter",
           "severity",
           "environment",
@@ -219,6 +221,7 @@ describe("runUpdate", () => {
       expect(item.release).toBe("release-next");
       expect(item.blocked_by).toBe("pm-blocking-next");
       expect(item.blocked_reason).toBe("blocked waiting reason");
+      expect(item.unblock_note).toBe("unblocked after dependency update");
       expect(item.reporter).toBe("reporter-next");
       expect(item.severity).toBe("medium");
       expect(item.environment).toBe("linux:node25");
@@ -297,6 +300,7 @@ describe("runUpdate", () => {
           release: "none",
           blockedBy: "none",
           blockedReason: "none",
+          unblockNote: "none",
           reporter: "none",
           severity: "none",
           environment: "none",
@@ -339,6 +343,7 @@ describe("runUpdate", () => {
           "release",
           "blocked_by",
           "blocked_reason",
+          "unblock_note",
           "reporter",
           "severity",
           "environment",
@@ -376,6 +381,7 @@ describe("runUpdate", () => {
       expect(item.release).toBeUndefined();
       expect(item.blocked_by).toBeUndefined();
       expect(item.blocked_reason).toBeUndefined();
+      expect(item.unblock_note).toBeUndefined();
       expect(item.reporter).toBeUndefined();
       expect(item.severity).toBeUndefined();
       expect(item.environment).toBeUndefined();

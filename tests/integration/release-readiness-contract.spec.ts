@@ -295,7 +295,6 @@ const LEGACY_PROMPT_DISALLOWED_TOKENS = [
   "--depends-on / --blocks / --parent / --child / --related / --discovered-from",
 ];
 const PLANNED_NOT_YET_CANONICAL_FLAGS = [
-  "--unblock-note",
   "--evidence",
   "--decision",
   "--verified-by",
@@ -633,6 +632,8 @@ describe("release readiness baseline contract", () => {
     expect(prdCreateSection).toContain("--outcome");
     expect(prdCreateSection).toContain("--why-now");
     expect(prdCreateSection).toContain("--why_now");
+    expect(prdCreateSection).toContain("--unblock-note");
+    expect(prdCreateSection).toContain("--unblock_note");
     expect(prdCreateSection).toContain("low|med|medium|high|critical");
     expect(prdCreateSection).toContain("--confidence");
     expect(readmeCreateSection).toContain("--estimated_minutes");
@@ -648,6 +649,8 @@ describe("release readiness baseline contract", () => {
     expect(readmeCreateSection).toContain("--outcome");
     expect(readmeCreateSection).toContain("--why-now");
     expect(readmeCreateSection).toContain("--why_now");
+    expect(readmeCreateSection).toContain("--unblock-note");
+    expect(readmeCreateSection).toContain("--unblock_note");
     expect(readmeCreateSection).toContain("low|med|medium|high|critical");
     expect(readmeCreateSection).toContain("--confidence");
     expectSectionContainsTokens(prdCreateSection, ISSUE_METADATA_CREATE_FLAG_TOKENS);
@@ -673,6 +676,8 @@ describe("release readiness baseline contract", () => {
       expect(help.stdout).toContain("--outcome");
       expect(help.stdout).toContain("--why-now");
       expect(help.stdout).toContain("--why_now");
+      expect(help.stdout).toContain("--unblock-note");
+      expect(help.stdout).toContain("--unblock_note");
       expect(help.stdout).toContain("low|med|medium|high|critical");
       expect(help.stdout).toContain("--confidence");
       for (const flag of ISSUE_METADATA_CREATE_FLAG_TOKENS) {
@@ -750,6 +755,8 @@ describe("release readiness baseline contract", () => {
     expect(prdUpdateSection).toContain("--outcome");
     expect(prdUpdateSection).toContain("--why-now");
     expect(prdUpdateSection).toContain("--why_now");
+    expect(prdUpdateSection).toContain("--unblock-note");
+    expect(prdUpdateSection).toContain("--unblock_note");
     expect(prdUpdateSection).toContain("low|med|medium|high|critical");
     expect(prdUpdateSection).toContain("--confidence");
     expect(readmeUpdateSection).toContain("--estimated_minutes");
@@ -765,6 +772,8 @@ describe("release readiness baseline contract", () => {
     expect(readmeUpdateSection).toContain("--outcome");
     expect(readmeUpdateSection).toContain("--why-now");
     expect(readmeUpdateSection).toContain("--why_now");
+    expect(readmeUpdateSection).toContain("--unblock-note");
+    expect(readmeUpdateSection).toContain("--unblock_note");
     expect(readmeUpdateSection).toContain("low|med|medium|high|critical");
     expect(readmeUpdateSection).toContain("--confidence");
     expectSectionContainsTokens(prdUpdateSection, ISSUE_METADATA_UPDATE_FLAG_TOKENS);
@@ -791,6 +800,8 @@ describe("release readiness baseline contract", () => {
       expect(updateHelp.stdout).toContain("--outcome");
       expect(updateHelp.stdout).toContain("--why-now");
       expect(updateHelp.stdout).toContain("--why_now");
+      expect(updateHelp.stdout).toContain("--unblock-note");
+      expect(updateHelp.stdout).toContain("--unblock_note");
       expect(updateHelp.stdout).toContain("low|med|medium|high|critical");
       expect(updateHelp.stdout).toContain("--confidence");
       for (const flag of ISSUE_METADATA_UPDATE_FLAG_TOKENS) {

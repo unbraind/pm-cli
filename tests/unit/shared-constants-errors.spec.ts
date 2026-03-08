@@ -66,6 +66,7 @@ describe("shared constants and errors contracts", () => {
       "release",
       "blocked_by",
       "blocked_reason",
+      "unblock_note",
       "reporter",
       "severity",
       "environment",

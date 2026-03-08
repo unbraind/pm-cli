@@ -2,9 +2,6 @@
   "version": 1,
   "id_prefix": "pm-",
   "author_default": "",
-  "session": {
-    "id": "linux-steve-82cd"
-  },
   "locks": {
     "ttl_seconds": 1800
   },

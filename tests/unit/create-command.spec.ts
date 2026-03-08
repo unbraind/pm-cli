@@ -72,6 +72,7 @@ describe("runCreate", () => {
           release: "release-2026.03",
           blockedBy: "pm-blocked-seed",
           blockedReason: "waiting on dependency seed",
+          unblockNote: "dependency unblocked by upstream patch",
           reporter: "reporter-seed",
           severity: "med",
           environment: "linux:node25",
@@ -129,6 +130,7 @@ describe("runCreate", () => {
           "release",
           "blocked_by",
           "blocked_reason",
+          "unblock_note",
           "reporter",
           "severity",
           "environment",
@@ -166,6 +168,7 @@ describe("runCreate", () => {
       expect(result.item.release).toBe("release-2026.03");
       expect(result.item.blocked_by).toBe("pm-blocked-seed");
       expect(result.item.blocked_reason).toBe("waiting on dependency seed");
+      expect(result.item.unblock_note).toBe("dependency unblocked by upstream patch");
       expect(result.item.reporter).toBe("reporter-seed");
       expect(result.item.severity).toBe("medium");
       expect(result.item.environment).toBe("linux:node25");
@@ -332,6 +335,7 @@ describe("runCreate", () => {
             release: "none",
             blockedBy: "none",
             blockedReason: "none",
+            unblockNote: "none",
             reporter: "none",
             severity: "none",
             environment: "none",
@@ -376,6 +380,7 @@ describe("runCreate", () => {
         expect(result.item.release).toBeUndefined();
         expect(result.item.blocked_by).toBeUndefined();
         expect(result.item.blocked_reason).toBeUndefined();
+        expect(result.item.unblock_note).toBeUndefined();
         expect(result.item.reporter).toBeUndefined();
         expect(result.item.severity).toBeUndefined();
         expect(result.item.environment).toBeUndefined();
@@ -420,6 +425,7 @@ describe("runCreate", () => {
             "unset:release",
             "unset:blocked_by",
             "unset:blocked_reason",
+            "unset:unblock_note",
             "unset:reporter",
             "unset:severity",
             "unset:environment",

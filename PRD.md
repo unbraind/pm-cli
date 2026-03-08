@@ -267,6 +267,7 @@ Optional fields:
 - `release?: string`
 - `blocked_by?: string` (item ID reference or free-text reason)
 - `blocked_reason?: string`
+- `unblock_note?: string`
 - `reporter?: string`
 - `severity?: "low" | "medium" | "high" | "critical"`
 - `environment?: string`
@@ -325,26 +326,27 @@ Keys MUST serialize in this order:
 28. `release`
 29. `blocked_by`
 30. `blocked_reason`
-31. `reporter`
-32. `severity`
-33. `environment`
-34. `repro_steps`
-35. `resolution`
-36. `expected_result`
-37. `actual_result`
-38. `affected_version`
-39. `fixed_version`
-40. `component`
-41. `regression`
-42. `customer_impact`
-43. `dependencies`
-44. `comments`
-45. `notes`
-46. `learnings`
-47. `files`
-48. `tests`
-49. `docs`
-50. `close_reason`
+31. `unblock_note`
+32. `reporter`
+33. `severity`
+34. `environment`
+35. `repro_steps`
+36. `resolution`
+37. `expected_result`
+38. `actual_result`
+39. `affected_version`
+40. `fixed_version`
+41. `component`
+42. `regression`
+43. `customer_impact`
+44. `dependencies`
+45. `comments`
+46. `notes`
+47. `learnings`
+48. `files`
+49. `tests`
+50. `docs`
+51. `close_reason`
 
 Unset optional fields are omitted.
 
@@ -616,6 +618,7 @@ Mutating `create` (all schema fields MUST be passable explicitly):
 - `--release` (optional; or `none`)
 - `--blocked-by`, `--blocked_by` (optional; item ID or free-text, or `none`)
 - `--blocked-reason`, `--blocked_reason` (optional; or `none`)
+- `--unblock-note`, `--unblock_note` (optional; unblock rationale note, or `none`)
 - `--reporter` (optional; issue reporter, or `none`)
 - `--severity` (optional; `low|med|medium|high|critical`, or `none`; `med` persists as `medium`)
 - `--environment` (optional; issue environment context, or `none`)
@@ -667,6 +670,7 @@ Mutating `update` (v0.1 baseline):
 - `--release`
 - `--blocked-by`, `--blocked_by`
 - `--blocked-reason`, `--blocked_reason`
+- `--unblock-note`, `--unblock_note`
 - `--reporter`
 - `--severity` (`low|med|medium|high|critical`; `med` persists as `medium`)
 - `--environment`

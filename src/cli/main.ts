@@ -760,6 +760,9 @@ function normalizeCreateOptions(commandOptions: Record<string, unknown>): Create
     blockedReason:
       (typeof commandOptions.blockedReason === "string" ? commandOptions.blockedReason : undefined) ??
       (typeof commandOptions.blocked_reason === "string" ? commandOptions.blocked_reason : undefined),
+    unblockNote:
+      (typeof commandOptions.unblockNote === "string" ? commandOptions.unblockNote : undefined) ??
+      (typeof commandOptions.unblock_note === "string" ? commandOptions.unblock_note : undefined),
     reporter: typeof commandOptions.reporter === "string" ? commandOptions.reporter : undefined,
     severity: typeof commandOptions.severity === "string" ? commandOptions.severity : undefined,
     environment: typeof commandOptions.environment === "string" ? commandOptions.environment : undefined,
@@ -841,6 +844,9 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
     blockedReason:
       (typeof commandOptions.blockedReason === "string" ? commandOptions.blockedReason : undefined) ??
       (typeof commandOptions.blocked_reason === "string" ? commandOptions.blocked_reason : undefined),
+    unblockNote:
+      (typeof commandOptions.unblockNote === "string" ? commandOptions.unblockNote : undefined) ??
+      (typeof commandOptions.unblock_note === "string" ? commandOptions.unblock_note : undefined),
     reporter: typeof commandOptions.reporter === "string" ? commandOptions.reporter : undefined,
     severity: typeof commandOptions.severity === "string" ? commandOptions.severity : undefined,
     environment: typeof commandOptions.environment === "string" ? commandOptions.environment : undefined,
@@ -1023,6 +1029,8 @@ program
   .option("--blocked_by <value>", "Alias for --blocked-by")
   .option("--blocked-reason <value>", "Blocked reason, or none")
   .option("--blocked_reason <value>", "Alias for --blocked-reason")
+  .option("--unblock-note <value>", "Unblock rationale note, or none")
+  .option("--unblock_note <value>", "Alias for --unblock-note")
   .option("--reporter <value>", "Issue reporter, or none")
   .option("--severity <value>", "Issue severity: low|med|medium|high|critical, or none (med persists as medium)")
   .option("--environment <value>", "Issue environment context, or none")
@@ -1308,6 +1316,8 @@ program
   .option("--blocked_by <value>", "Alias for --blocked-by")
   .option("--blocked-reason <value>", "Set blocked reason (or none)")
   .option("--blocked_reason <value>", "Alias for --blocked-reason")
+  .option("--unblock-note <value>", "Set unblock rationale note (or none)")
+  .option("--unblock_note <value>", "Alias for --unblock-note")
   .option("--reporter <value>", "Set issue reporter (or none)")
   .option("--severity <value>", "Set issue severity: low|med|medium|high|critical (or none; med persists as medium)")
   .option("--environment <value>", "Set issue environment context (or none)")

@@ -279,6 +279,7 @@ export function normalizeFrontMatter(frontMatter: ItemFrontMatter): ItemFrontMat
     release: frontMatter.release?.trim() || undefined,
     blocked_by: frontMatter.blocked_by?.trim() || undefined,
     blocked_reason: frontMatter.blocked_reason?.trim() || undefined,
+    unblock_note: frontMatter.unblock_note?.trim() || undefined,
     reporter: frontMatter.reporter?.trim() || undefined,
     severity: normalizeSeverityValue(frontMatter.severity),
     environment: frontMatter.environment?.trim() || undefined,

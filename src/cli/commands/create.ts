@@ -62,6 +62,7 @@ export interface CreateCommandOptions {
   release?: string;
   blockedBy?: string;
   blockedReason?: string;
+  unblockNote?: string;
   reporter?: string;
   severity?: string;
   environment?: string;
@@ -372,6 +373,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     [options.release, "release"],
     [options.blockedBy, "blocked_by"],
     [options.blockedReason, "blocked_reason"],
+    [options.unblockNote, "unblock_note"],
     [options.reporter, "reporter"],
     [options.severity, "severity"],
     [options.environment, "environment"],
@@ -429,6 +431,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const release = options.release !== undefined ? parseOptionalString(options.release) : undefined;
   const blockedBy = options.blockedBy !== undefined ? parseOptionalString(options.blockedBy) : undefined;
   const blockedReason = options.blockedReason !== undefined ? parseOptionalString(options.blockedReason) : undefined;
+  const unblockNote = options.unblockNote !== undefined ? parseOptionalString(options.unblockNote) : undefined;
   const reporter = options.reporter !== undefined ? parseOptionalString(options.reporter) : undefined;
   const severityRaw = options.severity !== undefined ? parseOptionalString(options.severity) : undefined;
   const severity =
@@ -476,6 +479,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     release,
     blocked_by: blockedBy,
     blocked_reason: blockedReason,
+    unblock_note: unblockNote,
     reporter,
     severity,
     environment,

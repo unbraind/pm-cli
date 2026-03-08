@@ -374,6 +374,7 @@ pm create \
   --release none \
   --blocked-by none \
   --blocked-reason none \
+  --unblock-note/--unblock_note none \
   --reporter none \
   --severity none \
   --environment none \
@@ -428,6 +429,7 @@ pm create \
   --release none \
   --blocked-by none \
   --blocked-reason none \
+  --unblock-note/--unblock_note none \
   --dep "id=pm-xxxx,kind=blocks,author=...,created_at=now" \
   --comment "author=...,created_at=now,text=Why this epic exists." \
   --note "author=...,created_at=now,text=How success is measured." \
