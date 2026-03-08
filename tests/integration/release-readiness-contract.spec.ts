@@ -665,7 +665,9 @@ describe("release readiness baseline contract", () => {
     const agents = await readRepoText("AGENTS.md");
 
     expect(prd).toContain("`pm install pi [--project|--global]`");
+    expect(prd).toContain("project-root` is derived from `--path` when provided, otherwise current working directory");
     expect(readme).toContain("`pm install pi [--project|--global]`");
+    expect(readme).toContain("project-root` is derived from `--path` when provided, otherwise current working directory");
     expect(agents).toContain("pm install pi --project");
 
     await withTempPmPath(async (context) => {
@@ -673,6 +675,7 @@ describe("release readiness baseline contract", () => {
       expect(help.code).toBe(0);
       expect(help.stdout).toContain("Install target: pi");
       expect(help.stdout).toContain("--project");
+      expect(help.stdout).toContain("derived from --path");
       expect(help.stdout).toContain("--global");
     });
   });

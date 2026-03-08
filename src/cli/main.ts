@@ -1025,7 +1025,10 @@ program
 program
   .command("install")
   .argument("<target>", "Install target: pi")
-  .option("--project", "Install Pi extension into current project .pi/extensions (default)")
+  .option(
+    "--project",
+    "Install Pi extension into resolved project root .pi/extensions (derived from --path, default)",
+  )
   .option("--global", "Install Pi extension into global PI_CODING_AGENT_DIR or ~/.pi/agent")
   .description("Install supported integrations (currently: pi).")
   .action(async (target: string, options: Record<string, unknown>, command) => {

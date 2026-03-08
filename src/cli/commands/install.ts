@@ -42,10 +42,28 @@ function resolvePiGlobalRoot(): string {
   return path.join(os.homedir(), ".pi", "agent");
 }
 
+function resolveProjectRootFromPmRoot(pmRoot: string): string {
+  const normalizedPmRoot = path.normalize(pmRoot);
+  const agentStoreSuffix = path.join(".agents", "pm");
+  if (normalizedPmRoot.endsWith(agentStoreSuffix)) {
+    return path.resolve(pmRoot, "..", "..");
+  }
+  return path.resolve(pmRoot, "..");
+}
+
+function resolveProjectInstallRoot(cwd: string, cliPath?: string): string {
+  const configuredPath = cliPath?.trim();
+  if (!configuredPath) {
+    return cwd;
+  }
+  const pmRoot = path.resolve(cwd, configuredPath);
+  return resolveProjectRootFromPmRoot(pmRoot);
+}
+
 export async function runInstall(
   target: string,
   options: InstallCommandOptions,
-  _global: GlobalOptions,
+  global: GlobalOptions,
   runtime: InstallRuntime = {},
 ): Promise<InstallResult> {
   const normalizedTarget = target.trim().toLowerCase();
@@ -63,9 +81,10 @@ export async function runInstall(
   const packageRoot = getPackageRootFromCommandModule();
   const sourcePath = resolvePiExtensionSourcePath(packageRoot);
   const readFileImpl = runtime.readFile ?? fs.readFile;
+  const projectRoot = resolveProjectInstallRoot(process.cwd(), global.path);
   const destinationPath =
     scope === "project"
-      ? path.resolve(process.cwd(), ".pi/extensions/pm-cli/index.ts")
+      ? path.resolve(projectRoot, ".pi/extensions/pm-cli/index.ts")
       : path.resolve(resolvePiGlobalRoot(), "extensions/pm-cli/index.ts");
 
   let sourceContent: string;

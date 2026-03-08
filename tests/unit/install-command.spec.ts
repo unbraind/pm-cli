@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -31,6 +31,80 @@ describe("runInstall", () => {
     } finally {
       process.chdir(previousCwd);
       await rm(tempProject, { recursive: true, force: true });
+    }
+  });
+
+  it("uses global --path PM root to resolve project-scope destination", async () => {
+    const tempBase = await mkdtemp(path.join(os.tmpdir(), "pm-install-project-path-"));
+    const tempCaller = path.join(tempBase, "caller");
+    const tempProject = path.join(tempBase, "project-root");
+    const previousCwd = process.cwd();
+    try {
+      await mkdir(tempCaller, { recursive: true });
+      await mkdir(tempProject, { recursive: true });
+      process.chdir(tempCaller);
+
+      const pmPath = path.join(tempProject, ".agents", "pm");
+      const result = await runInstall("pi", { project: true }, { path: pmPath });
+
+      expect(result.scope).toBe("project");
+      expect(result.destination_path).toBe(path.join(tempProject, ".pi", "extensions", "pm-cli", "index.ts"));
+      const destinationContent = await readFile(result.destination_path, "utf8");
+      expect(destinationContent.length).toBeGreaterThan(0);
+    } finally {
+      process.chdir(previousCwd);
+      await rm(tempBase, { recursive: true, force: true });
+    }
+  });
+
+  it("uses parent directory when --path does not point at .agents/pm", async () => {
+    const tempBase = await mkdtemp(path.join(os.tmpdir(), "pm-install-project-custom-root-"));
+    const tempCaller = path.join(tempBase, "caller");
+    const customPmRoot = path.join(tempBase, "custom-pm-root");
+    const previousCwd = process.cwd();
+    try {
+      await mkdir(tempCaller, { recursive: true });
+      await mkdir(customPmRoot, { recursive: true });
+      process.chdir(tempCaller);
+
+      const result = await runInstall("pi", { project: true }, { path: customPmRoot });
+
+      expect(result.scope).toBe("project");
+      expect(result.destination_path).toBe(path.join(tempBase, ".pi", "extensions", "pm-cli", "index.ts"));
+      const destinationContent = await readFile(result.destination_path, "utf8");
+      expect(destinationContent.length).toBeGreaterThan(0);
+    } finally {
+      process.chdir(previousCwd);
+      await rm(tempBase, { recursive: true, force: true });
+    }
+  });
+
+  it("ignores PM_PATH for project scope when --path is not provided", async () => {
+    const tempBase = await mkdtemp(path.join(os.tmpdir(), "pm-install-project-pmpath-"));
+    const tempCaller = path.join(tempBase, "caller");
+    const tempProject = path.join(tempBase, "project-root");
+    const previousCwd = process.cwd();
+    const previousPmPath = process.env.PM_PATH;
+    try {
+      await mkdir(tempCaller, { recursive: true });
+      await mkdir(tempProject, { recursive: true });
+      process.chdir(tempCaller);
+      process.env.PM_PATH = path.join(tempProject, ".agents", "pm");
+
+      const result = await runInstall("pi", { project: true }, {});
+
+      expect(result.scope).toBe("project");
+      expect(result.destination_path).toBe(path.join(tempCaller, ".pi", "extensions", "pm-cli", "index.ts"));
+      const destinationContent = await readFile(result.destination_path, "utf8");
+      expect(destinationContent.length).toBeGreaterThan(0);
+    } finally {
+      process.chdir(previousCwd);
+      if (previousPmPath === undefined) {
+        delete process.env.PM_PATH;
+      } else {
+        process.env.PM_PATH = previousPmPath;
+      }
+      await rm(tempBase, { recursive: true, force: true });
     }
   });
 

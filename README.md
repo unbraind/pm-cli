@@ -225,7 +225,7 @@ Format:
 ### Core (implemented in v0.1)
 
 - `pm init [PREFIX]`
-- `pm install pi [--project|--global]` (install bundled Pi extension to `.pi/extensions/pm-cli/index.ts` or global `PI_CODING_AGENT_DIR/extensions/pm-cli/index.ts`)
+- `pm install pi [--project|--global]` (install bundled Pi extension to `<project-root>/.pi/extensions/pm-cli/index.ts`, where `project-root` is derived from `--path` when provided, otherwise current working directory; global scope uses `PI_CODING_AGENT_DIR/extensions/pm-cli/index.ts`)
 - `pm list` (excludes terminal statuses `closed`/`canceled` by default — the active working-set view), `pm list-all` (all statuses including terminal)
 - `pm list-draft`, `pm list-open`, `pm list-in-progress`, `pm list-blocked`, `pm list-closed`, `pm list-canceled`
 - `pm get <ID>`

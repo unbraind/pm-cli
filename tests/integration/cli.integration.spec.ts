@@ -82,6 +82,27 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(projectPayload.scope).toBe("project");
       expect(projectPayload.destination_path).toBe(path.join(projectRoot, ".pi", "extensions", "pm-cli", "index.ts"));
 
+      const pathDerivedRoot = path.join(context.tempRoot, "path-derived-workspace");
+      const pathDerivedPmRoot = path.join(pathDerivedRoot, ".agents", "pm");
+      const pathDerivedCaller = path.join(context.tempRoot, "path-derived-caller");
+      await mkdir(pathDerivedPmRoot, { recursive: true });
+      await mkdir(pathDerivedCaller, { recursive: true });
+      const cliPathArg = path.relative(pathDerivedCaller, pathDerivedPmRoot);
+
+      const projectInstallWithPath = context.runCli(
+        ["--path", cliPathArg, "install", "pi", "--project", "--json"],
+        { expectJson: true, cwd: pathDerivedCaller },
+      );
+      expect(projectInstallWithPath.code).toBe(0);
+      const projectPathPayload = projectInstallWithPath.json as {
+        scope: string;
+        destination_path: string;
+      };
+      expect(projectPathPayload.scope).toBe("project");
+      expect(projectPathPayload.destination_path).toBe(
+        path.join(pathDerivedRoot, ".pi", "extensions", "pm-cli", "index.ts"),
+      );
+
       const globalRoot = path.join(context.tempRoot, "pi-agent-global", os.platform());
       const previousAgentDir = context.env.PI_CODING_AGENT_DIR;
       context.env.PI_CODING_AGENT_DIR = globalRoot;
