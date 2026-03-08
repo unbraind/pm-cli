@@ -31,7 +31,7 @@ src/
       delete.ts                  pm delete
       claim.ts                   pm claim / release
       release.ts                 (re-exports from claim.ts)
-      list.ts                    pm list / list-all / list-* commands
+      list.ts                    pm list (active-only: excludes closed/canceled) / list-all / list-* commands
       comments.ts                pm comments
       files.ts                   pm files
       docs.ts                    pm docs
