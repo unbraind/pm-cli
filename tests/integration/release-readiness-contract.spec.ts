@@ -200,6 +200,7 @@ const REQUIRED_TEST_FLAGS = [
 const REQUIRED_COMMENTS_FLAGS = ["--add", "--limit", "--author", "--message", "--force"];
 
 const REQUIRED_CLAIM_RELEASE_FLAGS = ["--author", "--message", "--force"];
+const REQUIRED_RESTORE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_CLOSE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_DELETE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_APPEND_FLAGS = ["--body", "--author", "--message", "--force"];
@@ -907,6 +908,23 @@ describe("release readiness baseline contract", () => {
       expect(appendHelp.stdout).toContain("Append text to an item body.");
       for (const flag of REQUIRED_APPEND_FLAGS) {
         expect(appendHelp.stdout).toContain(flag);
+      }
+    });
+  });
+
+  it("keeps restore mutation metadata contract aligned across PRD and CLI help", async () => {
+    const prd = await readRepoText("PRD.md");
+    expect(prd).toContain(
+      "| `pm restore <ID> <TIMESTAMP\\|VERSION>` | id + restore target + optional `--author/--message/--force` |",
+    );
+
+    await withTempPmPath(async (context) => {
+      const restoreHelp = context.runCli(["restore", "--help"]);
+      expect(restoreHelp.code).toBe(0);
+      expect(restoreHelp.stdout).toContain("Usage: pm restore [options] <id> <target>");
+      expect(restoreHelp.stdout).toContain("Restore an item to a previous timestamp or version.");
+      for (const flag of REQUIRED_RESTORE_FLAGS) {
+        expect(restoreHelp.stdout).toContain(flag);
       }
     });
   });
