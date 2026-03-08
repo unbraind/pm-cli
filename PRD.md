@@ -245,6 +245,14 @@ Optional fields:
 - `comments?: Comment[]`
 - `author?: string`
 - `acceptance_criteria?: string`
+- `definition_of_ready?: string`
+- `order?: number`
+- `goal?: string`
+- `objective?: string`
+- `value?: string`
+- `impact?: string`
+- `outcome?: string`
+- `why_now?: string`
 - `notes?: LogNote[]`
 - `learnings?: LogNote[]`
 - `files?: LinkedFile[]`
@@ -287,21 +295,29 @@ Keys MUST serialize in this order:
 12. `author`
 13. `estimated_minutes`
 14. `acceptance_criteria`
-15. `parent`
-16. `reviewer`
-17. `risk`
-18. `sprint`
-19. `release`
-20. `blocked_by`
-21. `blocked_reason`
-22. `dependencies`
-23. `comments`
-24. `notes`
-25. `learnings`
-26. `files`
-27. `tests`
-28. `docs`
-29. `close_reason`
+15. `definition_of_ready`
+16. `order`
+17. `goal`
+18. `objective`
+19. `value`
+20. `impact`
+21. `outcome`
+22. `why_now`
+23. `parent`
+24. `reviewer`
+25. `risk`
+26. `sprint`
+27. `release`
+28. `blocked_by`
+29. `blocked_reason`
+30. `dependencies`
+31. `comments`
+32. `notes`
+33. `learnings`
+34. `files`
+35. `tests`
+36. `docs`
+37. `close_reason`
 
 Unset optional fields are omitted.
 
@@ -569,6 +585,14 @@ Mutating `create` (all schema fields MUST be passable explicitly):
 - `--release` (optional; or `none`)
 - `--blocked-by`, `--blocked_by` (optional; item ID or free-text, or `none`)
 - `--blocked-reason`, `--blocked_reason` (optional; or `none`)
+- `--definition-of-ready`, `--definition_of_ready` (optional; explicit empty allowed; use `none` to unset)
+- `--order`, `--rank` (optional; integer rank/order, or `none`)
+- `--goal` (optional; or `none`)
+- `--objective` (optional; or `none`)
+- `--value` (optional; or `none`)
+- `--impact` (optional; or `none`)
+- `--outcome` (optional; or `none`)
+- `--why-now`, `--why_now` (optional; or `none`)
 
 Mutating `create` flags (repeatable, each required at least once; use `none` for explicit empty intent):
 
@@ -599,6 +623,14 @@ Mutating `update` (v0.1 baseline):
 - `--release`
 - `--blocked-by`, `--blocked_by`
 - `--blocked-reason`, `--blocked_reason`
+- `--definition-of-ready`, `--definition_of_ready`
+- `--order`, `--rank`
+- `--goal`
+- `--objective`
+- `--value`
+- `--impact`
+- `--outcome`
+- `--why-now`, `--why_now`
 - `--author`
 - `--message`
 

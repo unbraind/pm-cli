@@ -80,6 +80,14 @@ export interface ItemFrontMatter {
   author?: string;
   estimated_minutes?: number;
   acceptance_criteria?: string;
+  definition_of_ready?: string;
+  order?: number;
+  goal?: string;
+  objective?: string;
+  value?: string;
+  impact?: string;
+  outcome?: string;
+  why_now?: string;
   parent?: string;
   reviewer?: string;
   risk?: "low" | "medium" | "high" | "critical";

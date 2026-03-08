@@ -256,15 +256,6 @@ const LEGACY_PROMPT_DISALLOWED_TOKENS = [
 ];
 const PLANNED_NOT_YET_CANONICAL_FLAGS = [
   "--unblock-note",
-  "--definition-of-ready",
-  "--rank",
-  "--order",
-  "--value",
-  "--impact",
-  "--outcome",
-  "--why-now",
-  "--goal",
-  "--objective",
   "--evidence",
   "--decision",
   "--verified-by",
@@ -604,8 +595,30 @@ describe("release readiness baseline contract", () => {
     );
     expect(prdCreateSection).toContain("--estimated_minutes");
     expect(prdCreateSection).toContain("--acceptance_criteria");
+    expect(prdCreateSection).toContain("--definition-of-ready");
+    expect(prdCreateSection).toContain("--definition_of_ready");
+    expect(prdCreateSection).toContain("--order");
+    expect(prdCreateSection).toContain("--rank");
+    expect(prdCreateSection).toContain("--goal");
+    expect(prdCreateSection).toContain("--objective");
+    expect(prdCreateSection).toContain("--value");
+    expect(prdCreateSection).toContain("--impact");
+    expect(prdCreateSection).toContain("--outcome");
+    expect(prdCreateSection).toContain("--why-now");
+    expect(prdCreateSection).toContain("--why_now");
     expect(readmeCreateSection).toContain("--estimated_minutes");
     expect(readmeCreateSection).toContain("--acceptance_criteria");
+    expect(readmeCreateSection).toContain("--definition-of-ready");
+    expect(readmeCreateSection).toContain("--definition_of_ready");
+    expect(readmeCreateSection).toContain("--order");
+    expect(readmeCreateSection).toContain("--rank");
+    expect(readmeCreateSection).toContain("--goal");
+    expect(readmeCreateSection).toContain("--objective");
+    expect(readmeCreateSection).toContain("--value");
+    expect(readmeCreateSection).toContain("--impact");
+    expect(readmeCreateSection).toContain("--outcome");
+    expect(readmeCreateSection).toContain("--why-now");
+    expect(readmeCreateSection).toContain("--why_now");
 
     await withTempPmPath(async (context) => {
       const help = context.runCli(["create", "--help"]);
@@ -616,6 +629,17 @@ describe("release readiness baseline contract", () => {
       expect(help.stdout).toContain("--estimated-minutes");
       expect(help.stdout).toContain("--estimated_minutes");
       expect(help.stdout).toContain("--acceptance_criteria");
+      expect(help.stdout).toContain("--definition-of-ready");
+      expect(help.stdout).toContain("--definition_of_ready");
+      expect(help.stdout).toContain("--order");
+      expect(help.stdout).toContain("--rank");
+      expect(help.stdout).toContain("--goal");
+      expect(help.stdout).toContain("--objective");
+      expect(help.stdout).toContain("--value");
+      expect(help.stdout).toContain("--impact");
+      expect(help.stdout).toContain("--outcome");
+      expect(help.stdout).toContain("--why-now");
+      expect(help.stdout).toContain("--why_now");
       expect(help.stdout).not.toContain("Seed dependency entry (required; use none for empty) (default: [])");
       expect(help.stdout).not.toContain("Seed comment entry (required; use none for empty) (default: [])");
       expect(help.stdout).not.toContain("Seed note entry (required; use none for empty) (default: [])");
@@ -677,8 +701,30 @@ describe("release readiness baseline contract", () => {
     expectSectionContainsTokens(readmeUpdateSection, REQUIRED_UPDATE_FLAGS);
     expect(prdUpdateSection).toContain("--estimated_minutes");
     expect(prdUpdateSection).toContain("--acceptance_criteria");
+    expect(prdUpdateSection).toContain("--definition-of-ready");
+    expect(prdUpdateSection).toContain("--definition_of_ready");
+    expect(prdUpdateSection).toContain("--order");
+    expect(prdUpdateSection).toContain("--rank");
+    expect(prdUpdateSection).toContain("--goal");
+    expect(prdUpdateSection).toContain("--objective");
+    expect(prdUpdateSection).toContain("--value");
+    expect(prdUpdateSection).toContain("--impact");
+    expect(prdUpdateSection).toContain("--outcome");
+    expect(prdUpdateSection).toContain("--why-now");
+    expect(prdUpdateSection).toContain("--why_now");
     expect(readmeUpdateSection).toContain("--estimated_minutes");
     expect(readmeUpdateSection).toContain("--acceptance_criteria");
+    expect(readmeUpdateSection).toContain("--definition-of-ready");
+    expect(readmeUpdateSection).toContain("--definition_of_ready");
+    expect(readmeUpdateSection).toContain("--order");
+    expect(readmeUpdateSection).toContain("--rank");
+    expect(readmeUpdateSection).toContain("--goal");
+    expect(readmeUpdateSection).toContain("--objective");
+    expect(readmeUpdateSection).toContain("--value");
+    expect(readmeUpdateSection).toContain("--impact");
+    expect(readmeUpdateSection).toContain("--outcome");
+    expect(readmeUpdateSection).toContain("--why-now");
+    expect(readmeUpdateSection).toContain("--why_now");
     expect(readmeUpdateSection).toContain("pm close <ID> <TEXT>");
 
     await withTempPmPath(async (context) => {
@@ -690,6 +736,17 @@ describe("release readiness baseline contract", () => {
       expect(updateHelp.stdout).toContain("--estimated-minutes");
       expect(updateHelp.stdout).toContain("--estimated_minutes");
       expect(updateHelp.stdout).toContain("--acceptance_criteria");
+      expect(updateHelp.stdout).toContain("--definition-of-ready");
+      expect(updateHelp.stdout).toContain("--definition_of_ready");
+      expect(updateHelp.stdout).toContain("--order");
+      expect(updateHelp.stdout).toContain("--rank");
+      expect(updateHelp.stdout).toContain("--goal");
+      expect(updateHelp.stdout).toContain("--objective");
+      expect(updateHelp.stdout).toContain("--value");
+      expect(updateHelp.stdout).toContain("--impact");
+      expect(updateHelp.stdout).toContain("--outcome");
+      expect(updateHelp.stdout).toContain("--why-now");
+      expect(updateHelp.stdout).toContain("--why_now");
     });
   });
 

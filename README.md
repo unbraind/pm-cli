@@ -278,6 +278,14 @@ Format:
   - `--release`
   - `--blocked-by/--blocked_by` (item ID or free-text)
   - `--blocked-reason/--blocked_reason`
+  - `--definition-of-ready/--definition_of_ready` (explicit empty allowed)
+  - `--order/--rank` (integer rank/order)
+  - `--goal`
+  - `--objective`
+  - `--value`
+  - `--impact`
+  - `--outcome`
+  - `--why-now/--why_now`
 - required repeatable seed flags (pass each at least once; use `none` for explicit empty intent):
   - `--dep`
   - `--comment`
@@ -314,6 +322,14 @@ Explicit unset behavior:
 - `--release`
 - `--blocked-by/--blocked_by`
 - `--blocked-reason/--blocked_reason`
+- `--definition-of-ready/--definition_of_ready`
+- `--order/--rank`
+- `--goal`
+- `--objective`
+- `--value`
+- `--impact`
+- `--outcome`
+- `--why-now/--why_now`
 - `--author`
 - `--message`
 - `--force`

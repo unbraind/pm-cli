@@ -112,7 +112,15 @@ describe("runUpdate", () => {
           deadline: "+1d",
           estimatedMinutes: "45",
           acceptanceCriteria: "new acceptance",
+          definitionOfReady: " ready with fixtures ",
+          order: "8",
           assignee: " next-assignee ",
+          goal: " goal-next ",
+          objective: " objective-next ",
+          value: " value-next ",
+          impact: " impact-next ",
+          outcome: " outcome-next ",
+          whyNow: " why-now-next ",
           parent: " pm-parent-next ",
           reviewer: " reviewer-next ",
           risk: "critical",
@@ -138,6 +146,14 @@ describe("runUpdate", () => {
           "deadline",
           "estimated_minutes",
           "acceptance_criteria",
+          "definition_of_ready",
+          "order",
+          "goal",
+          "objective",
+          "value",
+          "impact",
+          "outcome",
+          "why_now",
           "assignee",
           "parent",
           "reviewer",
@@ -160,7 +176,15 @@ describe("runUpdate", () => {
       expect(Number.isNaN(Date.parse(String(item.deadline)))).toBe(false);
       expect(item.estimated_minutes).toBe(45);
       expect(item.acceptance_criteria).toBe("new acceptance");
+      expect(item.definition_of_ready).toBe("ready with fixtures");
+      expect(item.order).toBe(8);
       expect(item.assignee).toBe("next-assignee");
+      expect(item.goal).toBe("goal-next");
+      expect(item.objective).toBe("objective-next");
+      expect(item.value).toBe("value-next");
+      expect(item.impact).toBe("impact-next");
+      expect(item.outcome).toBe("outcome-next");
+      expect(item.why_now).toBe("why-now-next");
       expect(item.parent).toBe("pm-parent-next");
       expect(item.reviewer).toBe("reviewer-next");
       expect(item.risk).toBe("critical");
@@ -183,6 +207,15 @@ describe("runUpdate", () => {
           deadline: "none",
           estimatedMinutes: "none",
           acceptanceCriteria: "none",
+          definitionOfReady: "none",
+          order: "none",
+          rank: "none",
+          goal: "none",
+          objective: "none",
+          value: "none",
+          impact: "none",
+          outcome: "none",
+          whyNow: "none",
           assignee: "none",
           parent: "none",
           reviewer: "none",
@@ -204,6 +237,14 @@ describe("runUpdate", () => {
           "deadline",
           "estimated_minutes",
           "acceptance_criteria",
+          "definition_of_ready",
+          "order",
+          "goal",
+          "objective",
+          "value",
+          "impact",
+          "outcome",
+          "why_now",
           "assignee",
           "parent",
           "reviewer",
@@ -220,6 +261,14 @@ describe("runUpdate", () => {
       expect(item.deadline).toBeUndefined();
       expect(item.estimated_minutes).toBeUndefined();
       expect(item.acceptance_criteria).toBeUndefined();
+      expect(item.definition_of_ready).toBeUndefined();
+      expect(item.order).toBeUndefined();
+      expect(item.goal).toBeUndefined();
+      expect(item.objective).toBeUndefined();
+      expect(item.value).toBeUndefined();
+      expect(item.impact).toBeUndefined();
+      expect(item.outcome).toBeUndefined();
+      expect(item.why_now).toBeUndefined();
       expect(item.assignee).toBeUndefined();
       expect(item.parent).toBeUndefined();
       expect(item.reviewer).toBeUndefined();
@@ -269,6 +318,12 @@ describe("runUpdate", () => {
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(runUpdate(id, { risk: "extreme" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runUpdate(id, { order: "3.7" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runUpdate(id, { order: "1", rank: "2" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
     });

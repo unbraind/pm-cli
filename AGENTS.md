@@ -355,9 +355,24 @@ pm create \
   --deadline +1d \
   --estimate 60 \
   --acceptance-criteria/--ac "..." \
+  --definition-of-ready/--definition_of_ready "none" \
+  --order/--rank none \
+  --goal none \
+  --objective none \
+  --value none \
+  --impact none \
+  --outcome none \
+  --why-now/--why_now none \
   --author "..." \
   --message "..." \
   --assignee none \
+  --parent none \
+  --reviewer none \
+  --risk none \
+  --sprint none \
+  --release none \
+  --blocked-by none \
+  --blocked-reason none \
   --dep <DEP> \
   --comment <COMMENT> \
   --note <NOTE> \
@@ -381,9 +396,24 @@ pm create \
   --deadline +7d \
   --estimate 240 \
   --acceptance-criteria/--ac "..." \
+  --definition-of-ready/--definition_of_ready "none" \
+  --order/--rank none \
+  --goal none \
+  --objective none \
+  --value none \
+  --impact none \
+  --outcome none \
+  --why-now/--why_now none \
   --author "..." \
   --message "MESSAGE" \
   --assignee none \
+  --parent none \
+  --reviewer none \
+  --risk none \
+  --sprint none \
+  --release none \
+  --blocked-by none \
+  --blocked-reason none \
   --dep "id=pm-xxxx,kind=blocks,author=...,created_at=now" \
   --comment "author=...,created_at=now,text=Why this epic exists." \
   --note "author=...,created_at=now,text=How success is measured." \

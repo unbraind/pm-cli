@@ -34,6 +34,15 @@ export interface CreateCommandOptions {
   deadline: string;
   estimatedMinutes: string;
   acceptanceCriteria: string;
+  definitionOfReady?: string;
+  order?: string;
+  rank?: string;
+  goal?: string;
+  objective?: string;
+  value?: string;
+  impact?: string;
+  outcome?: string;
+  whyNow?: string;
   author: string;
   message: string;
   assignee: string;
@@ -287,6 +296,15 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     [options.deadline, "deadline"],
     [options.estimatedMinutes, "estimated_minutes"],
     [options.acceptanceCriteria, "acceptance_criteria"],
+    [options.definitionOfReady, "definition_of_ready"],
+    [options.order, "order"],
+    [options.rank, "order"],
+    [options.goal, "goal"],
+    [options.objective, "objective"],
+    [options.value, "value"],
+    [options.impact, "impact"],
+    [options.outcome, "outcome"],
+    [options.whyNow, "why_now"],
     [options.assignee, "assignee"],
     [options.author, "author"],
     [options.parent, "parent"],
@@ -314,6 +332,21 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     ? undefined
     : parseOptionalNumber(options.estimatedMinutes, "estimated-minutes");
   const acceptanceCriteria = isNoneToken(options.acceptanceCriteria) ? undefined : options.acceptanceCriteria;
+  const definitionOfReady = options.definitionOfReady !== undefined ? parseOptionalString(options.definitionOfReady) : undefined;
+  if (options.order !== undefined && options.rank !== undefined && options.order !== options.rank) {
+    throw new PmCliError("--order and --rank must match when both are provided", EXIT_CODE.USAGE);
+  }
+  const orderRaw = options.order ?? options.rank;
+  const order = orderRaw === undefined || isNoneToken(orderRaw) ? undefined : parseOptionalNumber(orderRaw, "order");
+  if (order !== undefined && !Number.isInteger(order)) {
+    throw new PmCliError("Order must be an integer", EXIT_CODE.USAGE);
+  }
+  const goal = options.goal !== undefined ? parseOptionalString(options.goal) : undefined;
+  const objective = options.objective !== undefined ? parseOptionalString(options.objective) : undefined;
+  const value = options.value !== undefined ? parseOptionalString(options.value) : undefined;
+  const impact = options.impact !== undefined ? parseOptionalString(options.impact) : undefined;
+  const outcome = options.outcome !== undefined ? parseOptionalString(options.outcome) : undefined;
+  const whyNow = options.whyNow !== undefined ? parseOptionalString(options.whyNow) : undefined;
   const assignee = parseOptionalString(options.assignee);
   const authorValue = parseOptionalString(options.author) ?? author;
   const parent = options.parent !== undefined ? parseOptionalString(options.parent) : undefined;
@@ -340,6 +373,14 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     author: authorValue,
     estimated_minutes: estimatedMinutes,
     acceptance_criteria: acceptanceCriteria,
+    definition_of_ready: definitionOfReady,
+    order,
+    goal,
+    objective,
+    value,
+    impact,
+    outcome,
+    why_now: whyNow,
     parent,
     reviewer,
     risk,

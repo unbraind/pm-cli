@@ -732,6 +732,19 @@ function normalizeCreateOptions(commandOptions: Record<string, unknown>): Create
       (typeof commandOptions.acceptanceCriteria === "string" ? commandOptions.acceptanceCriteria : undefined) ??
       (typeof commandOptions.acceptance_criteria === "string" ? commandOptions.acceptance_criteria : undefined) ??
       requiredString("ac", "--acceptance-criteria/--ac"),
+    definitionOfReady:
+      (typeof commandOptions.definitionOfReady === "string" ? commandOptions.definitionOfReady : undefined) ??
+      (typeof commandOptions.definition_of_ready === "string" ? commandOptions.definition_of_ready : undefined),
+    order: typeof commandOptions.order === "string" ? commandOptions.order : undefined,
+    rank: typeof commandOptions.rank === "string" ? commandOptions.rank : undefined,
+    goal: typeof commandOptions.goal === "string" ? commandOptions.goal : undefined,
+    objective: typeof commandOptions.objective === "string" ? commandOptions.objective : undefined,
+    value: typeof commandOptions.value === "string" ? commandOptions.value : undefined,
+    impact: typeof commandOptions.impact === "string" ? commandOptions.impact : undefined,
+    outcome: typeof commandOptions.outcome === "string" ? commandOptions.outcome : undefined,
+    whyNow:
+      (typeof commandOptions.whyNow === "string" ? commandOptions.whyNow : undefined) ??
+      (typeof commandOptions.why_now === "string" ? commandOptions.why_now : undefined),
     author: requiredString("author", "--author"),
     message: requiredString("message", "--message"),
     assignee: requiredString("assignee", "--assignee"),
@@ -774,6 +787,19 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
       (typeof commandOptions.acceptanceCriteria === "string" ? commandOptions.acceptanceCriteria : undefined) ??
       (typeof commandOptions.acceptance_criteria === "string" ? commandOptions.acceptance_criteria : undefined) ??
       (typeof commandOptions.ac === "string" ? commandOptions.ac : undefined),
+    definitionOfReady:
+      (typeof commandOptions.definitionOfReady === "string" ? commandOptions.definitionOfReady : undefined) ??
+      (typeof commandOptions.definition_of_ready === "string" ? commandOptions.definition_of_ready : undefined),
+    order: typeof commandOptions.order === "string" ? commandOptions.order : undefined,
+    rank: typeof commandOptions.rank === "string" ? commandOptions.rank : undefined,
+    goal: typeof commandOptions.goal === "string" ? commandOptions.goal : undefined,
+    objective: typeof commandOptions.objective === "string" ? commandOptions.objective : undefined,
+    value: typeof commandOptions.value === "string" ? commandOptions.value : undefined,
+    impact: typeof commandOptions.impact === "string" ? commandOptions.impact : undefined,
+    outcome: typeof commandOptions.outcome === "string" ? commandOptions.outcome : undefined,
+    whyNow:
+      (typeof commandOptions.whyNow === "string" ? commandOptions.whyNow : undefined) ??
+      (typeof commandOptions.why_now === "string" ? commandOptions.why_now : undefined),
     author: typeof commandOptions.author === "string" ? commandOptions.author : undefined,
     message: typeof commandOptions.message === "string" ? commandOptions.message : undefined,
     force: Boolean(commandOptions.force),
@@ -923,6 +949,17 @@ program
   .option("--acceptance-criteria <value>", "Acceptance criteria (allow empty string)")
   .option("--acceptance_criteria <value>", "Alias for --acceptance-criteria")
   .option("--ac <value>", "Alias for --acceptance-criteria")
+  .option("--definition-of-ready <value>", "Definition of ready (allow empty string, or none)")
+  .option("--definition_of_ready <value>", "Alias for --definition-of-ready")
+  .option("--order <value>", "Planning order/rank integer, or none")
+  .option("--rank <value>", "Alias for --order")
+  .option("--goal <value>", "Goal identifier, or none")
+  .option("--objective <value>", "Objective identifier, or none")
+  .option("--value <value>", "Business value summary, or none")
+  .option("--impact <value>", "Business impact summary, or none")
+  .option("--outcome <value>", "Expected outcome summary, or none")
+  .option("--why-now <value>", "Why-now rationale, or none")
+  .option("--why_now <value>", "Alias for --why-now")
   .requiredOption("--author <value>", "Mutation author, or none")
   .requiredOption("--message <value>", "History message (allow empty string)")
   .requiredOption("--assignee <value>", "Item assignee, or none")
@@ -1178,6 +1215,17 @@ program
   .option("--acceptance-criteria <value>", "Set acceptance criteria (or none)")
   .option("--acceptance_criteria <value>", "Alias for --acceptance-criteria")
   .option("--ac <value>", "Alias for --acceptance-criteria")
+  .option("--definition-of-ready <value>", "Set definition of ready (or none)")
+  .option("--definition_of_ready <value>", "Alias for --definition-of-ready")
+  .option("--order <value>", "Set planning order/rank integer (or none)")
+  .option("--rank <value>", "Alias for --order")
+  .option("--goal <value>", "Set goal identifier (or none)")
+  .option("--objective <value>", "Set objective identifier (or none)")
+  .option("--value <value>", "Set business value summary (or none)")
+  .option("--impact <value>", "Set business impact summary (or none)")
+  .option("--outcome <value>", "Set expected outcome summary (or none)")
+  .option("--why-now <value>", "Set why-now rationale (or none)")
+  .option("--why_now <value>", "Alias for --why-now")
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "Mutation message")
   .option("--assignee <value>", "Set assignee (or none)")

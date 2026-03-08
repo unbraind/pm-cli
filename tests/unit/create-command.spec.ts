@@ -71,6 +71,14 @@ describe("runCreate", () => {
           release: "release-2026.03",
           blockedBy: "pm-blocked-seed",
           blockedReason: "waiting on dependency seed",
+          definitionOfReady: "ready when fixtures are prepared",
+          order: "7",
+          goal: "goal-seed",
+          objective: "objective-seed",
+          value: "value-seed",
+          impact: "impact-seed",
+          outcome: "outcome-seed",
+          whyNow: "why-now-seed",
         }),
         { path: context.pmPath },
       );
@@ -92,6 +100,14 @@ describe("runCreate", () => {
           "author",
           "estimated_minutes",
           "acceptance_criteria",
+          "definition_of_ready",
+          "order",
+          "goal",
+          "objective",
+          "value",
+          "impact",
+          "outcome",
+          "why_now",
           "parent",
           "reviewer",
           "risk",
@@ -123,6 +139,14 @@ describe("runCreate", () => {
       expect(result.item.release).toBe("release-2026.03");
       expect(result.item.blocked_by).toBe("pm-blocked-seed");
       expect(result.item.blocked_reason).toBe("waiting on dependency seed");
+      expect(result.item.definition_of_ready).toBe("ready when fixtures are prepared");
+      expect(result.item.order).toBe(7);
+      expect(result.item.goal).toBe("goal-seed");
+      expect(result.item.objective).toBe("objective-seed");
+      expect(result.item.value).toBe("value-seed");
+      expect(result.item.impact).toBe("impact-seed");
+      expect(result.item.outcome).toBe("outcome-seed");
+      expect(result.item.why_now).toBe("why-now-seed");
       expect(result.item.dependencies).toEqual([
         {
           id: "pm-a1b2",
@@ -212,6 +236,15 @@ describe("runCreate", () => {
             deadline: "none",
             estimatedMinutes: "none",
             acceptanceCriteria: "none",
+            definitionOfReady: "none",
+            order: "none",
+            rank: "none",
+            goal: "none",
+            objective: "none",
+            value: "none",
+            impact: "none",
+            outcome: "none",
+            whyNow: "none",
             author: "none",
             assignee: "none",
             parent: "none",
@@ -236,6 +269,14 @@ describe("runCreate", () => {
         expect(result.item.deadline).toBeUndefined();
         expect(result.item.estimated_minutes).toBeUndefined();
         expect(result.item.acceptance_criteria).toBeUndefined();
+        expect(result.item.definition_of_ready).toBeUndefined();
+        expect(result.item.order).toBeUndefined();
+        expect(result.item.goal).toBeUndefined();
+        expect(result.item.objective).toBeUndefined();
+        expect(result.item.value).toBeUndefined();
+        expect(result.item.impact).toBeUndefined();
+        expect(result.item.outcome).toBeUndefined();
+        expect(result.item.why_now).toBeUndefined();
         expect(result.item.assignee).toBeUndefined();
         expect(result.item.parent).toBeUndefined();
         expect(result.item.reviewer).toBeUndefined();
@@ -259,6 +300,14 @@ describe("runCreate", () => {
             "unset:deadline",
             "unset:estimated_minutes",
             "unset:acceptance_criteria",
+            "unset:definition_of_ready",
+            "unset:order",
+            "unset:goal",
+            "unset:objective",
+            "unset:value",
+            "unset:impact",
+            "unset:outcome",
+            "unset:why_now",
             "unset:assignee",
             "unset:parent",
             "unset:reviewer",
@@ -448,6 +497,25 @@ describe("runCreate", () => {
         runCreate(
           baseCreateOptions({
             risk: "extreme",
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            order: "2.5",
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            order: "1",
+            rank: "2",
           }),
           { path: context.pmPath },
         ),

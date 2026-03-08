@@ -298,6 +298,22 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "20",
           "--acceptance-criteria",
           "Extended optional fields are accepted",
+          "--definition_of_ready",
+          "Ready after scope review",
+          "--rank",
+          "5",
+          "--goal",
+          "goal-create",
+          "--objective",
+          "objective-create",
+          "--value",
+          "value-create",
+          "--impact",
+          "impact-create",
+          "--outcome",
+          "outcome-create",
+          "--why_now",
+          "why-now-create",
           "--author",
           "integration-test",
           "--message",
@@ -344,6 +360,14 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           risk: string;
           sprint: string;
           release: string;
+          definition_of_ready: string;
+          order: number;
+          goal: string;
+          objective: string;
+          value: string;
+          impact: string;
+          outcome: string;
+          why_now: string;
           blocked_by: string;
           blocked_reason: string;
         };
@@ -353,6 +377,14 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(createdItem.risk).toBe("medium");
       expect(createdItem.sprint).toBe("sprint-create");
       expect(createdItem.release).toBe("release-create");
+      expect(createdItem.definition_of_ready).toBe("Ready after scope review");
+      expect(createdItem.order).toBe(5);
+      expect(createdItem.goal).toBe("goal-create");
+      expect(createdItem.objective).toBe("objective-create");
+      expect(createdItem.value).toBe("value-create");
+      expect(createdItem.impact).toBe("impact-create");
+      expect(createdItem.outcome).toBe("outcome-create");
+      expect(createdItem.why_now).toBe("why-now-create");
       expect(createdItem.blocked_by).toBe("pm-block-create");
       expect(createdItem.blocked_reason).toBe("blocked reason create");
 
@@ -371,6 +403,22 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "sprint-update",
           "--release",
           "release-update",
+          "--definition-of-ready",
+          "Ready after update",
+          "--order",
+          "3",
+          "--goal",
+          "goal-update",
+          "--objective",
+          "objective-update",
+          "--value",
+          "value-update",
+          "--impact",
+          "impact-update",
+          "--outcome",
+          "outcome-update",
+          "--why-now",
+          "why-now-update",
           "--blocked-by",
           "pm-block-update",
           "--blocked-reason",
@@ -390,6 +438,14 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           risk: string;
           sprint: string;
           release: string;
+          definition_of_ready: string;
+          order: number;
+          goal: string;
+          objective: string;
+          value: string;
+          impact: string;
+          outcome: string;
+          why_now: string;
           blocked_by: string;
           blocked_reason: string;
         };
@@ -399,6 +455,14 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(updatedItem.risk).toBe("high");
       expect(updatedItem.sprint).toBe("sprint-update");
       expect(updatedItem.release).toBe("release-update");
+      expect(updatedItem.definition_of_ready).toBe("Ready after update");
+      expect(updatedItem.order).toBe(3);
+      expect(updatedItem.goal).toBe("goal-update");
+      expect(updatedItem.objective).toBe("objective-update");
+      expect(updatedItem.value).toBe("value-update");
+      expect(updatedItem.impact).toBe("impact-update");
+      expect(updatedItem.outcome).toBe("outcome-update");
+      expect(updatedItem.why_now).toBe("why-now-update");
       expect(updatedItem.blocked_by).toBe("pm-block-update");
       expect(updatedItem.blocked_reason).toBe("blocked reason update");
 
@@ -416,6 +480,22 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "--sprint",
           "none",
           "--release",
+          "none",
+          "--definition_of_ready",
+          "none",
+          "--rank",
+          "none",
+          "--goal",
+          "none",
+          "--objective",
+          "none",
+          "--value",
+          "none",
+          "--impact",
+          "none",
+          "--outcome",
+          "none",
+          "--why_now",
           "none",
           "--blocked_by",
           "none",
@@ -436,6 +516,14 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           risk?: string;
           sprint?: string;
           release?: string;
+          definition_of_ready?: string;
+          order?: number;
+          goal?: string;
+          objective?: string;
+          value?: string;
+          impact?: string;
+          outcome?: string;
+          why_now?: string;
           blocked_by?: string;
           blocked_reason?: string;
         };
@@ -445,6 +533,14 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(unsetItem.risk).toBeUndefined();
       expect(unsetItem.sprint).toBeUndefined();
       expect(unsetItem.release).toBeUndefined();
+      expect(unsetItem.definition_of_ready).toBeUndefined();
+      expect(unsetItem.order).toBeUndefined();
+      expect(unsetItem.goal).toBeUndefined();
+      expect(unsetItem.objective).toBeUndefined();
+      expect(unsetItem.value).toBeUndefined();
+      expect(unsetItem.impact).toBeUndefined();
+      expect(unsetItem.outcome).toBeUndefined();
+      expect(unsetItem.why_now).toBeUndefined();
       expect(unsetItem.blocked_by).toBeUndefined();
       expect(unsetItem.blocked_reason).toBeUndefined();
     });

@@ -19,6 +19,15 @@ export interface UpdateCommandOptions {
   deadline?: string;
   estimatedMinutes?: string;
   acceptanceCriteria?: string;
+  definitionOfReady?: string;
+  order?: string;
+  rank?: string;
+  goal?: string;
+  objective?: string;
+  value?: string;
+  impact?: string;
+  outcome?: string;
+  whyNow?: string;
   author?: string;
   message?: string;
   force?: boolean;
@@ -77,6 +86,15 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     options.deadline !== undefined,
     options.estimatedMinutes !== undefined,
     options.acceptanceCriteria !== undefined,
+    options.definitionOfReady !== undefined,
+    options.order !== undefined,
+    options.rank !== undefined,
+    options.goal !== undefined,
+    options.objective !== undefined,
+    options.value !== undefined,
+    options.impact !== undefined,
+    options.outcome !== undefined,
+    options.whyNow !== undefined,
     options.assignee !== undefined,
     options.parent !== undefined,
     options.reviewer !== undefined,
@@ -89,6 +107,9 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
 
   if (!changedFlags) {
     throw new PmCliError("No update flags provided", EXIT_CODE.USAGE);
+  }
+  if (options.order !== undefined && options.rank !== undefined && options.order !== options.rank) {
+    throw new PmCliError("--order and --rank must match when both are provided", EXIT_CODE.USAGE);
   }
 
   const result = await mutateItem({
@@ -162,6 +183,75 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
           document.front_matter.acceptance_criteria = options.acceptanceCriteria;
         }
         changedFields.push("acceptance_criteria");
+      }
+      if (options.definitionOfReady !== undefined) {
+        if (isNoneToken(options.definitionOfReady)) {
+          delete document.front_matter.definition_of_ready;
+        } else {
+          document.front_matter.definition_of_ready = options.definitionOfReady.trim();
+        }
+        changedFields.push("definition_of_ready");
+      }
+      const orderRaw = options.order ?? options.rank;
+      if (orderRaw !== undefined) {
+        if (isNoneToken(orderRaw)) {
+          delete document.front_matter.order;
+        } else {
+          const parsedOrder = parseOptionalNumber(orderRaw, "order");
+          if (!Number.isInteger(parsedOrder)) {
+            throw new PmCliError("Order must be an integer", EXIT_CODE.USAGE);
+          }
+          document.front_matter.order = parsedOrder;
+        }
+        changedFields.push("order");
+      }
+      if (options.goal !== undefined) {
+        if (isNoneToken(options.goal)) {
+          delete document.front_matter.goal;
+        } else {
+          document.front_matter.goal = options.goal.trim();
+        }
+        changedFields.push("goal");
+      }
+      if (options.objective !== undefined) {
+        if (isNoneToken(options.objective)) {
+          delete document.front_matter.objective;
+        } else {
+          document.front_matter.objective = options.objective.trim();
+        }
+        changedFields.push("objective");
+      }
+      if (options.value !== undefined) {
+        if (isNoneToken(options.value)) {
+          delete document.front_matter.value;
+        } else {
+          document.front_matter.value = options.value.trim();
+        }
+        changedFields.push("value");
+      }
+      if (options.impact !== undefined) {
+        if (isNoneToken(options.impact)) {
+          delete document.front_matter.impact;
+        } else {
+          document.front_matter.impact = options.impact.trim();
+        }
+        changedFields.push("impact");
+      }
+      if (options.outcome !== undefined) {
+        if (isNoneToken(options.outcome)) {
+          delete document.front_matter.outcome;
+        } else {
+          document.front_matter.outcome = options.outcome.trim();
+        }
+        changedFields.push("outcome");
+      }
+      if (options.whyNow !== undefined) {
+        if (isNoneToken(options.whyNow)) {
+          delete document.front_matter.why_now;
+        } else {
+          document.front_matter.why_now = options.whyNow.trim();
+        }
+        changedFields.push("why_now");
       }
       if (options.assignee !== undefined) {
         if (isNoneToken(options.assignee) || options.assignee.trim() === "") {
