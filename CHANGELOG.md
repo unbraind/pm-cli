@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### CI and Release Automation
 - Automated npm publish workflow (`.github/workflows/release.yml`) triggered on `v*.*.*` version tags: runs full build, typecheck, test, and coverage suite before publishing to npm; requires `NPM_TOKEN` secret.
+- npm provenance attestation enabled (`--provenance` on `npm publish`) linking each release to its source commit and build pipeline via Sigstore; consumers can verify supply chain integrity and npm shows a Provenance badge.
 - Node 24 added to CI matrix (`ci.yml` and `nightly.yml`) ensuring forward compatibility with the Node 24 LTS line.
 - Node 25 (current release) added to nightly CI matrix for early forward-compatibility detection.
 - Dependabot configured (`.github/dependabot.yml`) for weekly npm and GitHub Actions dependency updates.
