@@ -11,8 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### CI and Release Automation
 - Automated npm publish workflow (`.github/workflows/release.yml`) triggered on `v*.*.*` version tags: runs full build, typecheck, test, and coverage suite before publishing to npm; requires `NPM_TOKEN` secret.
-- Node 24 added to CI matrix (`ci.yml` and `nightly.yml`) ensuring forward compatibility with the upcoming Node 24 LTS line.
+- Node 24 added to CI matrix (`ci.yml` and `nightly.yml`) ensuring forward compatibility with the Node 24 LTS line.
+- Node 25 (current release) added to nightly CI matrix for early forward-compatibility detection.
 - Dependabot configured (`.github/dependabot.yml`) for weekly npm and GitHub Actions dependency updates.
+
+#### Developer Documentation
+- `docs/ARCHITECTURE.md` — comprehensive internal architecture guide covering source tree, item storage, mutation contract, history/restore, extension system, search architecture, and testing.
+- `docs/EXTENSIONS.md` — extension development guide covering manifest format, full `ExtensionApi` reference, lifecycle hooks, built-in extensions, and a minimal example.
+- `docs/**` added to `package.json` `files` allowlist so documentation ships with the npm package.
+- README links to new `docs/` guides from the Repository Structure section.
 
 #### Community and npm Package Hygiene
 - `package.json` now includes `repository`, `bugs`, `homepage`, and `author` fields for proper npm page display and discoverability.

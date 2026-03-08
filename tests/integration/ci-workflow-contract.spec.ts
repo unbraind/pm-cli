@@ -83,6 +83,7 @@ describe("GitHub workflow contract", () => {
       "- 20",
       "- 22",
       "- 24",
+      "- 25",
       "run: pnpm build",
       "run: pnpm typecheck",
       "if: matrix.node == 20",

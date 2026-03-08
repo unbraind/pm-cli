@@ -183,6 +183,9 @@ scripts/
   install.sh
   install.ps1
   run-tests.mjs
+docs/
+  ARCHITECTURE.md
+  EXTENSIONS.md
 .pi/
   extensions/
     pm-cli/
@@ -190,6 +193,11 @@ scripts/
   ci.yml
   nightly.yml
 ```
+
+## Developer Docs
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — Internal architecture, source layout, mutation contract, history/restore, search, and testing.
+- [docs/EXTENSIONS.md](docs/EXTENSIONS.md) — Extension development guide: manifest format, API reference, hook lifecycle, built-in extensions.
 
 ## Item File Format
 

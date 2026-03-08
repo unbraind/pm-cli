@@ -1442,6 +1442,7 @@ describe("release readiness baseline contract", () => {
       "LICENSE",
       "AGENTS.md",
       "PRD.md",
+      "docs/**",
       ".pi/extensions/pm-cli/index.ts",
       "scripts/install.sh",
       "scripts/install.ps1",
