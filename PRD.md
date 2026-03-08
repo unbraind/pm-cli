@@ -1057,13 +1057,14 @@ Current baseline status (release-hardening):
 
 - Implemented as a Pi agent extension source module at `.pi/extensions/pm-cli/index.ts` (outside the `pm` CLI command surface).
 - Registers one Pi tool named `pm` via Pi's extension API (`registerTool`) and maps `action` + command-shaped fields to `pm` CLI invocations.
-- Action dispatch currently covers the full v0.1 command-aligned set (`init`, `config`, `create`, `list`, `list-all`, `list-draft`, `list-open`, `list-in-progress`, `list-blocked`, `list-closed`, `list-canceled`, `get`, `search`, `reindex`, `history`, `activity`, `restore`, `update`, `close`, `delete`, `append`, `comments`, `files`, `docs`, `test`, `test-all`, `stats`, `health`, `gc`, `claim`, `release`) plus extension action aliases (`beads-import`, `todos-import`, `todos-export`).
+- Action dispatch currently covers the full v0.1 command-aligned set (`init`, `config`, `create`, `list`, `list-all`, `list-draft`, `list-open`, `list-in-progress`, `list-blocked`, `list-closed`, `list-canceled`, `get`, `search`, `reindex`, `history`, `activity`, `restore`, `update`, `close`, `delete`, `append`, `comments`, `files`, `docs`, `test`, `test-all`, `stats`, `health`, `gc`, `completion`, `claim`, `release`) plus extension action aliases (`beads-import`, `todos-import`, `todos-export`).
 - Invocation fallback order is deterministic for distribution resilience: attempt `pm` first, then fallback to packaged `node <package-root>/dist/cli.js` when `pm` is unavailable.
 
 - Expose one tool `pm`.
 - Parameters include:
   - `action` enum mapped to CLI commands
   - common fields (`id`, `title`, `status`, `tags`, `body`, etc.)
+  - completion parity field `shell` (`action=completion` -> `pm completion <shell>`)
   - search-specific parity fields including `mode` and `includeLinked` (`--include-linked`)
   - claim/release metadata parity fields including `author`, `message`, and `force` (`--author`, `--message`, `--force`)
   - create/update scalar parity fields using camelCase wrapper parameters that forward to the canonical CLI flags for planning/workflow metadata (`parent`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blockedBy`, `blockedReason`, `unblockNote`, `definitionOfReady`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `whyNow`) and issue metadata (`reporter`, `severity`, `environment`, `reproSteps`, `resolution`, `expectedResult`, `actualResult`, `affectedVersion`, `fixedVersion`, `component`, `regression`, `customerImpact`)
@@ -1346,7 +1347,7 @@ Checklist:
 - [x] renderer and command extension points (deterministic core-command override + renderer override registration/dispatch is implemented with failure containment, extension command handlers for declared command paths including dynamically surfaced non-core paths are implemented, dynamic command help now surfaces `registerFlags` metadata deterministically, deep snapshot isolation for override/renderer result contexts is implemented, and override/renderer execution now includes cloned command `args`/`options`/`global` snapshots plus `pm_root` metadata for contextual deterministic extension output behavior)
 - [x] built-in beads import extension (built-in extension command-handler packaging, Beads JSONL field mapping, deterministic defaults, `op: "import"` history entries, and parity polish implemented)
 - [x] built-in todos import/export extension (built-in extension command-handler packaging, todos markdown round-trip, canonical optional metadata preservation including planning/workflow and issue fields, hierarchical ID preservation, and `med` alias normalization implemented)
-- [x] built-in Pi tool wrapper extension (Pi agent extension module at `.pi/extensions/pm-cli/index.ts` with full v0.1 action dispatch parity, camelCase parameter surface for all canonical scalar metadata, explicit empty-string passthrough, numeric-flag stringification, claim/release parity, packaged CLI fallback, and distribution packaging polish implemented)
+- [x] built-in Pi tool wrapper extension (Pi agent extension module at `.pi/extensions/pm-cli/index.ts` with full v0.1 action dispatch parity, including `completion` + `shell` mapping, camelCase parameter surface for all canonical scalar metadata, explicit empty-string passthrough, numeric-flag stringification, claim/release parity, packaged CLI fallback, and distribution packaging polish implemented)
 
 Definition of Done:
 

@@ -371,6 +371,7 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(() => buildPmCliArgs({ action: "close", id: "pm-a1b2" })).toThrow('Action "close" requires "text".');
     expect(() => buildPmCliArgs({ action: "delete" })).toThrow('Action "delete" requires "id".');
     expect(() => buildPmCliArgs({ action: "search" })).toThrow('Action "search" requires "query".');
+    expect(() => buildPmCliArgs({ action: "completion" })).toThrow('Action "completion" requires "shell".');
     expect(() => buildPmCliArgs({ action: "unknown-action" })).toThrow('Unsupported action "unknown-action".');
   });
 
@@ -414,6 +415,7 @@ describe("Pi agent extension wrapper for pm", () => {
     expect((tool.parameters as { properties: { definitionOfReady: { type: string } } }).properties.definitionOfReady.type).toBe(
       "string",
     );
+    expect((tool.parameters as { properties: { shell: { type: string } } }).properties.shell.type).toBe("string");
     expect(
       (
         tool.parameters as {
@@ -709,6 +711,13 @@ describe("Pi agent extension wrapper for pm", () => {
         timeout: "1800",
       }),
     ).toEqual(["--json", "test-all", "--status", "in_progress", "--timeout", "1800"]);
+
+    expect(
+      buildPmCliArgs({
+        action: "completion",
+        shell: "fish",
+      }),
+    ).toEqual(["--json", "completion", "fish"]);
 
     expect(
       buildPmCliArgs({

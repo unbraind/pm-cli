@@ -649,10 +649,14 @@ describe("release readiness baseline contract", () => {
   it("keeps Pi wrapper packaging polish documented as implemented", async () => {
     const prd = await readRepoText("PRD.md");
     const readme = await readRepoText("README.md");
+    const agents = await readRepoText("AGENTS.md");
 
     expect(prd).toContain("packaged CLI fallback, and distribution packaging polish implemented");
+    expect(prd).toContain("`completion`");
     expect(prd).not.toContain("distribution packaging polish is post-v0.1 roadmap");
     expect(readme).toContain("For packaging resilience (implemented), the wrapper attempts `pm` first");
+    expect(readme).toContain("action=completion");
+    expect(agents).toContain("action: \"completion\"");
   });
 
   it("keeps pm create help aligned with required explicit create flags", async () => {

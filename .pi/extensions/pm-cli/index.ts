@@ -30,6 +30,7 @@ export const PM_TOOL_ACTIONS = [
   "stats",
   "health",
   "gc",
+  "completion",
   "claim",
   "release",
   "beads-import",
@@ -111,6 +112,7 @@ export interface PmToolParameters {
   timeout?: NumericFlagInput;
   force?: boolean;
   run?: boolean;
+  shell?: string;
   file?: string;
   folder?: string;
   text?: string;
@@ -229,6 +231,7 @@ export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = {
     timeout: { anyOf: [{ type: "string" }, { type: "number" }] },
     force: { type: "boolean" },
     run: { type: "boolean" },
+    shell: { type: "string" },
     file: { type: "string" },
     folder: { type: "string" },
     text: { type: "string" },
@@ -533,6 +536,9 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
     case "health":
     case "gc":
       args.push(action);
+      return args;
+    case "completion":
+      args.push("completion", requireString(params.shell, "shell", action));
       return args;
     case "claim":
     case "release":
