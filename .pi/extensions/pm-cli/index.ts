@@ -36,6 +36,8 @@ export const PM_TOOL_ACTIONS = [
   "beads-import",
   "todos-import",
   "todos-export",
+  "start-task",
+  "pause-task",
 ] as const;
 
 export type PmToolAction = (typeof PM_TOOL_ACTIONS)[number];
@@ -415,6 +417,31 @@ function addGlobalFlags(args: string[], params: PmToolParameters): void {
   pushOption(args, "--path", params.path);
 }
 
+export function buildPmCliSequences(params: PmToolParameters): string[][] {
+  const action = params.action.trim().toLowerCase();
+  if (action === "start-task") {
+    const globalArgs: string[] = [];
+    addGlobalFlags(globalArgs, params);
+    const id = requireString(params.id, "id", action);
+    const claimArgs = ["claim", id];
+    addAuthorMessageForceFlags(claimArgs, params);
+    const updateArgs = ["update", id, "--status", "in_progress"];
+    addAuthorMessageForceFlags(updateArgs, params);
+    return [[...globalArgs, ...claimArgs], [...globalArgs, ...updateArgs]];
+  }
+  if (action === "pause-task") {
+    const globalArgs: string[] = [];
+    addGlobalFlags(globalArgs, params);
+    const id = requireString(params.id, "id", action);
+    const updateArgs = ["update", id, "--status", "open"];
+    addAuthorMessageForceFlags(updateArgs, params);
+    const releaseArgs = ["release", id];
+    addAuthorMessageForceFlags(releaseArgs, params);
+    return [[...globalArgs, ...updateArgs], [...globalArgs, ...releaseArgs]];
+  }
+  return [buildPmCliArgs(params)];
+}
+
 export function buildPmCliArgs(params: PmToolParameters): string[] {
   const action = params.action.trim().toLowerCase();
   if (!isPmToolAction(action)) {
@@ -604,79 +631,103 @@ export async function runPmToolAction(
   params: PmToolParameters,
   signal?: AbortSignal,
 ): Promise<PiToolResultEnvelope> {
-  const cliArgs = buildPmCliArgs(params);
+  const sequences = buildPmCliSequences(params);
   const timeout = typeof params.timeoutMs === "number" && Number.isFinite(params.timeoutMs) ? params.timeoutMs : undefined;
-
-  const attempts: Array<{ command: string; args: string[]; display: string }> = [];
-  if (typeof params.pmExecutable === "string" && params.pmExecutable.length > 0) {
-    attempts.push({
-      command: params.pmExecutable,
-      args: cliArgs,
-      display: commandToDisplay(params.pmExecutable, cliArgs),
-    });
-  } else {
-    attempts.push(
-      {
-        command: "pm",
-        args: cliArgs,
-        display: commandToDisplay("pm", cliArgs),
-      },
-      {
-        command: "node",
-        args: [NODE_FALLBACK_CLI_PATH, ...cliArgs],
-        display: commandToDisplay("node", [NODE_FALLBACK_CLI_PATH, ...cliArgs]),
-      },
-    );
-  }
 
   let lastResult: PiExecResult = {
     code: 1,
     stdout: "",
     stderr: "No pm invocation attempts were configured.",
   };
-  let selectedAttempt = attempts[0];
-  const tried = attempts.map((attempt) => attempt.display);
+  let selectedAttempt: { command: string; args: string[]; display: string } | undefined;
+  const tried: string[] = [];
+  const allStdout: string[] = [];
+  const allStderr: string[] = [];
+  let parsed: unknown = null;
+  let exitCode = 1;
 
-  for (let index = 0; index < attempts.length; index += 1) {
-    const attempt = attempts[index];
-    selectedAttempt = attempt;
-    try {
-      lastResult = await pi.exec(attempt.command, attempt.args, { signal, timeout });
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      lastResult = {
-        code: 1,
-        stdout: "",
-        stderr: message,
-      };
+  for (const cliArgs of sequences) {
+    const attempts: Array<{ command: string; args: string[]; display: string }> = [];
+    if (typeof params.pmExecutable === "string" && params.pmExecutable.length > 0) {
+      attempts.push({
+        command: params.pmExecutable,
+        args: cliArgs,
+        display: commandToDisplay(params.pmExecutable, cliArgs),
+      });
+    } else {
+      attempts.push(
+        {
+          command: "pm",
+          args: cliArgs,
+          display: commandToDisplay("pm", cliArgs),
+        },
+        {
+          command: "node",
+          args: [NODE_FALLBACK_CLI_PATH, ...cliArgs],
+          display: commandToDisplay("node", [NODE_FALLBACK_CLI_PATH, ...cliArgs]),
+        },
+      );
     }
 
-    const code = lastResult.code ?? 1;
-    const stderr = (lastResult.stderr ?? "").trim();
-    if (code === 0) {
-      break;
+    let sequenceResult: PiExecResult = {
+      code: 1,
+      stdout: "",
+      stderr: "No pm invocation attempts were configured.",
+    };
+
+    for (let index = 0; index < attempts.length; index += 1) {
+      const attempt = attempts[index];
+      selectedAttempt = attempt;
+      tried.push(attempt.display);
+      try {
+        sequenceResult = await pi.exec(attempt.command, attempt.args, { signal, timeout });
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        sequenceResult = {
+          code: 1,
+          stdout: "",
+          stderr: message,
+        };
+      }
+
+      const code = sequenceResult.code ?? 1;
+      const stderr = (sequenceResult.stderr ?? "").trim();
+      if (code === 0) {
+        break;
+      }
+
+      if (!looksLikeCommandNotFound(stderr, attempt.command, code) || index === attempts.length - 1) {
+        break;
+      }
     }
 
-    if (!looksLikeCommandNotFound(stderr, attempt.command, code) || index === attempts.length - 1) {
+    lastResult = sequenceResult;
+    exitCode = lastResult.code ?? 1;
+
+    const currentStdout = (lastResult.stdout ?? "").trim();
+    const currentStderr = (lastResult.stderr ?? "").trim();
+    if (currentStdout) allStdout.push(currentStdout);
+    if (currentStderr) allStderr.push(currentStderr);
+    parsed = parseJsonOutput(currentStdout);
+
+    if (exitCode !== 0) {
       break;
     }
   }
 
-  const stdout = (lastResult.stdout ?? "").trim();
-  const stderr = (lastResult.stderr ?? "").trim();
-  const exitCode = lastResult.code ?? 1;
-  const parsed = parseJsonOutput(stdout);
+  const stdout = allStdout.join("\n\n");
+  const stderr = allStderr.join("\n\n");
   const contentText = renderContentText(stdout, stderr, exitCode);
 
   return {
     content: [{ type: "text", text: contentText }],
     details: {
       action: params.action,
-      invocation: {
+      invocation: selectedAttempt ? {
         command: selectedAttempt.command,
         args: selectedAttempt.args,
         display: selectedAttempt.display,
-      },
+      } : { command: "unknown", args: [], display: "unknown" },
       tried,
       exit_code: exitCode,
       ok: exitCode === 0,

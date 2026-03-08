@@ -1060,12 +1060,12 @@ Current baseline status (release-hardening):
 
 - Implemented as a Pi agent extension source module at `.pi/extensions/pm-cli/index.ts` (outside the `pm` CLI command surface).
 - Registers one Pi tool named `pm` via Pi's extension API (`registerTool`) and maps `action` + command-shaped fields to `pm` CLI invocations.
-- Action dispatch currently covers the full v0.1 command-aligned set (`init`, `config`, `create`, `list`, `list-all`, `list-draft`, `list-open`, `list-in-progress`, `list-blocked`, `list-closed`, `list-canceled`, `get`, `search`, `reindex`, `history`, `activity`, `restore`, `update`, `close`, `delete`, `append`, `comments`, `files`, `docs`, `test`, `test-all`, `stats`, `health`, `gc`, `completion`, `claim`, `release`) plus extension action aliases (`beads-import`, `todos-import`, `todos-export`).
+- Action dispatch currently covers the full v0.1 command-aligned set (`init`, `config`, `create`, `list`, `list-all`, `list-draft`, `list-open`, `list-in-progress`, `list-blocked`, `list-closed`, `list-canceled`, `get`, `search`, `reindex`, `history`, `activity`, `restore`, `update`, `close`, `delete`, `append`, `comments`, `files`, `docs`, `test`, `test-all`, `stats`, `health`, `gc`, `completion`, `claim`, `release`) plus extension action aliases (`beads-import`, `todos-import`, `todos-export`) and workflow presets (`start-task`, `pause-task`).
 - Invocation fallback order is deterministic for distribution resilience: attempt `pm` first, then fallback to packaged `node <package-root>/dist/cli.js` when `pm` is unavailable.
 
 - Expose one tool `pm`.
 - Parameters include:
-  - `action` enum mapped to CLI commands
+  - `action` enum mapped to CLI commands and workflow presets
   - common fields (`id`, `title`, `status`, `tags`, `body`, etc.)
   - completion parity field `shell` (`action=completion` -> `pm completion <shell>`)
   - search-specific parity fields including `mode` and `includeLinked` (`--include-linked`)

@@ -797,4 +797,28 @@ describe("Pi agent extension wrapper for pm", () => {
       },
     });
   });
+
+  it("supports workflow presets like start-task and pause-task", async () => {
+    const execSpy = vi
+      .fn()
+      .mockResolvedValue({ code: 0, stdout: "{}", stderr: "" });
+    const api = { registerTool: vi.fn(), exec: execSpy };
+    const tool = createPmToolDefinition(api);
+
+    await tool.execute("call-1", { action: "start-task", id: "pm-a1b2", author: "pi-bot", force: true });
+    expect(execSpy).toHaveBeenCalledTimes(2);
+    // Claim call
+    expect(execSpy.mock.calls[0]?.[1]).toEqual(expect.arrayContaining(["claim", "pm-a1b2", "--author", "pi-bot", "--force"]));
+    // Update call
+    expect(execSpy.mock.calls[1]?.[1]).toEqual(expect.arrayContaining(["update", "pm-a1b2", "--status", "in_progress", "--author", "pi-bot", "--force"]));
+
+    execSpy.mockClear();
+
+    await tool.execute("call-2", { action: "pause-task", id: "pm-a1b2", author: "pi-bot" });
+    expect(execSpy).toHaveBeenCalledTimes(2);
+    // Update call
+    expect(execSpy.mock.calls[0]?.[1]).toEqual(expect.arrayContaining(["update", "pm-a1b2", "--status", "open", "--author", "pi-bot"]));
+    // Release call
+    expect(execSpy.mock.calls[1]?.[1]).toEqual(expect.arrayContaining(["release", "pm-a1b2", "--author", "pi-bot"]));
+  });
 });
