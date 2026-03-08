@@ -789,6 +789,7 @@ Initial flags:
 - `--mode <keyword|semantic|hybrid>` (all modes implemented baseline; advanced semantic/hybrid tuning planned)
 - `--include-linked` (keyword mode and hybrid lexical component: include readable linked docs/files/tests content in corpus scoring)
 - `--limit <n>`
+- `--limit 0` is valid and returns a deterministic empty result set (after mode/config validation) without executing embedding/vector query requests
 - shared list-like filters where applicable (`--type`, `--tag`, `--priority`, `--deadline-before`, `--deadline-after`)
 - shared `--type` and `--priority` filters follow canonical validation (`--type` in `Epic|Feature|Task|Chore|Issue`, `--priority` integer `0..4`)
 

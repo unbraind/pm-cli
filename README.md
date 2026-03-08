@@ -217,6 +217,7 @@ Format:
 - `pm get <ID>`
 - `pm search <keywords>` (keyword + semantic + hybrid modes; `--include-linked` expands keyword/hybrid lexical scoring with linked content)
 - `pm search` shared filters enforce canonical values: `--type` must be `Epic|Feature|Task|Chore|Issue` and `--priority` must be an integer `0..4`
+- `pm search --limit 0` returns a deterministic empty result set (after mode/config validation) without embedding/vector query execution
 - `pm reindex` (keyword/semantic/hybrid cache artifact rebuild; semantic/hybrid perform provider embedding generation + vector upsert)
 - `pm history <ID>`, `pm activity [--limit]`
 - `pm restore <ID> <TIMESTAMP|VERSION>`

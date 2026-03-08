@@ -1,8 +1,19 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { runActiveOnReadHooks } from "../../core/extensions/index.js";
-import { executeEmbeddingRequest, resolveEmbeddingProviders } from "../../core/search/providers.js";
-import { executeVectorQuery, resolveVectorStores } from "../../core/search/vector-stores.js";
+import {
+  executeEmbeddingRequest,
+  resolveEmbeddingProviders,
+  type EmbeddingProviderConfig,
+  type EmbeddingProviderResolution,
+} from "../../core/search/providers.js";
+import {
+  executeVectorQuery,
+  resolveVectorStores,
+  type VectorQueryHit,
+  type VectorStoreConfig,
+  type VectorStoreResolution,
+} from "../../core/search/vector-stores.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
 import { EXIT_CODE, TYPE_TO_FOLDER } from "../../core/shared/constants.js";
@@ -25,6 +36,8 @@ export interface SearchOptions {
   limit?: string;
 }
 
+type SearchMode = "keyword" | "semantic" | "hybrid";
+
 export interface SearchHit {
   item: ItemFrontMatter;
   score: number;
@@ -33,7 +46,7 @@ export interface SearchHit {
 
 export interface SearchResult {
   query: string;
-  mode: "keyword" | "semantic" | "hybrid";
+  mode: SearchMode;
   items: SearchHit[];
   count: number;
   filters: Record<string, unknown>;
@@ -59,7 +72,7 @@ interface SearchModeContext {
   hasVectorStore: boolean;
 }
 
-function parseMode(raw: string | undefined, context: SearchModeContext): "keyword" | "semantic" | "hybrid" {
+function parseMode(raw: string | undefined, context: SearchModeContext): SearchMode {
   if (raw === undefined) {
     return context.hasProvider && context.hasVectorStore ? "hybrid" : "keyword";
   }
@@ -423,7 +436,7 @@ export function resolveSearchTuning(settings: unknown): SearchTuning {
 
 function emptySearchResult(
   query: string,
-  mode: "keyword" | "semantic" | "hybrid",
+  mode: SearchMode,
   options: SearchOptions,
   includeLinked: boolean,
   scoreThreshold: number,
@@ -448,6 +461,118 @@ function emptySearchResult(
     },
     now: nowIso(),
   };
+}
+
+function requireSemanticDependencies(
+  requestedMode: Exclude<SearchMode, "keyword">,
+  providerResolution: EmbeddingProviderResolution,
+  vectorResolution: VectorStoreResolution,
+): { provider: EmbeddingProviderConfig; vectorStore: VectorStoreConfig } {
+  if (!providerResolution.active) {
+    throw new PmCliError(
+      `Search mode '${requestedMode}' requires a configured embedding provider in settings.providers.openai or settings.providers.ollama`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (!vectorResolution.active) {
+    throw new PmCliError(
+      `Search mode '${requestedMode}' requires a configured vector store in settings.vector_store.qdrant or settings.vector_store.lancedb`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  return {
+    provider: providerResolution.active,
+    vectorStore: vectorResolution.active,
+  };
+}
+
+function buildSemanticHits(
+  vectorHits: VectorQueryHit[],
+  filteredById: Map<string, ItemDocument>,
+): { semanticHits: SearchHit[]; semanticScores: Map<string, number> } {
+  const semanticHits: SearchHit[] = [];
+  const semanticScores = new Map<string, number>();
+  for (const vectorHit of vectorHits) {
+    if (semanticScores.has(vectorHit.id)) {
+      continue;
+    }
+    const document = filteredById.get(vectorHit.id);
+    if (!document) {
+      continue;
+    }
+    semanticScores.set(vectorHit.id, vectorHit.score);
+    semanticHits.push({
+      item: document.front_matter,
+      score: vectorHit.score,
+      matched_fields: ["semantic"],
+    });
+  }
+  return {
+    semanticHits,
+    semanticScores,
+  };
+}
+
+function combineHybridHits(
+  filteredById: Map<string, ItemDocument>,
+  semanticScores: Map<string, number>,
+  keywordHits: SearchHit[],
+  hybridSemanticWeight: number,
+): SearchHit[] {
+  const keywordScores = new Map(keywordHits.map((entry) => [entry.item.id, entry.score]));
+  const keywordMatches = new Map(keywordHits.map((entry) => [entry.item.id, entry.matched_fields]));
+  const normalizedSemantic = normalizeScoreMap(semanticScores);
+  const normalizedKeyword = normalizeScoreMap(keywordScores);
+  const candidateIds = new Set<string>([...semanticScores.keys(), ...keywordScores.keys()]);
+  const keywordWeight = 1 - hybridSemanticWeight;
+  return [...candidateIds]
+    .map((id) => {
+      const document = filteredById.get(id)!;
+      const semanticScore = normalizedSemantic.get(id) ?? 0;
+      const keywordScore = normalizedKeyword.get(id) ?? 0;
+      const combinedScore = (semanticScore * hybridSemanticWeight) + (keywordScore * keywordWeight);
+      if (combinedScore <= 0) {
+        return null;
+      }
+      const matchedFields = new Set<string>();
+      if (semanticScores.has(id)) {
+        matchedFields.add("semantic");
+      }
+      for (const field of keywordMatches.get(id) ?? []) {
+        matchedFields.add(field);
+      }
+      return {
+        item: document.front_matter,
+        score: combinedScore,
+        matched_fields: [...matchedFields].sort((a, b) => a.localeCompare(b)),
+      };
+    })
+    .filter((entry): entry is SearchHit => entry !== null);
+}
+
+interface SemanticQueryContext {
+  requestedMode: Exclude<SearchMode, "keyword">;
+  query: string;
+  filteredDocuments: ItemDocument[];
+  keywordHits: SearchHit[];
+  hybridSemanticWeight: number;
+  limit: number | undefined;
+  maxResults: number;
+  provider: EmbeddingProviderConfig;
+  vectorStore: VectorStoreConfig;
+}
+
+async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promise<SearchHit[]> {
+  const semanticLimit = context.limit ?? context.maxResults;
+  const queryVectors = await executeEmbeddingRequest(context.provider, context.query.trim());
+  const semanticVector = queryVectors[0];
+  const vectorHits = await executeVectorQuery(context.vectorStore, semanticVector, semanticLimit);
+  const filteredById = new Map(context.filteredDocuments.map((document) => [document.front_matter.id, document]));
+  const { semanticHits, semanticScores } = buildSemanticHits(vectorHits, filteredById);
+  if (context.requestedMode === "semantic") {
+    return semanticHits;
+  }
+  return combineHybridHits(filteredById, semanticScores, context.keywordHits, context.hybridSemanticWeight);
 }
 
 async function loadDocuments(pmRoot: string): Promise<ItemDocument[]> {
@@ -475,6 +600,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
   const settings = await readSettings(pmRoot);
+  const maxResults = resolveSearchMaxResults(settings);
   const scoreThreshold = resolveSearchScoreThreshold(settings);
   const hybridSemanticWeight = resolveHybridSemanticWeight(settings);
   const tuning = resolveSearchTuning(settings);
@@ -486,7 +612,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   });
   const allDocuments = await loadDocuments(pmRoot);
   const filteredDocuments = applyFilters(allDocuments, options);
-  if (requestedMode === "keyword" && filteredDocuments.length === 0) {
+  if (requestedMode === "keyword" && (filteredDocuments.length === 0 || limit === 0)) {
     return emptySearchResult(query, requestedMode, options, includeLinked, scoreThreshold, hybridSemanticWeight);
   }
 
@@ -505,86 +631,26 @@ export async function runSearch(query: string, options: SearchOptions, global: G
 
   let hits = keywordHits;
   if (requestedMode !== "keyword") {
-    if (!providerResolution.active) {
-      throw new PmCliError(
-        `Search mode '${requestedMode}' requires a configured embedding provider in settings.providers.openai or settings.providers.ollama`,
-        EXIT_CODE.USAGE,
-      );
-    }
-    if (!vectorResolution.active) {
-      throw new PmCliError(
-        `Search mode '${requestedMode}' requires a configured vector store in settings.vector_store.qdrant or settings.vector_store.lancedb`,
-        EXIT_CODE.USAGE,
-      );
-    }
-    if (filteredDocuments.length === 0) {
+    const { provider, vectorStore } = requireSemanticDependencies(requestedMode, providerResolution, vectorResolution);
+    if (filteredDocuments.length === 0 || limit === 0) {
       return emptySearchResult(query, requestedMode, options, includeLinked, scoreThreshold, hybridSemanticWeight);
     }
-
-    const maxResults = resolveSearchMaxResults(settings);
-    const semanticLimit = limit ?? maxResults;
-    const queryVectors = await executeEmbeddingRequest(providerResolution.active, query.trim());
-    const semanticVector = queryVectors[0];
-    const vectorHits = await executeVectorQuery(vectorResolution.active, semanticVector, semanticLimit);
-
-    const filteredById = new Map(filteredDocuments.map((document) => [document.front_matter.id, document]));
-    const semanticHits: SearchHit[] = [];
-    const semanticScores = new Map<string, number>();
-    for (const vectorHit of vectorHits) {
-      if (semanticScores.has(vectorHit.id)) {
-        continue;
-      }
-      const document = filteredById.get(vectorHit.id);
-      if (!document) {
-        continue;
-      }
-      semanticScores.set(vectorHit.id, vectorHit.score);
-      semanticHits.push({
-        item: document.front_matter,
-        score: vectorHit.score,
-        matched_fields: ["semantic"],
-      });
-    }
-
-    if (requestedMode === "semantic") {
-      hits = semanticHits;
-    } else {
-      const keywordScores = new Map(keywordHits.map((entry) => [entry.item.id, entry.score]));
-      const keywordMatches = new Map(keywordHits.map((entry) => [entry.item.id, entry.matched_fields]));
-      const normalizedSemantic = normalizeScoreMap(semanticScores);
-      const normalizedKeyword = normalizeScoreMap(keywordScores);
-      const candidateIds = new Set<string>([...semanticScores.keys(), ...keywordScores.keys()]);
-      const keywordWeight = 1 - hybridSemanticWeight;
-
-      hits = [...candidateIds]
-        .map((id) => {
-          const document = filteredById.get(id)!;
-          const semanticScore = normalizedSemantic.get(id) ?? 0;
-          const keywordScore = normalizedKeyword.get(id) ?? 0;
-          const combinedScore = (semanticScore * hybridSemanticWeight) + (keywordScore * keywordWeight);
-          if (combinedScore <= 0) {
-            return null;
-          }
-          const matchedFields = new Set<string>();
-          if (semanticScores.has(id)) {
-            matchedFields.add("semantic");
-          }
-          for (const field of keywordMatches.get(id) ?? []) {
-            matchedFields.add(field);
-          }
-          return {
-            item: document.front_matter,
-            score: combinedScore,
-            matched_fields: [...matchedFields].sort((a, b) => a.localeCompare(b)),
-          };
-        })
-        .filter((entry): entry is SearchHit => entry !== null);
-    }
+    hits = await computeSemanticOrHybridHits({
+      requestedMode,
+      query,
+      filteredDocuments,
+      keywordHits,
+      hybridSemanticWeight,
+      limit,
+      maxResults,
+      provider,
+      vectorStore,
+    });
   }
 
   const thresholded = hits.filter((entry) => entry.score >= scoreThreshold);
   const sorted = sortHits(thresholded);
-  const effectiveLimit = requestedMode === "keyword" ? limit : (limit ?? resolveSearchMaxResults(settings));
+  const effectiveLimit = requestedMode === "keyword" ? limit : (limit ?? maxResults);
   const limited = effectiveLimit === undefined ? sorted : sorted.slice(0, effectiveLimit);
 
   return {

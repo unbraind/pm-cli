@@ -75,6 +75,29 @@ function serializeDocument(frontMatter: ItemFrontMatter, body: string): string {
   return `${JSON.stringify(frontMatter, null, 2)}\n\n${body}`;
 }
 
+function resolveFetchTarget(url: unknown): string {
+  if (typeof url === "string") {
+    return url;
+  }
+  if (url instanceof URL) {
+    return url.toString();
+  }
+  if (typeof url === "object" && url !== null && "url" in url) {
+    const maybeUrl = (url as { url?: unknown }).url;
+    if (typeof maybeUrl === "string") {
+      return maybeUrl;
+    }
+  }
+  throw new TypeError(`Unexpected fetch target type: ${typeof url}`);
+}
+
+function parseJsonBody<T>(body: unknown): T {
+  if (typeof body !== "string") {
+    throw new TypeError(`Expected string request body but received ${typeof body}`);
+  }
+  return JSON.parse(body) as T;
+}
+
 describe("runSearch", () => {
   beforeEach(() => {
     pathExistsMock.mockReset();
@@ -208,6 +231,63 @@ describe("runSearch", () => {
     await expect(runSearch("token", { limit: "-1" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
       exitCode: EXIT_CODE.USAGE,
     });
+  });
+
+  it("returns deterministic empty semantic and hybrid results for limit=0 without embedding/vector requests", async () => {
+    const semanticSettings = {
+      providers: {
+        openai: {
+          base_url: "https://api.example.test/v1",
+          model: "text-embedding-3-small",
+          api_key: "",
+        },
+      },
+      vector_store: {
+        qdrant: {
+          url: "https://qdrant.example.test:6333",
+          api_key: "",
+        },
+      },
+    } as unknown as { id_prefix: string };
+    const indexedItem = makeFrontMatter({
+      id: "pm-limit-zero",
+      title: "token title",
+      description: "token description",
+      tags: ["token"],
+    });
+
+    readSettingsMock.mockResolvedValue(semanticSettings);
+    listAllFrontMatterMock.mockResolvedValue([indexedItem]);
+    readFileMock.mockImplementation(async (targetPath) => {
+      if (targetPath.endsWith("pm-limit-zero.md")) {
+        return serializeDocument(indexedItem, "token body");
+      }
+      throw new Error(`Unexpected path: ${targetPath}`);
+    });
+
+    const fetchMock = vi.fn(async () => {
+      throw new Error("fetch should not be called for limit=0 semantic/hybrid search");
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../src/cli/commands/search.js");
+      const semanticResult = await runSearch("token", { mode: "semantic", limit: "0" }, { path: "/tmp/pm-search" });
+      expect(semanticResult.mode).toBe("semantic");
+      expect(semanticResult.count).toBe(0);
+      expect(semanticResult.items).toEqual([]);
+      expect(semanticResult.filters).toMatchObject({ limit: "0" });
+
+      const hybridResult = await runSearch("token", { mode: "hybrid", limit: "0" }, { path: "/tmp/pm-search" });
+      expect(hybridResult.mode).toBe("hybrid");
+      expect(hybridResult.count).toBe(0);
+      expect(hybridResult.items).toEqual([]);
+      expect(hybridResult.filters).toMatchObject({ limit: "0" });
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 
   it("matches every keyword corpus field and applies metadata filters", async () => {
@@ -353,7 +433,7 @@ describe("runSearch", () => {
     const fetchCalls: string[] = [];
     let queryCallCount = 0;
     globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
-      const target = String(url);
+      const target = resolveFetchTarget(url);
       fetchCalls.push(target);
       if (target.endsWith("/v1/embeddings")) {
         return {
@@ -366,7 +446,7 @@ describe("runSearch", () => {
       }
       if (target.endsWith("/collections/pm_items/points/search")) {
         queryCallCount += 1;
-        const body = JSON.parse(String(init?.body ?? "{}")) as { limit?: number };
+        const body = parseJsonBody<{ limit?: number }>(init?.body);
         expect(body.limit).toBe(queryCallCount === 1 ? 2 : 3);
         return {
           ok: true,
@@ -459,7 +539,7 @@ describe("runSearch", () => {
 
     const originalFetch = globalThis.fetch;
     globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
-      const target = String(url);
+      const target = resolveFetchTarget(url);
       if (target.endsWith("/v1/embeddings")) {
         return {
           ok: true,
@@ -470,7 +550,7 @@ describe("runSearch", () => {
         } as unknown as Response;
       }
       if (target.endsWith("/collections/pm_items/points/search")) {
-        const body = JSON.parse(String(init?.body ?? "{}")) as { limit?: number };
+        const body = parseJsonBody<{ limit?: number }>(init?.body);
         expect(body.limit).toBe(3);
         return {
           ok: true,
@@ -562,7 +642,7 @@ describe("runSearch", () => {
 
     const originalFetch = globalThis.fetch;
     globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
-      const target = String(url);
+      const target = resolveFetchTarget(url);
       if (target.endsWith("/v1/embeddings")) {
         return {
           ok: true,
@@ -573,7 +653,7 @@ describe("runSearch", () => {
         } as unknown as Response;
       }
       if (target.endsWith("/collections/pm_items/points/search")) {
-        const body = JSON.parse(String(init?.body ?? "{}")) as { limit?: number };
+        const body = parseJsonBody<{ limit?: number }>(init?.body);
         expect(body.limit).toBe(5);
         return {
           ok: true,
