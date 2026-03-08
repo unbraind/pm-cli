@@ -646,6 +646,15 @@ describe("release readiness baseline contract", () => {
     expect(readme).toContain("preserves explicit imported IDs verbatim including hierarchical suffixes such as `pm-legacy.1.2`");
   });
 
+  it("keeps Pi wrapper packaging polish documented as implemented", async () => {
+    const prd = await readRepoText("PRD.md");
+    const readme = await readRepoText("README.md");
+
+    expect(prd).toContain("packaged CLI fallback, and distribution packaging polish implemented");
+    expect(prd).not.toContain("distribution packaging polish is post-v0.1 roadmap");
+    expect(readme).toContain("For packaging resilience (implemented), the wrapper attempts `pm` first");
+  });
+
   it("keeps pm create help aligned with required explicit create flags", async () => {
     const prd = await readRepoText("PRD.md");
     const readme = await readRepoText("README.md");
