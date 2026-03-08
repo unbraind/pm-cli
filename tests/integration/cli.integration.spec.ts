@@ -336,6 +336,30 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "pm-block-create",
           "--blocked_reason",
           "blocked reason create",
+          "--reporter",
+          "reporter-create",
+          "--severity",
+          "med",
+          "--environment",
+          "linux-create",
+          "--repro_steps",
+          "create repro steps",
+          "--resolution",
+          "create resolution summary",
+          "--expected_result",
+          "expected create behavior",
+          "--actual_result",
+          "actual create behavior",
+          "--affected_version",
+          "0.1.0",
+          "--fixed_version",
+          "0.1.1",
+          "--component",
+          "cli/create",
+          "--regression",
+          "true",
+          "--customer_impact",
+          "create impact summary",
           "--dep",
           "none",
           "--comment",
@@ -373,6 +397,18 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           why_now: string;
           blocked_by: string;
           blocked_reason: string;
+          reporter: string;
+          severity: string;
+          environment: string;
+          repro_steps: string;
+          resolution: string;
+          expected_result: string;
+          actual_result: string;
+          affected_version: string;
+          fixed_version: string;
+          component: string;
+          regression: boolean;
+          customer_impact: string;
         };
       }).item;
       expect(createdItem.parent).toBe("pm-parent-create");
@@ -391,6 +427,18 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(createdItem.why_now).toBe("why-now-create");
       expect(createdItem.blocked_by).toBe("pm-block-create");
       expect(createdItem.blocked_reason).toBe("blocked reason create");
+      expect(createdItem.reporter).toBe("reporter-create");
+      expect(createdItem.severity).toBe("medium");
+      expect(createdItem.environment).toBe("linux-create");
+      expect(createdItem.repro_steps).toBe("create repro steps");
+      expect(createdItem.resolution).toBe("create resolution summary");
+      expect(createdItem.expected_result).toBe("expected create behavior");
+      expect(createdItem.actual_result).toBe("actual create behavior");
+      expect(createdItem.affected_version).toBe("0.1.0");
+      expect(createdItem.fixed_version).toBe("0.1.1");
+      expect(createdItem.component).toBe("cli/create");
+      expect(createdItem.regression).toBe(true);
+      expect(createdItem.customer_impact).toBe("create impact summary");
 
       const updateResult = context.runCli(
         [
@@ -429,6 +477,30 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "pm-block-update",
           "--blocked-reason",
           "blocked reason update",
+          "--reporter",
+          "reporter-update",
+          "--severity",
+          "high",
+          "--environment",
+          "linux-update",
+          "--repro-steps",
+          "update repro steps",
+          "--resolution",
+          "update resolution summary",
+          "--expected-result",
+          "expected update behavior",
+          "--actual-result",
+          "actual update behavior",
+          "--affected-version",
+          "0.1.1",
+          "--fixed-version",
+          "0.1.2",
+          "--component",
+          "cli/update",
+          "--regression",
+          "false",
+          "--customer-impact",
+          "update impact summary",
           "--author",
           "integration-test",
           "--message",
@@ -455,6 +527,18 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           why_now: string;
           blocked_by: string;
           blocked_reason: string;
+          reporter: string;
+          severity: string;
+          environment: string;
+          repro_steps: string;
+          resolution: string;
+          expected_result: string;
+          actual_result: string;
+          affected_version: string;
+          fixed_version: string;
+          component: string;
+          regression: boolean;
+          customer_impact: string;
         };
       }).item;
       expect(updatedItem.parent).toBe("pm-parent-update");
@@ -473,6 +557,18 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(updatedItem.why_now).toBe("why-now-update");
       expect(updatedItem.blocked_by).toBe("pm-block-update");
       expect(updatedItem.blocked_reason).toBe("blocked reason update");
+      expect(updatedItem.reporter).toBe("reporter-update");
+      expect(updatedItem.severity).toBe("high");
+      expect(updatedItem.environment).toBe("linux-update");
+      expect(updatedItem.repro_steps).toBe("update repro steps");
+      expect(updatedItem.resolution).toBe("update resolution summary");
+      expect(updatedItem.expected_result).toBe("expected update behavior");
+      expect(updatedItem.actual_result).toBe("actual update behavior");
+      expect(updatedItem.affected_version).toBe("0.1.1");
+      expect(updatedItem.fixed_version).toBe("0.1.2");
+      expect(updatedItem.component).toBe("cli/update");
+      expect(updatedItem.regression).toBe(false);
+      expect(updatedItem.customer_impact).toBe("update impact summary");
 
       const unsetResult = context.runCli(
         [
@@ -511,6 +607,30 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "none",
           "--blocked_reason",
           "none",
+          "--reporter",
+          "none",
+          "--severity",
+          "none",
+          "--environment",
+          "none",
+          "--repro_steps",
+          "none",
+          "--resolution",
+          "none",
+          "--expected_result",
+          "none",
+          "--actual_result",
+          "none",
+          "--affected_version",
+          "none",
+          "--fixed_version",
+          "none",
+          "--component",
+          "none",
+          "--regression",
+          "none",
+          "--customer_impact",
+          "none",
           "--author",
           "integration-test",
           "--message",
@@ -537,6 +657,18 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           why_now?: string;
           blocked_by?: string;
           blocked_reason?: string;
+          reporter?: string;
+          severity?: string;
+          environment?: string;
+          repro_steps?: string;
+          resolution?: string;
+          expected_result?: string;
+          actual_result?: string;
+          affected_version?: string;
+          fixed_version?: string;
+          component?: string;
+          regression?: boolean;
+          customer_impact?: string;
         };
       }).item;
       expect(unsetItem.parent).toBeUndefined();
@@ -555,6 +687,18 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(unsetItem.why_now).toBeUndefined();
       expect(unsetItem.blocked_by).toBeUndefined();
       expect(unsetItem.blocked_reason).toBeUndefined();
+      expect(unsetItem.reporter).toBeUndefined();
+      expect(unsetItem.severity).toBeUndefined();
+      expect(unsetItem.environment).toBeUndefined();
+      expect(unsetItem.repro_steps).toBeUndefined();
+      expect(unsetItem.resolution).toBeUndefined();
+      expect(unsetItem.expected_result).toBeUndefined();
+      expect(unsetItem.actual_result).toBeUndefined();
+      expect(unsetItem.affected_version).toBeUndefined();
+      expect(unsetItem.fixed_version).toBeUndefined();
+      expect(unsetItem.component).toBeUndefined();
+      expect(unsetItem.regression).toBeUndefined();
+      expect(unsetItem.customer_impact).toBeUndefined();
     });
   });
 

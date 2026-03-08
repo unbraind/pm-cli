@@ -203,6 +203,46 @@ const REQUIRED_CLAIM_RELEASE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_CLOSE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_DELETE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_APPEND_FLAGS = ["--body", "--author", "--message", "--force"];
+const ISSUE_METADATA_CREATE_FLAG_TOKENS = [
+  "--reporter",
+  "--severity",
+  "--environment",
+  "--repro-steps",
+  "--repro_steps",
+  "--resolution",
+  "--expected-result",
+  "--expected_result",
+  "--actual-result",
+  "--actual_result",
+  "--affected-version",
+  "--affected_version",
+  "--fixed-version",
+  "--fixed_version",
+  "--component",
+  "--regression",
+  "--customer-impact",
+  "--customer_impact",
+];
+const ISSUE_METADATA_UPDATE_FLAG_TOKENS = [
+  "--reporter",
+  "--severity",
+  "--environment",
+  "--repro-steps",
+  "--repro_steps",
+  "--resolution",
+  "--expected-result",
+  "--expected_result",
+  "--actual-result",
+  "--actual_result",
+  "--affected-version",
+  "--affected_version",
+  "--fixed-version",
+  "--fixed_version",
+  "--component",
+  "--regression",
+  "--customer-impact",
+  "--customer_impact",
+];
 const REQUIRED_PI_CREATE_EXAMPLE_KEYS = [
   "action",
   "title",
@@ -260,18 +300,6 @@ const PLANNED_NOT_YET_CANONICAL_FLAGS = [
   "--decision",
   "--verified-by",
   "--verified-at",
-  "--reporter",
-  "--severity",
-  "--environment",
-  "--repro-steps",
-  "--resolution",
-  "--expected-result",
-  "--actual-result",
-  "--affected-version",
-  "--fixed-version",
-  "--component",
-  "--regression",
-  "--customer-impact",
   "--relates-to",
   "--duplicates",
   "--caused-by",
@@ -622,6 +650,8 @@ describe("release readiness baseline contract", () => {
     expect(readmeCreateSection).toContain("--why_now");
     expect(readmeCreateSection).toContain("low|med|medium|high|critical");
     expect(readmeCreateSection).toContain("--confidence");
+    expectSectionContainsTokens(prdCreateSection, ISSUE_METADATA_CREATE_FLAG_TOKENS);
+    expectSectionContainsTokens(readmeCreateSection, ISSUE_METADATA_CREATE_FLAG_TOKENS);
 
     await withTempPmPath(async (context) => {
       const help = context.runCli(["create", "--help"]);
@@ -645,6 +675,9 @@ describe("release readiness baseline contract", () => {
       expect(help.stdout).toContain("--why_now");
       expect(help.stdout).toContain("low|med|medium|high|critical");
       expect(help.stdout).toContain("--confidence");
+      for (const flag of ISSUE_METADATA_CREATE_FLAG_TOKENS) {
+        expect(help.stdout).toContain(flag);
+      }
       expect(help.stdout).not.toContain("Seed dependency entry (required; use none for empty) (default: [])");
       expect(help.stdout).not.toContain("Seed comment entry (required; use none for empty) (default: [])");
       expect(help.stdout).not.toContain("Seed note entry (required; use none for empty) (default: [])");
@@ -734,6 +767,8 @@ describe("release readiness baseline contract", () => {
     expect(readmeUpdateSection).toContain("--why_now");
     expect(readmeUpdateSection).toContain("low|med|medium|high|critical");
     expect(readmeUpdateSection).toContain("--confidence");
+    expectSectionContainsTokens(prdUpdateSection, ISSUE_METADATA_UPDATE_FLAG_TOKENS);
+    expectSectionContainsTokens(readmeUpdateSection, ISSUE_METADATA_UPDATE_FLAG_TOKENS);
     expect(readmeUpdateSection).toContain("pm close <ID> <TEXT>");
 
     await withTempPmPath(async (context) => {
@@ -758,6 +793,9 @@ describe("release readiness baseline contract", () => {
       expect(updateHelp.stdout).toContain("--why_now");
       expect(updateHelp.stdout).toContain("low|med|medium|high|critical");
       expect(updateHelp.stdout).toContain("--confidence");
+      for (const flag of ISSUE_METADATA_UPDATE_FLAG_TOKENS) {
+        expect(updateHelp.stdout).toContain(flag);
+      }
     });
   });
 

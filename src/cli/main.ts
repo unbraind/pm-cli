@@ -760,6 +760,30 @@ function normalizeCreateOptions(commandOptions: Record<string, unknown>): Create
     blockedReason:
       (typeof commandOptions.blockedReason === "string" ? commandOptions.blockedReason : undefined) ??
       (typeof commandOptions.blocked_reason === "string" ? commandOptions.blocked_reason : undefined),
+    reporter: typeof commandOptions.reporter === "string" ? commandOptions.reporter : undefined,
+    severity: typeof commandOptions.severity === "string" ? commandOptions.severity : undefined,
+    environment: typeof commandOptions.environment === "string" ? commandOptions.environment : undefined,
+    reproSteps:
+      (typeof commandOptions.reproSteps === "string" ? commandOptions.reproSteps : undefined) ??
+      (typeof commandOptions.repro_steps === "string" ? commandOptions.repro_steps : undefined),
+    resolution: typeof commandOptions.resolution === "string" ? commandOptions.resolution : undefined,
+    expectedResult:
+      (typeof commandOptions.expectedResult === "string" ? commandOptions.expectedResult : undefined) ??
+      (typeof commandOptions.expected_result === "string" ? commandOptions.expected_result : undefined),
+    actualResult:
+      (typeof commandOptions.actualResult === "string" ? commandOptions.actualResult : undefined) ??
+      (typeof commandOptions.actual_result === "string" ? commandOptions.actual_result : undefined),
+    affectedVersion:
+      (typeof commandOptions.affectedVersion === "string" ? commandOptions.affectedVersion : undefined) ??
+      (typeof commandOptions.affected_version === "string" ? commandOptions.affected_version : undefined),
+    fixedVersion:
+      (typeof commandOptions.fixedVersion === "string" ? commandOptions.fixedVersion : undefined) ??
+      (typeof commandOptions.fixed_version === "string" ? commandOptions.fixed_version : undefined),
+    component: typeof commandOptions.component === "string" ? commandOptions.component : undefined,
+    regression: typeof commandOptions.regression === "string" ? commandOptions.regression : undefined,
+    customerImpact:
+      (typeof commandOptions.customerImpact === "string" ? commandOptions.customerImpact : undefined) ??
+      (typeof commandOptions.customer_impact === "string" ? commandOptions.customer_impact : undefined),
     dep: requiredRepeatable("dep", "--dep"),
     comment: requiredRepeatable("comment", "--comment"),
     note: requiredRepeatable("note", "--note"),
@@ -817,6 +841,30 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
     blockedReason:
       (typeof commandOptions.blockedReason === "string" ? commandOptions.blockedReason : undefined) ??
       (typeof commandOptions.blocked_reason === "string" ? commandOptions.blocked_reason : undefined),
+    reporter: typeof commandOptions.reporter === "string" ? commandOptions.reporter : undefined,
+    severity: typeof commandOptions.severity === "string" ? commandOptions.severity : undefined,
+    environment: typeof commandOptions.environment === "string" ? commandOptions.environment : undefined,
+    reproSteps:
+      (typeof commandOptions.reproSteps === "string" ? commandOptions.reproSteps : undefined) ??
+      (typeof commandOptions.repro_steps === "string" ? commandOptions.repro_steps : undefined),
+    resolution: typeof commandOptions.resolution === "string" ? commandOptions.resolution : undefined,
+    expectedResult:
+      (typeof commandOptions.expectedResult === "string" ? commandOptions.expectedResult : undefined) ??
+      (typeof commandOptions.expected_result === "string" ? commandOptions.expected_result : undefined),
+    actualResult:
+      (typeof commandOptions.actualResult === "string" ? commandOptions.actualResult : undefined) ??
+      (typeof commandOptions.actual_result === "string" ? commandOptions.actual_result : undefined),
+    affectedVersion:
+      (typeof commandOptions.affectedVersion === "string" ? commandOptions.affectedVersion : undefined) ??
+      (typeof commandOptions.affected_version === "string" ? commandOptions.affected_version : undefined),
+    fixedVersion:
+      (typeof commandOptions.fixedVersion === "string" ? commandOptions.fixedVersion : undefined) ??
+      (typeof commandOptions.fixed_version === "string" ? commandOptions.fixed_version : undefined),
+    component: typeof commandOptions.component === "string" ? commandOptions.component : undefined,
+    regression: typeof commandOptions.regression === "string" ? commandOptions.regression : undefined,
+    customerImpact:
+      (typeof commandOptions.customerImpact === "string" ? commandOptions.customerImpact : undefined) ??
+      (typeof commandOptions.customer_impact === "string" ? commandOptions.customer_impact : undefined),
   };
 }
 
@@ -975,6 +1023,24 @@ program
   .option("--blocked_by <value>", "Alias for --blocked-by")
   .option("--blocked-reason <value>", "Blocked reason, or none")
   .option("--blocked_reason <value>", "Alias for --blocked-reason")
+  .option("--reporter <value>", "Issue reporter, or none")
+  .option("--severity <value>", "Issue severity: low|med|medium|high|critical, or none (med persists as medium)")
+  .option("--environment <value>", "Issue environment context, or none")
+  .option("--repro-steps <value>", "Issue reproduction steps, or none")
+  .option("--repro_steps <value>", "Alias for --repro-steps")
+  .option("--resolution <value>", "Issue resolution summary, or none")
+  .option("--expected-result <value>", "Issue expected behavior, or none")
+  .option("--expected_result <value>", "Alias for --expected-result")
+  .option("--actual-result <value>", "Issue observed behavior, or none")
+  .option("--actual_result <value>", "Alias for --actual-result")
+  .option("--affected-version <value>", "Affected version identifier, or none")
+  .option("--affected_version <value>", "Alias for --affected-version")
+  .option("--fixed-version <value>", "Fixed version identifier, or none")
+  .option("--fixed_version <value>", "Alias for --fixed-version")
+  .option("--component <value>", "Issue component ownership, or none")
+  .option("--regression <value>", "Regression marker: true|false|1|0, or none")
+  .option("--customer-impact <value>", "Customer impact summary, or none")
+  .option("--customer_impact <value>", "Alias for --customer-impact")
   .option("--dep <value>", "Seed dependency entry (required; use none for empty)", collect)
   .option("--comment <value>", "Seed comment entry (required; use none for empty)", collect)
   .option("--note <value>", "Seed note entry (required; use none for empty)", collect)
@@ -1242,6 +1308,24 @@ program
   .option("--blocked_by <value>", "Alias for --blocked-by")
   .option("--blocked-reason <value>", "Set blocked reason (or none)")
   .option("--blocked_reason <value>", "Alias for --blocked-reason")
+  .option("--reporter <value>", "Set issue reporter (or none)")
+  .option("--severity <value>", "Set issue severity: low|med|medium|high|critical (or none; med persists as medium)")
+  .option("--environment <value>", "Set issue environment context (or none)")
+  .option("--repro-steps <value>", "Set issue reproduction steps (or none)")
+  .option("--repro_steps <value>", "Alias for --repro-steps")
+  .option("--resolution <value>", "Set issue resolution summary (or none)")
+  .option("--expected-result <value>", "Set issue expected behavior (or none)")
+  .option("--expected_result <value>", "Alias for --expected-result")
+  .option("--actual-result <value>", "Set issue observed behavior (or none)")
+  .option("--actual_result <value>", "Alias for --actual-result")
+  .option("--affected-version <value>", "Set affected version identifier (or none)")
+  .option("--affected_version <value>", "Alias for --affected-version")
+  .option("--fixed-version <value>", "Set fixed version identifier (or none)")
+  .option("--fixed_version <value>", "Alias for --fixed-version")
+  .option("--component <value>", "Set issue component ownership (or none)")
+  .option("--regression <value>", "Set regression marker: true|false|1|0 (or none)")
+  .option("--customer-impact <value>", "Set customer impact summary (or none)")
+  .option("--customer_impact <value>", "Alias for --customer-impact")
   .option("--force", "Force ownership override")
   .action(async (id: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);

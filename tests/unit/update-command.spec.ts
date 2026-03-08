@@ -129,6 +129,18 @@ describe("runUpdate", () => {
           release: " release-next ",
           blockedBy: " pm-blocking-next ",
           blockedReason: " blocked waiting reason ",
+          reporter: " reporter-next ",
+          severity: "med",
+          environment: " linux:node25 ",
+          reproSteps: " run command and inspect output ",
+          resolution: " update metadata parser ",
+          expectedResult: " issue metadata should persist ",
+          actualResult: " issue metadata was missing ",
+          affectedVersion: " 0.1.0 ",
+          fixedVersion: " 0.1.1 ",
+          component: " cli/update ",
+          regression: "true",
+          customerImpact: " triage reports missing details ",
           author: " explicit-author ",
           message: "apply explicit update",
         },
@@ -164,6 +176,18 @@ describe("runUpdate", () => {
           "release",
           "blocked_by",
           "blocked_reason",
+          "reporter",
+          "severity",
+          "environment",
+          "repro_steps",
+          "resolution",
+          "expected_result",
+          "actual_result",
+          "affected_version",
+          "fixed_version",
+          "component",
+          "regression",
+          "customer_impact",
         ]),
       );
 
@@ -195,6 +219,18 @@ describe("runUpdate", () => {
       expect(item.release).toBe("release-next");
       expect(item.blocked_by).toBe("pm-blocking-next");
       expect(item.blocked_reason).toBe("blocked waiting reason");
+      expect(item.reporter).toBe("reporter-next");
+      expect(item.severity).toBe("medium");
+      expect(item.environment).toBe("linux:node25");
+      expect(item.repro_steps).toBe("run command and inspect output");
+      expect(item.resolution).toBe("update metadata parser");
+      expect(item.expected_result).toBe("issue metadata should persist");
+      expect(item.actual_result).toBe("issue metadata was missing");
+      expect(item.affected_version).toBe("0.1.0");
+      expect(item.fixed_version).toBe("0.1.1");
+      expect(item.component).toBe("cli/update");
+      expect(item.regression).toBe(true);
+      expect(item.customer_impact).toBe("triage reports missing details");
       expect(latestUpdateAuthor(context, id)).toBe("explicit-author");
 
       const mediumConfidence = await runUpdate(
@@ -218,6 +254,17 @@ describe("runUpdate", () => {
         { path: context.pmPath },
       );
       expect((highConfidence.item as Record<string, unknown>).confidence).toBe("high");
+
+      const falseRegression = await runUpdate(
+        id,
+        {
+          regression: "0",
+          author: "next-assignee",
+          message: "set regression false alias",
+        },
+        { path: context.pmPath },
+      );
+      expect((falseRegression.item as Record<string, unknown>).regression).toBe(false);
     });
   });
 
@@ -250,6 +297,18 @@ describe("runUpdate", () => {
           release: "none",
           blockedBy: "none",
           blockedReason: "none",
+          reporter: "none",
+          severity: "none",
+          environment: "none",
+          reproSteps: "none",
+          resolution: "none",
+          expectedResult: "none",
+          actualResult: "none",
+          affectedVersion: "none",
+          fixedVersion: "none",
+          component: "none",
+          regression: "none",
+          customerImpact: "none",
           author: "active-owner",
           message: "cancel and clear optional fields",
         },
@@ -280,6 +339,18 @@ describe("runUpdate", () => {
           "release",
           "blocked_by",
           "blocked_reason",
+          "reporter",
+          "severity",
+          "environment",
+          "repro_steps",
+          "resolution",
+          "expected_result",
+          "actual_result",
+          "affected_version",
+          "fixed_version",
+          "component",
+          "regression",
+          "customer_impact",
         ]),
       );
 
@@ -305,6 +376,18 @@ describe("runUpdate", () => {
       expect(item.release).toBeUndefined();
       expect(item.blocked_by).toBeUndefined();
       expect(item.blocked_reason).toBeUndefined();
+      expect(item.reporter).toBeUndefined();
+      expect(item.severity).toBeUndefined();
+      expect(item.environment).toBeUndefined();
+      expect(item.repro_steps).toBeUndefined();
+      expect(item.resolution).toBeUndefined();
+      expect(item.expected_result).toBeUndefined();
+      expect(item.actual_result).toBeUndefined();
+      expect(item.affected_version).toBeUndefined();
+      expect(item.fixed_version).toBeUndefined();
+      expect(item.component).toBeUndefined();
+      expect(item.regression).toBeUndefined();
+      expect(item.customer_impact).toBeUndefined();
     });
   });
 
@@ -352,6 +435,12 @@ describe("runUpdate", () => {
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(runUpdate(id, { confidence: "uncertain" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runUpdate(id, { severity: "urgent" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runUpdate(id, { regression: "sometimes" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(runUpdate(id, { order: "3.7" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({

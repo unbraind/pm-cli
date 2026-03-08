@@ -72,6 +72,18 @@ describe("runCreate", () => {
           release: "release-2026.03",
           blockedBy: "pm-blocked-seed",
           blockedReason: "waiting on dependency seed",
+          reporter: "reporter-seed",
+          severity: "med",
+          environment: "linux:node25",
+          reproSteps: "run create then update",
+          resolution: "workaround documented",
+          expectedResult: "create metadata persists",
+          actualResult: "metadata mismatch observed",
+          affectedVersion: "0.1.0",
+          fixedVersion: "0.1.1",
+          component: "cli/create",
+          regression: "true",
+          customerImpact: "high volume issue triage blocked",
           definitionOfReady: "ready when fixtures are prepared",
           order: "7",
           goal: "goal-seed",
@@ -117,6 +129,18 @@ describe("runCreate", () => {
           "release",
           "blocked_by",
           "blocked_reason",
+          "reporter",
+          "severity",
+          "environment",
+          "repro_steps",
+          "resolution",
+          "expected_result",
+          "actual_result",
+          "affected_version",
+          "fixed_version",
+          "component",
+          "regression",
+          "customer_impact",
           "dependencies",
           "comments",
           "notes",
@@ -142,6 +166,18 @@ describe("runCreate", () => {
       expect(result.item.release).toBe("release-2026.03");
       expect(result.item.blocked_by).toBe("pm-blocked-seed");
       expect(result.item.blocked_reason).toBe("waiting on dependency seed");
+      expect(result.item.reporter).toBe("reporter-seed");
+      expect(result.item.severity).toBe("medium");
+      expect(result.item.environment).toBe("linux:node25");
+      expect(result.item.repro_steps).toBe("run create then update");
+      expect(result.item.resolution).toBe("workaround documented");
+      expect(result.item.expected_result).toBe("create metadata persists");
+      expect(result.item.actual_result).toBe("metadata mismatch observed");
+      expect(result.item.affected_version).toBe("0.1.0");
+      expect(result.item.fixed_version).toBe("0.1.1");
+      expect(result.item.component).toBe("cli/create");
+      expect(result.item.regression).toBe(true);
+      expect(result.item.customer_impact).toBe("high volume issue triage blocked");
       expect(result.item.definition_of_ready).toBe("ready when fixtures are prepared");
       expect(result.item.order).toBe(7);
       expect(result.item.goal).toBe("goal-seed");
@@ -208,6 +244,20 @@ describe("runCreate", () => {
         { path: context.pmPath },
       );
       expect(numericConfidence.item.confidence).toBe(87);
+    });
+  });
+
+  it("accepts regression false boolean aliases", async () => {
+    await withTempPmPath(async (context) => {
+      const falseRegression = await runCreate(
+        baseCreateOptions({
+          title: "create-regression-false",
+          regression: "0",
+          message: "create regression false",
+        }),
+        { path: context.pmPath },
+      );
+      expect(falseRegression.item.regression).toBe(false);
     });
   });
 
@@ -282,6 +332,18 @@ describe("runCreate", () => {
             release: "none",
             blockedBy: "none",
             blockedReason: "none",
+            reporter: "none",
+            severity: "none",
+            environment: "none",
+            reproSteps: "none",
+            resolution: "none",
+            expectedResult: "none",
+            actualResult: "none",
+            affectedVersion: "none",
+            fixedVersion: "none",
+            component: "none",
+            regression: "none",
+            customerImpact: "none",
             message: "",
             dep: ["none"],
             comment: ["none"],
@@ -314,6 +376,18 @@ describe("runCreate", () => {
         expect(result.item.release).toBeUndefined();
         expect(result.item.blocked_by).toBeUndefined();
         expect(result.item.blocked_reason).toBeUndefined();
+        expect(result.item.reporter).toBeUndefined();
+        expect(result.item.severity).toBeUndefined();
+        expect(result.item.environment).toBeUndefined();
+        expect(result.item.repro_steps).toBeUndefined();
+        expect(result.item.resolution).toBeUndefined();
+        expect(result.item.expected_result).toBeUndefined();
+        expect(result.item.actual_result).toBeUndefined();
+        expect(result.item.affected_version).toBeUndefined();
+        expect(result.item.fixed_version).toBeUndefined();
+        expect(result.item.component).toBeUndefined();
+        expect(result.item.regression).toBeUndefined();
+        expect(result.item.customer_impact).toBeUndefined();
         expect(result.item.dependencies).toBeUndefined();
         expect(result.item.comments).toBeUndefined();
         expect(result.item.notes).toBeUndefined();
@@ -346,6 +420,18 @@ describe("runCreate", () => {
             "unset:release",
             "unset:blocked_by",
             "unset:blocked_reason",
+            "unset:reporter",
+            "unset:severity",
+            "unset:environment",
+            "unset:repro_steps",
+            "unset:resolution",
+            "unset:expected_result",
+            "unset:actual_result",
+            "unset:affected_version",
+            "unset:fixed_version",
+            "unset:component",
+            "unset:regression",
+            "unset:customer_impact",
             "unset:dependencies",
             "unset:comments",
             "unset:notes",
@@ -545,6 +631,24 @@ describe("runCreate", () => {
         runCreate(
           baseCreateOptions({
             confidence: "uncertain",
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            severity: "urgent",
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            regression: "sometimes",
           }),
           { path: context.pmPath },
         ),

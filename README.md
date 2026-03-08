@@ -279,6 +279,18 @@ Format:
   - `--release`
   - `--blocked-by/--blocked_by` (item ID or free-text)
   - `--blocked-reason/--blocked_reason`
+  - `--reporter`
+  - `--severity` (`low|med|medium|high|critical`; `med` persists as `medium`)
+  - `--environment`
+  - `--repro-steps/--repro_steps`
+  - `--resolution`
+  - `--expected-result/--expected_result`
+  - `--actual-result/--actual_result`
+  - `--affected-version/--affected_version`
+  - `--fixed-version/--fixed_version`
+  - `--component`
+  - `--regression` (`true|false|1|0`)
+  - `--customer-impact/--customer_impact`
   - `--definition-of-ready/--definition_of_ready` (explicit empty allowed)
   - `--order/--rank` (integer rank/order)
   - `--goal`
@@ -324,6 +336,18 @@ Explicit unset behavior:
 - `--release`
 - `--blocked-by/--blocked_by`
 - `--blocked-reason/--blocked_reason`
+- `--reporter`
+- `--severity` (`low|med|medium|high|critical`; `med` persists as `medium`)
+- `--environment`
+- `--repro-steps/--repro_steps`
+- `--resolution`
+- `--expected-result/--expected_result`
+- `--actual-result/--actual_result`
+- `--affected-version/--affected_version`
+- `--fixed-version/--fixed_version`
+- `--component`
+- `--regression` (`true|false|1|0`)
+- `--customer-impact/--customer_impact`
 - `--definition-of-ready/--definition_of_ready`
 - `--order/--rank`
 - `--goal`

@@ -374,6 +374,18 @@ pm create \
   --release none \
   --blocked-by none \
   --blocked-reason none \
+  --reporter none \
+  --severity none \
+  --environment none \
+  --repro-steps none \
+  --resolution none \
+  --expected-result none \
+  --actual-result none \
+  --affected-version none \
+  --fixed-version none \
+  --component none \
+  --regression none \
+  --customer-impact none \
   --dep <DEP> \
   --comment <COMMENT> \
   --note <NOTE> \

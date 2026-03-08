@@ -1,5 +1,5 @@
 import type { Comment, Dependency, ItemDocument, ItemFrontMatter, LinkedDoc, LinkedFile, LinkedTest, LogNote } from "../../types/index.js";
-import { CONFIDENCE_TEXT_VALUES, ITEM_TYPE_VALUES, STATUS_VALUES } from "../../types/index.js";
+import { CONFIDENCE_TEXT_VALUES, ISSUE_SEVERITY_VALUES, ITEM_TYPE_VALUES, STATUS_VALUES } from "../../types/index.js";
 import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { orderObject } from "../shared/serialization.js";
@@ -85,6 +85,27 @@ function assertValidFrontMatter(frontMatter: unknown): asserts frontMatter is It
       );
     } else {
       assertFrontMatterCondition(false, "confidence must be a number or string");
+    }
+  }
+
+  const severity = record.severity;
+  if (severity !== undefined) {
+    if (typeof severity !== "string") {
+      validationError("severity must be a string");
+    }
+    const normalizedSeverity = severity.trim().toLowerCase();
+    const isKnownSeverity =
+      normalizedSeverity === "med" || ISSUE_SEVERITY_VALUES.includes(normalizedSeverity as (typeof ISSUE_SEVERITY_VALUES)[number]);
+    assertFrontMatterCondition(
+      isKnownSeverity,
+      `severity value must be one of: ${[...ISSUE_SEVERITY_VALUES, "med"].join(", ")}`,
+    );
+  }
+
+  const regression = record.regression;
+  if (regression !== undefined) {
+    if (typeof regression !== "boolean") {
+      validationError("regression must be a boolean");
     }
   }
 
@@ -202,6 +223,20 @@ function normalizeConfidenceValue(value: ItemFrontMatter["confidence"] | undefin
   return undefined;
 }
 
+function normalizeSeverityValue(value: ItemFrontMatter["severity"] | undefined): ItemFrontMatter["severity"] | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "med") {
+    return "medium";
+  }
+  if (ISSUE_SEVERITY_VALUES.includes(normalized as (typeof ISSUE_SEVERITY_VALUES)[number])) {
+    return normalized as (typeof ISSUE_SEVERITY_VALUES)[number];
+  }
+  return undefined;
+}
+
 export function normalizeFrontMatter(frontMatter: ItemFrontMatter): ItemFrontMatter {
   const tags = Array.from(new Set(frontMatter.tags.map((tag) => tag.trim().toLowerCase()).filter(Boolean))).sort((a, b) =>
     a.localeCompare(b),
@@ -244,6 +279,18 @@ export function normalizeFrontMatter(frontMatter: ItemFrontMatter): ItemFrontMat
     release: frontMatter.release?.trim() || undefined,
     blocked_by: frontMatter.blocked_by?.trim() || undefined,
     blocked_reason: frontMatter.blocked_reason?.trim() || undefined,
+    reporter: frontMatter.reporter?.trim() || undefined,
+    severity: normalizeSeverityValue(frontMatter.severity),
+    environment: frontMatter.environment?.trim() || undefined,
+    repro_steps: frontMatter.repro_steps?.trim() || undefined,
+    resolution: frontMatter.resolution?.trim() || undefined,
+    expected_result: frontMatter.expected_result?.trim() || undefined,
+    actual_result: frontMatter.actual_result?.trim() || undefined,
+    affected_version: frontMatter.affected_version?.trim() || undefined,
+    fixed_version: frontMatter.fixed_version?.trim() || undefined,
+    component: frontMatter.component?.trim() || undefined,
+    regression: frontMatter.regression,
+    customer_impact: frontMatter.customer_impact?.trim() || undefined,
     close_reason: frontMatter.close_reason || undefined,
   };
   for (const [key, value] of Object.entries(normalized)) {

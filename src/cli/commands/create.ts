@@ -24,6 +24,7 @@ import type {
 import {
   CONFIDENCE_TEXT_VALUES,
   DEPENDENCY_KIND_VALUES,
+  ISSUE_SEVERITY_VALUES,
   ITEM_TYPE_VALUES,
   RISK_VALUES,
   SCOPE_VALUES,
@@ -61,6 +62,18 @@ export interface CreateCommandOptions {
   release?: string;
   blockedBy?: string;
   blockedReason?: string;
+  reporter?: string;
+  severity?: string;
+  environment?: string;
+  reproSteps?: string;
+  resolution?: string;
+  expectedResult?: string;
+  actualResult?: string;
+  affectedVersion?: string;
+  fixedVersion?: string;
+  component?: string;
+  regression?: string;
+  customerImpact?: string;
   dep?: string[];
   comment?: string[];
   note?: string[];
@@ -91,6 +104,11 @@ function normalizeRiskInput(value: string): string {
   return trimmed.toLowerCase() === "med" ? "medium" : trimmed;
 }
 
+function normalizeSeverityInput(value: string): string {
+  const trimmed = value.trim();
+  return trimmed.toLowerCase() === "med" ? "medium" : trimmed;
+}
+
 function parseConfidenceInput(value: string): number | "low" | "medium" | "high" {
   const trimmed = value.trim().toLowerCase();
   if (trimmed === "med") {
@@ -104,6 +122,17 @@ function parseConfidenceInput(value: string): number | "low" | "medium" | "high"
     throw new PmCliError("Confidence must be an integer 0..100 or one of low|med|medium|high", EXIT_CODE.USAGE);
   }
   return parsed;
+}
+
+function parseRegressionInput(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "true" || normalized === "1") {
+    return true;
+  }
+  if (normalized === "false" || normalized === "0") {
+    return false;
+  }
+  throw new PmCliError("Regression must be one of true|false|1|0", EXIT_CODE.USAGE);
 }
 
 function parseCreatedAt(value: string | undefined, currentIso: string): string {
@@ -343,6 +372,18 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     [options.release, "release"],
     [options.blockedBy, "blocked_by"],
     [options.blockedReason, "blocked_reason"],
+    [options.reporter, "reporter"],
+    [options.severity, "severity"],
+    [options.environment, "environment"],
+    [options.reproSteps, "repro_steps"],
+    [options.resolution, "resolution"],
+    [options.expectedResult, "expected_result"],
+    [options.actualResult, "actual_result"],
+    [options.affectedVersion, "affected_version"],
+    [options.fixedVersion, "fixed_version"],
+    [options.component, "component"],
+    [options.regression, "regression"],
+    [options.customerImpact, "customer_impact"],
   ];
   for (const [value, key] of scalarExplicitUnsetCandidates) {
     if (isNoneToken(value)) {
@@ -388,6 +429,21 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const release = options.release !== undefined ? parseOptionalString(options.release) : undefined;
   const blockedBy = options.blockedBy !== undefined ? parseOptionalString(options.blockedBy) : undefined;
   const blockedReason = options.blockedReason !== undefined ? parseOptionalString(options.blockedReason) : undefined;
+  const reporter = options.reporter !== undefined ? parseOptionalString(options.reporter) : undefined;
+  const severityRaw = options.severity !== undefined ? parseOptionalString(options.severity) : undefined;
+  const severity =
+    severityRaw !== undefined ? ensureEnumValue(normalizeSeverityInput(severityRaw), ISSUE_SEVERITY_VALUES, "severity") : undefined;
+  const environment = options.environment !== undefined ? parseOptionalString(options.environment) : undefined;
+  const reproSteps = options.reproSteps !== undefined ? parseOptionalString(options.reproSteps) : undefined;
+  const resolution = options.resolution !== undefined ? parseOptionalString(options.resolution) : undefined;
+  const expectedResult = options.expectedResult !== undefined ? parseOptionalString(options.expectedResult) : undefined;
+  const actualResult = options.actualResult !== undefined ? parseOptionalString(options.actualResult) : undefined;
+  const affectedVersion = options.affectedVersion !== undefined ? parseOptionalString(options.affectedVersion) : undefined;
+  const fixedVersion = options.fixedVersion !== undefined ? parseOptionalString(options.fixedVersion) : undefined;
+  const component = options.component !== undefined ? parseOptionalString(options.component) : undefined;
+  const regressionRaw = options.regression !== undefined ? parseOptionalString(options.regression) : undefined;
+  const regression = regressionRaw !== undefined ? parseRegressionInput(regressionRaw) : undefined;
+  const customerImpact = options.customerImpact !== undefined ? parseOptionalString(options.customerImpact) : undefined;
 
   const frontMatter: ItemFrontMatter = normalizeFrontMatter({
     id,
@@ -420,6 +476,18 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     release,
     blocked_by: blockedBy,
     blocked_reason: blockedReason,
+    reporter,
+    severity,
+    environment,
+    repro_steps: reproSteps,
+    resolution,
+    expected_result: expectedResult,
+    actual_result: actualResult,
+    affected_version: affectedVersion,
+    fixed_version: fixedVersion,
+    component,
+    regression,
+    customer_impact: customerImpact,
     dependencies: dependencies.values,
     comments: comments.values as Comment[] | undefined,
     notes: notes.values as LogNote[] | undefined,

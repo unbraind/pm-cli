@@ -7,7 +7,7 @@ import { isNoneToken, resolveIsoOrRelative } from "../../core/shared/time.js";
 import { mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import { CONFIDENCE_TEXT_VALUES, ITEM_TYPE_VALUES, RISK_VALUES, STATUS_VALUES } from "../../types/index.js";
+import { CONFIDENCE_TEXT_VALUES, ISSUE_SEVERITY_VALUES, ITEM_TYPE_VALUES, RISK_VALUES, STATUS_VALUES } from "../../types/index.js";
 
 export interface UpdateCommandOptions {
   title?: string;
@@ -40,6 +40,18 @@ export interface UpdateCommandOptions {
   release?: string;
   blockedBy?: string;
   blockedReason?: string;
+  reporter?: string;
+  severity?: string;
+  environment?: string;
+  reproSteps?: string;
+  resolution?: string;
+  expectedResult?: string;
+  actualResult?: string;
+  affectedVersion?: string;
+  fixedVersion?: string;
+  component?: string;
+  regression?: string;
+  customerImpact?: string;
 }
 
 export interface UpdateResult {
@@ -66,6 +78,11 @@ function normalizeRiskInput(value: string): string {
   return trimmed.toLowerCase() === "med" ? "medium" : trimmed;
 }
 
+function normalizeSeverityInput(value: string): string {
+  const trimmed = value.trim();
+  return trimmed.toLowerCase() === "med" ? "medium" : trimmed;
+}
+
 function parseConfidenceInput(value: string): number | "low" | "medium" | "high" {
   const trimmed = value.trim().toLowerCase();
   if (trimmed === "med") {
@@ -79,6 +96,17 @@ function parseConfidenceInput(value: string): number | "low" | "medium" | "high"
     throw new PmCliError("Confidence must be an integer 0..100 or one of low|med|medium|high", EXIT_CODE.USAGE);
   }
   return parsed;
+}
+
+function parseRegressionInput(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "true" || normalized === "1") {
+    return true;
+  }
+  if (normalized === "false" || normalized === "0") {
+    return false;
+  }
+  throw new PmCliError("Regression must be one of true|false|1|0", EXIT_CODE.USAGE);
 }
 
 function ensurePriority(raw: string): 0 | 1 | 2 | 3 | 4 {
@@ -125,6 +153,18 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     options.release !== undefined,
     options.blockedBy !== undefined,
     options.blockedReason !== undefined,
+    options.reporter !== undefined,
+    options.severity !== undefined,
+    options.environment !== undefined,
+    options.reproSteps !== undefined,
+    options.resolution !== undefined,
+    options.expectedResult !== undefined,
+    options.actualResult !== undefined,
+    options.affectedVersion !== undefined,
+    options.fixedVersion !== undefined,
+    options.component !== undefined,
+    options.regression !== undefined,
+    options.customerImpact !== undefined,
   ].some(Boolean);
 
   if (!changedFlags) {
@@ -346,6 +386,102 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
           document.front_matter.blocked_reason = options.blockedReason.trim();
         }
         changedFields.push("blocked_reason");
+      }
+      if (options.reporter !== undefined) {
+        if (isNoneToken(options.reporter)) {
+          delete document.front_matter.reporter;
+        } else {
+          document.front_matter.reporter = options.reporter.trim();
+        }
+        changedFields.push("reporter");
+      }
+      if (options.severity !== undefined) {
+        if (isNoneToken(options.severity)) {
+          delete document.front_matter.severity;
+        } else {
+          document.front_matter.severity = ensureEnum(normalizeSeverityInput(options.severity), ISSUE_SEVERITY_VALUES, "severity");
+        }
+        changedFields.push("severity");
+      }
+      if (options.environment !== undefined) {
+        if (isNoneToken(options.environment)) {
+          delete document.front_matter.environment;
+        } else {
+          document.front_matter.environment = options.environment.trim();
+        }
+        changedFields.push("environment");
+      }
+      if (options.reproSteps !== undefined) {
+        if (isNoneToken(options.reproSteps)) {
+          delete document.front_matter.repro_steps;
+        } else {
+          document.front_matter.repro_steps = options.reproSteps.trim();
+        }
+        changedFields.push("repro_steps");
+      }
+      if (options.resolution !== undefined) {
+        if (isNoneToken(options.resolution)) {
+          delete document.front_matter.resolution;
+        } else {
+          document.front_matter.resolution = options.resolution.trim();
+        }
+        changedFields.push("resolution");
+      }
+      if (options.expectedResult !== undefined) {
+        if (isNoneToken(options.expectedResult)) {
+          delete document.front_matter.expected_result;
+        } else {
+          document.front_matter.expected_result = options.expectedResult.trim();
+        }
+        changedFields.push("expected_result");
+      }
+      if (options.actualResult !== undefined) {
+        if (isNoneToken(options.actualResult)) {
+          delete document.front_matter.actual_result;
+        } else {
+          document.front_matter.actual_result = options.actualResult.trim();
+        }
+        changedFields.push("actual_result");
+      }
+      if (options.affectedVersion !== undefined) {
+        if (isNoneToken(options.affectedVersion)) {
+          delete document.front_matter.affected_version;
+        } else {
+          document.front_matter.affected_version = options.affectedVersion.trim();
+        }
+        changedFields.push("affected_version");
+      }
+      if (options.fixedVersion !== undefined) {
+        if (isNoneToken(options.fixedVersion)) {
+          delete document.front_matter.fixed_version;
+        } else {
+          document.front_matter.fixed_version = options.fixedVersion.trim();
+        }
+        changedFields.push("fixed_version");
+      }
+      if (options.component !== undefined) {
+        if (isNoneToken(options.component)) {
+          delete document.front_matter.component;
+        } else {
+          document.front_matter.component = options.component.trim();
+        }
+        changedFields.push("component");
+      }
+      if (options.regression !== undefined) {
+        if (isNoneToken(options.regression)) {
+          delete document.front_matter.regression;
+        } else {
+          document.front_matter.regression = parseRegressionInput(options.regression);
+        }
+        changedFields.push("regression");
+      }
+      if (options.customerImpact !== undefined) {
+        if (isNoneToken(options.customerImpact)) {
+          delete document.front_matter.customer_impact;
+        } else {
+          document.front_matter.customer_impact = options.customerImpact.trim();
+        }
+        changedFields.push("customer_impact");
       }
 
       return { changedFields };

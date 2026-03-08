@@ -267,6 +267,18 @@ Optional fields:
 - `release?: string`
 - `blocked_by?: string` (item ID reference or free-text reason)
 - `blocked_reason?: string`
+- `reporter?: string`
+- `severity?: "low" | "medium" | "high" | "critical"`
+- `environment?: string`
+- `repro_steps?: string`
+- `resolution?: string`
+- `expected_result?: string`
+- `actual_result?: string`
+- `affected_version?: string`
+- `fixed_version?: string`
+- `component?: string`
+- `regression?: boolean`
+- `customer_impact?: string`
 - `close_reason?: string`
 
 Types:
@@ -277,6 +289,7 @@ Types:
 - `LinkedFile = { path: string; scope: "project" | "global"; note?: string }`
 - `LinkedTest = { command?: string; path?: string; scope: "project" | "global"; timeout_seconds?: number; note?: string }`
 - `LinkedDoc = { path: string; scope: "project" | "global"; note?: string }`
+- `IssueSeverity = "low" | "medium" | "high" | "critical"`
 
 ### 7.2 Canonical key order
 
@@ -312,14 +325,26 @@ Keys MUST serialize in this order:
 28. `release`
 29. `blocked_by`
 30. `blocked_reason`
-31. `dependencies`
-32. `comments`
-33. `notes`
-34. `learnings`
-35. `files`
-36. `tests`
-37. `docs`
-38. `close_reason`
+31. `reporter`
+32. `severity`
+33. `environment`
+34. `repro_steps`
+35. `resolution`
+36. `expected_result`
+37. `actual_result`
+38. `affected_version`
+39. `fixed_version`
+40. `component`
+41. `regression`
+42. `customer_impact`
+43. `dependencies`
+44. `comments`
+45. `notes`
+46. `learnings`
+47. `files`
+48. `tests`
+49. `docs`
+50. `close_reason`
 
 Unset optional fields are omitted.
 
@@ -330,6 +355,7 @@ Unset optional fields are omitted.
 - `tags` sorted lexicographically, deduplicated.
 - `risk` CLI input alias `med` normalizes to canonical stored value `medium`.
 - `confidence` CLI input accepts integers `0..100` or `low|med|medium|high`; `med` persists as `medium`.
+- `severity` CLI input alias `med` normalizes to canonical stored value `medium`.
 - `dependencies`, `comments`, `notes`, `learnings` sorted by `created_at` ascending; stable tie-break by text/id.
 - `files` sorted by `scope` asc, then `path` asc, then `note` asc.
 - `tests` sorted by `scope` asc, then `path` asc, then `command` asc, then `timeout_seconds` asc, then `note` asc.
@@ -590,6 +616,18 @@ Mutating `create` (all schema fields MUST be passable explicitly):
 - `--release` (optional; or `none`)
 - `--blocked-by`, `--blocked_by` (optional; item ID or free-text, or `none`)
 - `--blocked-reason`, `--blocked_reason` (optional; or `none`)
+- `--reporter` (optional; issue reporter, or `none`)
+- `--severity` (optional; `low|med|medium|high|critical`, or `none`; `med` persists as `medium`)
+- `--environment` (optional; issue environment context, or `none`)
+- `--repro-steps`, `--repro_steps` (optional; issue reproduction steps, or `none`)
+- `--resolution` (optional; issue resolution summary, or `none`)
+- `--expected-result`, `--expected_result` (optional; issue expected behavior, or `none`)
+- `--actual-result`, `--actual_result` (optional; issue observed behavior, or `none`)
+- `--affected-version`, `--affected_version` (optional; impacted version identifier, or `none`)
+- `--fixed-version`, `--fixed_version` (optional; fixed version identifier, or `none`)
+- `--component` (optional; owning component, or `none`)
+- `--regression` (optional; boolean `true|false|1|0`, or `none`)
+- `--customer-impact`, `--customer_impact` (optional; customer impact summary, or `none`)
 - `--definition-of-ready`, `--definition_of_ready` (optional; explicit empty allowed; use `none` to unset)
 - `--order`, `--rank` (optional; integer rank/order, or `none`)
 - `--goal` (optional; or `none`)
@@ -629,6 +667,18 @@ Mutating `update` (v0.1 baseline):
 - `--release`
 - `--blocked-by`, `--blocked_by`
 - `--blocked-reason`, `--blocked_reason`
+- `--reporter`
+- `--severity` (`low|med|medium|high|critical`; `med` persists as `medium`)
+- `--environment`
+- `--repro-steps`, `--repro_steps`
+- `--resolution`
+- `--expected-result`, `--expected_result`
+- `--actual-result`, `--actual_result`
+- `--affected-version`, `--affected_version`
+- `--fixed-version`, `--fixed_version`
+- `--component`
+- `--regression` (`true|false|1|0`)
+- `--customer-impact`, `--customer_impact`
 - `--definition-of-ready`, `--definition_of_ready`
 - `--order`, `--rank`
 - `--goal`

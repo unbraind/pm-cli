@@ -74,6 +74,22 @@ describe("item-format front-matter validation", () => {
     expect(textLevel.front_matter.confidence).toBe("high");
   });
 
+  it("parses and normalizes severity values", () => {
+    const medAlias = parseItemDocument(buildSource({ severity: "med" }));
+    expect(medAlias.front_matter.severity).toBe("medium");
+
+    const textLevel = parseItemDocument(buildSource({ severity: "high" }));
+    expect(textLevel.front_matter.severity).toBe("high");
+  });
+
+  it("parses regression boolean values", () => {
+    const regressionTrue = parseItemDocument(buildSource({ regression: true }));
+    expect(regressionTrue.front_matter.regression).toBe(true);
+
+    const regressionFalse = parseItemDocument(buildSource({ regression: false }));
+    expect(regressionFalse.front_matter.regression).toBe(false);
+  });
+
   it("throws on invalid confidence values", () => {
     expect(() => parseItemDocument(buildSource({ confidence: 101 }))).toThrow(
       "confidence number value must be an integer 0..100",
@@ -86,6 +102,12 @@ describe("item-format front-matter validation", () => {
     );
   });
 
+  it("throws on invalid severity and regression values", () => {
+    expect(() => parseItemDocument(buildSource({ severity: "urgent" }))).toThrow("severity value must be one of");
+    expect(() => parseItemDocument(buildSource({ severity: 3 }))).toThrow("severity must be a string");
+    expect(() => parseItemDocument(buildSource({ regression: "true" }))).toThrow("regression must be a boolean");
+  });
+
   it("drops invalid confidence text during direct normalize fallback", () => {
     const parsed = parseItemDocument(buildSource({ confidence: "low" }));
     const normalized = normalizeFrontMatter({
@@ -93,5 +115,14 @@ describe("item-format front-matter validation", () => {
       confidence: "unknown",
     } as unknown as Parameters<typeof normalizeFrontMatter>[0]);
     expect(normalized.confidence).toBeUndefined();
+  });
+
+  it("drops invalid severity text during direct normalize fallback", () => {
+    const parsed = parseItemDocument(buildSource({ severity: "low" }));
+    const normalized = normalizeFrontMatter({
+      ...(parsed.front_matter as Record<string, unknown>),
+      severity: "urgent",
+    } as unknown as Parameters<typeof normalizeFrontMatter>[0]);
+    expect(normalized.severity).toBeUndefined();
   });
 });

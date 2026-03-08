@@ -26,6 +26,9 @@ export type LinkScope = (typeof SCOPE_VALUES)[number];
 export const RISK_VALUES = ["low", "medium", "high", "critical"] as const;
 export type RiskLevel = (typeof RISK_VALUES)[number];
 
+export const ISSUE_SEVERITY_VALUES = ["low", "medium", "high", "critical"] as const;
+export type IssueSeverity = (typeof ISSUE_SEVERITY_VALUES)[number];
+
 export const CONFIDENCE_TEXT_VALUES = ["low", "medium", "high"] as const;
 export type ConfidenceTextLevel = (typeof CONFIDENCE_TEXT_VALUES)[number];
 export type ConfidenceValue = number | ConfidenceTextLevel;
@@ -100,6 +103,18 @@ export interface ItemFrontMatter {
   release?: string;
   blocked_by?: string;
   blocked_reason?: string;
+  reporter?: string;
+  severity?: IssueSeverity;
+  environment?: string;
+  repro_steps?: string;
+  resolution?: string;
+  expected_result?: string;
+  actual_result?: string;
+  affected_version?: string;
+  fixed_version?: string;
+  component?: string;
+  regression?: boolean;
+  customer_impact?: string;
   dependencies?: Dependency[];
   comments?: Comment[];
   notes?: LogNote[];
