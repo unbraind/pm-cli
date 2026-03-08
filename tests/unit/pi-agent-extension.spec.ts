@@ -198,6 +198,164 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(invalidNumericArgs).toEqual(["--json", "list-open"]);
   });
 
+  it("maps canonical create and update parity fields for planning and issue metadata", () => {
+    const createArgs = buildPmCliArgs({
+      action: "create",
+      title: "Pi parity task",
+      description: "full metadata",
+      type: "Task",
+      status: "open",
+      priority: "1",
+      tags: "pi,parity",
+      body: "",
+      deadline: "none",
+      estimate: "30",
+      acceptanceCriteria: "all fields map",
+      author: "pi-bot",
+      message: "create parity task",
+      assignee: "none",
+      parent: "none",
+      reviewer: "none",
+      risk: "medium",
+      confidence: "high",
+      sprint: "sprint-1",
+      release: "v0.1",
+      blockedBy: "none",
+      blockedReason: "none",
+      unblockNote: "none",
+      reporter: "none",
+      severity: "none",
+      environment: "none",
+      reproSteps: "none",
+      resolution: "none",
+      expectedResult: "none",
+      actualResult: "none",
+      affectedVersion: "none",
+      fixedVersion: "none",
+      component: "none",
+      regression: false,
+      customerImpact: "none",
+      definitionOfReady: "ready",
+      order: 7,
+      goal: "Release-hardening",
+      objective: "Parity",
+      value: "Complete wrapper coverage",
+      impact: "No metadata loss",
+      outcome: "Pi wrapper matches CLI",
+      whyNow: "Docs already require it",
+      dep: ["none"],
+      comment: ["none"],
+      note: ["none"],
+      learning: ["none"],
+      linkedFile: ["none"],
+      linkedTest: ["none"],
+      doc: ["none"],
+    });
+
+    expect(createArgs).toEqual(
+      expect.arrayContaining([
+        "--parent",
+        "none",
+        "--reviewer",
+        "none",
+        "--risk",
+        "medium",
+        "--confidence",
+        "high",
+        "--sprint",
+        "sprint-1",
+        "--release",
+        "v0.1",
+        "--blocked-by",
+        "none",
+        "--blocked-reason",
+        "none",
+        "--unblock-note",
+        "none",
+        "--reporter",
+        "none",
+        "--severity",
+        "none",
+        "--environment",
+        "none",
+        "--repro-steps",
+        "none",
+        "--resolution",
+        "none",
+        "--expected-result",
+        "none",
+        "--actual-result",
+        "none",
+        "--affected-version",
+        "none",
+        "--fixed-version",
+        "none",
+        "--component",
+        "none",
+        "--regression",
+        "false",
+        "--customer-impact",
+        "none",
+        "--definition-of-ready",
+        "ready",
+        "--order",
+        "7",
+        "--goal",
+        "Release-hardening",
+        "--objective",
+        "Parity",
+        "--value",
+        "Complete wrapper coverage",
+        "--impact",
+        "No metadata loss",
+        "--outcome",
+        "Pi wrapper matches CLI",
+        "--why-now",
+        "Docs already require it",
+      ]),
+    );
+
+    const updateArgs = buildPmCliArgs({
+      action: "update",
+      id: "pm-a1b2",
+      blockedBy: "pm-z9y8",
+      blockedReason: "",
+      unblockNote: "waiting on merge",
+      regression: true,
+      definitionOfReady: "",
+      order: "9",
+      customerImpact: "none",
+      expectedResult: "fixed",
+      actualResult: "broken",
+      whyNow: "still urgent",
+    });
+
+    expect(updateArgs).toEqual(
+      expect.arrayContaining([
+        "update",
+        "pm-a1b2",
+        "--blocked-by",
+        "pm-z9y8",
+        "--unblock-note",
+        "waiting on merge",
+        "--regression",
+        "true",
+        "--definition-of-ready",
+        "",
+        "--order",
+        "9",
+        "--customer-impact",
+        "none",
+        "--expected-result",
+        "fixed",
+        "--actual-result",
+        "broken",
+        "--why-now",
+        "still urgent",
+      ]),
+    );
+  });
+
   it("validates required positional arguments for action mappings", () => {
     expect(() => buildPmCliArgs({ action: "config" })).toThrow('Action "config" requires "scope".');
     expect(() => buildPmCliArgs({ action: "config", scope: "project" })).toThrow(
@@ -250,6 +408,21 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(
       (tool.parameters as { properties: { includeLinked: { type: string } } }).properties.includeLinked.type,
     ).toBe("boolean");
+    expect((tool.parameters as { properties: { blockedBy: { type: string } } }).properties.blockedBy.type).toBe(
+      "string",
+    );
+    expect((tool.parameters as { properties: { definitionOfReady: { type: string } } }).properties.definitionOfReady.type).toBe(
+      "string",
+    );
+    expect(
+      (
+        tool.parameters as {
+          properties: {
+            regression: { anyOf: Array<{ type: string }> };
+          };
+        }
+      ).properties.regression.anyOf,
+    ).toEqual(expect.arrayContaining([{ type: "boolean" }, { type: "string" }, { type: "number" }]));
     expect(
       (
         tool.parameters as {

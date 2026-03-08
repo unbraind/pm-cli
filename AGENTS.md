@@ -227,6 +227,7 @@ pm restore pm-a1b2 2026-02-17T11:15:03.120Z
 The built-in Pi wrapper exposes one tool: `pm`.
 Reference implementation source lives at `.pi/extensions/pm-cli/index.ts` as a Pi agent extension module.
 Load it in Pi with `pi -e ./.pi/extensions/pm-cli/index.ts` (or copy to `.pi/extensions/`).
+For `create` and `update`, use camelCase wrapper parameters for the canonical CLI scalar fields such as `parent`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blockedBy`, `blockedReason`, `unblockNote`, `definitionOfReady`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `whyNow`, `reporter`, `severity`, `environment`, `reproSteps`, `resolution`, `expectedResult`, `actualResult`, `affectedVersion`, `fixedVersion`, `component`, `regression`, and `customerImpact`.
 
 ### Example: list open tasks
 
@@ -255,6 +256,35 @@ Load it in Pi with `pi -e ./.pi/extensions/pm-cli/index.ts` (or copy to `.pi/ext
   "author": "maintainer-agent",
   "message": "Create extension loader task",
   "assignee": "none",
+  "parent": "none",
+  "reviewer": "none",
+  "risk": "medium",
+  "confidence": "high",
+  "sprint": "maintainer-loop",
+  "release": "v0.1",
+  "blockedBy": "none",
+  "blockedReason": "none",
+  "unblockNote": "none",
+  "reporter": "none",
+  "severity": "none",
+  "environment": "none",
+  "reproSteps": "none",
+  "resolution": "none",
+  "expectedResult": "none",
+  "actualResult": "none",
+  "affectedVersion": "none",
+  "fixedVersion": "none",
+  "component": "none",
+  "regression": "none",
+  "customerImpact": "none",
+  "definitionOfReady": "Extension loading contract is clarified in docs.",
+  "order": 1,
+  "goal": "Release-hardening",
+  "objective": "Ship deterministic extension loading",
+  "value": "Makes extension behavior predictable for agents and humans",
+  "impact": "Reduces configuration and precedence drift",
+  "outcome": "Extension loader applies deterministic precedence",
+  "whyNow": "Extension loading is foundational for the remaining roadmap",
   "dep": ["none"],
   "comment": ["author=maintainer-agent,created_at=now,text=Why this task exists align extension load precedence behavior."],
   "note": ["author=maintainer-agent,created_at=now,text=Initial implementation plan wire loader in runtime bootstrap."],

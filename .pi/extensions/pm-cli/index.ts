@@ -39,6 +39,7 @@ export const PM_TOOL_ACTIONS = [
 
 export type PmToolAction = (typeof PM_TOOL_ACTIONS)[number];
 type NumericFlagInput = string | number;
+type BooleanFlagInput = string | number | boolean;
 
 const NODE_FALLBACK_CLI_PATH = fileURLToPath(new URL("../../../dist/cli.js", import.meta.url));
 
@@ -72,6 +73,35 @@ export interface PmToolParameters {
   author?: string;
   message?: string;
   assignee?: string;
+  parent?: string;
+  reviewer?: string;
+  risk?: string;
+  confidence?: NumericFlagInput | string;
+  sprint?: string;
+  release?: string;
+  blockedBy?: string;
+  blockedReason?: string;
+  unblockNote?: string;
+  reporter?: string;
+  severity?: string;
+  environment?: string;
+  reproSteps?: string;
+  resolution?: string;
+  expectedResult?: string;
+  actualResult?: string;
+  affectedVersion?: string;
+  fixedVersion?: string;
+  component?: string;
+  regression?: BooleanFlagInput;
+  customerImpact?: string;
+  definitionOfReady?: string;
+  order?: NumericFlagInput;
+  goal?: string;
+  objective?: string;
+  value?: string;
+  impact?: string;
+  outcome?: string;
+  whyNow?: string;
   mode?: string;
   includeLinked?: boolean;
   tag?: string;
@@ -161,6 +191,35 @@ export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = {
     author: { type: "string" },
     message: { type: "string" },
     assignee: { type: "string" },
+    parent: { type: "string" },
+    reviewer: { type: "string" },
+    risk: { type: "string" },
+    confidence: { anyOf: [{ type: "string" }, { type: "number" }] },
+    sprint: { type: "string" },
+    release: { type: "string" },
+    blockedBy: { type: "string" },
+    blockedReason: { type: "string" },
+    unblockNote: { type: "string" },
+    reporter: { type: "string" },
+    severity: { type: "string" },
+    environment: { type: "string" },
+    reproSteps: { type: "string" },
+    resolution: { type: "string" },
+    expectedResult: { type: "string" },
+    actualResult: { type: "string" },
+    affectedVersion: { type: "string" },
+    fixedVersion: { type: "string" },
+    component: { type: "string" },
+    regression: { anyOf: [{ type: "boolean" }, { type: "string" }, { type: "number" }] },
+    customerImpact: { type: "string" },
+    definitionOfReady: { type: "string" },
+    order: { anyOf: [{ type: "string" }, { type: "number" }] },
+    goal: { type: "string" },
+    objective: { type: "string" },
+    value: { type: "string" },
+    impact: { type: "string" },
+    outcome: { type: "string" },
+    whyNow: { type: "string" },
     mode: { type: "string" },
     includeLinked: { type: "boolean" },
     tag: { type: "string" },
@@ -218,6 +277,14 @@ function pushRepeatable(args: string[], flag: string, values: string[] | undefin
   }
 }
 
+function pushBooleanishOption(args: string[], flag: string, value: BooleanFlagInput | undefined): void {
+  if (typeof value === "boolean") {
+    args.push(flag, value ? "true" : "false");
+    return;
+  }
+  pushOption(args, flag, value);
+}
+
 function pushRepeatableOrNone(args: string[], flag: string, values: string[] | undefined): void {
   const validValues = Array.isArray(values) ? values.filter((value) => typeof value === "string" && value.length > 0) : [];
   if (validValues.length === 0) {
@@ -260,6 +327,7 @@ function addCreateFlags(args: string[], params: PmToolParameters): void {
   pushOption(args, "--message", params.message, true);
   const assignee = typeof params.assignee === "string" && params.assignee.length > 0 ? params.assignee : "none";
   pushOption(args, "--assignee", assignee);
+  addSharedCreateUpdateFlags(args, params);
   pushRepeatableOrNone(args, "--dep", params.dep);
   pushRepeatableOrNone(args, "--comment", params.comment);
   pushRepeatableOrNone(args, "--note", params.note);
@@ -282,9 +350,42 @@ function addUpdateFlags(args: string[], params: PmToolParameters): void {
   pushOption(args, "--author", params.author);
   pushOption(args, "--message", params.message, true);
   pushOption(args, "--assignee", params.assignee);
+  addSharedCreateUpdateFlags(args, params);
   if (params.force) {
     args.push("--force");
   }
+}
+
+function addSharedCreateUpdateFlags(args: string[], params: PmToolParameters): void {
+  pushOption(args, "--parent", params.parent);
+  pushOption(args, "--reviewer", params.reviewer);
+  pushOption(args, "--risk", params.risk);
+  pushOption(args, "--confidence", params.confidence);
+  pushOption(args, "--sprint", params.sprint);
+  pushOption(args, "--release", params.release);
+  pushOption(args, "--blocked-by", params.blockedBy);
+  pushOption(args, "--blocked-reason", params.blockedReason);
+  pushOption(args, "--unblock-note", params.unblockNote);
+  pushOption(args, "--reporter", params.reporter);
+  pushOption(args, "--severity", params.severity);
+  pushOption(args, "--environment", params.environment);
+  pushOption(args, "--repro-steps", params.reproSteps);
+  pushOption(args, "--resolution", params.resolution);
+  pushOption(args, "--expected-result", params.expectedResult);
+  pushOption(args, "--actual-result", params.actualResult);
+  pushOption(args, "--affected-version", params.affectedVersion);
+  pushOption(args, "--fixed-version", params.fixedVersion);
+  pushOption(args, "--component", params.component);
+  pushBooleanishOption(args, "--regression", params.regression);
+  pushOption(args, "--customer-impact", params.customerImpact);
+  pushOption(args, "--definition-of-ready", params.definitionOfReady, true);
+  pushOption(args, "--order", params.order);
+  pushOption(args, "--goal", params.goal);
+  pushOption(args, "--objective", params.objective);
+  pushOption(args, "--value", params.value);
+  pushOption(args, "--impact", params.impact);
+  pushOption(args, "--outcome", params.outcome);
+  pushOption(args, "--why-now", params.whyNow);
 }
 
 function addAuthorMessageForceFlags(args: string[], params: PmToolParameters): void {

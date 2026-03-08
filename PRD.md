@@ -1061,6 +1061,7 @@ Current baseline status (release-hardening):
   - common fields (`id`, `title`, `status`, `tags`, `body`, etc.)
   - search-specific parity fields including `mode` and `includeLinked` (`--include-linked`)
   - claim/release metadata parity fields including `author`, `message`, and `force` (`--author`, `--message`, `--force`)
+  - create/update scalar parity fields using camelCase wrapper parameters that forward to the canonical CLI flags for planning/workflow metadata (`parent`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blockedBy`, `blockedReason`, `unblockNote`, `definitionOfReady`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `whyNow`) and issue metadata (`reporter`, `severity`, `environment`, `reproSteps`, `resolution`, `expectedResult`, `actualResult`, `affectedVersion`, `fixedVersion`, `component`, `regression`, `customerImpact`)
   - explicit empty-string passthrough for empty-allowed CLI flags (for example `--description ""` and `--body ""`)
   - numeric scalar parity for numeric CLI flags: wrapper accepts either JSON numbers or strings for `priority`, `estimate`, `limit`, and `timeout`, then stringifies values for deterministic CLI argument emission
 - Return object:
