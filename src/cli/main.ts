@@ -9,6 +9,7 @@ import {
   runClaim,
   runClose,
   runComments,
+  runCompletion,
   runConfig,
   runCreate,
   runDelete,
@@ -1703,6 +1704,23 @@ program
     printResult(result, globalOptions);
     if (globalOptions.profile) {
       printError(`profile:command=release took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+program
+  .command("completion")
+  .argument("<shell>", "Shell type: bash, zsh, or fish")
+  .description("Generate shell completion script for pm.")
+  .action((shell: string, _options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const result = runCompletion(shell);
+    if (globalOptions.json) {
+      printResult(result, globalOptions);
+    } else if (!globalOptions.quiet) {
+      process.stdout.write(`${result.script}\n`);
+    }
+    if (globalOptions.profile) {
+      printError(`profile:command=completion took_ms=0`);
     }
   });
 

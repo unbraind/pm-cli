@@ -1,4 +1,5 @@
 export { runAppend } from "./append.js";
+export { runCompletion, type CompletionResult, type CompletionShell } from "./completion.js";
 export { runActivity } from "./activity.js";
 export { runBeadsImport, type BeadsImportOptions, type BeadsImportResult } from "./beads.js";
 export { runClaim, runRelease } from "./claim.js";

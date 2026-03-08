@@ -234,6 +234,7 @@ Format:
 - `pm beads import [--file <path>]` (built-in Beads extension command, import-only)
 - `pm todos import [--folder <path>]` (built-in todos extension command)
 - `pm todos export [--folder <path>]` (built-in todos extension command)
+- `pm completion <bash|zsh|fish>` (generate shell tab-completion script)
 - extension-only command paths return not-found when no handler is registered, and generic failure when a matched handler throws; profile diagnostics include deterministic warning codes like `extension_command_handler_failed:<layer>:<name>:<command>`
 - extension command names are canonicalized (trimmed, lowercased, repeated internal whitespace collapsed) before registration and dispatch so equivalent command paths resolve deterministically
 - `pm test <ID> --add` rejects linked commands that invoke `pm test-all` (including global-flag and package-spec launcher forms like `pm --json test-all`, `npx pm-cli@latest --json test-all`, `pnpm dlx pm-cli@latest --json test-all`, and `npm exec -- pm-cli@latest --json test-all`) to prevent recursive orchestration
@@ -483,6 +484,40 @@ For command-shape parity, explicit empty-string values are forwarded for empty-a
 For numeric-flag parity, wrapper parameters accept either JSON numbers or strings for `priority`, `estimate`, `limit`, and `timeout`, and stringify them before CLI invocation.
 For claim/release parity, wrapper parameters `author`, `message`, and `force` are forwarded to `pm claim|release --author/--message/--force`.
 For packaging resilience, the wrapper attempts `pm` first and falls back to `node <package-root>/dist/cli.js` when `pm` is unavailable.
+
+## Shell Completion
+
+`pm` supports tab-completion for bash, zsh, and fish shells.
+
+### Bash
+
+```bash
+# Add to ~/.bashrc or ~/.bash_profile
+eval "$(pm completion bash)"
+```
+
+### Zsh
+
+```bash
+# Add to ~/.zshrc
+eval "$(pm completion zsh)"
+```
+
+### Fish
+
+```bash
+# Generate and save the completion file
+pm completion fish > ~/.config/fish/completions/pm.fish
+```
+
+### JSON output
+
+```bash
+pm completion bash --json
+# => { "shell": "bash", "script": "...", "setup_hint": "..." }
+```
+
+Completion covers all `pm` subcommands, their flags, and common argument values (item types, statuses, priorities, search modes, shell names).
 
 ## FAQ
 

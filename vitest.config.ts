@@ -18,6 +18,7 @@ export default defineConfig({
         "src/cli/commands/append.ts",
         "src/cli/commands/activity.ts",
         "src/cli/commands/beads.ts",
+        "src/cli/commands/completion.ts",
         "src/cli/commands/claim.ts",
         "src/cli/commands/comments.ts",
         "src/cli/commands/config.ts",

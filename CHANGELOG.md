@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Shell Completion
+- `pm completion bash` — outputs a bash tab-completion script. Source it or add `eval "$(pm completion bash)"` to `~/.bashrc`.
+- `pm completion zsh` — outputs a zsh tab-completion script. Add `eval "$(pm completion zsh)"` to `~/.zshrc`.
+- `pm completion fish` — outputs a fish tab-completion script. Pipe to `~/.config/fish/completions/pm.fish`.
+- `pm completion <shell> --json` — returns structured `{ shell, script, setup_hint }` for programmatic use.
+- Completion covers all subcommands, global flags, list filters (`--type`, `--assignee`, `--sprint`, `--release`, `--priority`, etc.), search modes, item types, statuses, priorities, and shell names.
+
 #### List Command Filters
 - `--assignee <value>` filter for all `list*` commands — exact match on `assignee` field; use `none` to filter for unassigned items.
 - `--sprint <value>` filter for all `list*` commands — exact match on `sprint` field.

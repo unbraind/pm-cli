@@ -590,6 +590,7 @@ If any step fails, return non-zero exit code and preserve prior item bytes.
 - `pm beads import [--file <path>]`
 - `pm todos import [--folder <path>]`
 - `pm todos export [--folder <path>]`
+- `pm completion <bash|zsh|fish>`
 
 Roadmap commands (post-v0.1, tracked but not release blockers):
 
@@ -757,6 +758,7 @@ All commands return deterministic top-level objects (TOON by default, JSON with 
 | `pm history <ID> --limit` | id + optional limit | `{ id, history, count, limit }` |
 | `pm activity --limit` | optional limit | `{ activity, count, limit }` |
 | `pm restore <ID> <TIMESTAMP\|VERSION>` | id + restore target + optional `--author/--message/--force` | `{ item, restored_from, changed_fields, warnings }` |
+| `pm completion <shell>` | `bash`, `zsh`, or `fish`; non-JSON output is the raw script suitable for eval or pipe; JSON output is `{ shell, script, setup_hint }` | `{ shell, script, setup_hint }` |
 
 Roadmap output contracts remain defined in this PRD for extension areas and advanced search tuning that are still out of v0.1 release scope.
 
@@ -1364,6 +1366,7 @@ Checklist:
 - [x] installer scripts (`scripts/install.sh`, `scripts/install.ps1`) with post-install `pm --version` availability verification
 - [x] npm packaging allowlist + prepublish build guard
 - [x] community docs baseline (`LICENSE`, `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`)
+- [x] shell completion command (`pm completion bash|zsh|fish`)
 
 Definition of Done:
 
