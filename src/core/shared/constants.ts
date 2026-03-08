@@ -89,6 +89,9 @@ export const SETTINGS_DEFAULTS: PmSettings = {
   output: {
     default_format: "toon",
   },
+  workflow: {
+    definition_of_done: [],
+  },
   extensions: {
     enabled: [],
     disabled: [],

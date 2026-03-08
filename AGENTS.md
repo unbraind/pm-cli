@@ -56,6 +56,8 @@ Populate metadata early:
 - `pm update <ID> --acceptance-criteria/--ac "..."`
 - `pm update <ID> --estimate <minutes>`
 - `pm update <ID> --deadline +1d` (resolved to ISO at write)
+- when team-level close-readiness policy changes, update Definition of Done criteria via:
+  - `pm config project set definition-of-done --criterion "tests pass" --criterion "linked files/tests/docs present"`
 
 ### Step D - Link execution context
 
@@ -194,6 +196,7 @@ A close action should include:
 Quick start loop:
 
 ```bash
+pm config project set definition-of-done --criterion "tests pass" --criterion "linked files/tests/docs present"
 pm list-open --type Task --priority 0 --limit 5
 pm claim pm-a1b2
 pm update pm-a1b2 --status in_progress --description "Implement restore replay"

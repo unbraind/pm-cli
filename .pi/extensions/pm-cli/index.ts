@@ -2,6 +2,7 @@ import { fileURLToPath } from "node:url";
 
 export const PM_TOOL_ACTIONS = [
   "init",
+  "config",
   "create",
   "list",
   "list-all",
@@ -55,6 +56,9 @@ export interface PmToolParameters {
   query?: string;
   keywords?: string;
   prefix?: string;
+  scope?: string;
+  configAction?: string;
+  key?: string;
   title?: string;
   description?: string;
   type?: string;
@@ -89,6 +93,7 @@ export interface PmToolParameters {
   linkedFile?: string[];
   linkedTest?: string[];
   doc?: string[];
+  criterion?: string[];
 }
 
 export interface PiExecResult {
@@ -140,6 +145,9 @@ export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = {
     query: { type: "string" },
     keywords: { type: "string" },
     prefix: { type: "string" },
+    scope: { type: "string" },
+    configAction: { type: "string" },
+    key: { type: "string" },
     title: { type: "string" },
     description: { type: "string" },
     type: { type: "string" },
@@ -174,6 +182,7 @@ export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = {
     linkedFile: { type: "array", items: { type: "string" } },
     linkedTest: { type: "array", items: { type: "string" } },
     doc: { type: "array", items: { type: "string" } },
+    criterion: { type: "array", items: { type: "string" } },
   },
 };
 
@@ -317,6 +326,15 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       if (params.prefix) {
         args.push(params.prefix);
       }
+      return args;
+    case "config":
+      args.push(
+        "config",
+        requireString(params.scope, "scope", action),
+        requireString(params.configAction, "configAction", action),
+        requireString(params.key, "key", action),
+      );
+      pushRepeatable(args, "--criterion", params.criterion);
       return args;
     case "create":
       args.push("create");

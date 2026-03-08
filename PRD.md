@@ -584,6 +584,8 @@ If any step fails, return non-zero exit code and preserve prior item bytes.
 - `pm history <ID>`
 - `pm activity`
 - `pm restore <ID> <TIMESTAMP|VERSION>`
+- `pm config <project|global> set definition-of-done --criterion <text>`
+- `pm config <project|global> get definition-of-done`
 - `pm close <ID> <TEXT>`
 - `pm beads import [--file <path>]`
 - `pm todos import [--folder <path>]`
@@ -1049,7 +1051,7 @@ Current baseline status (release-hardening):
 
 - Implemented as a Pi agent extension source module at `.pi/extensions/pm-cli/index.ts` (outside the `pm` CLI command surface).
 - Registers one Pi tool named `pm` via Pi's extension API (`registerTool`) and maps `action` + command-shaped fields to `pm` CLI invocations.
-- Action dispatch currently covers the full v0.1 command-aligned set (`init`, `create`, `list`, `list-all`, `list-draft`, `list-open`, `list-in-progress`, `list-blocked`, `list-closed`, `list-canceled`, `get`, `search`, `reindex`, `history`, `activity`, `restore`, `update`, `close`, `delete`, `append`, `comments`, `files`, `docs`, `test`, `test-all`, `stats`, `health`, `gc`, `claim`, `release`) plus extension action aliases (`beads-import`, `todos-import`, `todos-export`).
+- Action dispatch currently covers the full v0.1 command-aligned set (`init`, `config`, `create`, `list`, `list-all`, `list-draft`, `list-open`, `list-in-progress`, `list-blocked`, `list-closed`, `list-canceled`, `get`, `search`, `reindex`, `history`, `activity`, `restore`, `update`, `close`, `delete`, `append`, `comments`, `files`, `docs`, `test`, `test-all`, `stats`, `health`, `gc`, `claim`, `release`) plus extension action aliases (`beads-import`, `todos-import`, `todos-export`).
 - Invocation fallback order is deterministic for distribution resilience: attempt `pm` first, then fallback to packaged `node <package-root>/dist/cli.js` when `pm` is unavailable.
 
 - Expose one tool `pm`.
@@ -1091,6 +1093,7 @@ Wrapper behavior must remain aligned with CLI semantics and exit conditions.
 - `author_default`
 - `locks.ttl_seconds`
 - `output.default_format`
+- `workflow.definition_of_done[]`
 - `extensions.enabled[]`
 - `extensions.disabled[]`
 - `search.score_threshold`
@@ -1121,6 +1124,9 @@ Default `settings.json` object written by `pm init`:
   },
   "output": {
     "default_format": "toon"
+  },
+  "workflow": {
+    "definition_of_done": []
   },
   "extensions": {
     "enabled": [],
@@ -1156,6 +1162,13 @@ Default `settings.json` object written by `pm init`:
   }
 }
 ```
+
+Definition-of-Done config baseline:
+
+- `pm config project set definition-of-done --criterion <text>` replaces the project-level criteria list in `.agents/pm/settings.json`.
+- `pm config global set definition-of-done --criterion <text>` replaces the global criteria list in `~/.pm-cli/settings.json` (or `PM_GLOBAL_PATH/settings.json`).
+- `pm config <project|global> get definition-of-done` returns the currently effective list for the selected scope with deterministic TOON/JSON output.
+- Empty criteria are rejected; duplicate criteria are deduplicated with lexicographic ordering.
 
 Notes:
 

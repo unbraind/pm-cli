@@ -158,6 +158,9 @@ export interface PmSettings {
   output: {
     default_format: "toon" | "json";
   };
+  workflow: {
+    definition_of_done: string[];
+  };
   extensions: {
     enabled: string[];
     disabled: string[];

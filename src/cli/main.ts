@@ -9,6 +9,7 @@ import {
   runClaim,
   runClose,
   runComments,
+  runConfig,
   runCreate,
   runDelete,
   runDocs,
@@ -986,6 +987,32 @@ program
     printResult(result, globalOptions);
     if (globalOptions.profile) {
       printError(`profile:command=init took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+program
+  .command("config")
+  .argument("<scope>", "Config scope: project|global")
+  .argument("<action>", "Config action: get|set")
+  .argument("<key>", "Config key: definition-of-done")
+  .option("--criterion <text>", "Definition-of-Done criterion (repeatable for set)", collect)
+  .description("Read or update deterministic pm settings.")
+  .action(async (scope: string, action: string, key: string, options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const criteria = Array.isArray(options.criterion) ? (options.criterion as string[]) : [];
+    const result = await runConfig(
+      scope,
+      action,
+      key,
+      {
+        criterion: criteria,
+      },
+      globalOptions,
+    );
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=config took_ms=${Date.now() - startedAt}`);
     }
   });
 

@@ -1020,6 +1020,31 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(statsJson.totals.history_entries).toBeGreaterThanOrEqual(1);
       expect(statsJson.by_type.Task).toBeGreaterThanOrEqual(1);
 
+      const configSet = context.runCli(
+        [
+          "config",
+          "project",
+          "set",
+          "definition-of-done",
+          "--json",
+          "--criterion",
+          "tests pass",
+          "--criterion",
+          "linked files/tests/docs present",
+        ],
+        { expectJson: true },
+      );
+      expect(configSet.code).toBe(0);
+      const configSetJson = configSet.json as { criteria: string[]; changed: boolean };
+      expect(configSetJson.criteria).toEqual(["linked files/tests/docs present", "tests pass"]);
+      expect(configSetJson.changed).toBe(true);
+
+      const configGet = context.runCli(["config", "project", "get", "definition-of-done", "--json"], { expectJson: true });
+      expect(configGet.code).toBe(0);
+      const configGetJson = configGet.json as { criteria: string[]; changed: boolean };
+      expect(configGetJson.criteria).toEqual(["linked files/tests/docs present", "tests pass"]);
+      expect(configGetJson.changed).toBe(false);
+
       const health = context.runCli(["health", "--json"], { expectJson: true });
       expect(health.code).toBe(0);
       const healthJson = health.json as {

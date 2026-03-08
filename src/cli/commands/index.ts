@@ -4,6 +4,7 @@ export { runBeadsImport, type BeadsImportOptions, type BeadsImportResult } from 
 export { runClaim, runRelease } from "./claim.js";
 export { runClose, type CloseCommandOptions, type CloseResult } from "./close.js";
 export { runComments } from "./comments.js";
+export { runConfig, type ConfigCommandOptions, type ConfigResult } from "./config.js";
 export { runCreate, type CreateCommandOptions } from "./create.js";
 export { runDelete, type DeleteCommandOptions, type DeleteResult } from "./delete.js";
 export { runDocs } from "./docs.js";

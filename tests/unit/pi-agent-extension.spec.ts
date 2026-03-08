@@ -136,6 +136,25 @@ describe("Pi agent extension wrapper for pm", () => {
   });
 
   it("accepts numeric scalar inputs for numeric CLI flags", () => {
+    const configArgs = buildPmCliArgs({
+      action: "config",
+      scope: "project",
+      configAction: "set",
+      key: "definition-of-done",
+      criterion: ["tests pass", "linked files/tests/docs present"],
+    });
+    expect(configArgs).toEqual([
+      "--json",
+      "config",
+      "project",
+      "set",
+      "definition-of-done",
+      "--criterion",
+      "tests pass",
+      "--criterion",
+      "linked files/tests/docs present",
+    ]);
+
     const createArgs = buildPmCliArgs({
       action: "create",
       title: "Pi numeric task",
@@ -180,6 +199,13 @@ describe("Pi agent extension wrapper for pm", () => {
   });
 
   it("validates required positional arguments for action mappings", () => {
+    expect(() => buildPmCliArgs({ action: "config" })).toThrow('Action "config" requires "scope".');
+    expect(() => buildPmCliArgs({ action: "config", scope: "project" })).toThrow(
+      'Action "config" requires "configAction".',
+    );
+    expect(() => buildPmCliArgs({ action: "config", scope: "project", configAction: "set" })).toThrow(
+      'Action "config" requires "key".',
+    );
     expect(() => buildPmCliArgs({ action: "get" })).toThrow('Action "get" requires "id".');
     expect(() => buildPmCliArgs({ action: "restore", id: "pm-a1b2" })).toThrow(
       'Action "restore" requires "target".',

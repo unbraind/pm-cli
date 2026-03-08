@@ -20,6 +20,7 @@ export default defineConfig({
         "src/cli/commands/beads.ts",
         "src/cli/commands/claim.ts",
         "src/cli/commands/comments.ts",
+        "src/cli/commands/config.ts",
         "src/cli/commands/docs.ts",
         "src/cli/commands/files.ts",
         "src/cli/commands/gc.ts",

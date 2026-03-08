@@ -16,6 +16,11 @@ const settingsSchema = z.object({
   output: z.object({
     default_format: z.union([z.literal("toon"), z.literal("json")]),
   }),
+  workflow: z
+    .object({
+      definition_of_done: z.array(z.string()),
+    })
+    .optional(),
   extensions: z.object({
     enabled: z.array(z.string()),
     disabled: z.array(z.string()),
@@ -68,6 +73,9 @@ function mergeSettings(raw: unknown): PmSettings {
     ...settings,
     locks: { ...defaults.locks, ...settings.locks },
     output: { ...defaults.output, ...settings.output },
+    workflow: {
+      definition_of_done: [...(settings.workflow?.definition_of_done ?? defaults.workflow.definition_of_done)],
+    },
     extensions: {
       enabled: [...settings.extensions.enabled],
       disabled: [...settings.extensions.disabled],
@@ -91,6 +99,7 @@ export function serializeSettings(settings: PmSettings): string {
     "author_default",
     "locks",
     "output",
+    "workflow",
     "extensions",
     "search",
     "providers",
@@ -99,6 +108,7 @@ export function serializeSettings(settings: PmSettings): string {
 
   ordered.locks = orderObject(ordered.locks as Record<string, unknown>, ["ttl_seconds"]);
   ordered.output = orderObject(ordered.output as Record<string, unknown>, ["default_format"]);
+  ordered.workflow = orderObject(ordered.workflow as Record<string, unknown>, ["definition_of_done"]);
   ordered.extensions = orderObject(ordered.extensions as Record<string, unknown>, ["enabled", "disabled"]);
   ordered.search = orderObject(ordered.search as Record<string, unknown>, [
     "score_threshold",

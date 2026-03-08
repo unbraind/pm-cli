@@ -59,6 +59,45 @@ describe("core/store/settings", () => {
     });
   });
 
+  it("merges defaults when legacy settings omit workflow block", async () => {
+    await withTempRoot(async (pmRoot) => {
+      const settingsPath = getSettingsPath(pmRoot);
+      await fs.mkdir(path.dirname(settingsPath), { recursive: true });
+      await fs.writeFile(
+        settingsPath,
+        JSON.stringify({
+          version: 1,
+          id_prefix: "pm-",
+          author_default: "legacy",
+          locks: { ttl_seconds: 1800 },
+          output: { default_format: "toon" },
+          extensions: { enabled: [], disabled: [] },
+          search: {
+            score_threshold: 0,
+            hybrid_semantic_weight: 0.7,
+            max_results: 50,
+            embedding_model: "",
+            embedding_batch_size: 32,
+            scanner_max_batch_retries: 3,
+          },
+          providers: {
+            openai: { base_url: "", api_key: "", model: "" },
+            ollama: { base_url: "", model: "" },
+          },
+          vector_store: {
+            qdrant: { url: "", api_key: "" },
+            lancedb: { path: "" },
+          },
+        }),
+        "utf8",
+      );
+
+      const settings = await readSettings(pmRoot);
+      expect(settings.author_default).toBe("legacy");
+      expect(settings.workflow.definition_of_done).toEqual([]);
+    });
+  });
+
   it("writes deterministic settings content and reads it back", async () => {
     await withTempRoot(async (pmRoot) => {
       const custom = structuredClone(SETTINGS_DEFAULTS);
@@ -83,6 +122,7 @@ describe("core/store/settings", () => {
         "author_default",
         "locks",
         "output",
+        "workflow",
         "extensions",
         "search",
         "providers",
@@ -90,6 +130,7 @@ describe("core/store/settings", () => {
       ]);
       expectOrderedObjectKeys(parsed.locks, ["ttl_seconds"]);
       expectOrderedObjectKeys(parsed.output, ["default_format"]);
+      expectOrderedObjectKeys(parsed.workflow, ["definition_of_done"]);
       expectOrderedObjectKeys(parsed.extensions, ["enabled", "disabled"]);
       expectOrderedObjectKeys(parsed.search, [
         "score_threshold",
