@@ -16,7 +16,7 @@
     "tests"
   ],
   "created_at": "2026-03-08T10:34:28.069Z",
-  "updated_at": "2026-03-08T10:58:56.850Z",
+  "updated_at": "2026-03-08T10:59:50.111Z",
   "deadline": "2026-03-09T10:34:28.069Z",
   "author": "maintainer-agent",
   "estimated_minutes": 120,
@@ -53,6 +53,11 @@
       "created_at": "2026-03-08T10:58:56.521Z",
       "author": "maintainer-agent",
       "text": "Implementation complete: docs-first contract update plus CLI/schema/test changes for issue metadata flags (reporter,severity,environment,repro_steps,resolution,expected_result,actual_result,affected_version,fixed_version,component,regression,customer_impact) with create/update alias support and none-unset semantics. Evidence: pm test pm-rs40 --run --timeout 7200 --json passed all 3 linked tests including node scripts/run-tests.mjs coverage with 100% lines/branches/functions/statements; pm test-all --status in_progress --timeout 7200 --json passed (items=1 linked_tests=3 passed=3 failed=0 skipped=0); pm test-all --status closed --timeout 7200 --json passed (items=145 linked_tests=371 passed=66 failed=0 skipped=305)."
+    },
+    {
+      "created_at": "2026-03-08T10:59:50.111Z",
+      "author": "maintainer-agent",
+      "text": "Delivery: committed as 8316c87 and pushed to origin/main. Workspace is clean after push (git status -sb: main...origin/main)."
     }
   ],
   "notes": [
