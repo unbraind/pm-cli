@@ -66,10 +66,34 @@ node scripts/run-tests.mjs coverage
 
 The runner creates a temporary sandbox and sets `PM_PATH` and `PM_GLOBAL_PATH` so tests never touch repository planning data.
 
+## Extension Development
+
+`pm-cli` extensions live in `.agents/pm/extensions/` (project) or `~/.pm-cli/extensions/` (global). Each extension needs:
+
+1. A manifest file `manifest.json` declaring `name`, `version`, `entry`, `priority`, and `capabilities`.
+2. An entry module exporting `activate(api)`.
+
+The `api` object provides:
+
+- `api.registerCommand({ name, run })` — add or override command handlers.
+- `api.registerRenderer(format, renderer)` — override `toon`/`json` output.
+- `api.registerImporter(name, importer)` — adds `<name> import` command path.
+- `api.registerExporter(name, exporter)` — adds `<name> export` command path.
+- `api.registerFlags(targetCommand, flags)` — declare flags for extension commands.
+- `api.registerItemFields(fields)` — declare custom schema fields.
+- `api.registerMigration(def)` — declare schema migrations.
+- `api.registerSearchProvider(provider)` — add custom search providers.
+- `api.registerVectorStoreAdapter(adapter)` — add custom vector store adapters.
+- `api.hooks.beforeCommand/afterCommand/onWrite/onRead/onIndex` — lifecycle hooks.
+
+Only register capabilities that are listed in your manifest's `capabilities` array. Registration outside declared capabilities fails extension activation deterministically.
+
+Run `pm health` to inspect extension load/activation status and migration summaries.
+
 ## Pull Requests
 
 - Include focused scope and rationale.
-- Confirm all checks pass.
-- Update docs/contracts when behavior changes.
-- Add/maintain tests for any new behavior.
+- Confirm all checks pass (`pnpm build && pnpm typecheck && pnpm test:coverage`).
+- Update docs/contracts when behavior changes (`PRD.md`, `README.md`, `AGENTS.md`).
+- Add/maintain tests for any new behavior (100% coverage required).
 - Reference relevant `pm` item IDs in PR description.

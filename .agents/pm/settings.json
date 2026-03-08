@@ -8,12 +8,21 @@
   "output": {
     "default_format": "toon"
   },
+  "workflow": {
+    "definition_of_done": [
+      "docs updated when behavior changes",
+      "linked files/tests/docs present",
+      "pm item closed with evidence comment",
+      "tests pass at 100% coverage"
+    ]
+  },
   "extensions": {
     "enabled": [],
     "disabled": []
   },
   "search": {
     "score_threshold": 0,
+    "hybrid_semantic_weight": 0.7,
     "max_results": 50,
     "embedding_model": "",
     "embedding_batch_size": 32,
@@ -26,8 +35,8 @@
       "model": ""
     },
     "ollama": {
-      "base_url": "",
-      "model": ""
+      "base_url": "http://localhost:11434",
+      "model": "qwen3-embedding:0.6b"
     }
   },
   "vector_store": {
@@ -36,7 +45,7 @@
       "api_key": ""
     },
     "lancedb": {
-      "path": ""
+      "path": ".agents/pm/search/lancedb/"
     }
   }
 }
