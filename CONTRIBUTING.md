@@ -66,9 +66,16 @@ node scripts/run-tests.mjs coverage
 
 The runner creates a temporary sandbox and sets `PM_PATH` and `PM_GLOBAL_PATH` so tests never touch repository planning data.
 
+## Developer Documentation
+
+For deeper context on implementation and extension development:
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — source tree, item storage, mutation contract, history/restore, search, and testing internals.
+- [docs/EXTENSIONS.md](docs/EXTENSIONS.md) — full extension development guide: manifest format, ExtensionApi reference, lifecycle hooks, and a working example.
+
 ## Extension Development
 
-`pm-cli` extensions live in `.agents/pm/extensions/` (project) or `~/.pm-cli/extensions/` (global). Each extension needs:
+`pm-cli` extensions live in `.agents/pm/extensions/` (project) or `~/.pm-cli/extensions/` (global). See [docs/EXTENSIONS.md](docs/EXTENSIONS.md) for the full guide. Each extension needs:
 
 1. A manifest file `manifest.json` declaring `name`, `version`, `entry`, `priority`, and `capabilities`.
 2. An entry module exporting `activate(api)`.

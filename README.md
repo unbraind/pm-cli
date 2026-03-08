@@ -1,5 +1,10 @@
 # pm-cli (`pm`)
 
+[![CI](https://github.com/unbraind/pm-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/unbraind/pm-cli/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/pm-cli)](https://www.npmjs.com/package/pm-cli)
+[![Node >=20](https://img.shields.io/node/v/pm-cli)](https://nodejs.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Agent-friendly, git-native project management for humans and coding agents.
 
 `pm` stores work items as plain markdown files with JSON front-matter, keeps append-only history, supports safe concurrent mutation with lock + claim semantics, and defaults to token-efficient TOON output.
