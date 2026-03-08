@@ -732,7 +732,7 @@ All commands return deterministic top-level objects (TOON by default, JSON with 
 | `pm search <keywords>` | keyword query + optional mode/include-linked/limit filters | `{ query, mode, items, count, filters, now }` |
 | `pm reindex` | optional `--mode` (`keyword|semantic|hybrid` baseline) | `{ ok, mode, total_items, artifacts, warnings, generated_at }` |
 | `pm beads import --file <path?>` | optional Beads JSONL source path (defaults to `.beads/issues.jsonl`) | `{ ok, source, imported, skipped, ids, warnings }` |
-| `pm todos import --folder <path?>` | optional todos markdown source folder (defaults to `.pi/todos`) | `{ ok, folder, imported, skipped, ids, warnings }` |
+| `pm todos import --folder <path?>` | optional todos markdown source folder (defaults to `.pi/todos`); preserves canonical optional `ItemFrontMatter` metadata when present and applies deterministic defaults for missing PM fields | `{ ok, folder, imported, skipped, ids, warnings }` |
 | `pm todos export --folder <path?>` | optional todos markdown destination folder (defaults to `.pi/todos`) | `{ ok, folder, exported, ids, warnings }` |
 | `pm create ...` | required title + schema flags | `{ item, changed_fields, warnings }` |
 | `pm update <ID> ...` | id + patch-like flags (`--status closed` is rejected; use `pm close <ID> <TEXT>`) | `{ item, changed_fields, warnings }` |
@@ -1035,8 +1035,8 @@ Behavior:
 - Field mapping:
   - `title -> title`
   - `body -> body`
-  - `status/tags/created_at/assignee/confidence -> same`
-  - `confidence` text aliases normalize deterministically (`med -> medium`)
+  - canonical PM front-matter fields round-trip when present, including planning/workflow metadata (`definition_of_ready`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `why_now`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blocked_by`, `blocked_reason`, `unblock_note`) and issue metadata (`reporter`, `severity`, `environment`, `repro_steps`, `resolution`, `expected_result`, `actual_result`, `affected_version`, `fixed_version`, `component`, `regression`, `customer_impact`)
+  - `confidence`, `risk`, and `severity` text aliases normalize deterministically (`med -> medium`)
 - Missing PM fields get deterministic defaults:
   - `description = ""`
   - `priority = 2`

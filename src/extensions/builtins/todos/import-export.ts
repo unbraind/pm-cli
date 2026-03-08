@@ -15,7 +15,7 @@ import { nowIso } from "../../../core/shared/time.js";
 import { listAllFrontMatter, locateItem, readLocatedItem } from "../../../core/store/item-store.js";
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../../core/store/paths.js";
 import { readSettings } from "../../../core/store/settings.js";
-import { CONFIDENCE_TEXT_VALUES, ITEM_TYPE_VALUES, STATUS_VALUES } from "../../../types/index.js";
+import { CONFIDENCE_TEXT_VALUES, ISSUE_SEVERITY_VALUES, ITEM_TYPE_VALUES, RISK_VALUES, STATUS_VALUES } from "../../../types/index.js";
 import type { ItemDocument, ItemFrontMatter, ItemStatus, ItemType, PmSettings } from "../../../types/index.js";
 
 const DEFAULT_TODOS_FOLDER = ".pi/todos";
@@ -103,6 +103,19 @@ function toEstimatedMinutes(value: unknown): number | undefined {
   return undefined;
 }
 
+function toInteger(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isInteger(value)) {
+    return value;
+  }
+  if (typeof value === "string" && value.trim().length > 0) {
+    const parsed = Number(value);
+    if (Number.isInteger(parsed)) {
+      return parsed;
+    }
+  }
+  return undefined;
+}
+
 function toPriority(value: unknown): PriorityValue {
   if (typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 4) {
     return value as PriorityValue;
@@ -136,6 +149,48 @@ function toConfidence(value: unknown): ItemFrontMatter["confidence"] | undefined
   const parsed = Number(normalized);
   if (Number.isInteger(parsed) && parsed >= 0 && parsed <= 100) {
     return parsed;
+  }
+  return undefined;
+}
+
+function toNormalizedEnum<T extends readonly string[]>(
+  value: unknown,
+  allowed: T,
+): T[number] | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (normalized.length === 0) {
+    return undefined;
+  }
+  const candidate = normalized === "med" ? "medium" : normalized;
+  if (allowed.includes(candidate as T[number])) {
+    return candidate as T[number];
+  }
+  return undefined;
+}
+
+function toBoolean(value: unknown): boolean | undefined {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true" || normalized === "1") {
+      return true;
+    }
+    if (normalized === "false" || normalized === "0") {
+      return false;
+    }
+  }
+  if (typeof value === "number") {
+    if (value === 1) {
+      return true;
+    }
+    if (value === 0) {
+      return false;
+    }
   }
   return undefined;
 }
@@ -285,6 +340,34 @@ async function importTodoCandidate(candidate: ParsedTodoCandidate, runtime: Todo
       author: toNonEmptyString(candidate.frontMatter.author) ?? runtime.author,
       estimated_minutes: toEstimatedMinutes(candidate.frontMatter.estimated_minutes),
       acceptance_criteria: toNonEmptyString(candidate.frontMatter.acceptance_criteria),
+      definition_of_ready: toNonEmptyString(candidate.frontMatter.definition_of_ready),
+      order: toInteger(candidate.frontMatter.order),
+      goal: toNonEmptyString(candidate.frontMatter.goal),
+      objective: toNonEmptyString(candidate.frontMatter.objective),
+      value: toNonEmptyString(candidate.frontMatter.value),
+      impact: toNonEmptyString(candidate.frontMatter.impact),
+      outcome: toNonEmptyString(candidate.frontMatter.outcome),
+      why_now: toNonEmptyString(candidate.frontMatter.why_now),
+      parent: toNonEmptyString(candidate.frontMatter.parent),
+      reviewer: toNonEmptyString(candidate.frontMatter.reviewer),
+      risk: toNormalizedEnum(candidate.frontMatter.risk, RISK_VALUES),
+      sprint: toNonEmptyString(candidate.frontMatter.sprint),
+      release: toNonEmptyString(candidate.frontMatter.release),
+      blocked_by: toNonEmptyString(candidate.frontMatter.blocked_by),
+      blocked_reason: toNonEmptyString(candidate.frontMatter.blocked_reason),
+      unblock_note: toNonEmptyString(candidate.frontMatter.unblock_note),
+      reporter: toNonEmptyString(candidate.frontMatter.reporter),
+      severity: toNormalizedEnum(candidate.frontMatter.severity, ISSUE_SEVERITY_VALUES),
+      environment: toNonEmptyString(candidate.frontMatter.environment),
+      repro_steps: toNonEmptyString(candidate.frontMatter.repro_steps),
+      resolution: toNonEmptyString(candidate.frontMatter.resolution),
+      expected_result: toNonEmptyString(candidate.frontMatter.expected_result),
+      actual_result: toNonEmptyString(candidate.frontMatter.actual_result),
+      affected_version: toNonEmptyString(candidate.frontMatter.affected_version),
+      fixed_version: toNonEmptyString(candidate.frontMatter.fixed_version),
+      component: toNonEmptyString(candidate.frontMatter.component),
+      regression: toBoolean(candidate.frontMatter.regression),
+      customer_impact: toNonEmptyString(candidate.frontMatter.customer_impact),
       close_reason: toNonEmptyString(candidate.frontMatter.close_reason),
       dependencies: Array.isArray(candidate.frontMatter.dependencies) ? (candidate.frontMatter.dependencies as any[]) : undefined,
       comments: Array.isArray(candidate.frontMatter.comments) ? (candidate.frontMatter.comments as any[]) : undefined,

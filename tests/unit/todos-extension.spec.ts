@@ -173,6 +173,231 @@ describe("built-in todos extension import/export", () => {
     });
   });
 
+  it("imports regression boolean aliases from strings and numbers", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceFolder = path.join(context.tempRoot, "todos-regression-source");
+      await mkdir(sourceFolder, { recursive: true });
+
+      await writeTodoMarkdown(sourceFolder, "regression-string-false.md", {
+        id: "regression-string-false",
+        title: "Regression String False",
+        regression: "false",
+      });
+      await writeTodoMarkdown(sourceFolder, "regression-number-true.md", {
+        id: "regression-number-true",
+        title: "Regression Number True",
+        regression: 1,
+      });
+      await writeTodoMarkdown(sourceFolder, "regression-number-false.md", {
+        id: "regression-number-false",
+        title: "Regression Number False",
+        regression: 0,
+      });
+
+      const imported = await runTodosImport({ folder: sourceFolder }, {});
+      expect(imported.imported).toBe(3);
+      expect(imported.skipped).toBe(0);
+
+      const stringFalse = context.runCli(["get", "pm-regression-string-false", "--json"], { expectJson: true });
+      expect(stringFalse.code).toBe(0);
+      expect((stringFalse.json as { item: { regression?: boolean } }).item.regression).toBe(false);
+
+      const numberTrue = context.runCli(["get", "pm-regression-number-true", "--json"], { expectJson: true });
+      expect(numberTrue.code).toBe(0);
+      expect((numberTrue.json as { item: { regression?: boolean } }).item.regression).toBe(true);
+
+      const numberFalse = context.runCli(["get", "pm-regression-number-false", "--json"], { expectJson: true });
+      expect(numberFalse.code).toBe(0);
+      expect((numberFalse.json as { item: { regression?: boolean } }).item.regression).toBe(false);
+    });
+  });
+
+  it("drops empty or invalid enums while preserving numeric order and boolean regression values", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceFolder = path.join(context.tempRoot, "todos-enum-sanitization-source");
+      await mkdir(sourceFolder, { recursive: true });
+
+      await writeTodoMarkdown(sourceFolder, "enum-sanitization.md", {
+        id: "enum-sanitization",
+        title: "Enum sanitization",
+        order: 9,
+        risk: "   ",
+        severity: "urgent",
+        regression: true,
+      });
+
+      const imported = await runTodosImport({ folder: sourceFolder }, {});
+      expect(imported.imported).toBe(1);
+      expect(imported.skipped).toBe(0);
+
+      const result = context.runCli(["get", "pm-enum-sanitization", "--json"], { expectJson: true });
+      expect(result.code).toBe(0);
+      const item = (result.json as { item: Record<string, unknown> }).item;
+      expect(item.order).toBe(9);
+      expect(item.regression).toBe(true);
+      expect("risk" in item).toBe(false);
+      expect("severity" in item).toBe(false);
+    });
+  });
+
+  it("drops invalid integer strings and unsupported regression numerics while accepting string zero", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceFolder = path.join(context.tempRoot, "todos-normalization-edge-source");
+      await mkdir(sourceFolder, { recursive: true });
+
+      await writeTodoMarkdown(sourceFolder, "string-zero.md", {
+        id: "string-zero",
+        title: "String zero regression",
+        regression: "0",
+      });
+      await writeTodoMarkdown(sourceFolder, "invalid-order.md", {
+        id: "invalid-order",
+        title: "Invalid order",
+        order: "not-an-integer",
+        regression: 2,
+      });
+
+      const imported = await runTodosImport({ folder: sourceFolder }, {});
+      expect(imported.imported).toBe(2);
+      expect(imported.skipped).toBe(0);
+
+      const stringZero = context.runCli(["get", "pm-string-zero", "--json"], { expectJson: true });
+      expect(stringZero.code).toBe(0);
+      expect((stringZero.json as { item: { regression?: boolean } }).item.regression).toBe(false);
+
+      const invalidOrder = context.runCli(["get", "pm-invalid-order", "--json"], { expectJson: true });
+      expect(invalidOrder.code).toBe(0);
+      const invalidOrderItem = (invalidOrder.json as { item: Record<string, unknown> }).item;
+      expect("order" in invalidOrderItem).toBe(false);
+      expect("regression" in invalidOrderItem).toBe(false);
+    });
+  });
+
+  it("drops unsupported regression strings", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceFolder = path.join(context.tempRoot, "todos-regression-invalid-string-source");
+      await mkdir(sourceFolder, { recursive: true });
+
+      await writeTodoMarkdown(sourceFolder, "invalid-regression-string.md", {
+        id: "invalid-regression-string",
+        title: "Invalid regression string",
+        regression: "maybe",
+      });
+
+      const imported = await runTodosImport({ folder: sourceFolder }, {});
+      expect(imported.imported).toBe(1);
+      expect(imported.skipped).toBe(0);
+
+      const result = context.runCli(["get", "pm-invalid-regression-string", "--json"], { expectJson: true });
+      expect(result.code).toBe(0);
+      expect("regression" in (result.json as { item: Record<string, unknown> }).item).toBe(false);
+    });
+  });
+
+  it("imports canonical planning workflow and issue metadata fields when present", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceFolder = path.join(context.tempRoot, "todos-full-metadata-source");
+      await mkdir(sourceFolder, { recursive: true });
+
+      await writeTodoMarkdown(
+        sourceFolder,
+        "full-metadata.md",
+        {
+          id: "full-metadata",
+          title: "Full metadata import",
+          type: "issue",
+          status: "blocked",
+          priority: 1,
+          created_at: "2026-02-08T00:00:00.000Z",
+          updated_at: "2026-02-09T00:00:00.000Z",
+          deadline: "2026-02-10T00:00:00.000Z",
+          assignee: "owner-a",
+          author: "source-author",
+          estimated_minutes: 55,
+          acceptance_criteria: "Imported acceptance",
+          definition_of_ready: "Ready to import",
+          order: "7",
+          goal: "goal-a",
+          objective: "objective-a",
+          value: "value-a",
+          impact: "impact-a",
+          outcome: "outcome-a",
+          why_now: "why-now-a",
+          parent: "pm-parent-a",
+          reviewer: "reviewer-a",
+          risk: "med",
+          confidence: "med",
+          sprint: "sprint-a",
+          release: "release-a",
+          blocked_by: "pm-blocker-a",
+          blocked_reason: "waiting on dependency",
+          unblock_note: "dependency unblocked",
+          reporter: "reporter-a",
+          severity: "med",
+          environment: "production",
+          repro_steps: "step 1",
+          resolution: "pending",
+          expected_result: "works",
+          actual_result: "fails",
+          affected_version: "1.0.0",
+          fixed_version: "1.0.1",
+          component: "todos-import",
+          regression: "true",
+          customer_impact: "customer blocked",
+          close_reason: "not closed yet",
+        },
+        "metadata body",
+      );
+
+      const imported = await runTodosImport({ folder: sourceFolder }, {});
+      expect(imported.imported).toBe(1);
+      expect(imported.skipped).toBe(0);
+      expect(imported.ids).toEqual(["pm-full-metadata"]);
+
+      const result = context.runCli(["get", "pm-full-metadata", "--json"], { expectJson: true });
+      expect(result.code).toBe(0);
+      const item = (result.json as { item: Record<string, unknown>; body: string }).item;
+      expect(item.type).toBe("Issue");
+      expect(item.status).toBe("blocked");
+      expect(item.deadline).toBe("2026-02-10T00:00:00.000Z");
+      expect(item.assignee).toBe("owner-a");
+      expect(item.author).toBe("source-author");
+      expect(item.estimated_minutes).toBe(55);
+      expect(item.acceptance_criteria).toBe("Imported acceptance");
+      expect(item.definition_of_ready).toBe("Ready to import");
+      expect(item.order).toBe(7);
+      expect(item.goal).toBe("goal-a");
+      expect(item.objective).toBe("objective-a");
+      expect(item.value).toBe("value-a");
+      expect(item.impact).toBe("impact-a");
+      expect(item.outcome).toBe("outcome-a");
+      expect(item.why_now).toBe("why-now-a");
+      expect(item.parent).toBe("pm-parent-a");
+      expect(item.reviewer).toBe("reviewer-a");
+      expect(item.risk).toBe("medium");
+      expect(item.confidence).toBe("medium");
+      expect(item.sprint).toBe("sprint-a");
+      expect(item.release).toBe("release-a");
+      expect(item.blocked_by).toBe("pm-blocker-a");
+      expect(item.blocked_reason).toBe("waiting on dependency");
+      expect(item.unblock_note).toBe("dependency unblocked");
+      expect(item.reporter).toBe("reporter-a");
+      expect(item.severity).toBe("medium");
+      expect(item.environment).toBe("production");
+      expect(item.repro_steps).toBe("step 1");
+      expect(item.resolution).toBe("pending");
+      expect(item.expected_result).toBe("works");
+      expect(item.actual_result).toBe("fails");
+      expect(item.affected_version).toBe("1.0.0");
+      expect(item.fixed_version).toBe("1.0.1");
+      expect(item.component).toBe("todos-import");
+      expect(item.regression).toBe(true);
+      expect(item.customer_impact).toBe("customer blocked");
+      expect(item.close_reason).toBe("not closed yet");
+      expect((result.json as { body: string }).body).toBe("metadata body");
+    });
+  });
+
   it("covers import fallback branches, lock conflicts, and deterministic warnings", async () => {
     await withTempPmPath(async (context) => {
       const sourceFolder = path.join(context.tempRoot, "todos-branch-source");
