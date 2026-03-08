@@ -45,9 +45,14 @@
   "devDependencies": {
     "@types/node": "latest",
     "@vitest/coverage-v8": "^4.0.18",
-    "c8": "^10.1.3",
+    "c8": "^11.0.0",
     "tsx": "latest",
     "typescript": "latest",
     "vitest": "^4.0.18"
+  },
+  "pnpm": {
+    "overrides": {
+      "rollup": ">=4.59.0"
+    }
   }
 }
