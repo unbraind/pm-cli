@@ -123,7 +123,7 @@ describe("runUpdate", () => {
           whyNow: " why-now-next ",
           parent: " pm-parent-next ",
           reviewer: " reviewer-next ",
-          risk: "critical",
+          risk: "med",
           sprint: " sprint-next ",
           release: " release-next ",
           blockedBy: " pm-blocking-next ",
@@ -187,7 +187,7 @@ describe("runUpdate", () => {
       expect(item.why_now).toBe("why-now-next");
       expect(item.parent).toBe("pm-parent-next");
       expect(item.reviewer).toBe("reviewer-next");
-      expect(item.risk).toBe("critical");
+      expect(item.risk).toBe("medium");
       expect(item.sprint).toBe("sprint-next");
       expect(item.release).toBe("release-next");
       expect(item.blocked_by).toBe("pm-blocking-next");

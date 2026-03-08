@@ -60,6 +60,11 @@ function ensureEnum<T extends string>(value: string, allowed: readonly T[], labe
   return value as T;
 }
 
+function normalizeRiskInput(value: string): string {
+  const trimmed = value.trim();
+  return trimmed.toLowerCase() === "med" ? "medium" : trimmed;
+}
+
 function ensurePriority(raw: string): 0 | 1 | 2 | 3 | 4 {
   const parsed = parseOptionalNumber(raw, "priority");
   if (![0, 1, 2, 3, 4].includes(parsed)) {
@@ -281,7 +286,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         if (isNoneToken(options.risk)) {
           delete document.front_matter.risk;
         } else {
-          document.front_matter.risk = ensureEnum(options.risk, RISK_VALUES, "risk");
+          document.front_matter.risk = ensureEnum(normalizeRiskInput(options.risk), RISK_VALUES, "risk");
         }
         changedFields.push("risk");
       }

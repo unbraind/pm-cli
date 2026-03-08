@@ -326,6 +326,7 @@ Unset optional fields are omitted.
 - `updated_at` MUST change for every mutation.
 - Relative deadlines (`+6h`, `+1d`, `+2w`) resolve on write and persist as absolute ISO.
 - `tags` sorted lexicographically, deduplicated.
+- `risk` CLI input alias `med` normalizes to canonical stored value `medium`.
 - `dependencies`, `comments`, `notes`, `learnings` sorted by `created_at` ascending; stable tie-break by text/id.
 - `files` sorted by `scope` asc, then `path` asc, then `note` asc.
 - `tests` sorted by `scope` asc, then `path` asc, then `command` asc, then `timeout_seconds` asc, then `note` asc.
@@ -580,7 +581,7 @@ Mutating `create` (all schema fields MUST be passable explicitly):
 - `--assignee` (explicit; use `none` to unset)
 - `--parent` (optional; item ID reference or `none`)
 - `--reviewer` (optional; or `none`)
-- `--risk` (optional; `low|medium|high|critical` or `none`)
+- `--risk` (optional; `low|med|medium|high|critical` or `none`; `med` persists as `medium`)
 - `--sprint` (optional; or `none`)
 - `--release` (optional; or `none`)
 - `--blocked-by`, `--blocked_by` (optional; item ID or free-text, or `none`)
@@ -618,7 +619,7 @@ Mutating `update` (v0.1 baseline):
 - `--assignee`
 - `--parent`
 - `--reviewer`
-- `--risk`
+- `--risk` (`low|med|medium|high|critical`; `med` persists as `medium`)
 - `--sprint`
 - `--release`
 - `--blocked-by`, `--blocked_by`

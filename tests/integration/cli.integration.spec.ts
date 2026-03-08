@@ -398,7 +398,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "--reviewer",
           "reviewer-update",
           "--risk",
-          "high",
+          "med",
           "--sprint",
           "sprint-update",
           "--release",
@@ -452,7 +452,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       }).item;
       expect(updatedItem.parent).toBe("pm-parent-update");
       expect(updatedItem.reviewer).toBe("reviewer-update");
-      expect(updatedItem.risk).toBe("high");
+      expect(updatedItem.risk).toBe("medium");
       expect(updatedItem.sprint).toBe("sprint-update");
       expect(updatedItem.release).toBe("release-update");
       expect(updatedItem.definition_of_ready).toBe("Ready after update");

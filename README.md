@@ -273,7 +273,7 @@ Format:
 - optional scalar flags (use `none` to unset):
   - `--parent` (item ID reference)
   - `--reviewer`
-  - `--risk` (`low|medium|high|critical`)
+  - `--risk` (`low|med|medium|high|critical`; `med` persists as `medium`)
   - `--sprint`
   - `--release`
   - `--blocked-by/--blocked_by` (item ID or free-text)
@@ -317,7 +317,7 @@ Explicit unset behavior:
 - `--assignee`
 - `--parent`
 - `--reviewer`
-- `--risk`
+- `--risk` (`low|med|medium|high|critical`; `med` persists as `medium`)
 - `--sprint`
 - `--release`
 - `--blocked-by/--blocked_by`

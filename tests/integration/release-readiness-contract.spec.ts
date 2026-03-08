@@ -606,6 +606,7 @@ describe("release readiness baseline contract", () => {
     expect(prdCreateSection).toContain("--outcome");
     expect(prdCreateSection).toContain("--why-now");
     expect(prdCreateSection).toContain("--why_now");
+    expect(prdCreateSection).toContain("low|med|medium|high|critical");
     expect(readmeCreateSection).toContain("--estimated_minutes");
     expect(readmeCreateSection).toContain("--acceptance_criteria");
     expect(readmeCreateSection).toContain("--definition-of-ready");
@@ -619,6 +620,7 @@ describe("release readiness baseline contract", () => {
     expect(readmeCreateSection).toContain("--outcome");
     expect(readmeCreateSection).toContain("--why-now");
     expect(readmeCreateSection).toContain("--why_now");
+    expect(readmeCreateSection).toContain("low|med|medium|high|critical");
 
     await withTempPmPath(async (context) => {
       const help = context.runCli(["create", "--help"]);
@@ -640,6 +642,7 @@ describe("release readiness baseline contract", () => {
       expect(help.stdout).toContain("--outcome");
       expect(help.stdout).toContain("--why-now");
       expect(help.stdout).toContain("--why_now");
+      expect(help.stdout).toContain("low|med|medium|high|critical");
       expect(help.stdout).not.toContain("Seed dependency entry (required; use none for empty) (default: [])");
       expect(help.stdout).not.toContain("Seed comment entry (required; use none for empty) (default: [])");
       expect(help.stdout).not.toContain("Seed note entry (required; use none for empty) (default: [])");
@@ -712,6 +715,7 @@ describe("release readiness baseline contract", () => {
     expect(prdUpdateSection).toContain("--outcome");
     expect(prdUpdateSection).toContain("--why-now");
     expect(prdUpdateSection).toContain("--why_now");
+    expect(prdUpdateSection).toContain("low|med|medium|high|critical");
     expect(readmeUpdateSection).toContain("--estimated_minutes");
     expect(readmeUpdateSection).toContain("--acceptance_criteria");
     expect(readmeUpdateSection).toContain("--definition-of-ready");
@@ -725,6 +729,7 @@ describe("release readiness baseline contract", () => {
     expect(readmeUpdateSection).toContain("--outcome");
     expect(readmeUpdateSection).toContain("--why-now");
     expect(readmeUpdateSection).toContain("--why_now");
+    expect(readmeUpdateSection).toContain("low|med|medium|high|critical");
     expect(readmeUpdateSection).toContain("pm close <ID> <TEXT>");
 
     await withTempPmPath(async (context) => {
@@ -747,6 +752,7 @@ describe("release readiness baseline contract", () => {
       expect(updateHelp.stdout).toContain("--outcome");
       expect(updateHelp.stdout).toContain("--why-now");
       expect(updateHelp.stdout).toContain("--why_now");
+      expect(updateHelp.stdout).toContain("low|med|medium|high|critical");
     });
   });
 

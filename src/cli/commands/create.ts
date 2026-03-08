@@ -78,6 +78,11 @@ function ensureEnumValue<T extends string>(value: string, allowed: readonly T[],
   return value as T;
 }
 
+function normalizeRiskInput(value: string): string {
+  const trimmed = value.trim();
+  return trimmed.toLowerCase() === "med" ? "medium" : trimmed;
+}
+
 function parseCreatedAt(value: string | undefined, currentIso: string): string {
   if (!value || value.trim() === "" || value.trim().toLowerCase() === "now") {
     return currentIso;
@@ -352,7 +357,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const parent = options.parent !== undefined ? parseOptionalString(options.parent) : undefined;
   const reviewer = options.reviewer !== undefined ? parseOptionalString(options.reviewer) : undefined;
   const riskRaw = options.risk !== undefined ? parseOptionalString(options.risk) : undefined;
-  const risk = riskRaw !== undefined ? ensureEnumValue(riskRaw, RISK_VALUES, "risk") : undefined;
+  const risk = riskRaw !== undefined ? ensureEnumValue(normalizeRiskInput(riskRaw), RISK_VALUES, "risk") : undefined;
   const sprint = options.sprint !== undefined ? parseOptionalString(options.sprint) : undefined;
   const release = options.release !== undefined ? parseOptionalString(options.release) : undefined;
   const blockedBy = options.blockedBy !== undefined ? parseOptionalString(options.blockedBy) : undefined;

@@ -66,7 +66,7 @@ describe("runCreate", () => {
         baseCreateOptions({
           parent: "pm-parent-seed",
           reviewer: "reviewer-seed",
-          risk: "high",
+          risk: "med",
           sprint: "sprint-42",
           release: "release-2026.03",
           blockedBy: "pm-blocked-seed",
@@ -134,7 +134,7 @@ describe("runCreate", () => {
       expect(result.item.author).toBe("seed-author");
       expect(result.item.parent).toBe("pm-parent-seed");
       expect(result.item.reviewer).toBe("reviewer-seed");
-      expect(result.item.risk).toBe("high");
+      expect(result.item.risk).toBe("medium");
       expect(result.item.sprint).toBe("sprint-42");
       expect(result.item.release).toBe("release-2026.03");
       expect(result.item.blocked_by).toBe("pm-blocked-seed");
