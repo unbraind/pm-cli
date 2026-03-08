@@ -21,7 +21,7 @@ import type {
   LinkedTest,
   LogNote,
 } from "../../types/index.js";
-import { DEPENDENCY_KIND_VALUES, ITEM_TYPE_VALUES, SCOPE_VALUES, STATUS_VALUES } from "../../types/index.js";
+import { DEPENDENCY_KIND_VALUES, ITEM_TYPE_VALUES, RISK_VALUES, SCOPE_VALUES, STATUS_VALUES } from "../../types/index.js";
 
 export interface CreateCommandOptions {
   title: string;
@@ -37,6 +37,13 @@ export interface CreateCommandOptions {
   author: string;
   message: string;
   assignee: string;
+  parent?: string;
+  reviewer?: string;
+  risk?: string;
+  sprint?: string;
+  release?: string;
+  blockedBy?: string;
+  blockedReason?: string;
   dep?: string[];
   comment?: string[];
   note?: string[];
@@ -276,12 +283,19 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const docs = parseDocs(options.doc);
   if (docs.explicitEmpty) explicitUnsets.push("docs");
 
-  const scalarExplicitUnsetCandidates: ReadonlyArray<readonly [string, string]> = [
+  const scalarExplicitUnsetCandidates: ReadonlyArray<readonly [string | undefined, string]> = [
     [options.deadline, "deadline"],
     [options.estimatedMinutes, "estimated_minutes"],
     [options.acceptanceCriteria, "acceptance_criteria"],
     [options.assignee, "assignee"],
     [options.author, "author"],
+    [options.parent, "parent"],
+    [options.reviewer, "reviewer"],
+    [options.risk, "risk"],
+    [options.sprint, "sprint"],
+    [options.release, "release"],
+    [options.blockedBy, "blocked_by"],
+    [options.blockedReason, "blocked_reason"],
   ];
   for (const [value, key] of scalarExplicitUnsetCandidates) {
     if (isNoneToken(value)) {
@@ -302,6 +316,14 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const acceptanceCriteria = isNoneToken(options.acceptanceCriteria) ? undefined : options.acceptanceCriteria;
   const assignee = parseOptionalString(options.assignee);
   const authorValue = parseOptionalString(options.author) ?? author;
+  const parent = options.parent !== undefined ? parseOptionalString(options.parent) : undefined;
+  const reviewer = options.reviewer !== undefined ? parseOptionalString(options.reviewer) : undefined;
+  const riskRaw = options.risk !== undefined ? parseOptionalString(options.risk) : undefined;
+  const risk = riskRaw !== undefined ? ensureEnumValue(riskRaw, RISK_VALUES, "risk") : undefined;
+  const sprint = options.sprint !== undefined ? parseOptionalString(options.sprint) : undefined;
+  const release = options.release !== undefined ? parseOptionalString(options.release) : undefined;
+  const blockedBy = options.blockedBy !== undefined ? parseOptionalString(options.blockedBy) : undefined;
+  const blockedReason = options.blockedReason !== undefined ? parseOptionalString(options.blockedReason) : undefined;
 
   const frontMatter: ItemFrontMatter = normalizeFrontMatter({
     id,
@@ -318,6 +340,13 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     author: authorValue,
     estimated_minutes: estimatedMinutes,
     acceptance_criteria: acceptanceCriteria,
+    parent,
+    reviewer,
+    risk,
+    sprint,
+    release,
+    blocked_by: blockedBy,
+    blocked_reason: blockedReason,
     dependencies: dependencies.values,
     comments: comments.values as Comment[] | undefined,
     notes: notes.values as LogNote[] | undefined,

@@ -23,6 +23,9 @@ export type DependencyKind = (typeof DEPENDENCY_KIND_VALUES)[number];
 export const SCOPE_VALUES = ["project", "global"] as const;
 export type LinkScope = (typeof SCOPE_VALUES)[number];
 
+export const RISK_VALUES = ["low", "medium", "high", "critical"] as const;
+export type RiskLevel = (typeof RISK_VALUES)[number];
+
 export interface Dependency {
   id: string;
   kind: DependencyKind;
@@ -77,6 +80,13 @@ export interface ItemFrontMatter {
   author?: string;
   estimated_minutes?: number;
   acceptance_criteria?: string;
+  parent?: string;
+  reviewer?: string;
+  risk?: "low" | "medium" | "high" | "critical";
+  sprint?: string;
+  release?: string;
+  blocked_by?: string;
+  blocked_reason?: string;
   dependencies?: Dependency[];
   comments?: Comment[];
   notes?: LogNote[];

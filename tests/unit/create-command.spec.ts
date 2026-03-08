@@ -62,7 +62,18 @@ describe("runCreate", () => {
 
   it("creates an item with normalized fields and deterministic history metadata", async () => {
     await withTempPmPath(async (context) => {
-      const result = await runCreate(baseCreateOptions(), { path: context.pmPath });
+      const result = await runCreate(
+        baseCreateOptions({
+          parent: "pm-parent-seed",
+          reviewer: "reviewer-seed",
+          risk: "high",
+          sprint: "sprint-42",
+          release: "release-2026.03",
+          blockedBy: "pm-blocked-seed",
+          blockedReason: "waiting on dependency seed",
+        }),
+        { path: context.pmPath },
+      );
 
       expect(result.warnings).toEqual([]);
       expect(result.changed_fields).toEqual(
@@ -81,6 +92,13 @@ describe("runCreate", () => {
           "author",
           "estimated_minutes",
           "acceptance_criteria",
+          "parent",
+          "reviewer",
+          "risk",
+          "sprint",
+          "release",
+          "blocked_by",
+          "blocked_reason",
           "dependencies",
           "comments",
           "notes",
@@ -98,6 +116,13 @@ describe("runCreate", () => {
       expect(result.item.priority).toBe(1);
       expect(result.item.tags).toEqual(["alpha", "gamma"]);
       expect(result.item.author).toBe("seed-author");
+      expect(result.item.parent).toBe("pm-parent-seed");
+      expect(result.item.reviewer).toBe("reviewer-seed");
+      expect(result.item.risk).toBe("high");
+      expect(result.item.sprint).toBe("sprint-42");
+      expect(result.item.release).toBe("release-2026.03");
+      expect(result.item.blocked_by).toBe("pm-blocked-seed");
+      expect(result.item.blocked_reason).toBe("waiting on dependency seed");
       expect(result.item.dependencies).toEqual([
         {
           id: "pm-a1b2",
@@ -189,6 +214,13 @@ describe("runCreate", () => {
             acceptanceCriteria: "none",
             author: "none",
             assignee: "none",
+            parent: "none",
+            reviewer: "none",
+            risk: "none",
+            sprint: "none",
+            release: "none",
+            blockedBy: "none",
+            blockedReason: "none",
             message: "",
             dep: ["none"],
             comment: ["none"],
@@ -205,6 +237,13 @@ describe("runCreate", () => {
         expect(result.item.estimated_minutes).toBeUndefined();
         expect(result.item.acceptance_criteria).toBeUndefined();
         expect(result.item.assignee).toBeUndefined();
+        expect(result.item.parent).toBeUndefined();
+        expect(result.item.reviewer).toBeUndefined();
+        expect(result.item.risk).toBeUndefined();
+        expect(result.item.sprint).toBeUndefined();
+        expect(result.item.release).toBeUndefined();
+        expect(result.item.blocked_by).toBeUndefined();
+        expect(result.item.blocked_reason).toBeUndefined();
         expect(result.item.dependencies).toBeUndefined();
         expect(result.item.comments).toBeUndefined();
         expect(result.item.notes).toBeUndefined();
@@ -221,6 +260,13 @@ describe("runCreate", () => {
             "unset:estimated_minutes",
             "unset:acceptance_criteria",
             "unset:assignee",
+            "unset:parent",
+            "unset:reviewer",
+            "unset:risk",
+            "unset:sprint",
+            "unset:release",
+            "unset:blocked_by",
+            "unset:blocked_reason",
             "unset:dependencies",
             "unset:comments",
             "unset:notes",
@@ -393,6 +439,15 @@ describe("runCreate", () => {
         runCreate(
           baseCreateOptions({
             priority: "8",
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            risk: "extreme",
           }),
           { path: context.pmPath },
         ),

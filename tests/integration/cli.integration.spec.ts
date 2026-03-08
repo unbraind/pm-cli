@@ -272,6 +272,184 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("accepts extended optional field flags for create/update including blocked aliases", async () => {
+    await withTempPmPath(async (context) => {
+      const createResult = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Extended optional create item",
+          "--description",
+          "Validate create/update optional scalar field flags",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,contract,extended",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "20",
+          "--acceptance-criteria",
+          "Extended optional fields are accepted",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create with extended optional fields",
+          "--assignee",
+          "none",
+          "--parent",
+          "pm-parent-create",
+          "--reviewer",
+          "reviewer-create",
+          "--risk",
+          "medium",
+          "--sprint",
+          "sprint-create",
+          "--release",
+          "release-create",
+          "--blocked_by",
+          "pm-block-create",
+          "--blocked_reason",
+          "blocked reason create",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(createResult.code).toBe(0);
+      const createdItem = (createResult.json as {
+        item: {
+          id: string;
+          parent: string;
+          reviewer: string;
+          risk: string;
+          sprint: string;
+          release: string;
+          blocked_by: string;
+          blocked_reason: string;
+        };
+      }).item;
+      expect(createdItem.parent).toBe("pm-parent-create");
+      expect(createdItem.reviewer).toBe("reviewer-create");
+      expect(createdItem.risk).toBe("medium");
+      expect(createdItem.sprint).toBe("sprint-create");
+      expect(createdItem.release).toBe("release-create");
+      expect(createdItem.blocked_by).toBe("pm-block-create");
+      expect(createdItem.blocked_reason).toBe("blocked reason create");
+
+      const updateResult = context.runCli(
+        [
+          "update",
+          createdItem.id,
+          "--json",
+          "--parent",
+          "pm-parent-update",
+          "--reviewer",
+          "reviewer-update",
+          "--risk",
+          "high",
+          "--sprint",
+          "sprint-update",
+          "--release",
+          "release-update",
+          "--blocked-by",
+          "pm-block-update",
+          "--blocked-reason",
+          "blocked reason update",
+          "--author",
+          "integration-test",
+          "--message",
+          "Update with extended optional fields",
+        ],
+        { expectJson: true },
+      );
+      expect(updateResult.code).toBe(0);
+      const updatedItem = (updateResult.json as {
+        item: {
+          parent: string;
+          reviewer: string;
+          risk: string;
+          sprint: string;
+          release: string;
+          blocked_by: string;
+          blocked_reason: string;
+        };
+      }).item;
+      expect(updatedItem.parent).toBe("pm-parent-update");
+      expect(updatedItem.reviewer).toBe("reviewer-update");
+      expect(updatedItem.risk).toBe("high");
+      expect(updatedItem.sprint).toBe("sprint-update");
+      expect(updatedItem.release).toBe("release-update");
+      expect(updatedItem.blocked_by).toBe("pm-block-update");
+      expect(updatedItem.blocked_reason).toBe("blocked reason update");
+
+      const unsetResult = context.runCli(
+        [
+          "update",
+          createdItem.id,
+          "--json",
+          "--parent",
+          "none",
+          "--reviewer",
+          "none",
+          "--risk",
+          "none",
+          "--sprint",
+          "none",
+          "--release",
+          "none",
+          "--blocked_by",
+          "none",
+          "--blocked_reason",
+          "none",
+          "--author",
+          "integration-test",
+          "--message",
+          "Unset extended optional fields",
+        ],
+        { expectJson: true },
+      );
+      expect(unsetResult.code).toBe(0);
+      const unsetItem = (unsetResult.json as {
+        item: {
+          parent?: string;
+          reviewer?: string;
+          risk?: string;
+          sprint?: string;
+          release?: string;
+          blocked_by?: string;
+          blocked_reason?: string;
+        };
+      }).item;
+      expect(unsetItem.parent).toBeUndefined();
+      expect(unsetItem.reviewer).toBeUndefined();
+      expect(unsetItem.risk).toBeUndefined();
+      expect(unsetItem.sprint).toBeUndefined();
+      expect(unsetItem.release).toBeUndefined();
+      expect(unsetItem.blocked_by).toBeUndefined();
+      expect(unsetItem.blocked_reason).toBeUndefined();
+    });
+  });
+
   it("requires explicit repeatable seed flags for create contract parity", async () => {
     await withTempPmPath(async (context) => {
       const createWithoutRepeatables = context.runCli([

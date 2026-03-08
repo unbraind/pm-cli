@@ -191,6 +191,13 @@ export function normalizeFrontMatter(frontMatter: ItemFrontMatter): ItemFrontMat
     author: frontMatter.author || undefined,
     estimated_minutes: frontMatter.estimated_minutes,
     acceptance_criteria: frontMatter.acceptance_criteria ?? undefined,
+    parent: frontMatter.parent?.trim() || undefined,
+    reviewer: frontMatter.reviewer?.trim() || undefined,
+    risk: frontMatter.risk ?? undefined,
+    sprint: frontMatter.sprint?.trim() || undefined,
+    release: frontMatter.release?.trim() || undefined,
+    blocked_by: frontMatter.blocked_by?.trim() || undefined,
+    blocked_reason: frontMatter.blocked_reason?.trim() || undefined,
     close_reason: frontMatter.close_reason || undefined,
   };
   for (const [key, value] of Object.entries(normalized)) {

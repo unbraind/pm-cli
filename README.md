@@ -270,6 +270,14 @@ Format:
   - `--author` (fallbacks still exist, but explicit is recommended)
   - `--message`
   - `--assignee` (explicit; use `none` to clear)
+- optional scalar flags (use `none` to unset):
+  - `--parent` (item ID reference)
+  - `--reviewer`
+  - `--risk` (`low|medium|high|critical`)
+  - `--sprint`
+  - `--release`
+  - `--blocked-by/--blocked_by` (item ID or free-text)
+  - `--blocked-reason/--blocked_reason`
 - required repeatable seed flags (pass each at least once; use `none` for explicit empty intent):
   - `--dep`
   - `--comment`
@@ -299,6 +307,13 @@ Explicit unset behavior:
 - `--estimate/--estimated-minutes/--estimated_minutes`
 - `--acceptance-criteria`, `--acceptance_criteria`, `--ac`
 - `--assignee`
+- `--parent`
+- `--reviewer`
+- `--risk`
+- `--sprint`
+- `--release`
+- `--blocked-by/--blocked_by`
+- `--blocked-reason/--blocked_reason`
 - `--author`
 - `--message`
 - `--force`

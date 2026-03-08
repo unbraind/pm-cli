@@ -251,6 +251,13 @@ Optional fields:
 - `tests?: LinkedTest[]`
 - `docs?: LinkedDoc[]`
 - `estimated_minutes?: number`
+- `parent?: string` (item ID reference; shorthand for a `kind=parent` dependency)
+- `reviewer?: string`
+- `risk?: "low" | "medium" | "high" | "critical"`
+- `sprint?: string`
+- `release?: string`
+- `blocked_by?: string` (item ID reference or free-text reason)
+- `blocked_reason?: string`
 - `close_reason?: string`
 
 Types:
@@ -280,14 +287,21 @@ Keys MUST serialize in this order:
 12. `author`
 13. `estimated_minutes`
 14. `acceptance_criteria`
-15. `dependencies`
-16. `comments`
-17. `notes`
-18. `learnings`
-19. `files`
-20. `tests`
-21. `docs`
-22. `close_reason`
+15. `parent`
+16. `reviewer`
+17. `risk`
+18. `sprint`
+19. `release`
+20. `blocked_by`
+21. `blocked_reason`
+22. `dependencies`
+23. `comments`
+24. `notes`
+25. `learnings`
+26. `files`
+27. `tests`
+28. `docs`
+29. `close_reason`
 
 Unset optional fields are omitted.
 
@@ -548,6 +562,13 @@ Mutating `create` (all schema fields MUST be passable explicitly):
 - `--author` (explicit; fallback `PM_AUTHOR`/settings allowed)
 - `--message` (explicit history message; empty allowed)
 - `--assignee` (explicit; use `none` to unset)
+- `--parent` (optional; item ID reference or `none`)
+- `--reviewer` (optional; or `none`)
+- `--risk` (optional; `low|medium|high|critical` or `none`)
+- `--sprint` (optional; or `none`)
+- `--release` (optional; or `none`)
+- `--blocked-by`, `--blocked_by` (optional; item ID or free-text, or `none`)
+- `--blocked-reason`, `--blocked_reason` (optional; or `none`)
 
 Mutating `create` flags (repeatable, each required at least once; use `none` for explicit empty intent):
 
@@ -571,6 +592,13 @@ Mutating `update` (v0.1 baseline):
 - `--estimate`, `--estimated-minutes`, `--estimated_minutes`
 - `--acceptance-criteria`, `--acceptance_criteria`, `--ac`
 - `--assignee`
+- `--parent`
+- `--reviewer`
+- `--risk`
+- `--sprint`
+- `--release`
+- `--blocked-by`, `--blocked_by`
+- `--blocked-reason`, `--blocked_reason`
 - `--author`
 - `--message`
 

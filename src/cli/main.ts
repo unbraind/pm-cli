@@ -735,6 +735,17 @@ function normalizeCreateOptions(commandOptions: Record<string, unknown>): Create
     author: requiredString("author", "--author"),
     message: requiredString("message", "--message"),
     assignee: requiredString("assignee", "--assignee"),
+    parent: typeof commandOptions.parent === "string" ? commandOptions.parent : undefined,
+    reviewer: typeof commandOptions.reviewer === "string" ? commandOptions.reviewer : undefined,
+    risk: typeof commandOptions.risk === "string" ? commandOptions.risk : undefined,
+    sprint: typeof commandOptions.sprint === "string" ? commandOptions.sprint : undefined,
+    release: typeof commandOptions.release === "string" ? commandOptions.release : undefined,
+    blockedBy:
+      (typeof commandOptions.blockedBy === "string" ? commandOptions.blockedBy : undefined) ??
+      (typeof commandOptions.blocked_by === "string" ? commandOptions.blocked_by : undefined),
+    blockedReason:
+      (typeof commandOptions.blockedReason === "string" ? commandOptions.blockedReason : undefined) ??
+      (typeof commandOptions.blocked_reason === "string" ? commandOptions.blocked_reason : undefined),
     dep: requiredRepeatable("dep", "--dep"),
     comment: requiredRepeatable("comment", "--comment"),
     note: requiredRepeatable("note", "--note"),
@@ -767,6 +778,17 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
     message: typeof commandOptions.message === "string" ? commandOptions.message : undefined,
     force: Boolean(commandOptions.force),
     assignee: typeof commandOptions.assignee === "string" ? commandOptions.assignee : undefined,
+    parent: typeof commandOptions.parent === "string" ? commandOptions.parent : undefined,
+    reviewer: typeof commandOptions.reviewer === "string" ? commandOptions.reviewer : undefined,
+    risk: typeof commandOptions.risk === "string" ? commandOptions.risk : undefined,
+    sprint: typeof commandOptions.sprint === "string" ? commandOptions.sprint : undefined,
+    release: typeof commandOptions.release === "string" ? commandOptions.release : undefined,
+    blockedBy:
+      (typeof commandOptions.blockedBy === "string" ? commandOptions.blockedBy : undefined) ??
+      (typeof commandOptions.blocked_by === "string" ? commandOptions.blocked_by : undefined),
+    blockedReason:
+      (typeof commandOptions.blockedReason === "string" ? commandOptions.blockedReason : undefined) ??
+      (typeof commandOptions.blocked_reason === "string" ? commandOptions.blocked_reason : undefined),
   };
 }
 
@@ -904,6 +926,15 @@ program
   .requiredOption("--author <value>", "Mutation author, or none")
   .requiredOption("--message <value>", "History message (allow empty string)")
   .requiredOption("--assignee <value>", "Item assignee, or none")
+  .option("--parent <value>", "Parent item ID, or none")
+  .option("--reviewer <value>", "Reviewer, or none")
+  .option("--risk <value>", "Risk level: low|medium|high|critical, or none")
+  .option("--sprint <value>", "Sprint identifier, or none")
+  .option("--release <value>", "Release identifier, or none")
+  .option("--blocked-by <value>", "Blocked-by item ID or reason, or none")
+  .option("--blocked_by <value>", "Alias for --blocked-by")
+  .option("--blocked-reason <value>", "Blocked reason, or none")
+  .option("--blocked_reason <value>", "Alias for --blocked-reason")
   .option("--dep <value>", "Seed dependency entry (required; use none for empty)", collect)
   .option("--comment <value>", "Seed comment entry (required; use none for empty)", collect)
   .option("--note <value>", "Seed note entry (required; use none for empty)", collect)
@@ -1150,6 +1181,15 @@ program
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "Mutation message")
   .option("--assignee <value>", "Set assignee (or none)")
+  .option("--parent <value>", "Set parent item ID (or none)")
+  .option("--reviewer <value>", "Set reviewer (or none)")
+  .option("--risk <value>", "Set risk level: low|medium|high|critical (or none)")
+  .option("--sprint <value>", "Set sprint identifier (or none)")
+  .option("--release <value>", "Set release identifier (or none)")
+  .option("--blocked-by <value>", "Set blocked-by item ID or reason (or none)")
+  .option("--blocked_by <value>", "Alias for --blocked-by")
+  .option("--blocked-reason <value>", "Set blocked reason (or none)")
+  .option("--blocked_reason <value>", "Alias for --blocked-reason")
   .option("--force", "Force ownership override")
   .action(async (id: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);

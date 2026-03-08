@@ -7,7 +7,7 @@ import { isNoneToken, resolveIsoOrRelative } from "../../core/shared/time.js";
 import { mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import { ITEM_TYPE_VALUES, STATUS_VALUES } from "../../types/index.js";
+import { ITEM_TYPE_VALUES, RISK_VALUES, STATUS_VALUES } from "../../types/index.js";
 
 export interface UpdateCommandOptions {
   title?: string;
@@ -23,6 +23,13 @@ export interface UpdateCommandOptions {
   message?: string;
   force?: boolean;
   assignee?: string;
+  parent?: string;
+  reviewer?: string;
+  risk?: string;
+  sprint?: string;
+  release?: string;
+  blockedBy?: string;
+  blockedReason?: string;
 }
 
 export interface UpdateResult {
@@ -71,6 +78,13 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     options.estimatedMinutes !== undefined,
     options.acceptanceCriteria !== undefined,
     options.assignee !== undefined,
+    options.parent !== undefined,
+    options.reviewer !== undefined,
+    options.risk !== undefined,
+    options.sprint !== undefined,
+    options.release !== undefined,
+    options.blockedBy !== undefined,
+    options.blockedReason !== undefined,
   ].some(Boolean);
 
   if (!changedFlags) {
@@ -156,6 +170,62 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
           document.front_matter.assignee = options.assignee.trim();
         }
         changedFields.push("assignee");
+      }
+      if (options.parent !== undefined) {
+        if (isNoneToken(options.parent)) {
+          delete document.front_matter.parent;
+        } else {
+          document.front_matter.parent = options.parent.trim();
+        }
+        changedFields.push("parent");
+      }
+      if (options.reviewer !== undefined) {
+        if (isNoneToken(options.reviewer)) {
+          delete document.front_matter.reviewer;
+        } else {
+          document.front_matter.reviewer = options.reviewer.trim();
+        }
+        changedFields.push("reviewer");
+      }
+      if (options.risk !== undefined) {
+        if (isNoneToken(options.risk)) {
+          delete document.front_matter.risk;
+        } else {
+          document.front_matter.risk = ensureEnum(options.risk, RISK_VALUES, "risk");
+        }
+        changedFields.push("risk");
+      }
+      if (options.sprint !== undefined) {
+        if (isNoneToken(options.sprint)) {
+          delete document.front_matter.sprint;
+        } else {
+          document.front_matter.sprint = options.sprint.trim();
+        }
+        changedFields.push("sprint");
+      }
+      if (options.release !== undefined) {
+        if (isNoneToken(options.release)) {
+          delete document.front_matter.release;
+        } else {
+          document.front_matter.release = options.release.trim();
+        }
+        changedFields.push("release");
+      }
+      if (options.blockedBy !== undefined) {
+        if (isNoneToken(options.blockedBy)) {
+          delete document.front_matter.blocked_by;
+        } else {
+          document.front_matter.blocked_by = options.blockedBy.trim();
+        }
+        changedFields.push("blocked_by");
+      }
+      if (options.blockedReason !== undefined) {
+        if (isNoneToken(options.blockedReason)) {
+          delete document.front_matter.blocked_reason;
+        } else {
+          document.front_matter.blocked_reason = options.blockedReason.trim();
+        }
+        changedFields.push("blocked_reason");
       }
 
       return { changedFields };

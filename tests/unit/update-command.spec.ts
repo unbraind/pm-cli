@@ -113,6 +113,13 @@ describe("runUpdate", () => {
           estimatedMinutes: "45",
           acceptanceCriteria: "new acceptance",
           assignee: " next-assignee ",
+          parent: " pm-parent-next ",
+          reviewer: " reviewer-next ",
+          risk: "critical",
+          sprint: " sprint-next ",
+          release: " release-next ",
+          blockedBy: " pm-blocking-next ",
+          blockedReason: " blocked waiting reason ",
           author: " explicit-author ",
           message: "apply explicit update",
         },
@@ -132,6 +139,13 @@ describe("runUpdate", () => {
           "estimated_minutes",
           "acceptance_criteria",
           "assignee",
+          "parent",
+          "reviewer",
+          "risk",
+          "sprint",
+          "release",
+          "blocked_by",
+          "blocked_reason",
         ]),
       );
 
@@ -147,6 +161,13 @@ describe("runUpdate", () => {
       expect(item.estimated_minutes).toBe(45);
       expect(item.acceptance_criteria).toBe("new acceptance");
       expect(item.assignee).toBe("next-assignee");
+      expect(item.parent).toBe("pm-parent-next");
+      expect(item.reviewer).toBe("reviewer-next");
+      expect(item.risk).toBe("critical");
+      expect(item.sprint).toBe("sprint-next");
+      expect(item.release).toBe("release-next");
+      expect(item.blocked_by).toBe("pm-blocking-next");
+      expect(item.blocked_reason).toBe("blocked waiting reason");
       expect(latestUpdateAuthor(context, id)).toBe("explicit-author");
     });
   });
@@ -163,6 +184,13 @@ describe("runUpdate", () => {
           estimatedMinutes: "none",
           acceptanceCriteria: "none",
           assignee: "none",
+          parent: "none",
+          reviewer: "none",
+          risk: "none",
+          sprint: "none",
+          release: "none",
+          blockedBy: "none",
+          blockedReason: "none",
           author: "active-owner",
           message: "cancel and clear optional fields",
         },
@@ -177,6 +205,13 @@ describe("runUpdate", () => {
           "estimated_minutes",
           "acceptance_criteria",
           "assignee",
+          "parent",
+          "reviewer",
+          "risk",
+          "sprint",
+          "release",
+          "blocked_by",
+          "blocked_reason",
         ]),
       );
 
@@ -186,6 +221,13 @@ describe("runUpdate", () => {
       expect(item.estimated_minutes).toBeUndefined();
       expect(item.acceptance_criteria).toBeUndefined();
       expect(item.assignee).toBeUndefined();
+      expect(item.parent).toBeUndefined();
+      expect(item.reviewer).toBeUndefined();
+      expect(item.risk).toBeUndefined();
+      expect(item.sprint).toBeUndefined();
+      expect(item.release).toBeUndefined();
+      expect(item.blocked_by).toBeUndefined();
+      expect(item.blocked_reason).toBeUndefined();
     });
   });
 
@@ -224,6 +266,9 @@ describe("runUpdate", () => {
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(runUpdate(id, { priority: "nope" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runUpdate(id, { risk: "extreme" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
     });

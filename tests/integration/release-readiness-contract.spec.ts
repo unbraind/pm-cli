@@ -255,9 +255,6 @@ const LEGACY_PROMPT_DISALLOWED_TOKENS = [
   "--depends-on / --blocks / --parent / --child / --related / --discovered-from",
 ];
 const PLANNED_NOT_YET_CANONICAL_FLAGS = [
-  "--reviewer",
-  "--blocked-by",
-  "--blocked-reason",
   "--unblock-note",
   "--definition-of-ready",
   "--rank",
@@ -268,8 +265,6 @@ const PLANNED_NOT_YET_CANONICAL_FLAGS = [
   "--why-now",
   "--goal",
   "--objective",
-  "--sprint",
-  "--release",
   "--evidence",
   "--decision",
   "--verified-by",
@@ -286,9 +281,7 @@ const PLANNED_NOT_YET_CANONICAL_FLAGS = [
   "--component",
   "--regression",
   "--customer-impact",
-  "--risk",
   "--confidence",
-  "--parent",
   "--relates-to",
   "--duplicates",
   "--caused-by",
