@@ -607,6 +607,16 @@ describe("release readiness baseline contract", () => {
     }
   });
 
+  it("keeps imported hierarchical ID preservation explicit in PRD and README todos docs", async () => {
+    const prd = await readRepoText("PRD.md");
+    const readme = await readRepoText("README.md");
+    const prdTodosSection = extractSection(prd, "### B) todos.ts import/export", "## 16) Security and Data Integrity");
+
+    expect(prdTodosSection).toContain("hierarchical suffixes such as `pm-legacy.1.2`");
+    expect(prdTodosSection).toContain("preserved verbatim");
+    expect(readme).toContain("preserves explicit imported IDs verbatim including hierarchical suffixes such as `pm-legacy.1.2`");
+  });
+
   it("keeps pm create help aligned with required explicit create flags", async () => {
     const prd = await readRepoText("PRD.md");
     const readme = await readRepoText("README.md");

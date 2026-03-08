@@ -125,6 +125,34 @@ describe("built-in todos extension import/export", () => {
     });
   });
 
+  it("preserves explicit hierarchical IDs during todos import", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceFolder = path.join(context.tempRoot, "todos-hierarchical-id-source");
+      await mkdir(sourceFolder, { recursive: true });
+
+      await writeTodoMarkdown(
+        sourceFolder,
+        "pm-legacy.1.2.md",
+        {
+          id: "pm-legacy.1.2",
+          title: "Hierarchical todo import",
+          status: "open",
+          tags: ["todos", "hierarchical"],
+        },
+        "Hierarchical body.",
+      );
+
+      const imported = await runTodosImport({ folder: sourceFolder }, {});
+      expect(imported.imported).toBe(1);
+      expect(imported.skipped).toBe(0);
+      expect(imported.ids).toEqual(["pm-legacy.1.2"]);
+
+      const result = context.runCli(["get", "pm-legacy.1.2", "--json"], { expectJson: true });
+      expect(result.code).toBe(0);
+      expect((result.json as { item: { id: string } }).item.id).toBe("pm-legacy.1.2");
+    });
+  });
+
   it("imports confidence variants and drops invalid confidence values", async () => {
     await withTempPmPath(async (context) => {
       const sourceFolder = path.join(context.tempRoot, "todos-confidence-source");

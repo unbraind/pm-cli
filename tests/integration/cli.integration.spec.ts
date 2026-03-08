@@ -2216,6 +2216,41 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("preserves hierarchical IDs through the todos import CLI command", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceFolder = path.join(context.tempRoot, "todos-cli-hierarchical-source");
+      await mkdir(sourceFolder, { recursive: true });
+
+      await writeFile(
+        path.join(sourceFolder, "pm-legacy.1.2.md"),
+        `${JSON.stringify(
+          {
+            id: "pm-legacy.1.2",
+            title: "Hierarchical CLI Todo",
+            status: "open",
+            tags: ["todos", "hierarchical"],
+          },
+          null,
+          2,
+        )}\n\nHierarchical CLI body.\n`,
+        "utf8",
+      );
+
+      const imported = context.runCli(["todos", "import", "--json", "--folder", sourceFolder], { expectJson: true });
+      expect(imported.code).toBe(0);
+      const importedJson = imported.json as { imported: number; skipped: number; ids: string[] };
+      expect(importedJson.imported).toBe(1);
+      expect(importedJson.skipped).toBe(0);
+      expect(importedJson.ids).toEqual(["pm-legacy.1.2"]);
+
+      const item = context.runCli(["get", "pm-legacy.1.2", "--json"], { expectJson: true });
+      expect(item.code).toBe(0);
+      const itemJson = item.json as { item: { id: string }; body: string };
+      expect(itemJson.item.id).toBe("pm-legacy.1.2");
+      expect(itemJson.body).toBe("Hierarchical CLI body.");
+    });
+  });
+
   it("enforces ownership conflicts across assignees", async () => {
     await withTempPmPath(async (context) => {
       const createResult = context.runCli(

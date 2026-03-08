@@ -1037,6 +1037,7 @@ Behavior:
 - Field mapping:
   - `title -> title`
   - `body -> body`
+  - imported IDs, including hierarchical suffixes such as `pm-legacy.1.2`, are preserved verbatim when provided in todos front matter
   - canonical PM front-matter fields round-trip when present, including planning/workflow metadata (`definition_of_ready`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `why_now`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blocked_by`, `blocked_reason`, `unblock_note`) and issue metadata (`reporter`, `severity`, `environment`, `repro_steps`, `resolution`, `expected_result`, `actual_result`, `affected_version`, `fixed_version`, `component`, `regression`, `customer_impact`)
   - `confidence`, `risk`, and `severity` text aliases normalize deterministically (`med -> medium`)
 - Missing PM fields get deterministic defaults:
