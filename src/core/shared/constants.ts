@@ -51,6 +51,7 @@ export const FRONT_MATTER_KEY_ORDER: ReadonlyArray<keyof ItemFrontMatter> = [
   "parent",
   "reviewer",
   "risk",
+  "confidence",
   "sprint",
   "release",
   "blocked_by",

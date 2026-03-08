@@ -124,6 +124,7 @@ describe("runUpdate", () => {
           parent: " pm-parent-next ",
           reviewer: " reviewer-next ",
           risk: "med",
+          confidence: "88",
           sprint: " sprint-next ",
           release: " release-next ",
           blockedBy: " pm-blocking-next ",
@@ -158,6 +159,7 @@ describe("runUpdate", () => {
           "parent",
           "reviewer",
           "risk",
+          "confidence",
           "sprint",
           "release",
           "blocked_by",
@@ -188,11 +190,34 @@ describe("runUpdate", () => {
       expect(item.parent).toBe("pm-parent-next");
       expect(item.reviewer).toBe("reviewer-next");
       expect(item.risk).toBe("medium");
+      expect(item.confidence).toBe(88);
       expect(item.sprint).toBe("sprint-next");
       expect(item.release).toBe("release-next");
       expect(item.blocked_by).toBe("pm-blocking-next");
       expect(item.blocked_reason).toBe("blocked waiting reason");
       expect(latestUpdateAuthor(context, id)).toBe("explicit-author");
+
+      const mediumConfidence = await runUpdate(
+        id,
+        {
+          confidence: "med",
+          author: "next-assignee",
+          message: "normalize confidence med alias",
+        },
+        { path: context.pmPath },
+      );
+      expect((mediumConfidence.item as Record<string, unknown>).confidence).toBe("medium");
+
+      const highConfidence = await runUpdate(
+        id,
+        {
+          confidence: "high",
+          author: "next-assignee",
+          message: "set confidence text level",
+        },
+        { path: context.pmPath },
+      );
+      expect((highConfidence.item as Record<string, unknown>).confidence).toBe("high");
     });
   });
 
@@ -220,6 +245,7 @@ describe("runUpdate", () => {
           parent: "none",
           reviewer: "none",
           risk: "none",
+          confidence: "none",
           sprint: "none",
           release: "none",
           blockedBy: "none",
@@ -249,6 +275,7 @@ describe("runUpdate", () => {
           "parent",
           "reviewer",
           "risk",
+          "confidence",
           "sprint",
           "release",
           "blocked_by",
@@ -273,6 +300,7 @@ describe("runUpdate", () => {
       expect(item.parent).toBeUndefined();
       expect(item.reviewer).toBeUndefined();
       expect(item.risk).toBeUndefined();
+      expect(item.confidence).toBeUndefined();
       expect(item.sprint).toBeUndefined();
       expect(item.release).toBeUndefined();
       expect(item.blocked_by).toBeUndefined();
@@ -318,6 +346,12 @@ describe("runUpdate", () => {
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(runUpdate(id, { risk: "extreme" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runUpdate(id, { confidence: "-1" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runUpdate(id, { confidence: "uncertain" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(runUpdate(id, { order: "3.7" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({

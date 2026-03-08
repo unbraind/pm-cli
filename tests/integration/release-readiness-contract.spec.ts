@@ -272,7 +272,6 @@ const PLANNED_NOT_YET_CANONICAL_FLAGS = [
   "--component",
   "--regression",
   "--customer-impact",
-  "--confidence",
   "--relates-to",
   "--duplicates",
   "--caused-by",
@@ -524,7 +523,7 @@ describe("release readiness baseline contract", () => {
       "### Epic Template With Comment + Note",
     );
 
-    expectSectionContainsTokens(allFlagsTemplateSection, ["pm create", ...REQUIRED_CREATE_FLAGS]);
+    expectSectionContainsTokens(allFlagsTemplateSection, ["pm create", ...REQUIRED_CREATE_FLAGS, "--confidence"]);
   });
 
   it("keeps README quickstart create example aligned with explicit seed-field contract", async () => {
@@ -607,6 +606,7 @@ describe("release readiness baseline contract", () => {
     expect(prdCreateSection).toContain("--why-now");
     expect(prdCreateSection).toContain("--why_now");
     expect(prdCreateSection).toContain("low|med|medium|high|critical");
+    expect(prdCreateSection).toContain("--confidence");
     expect(readmeCreateSection).toContain("--estimated_minutes");
     expect(readmeCreateSection).toContain("--acceptance_criteria");
     expect(readmeCreateSection).toContain("--definition-of-ready");
@@ -621,6 +621,7 @@ describe("release readiness baseline contract", () => {
     expect(readmeCreateSection).toContain("--why-now");
     expect(readmeCreateSection).toContain("--why_now");
     expect(readmeCreateSection).toContain("low|med|medium|high|critical");
+    expect(readmeCreateSection).toContain("--confidence");
 
     await withTempPmPath(async (context) => {
       const help = context.runCli(["create", "--help"]);
@@ -643,6 +644,7 @@ describe("release readiness baseline contract", () => {
       expect(help.stdout).toContain("--why-now");
       expect(help.stdout).toContain("--why_now");
       expect(help.stdout).toContain("low|med|medium|high|critical");
+      expect(help.stdout).toContain("--confidence");
       expect(help.stdout).not.toContain("Seed dependency entry (required; use none for empty) (default: [])");
       expect(help.stdout).not.toContain("Seed comment entry (required; use none for empty) (default: [])");
       expect(help.stdout).not.toContain("Seed note entry (required; use none for empty) (default: [])");
@@ -716,6 +718,7 @@ describe("release readiness baseline contract", () => {
     expect(prdUpdateSection).toContain("--why-now");
     expect(prdUpdateSection).toContain("--why_now");
     expect(prdUpdateSection).toContain("low|med|medium|high|critical");
+    expect(prdUpdateSection).toContain("--confidence");
     expect(readmeUpdateSection).toContain("--estimated_minutes");
     expect(readmeUpdateSection).toContain("--acceptance_criteria");
     expect(readmeUpdateSection).toContain("--definition-of-ready");
@@ -730,6 +733,7 @@ describe("release readiness baseline contract", () => {
     expect(readmeUpdateSection).toContain("--why-now");
     expect(readmeUpdateSection).toContain("--why_now");
     expect(readmeUpdateSection).toContain("low|med|medium|high|critical");
+    expect(readmeUpdateSection).toContain("--confidence");
     expect(readmeUpdateSection).toContain("pm close <ID> <TEXT>");
 
     await withTempPmPath(async (context) => {
@@ -753,6 +757,7 @@ describe("release readiness baseline contract", () => {
       expect(updateHelp.stdout).toContain("--why-now");
       expect(updateHelp.stdout).toContain("--why_now");
       expect(updateHelp.stdout).toContain("low|med|medium|high|critical");
+      expect(updateHelp.stdout).toContain("--confidence");
     });
   });
 

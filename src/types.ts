@@ -26,6 +26,10 @@ export type LinkScope = (typeof SCOPE_VALUES)[number];
 export const RISK_VALUES = ["low", "medium", "high", "critical"] as const;
 export type RiskLevel = (typeof RISK_VALUES)[number];
 
+export const CONFIDENCE_TEXT_VALUES = ["low", "medium", "high"] as const;
+export type ConfidenceTextLevel = (typeof CONFIDENCE_TEXT_VALUES)[number];
+export type ConfidenceValue = number | ConfidenceTextLevel;
+
 export interface Dependency {
   id: string;
   kind: DependencyKind;
@@ -91,6 +95,7 @@ export interface ItemFrontMatter {
   parent?: string;
   reviewer?: string;
   risk?: "low" | "medium" | "high" | "critical";
+  confidence?: ConfidenceValue;
   sprint?: string;
   release?: string;
   blocked_by?: string;

@@ -61,6 +61,7 @@ describe("shared constants and errors contracts", () => {
       "parent",
       "reviewer",
       "risk",
+      "confidence",
       "sprint",
       "release",
       "blocked_by",

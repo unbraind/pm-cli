@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseItemDocument } from "../../src/item-format.js";
+import { normalizeFrontMatter, parseItemDocument } from "../../src/item-format.js";
 
 const FIXED_TS = "2026-02-22T00:00:00.000Z";
 
@@ -61,5 +61,37 @@ describe("item-format front-matter validation", () => {
     expect(() => parseItemDocument(buildSource({ deadline: "tomorrow-ish" }))).toThrow(
       "deadline must be a valid ISO timestamp",
     );
+  });
+
+  it("parses and normalizes confidence values", () => {
+    const numeric = parseItemDocument(buildSource({ confidence: 42 }));
+    expect(numeric.front_matter.confidence).toBe(42);
+
+    const medAlias = parseItemDocument(buildSource({ confidence: "med" }));
+    expect(medAlias.front_matter.confidence).toBe("medium");
+
+    const textLevel = parseItemDocument(buildSource({ confidence: "high" }));
+    expect(textLevel.front_matter.confidence).toBe("high");
+  });
+
+  it("throws on invalid confidence values", () => {
+    expect(() => parseItemDocument(buildSource({ confidence: 101 }))).toThrow(
+      "confidence number value must be an integer 0..100",
+    );
+    expect(() => parseItemDocument(buildSource({ confidence: "uncertain" }))).toThrow(
+      "confidence string value must be one of",
+    );
+    expect(() => parseItemDocument(buildSource({ confidence: { value: "low" } }))).toThrow(
+      "confidence must be a number or string",
+    );
+  });
+
+  it("drops invalid confidence text during direct normalize fallback", () => {
+    const parsed = parseItemDocument(buildSource({ confidence: "low" }));
+    const normalized = normalizeFrontMatter({
+      ...(parsed.front_matter as Record<string, unknown>),
+      confidence: "unknown",
+    } as unknown as Parameters<typeof normalizeFrontMatter>[0]);
+    expect(normalized.confidence).toBeUndefined();
   });
 });

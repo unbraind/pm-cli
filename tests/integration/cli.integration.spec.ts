@@ -326,6 +326,8 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "reviewer-create",
           "--risk",
           "medium",
+          "--confidence",
+          "low",
           "--sprint",
           "sprint-create",
           "--release",
@@ -358,6 +360,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           parent: string;
           reviewer: string;
           risk: string;
+          confidence: string;
           sprint: string;
           release: string;
           definition_of_ready: string;
@@ -375,6 +378,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(createdItem.parent).toBe("pm-parent-create");
       expect(createdItem.reviewer).toBe("reviewer-create");
       expect(createdItem.risk).toBe("medium");
+      expect(createdItem.confidence).toBe("low");
       expect(createdItem.sprint).toBe("sprint-create");
       expect(createdItem.release).toBe("release-create");
       expect(createdItem.definition_of_ready).toBe("Ready after scope review");
@@ -399,6 +403,8 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "reviewer-update",
           "--risk",
           "med",
+          "--confidence",
+          "73",
           "--sprint",
           "sprint-update",
           "--release",
@@ -436,6 +442,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           parent: string;
           reviewer: string;
           risk: string;
+          confidence: number;
           sprint: string;
           release: string;
           definition_of_ready: string;
@@ -453,6 +460,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(updatedItem.parent).toBe("pm-parent-update");
       expect(updatedItem.reviewer).toBe("reviewer-update");
       expect(updatedItem.risk).toBe("medium");
+      expect(updatedItem.confidence).toBe(73);
       expect(updatedItem.sprint).toBe("sprint-update");
       expect(updatedItem.release).toBe("release-update");
       expect(updatedItem.definition_of_ready).toBe("Ready after update");
@@ -476,6 +484,8 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "--reviewer",
           "none",
           "--risk",
+          "none",
+          "--confidence",
           "none",
           "--sprint",
           "none",
@@ -514,6 +524,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           parent?: string;
           reviewer?: string;
           risk?: string;
+          confidence?: number | string;
           sprint?: string;
           release?: string;
           definition_of_ready?: string;
@@ -531,6 +542,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(unsetItem.parent).toBeUndefined();
       expect(unsetItem.reviewer).toBeUndefined();
       expect(unsetItem.risk).toBeUndefined();
+      expect(unsetItem.confidence).toBeUndefined();
       expect(unsetItem.sprint).toBeUndefined();
       expect(unsetItem.release).toBeUndefined();
       expect(unsetItem.definition_of_ready).toBeUndefined();

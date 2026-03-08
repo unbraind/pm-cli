@@ -1,5 +1,5 @@
 import type { Comment, Dependency, ItemDocument, ItemFrontMatter, LinkedDoc, LinkedFile, LinkedTest, LogNote } from "../../types/index.js";
-import { ITEM_TYPE_VALUES, STATUS_VALUES } from "../../types/index.js";
+import { CONFIDENCE_TEXT_VALUES, ITEM_TYPE_VALUES, STATUS_VALUES } from "../../types/index.js";
 import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { orderObject } from "../shared/serialization.js";
@@ -66,6 +66,26 @@ function assertValidFrontMatter(frontMatter: unknown): asserts frontMatter is It
   assertFrontMatterCondition(Array.isArray(tags), "tags must be an array");
   for (const tag of tags as unknown[]) {
     assertFrontMatterCondition(typeof tag === "string", "tags entries must be strings");
+  }
+
+  const confidence = record.confidence;
+  if (confidence !== undefined) {
+    if (typeof confidence === "number") {
+      assertFrontMatterCondition(
+        Number.isInteger(confidence) && confidence >= 0 && confidence <= 100,
+        "confidence number value must be an integer 0..100",
+      );
+    } else if (typeof confidence === "string") {
+      const normalizedConfidence = confidence.trim().toLowerCase();
+      const isKnownTextConfidence =
+        normalizedConfidence === "med" || CONFIDENCE_TEXT_VALUES.includes(normalizedConfidence as (typeof CONFIDENCE_TEXT_VALUES)[number]);
+      assertFrontMatterCondition(
+        isKnownTextConfidence,
+        `confidence string value must be one of: ${[...CONFIDENCE_TEXT_VALUES, "med"].join(", ")}`,
+      );
+    } else {
+      assertFrontMatterCondition(false, "confidence must be a number or string");
+    }
   }
 
   assertTimestampField(record, "created_at");
@@ -165,6 +185,23 @@ function normalizeBody(body: string): string {
   return body.replace(/^\n+/, "").replace(/\s+$/, "");
 }
 
+function normalizeConfidenceValue(value: ItemFrontMatter["confidence"] | undefined): ItemFrontMatter["confidence"] | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (typeof value === "number") {
+    return value;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "med") {
+    return "medium";
+  }
+  if (CONFIDENCE_TEXT_VALUES.includes(normalized as (typeof CONFIDENCE_TEXT_VALUES)[number])) {
+    return normalized as (typeof CONFIDENCE_TEXT_VALUES)[number];
+  }
+  return undefined;
+}
+
 export function normalizeFrontMatter(frontMatter: ItemFrontMatter): ItemFrontMatter {
   const tags = Array.from(new Set(frontMatter.tags.map((tag) => tag.trim().toLowerCase()).filter(Boolean))).sort((a, b) =>
     a.localeCompare(b),
@@ -202,6 +239,7 @@ export function normalizeFrontMatter(frontMatter: ItemFrontMatter): ItemFrontMat
     parent: frontMatter.parent?.trim() || undefined,
     reviewer: frontMatter.reviewer?.trim() || undefined,
     risk: frontMatter.risk ?? undefined,
+    confidence: normalizeConfidenceValue(frontMatter.confidence),
     sprint: frontMatter.sprint?.trim() || undefined,
     release: frontMatter.release?.trim() || undefined,
     blocked_by: frontMatter.blocked_by?.trim() || undefined,

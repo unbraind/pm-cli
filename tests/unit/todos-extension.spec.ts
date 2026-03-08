@@ -125,6 +125,54 @@ describe("built-in todos extension import/export", () => {
     });
   });
 
+  it("imports confidence variants and drops invalid confidence values", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceFolder = path.join(context.tempRoot, "todos-confidence-source");
+      await mkdir(sourceFolder, { recursive: true });
+
+      await writeTodoMarkdown(sourceFolder, "confidence-number.md", {
+        id: "confidence-number",
+        title: "Confidence Number",
+        confidence: 44,
+      });
+      await writeTodoMarkdown(sourceFolder, "confidence-text.md", {
+        id: "confidence-text",
+        title: "Confidence Text",
+        confidence: "high",
+      });
+      await writeTodoMarkdown(sourceFolder, "confidence-empty.md", {
+        id: "confidence-empty",
+        title: "Confidence Empty",
+        confidence: "   ",
+      });
+      await writeTodoMarkdown(sourceFolder, "confidence-invalid.md", {
+        id: "confidence-invalid",
+        title: "Confidence Invalid",
+        confidence: "uncertain",
+      });
+
+      const imported = await runTodosImport({ folder: sourceFolder }, {});
+      expect(imported.imported).toBe(4);
+      expect(imported.skipped).toBe(0);
+
+      const numberItem = context.runCli(["get", "pm-confidence-number", "--json"], { expectJson: true });
+      expect(numberItem.code).toBe(0);
+      expect((numberItem.json as { item: { confidence?: number } }).item.confidence).toBe(44);
+
+      const textItem = context.runCli(["get", "pm-confidence-text", "--json"], { expectJson: true });
+      expect(textItem.code).toBe(0);
+      expect((textItem.json as { item: { confidence?: string } }).item.confidence).toBe("high");
+
+      const emptyItem = context.runCli(["get", "pm-confidence-empty", "--json"], { expectJson: true });
+      expect(emptyItem.code).toBe(0);
+      expect("confidence" in (emptyItem.json as { item: Record<string, unknown> }).item).toBe(false);
+
+      const invalidItem = context.runCli(["get", "pm-confidence-invalid", "--json"], { expectJson: true });
+      expect(invalidItem.code).toBe(0);
+      expect("confidence" in (invalidItem.json as { item: Record<string, unknown> }).item).toBe(false);
+    });
+  });
+
   it("covers import fallback branches, lock conflicts, and deterministic warnings", async () => {
     await withTempPmPath(async (context) => {
       const sourceFolder = path.join(context.tempRoot, "todos-branch-source");
@@ -162,6 +210,7 @@ describe("built-in todos extension import/export", () => {
           author: "   ",
           description: "   ",
           deadline: "not-a-date",
+          confidence: "73",
         },
         "  generated body with trailing spaces   ",
       );
@@ -179,6 +228,7 @@ describe("built-in todos extension import/export", () => {
           updated_at: "2026-02-06T00:00:00.000Z",
           assignee: "typed-author",
           deadline: "2026-02-07T00:00:00.000Z",
+          confidence: "med",
           acceptance_criteria: "Typed acceptance",
           close_reason: "done",
           estimated_minutes: 20,
@@ -236,6 +286,7 @@ describe("built-in todos extension import/export", () => {
             description: string;
             created_at: string;
             updated_at: string;
+            confidence?: number | "low" | "medium" | "high";
           };
           body: string;
         };
@@ -246,6 +297,7 @@ describe("built-in todos extension import/export", () => {
         expect(generatedItem.item.author).toBe("unknown");
         expect(generatedItem.item.estimated_minutes).toBe(15);
         expect(generatedItem.item.description).toBe("");
+        expect(generatedItem.item.confidence).toBe(73);
         expect(generatedItem.item.created_at).toBe(generatedItem.item.updated_at);
         expect(generatedItem.body).toBe("  generated body with trailing spaces");
 
@@ -261,6 +313,7 @@ describe("built-in todos extension import/export", () => {
             updated_at: string;
             assignee?: string;
             deadline?: string;
+            confidence?: number | "low" | "medium" | "high";
             acceptance_criteria?: string;
             close_reason?: string;
             estimated_minutes?: number;
@@ -275,6 +328,7 @@ describe("built-in todos extension import/export", () => {
         expect(typedItem.item.updated_at).toBe("2026-02-06T00:00:00.000Z");
         expect(typedItem.item.assignee).toBe("typed-author");
         expect(typedItem.item.deadline).toBe("2026-02-07T00:00:00.000Z");
+        expect(typedItem.item.confidence).toBe("medium");
         expect(typedItem.item.acceptance_criteria).toBe("Typed acceptance");
         expect(typedItem.item.close_reason).toBe("done");
         expect(typedItem.item.estimated_minutes).toBe(20);

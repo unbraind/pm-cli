@@ -751,6 +751,7 @@ function normalizeCreateOptions(commandOptions: Record<string, unknown>): Create
     parent: typeof commandOptions.parent === "string" ? commandOptions.parent : undefined,
     reviewer: typeof commandOptions.reviewer === "string" ? commandOptions.reviewer : undefined,
     risk: typeof commandOptions.risk === "string" ? commandOptions.risk : undefined,
+    confidence: typeof commandOptions.confidence === "string" ? commandOptions.confidence : undefined,
     sprint: typeof commandOptions.sprint === "string" ? commandOptions.sprint : undefined,
     release: typeof commandOptions.release === "string" ? commandOptions.release : undefined,
     blockedBy:
@@ -807,6 +808,7 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
     parent: typeof commandOptions.parent === "string" ? commandOptions.parent : undefined,
     reviewer: typeof commandOptions.reviewer === "string" ? commandOptions.reviewer : undefined,
     risk: typeof commandOptions.risk === "string" ? commandOptions.risk : undefined,
+    confidence: typeof commandOptions.confidence === "string" ? commandOptions.confidence : undefined,
     sprint: typeof commandOptions.sprint === "string" ? commandOptions.sprint : undefined,
     release: typeof commandOptions.release === "string" ? commandOptions.release : undefined,
     blockedBy:
@@ -966,6 +968,7 @@ program
   .option("--parent <value>", "Parent item ID, or none")
   .option("--reviewer <value>", "Reviewer, or none")
   .option("--risk <value>", "Risk level: low|med|medium|high|critical, or none (med persists as medium)")
+  .option("--confidence <value>", "Confidence level: 0..100|low|med|medium|high, or none (med persists as medium)")
   .option("--sprint <value>", "Sprint identifier, or none")
   .option("--release <value>", "Release identifier, or none")
   .option("--blocked-by <value>", "Blocked-by item ID or reason, or none")
@@ -1232,6 +1235,7 @@ program
   .option("--parent <value>", "Set parent item ID (or none)")
   .option("--reviewer <value>", "Set reviewer (or none)")
   .option("--risk <value>", "Set risk level: low|med|medium|high|critical (or none; med persists as medium)")
+  .option("--confidence <value>", "Set confidence level: 0..100|low|med|medium|high (or none; med persists as medium)")
   .option("--sprint <value>", "Set sprint identifier (or none)")
   .option("--release <value>", "Set release identifier (or none)")
   .option("--blocked-by <value>", "Set blocked-by item ID or reason (or none)")

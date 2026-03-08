@@ -7,7 +7,7 @@ import { isNoneToken, resolveIsoOrRelative } from "../../core/shared/time.js";
 import { mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import { ITEM_TYPE_VALUES, RISK_VALUES, STATUS_VALUES } from "../../types/index.js";
+import { CONFIDENCE_TEXT_VALUES, ITEM_TYPE_VALUES, RISK_VALUES, STATUS_VALUES } from "../../types/index.js";
 
 export interface UpdateCommandOptions {
   title?: string;
@@ -35,6 +35,7 @@ export interface UpdateCommandOptions {
   parent?: string;
   reviewer?: string;
   risk?: string;
+  confidence?: string;
   sprint?: string;
   release?: string;
   blockedBy?: string;
@@ -63,6 +64,21 @@ function ensureEnum<T extends string>(value: string, allowed: readonly T[], labe
 function normalizeRiskInput(value: string): string {
   const trimmed = value.trim();
   return trimmed.toLowerCase() === "med" ? "medium" : trimmed;
+}
+
+function parseConfidenceInput(value: string): number | "low" | "medium" | "high" {
+  const trimmed = value.trim().toLowerCase();
+  if (trimmed === "med") {
+    return "medium";
+  }
+  if (CONFIDENCE_TEXT_VALUES.includes(trimmed as (typeof CONFIDENCE_TEXT_VALUES)[number])) {
+    return trimmed as (typeof CONFIDENCE_TEXT_VALUES)[number];
+  }
+  const parsed = parseOptionalNumber(value, "confidence");
+  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 100) {
+    throw new PmCliError("Confidence must be an integer 0..100 or one of low|med|medium|high", EXIT_CODE.USAGE);
+  }
+  return parsed;
 }
 
 function ensurePriority(raw: string): 0 | 1 | 2 | 3 | 4 {
@@ -104,6 +120,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     options.parent !== undefined,
     options.reviewer !== undefined,
     options.risk !== undefined,
+    options.confidence !== undefined,
     options.sprint !== undefined,
     options.release !== undefined,
     options.blockedBy !== undefined,
@@ -289,6 +306,14 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
           document.front_matter.risk = ensureEnum(normalizeRiskInput(options.risk), RISK_VALUES, "risk");
         }
         changedFields.push("risk");
+      }
+      if (options.confidence !== undefined) {
+        if (isNoneToken(options.confidence)) {
+          delete document.front_matter.confidence;
+        } else {
+          document.front_matter.confidence = parseConfidenceInput(options.confidence);
+        }
+        changedFields.push("confidence");
       }
       if (options.sprint !== undefined) {
         if (isNoneToken(options.sprint)) {

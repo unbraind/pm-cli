@@ -369,6 +369,7 @@ pm create \
   --parent none \
   --reviewer none \
   --risk none \
+  --confidence none \
   --sprint none \
   --release none \
   --blocked-by none \
@@ -410,6 +411,7 @@ pm create \
   --parent none \
   --reviewer none \
   --risk none \
+  --confidence none \
   --sprint none \
   --release none \
   --blocked-by none \

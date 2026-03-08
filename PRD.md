@@ -262,6 +262,7 @@ Optional fields:
 - `parent?: string` (item ID reference; shorthand for a `kind=parent` dependency)
 - `reviewer?: string`
 - `risk?: "low" | "medium" | "high" | "critical"`
+- `confidence?: 0..100 | "low" | "medium" | "high"`
 - `sprint?: string`
 - `release?: string`
 - `blocked_by?: string` (item ID reference or free-text reason)
@@ -306,18 +307,19 @@ Keys MUST serialize in this order:
 23. `parent`
 24. `reviewer`
 25. `risk`
-26. `sprint`
-27. `release`
-28. `blocked_by`
-29. `blocked_reason`
-30. `dependencies`
-31. `comments`
-32. `notes`
-33. `learnings`
-34. `files`
-35. `tests`
-36. `docs`
-37. `close_reason`
+26. `confidence`
+27. `sprint`
+28. `release`
+29. `blocked_by`
+30. `blocked_reason`
+31. `dependencies`
+32. `comments`
+33. `notes`
+34. `learnings`
+35. `files`
+36. `tests`
+37. `docs`
+38. `close_reason`
 
 Unset optional fields are omitted.
 
@@ -327,6 +329,7 @@ Unset optional fields are omitted.
 - Relative deadlines (`+6h`, `+1d`, `+2w`) resolve on write and persist as absolute ISO.
 - `tags` sorted lexicographically, deduplicated.
 - `risk` CLI input alias `med` normalizes to canonical stored value `medium`.
+- `confidence` CLI input accepts integers `0..100` or `low|med|medium|high`; `med` persists as `medium`.
 - `dependencies`, `comments`, `notes`, `learnings` sorted by `created_at` ascending; stable tie-break by text/id.
 - `files` sorted by `scope` asc, then `path` asc, then `note` asc.
 - `tests` sorted by `scope` asc, then `path` asc, then `command` asc, then `timeout_seconds` asc, then `note` asc.
@@ -582,6 +585,7 @@ Mutating `create` (all schema fields MUST be passable explicitly):
 - `--parent` (optional; item ID reference or `none`)
 - `--reviewer` (optional; or `none`)
 - `--risk` (optional; `low|med|medium|high|critical` or `none`; `med` persists as `medium`)
+- `--confidence` (optional; `0..100|low|med|medium|high` or `none`; `med` persists as `medium`)
 - `--sprint` (optional; or `none`)
 - `--release` (optional; or `none`)
 - `--blocked-by`, `--blocked_by` (optional; item ID or free-text, or `none`)
@@ -620,6 +624,7 @@ Mutating `update` (v0.1 baseline):
 - `--parent`
 - `--reviewer`
 - `--risk` (`low|med|medium|high|critical`; `med` persists as `medium`)
+- `--confidence` (`0..100|low|med|medium|high`; `med` persists as `medium`)
 - `--sprint`
 - `--release`
 - `--blocked-by`, `--blocked_by`
@@ -975,7 +980,8 @@ Behavior:
 - Field mapping:
   - `title -> title`
   - `body -> body`
-  - `status/tags/created_at/assignee -> same`
+  - `status/tags/created_at/assignee/confidence -> same`
+  - `confidence` text aliases normalize deterministically (`med -> medium`)
 - Missing PM fields get deterministic defaults:
   - `description = ""`
   - `priority = 2`

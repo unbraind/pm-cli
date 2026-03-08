@@ -21,7 +21,14 @@ import type {
   LinkedTest,
   LogNote,
 } from "../../types/index.js";
-import { DEPENDENCY_KIND_VALUES, ITEM_TYPE_VALUES, RISK_VALUES, SCOPE_VALUES, STATUS_VALUES } from "../../types/index.js";
+import {
+  CONFIDENCE_TEXT_VALUES,
+  DEPENDENCY_KIND_VALUES,
+  ITEM_TYPE_VALUES,
+  RISK_VALUES,
+  SCOPE_VALUES,
+  STATUS_VALUES,
+} from "../../types/index.js";
 
 export interface CreateCommandOptions {
   title: string;
@@ -49,6 +56,7 @@ export interface CreateCommandOptions {
   parent?: string;
   reviewer?: string;
   risk?: string;
+  confidence?: string;
   sprint?: string;
   release?: string;
   blockedBy?: string;
@@ -81,6 +89,21 @@ function ensureEnumValue<T extends string>(value: string, allowed: readonly T[],
 function normalizeRiskInput(value: string): string {
   const trimmed = value.trim();
   return trimmed.toLowerCase() === "med" ? "medium" : trimmed;
+}
+
+function parseConfidenceInput(value: string): number | "low" | "medium" | "high" {
+  const trimmed = value.trim().toLowerCase();
+  if (trimmed === "med") {
+    return "medium";
+  }
+  if (CONFIDENCE_TEXT_VALUES.includes(trimmed as (typeof CONFIDENCE_TEXT_VALUES)[number])) {
+    return trimmed as (typeof CONFIDENCE_TEXT_VALUES)[number];
+  }
+  const parsed = parseOptionalNumber(value, "confidence");
+  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 100) {
+    throw new PmCliError("Confidence must be an integer 0..100 or one of low|med|medium|high", EXIT_CODE.USAGE);
+  }
+  return parsed;
 }
 
 function parseCreatedAt(value: string | undefined, currentIso: string): string {
@@ -315,6 +338,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     [options.parent, "parent"],
     [options.reviewer, "reviewer"],
     [options.risk, "risk"],
+    [options.confidence, "confidence"],
     [options.sprint, "sprint"],
     [options.release, "release"],
     [options.blockedBy, "blocked_by"],
@@ -358,6 +382,8 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const reviewer = options.reviewer !== undefined ? parseOptionalString(options.reviewer) : undefined;
   const riskRaw = options.risk !== undefined ? parseOptionalString(options.risk) : undefined;
   const risk = riskRaw !== undefined ? ensureEnumValue(normalizeRiskInput(riskRaw), RISK_VALUES, "risk") : undefined;
+  const confidenceRaw = options.confidence !== undefined ? parseOptionalString(options.confidence) : undefined;
+  const confidence = confidenceRaw !== undefined ? parseConfidenceInput(confidenceRaw) : undefined;
   const sprint = options.sprint !== undefined ? parseOptionalString(options.sprint) : undefined;
   const release = options.release !== undefined ? parseOptionalString(options.release) : undefined;
   const blockedBy = options.blockedBy !== undefined ? parseOptionalString(options.blockedBy) : undefined;
@@ -389,6 +415,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     parent,
     reviewer,
     risk,
+    confidence,
     sprint,
     release,
     blocked_by: blockedBy,

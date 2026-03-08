@@ -67,6 +67,7 @@ describe("runCreate", () => {
           parent: "pm-parent-seed",
           reviewer: "reviewer-seed",
           risk: "med",
+          confidence: "med",
           sprint: "sprint-42",
           release: "release-2026.03",
           blockedBy: "pm-blocked-seed",
@@ -111,6 +112,7 @@ describe("runCreate", () => {
           "parent",
           "reviewer",
           "risk",
+          "confidence",
           "sprint",
           "release",
           "blocked_by",
@@ -135,6 +137,7 @@ describe("runCreate", () => {
       expect(result.item.parent).toBe("pm-parent-seed");
       expect(result.item.reviewer).toBe("reviewer-seed");
       expect(result.item.risk).toBe("medium");
+      expect(result.item.confidence).toBe("medium");
       expect(result.item.sprint).toBe("sprint-42");
       expect(result.item.release).toBe("release-2026.03");
       expect(result.item.blocked_by).toBe("pm-blocked-seed");
@@ -181,6 +184,30 @@ describe("runCreate", () => {
         author: "seed-author",
         message: "create seed message",
       });
+    });
+  });
+
+  it("accepts confidence text levels and numeric values", async () => {
+    await withTempPmPath(async (context) => {
+      const textConfidence = await runCreate(
+        baseCreateOptions({
+          title: "create-confidence-text",
+          confidence: "high",
+          message: "create confidence text",
+        }),
+        { path: context.pmPath },
+      );
+      expect(textConfidence.item.confidence).toBe("high");
+
+      const numericConfidence = await runCreate(
+        baseCreateOptions({
+          title: "create-confidence-numeric",
+          confidence: "87",
+          message: "create confidence numeric",
+        }),
+        { path: context.pmPath },
+      );
+      expect(numericConfidence.item.confidence).toBe(87);
     });
   });
 
@@ -250,6 +277,7 @@ describe("runCreate", () => {
             parent: "none",
             reviewer: "none",
             risk: "none",
+            confidence: "none",
             sprint: "none",
             release: "none",
             blockedBy: "none",
@@ -281,6 +309,7 @@ describe("runCreate", () => {
         expect(result.item.parent).toBeUndefined();
         expect(result.item.reviewer).toBeUndefined();
         expect(result.item.risk).toBeUndefined();
+        expect(result.item.confidence).toBeUndefined();
         expect(result.item.sprint).toBeUndefined();
         expect(result.item.release).toBeUndefined();
         expect(result.item.blocked_by).toBeUndefined();
@@ -312,6 +341,7 @@ describe("runCreate", () => {
             "unset:parent",
             "unset:reviewer",
             "unset:risk",
+            "unset:confidence",
             "unset:sprint",
             "unset:release",
             "unset:blocked_by",
@@ -497,6 +527,24 @@ describe("runCreate", () => {
         runCreate(
           baseCreateOptions({
             risk: "extreme",
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            confidence: "101",
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            confidence: "uncertain",
           }),
           { path: context.pmPath },
         ),

@@ -15,7 +15,7 @@ import { nowIso } from "../../../core/shared/time.js";
 import { listAllFrontMatter, locateItem, readLocatedItem } from "../../../core/store/item-store.js";
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../../core/store/paths.js";
 import { readSettings } from "../../../core/store/settings.js";
-import { ITEM_TYPE_VALUES, STATUS_VALUES } from "../../../types/index.js";
+import { CONFIDENCE_TEXT_VALUES, ITEM_TYPE_VALUES, STATUS_VALUES } from "../../../types/index.js";
 import type { ItemDocument, ItemFrontMatter, ItemStatus, ItemType, PmSettings } from "../../../types/index.js";
 
 const DEFAULT_TODOS_FOLDER = ".pi/todos";
@@ -114,6 +114,30 @@ function toPriority(value: unknown): PriorityValue {
     }
   }
   return 2;
+}
+
+function toConfidence(value: unknown): ItemFrontMatter["confidence"] | undefined {
+  if (typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 100) {
+    return value;
+  }
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (normalized.length === 0) {
+    return undefined;
+  }
+  if (normalized === "med") {
+    return "medium";
+  }
+  if (CONFIDENCE_TEXT_VALUES.includes(normalized as (typeof CONFIDENCE_TEXT_VALUES)[number])) {
+    return normalized as (typeof CONFIDENCE_TEXT_VALUES)[number];
+  }
+  const parsed = Number(normalized);
+  if (Number.isInteger(parsed) && parsed >= 0 && parsed <= 100) {
+    return parsed;
+  }
+  return undefined;
 }
 
 function toTags(value: unknown): string[] {
@@ -252,6 +276,7 @@ async function importTodoCandidate(candidate: ParsedTodoCandidate, runtime: Todo
       type,
       status: toStatus(candidate.frontMatter.status),
       priority: toPriority(candidate.frontMatter.priority),
+      confidence: toConfidence(candidate.frontMatter.confidence),
       tags: toTags(candidate.frontMatter.tags),
       created_at: createdAt,
       updated_at: updatedAt,
