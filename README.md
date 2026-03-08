@@ -435,7 +435,7 @@ Precedence:
 3. settings.json
 4. defaults
 
-## Planned Search and Extensions
+## Search and Extension System
 
 Keyword search is part of the implemented command surface, `pm search --include-linked` expands keyword scoring across readable linked docs/files/tests content while enforcing scope-root containment (`scope=project` and `scope=global` paths must stay within their allowed roots after both resolve-path and symlink-resolved-realpath checks; out-of-scope or realpath-escape paths are skipped), and `pm reindex` rebuilds deterministic keyword cache artifacts (`index/manifest.json` and `search/embeddings.jsonl`). Provider abstraction baseline is also in place for deterministic OpenAI/Ollama configuration resolution, request-target resolution (including OpenAI-compatible `base_url` normalization for root, `/v1`, and explicit `/embeddings` forms), provider-specific request payload/response normalization (including deterministic OpenAI data-entry index ordering), deterministic request-execution helper behavior, deterministic per-request normalized-input deduplication with output fan-out back to original input cardinality/order, and deterministic embedding cardinality validation (normalized input count must match returned vector count after dedupe expansion). Vector-store abstraction baseline is also in place for deterministic Qdrant/LanceDB configuration resolution, request-target planning, request payload/response normalization, deterministic Qdrant request-execution helper behavior, deterministic LanceDB local query/upsert/delete helper behavior, deterministic local snapshot persistence + reload across process boundaries, and deterministic query-hit ordering normalization (score descending with id ascending tie-break).
 
