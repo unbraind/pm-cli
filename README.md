@@ -226,7 +226,7 @@ Format:
 
 - `pm init [PREFIX]`
 - `pm install pi [--project|--global]` (install bundled Pi extension to `.pi/extensions/pm-cli/index.ts` or global `PI_CODING_AGENT_DIR/extensions/pm-cli/index.ts`)
-- `pm list`, `pm list-all`
+- `pm list` (excludes terminal statuses `closed`/`canceled` by default — the active working-set view), `pm list-all` (all statuses including terminal)
 - `pm list-draft`, `pm list-open`, `pm list-in-progress`, `pm list-blocked`, `pm list-closed`, `pm list-canceled`
 - `pm get <ID>`
 - `pm search <keywords>` (keyword + semantic + hybrid modes; `--include-linked` expands keyword/hybrid lexical scoring with linked content)
@@ -255,6 +255,13 @@ Format:
 - `pm test <ID> --run` skips legacy linked commands that invoke `pm test-all` (including global-flag and package-spec launcher forms such as `npx`, `pnpm dlx`, and `npm exec` launcher variants) and reports deterministic skip diagnostics
 - `pm test <ID> --add` rejects sandbox-unsafe test-runner commands (for example `pnpm test`, `pnpm test:coverage`, `npm test`, `npm run test`, `pnpm run test`, `yarn run test`, `bun run test`, `vitest`) unless they use `node scripts/run-tests.mjs ...` or explicitly set both `PM_PATH` and `PM_GLOBAL_PATH`; chained direct test-runner segments are validated independently, so each direct runner segment must be explicitly sandboxed
 - `pm test-all` deduplicates identical linked command/path entries per invocation (keyed by scope+normalized command or scope+path), reports duplicates as skipped, and uses the maximum `timeout_seconds` when duplicate keys disagree on timeout metadata
+
+### `pm list` vs `pm list-all`
+
+- `pm list` — active working-set view: excludes `closed` and `canceled` items by default. Useful for day-to-day use to see what needs attention.
+- `pm list-all` — full inventory: includes all items regardless of status. Useful for auditing and historical review.
+
+Both commands accept the same filter flags; `pm list` applies the terminal-status exclusion before any other filters.
 
 ### `pm list` filters
 

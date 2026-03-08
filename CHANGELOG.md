@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+#### CLI UX
+- `pm list` now excludes terminal statuses (`closed`, `canceled`) by default, showing only the active working-set of items. Use `pm list-all` to include all items regardless of status. This aligns with common CLI conventions (analogous to `docker ps` vs `docker ps -a`) and makes `pm list` the intuitive day-to-day view without having to type `pm list-open` or filter manually. `pm list-all` is unchanged and continues to return all items.
+
 ### Added
 
 #### CI and Release Automation

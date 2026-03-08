@@ -128,6 +128,45 @@ describe("runList", () => {
     });
   });
 
+  it("excludes terminal statuses when excludeTerminal is true", async () => {
+    await withTempPmPath(async (context) => {
+      createItem(context, {
+        title: "Open Item",
+        status: "open",
+        priority: "1",
+        tags: "test",
+        deadline: "+1d",
+      });
+      createItem(context, {
+        title: "Blocked Item",
+        status: "blocked",
+        priority: "2",
+        tags: "test",
+        deadline: "+2d",
+      });
+      createItem(context, {
+        title: "Closed Item",
+        status: "closed",
+        priority: "0",
+        tags: "test",
+        deadline: "+3d",
+      });
+
+      // excludeTerminal=true: should exclude closed and blocked is still shown
+      const activeOnly = await runList(undefined, { excludeTerminal: true }, { path: context.pmPath });
+      expect(activeOnly.count).toBe(2);
+      expect(activeOnly.items.every((item) => item.status !== "closed" && item.status !== "canceled")).toBe(true);
+
+      // excludeTerminal=false (or undefined): should include all items
+      const allItems = await runList(undefined, {}, { path: context.pmPath });
+      expect(allItems.count).toBe(3);
+
+      // status filter takes precedence over excludeTerminal (status filter is exact match)
+      const closedExplicit = await runList("closed", { excludeTerminal: true }, { path: context.pmPath });
+      expect(closedExplicit.count).toBe(0);
+    });
+  });
+
   it("validates filter values", async () => {
     await withTempPmPath(async (context) => {
       await expect(runList(undefined, { priority: "8" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({

@@ -16,7 +16,7 @@ export { runHealth } from "./health.js";
 export { runHistory } from "./history.js";
 export { runInit } from "./init.js";
 export { runInstall, type InstallCommandOptions, type InstallResult } from "./install.js";
-export { runList } from "./list.js";
+export { runList, type ListOptions } from "./list.js";
 export { runSearch } from "./search.js";
 export { runReindex, type ReindexOptions, type ReindexResult } from "./reindex.js";
 export { runRestore } from "./restore.js";

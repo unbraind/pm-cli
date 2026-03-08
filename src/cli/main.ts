@@ -31,6 +31,7 @@ import {
   runTestAll,
   runUpdate,
   type CreateCommandOptions,
+  type ListOptions,
 } from "./commands/index.js";
 import {
   activateExtensions,
@@ -877,7 +878,7 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
   };
 }
 
-function normalizeListOptions(options: Record<string, unknown>): Record<string, string | undefined> {
+function normalizeListOptions(options: Record<string, unknown>): ListOptions {
   return {
     type: typeof options.type === "string" ? options.type : undefined,
     tag: typeof options.tag === "string" ? options.tag : undefined,
@@ -1123,7 +1124,7 @@ program
     }
   });
 
-function registerListCommand(name: string, description: string, status?: ItemStatus): void {
+function registerListCommand(name: string, description: string, status?: ItemStatus, excludeTerminal?: boolean): void {
   program
     .command(name)
     .description(description)
@@ -1139,7 +1140,9 @@ function registerListCommand(name: string, description: string, status?: ItemSta
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const result = await runList(status, normalizeListOptions(options), globalOptions);
+      const listOptions = normalizeListOptions(options);
+      if (excludeTerminal) listOptions.excludeTerminal = true;
+      const result = await runList(status, listOptions, globalOptions);
       printResult(result, globalOptions);
       if (globalOptions.profile) {
         printError(`profile:command=${name} took_ms=${Date.now() - startedAt}`);
@@ -1147,7 +1150,7 @@ function registerListCommand(name: string, description: string, status?: ItemSta
     });
 }
 
-registerListCommand("list", "List items with optional filters.");
+registerListCommand("list", "List active items (excludes closed/canceled) with optional filters.", undefined, true);
 registerListCommand("list-all", "List all items with optional filters.");
 registerListCommand("list-draft", "List draft items with optional filters.", "draft");
 registerListCommand("list-open", "List open items with optional filters.", "open");

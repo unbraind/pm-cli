@@ -728,8 +728,8 @@ All commands return deterministic top-level objects (TOON by default, JSON with 
 | --- | --- | --- |
 | `pm init [PREFIX]` | optional prefix, `--path` | `{ ok, path, settings, created_dirs, warnings }` |
 | `pm install pi [--project\|--global]` | install target (`pi`) + optional scope flags (`--project` default, `--global` uses `PI_CODING_AGENT_DIR` or `~/.pi/agent`) | `{ ok, target, scope, source_path, destination_path, overwritten, warnings }` |
-| `pm list` | optional filter flags | `{ items, count, filters, now }` |
-| `pm list-all` | optional filter flags | `{ items, count, filters, now }` |
+| `pm list` | optional filter flags; excludes terminal statuses (`closed`, `canceled`) by default | `{ items, count, filters, now }` |
+| `pm list-all` | optional filter flags; includes all statuses including terminal | `{ items, count, filters, now }` |
 | `pm list-draft` | optional type/tag/priority/deadline/assignee/sprint/release filters | `{ items, count, filters, now }` |
 | `pm list-open` | optional type/tag/priority/deadline/assignee/sprint/release filters | `{ items, count, filters, now }` |
 | `pm list-in-progress` | same as above | `{ items, count, filters, now }` |
@@ -787,7 +787,8 @@ Examples:
 Determinism requirements:
 
 - Stable key order in every object.
-- Stable array order for `items` (default sort: open before terminal, then priority asc, then updated_at desc, then id asc).
+- Stable array order for `items` (default sort: non-terminal before terminal, then priority asc, then updated_at desc, then id asc).
+- `pm list` excludes terminal statuses (`closed`, `canceled`) by default; `pm list-all` includes all statuses.
 - TOON and JSON contain same logical content.
 - `--quiet` prints nothing to stdout but still uses exit codes.
 

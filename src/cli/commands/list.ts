@@ -18,6 +18,7 @@ export interface ListOptions {
   sprint?: string;
   release?: string;
   limit?: string;
+  excludeTerminal?: boolean;
 }
 
 export interface ListResult {
@@ -98,6 +99,7 @@ function applyFilters(items: ItemFrontMatter[], status: ItemStatus | undefined, 
 
   return items.filter((item) => {
     if (status && item.status !== status) return false;
+    if (options.excludeTerminal && isTerminal(item.status)) return false;
     if (typeFilter && item.type !== typeFilter) return false;
     if (tagFilter && !item.tags.includes(tagFilter)) return false;
     if (priorityFilter !== undefined && item.priority !== priorityFilter) return false;
