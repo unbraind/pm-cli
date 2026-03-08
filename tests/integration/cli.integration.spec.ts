@@ -1334,6 +1334,19 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(allStatuses.slice(firstTerminalIndex).every((status) => status === "closed" || status === "canceled")).toBe(
         true,
       );
+
+      // pm list (bare command) excludes terminal statuses by default
+      const listActive = context.runCli(["list", "--json", "--type", "Task"], { expectJson: true });
+      expect(listActive.code).toBe(0);
+      const listActiveJson = listActive.json as { count: number; items: Array<{ status: string }> };
+      expect(listActiveJson.count).toBe(5);
+      const activeStatuses = listActiveJson.items.map((item) => item.status);
+      expect(activeStatuses).not.toContain("closed");
+      expect(activeStatuses).not.toContain("canceled");
+      expect(activeStatuses).toContain("draft");
+      expect(activeStatuses).toContain("open");
+      expect(activeStatuses).toContain("in_progress");
+      expect(activeStatuses).toContain("blocked");
     });
   });
 
