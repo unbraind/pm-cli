@@ -144,7 +144,7 @@ describe("resolveEmbeddingRequestTarget", () => {
       }),
     ).toEqual({
       provider: "ollama",
-      endpoint: "http://localhost:11434/api/embeddings",
+      endpoint: "http://localhost:11434/api/embed",
       model: "nomic-embed-text",
     });
   });
@@ -206,7 +206,7 @@ describe("buildEmbeddingRequestPlan", () => {
       ).body,
     ).toEqual({
       model: "nomic-embed-text",
-      prompt: "single prompt",
+      input: ["single prompt"],
     });
 
     expect(
@@ -216,11 +216,11 @@ describe("buildEmbeddingRequestPlan", () => {
           base_url: "http://localhost:11434",
           model: "nomic-embed-text",
         },
-        ["one", "two"],
+        ["batch 1", "batch 2"],
       ).body,
     ).toEqual({
       model: "nomic-embed-text",
-      input: ["one", "two"],
+      input: ["batch 1", "batch 2"],
     });
   });
 

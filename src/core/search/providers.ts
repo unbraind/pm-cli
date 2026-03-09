@@ -209,7 +209,7 @@ export function resolveEmbeddingRequestTarget(provider: EmbeddingProviderConfig)
   }
   return {
     provider: "ollama",
-    endpoint: `${baseUrl}/api/embeddings`,
+    endpoint: `${baseUrl}/api/embed`,
     model: provider.model,
   };
 }
@@ -236,15 +236,10 @@ export function buildEmbeddingRequestPlan(provider: EmbeddingProviderConfig, inp
     headers: {
       "content-type": "application/json",
     },
-    body: normalizedInputs.length === 1
-      ? {
-          model: provider.model,
-          prompt: normalizedInputs[0],
-        }
-      : {
-          model: provider.model,
-          input: normalizedInputs,
-        },
+    body: {
+      model: provider.model,
+      input: normalizedInputs,
+    },
   };
 }
 
