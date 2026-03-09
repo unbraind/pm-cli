@@ -1,9 +1,9 @@
 {
-  "name": "pm-cli",
-  "version": "0.1.0",
+  "name": "@unbrained/pm-cli",
+  "version": "2026.3.9",
   "description": "Git-native project management CLI for humans and agents.",
   "type": "module",
-  "author": "unbraind",
+  "author": "unbrained",
   "homepage": "https://github.com/unbraind/pm-cli#readme",
   "repository": {
     "type": "git",
@@ -33,6 +33,10 @@
     "dev": "tsx src/cli.ts",
     "test": "pnpm build && vitest run",
     "test:coverage": "pnpm build && vitest run --coverage",
+    "version:check": "node scripts/release-version.mjs check",
+    "version:next": "node scripts/release-version.mjs next",
+    "security:scan": "node scripts/check-secrets.mjs",
+    "smoke:npx": "node scripts/smoke-npx-from-pack.mjs",
     "prepublishOnly": "pnpm build"
   },
   "keywords": [
@@ -46,6 +50,9 @@
     "coding-agents"
   ],
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=20"
   },

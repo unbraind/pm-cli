@@ -72,6 +72,7 @@ For deeper context on implementation and extension development:
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — source tree, item storage, mutation contract, history/restore, search, and testing internals.
 - [docs/EXTENSIONS.md](docs/EXTENSIONS.md) — full extension development guide: manifest format, ExtensionApi reference, lifecycle hooks, and a working example.
+- [docs/RELEASING.md](docs/RELEASING.md) — maintainer release procedure for calendar versioning, CI gates, npm publish, and GitHub Release automation.
 
 ## Extension Development
 

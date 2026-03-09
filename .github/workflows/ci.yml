@@ -50,6 +50,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Version policy check
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 20
+        run: pnpm version:check
+
+      - name: Secret leak scan
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 20
+        run: pnpm security:scan
+
       - name: Build
         run: pnpm build
 
@@ -70,6 +78,10 @@ jobs:
       - name: Packaging smoke check
         if: matrix.os == 'ubuntu-latest' && matrix.node == 20
         run: npm pack --dry-run
+
+      - name: npx tarball smoke check
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 20
+        run: pnpm smoke:npx
 
       - name: Upload coverage artifact
         if: always() && matrix.os == 'ubuntu-latest' && matrix.node == 20

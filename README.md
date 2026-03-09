@@ -1,8 +1,8 @@
 # pm-cli (`pm`)
 
 [![CI](https://github.com/unbraind/pm-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/unbraind/pm-cli/actions/workflows/ci.yml)
-[![npm version](https://img.shields.io/npm/v/pm-cli)](https://www.npmjs.com/package/pm-cli)
-[![Node >=20](https://img.shields.io/node/v/pm-cli)](https://nodejs.org)
+[![npm version](https://img.shields.io/npm/v/%40unbrained%2Fpm-cli)](https://www.npmjs.com/package/%40unbrained%2Fpm-cli)
+[![Node >=20](https://img.shields.io/node/v/%40unbrained%2Fpm-cli)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Agent-friendly, git-native project management for humans and coding agents.
@@ -24,7 +24,7 @@ Agent-friendly, git-native project management for humans and coding agents.
 ### npm (recommended)
 
 ```bash
-npm i -g pm-cli
+npm i -g @unbrained/pm-cli
 pm --help
 pm --version
 ```
@@ -32,13 +32,13 @@ pm --version
 Update to latest:
 
 ```bash
-npm i -g pm-cli@latest
+npm i -g @unbrained/pm-cli@latest
 ```
 
 ### Project-local invocation
 
 ```bash
-npx pm-cli --help
+npx @unbrained/pm-cli --help
 ```
 
 ### Installer scripts
@@ -53,6 +53,7 @@ pwsh scripts/install.ps1
 
 Both installers are idempotent for update flows; rerun them to move to a newer version.
 Each installer verifies post-install CLI availability by resolving `pm` and running `pm --version` before reporting success.
+Installer default package target is `@unbrained/pm-cli`.
 Set `PM_CLI_PACKAGE` to override the package source when smoke-testing installer flows.
 Scoped package names such as `@scope/pkg` still honor `--version`, while literal specs (`file:`, URLs, local paths/tarballs, or already versioned package specs) are passed to npm unchanged.
 
@@ -203,6 +204,7 @@ docs/
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — Internal architecture, source layout, mutation contract, history/restore, search, and testing.
 - [docs/EXTENSIONS.md](docs/EXTENSIONS.md) — Extension development guide: manifest format, API reference, hook lifecycle, built-in extensions.
+- [docs/RELEASING.md](docs/RELEASING.md) — Maintainer release runbook for calendar versioning, CI gates, npm publish, and GitHub Releases.
 
 ## Item File Format
 
@@ -251,7 +253,7 @@ Format:
 - `pm completion <bash|zsh|fish>` (generate shell tab-completion script)
 - extension-only command paths return not-found when no handler is registered, and generic failure when a matched handler throws; profile diagnostics include deterministic warning codes like `extension_command_handler_failed:<layer>:<name>:<command>`
 - extension command names are canonicalized (trimmed, lowercased, repeated internal whitespace collapsed) before registration and dispatch so equivalent command paths resolve deterministically
-- `pm test <ID> --add` rejects linked commands that invoke `pm test-all` (including global-flag and package-spec launcher forms like `pm --json test-all`, `npx pm-cli@latest --json test-all`, `pnpm dlx pm-cli@latest --json test-all`, and `npm exec -- pm-cli@latest --json test-all`) to prevent recursive orchestration
+- `pm test <ID> --add` rejects linked commands that invoke `pm test-all` (including global-flag and package-spec launcher forms like `pm --json test-all`, `npx @unbrained/pm-cli@latest --json test-all`, `pnpm dlx @unbrained/pm-cli@latest --json test-all`, and `npm exec -- @unbrained/pm-cli@latest --json test-all`) to prevent recursive orchestration
 - `pm test <ID> --run` skips legacy linked commands that invoke `pm test-all` (including global-flag and package-spec launcher forms such as `npx`, `pnpm dlx`, and `npm exec` launcher variants) and reports deterministic skip diagnostics
 - `pm test <ID> --add` rejects sandbox-unsafe test-runner commands (for example `pnpm test`, `pnpm test:coverage`, `npm test`, `npm run test`, `pnpm run test`, `yarn run test`, `bun run test`, `vitest`) unless they use `node scripts/run-tests.mjs ...` or explicitly set both `PM_PATH` and `PM_GLOBAL_PATH`; chained direct test-runner segments are validated independently, so each direct runner segment must be explicitly sandboxed
 - `pm test-all` deduplicates identical linked command/path entries per invocation (keyed by scope+normalized command or scope+path), reports duplicates as skipped, and uses the maximum `timeout_seconds` when duplicate keys disagree on timeout metadata
@@ -598,7 +600,7 @@ Restore replays append-only history to the target point, rewrites the item atomi
 
 - All tests must run with a sandbox `PM_PATH` (never the repository's real `.agents/pm`).
 - PM-linked test execution should use `node scripts/run-tests.mjs <test|coverage> [-- <vitest args...>]` so both `PM_PATH` and `PM_GLOBAL_PATH` are sandboxed per run; forwarded args target Vitest directly (for example: `node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts`).
-- `pm test <ID>` linked command entries must not invoke `pm test-all` (including global-flag and package-spec launcher forms like `pm --json test-all`, `npx pm-cli@latest --json test-all`, `pnpm dlx pm-cli@latest --json test-all`, and `npm exec -- pm-cli@latest --json test-all`); the CLI rejects recursive orchestration entries at add-time.
+- `pm test <ID>` linked command entries must not invoke `pm test-all` (including global-flag and package-spec launcher forms like `pm --json test-all`, `npx @unbrained/pm-cli@latest --json test-all`, `pnpm dlx @unbrained/pm-cli@latest --json test-all`, and `npm exec -- @unbrained/pm-cli@latest --json test-all`); the CLI rejects recursive orchestration entries at add-time.
 - `pm test <ID> --run` defensively skips legacy linked command entries that invoke `pm test-all` (including global-flag and package-spec launcher forms such as `npx`, `pnpm dlx`, and `npm exec` launcher variants) and reports deterministic skipped results.
 - `pm test <ID>` linked test-runner command entries must use `node scripts/run-tests.mjs ...` or explicitly set both `PM_PATH` and `PM_GLOBAL_PATH`; the CLI rejects sandbox-unsafe variants at add-time, including unsandboxed package-manager run-script forms like `npm run test` / `pnpm run test` and chained direct test-runner segments that are not explicitly sandboxed.
 - `pm test-all` runs each unique linked command/path key once per invocation and marks duplicates as skipped for deterministic orchestration output; duplicate-key timeout conflicts resolve to the maximum `timeout_seconds` for that key.
@@ -624,8 +626,10 @@ pnpm build
 pnpm typecheck
 pnpm test
 pnpm test:coverage
+pnpm version:check
+pnpm security:scan
 node scripts/run-tests.mjs coverage
-npm pack
+pnpm smoke:npx
 ```
 
 Manual smoke checks:
@@ -639,11 +643,11 @@ Manual smoke checks:
 Pushing a version tag triggers the automated npm publish workflow:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v2026.3.9
+git push origin v2026.3.9
 ```
 
-The `.github/workflows/release.yml` workflow runs the full CI suite and publishes to npm when all checks pass. Requires `NPM_TOKEN` secret configured in the repository settings.
+The `.github/workflows/release.yml` workflow runs full validation, enforces calendar version policy, and publishes `@unbrained/pm-cli` to npm only when all checks pass. It uses the `release` GitHub Environment and requires the `NPM_TOKEN` environment secret.
 
 ## Project Status
 

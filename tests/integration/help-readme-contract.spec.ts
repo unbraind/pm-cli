@@ -109,6 +109,8 @@ describe("README/help contract (sandboxed)", () => {
     const readme = await readFile(path.resolve(process.cwd(), "README.md"), "utf8");
     const installerSection = extractSection(readme, "### Installer scripts", "During development in this repo:");
 
+    expect(readme).toContain("npm i -g @unbrained/pm-cli");
+    expect(readme).toContain("npx @unbrained/pm-cli --help");
     expect(installerSection).toContain("https://raw.githubusercontent.com/unbraind/pm-cli/main/scripts/install.sh");
     expect(installerSection).toContain("https://raw.githubusercontent.com/unbraind/pm-cli/main/scripts/install.ps1");
     expect(installerSection).toContain("`PM_CLI_PACKAGE`");
@@ -123,13 +125,13 @@ describe("README/help contract (sandboxed)", () => {
 
     expect(installerSection).toContain("Scoped package names such as `@scope/pkg` still honor `--version`");
     expect(installerSection).toContain("literal specs");
-    expect(shellInstaller).toContain('PACKAGE_NAME="${PM_CLI_PACKAGE:-pm-cli}"');
+    expect(shellInstaller).toContain('PACKAGE_NAME="${PM_CLI_PACKAGE:-@unbrained/pm-cli}"');
     expect(shellInstaller).toContain("is_literal_install_spec");
     expect(shellInstaller).toContain('if is_literal_install_spec "$PACKAGE_NAME"; then');
     expect(shellInstaller).toContain('[[ "$name" == @*/*@* ]]');
     expect(powershellInstaller).toContain('[string]$PackageName = ""');
     expect(powershellInstaller).toContain("$envPackageName = $env:PM_CLI_PACKAGE");
-    expect(powershellInstaller).toContain('$PackageName = "pm-cli"');
+    expect(powershellInstaller).toContain('$PackageName = "@unbrained/pm-cli"');
     expect(powershellInstaller).toContain("$PackageName = $envPackageName");
     expect(powershellInstaller).toContain("function Use-LiteralInstallSpec");
     expect(powershellInstaller).toContain('if ($Name.StartsWith("@"))');

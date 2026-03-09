@@ -10,7 +10,7 @@ $ErrorActionPreference = "Stop"
 $envPackageName = $env:PM_CLI_PACKAGE
 if ([string]::IsNullOrWhiteSpace($PackageName)) {
   if ([string]::IsNullOrWhiteSpace($envPackageName)) {
-    $PackageName = "pm-cli"
+    $PackageName = "@unbrained/pm-cli"
   } else {
     $PackageName = $envPackageName
   }
