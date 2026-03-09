@@ -1583,11 +1583,13 @@ describe("release readiness baseline contract", () => {
     expect(installSh).toContain("$PM_BIN --version");
     expect(installSh).toContain("Installed pm version:");
     expect(installSh).toContain("@unbrained/pm-cli");
+    expect(installSh).toContain("--force");
 
     const installPs1 = await readRepoText("scripts/install.ps1");
     expect(installPs1).toContain("$pmExecutable --version");
     expect(installPs1).toContain("Installed pm version:");
     expect(installPs1).toContain('@unbrained/pm-cli');
+    expect(installPs1).toContain('"--force"');
 
     const releaseVersionScript = await readRepoText("scripts/release-version.mjs");
     expect(releaseVersionScript).toContain("YYYY.M.D");

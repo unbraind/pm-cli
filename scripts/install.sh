@@ -88,7 +88,8 @@ if is_literal_install_spec "$PACKAGE_NAME"; then
 else
   INSTALL_SPEC="${PACKAGE_NAME}@${TARGET_VERSION}"
 fi
-INSTALL_CMD=(npm install -g "$INSTALL_SPEC")
+# Force is required for idempotent reruns when an existing pm shim already exists.
+INSTALL_CMD=(npm install -g --force "$INSTALL_SPEC")
 if [[ -n "$PREFIX" ]]; then
   INSTALL_CMD+=(--prefix "$PREFIX")
 fi

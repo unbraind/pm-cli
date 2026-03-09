@@ -63,7 +63,8 @@ if (Use-LiteralInstallSpec $PackageName) {
   $installSpec = "$PackageName@$Version"
 }
 Write-Host "Installing or updating $installSpec..."
-$npmArgs = @("install", "-g", $installSpec)
+# --force keeps repeated installer runs idempotent when pm shim already exists.
+$npmArgs = @("install", "-g", "--force", $installSpec)
 if ($Prefix -ne "") {
   $npmArgs += @("--prefix", $Prefix)
 }
