@@ -38,6 +38,7 @@ export const PM_TOOL_ACTIONS = [
   "todos-export",
   "start-task",
   "pause-task",
+  "close-task",
 ] as const;
 
 export type PmToolAction = (typeof PM_TOOL_ACTIONS)[number];
@@ -439,6 +440,16 @@ export function buildPmCliSequences(params: PmToolParameters): string[][] {
     addAuthorMessageForceFlags(releaseArgs, params);
     return [[...globalArgs, ...updateArgs], [...globalArgs, ...releaseArgs]];
   }
+  if (action === "close-task") {
+    const globalArgs: string[] = [];
+    addGlobalFlags(globalArgs, params);
+    const id = requireString(params.id, "id", action);
+    const closeArgs = ["close", id, requireString(params.text, "text", action)];
+    addAuthorMessageForceFlags(closeArgs, params);
+    const releaseArgs = ["release", id];
+    addAuthorMessageForceFlags(releaseArgs, params);
+    return [[...globalArgs, ...closeArgs], [...globalArgs, ...releaseArgs]];
+  }
   return [buildPmCliArgs(params)];
 }
 
@@ -572,6 +583,10 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       args.push(action, requireString(params.id, "id", action));
       addAuthorMessageForceFlags(args, params);
       return args;
+    case "start-task":
+    case "pause-task":
+    case "close-task":
+      throw new Error(`Action "${action}" is a workflow preset and must be built via buildPmCliSequences().`);
     case "beads-import":
       args.push("beads", "import");
       pushOption(args, "--file", params.file);

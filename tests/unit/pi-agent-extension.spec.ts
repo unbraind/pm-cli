@@ -798,7 +798,7 @@ describe("Pi agent extension wrapper for pm", () => {
     });
   });
 
-  it("supports workflow presets like start-task and pause-task", async () => {
+  it("supports workflow presets like start-task pause-task and close-task", async () => {
     const execSpy = vi
       .fn()
       .mockResolvedValue({ code: 0, stdout: "{}", stderr: "" });
@@ -820,5 +820,42 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(execSpy.mock.calls[0]?.[1]).toEqual(expect.arrayContaining(["update", "pm-a1b2", "--status", "open", "--author", "pi-bot"]));
     // Release call
     expect(execSpy.mock.calls[1]?.[1]).toEqual(expect.arrayContaining(["release", "pm-a1b2", "--author", "pi-bot"]));
+
+    execSpy.mockClear();
+
+    await tool.execute("call-3", {
+      action: "close-task",
+      id: "pm-a1b2",
+      text: "Completed workflow preset validation",
+      author: "pi-bot",
+      force: true,
+    });
+    expect(execSpy).toHaveBeenCalledTimes(2);
+    // Close call
+    expect(execSpy.mock.calls[0]?.[1]).toEqual(
+      expect.arrayContaining([
+        "close",
+        "pm-a1b2",
+        "Completed workflow preset validation",
+        "--author",
+        "pi-bot",
+        "--force",
+      ]),
+    );
+    // Release call
+    expect(execSpy.mock.calls[1]?.[1]).toEqual(
+      expect.arrayContaining(["release", "pm-a1b2", "--author", "pi-bot", "--force"]),
+    );
+  });
+
+  it("requires close reason text for close-task workflow preset", async () => {
+    const execSpy = vi.fn().mockResolvedValue({ code: 0, stdout: "{}", stderr: "" });
+    const api = { registerTool: vi.fn(), exec: execSpy };
+    const tool = createPmToolDefinition(api);
+
+    await expect(tool.execute("call-4", { action: "close-task", id: "pm-a1b2", author: "pi-bot" })).rejects.toThrow(
+      'Action "close-task" requires "text".',
+    );
+    expect(execSpy).toHaveBeenCalledTimes(0);
   });
 });
