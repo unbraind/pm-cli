@@ -94,6 +94,9 @@ export PM_CMD="pm"
 # verify command surface before mutation work
 $PM_CMD --version
 $PM_CMD --help
+node -v
+pnpm -v
+pnpm build
 ```
 
 Use repository-default tracking for maintainer runs (do not set `PM_PATH`).

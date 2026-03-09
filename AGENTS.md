@@ -19,6 +19,11 @@ This document defines how coding agents must use `pm` for planning, execution, a
 - Refresh the global CLI from this repository for maintainer runs:
   - Run `npm install -g .` from repository root.
   - Verify availability with `pm --version` before mutation commands.
+- Run baseline runtime/build sanity checks before mutation commands:
+  - `PM_CMD --version`
+  - `node -v`
+  - `pnpm -v`
+  - `pnpm build` (if configured)
 - For real repository tracking, do not override `PM_PATH`.
 - For tests only, always use sandboxed `PM_PATH` and `PM_GLOBAL_PATH` (or `node scripts/run-tests.mjs ...`).
 
