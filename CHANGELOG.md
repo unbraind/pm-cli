@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+#### Release Versioning and Distribution
+- npm package identity switched to scoped publish target `@unbrained/pm-cli` to avoid naming collisions with existing unscoped packages while keeping the `pm` executable unchanged.
+- Versioning policy now follows calendar SemVer-compatible releases: `YYYY.M.D` for the first release of a day and `YYYY.M.D-N` for subsequent same-day releases (`N >= 2`).
+- Installer defaults now target `@unbrained/pm-cli` while preserving `PM_CLI_PACKAGE` override support for local/tarball smoke tests.
+
+#### CI/CD and Release Guardrails
+- Added automated version policy enforcement script (`scripts/release-version.mjs`) with tag/version consistency checks and registry-aware same-day release sequencing.
+- Added tracked-file credential leak scanner (`scripts/check-secrets.mjs`) and wired it into CI/release gates.
+- Added packaged `npx` smoke test (`scripts/smoke-npx-from-pack.mjs`) to verify tarball executability before release publish.
+- Release workflow now uses the GitHub `release` Environment, validates version sequencing before publish, and creates a GitHub Release with generated notes after npm publish.
+
 #### CLI UX
 - `pm list` now excludes terminal statuses (`closed`, `canceled`) by default, showing only the active working-set of items. Use `pm list-all` to include all items regardless of status. This aligns with common CLI conventions (analogous to `docker ps` vs `docker ps -a`) and makes `pm list` the intuitive day-to-day view without having to type `pm list-open` or filter manually. `pm list-all` is unchanged and continues to return all items.
 

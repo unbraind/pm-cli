@@ -12,7 +12,7 @@ body:
     attributes:
       label: pm-cli version
       description: Run `pm --version` and paste the output here.
-      placeholder: "0.1.0"
+      placeholder: "2026.3.9"
     validations:
       required: true
 

@@ -21,6 +21,9 @@
 - [ ] `pnpm build` passes
 - [ ] `pnpm typecheck` passes
 - [ ] `node scripts/run-tests.mjs coverage` passes at 100% coverage (lines/branches/functions/statements)
+- [ ] `pnpm version:check` passes (calendar release version policy)
+- [ ] `pnpm security:scan` passes (no tracked credential leaks)
+- [ ] `pnpm smoke:npx` passes (packaged npx executable smoke test)
 - [ ] All linked pm item files/tests/docs are updated
 - [ ] PRD.md / README.md / AGENTS.md updated if behavior changed
 - [ ] CHANGELOG.md updated under `[Unreleased]`

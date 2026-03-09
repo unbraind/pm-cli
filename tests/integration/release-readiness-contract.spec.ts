@@ -143,6 +143,11 @@ function expectSectionContainsTokens(section: string, tokens: string[]): void {
   }
 }
 
+function isValidCalendarDate(year: number, month: number, day: number): boolean {
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+
 function expectTopLevelKeyOrder(value: unknown, expectedKeys: string[]): void {
   expect(value).toBeTypeOf("object");
   expect(value).not.toBeNull();
@@ -536,7 +541,23 @@ describe("release readiness baseline contract", () => {
     const expectedVersion = packageJson.version;
 
     expect(expectedVersion).toBeTypeOf("string");
-    expect(expectedVersion).toMatch(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/);
+    const versionPolicyMatch = (expectedVersion as string).match(/^([1-9]\d{3})\.([1-9]\d*)\.([1-9]\d*)(?:-([1-9]\d*))?$/);
+    expect(versionPolicyMatch).not.toBeNull();
+    if (!versionPolicyMatch) {
+      throw new Error("unreachable");
+    }
+    const year = Number(versionPolicyMatch[1]);
+    const month = Number(versionPolicyMatch[2]);
+    const day = Number(versionPolicyMatch[3]);
+    const releaseOrdinal = versionPolicyMatch[4] ? Number(versionPolicyMatch[4]) : null;
+    expect(month).toBeGreaterThanOrEqual(1);
+    expect(month).toBeLessThanOrEqual(12);
+    expect(day).toBeGreaterThanOrEqual(1);
+    expect(day).toBeLessThanOrEqual(31);
+    expect(isValidCalendarDate(year, month, day)).toBe(true);
+    if (releaseOrdinal !== null) {
+      expect(releaseOrdinal).toBeGreaterThanOrEqual(2);
+    }
 
     await withTempPmPath(async (context) => {
       const versionResult = context.runCli(["--version"]);
@@ -1431,12 +1452,14 @@ describe("release readiness baseline contract", () => {
 
   it("keeps npm packaging allowlist and prepublish guard aligned", async () => {
     const packageJson = JSON.parse(await readRepoText("package.json")) as {
+      name?: string;
       files?: string[];
       scripts?: Record<string, string | undefined>;
       repository?: { type?: string; url?: string };
       bugs?: { url?: string };
       homepage?: string;
       author?: string;
+      publishConfig?: { access?: string };
     };
 
     const requiredPublishFiles = [
@@ -1457,6 +1480,13 @@ describe("release readiness baseline contract", () => {
     }
 
     expect(packageJson.scripts?.prepublishOnly).toBe("pnpm build");
+    expect(packageJson.scripts?.["version:check"]).toBe("node scripts/release-version.mjs check");
+    expect(packageJson.scripts?.["version:next"]).toBe("node scripts/release-version.mjs next");
+    expect(packageJson.scripts?.["security:scan"]).toBe("node scripts/check-secrets.mjs");
+    expect(packageJson.scripts?.["smoke:npx"]).toBe("node scripts/smoke-npx-from-pack.mjs");
+
+    expect(packageJson.name).toBe("@unbrained/pm-cli");
+    expect(packageJson.publishConfig?.access).toBe("public");
 
     expect(packageJson.repository).toBeDefined();
     expect(packageJson.repository?.type).toBe("git");
@@ -1523,6 +1553,9 @@ describe("release readiness baseline contract", () => {
       "scripts/run-tests.mjs",
       "scripts/install.sh",
       "scripts/install.ps1",
+      "scripts/release-version.mjs",
+      "scripts/check-secrets.mjs",
+      "scripts/smoke-npx-from-pack.mjs",
     ];
 
     for (const requiredPath of requiredPaths) {
@@ -1549,9 +1582,22 @@ describe("release readiness baseline contract", () => {
     expect(installSh).toContain("PM_BIN");
     expect(installSh).toContain("$PM_BIN --version");
     expect(installSh).toContain("Installed pm version:");
+    expect(installSh).toContain("@unbrained/pm-cli");
 
     const installPs1 = await readRepoText("scripts/install.ps1");
     expect(installPs1).toContain("$pmExecutable --version");
     expect(installPs1).toContain("Installed pm version:");
+    expect(installPs1).toContain('@unbrained/pm-cli');
+
+    const releaseVersionScript = await readRepoText("scripts/release-version.mjs");
+    expect(releaseVersionScript).toContain("YYYY.M.D");
+    expect(releaseVersionScript).toContain("verify-next");
+
+    const securityScanScript = await readRepoText("scripts/check-secrets.mjs");
+    expect(securityScanScript).toContain("No credential-like secrets detected");
+
+    const npxSmokeScript = await readRepoText("scripts/smoke-npx-from-pack.mjs");
+    expect(npxSmokeScript).toContain("npx");
+    expect(npxSmokeScript).toContain("npm pack");
   });
 });

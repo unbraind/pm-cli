@@ -6,7 +6,7 @@ on:
       - "v*.*.*"
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 concurrency:
@@ -17,6 +17,8 @@ jobs:
   release:
     name: Build, Test, Publish
     runs-on: ubuntu-latest
+    environment:
+      name: release
 
     steps:
       - name: Checkout
@@ -37,6 +39,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Version policy + tag guard
+        run: node scripts/release-version.mjs check --tag "${GITHUB_REF_NAME}" --verify-next
+
+      - name: Secret leak scan
+        run: pnpm security:scan
+
       - name: Build
         run: pnpm build
 
@@ -52,6 +60,9 @@ jobs:
       - name: Packaging smoke check
         run: npm pack --dry-run
 
+      - name: npx tarball smoke check
+        run: pnpm smoke:npx
+
       - name: Upload coverage artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -64,3 +75,8 @@ jobs:
         run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true

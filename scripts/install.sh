@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PACKAGE_NAME="${PM_CLI_PACKAGE:-pm-cli}"
+PACKAGE_NAME="${PM_CLI_PACKAGE:-@unbrained/pm-cli}"
 TARGET_VERSION="latest"
 PREFIX=""
 
 usage() {
   cat <<'EOF'
-Install or update pm-cli globally via npm.
+Install or update @unbrained/pm-cli globally via npm.
 
 Usage:
   bash scripts/install.sh [--version <tag>] [--prefix <dir>]

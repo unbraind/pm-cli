@@ -43,6 +43,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Version policy check
+        if: matrix.node == 20
+        run: pnpm version:check
+
+      - name: Secret leak scan
+        if: matrix.node == 20
+        run: pnpm security:scan
+
       - name: Build
         run: pnpm build
 
