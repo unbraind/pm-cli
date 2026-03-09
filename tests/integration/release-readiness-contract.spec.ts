@@ -1438,6 +1438,10 @@ describe("release readiness baseline contract", () => {
       expect(readme).toContain(token);
       expect(agents).toContain(token);
     }
+
+    const prdExampleSection = extractSection(prd, "### 7.4 Example item file", "## 8) ID Strategy");
+    expect(prdExampleSection).toContain('"command": "node scripts/run-tests.mjs test --');
+    expect(prdExampleSection).not.toContain('"command": "pnpm test history"');
   });
 
   it("keeps AGENTS validation sweep guidance aligned with in-progress and closed test-all loops", async () => {

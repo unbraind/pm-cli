@@ -396,7 +396,7 @@ Unset optional fields are omitted.
   ],
   "tests": [
     {
-      "command": "pnpm test history",
+      "command": "node scripts/run-tests.mjs test -- tests/unit/history-command.spec.ts",
       "scope": "project",
       "timeout_seconds": 90
     }
