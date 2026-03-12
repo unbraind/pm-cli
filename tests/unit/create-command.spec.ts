@@ -33,7 +33,7 @@ function baseCreateOptions(overrides: Partial<CreateCommandOptions> = {}): Creat
     test: [
       "command=node scripts/run-tests.mjs test,path=tests/unit/create-command.spec.ts,scope=project,timeout=120,timeout_seconds=120,note=create-coverage",
     ],
-    doc: ["path=README.md,scope=project,note=contract"],
+    doc: ["path=README.md,scope=project,note=documentation"],
     ...overrides,
   };
 }

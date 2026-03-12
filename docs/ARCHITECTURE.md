@@ -231,7 +231,7 @@ Tests live in `tests/`:
 ```
 tests/
   unit/           Unit tests (item format, lock, search, commands, extensions, etc.)
-  integration/    Integration tests (CLI subprocess spawn, CI contract, README contract)
+  integration/    Integration tests (CLI subprocess spawn, runtime/readiness coverage)
 ```
 
 All tests run in sandboxed temp directories (`PM_PATH` + `PM_GLOBAL_PATH` isolated per suite). Coverage is enforced at 100% for lines, branches, functions, and statements.

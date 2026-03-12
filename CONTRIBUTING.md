@@ -43,7 +43,7 @@ For tests, always use sandboxed storage via `node scripts/run-tests.mjs ...` (se
 ## Development Workflow
 
 1. Track work in `pm` items (claim, link files/tests/docs, and log comments/evidence).
-2. Keep docs aligned with behavior (`PRD.md`, `README.md`, `AGENTS.md`) before implementation changes.
+2. Treat `pm` data and runtime behavior as the source of truth; update user-facing docs as needed without using them as test contracts.
 3. Prefer small, reviewable changesets with deterministic behavior.
 
 ## Testing
@@ -102,6 +102,6 @@ Run `pm health` to inspect extension load/activation status and migration summar
 
 - Include focused scope and rationale.
 - Confirm all checks pass (`pnpm build && pnpm typecheck && pnpm test:coverage`).
-- Update docs/contracts when behavior changes (`PRD.md`, `README.md`, `AGENTS.md`).
+- Update relevant user-facing docs when behavior changes, but keep enforcement in pm data and runtime tests.
 - Add/maintain tests for any new behavior (100% coverage required).
 - Reference relevant `pm` item IDs in PR description.

@@ -293,7 +293,7 @@ For `create` and `update`, use camelCase wrapper parameters for the canonical CL
   "component": "none",
   "regression": "none",
   "customerImpact": "none",
-  "definitionOfReady": "Extension loading contract is clarified in docs.",
+  "definitionOfReady": "Extension loading behavior is clarified in docs.",
   "order": 1,
   "goal": "Release-hardening",
   "objective": "Ship deterministic extension loading",
@@ -307,7 +307,7 @@ For `create` and `update`, use camelCase wrapper parameters for the canonical CL
   "learning": ["none"],
   "linkedFile": ["path=src/core/extensions/loader.ts,scope=project,note=planned implementation file"],
   "linkedTest": ["command=node scripts/run-tests.mjs test,scope=project,timeout_seconds=240,note=sandbox-safe regression"],
-  "doc": ["path=PRD.md,scope=project,note=authoritative contract"]
+  "doc": ["path=docs/ARCHITECTURE.md,scope=project,note=implementation reference"]
 }
 ```
 

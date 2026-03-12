@@ -25,7 +25,7 @@
 - [ ] `pnpm security:scan` passes (no tracked credential leaks)
 - [ ] `pnpm smoke:npx` passes (packaged npx executable smoke test)
 - [ ] All linked pm item files/tests/docs are updated
-- [ ] PRD.md / README.md / AGENTS.md updated if behavior changed
+- [ ] Relevant user-facing docs updated if behavior changed; pm data/runtime tests remain the source of truth
 - [ ] CHANGELOG.md updated under `[Unreleased]`
 - [ ] No manual edits to `.agents/pm/**` (only via `pm` commands)
 

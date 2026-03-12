@@ -1,6 +1,6 @@
 # pm-cli Product Requirements Document (PRD)
 
-Status: Draft v1 (authoritative for implementation)  
+Status: Draft v1 (planning reference; pm data and runtime behavior are authoritative)
 Project: `pm` / `pm-cli`  
 Last Updated: 2026-02-19
 
@@ -39,9 +39,9 @@ Existing trackers either rely on hosted backends, store state in non-diff-friend
 - No required database for core tracker (file-backed core is mandatory).
 - Export to Beads is not required in v1 (import only).
 
-## 4) Authoritative Inputs and Design Findings
+## 4) Reference Inputs and Design Findings
 
-### 4.1 Local authoritative references analyzed
+### 4.1 Local reference inputs analyzed
 
 1. `todos.ts` (local Pi extension implementation)
 2. `.beads/issues.jsonl` (local Beads-style JSONL data)
@@ -1364,7 +1364,7 @@ Checklist:
 
 - [x] CI matrix finalized (ubuntu/macos/windows Node 20, ubuntu Node 22, ubuntu Node 24)
 - [x] fixture corpus for restore/import/search
-- [x] command help and README examples validated in tests
+- [x] command help and pm-data-driven runtime checks validated in tests
 - [x] repository layout refactor (`src/cli`, `src/core`, `src/types`)
 - [x] sandboxed integration harness (`withTempPmPath`)
 - [x] sandboxed pm-runner (`scripts/run-tests.mjs`) for `pm test` and `pm test-all` safety
@@ -1377,7 +1377,7 @@ Checklist:
 Definition of Done:
 
 - All required commands and tests passing
-- docs and behavior aligned with this PRD
+- pm data, runtime behavior, and user-facing docs kept coherent
 
 ## 22) Open Assumptions and Clarifications Captured
 
