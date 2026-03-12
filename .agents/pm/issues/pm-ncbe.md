@@ -3,7 +3,7 @@
   "title": "Track GitHub Dependabot alert #1 for undici (GHSA-3cvr-822r-rqcc)",
   "description": "undici before v5.8.0 vulnerable to CRLF injection in request headers",
   "type": "Issue",
-  "status": "open",
+  "status": "closed",
   "priority": 1,
   "tags": [
     "dependabot",
@@ -12,7 +12,7 @@
     "undici"
   ],
   "created_at": "2026-03-12T22:34:20.551Z",
-  "updated_at": "2026-03-12T22:34:20.551Z",
+  "updated_at": "2026-03-12T23:19:30.636Z",
   "author": "codex-agent",
   "estimated_minutes": 30,
   "acceptance_criteria": "Alert is resolved by an upgrade or explicitly dismissed with recorded rationale and verification.",
@@ -40,6 +40,11 @@
       "created_at": "2026-03-12T22:34:20.551Z",
       "author": "codex-agent",
       "text": "Imported GitHub Dependabot alert GHSA-3cvr-822r-rqcc."
+    },
+    {
+      "created_at": "2026-03-12T23:19:29.841Z",
+      "author": "cursor-agent",
+      "text": "Verification: pnpm audit --prod reports 'No known vulnerabilities found' on 2026-03-12. Current lockfile resolves undici@7.22.0, fast-json-patch@3.1.1, and zod@4.3.6, meeting or exceeding fixed versions recorded in this alert."
     }
   ],
   "notes": [
@@ -62,7 +67,8 @@
       "scope": "project",
       "note": "security reporting and handling policy"
     }
-  ]
+  ],
+  "close_reason": "Dependency remediation verified locally; no remaining known vulnerabilities in current dependency graph."
 }
 
 GitHub Dependabot alert #1

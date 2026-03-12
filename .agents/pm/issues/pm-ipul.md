@@ -3,7 +3,7 @@
   "title": "Track GitHub Dependabot alert #10 for undici (GHSA-m4v8-wqvr-p9f7)",
   "description": "Undici's Proxy-Authorization header not cleared on cross-origin redirect for dispatch, request, stream, pipeline",
   "type": "Issue",
-  "status": "open",
+  "status": "closed",
   "priority": 2,
   "tags": [
     "dependabot",
@@ -12,7 +12,7 @@
     "undici"
   ],
   "created_at": "2026-03-12T22:34:27.886Z",
-  "updated_at": "2026-03-12T22:34:27.886Z",
+  "updated_at": "2026-03-12T23:19:35.429Z",
   "author": "codex-agent",
   "estimated_minutes": 30,
   "acceptance_criteria": "Alert is resolved by an upgrade or explicitly dismissed with recorded rationale and verification.",
@@ -40,6 +40,11 @@
       "created_at": "2026-03-12T22:34:27.886Z",
       "author": "codex-agent",
       "text": "Imported GitHub Dependabot alert GHSA-m4v8-wqvr-p9f7."
+    },
+    {
+      "created_at": "2026-03-12T23:19:34.630Z",
+      "author": "cursor-agent",
+      "text": "Verification: pnpm audit --prod reports 'No known vulnerabilities found' on 2026-03-12. Current lockfile resolves undici@7.22.0, fast-json-patch@3.1.1, and zod@4.3.6, meeting or exceeding fixed versions recorded in this alert."
     }
   ],
   "notes": [
@@ -62,7 +67,8 @@
       "scope": "project",
       "note": "security reporting and handling policy"
     }
-  ]
+  ],
+  "close_reason": "Dependency remediation verified locally; no remaining known vulnerabilities in current dependency graph."
 }
 
 GitHub Dependabot alert #10
