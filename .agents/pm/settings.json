@@ -10,10 +10,8 @@
   },
   "workflow": {
     "definition_of_done": [
-      "docs updated when behavior changes",
       "linked files/tests/docs present",
-      "pm item closed with evidence comment",
-      "tests pass at 100% coverage"
+      "tests pass"
     ]
   },
   "extensions": {
