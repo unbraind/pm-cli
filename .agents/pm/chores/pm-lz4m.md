@@ -3,7 +3,7 @@
   "title": "Release @unbrained/pm-cli 2026.3.12",
   "description": "Execute the documented release workflow to publish the next pm-cli version to GitHub Releases and npm.",
   "type": "Chore",
-  "status": "in_progress",
+  "status": "closed",
   "priority": 0,
   "tags": [
     "pm-cli",
@@ -11,9 +11,8 @@
     "release"
   ],
   "created_at": "2026-03-12T23:36:45.792Z",
-  "updated_at": "2026-03-12T23:41:04.907Z",
+  "updated_at": "2026-03-12T23:45:20.632Z",
   "deadline": "2026-03-13T23:36:45.792Z",
-  "assignee": "release-agent",
   "author": "release-agent",
   "estimated_minutes": 120,
   "acceptance_criteria": "package.json and changelog are updated for the release version, release gates pass, release tag is pushed, GitHub Release is created, and npm publish succeeds without secret leaks.",
@@ -43,6 +42,11 @@
       "created_at": "2026-03-12T23:41:04.907Z",
       "author": "release-agent",
       "text": "Local release gates passed for 2026.3.12: pnpm build, pnpm typecheck, pnpm test (54/54 files, 528/528 tests), pnpm test:coverage (100% lines/branches/functions/statements), node scripts/release-version.mjs check --tag v2026.3.12 --verify-next, pnpm security:scan (no credential-like secrets), node scripts/run-tests.mjs coverage (100%), npm pack --dry-run, pnpm smoke:npx (passed)."
+    },
+    {
+      "created_at": "2026-03-12T23:45:19.737Z",
+      "author": "release-agent",
+      "text": "Publish evidence: pushed commit b720af4 to main, pushed tag v2026.3.12, Release workflow run 23029146939 succeeded, GitHub Release URL https://github.com/unbraind/pm-cli/releases/tag/v2026.3.12, npm registry now reports @unbrained/pm-cli version 2026.3.12."
     }
   ],
   "notes": [
@@ -78,7 +82,8 @@
       "scope": "project",
       "note": "canonical release procedure"
     }
-  ]
+  ],
+  "close_reason": "Release v2026.3.12 published successfully to GitHub Releases and npm after passing version guard, tests, coverage, and secret scan checks."
 }
 
 Prepare changelog, run release gates, and publish via the tag-triggered GitHub Actions workflow.
