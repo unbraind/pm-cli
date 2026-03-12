@@ -5,7 +5,7 @@
 [![Node >=20](https://img.shields.io/node/v/%40unbrained%2Fpm-cli)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-`pm` is a git-native project management CLI for humans and coding agents. It stores work as plain Markdown files with JSON front matter, keeps append-only history, and supports safe collaboration without requiring a separate service.
+`pm` is a git-native project management CLI for humans and coding agents. It stores work as plain Markdown files with JSON front matter, keeps append-only history, and supports safe collaboration.
 
 ## Highlights
 
