@@ -31,6 +31,15 @@ This document defines how coding agents must use `pm` for planning, execution, a
 
 ### Step A - Pick next work
 
+Before creating any new `pm` item, always check for an existing relevant item first.
+
+- Search and list existing items before `pm create`:
+  - `pm search "<keywords>" --limit 10`
+  - `pm list-open --limit 20`
+  - `pm list-in-progress --limit 20`
+- If a relevant item already exists, reuse it, update it, or claim it instead of creating a new one.
+- Never create duplicate `pm` items for the same work.
+
 Use one of:
 
 - `pm list-in-progress --limit 20`
