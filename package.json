@@ -1,6 +1,6 @@
 {
   "name": "@unbrained/pm-cli",
-  "version": "2026.3.9",
+  "version": "2026.3.12",
   "description": "Git-native project management CLI for humans and agents.",
   "type": "module",
   "author": "unbrained",
