@@ -6,6 +6,8 @@
 {"id":"legacy.6","title":"Empty Scalar Tests","tests":"   ","docs":"   ","files":"   "}
 {"id":"legacy.7","title":"Branch cases array","tests":[{"test":"fallback-test","scope":"global","path":"some-path.ts"},{"path":"only-path-test"}],"docs":[{"doc":"fallback-doc.md","scope":"global","note":"doc note"}],"files":[{"file":"fallback-file.ts","scope":"global"}, {"path":"project-scoped-obj.ts"}]}
 {"id":"legacy.8","title":"Empty filtered arrays","tests":["  ", {}],"docs":["  ", {}],"files":["  ", {}]}
-{"id":"legacy.9","title":"Beads native fields","status":"closed","closed_at":"2026-01-05T00:00:00.000Z","labels":["bug","ui"],"design":"This is the design doc","dependencies":[{"depends_on_id":"legacy.1"}],"created_by":"original_creator","external_ref":"JIRA-123"}
+{"id":"legacy.9","title":"Beads native fields","issue_type":"bug","status":"closed","closed_at":"2026-01-05T00:00:00.000Z","labels":["bug","ui"],"design":"This is the design doc","dependencies":[{"depends_on_id":"legacy.1","type":"parent-child","created_by":"daemon"}],"created_by":"original_creator","external_ref":"JIRA-123"}
 {"id":"legacy.10","title":"Beads body with extras","body":"Existing body","design":"Design details","external_ref":"EXT-456"}
 {"id":"legacy.11","title":"Beads external reference only","external_ref":"EXT-ONLY"}
+{"id":"legacy.12","title":"Owner and due_at fallback","type":"event","owner":"owner-a","due_at":"2026-03-15T11:18:44.832869327+01:00","dependencies":[{"depends_on_id":"legacy.1","type":"discovered-from","created_by":"daemon"}]}
+{"id":"legacy.13","title":"Compatibility dependency mapping","dependencies":[{"depends_on_id":"legacy.2","type":"relates-to","author":"beads","created_at":"2026-01-06T01:02:03.000Z"}]}

@@ -2,7 +2,7 @@ import { pathExists } from "../../core/fs/fs-utils.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
+import { compareTimestampStrings, nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
 import { listAllFrontMatter } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -49,7 +49,7 @@ function sortItems(items: ItemFrontMatter[]): ItemFrontMatter[] {
     }
     const byPriority = a.priority - b.priority;
     if (byPriority !== 0) return byPriority;
-    const byUpdated = b.updated_at.localeCompare(a.updated_at);
+    const byUpdated = compareTimestampStrings(b.updated_at, a.updated_at);
     if (byUpdated !== 0) return byUpdated;
     return a.id.localeCompare(b.id);
   });
@@ -103,8 +103,8 @@ function applyFilters(items: ItemFrontMatter[], status: ItemStatus | undefined, 
     if (typeFilter && item.type !== typeFilter) return false;
     if (tagFilter && !item.tags.includes(tagFilter)) return false;
     if (priorityFilter !== undefined && item.priority !== priorityFilter) return false;
-    if (deadlineBefore && (!item.deadline || item.deadline > deadlineBefore)) return false;
-    if (deadlineAfter && (!item.deadline || item.deadline < deadlineAfter)) return false;
+    if (deadlineBefore && (!item.deadline || compareTimestampStrings(item.deadline, deadlineBefore) > 0)) return false;
+    if (deadlineAfter && (!item.deadline || compareTimestampStrings(item.deadline, deadlineAfter) < 0)) return false;
     if (assigneeFilter !== undefined) {
       if (assigneeFilter.toLowerCase() === "none") {
         if (item.assignee) return false;

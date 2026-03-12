@@ -3,25 +3,34 @@ import path from "node:path";
 import { pathExists, removeFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { runActiveOnReadHooks, runActiveOnWriteHooks } from "../../core/extensions/index.js";
 import { appendHistoryEntry, createHistoryEntry } from "../../core/history/history.js";
-import { generateItemId, normalizeItemId } from "../../core/item/id.js";
+import { generateItemId, normalizeItemId, normalizeRawItemId } from "../../core/item/id.js";
 import { canonicalDocument, normalizeFrontMatter, serializeItemDocument } from "../../core/item/item-format.js";
 import { parseTags } from "../../core/item/parse.js";
 import { acquireLock } from "../../core/lock/lock.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { nowIso } from "../../core/shared/time.js";
+import { isTimestampLiteral, nowIso } from "../../core/shared/time.js";
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { Dependency, ItemDocument, ItemFrontMatter, ItemStatus, ItemType, LogNote, LinkedFile, LinkedTest, LinkedDoc } from "../../types/index.js";
 import { DEPENDENCY_KIND_VALUES, STATUS_VALUES } from "../../types/index.js";
 
-const DEFAULT_BEADS_FILE = ".beads/issues.jsonl";
+const PRIMARY_AUTO_DISCOVERY_FILES = [
+  ".beads/issues.jsonl",
+  "issues.jsonl",
+] as const;
+
+const UNSAFE_AUTO_DISCOVERY_FILES = [
+  ".beads/sync_base.jsonl",
+  "sync_base.jsonl",
+] as const;
 
 export interface BeadsImportOptions {
   file?: string;
   author?: string;
   message?: string;
+  preserveSourceIds?: boolean;
 }
 
 export interface BeadsImportResult {
@@ -47,8 +56,10 @@ interface BeadsRecord extends Record<string, unknown> {
   created_at?: unknown;
   updated_at?: unknown;
   closed_at?: unknown;
+  due_at?: unknown;
   deadline?: unknown;
   assignee?: unknown;
+  owner?: unknown;
   author?: unknown;
   created_by?: unknown;
   estimated_minutes?: unknown;
@@ -78,11 +89,10 @@ function toIsoString(value: unknown): string | undefined {
   if (!raw) {
     return undefined;
   }
-  const timestamp = Date.parse(raw);
-  if (!Number.isFinite(timestamp)) {
+  if (!isTimestampLiteral(raw)) {
     return undefined;
   }
-  return new Date(timestamp).toISOString();
+  return raw;
 }
 
 function toEstimatedMinutes(value: unknown): number | undefined {
@@ -126,21 +136,26 @@ function toTags(value: unknown): string[] {
   return [];
 }
 
-function toItemType(value: unknown): ItemType {
-  const normalized = toNonEmptyString(value)?.toLowerCase();
+function toItemType(value: unknown): { type: ItemType; sourceType?: string } {
+  const raw = toNonEmptyString(value);
+  const normalized = raw?.toLowerCase();
   switch (normalized) {
     case "epic":
-      return "Epic";
+      return { type: "Epic" };
     case "feature":
-      return "Feature";
+      return { type: "Feature" };
     case "task":
-      return "Task";
+      return { type: "Task" };
     case "chore":
-      return "Chore";
+      return { type: "Chore" };
     case "issue":
-      return "Issue";
+      return { type: "Issue" };
+    case "bug":
+      return { type: "Issue", sourceType: raw };
+    case "event":
+      return { type: "Task", sourceType: raw };
     default:
-      return "Task";
+      return { type: "Task", sourceType: raw };
   }
 }
 
@@ -152,15 +167,54 @@ function toStatus(value: unknown): ItemStatus {
   return "open";
 }
 
-function toDependencyKind(value: unknown): Dependency["kind"] {
-  const normalized = toNonEmptyString(value)?.toLowerCase();
-  if (normalized && DEPENDENCY_KIND_VALUES.includes(normalized as Dependency["kind"])) {
-    return normalized as Dependency["kind"];
+function toDependencyKind(value: unknown): { kind: Dependency["kind"]; sourceKind?: string } {
+  const raw = toNonEmptyString(value);
+  const normalized = raw?.toLowerCase();
+  if (!normalized) {
+    return { kind: "related" };
   }
-  return "related";
+
+  const preserveIfChanged = (kind: Dependency["kind"]): { kind: Dependency["kind"]; sourceKind?: string } => ({
+    kind,
+    sourceKind: normalized === kind ? undefined : raw,
+  });
+
+  if (DEPENDENCY_KIND_VALUES.includes(normalized as Dependency["kind"])) {
+    return preserveIfChanged(normalized as Dependency["kind"]);
+  }
+
+  switch (normalized) {
+    case "parent-child":
+      return preserveIfChanged("parent_child");
+    case "child-of":
+      return preserveIfChanged("child_of");
+    case "related-to":
+    case "relates-to":
+      return preserveIfChanged("related_to");
+    case "discovered-from":
+      return preserveIfChanged("discovered_from");
+    case "blocked-by":
+      return preserveIfChanged("blocked_by");
+    case "incident-from":
+      return preserveIfChanged("incident_from");
+    default:
+      return {
+        kind: "related",
+        sourceKind: raw,
+      };
+  }
 }
 
-function toDependencies(value: unknown, fallbackCreatedAt: string, prefix: string): Dependency[] | undefined {
+function normalizeImportedId(id: string, prefix: string, preserveSourceIds: boolean): string {
+  return preserveSourceIds ? normalizeRawItemId(id) : normalizeItemId(id, prefix);
+}
+
+function toDependencies(
+  value: unknown,
+  fallbackCreatedAt: string,
+  prefix: string,
+  preserveSourceIds: boolean,
+): Dependency[] | undefined {
   if (!Array.isArray(value)) {
     return undefined;
   }
@@ -173,7 +227,7 @@ function toDependencies(value: unknown, fallbackCreatedAt: string, prefix: strin
         continue;
       }
       dependencies.push({
-        id: normalizeItemId(id, prefix),
+        id: normalizeImportedId(id, prefix, preserveSourceIds),
         kind: "related",
         created_at: fallbackCreatedAt,
       });
@@ -187,11 +241,13 @@ function toDependencies(value: unknown, fallbackCreatedAt: string, prefix: strin
     if (!id) {
       continue;
     }
+    const dependencyKind = toDependencyKind(candidate.type ?? candidate.kind);
     dependencies.push({
-      id: normalizeItemId(id, prefix),
-      kind: toDependencyKind(candidate.kind),
+      id: normalizeImportedId(id, prefix, preserveSourceIds),
+      kind: dependencyKind.kind,
       created_at: toIsoString(candidate.created_at) ?? fallbackCreatedAt,
-      author: toNonEmptyString(candidate.author),
+      author: toNonEmptyString(candidate.author) ?? toNonEmptyString(candidate.created_by),
+      source_kind: dependencyKind.sourceKind,
     });
   }
 
@@ -392,24 +448,92 @@ function resolveInputPath(rawPath: string): string {
   return path.isAbsolute(rawPath) ? rawPath : path.resolve(process.cwd(), rawPath);
 }
 
+async function readStdin(): Promise<string> {
+  return await new Promise<string>((resolve, reject) => {
+    let raw = "";
+    process.stdin.setEncoding("utf8");
+    process.stdin.on("data", (chunk) => {
+      raw += chunk;
+    });
+    process.stdin.on("end", () => resolve(raw));
+    process.stdin.on("error", reject);
+  });
+}
+
+async function resolveBeadsSource(rawPath: string | undefined): Promise<{
+  source: string;
+  sourcePath?: string;
+  raw: string;
+  warnings: string[];
+}> {
+  const explicitSource = toNonEmptyString(rawPath);
+  if (explicitSource) {
+    if (explicitSource === "-") {
+      return {
+        source: "-",
+        raw: await readStdin(),
+        warnings: [],
+      };
+    }
+
+    const explicitPath = resolveInputPath(explicitSource);
+    if (!(await pathExists(explicitPath))) {
+      throw new PmCliError(`Beads source file not found at ${explicitPath}`, EXIT_CODE.NOT_FOUND);
+    }
+    return {
+      source: explicitSource,
+      sourcePath: explicitPath,
+      raw: await fs.readFile(explicitPath, "utf8"),
+      warnings: [],
+    };
+  }
+
+  for (const candidate of PRIMARY_AUTO_DISCOVERY_FILES) {
+    const candidatePath = resolveInputPath(candidate);
+    if (await pathExists(candidatePath)) {
+      return {
+        source: candidate,
+        sourcePath: candidatePath,
+        raw: await fs.readFile(candidatePath, "utf8"),
+        warnings: candidate === PRIMARY_AUTO_DISCOVERY_FILES[0] ? [] : [`beads_import_source_autodiscovered:${candidate}`],
+      };
+    }
+  }
+
+  for (const candidate of UNSAFE_AUTO_DISCOVERY_FILES) {
+    const candidatePath = resolveInputPath(candidate);
+    if (await pathExists(candidatePath)) {
+      throw new PmCliError(
+        `Beads auto-discovery found ${candidatePath}, but sync_base snapshots may be partial. Export a full Beads JSONL file and pass --file <path> (or --file - for stdin).`,
+        EXIT_CODE.NOT_FOUND,
+      );
+    }
+  }
+
+  throw new PmCliError(
+    `Beads source file not found. Checked ${PRIMARY_AUTO_DISCOVERY_FILES.join(", ")}. Use --file <path> or --file - for stdin.`,
+    EXIT_CODE.NOT_FOUND,
+  );
+}
+
 export async function runBeadsImport(options: BeadsImportOptions, global: GlobalOptions): Promise<BeadsImportResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await ensureInitHasRun(pmRoot);
 
   const settings = await readSettings(pmRoot);
-  const source = toNonEmptyString(options.file) ?? DEFAULT_BEADS_FILE;
-  const sourcePath = resolveInputPath(source);
-  if (!(await pathExists(sourcePath))) {
-    throw new PmCliError(`Beads source file not found at ${sourcePath}`, EXIT_CODE.NOT_FOUND);
-  }
-
-  const raw = await fs.readFile(sourcePath, "utf8");
+  const preserveSourceIds = options.preserveSourceIds === true;
+  const { source, sourcePath, raw, warnings: sourceWarnings } = await resolveBeadsSource(options.file);
   const warnings: string[] = [
-    ...(await runActiveOnReadHooks({
-      path: sourcePath,
-      scope: "project",
-    })),
+    ...sourceWarnings,
   ];
+  if (sourcePath) {
+    warnings.push(
+      ...(await runActiveOnReadHooks({
+        path: sourcePath,
+        scope: "project",
+      })),
+    );
+  }
   const lines = raw.split(/\r?\n/);
   const author = selectAuthor(toNonEmptyString(options.author), settings.author_default);
   const message = toNonEmptyString(options.message) ?? "Import from Beads JSONL";
@@ -450,26 +574,34 @@ export async function runBeadsImport(options: BeadsImportOptions, global: Global
     const createdAt = toIsoString(record.created_at) ?? nowIso();
     const updatedAt = toIsoString(record.updated_at) ?? createdAt;
     const id = toNonEmptyString(record.id)
-      ? normalizeItemId(toNonEmptyString(record.id) as string, settings.id_prefix)
+      ? normalizeImportedId(toNonEmptyString(record.id) as string, settings.id_prefix, preserveSourceIds)
       : await generateItemId(pmRoot, settings.id_prefix);
-    const type = toItemType(record.issue_type ?? record.type);
+    const typeMapping = toItemType(record.issue_type ?? record.type);
+    const type = typeMapping.type;
+    const closedAt = toIsoString(record.closed_at);
+    const assignee = toNonEmptyString(record.assignee) ?? toNonEmptyString(record.owner);
     const frontMatter = normalizeFrontMatter({
       id,
       title,
       description: toNonEmptyString(record.description) ?? "",
       type,
+      source_type: typeMapping.sourceType,
       status: toStatus(record.status),
       priority: toPriority(record.priority),
       tags: toTags(record.tags ?? record.labels),
       created_at: createdAt,
       updated_at: updatedAt,
-      deadline: toIsoString(record.deadline),
-      assignee: toNonEmptyString(record.assignee),
+      deadline: toIsoString(record.due_at ?? record.deadline),
+      closed_at: closedAt,
+      assignee,
+      source_owner: toNonEmptyString(record.owner),
       author: toNonEmptyString(record.author) ?? toNonEmptyString(record.created_by) ?? author,
       estimated_minutes: toEstimatedMinutes(record.estimated_minutes),
       acceptance_criteria: toNonEmptyString(record.acceptance_criteria),
-      close_reason: toNonEmptyString(record.close_reason) ?? (toIsoString(record.closed_at) ? `Closed at ${toIsoString(record.closed_at)}` : undefined),
-      dependencies: toDependencies(record.dependencies, createdAt, settings.id_prefix),
+      design: toNonEmptyString(record.design),
+      external_ref: toNonEmptyString(record.external_ref),
+      close_reason: toNonEmptyString(record.close_reason),
+      dependencies: toDependencies(record.dependencies, createdAt, settings.id_prefix, preserveSourceIds),
       comments: toLogEntries(record.comments, createdAt, author),
       notes: toLogEntries(record.notes, createdAt, author),
       learnings: toLogEntries(record.learnings, createdAt, author),

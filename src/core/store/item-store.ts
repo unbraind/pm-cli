@@ -7,7 +7,7 @@ import { appendHistoryEntry, createHistoryEntry } from "../history/history.js";
 import { canonicalDocument, parseItemDocument, serializeItemDocument } from "../item/item-format.js";
 import { acquireLock } from "../lock/lock.js";
 import { writeFileAtomic } from "../fs/fs-utils.js";
-import { normalizeItemId } from "../item/id.js";
+import { normalizeItemId, normalizeRawItemId } from "../item/id.js";
 import { getHistoryPath } from "./paths.js";
 import { nowIso } from "../shared/time.js";
 import type { ItemDocument, ItemFrontMatter, ItemType, PmSettings } from "../../types/index.js";
@@ -29,15 +29,19 @@ async function fileExists(targetPath: string): Promise<boolean> {
 
 export async function locateItem(pmRoot: string, rawId: string, idPrefix: string): Promise<LocatedItem | null> {
   const normalizedId = normalizeItemId(rawId, idPrefix);
+  const rawNormalizedId = normalizeRawItemId(rawId);
+  const candidateIds = normalizedId === rawNormalizedId ? [normalizedId] : [normalizedId, rawNormalizedId];
   const entries = Object.entries(TYPE_TO_FOLDER) as Array<[ItemType, string]>;
-  for (const [type, folder] of entries) {
-    const itemPath = path.join(pmRoot, folder, `${normalizedId}.md`);
-    if (await fileExists(itemPath)) {
-      return {
-        id: normalizedId,
-        type,
-        itemPath,
-      };
+  for (const candidateId of candidateIds) {
+    for (const [type, folder] of entries) {
+      const itemPath = path.join(pmRoot, folder, `${candidateId}.md`);
+      if (await fileExists(itemPath)) {
+        return {
+          id: candidateId,
+          type,
+          itemPath,
+        };
+      }
     }
   }
   return null;

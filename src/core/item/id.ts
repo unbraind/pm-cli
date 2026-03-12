@@ -9,12 +9,17 @@ export function normalizePrefix(input: string | undefined): string {
   return normalized.endsWith("-") ? normalized : `${normalized}-`;
 }
 
-export function normalizeItemId(input: string, prefix: string): string {
-  const canonicalPrefix = normalizePrefix(prefix);
+export function normalizeRawItemId(input: string): string {
   let normalized = input.trim().toLowerCase();
   if (normalized.startsWith("#")) {
     normalized = normalized.slice(1);
   }
+  return normalized;
+}
+
+export function normalizeItemId(input: string, prefix: string): string {
+  const canonicalPrefix = normalizePrefix(prefix);
+  const normalized = normalizeRawItemId(input);
   if (normalized.startsWith(canonicalPrefix)) {
     return normalized;
   }

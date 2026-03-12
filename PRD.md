@@ -739,7 +739,7 @@ All commands return deterministic top-level objects (TOON by default, JSON with 
 | `pm get <ID>` | normalized id | `{ item, body, linked: { files, tests, docs } }` |
 | `pm search <keywords>` | keyword query + optional mode/include-linked/limit filters | `{ query, mode, items, count, filters, now }` |
 | `pm reindex` | optional `--mode` (`keyword|semantic|hybrid` baseline) | `{ ok, mode, total_items, artifacts, warnings, generated_at }` |
-| `pm beads import --file <path?>` | optional Beads JSONL source path (defaults to `.beads/issues.jsonl`) | `{ ok, source, imported, skipped, ids, warnings }` |
+| `pm beads import [--file <path\|->] [--preserve-source-ids]` | optional Beads JSONL source path (`.beads/issues.jsonl` auto-discovered first, then `issues.jsonl`; implicit `sync_base.jsonl` fallback is refused as unsafe) | `{ ok, source, imported, skipped, ids, warnings }` |
 | `pm todos import --folder <path?>` | optional todos markdown source folder (defaults to `.pi/todos`); preserves canonical optional `ItemFrontMatter` metadata when present and applies deterministic defaults for missing PM fields | `{ ok, folder, imported, skipped, ids, warnings }` |
 | `pm todos export --folder <path?>` | optional todos markdown destination folder (defaults to `.pi/todos`) | `{ ok, folder, exported, ids, warnings }` |
 | `pm create ...` | required title + schema flags | `{ item, changed_fields, warnings }` |
@@ -1013,7 +1013,7 @@ export interface ExtensionApi {
 
 Command:
 
-- `pm beads import [--file <path>]`
+- `pm beads import [--file <path>|-] [--preserve-source-ids]`
 
 Current baseline status (release-hardening):
 
@@ -1023,9 +1023,10 @@ Behavior:
 
 - Parse Beads JSONL records.
 - Map Beads fields to PM schema.
-- Preserve IDs and timestamps where possible.
+- Preserve IDs and timestamps where possible, including Beads-only compatibility metadata such as `source_type`, `source_owner`, `source_kind`, `design`, `external_ref`, and `closed_at`.
 - Append history with `op: "import"`.
-- Default input path is `.beads/issues.jsonl` when `--file` is not provided.
+- When `--file` is not provided, auto-discover `.beads/issues.jsonl` first and then `issues.jsonl`; implicit fallback to `sync_base.jsonl` is refused because it may be partial.
+- `--preserve-source-ids` preserves explicit Beads item IDs verbatim instead of rewriting them to the tracker prefix.
 - Invalid JSONL lines or duplicate IDs are skipped with deterministic warnings.
 
 ### B) todos.ts import/export

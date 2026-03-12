@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { listAllFrontMatter, mutateItem } from "../../src/core/store/item-store.js";
+import { listAllFrontMatter, locateItem, mutateItem } from "../../src/core/store/item-store.js";
 import { getItemPath } from "../../src/core/store/paths.js";
 import { readSettings } from "../../src/core/store/settings.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
@@ -66,6 +66,15 @@ describe("core/store/item-store", () => {
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.NOT_FOUND,
       });
+    });
+  });
+
+  it("locates preserved source ids when the current tracker prefix differs", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      await writeTaskItem(pmPath, "clawd-01c8");
+      const located = await locateItem(pmPath, "clawd-01c8", "pm-");
+      expect(located?.id).toBe("clawd-01c8");
+      expect(located?.type).toBe("Task");
     });
   });
 

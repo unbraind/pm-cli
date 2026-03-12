@@ -7,6 +7,19 @@ export function nowIso(): string {
   return new Date().toISOString();
 }
 
+export function isTimestampLiteral(input: string): boolean {
+  return Number.isFinite(Date.parse(input));
+}
+
+export function compareTimestampStrings(left: string, right: string): number {
+  const leftMs = Date.parse(left);
+  const rightMs = Date.parse(right);
+  if (Number.isFinite(leftMs) && Number.isFinite(rightMs) && leftMs !== rightMs) {
+    return leftMs - rightMs;
+  }
+  return left.localeCompare(right);
+}
+
 export function isNoneToken(input: string | undefined): boolean {
   if (input === undefined) return false;
   const normalized = input.trim().toLowerCase();

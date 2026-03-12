@@ -15,8 +15,16 @@ export const DEPENDENCY_KIND_VALUES = [
   "blocks",
   "parent",
   "child",
+  "parent_child",
+  "child_of",
   "related",
+  "related_to",
   "discovered_from",
+  "blocked_by",
+  "incident_from",
+  "epic",
+  "supersedes",
+  "task",
 ] as const;
 export type DependencyKind = (typeof DEPENDENCY_KIND_VALUES)[number];
 
@@ -38,6 +46,7 @@ export interface Dependency {
   kind: DependencyKind;
   created_at: string;
   author?: string;
+  source_kind?: string;
 }
 
 export interface Comment {
@@ -77,16 +86,21 @@ export interface ItemFrontMatter {
   title: string;
   description: string;
   type: ItemType;
+  source_type?: string;
   status: ItemStatus;
   priority: 0 | 1 | 2 | 3 | 4;
   tags: string[];
   created_at: string;
   updated_at: string;
   deadline?: string;
+  closed_at?: string;
   assignee?: string;
+  source_owner?: string;
   author?: string;
   estimated_minutes?: number;
   acceptance_criteria?: string;
+  design?: string;
+  external_ref?: string;
   definition_of_ready?: string;
   order?: number;
   goal?: string;

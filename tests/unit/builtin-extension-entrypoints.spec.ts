@@ -114,6 +114,7 @@ describe("built-in extension entrypoints", () => {
         file: ".beads/issues.jsonl",
         author: 123,
         message: "entrypoint import",
+        preserveSourceIds: true,
       },
       global: globalFlags,
       pm_root: "/tmp/pm",
@@ -125,6 +126,7 @@ describe("built-in extension entrypoints", () => {
         file: ".beads/issues.jsonl",
         author: undefined,
         message: "entrypoint import",
+        preserveSourceIds: true,
       },
       globalFlags,
     );
@@ -136,6 +138,39 @@ describe("built-in extension entrypoints", () => {
       ids: ["pm-bead"],
       warnings: [],
     });
+  });
+
+  it("drops non-boolean preserveSourceIds values when coercing extension options", async () => {
+    const { api, commands } = createCommandOnlyApi();
+    mocked.runBeadsImport.mockResolvedValue({
+      ok: true,
+      source: "issues.jsonl",
+      imported: 1,
+      skipped: 0,
+      ids: ["pm-bead"],
+      warnings: [],
+    });
+
+    activateBeads(api);
+    await commands[0]!.run({
+      command: "beads import",
+      args: [],
+      options: {
+        preserveSourceIds: "true",
+      },
+      global: globalFlags,
+      pm_root: "/tmp/pm",
+    });
+
+    expect(mocked.runBeadsImport).toHaveBeenLastCalledWith(
+      {
+        file: undefined,
+        author: undefined,
+        message: undefined,
+        preserveSourceIds: undefined,
+      },
+      globalFlags,
+    );
   });
 
   it("registers todos import/export handlers and coerces option fields", async () => {

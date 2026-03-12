@@ -3,6 +3,7 @@ import { CONFIDENCE_TEXT_VALUES, ISSUE_SEVERITY_VALUES, ITEM_TYPE_VALUES, STATUS
 import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { orderObject } from "../shared/serialization.js";
+import { compareTimestampStrings, isTimestampLiteral } from "../shared/time.js";
 
 function normalizePathValue(value: string): string {
   return value.replaceAll("\\", "/");
@@ -30,7 +31,7 @@ function assertTimestampField(record: Record<string, unknown>, fieldName: "creat
   const rawValue = record[fieldName];
   assertFrontMatterCondition(typeof rawValue === "string", `${fieldName} must be a string`);
   const timestamp = rawValue as string;
-  assertFrontMatterCondition(Number.isFinite(Date.parse(timestamp)), `${fieldName} must be a valid ISO timestamp`);
+  assertFrontMatterCondition(isTimestampLiteral(timestamp), `${fieldName} must be a valid ISO timestamp`);
 }
 
 function assertValidFrontMatter(frontMatter: unknown): asserts frontMatter is ItemFrontMatter {
@@ -114,6 +115,17 @@ function assertValidFrontMatter(frontMatter: unknown): asserts frontMatter is It
   if (record.deadline !== undefined) {
     assertTimestampField(record, "deadline");
   }
+  if (record.closed_at !== undefined) {
+    const closedAt = record.closed_at;
+    assertFrontMatterCondition(typeof closedAt === "string", "closed_at must be a string");
+    assertFrontMatterCondition(isTimestampLiteral(closedAt as string), "closed_at must be a valid ISO timestamp");
+  }
+  for (const fieldName of ["source_type", "source_owner", "design", "external_ref"] as const) {
+    const value = record[fieldName];
+    if (value !== undefined) {
+      assertFrontMatterCondition(typeof value === "string", `${fieldName} must be a string`);
+    }
+  }
 }
 
 function sortDependencies(values: Dependency[] | undefined): Dependency[] | undefined {
@@ -124,20 +136,23 @@ function sortDependencies(values: Dependency[] | undefined): Dependency[] | unde
       kind: value.kind,
       created_at: value.created_at,
       author: value.author?.trim() || undefined,
+      source_kind: value.source_kind?.trim() || undefined,
     }))
     .sort((a, b) => {
-      const byCreated = a.created_at.localeCompare(b.created_at);
+      const byCreated = compareTimestampStrings(a.created_at, b.created_at);
       if (byCreated !== 0) return byCreated;
       const byId = a.id.localeCompare(b.id);
       if (byId !== 0) return byId;
-      return a.kind.localeCompare(b.kind);
+      const byKind = a.kind.localeCompare(b.kind);
+      if (byKind !== 0) return byKind;
+      return (a.source_kind ?? "").localeCompare(b.source_kind ?? "");
     });
 }
 
 function sortLogValues<T extends Comment | LogNote>(values: T[] | undefined): T[] | undefined {
   if (!values || values.length === 0) return undefined;
   return [...values].sort((a, b) => {
-    const byCreated = a.created_at.localeCompare(b.created_at);
+    const byCreated = compareTimestampStrings(a.created_at, b.created_at);
     if (byCreated !== 0) return byCreated;
     const byText = a.text.localeCompare(b.text);
     if (byText !== 0) return byText;
@@ -246,6 +261,7 @@ export function normalizeFrontMatter(frontMatter: ItemFrontMatter): ItemFrontMat
     title: frontMatter.title,
     description: frontMatter.description,
     type: frontMatter.type,
+    source_type: frontMatter.source_type?.trim() || undefined,
     status: frontMatter.status,
     priority: frontMatter.priority,
     tags,
@@ -259,10 +275,14 @@ export function normalizeFrontMatter(frontMatter: ItemFrontMatter): ItemFrontMat
     tests: sortTests(frontMatter.tests),
     docs: sortDocs(frontMatter.docs),
     deadline: frontMatter.deadline || undefined,
+    closed_at: frontMatter.closed_at || undefined,
     assignee: frontMatter.assignee?.trim() || undefined,
+    source_owner: frontMatter.source_owner?.trim() || undefined,
     author: frontMatter.author || undefined,
     estimated_minutes: frontMatter.estimated_minutes,
     acceptance_criteria: frontMatter.acceptance_criteria ?? undefined,
+    design: frontMatter.design ?? undefined,
+    external_ref: frontMatter.external_ref ?? undefined,
     definition_of_ready: frontMatter.definition_of_ready?.trim() || undefined,
     order: frontMatter.order,
     goal: frontMatter.goal?.trim() || undefined,

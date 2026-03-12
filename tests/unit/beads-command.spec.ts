@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { runBeadsImport } from "../../src/cli/commands/beads.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
 import { EXIT_CODE } from "../../src/constants.js";
@@ -93,6 +93,45 @@ describe("runBeadsImport", () => {
     });
   });
 
+  it("fails when no Beads source can be auto-discovered", async () => {
+    await withTempPmPath(async (context) => {
+      const previousCwd = process.cwd();
+      process.chdir(context.tempRoot);
+      try {
+        await expect(runBeadsImport({}, { path: context.pmPath })).rejects.toMatchObject({
+          exitCode: EXIT_CODE.NOT_FOUND,
+          message: expect.stringContaining("Checked .beads/issues.jsonl, issues.jsonl"),
+        });
+      } finally {
+        process.chdir(previousCwd);
+      }
+    });
+  });
+
+  it("reads Beads JSONL from stdin when --file - is requested", async () => {
+    await withTempPmPath(async (context) => {
+      const setEncodingSpy = vi.spyOn(process.stdin, "setEncoding").mockImplementation(() => process.stdin);
+      const onSpy = vi.spyOn(process.stdin, "on").mockImplementation(((event: string, handler: (...args: any[]) => void) => {
+        if (event === "data") {
+          handler(`${JSON.stringify({ id: "stdin-item", title: "STDIN import" })}\n`);
+        }
+        if (event === "end") {
+          handler();
+        }
+        return process.stdin;
+      }) as typeof process.stdin.on);
+
+      try {
+        const result = await runBeadsImport({ file: "-" }, { path: context.pmPath });
+        expect(result.source).toBe("-");
+        expect(result.ids).toEqual(["pm-stdin-item"]);
+      } finally {
+        setEncodingSpy.mockRestore();
+        onSpy.mockRestore();
+      }
+    });
+  });
+
   it("imports beads records with deterministic mapping and import history entries", async () => {
     await withTempPmPath(async (context) => {
       const sourcePath = path.join(context.tempRoot, "issues.jsonl");
@@ -113,7 +152,7 @@ describe("runBeadsImport", () => {
       expect(result).toEqual({
         ok: true,
         source: sourcePath,
-        imported: 11,
+        imported: 13,
         skipped: 0,
         ids: [
           "pm-legacy.1",
@@ -127,6 +166,8 @@ describe("runBeadsImport", () => {
           "pm-legacy.9",
           "pm-legacy.10",
           "pm-legacy.11",
+          "pm-legacy.12",
+          "pm-legacy.13",
         ],
         warnings: [],
       });
@@ -188,11 +229,22 @@ describe("runBeadsImport", () => {
       const ninth = context.runCli(["get", "pm-legacy.9", "--json"], { expectJson: true });
       expect(ninth.code).toBe(0);
       const ninthJson = ninth.json as any;
+      expect(ninthJson.item.type).toBe("Issue");
+      expect(ninthJson.item.source_type).toBe("bug");
       expect(ninthJson.item.tags).toEqual(["bug", "ui"]);
       expect(ninthJson.item.status).toBe("closed");
-      expect(ninthJson.item.close_reason).toBe("Closed at 2026-01-05T00:00:00.000Z");
+      expect(ninthJson.item.closed_at).toBe("2026-01-05T00:00:00.000Z");
+      expect(ninthJson.item.close_reason).toBeUndefined();
+      expect(ninthJson.item.design).toBe("This is the design doc");
+      expect(ninthJson.item.external_ref).toBe("JIRA-123");
       expect(ninthJson.item.dependencies).toEqual([
-        { id: "pm-legacy.1", kind: "related", created_at: ninthJson.item.created_at },
+        {
+          id: "pm-legacy.1",
+          kind: "parent_child",
+          created_at: ninthJson.item.created_at,
+          author: "daemon",
+          source_kind: "parent-child",
+        },
       ]);
       expect(ninthJson.item.author).toBe("original_creator");
       expect(ninthJson.body).toBe("## Design\n\nThis is the design doc\n\n## External Reference\nJIRA-123");
@@ -204,8 +256,40 @@ describe("runBeadsImport", () => {
 
       const eleventh = context.runCli(["get", "pm-legacy.11", "--json"], { expectJson: true });
       expect(eleventh.code).toBe(0);
-      const eleventhJson = eleventh.json as { body: string };
+      const eleventhJson = eleventh.json as { item: { external_ref: string }; body: string };
+      expect(eleventhJson.item.external_ref).toBe("EXT-ONLY");
       expect(eleventhJson.body).toBe("## External Reference\nEXT-ONLY");
+
+      const twelfth = context.runCli(["get", "pm-legacy.12", "--json"], { expectJson: true });
+      expect(twelfth.code).toBe(0);
+      const twelfthJson = twelfth.json as any;
+      expect(twelfthJson.item.type).toBe("Task");
+      expect(twelfthJson.item.source_type).toBe("event");
+      expect(twelfthJson.item.assignee).toBe("owner-a");
+      expect(twelfthJson.item.source_owner).toBe("owner-a");
+      expect(twelfthJson.item.deadline).toBe("2026-03-15T11:18:44.832869327+01:00");
+      expect(twelfthJson.item.dependencies).toEqual([
+        {
+          id: "pm-legacy.1",
+          kind: "discovered_from",
+          created_at: twelfthJson.item.created_at,
+          author: "daemon",
+          source_kind: "discovered-from",
+        },
+      ]);
+
+      const thirteenth = context.runCli(["get", "pm-legacy.13", "--json"], { expectJson: true });
+      expect(thirteenth.code).toBe(0);
+      const thirteenthJson = thirteenth.json as any;
+      expect(thirteenthJson.item.dependencies).toEqual([
+        {
+          id: "pm-legacy.2",
+          kind: "related_to",
+          created_at: "2026-01-06T01:02:03.000Z",
+          author: "beads",
+          source_kind: "relates-to",
+        },
+      ]);
 
       const history = context.runCli(["history", "pm-legacy.1", "--json"], { expectJson: true });
       expect(history.code).toBe(0);
@@ -227,6 +311,69 @@ describe("runBeadsImport", () => {
       await writeFile(sourcePath, `${lines.join("\n")}\n`, "utf8");
       const result = await runBeadsImport({ file: sourcePath }, { path: context.pmPath });
       expect(result.imported).toBe(5);
+    });
+  });
+
+  it("maps additional Beads dependency kind aliases deterministically", async () => {
+    await withTempPmPath(async (context) => {
+      const sourcePath = path.join(context.tempRoot, "dependency-aliases.jsonl");
+      const lines = [
+        JSON.stringify({ id: "dep-target", title: "Dependency target" }),
+        JSON.stringify({ id: "kindless", title: "Kindless dependency", dependencies: [{ depends_on_id: "dep-target" }] }),
+        JSON.stringify({ id: "child-of", title: "Child Of dependency", dependencies: [{ depends_on_id: "dep-target", type: "child-of" }] }),
+        JSON.stringify({ id: "blocked-by", title: "Blocked By dependency", dependencies: [{ depends_on_id: "dep-target", type: "blocked-by" }] }),
+        JSON.stringify({ id: "incident-from", title: "Incident From dependency", dependencies: [{ depends_on_id: "dep-target", type: "incident-from" }] }),
+        JSON.stringify({ id: "related-to", title: "Related To dependency", dependencies: [{ depends_on_id: "dep-target", type: "related-to" }] }),
+      ];
+      await writeFile(sourcePath, `${lines.join("\n")}\n`, "utf8");
+
+      await runBeadsImport({ file: sourcePath }, { path: context.pmPath });
+
+      const kindlessJson = context.runCli(["get", "pm-kindless", "--json"], { expectJson: true }).json as any;
+      const childOfJson = context.runCli(["get", "pm-child-of", "--json"], { expectJson: true }).json as any;
+      const blockedByJson = context.runCli(["get", "pm-blocked-by", "--json"], { expectJson: true }).json as any;
+      const incidentFromJson = context.runCli(["get", "pm-incident-from", "--json"], { expectJson: true }).json as any;
+      const relatedToJson = context.runCli(["get", "pm-related-to", "--json"], { expectJson: true }).json as any;
+
+      expect(kindlessJson.item.dependencies).toEqual([
+        {
+          id: "pm-dep-target",
+          kind: "related",
+          created_at: kindlessJson.item.created_at,
+        },
+      ]);
+      expect(childOfJson.item.dependencies).toEqual([
+        {
+          id: "pm-dep-target",
+          kind: "child_of",
+          created_at: childOfJson.item.created_at,
+          source_kind: "child-of",
+        },
+      ]);
+      expect(blockedByJson.item.dependencies).toEqual([
+        {
+          id: "pm-dep-target",
+          kind: "blocked_by",
+          created_at: blockedByJson.item.created_at,
+          source_kind: "blocked-by",
+        },
+      ]);
+      expect(incidentFromJson.item.dependencies).toEqual([
+        {
+          id: "pm-dep-target",
+          kind: "incident_from",
+          created_at: incidentFromJson.item.created_at,
+          source_kind: "incident-from",
+        },
+      ]);
+      expect(relatedToJson.item.dependencies).toEqual([
+        {
+          id: "pm-dep-target",
+          kind: "related_to",
+          created_at: relatedToJson.item.created_at,
+          source_kind: "related-to",
+        },
+      ]);
     });
   });
 
@@ -312,6 +459,7 @@ describe("runBeadsImport", () => {
           id: "pm-dep-item",
           kind: "related",
           created_at: epicJson.item.created_at,
+          source_kind: "unexpected-kind",
         },
       ]);
       expect(epicJson.item.comments).toBeUndefined();
@@ -454,6 +602,89 @@ describe("runBeadsImport", () => {
           process.env.PM_AUTHOR = previousAuthor;
         }
       }
+    });
+  });
+
+  it("auto-discovers a root issues.jsonl source with a deterministic warning", async () => {
+    await withTempPmPath(async (context) => {
+      await writeFile(
+        path.join(context.tempRoot, "issues.jsonl"),
+        `${JSON.stringify({ id: "root-auto-discovery", title: "Root auto discovery" })}\n`,
+        "utf8",
+      );
+
+      const previousCwd = process.cwd();
+      process.chdir(context.tempRoot);
+      try {
+        const result = await runBeadsImport({}, { path: context.pmPath });
+        expect(result.source).toBe("issues.jsonl");
+        expect(result.ids).toEqual(["pm-root-auto-discovery"]);
+        expect(result.warnings).toEqual(["beads_import_source_autodiscovered:issues.jsonl"]);
+      } finally {
+        process.chdir(previousCwd);
+      }
+    });
+  });
+
+  it("refuses sync_base auto-discovery because it may be partial", async () => {
+    await withTempPmPath(async (context) => {
+      const beadsDir = path.join(context.tempRoot, ".beads");
+      await mkdir(beadsDir, { recursive: true });
+      await writeFile(
+        path.join(beadsDir, "sync_base.jsonl"),
+        `${JSON.stringify({ id: "sync-base", title: "Sync base only" })}\n`,
+        "utf8",
+      );
+
+      const previousCwd = process.cwd();
+      process.chdir(context.tempRoot);
+      try {
+        await expect(runBeadsImport({}, { path: context.pmPath })).rejects.toMatchObject({
+          exitCode: EXIT_CODE.NOT_FOUND,
+          message: expect.stringContaining("sync_base snapshots may be partial"),
+        });
+      } finally {
+        process.chdir(previousCwd);
+      }
+    });
+  });
+
+  it("preserves explicit source ids when requested and keeps them addressable in a default-prefix tracker", async () => {
+    await withTempPmPath(async (context) => {
+      const sourcePath = path.join(context.tempRoot, "preserve-source-ids.jsonl");
+      await writeFile(
+        sourcePath,
+        `${JSON.stringify({
+          id: "clawd-01c8",
+          title: "Preserve source id",
+          dependencies: [{ depends_on_id: "clawd-01c8.1", type: "parent-child" }],
+        })}\n${JSON.stringify({
+          id: "clawd-01c8.1",
+          title: "Preserve source dependency target",
+        })}\n`,
+        "utf8",
+      );
+
+      const result = await runBeadsImport(
+        {
+          file: sourcePath,
+          preserveSourceIds: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(result.ids).toEqual(["clawd-01c8", "clawd-01c8.1"]);
+
+      const imported = context.runCli(["get", "clawd-01c8", "--json"], { expectJson: true });
+      expect(imported.code).toBe(0);
+      expect((imported.json as any).item.id).toBe("clawd-01c8");
+      expect((imported.json as any).item.dependencies).toEqual([
+        {
+          id: "clawd-01c8.1",
+          kind: "parent_child",
+          created_at: (imported.json as any).item.created_at,
+          source_kind: "parent-child",
+        },
+      ]);
     });
   });
 

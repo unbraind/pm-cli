@@ -19,7 +19,7 @@ import { parseItemDocument } from "../../core/item/item-format.js";
 import { EXIT_CODE, TYPE_TO_FOLDER } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
+import { compareTimestampStrings, nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
 import { listAllFrontMatter } from "../../core/store/item-store.js";
 import { getSettingsPath, resolveGlobalPmRoot, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -139,8 +139,8 @@ function applyFilters(items: ItemDocument[], options: SearchOptions): ItemDocume
     if (typeFilter && item.type !== typeFilter) return false;
     if (tagFilter && !item.tags.includes(tagFilter)) return false;
     if (priorityFilter !== undefined && item.priority !== priorityFilter) return false;
-    if (deadlineBefore && (!item.deadline || item.deadline > deadlineBefore)) return false;
-    if (deadlineAfter && (!item.deadline || item.deadline < deadlineAfter)) return false;
+    if (deadlineBefore && (!item.deadline || compareTimestampStrings(item.deadline, deadlineBefore) > 0)) return false;
+    if (deadlineAfter && (!item.deadline || compareTimestampStrings(item.deadline, deadlineAfter) < 0)) return false;
     return true;
   });
 }
@@ -333,7 +333,7 @@ function sortHits(items: SearchHit[]): SearchHit[] {
     }
     const byPriority = a.item.priority - b.item.priority;
     if (byPriority !== 0) return byPriority;
-    const byUpdated = b.item.updated_at.localeCompare(a.item.updated_at);
+    const byUpdated = compareTimestampStrings(b.item.updated_at, a.item.updated_at);
     if (byUpdated !== 0) return byUpdated;
     return a.item.id.localeCompare(b.item.id);
   });

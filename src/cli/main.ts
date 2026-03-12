@@ -1167,9 +1167,10 @@ program
   .description("Built-in Beads extension commands.")
   .command("import")
   .description("Import Beads JSONL records as PM items.")
-  .option("--file <path>", "Path to Beads JSONL file", ".beads/issues.jsonl")
+  .option("--file <path>", "Path to Beads JSONL file, or - for stdin")
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message for import entries")
+  .option("--preserve-source-ids", "Preserve explicit Beads ids instead of rewriting them to the tracker prefix")
   .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
