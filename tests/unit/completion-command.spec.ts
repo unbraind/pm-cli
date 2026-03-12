@@ -137,9 +137,9 @@ describe("generateZshScript", () => {
   it("includes all pm subcommand descriptions", () => {
     const script = generateZshScript();
     expect(script).toContain("init:Initialize");
-    expect(script).toContain("install:Install supported integrations");
-    expect(script).toContain("create:Create a new item");
-    expect(script).toContain("completion:Generate shell completion script");
+    expect(script).toContain("install:Install supported integrations and extensions");
+    expect(script).toContain("create:Create a new project management item");
+    expect(script).toContain("completion:Generate shell completion");
     expect(script).toContain("beads:Built-in Beads extension commands");
     expect(script).toContain("todos:Built-in todos extension commands");
   });
@@ -214,13 +214,13 @@ describe("generateFishScript", () => {
     const script = generateFishScript();
     for (const [cmd, desc] of [
       ["init", "Initialize"],
-      ["install", "Install supported integrations"],
+      ["install", "Install supported integrations and extensions"],
       ["create", "Create"],
-      ["get", "Get item details"],
+      ["get", "Show item details"],
       ["search", "Search items"],
       ["completion", "Generate shell completion"],
-      ["health", "tracker health"],
-      ["stats", "tracker statistics"],
+      ["health", "project tracker health"],
+      ["stats", "project tracker statistics"],
     ] as [string, string][]) {
       expect(script).toContain(`-a ${cmd}`);
       expect(script).toContain(desc);

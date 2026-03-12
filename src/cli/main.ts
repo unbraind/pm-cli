@@ -920,7 +920,7 @@ function resolveCliVersion(): string {
 const program = new Command();
 program
   .name("pm")
-  .description("Agent-friendly, git-native project management CLI.")
+  .description("Universal, flexible, extensible, agent-optimized project management CLI for any project or programming language.")
   .version(resolveCliVersion())
   .showHelpAfterError()
   .allowExcessArguments(false)
@@ -985,7 +985,7 @@ program.hook("postAction", async () => {
 program
   .command("init")
   .argument("[prefix]", "Optional id prefix")
-  .description("Initialize .agents/pm storage and settings.")
+  .description("Initialize pm storage and defaults for the current workspace.")
   .action(async (prefix: string | undefined, _options, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -1002,7 +1002,7 @@ program
   .argument("<action>", "Config action: get|set")
   .argument("<key>", "Config key: definition-of-done")
   .option("--criterion <text>", "Definition-of-Done criterion (repeatable for set)", collect)
-  .description("Read or update deterministic pm settings.")
+  .description("Read or update pm settings for the current workspace or global profile.")
   .action(async (scope: string, action: string, key: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -1030,7 +1030,7 @@ program
     "Install Pi extension into resolved project root .pi/extensions (derived from --path, default)",
   )
   .option("--global", "Install Pi extension into global PI_CODING_AGENT_DIR or ~/.pi/agent")
-  .description("Install supported integrations (currently: pi).")
+  .description("Install supported integrations and extensions.")
   .action(async (target: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -1050,7 +1050,7 @@ program
 
 program
   .command("create")
-  .description("Create a new item with deterministic front matter and history entry.")
+  .description("Create a new project management item.")
   .requiredOption("--title, -t <value>", "Item title")
   .requiredOption("--description, -d <value>", "Item description (allow empty string)")
   .requiredOption("--type <value>", "Item type: Epic|Feature|Task|Chore|Issue")
@@ -1153,7 +1153,7 @@ function registerListCommand(name: string, description: string, status?: ItemSta
     });
 }
 
-registerListCommand("list", "List active items (excludes closed/canceled) with optional filters.", undefined, true);
+registerListCommand("list", "List active items with optional filters.", undefined, true);
 registerListCommand("list-all", "List all items with optional filters.");
 registerListCommand("list-draft", "List draft items with optional filters.", "draft");
 registerListCommand("list-open", "List open items with optional filters.", "open");
@@ -1218,7 +1218,7 @@ todosCommand
 program
   .command("search")
   .argument("<keywords>", "Keyword query string")
-  .description("Search items across keyword and optional semantic/hybrid modes.")
+  .description("Search items with keyword, semantic, or hybrid modes.")
   .option(
     "--mode <value>",
     "Search mode: keyword|semantic|hybrid (default: hybrid when semantic config is available, else keyword)",
@@ -1242,7 +1242,7 @@ program
 
 program
   .command("reindex")
-  .description("Rebuild deterministic search artifacts for keyword, semantic, and hybrid modes.")
+  .description("Rebuild search artifacts for keyword, semantic, and hybrid modes.")
   .option("--mode <value>", "Reindex mode: keyword|semantic|hybrid", "keyword")
   .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
@@ -1262,7 +1262,7 @@ program
 program
   .command("get")
   .argument("<id>", "Item id")
-  .description("Get item details by id.")
+  .description("Show item details by ID.")
   .action(async (id: string, _options, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -1277,7 +1277,7 @@ program
   .command("history")
   .argument("<id>", "Item id")
   .option("--limit <n>", "Return only the latest n history entries")
-  .description("Show append-only history entries for an item.")
+  .description("Show item history entries.")
   .action(async (id: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -1297,7 +1297,7 @@ program
 program
   .command("activity")
   .option("--limit <n>", "Return only the latest n activity entries")
-  .description("Show recent activity across all item history streams.")
+  .description("Show recent activity across items.")
   .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -1320,7 +1320,7 @@ program
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
   .option("--force", "Force ownership/lock override")
-  .description("Restore an item to a previous timestamp or version.")
+  .description("Restore an item to an earlier timestamp or version.")
   .action(async (id: string, target: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -1344,7 +1344,7 @@ program
 program
   .command("update")
   .argument("<id>", "Item id")
-  .description("Update item front-matter fields.")
+  .description("Update item fields and metadata.")
   .option("--title, -t <value>", "Set title")
   .option("--description, -d <value>", "Set description")
   .option("--status, -s <value>", "Set status (use close command for closed)")
@@ -1420,7 +1420,7 @@ program
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
   .option("--force", "Force ownership override")
-  .description("Close an item with required reason text.")
+  .description("Close an item with a required reason.")
   .action(async (id: string, text: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -1447,7 +1447,7 @@ program
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
   .option("--force", "Force ownership override")
-  .description("Delete an item and append a delete history entry.")
+  .description("Delete an item and record the change in history.")
   .action(async (id: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -1474,7 +1474,7 @@ program
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "Mutation message")
   .option("--force", "Force ownership override")
-  .description("Append text to an item body.")
+  .description("Append text to an item's body.")
   .action(async (id: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -1503,7 +1503,7 @@ program
   .option("--author <value>", "Comment author")
   .option("--message <value>", "History message")
   .option("--force", "Force ownership override")
-  .description("List or append comments for an item.")
+  .description("List or add comments for an item.")
   .action(async (id: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -1535,7 +1535,7 @@ program
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
   .option("--force", "Force ownership override")
-  .description("List/add/remove linked files.")
+  .description("Manage files linked to an item.")
   .action(async (id: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -1569,7 +1569,7 @@ program
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
   .option("--force", "Force ownership override")
-  .description("List/add/remove linked docs.")
+  .description("Manage docs linked to an item.")
   .action(async (id: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -1605,7 +1605,7 @@ program
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
   .option("--force", "Force ownership override")
-  .description("List/add/remove linked tests and optionally run them.")
+  .description("Manage tests linked to an item and optionally run them.")
   .action(async (id: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -1635,7 +1635,7 @@ program
 
 program
   .command("test-all")
-  .description("Run linked test commands across many items.")
+  .description("Run linked tests across matching items.")
   .option("--status <value>", "Filter items by status before running tests")
   .option("--timeout <seconds>", "Default run timeout in seconds")
   .action(async (options: Record<string, unknown>, command) => {
@@ -1659,7 +1659,7 @@ program
 
 program
   .command("stats")
-  .description("Show deterministic tracker statistics summary.")
+  .description("Show project tracker statistics.")
   .action(async (_options, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -1672,7 +1672,7 @@ program
 
 program
   .command("health")
-  .description("Show deterministic tracker health checks summary.")
+  .description("Show project tracker health checks.")
   .action(async (_options, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -1685,7 +1685,7 @@ program
 
 program
   .command("gc")
-  .description("Collect optional cache artifacts and report deterministic summary.")
+  .description("Clean optional cache artifacts and show a summary.")
   .action(async (_options, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -1702,7 +1702,7 @@ program
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
   .option("--force", "Force claim override")
-  .description("Claim ownership of an item.")
+  .description("Claim an item for active work.")
   .action(async (id: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -1723,7 +1723,7 @@ program
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
   .option("--force", "Force release override")
-  .description("Release ownership of an item.")
+  .description("Release an item's active claim.")
   .action(async (id: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -1741,7 +1741,7 @@ program
 program
   .command("completion")
   .argument("<shell>", "Shell type: bash, zsh, or fish")
-  .description("Generate shell completion script for pm.")
+  .description("Generate shell completion for pm.")
   .action((shell: string, _options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const result = runCompletion(shell);

@@ -978,7 +978,7 @@ describe("release readiness baseline contract", () => {
       const closeHelp = context.runCli(["close", "--help"]);
       expect(closeHelp.code).toBe(0);
       expect(closeHelp.stdout).toContain("Usage: pm close [options] <id> <text>");
-      expect(closeHelp.stdout).toContain("Close an item with required reason text.");
+      expect(closeHelp.stdout).toContain("Close an item with a required reason.");
       for (const flag of REQUIRED_CLOSE_FLAGS) {
         expect(closeHelp.stdout).toContain(flag);
       }
@@ -993,7 +993,7 @@ describe("release readiness baseline contract", () => {
       const deleteHelp = context.runCli(["delete", "--help"]);
       expect(deleteHelp.code).toBe(0);
       expect(deleteHelp.stdout).toContain("Usage: pm delete [options] <id>");
-      expect(deleteHelp.stdout).toContain("Delete an item and append a delete history entry.");
+      expect(deleteHelp.stdout).toContain("Delete an item and record the change in history.");
       for (const flag of REQUIRED_DELETE_FLAGS) {
         expect(deleteHelp.stdout).toContain(flag);
       }
@@ -1008,7 +1008,7 @@ describe("release readiness baseline contract", () => {
       const appendHelp = context.runCli(["append", "--help"]);
       expect(appendHelp.code).toBe(0);
       expect(appendHelp.stdout).toContain("Usage: pm append [options] <id>");
-      expect(appendHelp.stdout).toContain("Append text to an item body.");
+      expect(appendHelp.stdout).toContain("Append text to an item's body.");
       for (const flag of REQUIRED_APPEND_FLAGS) {
         expect(appendHelp.stdout).toContain(flag);
       }
@@ -1025,7 +1025,7 @@ describe("release readiness baseline contract", () => {
       const restoreHelp = context.runCli(["restore", "--help"]);
       expect(restoreHelp.code).toBe(0);
       expect(restoreHelp.stdout).toContain("Usage: pm restore [options] <id> <target>");
-      expect(restoreHelp.stdout).toContain("Restore an item to a previous timestamp or version.");
+      expect(restoreHelp.stdout).toContain("Restore an item to an earlier timestamp or version.");
       for (const flag of REQUIRED_RESTORE_FLAGS) {
         expect(restoreHelp.stdout).toContain(flag);
       }
