@@ -112,6 +112,456 @@ describe("item-format front-matter validation", () => {
     );
   });
 
+  it("parses and normalizes events and recurrence deterministically", () => {
+    const parsed = parseItemDocument(
+      buildSource({
+        events: [
+          {
+            start_at: "2026-02-24T10:00:00.000Z",
+            title: "  weekly sync  ",
+            description: "  team weekly planning  ",
+            location: "  room 1  ",
+            timezone: "  UTC  ",
+            all_day: false,
+            recurrence: {
+              freq: "WEEKLY",
+              interval: 1,
+              by_weekday: ["fri", "mon", "fri"],
+              by_month_day: [3, 1, 3],
+              exdates: ["2026-03-02T10:00:00.000Z", "2026-02-24T10:00:00.000Z"],
+            },
+          },
+          {
+            start_at: "2026-02-23T09:00:00.000Z",
+            end_at: "2026-02-23T09:30:00.000Z",
+            title: "alpha event",
+          },
+        ],
+      }),
+    );
+
+    expect(parsed.front_matter.events).toEqual([
+      {
+        start_at: "2026-02-23T09:00:00.000Z",
+        end_at: "2026-02-23T09:30:00.000Z",
+        title: "alpha event",
+      },
+      {
+        start_at: "2026-02-24T10:00:00.000Z",
+        title: "weekly sync",
+        description: "team weekly planning",
+        location: "room 1",
+        timezone: "UTC",
+        all_day: false,
+        recurrence: {
+          freq: "weekly",
+          by_weekday: ["mon", "fri"],
+          by_month_day: [1, 3],
+          exdates: ["2026-02-24T10:00:00.000Z", "2026-03-02T10:00:00.000Z"],
+        },
+      },
+    ]);
+  });
+
+  it("sorts event ties by timezone, location, description, and recurrence", () => {
+    const baseFrontMatter = {
+      id: "pm-event-sort-ties",
+      title: "Event tie sort",
+      description: "Event tie sort description",
+      type: "Task",
+      status: "open",
+      priority: 1,
+      tags: ["calendar"],
+      created_at: FIXED_TS,
+      updated_at: FIXED_TS,
+    };
+
+    const timezoneSorted = normalizeFrontMatter({
+      ...baseFrontMatter,
+      events: [
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          end_at: "2026-02-24T10:00:00.000Z",
+          title: "Tie event",
+          all_day: false,
+          timezone: "Zulu",
+          location: "alpha room",
+          description: "alpha desc",
+          recurrence: { freq: "daily" },
+        },
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          end_at: "2026-02-24T10:00:00.000Z",
+          title: "Tie event",
+          all_day: false,
+          timezone: "UTC",
+          location: "alpha room",
+          description: "alpha desc",
+          recurrence: { freq: "daily" },
+        },
+      ],
+    });
+    expect(timezoneSorted.events?.map((event) => event.timezone)).toEqual(["UTC", "Zulu"]);
+
+    const locationSorted = normalizeFrontMatter({
+      ...baseFrontMatter,
+      events: [
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          end_at: "2026-02-24T10:00:00.000Z",
+          title: "Tie event",
+          all_day: false,
+          timezone: "UTC",
+          location: "zeta room",
+          description: "alpha desc",
+          recurrence: { freq: "daily" },
+        },
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          end_at: "2026-02-24T10:00:00.000Z",
+          title: "Tie event",
+          all_day: false,
+          timezone: "UTC",
+          location: "alpha room",
+          description: "alpha desc",
+          recurrence: { freq: "daily" },
+        },
+      ],
+    });
+    expect(locationSorted.events?.map((event) => event.location)).toEqual(["alpha room", "zeta room"]);
+
+    const descriptionSorted = normalizeFrontMatter({
+      ...baseFrontMatter,
+      events: [
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          end_at: "2026-02-24T10:00:00.000Z",
+          title: "Tie event",
+          all_day: false,
+          timezone: "UTC",
+          location: "alpha room",
+          description: "zeta desc",
+          recurrence: { freq: "daily" },
+        },
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          end_at: "2026-02-24T10:00:00.000Z",
+          title: "Tie event",
+          all_day: false,
+          timezone: "UTC",
+          location: "alpha room",
+          description: "alpha desc",
+          recurrence: { freq: "daily" },
+        },
+      ],
+    });
+    expect(descriptionSorted.events?.map((event) => event.description)).toEqual(["alpha desc", "zeta desc"]);
+
+    const recurrenceSorted = normalizeFrontMatter({
+      ...baseFrontMatter,
+      events: [
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          end_at: "2026-02-24T10:00:00.000Z",
+          title: "Tie event",
+          all_day: false,
+          timezone: "UTC",
+          location: "alpha room",
+          description: "alpha desc",
+          recurrence: { freq: "weekly", by_weekday: ["mon"] },
+        },
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          end_at: "2026-02-24T10:00:00.000Z",
+          title: "Tie event",
+          all_day: false,
+          timezone: "UTC",
+          location: "alpha room",
+          description: "alpha desc",
+          recurrence: { freq: "daily" },
+        },
+      ],
+    });
+    expect(recurrenceSorted.events?.map((event) => event.recurrence?.freq)).toEqual(["daily", "weekly"]);
+  });
+
+  it("covers event comparator optional-field branches and interval retention", () => {
+    const baseFrontMatter = {
+      id: "pm-event-comparator-branches",
+      title: "Event comparator branches",
+      description: "Event comparator branch coverage",
+      type: "Task",
+      status: "open",
+      priority: 1,
+      tags: ["calendar"],
+      created_at: FIXED_TS,
+      updated_at: FIXED_TS,
+    };
+
+    const intervalRetained = normalizeFrontMatter({
+      ...baseFrontMatter,
+      events: [
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          recurrence: { freq: "daily", interval: 2 },
+        },
+      ],
+    });
+    expect(intervalRetained.events?.[0]?.recurrence?.interval).toBe(2);
+
+    const endSorted = normalizeFrontMatter({
+      ...baseFrontMatter,
+      events: [
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          title: "Tie event",
+          all_day: false,
+        },
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          end_at: "2026-02-24T10:00:00.000Z",
+          title: "Tie event",
+          all_day: false,
+        },
+      ],
+    });
+    expect(endSorted.events?.map((event) => event.end_at)).toEqual([undefined, "2026-02-24T10:00:00.000Z"]);
+
+    const titleSorted = normalizeFrontMatter({
+      ...baseFrontMatter,
+      events: [
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          end_at: "2026-02-24T10:00:00.000Z",
+          all_day: false,
+        },
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          end_at: "2026-02-24T10:00:00.000Z",
+          title: "Tie event",
+          all_day: false,
+        },
+      ],
+    });
+    expect(titleSorted.events?.map((event) => event.title)).toEqual([undefined, "Tie event"]);
+
+    const allDaySorted = normalizeFrontMatter({
+      ...baseFrontMatter,
+      events: [
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          end_at: "2026-02-24T10:00:00.000Z",
+          title: "Tie event",
+          all_day: true,
+        },
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          end_at: "2026-02-24T10:00:00.000Z",
+          title: "Tie event",
+          all_day: false,
+        },
+      ],
+    });
+    expect(allDaySorted.events?.map((event) => event.all_day)).toEqual([false, true]);
+
+    const timezoneSorted = normalizeFrontMatter({
+      ...baseFrontMatter,
+      events: [
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          end_at: "2026-02-24T10:00:00.000Z",
+          title: "Tie event",
+          all_day: false,
+          timezone: "UTC",
+        },
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          end_at: "2026-02-24T10:00:00.000Z",
+          title: "Tie event",
+          all_day: false,
+        },
+      ],
+    });
+    expect(timezoneSorted.events?.map((event) => event.timezone)).toEqual([undefined, "UTC"]);
+
+    const locationSorted = normalizeFrontMatter({
+      ...baseFrontMatter,
+      events: [
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          end_at: "2026-02-24T10:00:00.000Z",
+          title: "Tie event",
+          all_day: false,
+          timezone: "UTC",
+          location: "Room 1",
+        },
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          end_at: "2026-02-24T10:00:00.000Z",
+          title: "Tie event",
+          all_day: false,
+          timezone: "UTC",
+        },
+      ],
+    });
+    expect(locationSorted.events?.map((event) => event.location)).toEqual([undefined, "Room 1"]);
+
+    const descriptionSorted = normalizeFrontMatter({
+      ...baseFrontMatter,
+      events: [
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          end_at: "2026-02-24T10:00:00.000Z",
+          title: "Tie event",
+          all_day: false,
+          timezone: "UTC",
+          location: "Room 1",
+          description: "Description",
+        },
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          end_at: "2026-02-24T10:00:00.000Z",
+          title: "Tie event",
+          all_day: false,
+          timezone: "UTC",
+          location: "Room 1",
+        },
+      ],
+    });
+    expect(descriptionSorted.events?.map((event) => event.description)).toEqual([undefined, "Description"]);
+
+    const recurrenceSorted = normalizeFrontMatter({
+      ...baseFrontMatter,
+      events: [
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          end_at: "2026-02-24T10:00:00.000Z",
+          title: "Tie event",
+          all_day: false,
+          timezone: "UTC",
+          location: "Room 1",
+          description: "Description",
+          recurrence: { freq: "weekly", by_weekday: ["mon"] },
+        },
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          end_at: "2026-02-24T10:00:00.000Z",
+          title: "Tie event",
+          all_day: false,
+          timezone: "UTC",
+          location: "Room 1",
+          description: "Description",
+        },
+      ],
+    });
+    expect(recurrenceSorted.events?.map((event) => event.recurrence?.freq)).toEqual(["weekly", undefined]);
+
+    const bothUndefinedFallback = normalizeFrontMatter({
+      ...baseFrontMatter,
+      events: [
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          all_day: false,
+        },
+        {
+          start_at: "2026-02-24T09:00:00.000Z",
+          all_day: false,
+        },
+      ],
+    });
+    expect(bothUndefinedFallback.events).toHaveLength(2);
+  });
+
+  it("throws on invalid event and recurrence structures", () => {
+    expect(() => parseItemDocument(buildSource({ events: "calendar-event" }))).toThrow("events must be an array");
+    expect(() => parseItemDocument(buildSource({ events: [42] }))).toThrow("events entries must be objects");
+    expect(() => parseItemDocument(buildSource({ events: [{ title: "missing start" }] }))).toThrow("event.start_at must be a string");
+    expect(() => parseItemDocument(buildSource({ events: [{ start_at: "not-a-timestamp" }] }))).toThrow(
+      "event.start_at must be a valid ISO timestamp",
+    );
+    expect(() =>
+      parseItemDocument(buildSource({ events: [{ start_at: FIXED_TS, end_at: "2026-02-21T00:00:00.000Z" }] })),
+    ).toThrow("event.end_at must be after event.start_at");
+    expect(() => parseItemDocument(buildSource({ events: [{ start_at: FIXED_TS, title: "   " }] }))).toThrow(
+      "event.title must not be empty",
+    );
+    expect(() => parseItemDocument(buildSource({ events: [{ start_at: FIXED_TS, all_day: "yes" }] }))).toThrow(
+      "event.all_day must be a boolean",
+    );
+    expect(() =>
+      parseItemDocument(
+        buildSource({
+          events: [
+            {
+              start_at: FIXED_TS,
+              recurrence: { freq: "hourly" },
+            },
+          ],
+        }),
+      ),
+    ).toThrow("event.recurrence.freq must be one of");
+    expect(() =>
+      parseItemDocument(
+        buildSource({
+          events: [
+            {
+              start_at: FIXED_TS,
+              recurrence: { freq: "daily", interval: 0 },
+            },
+          ],
+        }),
+      ),
+    ).toThrow("event.recurrence.interval must be an integer >= 1");
+    expect(() =>
+      parseItemDocument(
+        buildSource({
+          events: [
+            {
+              start_at: FIXED_TS,
+              recurrence: { freq: "weekly", by_weekday: ["mon", "funday"] },
+            },
+          ],
+        }),
+      ),
+    ).toThrow("event.recurrence.by_weekday entries must be one of");
+    expect(() =>
+      parseItemDocument(
+        buildSource({
+          events: [
+            {
+              start_at: FIXED_TS,
+              recurrence: { freq: "monthly", by_month_day: [0, 2] },
+            },
+          ],
+        }),
+      ),
+    ).toThrow("event.recurrence.by_month_day entries must be integers 1..31");
+    expect(() =>
+      parseItemDocument(
+        buildSource({
+          events: [
+            {
+              start_at: FIXED_TS,
+              recurrence: { freq: "daily", exdates: ["invalid-timestamp"] },
+            },
+          ],
+        }),
+      ),
+    ).toThrow("event.recurrence.exdates entries must be valid ISO timestamps");
+    expect(() =>
+      parseItemDocument(
+        buildSource({
+          events: [
+            {
+              start_at: FIXED_TS,
+              recurrence: { freq: "daily", until: "2026-02-21T00:00:00.000Z" },
+            },
+          ],
+        }),
+      ),
+    ).toThrow("event.recurrence.until must be at or after event.start_at");
+  });
+
   it("parses Beads compatibility fields and sorts dependency source_kind ties deterministically", () => {
     const normalizedDirect = normalizeFrontMatter({
       id: "pm-sort-source-kind",
@@ -258,6 +708,34 @@ describe("item-format front-matter validation", () => {
       severity: "urgent",
     } as unknown as Parameters<typeof normalizeFrontMatter>[0]);
     expect(normalized.severity).toBeUndefined();
+  });
+
+  it("drops invalid recurrence frequency during direct normalize fallback", () => {
+    const normalized = normalizeFrontMatter({
+      id: "pm-invalid-recurrence-fallback",
+      title: "Invalid recurrence fallback",
+      description: "invalid recurrence fallback description",
+      type: "Task",
+      status: "open",
+      priority: 1,
+      tags: [],
+      created_at: FIXED_TS,
+      updated_at: FIXED_TS,
+      events: [
+        {
+          start_at: "2026-02-24T10:00:00.000Z",
+          recurrence: {
+            freq: "hourly" as unknown as "daily",
+          },
+        },
+      ],
+    } as unknown as Parameters<typeof normalizeFrontMatter>[0]);
+
+    expect(normalized.events).toEqual([
+      {
+        start_at: "2026-02-24T10:00:00.000Z",
+      },
+    ]);
   });
 
   it("round-trips TOON item documents while preserving canonical document shape", () => {

@@ -121,9 +121,9 @@ pm claim <item-id>
 
 From there, use `pm update`, `pm comments`, `pm files`, `pm test`, `pm search`, and `pm close` as work progresses.
 
-## Calendar and Reminders
+## Calendar, Reminders, and Events
 
-`pm` now supports persistent item reminders plus a dedicated calendar surface for deadline and reminder planning.
+`pm` supports persistent reminder metadata, one-off and recurring scheduled events, and a dedicated calendar surface for deadline/reminder/event planning.
 
 ### Reminder fields on items
 
@@ -156,11 +156,60 @@ pm update pm-a1b2 --reminder "at=+4h,text=Follow up with reviewer"
 pm update pm-a1b2 --reminder none
 ```
 
+### Event fields on items
+
+- `pm create` and `pm update` accept repeatable `--event` flags.
+- Event value format supports:
+  - `start=<iso|relative>` (required)
+  - `end=<iso|relative>` (optional, must be after `start`)
+  - `title=<text>`, `description=<text>`, `location=<text>`, `timezone=<iana-or-label>`, `all_day=<true|false|1|0|yes|no>`
+- Recurrence metadata (optional, RFC-lite):
+  - `recur_freq=<daily|weekly|monthly|yearly>`
+  - `recur_interval=<int>=1+`
+  - `recur_count=<int>=1+`
+  - `recur_until=<iso|relative>`
+  - `recur_by_weekday=<mon|tue|wed|thu|fri|sat|sun>` (pipe-delimited)
+  - `recur_by_month_day=<1..31>` (pipe-delimited)
+  - `recur_exdates=<iso|relative>` (pipe-delimited)
+- Use `none` to explicitly clear all events in create/update flows.
+
+Examples:
+
+```bash
+pm create \
+  --title "Run release planning" \
+  --description "Set recurring planning sync plus a one-off launch checkpoint." \
+  --type Task \
+  --status open \
+  --priority 1 \
+  --tags "release,calendar" \
+  --body "" \
+  --deadline +7d \
+  --event "start=2026-04-03T15:00:00.000Z,title=Launch checkpoint,location=War room" \
+  --event "start=2026-04-01T09:00:00.000Z,title=Weekly planning,recur_freq=weekly,recur_by_weekday=wed,recur_interval=1" \
+  --estimate 30 \
+  --acceptance-criteria "Calendar schedule is captured in item metadata." \
+  --author "maintainer-agent" \
+  --message "Create calendar-rich planning task" \
+  --assignee none \
+  --dep none --comment none --note none --learning none --file none --test none --doc none
+
+pm update pm-a1b2 --event "start=+2d,title=Retro,recur_freq=monthly,recur_by_month_day=15"
+pm update pm-a1b2 --event none
+```
+
 ### Calendar command (`pm calendar` / `pm cal`)
 
 - Views: `agenda` (default), `day`, `week`, `month`
 - Default output for calendar is markdown (command-specific override)
 - Explicit output override: `--format markdown|toon|json` or global `--json`
+- Event source controls:
+  - `--include deadlines|reminders|events|all` (comma or pipe-delimited when passing multiple values)
+  - default source set is `all`
+- Recurrence expansion controls:
+  - `--recurrence-lookahead-days <n>`
+  - `--recurrence-lookback-days <n>`
+  - `--occurrence-limit <n>` (per recurring event; `>= 1`)
 - Past toggles and range controls:
   - `--past` includes past events in bounded views
   - `--from` / `--to` supported on `agenda`
@@ -173,6 +222,7 @@ Examples:
 pm calendar
 pm cal --view week --date +2d --past
 pm calendar --view agenda --from 2026-04-01T00:00:00.000Z --to 2026-04-08T00:00:00.000Z --assignee alex
+pm calendar --view agenda --include events --recurrence-lookahead-days 30 --occurrence-limit 50
 pm calendar --view month --tag release --format json
 ```
 

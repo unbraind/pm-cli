@@ -1,0 +1,29 @@
+id: pm-02gd
+title: Calendar parity integrations and release hardening
+description: Align completion wrapper docs and runtime contracts with expanded event and recurrence functionality while preserving compatibility.
+type: Feature
+status: closed
+priority: 1
+tags[5]: "area:calendar","area:docs","area:integration",pm-cli,release
+created_at: "2026-03-31T22:29:34.570Z"
+updated_at: "2026-03-31T23:27:13.723Z"
+deadline: "2026-04-10T22:29:34.570Z"
+author: codex-agent
+estimated_minutes: 280
+acceptance_criteria: Completion and Pi wrapper expose event/recurrence flags; docs and full regression coverage remain complete with no regressions.
+parent: pm-vdrn
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-122q,related,"2026-03-31T22:29:34.570Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-03-31T22:29:34.570Z",codex-agent,Feature created for integration/docs hardening of recurrence rollout.
+  "2026-03-31T23:27:12.670Z",codex-agent,"Completion, Pi wrapper, docs, and final regression/coverage gates are aligned with recurrence rollout (57 files, 588 tests, 100 percent coverage)."
+notes[1]{created_at,author,text}:
+  "2026-03-31T22:29:34.570Z",codex-agent,Maintain TOON global default while calendar keeps command-specific markdown default.
+files[1]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,wrapper parity updates
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,full release coverage gate
+docs[1]{path,scope,note}:
+  README.md,project,user-facing event recurrence docs
+close_reason: "Integration, docs, and release hardening for recurrence rollout are complete."
+body: Feature C for integration surfaces docs and release safety around event/recurrence parity.

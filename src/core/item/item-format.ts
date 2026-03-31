@@ -1,7 +1,26 @@
 import { decode as decodeToon, encode as encodeToon } from "@toon-format/toon";
-import type { Comment, Dependency, ItemDocument, ItemFrontMatter, LinkedDoc, LinkedFile, LinkedTest, LogNote, Reminder } from "../../types/index.js";
+import type {
+  CalendarEvent,
+  Comment,
+  Dependency,
+  ItemDocument,
+  ItemFrontMatter,
+  LinkedDoc,
+  LinkedFile,
+  LinkedTest,
+  LogNote,
+  RecurrenceRule,
+  Reminder,
+} from "../../types/index.js";
 import type { ItemFormat } from "../../types/index.js";
-import { CONFIDENCE_TEXT_VALUES, ISSUE_SEVERITY_VALUES, ITEM_TYPE_VALUES, STATUS_VALUES } from "../../types/index.js";
+import {
+  CONFIDENCE_TEXT_VALUES,
+  ISSUE_SEVERITY_VALUES,
+  ITEM_TYPE_VALUES,
+  RECURRENCE_FREQUENCY_VALUES,
+  RECURRENCE_WEEKDAY_VALUES,
+  STATUS_VALUES,
+} from "../../types/index.js";
 import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { orderObject } from "../shared/serialization.js";
@@ -19,6 +38,10 @@ const REQUIRED_STRING_FIELDS = [
   "updated_at",
 ] as const;
 
+function weekdayOrderIndex(value: (typeof RECURRENCE_WEEKDAY_VALUES)[number]): number {
+  return RECURRENCE_WEEKDAY_VALUES.indexOf(value);
+}
+
 function validationError(message: string): never {
   throw new PmCliError(`Invalid item front matter: ${message}`, EXIT_CODE.GENERIC_FAILURE);
 }
@@ -34,6 +57,74 @@ function assertTimestampField(record: Record<string, unknown>, fieldName: "creat
   assertFrontMatterCondition(typeof rawValue === "string", `${fieldName} must be a string`);
   const timestamp = rawValue as string;
   assertFrontMatterCondition(isTimestampLiteral(timestamp), `${fieldName} must be a valid ISO timestamp`);
+}
+
+function assertValidRecurrenceRule(recurrence: unknown): void {
+  assertFrontMatterCondition(
+    typeof recurrence === "object" && recurrence !== null && !Array.isArray(recurrence),
+    "event.recurrence must be an object",
+  );
+  const recurrenceRecord = recurrence as Record<string, unknown>;
+  assertFrontMatterCondition(typeof recurrenceRecord.freq === "string", "event.recurrence.freq must be a string");
+  const frequency = (recurrenceRecord.freq as string).trim().toLowerCase();
+  assertFrontMatterCondition(
+    RECURRENCE_FREQUENCY_VALUES.includes(frequency as (typeof RECURRENCE_FREQUENCY_VALUES)[number]),
+    `event.recurrence.freq must be one of: ${RECURRENCE_FREQUENCY_VALUES.join(", ")}`,
+  );
+
+  if (recurrenceRecord.interval !== undefined) {
+    assertFrontMatterCondition(
+      typeof recurrenceRecord.interval === "number" &&
+        Number.isInteger(recurrenceRecord.interval) &&
+        (recurrenceRecord.interval as number) >= 1,
+      "event.recurrence.interval must be an integer >= 1",
+    );
+  }
+
+  if (recurrenceRecord.count !== undefined) {
+    assertFrontMatterCondition(
+      typeof recurrenceRecord.count === "number" && Number.isInteger(recurrenceRecord.count) && (recurrenceRecord.count as number) >= 1,
+      "event.recurrence.count must be an integer >= 1",
+    );
+  }
+
+  if (recurrenceRecord.until !== undefined) {
+    assertFrontMatterCondition(typeof recurrenceRecord.until === "string", "event.recurrence.until must be a string");
+    assertFrontMatterCondition(
+      isTimestampLiteral(recurrenceRecord.until as string),
+      "event.recurrence.until must be a valid ISO timestamp",
+    );
+  }
+
+  if (recurrenceRecord.by_weekday !== undefined) {
+    assertFrontMatterCondition(Array.isArray(recurrenceRecord.by_weekday), "event.recurrence.by_weekday must be an array");
+    for (const weekday of recurrenceRecord.by_weekday as unknown[]) {
+      assertFrontMatterCondition(typeof weekday === "string", "event.recurrence.by_weekday entries must be strings");
+      const normalizedWeekday = (weekday as string).trim().toLowerCase();
+      assertFrontMatterCondition(
+        RECURRENCE_WEEKDAY_VALUES.includes(normalizedWeekday as (typeof RECURRENCE_WEEKDAY_VALUES)[number]),
+        `event.recurrence.by_weekday entries must be one of: ${RECURRENCE_WEEKDAY_VALUES.join(", ")}`,
+      );
+    }
+  }
+
+  if (recurrenceRecord.by_month_day !== undefined) {
+    assertFrontMatterCondition(Array.isArray(recurrenceRecord.by_month_day), "event.recurrence.by_month_day must be an array");
+    for (const day of recurrenceRecord.by_month_day as unknown[]) {
+      assertFrontMatterCondition(
+        typeof day === "number" && Number.isInteger(day) && day >= 1 && day <= 31,
+        "event.recurrence.by_month_day entries must be integers 1..31",
+      );
+    }
+  }
+
+  if (recurrenceRecord.exdates !== undefined) {
+    assertFrontMatterCondition(Array.isArray(recurrenceRecord.exdates), "event.recurrence.exdates must be an array");
+    for (const exdate of recurrenceRecord.exdates as unknown[]) {
+      assertFrontMatterCondition(typeof exdate === "string", "event.recurrence.exdates entries must be strings");
+      assertFrontMatterCondition(isTimestampLiteral(exdate as string), "event.recurrence.exdates entries must be valid ISO timestamps");
+    }
+  }
 }
 
 function assertValidFrontMatter(frontMatter: unknown): asserts frontMatter is ItemFrontMatter {
@@ -129,6 +220,52 @@ function assertValidFrontMatter(frontMatter: unknown): asserts frontMatter is It
       assertFrontMatterCondition((reminderRecord.text as string).trim().length > 0, "reminder.text must not be empty");
     }
   }
+  if (record.events !== undefined) {
+    const events = record.events;
+    assertFrontMatterCondition(Array.isArray(events), "events must be an array");
+    for (const event of events as unknown[]) {
+      assertFrontMatterCondition(typeof event === "object" && event !== null && !Array.isArray(event), "events entries must be objects");
+      const eventRecord = event as Record<string, unknown>;
+      assertFrontMatterCondition(typeof eventRecord.start_at === "string", "event.start_at must be a string");
+      assertFrontMatterCondition(isTimestampLiteral(eventRecord.start_at as string), "event.start_at must be a valid ISO timestamp");
+
+      if (eventRecord.end_at !== undefined) {
+        assertFrontMatterCondition(typeof eventRecord.end_at === "string", "event.end_at must be a string");
+        assertFrontMatterCondition(isTimestampLiteral(eventRecord.end_at as string), "event.end_at must be a valid ISO timestamp");
+        assertFrontMatterCondition(
+          compareTimestampStrings(eventRecord.end_at as string, eventRecord.start_at as string) > 0,
+          "event.end_at must be after event.start_at",
+        );
+      }
+
+      for (const stringField of ["title", "description", "location", "timezone"] as const) {
+        if (eventRecord[stringField] !== undefined) {
+          assertFrontMatterCondition(typeof eventRecord[stringField] === "string", `event.${stringField} must be a string`);
+          assertFrontMatterCondition(
+            (eventRecord[stringField] as string).trim().length > 0,
+            `event.${stringField} must not be empty`,
+          );
+        }
+      }
+
+      if (eventRecord.all_day !== undefined) {
+        assertFrontMatterCondition(typeof eventRecord.all_day === "boolean", "event.all_day must be a boolean");
+      }
+
+      if (eventRecord.recurrence !== undefined) {
+        assertValidRecurrenceRule(eventRecord.recurrence);
+        if ((eventRecord.recurrence as Record<string, unknown>).until !== undefined) {
+          assertFrontMatterCondition(
+            compareTimestampStrings(
+              (eventRecord.recurrence as Record<string, unknown>).until as string,
+              eventRecord.start_at as string,
+            ) >= 0,
+            "event.recurrence.until must be at or after event.start_at",
+          );
+        }
+      }
+    }
+  }
   if (record.closed_at !== undefined) {
     const closedAt = record.closed_at;
     assertFrontMatterCondition(typeof closedAt === "string", "closed_at must be a string");
@@ -188,6 +325,103 @@ function sortReminders(values: Reminder[] | undefined): Reminder[] | undefined {
       return a.text.localeCompare(b.text);
     });
   return normalized.length === 0 ? undefined : normalized;
+}
+
+function normalizeRecurrenceRule(value: RecurrenceRule | undefined): RecurrenceRule | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const normalizedFrequency = value.freq.trim().toLowerCase();
+  if (!RECURRENCE_FREQUENCY_VALUES.includes(normalizedFrequency as (typeof RECURRENCE_FREQUENCY_VALUES)[number])) {
+    return undefined;
+  }
+
+  const byWeekday = Array.from(
+    new Set(
+      (value.by_weekday ?? [])
+        .map((weekday) => weekday.trim().toLowerCase())
+        .filter((weekday) => RECURRENCE_WEEKDAY_VALUES.includes(weekday as (typeof RECURRENCE_WEEKDAY_VALUES)[number])),
+    ),
+  ).sort(
+    (a, b) =>
+      weekdayOrderIndex(a as (typeof RECURRENCE_WEEKDAY_VALUES)[number]) -
+      weekdayOrderIndex(b as (typeof RECURRENCE_WEEKDAY_VALUES)[number]),
+  );
+
+  const byMonthDay = Array.from(
+    new Set(
+      (value.by_month_day ?? [])
+        .filter((day) => Number.isInteger(day) && day >= 1 && day <= 31)
+        .map((day) => day as number),
+    ),
+  ).sort((a, b) => a - b);
+
+  const exdates = Array.from(
+    new Set(
+      (value.exdates ?? [])
+        .map((timestamp) => timestamp.trim())
+        .filter((timestamp) => isTimestampLiteral(timestamp)),
+    ),
+  ).sort((a, b) => compareTimestampStrings(a, b));
+
+  const normalized: RecurrenceRule = {
+    freq: normalizedFrequency as (typeof RECURRENCE_FREQUENCY_VALUES)[number],
+    interval: value.interval !== undefined && value.interval > 1 ? value.interval : undefined,
+    count: value.count,
+    until: value.until?.trim() || undefined,
+    by_weekday: byWeekday.length > 0 ? (byWeekday as (typeof RECURRENCE_WEEKDAY_VALUES)[number][]) : undefined,
+    by_month_day: byMonthDay.length > 0 ? byMonthDay : undefined,
+    exdates: exdates.length > 0 ? exdates : undefined,
+  };
+  for (const [key, fieldValue] of Object.entries(normalized)) {
+    if (fieldValue === undefined) {
+      delete (normalized as unknown as Record<string, unknown>)[key];
+    }
+  }
+  return normalized;
+}
+
+function sortEvents(values: CalendarEvent[] | undefined): CalendarEvent[] | undefined {
+  if (!values || values.length === 0) {
+    return undefined;
+  }
+  const normalized = [...values]
+    .map((value) => {
+      const event: CalendarEvent = {
+        start_at: value.start_at,
+        end_at: value.end_at || undefined,
+        title: value.title?.trim() || undefined,
+        description: value.description?.trim() || undefined,
+        location: value.location?.trim() || undefined,
+        all_day: value.all_day,
+        timezone: value.timezone?.trim() || undefined,
+        recurrence: normalizeRecurrenceRule(value.recurrence),
+      };
+      for (const [key, fieldValue] of Object.entries(event)) {
+        if (fieldValue === undefined) {
+          delete (event as unknown as Record<string, unknown>)[key];
+        }
+      }
+      return event;
+    })
+    .sort((a, b) => {
+      const byStart = compareTimestampStrings(a.start_at, b.start_at);
+      if (byStart !== 0) return byStart;
+      const byEnd = (a.end_at ?? "").localeCompare(b.end_at ?? "");
+      if (byEnd !== 0) return byEnd;
+      const byTitle = (a.title ?? "").localeCompare(b.title ?? "");
+      if (byTitle !== 0) return byTitle;
+      const byAllDay = Number(Boolean(a.all_day)) - Number(Boolean(b.all_day));
+      if (byAllDay !== 0) return byAllDay;
+      const byTimezone = (a.timezone ?? "").localeCompare(b.timezone ?? "");
+      if (byTimezone !== 0) return byTimezone;
+      const byLocation = (a.location ?? "").localeCompare(b.location ?? "");
+      if (byLocation !== 0) return byLocation;
+      const byDescription = (a.description ?? "").localeCompare(b.description ?? "");
+      if (byDescription !== 0) return byDescription;
+      return JSON.stringify(a.recurrence ?? {}).localeCompare(JSON.stringify(b.recurrence ?? {}));
+    });
+  return normalized;
 }
 
 function sortFiles(values: LinkedFile[] | undefined): LinkedFile[] | undefined {
@@ -306,6 +540,7 @@ export function normalizeFrontMatter(frontMatter: ItemFrontMatter): ItemFrontMat
     docs: sortDocs(frontMatter.docs),
     deadline: frontMatter.deadline || undefined,
     reminders: sortReminders(frontMatter.reminders),
+    events: sortEvents(frontMatter.events),
     closed_at: frontMatter.closed_at || undefined,
     assignee: frontMatter.assignee?.trim() || undefined,
     source_owner: frontMatter.source_owner?.trim() || undefined,

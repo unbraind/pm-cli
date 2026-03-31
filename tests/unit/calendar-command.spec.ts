@@ -23,6 +23,7 @@ function createCalendarItem(
     assignee?: string;
     deadline?: string;
     reminders?: string[];
+    events?: string[];
     sprint?: string;
     release?: string;
   },
@@ -65,6 +66,9 @@ function createCalendarItem(
   }
   for (const reminder of options.reminders ?? []) {
     createArgs.push("--reminder", reminder);
+  }
+  for (const event of options.events ?? []) {
+    createArgs.push("--event", event);
   }
   createArgs.push("--dep", "none", "--comment", "none", "--note", "none", "--learning", "none", "--file", "none", "--test", "none", "--doc", "none");
   const result = context.runCli(createArgs, { expectJson: true });
@@ -124,6 +128,50 @@ describe("calendar command module", () => {
       expect(markdown).toContain("[reminder]");
       expect(markdown).toContain("[deadline]");
       expect(markdown).toContain("calendar reminder");
+    });
+  });
+
+  it("expands one-off and recurring events in agenda output", async () => {
+    await withTempPmPath(async (context) => {
+      createCalendarItem(context, {
+        title: "One-off event seed",
+        events: ["start=2026-04-02T14:00:00.000Z,title=One-off demo"],
+      });
+      createCalendarItem(context, {
+        title: "Recurring event seed",
+        events: ["start=2026-04-01T10:00:00.000Z,title=Weekly sync,recur_freq=weekly,recur_by_weekday=wed|fri,recur_count=4"],
+      });
+
+      const result = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-04-01T00:00:00.000Z",
+          to: "2026-04-10T00:00:00.000Z",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.summary.events).toBe(4);
+      expect(result.summary.deadlines).toBe(0);
+      expect(result.summary.reminders).toBe(0);
+      expect(result.summary.scheduled).toBe(4);
+      expect(result.events.every((event) => event.kind === "event")).toBe(true);
+
+      const recurring = result.events.filter((event) => event.event_recurring === true);
+      expect(recurring).toHaveLength(3);
+      expect(recurring.map((event) => event.at)).toEqual([
+        "2026-04-01T10:00:00.000Z",
+        "2026-04-03T10:00:00.000Z",
+        "2026-04-08T10:00:00.000Z",
+      ]);
+
+      const oneOff = result.events.find((event) => event.event_recurring === false);
+      expect(oneOff?.at).toBe("2026-04-02T14:00:00.000Z");
+      expect(oneOff?.event_title).toBe("One-off demo");
+
+      const markdown = renderCalendarMarkdown(result);
+      expect(markdown).toContain("[event]");
+      expect(markdown).toContain("(recurring)");
     });
   });
 
@@ -223,6 +271,370 @@ describe("calendar command module", () => {
         { path: context.pmPath },
       );
       expect(releaseMismatch.summary.events).toBe(0);
+    });
+  });
+
+  it("supports source include filters and recurrence bounding controls", async () => {
+    await withTempPmPath(async (context) => {
+      createCalendarItem(context, {
+        title: "Include controls seed",
+        tags: "calendar,include-controls",
+        deadline: "2026-04-06T09:00:00.000Z",
+        reminders: ["at=2026-04-06T08:30:00.000Z,text=reminder seed"],
+        events: ["start=2026-04-06T10:00:00.000Z,title=event seed"],
+      });
+      createCalendarItem(context, {
+        title: "Recurring controls seed",
+        tags: "calendar,recurrence-controls",
+        events: ["start=2026-04-01T09:00:00.000Z,title=daily recurring,recur_freq=daily,recur_count=10"],
+      });
+
+      const deadlinesOnly = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-04-06T00:00:00.000Z",
+          to: "2026-04-07T00:00:00.000Z",
+          include: "deadlines",
+        },
+        { path: context.pmPath },
+      );
+      expect(deadlinesOnly.summary.events).toBe(1);
+      expect(deadlinesOnly.events.every((event) => event.kind === "deadline")).toBe(true);
+
+      const remindersOnly = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-04-06T00:00:00.000Z",
+          to: "2026-04-07T00:00:00.000Z",
+          include: "reminders",
+        },
+        { path: context.pmPath },
+      );
+      expect(remindersOnly.summary.events).toBe(1);
+      expect(remindersOnly.events.every((event) => event.kind === "reminder")).toBe(true);
+
+      const eventsOnly = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-04-06T00:00:00.000Z",
+          to: "2026-04-07T00:00:00.000Z",
+          include: "events",
+        },
+        { path: context.pmPath },
+      );
+      expect(eventsOnly.summary.events).toBe(2);
+      expect(eventsOnly.events.every((event) => event.kind === "event")).toBe(true);
+
+      const allSources = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-04-06T00:00:00.000Z",
+          to: "2026-04-07T00:00:00.000Z",
+          include: "all",
+          tag: "include-controls",
+        },
+        { path: context.pmPath },
+      );
+      expect(allSources.summary.events).toBe(3);
+      expect(new Set(allSources.events.map((event) => event.kind))).toEqual(new Set(["deadline", "reminder", "event"]));
+
+      const boundedLookahead = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-04-01T00:00:00.000Z",
+          include: "events",
+          recurrenceLookaheadDays: "2",
+          tag: "recurrence-controls",
+        },
+        { path: context.pmPath },
+      );
+      expect(boundedLookahead.events.map((event) => event.at)).toEqual([
+        "2026-04-01T09:00:00.000Z",
+        "2026-04-02T09:00:00.000Z",
+      ]);
+
+      const boundedOccurrenceLimit = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-04-01T00:00:00.000Z",
+          include: "events",
+          recurrenceLookaheadDays: "10",
+          occurrenceLimit: "2",
+          tag: "recurrence-controls",
+        },
+        { path: context.pmPath },
+      );
+      expect(boundedOccurrenceLimit.events).toHaveLength(2);
+    });
+  });
+
+  it("covers recurrence expansion edge branches across frequencies", async () => {
+    await withTempPmPath(async (context) => {
+      createCalendarItem(context, {
+        title: "Weekly month-day filter seed",
+        tags: "calendar,recurrence-weekly-edges",
+        events: [
+          "start=2026-03-30T09:00:00.000Z,title=weekly filtered,recur_freq=weekly,recur_by_weekday=mon|tue,recur_by_month_day=1",
+        ],
+      });
+      createCalendarItem(context, {
+        title: "Daily count-stop seed",
+        tags: "calendar,recurrence-count-stop",
+        events: ["start=2026-04-01T09:00:00.000Z,title=daily count stop,recur_freq=daily,recur_count=1"],
+      });
+      createCalendarItem(context, {
+        title: "Monthly stop seed",
+        tags: "calendar,recurrence-monthly-stop",
+        events: [
+          "start=2026-01-31T09:00:00.000Z,title=monthly stop,recur_freq=monthly,recur_by_month_day=31|30,recur_by_weekday=mon,recur_count=1",
+        ],
+      });
+      createCalendarItem(context, {
+        title: "Monthly return seed",
+        tags: "calendar,recurrence-monthly-return",
+        events: ["start=2026-04-30T09:00:00.000Z,title=monthly return,recur_freq=monthly,recur_by_month_day=31"],
+      });
+      createCalendarItem(context, {
+        title: "Monthly continue seed",
+        tags: "calendar,recurrence-monthly-continue",
+        events: ["start=2026-01-01T09:00:00.000Z,title=monthly continue,recur_freq=monthly,recur_by_month_day=1,recur_count=4"],
+      });
+      createCalendarItem(context, {
+        title: "Yearly return seed",
+        tags: "calendar,recurrence-yearly-return",
+        events: [
+          "start=2023-02-28T09:00:00.000Z,title=yearly return,recur_freq=yearly,recur_by_month_day=28|29,recur_by_weekday=sun",
+        ],
+      });
+      createCalendarItem(context, {
+        title: "Yearly continue seed",
+        tags: "calendar,recurrence-yearly-continue",
+        events: [
+          "start=2024-02-29T09:00:00.000Z,title=yearly continue,recur_freq=yearly,recur_by_month_day=29,recur_count=2",
+        ],
+      });
+      createCalendarItem(context, {
+        title: "Yearly stop seed",
+        tags: "calendar,recurrence-yearly-stop",
+        events: [
+          "start=2024-02-29T09:00:00.000Z,title=yearly stop,recur_freq=yearly,recur_by_month_day=29,recur_by_weekday=thu,recur_count=1",
+        ],
+      });
+      createCalendarItem(context, {
+        title: "Candidate before start seed",
+        tags: "calendar,recurrence-before-start",
+        events: [
+          "start=2026-04-08T09:00:00.000Z,title=before start,recur_freq=weekly,recur_by_weekday=mon|wed,recur_count=2",
+        ],
+      });
+      createCalendarItem(context, {
+        title: "Until stop seed",
+        tags: "calendar,recurrence-until-stop",
+        events: [
+          "start=2026-04-01T09:00:00.000Z,title=until stop,recur_freq=daily,recur_until=2026-04-02T09:00:00.000Z",
+        ],
+      });
+      createCalendarItem(context, {
+        title: "Excluded dates seed",
+        tags: "calendar,recurrence-excluded",
+        events: [
+          "start=2026-04-01T09:00:00.000Z,title=excluded dates,recur_freq=daily,recur_count=3,recur_exdates=2026-04-01T09:00:00.000Z|2026-04-03T09:00:00.000Z",
+        ],
+      });
+      createCalendarItem(context, {
+        title: "Daily filter seed",
+        tags: "calendar,recurrence-daily-filters",
+        events: ["start=2026-04-01T09:00:00.000Z,title=daily filter,recur_freq=daily,recur_by_weekday=thu,recur_by_month_day=2,recur_count=2"],
+      });
+      createCalendarItem(context, {
+        title: "Event title ordering seed",
+        tags: "calendar,event-title-ordering",
+        events: [
+          "start=2026-04-20T10:00:00.000Z,title=Zulu event",
+          "start=2026-04-20T10:00:00.000Z,title=Alpha event,location=Room A",
+          "start=2026-04-20T11:00:00.000Z,location=Room B",
+        ],
+      });
+
+      const weeklyEdge = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-03-30T00:00:00.000Z",
+          to: "2026-04-02T00:00:00.000Z",
+          include: "events",
+          tag: "recurrence-weekly-edges",
+          occurrenceLimit: "1",
+        },
+        { path: context.pmPath },
+      );
+      expect(weeklyEdge.summary.events).toBe(0);
+
+      const dailyCountStop = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-04-01T00:00:00.000Z",
+          to: "2026-04-03T00:00:00.000Z",
+          include: "events",
+          tag: "recurrence-count-stop",
+        },
+        { path: context.pmPath },
+      );
+      expect(dailyCountStop.events.map((event) => event.at)).toEqual(["2026-04-01T09:00:00.000Z"]);
+
+      const monthlyStop = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-01-01T00:00:00.000Z",
+          to: "2026-04-01T00:00:00.000Z",
+          include: "events",
+          tag: "recurrence-monthly-stop",
+        },
+        { path: context.pmPath },
+      );
+      expect(monthlyStop.events.map((event) => event.at)).toEqual(["2026-03-30T09:00:00.000Z"]);
+
+      const monthlyReturn = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-04-01T00:00:00.000Z",
+          to: "2026-05-01T00:00:00.000Z",
+          include: "events",
+          tag: "recurrence-monthly-return",
+          occurrenceLimit: "1",
+        },
+        { path: context.pmPath },
+      );
+      expect(monthlyReturn.summary.events).toBe(0);
+
+      const monthlyContinue = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-01-01T00:00:00.000Z",
+          to: "2026-04-01T00:00:00.000Z",
+          include: "events",
+          tag: "recurrence-monthly-continue",
+        },
+        { path: context.pmPath },
+      );
+      expect(monthlyContinue.events.map((event) => event.at)).toEqual([
+        "2026-01-01T09:00:00.000Z",
+        "2026-02-01T09:00:00.000Z",
+        "2026-03-01T09:00:00.000Z",
+      ]);
+
+      const yearlyReturn = await runCalendar(
+        {
+          view: "agenda",
+          from: "2023-01-01T00:00:00.000Z",
+          to: "2024-01-01T00:00:00.000Z",
+          include: "events",
+          tag: "recurrence-yearly-return",
+          occurrenceLimit: "1",
+        },
+        { path: context.pmPath },
+      );
+      expect(yearlyReturn.summary.events).toBe(0);
+
+      const yearlyContinue = await runCalendar(
+        {
+          view: "agenda",
+          from: "2024-01-01T00:00:00.000Z",
+          to: "2029-01-01T00:00:00.000Z",
+          include: "events",
+          tag: "recurrence-yearly-continue",
+          occurrenceLimit: "2",
+        },
+        { path: context.pmPath },
+      );
+      expect(yearlyContinue.events.map((event) => event.at)).toEqual(["2024-02-29T09:00:00.000Z"]);
+
+      const yearlyStop = await runCalendar(
+        {
+          view: "agenda",
+          from: "2024-01-01T00:00:00.000Z",
+          to: "2025-01-01T00:00:00.000Z",
+          include: "events",
+          tag: "recurrence-yearly-stop",
+        },
+        { path: context.pmPath },
+      );
+      expect(yearlyStop.events.map((event) => event.at)).toEqual(["2024-02-29T09:00:00.000Z"]);
+
+      const beforeStart = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-04-06T00:00:00.000Z",
+          to: "2026-04-15T00:00:00.000Z",
+          include: "events",
+          tag: "recurrence-before-start",
+        },
+        { path: context.pmPath },
+      );
+      expect(beforeStart.events.map((event) => event.at)).toEqual([
+        "2026-04-08T09:00:00.000Z",
+        "2026-04-13T09:00:00.000Z",
+      ]);
+
+      const untilStop = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-04-01T00:00:00.000Z",
+          to: "2026-04-10T00:00:00.000Z",
+          include: "events",
+          tag: "recurrence-until-stop",
+        },
+        { path: context.pmPath },
+      );
+      expect(untilStop.events.map((event) => event.at)).toEqual([
+        "2026-04-01T09:00:00.000Z",
+        "2026-04-02T09:00:00.000Z",
+      ]);
+
+      const excludedDates = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-04-01T00:00:00.000Z",
+          to: "2026-04-10T00:00:00.000Z",
+          include: "events",
+          tag: "recurrence-excluded",
+        },
+        { path: context.pmPath },
+      );
+      expect(excludedDates.events.map((event) => event.at)).toEqual([
+        "2026-04-02T09:00:00.000Z",
+        "2026-04-04T09:00:00.000Z",
+        "2026-04-05T09:00:00.000Z",
+      ]);
+
+      const dailyFilters = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-04-01T00:00:00.000Z",
+          to: "2026-04-05T00:00:00.000Z",
+          include: "events",
+          tag: "recurrence-daily-filters",
+        },
+        { path: context.pmPath },
+      );
+      expect(dailyFilters.events.map((event) => event.at)).toEqual(["2026-04-02T09:00:00.000Z"]);
+
+      const titleOrdering = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-04-20T00:00:00.000Z",
+          to: "2026-04-21T00:00:00.000Z",
+          include: "events",
+          tag: "event-title-ordering",
+        },
+        { path: context.pmPath },
+      );
+      const firstDayEvents = titleOrdering.events.filter((event) => event.at === "2026-04-20T10:00:00.000Z");
+      expect(firstDayEvents.map((event) => event.event_title)).toEqual(["Alpha event", "Zulu event"]);
+      expect(titleOrdering.events[2]?.event_title).toBe("Event title ordering seed");
+
+      const titleOrderingMarkdown = renderCalendarMarkdown(titleOrdering);
+      expect(titleOrderingMarkdown).toContain("Event title ordering seed");
+      expect(titleOrderingMarkdown).toContain("@ Room B");
     });
   });
 
@@ -476,6 +888,11 @@ describe("calendar command module", () => {
         { view: "agenda", status: "doing" },
         { view: "agenda", priority: "9" },
         { view: "agenda", limit: "-1" },
+        { view: "agenda", include: "deadlines|unknown" },
+        { view: "agenda", include: " , | " },
+        { view: "agenda", recurrenceLookaheadDays: "-3" },
+        { view: "agenda", recurrenceLookbackDays: "-2" },
+        { view: "agenda", occurrenceLimit: "0" },
       ];
 
       for (const options of invalidCases) {

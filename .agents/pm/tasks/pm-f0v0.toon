@@ -1,0 +1,33 @@
+id: pm-f0v0
+title: Add event and recurrence schema normalization
+description: Introduce persistent event fields and recurrence rule schema with deterministic validation and canonical ordering.
+type: Task
+status: closed
+priority: 1
+tags[5]: "area:calendar","area:recurrence","area:schema",code,pm-cli
+created_at: "2026-03-31T22:29:50.963Z"
+updated_at: "2026-03-31T22:32:57.140Z"
+deadline: "2026-04-07T22:29:50.963Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: Item schema validates and normalizes events/recurrence deterministically while keeping legacy items backward compatible.
+parent: pm-0ab3
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-7e6n,related,"2026-03-31T22:29:50.963Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-03-31T22:29:50.963Z",codex-agent,Task created for event and recurrence schema foundations.
+  "2026-03-31T22:32:48.801Z",codex-agent,Implemented first-class event and recurrence schema support with deterministic validation and normalization in item-format and front-matter ordering.
+notes[1]{created_at,author,text}:
+  "2026-03-31T22:29:50.963Z",codex-agent,Keep optional fields omitted when unset to avoid regressions.
+files[5]{path,scope,note}:
+  src/core/item/item-format.ts,project,event recurrence validation and normalization
+  src/core/shared/constants.ts,project,front matter key order includes events
+  src/types.ts,project,event and recurrence type definitions
+  tests/unit/item-format-validation.spec.ts,project,event recurrence schema tests
+  tests/unit/shared-constants-errors.spec.ts,project,key order contract includes events
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/item-format-validation.spec.ts tests/unit/shared-constants-errors.spec.ts,null,project,2400,schema validation coverage
+docs[1]{path,scope,note}:
+  PRD.md,project,event recurrence field contracts
+close_reason: Event and recurrence schema normalization implemented with passing targeted schema tests.
+body: Task for first-class event metadata plus recurrence rule validation in front matter.

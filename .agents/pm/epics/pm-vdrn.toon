@@ -1,0 +1,28 @@
+id: pm-vdrn
+title: "Calendar parity phase 2: events and recurrence"
+description: Expand calendar from reminders/deadlines into full event and recurrence capabilities while preserving deterministic and agent-safe behavior.
+type: Epic
+status: closed
+priority: 0
+tags[5]: agent-ux,"area:calendar","area:recurrence",core,pm-cli
+created_at: "2026-03-31T22:29:17.588Z"
+updated_at: "2026-03-31T23:27:15.853Z"
+deadline: "2026-04-14T22:29:17.588Z"
+author: codex-agent
+estimated_minutes: 720
+acceptance_criteria: "Calendar supports first-class events and recurring events with deterministic rendering, safe mutation paths, and release-grade test/docs coverage."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-qh3p,related,"2026-03-31T22:29:17.588Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-03-31T22:29:17.588Z",codex-agent,Epic created to extend calendar beyond reminders and deadlines.
+  "2026-03-31T23:27:14.850Z",codex-agent,"All phase-2 child features are complete: schema+mutation, occurrence engine+controls, and integration/docs hardening with 100 percent verification."
+notes[1]{created_at,author,text}:
+  "2026-03-31T22:29:17.588Z",codex-agent,Preserve existing calendar contracts while adding event/recurrence power.
+files[1]{path,scope,note}:
+  src/cli/commands/calendar.ts,project,event recurrence expansion target
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,2400,phase2 regression gate
+docs[1]{path,scope,note}:
+  PRD.md,project,calendar parity phase 2 requirements
+close_reason: "Calendar parity phase 2 delivered: events, recurrence, controls, docs, and full verification complete."
+body: Phase 2 tracks event and recurrence parity expansion with compatibility safeguards and full regression coverage.

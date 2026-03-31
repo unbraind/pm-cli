@@ -1,0 +1,36 @@
+id: pm-5xih
+title: Expand recurrence regression and runtime contract tests
+description: Add comprehensive unit/integration/runtime tests for event and recurring occurrence behavior with full coverage retention.
+type: Task
+status: closed
+priority: 1
+tags[5]: "area:calendar","area:recurrence","area:tests",code,pm-cli
+created_at: "2026-03-31T22:30:11.605Z"
+updated_at: "2026-03-31T23:22:45.570Z"
+deadline: "2026-04-07T22:30:11.605Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: All event/recurrence behavior is covered in unit/integration/runtime tests and global coverage remains 100%.
+parent: pm-02gd
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-tyq3,related,"2026-03-31T22:30:11.605Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-03-31T22:30:11.605Z",codex-agent,Task created for recurrence regression and runtime test expansion.
+  "2026-03-31T23:22:42.265Z",codex-agent,"Expanded recurrence/event branch coverage across calendar, create/update event parsing, and item normalization. Evidence: node scripts/run-tests.mjs coverage -> 57 files, 588 tests, global coverage 100/100/100/100."
+notes[1]{created_at,author,text}:
+  "2026-03-31T22:30:11.605Z",codex-agent,Ensure help/runtime contracts include new calendar flags.
+files[8]{path,scope,note}:
+  src/cli/commands/calendar.ts,project,weekday ordering helper and event title rendering branch cleanup
+  src/cli/commands/create.ts,project,weekday ordering helper for recurrence parsing
+  src/cli/commands/update.ts,project,weekday ordering helper for recurrence parsing
+  src/core/item/item-format.ts,project,branch-safe event sorting normalization adjustments
+  tests/unit/calendar-command.spec.ts,project,recurrence unit assertions
+  tests/unit/create-command.spec.ts,project,event parser branch coverage
+  tests/unit/item-format-validation.spec.ts,project,event sort and normalization branch coverage
+  tests/unit/update-command.spec.ts,project,event update parser branch coverage
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,full 100 percent coverage gate
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,test evidence entry
+close_reason: Recurrence regression coverage completed with full 100 percent gate passing.
+body: Task for recurrence correctness and release-readiness guardrail tests.

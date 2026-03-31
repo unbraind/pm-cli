@@ -146,6 +146,11 @@ describe("runUpdate", () => {
             "at=2026-03-03T12:00:00.000Z,text= reminder beta ",
             "at=2026-03-03T12:00:00.000Z,text=reminder alpha",
           ],
+          event: [
+            "start=2026-03-04T08:00:00.000Z,title=Daily defaults,recur_freq=daily",
+            "start=2026-03-05T10:00:00.000Z,end=2026-03-05T11:00:00.000Z,title=Planning review,all_day=yes",
+            "start=2026-03-06T09:00:00.000Z,title=Recurring standup,all_day=false,recur_freq=weekly,recur_by_weekday=fri|mon|fri,recur_by_month_day=10|2,recur_exdates=2026-03-13T09:00:00.000Z|none|2026-03-06T09:00:00.000Z",
+          ],
           author: " explicit-author ",
           message: "apply explicit update",
         },
@@ -195,6 +200,7 @@ describe("runUpdate", () => {
           "regression",
           "customer_impact",
           "reminders",
+          "events",
         ]),
       );
 
@@ -242,6 +248,32 @@ describe("runUpdate", () => {
       expect(item.reminders).toEqual([
         { at: "2026-03-03T12:00:00.000Z", text: "reminder alpha" },
         { at: "2026-03-03T12:00:00.000Z", text: "reminder beta" },
+      ]);
+      expect(item.events).toEqual([
+        {
+          start_at: "2026-03-04T08:00:00.000Z",
+          title: "Daily defaults",
+          recurrence: {
+            freq: "daily",
+          },
+        },
+        {
+          start_at: "2026-03-05T10:00:00.000Z",
+          end_at: "2026-03-05T11:00:00.000Z",
+          title: "Planning review",
+          all_day: true,
+        },
+        {
+          start_at: "2026-03-06T09:00:00.000Z",
+          title: "Recurring standup",
+          all_day: false,
+          recurrence: {
+            freq: "weekly",
+            by_weekday: ["mon", "fri"],
+            by_month_day: [2, 10],
+            exdates: ["2026-03-06T09:00:00.000Z", "2026-03-13T09:00:00.000Z"],
+          },
+        },
       ]);
       expect(latestUpdateAuthor(context, id)).toBe("explicit-author");
 
@@ -323,6 +355,7 @@ describe("runUpdate", () => {
           regression: "none",
           customerImpact: "none",
           reminder: ["none"],
+          event: ["none"],
           author: "active-owner",
           message: "cancel and clear optional fields",
         },
@@ -367,6 +400,7 @@ describe("runUpdate", () => {
           "regression",
           "customer_impact",
           "reminders",
+          "events",
         ]),
       );
 
@@ -406,6 +440,7 @@ describe("runUpdate", () => {
       expect(item.regression).toBeUndefined();
       expect(item.customer_impact).toBeUndefined();
       expect(item.reminders).toBeUndefined();
+      expect(item.events).toBeUndefined();
     });
   });
 
@@ -494,6 +529,148 @@ describe("runUpdate", () => {
         runUpdate(
           id,
           { reminder: ["at=+1d,text=   "] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+    });
+  });
+
+  it("validates event update inputs", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-invalid-events");
+
+      await expect(
+        runUpdate(
+          id,
+          { event: ["none", "start=2026-03-03T12:00:00.000Z,title=mixed"] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          { event: ["title=missing-start"] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          { event: ["start=2026-03-03T12:00:00.000Z,end=2026-03-03T11:00:00.000Z"] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          { event: ["start=2026-03-03T12:00:00.000Z,title=   "] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          { event: ["start=2026-03-03T12:00:00.000Z,title=none"] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          { event: ["start=2026-03-03T12:00:00.000Z,description=   "] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          { event: ["start=2026-03-03T12:00:00.000Z,description=none"] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          { event: ["start=2026-03-03T12:00:00.000Z,location=   "] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          { event: ["start=2026-03-03T12:00:00.000Z,location=none"] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          { event: ["start=2026-03-03T12:00:00.000Z,timezone=   "] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          { event: ["start=2026-03-03T12:00:00.000Z,timezone=none"] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          { event: ["start=2026-03-03T12:00:00.000Z,all_day=maybe"] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          { event: ["start=2026-03-03T12:00:00.000Z,recur_interval=2"] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          { event: ["start=2026-03-03T12:00:00.000Z,recur_freq=daily,recur_interval=0"] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          { event: ["start=2026-03-03T12:00:00.000Z,recur_freq=daily,recur_count=0"] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          { event: ["start=2026-03-03T12:00:00.000Z,recur_freq=daily,recur_until=2026-03-02T12:00:00.000Z"] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          { event: ["start=2026-03-03T12:00:00.000Z,recur_freq=monthly,recur_by_month_day=0"] },
           { path: context.pmPath },
         ),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });

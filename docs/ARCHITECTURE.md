@@ -148,11 +148,14 @@ Optional markdown body here.
 
 Fields are normalized and serialized in canonical key order (defined in `item-format.ts`) before hashing/history patch generation, regardless of on-disk item format.
 
-Reminder metadata is persisted directly in item front matter:
+Scheduling metadata is persisted directly in item front matter:
 
 - `reminders?: Array<{ at: ISO timestamp; text: string }>`
 - reminders are normalized and sorted deterministically by `at` then `text`
-- `pm create` and `pm update` support repeatable `--reminder at=<iso|relative>,text=<text>` values (`none` clears)
+- `events?: Array<{ start_at: ISO timestamp; end_at?: ISO timestamp; title?: string; description?: string; location?: string; timezone?: string; all_day?: boolean; recurrence?: RecurrenceRule }>`
+- recurrence supports `freq`, `interval`, `count`, `until`, `by_weekday`, `by_month_day`, and `exdates`
+- event and recurrence arrays are normalized/sorted deterministically for stable serialization
+- `pm create` and `pm update` support repeatable `--reminder` and `--event` values (`none` clears)
 
 ### Parallel Git/Worktree Safety
 
@@ -191,15 +194,21 @@ Pipeline:
 1. Resolve PM root and load settings.
 2. Read all item front matter records.
 3. Apply deterministic item filters (`type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`).
-4. Expand each item into events:
+4. Expand each item into calendar events:
    - deadline event (if `deadline` is set)
    - reminder events (for each `reminders[]` entry)
-5. Apply view windows:
+   - one-off scheduled events (`events[]` entries without recurrence)
+   - recurring event occurrences (`events[].recurrence`) expanded inside a bounded recurrence window
+5. Apply source controls and recurrence bounds:
+   - `--include deadlines|reminders|events|all`
+   - `--recurrence-lookahead-days`, `--recurrence-lookback-days`
+   - `--occurrence-limit` (cap per recurring event expansion)
+6. Apply view windows:
    - `agenda` (default, optional `--from`/`--to`)
    - `day`, `week`, `month` (anchored by `--date`)
    - `--past` toggles lower-bound behavior for bounded views
-6. Sort events deterministically by timestamp, priority, item id, event kind, then reminder text.
-7. Bucket events by UTC date and compute summary counts.
+7. Sort events deterministically by timestamp, priority, item id, event kind, event title, then reminder text.
+8. Bucket events by UTC date and compute summary counts (`deadlines`, `reminders`, `scheduled`).
 
 Output behavior is command-specific: `pm calendar` defaults to markdown for agent/human readability while keeping explicit `--format`/`--json` overrides. Global TOON defaults for other commands are unchanged.
 

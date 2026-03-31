@@ -113,6 +113,10 @@ export interface PmToolParameters {
   from?: string;
   to?: string;
   past?: boolean;
+  include?: string;
+  recurrenceLookaheadDays?: NumericFlagInput;
+  recurrenceLookbackDays?: NumericFlagInput;
+  occurrenceLimit?: NumericFlagInput;
   includeLinked?: boolean;
   tag?: string;
   deadlineBefore?: string;
@@ -135,6 +139,7 @@ export interface PmToolParameters {
   linkedTest?: string[];
   doc?: string[];
   reminder?: string[];
+  event?: string[];
   criterion?: string[];
   format?: string;
 }
@@ -239,6 +244,10 @@ export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = {
     from: { type: "string" },
     to: { type: "string" },
     past: { type: "boolean" },
+    include: { type: "string" },
+    recurrenceLookaheadDays: { anyOf: [{ type: "string" }, { type: "number" }] },
+    recurrenceLookbackDays: { anyOf: [{ type: "string" }, { type: "number" }] },
+    occurrenceLimit: { anyOf: [{ type: "string" }, { type: "number" }] },
     includeLinked: { type: "boolean" },
     tag: { type: "string" },
     deadlineBefore: { type: "string" },
@@ -261,6 +270,7 @@ export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = {
     linkedTest: { type: "array", items: { type: "string" } },
     doc: { type: "array", items: { type: "string" } },
     reminder: { type: "array", items: { type: "string" } },
+    event: { type: "array", items: { type: "string" } },
     criterion: { type: "array", items: { type: "string" } },
     format: { type: "string" },
   },
@@ -353,6 +363,7 @@ function addCreateFlags(args: string[], params: PmToolParameters): void {
   pushOption(args, "--assignee", assignee);
   addSharedCreateUpdateFlags(args, params);
   pushRepeatable(args, "--reminder", params.reminder);
+  pushRepeatable(args, "--event", params.event);
   pushRepeatableOrNone(args, "--dep", params.dep);
   pushRepeatableOrNone(args, "--comment", params.comment);
   pushRepeatableOrNone(args, "--note", params.note);
@@ -377,6 +388,7 @@ function addUpdateFlags(args: string[], params: PmToolParameters): void {
   pushOption(args, "--assignee", params.assignee);
   addSharedCreateUpdateFlags(args, params);
   pushRepeatable(args, "--reminder", params.reminder);
+  pushRepeatable(args, "--event", params.event);
   if (params.force) {
     args.push("--force");
   }
@@ -530,6 +542,10 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       pushOption(args, "--assignee", params.assignee);
       pushOption(args, "--sprint", params.sprint);
       pushOption(args, "--release", params.release);
+      pushOption(args, "--include", params.include);
+      pushOption(args, "--recurrence-lookahead-days", params.recurrenceLookaheadDays);
+      pushOption(args, "--recurrence-lookback-days", params.recurrenceLookbackDays);
+      pushOption(args, "--occurrence-limit", params.occurrenceLimit);
       pushOption(args, "--limit", params.limit);
       pushOption(args, "--format", params.format);
       return args;

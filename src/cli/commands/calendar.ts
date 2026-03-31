@@ -6,8 +6,8 @@ import { compareTimestampStrings, nowIso, resolveIsoOrRelative } from "../../cor
 import { listAllFrontMatter } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import type { ItemFrontMatter, ItemStatus, ItemType } from "../../types/index.js";
-import { ITEM_TYPE_VALUES, STATUS_VALUES } from "../../types/index.js";
+import type { ItemFrontMatter, ItemStatus, ItemType, RecurrenceRule } from "../../types/index.js";
+import { ITEM_TYPE_VALUES, RECURRENCE_WEEKDAY_VALUES, STATUS_VALUES } from "../../types/index.js";
 
 export const CALENDAR_VIEW_VALUES = ["agenda", "day", "week", "month"] as const;
 export type CalendarView = (typeof CALENDAR_VIEW_VALUES)[number];
@@ -29,14 +29,24 @@ export interface CalendarOptions {
   assignee?: string;
   sprint?: string;
   release?: string;
+  include?: string;
+  recurrenceLookaheadDays?: string;
+  recurrenceLookbackDays?: string;
+  occurrenceLimit?: string;
   format?: string;
 }
 
 export interface CalendarEvent {
   at: string;
   date: string;
-  kind: "deadline" | "reminder";
+  kind: "deadline" | "reminder" | "event";
   reminder_text: string | null;
+  event_title: string | null;
+  event_end: string | null;
+  event_location: string | null;
+  event_all_day: boolean | null;
+  event_timezone: string | null;
+  event_recurring: boolean | null;
   item_id: string;
   item_title: string;
   item_type: ItemType;
@@ -74,18 +84,31 @@ export interface CalendarResult {
     sprint: string | null;
     release: string | null;
     limit: string | null;
+    include: string | null;
+    recurrence_lookahead_days: string | null;
+    recurrence_lookback_days: string | null;
+    occurrence_limit: string | null;
   };
   summary: {
     events: number;
     items: number;
     deadlines: number;
     reminders: number;
+    scheduled: number;
   };
   events: CalendarEvent[];
   days: CalendarDayBucket[];
 }
 
 const ITEM_TYPES_BY_LOWER = new Map<string, ItemType>(ITEM_TYPE_VALUES.map((value) => [value.toLowerCase(), value]));
+const UTC_DAY_TO_WEEKDAY = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
+const DEFAULT_RECURRENCE_LOOKAHEAD_DAYS = 365;
+const DEFAULT_RECURRENCE_LOOKBACK_DAYS = 365;
+const MAX_RECURRENCE_OCCURRENCES = 1000;
+
+function weekdayOrderIndex(value: (typeof RECURRENCE_WEEKDAY_VALUES)[number]): number {
+  return RECURRENCE_WEEKDAY_VALUES.indexOf(value);
+}
 
 function parseLimit(raw: string | undefined): number | undefined {
   if (raw === undefined) return undefined;
@@ -94,6 +117,51 @@ function parseLimit(raw: string | undefined): number | undefined {
     throw new PmCliError("Calendar limit must be a non-negative integer", EXIT_CODE.USAGE);
   }
   return parsed;
+}
+
+function parseNonNegativeInteger(raw: string | undefined, label: string): number | undefined {
+  if (raw === undefined) return undefined;
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new PmCliError(`${label} must be a non-negative integer`, EXIT_CODE.USAGE);
+  }
+  return parsed;
+}
+
+type CalendarIncludeKind = "deadlines" | "reminders" | "events";
+
+function parseIncludeSources(raw: string | undefined): Set<CalendarIncludeKind> {
+  if (!raw) {
+    return new Set(["deadlines", "reminders", "events"]);
+  }
+  const normalized = raw.trim().toLowerCase();
+  if (normalized === "all") {
+    return new Set(["deadlines", "reminders", "events"]);
+  }
+  const values = normalized
+    .split(/[\|,]/)
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+  if (values.length === 0) {
+    throw new PmCliError("Calendar include filter must not be empty", EXIT_CODE.USAGE);
+  }
+  const include = new Set<CalendarIncludeKind>();
+  for (const value of values) {
+    if (value === "deadlines" || value === "deadline") {
+      include.add("deadlines");
+      continue;
+    }
+    if (value === "reminders" || value === "reminder") {
+      include.add("reminders");
+      continue;
+    }
+    if (value === "events" || value === "event") {
+      include.add("events");
+      continue;
+    }
+    throw new PmCliError("Calendar include filter must be deadlines|reminders|events|all", EXIT_CODE.USAGE);
+  }
+  return include;
 }
 
 function parseView(raw: string | undefined): CalendarView {
@@ -187,6 +255,188 @@ function maxTimestamp(left: string, right: string): string {
   return compareTimestampStrings(left, right) >= 0 ? left : right;
 }
 
+function buildUtcTimestamp(year: number, month: number, day: number, timeSource: Date): string | undefined {
+  const candidate = new Date(
+    Date.UTC(
+      year,
+      month,
+      day,
+      timeSource.getUTCHours(),
+      timeSource.getUTCMinutes(),
+      timeSource.getUTCSeconds(),
+      timeSource.getUTCMilliseconds(),
+    ),
+  );
+  if (candidate.getUTCFullYear() !== year || candidate.getUTCMonth() !== month || candidate.getUTCDate() !== day) {
+    return undefined;
+  }
+  return candidate.toISOString();
+}
+
+function weekdayToken(timestamp: string): (typeof UTC_DAY_TO_WEEKDAY)[number] {
+  return UTC_DAY_TO_WEEKDAY[new Date(timestamp).getUTCDay()];
+}
+
+function buildRecurringEventWindow(
+  start: string | undefined,
+  end: string | undefined,
+  nowValue: string,
+  lookbackDays: number | undefined,
+  lookaheadDays: number | undefined,
+): { start: string; end: string } {
+  const windowStart = start ?? addUtcDays(nowValue, -(lookbackDays ?? DEFAULT_RECURRENCE_LOOKBACK_DAYS));
+  const windowEnd = end ?? addUtcDays(start ?? nowValue, lookaheadDays ?? DEFAULT_RECURRENCE_LOOKAHEAD_DAYS);
+  return {
+    start: windowStart,
+    end: compareTimestampStrings(windowEnd, windowStart) > 0 ? windowEnd : addUtcDays(windowStart, 1),
+  };
+}
+
+function expandRecurringOccurrences(
+  startAt: string,
+  recurrence: RecurrenceRule,
+  window: { start: string; end: string },
+  occurrenceLimit: number | undefined,
+): string[] {
+  const maxOccurrences = occurrenceLimit ?? MAX_RECURRENCE_OCCURRENCES;
+  const interval = recurrence.interval ?? 1;
+  const countLimit = recurrence.count ?? Number.POSITIVE_INFINITY;
+  const until = recurrence.until;
+  const excluded = new Set(recurrence.exdates ?? []);
+  const recurrenceWeekdays =
+    recurrence.by_weekday && recurrence.by_weekday.length > 0 ? [...recurrence.by_weekday] : [weekdayToken(startAt)];
+  const recurrenceMonthDays =
+    recurrence.by_month_day && recurrence.by_month_day.length > 0 ? [...recurrence.by_month_day] : [new Date(startAt).getUTCDate()];
+  const weekdayFilter = recurrence.by_weekday ? new Set(recurrence.by_weekday) : undefined;
+  const monthDayFilter = recurrence.by_month_day ? new Set(recurrence.by_month_day) : undefined;
+  const sortedWeekdays = [...new Set(recurrenceWeekdays)].sort(
+    (left, right) =>
+      weekdayOrderIndex(left as (typeof RECURRENCE_WEEKDAY_VALUES)[number]) -
+      weekdayOrderIndex(right as (typeof RECURRENCE_WEEKDAY_VALUES)[number]),
+  );
+  const sortedMonthDays = [...new Set(recurrenceMonthDays)].sort((left, right) => left - right);
+
+  const occurrences: string[] = [];
+  let produced = 0;
+  const consumeCandidate = (candidateAt: string): "continue" | "stop" => {
+    if (compareTimestampStrings(candidateAt, startAt) < 0) {
+      return "continue";
+    }
+    if (until && compareTimestampStrings(candidateAt, until) > 0) {
+      return "stop";
+    }
+    if (compareTimestampStrings(candidateAt, window.end) >= 0) {
+      return "stop";
+    }
+    if (excluded.has(candidateAt)) {
+      return "continue";
+    }
+    produced += 1;
+    if (compareTimestampStrings(candidateAt, window.start) >= 0) {
+      occurrences.push(candidateAt);
+    }
+    if (produced >= countLimit) {
+      return "stop";
+    }
+    return "continue";
+  };
+
+  const startDate = new Date(startAt);
+  if (recurrence.freq === "daily") {
+    let candidateAt = startAt;
+    for (let iteration = 0; iteration < maxOccurrences; iteration += 1) {
+      const candidateWeekday = weekdayToken(candidateAt);
+      const candidateMonthDay = new Date(candidateAt).getUTCDate();
+      const weekdayMatches = !weekdayFilter || weekdayFilter.has(candidateWeekday);
+      const monthDayMatches = !monthDayFilter || monthDayFilter.has(candidateMonthDay);
+      if (weekdayMatches && monthDayMatches && consumeCandidate(candidateAt) === "stop") {
+        break;
+      }
+      candidateAt = addUtcDays(candidateAt, interval);
+    }
+    return occurrences;
+  }
+
+  if (recurrence.freq === "weekly") {
+    const weekStart = startOfUtcWeekMonday(startAt);
+    for (let step = 0; step < maxOccurrences; step += 1) {
+      const candidateWeekStart = addUtcDays(weekStart, step * interval * 7);
+      for (const weekday of sortedWeekdays) {
+        const dayOffset = weekdayOrderIndex(weekday as (typeof RECURRENCE_WEEKDAY_VALUES)[number]);
+        const candidateDay = addUtcDays(candidateWeekStart, dayOffset);
+        const dayDate = new Date(candidateDay);
+        const candidateAt = new Date(
+          Date.UTC(
+            dayDate.getUTCFullYear(),
+            dayDate.getUTCMonth(),
+            dayDate.getUTCDate(),
+            startDate.getUTCHours(),
+            startDate.getUTCMinutes(),
+            startDate.getUTCSeconds(),
+            startDate.getUTCMilliseconds(),
+          ),
+        ).toISOString();
+        const candidateMonthDay = dayDate.getUTCDate();
+        if (monthDayFilter && !monthDayFilter.has(candidateMonthDay)) {
+          continue;
+        }
+        const consumed = consumeCandidate(candidateAt);
+        if (consumed === "stop") {
+          return occurrences;
+        }
+      }
+    }
+    return occurrences;
+  }
+
+  if (recurrence.freq === "monthly") {
+    const startYear = startDate.getUTCFullYear();
+    const startMonth = startDate.getUTCMonth();
+    for (let step = 0; step < maxOccurrences; step += 1) {
+      const monthAnchor = new Date(Date.UTC(startYear, startMonth + step * interval, 1, 0, 0, 0, 0));
+      const year = monthAnchor.getUTCFullYear();
+      const month = monthAnchor.getUTCMonth();
+      for (const monthDay of sortedMonthDays) {
+        const candidateAt = buildUtcTimestamp(year, month, monthDay, startDate);
+        if (!candidateAt) {
+          continue;
+        }
+        const candidateWeekday = weekdayToken(candidateAt);
+        if (weekdayFilter && !weekdayFilter.has(candidateWeekday)) {
+          continue;
+        }
+        const consumed = consumeCandidate(candidateAt);
+        if (consumed === "stop") {
+          return occurrences;
+        }
+      }
+    }
+    return occurrences;
+  }
+
+  const year = startDate.getUTCFullYear();
+  const month = startDate.getUTCMonth();
+  for (let step = 0; step < maxOccurrences; step += 1) {
+    const candidateYear = year + step * interval;
+    for (const monthDay of sortedMonthDays) {
+      const candidateAt = buildUtcTimestamp(candidateYear, month, monthDay, startDate);
+      if (!candidateAt) {
+        continue;
+      }
+      const candidateWeekday = weekdayToken(candidateAt);
+      if (weekdayFilter && !weekdayFilter.has(candidateWeekday)) {
+        continue;
+      }
+      const consumed = consumeCandidate(candidateAt);
+      if (consumed === "stop") {
+        return occurrences;
+      }
+    }
+  }
+
+  return occurrences;
+}
+
 function sortEvents(values: CalendarEvent[]): CalendarEvent[] {
   return [...values].sort((a, b) => {
     const byAt = compareTimestampStrings(a.at, b.at);
@@ -197,19 +447,32 @@ function sortEvents(values: CalendarEvent[]): CalendarEvent[] {
     if (byId !== 0) return byId;
     const byKind = a.kind.localeCompare(b.kind);
     if (byKind !== 0) return byKind;
+    const byEventTitle = String(a.event_title).localeCompare(String(b.event_title));
+    if (byEventTitle !== 0) return byEventTitle;
     return String(a.reminder_text).localeCompare(String(b.reminder_text));
   });
 }
 
-function buildEventSeed(items: ItemFrontMatter[]): CalendarEvent[] {
+function buildEventSeed(
+  items: ItemFrontMatter[],
+  recurringWindow: { start: string; end: string },
+  includeSources: Set<CalendarIncludeKind>,
+  occurrenceLimit: number | undefined,
+): CalendarEvent[] {
   const events: CalendarEvent[] = [];
   for (const item of items) {
-    if (item.deadline) {
+    if (includeSources.has("deadlines") && item.deadline) {
       events.push({
         at: item.deadline,
         date: toUtcDayKey(item.deadline),
         kind: "deadline",
         reminder_text: null,
+        event_title: null,
+        event_end: null,
+        event_location: null,
+        event_all_day: null,
+        event_timezone: null,
+        event_recurring: null,
         item_id: item.id,
         item_title: item.title,
         item_type: item.type,
@@ -220,12 +483,18 @@ function buildEventSeed(items: ItemFrontMatter[]): CalendarEvent[] {
         item_tags: item.tags,
       });
     }
-    for (const reminder of item.reminders ?? []) {
+    for (const reminder of includeSources.has("reminders") ? (item.reminders ?? []) : []) {
       events.push({
         at: reminder.at,
         date: toUtcDayKey(reminder.at),
         kind: "reminder",
         reminder_text: reminder.text,
+        event_title: null,
+        event_end: null,
+        event_location: null,
+        event_all_day: null,
+        event_timezone: null,
+        event_recurring: null,
         item_id: item.id,
         item_title: item.title,
         item_type: item.type,
@@ -235,6 +504,33 @@ function buildEventSeed(items: ItemFrontMatter[]): CalendarEvent[] {
         item_deadline: item.deadline ?? null,
         item_tags: item.tags,
       });
+    }
+    for (const event of includeSources.has("events") ? (item.events ?? []) : []) {
+      const occurrences = event.recurrence
+        ? expandRecurringOccurrences(event.start_at, event.recurrence, recurringWindow, occurrenceLimit)
+        : [event.start_at];
+      for (const occurrenceAt of occurrences) {
+        events.push({
+          at: occurrenceAt,
+          date: toUtcDayKey(occurrenceAt),
+          kind: "event",
+          reminder_text: event.description ?? null,
+          event_title: event.title ?? item.title,
+          event_end: event.end_at ?? null,
+          event_location: event.location ?? null,
+          event_all_day: event.all_day ?? null,
+          event_timezone: event.timezone ?? null,
+          event_recurring: event.recurrence ? true : false,
+          item_id: item.id,
+          item_title: item.title,
+          item_type: item.type,
+          item_status: item.status,
+          item_priority: item.priority,
+          item_assignee: item.assignee ?? null,
+          item_deadline: item.deadline ?? null,
+          item_tags: item.tags,
+        });
+      }
     }
   }
   return sortEvents(events);
@@ -349,12 +645,15 @@ function summarize(events: CalendarEvent[]): CalendarResult["summary"] {
   const itemIds = new Set<string>();
   let deadlines = 0;
   let reminders = 0;
+  let scheduled = 0;
   for (const event of events) {
     itemIds.add(event.item_id);
     if (event.kind === "deadline") {
       deadlines += 1;
-    } else {
+    } else if (event.kind === "reminder") {
       reminders += 1;
+    } else {
+      scheduled += 1;
     }
   }
   return {
@@ -362,6 +661,7 @@ function summarize(events: CalendarEvent[]): CalendarResult["summary"] {
     items: itemIds.size,
     deadlines,
     reminders,
+    scheduled,
   };
 }
 
@@ -380,6 +680,12 @@ function formatEventLine(event: CalendarEvent): string {
   if (event.kind === "reminder") {
     return `${core} — ${event.reminder_text}`;
   }
+  if (event.kind === "event") {
+    const title = event.event_title!;
+    const recurrenceSuffix = event.event_recurring ? " (recurring)" : "";
+    const locationSuffix = event.event_location ? ` @ ${event.event_location}` : "";
+    return `${core} — ${title}${recurrenceSuffix}${locationSuffix}`;
+  }
   return core;
 }
 
@@ -389,7 +695,9 @@ export function renderCalendarMarkdown(result: CalendarResult): string {
   lines.push("");
   lines.push(`- now: ${result.now}`);
   lines.push(`- window: ${formatWindow(result.range)}`);
-  lines.push(`- events: ${result.summary.events} (deadlines: ${result.summary.deadlines}, reminders: ${result.summary.reminders})`);
+  lines.push(
+    `- events: ${result.summary.events} (deadlines: ${result.summary.deadlines}, reminders: ${result.summary.reminders}, scheduled: ${result.summary.scheduled})`,
+  );
   lines.push(`- items: ${result.summary.items}`);
   lines.push("");
 
@@ -418,11 +726,25 @@ export async function runCalendar(options: CalendarOptions, global: GlobalOption
   const view = parseView(options.view);
   const rangeBounds = buildRange(view, options, nowValue);
   const limit = parseLimit(options.limit);
+  const includeSources = parseIncludeSources(options.include);
+  const recurrenceLookaheadDays = parseNonNegativeInteger(options.recurrenceLookaheadDays, "Calendar recurrence lookahead days");
+  const recurrenceLookbackDays = parseNonNegativeInteger(options.recurrenceLookbackDays, "Calendar recurrence lookback days");
+  const occurrenceLimit = parseNonNegativeInteger(options.occurrenceLimit, "Calendar occurrence limit");
+  if (occurrenceLimit !== undefined && occurrenceLimit < 1) {
+    throw new PmCliError("Calendar occurrence limit must be >= 1", EXIT_CODE.USAGE);
+  }
 
   const settings = await readSettings(pmRoot);
   const items = await listAllFrontMatter(pmRoot, settings.item_format);
   const filteredItems = filterItems(items, options);
-  const seededEvents = buildEventSeed(filteredItems);
+  const recurringWindow = buildRecurringEventWindow(
+    rangeBounds.start,
+    rangeBounds.end,
+    nowValue,
+    recurrenceLookbackDays,
+    recurrenceLookaheadDays,
+  );
+  const seededEvents = buildEventSeed(filteredItems, recurringWindow, includeSources, occurrenceLimit);
   const rangedEvents = seededEvents.filter((event) => includeEventInWindow(event, rangeBounds.start, rangeBounds.end));
   const limitedEvents = limit === undefined ? rangedEvents : rangedEvents.slice(0, limit);
   const days = bucketEventsByDay(limitedEvents);
@@ -448,6 +770,10 @@ export async function runCalendar(options: CalendarOptions, global: GlobalOption
       sprint: options.sprint ?? null,
       release: options.release ?? null,
       limit: options.limit ?? null,
+      include: options.include ?? null,
+      recurrence_lookahead_days: options.recurrenceLookaheadDays ?? null,
+      recurrence_lookback_days: options.recurrenceLookbackDays ?? null,
+      occurrence_limit: options.occurrenceLimit ?? null,
     },
     summary: summarize(limitedEvents),
     events: limitedEvents,

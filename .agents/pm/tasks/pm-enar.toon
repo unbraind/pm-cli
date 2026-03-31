@@ -1,0 +1,34 @@
+id: pm-enar
+title: Add create/update event and recurrence mutation flags
+description: Extend create and update commands with deterministic event and recurrence mutation inputs including explicit clear semantics.
+type: Task
+status: closed
+priority: 1
+tags[5]: "area:calendar","area:cli","area:recurrence",code,pm-cli
+created_at: "2026-03-31T22:29:51.228Z"
+updated_at: "2026-03-31T22:39:30.639Z"
+deadline: "2026-04-07T22:29:51.228Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: Create/update support repeatable event inputs with deterministic parsing validation and none/unset behavior.
+parent: pm-0ab3
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ysgr,related,"2026-03-31T22:29:51.228Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-03-31T22:29:51.228Z",codex-agent,Task created for event and recurrence mutation flag support.
+  "2026-03-31T22:39:18.608Z",codex-agent,Implemented --event mutation parsing for create/update including recurrence recur_* fields and deterministic none clear semantics.
+notes[1]{created_at,author,text}:
+  "2026-03-31T22:29:51.228Z",codex-agent,Reuse parseCsvKv patterns for deterministic CLI parsing.
+files[6]{path,scope,note}:
+  src/cli/commands/create.ts,project,event flag parser
+  src/cli/commands/update.ts,project,event and recurrence update flag parser
+  src/cli/main.ts,project,create update event option surface
+  src/core/item/item-format.ts,project,nested undefined cleanup for event mutation serialization
+  tests/unit/create-command.spec.ts,project,create event mutation tests
+  tests/unit/update-command.spec.ts,project,update event mutation tests
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,null,project,2400,create/update event coverage
+docs[1]{path,scope,note}:
+  README.md,project,create update event flag docs
+close_reason: Create/update event and recurrence mutation flags implemented with passing create/update unit tests.
+body: Task for event authoring flags and mutation parsing in create/update.

@@ -44,6 +44,12 @@ export type ConfidenceValue = number | ConfidenceTextLevel;
 export const ITEM_FORMAT_VALUES = ["toon", "json_markdown"] as const;
 export type ItemFormat = (typeof ITEM_FORMAT_VALUES)[number];
 
+export const RECURRENCE_FREQUENCY_VALUES = ["daily", "weekly", "monthly", "yearly"] as const;
+export type RecurrenceFrequency = (typeof RECURRENCE_FREQUENCY_VALUES)[number];
+
+export const RECURRENCE_WEEKDAY_VALUES = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
+export type RecurrenceWeekday = (typeof RECURRENCE_WEEKDAY_VALUES)[number];
+
 export interface Dependency {
   id: string;
   kind: DependencyKind;
@@ -89,6 +95,27 @@ export interface Reminder {
   text: string;
 }
 
+export interface RecurrenceRule {
+  freq: RecurrenceFrequency;
+  interval?: number;
+  count?: number;
+  until?: string;
+  by_weekday?: RecurrenceWeekday[];
+  by_month_day?: number[];
+  exdates?: string[];
+}
+
+export interface CalendarEvent {
+  start_at: string;
+  end_at?: string;
+  title?: string;
+  description?: string;
+  location?: string;
+  all_day?: boolean;
+  timezone?: string;
+  recurrence?: RecurrenceRule;
+}
+
 export interface ItemFrontMatter {
   id: string;
   title: string;
@@ -102,6 +129,7 @@ export interface ItemFrontMatter {
   updated_at: string;
   deadline?: string;
   reminders?: Reminder[];
+  events?: CalendarEvent[];
   closed_at?: string;
   assignee?: string;
   source_owner?: string;

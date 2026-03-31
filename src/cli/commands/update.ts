@@ -7,8 +7,16 @@ import { isNoneToken, resolveIsoOrRelative } from "../../core/shared/time.js";
 import { mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import type { Reminder } from "../../types/index.js";
-import { CONFIDENCE_TEXT_VALUES, ISSUE_SEVERITY_VALUES, ITEM_TYPE_VALUES, RISK_VALUES, STATUS_VALUES } from "../../types/index.js";
+import type { CalendarEvent, RecurrenceRule, Reminder } from "../../types/index.js";
+import {
+  CONFIDENCE_TEXT_VALUES,
+  ISSUE_SEVERITY_VALUES,
+  ITEM_TYPE_VALUES,
+  RECURRENCE_FREQUENCY_VALUES,
+  RECURRENCE_WEEKDAY_VALUES,
+  RISK_VALUES,
+  STATUS_VALUES,
+} from "../../types/index.js";
 
 export interface UpdateCommandOptions {
   title?: string;
@@ -55,6 +63,7 @@ export interface UpdateCommandOptions {
   regression?: string;
   customerImpact?: string;
   reminder?: string[];
+  event?: string[];
 }
 
 export interface UpdateResult {
@@ -112,6 +121,10 @@ function parseRegressionInput(value: string): boolean {
   throw new PmCliError("Regression must be one of true|false|1|0", EXIT_CODE.USAGE);
 }
 
+function weekdayOrderIndex(value: (typeof RECURRENCE_WEEKDAY_VALUES)[number]): number {
+  return RECURRENCE_WEEKDAY_VALUES.indexOf(value);
+}
+
 function parseReminderEntries(raw: string[], nowValue: Date): Reminder[] {
   return raw.map((entry) => {
     const kv = parseCsvKv(entry, "--reminder");
@@ -123,6 +136,169 @@ function parseReminderEntries(raw: string[], nowValue: Date): Reminder[] {
     return {
       at: resolveIsoOrRelative(atRaw, nowValue),
       text: textRaw,
+    };
+  });
+}
+
+function parseEventBoolean(value: string, flag: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "true" || normalized === "1" || normalized === "yes") {
+    return true;
+  }
+  if (normalized === "false" || normalized === "0" || normalized === "no") {
+    return false;
+  }
+  throw new PmCliError(`${flag} must be one of true|false|1|0|yes|no`, EXIT_CODE.USAGE);
+}
+
+function parseDelimitedList(raw: string | undefined): string[] {
+  if (!raw) {
+    return [];
+  }
+  return raw
+    .split("|")
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+}
+
+function parseRecurrenceRule(kv: Record<string, string>, startAt: string, nowValue: Date): RecurrenceRule | undefined {
+  const freqRaw = kv.recur_freq?.trim();
+  const intervalRaw = kv.recur_interval?.trim();
+  const countRaw = kv.recur_count?.trim();
+  const untilRaw = kv.recur_until?.trim();
+  const byWeekdayRaw = kv.recur_by_weekday?.trim();
+  const byMonthDayRaw = kv.recur_by_month_day?.trim();
+  const exdatesRaw = kv.recur_exdates?.trim();
+
+  const recurrenceInputsProvided = [freqRaw, intervalRaw, countRaw, untilRaw, byWeekdayRaw, byMonthDayRaw, exdatesRaw].some(
+    (value) => value !== undefined && !isNoneToken(value),
+  );
+  if (!recurrenceInputsProvided) {
+    return undefined;
+  }
+  if (!freqRaw || isNoneToken(freqRaw)) {
+    throw new PmCliError("--event recurrence fields require recur_freq=<daily|weekly|monthly|yearly>", EXIT_CODE.USAGE);
+  }
+
+  const freq = ensureEnum(freqRaw.toLowerCase(), RECURRENCE_FREQUENCY_VALUES, "event recurrence frequency");
+  const interval = intervalRaw && !isNoneToken(intervalRaw) ? parseOptionalNumber(intervalRaw, "event recur_interval") : undefined;
+  if (interval !== undefined && (!Number.isInteger(interval) || interval < 1)) {
+    throw new PmCliError("--event recur_interval must be an integer >= 1", EXIT_CODE.USAGE);
+  }
+  const count = countRaw && !isNoneToken(countRaw) ? parseOptionalNumber(countRaw, "event recur_count") : undefined;
+  if (count !== undefined && (!Number.isInteger(count) || count < 1)) {
+    throw new PmCliError("--event recur_count must be an integer >= 1", EXIT_CODE.USAGE);
+  }
+  const until = untilRaw && !isNoneToken(untilRaw) ? resolveIsoOrRelative(untilRaw, nowValue) : undefined;
+  if (until && until < startAt) {
+    throw new PmCliError("--event recur_until must be at or after start", EXIT_CODE.USAGE);
+  }
+
+  const byWeekday = Array.from(
+    new Set(
+      parseDelimitedList(byWeekdayRaw)
+        .filter((value) => !isNoneToken(value))
+        .map((value) => ensureEnum(value.toLowerCase(), RECURRENCE_WEEKDAY_VALUES, "event weekday")),
+    ),
+  ).sort(
+    (left, right) =>
+      weekdayOrderIndex(left as (typeof RECURRENCE_WEEKDAY_VALUES)[number]) -
+      weekdayOrderIndex(right as (typeof RECURRENCE_WEEKDAY_VALUES)[number]),
+  );
+
+  const byMonthDay = Array.from(
+    new Set(
+      parseDelimitedList(byMonthDayRaw)
+        .filter((value) => !isNoneToken(value))
+        .map((value) => {
+          const day = parseOptionalNumber(value, "event recur_by_month_day");
+          if (!Number.isInteger(day) || day < 1 || day > 31) {
+            throw new PmCliError("--event recur_by_month_day values must be integers 1..31", EXIT_CODE.USAGE);
+          }
+          return day;
+        }),
+    ),
+  ).sort((left, right) => left - right);
+
+  const exdates = Array.from(
+    new Set(
+      parseDelimitedList(exdatesRaw)
+        .filter((value) => !isNoneToken(value))
+        .map((value) => resolveIsoOrRelative(value, nowValue)),
+    ),
+  ).sort((left, right) => left.localeCompare(right));
+
+  return {
+    freq,
+    interval,
+    count,
+    until,
+    by_weekday: byWeekday.length > 0 ? byWeekday : undefined,
+    by_month_day: byMonthDay.length > 0 ? byMonthDay : undefined,
+    exdates: exdates.length > 0 ? exdates : undefined,
+  };
+}
+
+function parseEventEntries(raw: string[], nowValue: Date): CalendarEvent[] {
+  return raw.map((entry) => {
+    const kv = parseCsvKv(entry, "--event");
+    const startRaw = kv.start?.trim();
+    if (!startRaw || isNoneToken(startRaw)) {
+      throw new PmCliError("--event requires start=<iso|relative>", EXIT_CODE.USAGE);
+    }
+    const startAt = resolveIsoOrRelative(startRaw, nowValue);
+    const endRaw = kv.end?.trim();
+    const endAt = endRaw && !isNoneToken(endRaw) ? resolveIsoOrRelative(endRaw, nowValue) : undefined;
+    if (endAt && endAt <= startAt) {
+      throw new PmCliError("--event end must be after start", EXIT_CODE.USAGE);
+    }
+
+    const titleRaw = kv.title;
+    const descriptionRaw = kv.description;
+    const locationRaw = kv.location;
+    const timezoneRaw = kv.timezone;
+    if (titleRaw !== undefined && isNoneToken(titleRaw)) {
+      throw new PmCliError("--event title cannot be none", EXIT_CODE.USAGE);
+    }
+    if (descriptionRaw !== undefined && isNoneToken(descriptionRaw)) {
+      throw new PmCliError("--event description cannot be none", EXIT_CODE.USAGE);
+    }
+    if (locationRaw !== undefined && isNoneToken(locationRaw)) {
+      throw new PmCliError("--event location cannot be none", EXIT_CODE.USAGE);
+    }
+    if (timezoneRaw !== undefined && isNoneToken(timezoneRaw)) {
+      throw new PmCliError("--event timezone cannot be none", EXIT_CODE.USAGE);
+    }
+
+    const title = titleRaw?.trim();
+    const description = descriptionRaw?.trim();
+    const location = locationRaw?.trim();
+    const timezone = timezoneRaw?.trim();
+    if (titleRaw !== undefined && !title) {
+      throw new PmCliError("--event title must not be empty", EXIT_CODE.USAGE);
+    }
+    if (descriptionRaw !== undefined && !description) {
+      throw new PmCliError("--event description must not be empty", EXIT_CODE.USAGE);
+    }
+    if (locationRaw !== undefined && !location) {
+      throw new PmCliError("--event location must not be empty", EXIT_CODE.USAGE);
+    }
+    if (timezoneRaw !== undefined && !timezone) {
+      throw new PmCliError("--event timezone must not be empty", EXIT_CODE.USAGE);
+    }
+
+    const allDayRaw = kv.all_day?.trim();
+    const recurrence = parseRecurrenceRule(kv, startAt, nowValue);
+
+    return {
+      start_at: startAt,
+      end_at: endAt,
+      title,
+      description,
+      location,
+      all_day: allDayRaw && !isNoneToken(allDayRaw) ? parseEventBoolean(allDayRaw, "--event all_day") : undefined,
+      timezone,
+      recurrence,
     };
   });
 }
@@ -186,6 +362,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     options.regression !== undefined,
     options.customerImpact !== undefined,
     options.reminder !== undefined,
+    options.event !== undefined,
   ].some(Boolean);
 
   if (!changedFlags) {
@@ -522,6 +699,17 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
           document.front_matter.reminders = parseReminderEntries(options.reminder, nowValue);
         }
         changedFields.push("reminders");
+      }
+      if (options.event !== undefined) {
+        if (options.event.some((entry) => isNoneToken(entry))) {
+          if (options.event.length > 1) {
+            throw new PmCliError("--event cannot mix 'none' with event values", EXIT_CODE.USAGE);
+          }
+          delete document.front_matter.events;
+        } else {
+          document.front_matter.events = parseEventEntries(options.event, nowValue);
+        }
+        changedFields.push("events");
       }
 
       return { changedFields };

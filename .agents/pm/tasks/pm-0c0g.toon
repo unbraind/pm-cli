@@ -1,0 +1,30 @@
+id: pm-0c0g
+title: Implement recurrence occurrence expansion in calendar views
+description: Expand runCalendar to emit event and recurring event occurrences across agenda/day/week/month windows with deterministic ordering.
+type: Task
+status: closed
+priority: 1
+tags[5]: "area:calendar","area:cli","area:recurrence",code,pm-cli
+created_at: "2026-03-31T22:29:51.361Z"
+updated_at: "2026-03-31T22:43:59.957Z"
+deadline: "2026-04-07T22:29:51.361Z"
+author: codex-agent
+estimated_minutes: 220
+acceptance_criteria: Calendar includes one-off and recurring event occurrences with bounded generation and stable sort behavior.
+parent: pm-8m6s
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ezri,related,"2026-03-31T22:29:51.361Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-03-31T22:29:51.361Z",codex-agent,Task created for recurrence expansion in calendar rendering.
+  "2026-03-31T22:43:49.204Z",codex-agent,Implemented one-off and recurring event occurrence expansion in calendar command with deterministic bounded generation and markdown rendering support.
+notes[1]{created_at,author,text}:
+  "2026-03-31T22:29:51.361Z",codex-agent,Protect against unbounded recurrence scans using deterministic limits.
+files[2]{path,scope,note}:
+  src/cli/commands/calendar.ts,project,recurrence occurrence generation
+  tests/unit/calendar-command.spec.ts,project,event and recurrence agenda expansion tests
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts,null,project,2400,recurrence occurrence unit coverage
+docs[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,occurrence expansion pipeline
+close_reason: Recurring and one-off event occurrence expansion implemented with passing calendar unit tests.
+body: Task for generating bounded recurring occurrences and integrating with existing calendar event stream.

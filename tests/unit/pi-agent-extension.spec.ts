@@ -32,6 +32,7 @@ describe("Pi agent extension wrapper for pm", () => {
       linkedTest: ["none"],
       doc: ["none"],
       reminder: ["none"],
+      event: ["none"],
       path: "/tmp/pm-sandbox",
     });
 
@@ -54,6 +55,8 @@ describe("Pi agent extension wrapper for pm", () => {
         "--assignee",
         "none",
         "--reminder",
+        "none",
+        "--event",
         "none",
       ]),
     );
@@ -426,6 +429,52 @@ describe("Pi agent extension wrapper for pm", () => {
       type: "array",
       items: { type: "string" },
     });
+    expect(
+      (
+        tool.parameters as {
+          properties: {
+            event: { type: string; items: { type: string } };
+          };
+        }
+      ).properties.event,
+    ).toEqual({
+      type: "array",
+      items: { type: "string" },
+    });
+    expect((tool.parameters as { properties: { include: { type: string } } }).properties.include.type).toBe("string");
+    expect(
+      (
+        tool.parameters as {
+          properties: {
+            recurrenceLookaheadDays: { anyOf: Array<{ type: string }> };
+            recurrenceLookbackDays: { anyOf: Array<{ type: string }> };
+            occurrenceLimit: { anyOf: Array<{ type: string }> };
+          };
+        }
+      ).properties.recurrenceLookaheadDays.anyOf,
+    ).toEqual(expect.arrayContaining([{ type: "string" }, { type: "number" }]));
+    expect(
+      (
+        tool.parameters as {
+          properties: {
+            recurrenceLookaheadDays: { anyOf: Array<{ type: string }> };
+            recurrenceLookbackDays: { anyOf: Array<{ type: string }> };
+            occurrenceLimit: { anyOf: Array<{ type: string }> };
+          };
+        }
+      ).properties.recurrenceLookbackDays.anyOf,
+    ).toEqual(expect.arrayContaining([{ type: "string" }, { type: "number" }]));
+    expect(
+      (
+        tool.parameters as {
+          properties: {
+            recurrenceLookaheadDays: { anyOf: Array<{ type: string }> };
+            recurrenceLookbackDays: { anyOf: Array<{ type: string }> };
+            occurrenceLimit: { anyOf: Array<{ type: string }> };
+          };
+        }
+      ).properties.occurrenceLimit.anyOf,
+    ).toEqual(expect.arrayContaining([{ type: "string" }, { type: "number" }]));
     expect((tool.parameters as { properties: { blockedBy: { type: string } } }).properties.blockedBy.type).toBe(
       "string",
     );
@@ -579,6 +628,10 @@ describe("Pi agent extension wrapper for pm", () => {
         assignee: "none",
         sprint: "sprint-7",
         release: "vnext",
+        include: "events",
+        recurrenceLookaheadDays: "30",
+        recurrenceLookbackDays: "7",
+        occurrenceLimit: "120",
         limit: "20",
         format: "markdown",
       }),
@@ -608,6 +661,14 @@ describe("Pi agent extension wrapper for pm", () => {
       "sprint-7",
       "--release",
       "vnext",
+      "--include",
+      "events",
+      "--recurrence-lookahead-days",
+      "30",
+      "--recurrence-lookback-days",
+      "7",
+      "--occurrence-limit",
+      "120",
       "--limit",
       "20",
       "--format",

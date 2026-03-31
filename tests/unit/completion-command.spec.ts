@@ -84,6 +84,7 @@ describe("generateBashScript", () => {
     expect(script).toContain("--acceptance-criteria");
     expect(script).toContain("--dep");
     expect(script).toContain("--reminder");
+    expect(script).toContain("--event");
     expect(script).toContain("--comment");
     expect(script).toContain("--note");
     expect(script).toContain("--learning");
@@ -95,6 +96,7 @@ describe("generateBashScript", () => {
     expect(script).toContain("--message");
     expect(script).toContain("--author");
     expect(script).toContain("--reminder");
+    expect(script).toContain("--event");
   });
 
   it("includes calendar-specific flags", () => {
@@ -104,6 +106,8 @@ describe("generateBashScript", () => {
     expect(script).toContain("--from");
     expect(script).toContain("--to");
     expect(script).toContain("--past");
+    expect(script).toContain("--include");
+    expect(script).toContain("--occurrence-limit");
     expect(script).toContain("--format");
   });
 
@@ -210,6 +214,9 @@ describe("generateZshScript", () => {
     expect(script).toContain("--past");
     expect(script).toContain("--format");
     expect(script).toContain("--reminder");
+    expect(script).toContain("--event");
+    expect(script).toContain("--include");
+    expect(script).toContain("--recurrence-lookahead-days");
   });
 });
 
@@ -319,6 +326,7 @@ describe("generateFishScript", () => {
     expect(script).toContain("__fish_seen_subcommand_from update");
     expect(script).toContain("-l force");
     expect(script).toContain("-l reminder");
+    expect(script).toContain("-l event");
   });
 
   it("includes fish calendar completions", () => {
@@ -326,6 +334,8 @@ describe("generateFishScript", () => {
     expect(script).toContain("__fish_seen_subcommand_from calendar cal");
     expect(script).toContain("-l view");
     expect(script).toContain("-l past");
+    expect(script).toContain("-l include");
+    expect(script).toContain("-l occurrence-limit");
     expect(script).toContain("-l format");
   });
 });

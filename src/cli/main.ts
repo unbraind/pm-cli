@@ -827,6 +827,7 @@ function normalizeCreateOptions(commandOptions: Record<string, unknown>): Create
     test: requiredRepeatable("test", "--test"),
     doc: requiredRepeatable("doc", "--doc"),
     reminder: Array.isArray(commandOptions.reminder) ? (commandOptions.reminder as string[]) : undefined,
+    event: Array.isArray(commandOptions.event) ? (commandOptions.event as string[]) : undefined,
   };
 }
 
@@ -905,6 +906,7 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
       (typeof commandOptions.customerImpact === "string" ? commandOptions.customerImpact : undefined) ??
       (typeof commandOptions.customer_impact === "string" ? commandOptions.customer_impact : undefined),
     reminder: Array.isArray(commandOptions.reminder) ? (commandOptions.reminder as string[]) : undefined,
+    event: Array.isArray(commandOptions.event) ? (commandOptions.event as string[]) : undefined,
   };
 }
 
@@ -951,6 +953,16 @@ function normalizeCalendarOptions(options: Record<string, unknown>): CalendarOpt
     assignee: typeof options.assignee === "string" ? options.assignee : undefined,
     sprint: typeof options.sprint === "string" ? options.sprint : undefined,
     release: typeof options.release === "string" ? options.release : undefined,
+    include: typeof options.include === "string" ? options.include : undefined,
+    recurrenceLookaheadDays:
+      (typeof options.recurrenceLookaheadDays === "string" ? options.recurrenceLookaheadDays : undefined) ??
+      (typeof options.recurrence_lookahead_days === "string" ? options.recurrence_lookahead_days : undefined),
+    recurrenceLookbackDays:
+      (typeof options.recurrenceLookbackDays === "string" ? options.recurrenceLookbackDays : undefined) ??
+      (typeof options.recurrence_lookback_days === "string" ? options.recurrence_lookback_days : undefined),
+    occurrenceLimit:
+      (typeof options.occurrenceLimit === "string" ? options.occurrenceLimit : undefined) ??
+      (typeof options.occurrence_limit === "string" ? options.occurrence_limit : undefined),
     format: typeof options.format === "string" ? options.format : undefined,
   };
 }
@@ -1163,6 +1175,11 @@ program
   .option("--customer_impact <value>", "Alias for --customer-impact")
   .option("--dep <value>", "Seed dependency entry (required; use none for empty)", collect)
   .option("--reminder <value>", "Seed reminder entry at=<iso|relative>,text=<text> (repeatable; use none for empty)", collect)
+  .option(
+    "--event <value>",
+    "Seed event entry start=<iso|relative>,end=<iso|relative>,title=<text>,all_day=<true|false>,recur_* fields (repeatable; use none for empty)",
+    collect,
+  )
   .option("--comment <value>", "Seed comment entry (required; use none for empty)", collect)
   .option("--note <value>", "Seed note entry (required; use none for empty)", collect)
   .option("--learning <value>", "Seed learning entry (required; use none for empty)", collect)
@@ -1234,6 +1251,13 @@ function registerCalendarCommand(): void {
     .option("--assignee <value>", "Filter by assignee (use 'none' for unassigned)")
     .option("--sprint <value>", "Filter by sprint")
     .option("--release <value>", "Filter by release")
+    .option("--include <value>", "Include sources: deadlines|reminders|events|all (comma or | separated)")
+    .option("--recurrence-lookahead-days <n>", "Bound open-ended recurrence generation lookahead days")
+    .option("--recurrence_lookahead_days <n>", "Alias for --recurrence-lookahead-days")
+    .option("--recurrence-lookback-days <n>", "Bound open-ended recurrence generation lookback days")
+    .option("--recurrence_lookback_days <n>", "Alias for --recurrence-lookback-days")
+    .option("--occurrence-limit <n>", "Cap generated occurrences per recurring event")
+    .option("--occurrence_limit <n>", "Alias for --occurrence-limit")
     .option("--limit <n>", "Limit returned event count")
     .option("--format <value>", "Calendar output format override: markdown|toon|json")
     .action(async (options: Record<string, unknown>, actionCommand) => {
@@ -1500,6 +1524,11 @@ program
   .option("--customer-impact <value>", "Set customer impact summary (or none)")
   .option("--customer_impact <value>", "Alias for --customer-impact")
   .option("--reminder <value>", "Set reminders at=<iso|relative>,text=<text> (repeatable; use none to clear)", collect)
+  .option(
+    "--event <value>",
+    "Set events start=<iso|relative>,end=<iso|relative>,title=<text>,all_day=<true|false>,recur_* fields (repeatable; use none to clear)",
+    collect,
+  )
   .option("--force", "Force ownership override")
   .action(async (id: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);

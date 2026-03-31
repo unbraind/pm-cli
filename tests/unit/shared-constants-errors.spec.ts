@@ -48,6 +48,7 @@ describe("shared constants and errors contracts", () => {
       "updated_at",
       "deadline",
       "reminders",
+      "events",
       "closed_at",
       "assignee",
       "source_owner",

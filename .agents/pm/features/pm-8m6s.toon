@@ -1,0 +1,29 @@
+id: pm-8m6s
+title: Calendar occurrence engine and advanced view filtering
+description: Expand calendar command to materialize one-off and recurring event occurrences with deterministic windows filters and sorting.
+type: Feature
+status: closed
+priority: 1
+tags[5]: agent-ux,"area:calendar","area:cli","area:recurrence",pm-cli
+created_at: "2026-03-31T22:29:34.305Z"
+updated_at: "2026-03-31T23:27:11.591Z"
+deadline: "2026-04-10T22:29:34.305Z"
+author: codex-agent
+estimated_minutes: 320
+acceptance_criteria: Calendar renders events plus recurring occurrences across agenda/day/week/month with deterministic filters and stable ordering.
+parent: pm-vdrn
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-tuhf,related,"2026-03-31T22:29:34.305Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-03-31T22:29:34.305Z",codex-agent,Feature created for recurrence expansion in calendar command.
+  "2026-03-31T23:27:10.688Z",codex-agent,Calendar occurrence expansion now materializes one-off and recurring events with bounded controls and deterministic ordering across views.
+notes[1]{created_at,author,text}:
+  "2026-03-31T22:29:34.305Z",codex-agent,Add bounded recurrence generation to avoid unbounded scans.
+files[1]{path,scope,note}:
+  src/cli/commands/calendar.ts,project,occurrence expansion logic
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,2400,calendar recurrence coverage
+docs[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,occurrence pipeline design
+close_reason: Calendar occurrence engine and advanced recurrence filters are complete and verified.
+body: Feature B for runCalendar occurrence expansion and advanced query controls.

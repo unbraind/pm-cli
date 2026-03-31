@@ -56,13 +56,13 @@ const LIST_FLAGS =
   "--type --tag --priority --deadline-before --deadline-after --assignee --sprint --release --limit --include-body --json --quiet --path --no-extensions --profile --help";
 
 const CREATE_FLAGS =
-  "-t --title -d --description --type -s --status -p --priority --tags -b --body --deadline --estimate --estimated-minutes --acceptance-criteria --ac --author --message --assignee --parent --reviewer --risk --confidence --sprint --release --blocked-by --blocked-reason --unblock-note --reporter --severity --environment --repro-steps --resolution --expected-result --actual-result --affected-version --fixed-version --component --regression --customer-impact --definition-of-ready --order --rank --goal --objective --value --impact --outcome --why-now --dep --reminder --comment --note --learning --file --test --doc --json --quiet --path --no-extensions --profile --help";
+  "-t --title -d --description --type -s --status -p --priority --tags -b --body --deadline --estimate --estimated-minutes --acceptance-criteria --ac --author --message --assignee --parent --reviewer --risk --confidence --sprint --release --blocked-by --blocked-reason --unblock-note --reporter --severity --environment --repro-steps --resolution --expected-result --actual-result --affected-version --fixed-version --component --regression --customer-impact --definition-of-ready --order --rank --goal --objective --value --impact --outcome --why-now --dep --reminder --event --comment --note --learning --file --test --doc --json --quiet --path --no-extensions --profile --help";
 
 const UPDATE_FLAGS =
-  "-t --title -d --description -s --status -p --priority --type --tags --deadline --estimate --estimated-minutes --acceptance-criteria --ac --assignee --parent --reviewer --risk --confidence --sprint --release --blocked-by --blocked-reason --unblock-note --reporter --severity --environment --repro-steps --resolution --expected-result --actual-result --affected-version --fixed-version --component --regression --customer-impact --definition-of-ready --order --rank --goal --objective --value --impact --outcome --why-now --author --message --reminder --force --json --quiet --path --no-extensions --profile --help";
+  "-t --title -d --description -s --status -p --priority --type --tags --deadline --estimate --estimated-minutes --acceptance-criteria --ac --assignee --parent --reviewer --risk --confidence --sprint --release --blocked-by --blocked-reason --unblock-note --reporter --severity --environment --repro-steps --resolution --expected-result --actual-result --affected-version --fixed-version --component --regression --customer-impact --definition-of-ready --order --rank --goal --objective --value --impact --outcome --why-now --author --message --reminder --event --force --json --quiet --path --no-extensions --profile --help";
 
 const CALENDAR_FLAGS =
-  "--view --date --from --to --past --type --tag --priority --status --assignee --sprint --release --limit --format --json --quiet --path --no-extensions --profile --help";
+  "--view --date --from --to --past --type --tag --priority --status --assignee --sprint --release --include --recurrence-lookahead-days --recurrence-lookback-days --occurrence-limit --limit --format --json --quiet --path --no-extensions --profile --help";
 
 const SEARCH_FLAGS =
   "--mode --include-linked --limit --type --tag --priority --deadline-before --deadline-after --json --quiet --path --no-extensions --profile --help";
@@ -254,6 +254,7 @@ _pm() {
             '--estimate[Estimated minutes]:minutes' \\
             '--acceptance-criteria[Acceptance criteria]:criteria' \\
             '--reminder[Reminder entry at=<iso|relative>,text=<text>]:reminder' \\
+            '--event[Event entry start=<iso|relative>,end=<iso|relative>,recur_*]:event' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--assignee[Assignee (none to unset)]:assignee' \\
@@ -269,6 +270,7 @@ _pm() {
             '--type[Item type]:(Epic Feature Task Chore Issue)' \\
             '--tags[Comma-separated tags]:tags' \\
             '--reminder[Reminder entry at=<iso|relative>,text=<text> (none to clear)]:reminder' \\
+            '--event[Event entry start=<iso|relative>,end=<iso|relative>,recur_* (none to clear)]:event' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
@@ -289,6 +291,10 @@ _pm() {
             '--assignee[Filter by assignee]:assignee' \\
             '--sprint[Filter by sprint]:sprint' \\
             '--release[Filter by release]:release' \\
+            '--include[Include event sources]:(all deadlines reminders events)' \\
+            '--recurrence-lookahead-days[Bound open-ended recurrence lookahead]:days' \\
+            '--recurrence-lookback-days[Bound open-ended recurrence lookback]:days' \\
+            '--occurrence-limit[Cap occurrences per recurring event]:number' \\
             '--limit[Limit returned events]:number' \\
             '--format[Output override]:(markdown toon json)' \\
             '--json[Output JSON]' \\
@@ -450,6 +456,7 @@ complete -c pm -n '__fish_seen_subcommand_from create' -l deadline              
 complete -c pm -n '__fish_seen_subcommand_from create' -l estimate                -d 'Estimated minutes' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l acceptance-criteria     -d 'Acceptance criteria' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l reminder                -d 'Reminder entry at=<iso|relative>,text=<text>' -r
+complete -c pm -n '__fish_seen_subcommand_from create' -l event                   -d 'Event entry start=<iso|relative>,end=<iso|relative>,recur_*' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l author                  -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l message                 -d 'History message' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l assignee                -d 'Assignee (none to unset)' -r
@@ -461,6 +468,7 @@ complete -c pm -n '__fish_seen_subcommand_from update' -s s -l status           
 complete -c pm -n '__fish_seen_subcommand_from update' -s p -l priority           -d 'Priority (0-4)' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from update' -l type                    -d 'Item type' -r -a 'Epic Feature Task Chore Issue'
 complete -c pm -n '__fish_seen_subcommand_from update' -l reminder                -d 'Reminder entry at=<iso|relative>,text=<text> (none to clear)' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l event                   -d 'Event entry start=<iso|relative>,end=<iso|relative>,recur_* (none to clear)' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l author                  -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l message                 -d 'History message' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l force                   -d 'Force override'
@@ -486,6 +494,10 @@ complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l status    -d 'Fi
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l assignee  -d 'Filter by assignee (none for unassigned)' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l sprint    -d 'Filter by sprint' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l release   -d 'Filter by release' -r
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l include   -d 'Include event sources' -r -a 'all deadlines reminders events'
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l recurrence-lookahead-days -d 'Bound open-ended recurrence lookahead' -r
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l recurrence-lookback-days -d 'Bound open-ended recurrence lookback' -r
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l occurrence-limit -d 'Cap occurrences per recurring event' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l limit     -d 'Limit returned events' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l format    -d 'Output override' -r -a 'markdown toon json'
 
