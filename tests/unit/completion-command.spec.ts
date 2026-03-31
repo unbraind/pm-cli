@@ -70,6 +70,7 @@ describe("generateBashScript", () => {
     expect(script).toContain("--sprint");
     expect(script).toContain("--release");
     expect(script).toContain("--limit");
+    expect(script).toContain("--include-body");
     expect(script).toContain("--deadline-before");
     expect(script).toContain("--deadline-after");
   });
@@ -183,6 +184,7 @@ describe("generateZshScript", () => {
     expect(script).toContain("--sprint");
     expect(script).toContain("--release");
     expect(script).toContain("--limit");
+    expect(script).toContain("--include-body");
   });
 });
 
@@ -235,6 +237,7 @@ describe("generateFishScript", () => {
     expect(script).toContain("-l release");
     expect(script).toContain("-l priority");
     expect(script).toContain("-l limit");
+    expect(script).toContain("-l include-body");
     expect(script).toContain("-l deadline-before");
     expect(script).toContain("-l deadline-after");
   });

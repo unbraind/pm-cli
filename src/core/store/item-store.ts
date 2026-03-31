@@ -58,8 +58,21 @@ export async function readLocatedItem(item: LocatedItem): Promise<{ raw: string;
 }
 
 export async function listAllFrontMatter(pmRoot: string): Promise<ItemFrontMatter[]> {
+  const documents = await listAllDocuments(pmRoot);
+  return documents.map((document) => document.front_matter);
+}
+
+export async function listAllFrontMatterWithBody(pmRoot: string): Promise<Array<ItemFrontMatter & { body: string }>> {
+  const documents = await listAllDocuments(pmRoot);
+  return documents.map((document) => ({
+    ...document.front_matter,
+    body: document.body,
+  }));
+}
+
+async function listAllDocuments(pmRoot: string): Promise<ItemDocument[]> {
   const entries = Object.values(TYPE_TO_FOLDER);
-  const items: ItemFrontMatter[] = [];
+  const documents: ItemDocument[] = [];
   for (const folder of entries) {
     const dirPath = path.join(pmRoot, folder);
     let files: string[] = [];
@@ -76,14 +89,13 @@ export async function listAllFrontMatter(pmRoot: string): Promise<ItemFrontMatte
           path: itemPath,
           scope: "project",
         });
-        const parsed = parseItemDocument(raw);
-        items.push(parsed.front_matter);
+        documents.push(parseItemDocument(raw));
       } catch {
         // skip unreadable items
       }
     }
   }
-  return items;
+  return documents;
 }
 
 export async function mutateItem(params: {

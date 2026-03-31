@@ -889,6 +889,7 @@ function normalizeListOptions(options: Record<string, unknown>): ListOptions {
     sprint: typeof options.sprint === "string" ? options.sprint : undefined,
     release: typeof options.release === "string" ? options.release : undefined,
     limit: typeof options.limit === "string" ? options.limit : undefined,
+    includeBody: options.includeBody === true ? true : undefined,
   };
 }
 
@@ -1140,6 +1141,7 @@ function registerListCommand(name: string, description: string, status?: ItemSta
     .option("--sprint <value>", "Filter by sprint")
     .option("--release <value>", "Filter by release")
     .option("--limit <n>", "Limit returned item count")
+    .option("--include-body", "Include item body in each returned list row")
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();

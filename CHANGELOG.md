@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `list*` commands now accept `--include-body` to project item `body` into each returned row when needed for metadata completeness analysis.
+
+### Changed
+- Default `list*` output remains front-matter-only; `body` projection is now explicit and opt-in via `--include-body` to preserve lightweight list payloads.
+
 ## [2026.3.12] - 2026-03-12
 
 ### Changed

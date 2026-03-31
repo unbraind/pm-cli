@@ -6,6 +6,7 @@ const readFileIfExistsMock = vi.fn<() => Promise<string | null>>();
 const writeFileAtomicMock = vi.fn<() => Promise<void>>();
 const readSettingsMock = vi.fn<() => Promise<unknown>>();
 const listAllFrontMatterMock = vi.fn<() => Promise<ItemFrontMatter[]>>();
+const listAllFrontMatterWithBodyMock = vi.fn<() => Promise<Array<ItemFrontMatter & { body: string }>>>();
 
 vi.mock("../../src/fs-utils.js", () => ({
   pathExists: pathExistsMock,
@@ -29,10 +30,12 @@ vi.mock("../../src/core/store/settings.js", () => ({
 
 vi.mock("../../src/item-store.js", () => ({
   listAllFrontMatter: listAllFrontMatterMock,
+  listAllFrontMatterWithBody: listAllFrontMatterWithBodyMock,
 }));
 
 vi.mock("../../src/core/store/item-store.js", () => ({
   listAllFrontMatter: listAllFrontMatterMock,
+  listAllFrontMatterWithBody: listAllFrontMatterWithBodyMock,
 }));
 
 describe("runList sorting branches", () => {
@@ -41,7 +44,7 @@ describe("runList sorting branches", () => {
     readFileIfExistsMock.mockResolvedValue("{}");
     writeFileAtomicMock.mockResolvedValue(undefined);
     readSettingsMock.mockResolvedValue({});
-    listAllFrontMatterMock.mockResolvedValue([
+    const baseItems: ItemFrontMatter[] = [
       {
         id: "pm-bbb",
         title: "same-time-id-b",
@@ -108,7 +111,9 @@ describe("runList sorting branches", () => {
         created_at: "2026-02-18T00:00:00.000Z",
         updated_at: "2026-02-18T00:06:00.000Z",
       },
-    ]);
+    ];
+    listAllFrontMatterMock.mockResolvedValue(baseItems);
+    listAllFrontMatterWithBodyMock.mockResolvedValue(baseItems.map((item) => ({ ...item, body: "" })));
   });
 
   it("orders open items before terminal then applies priority/updated/id tie-breakers", async () => {

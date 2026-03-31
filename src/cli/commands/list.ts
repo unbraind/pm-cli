@@ -3,7 +3,7 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { compareTimestampStrings, nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
-import { listAllFrontMatter } from "../../core/store/item-store.js";
+import { listAllFrontMatter, listAllFrontMatterWithBody } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter, ItemStatus, ItemType } from "../../types/index.js";
@@ -18,11 +18,14 @@ export interface ListOptions {
   sprint?: string;
   release?: string;
   limit?: string;
+  includeBody?: boolean;
   excludeTerminal?: boolean;
 }
 
+export type ListedItem = ItemFrontMatter | (ItemFrontMatter & { body: string });
+
 export interface ListResult {
-  items: ItemFrontMatter[];
+  items: ListedItem[];
   count: number;
   filters: Record<string, unknown>;
   now: string;
@@ -40,7 +43,7 @@ function isTerminal(status: ItemStatus): boolean {
   return status === "closed" || status === "canceled";
 }
 
-function sortItems(items: ItemFrontMatter[]): ItemFrontMatter[] {
+function sortItems(items: ListedItem[]): ListedItem[] {
   return [...items].sort((a, b) => {
     const aTerminal = isTerminal(a.status);
     const bTerminal = isTerminal(b.status);
@@ -87,7 +90,7 @@ function parseLimit(raw: string | undefined): number | undefined {
   return parsed;
 }
 
-function applyFilters(items: ItemFrontMatter[], status: ItemStatus | undefined, options: ListOptions): ItemFrontMatter[] {
+function applyFilters(items: ListedItem[], status: ItemStatus | undefined, options: ListOptions): ListedItem[] {
   const typeFilter = parseType(options.type);
   const tagFilter = options.tag?.trim().toLowerCase();
   const priorityFilter = parsePriority(options.priority);
@@ -124,7 +127,7 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
   await readSettings(pmRoot);
-  const items = await listAllFrontMatter(pmRoot);
+  const items = options.includeBody ? await listAllFrontMatterWithBody(pmRoot) : await listAllFrontMatter(pmRoot);
   const filtered = applyFilters(items, status, options);
   const sorted = sortItems(filtered);
   const limit = parseLimit(options.limit);
@@ -144,6 +147,7 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
       sprint: options.sprint ?? null,
       release: options.release ?? null,
       limit: options.limit ?? null,
+      include_body: options.includeBody ?? null,
     },
     now,
   };

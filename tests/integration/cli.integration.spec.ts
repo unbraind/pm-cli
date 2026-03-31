@@ -1261,7 +1261,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
             "--tags",
             "integration,list-status",
             "--body",
-            "",
+            `Body for ${title}`,
             "--deadline",
             "none",
             "--estimate",
@@ -1311,12 +1311,14 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const listOpenJson = listOpen.json as {
         count: number;
         items: Array<{ status: string; priority: number }>;
-        filters: { status: string | null };
+        filters: { status: string | null; include_body: boolean | null };
       };
       expect(listOpenJson.filters.status).toBe("open");
+      expect(listOpenJson.filters.include_body).toBeNull();
       expect(listOpenJson.count).toBe(2);
       expect(listOpenJson.items.map((item) => item.status)).toEqual(["open", "open"]);
       expect(listOpenJson.items.map((item) => item.priority)).toEqual([0, 1]);
+      expect(listOpenJson.items[0]).not.toHaveProperty("body");
 
       const listInProgress = context.runCli(["list-in-progress", "--json", "--type", "Task"], { expectJson: true });
       expect(listInProgress.code).toBe(0);
@@ -1368,6 +1370,30 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(activeStatuses).toContain("open");
       expect(activeStatuses).toContain("in_progress");
       expect(activeStatuses).toContain("blocked");
+
+      const listCommandsWithBody = [
+        "list",
+        "list-all",
+        "list-draft",
+        "list-open",
+        "list-in-progress",
+        "list-blocked",
+        "list-closed",
+        "list-canceled",
+      ] as const;
+
+      for (const commandName of listCommandsWithBody) {
+        const withBodyResult = context.runCli([commandName, "--json", "--type", "Task", "--include-body"], {
+          expectJson: true,
+        });
+        expect(withBodyResult.code).toBe(0);
+        const withBodyJson = withBodyResult.json as {
+          items: Array<{ body?: string }>;
+          filters: { include_body: boolean | null };
+        };
+        expect(withBodyJson.filters.include_body).toBe(true);
+        expect(withBodyJson.items.every((item) => typeof item.body === "string")).toBe(true);
+      }
     });
   });
 

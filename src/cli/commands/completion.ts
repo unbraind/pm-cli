@@ -51,7 +51,7 @@ const ALL_COMMANDS = [
 ];
 
 const LIST_FLAGS =
-  "--type --tag --priority --deadline-before --deadline-after --assignee --sprint --release --limit --json --quiet --path --no-extensions --profile --help";
+  "--type --tag --priority --deadline-before --deadline-after --assignee --sprint --release --limit --include-body --json --quiet --path --no-extensions --profile --help";
 
 const CREATE_FLAGS =
   "-t --title -d --description --type -s --status -p --priority --tags -b --body --deadline --estimate --estimated-minutes --acceptance-criteria --ac --author --message --assignee --parent --reviewer --risk --confidence --sprint --release --blocked-by --blocked-reason --unblock-note --reporter --severity --environment --repro-steps --resolution --expected-result --actual-result --affected-version --fixed-version --component --regression --customer-impact --definition-of-ready --order --rank --goal --objective --value --impact --outcome --why-now --dep --comment --note --learning --file --test --doc --json --quiet --path --no-extensions --profile --help";
@@ -226,6 +226,7 @@ _pm() {
             '--sprint[Filter by sprint]:sprint' \\
             '--release[Filter by release]:release' \\
             '--limit[Limit returned item count]:number' \\
+            '--include-body[Include item body in each returned list row]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]' \\
             '--path[Override PM path]:path:_files -/'
@@ -399,6 +400,7 @@ for list_cmd in ${listCmds}
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l sprint   -d 'Filter by sprint' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l release  -d 'Filter by release' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l limit    -d 'Limit returned item count' -r
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l include-body -d 'Include item body in each returned list row'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l deadline-before -d 'Filter by deadline upper bound' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l deadline-after  -d 'Filter by deadline lower bound' -r
 end

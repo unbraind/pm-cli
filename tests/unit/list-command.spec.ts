@@ -16,6 +16,7 @@ function createItem(context: TempPmContext, params: {
   assignee?: string;
   sprint?: string;
   release?: string;
+  body?: string;
 }): void {
   const args = [
     "create",
@@ -33,7 +34,7 @@ function createItem(context: TempPmContext, params: {
     "--tags",
     params.tags,
     "--body",
-    "",
+    params.body ?? "",
     "--deadline",
     params.deadline,
     "--estimate",
@@ -125,6 +126,29 @@ describe("runList", () => {
         { path: context.pmPath },
       );
       expect(deadlineFiltered.count).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  it("includes item body only when includeBody is enabled", async () => {
+    await withTempPmPath(async (context) => {
+      createItem(context, {
+        title: "Body Projection",
+        status: "open",
+        priority: "1",
+        tags: "body,test",
+        deadline: "+1d",
+        body: "Projected list body",
+      });
+
+      const withoutBody = await runList("open", {}, { path: context.pmPath });
+      expect(withoutBody.count).toBe(1);
+      expect(withoutBody.filters.include_body).toBeNull();
+      expect(withoutBody.items[0]).not.toHaveProperty("body");
+
+      const withBody = await runList("open", { includeBody: true }, { path: context.pmPath });
+      expect(withBody.count).toBe(1);
+      expect(withBody.filters.include_body).toBe(true);
+      expect(withBody.items[0]).toHaveProperty("body", "Projected list body");
     });
   });
 

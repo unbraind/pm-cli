@@ -713,6 +713,7 @@ List/search filters:
 - `--assignee` (exact match on `assignee` field; use `none` to filter for unassigned items)
 - `--sprint` (exact match on `sprint` field)
 - `--release` (exact match on `release` field)
+- `--include-body` (list* only; when enabled, each returned item includes `body`; default list rows remain front-matter-only)
 
 Mutation safety:
 
@@ -728,10 +729,10 @@ All commands return deterministic top-level objects (TOON by default, JSON with 
 | --- | --- | --- |
 | `pm init [PREFIX]` | optional prefix, `--path` | `{ ok, path, settings, created_dirs, warnings }` |
 | `pm install pi [--project\|--global]` | install target (`pi`) + optional scope flags (`--project` default writes to `<project-root>/.pi/extensions/pm-cli/index.ts` where `project-root` is derived from `--path` when provided, otherwise current working directory; `--global` uses `PI_CODING_AGENT_DIR` or `~/.pi/agent`) | `{ ok, target, scope, source_path, destination_path, overwritten, warnings }` |
-| `pm list` | optional filter flags; excludes terminal statuses (`closed`, `canceled`) by default | `{ items, count, filters, now }` |
-| `pm list-all` | optional filter flags; includes all statuses including terminal | `{ items, count, filters, now }` |
-| `pm list-draft` | optional type/tag/priority/deadline/assignee/sprint/release filters | `{ items, count, filters, now }` |
-| `pm list-open` | optional type/tag/priority/deadline/assignee/sprint/release filters | `{ items, count, filters, now }` |
+| `pm list` | optional filter flags (including `--include-body`); excludes terminal statuses (`closed`, `canceled`) by default | `{ items, count, filters, now }` |
+| `pm list-all` | optional filter flags (including `--include-body`); includes all statuses including terminal | `{ items, count, filters, now }` |
+| `pm list-draft` | optional type/tag/priority/deadline/assignee/sprint/release/include-body filters | `{ items, count, filters, now }` |
+| `pm list-open` | optional type/tag/priority/deadline/assignee/sprint/release/include-body filters | `{ items, count, filters, now }` |
 | `pm list-in-progress` | same as above | `{ items, count, filters, now }` |
 | `pm list-blocked` | same as above | `{ items, count, filters, now }` |
 | `pm list-closed` | same as above | `{ items, count, filters, now }` |
@@ -762,6 +763,11 @@ All commands return deterministic top-level objects (TOON by default, JSON with 
 | `pm restore <ID> <TIMESTAMP\|VERSION>` | id + restore target + optional `--author/--message/--force` | `{ item, restored_from, changed_fields, warnings }` |
 | `pm completion <shell>` | `bash`, `zsh`, or `fish`; non-JSON output is the raw script suitable for eval or pipe; JSON output is `{ shell, script, setup_hint }` | `{ shell, script, setup_hint }` |
 
+List command row projection:
+
+- Default `list*` rows contain `ItemFrontMatter` fields only.
+- With `--include-body`, each row additionally includes `body` and `filters.include_body` is `true` (`null` when omitted).
+
 Roadmap output contracts remain defined in this PRD for extension areas and advanced search tuning that are still out of v0.1 release scope.
 
 ## 12) Canonical Output Objects (TOON-first)
@@ -772,6 +778,8 @@ Examples:
 
 - `list*`:
   - `{ items, count, filters, now }`
+  - default rows: `ItemFrontMatter`
+  - with `--include-body`: `ItemFrontMatter + body`
 - `search`:
   - `{ query, mode, items, count, filters, now }`
 - `get`:
@@ -789,6 +797,7 @@ Determinism requirements:
 - Stable key order in every object.
 - Stable array order for `items` (default sort: non-terminal before terminal, then priority asc, then updated_at desc, then id asc).
 - `pm list` excludes terminal statuses (`closed`, `canceled`) by default; `pm list-all` includes all statuses.
+- `list*` reports `filters.include_body` as `null` unless `--include-body` is provided (`true` when provided).
 - TOON and JSON contain same logical content.
 - `--quiet` prints nothing to stdout but still uses exit codes.
 
