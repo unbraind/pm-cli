@@ -771,7 +771,7 @@ describe("runBeadsImport", () => {
         "extension_hook_failed:project:beads-write-boom:onWrite",
       ]);
       expect(hookEvents).toContain("read:hooked-import.jsonl");
-      expect(hookEvents).toContain("write:import:pm-hooked-import.md");
+      expect(hookEvents).toContain("write:import:pm-hooked-import.toon");
       expect(hookEvents).toContain("write:import:history:pm-hooked-import.jsonl");
     });
   });

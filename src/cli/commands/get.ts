@@ -23,7 +23,7 @@ export async function runGet(id: string, global: GlobalOptions): Promise<GetResu
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
   const settings = await readSettings(pmRoot);
-  const located = await locateItem(pmRoot, id, settings.id_prefix);
+  const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format);
   if (!located) {
     throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
   }

@@ -211,7 +211,7 @@ describe("runRestore", () => {
       expect(restored.item.id).toBe(id);
       expect(events).toEqual([
         `lock:create:${id}.lock`,
-        `restore:${id}.md`,
+        `restore:${id}.toon`,
         `restore:history:${id}.jsonl`,
         `lock:release:${id}.lock`,
       ]);

@@ -1,0 +1,41 @@
+front_matter:
+  id: pm-pmd
+  title: "M4: Keyword indexing and search command"
+  description: Implement keyword corpus indexing and query execution.
+  type: Task
+  status: closed
+  priority: 1
+  tags[4]: "area:search-keyword",core,"milestone:4",pm-cli
+  created_at: "2026-02-17T23:02:10.065Z"
+  updated_at: "2026-02-18T18:19:31.612Z"
+  deadline: "2026-03-07T23:02:10.065Z"
+  author: steve
+  estimated_minutes: 120
+  acceptance_criteria: "Keyword search command is available and returns deterministic ranked hits across title, description, tags, status, body, comments, notes, learnings, and dependency ids/kinds with TOON/JSON parity and 100% coverage maintained."
+  dependencies[2]{id,kind,created_at,author,source_kind}:
+    pm-54d,blocks,"2026-02-17T23:02:10.065Z",steve,null
+    pm-f45,parent,"2026-02-17T23:02:10.065Z",steve,null
+  comments[3]{created_at,author,text}:
+    "2026-02-18T18:03:38.258Z",cursor-maintainer,"Plan: docs-first update PRD/README to move keyword search from roadmap to implemented, then add deterministic keyword search command with ranking and tests before running linked pm test + pm test-all."
+    "2026-02-18T18:04:43.179Z",cursor-maintainer,"Docs-first update complete: README and PRD now declare pm search keyword mode in implemented command surface, while semantic/hybrid, reindex, close, and delete remain roadmap work."
+    "2026-02-18T18:19:26.331Z",cursor-maintainer,"Implementation complete: added pm search keyword command with deterministic scoring/sorting and list-like filters, wired CLI/help surface, updated README/PRD contracts, and added unit/integration coverage. Evidence: pm test pm-pmd --run passed both linked commands (coverage + targeted search tests) with 100% statements/branches/functions/lines. Regression evidence: pm test-all --status in_progress --timeout 1800 --json passed totals items=5 linked_tests=17 passed=17 failed=0 skipped=0."
+  files[11]{path,scope,note}:
+    PRD.md,project,Docs-first update for milestone/command matrix
+    README.md,project,Docs-first update for command surface
+    src/cli/commands/index.ts,project,Export search command runner
+    src/cli/commands/search.ts,project,Keyword search scoring and filtering implementation
+    src/cli/main.ts,project,CLI command registration
+    src/commands/search.ts,project,Keyword search implementation
+    tests/integration/cli.integration.spec.ts,project,CLI smoke coverage for search command
+    tests/integration/help-readme-contract.spec.ts,project,README heading contract update for roadmap section
+    tests/unit/search-command.spec.ts,project,Search ranking and corpus coverage tests
+    tests/unit/structure-exports.spec.ts,project,Ensure runSearch is exported from command index
+    vitest.config.ts,project,Include search command in strict 100 percent coverage gate
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,1200,Sandboxed full coverage gate
+    node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,300,Targeted sandboxed search unit tests
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,Dogfood workflow rules
+    PRD.md,project,Authoritative product contract
+    README.md,project,Public command surface contract
+body: Implement always-available keyword search functionality.

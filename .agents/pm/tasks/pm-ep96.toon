@@ -1,0 +1,31 @@
+front_matter:
+  id: pm-ep96
+  title: Bootstrap dogfood backlog and execute highest-priority gap
+  description: Initialize tracker coverage for maintainer loop and map PRD README requirements to implementation then complete one highest-priority release-readiness gap.
+  type: Task
+  status: closed
+  priority: 0
+  tags[7]: "area:planning",code,docs,"milestone:0",pm-cli,"priority:0",tests
+  created_at: "2026-03-06T22:54:37.955Z"
+  updated_at: "2026-03-06T23:07:44.457Z"
+  deadline: "2026-03-07T22:54:37.955Z"
+  author: maintainer-agent
+  estimated_minutes: 120
+  acceptance_criteria: PRD milestone areas are represented by pm items and evidence shows sandbox-safe regression plus coverage pass.
+  comments[3]{created_at,author,text}:
+    "2026-03-06T22:54:37.955Z",maintainer-agent,This item exists to start dogfooded execution from an empty tracker and keep every mutation auditable.
+    "2026-03-06T22:55:30.053Z",maintainer-agent,"Planned change: seed missing PRD milestone epics M0 through M6 with full metadata so backlog coverage exists before further code edits."
+    "2026-03-06T23:07:44.097Z",maintainer-agent,"Implemented backlog coverage gap fix by creating PRD milestone epics: pm-6hhn pm-zetb pm-murz pm-met4 pm-xtfo pm-gyfn pm-defw. Evidence: pm test pm-ep96 --run --timeout 1200 passed 2/2 linked tests; pm test-all --status in_progress --timeout 1200 passed items=1 linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status closed --timeout 1200 passed items=111 linked_tests=303 passed=63 failed=0 skipped=240. Coverage remains 100% lines branches functions statements."
+  notes[1]{created_at,author,text}:
+    "2026-03-06T22:54:37.955Z",maintainer-agent,Validation plan select highest priority unblocked gap patch run tests and close with evidence.
+  files[1]{path,scope,note}:
+    PRD.md,project,authoritative requirements
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,600,coverage gate
+    node scripts/run-tests.mjs test,null,project,600,sandbox regression
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,operating rules
+    PRD.md,project,governing spec
+    README.md,project,operator contract
+  close_reason: Seeded missing PRD milestone epics with full metadata and completed mandatory regression sweeps with 100% coverage.
+body: Run maintainer bootstrap read authoritative docs inventory command feature parity then implement and verify one concrete gap with full pm evidence.

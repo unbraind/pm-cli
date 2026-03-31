@@ -1,0 +1,54 @@
+front_matter:
+  id: pm-5rh2
+  title: Remove session-based ownership model
+  description: "Replace session-scoped assignment semantics with generic assignee ownership across schema, commands, docs, tests, and Pi wrapper paths."
+  type: Task
+  status: closed
+  priority: 0
+  tags[9]: "area:core","area:docs","area:extensions-pi",code,doc,"milestone:next",pm-cli,"priority:0",tests
+  created_at: "2026-03-05T08:56:51.061Z"
+  updated_at: "2026-03-05T09:34:48.936Z"
+  deadline: "2026-03-06T08:56:51.061Z"
+  author: maintainer-agent
+  estimated_minutes: 240
+  acceptance_criteria: No source/docs/tests reference legacy ownership session fields; ownership uses assignee semantics consistently; Pi wrapper docs point to .pi/extensions/pm-cli/index.ts; pm regression and coverage runs pass at 100 percent.
+  dependencies[1]{id,kind,created_at,author,source_kind}:
+    pm-06t,related,"2026-03-05T08:56:51.061Z",maintainer-agent,null
+  comments[4]{created_at,author,text}:
+    "2026-03-05T08:56:51.061Z",maintainer-agent,"Why this exists: remove Pi-specific session semantics and make ownership model generic for all agents."
+    "2026-03-05T08:57:02.247Z",maintainer-agent,"Planned changeset: replace assigned_to_session/session.id/PM_SESSION with assignee semantics and owner-based locking metadata; migrate CLI flags to --assignee; update Pi wrapper parameter names and docs path references; then run targeted plus full regression and remove session attributes from tracker items using pm updates."
+    "2026-03-05T09:32:43.079Z",maintainer-agent,"Evidence: pnpm build passed; node scripts/run-tests.mjs coverage passed (49/49 files, 371/371 tests, coverage report 100% statements/branches/functions/lines); node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts tests/unit/update-command.spec.ts tests/unit/create-command.spec.ts tests/unit/pi-agent-extension.spec.ts passed (35/35); node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/integration/help-readme-contract.spec.ts tests/integration/cli.integration.spec.ts passed (34/34). pm test pm-5rh2 --run --timeout 7200 --json passed all 3 linked tests. pm test-all --status in_progress --timeout 7200 --json passed totals items=1 linked_tests=3 passed=3 failed=0 skipped=0. pm test-all --status closed --timeout 7200 --json passed totals items=66 linked_tests=206 passed=57 failed=0 skipped=149. Tracker cleanup: pm-5rh2 front matter now uses assignee and no longer contains assigned_to_session."
+    "2026-03-05T09:34:48.936Z",maintainer-agent,"Note: some historical comments and body text preserve legacy terminology as part of append-only item history; active front matter and linked file metadata now use assignee ownership and project-scoped Pi wrapper paths."
+  notes[1]{created_at,author,text}:
+    "2026-03-05T08:56:51.061Z",maintainer-agent,"Plan: migrate schema and commands then docs and tests then pm item cleanup."
+  files[21]{path,scope,note}:
+    .pi/extensions/pm-cli/index.ts,project,Pi wrapper parameter migration
+    package.json,project,publish path updated to project-scoped Pi extension
+    src/cli/commands/beads.ts,project,beads assignee mapping
+    src/cli/commands/claim.ts,project,claim and release assignee behavior
+    src/cli/commands/close.ts,project,clear assignee on close
+    src/cli/commands/create.ts,project,create assignee field
+    src/cli/commands/restore.ts,project,owner conflict checks and locking
+    src/cli/commands/update.ts,project,update assignee field
+    src/cli/main.ts,project,flag and help migration
+    src/core/item/item-format.ts,project,front-matter assignee normalization
+    src/core/lock/lock.ts,project,lock owner field migration
+    src/core/shared/constants.ts,project,front-matter key order and settings defaults
+    src/core/store/item-store.ts,project,assignee ownership checks
+    src/core/store/settings.ts,project,remove session settings model
+    src/extensions/builtins/todos/import-export.ts,project,todos import-export assignee migration
+    src/types.ts,project,ownership schema migration
+    tests/integration/cli.integration.spec.ts,project,integration lifecycle assignee flow
+    tests/integration/help-readme-contract.spec.ts,project,readme quickstart assignee flow
+    tests/unit/claim-command.spec.ts,project,author-assignee behavior coverage
+    tests/unit/close-command.spec.ts,project,close clears assignee coverage
+    tests/unit/update-command.spec.ts,project,assignee update semantics coverage
+  tests[3]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,2400,sandboxed full coverage gate
+    node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts tests/unit/update-command.spec.ts tests/unit/create-command.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,1800,targeted ownership and wrapper tests
+    node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/integration/help-readme-contract.spec.ts tests/integration/cli.integration.spec.ts,null,project,2400,post-migration conflict-regression verification
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,agent workflow updates
+    PRD.md,project,authoritative contract update
+    README.md,project,public contract updates
+body: "Context: session ownership came from Pi todos heritage and is no longer appropriate for multi-agent usage. Approach: migrate assigned_to_session to assignee and remove PM_SESSION and settings.session.id references while preserving deterministic behavior and lock safety."

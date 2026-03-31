@@ -58,8 +58,9 @@ import { refreshSearchArtifactsForMutation } from "../core/search/cache.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { printError, printResult } from "../core/output/output.js";
+import { migrateItemFilesToFormat } from "../core/store/item-format-migration.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
-import { readSettings } from "../core/store/settings.js";
+import { readSettings, readSettingsWithMetadata } from "../core/store/settings.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { getEnabledBuiltInExtensions } from "../core/extensions/builtins.js";
 import type { ItemStatus, PmSettings } from "../types/index.js";
@@ -434,6 +435,29 @@ function enforceMandatoryMigrationWriteGate(
     `Write command "${commandPath}" blocked by unresolved mandatory extension migrations (${codes.join(",")}). ${forceGuidance}`,
     EXIT_CODE.CONFLICT,
   );
+}
+
+async function enforceItemFormatWriteGateAndPreflightMigration(
+  commandPath: string,
+  options: Record<string, unknown>,
+  globalOptions: GlobalOptions,
+): Promise<void> {
+  const decision = decideWriteGate(commandPath, options);
+  if (!decision.isMutation) {
+    return;
+  }
+  const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
+  if (!(await pathExists(getSettingsPath(pmRoot)))) {
+    return;
+  }
+  const { settings, metadata } = await readSettingsWithMetadata(pmRoot);
+  if (!metadata.has_explicit_item_format) {
+    throw new PmCliError(
+      `Write command "${commandPath}" requires explicit item format selection before mutations. Run "pm config project set item-format --format toon" or "pm config project set item-format --format json_markdown".`,
+      EXIT_CODE.CONFLICT,
+    );
+  }
+  await migrateItemFilesToFormat(pmRoot, settings.item_format, "item_format:pre_mutation_sync");
 }
 
 function describeUnknownError(error: unknown): string {
@@ -936,13 +960,15 @@ program
 program.hook("preAction", async (_thisCommand, actionCommand) => {
   activeExtensionHookContext = null;
   clearActiveExtensionHooks();
+  const globalOptions = getGlobalOptions(actionCommand);
+  const commandPath = getCommandPath(actionCommand);
+  const commandOptions = actionCommand.optsWithGlobals();
+  await enforceItemFormatWriteGateAndPreflightMigration(commandPath, commandOptions, globalOptions);
   const runtimeExtensions = await maybeLoadRuntimeExtensions(actionCommand);
   if (!runtimeExtensions) {
     return;
   }
 
-  const globalOptions = getGlobalOptions(actionCommand);
-  const commandPath = getCommandPath(actionCommand);
   const commandArgs = actionCommand.args.map(String);
   activeExtensionHookContext = {
     hooks: runtimeExtensions.hooks,
@@ -955,7 +981,6 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
   setActiveExtensionHooks(runtimeExtensions.hooks);
   setActiveExtensionCommands(runtimeExtensions.commands);
   setActiveExtensionRenderers(runtimeExtensions.renderers);
-  const commandOptions = actionCommand.optsWithGlobals();
   setActiveCommandContext({
     command: commandPath,
     args: commandArgs,
@@ -1001,8 +1026,9 @@ program
   .command("config")
   .argument("<scope>", "Config scope: project|global")
   .argument("<action>", "Config action: get|set")
-  .argument("<key>", "Config key: definition-of-done")
+  .argument("<key>", "Config key: definition-of-done|item-format")
   .option("--criterion <text>", "Definition-of-Done criterion (repeatable for set)", collect)
+  .option("--format <value>", "Item format for item-format key: toon|json_markdown")
   .description("Read or update pm settings for the current workspace or global profile.")
   .action(async (scope: string, action: string, key: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
@@ -1014,6 +1040,7 @@ program
       key,
       {
         criterion: criteria,
+        format: typeof options.format === "string" ? options.format : undefined,
       },
       globalOptions,
     );

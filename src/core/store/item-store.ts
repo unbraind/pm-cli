@@ -8,14 +8,15 @@ import { canonicalDocument, parseItemDocument, serializeItemDocument } from "../
 import { acquireLock } from "../lock/lock.js";
 import { writeFileAtomic } from "../fs/fs-utils.js";
 import { normalizeItemId, normalizeRawItemId } from "../item/id.js";
-import { getHistoryPath } from "./paths.js";
+import { getHistoryPath, getItemFormatFromPath, getItemPath, ITEM_FILE_EXTENSIONS } from "./paths.js";
 import { nowIso } from "../shared/time.js";
-import type { ItemDocument, ItemFrontMatter, ItemType, PmSettings } from "../../types/index.js";
+import type { ItemDocument, ItemFormat, ItemFrontMatter, ItemType, PmSettings } from "../../types/index.js";
 
 export interface LocatedItem {
   id: string;
   type: ItemType;
   itemPath: string;
+  item_format: ItemFormat;
 }
 
 async function fileExists(targetPath: string): Promise<boolean> {
@@ -27,20 +28,39 @@ async function fileExists(targetPath: string): Promise<boolean> {
   }
 }
 
-export async function locateItem(pmRoot: string, rawId: string, idPrefix: string): Promise<LocatedItem | null> {
+function resolveItemFormatSearchOrder(preferredFormat?: ItemFormat): ItemFormat[] {
+  if (preferredFormat === "toon") {
+    return ["toon", "json_markdown"];
+  }
+  if (preferredFormat === "json_markdown") {
+    return ["json_markdown", "toon"];
+  }
+  return ["toon", "json_markdown"];
+}
+
+export async function locateItem(
+  pmRoot: string,
+  rawId: string,
+  idPrefix: string,
+  preferredFormat?: ItemFormat,
+): Promise<LocatedItem | null> {
   const normalizedId = normalizeItemId(rawId, idPrefix);
   const rawNormalizedId = normalizeRawItemId(rawId);
   const candidateIds = normalizedId === rawNormalizedId ? [normalizedId] : [normalizedId, rawNormalizedId];
   const entries = Object.entries(TYPE_TO_FOLDER) as Array<[ItemType, string]>;
+  const searchOrder = resolveItemFormatSearchOrder(preferredFormat);
   for (const candidateId of candidateIds) {
-    for (const [type, folder] of entries) {
-      const itemPath = path.join(pmRoot, folder, `${candidateId}.md`);
-      if (await fileExists(itemPath)) {
-        return {
-          id: candidateId,
-          type,
-          itemPath,
-        };
+    for (const [type] of entries) {
+      for (const itemFormat of searchOrder) {
+        const itemPath = getItemPath(pmRoot, type, candidateId, itemFormat);
+        if (await fileExists(itemPath)) {
+          return {
+            id: candidateId,
+            type,
+            itemPath,
+            item_format: itemFormat,
+          };
+        }
       }
     }
   }
@@ -53,27 +73,30 @@ export async function readLocatedItem(item: LocatedItem): Promise<{ raw: string;
     path: item.itemPath,
     scope: "project",
   });
-  const document = parseItemDocument(raw);
+  const document = parseItemDocument(raw, { format: item.item_format });
   return { raw, document };
 }
 
-export async function listAllFrontMatter(pmRoot: string): Promise<ItemFrontMatter[]> {
-  const documents = await listAllDocuments(pmRoot);
+export async function listAllFrontMatter(pmRoot: string, preferredFormat?: ItemFormat): Promise<ItemFrontMatter[]> {
+  const documents = await listAllDocuments(pmRoot, preferredFormat);
   return documents.map((document) => document.front_matter);
 }
 
-export async function listAllFrontMatterWithBody(pmRoot: string): Promise<Array<ItemFrontMatter & { body: string }>> {
-  const documents = await listAllDocuments(pmRoot);
+export async function listAllFrontMatterWithBody(
+  pmRoot: string,
+  preferredFormat?: ItemFormat,
+): Promise<Array<ItemFrontMatter & { body: string }>> {
+  const documents = await listAllDocuments(pmRoot, preferredFormat);
   return documents.map((document) => ({
     ...document.front_matter,
     body: document.body,
   }));
 }
 
-async function listAllDocuments(pmRoot: string): Promise<ItemDocument[]> {
-  const entries = Object.values(TYPE_TO_FOLDER);
-  const documents: ItemDocument[] = [];
-  for (const folder of entries) {
+async function listAllDocuments(pmRoot: string, preferredFormat?: ItemFormat): Promise<ItemDocument[]> {
+  const entries = Object.entries(TYPE_TO_FOLDER) as Array<[ItemType, string]>;
+  const documentsById = new Map<string, { document: ItemDocument; itemFormat: ItemFormat }>();
+  for (const [, folder] of entries) {
     const dirPath = path.join(pmRoot, folder);
     let files: string[] = [];
     try {
@@ -81,21 +104,41 @@ async function listAllDocuments(pmRoot: string): Promise<ItemDocument[]> {
     } catch {
       continue;
     }
-    for (const file of files.filter((entry) => entry.endsWith(".md"))) {
+    for (const file of files.filter((entry) => ITEM_FILE_EXTENSIONS.some((ext) => entry.toLowerCase().endsWith(ext)))) {
       try {
         const itemPath = path.join(dirPath, file);
+        const itemFormat = getItemFormatFromPath(itemPath) as ItemFormat;
         const raw = await fs.readFile(itemPath, "utf8");
         await runActiveOnReadHooks({
           path: itemPath,
           scope: "project",
         });
-        documents.push(parseItemDocument(raw));
+        const parsed = parseItemDocument(raw, { format: itemFormat });
+        const existing = documentsById.get(parsed.front_matter.id);
+        if (!existing) {
+          documentsById.set(parsed.front_matter.id, {
+            document: parsed,
+            itemFormat,
+          });
+          continue;
+        }
+        const shouldReplace = preferredFormat
+          ? itemFormat === preferredFormat && existing.itemFormat !== preferredFormat
+          : itemFormat === "toon" && existing.itemFormat !== "toon";
+        if (shouldReplace) {
+          documentsById.set(parsed.front_matter.id, {
+            document: parsed,
+            itemFormat,
+          });
+        }
       } catch {
         // skip unreadable items
       }
     }
   }
-  return documents;
+  return [...documentsById.values()]
+    .sort((left, right) => left.document.front_matter.id.localeCompare(right.document.front_matter.id))
+    .map((entry) => entry.document);
 }
 
 export async function mutateItem(params: {
@@ -108,7 +151,7 @@ export async function mutateItem(params: {
   force?: boolean;
   mutate: (document: ItemDocument) => { changedFields: string[]; warnings?: string[] };
 }): Promise<{ item: ItemFrontMatter; body: string; changedFields: string[]; warnings: string[] }> {
-  const located = await locateItem(params.pmRoot, params.id, params.settings.id_prefix);
+  const located = await locateItem(params.pmRoot, params.id, params.settings.id_prefix, params.settings.item_format);
   if (!located) {
     throw new PmCliError(`Item ${params.id} not found`, EXIT_CODE.NOT_FOUND);
   }
@@ -137,7 +180,7 @@ export async function mutateItem(params: {
     const mutation = params.mutate(mutableDocument);
     mutableDocument.front_matter.updated_at = nowIso();
     const afterDocument = canonicalDocument(mutableDocument);
-    const serializedAfter = serializeItemDocument(afterDocument);
+    const serializedAfter = serializeItemDocument(afterDocument, { format: located.item_format });
 
     await writeFileAtomic(located.itemPath, serializedAfter);
     const entry = createHistoryEntry({
@@ -187,7 +230,7 @@ export async function deleteItem(params: {
   message?: string;
   force?: boolean;
 }): Promise<{ item: ItemFrontMatter; changedFields: string[]; warnings: string[] }> {
-  const located = await locateItem(params.pmRoot, params.id, params.settings.id_prefix);
+  const located = await locateItem(params.pmRoot, params.id, params.settings.id_prefix, params.settings.item_format);
   if (!located) {
     throw new PmCliError(`Item ${params.id} not found`, EXIT_CODE.NOT_FOUND);
   }

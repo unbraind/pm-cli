@@ -1,0 +1,31 @@
+front_matter:
+  id: pm-ybpq
+  title: Add TOON migration tests docs and verification
+  description: Expand tests and docs for TOON default item storage then run full sandbox test and coverage verification.
+  type: Task
+  status: closed
+  priority: 1
+  tags[5]: docs,pm-cli,tests,toon,verification
+  created_at: "2026-03-31T20:13:39.416Z"
+  updated_at: "2026-03-31T20:58:09.669Z"
+  author: codex-agent
+  estimated_minutes: 240
+  acceptance_criteria: Targeted and full sandbox regression suites pass with updated docs describing TOON default and compatibility guarantees.
+  parent: pm-u919
+  dependencies[1]{id,kind,created_at,author,source_kind}:
+    pm-u919,parent,"2026-03-31T20:13:39.416Z",codex-agent,null
+  comments[2]{created_at,author,text}:
+    "2026-03-31T20:13:39.416Z",codex-agent,Task tracks tests docs and final verification evidence.
+    "2026-03-31T20:56:46.251Z",codex-agent,"Expanded TOON migration tests/docs and completed full sandbox validation: node scripts/run-tests.mjs coverage now passes at 100% lines/branches/functions/statements."
+  notes[1]{created_at,author,text}:
+    "2026-03-31T20:13:39.416Z",codex-agent,Close only after node scripts run-tests wrappers pass.
+  files[2]{path,scope,note}:
+    tests/unit/item-format-migration.spec.ts,project,added migration edge-case coverage for missing dirs and target-only variants
+    tests/unit/test-all-command.spec.ts,project,added deterministic timeout dedupe branch coverage
+  tests[1]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,2400,full sandbox verification evidence
+  docs[2]{path,scope,note}:
+    docs/ARCHITECTURE.md,project,documented dual-format item storage architecture
+    README.md,project,documented TOON default and compatibility
+  close_reason: tests docs and verification completed
+body: Update unit and integration coverage for dual-format and migration behavior and refresh architecture and readme docs.

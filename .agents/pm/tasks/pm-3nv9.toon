@@ -1,0 +1,43 @@
+front_matter:
+  id: pm-3nv9
+  title: Enforce close-command closure path
+  description: Align docs and command behavior so terminal close transitions use pm close with explicit close reason.
+  type: Task
+  status: closed
+  priority: 1
+  tags[5]: "area:core","area:docs",close,pm-cli,workflow
+  created_at: "2026-03-06T13:04:03.661Z"
+  updated_at: "2026-03-06T13:23:20.847Z"
+  deadline: "2026-03-07T13:04:03.661Z"
+  author: maintainer-agent
+  estimated_minutes: 120
+  acceptance_criteria: PRD README and AGENTS consistently document pm close for closed transitions; update command rejects --status closed with clear guidance; tests cover new guard; sandboxed regression and coverage remain 100%.
+  comments[8]{created_at,author,text}:
+    "2026-03-06T13:04:03.661Z",maintainer-agent,Detected close workflow drift and opening alignment task
+    "2026-03-06T13:04:19.260Z",maintainer-agent,"Planned changeset: update docs to use pm close for closed transitions, then enforce update --status closed guard and add test coverage."
+    "2026-03-06T13:04:28.516Z",maintainer-agent,"Docs changeset start: clarify PRD update terminal-status semantics and sync README AGENTS close examples."
+    "2026-03-06T13:05:23.590Z",maintainer-agent,"Code changeset start: enforce update status guard so closed transitions require pm close."
+    "2026-03-06T13:06:49.095Z",maintainer-agent,"Implemented docs-first and code updates: PRD now forbids update --status closed, README and AGENTS close via pm close, update command now errors on closed status, and README integration test now uses close command."
+    "2026-03-06T13:07:54.822Z",maintainer-agent,"Verification failure triage: canceled-status unit case hit ownership conflict because seeded assignee differs from default author; applying targeted test fix with explicit matching author then rerunning linked tests."
+    "2026-03-06T13:20:48.451Z",maintainer-agent,"Evidence: node dist/cli.js test pm-3nv9 --run --timeout 7200 --json passed all 3 linked tests after one deterministic unit-test fixture adjustment; node dist/cli.js test-all --status in_progress --timeout 7200 --json passed totals items=1 linked_tests=3 passed=3 failed=0 skipped=0; node dist/cli.js test-all --status closed --timeout 7200 --json passed totals items=87 linked_tests=260 passed=62 failed=0 skipped=198; coverage remains 100% statements branches functions and lines."
+    "2026-03-06T13:23:12.675Z",maintainer-agent,"Post-lint-cleanup verification: node dist/cli.js test pm-3nv9 --run --timeout 7200 --json passed all 3 linked tests; node dist/cli.js test-all --status in_progress --timeout 7200 --json passed totals items=1 linked_tests=3 passed=3 failed=0 skipped=0; coverage remains 100% statements branches functions and lines."
+  notes[1]{created_at,author,text}:
+    "2026-03-06T13:04:03.661Z",maintainer-agent,Plan docs first then update guard then tests and regression
+  files[7]{path,scope,note}:
+    AGENTS.md,project,canonical close workflow sync
+    PRD.md,project,close workflow contract clarification
+    README.md,project,close workflow quickstart sync
+    src/cli/commands/update.ts,project,guard closed status in update
+    src/cli/main.ts,project,update help text reflects close workflow
+    tests/integration/help-readme-contract.spec.ts,project,quickstart lifecycle closes via close command
+    tests/unit/update-command.spec.ts,project,coverage for closed-status guard
+  tests[3]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,2400,full sandboxed coverage gate
+    node scripts/run-tests.mjs test -- tests/integration/help-readme-contract.spec.ts,null,project,1800,README lifecycle contract regression
+    node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,null,project,1200,targeted update command regression
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,agent workflow contract
+    PRD.md,project,authoritative contract
+    README.md,project,public workflow examples
+  close_reason: Docs and update closure workflow aligned with contract and tests
+body: "PRD requires close_reason semantics via pm close. README and AGENTS still demonstrate pm update --status closed, and update currently allows closed without close_reason. This task aligns contract docs and command behavior."

@@ -1,0 +1,54 @@
+front_matter:
+  id: pm-912
+  title: Testing strategy and 100 percent coverage gates
+  description: Add unit and integration tests with strict PM_PATH sandboxing and enforce 100% coverage thresholds.
+  type: Task
+  status: closed
+  priority: 0
+  tags[4]: coverage,pm-cli,release-readiness,testing
+  created_at: "2026-02-17T23:37:35.015Z"
+  updated_at: "2026-02-18T02:53:01.817Z"
+  deadline: "2026-02-22T23:37:35.015Z"
+  author: cursor-agent
+  estimated_minutes: 420
+  acceptance_criteria: Vitest unit+integration suites run in temp PM_PATH sandboxes and coverage thresholds are enforced at 100% for all metrics.
+  dependencies[3]{id,kind,created_at,author,source_kind}:
+    pm-2c8,related,"2026-02-17T23:37:35.015Z",cursor-agent,null
+    pm-ote,parent,"2026-02-17T23:37:35.015Z",cursor-agent,null
+    pm-pq8,related,"2026-02-17T23:37:35.015Z",cursor-agent,null
+  comments[11]{created_at,author,text}:
+    "2026-02-18T00:02:31.554Z",cursor-agent,"Evidence: pnpm test passed (19 tests across unit+integration). pnpm test:coverage passed with 100% statements/branches/functions/lines for the enforced release-hardening scope. Integration tests use withTempPmPath and spawn node dist/cli.js with PM_PATH/PM_AUTHOR/PM_SESSION sandbox env values."
+    "2026-02-18T00:14:47.650Z",cursor-agent,"Removed linked pnpm test and pnpm test:coverage commands from test-all orchestration scope to avoid recursive invocation chains (integration suite itself exercises test-all)."
+    "2026-02-18T01:37:30.396Z",agent,"Planned change-set: add integration assertion that pm test-all exits with code 5 when any linked test command fails, preserving sandbox PM_PATH behavior and deterministic output contract."
+    "2026-02-18T01:38:02.209Z",agent,"Implemented integration coverage for test-all dependency-failed semantics: added a mixed pass/fail sandbox scenario asserting exit code 5 and failure aggregation fields in tests/integration/cli.integration.spec.ts."
+    "2026-02-18T01:39:39.766Z",agent,"Evidence: pm test pm-912 --run --timeout 480 --json passed both linked commands (sandboxed integration + sandboxed coverage). Coverage remained 100% statements/branches/functions/lines with 26/26 tests passing. Regression sweep via pm test-all --status in_progress --timeout 600 --json passed totals items=5 linked_tests=9 passed=9 failed=0 skipped=0."
+    "2026-02-18T02:33:42.999Z",steve,"Planned change-set: enforce sandbox-safe linked test execution by default for pm test --run/test-all and align README/AGENTS examples to use node scripts/run-tests.mjs commands."
+    "2026-02-18T02:35:22.295Z",steve,"Implemented change-set: updated README/AGENTS test-link examples to use node scripts/run-tests.mjs, added automatic temp PM_PATH+PM_GLOBAL_PATH sandboxing for linked test command execution in src/commands/test.ts, and expanded unit/integration coverage to verify sandbox env propagation and README contract alignment."
+    "2026-02-18T02:38:20.753Z",steve,"Follow-up fix: initialize the ephemeral sandbox PM_PATH before executing linked commands so existing CLI-based linked tests (e.g., node dist/cli.js list-open --json) still run successfully inside isolation."
+    "2026-02-18T02:43:05.005Z",steve,"Evidence: node dist/cli.js test pm-912 --run --timeout 900 --json passed all 3 linked commands (coverage + integration + unit). Coverage remained 100% statements/branches/functions/lines (43/43 tests). Regression sweep node dist/cli.js test-all --status in_progress --timeout 900 --json passed totals items=5 linked_tests=10 passed=10 failed=0 skipped=0 after sandbox-init compatibility fix for CLI-linked tests."
+    "2026-02-18T02:49:51.727Z",maintainer-agent,"Planned change-set: align README testing policy with implemented integration sandbox env requirements by documenting PM_SESSION alongside PM_PATH and PM_AUTHOR, and enforce this contract in help-readme integration tests."
+    "2026-02-18T02:53:01.442Z",maintainer-agent,"Implemented change-set: README testing policy now documents PM_SESSION for integration subprocesses, and tests/integration/help-readme-contract.spec.ts now enforces that contract section. Evidence: node dist/cli.js test pm-912 --run --timeout 900 --json passed all linked tests; node dist/cli.js test-all --status in_progress --timeout 900 --json passed totals items=5 linked_tests=10 passed=10 failed=0 skipped=0; coverage remained 100 percent statements/branches/functions/lines; pnpm build passed."
+  files[14]{path,scope,note}:
+    AGENTS.md,project,align workflow examples with sandbox-safe test commands
+    package.json,project,Test scripts and prepublish guard updates
+    README.md,project,align quickstart and examples with sandbox-safe test commands
+    src/cli/main.ts,project,verify dependency-failed exit behavior path
+    src/commands/test.ts,project,sandbox linked test command execution
+    tests/helpers/withTempPmPath.ts,project,Sandbox PM_PATH helper
+    tests/integration/cli.integration.spec.ts,project,Sandbox subprocess command matrix
+    tests/integration/help-readme-contract.spec.ts,project,README quickstart contract validation with sandbox-safe test command
+    tests/unit/determinism.spec.ts,project,Deterministic utility coverage
+    tests/unit/list-command.spec.ts,project,runList validation coverage
+    tests/unit/list-sort-branches.spec.ts,project,runList sort branch coverage
+    tests/unit/structure-exports.spec.ts,project,Module boundary export checks
+    tests/unit/test-all-command.spec.ts,project,runTestAll branch coverage
+    vitest.config.ts,project,Vitest coverage gate configuration
+  tests[3]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,360,full 100 percent coverage gate
+    node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,240,integration verification for test-all exit code
+    node scripts/run-tests.mjs test -- tests/unit/test-all-command.spec.ts,null,project,240,unit regression for sandbox-linked test execution
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,dogfood and validation workflow
+    PRD.md,project,authoritative exit-code contract
+    README.md,project,release-readiness and test policy
+body: "Introduce comprehensive test helpers and suites that never touch real .agents/pm data, and enforce deterministic behavior through coverage gates."

@@ -1,0 +1,29 @@
+front_matter:
+  id: pm-awo
+  title: Create contract verification sample
+  description: Verify and close create-contract sample with current release-readiness regression evidence.
+  type: Chore
+  status: closed
+  priority: 2
+  tags[4]: "area:verification",core,"milestone:0",pm-cli
+  created_at: "2026-02-17T23:14:58.875Z"
+  updated_at: "2026-03-04T11:34:44.184Z"
+  deadline: "2026-03-05T11:19:39.284Z"
+  author: steve
+  estimated_minutes: 30
+  acceptance_criteria: release-readiness contract test passes via sandbox runner; pm test-all sweeps pass for in_progress and closed; item has linked docs/files/tests and closure evidence comment.
+  comments[3]{created_at,author,text}:
+    "2026-03-04T11:19:44.696Z",cursor-maintainer,"Plan: validate release-readiness create-contract behavior against current docs and CLI help, verify sandbox-safe test execution, then close with fresh evidence."
+    "2026-03-04T11:21:30.722Z",cursor-maintainer,"Verified latest local package is globally available: ran npm i -g . and confirmed pm --version=0.1.0."
+    "2026-03-04T11:34:43.750Z",cursor-maintainer,"Evidence: pm test pm-awo --run --timeout 2400 --json => passed=2 failed=0 skipped=0 (coverage run + targeted release-readiness contract run). pm test-all --status in_progress --timeout 2400 --json => items=8 linked_tests=35 passed=16 failed=0 skipped=19. pm test-all --status closed --timeout 2400 --json => items=37 linked_tests=128 passed=51 failed=0 skipped=77. Coverage remains 100% lines/branches/functions/statements."
+  files[2]{path,scope,note}:
+    scripts/run-tests.mjs,project,sandbox-safe test runner
+    tests/integration/release-readiness-contract.spec.ts,project,contract coverage source
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,2400,full coverage gate regression
+    node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,targeted contract regression
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,dogfood workflow requirements
+    PRD.md,project,authoritative requirements
+    README.md,project,documented command contract
+body: Validate that full create options map into deterministic item and history records.

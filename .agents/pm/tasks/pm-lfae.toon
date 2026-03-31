@@ -1,0 +1,33 @@
+front_matter:
+  id: pm-lfae
+  title: Release-readiness audit and next hardening changeset
+  description: Run full deterministic verification identify highest-value contract-aligned gap and implement one release-readiness improvement with evidence.
+  type: Task
+  status: closed
+  priority: 0
+  tags[4]: core,maintainer,pm-cli,release-readiness
+  created_at: "2026-03-06T20:33:04.098Z"
+  updated_at: "2026-03-06T20:38:43.117Z"
+  deadline: "2026-03-07T20:33:04.098Z"
+  author: maintainer-agent
+  estimated_minutes: 120
+  acceptance_criteria: At least one contract-aligned improvement is implemented and verified evidence comment includes test commands and coverage status item can be cleanly closed or left in-progress with blocker details.
+  comments[5]{created_at,author,text}:
+    "2026-03-06T20:33:04.098Z",maintainer-agent,Run bootstrap and triage to choose the highest-value hardening task without duplicating existing work.
+    "2026-03-06T20:33:26.489Z",maintainer-agent,Starting baseline verification run via linked tests plus test-all and coverage to identify the next highest-value hardening gap.
+    "2026-03-06T20:35:18.186Z",maintainer-agent,Baseline verification passed. Starting focused gap discovery for one concrete hardening changeset.
+    "2026-03-06T20:36:21.489Z",maintainer-agent,"Planned changeset: add explicit maintainer bootstrap commands to CONTRIBUTING.md to align contributor guidance with active maintainer workflow contract."
+    "2026-03-06T20:38:29.860Z",maintainer-agent,"Evidence: node dist/cli.js test pm-lfae --run passed; node dist/cli.js test-all --status in_progress passed; node scripts/run-tests.mjs coverage passed with 100% lines branches functions statements. Updated CONTRIBUTING.md with maintainer bootstrap commands and sandbox guidance."
+  notes[1]{created_at,author,text}:
+    "2026-03-06T20:33:04.098Z",maintainer-agent,Start with baseline verification then implement minimal high-impact change.
+  files[1]{path,scope,note}:
+    CONTRIBUTING.md,project,maintainer bootstrap documentation hardening
+  tests[1]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs test,null,project,240,sandbox-safe regression
+  docs[4]{path,scope,note}:
+    AGENTS.md,project,agent workflow contract
+    CONTRIBUTING.md,project,contributor workflow reference
+    PRD.md,project,authoritative contract
+    README.md,project,public contract
+  close_reason: Maintainer bootstrap documentation hardening completed and verification suite passed with 100% coverage.
+body: "Maintainer loop item for this idempotent run establish baseline verification select one highest-value gap from PRD README AGENTS alignment and implementation status then deliver docs code tests with evidence.\n\nImplemented documentation hardening in CONTRIBUTING.md by adding an explicit maintainer bootstrap section covering PM_CMD selection PM_AUTHOR setup required version checks and sandbox-safe test guidance."

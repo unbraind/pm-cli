@@ -5,14 +5,30 @@
 [![Node >=20](https://img.shields.io/node/v/%40unbrained%2Fpm-cli)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-`pm` is a git-native project management CLI for humans and coding agents. It stores work as plain Markdown files with JSON front matter, keeps append-only history, and supports safe collaboration.
+`pm` is a git-native project management CLI for humans and coding agents. It stores items as TOON (`.toon`) by default with full JSON-front-matter Markdown (`.md`) compatibility, keeps append-only JSONL history, and supports safe collaboration.
 
 ## Highlights
 
 - Git-native items that stay reviewable in diffs
 - Safe multi-agent workflows with claims, locks, and restore
 - Deterministic output with TOON by default and `--json` when needed
+- Automatic item format migration when `item-format` config changes
 - Optional search and extension support for more advanced setups
+
+## Item Storage Formats
+
+- Default item format is TOON (`.toon`) using full `{ front_matter, body }` object storage.
+- Legacy JSON front matter + markdown body (`.md`) remains fully supported.
+- History files always remain JSONL (`history/<id>.jsonl`).
+- Set project item storage format with:
+
+```bash
+pm config project set item-format --format toon
+# or
+pm config project set item-format --format json_markdown
+```
+
+Changing `item-format` automatically migrates item files to the configured format.
 
 ## Install
 

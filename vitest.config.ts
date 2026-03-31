@@ -64,6 +64,7 @@ export default defineConfig({
         "src/core/shared/serialization.ts",
         "src/core/shared/time.ts",
         "src/core/store/index.ts",
+        "src/core/store/item-format-migration.ts",
         "src/core/store/item-store.ts",
         "src/core/store/paths.ts",
         "src/core/store/settings.ts",

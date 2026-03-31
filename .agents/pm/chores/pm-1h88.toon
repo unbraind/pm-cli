@@ -1,0 +1,27 @@
+front_matter:
+  id: pm-1h88
+  title: Cut public release 2026.3.9
+  description: "Create final release commit/PR messaging, switch GitHub repository visibility to public, and publish @unbrained/pm-cli."
+  type: Chore
+  status: closed
+  priority: 0
+  tags[4]: pm-cli,publishing,release,security
+  created_at: "2026-03-09T13:02:02.787Z"
+  updated_at: "2026-03-09T13:16:14.105Z"
+  deadline: "2026-03-10T13:02:02.787Z"
+  author: maintainer-agent
+  estimated_minutes: 90
+  acceptance_criteria: Repository set public intentionally; release commit pushed; PR opened with final messaging; tag v2026.3.9 pushed; release workflow publishes @unbrained/pm-cli successfully; no credential leaks detected.
+  comments[2]{created_at,author,text}:
+    "2026-03-09T13:02:02.787Z",maintainer-agent,Execute final launch operations with explicit leak checks and release guardrails.
+    "2026-03-09T13:16:11.859Z",maintainer-agent,"Execution evidence: PR https://github.com/unbraind/pm-cli/pull/1 created and merged (merge commit e1c959de4788f707cca0e3c3a16e8cc5ec43d076). Repository visibility switched to PUBLIC via gh repo edit. Safe pre-release checklist passed for tag v2026.3.9: version/tag policy check, security scan, build, typecheck, full tests, sandboxed coverage, npx smoke. Release workflow succeeded: https://github.com/unbraind/pm-cli/actions/runs/22854914140 (publish + GitHub release). npm availability verified: npm view @unbrained/pm-cli@2026.3.9 version => 2026.3.9 and npx --yes @unbrained/pm-cli@2026.3.9 --version => 2026.3.9."
+  notes[1]{created_at,author,text}:
+    "2026-03-09T13:02:02.787Z",maintainer-agent,Prefer tag-driven publish workflow using release environment secret NPM_TOKEN.
+  files[1]{path,scope,note}:
+    .github/workflows/release.yml,project,tag-driven publish pipeline
+  tests[1]{command,path,scope,timeout_seconds,note}:
+    "pnpm security:scan",null,project,120,final leak check before release
+  docs[1]{path,scope,note}:
+    docs/RELEASING.md,project,release runbook
+  close_reason: Public repo + npm release completed for v2026.3.9 with final leak checks and verification.
+body: Operational release execution task for today's production launch.

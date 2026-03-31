@@ -224,7 +224,7 @@ export async function runRestore(
   }
 
   const settings = await readSettings(pmRoot);
-  const located = await locateItem(pmRoot, id, settings.id_prefix);
+  const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format);
   if (!located) {
     throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
   }
@@ -268,7 +268,7 @@ export async function runRestore(
       );
     }
 
-    const serializedRestore = serializeItemDocument(restoredDocument);
+    const serializedRestore = serializeItemDocument(restoredDocument, { format: located.item_format });
     await writeFileAtomic(located.itemPath, serializedRestore);
 
     const historyEntry = createHistoryEntry({

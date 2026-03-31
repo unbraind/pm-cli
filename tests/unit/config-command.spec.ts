@@ -5,8 +5,10 @@ import { afterEach, describe, expect, it } from "vitest";
 import { runConfig } from "../../src/cli/commands/config.js";
 import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
-import { getSettingsPath } from "../../src/core/store/paths.js";
+import { canonicalDocument, serializeItemDocument } from "../../src/core/item/item-format.js";
+import { getItemPath, getSettingsPath } from "../../src/core/store/paths.js";
 import { writeSettings } from "../../src/core/store/settings.js";
+import type { ItemDocument } from "../../src/types/index.js";
 import type { GlobalOptions } from "../../src/core/shared/command-types.js";
 
 const DEFAULT_GLOBAL_OPTIONS: GlobalOptions = {
@@ -172,6 +174,97 @@ describe("runConfig", () => {
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
+    });
+  });
+
+  it("sets and gets project item-format and migrates item files to the configured format", async () => {
+    await withTempRoot(async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      const settings = structuredClone(SETTINGS_DEFAULTS);
+      settings.item_format = "json_markdown";
+      await writeSettings(pmRoot, settings);
+
+      const document: ItemDocument = canonicalDocument({
+        front_matter: {
+          id: "pm-config-format",
+          title: "Config migration",
+          description: "Migrate file format",
+          type: "Task",
+          status: "open",
+          priority: 1,
+          tags: ["config"],
+          created_at: "2026-03-31T00:00:00.000Z",
+          updated_at: "2026-03-31T00:00:00.000Z",
+        },
+        body: "seed body",
+      });
+      const markdownPath = getItemPath(pmRoot, "Task", "pm-config-format", "json_markdown");
+      await fs.mkdir(path.dirname(markdownPath), { recursive: true });
+      await fs.writeFile(markdownPath, serializeItemDocument(document, { format: "json_markdown" }), "utf8");
+
+      const result = await runConfig(
+        "project",
+        "set",
+        "item-format",
+        {
+          format: "toon",
+        },
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+
+      expect(result.key).toBe("item_format");
+      expect(result.format).toBe("toon");
+      expect(result.changed).toBe(true);
+      expect(result.has_explicit_item_format).toBe(true);
+      expect(result.migration?.target_format).toBe("toon");
+      expect(result.migration?.migrated).toContain("pm-config-format");
+
+      const toonPath = getItemPath(pmRoot, "Task", "pm-config-format", "toon");
+      await expect(fs.access(toonPath)).resolves.toBeUndefined();
+      await expect(fs.access(markdownPath)).rejects.toBeDefined();
+
+      const getResult = await runConfig("project", "get", "item_format", {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot });
+      expect(getResult.format).toBe("toon");
+      expect(getResult.changed).toBe(false);
+    });
+  });
+
+  it("requires --format when setting item-format and validates allowed values", async () => {
+    await withTempRoot(async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      await expect(runConfig("project", "set", "item-format", {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot })).rejects.toMatchObject<
+        PmCliError
+      >({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runConfig("project", "set", "item-format", { format: "markdown" }, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
+  it("treats legacy settings without item_format as changed when explicitly setting default format", async () => {
+    await withTempRoot(async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      const legacySettings = { ...structuredClone(SETTINGS_DEFAULTS) } as Record<string, unknown>;
+      delete legacySettings.item_format;
+      await fs.mkdir(pmRoot, { recursive: true });
+      await fs.writeFile(path.join(pmRoot, "settings.json"), `${JSON.stringify(legacySettings, null, 2)}\n`, "utf8");
+
+      const result = await runConfig(
+        "project",
+        "set",
+        "item-format",
+        { format: "toon" },
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(result.changed).toBe(true);
+      expect(result.format).toBe("toon");
+      expect(result.has_explicit_item_format).toBe(true);
     });
   });
 });

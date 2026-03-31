@@ -11,6 +11,7 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { isTimestampLiteral, nowIso } from "../../core/shared/time.js";
+import { locateItem } from "../../core/store/item-store.js";
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { Dependency, ItemDocument, ItemFrontMatter, ItemStatus, ItemType, LogNote, LinkedFile, LinkedTest, LinkedDoc } from "../../types/index.js";
@@ -623,18 +624,19 @@ export async function runBeadsImport(options: BeadsImportOptions, global: Global
       front_matter: frontMatter,
       body: finalBody,
     });
-    const itemPath = getItemPath(pmRoot, type, id);
-    if (await pathExists(itemPath)) {
+    const existing = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format);
+    if (existing) {
       warnings.push(`beads_import_item_exists:${id}`);
       skipped += 1;
       continue;
     }
+    const itemPath = getItemPath(pmRoot, type, id, settings.item_format);
 
     const historyPath = getHistoryPath(pmRoot, id);
     try {
       const releaseLock = await acquireLock(pmRoot, id, settings.locks.ttl_seconds, author);
       try {
-        await writeFileAtomic(itemPath, serializeItemDocument(afterDocument));
+        await writeFileAtomic(itemPath, serializeItemDocument(afterDocument, { format: settings.item_format }));
         try {
           const entry = createHistoryEntry({
             nowIso: nowIso(),

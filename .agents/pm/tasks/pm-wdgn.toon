@@ -1,0 +1,36 @@
+front_matter:
+  id: pm-wdgn
+  title: Harden chained sandbox env detection per segment
+  description: Require sandbox-safe evaluation per chained command segment for pm test --add direct runner validation.
+  type: Task
+  status: closed
+  priority: 1
+  tags[7]: "area:test-command",code,doc,"milestone:3",pm-cli,"priority:1",tests
+  created_at: "2026-03-05T12:46:34.203Z"
+  updated_at: "2026-03-05T12:57:33.617Z"
+  deadline: "2026-03-06T23:59:00.000Z"
+  author: maintainer-agent
+  estimated_minutes: 90
+  acceptance_criteria: pm test --add rejects chained direct runner segments that lack explicit PM_PATH and PM_GLOBAL_PATH even when other segments set them; docs and unit tests cover the behavior and coverage remains 100 percent.
+  dependencies[1]{id,kind,created_at,author,source_kind}:
+    pm-mlc3,related,"2026-03-05T12:46:34.203Z",maintainer-agent,null
+  comments[4]{created_at,author,text}:
+    "2026-03-05T12:46:34.203Z",maintainer-agent,Need per-segment sandbox checks to close a chained-command bypass in pm test add validation
+    "2026-03-05T12:46:50.440Z",maintainer-agent,"Implementing now: update docs language for chained direct-runner safety semantics, then enforce per-segment sandbox-env validation in src/cli/commands/test.ts and add regression tests for cross-segment bypass attempts."
+    "2026-03-05T12:48:25.718Z",maintainer-agent,"Docs-first update applied in README.md, PRD.md, and AGENTS.md to state chained direct test-runner segments are validated independently. Implemented parser hardening in src/cli/commands/test.ts by requiring explicit PM_PATH+PM_GLOBAL_PATH per unsafe direct-runner segment; added regressions in tests/unit/test-command.spec.ts for cross-segment bypass rejection and per-segment explicit-env acceptance."
+    "2026-03-05T12:57:27.314Z",maintainer-agent,"Evidence: pm test pm-wdgn --run --timeout 2400 --json => linked_tests=2 passed=2 failed=0. pm test-all --status in_progress --timeout 2400 --json => items=1 linked_tests=2 passed=2 failed=0 skipped=0. pm test-all --status closed --timeout 2400 --json => items=70 linked_tests=216 passed=59 failed=0 skipped=157. Coverage gate remains 100% lines/branches/functions/statements."
+  notes[1]{created_at,author,text}:
+    "2026-03-05T12:46:34.203Z",maintainer-agent,Update docs first then implement parser hardening and regression tests
+  learnings[1]{created_at,author,text}:
+    "2026-03-05T12:46:34.203Z",maintainer-agent,Safety checks for chained shell commands must evaluate segment boundaries
+  files[2]{path,scope,note}:
+    src/cli/commands/test.ts,project,sandbox direct-runner validation
+    tests/unit/test-command.spec.ts,project,regression coverage
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,2400,coverage gate verification
+    node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,1200,targeted test-command regressions
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,dogfood and test safety protocol
+    PRD.md,project,authoritative behavior contract
+    README.md,project,clarify chained sandbox env requirement
+body: Current sandbox env detection in pm test --add is command-wide. Chained commands can pass validation when PM_PATH and PM_GLOBAL_PATH are set in one segment but an unsafe direct runner appears in a different segment. Tighten validation so each chained direct-runner segment must either use node scripts/run-tests.mjs or explicitly set both env vars.

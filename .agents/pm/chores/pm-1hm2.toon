@@ -1,0 +1,55 @@
+front_matter:
+  id: pm-1hm2
+  title: "Release hardening: scoped npm + version policy + CI"
+  description: "Audit for leaked private data, enforce calendar SemVer policy, and harden GitHub/npm release automation for scoped package publishing."
+  type: Chore
+  status: closed
+  priority: 0
+  tags[4]: ci,pm-cli,release-readiness,security
+  created_at: "2026-03-09T12:42:13.949Z"
+  updated_at: "2026-03-09T12:56:34.722Z"
+  deadline: "2026-03-10T12:42:13.949Z"
+  author: maintainer-agent
+  estimated_minutes: 180
+  acceptance_criteria: "No leaked credentials in tracked files/pm data; package/versioning follows YYYY.M.D[-N] policy; CI/release pipelines enforce policy and support @unbrained/pm-cli publishing + npx usage; contributor release docs updated."
+  comments[2]{created_at,author,text}:
+    "2026-03-09T12:42:13.949Z",maintainer-agent,Initiate final release hardening sweep before public launch.
+    "2026-03-09T12:56:28.657Z",maintainer-agent,"Evidence: release hardening validations passed. Commands: pnpm version:next => 2026.3.9; pnpm version:check => passed; pnpm security:scan => no credential-like secrets in tracked files (including .agents/pm tracked data); pnpm smoke:npx => passed (2026.3.9); node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/help-readme-contract.spec.ts tests/integration/release-readiness-contract.spec.ts => 48/48 passing; pnpm test => 54 files, 541 tests passing; node scripts/run-tests.mjs coverage => 54 files, 541 tests passing at 100% lines/branches/functions/statements."
+  notes[1]{created_at,author,text}:
+    "2026-03-09T12:42:13.949Z",maintainer-agent,Implement version policy checks and release workflow guardrails.
+  files[20]{path,scope,note}:
+    .github/ISSUE_TEMPLATE/bug-report.yml,project,calendar version placeholder
+    .github/PULL_REQUEST_TEMPLATE.md,project,new release safety checklist items
+    .github/workflows/ci.yml,project,version/security/npx gates in CI
+    .github/workflows/nightly.yml,project,nightly version and security checks
+    .github/workflows/release.yml,project,release environment publish flow with tag guard
+    AGENTS.md,project,scoped package-spec recursion examples
+    CHANGELOG.md,project,release hardening changelog entries
+    CONTRIBUTING.md,project,link release runbook
+    docs/RELEASING.md,project,maintainer release runbook
+    package.json,project,scope package + version policy
+    PRD.md,project,scoped package-spec recursion examples
+    README.md,project,scoped install docs and release checklist
+    scripts/check-secrets.mjs,project,tracked-file secret leak scanner
+    scripts/install.ps1,project,scoped installer default package
+    scripts/install.sh,project,scoped installer default package
+    scripts/release-version.mjs,project,calendar SemVer policy and registry sequencing checks
+    scripts/smoke-npx-from-pack.mjs,project,packaged npx smoke test
+    tests/integration/ci-workflow-contract.spec.ts,project,workflow contract assertions
+    tests/integration/help-readme-contract.spec.ts,project,README installer and package assertions
+    tests/integration/release-readiness-contract.spec.ts,project,version policy and packaging assertions
+  tests[5]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,1200,full regression gate
+    node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/help-readme-contract.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,1200,targeted contract verification
+    "pnpm security:scan",null,project,120,tracked credential leak scan
+    "pnpm smoke:npx",null,project,180,packaged npx executable smoke
+    "pnpm version:check",null,project,120,calendar version policy validation
+  docs[6]{path,scope,note}:
+    AGENTS.md,project,dogfood command contract package-spec update
+    CHANGELOG.md,project,unreleased release hardening notes
+    CONTRIBUTING.md,project,release runbook linkage
+    docs/RELEASING.md,project,maintainer release process
+    PRD.md,project,canonical package-spec recursion examples
+    README.md,project,public release/install contract
+  close_reason: "Release management hardening completed: scoped package + calendar version policy + CI/release gates validated."
+body: Prepare repository for public production release without publishing yet.

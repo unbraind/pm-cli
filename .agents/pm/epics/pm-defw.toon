@@ -1,0 +1,28 @@
+front_matter:
+  id: pm-defw
+  title: PRD Milestone 6 - Hardening and Release Readiness
+  description: Finalize CI coverage docs governance and release checklist compliance.
+  type: Epic
+  status: canceled
+  priority: 0
+  tags[7]: "area:milestone",code,docs,"milestone:6",pm-cli,"priority:0",tests
+  created_at: "2026-03-06T22:55:54.349Z"
+  updated_at: "2026-03-06T23:18:37.539Z"
+  deadline: "2026-03-20T22:55:54.349Z"
+  author: maintainer-agent
+  estimated_minutes: 240
+  acceptance_criteria: Milestone 6 deliverables in PRD section 21 are fully represented by linked features and validated evidence.
+  dependencies[1]{id,kind,created_at,author,source_kind}:
+    pm-gyfn,blocks,"2026-03-06T22:55:54.349Z",maintainer-agent,null
+  comments[2]{created_at,author,text}:
+    "2026-03-06T22:55:54.349Z",maintainer-agent,Milestone 6 seeded from PRD to establish complete dogfood planning coverage.
+    "2026-03-06T23:18:37.381Z",maintainer-agent,Duplicate milestone epic identified during tracker normalization. Canonical milestone item is pm-jiw for Milestone 6; this seeded duplicate is being canceled to keep backlog deterministic and non-overlapping.
+  notes[1]{created_at,author,text}:
+    "2026-03-06T22:55:54.349Z",maintainer-agent,Next step create or link concrete features and tasks under this milestone.
+  files[1]{path,scope,note}:
+    PRD.md,project,milestone source
+  tests[1]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs test,null,project,600,sandbox-safe regression
+  docs[1]{path,scope,note}:
+    PRD.md,project,milestone definition
+body: Canonical milestone tracking item seeded from PRD section 21. Child features and tasks should attach here via dependencies.

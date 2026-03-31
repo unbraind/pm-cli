@@ -66,7 +66,7 @@ function createTask(context: TempPmContext, title: string, options: CreateTaskOp
 }
 
 function itemPathForTask(context: TempPmContext, id: string): string {
-  return path.join(context.pmPath, "tasks", `${id}.md`);
+  return path.join(context.pmPath, "tasks", `${id}.toon`);
 }
 
 function latestDeleteHistoryEntry(

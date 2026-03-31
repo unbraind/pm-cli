@@ -1,0 +1,41 @@
+front_matter:
+  id: pm-pjj7
+  title: "M5 follow-up: health extension activation probe"
+  description: Extend pm health extension diagnostics to include extension activation failures from activate(api) calls.
+  type: Task
+  status: closed
+  priority: 1
+  tags[8]: "area:extensions","area:health",code,doc,"milestone:5",pm-cli,"priority:1",tests
+  created_at: "2026-03-05T15:13:38.557Z"
+  updated_at: "2026-03-05T15:27:26.358Z"
+  deadline: "2026-03-07T23:59:00.000Z"
+  author: cursor-maintainer
+  estimated_minutes: 90
+  acceptance_criteria: pm health reports extension activation failures deterministically with warnings and details; docs reflect behavior; sandboxed coverage plus pm regression sweeps remain at 100 percent.
+  dependencies[1]{id,kind,created_at,author,source_kind}:
+    pm-7sd,related,"2026-03-05T15:13:38.557Z",cursor-maintainer,null
+  comments[4]{created_at,author,text}:
+    "2026-03-05T15:13:38.557Z",cursor-maintainer,"Why this exists: close remaining M5 health hardening by surfacing extension activation failures in health diagnostics."
+    "2026-03-05T15:13:56.008Z",cursor-maintainer,"Planned changeset: docs-first update PRD and README to require extension activation probe diagnostics in pm health, then wire health command to surface activate(api) failures with deterministic warnings and add unit coverage before full pm test and test-all sweeps."
+    "2026-03-05T15:16:07.648Z",cursor-maintainer,"Implemented docs-first plus code changeset: PRD.md and README.md now require health extension activation diagnostics; src/cli/commands/health.ts now performs extension load and activation probes and surfaces deterministic activation metadata/warnings; tests/unit/health-command.spec.ts adds activation-failure health regression coverage."
+    "2026-03-05T15:27:17.466Z",cursor-maintainer,"Evidence: node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts passed (7/7). pm test pm-pjj7 --run --timeout 7200 --json passed all linked commands (coverage plus targeted suite plus build). pm test-all --status in_progress --timeout 7200 --json passed totals items=1 linked_tests=3 passed=3 failed=0 skipped=0. pm test-all --status closed --timeout 7200 --json passed totals items=73 linked_tests=223 passed=59 failed=0 skipped=164. Coverage statement: node scripts/run-tests.mjs coverage reports 100 percent statements branches functions and lines."
+  notes[1]{created_at,author,text}:
+    "2026-03-05T15:13:38.557Z",cursor-maintainer,Plan update docs first then wire health output then verify with tests.
+  learnings[1]{created_at,author,text}:
+    "2026-03-05T15:13:38.557Z",cursor-maintainer,Initial assumption activation failures are visible at runtime but not in health.
+  files[6]{path,scope,note}:
+    PRD.md,project,health activation diagnostic contract update
+    README.md,project,health activation diagnostics documented
+    src/cli/commands/health.ts,project,activation diagnostics in health
+    src/core/extensions/loader.ts,project,activation diagnostics source
+    tests/unit/extension-loader.spec.ts,project,activation warning fixtures
+    tests/unit/health-command.spec.ts,project,activation health regression coverage
+  tests[3]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,7200,coverage gate
+    node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/unit/extension-loader.spec.ts,null,project,1800,targeted extension health tests
+    pnpm build,null,project,600,compile verification
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,agent workflow contract
+    PRD.md,project,governing spec
+    README.md,project,public behavior contract
+body: "Context: health currently surfaces extension discovery and load warnings. Activation failures should also be visible in release diagnostics. Approach: docs-first contract update then wire activation warnings and details into health output with deterministic tests and full regression evidence."

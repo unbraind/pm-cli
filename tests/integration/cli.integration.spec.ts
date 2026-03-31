@@ -1747,6 +1747,207 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("blocks item mutations when legacy settings omit item_format until explicit config selection is set", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as Record<string, unknown>;
+      delete settings.item_format;
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const blockedCreate = context.runCli([
+        "create",
+        "--json",
+        "--title",
+        "Blocked legacy mutation",
+        "--description",
+        "Requires explicit item format selection first",
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--priority",
+        "1",
+        "--tags",
+        "integration,item-format",
+        "--body",
+        "",
+        "--deadline",
+        "none",
+        "--estimate",
+        "20",
+        "--acceptance-criteria",
+        "Mutation blocks until format is explicitly selected",
+        "--author",
+        "integration-test",
+        "--message",
+        "Attempt blocked create",
+        "--assignee",
+        "none",
+        "--dep",
+        "none",
+        "--comment",
+        "none",
+        "--note",
+        "none",
+        "--learning",
+        "none",
+        "--file",
+        "none",
+        "--test",
+        "none",
+        "--doc",
+        "none",
+      ]);
+      expect(blockedCreate.code).toBe(4);
+      expect(blockedCreate.stderr).toContain("requires explicit item format selection before mutations");
+
+      const setFormat = context.runCli(
+        ["config", "project", "set", "item-format", "--format", "toon", "--json"],
+        { expectJson: true },
+      );
+      expect(setFormat.code).toBe(0);
+      const setFormatJson = setFormat.json as { key: string; format: string; changed: boolean };
+      expect(setFormatJson.key).toBe("item_format");
+      expect(setFormatJson.format).toBe("toon");
+      expect(setFormatJson.changed).toBe(true);
+
+      const allowedCreate = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Allowed after explicit format set",
+          "--description",
+          "Mutation should proceed after config selection",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,item-format",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "20",
+          "--acceptance-criteria",
+          "Mutation succeeds once explicit format is selected",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create after format set",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(allowedCreate.code).toBe(0);
+    });
+  });
+
+  it("auto-migrates item files before mutation when settings item_format is manually changed", async () => {
+    await withTempPmPath(async (context) => {
+      const setMarkdown = context.runCli(
+        ["config", "project", "set", "item-format", "--format", "json_markdown", "--json"],
+        { expectJson: true },
+      );
+      expect(setMarkdown.code).toBe(0);
+
+      const createResult = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Manual settings migration preflight",
+          "--description",
+          "Verify pre-mutation item format sync",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,item-format",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "20",
+          "--acceptance-criteria",
+          "Mutation preflight migrates item format",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create markdown item",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(createResult.code).toBe(0);
+      const createdId = (createResult.json as { item: { id: string } }).item.id;
+      const markdownPath = path.join(context.pmPath, "tasks", `${createdId}.md`);
+      const toonPath = path.join(context.pmPath, "tasks", `${createdId}.toon`);
+      await expect(readFile(markdownPath, "utf8")).resolves.toContain(createdId);
+
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as Record<string, unknown>;
+      settings.item_format = "toon";
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const updateResult = context.runCli(
+        [
+          "update",
+          createdId,
+          "--status",
+          "in_progress",
+          "--author",
+          "integration-test",
+          "--message",
+          "Update after manual item_format switch",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(updateResult.code).toBe(0);
+      await expect(readFile(toonPath, "utf8")).resolves.toContain(createdId);
+      await expect(readFile(markdownPath, "utf8")).rejects.toBeDefined();
+    });
+  });
+
   it("runs extension read/write/index hooks for item-store, history/activity, and reindex flows", async () => {
     await withTempPmPath(async (context) => {
       const extensionDir = path.join(context.pmPath, "extensions", "rw-index-hook-ext");
@@ -1861,8 +2062,8 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         .trim()
         .split("\n")
         .filter((entry) => entry.length > 0);
-      expect(lines.some((line) => line.startsWith("write:update:") && line.endsWith(".md"))).toBe(true);
-      expect(lines.includes(`read:${id}.md`)).toBe(true);
+      expect(lines.some((line) => line.startsWith("write:update:") && line.endsWith(".toon"))).toBe(true);
+      expect(lines.includes(`read:${id}.toon`)).toBe(true);
       expect(lines.filter((line) => line === `read:${id}.jsonl`).length).toBeGreaterThanOrEqual(2);
       expect(lines).toContain("read:settings.json");
       expect(lines).toContain("write:settings:write:settings.json");

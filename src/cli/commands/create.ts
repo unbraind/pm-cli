@@ -510,14 +510,14 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     body: "",
   };
 
-  const itemPath = getItemPath(pmRoot, type, id);
+  const itemPath = getItemPath(pmRoot, type, id, settings.item_format);
   const historyPath = getHistoryPath(pmRoot, id);
   const lockRelease = await acquireLock(pmRoot, id, settings.locks.ttl_seconds, author);
   const historyMessage = buildHistoryMessage(options.message, explicitUnsets);
   let hookWarnings: string[] = [];
 
   try {
-    await writeFileAtomic(itemPath, serializeItemDocument(afterDocument));
+    await writeFileAtomic(itemPath, serializeItemDocument(afterDocument, { format: settings.item_format }));
     try {
       const entry = createHistoryEntry({
         nowIso: nowValue,

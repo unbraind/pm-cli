@@ -1,0 +1,38 @@
+front_matter:
+  id: pm-3aeu
+  title: "M5 follow-up: dispatch onIndex hooks in gc command"
+  description: Close a hook-lifecycle gap by emitting deterministic onIndex hook events from pm gc cache cleanup operations.
+  type: Task
+  status: closed
+  priority: 1
+  tags[7]: "area:extensions-hooks",code,docs,"milestone:5",pm-cli,"priority:1",tests
+  created_at: "2026-03-04T15:33:55.396Z"
+  updated_at: "2026-03-04T15:44:41.448Z"
+  deadline: "2026-03-06T23:59:00.000Z"
+  author: cursor-maintainer
+  estimated_minutes: 90
+  acceptance_criteria: "Met: pm gc dispatches onIndex hooks with deterministic mode gc and cache-target totals; docs are aligned; targeted and regression sweeps passed with 100 percent coverage."
+  dependencies[1]{id,kind,created_at,author,source_kind}:
+    pm-p8p,discovered_from,"2026-03-04T15:33:55.396Z",cursor-maintainer,null
+  comments[6]{created_at,author,text}:
+    "2026-03-04T15:33:55.396Z",cursor-maintainer,Follow-up from hook lifecycle task. gc should emit onIndex events for index cache observability.
+    "2026-03-04T15:34:05.690Z",cursor-maintainer,"Planned changeset: docs-first update for gc onIndex hook behavior then implement onIndex dispatch in gc command and extend gc unit coverage before running pm test and regression sweeps."
+    "2026-03-04T15:35:09.219Z",cursor-maintainer,"Docs-first update complete: PRD and README now explicitly require pm gc to dispatch onIndex hooks with mode gc and deterministic cache-target totals before code changes."
+    "2026-03-04T15:35:22.263Z",cursor-maintainer,"Starting code changes: wire gc command to dispatch onIndex hook context and extend unit tests for event emission plus failing-index warning propagation."
+    "2026-03-04T15:35:47.758Z",cursor-maintainer,"Implemented code changes: gc command now dispatches onIndex hooks with mode gc and total_items equal cache targets scanned; gc unit tests now assert index event emission and deterministic warning propagation for failing onIndex hooks."
+    "2026-03-04T15:44:41.054Z",cursor-maintainer,"Evidence: pm test pm-3aeu --run --timeout 3600 --json passed (2/2 linked commands). pm test-all --status in_progress --timeout 3600 --json passed (items=1 linked_tests=2 passed=2 failed=0 skipped=0). pm test-all --status closed --timeout 3600 --json passed (items=49 linked_tests=171 passed=55 failed=0 skipped=116). Coverage remained 100% for lines branches functions and statements in coverage runs. Follow-up items created: none."
+  notes[1]{created_at,author,text}:
+    "2026-03-04T15:33:55.396Z",cursor-maintainer,Plan docs-first update then gc onIndex dispatch then tests and evidence logging.
+  files[4]{path,scope,note}:
+    PRD.md,project,docs-first contract clarification for gc onIndex
+    README.md,project,docs-first runtime hook lifecycle clarification
+    src/cli/commands/gc.ts,project,gc hook dispatch implementation
+    tests/unit/gc-command.spec.ts,project,gc hook lifecycle tests
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,3600,coverage gate remains 100 percent
+    node scripts/run-tests.mjs test -- tests/unit/gc-command.spec.ts,null,project,1800,targeted gc hook lifecycle regression
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,agent workflow requirements
+    PRD.md,project,governing hook lifecycle contract
+    README.md,project,public hook lifecycle behavior
+body: "Context: hook lifecycle docs claim stats/health/gc call-site coverage but gc currently dispatches read/write hooks only. Approach: update docs-first contract language for gc onIndex behavior then implement gc onIndex dispatch with deterministic warning propagation and add unit/integration coverage."

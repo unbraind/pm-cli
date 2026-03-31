@@ -514,7 +514,7 @@ describe("core/search/cache", () => {
       settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
       await writeSettings(context.pmPath, settings);
 
-      const brokenItemPath = path.join(context.pmPath, "tasks", `${itemId}.md`);
+      const brokenItemPath = path.join(context.pmPath, "tasks", `${itemId}.toon`);
       await fs.writeFile(brokenItemPath, "not-json-front-matter", "utf8");
 
       const result = await refreshSemanticEmbeddingsForMutatedItems(context.pmPath, [itemId]);

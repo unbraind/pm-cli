@@ -1,0 +1,44 @@
+front_matter:
+  id: pm-l88i
+  title: "M5 follow-up: include built-in extensions in health probe"
+  description: Align pm health extension diagnostics with runtime by including built-in extension activation/load results.
+  type: Task
+  status: closed
+  priority: 1
+  tags[8]: "area:extensions","area:health",code,doc,"milestone:5",pm-cli,"priority:1",tests
+  created_at: "2026-03-06T06:55:04.808Z"
+  updated_at: "2026-03-06T07:12:36.645Z"
+  deadline: "2026-03-07T23:59:00.000Z"
+  author: maintainer-agent
+  estimated_minutes: 75
+  acceptance_criteria: pm health extension check includes built-in extensions in activation/loaded diagnostics with deterministic ordering and warning behavior; docs reflect contract; sandboxed tests remain 100 percent coverage.
+  dependencies[1]{id,kind,created_at,author,source_kind}:
+    pm-pjj7,related,"2026-03-06T06:55:04.808Z",maintainer-agent,null
+  comments[5]{created_at,author,text}:
+    "2026-03-06T06:55:04.808Z",maintainer-agent,"Why this exists: keep health diagnostics aligned with runtime extension behavior by probing built-in extensions too."
+    "2026-03-06T06:55:17.798Z",maintainer-agent,"Planned changeset before edits: docs-first update README and PRD to require built-in extension inclusion in health probe, then implement shared built-in extension helper and wire health to include built-ins with deterministic activation metadata and tests."
+    "2026-03-06T07:00:04.380Z",maintainer-agent,"Implemented docs-first contract updates in README and PRD, added shared built-in extension helper module, refactored CLI runtime loading to use it, and updated health probe path to include enabled built-in extensions in loaded/activation diagnostics."
+    "2026-03-06T07:11:48.839Z",maintainer-agent,"Evidence: pm test pm-l88i --run --timeout 7200 --json passed all 4 linked checks (coverage, helper unit test, health+loader targeted suite, build). pm test-all --status in_progress --timeout 7200 --json passed totals items=1 linked_tests=4 passed=4 failed=0 skipped=0. pm test-all --status closed --timeout 7200 --json passed totals items=79 linked_tests=237 passed=61 failed=0 skipped=176. Coverage statement: node scripts/run-tests.mjs coverage reports 100 percent statements, branches, functions, and lines."
+    "2026-03-06T07:12:36.645Z",maintainer-agent,"Follow-up fix during verification: added src/core/extensions/builtins.ts to vitest coverage include allowlist and updated health activation-probe expectation to command_handler_count=3 because built-in beads/todos command handlers are now part of health activation diagnostics."
+  notes[1]{created_at,author,text}:
+    "2026-03-06T06:55:04.808Z",maintainer-agent,Plan docs-first update then implement health probe built-in inclusion plus tests.
+  learnings[1]{created_at,author,text}:
+    "2026-03-06T06:55:04.808Z",maintainer-agent,Initial assumption health currently omits built-ins from activation probe details.
+  files[7]{path,scope,note}:
+    PRD.md,project,PRD contract update for health built-ins
+    README.md,project,doc contract update for health
+    src/cli/commands/health.ts,project,health extension probe runtime parity
+    src/cli/main.ts,project,reuse shared built-in extension helper
+    src/core/extensions/builtins.ts,project,shared built-in extension metadata helper
+    tests/unit/extensions-builtins.spec.ts,project,shared built-in extension helper coverage
+    tests/unit/health-command.spec.ts,project,health diagnostics regression coverage
+  tests[4]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,7200,coverage gate
+    node scripts/run-tests.mjs test -- tests/unit/extensions-builtins.spec.ts,null,project,900,built-in extension helper unit coverage
+    node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/unit/extension-loader.spec.ts,null,project,1800,targeted extension health tests
+    pnpm build,null,project,600,compile verification
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,agent workflow contract
+    PRD.md,project,governing spec
+    README.md,project,public contract
+body: "Context: runtime command execution always includes built-in beads/todos extensions (subject to settings), but health extension diagnostics currently probe only filesystem-loaded extensions. Approach: docs-first contract update, wire health probe to include built-ins with deterministic ordering, and add regression tests."

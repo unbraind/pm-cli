@@ -1,0 +1,37 @@
+front_matter:
+  id: pm-er7n
+  title: "M3 follow-up: harden activity when history directory is missing"
+  description: Return deterministic empty activity when history directory is missing instead of generic filesystem failure.
+  type: Task
+  status: closed
+  priority: 1
+  tags[6]: "area:history",code,"milestone:3",pm-cli,"priority:1",tests
+  created_at: "2026-03-06T04:58:36.054Z"
+  updated_at: "2026-03-06T05:13:31.738Z"
+  deadline: "2026-03-07T23:59:00.000Z"
+  author: cursor-maintainer
+  estimated_minutes: 75
+  acceptance_criteria: "pm activity returns {activity:[],count:0} when history directory is absent; targeted and full regression tests pass with 100% coverage unchanged."
+  dependencies[1]{id,kind,created_at,author,source_kind}:
+    pm-54d,related,"2026-03-06T04:58:36.054Z",cursor-maintainer,null
+  comments[5]{created_at,author,text}:
+    "2026-03-06T04:58:36.054Z",cursor-maintainer,"Why this exists: activity should not crash when history directory is absent; command should remain deterministic and resilient."
+    "2026-03-06T04:58:48.695Z",cursor-maintainer,"Planned changeset: make activity command tolerate absent history directory by returning empty activity; add unit regression case and run linked tests plus test-all sweeps before closure."
+    "2026-03-06T04:59:27.874Z",cursor-maintainer,"Implemented changeset: activity command now treats missing history directory (ENOENT) as an empty history stream set, and added a unit regression asserting deterministic empty activity output when history directory is removed."
+    "2026-03-06T05:03:01.624Z",cursor-maintainer,"Coverage gate initially failed after first patch (activity missing-history fallback), so I added a non-ENOENT propagation regression case and simplified ENOENT detection to keep deterministic behavior while restoring full branch coverage."
+    "2026-03-06T05:13:25.849Z",cursor-maintainer,"Evidence: pm test pm-er7n --run --timeout 7200 --json => linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status in_progress --timeout 7200 --json => items=1 linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status closed --timeout 7200 --json => items=77 linked_tests=233 passed=61 failed=0 skipped=172. Coverage proof from linked coverage run: All files | 100 | 100 | 100 | 100. Follow-up: no additional tracking items required for this hardening slice."
+  notes[1]{created_at,author,text}:
+    "2026-03-06T04:58:36.054Z",cursor-maintainer,"Plan: update activity command missing-directory path handling and add regression coverage before full sweeps."
+  learnings[1]{created_at,author,text}:
+    "2026-03-06T04:58:36.054Z",cursor-maintainer,Missing optional tracker subdirectories should degrade to deterministic empty results where safe.
+  files[2]{path,scope,note}:
+    src/cli/commands/activity.ts,project,missing-history fallback
+    tests/unit/history-activity-command.spec.ts,project,regression for missing history directory
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,7200,coverage gate
+    node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts,null,project,1800,targeted activity regression
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,governing workflow
+    PRD.md,project,authoritative contract
+    README.md,project,public command contract
+body: "Harden activity command by treating a missing history directory as zero history streams, preserving deterministic output and avoiding ENOENT failures in partially initialized/corrupted stores."

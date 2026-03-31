@@ -1,13 +1,13 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { listAllFrontMatter, locateItem, mutateItem } from "../../src/core/store/item-store.js";
+import { listAllFrontMatter, locateItem, mutateItem, readLocatedItem } from "../../src/core/store/item-store.js";
 import { getItemPath } from "../../src/core/store/paths.js";
 import { readSettings } from "../../src/core/store/settings.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { parseItemDocument, serializeItemDocument } from "../../src/core/item/item-format.js";
-import type { ItemDocument, ItemFrontMatter } from "../../src/types/index.js";
+import type { ItemDocument, ItemFormat, ItemFrontMatter } from "../../src/types/index.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 const FIXED_TS = "2026-02-20T00:00:00.000Z";
@@ -16,6 +16,7 @@ async function writeTaskItem(
   pmRoot: string,
   id: string,
   overrides: Partial<ItemFrontMatter> = {},
+  format: ItemFormat = "json_markdown",
 ): Promise<{ itemPath: string; document: ItemDocument }> {
   const frontMatter: ItemFrontMatter = {
     id,
@@ -33,9 +34,9 @@ async function writeTaskItem(
     front_matter: frontMatter,
     body: "seed body",
   };
-  const itemPath = getItemPath(pmRoot, "Task", id);
+  const itemPath = getItemPath(pmRoot, "Task", id, format);
   await fs.mkdir(path.dirname(itemPath), { recursive: true });
-  await fs.writeFile(itemPath, serializeItemDocument(document), "utf8");
+  await fs.writeFile(itemPath, serializeItemDocument(document, { format }), "utf8");
   return { itemPath, document };
 }
 
@@ -75,6 +76,44 @@ describe("core/store/item-store", () => {
       const located = await locateItem(pmPath, "clawd-01c8", "pm-");
       expect(located?.id).toBe("clawd-01c8");
       expect(located?.type).toBe("Task");
+    });
+  });
+
+  it("prefers configured format when both markdown and toon files exist", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-format-preference";
+      await writeTaskItem(pmPath, id, { description: "markdown-description" }, "json_markdown");
+      await writeTaskItem(pmPath, id, { description: "toon-description" }, "toon");
+
+      const locatedToon = await locateItem(pmPath, id, "pm-", "toon");
+      expect(locatedToon?.item_format).toBe("toon");
+      const loadedToon = await readLocatedItem(locatedToon as NonNullable<typeof locatedToon>);
+      expect(loadedToon.document.front_matter.description).toBe("toon-description");
+
+      const locatedMarkdown = await locateItem(pmPath, id, "pm-", "json_markdown");
+      expect(locatedMarkdown?.item_format).toBe("json_markdown");
+      const loadedMarkdown = await readLocatedItem(locatedMarkdown as NonNullable<typeof locatedMarkdown>);
+      expect(loadedMarkdown.document.front_matter.description).toBe("markdown-description");
+    });
+  });
+
+  it("deduplicates listAllFrontMatter results by preferred item format", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-list-format-preference";
+      await writeTaskItem(pmPath, id, { description: "markdown-only" }, "json_markdown");
+      await writeTaskItem(pmPath, id, { description: "toon-only" }, "toon");
+
+      const defaultPreferred = await listAllFrontMatter(pmPath);
+      expect(defaultPreferred.filter((entry) => entry.id === id)).toHaveLength(1);
+      expect(defaultPreferred.find((entry) => entry.id === id)?.description).toBe("toon-only");
+
+      const preferredToon = await listAllFrontMatter(pmPath, "toon");
+      expect(preferredToon.filter((entry) => entry.id === id)).toHaveLength(1);
+      expect(preferredToon.find((entry) => entry.id === id)?.description).toBe("toon-only");
+
+      const preferredMarkdown = await listAllFrontMatter(pmPath, "json_markdown");
+      expect(preferredMarkdown.filter((entry) => entry.id === id)).toHaveLength(1);
+      expect(preferredMarkdown.find((entry) => entry.id === id)?.description).toBe("markdown-only");
     });
   });
 

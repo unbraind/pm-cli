@@ -73,7 +73,7 @@ export async function runHistory(id: string, options: HistoryCommandOptions, glo
   const limit = parseLimit(options.limit);
   const settings = await readSettings(pmRoot);
   const normalizedId = normalizeItemId(id, settings.id_prefix);
-  const located = await locateItem(pmRoot, normalizedId, settings.id_prefix);
+  const located = await locateItem(pmRoot, normalizedId, settings.id_prefix, settings.item_format);
   const resolvedId = located?.id ?? normalizedId;
   const historyPath = getHistoryPath(pmRoot, resolvedId);
   if (!located && !(await pathExists(historyPath))) {

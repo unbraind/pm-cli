@@ -1,0 +1,53 @@
+front_matter:
+  id: pm-zau
+  title: "M3: stats health and gc commands"
+  description: "Implement operational diagnostics command surfaces incrementally, starting with deterministic stats output for current tracker state."
+  type: Task
+  status: closed
+  priority: 1
+  tags[4]: "area:operations",core,"milestone:3",pm-cli
+  created_at: "2026-02-17T23:02:09.876Z"
+  updated_at: "2026-02-18T14:34:05.944Z"
+  deadline: "2026-03-03T23:02:09.876Z"
+  author: steve
+  estimated_minutes: 140
+  acceptance_criteria: "stats, health, and gc commands provide deterministic diagnostics outputs with unit/integration coverage and 100% gate preserved"
+  dependencies[2]{id,kind,created_at,author,source_kind}:
+    pm-54d,parent,"2026-02-17T23:02:09.876Z",steve,null
+    pm-c0r,blocks,"2026-02-17T23:02:09.876Z",steve,null
+  comments[10]{created_at,author,text}:
+    "2026-02-18T03:53:00.847Z",maintainer-agent,"author=maintainer-agent,created_at=now,text=Planned changeset: update PRD/README command matrix first, then add deterministic pm stats command with unit/integration coverage and preserve 100% thresholds."
+    "2026-02-18T03:58:25.902Z",maintainer-agent,"Implemented pm stats command with deterministic totals/by_type/by_status output; updated README/PRD command matrix first per contract, then wired CLI + tests. Evidence: pm test pm-zau --run --timeout 600 passed (linked commands node scripts/run-tests.mjs coverage/test + pnpm build), pm test-all --status in_progress --timeout 600 passed (11/11 linked tests), coverage remains 100% lines/branches/functions/statements including src/commands/stats.ts."
+    "2026-02-18T03:58:56.700Z",maintainer-agent,Stats sub-scope is complete and validated; remaining task scope is to implement health and gc commands with deterministic output contracts and tests.
+    "2026-02-18T03:59:18.545Z",maintainer-agent,"Verification spot-check: node dist/cli.js --help now lists stats in implemented command surface."
+    "2026-02-18T04:14:17.956Z",maintainer-agent,"author=maintainer-agent,created_at=now,text=Planned changeset: update PRD/README command matrix to include health baseline, then implement pm health command with deterministic checks (settings, required directories, storage summary) plus unit/integration coverage while keeping gc pending."
+    "2026-02-18T04:19:09.246Z",maintainer-agent,"Health sub-scope implemented: added pm health command with deterministic checks for settings, required directories, settings-value sanity, and storage summary. Evidence: pnpm build passed; pm test pm-zau --run --timeout 900 passed; pm test-all --status in_progress --timeout 900 passed (totals items=5 linked_tests=12 passed=11 failed=0 skipped=1). Coverage remains 100% lines/branches/functions/statements including src/commands/health.ts."
+    "2026-02-18T04:19:09.405Z",maintainer-agent,"Remaining scope note: gc command is still pending under pm-zau; health is now included in CLI help and documented in PRD/README implemented command surface."
+    "2026-02-18T14:28:53.451Z",maintainer-agent,"author=maintainer-agent,created_at=now,text=Planned changeset: update PRD and README first to include deterministic gc command contract, then implement pm gc wiring + command logic with unit/integration coverage and run pm test + pm test-all for evidence."
+    "2026-02-18T14:29:26.051Z",maintainer-agent,"Docs-first update applied: PRD.md and README.md now list pm gc in implemented command surface and define gc output contract before code implementation."
+    "2026-02-18T14:34:05.623Z",maintainer-agent,"Implemented pm gc command with deterministic cache cleanup summary and CLI wiring after docs-first PRD/README updates. Evidence: pm test pm-zau --run --timeout 1200 passed (linked coverage/test/build commands), pm test-all --status in_progress --timeout 1200 passed (totals items=5 linked_tests=14 passed=11 failed=0 skipped=3), and coverage remains 100% lines/branches/functions/statements including src/commands/gc.ts."
+  files[12]{path,scope,note}:
+    PRD.md,project,update milestone checklist and command matrix
+    README.md,project,document implemented command surface
+    src/cli/commands/index.ts,project,export stats command
+    src/cli/main.ts,project,register stats command
+    src/commands/gc.ts,project,gc command implementation
+    src/commands/health.ts,project,health command implementation
+    src/commands/stats.ts,project,stats command implementation
+    tests/integration/cli.integration.spec.ts,project,cli stats integration coverage
+    tests/unit/gc-command.spec.ts,project,unit coverage for gc command
+    tests/unit/health-command.spec.ts,project,unit coverage for health command
+    tests/unit/stats-command.spec.ts,project,unit coverage for stats logic
+    vitest.config.ts,project,coverage include for new command file
+  tests[6]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,600,sandboxed coverage gate
+    node scripts/run-tests.mjs test,null,project,600,sandboxed regression
+    pnpm build,null,project,180,build verification
+    null,tests/integration/cli.integration.spec.ts,project,null,integration health command coverage
+    null,tests/unit/gc-command.spec.ts,project,null,unit gc command assertions
+    null,tests/unit/health-command.spec.ts,project,null,health command unit assertions
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,dogfood workflow contract
+    PRD.md,project,governing spec
+    README.md,project,public command contract
+body: Implement stats health and garbage-collection command surfaces.

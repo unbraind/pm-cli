@@ -1,0 +1,34 @@
+front_matter:
+  id: pm-jiw
+  title: Milestone 6 - Hardening + Release Readiness
+  description: Milestone epic for CI hardening fixtures and release validation.
+  type: Epic
+  status: closed
+  priority: 0
+  tags[4]: "area:release",core,"milestone:6",pm-cli
+  created_at: "2026-02-17T23:01:12.657Z"
+  updated_at: "2026-03-04T16:22:28.059Z"
+  deadline: "2026-03-19T23:01:12.657Z"
+  author: steve
+  estimated_minutes: 360
+  acceptance_criteria: Milestone 6 checklist items are implemented and release gates pass.
+  dependencies[2]{id,kind,created_at,author,source_kind}:
+    pm-b1w,blocks,"2026-02-17T23:01:12.657Z",steve,null
+    pm-j7a,child,"2026-02-17T23:01:12.657Z",steve,null
+  comments[3]{created_at,author,text}:
+    "2026-02-17T23:01:12.657Z",steve,Milestone 6 stabilizes quality and release confidence.
+    "2026-03-04T16:13:16.657Z",cursor-maintainer,"Planned change-set: verify milestone-6 release-readiness gates (build + full coverage + pm test-all regressions) and close this epic only if evidence confirms acceptance criteria."
+    "2026-03-04T16:22:22.204Z",cursor-maintainer,"Evidence: pm test pm-jiw --run --timeout 1800 passed (node scripts/run-tests.mjs coverage) with 48/48 test files passing and coverage at 100% lines/branches/functions/statements. Regression sweeps passed via pm test-all --status in_progress --timeout 1800 (1 passed, 0 failed) and pm test-all --status closed --timeout 1800 (56 passed, 0 failed, 119 skipped deterministic duplicates)."
+  notes[1]{created_at,author,text}:
+    "2026-02-17T23:01:12.657Z",steve,Success means CI matrix and docs examples are validated in tests.
+  files[3]{path,scope,note}:
+    .github/workflows/ci.yml,project,CI release gate matrix
+    package.json,project,build and coverage scripts for release gates
+    scripts/run-tests.mjs,project,sandbox-safe regression runner
+  tests[1]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,1800,full coverage gate in sandbox
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,dogfood workflow and verification protocol
+    PRD.md,project,authoritative release criteria
+    README.md,project,public command and release contract
+body: Finalize release readiness with tests fixtures and docs validation.

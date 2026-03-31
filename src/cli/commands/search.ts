@@ -16,14 +16,14 @@ import {
 } from "../../core/search/vector-stores.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
-import { EXIT_CODE, TYPE_TO_FOLDER } from "../../core/shared/constants.js";
+import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { compareTimestampStrings, nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
 import { listAllFrontMatter } from "../../core/store/item-store.js";
-import { getSettingsPath, resolveGlobalPmRoot, resolvePmRoot } from "../../core/store/paths.js";
+import { getSettingsPath, resolveGlobalPmRoot, resolvePmRoot, getItemPath } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import type { ItemDocument, ItemFrontMatter, ItemStatus, ItemType } from "../../types/index.js";
+import type { ItemDocument, ItemFormat, ItemFrontMatter, ItemStatus, ItemType } from "../../types/index.js";
 
 export interface SearchOptions {
   mode?: string;
@@ -575,18 +575,34 @@ async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promi
   return combineHybridHits(filteredById, semanticScores, context.keywordHits, context.hybridSemanticWeight);
 }
 
-async function loadDocuments(pmRoot: string): Promise<ItemDocument[]> {
-  const items = await listAllFrontMatter(pmRoot);
+function alternateFormat(itemFormat: ItemFormat): ItemFormat {
+  return itemFormat === "toon" ? "json_markdown" : "toon";
+}
+
+async function loadDocuments(pmRoot: string, itemFormat: ItemFormat): Promise<ItemDocument[]> {
+  const items = await listAllFrontMatter(pmRoot, itemFormat);
   const documents: ItemDocument[] = [];
   for (const item of items) {
-    const itemPath = path.join(pmRoot, TYPE_TO_FOLDER[item.type], `${item.id}.md`);
-    const raw = await fs.readFile(itemPath, "utf8");
+    const preferredPath = getItemPath(pmRoot, item.type, item.id, itemFormat);
+    try {
+      const raw = await fs.readFile(preferredPath, "utf8");
+      await runActiveOnReadHooks({
+        path: preferredPath,
+        scope: "project",
+      });
+      documents.push(parseItemDocument(raw, { format: itemFormat }));
+      continue;
+    } catch {
+      // Fallback to the alternate format when preferred format path is absent.
+    }
+    const fallbackFormat = alternateFormat(itemFormat);
+    const fallbackPath = getItemPath(pmRoot, item.type, item.id, fallbackFormat);
+    const raw = await fs.readFile(fallbackPath, "utf8");
     await runActiveOnReadHooks({
-      path: itemPath,
+      path: fallbackPath,
       scope: "project",
     });
-    const parsed = parseItemDocument(raw);
-    documents.push(parsed);
+    documents.push(parseItemDocument(raw, { format: fallbackFormat }));
   }
   return documents;
 }
@@ -610,7 +626,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
     hasProvider: providerResolution.active !== null,
     hasVectorStore: vectorResolution.active !== null,
   });
-  const allDocuments = await loadDocuments(pmRoot);
+  const allDocuments = await loadDocuments(pmRoot, settings.item_format ?? "json_markdown");
   const filteredDocuments = applyFilters(allDocuments, options);
   if (requestedMode === "keyword" && (filteredDocuments.length === 0 || limit === 0)) {
     return emptySearchResult(query, requestedMode, options, includeLinked, scoreThreshold, hybridSemanticWeight);

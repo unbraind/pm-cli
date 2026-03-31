@@ -557,7 +557,7 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
     tests = result.item.tests ?? [];
     itemId = result.item.id;
   } else {
-    const located = await locateItem(pmRoot, id, settings.id_prefix);
+    const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format);
     if (!located) {
       throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
     }

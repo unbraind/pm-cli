@@ -1,0 +1,23 @@
+front_matter:
+  id: pm-s0ne
+  title: Implement automatic migration and mutation gate
+  description: Automatically rewrite item files when format changes and enforce explicit format selection for legacy repos before mutating commands.
+  type: Task
+  status: closed
+  priority: 1
+  tags[4]: gate,migration,pm-cli,toon
+  created_at: "2026-03-31T20:13:39.182Z"
+  updated_at: "2026-03-31T20:58:08.317Z"
+  author: codex-agent
+  estimated_minutes: 180
+  acceptance_criteria: Format changes trigger migration and legacy repositories without explicit format cannot run item mutating commands.
+  parent: pm-z8bl
+  dependencies[1]{id,kind,created_at,author,source_kind}:
+    pm-z8bl,parent,"2026-03-31T20:13:39.182Z",codex-agent,null
+  comments[2]{created_at,author,text}:
+    "2026-03-31T20:13:39.182Z",codex-agent,Task tracks migration execution and gate rules.
+    "2026-03-31T20:56:44.985Z",codex-agent,Implemented automatic item format migration and pre-mutation explicit-selection gate; configured format now wins during dual-file conflicts and preflight sync runs before mutations.
+  notes[1]{created_at,author,text}:
+    "2026-03-31T20:13:39.182Z",codex-agent,Ensure configured format always wins when both files exist.
+  close_reason: automatic migration and legacy write gate completed
+body: Add migration pipeline and pre-mutation enforcement logic across CLI mutation entrypoints.

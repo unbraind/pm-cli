@@ -137,6 +137,7 @@ async function resolveSemanticRefreshRuntimeContext(
 async function collectSemanticRefreshWorkload(
   pmRoot: string,
   idPrefix: string,
+  preferredFormat: "toon" | "json_markdown",
   normalizedItemIds: string[],
 ): Promise<SemanticRefreshWorkload> {
   const warnings: string[] = [];
@@ -145,7 +146,7 @@ async function collectSemanticRefreshWorkload(
   const documents: Array<{ id: string; document: ItemDocument }> = [];
 
   for (const itemId of normalizedItemIds) {
-    const located = await locateItem(pmRoot, itemId, idPrefix);
+    const located = await locateItem(pmRoot, itemId, idPrefix, preferredFormat);
     if (!located) {
       missing.add(itemId);
       continue;
@@ -273,6 +274,7 @@ export async function refreshSemanticEmbeddingsForMutatedItems(
   const workload = await collectSemanticRefreshWorkload(
     pmRoot,
     runtimeContext.settings.id_prefix,
+    runtimeContext.settings.item_format,
     normalizedItemIds,
   );
   const refreshedResult = await refreshLocatedSemanticVectors(

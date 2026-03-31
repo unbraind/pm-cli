@@ -1,0 +1,31 @@
+front_matter:
+  id: pm-imob
+  title: "M5 roadmap: Beads import extension parity polish"
+  description: Polish parity and harden beads import extension.
+  type: Task
+  status: closed
+  priority: 2
+  tags[4]: "area:extensions","milestone:5",pm-cli,roadmap
+  created_at: "2026-03-07T14:01:19.318Z"
+  updated_at: "2026-03-07T20:26:38.913Z"
+  author: maintainer-agent
+  estimated_minutes: 60
+  acceptance_criteria: Beads import is fully polished.
+  comments[5]{created_at,author,text}:
+    "2026-03-07T20:00:20.675Z",maintainer-agent,Extended Beads import field mapping parity (labels/created_by/closed_at/design/external_ref plus linked files/tests/docs) and validated deterministic import behavior with expanded fixture coverage.
+    "2026-03-07T20:00:20.847Z",maintainer-agent,Fixed a deterministic test expectation to assert dependency created_at fallback from imported item timestamp when source created_at is absent.
+    "2026-03-07T20:11:43.504Z",maintainer-agent,"Addressing coverage gate failure from pm test-all --status closed: add deterministic fixture/assertion that exercises design/external_ref append branches when body is already non-empty."
+    "2026-03-07T20:26:32.189Z",maintainer-agent,"Added Beads fixture branches for design/external_ref body composition, restoring 100% branch coverage for beads import paths."
+    "2026-03-07T20:26:32.424Z",maintainer-agent,"Evidence: pm test pm-imob --run passed; pm test-all --status in_progress passed (failed=0); pm test-all --status closed passed (failed=0, passed=62, skipped=284); node scripts/run-tests.mjs coverage reports 100% statements/branches/functions/lines."
+  files[4]{path,scope,note}:
+    .gitignore,project,track beads default-path fixtures in repo
+    src/cli/commands/beads.ts,project,null
+    tests/fixtures/beads/import-records.jsonl,project,null
+    tests/unit/beads-command.spec.ts,project,null
+  tests[1]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs test,null,project,240,null
+  docs[2]{path,scope,note}:
+    PRD.md,project,beads import parity contract
+    README.md,project,beads import behavior contract
+  close_reason: Completed Beads import parity polish with expanded mapping coverage and restored 100% coverage gate; pm test and regression sweeps passed.
+body: Implement remaining parity polish and hardening for built-in beads import extension.

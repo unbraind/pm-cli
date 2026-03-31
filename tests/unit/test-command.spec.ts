@@ -82,11 +82,20 @@ async function overwriteTaskTests(
   id: string,
   tests: Array<Record<string, unknown>>,
 ): Promise<void> {
-  const taskPath = path.join(context.pmPath, "tasks", `${id}.md`);
-  const source = await readFile(taskPath, "utf8");
-  const parsed = parseItemDocument(source);
+  const toonPath = path.join(context.pmPath, "tasks", `${id}.toon`);
+  const markdownPath = path.join(context.pmPath, "tasks", `${id}.md`);
+  let taskPath = toonPath;
+  let source: string;
+  try {
+    source = await readFile(taskPath, "utf8");
+  } catch {
+    taskPath = markdownPath;
+    source = await readFile(taskPath, "utf8");
+  }
+  const format = taskPath.endsWith(".toon") ? "toon" : "json_markdown";
+  const parsed = parseItemDocument(source, { format });
   parsed.front_matter.tests = tests as unknown as never;
-  await writeFile(taskPath, serializeItemDocument(parsed), "utf8");
+  await writeFile(taskPath, serializeItemDocument(parsed, { format }), "utf8");
 }
 
 describe("runTest", () => {

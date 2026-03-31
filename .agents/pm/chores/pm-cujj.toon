@@ -1,0 +1,35 @@
+front_matter:
+  id: pm-cujj
+  title: Release-readiness guard for update help/contract parity
+  description: Add integration contract coverage to keep PRD update-flag contract and pm update --help output aligned.
+  type: Chore
+  status: closed
+  priority: 0
+  tags[6]: "area:update","milestone:6",pm-cli,"priority:0",release-readiness,tests
+  created_at: "2026-03-06T22:29:14.466Z"
+  updated_at: "2026-03-06T22:52:51.622Z"
+  deadline: "2026-03-08T23:59:00.000Z"
+  author: maintainer-agent
+  estimated_minutes: 60
+  acceptance_criteria: Release-readiness contract test asserts update section flags from PRD and README remain aligned with pm update --help and mandatory sweeps pass at 100% coverage.
+  dependencies[1]{id,kind,created_at,author,source_kind}:
+    pm-8mkp,related,"2026-03-06T22:29:14.466Z",maintainer-agent,null
+  comments[4]{created_at,author,text}:
+    "2026-03-06T22:29:14.466Z",maintainer-agent,"Why this exists: release-readiness currently guards create and claim-release help but not update help parity."
+    "2026-03-06T22:29:37.939Z",maintainer-agent,"Planned changeset: add a release-readiness contract assertion that validates PRD/README update flag tokens against pm update --help output to prevent docs/help drift."
+    "2026-03-06T22:30:34.245Z",maintainer-agent,"Implemented docs-first parity hardening: README now includes an explicit pm update mutation flag contract section, and release-readiness integration tests now assert PRD/README/update-help parity for update flags and close-workflow guidance."
+    "2026-03-06T22:52:42.338Z",maintainer-agent,"Evidence: pnpm build passed. pm test pm-cujj --run --timeout 7200 --json passed linked tests (2/2): node scripts/run-tests.mjs coverage and node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts. pm test-all --status in_progress --timeout 7200 --json passed (items=1 linked_tests=2 passed=2 failed=0 skipped=0). pm test-all --status closed --timeout 7200 --json passed (items=110 linked_tests=301 passed=63 failed=0 skipped=238). Coverage remains 100% lines/branches/functions/statements."
+  notes[1]{created_at,author,text}:
+    "2026-03-06T22:29:14.466Z",maintainer-agent,"Plan: add focused integration assertion in release-readiness-contract spec and run mandatory pm test/test-all sweeps."
+  files[2]{path,scope,note}:
+    README.md,project,document update explicit-flag contract
+    tests/integration/release-readiness-contract.spec.ts,project,add update help parity guard
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,2400,coverage gate
+    node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,targeted contract regression
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,dogfood release-readiness workflow
+    PRD.md,project,update-flag contract source
+    README.md,project,update-help contract source
+  close_reason: Added README update flag contract section and enforced PRD/README/update-help parity in release-readiness integration tests; all mandatory sweeps passed with 100% coverage.
+body: Add a non-duplicate release-readiness assertion for update command explicit-flag contract.

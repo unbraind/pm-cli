@@ -36,7 +36,10 @@ function randomToken(length: number): string {
 }
 
 async function idExists(pmRoot: string, id: string): Promise<boolean> {
-  const checks = Object.values(TYPE_TO_FOLDER).map((folder) => path.join(pmRoot, folder, `${id}.md`));
+  const checks = Object.values(TYPE_TO_FOLDER).flatMap((folder) => [
+    path.join(pmRoot, folder, `${id}.md`),
+    path.join(pmRoot, folder, `${id}.toon`),
+  ]);
   for (const target of checks) {
     if (await pathExists(target)) {
       return true;

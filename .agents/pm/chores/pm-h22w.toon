@@ -1,0 +1,32 @@
+front_matter:
+  id: pm-h22w
+  title: Sync legacy prompt docs with create contract
+  description: Align prompt templates that still show minimal pm create syntax with the current explicit PRD contract.
+  type: Chore
+  status: closed
+  priority: 1
+  tags[4]: "area:docs",contract,pm-cli,prompts
+  created_at: "2026-03-06T14:08:27.897Z"
+  updated_at: "2026-03-06T14:23:37.197Z"
+  deadline: "2026-03-07T14:08:27.897Z"
+  author: maintainer-agent
+  estimated_minutes: 75
+  acceptance_criteria: Prompt docs no longer show minimal create syntax or unsupported dependency sugar and include the current explicit create contract for safe agent usage.
+  comments[3]{created_at,author,text}:
+    "2026-03-06T14:08:27.897Z",maintainer-agent,Why this exists prevent stale prompt guidance from creating unsupported pm usage
+    "2026-03-06T14:08:47.804Z",maintainer-agent,Planned changeset update legacy prompt docs to current create contract guardrails and add release-readiness regression assertion.
+    "2026-03-06T14:23:36.856Z",maintainer-agent,"Implemented prompt contract sync: updated docs/prompts/prompt-00.md and docs/prompts/idea.md to remove legacy create/update/activity guidance and added release-readiness regression assertions for legacy prompt docs. Evidence: node dist/cli.js test pm-h22w --run --timeout 3600 --json passed 1 of 1 linked tests; node dist/cli.js test-all --status in_progress --timeout 3600 --json passed totals items=1 linked_tests=1 passed=1 failed=0 skipped=0; node dist/cli.js test-all --status closed --timeout 3600 --json passed totals items=90 linked_tests=266 passed=63 failed=0 skipped=203; node scripts/run-tests.mjs coverage passed with 50 test files 400 tests and 100 percent coverage lines branches functions statements."
+  notes[1]{created_at,author,text}:
+    "2026-03-06T14:08:27.897Z",maintainer-agent,Plan update prompt docs then add regression assertion and verify with sandbox tests
+  files[3]{path,scope,note}:
+    docs/prompts/idea.md,project,legacy prompt synopsis wording
+    docs/prompts/prompt-00.md,project,legacy command surface wording
+    tests/integration/release-readiness-contract.spec.ts,project,guard prompt docs contract drift
+  tests[1]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,2400,docs contract regression
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,agent workflow contract
+    PRD.md,project,authoritative create contract
+    README.md,project,public create contract wording
+  close_reason: Legacy prompt docs now enforce current explicit create contract guidance and release-readiness checks passed with 100 percent coverage.
+body: Legacy prompts like prompt-00 and idea still show simplified create/update syntax and unsupported flag sugar. Update those docs to reflect the current explicit create contract and avoid unsupported command guidance.

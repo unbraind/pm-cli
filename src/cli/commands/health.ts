@@ -304,7 +304,7 @@ export async function runHealth(global: GlobalOptions): Promise<HealthResult> {
 
   const settingWarnings = validateSettingsValues(settings);
   const extensionCheck = await buildExtensionCheck(pmRoot, settings, Boolean(global.noExtensions));
-  const items = await listAllFrontMatter(pmRoot);
+  const items = await listAllFrontMatter(pmRoot, settings.item_format);
   const historySummary = await countHistoryStreams(pmRoot);
 
   const checks: HealthCheck[] = [

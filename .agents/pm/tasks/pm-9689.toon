@@ -1,0 +1,31 @@
+front_matter:
+  id: pm-9689
+  title: Implement item_format settings model
+  description: Add item_format settings key with explicit-selection metadata and deterministic serialization ordering.
+  type: Task
+  status: closed
+  priority: 1
+  tags[3]: pm-cli,settings,toon
+  created_at: "2026-03-31T20:13:38.843Z"
+  updated_at: "2026-03-31T20:58:07.052Z"
+  author: codex-agent
+  estimated_minutes: 120
+  acceptance_criteria: Settings expose item_format toon|json_markdown with explicit selection detection and deterministic write ordering.
+  parent: pm-5cbm
+  dependencies[1]{id,kind,created_at,author,source_kind}:
+    pm-5cbm,parent,"2026-03-31T20:13:38.843Z",codex-agent,null
+  comments[3]{created_at,author,text}:
+    "2026-03-31T20:13:38.843Z",codex-agent,Task tracks item_format schema and metadata changes.
+    "2026-03-31T20:15:32.913Z",codex-agent,"Implemented settings model updates: added item_format toon|json_markdown, introduced readSettingsWithMetadata explicit selection signal, and updated deterministic settings serialization order. Validation: targeted settings/config/init tests passed."
+    "2026-03-31T20:56:43.585Z",codex-agent,"Implemented item_format settings model with explicit selection metadata, deterministic serialization ordering, and settings schema support for toon/json_markdown."
+  notes[1]{created_at,author,text}:
+    "2026-03-31T20:13:38.843Z",codex-agent,Implement without breaking legacy settings compatibility.
+  files[4]{path,scope,note}:
+    src/core/shared/constants.ts,project,default settings include item format
+    src/core/store/settings.ts,project,settings metadata and schema updates
+    src/types.ts,project,item format type additions
+    tests/unit/settings-store.spec.ts,project,metadata and deterministic settings tests
+  tests[1]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/init-command.spec.ts,null,project,1200,targeted settings regression
+  close_reason: item_format settings metadata implemented and validated
+body: Update settings schema defaults and config surfaces to represent item format choice explicitly.

@@ -6,7 +6,7 @@ import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/co
 import type { ExtensionHookRegistry } from "../../src/core/extensions/loader.js";
 import { SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
 import { getSettingsPath } from "../../src/core/store/paths.js";
-import { readSettings, serializeSettings, writeSettings } from "../../src/core/store/settings.js";
+import { readSettings, readSettingsWithMetadata, serializeSettings, writeSettings } from "../../src/core/store/settings.js";
 
 async function withTempRoot(run: (pmRoot: string) => Promise<void>): Promise<void> {
   const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pm-cli-settings-test-"));
@@ -120,6 +120,7 @@ describe("core/store/settings", () => {
         "version",
         "id_prefix",
         "author_default",
+        "item_format",
         "locks",
         "output",
         "workflow",
@@ -153,6 +154,64 @@ describe("core/store/settings", () => {
 
       const loaded = await readSettings(pmRoot);
       expect(loaded).toEqual(custom);
+    });
+  });
+
+  it("reports whether item_format was explicitly selected in settings JSON", async () => {
+    await withTempRoot(async (pmRoot) => {
+      const settingsPath = getSettingsPath(pmRoot);
+      await fs.mkdir(path.dirname(settingsPath), { recursive: true });
+      await fs.writeFile(
+        settingsPath,
+        JSON.stringify({
+          version: 1,
+          id_prefix: "pm-",
+          author_default: "legacy",
+          locks: { ttl_seconds: 1800 },
+          output: { default_format: "toon" },
+          workflow: { definition_of_done: [] },
+          extensions: { enabled: [], disabled: [] },
+          search: {
+            score_threshold: 0,
+            hybrid_semantic_weight: 0.7,
+            max_results: 50,
+            embedding_model: "",
+            embedding_batch_size: 32,
+            scanner_max_batch_retries: 3,
+          },
+          providers: {
+            openai: { base_url: "", api_key: "", model: "" },
+            ollama: { base_url: "", model: "" },
+          },
+          vector_store: {
+            qdrant: { url: "", api_key: "" },
+            lancedb: { path: "" },
+          },
+        }),
+        "utf8",
+      );
+
+      const legacyRead = await readSettingsWithMetadata(pmRoot);
+      expect(legacyRead.settings.item_format).toBe("toon");
+      expect(legacyRead.metadata.has_explicit_item_format).toBe(false);
+
+      const settings = structuredClone(SETTINGS_DEFAULTS);
+      settings.item_format = "json_markdown";
+      await writeSettings(pmRoot, settings);
+      const explicitRead = await readSettingsWithMetadata(pmRoot);
+      expect(explicitRead.settings.item_format).toBe("json_markdown");
+      expect(explicitRead.metadata.has_explicit_item_format).toBe(true);
+    });
+  });
+
+  it("treats non-object settings payloads as lacking explicit item_format selection", async () => {
+    await withTempRoot(async (pmRoot) => {
+      const settingsPath = getSettingsPath(pmRoot);
+      await fs.mkdir(path.dirname(settingsPath), { recursive: true });
+      await fs.writeFile(settingsPath, "[]\n", "utf8");
+      const loaded = await readSettingsWithMetadata(pmRoot);
+      expect(loaded.metadata.has_explicit_item_format).toBe(false);
+      expect(loaded.settings.item_format).toBe("toon");
     });
   });
 

@@ -1,0 +1,46 @@
+front_matter:
+  id: pm-1p6f
+  title: Promote unblock-note to canonical workflow field
+  description: Docs-first promotion and implementation of unblock note metadata across create/update contracts and storage.
+  type: Task
+  status: closed
+  priority: 0
+  tags[7]: "area:workflow",code,docs,"milestone:7",pm-cli,"priority:0",tests
+  created_at: "2026-03-08T13:07:26.852Z"
+  updated_at: "2026-03-08T13:24:14.136Z"
+  deadline: "2026-03-09T13:07:26.852Z"
+  author: maintainer-agent
+  estimated_minutes: 120
+  acceptance_criteria: CLI create/update support --unblock-note and --unblock_note with deterministic none-unset behavior; docs and tests align; coverage remains 100 percent.
+  comments[5]{created_at,author,text}:
+    "2026-03-08T13:07:26.852Z",maintainer-agent,Why this exists unblock-note is still planned-only but needed for all-fields maintainership workflows.
+    "2026-03-08T13:07:45.686Z",maintainer-agent,"Planned changeset before edits: update PRD README and AGENTS to promote unblock-note into canonical create and update contracts, then implement schema and CLI wiring with deterministic none-unset semantics plus unit and integration coverage."
+    "2026-03-08T13:08:47.126Z",maintainer-agent,"Docs-first update complete: PRD README and AGENTS now promote unblock-note and unblock_note into canonical create and update contracts plus all-fields templates, including front-matter schema and key-order contract updates."
+    "2026-03-08T13:10:56.887Z",maintainer-agent,"Implementation phase complete: added unblock_note to item schema and canonical key order, wired create and update options for unblock-note and unblock_note aliases, and updated unit and integration contracts for create/update behavior plus release-readiness docs-help parity."
+    "2026-03-08T13:23:54.899Z",maintainer-agent,"Evidence: pm test pm-1p6f --run --timeout 7200 --json passed both linked commands (coverage plus targeted unblock-note suites). pm test-all --status in_progress --timeout 7200 --json passed totals items=1 linked_tests=2 passed=2 failed=0 skipped=0. pm test-all --status closed --timeout 7200 --json passed totals items=148 linked_tests=378 passed=67 failed=0 skipped=311. Coverage remains 100 percent statements branches functions and lines."
+  notes[1]{created_at,author,text}:
+    "2026-03-08T13:07:26.852Z",maintainer-agent,Plan docs first in PRD README and AGENTS then CLI and schema wiring then unit and integration updates with pm evidence.
+  files[14]{path,scope,note}:
+    AGENTS.md,project,all-fields templates include unblock note
+    PRD.md,project,promote unblock_note schema and flag contracts
+    README.md,project,document create and update unblock note flags
+    src/cli/commands/create.ts,project,create command parsing and explicit unsets
+    src/cli/commands/update.ts,project,update command parsing and mutation
+    src/cli/main.ts,project,add create and update option aliases
+    src/core/item/item-format.ts,project,normalization and serialization
+    src/core/shared/constants.ts,project,canonical key order
+    src/types.ts,project,front matter schema
+    tests/integration/cli.integration.spec.ts,project,cli flag integration contract
+    tests/integration/release-readiness-contract.spec.ts,project,docs help parity contract
+    tests/unit/create-command.spec.ts,project,create coverage for unblock note
+    tests/unit/shared-constants-errors.spec.ts,project,canonical key order coverage
+    tests/unit/update-command.spec.ts,project,update coverage for unblock note
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,7200,sandbox-safe full coverage gate
+    node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/shared-constants-errors.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,7200,targeted unblock-note regression
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,maintainer workflow template
+    PRD.md,project,authoritative flag contract update
+    README.md,project,public flag contract
+  close_reason: unblock-note canonicalized across docs CLI schema and tests with full regression evidence
+body: Promote unblock note metadata into canonical create/update contracts so blocked workflows can capture unblocking rationale with deterministic none-unset semantics.

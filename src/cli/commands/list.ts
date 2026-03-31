@@ -126,8 +126,10 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
-  await readSettings(pmRoot);
-  const items = options.includeBody ? await listAllFrontMatterWithBody(pmRoot) : await listAllFrontMatter(pmRoot);
+  const settings = await readSettings(pmRoot);
+  const items = options.includeBody
+    ? await listAllFrontMatterWithBody(pmRoot, settings.item_format)
+    : await listAllFrontMatter(pmRoot, settings.item_format);
   const filtered = applyFilters(items, status, options);
   const sorted = sortItems(filtered);
   const limit = parseLimit(options.limit);

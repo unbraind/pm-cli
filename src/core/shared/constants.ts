@@ -88,6 +88,7 @@ export const SETTINGS_DEFAULTS: PmSettings = {
   version: 1,
   id_prefix: "pm-",
   author_default: "",
+  item_format: "toon",
   locks: {
     ttl_seconds: 1800,
   },

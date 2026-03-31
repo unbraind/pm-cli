@@ -1,0 +1,39 @@
+front_matter:
+  id: pm-fsyv
+  title: "M5: Enforce symlink-resolved extension entry boundary"
+  description: Harden extension loader so entry containment is validated after symlink resolution.
+  type: Task
+  status: closed
+  priority: 1
+  tags[7]: "area:extensions-loader",code,"milestone:5",pm-cli,"priority:1",security,tests
+  created_at: "2026-03-03T23:15:51.883Z"
+  updated_at: "2026-03-03T23:37:02.045Z"
+  deadline: "2026-03-10T23:15:51.000Z"
+  author: cursor-maintainer
+  estimated_minutes: 90
+  acceptance_criteria: "Extension discovery/load rejects symlink-escaped entries with deterministic warnings, docs are aligned first, and coverage-gated tests verify both escaped and in-tree symlink entry behavior."
+  dependencies[2]{id,kind,created_at,author,source_kind}:
+    pm-7sd,discovered_from,"2026-03-03T23:15:51.883Z",cursor-maintainer,null
+    pm-b1w,parent,"2026-03-03T23:15:51.883Z",cursor-maintainer,null
+  comments[4]{created_at,author,text}:
+    "2026-03-03T23:15:51.883Z",cursor-maintainer,Symlink escapes can bypass current entry boundary checks and this task hardens containment.
+    "2026-03-03T23:16:07.069Z",cursor-maintainer,"Planned changeset: docs-first clarify symlink-resolved entry containment semantics, then implement loader realpath enforcement with unit coverage for escaped and in-tree symlink targets."
+    "2026-03-03T23:27:52.881Z",cursor-maintainer,"Implemented docs-first symlink boundary hardening. Docs: PRD.md and README.md now require extension entry containment after canonical realpath resolution including symlink targets. Code: src/core/extensions/loader.ts now validates entry containment after canonical resolution. Tests: tests/unit/extension-loader.spec.ts now covers symlink escape rejection and in-tree symlink acceptance. Evidence: node dist/cli.js test pm-fsyv --run --timeout 7200 --json passed 2/2 linked tests; node dist/cli.js test-all --status in_progress --timeout 7200 --json totals items=8 linked_tests=32 passed=14 failed=0 skipped=18; node dist/cli.js test-all --status closed --timeout 7200 --json totals items=35 linked_tests=123 passed=50 failed=0 skipped=73. Coverage statement: linked coverage runs remained 100% lines/branches/functions/statements."
+    "2026-03-03T23:37:02.045Z",cursor-maintainer,"Post-lint refactor verification: refactored scanExtensionLayer path into scanExtensionDirectory helper to resolve introduced cognitive-complexity warning without behavior changes. Re-ran required evidence after this code change: node dist/cli.js test pm-fsyv --run --timeout 7200 --json passed 2/2 linked tests; node dist/cli.js test-all --status in_progress --timeout 7200 --json totals items=7 linked_tests=30 passed=14 failed=0 skipped=16; node dist/cli.js test-all --status closed --timeout 7200 --json totals items=36 linked_tests=125 passed=50 failed=0 skipped=75. Coverage remains 100% lines/branches/functions/statements in linked coverage runs."
+  notes[1]{created_at,author,text}:
+    "2026-03-03T23:15:51.883Z",cursor-maintainer,Docs-first update then loader realpath enforcement and unit regression coverage.
+  learnings[1]{created_at,author,text}:
+    "2026-03-03T23:15:51.883Z",cursor-maintainer,none
+  files[4]{path,scope,note}:
+    PRD.md,project,authoritative security semantics
+    README.md,project,docs-first boundary contract update
+    src/core/extensions/loader.ts,project,planned symlink boundary hardening
+    tests/unit/extension-loader.spec.ts,project,symlink boundary regression coverage
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,2400,coverage gate proof
+    node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,1200,targeted loader regression
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,workflow and test safety contract
+    PRD.md,project,governing security contract
+    README.md,project,public contract update
+body: Current entry containment checks use resolved path strings but do not validate symlink targets. Add realpath-aware containment enforcement so entries escaping extension directories via symlinks are rejected deterministically.

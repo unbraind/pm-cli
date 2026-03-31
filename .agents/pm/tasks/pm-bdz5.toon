@@ -1,0 +1,30 @@
+front_matter:
+  id: pm-bdz5
+  title: "M5 roadmap: Pi tool wrapper packaging/distribution polish"
+  description: Polish packaging and distribution of Pi tool wrapper.
+  type: Task
+  status: closed
+  priority: 2
+  tags[4]: "area:extensions","milestone:5",pm-cli,roadmap
+  created_at: "2026-03-07T14:01:19.679Z"
+  updated_at: "2026-03-07T14:45:41.464Z"
+  author: maintainer-agent
+  estimated_minutes: 60
+  acceptance_criteria: Pi wrapper invokes pm when available and otherwise falls back to the packaged dist/cli.js path; behavior is documented and covered by unit tests.
+  comments[4]{created_at,author,text}:
+    "2026-03-07T14:13:48.475Z",maintainer-agent,Claimed task. Will review Pi extension packaging and distribution.
+    "2026-03-07T14:23:51.706Z",maintainer-agent,"Planned changeset: document and harden Pi wrapper packaging fallback so missing global pm deterministically falls back to this package's dist/cli.js path; add regression assertions for fallback path correctness."
+    "2026-03-07T14:45:40.940Z",maintainer-agent,"Implemented Pi wrapper fallback path hardening: corrected node fallback from .pi extension to packaged dist/cli.js and added regression assertions that fallback path is absolute, resolves under /pm-cli/dist/cli.js, and exists on disk."
+    "2026-03-07T14:45:41.111Z",maintainer-agent,"Evidence: pm test pm-bdz5 --run passed (8/8); pm test-all --status in_progress passed (1 linked test); pm test-all --status closed passed (items=129 linked_tests=341 passed=62 failed=0 skipped=279); node scripts/run-tests.mjs coverage reports 100% statements/branches/functions/lines."
+  files[4]{path,scope,note}:
+    .pi/extensions/pm-cli/index.ts,project,Pi extension module
+    PRD.md,project,Specify packaged dist fallback contract
+    README.md,project,Document deterministic fallback invocation order
+    tests/unit/pi-agent-extension.spec.ts,project,fallback path regression assertions
+  tests[1]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts,null,project,240,Pi extension tests
+  docs[2]{path,scope,note}:
+    PRD.md,project,Pi wrapper fallback invocation contract
+    README.md,project,Pi extension docs
+  close_reason: "Pi wrapper now deterministically falls back to packaged dist/cli.js, docs updated, and regression plus full pm test sweeps pass with 100% coverage maintained."
+body: Implement packaging/distribution polish for the built-in Pi tool wrapper extension.

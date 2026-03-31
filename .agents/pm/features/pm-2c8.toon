@@ -1,0 +1,157 @@
+front_matter:
+  id: pm-2c8
+  title: Repo restructure and module boundaries
+  description: Refactor source layout into clear CLI wiring vs core domain modules while preserving deterministic behavior and public command compatibility.
+  type: Feature
+  status: closed
+  priority: 1
+  tags[4]: architecture,pm-cli,refactor,release-readiness
+  created_at: "2026-02-17T23:37:26.647Z"
+  updated_at: "2026-03-07T00:36:48.513Z"
+  deadline: "2026-02-21T23:37:26.647Z"
+  author: cursor-agent
+  estimated_minutes: 360
+  acceptance_criteria: Module boundaries keep src/cli and src/core as canonical implementation locations while legacy root exports remain deterministic and covered by tests/build.
+  dependencies[2]{id,kind,created_at,author,source_kind}:
+    pm-ote,parent,"2026-02-17T23:37:26.647Z",cursor-agent,null
+    pm-pq8,related,"2026-02-17T23:37:26.647Z",cursor-agent,null
+  comments[47]{created_at,author,text}:
+    "2026-02-17T23:51:03.059Z",cursor-agent,Implemented first-pass modular layout (src/cli + src/core + src/types) with stable bin wrapper and new list/test-all command wiring while preserving existing behavior through compatibility bridges.
+    "2026-02-17T23:51:36.869Z",cursor-agent,"Validation evidence: pnpm build succeeded; pm --help includes version/list-in-progress/list-blocked/list-closed/list-canceled/test-all; test-all command executed successfully with dependency_failed semantics available via exit code when failures exist."
+    "2026-02-18T00:10:15.533Z",cursor-agent,Removed recursive linked test command that invoked test-all from within test-all to prevent self-referential execution loops.
+    "2026-02-18T15:23:24.689Z",cursor-maintainer,"Planned changeset: migrate command-layer imports from legacy flat wrappers to src/core and src/types boundary modules; preserve behavior and keep compatibility wrappers in place for now."
+    "2026-02-18T15:31:27.978Z",cursor-maintainer,"Implemented a behavior-preserving import-boundary migration across command modules to consume src/core/* and src/types/index.js paths directly (activity, append, claim, comments, create, docs, files, gc, get, health, history, init, list, restore, stats, test, test-all, update). Validation: pnpm build; node dist/cli.js test pm-2c8 --run --timeout 1200 --json; node dist/cli.js test-all --status in_progress --timeout 1200 --json. Result: all linked tests passed (13/13 in test-all) and coverage remains 100% lines/branches/functions/statements via node scripts/run-tests.mjs coverage."
+    "2026-02-18T15:31:55.854Z",cursor-maintainer,"Handoff: import-boundary migration step completed and validated; item remains in_progress for future wrapper inversion/removal work."
+    "2026-02-18T15:35:49.994Z",maintainer-agent,"Planned changeset: move list/history/activity implementations into src/cli/commands, leave src/commands/* as compatibility re-export wrappers, and update coverage include paths to enforce implementation files."
+    "2026-02-18T15:44:18.123Z",maintainer-agent,"Implemented command-boundary inversion step: moved list/history/activity implementations into src/cli/commands/*, converted src/commands/{list,history,activity}.ts into compatibility re-export wrappers, and updated src/cli/commands/index.ts + vitest coverage include paths to enforce the new implementation files. Validation evidence: pm test pm-2c8 --run --timeout 1200 --json passed all 4 linked tests; pm test-all --status in_progress --timeout 1200 --json passed totals items=4 linked_tests=13 passed=13 failed=0 skipped=0; coverage remains 100% statements/branches/functions/lines (including cli/commands/activity.ts, history.ts, list.ts)."
+    "2026-02-18T15:44:34.179Z",maintainer-agent,"Handoff: completed list/history/activity command migration to src/cli/commands with compatibility wrappers retained in src/commands. Next incremental step can migrate remaining command implementations similarly and eventually remove wrapper layer when imports are fully switched."
+    "2026-02-18T16:59:45.039Z",cursor-maintainer,"Planned change: migrate store implementation to src/core/store/* and turn root store modules into compatibility re-exports. Goal is to improve module boundaries without changing CLI behavior."
+    "2026-02-18T17:08:30.877Z",cursor-maintainer,"Implemented store-boundary inversion: moved implementations into src/core/store/{item-store,paths,settings}.ts, updated src/core/store/index.ts to local exports, and converted src/{item-store,paths,settings}.ts to compatibility re-exports. Fixed test mock compatibility in tests/unit/list-sort-branches.spec.ts to cover both root and core import paths. Evidence: pm test pm-2c8 --run --timeout 1800 --json passed all linked tests; pm test-all --status in_progress --timeout 1800 --json totals passed=15 failed=0 skipped=0 across 4 items; coverage from node scripts/run-tests.mjs coverage remains 100% for statements/branches/functions/lines."
+    "2026-02-18T17:08:49.682Z",cursor-maintainer,"Iteration complete: store-domain core migration validated and claim released for next incremental boundary refactor step."
+    "2026-02-18T17:14:20.797Z",cursor-maintainer,"Plan for this changeset: tighten module-boundary compatibility by removing stale command wrappers and adding contract tests so core/cli namespace boundaries remain deterministic and release-safe."
+    "2026-02-18T17:15:33.621Z",cursor-maintainer,"Implemented module-boundary refinement: moved runTestAll implementation into src/cli/commands/test-all.ts and converted src/commands/test-all.ts into a compatibility re-export."
+    "2026-02-18T17:21:25.035Z",cursor-maintainer,"Found coverage-gate gap after migration: vitest include list still targets src/commands/test-all.ts and does not include src/cli/commands/test-all.ts. Updating coverage include paths to keep 100% gate meaningful for canonical command location."
+    "2026-02-18T17:21:40.195Z",cursor-maintainer,Updated coverage include list to target src/cli/commands/test-all.ts (canonical implementation) so migration remains enforced by the 100% coverage gate.
+    "2026-02-18T17:26:45.568Z",cursor-maintainer,"Evidence: pm test pm-2c8 --run --timeout 1200 => passed=4 failed=0 skipped=0; pm test-all --status in_progress --timeout 1200 => items=4 linked_tests=15 passed=15 failed=0 skipped=0; node scripts/run-tests.mjs coverage => All files 100% statements/branches/functions/lines with cli/commands/test-all.ts at 100%."
+    "2026-02-18T17:27:04.480Z",cursor-maintainer,"Handoff: command-boundary migration and coverage alignment complete for this iteration; leaving item in_progress for additional command migrations."
+    "2026-02-18T17:27:26.692Z",cursor-maintainer,"Discovery check this iteration: PRD milestone and major feature areas already have corresponding pm items (M0-M6 epics and subtasks), so no new tracking items were created."
+    "2026-02-18T17:37:23.979Z",cursor-maintainer,"Planned changeset: invert remaining shared/core wrapper direction so src/core contains canonical implementations (shared/fs/item/history/lock/output), while legacy src/* modules remain compatibility re-exports; no behavior changes intended."
+    "2026-02-18T17:50:17.270Z",cursor-maintainer,"Implemented shared/core wrapper inversion step: moved implementations into src/core/{shared,fs,item,history,lock,output} modules, updated core namespace index exports to local modules, and converted legacy root modules in src/* (constants/errors/serialization/time/fs-utils/id/item-format/parse/history/lock/output/command-types) into compatibility re-exports. Validation: pnpm build passed; pm test pm-2c8 --run --timeout 1800 --json passed 4/4 linked tests including sandboxed coverage; pm test-all --status in_progress --timeout 1800 --json passed totals items=4 linked_tests=15 passed=15 failed=0 skipped=0. Coverage remains 100% statements/branches/functions/lines."
+    "2026-02-18T18:49:44.103Z",cursor-maintainer,"Planned changeset: migrate append command implementation to src/cli/commands/append.ts, keep src/commands/append.ts as a compatibility re-export, and update CLI command exports accordingly without behavior changes."
+    "2026-02-18T18:50:26.059Z",cursor-maintainer,"Implemented append-boundary migration: moved runAppend implementation into src/cli/commands/append.ts, converted src/commands/append.ts into a compatibility re-export, and updated CLI command index + coverage include path to keep canonical ownership in src/cli/commands."
+    "2026-02-18T18:55:03.521Z",cursor-maintainer,"Evidence: pnpm build passed; pm test pm-2c8 --run --timeout 1800 --json passed all linked tests (4/4); pm test-all --status in_progress --timeout 1800 --json passed totals items=4 linked_tests=15 passed=15 failed=0 skipped=0. Coverage remains 100% statements/branches/functions/lines via node scripts/run-tests.mjs coverage, including src/cli/commands/append.ts at 100%."
+    "2026-02-18T18:55:08.119Z",cursor-maintainer,"Iteration handoff: append command boundary migration is complete and validated; item remains in_progress for migrating additional command implementations to src/cli/commands while preserving compatibility wrappers."
+    "2026-02-18T18:58:46.265Z",maintainer-agent,"Planned changeset: migrate get command implementation to src/cli/commands/get.ts, keep src/commands/get.ts as compatibility re-export, and update command exports/coverage include path without behavior changes."
+    "2026-02-18T19:04:10.540Z",maintainer-agent,"Implemented get-boundary migration: moved runGet/GetResult implementation into src/cli/commands/get.ts, converted src/commands/get.ts into a compatibility re-export, updated src/cli/commands/index.ts to export runGet from cli namespace, and aligned vitest coverage include to src/cli/commands/get.ts. Behavior and CLI contract unchanged."
+    "2026-02-18T19:04:10.745Z",maintainer-agent,"Evidence: node dist/cli.js test pm-2c8 --run --timeout 1800 --json passed all linked tests (4/4). Regression: node dist/cli.js test-all --status in_progress --timeout 1800 --json passed totals items=4 linked_tests=15 passed=15 failed=0 skipped=0. Coverage from node scripts/run-tests.mjs coverage remains 100% lines/branches/functions/statements, including src/cli/commands/get.ts at 100%."
+    "2026-02-18T19:04:16.107Z",maintainer-agent,"Iteration handoff: get command boundary migration is complete and validated; item remains in_progress for future command migrations while compatibility wrappers are retained."
+    "2026-02-18T19:07:13.382Z",maintainer-agent,"Planned changeset: migrate claim/release command implementation into src/cli/commands/claim.ts, keep src/commands/claim.ts as compatibility re-export, and update command export/coverage include paths so canonical ownership continues moving to cli namespace without behavior changes."
+    "2026-02-18T19:14:17.176Z",maintainer-agent,"Implemented claim-boundary migration: moved runClaim/runRelease and ClaimResult/ReleaseResult into src/cli/commands/claim.ts, converted src/commands/claim.ts into compatibility re-export wrapper, updated src/cli/commands/index.ts to export from ./claim.js, and aligned vitest coverage include to src/cli/commands/claim.ts. Validation: node dist/cli.js test pm-2c8 --run --timeout 1800 --json passed all linked tests (5/5). Regression: node dist/cli.js test-all --status in_progress --timeout 1800 --json passed totals items=4 linked_tests=16 passed=16 failed=0 skipped=0. Coverage remains 100% lines/branches/functions/statements with cli/commands/claim.ts at 100%. Docs alignment check: PRD.md/README.md/AGENTS.md required no text changes because command behavior and surface remained unchanged."
+    "2026-02-18T19:14:26.388Z",maintainer-agent,"Iteration handoff: claim/release command migration to src/cli/commands is complete and validated; compatibility wrapper remains in src/commands/claim.ts and item stays in_progress for remaining command migrations."
+    "2026-02-18T19:20:32.268Z",cursor-agent,"Planned changeset: migrate gc/health/stats implementations into src/cli/commands as canonical command-layer modules, convert src/commands/{gc,health,stats}.ts to compatibility re-exports, and update coverage includes to enforce the canonical files."
+    "2026-02-18T19:22:38.104Z",cursor-agent,"Implemented command-boundary migration for gc/health/stats: moved canonical logic to src/cli/commands/{gc,health,stats}.ts, converted src/commands/{gc,health,stats}.ts to compatibility re-exports, and switched vitest coverage includes to canonical cli command files."
+    "2026-02-18T19:36:17.397Z",cursor-agent,"Evidence: pnpm build passed. pm test pm-2c8 --run --timeout 1800 --json passed all linked checks (5/5). pm test-all --status in_progress --timeout 1800 --json totals: items=4, linked_tests=16, passed=16, failed=0, skipped=0. pm test-all --status closed --timeout 1800 --json totals: items=11, linked_tests=25, passed=22, failed=0, skipped=3. Coverage remains 100% statements/branches/functions/lines (All files 100 in coverage output, including cli/commands/{gc,health,stats}.ts). No new tracking items were required for this changeset."
+    "2026-02-18T19:41:56.486Z",cursor-maintainer,"Planned changeset: migrate comments/docs/files/restore/test command implementations into src/cli/commands, convert src/commands counterparts to compatibility re-exports, and update coverage include paths to enforce canonical cli-boundary ownership."
+    "2026-02-18T20:00:28.431Z",cursor-maintainer,"Implemented command-boundary migration step: moved comments/docs/files/init/restore/test implementations into src/cli/commands/* and converted src/commands/* counterparts into compatibility re-exports. Updated src/cli/commands/index.ts to import canonical cli modules and updated vitest coverage include paths to enforce cli command ownership. Evidence: pnpm build passed; pm test pm-2c8 --run --timeout 1800 --json passed all linked tests; pm test-all --status in_progress --timeout 1800 --json totals items=4 linked_tests=16 passed=16 failed=0 skipped=0; pm test-all --status closed --timeout 1800 --json totals items=11 linked_tests=25 passed=22 failed=0 skipped=3; coverage remains 100% statements/branches/functions/lines (All files 100% from node scripts/run-tests.mjs coverage output)."
+    "2026-02-18T20:03:49.209Z",maintainer-agent,"Planned changeset: migrate create/update command implementations into src/cli/commands, convert src/commands/{create,update}.ts into compatibility re-exports, and update cli command index exports while preserving behavior and docs contracts."
+    "2026-02-18T20:20:22.827Z",maintainer-agent,"Implemented create/update command-boundary migration: moved canonical runCreate/runUpdate implementations to src/cli/commands/{create,update}.ts, converted src/commands/{create,update}.ts to compatibility re-export wrappers, and switched src/cli/commands/index.ts to local cli exports. Behavior and public command contracts remain unchanged."
+    "2026-02-18T20:20:22.997Z",maintainer-agent,"Evidence: pnpm build passed. pm test pm-2c8 --run --timeout 1800 --json passed linked tests count=5 with all run_results passed. pm test-all --status in_progress --timeout 1800 --json totals items=4 linked_tests=16 passed=16 failed=0 skipped=0. pm test-all --status closed --timeout 1800 --json totals items=11 linked_tests=25 passed=22 failed=0 skipped=3. Coverage remains 100% lines/branches/functions/statements in linked coverage runs."
+    "2026-02-18T20:20:23.159Z",maintainer-agent,"Docs alignment check: PRD.md, README.md, and AGENTS.md required no text changes for this changeset because command behavior/surface did not change; this iteration only completes remaining command-boundary migration for create/update ownership."
+    "2026-02-18T21:23:12.316Z",cursor-maintainer,"Planned changeset: remove the remaining cli-to-legacy command wrapper dependency by importing runTest directly from ./test.js inside src/cli/commands/test-all.ts; behavior should remain unchanged."
+    "2026-02-18T21:36:13.317Z",cursor-maintainer,"Implemented boundary cleanup: src/cli/commands/test-all.ts now imports runTest from ./test.js instead of ../../commands/test.js, removing the last cli-to-legacy command-wrapper dependency while preserving behavior."
+    "2026-02-18T21:36:13.490Z",cursor-maintainer,"Evidence: pm test pm-2c8 --run --timeout 1800 --json passed all 5 linked tests; pm test-all --status in_progress --timeout 1800 --json totals items=4 linked_tests=19 passed=18 failed=0 skipped=1; pm test-all --status closed --timeout 1800 --json totals items=11 linked_tests=25 passed=22 failed=0 skipped=3. Coverage proof from linked node scripts/run-tests.mjs coverage output remains 100% statements/branches/functions/lines (All files 100%), including test-all.ts at 100%. Docs alignment: PRD.md/README.md/AGENTS.md required no text changes for this behavior-preserving import-path cleanup."
+    "2026-02-18T21:40:42.201Z",maintainer-agent,"Planned changeset: add explicit compatibility-wrapper contract coverage that verifies src/commands modules remain strict re-exports of src/cli/commands modules, strengthening module-boundary acceptance criteria without behavior changes."
+    "2026-02-18T21:55:12.360Z",maintainer-agent,"Implemented tests/unit/command-wrapper-exports.spec.ts to verify every src/commands/*.ts module is a strict runtime re-export of the matching src/cli/commands/*.ts module. Evidence: pm test pm-2c8 --run --timeout 1800 --json passed all linked tests (count=6); pm test-all --status in_progress --timeout 1800 --json totals items=4 linked_tests=20 passed=19 failed=0 skipped=1; pm test-all --status closed --timeout 1800 --json totals items=11 linked_tests=25 passed=22 failed=0 skipped=3; coverage from linked run-tests coverage output remains 100% statements/branches/functions/lines."
+    "2026-03-07T00:36:48.513Z",maintainer-agent,"Maintenance fix: removed stale linked test command for deleted tests/unit/command-wrapper-exports.spec.ts after closed regression sweep surfaced deterministic missing-file failure in pm test-all."
+  files[80]{path,scope,note}:
+    src/cli.ts,project,Stable bin wrapper that delegates to src/cli/main.ts
+    src/cli/commands/activity.ts,project,command implementation moved under cli boundary
+    src/cli/commands/append.ts,project,canonical append command implementation
+    src/cli/commands/claim.ts,project,canonical claim/release command implementation
+    src/cli/commands/comments.ts,project,cli-boundary-migration
+    src/cli/commands/create.ts,project,canonical create command implementation
+    src/cli/commands/docs.ts,project,cli-boundary-migration
+    src/cli/commands/files.ts,project,cli-boundary-migration
+    src/cli/commands/gc.ts,project,canonical gc command implementation
+    src/cli/commands/get.ts,project,canonical get command implementation
+    src/cli/commands/health.ts,project,canonical health command implementation
+    src/cli/commands/history.ts,project,command implementation moved under cli boundary
+    src/cli/commands/index.ts,project,CLI command boundary bridge
+    src/cli/commands/init.ts,project,cli-boundary-migration
+    src/cli/commands/list.ts,project,command implementation moved under cli boundary
+    src/cli/commands/restore.ts,project,cli-boundary-migration
+    src/cli/commands/stats.ts,project,canonical stats command implementation
+    src/cli/commands/test-all.ts,project,Canonical test-all implementation moved into cli command namespace
+    src/cli/commands/test.ts,project,cli-boundary-migration
+    src/cli/commands/update.ts,project,canonical update command implementation
+    src/cli/main.ts,project,New CLI wiring entrypoint with expanded commands
+    src/command-types.ts,project,compatibility wrapper to core shared command types
+    src/commands/activity.ts,project,import-boundary migration candidate
+    src/commands/append.ts,project,import-boundary migration candidate
+    src/commands/claim.ts,project,import-boundary migration candidate
+    src/commands/comments.ts,project,import-boundary migration candidate
+    src/commands/create.ts,project,import-boundary migration candidate
+    src/commands/docs.ts,project,import-boundary migration candidate
+    src/commands/files.ts,project,import-boundary migration candidate
+    src/commands/gc.ts,project,import-boundary migration to core modules
+    src/commands/get.ts,project,import-boundary migration candidate
+    src/commands/health.ts,project,import-boundary migration to core modules
+    src/commands/history.ts,project,import-boundary migration candidate
+    src/commands/init.ts,project,import-boundary migration to core modules
+    src/commands/list.ts,project,List limit support for deterministic filtering
+    src/commands/release.ts,project,import-boundary migration candidate
+    src/commands/restore.ts,project,import-boundary migration candidate
+    src/commands/stats.ts,project,import-boundary migration to core modules
+    src/commands/test-all.ts,project,Cross-item linked test orchestration command
+    src/commands/test.ts,project,import-boundary migration candidate
+    src/commands/update.ts,project,import-boundary migration candidate
+    src/constants.ts,project,compatibility wrapper to core shared constants
+    src/core/fs/fs-utils.ts,project,Core boundary wrapper
+    src/core/fs/index.ts,project,Core namespace export
+    src/core/history/history.ts,project,Core boundary wrapper
+    src/core/history/index.ts,project,Core namespace export
+    src/core/item/id.ts,project,Core boundary wrapper
+    src/core/item/index.ts,project,Core namespace export
+    src/core/item/item-format.ts,project,Core boundary wrapper
+    src/core/item/parse.ts,project,Core boundary wrapper
+    src/core/lock/index.ts,project,Core namespace export
+    src/core/lock/lock.ts,project,Core boundary wrapper
+    src/core/output/output.ts,project,Core boundary wrapper
+    src/core/shared/command-types.ts,project,Core boundary wrapper
+    src/core/shared/constants.ts,project,Core boundary wrapper
+    src/core/shared/errors.ts,project,Core boundary wrapper
+    src/core/shared/index.ts,project,Core namespace export
+    src/core/shared/serialization.ts,project,Core boundary wrapper
+    src/core/shared/time.ts,project,Core boundary wrapper
+    src/core/store/index.ts,project,Core namespace export
+    src/core/store/item-store.ts,project,Core boundary wrapper
+    src/core/store/paths.ts,project,Core boundary wrapper
+    src/core/store/settings.ts,project,Core boundary wrapper
+    src/errors.ts,project,compatibility wrapper to core shared errors
+    src/fs-utils.ts,project,compatibility wrapper to core fs module
+    src/history.ts,project,compatibility wrapper to core history module
+    src/id.ts,project,compatibility wrapper to core item id module
+    src/item-format.ts,project,compatibility wrapper to core item format module
+    src/item-store.ts,project,compatibility re-export
+    src/lock.ts,project,compatibility wrapper to core lock module
+    src/output.ts,project,compatibility wrapper to core output module
+    src/parse.ts,project,compatibility wrapper to core item parse module
+    src/paths.ts,project,compatibility re-export
+    src/serialization.ts,project,compatibility wrapper to core shared serialization
+    src/settings.ts,project,compatibility re-export
+    src/time.ts,project,compatibility wrapper to core shared time
+    src/types/index.ts,project,Shared type namespace entry
+    tests/unit/command-wrapper-exports.spec.ts,project,wrapper parity contract coverage
+    tests/unit/list-sort-branches.spec.ts,project,mock compatibility for core store boundary migration
+    vitest.config.ts,project,coverage include paths updated to cli command implementations
+  tests[5]{command,path,scope,timeout_seconds,note}:
+    node dist/cli.js --help,null,project,60,Command surface smoke check
+    node scripts/run-tests.mjs coverage,null,project,900,sandboxed coverage gate
+    node scripts/run-tests.mjs test,null,project,600,sandboxed unit/integration suite
+    node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts,null,project,300,targeted claim command regression
+    pnpm build,null,project,180,Compile after structure refactor
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,agent workflow and dogfood protocol
+    PRD.md,project,governing spec
+    README.md,project,public command and structure contract
+body: "Implement scalable TypeScript CLI structure with separated command wiring, core domain modules, and shared types; keep existing command behavior stable."

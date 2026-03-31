@@ -1,0 +1,34 @@
+front_matter:
+  id: pm-siz
+  title: "M0: Error model and exit code mapping"
+  description: "Implement and verify structured error model and PRD exit code mapping through integration coverage for usage, not-found, conflict, dependency-failed, and generic failure paths."
+  type: Task
+  status: closed
+  priority: 1
+  tags[4]: "area:error-model",core,"milestone:0",pm-cli
+  created_at: "2026-02-17T23:02:07.105Z"
+  updated_at: "2026-02-19T21:58:55.319Z"
+  deadline: "2026-02-20T23:02:07.105Z"
+  author: steve
+  estimated_minutes: 120
+  acceptance_criteria: "Error and command-failure paths deterministically map to exit codes 1/2/3/4/5 per PRD, with integration tests and regression sweeps passing at 100% coverage."
+  dependencies[1]{id,kind,created_at,author,source_kind}:
+    pm-2xl,parent,"2026-02-17T23:02:07.105Z",steve,null
+  comments[3]{created_at,author,text}:
+    "2026-02-19T21:34:16.277Z",cursor-maintainer,"Planned change-set: add deterministic integration coverage for CLI exit-code mapping paths (usage, not-found, conflict, dependency-failed, generic failure), validate existing error model contracts in src/core/shared/errors.ts and src/cli/main.ts, then run pm test + test-all regression sweeps with 100% coverage evidence."
+    "2026-02-19T21:58:54.806Z",cursor-maintainer,"Implemented exit-code hardening for generic-failure path by adding integration coverage in tests/integration/cli.integration.spec.ts (new test: returns generic-failure exit code for unexpected init filesystem errors), which validates top-level unknown-error mapping to exit code 1 while preserving existing checks for usage/not-found/conflict/dependency-failed. Evidence: pm test pm-siz --run --timeout 2400 --json passed all linked tests (3/3); pm test-all --status in_progress --timeout 2400 --json passed totals items=8 linked_tests=36 passed=35 failed=0 skipped=1; pm test-all --status closed --timeout 2400 --json passed totals items=16 linked_tests=44 passed=41 failed=0 skipped=3; coverage remains 100% statements/branches/functions/lines."
+    "2026-02-19T21:58:54.970Z",cursor-maintainer,"Docs alignment check: PRD.md, README.md, and AGENTS.md remain accurate for this change-set; no contract text updates were required because behavior already specified exit code mapping and this iteration adds regression coverage."
+  files[4]{path,scope,note}:
+    src/cli/main.ts,project,top-level-error-to-exit-code-mapping
+    src/core/shared/constants.ts,project,authoritative-exit-code-map
+    src/core/shared/errors.ts,project,structured-error-type
+    tests/integration/cli.integration.spec.ts,project,integration-exit-code-regression-tests
+  tests[3]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,2400,coverage-gate
+    node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1200,exit-code-integration-regression
+    pnpm build,null,project,240,compile-gate
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,dogfood-test-safety-protocol
+    PRD.md,project,governing-exit-code-contract
+    README.md,project,public-exit-code-contract
+body: Define shared error classes and command-level exit handling.

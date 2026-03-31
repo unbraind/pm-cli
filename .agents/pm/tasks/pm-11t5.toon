@@ -1,0 +1,41 @@
+front_matter:
+  id: pm-11t5
+  title: Harden recursive test-all detection for pnpm dlx and npm exec launchers
+  description: Reject linked test commands that invoke pm test-all through pnpm dlx/npm exec package launcher forms and keep runtime skip parity.
+  type: Task
+  status: closed
+  priority: 1
+  tags[6]: "area:test-command",code,"milestone:3",pm-cli,"priority:1",tests
+  created_at: "2026-03-05T11:05:52.887Z"
+  updated_at: "2026-03-05T11:30:19.133Z"
+  deadline: "2026-03-06T23:59:00.000Z"
+  author: cursor-maintainer
+  estimated_minutes: 90
+  acceptance_criteria: pm test --add rejects recursive test-all commands launched via pnpm dlx and npm exec package-spec forms; pm test --run skips legacy recursive entries for those forms; docs and tests reflect behavior; coverage remains 100 percent.
+  dependencies[1]{id,kind,created_at,author,source_kind}:
+    pm-8fvl,related,"2026-03-05T11:05:52.887Z",cursor-maintainer,null
+  comments[6]{created_at,author,text}:
+    "2026-03-05T11:05:52.887Z",cursor-maintainer,"Gap verified by probe command: pnpm dlx pm-cli@latest --json test-all currently bypasses recursion guard."
+    "2026-03-05T11:06:13.568Z",cursor-maintainer,"Planned changeset: update PRD/README/AGENTS to explicitly include pnpm dlx and npm exec package launcher recursion forms, then harden src/cli/commands/test.ts parsing and extend unit regressions for add-time rejection plus runtime skip parity."
+    "2026-03-05T11:07:05.887Z",cursor-maintainer,"Docs-first alignment completed: updated PRD README and AGENTS recursive test-all safety wording to explicitly include pnpm dlx and npm exec package launcher forms alongside existing pm and npx examples."
+    "2026-03-05T11:20:20.643Z",cursor-maintainer,"Implemented launcher-parser hardening in src/cli/commands/test.ts: recursive test-all detection now evaluates pnpm dlx and npm exec/x package-launcher forms in addition to existing pm/node/npx handling, while preserving token-aware flag and env parsing semantics."
+    "2026-03-05T11:20:20.789Z",cursor-maintainer,"Evidence: pm test pm-11t5 --run --timeout 2400 --json passed (linked_tests=2 passed=2 failed=0) with coverage report at 100% lines/branches/functions/statements; pm test-all --status in_progress --timeout 2400 --json passed (items=1 linked_tests=2 passed=2 failed=0 skipped=0); pm test-all --status closed --timeout 2400 --json passed (items=68 linked_tests=212 passed=59 failed=0 skipped=153)."
+    "2026-03-05T11:30:11.746Z",cursor-maintainer,"Post-refactor verification (latest code): pm test pm-11t5 --run --timeout 2400 --json passed with linked_tests=2 passed=2 failed=0 and 100% coverage across lines/branches/functions/statements; pm test-all --status in_progress --timeout 2400 --json passed (items=1 linked_tests=2 passed=2 failed=0 skipped=0); pm test-all --status closed --timeout 2400 --json passed (items=68 linked_tests=212 passed=59 failed=0 skipped=153)."
+  notes[1]{created_at,author,text}:
+    "2026-03-05T11:05:52.887Z",cursor-maintainer,Docs-first update PRD/README/AGENTS then implement launcher parser hardening and add regressions.
+  learnings[1]{created_at,author,text}:
+    "2026-03-05T11:05:52.887Z",cursor-maintainer,Recursive guard logic should normalize package-launcher wrappers consistently across npm ecosystem commands.
+  files[5]{path,scope,note}:
+    AGENTS.md,project,docs-first recursive launcher examples
+    PRD.md,project,docs-first recursive launcher contract update
+    README.md,project,docs-first recursive launcher examples
+    src/cli/commands/test.ts,project,recursive launcher detection
+    tests/unit/test-command.spec.ts,project,regression coverage for pnpm dlx and npm exec
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,1800,full coverage gate
+    node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,1200,targeted recursion guard regressions
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,maintainer workflow and safety rules
+    PRD.md,project,authoritative recursive safety contract
+    README.md,project,public recursive safety contract
+body: "Context: recursive test-all guard currently catches pm/node/npx launcher forms but allows pnpm dlx pm-cli@latest --json test-all. Approach: docs-first contract update, then token-aware launcher parsing for pnpm dlx and npm exec variants, plus regression tests for add-time rejection and runtime skip behavior."

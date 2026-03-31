@@ -1,0 +1,41 @@
+front_matter:
+  id: pm-3s0
+  title: "M5: Built-in todos import export extension"
+  description: Implement todos markdown import and export extension.
+  type: Task
+  status: closed
+  priority: 1
+  tags[4]: "area:extensions-todos",core,"milestone:5",pm-cli
+  created_at: "2026-02-17T23:02:12.078Z"
+  updated_at: "2026-03-04T13:40:47.644Z"
+  deadline: "2026-03-13T23:02:12.078Z"
+  author: steve
+  estimated_minutes: 120
+  acceptance_criteria: Todos import and export preserve mapped fields deterministically.
+  dependencies[2]{id,kind,created_at,author,source_kind}:
+    pm-b1w,parent,"2026-02-17T23:02:12.078Z",steve,null
+    pm-f45,blocks,"2026-02-17T23:02:12.078Z",steve,null
+  comments[6]{created_at,author,text}:
+    "2026-02-19T20:12:36.006Z",cursor-agent,"Planned change-set: docs-first update to mark todos import and export as built-in extension command handlers, then implement built-in todos extension modules and command-path dispatch through extension registry, keeping beads as import-only extension command without core fallback."
+    "2026-02-19T20:16:43.603Z",cursor-agent,"Docs-first update completed: README now lists pm todos import/export as built-in extension commands and clarifies beads is extension import-only; PRD command contracts now include todos import/export outputs, marks todos built-in extension as implemented baseline, and tightens beads to extension-only (no core fallback)."
+    "2026-02-19T21:25:47.916Z",cursor-agent,"Implemented built-in todos import/export extension module with command handlers for todos import and todos export, todos markdown mapping logic, and CLI command-path wiring through required extension dispatch. Added integration and unit coverage for todos import/export behavior and extension-only command handling."
+    "2026-02-19T21:25:48.115Z",cursor-agent,"Evidence: pnpm build passed. node dist/cli.js test pm-3s0 --run --timeout 2400 --json passed all linked tests including node scripts/run-tests.mjs coverage with 100% lines/branches/functions/statements. Final regression sweeps on this code state passed: node dist/cli.js test-all --status in_progress --timeout 2400 --json totals items=7 linked_tests=33 passed=32 failed=0 skipped=1; node dist/cli.js test-all --status closed --timeout 2400 --json totals items=16 linked_tests=44 passed=41 failed=0 skipped=3."
+    "2026-03-04T13:30:07.637Z",steve,"Planned closure pass: re-run linked sandbox-safe tests with pm test --run and regression sweeps via pm test-all (in_progress + closed). If green and coverage remains 100%, close this item with evidence."
+    "2026-03-04T13:40:47.327Z",steve,"Evidence: pm test pm-3s0 --run --timeout 7200 --json passed all linked tests (3/3, failed=0). Regression sweeps passed: pm test-all --status in_progress --timeout 7200 --json totals items=2 linked_tests=9 passed=7 failed=0 skipped=2; pm test-all --status closed --timeout 7200 --json totals items=43 linked_tests=154 passed=54 failed=0 skipped=100. Coverage statement: sandboxed coverage run remained 100% lines/branches/functions/statements."
+  files[7]{path,scope,note}:
+    PRD.md,project,docs-first built-in extensions status update
+    README.md,project,docs-first command surface update
+    src/cli/main.ts,project,declare todos command paths and extension-only dispatch
+    src/extensions/builtins/todos/import-export.ts,project,todos import export mapping logic
+    src/extensions/builtins/todos/index.ts,project,built-in todos extension activate hook
+    tests/integration/cli.integration.spec.ts,project,integration coverage for todos extension commands
+    tests/unit/todos-extension.spec.ts,project,unit coverage for todos extension mappings
+  tests[3]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,2400,full sandboxed coverage gate
+    node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,integration extension command coverage
+    node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts,null,project,900,todos extension unit coverage
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,dogfood and workflow constraints
+    PRD.md,project,governing extension behavior and command contracts
+    README.md,project,documented command surface
+body: Ship built-in todos adapter extension.

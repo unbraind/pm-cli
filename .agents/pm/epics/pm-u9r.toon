@@ -1,0 +1,38 @@
+front_matter:
+  id: pm-u9r
+  title: Milestone 1 - Core Item CRUD + Locking
+  description: Milestone epic for schema item IO ID strategy lock safety and base CRUD commands.
+  type: Epic
+  status: closed
+  priority: 0
+  tags[4]: "area:core-crud",core,"milestone:1",pm-cli
+  created_at: "2026-02-17T23:01:10.609Z"
+  updated_at: "2026-03-04T14:14:42.360Z"
+  deadline: "2026-02-23T23:01:10.609Z"
+  author: steve
+  estimated_minutes: 540
+  acceptance_criteria: Milestone 1 checklist items are implemented and deterministic.
+  dependencies[2]{id,kind,created_at,author,source_kind}:
+    pm-2xl,blocks,"2026-02-17T23:01:10.609Z",steve,null
+    pm-j7a,child,"2026-02-17T23:01:10.609Z",steve,null
+  comments[4]{created_at,author,text}:
+    "2026-02-17T23:01:10.609Z",steve,Milestone 1 builds on milestone 0 foundations for core mutation workflows.
+    "2026-03-04T13:54:51.333Z",maintainer-agent,"Planned changeset: verify Milestone 1 completion against PRD core CRUD+locking checklist and current CLI command surface, then run mandatory pm test + pm test-all sweeps and close with evidence if all checks pass."
+    "2026-03-04T14:04:24.700Z",maintainer-agent,"Evidence: verified Milestone 1 PRD checklist against current CLI command surface (pm --help includes create/get/update/append/claim/release/close/delete + lock-safe mutation workflow). Mandatory item run passed: pm test pm-u9r --run --timeout 7200 --json => linked tests passed=3 failed=0 skipped=0. Regression sweeps passed: pm test-all --status in_progress --timeout 7200 --json => totals items=2 linked_tests=9 passed=7 failed=0 skipped=2; pm test-all --status closed --timeout 7200 --json => totals items=44 linked_tests=157 passed=54 failed=0 skipped=103. Coverage proof: sandboxed coverage outputs report 100% lines/branches/functions/statements (All files 100/100/100/100). Follow-up items created: none."
+    "2026-03-04T14:14:42.360Z",maintainer-agent,"Post-close compliance rerun after closure metadata updates: pm test pm-u9r --run --timeout 7200 --json passed (linked tests passed=3 failed=0 skipped=0). pm test-all --status in_progress --timeout 7200 --json passed totals items=1 linked_tests=6 passed=5 failed=0 skipped=1. pm test-all --status closed --timeout 7200 --json passed totals items=45 linked_tests=160 passed=54 failed=0 skipped=106. Coverage proof remains 100% lines/branches/functions/statements (All files 100/100/100/100)."
+  notes[1]{created_at,author,text}:
+    "2026-02-17T23:01:10.609Z",steve,Success means atomic CRUD with lock conflict handling and deterministic output.
+  files[4]{path,scope,note}:
+    src/cli/main.ts,project,CRUD command wiring in CLI surface
+    src/core/item/id.ts,project,id normalization and generation
+    src/core/lock/lock.ts,project,lock semantics and stale lock handling
+    src/core/store/item-store.ts,project,core CRUD persistence and atomic writes
+  tests[3]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,3600,full sandboxed coverage gate
+    node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,CRUD lock lifecycle integration matrix
+    node scripts/run-tests.mjs test -- tests/unit/core-item-lock-coverage.spec.ts,null,project,1200,core lock branch coverage
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,agent workflow contract
+    PRD.md,project,governing spec for milestone 1
+    README.md,project,user-facing command surface contract
+body: Implement core CRUD and locking semantics on item files.

@@ -1,0 +1,61 @@
+front_matter:
+  id: pm-jdt8
+  title: Add definition-of-done config baseline
+  description: Docs-first add a config command baseline for team Definition of Done settings so maintainer workflows can persist release-quality criteria deterministically.
+  type: Task
+  status: closed
+  priority: 0
+  tags[9]: "area:config","area:workflow",code,docs,"milestone:7",pm-cli,"priority:0",release-readiness,tests
+  created_at: "2026-03-08T14:33:25.586Z"
+  updated_at: "2026-03-08T15:05:51.939Z"
+  deadline: "2026-03-09T14:33:25.586Z"
+  author: maintainer-agent
+  estimated_minutes: 150
+  acceptance_criteria: pm config supports project/global Definition of Done criteria persistence with deterministic TOON/JSON output; PRD README and AGENTS document the baseline; unit/integration coverage keeps the repository at 100 percent.
+  definition_of_ready: "Gap confirmed: maintainer workflow requires Definition of Done configuration but the CLI currently exposes no config command or settings slot."
+  order: 1
+  goal: Release-hardening
+  objective: Close maintainer workflow gap for team Definition of Done configuration
+  value: Enables deterministic team-level quality policy storage in pm itself
+  impact: Reduces release-readiness drift between maintainer instructions and CLI behavior
+  outcome: Maintainers can persist and inspect Definition of Done criteria through the CLI
+  why_now: Current maintainer protocol references pm config for Definition of Done but implementation has no command support yet
+  risk: medium
+  confidence: high
+  sprint: maintainer-loop-2026-03-08
+  release: v0.1
+  dependencies[1]{id,kind,created_at,author,source_kind}:
+    pm-ote,related,"2026-03-08T14:33:25.586Z",maintainer-agent,null
+  comments[4]{created_at,author,text}:
+    "2026-03-08T14:33:25.586Z",maintainer-agent,Why this exists because the maintainer workflow expects Definition of Done configuration but pm currently has no config command or workflow settings storage.
+    "2026-03-08T14:33:33.555Z",maintainer-agent,"Planned changeset: update PRD README and AGENTS first to document a minimal pm config baseline for Definition of Done criteria, then implement settings persistence plus config command wiring and targeted release-readiness tests."
+    "2026-03-08T14:39:19.710Z",maintainer-agent,"Docs-first implementation is in place: added workflow.definition_of_done settings storage, a new config command baseline for project/global get and set flows, CLI integration coverage, and Pi wrapper action parity for the new command surface."
+    "2026-03-08T15:05:51.939Z",maintainer-agent,"Evidence: pm test pm-jdt8 --run passed all 3 linked tests; pm test-all --status in_progress rerun passed 3 of 3 linked tests after one transient todos-import false negative on the first sweep; pm test-all --status closed passed 68 linked tests with 316 deterministic duplicate or path skips across 151 closed items; node scripts/run-tests.mjs coverage remained at 100 percent statements, branches, functions, and lines."
+  notes[1]{created_at,author,text}:
+    "2026-03-08T14:33:25.586Z",maintainer-agent,Plan update docs first then add settings storage and config command wiring then run focused and full regression checks.
+  files[15]{path,scope,note}:
+    .pi/extensions/pm-cli/index.ts,project,Pi wrapper config action parity
+    AGENTS.md,project,maintainer workflow contract
+    PRD.md,project,authoritative config contract update
+    README.md,project,public config command documentation
+    src/cli/commands/config.ts,project,config command implementation
+    src/cli/commands/index.ts,project,export config command
+    src/cli/main.ts,project,config command wiring
+    src/core/shared/constants.ts,project,settings defaults include workflow definition-of-done
+    src/core/store/settings.ts,project,settings schema persistence update
+    src/types.ts,project,settings schema includes workflow definition-of-done
+    tests/integration/cli.integration.spec.ts,project,config CLI integration coverage
+    tests/unit/config-command.spec.ts,project,unit coverage for config command
+    tests/unit/pi-agent-extension.spec.ts,project,Pi wrapper config action coverage
+    tests/unit/settings-store.spec.ts,project,settings workflow compatibility coverage
+    vitest.config.ts,project,coverage include for config command
+  tests[3]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,2400,sandbox-safe coverage gate
+    node scripts/run-tests.mjs test -- tests/unit/config-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/help-readme-contract.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,2400,targeted config baseline regressions
+    node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/integration/help-readme-contract.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,2400,targeted config contract regressions
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,maintainer workflow contract
+    PRD.md,project,governing spec
+    README.md,project,public command contract
+  close_reason: "Definition-of-Done config baseline implemented with docs, CLI, settings persistence, Pi wrapper parity, and verified 100 percent coverage."
+body: "Implement the narrowest release-safe baseline for Definition of Done settings: document the command contract, add settings storage for workflow.definition_of_done, wire a config command surface for set/list flows, and keep the repository release-ready with sandbox-safe regression evidence."

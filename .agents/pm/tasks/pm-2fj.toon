@@ -1,0 +1,37 @@
+front_matter:
+  id: pm-2fj
+  title: "M2: History and activity commands"
+  description: Implement user-visible history and activity inspection commands.
+  type: Task
+  status: closed
+  priority: 1
+  tags[4]: "area:history",core,"milestone:2",pm-cli
+  created_at: "2026-02-17T23:02:08.818Z"
+  updated_at: "2026-02-18T01:33:09.884Z"
+  deadline: "2026-02-27T23:02:08.818Z"
+  author: steve
+  estimated_minutes: 90
+  acceptance_criteria: History and activity command outputs are deterministic and complete.
+  dependencies[2]{id,kind,created_at,author,source_kind}:
+    pm-c0r,parent,"2026-02-17T23:02:08.818Z",steve,null
+    pm-u9r,blocks,"2026-02-17T23:02:08.818Z",steve,null
+  comments[3]{created_at,author,text}:
+    "2026-02-18T01:27:26.694Z",agent,Implementing history/activity CLI commands with deterministic output contracts and test coverage; docs will be updated before behavior changes.
+    "2026-02-18T01:33:09.397Z",agent,"Implemented new history/activity command surface: added runHistory and runActivity handlers, wired CLI registration/exports, updated README+PRD command matrices first, and added unit/integration coverage for deterministic history/activity behavior."
+    "2026-02-18T01:33:09.558Z",agent,"Evidence: pnpm build passed; node dist/cli.js test pm-2fj --run --timeout 1200 --json passed (2/2 linked tests). Coverage report remained 100% statements/branches/functions/lines. Regression sweep passed via node dist/cli.js test-all --status in_progress --timeout 1200 --json with totals items=6 linked_tests=9 passed=9 failed=0 skipped=0."
+  files[8]{path,scope,note}:
+    PRD.md,project,Update command matrix and milestone state
+    README.md,project,Update implemented-vs-roadmap command lists
+    src/cli/commands/index.ts,project,Export new command handlers
+    src/cli/main.ts,project,Register history/activity commands
+    src/commands/activity.ts,project,Implement cross-item activity stream
+    src/commands/history.ts,project,Implement per-item history retrieval
+    tests/integration/cli.integration.spec.ts,project,Add history/activity CLI integration checks
+    tests/unit/history-activity-command.spec.ts,project,Unit coverage for history/activity handlers
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,600,Sandboxed coverage gate
+    node scripts/run-tests.mjs test,null,project,600,Sandboxed regression tests
+  docs[2]{path,scope,note}:
+    PRD.md,project,Authoritative command and output contract
+    README.md,project,Public command surface reference
+body: Expose history timelines through command output contracts.

@@ -1,0 +1,42 @@
+front_matter:
+  id: pm-mfza
+  title: Add snake_case aliases for create/update acceptance and estimate flags
+  description: Support --acceptance_criteria and --estimated_minutes aliases alongside kebab-case flags for automation compatibility.
+  type: Task
+  status: closed
+  priority: 0
+  tags[8]: "area:cli","area:docs",code,compatibility,"milestone:6",pm-cli,"priority:0",tests
+  created_at: "2026-03-07T22:41:27.421Z"
+  updated_at: "2026-03-07T22:57:55.556Z"
+  deadline: "2026-03-09T23:59:00.000Z"
+  author: maintainer-agent
+  estimated_minutes: 90
+  acceptance_criteria: pm create and pm update accept --acceptance_criteria and --estimated_minutes; authoritative docs and contract tests reflect aliases; pm test plus test-all sweeps pass with 100% coverage.
+  dependencies[1]{id,kind,created_at,author,source_kind}:
+    pm-b1w,related,"2026-03-07T22:41:27.421Z",maintainer-agent,null
+  comments[6]{created_at,author,text}:
+    "2026-03-07T22:41:27.421Z",maintainer-agent,Why this exists automation prompts frequently emit snake_case flag names and currently require manual translation.
+    "2026-03-07T22:41:42.118Z",maintainer-agent,"Planned change-set: update PRD and README first to document snake_case aliases for --acceptance_criteria and --estimated_minutes in create/update contracts, then wire commander option aliases and normalization, then add integration/release-contract assertions."
+    "2026-03-07T22:42:09.312Z",maintainer-agent,"Docs-first update complete: PRD.md and README.md now declare snake_case aliases --acceptance_criteria and --estimated_minutes for create/update flag contracts before runtime implementation."
+    "2026-03-07T22:44:57.400Z",maintainer-agent,Initial pm test run exposed Commander alias limitations when three long flags were declared on one option. Reworked create/update alias registration to separate --estimated_minutes options and retained required create validation in normalizeCreateOptions.
+    "2026-03-07T22:57:55.046Z",maintainer-agent,"Implemented docs-first snake_case alias parity: PRD/README now document --estimated_minutes and --acceptance_criteria for create/update contracts; CLI wiring in src/cli/main.ts now accepts these aliases via dedicated option registration plus normalization fallbacks; integration and release-readiness contract tests now cover alias runtime/help/doc behavior."
+    "2026-03-07T22:57:55.219Z",maintainer-agent,"Evidence: pm test pm-mfza --run --timeout 7200 --json passed (3/3 linked tests including coverage). pm test-all --status in_progress --timeout 7200 --json passed (items=1 linked_tests=3 passed=3 failed=0 skipped=0). pm test-all --status closed --timeout 7200 --json passed (items=138 linked_tests=356 passed=64 failed=0 skipped=292). Coverage remains 100% lines/branches/functions/statements."
+  notes[1]{created_at,author,text}:
+    "2026-03-07T22:41:27.421Z",maintainer-agent,Plan docs-first updates then CLI option wiring then integration/release contract tests.
+  files[6]{path,scope,note}:
+    PRD.md,project,command contract update
+    README.md,project,docs-first alias contract update
+    src/cli/main.ts,project,create/update option alias wiring
+    tests/integration/cli.integration.spec.ts,project,CLI alias integration coverage
+    tests/integration/help-readme-contract.spec.ts,project,README/help alignment coverage
+    tests/integration/release-readiness-contract.spec.ts,project,help contract coverage
+  tests[3]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,3600,coverage gate
+    node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,alias integration coverage
+    node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,release-readiness contract
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,maintainer workflow contract
+    PRD.md,project,authoritative command contract
+    README.md,project,public create/update alias documentation
+  close_reason: Snake_case aliases for create/update estimate and acceptance criteria are implemented across docs/runtime/tests; pm test and both regression sweeps pass with 100% coverage.
+body: "Docs-first hardening: document and implement snake_case aliases for acceptance criteria and estimated minutes in create/update command parsing and help contracts."

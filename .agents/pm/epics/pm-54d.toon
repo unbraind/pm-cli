@@ -1,0 +1,36 @@
+front_matter:
+  id: pm-54d
+  title: Milestone 3 - Query + Operations
+  description: Milestone epic for list query operations and linked artifact commands.
+  type: Epic
+  status: closed
+  priority: 0
+  tags[4]: "area:operations",core,"milestone:3",pm-cli
+  created_at: "2026-02-17T23:01:11.350Z"
+  updated_at: "2026-03-04T14:52:10.543Z"
+  deadline: "2026-03-03T23:01:11.350Z"
+  author: steve
+  estimated_minutes: 420
+  acceptance_criteria: Milestone 3 checklist items are implemented and tested.
+  dependencies[2]{id,kind,created_at,author,source_kind}:
+    pm-c0r,blocks,"2026-02-17T23:01:11.350Z",steve,null
+    pm-j7a,child,"2026-02-17T23:01:11.350Z",steve,null
+  comments[5]{created_at,author,text}:
+    "2026-02-17T23:01:11.350Z",steve,Milestone 3 turns core data into usable project operations.
+    "2026-03-04T14:41:02.957Z",unknown,"Planned change-set: add explicit integration assertions for list-open/list-in-progress/list-blocked/list-closed/list-canceled command filtering, then update PRD Milestone 3 list checklist from [~] to [x] once verified by sandboxed coverage + regression runs."
+    "2026-03-04T14:42:10.797Z",cursor-maintainer,"Implemented change-set: added integration coverage that seeds all lifecycle statuses and asserts list-open/list-in-progress/list-blocked/list-closed/list-canceled filtering plus list-all terminal ordering, and updated PRD Milestone 3 checklist entry for list/list-* from partial to complete."
+    "2026-03-04T14:42:21.685Z",cursor-maintainer,"Bootstrap evidence: ensured latest project build is globally available via npm install -g /home/steve/GITHUB_RELEASE/pm-cli and verified pm --version => 0.1.0."
+    "2026-03-04T14:52:06.921Z",cursor-maintainer,"Evidence: pm test pm-54d --run --timeout 1800 passed (2/2 linked commands). pm test-all --status in_progress --timeout 1800 passed (items=1, linked_tests=2, failed=0). pm test-all --status closed --timeout 1800 passed (items=46, linked_tests=166, failed=0, skipped=112 duplicate keys). Coverage remained 100% lines/branches/functions/statements, and new integration test case now validates list-open/list-in-progress/list-blocked/list-closed/list-canceled filtering plus list-all terminal ordering."
+  notes[1]{created_at,author,text}:
+    "2026-02-17T23:01:11.350Z",steve,Success means deterministic list filter and linked command workflows.
+  files[2]{path,scope,note}:
+    PRD.md,project,milestone checklist alignment
+    tests/integration/cli.integration.spec.ts,project,list status command matrix coverage
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,1200,sandboxed 100 percent coverage gate
+    node scripts/run-tests.mjs test,null,project,1200,sandboxed regression suite
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,dogfood workflow requirements
+    PRD.md,project,authoritative milestone checklist
+    README.md,project,public command contract
+body: Implement query commands and operational helpers.

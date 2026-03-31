@@ -1,0 +1,38 @@
+front_matter:
+  id: pm-3ses
+  title: "M5 follow-up: isolate hook execution contexts"
+  description: Ensure extension hooks run with isolated context snapshots so one hook cannot mutate caller or sibling hook context.
+  type: Task
+  status: closed
+  priority: 1
+  tags[7]: "area:extensions",code,doc,"milestone:5",pm-cli,"priority:1",tests
+  created_at: "2026-03-06T04:32:38.865Z"
+  updated_at: "2026-03-06T04:45:05.449Z"
+  deadline: "2026-03-07T23:59:00.000Z"
+  author: maintainer-agent
+  estimated_minutes: 90
+  acceptance_criteria: Hook execution uses cloned context snapshots per hook call and tests prove mutations do not leak across hooks or back to caller.
+  dependencies[1]{id,kind,created_at,author,source_kind}:
+    pm-b1w,related,"2026-03-06T04:32:38.865Z",maintainer-agent,null
+  comments[6]{created_at,author,text}:
+    "2026-03-06T04:32:38.865Z",maintainer-agent,Why this exists close remaining hook sandbox boundary by isolating per hook context snapshots.
+    "2026-03-06T04:32:54.426Z",maintainer-agent,"Planned changeset: docs-first update PRD and README to codify per-hook context snapshot isolation then harden extension loader hook execution to clone context per callback and add regression tests for mutation non-leakage."
+    "2026-03-06T04:33:52.152Z",maintainer-agent,"Docs-first update complete: PRD and README now codify per-hook context snapshot isolation so hook-side mutations cannot leak across callbacks or caller state."
+    "2026-03-06T04:34:48.699Z",maintainer-agent,"Implemented code changes: executeRegisteredHooks now runs each hook with a cloned context snapshot and extension-loader unit coverage now verifies mutation isolation across hooks and caller state."
+    "2026-03-06T04:44:37.820Z",maintainer-agent,"Evidence: pm test pm-3ses --run --timeout 7200 --json passed with linked_tests=2 passed=2 failed=0 skipped=0. pm test-all --status in_progress --timeout 7200 --json passed totals items=1 linked_tests=2 passed=2 failed=0 skipped=0. pm test-all --status closed --timeout 7200 --json passed totals items=76 linked_tests=231 passed=61 failed=0 skipped=170. Coverage statement: linked sandboxed coverage runs remained 100% lines branches functions and statements including src/core/extensions/loader.ts and tests/unit/extension-loader.spec.ts."
+    "2026-03-06T04:45:00.044Z",maintainer-agent,"Post-change environment check: pnpm build and npm install -g . succeeded and pm --version reports 0.1.0 from current repository state."
+  notes[1]{created_at,author,text}:
+    "2026-03-06T04:32:38.865Z",maintainer-agent,Plan docs first contract update loader hardening unit regression coverage then pm test and test-all sweeps.
+  files[4]{path,scope,note}:
+    PRD.md,project,docs-first hook isolation contract
+    README.md,project,docs-first update
+    src/core/extensions/loader.ts,project,hook execution isolation implementation
+    tests/unit/extension-loader.spec.ts,project,hook context isolation regression
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,7200,coverage gate
+    node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,3600,targeted extension loader regressions
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,agent operating rules
+    PRD.md,project,governing spec
+    README.md,project,governing spec
+body: Close the remaining hook sandbox boundary by cloning beforeCommand afterCommand onRead onWrite and onIndex contexts per hook execution while preserving deterministic warning semantics.

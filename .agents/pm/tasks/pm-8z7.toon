@@ -1,0 +1,35 @@
+front_matter:
+  id: pm-8z7
+  title: "M6: CI matrix finalized"
+  description: Finalize CI matrix across Linux macOS and Windows.
+  type: Task
+  status: closed
+  priority: 1
+  tags[4]: "area:ci",core,"milestone:6",pm-cli
+  created_at: "2026-02-17T23:02:12.452Z"
+  updated_at: "2026-02-20T02:42:43.177Z"
+  deadline: "2026-03-19T23:02:12.452Z"
+  author: steve
+  estimated_minutes: 120
+  acceptance_criteria: CI matrix runs lint typecheck and tests across target platforms.
+  dependencies[2]{id,kind,created_at,author,source_kind}:
+    pm-b1w,blocks,"2026-02-17T23:02:12.452Z",steve,null
+    pm-jiw,parent,"2026-02-17T23:02:12.452Z",steve,null
+  comments[4]{created_at,author,text}:
+    "2026-02-20T02:05:32.821Z",cursor-maintainer,"Planned change-set: finalize GitHub Actions matrix with deterministic platform/node coverage, concurrency cancellation, and least-privilege permissions while preserving sandboxed regression gates."
+    "2026-02-20T02:07:17.254Z",cursor-maintainer,"Implemented CI matrix finalization: added workflow-level read-only permissions and concurrency cancellation; expanded CI to include Node 22 on ubuntu while keeping cross-platform Node 20 lanes; constrained coverage/sandbox/packaging gates to canonical ubuntu-node20 lane; expanded nightly to Node 20+22 with conditional coverage/full-test split; updated ci-workflow-contract integration test expectations accordingly."
+    "2026-02-20T02:25:18.587Z",cursor-maintainer,"Updated PRD milestone checklist to mark CI matrix finalized as complete, keeping docs authoritative and aligned with implemented workflows."
+    "2026-02-20T02:42:42.852Z",cursor-maintainer,"Evidence: pm test pm-8z7 --run --timeout 1200 --json passed both linked tests (sandbox coverage + CLI integration). Coverage remained 100% statements/branches/functions/lines. Regression sweeps passed: pm test-all --status in_progress --timeout 1200 --json => items=9 linked_tests=40 passed=39 failed=0 skipped=1; pm test-all --status closed --timeout 1200 --json => items=17 linked_tests=47 passed=44 failed=0 skipped=3. Follow-up items created: none required."
+  files[4]{path,scope,note}:
+    .github/workflows/ci.yml,project,primary CI matrix
+    .github/workflows/nightly.yml,project,nightly matrix coverage
+    PRD.md,project,mark Milestone 6 CI matrix checklist as complete
+    tests/integration/ci-workflow-contract.spec.ts,project,workflow contract expectations for finalized matrix
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,900,coverage gate in sandbox
+    node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,600,CLI integration regression
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,dogfood and test safety rules
+    PRD.md,project,milestone 6 CI requirements
+    README.md,project,release readiness checklist
+body: Finalize cross-platform CI and quality gates.

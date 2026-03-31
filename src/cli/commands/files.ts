@@ -83,7 +83,7 @@ export async function runFiles(id: string, options: FilesCommandOptions, global:
   const shouldMutate = adds.length > 0 || removes.length > 0;
 
   if (!shouldMutate) {
-    const located = await locateItem(pmRoot, id, settings.id_prefix);
+    const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format);
     if (!located) {
       throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
     }

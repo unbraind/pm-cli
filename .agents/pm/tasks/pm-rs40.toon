@@ -1,0 +1,57 @@
+front_matter:
+  id: pm-rs40
+  title: Add issue-specific metadata fields to item schema and CLI
+  description: Docs-first add issue lifecycle metadata (reporter severity environment repro expected actual component version resolution impact) to create/update schema and serialization contracts.
+  type: Task
+  status: closed
+  priority: 0
+  tags[8]: "area:cli","area:docs","area:schema",code,"milestone:8",pm-cli,"priority:0",tests
+  created_at: "2026-03-08T10:34:28.069Z"
+  updated_at: "2026-03-08T10:59:50.111Z"
+  deadline: "2026-03-09T10:34:28.069Z"
+  author: maintainer-agent
+  estimated_minutes: 120
+  acceptance_criteria: Create and update accept issue-specific metadata flags with deterministic none-unset semantics and canonical storage; docs and tests updated with 100% coverage preserved.
+  definition_of_ready: PRD README AGENTS contracts updated and target files/tests linked.
+  order: 1
+  goal: Release-hardening
+  objective: Close issue-management metadata parity gap
+  value: Richer issue tracking data for production workflows
+  impact: Improves incident triage and audit readiness
+  outcome: Issue records capture reproducibility and impact context
+  why_now: Current all-fields maintainer workflow requires these metadata fields
+  risk: medium
+  confidence: high
+  sprint: maintainer-loop-2026-03-08
+  release: v0.1
+  comments[5]{created_at,author,text}:
+    "2026-03-08T10:34:28.069Z",maintainer-agent,"Why this exists: issue workflows need richer metadata than the current shared schema supports."
+    "2026-03-08T10:34:45.942Z",maintainer-agent,"Planned changeset before edits: update PRD README and AGENTS to add issue-specific metadata contract (reporter severity environment repro expected actual versions component regression customer impact resolution), then implement create/update flag wiring, schema/key-order normalization, and focused+full regression tests."
+    "2026-03-08T10:37:02.803Z",maintainer-agent,"Docs-first phase complete: PRD README and AGENTS now treat issue-specific metadata fields as canonical create/update contract fields with explicit none-unset semantics and severity med normalization."
+    "2026-03-08T10:58:56.521Z",maintainer-agent,"Implementation complete: docs-first contract update plus CLI/schema/test changes for issue metadata flags (reporter,severity,environment,repro_steps,resolution,expected_result,actual_result,affected_version,fixed_version,component,regression,customer_impact) with create/update alias support and none-unset semantics. Evidence: pm test pm-rs40 --run --timeout 7200 --json passed all 3 linked tests including node scripts/run-tests.mjs coverage with 100% lines/branches/functions/statements; pm test-all --status in_progress --timeout 7200 --json passed (items=1 linked_tests=3 passed=3 failed=0 skipped=0); pm test-all --status closed --timeout 7200 --json passed (items=145 linked_tests=371 passed=66 failed=0 skipped=305)."
+    "2026-03-08T10:59:50.111Z",maintainer-agent,"Delivery: committed as 8316c87 and pushed to origin/main. Workspace is clean after push (git status -sb: main...origin/main)."
+  notes[1]{created_at,author,text}:
+    "2026-03-08T10:34:28.069Z",maintainer-agent,Plan docs-first update then add schema fields create/update parsing and comprehensive tests.
+  files[12]{path,scope,note}:
+    AGENTS.md,project,all-flags template includes issue metadata options
+    PRD.md,project,docs-first issue metadata schema+flag contract
+    README.md,project,create/update issue metadata contract
+    src/cli/commands/create.ts,project,parse issue metadata flags
+    src/cli/commands/update.ts,project,update issue metadata flags
+    src/cli/main.ts,project,create/update option wiring
+    src/core/item/item-format.ts,project,issue metadata normalization and validation
+    src/core/shared/constants.ts,project,front matter key order update
+    src/types.ts,project,item schema extension
+    tests/integration/release-readiness-contract.spec.ts,project,docs/help contract assertions
+    tests/unit/create-command.spec.ts,project,create issue metadata tests
+    tests/unit/update-command.spec.ts,project,update issue metadata tests
+  tests[3]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,7200,sandbox-safe 100% coverage gate
+    node scripts/run-tests.mjs test,null,project,3600,sandbox-safe full regression
+    node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,1800,targeted issue metadata regressions
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,maintainer all-fields workflow contract
+    PRD.md,project,authoritative contract
+    README.md,project,public contract for create/update flags
+  close_reason: Issue metadata parity implemented with docs+CLI+schema+tests and verification sweeps passing at 100% coverage.
+body: "Implement issue-specific metadata fields with deterministic parsing, normalization, serialization, and docs/help parity."

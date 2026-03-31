@@ -1,0 +1,32 @@
+front_matter:
+  id: pm-8ikr
+  title: "M4 roadmap: Broader adapter optimization and persistence refinements"
+  description: Add deterministic persistence refinements for local LanceDB adapter operations used by semantic/hybrid search.
+  type: Task
+  status: closed
+  priority: 2
+  tags[4]: "area:search","milestone:4",pm-cli,roadmap
+  created_at: "2026-03-07T14:01:18.499Z"
+  updated_at: "2026-03-07T15:57:26.604Z"
+  deadline: "2026-03-08T15:21:13.718Z"
+  author: maintainer-agent
+  estimated_minutes: 90
+  acceptance_criteria: "Local LanceDB adapter persists deterministic table snapshots to disk, reloads across process boundaries, and remains covered by sandbox-safe unit tests."
+  comments[3]{created_at,author,text}:
+    "2026-03-07T15:21:15.377Z",maintainer-agent,"Plan: implement deterministic on-disk persistence for local LanceDB adapter tables, including stable serialization and reload-on-query behavior; then extend unit tests and docs to capture refined behavior before running pm test + pm test-all."
+    "2026-03-07T15:57:26.122Z",maintainer-agent,"Implemented deterministic local LanceDB snapshot persistence in src/core/search/vector-stores.ts (disk-backed load/write/delete, snapshot schema validation, atomic snapshot writes) and expanded tests/docs in tests/unit/vector-store-adapter.spec.ts, PRD.md, and README.md."
+    "2026-03-07T15:57:26.278Z",maintainer-agent,"Evidence: pm test pm-8ikr --run --timeout 1200 passed (coverage + focused unit tests), pm test-all --status in_progress --timeout 1200 passed (items=1 passed=2 failed=0 skipped=0), pm test-all --status closed --timeout 1200 passed (items=130 passed=62 failed=0 skipped=280), and node scripts/run-tests.mjs coverage reports 100% for statements/branches/functions/lines."
+  files[4]{path,scope,note}:
+    PRD.md,project,behavior doc alignment
+    README.md,project,public docs alignment
+    src/core/search/vector-stores.ts,project,local adapter persistence implementation
+    tests/unit/vector-store-adapter.spec.ts,project,adapter persistence coverage
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,600,sandbox-safe full coverage gate
+    node scripts/run-tests.mjs test -- tests/unit/vector-store-adapter.spec.ts,null,project,240,sandbox-safe focused adapter tests
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,maintainer workflow contract
+    PRD.md,project,governing spec
+    README.md,project,public behavior contract
+  close_reason: Local LanceDB adapter now persists deterministic snapshots across process boundaries with full validation/error handling and 100% coverage evidence.
+body: Implement broader vector store adapter optimizations and persistence refinements.

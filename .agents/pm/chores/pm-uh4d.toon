@@ -1,0 +1,35 @@
+front_matter:
+  id: pm-uh4d
+  title: "Release-readiness loop: enforce global install bootstrap contract"
+  description: Document and test the maintainer requirement to refresh global pm from this repository during bootstrap.
+  type: Chore
+  status: closed
+  priority: 0
+  tags[8]: "area:bootstrap",contract-sync,doc,maintenance,pm-cli,"priority:0",release-readiness,tests
+  created_at: "2026-03-06T20:52:25.754Z"
+  updated_at: "2026-03-06T21:03:27.886Z"
+  deadline: "2026-03-07T20:52:25.754Z"
+  author: maintainer-agent
+  estimated_minutes: 90
+  acceptance_criteria: AGENTS session bootstrap explicitly requires refreshing global pm from this repository and release-readiness contract tests enforce the text contract; sandbox-safe verification remains 100 percent coverage.
+  dependencies[1]{id,kind,created_at,author,source_kind}:
+    pm-lfae,related,"2026-03-06T20:52:25.754Z",maintainer-agent,null
+  comments[4]{created_at,author,text}:
+    "2026-03-06T20:52:25.754Z",maintainer-agent,"Why this exists: convert maintainer global-install habit into explicit doc plus regression contract guard."
+    "2026-03-06T20:52:35.909Z",maintainer-agent,"Planned changeset: update AGENTS session bootstrap with explicit npm install -g . refresh + verification guidance, then extend release-readiness contract tests to assert that guidance remains present."
+    "2026-03-06T21:03:27.432Z",maintainer-agent,"Implemented docs-first bootstrap hardening: AGENTS session bootstrap now explicitly requires running npm install -g . from repo root and verifying pm --version before mutation commands; release-readiness contract test now enforces those tokens."
+    "2026-03-06T21:03:27.581Z",maintainer-agent,"Evidence: npm install -g . succeeded and pm --version reports 0.1.0. pm test pm-uh4d --run --timeout 7200 passed linked tests (coverage + release-readiness spec). pm test-all --status in_progress --timeout 7200 passed (items=1 linked_tests=2 passed=2 failed=0 skipped=0). pm test-all --status closed --timeout 7200 passed (items=105 linked_tests=292 passed=63 failed=0 skipped=229). Coverage remains 100% lines/branches/functions/statements."
+  notes[1]{created_at,author,text}:
+    "2026-03-06T20:52:25.754Z",maintainer-agent,Docs first then tests then full pm verification and evidence logging.
+  files[2]{path,scope,note}:
+    AGENTS.md,project,bootstrap guidance source of truth
+    tests/integration/release-readiness-contract.spec.ts,project,bootstrap contract assertions
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,1200,sandbox-safe coverage gate
+    node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1200,contract regression
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,authoritative maintainer workflow
+    PRD.md,project,governing contract
+    README.md,project,public contract reference
+  close_reason: Bootstrap global-install contract is now explicit in AGENTS and guarded by release-readiness tests; all required pm test and test-all sweeps passed with coverage at 100%.
+body: "Context: maintainer runs already execute global install refresh, but this is not explicitly guarded in release-readiness contracts.\\nApproach: update AGENTS bootstrap section first, then extend release-readiness contract tests to assert this guidance stays present."

@@ -129,6 +129,7 @@ export interface PmToolParameters {
   linkedTest?: string[];
   doc?: string[];
   criterion?: string[];
+  format?: string;
 }
 
 export interface PiExecResult {
@@ -248,6 +249,7 @@ export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = {
     linkedTest: { type: "array", items: { type: "string" } },
     doc: { type: "array", items: { type: "string" } },
     criterion: { type: "array", items: { type: "string" } },
+    format: { type: "string" },
   },
 };
 
@@ -477,6 +479,7 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
         requireString(params.key, "key", action),
       );
       pushRepeatable(args, "--criterion", params.criterion);
+      pushOption(args, "--format", params.format);
       return args;
     case "create":
       args.push("create");

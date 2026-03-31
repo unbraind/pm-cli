@@ -1,0 +1,41 @@
+front_matter:
+  id: pm-f45
+  title: Milestone 4 - Search
+  description: Milestone epic for keyword semantic hybrid search and indexing.
+  type: Epic
+  status: closed
+  priority: 0
+  tags[4]: "area:search",core,"milestone:4",pm-cli
+  created_at: "2026-02-17T23:01:11.736Z"
+  updated_at: "2026-03-04T15:27:57.518Z"
+  deadline: "2026-03-07T23:01:11.736Z"
+  author: steve
+  estimated_minutes: 480
+  acceptance_criteria: Milestone 4 checklist items are implemented with reindexing behavior.
+  dependencies[2]{id,kind,created_at,author,source_kind}:
+    pm-54d,blocks,"2026-02-17T23:01:11.736Z",steve,null
+    pm-j7a,child,"2026-02-17T23:01:11.736Z",steve,null
+  comments[4]{created_at,author,text}:
+    "2026-02-17T23:01:11.736Z",steve,Milestone 4 provides discoverability across item and linked content.
+    "2026-03-04T15:17:54.037Z",cursor-agent,"Planned closure validation: verify search/reindex command parity and run sandbox-safe targeted + full coverage regressions before closing."
+    "2026-03-04T15:27:21.511Z",cursor-agent,"Evidence: pm test pm-f45 --run --timeout 3600 passed (2/2 linked tests). pm test-all --status in_progress --timeout 3600 passed (items=1, passed=2, failed=0). pm test-all --status closed --timeout 3600 passed (items=48, linked_tests=169, passed=54, failed=0, skipped=115 duplicate-dedup expected). Coverage artifact coverage/coverage-summary.json reports 100% lines/statements/functions/branches. PRD-vs-help command parity check confirms required command surface present for milestone search scope."
+    "2026-03-04T15:27:57.518Z",cursor-agent,"Session bootstrap evidence: detected PM_CMD=pm, enforced global installation from this repo via npm i -g ., verified command path and pm --version=0.1.0, and baseline pnpm build completed successfully before milestone validation."
+  notes[1]{created_at,author,text}:
+    "2026-02-17T23:01:11.736Z",steve,Success means keyword mode always works and semantic mode is optional.
+  files[8]{path,scope,note}:
+    src/cli/commands/reindex.ts,project,reindex command entrypoint
+    src/cli/commands/search.ts,project,search command entrypoint
+    src/core/search/providers.ts,project,embedding provider abstraction
+    src/core/search/vector-stores.ts,project,vector store abstraction
+    tests/unit/embedding-provider.spec.ts,project,provider tests
+    tests/unit/reindex-command.spec.ts,project,reindex tests
+    tests/unit/search-command.spec.ts,project,search command tests
+    tests/unit/vector-store-adapter.spec.ts,project,vector adapter tests
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,1800,full coverage gate
+    node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/embedding-provider.spec.ts tests/unit/vector-store-adapter.spec.ts,null,project,900,targeted milestone4 regression
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,agent workflow and dogfood rules
+    PRD.md,project,authoritative requirements
+    README.md,project,public contract alignment
+body: Implement deterministic keyword and optional semantic search paths.

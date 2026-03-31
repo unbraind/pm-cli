@@ -73,11 +73,20 @@ async function overwriteTaskTests(
   id: string,
   tests: Array<Record<string, unknown>>,
 ): Promise<void> {
-  const taskPath = path.join(context.pmPath, "tasks", `${id}.md`);
-  const source = await readFile(taskPath, "utf8");
-  const parsed = parseItemDocument(source);
+  const toonPath = path.join(context.pmPath, "tasks", `${id}.toon`);
+  const markdownPath = path.join(context.pmPath, "tasks", `${id}.md`);
+  let taskPath = toonPath;
+  let source: string;
+  try {
+    source = await readFile(taskPath, "utf8");
+  } catch {
+    taskPath = markdownPath;
+    source = await readFile(taskPath, "utf8");
+  }
+  const format = taskPath.endsWith(".toon") ? "toon" : "json_markdown";
+  const parsed = parseItemDocument(source, { format });
   parsed.front_matter.tests = tests as unknown as never;
-  await writeFile(taskPath, serializeItemDocument(parsed), "utf8");
+  await writeFile(taskPath, serializeItemDocument(parsed, { format }), "utf8");
 }
 
 describe("runTestAll", () => {
@@ -272,6 +281,70 @@ describe("runTestAll", () => {
     });
   });
 
+  it("keeps the existing timeout when duplicate command omits timeout_seconds", async () => {
+    await withTempPmPath(async (context) => {
+      const mixedTimeoutId = createTaskWithTests(context, {
+        title: "Mixed Timeout Duplicate Source",
+        status: "open",
+        testEntries: ["path=tests/mixed-timeout-placeholder.spec.ts,scope=project"],
+      });
+      await overwriteTaskTests(context, mixedTimeoutId, [
+        {
+          command: "node -e \"process.stdout.write('mixed-timeout-token')\"",
+          scope: "project",
+          timeout_seconds: 3,
+        },
+        {
+          command: "node -e \"process.stdout.write('mixed-timeout-token')\"",
+          scope: "project",
+        },
+      ]);
+
+      const result = await runTestAll({ status: "open" }, { path: context.pmPath });
+      expect(result.totals.items).toBe(1);
+      expect(result.totals.linked_tests).toBe(2);
+      expect(result.passed).toBe(1);
+      expect(result.failed).toBe(0);
+      expect(result.skipped).toBe(1);
+    });
+  });
+
+  it("keeps existing timeout when duplicate path omits timeout_seconds", async () => {
+    await withTempPmPath(async (context) => {
+      const formatResult = context.runCli(
+        ["config", "project", "set", "item-format", "--format", "json_markdown", "--json"],
+        { expectJson: true },
+      );
+      expect(formatResult.code).toBe(0);
+
+      const mixedTimeoutId = createTaskWithTests(context, {
+        title: "Mixed Path Timeout Duplicate Source",
+        status: "open",
+        testEntries: ["path=tests/mixed-path-timeout-placeholder.spec.ts,scope=project"],
+      });
+      await overwriteTaskTests(context, mixedTimeoutId, [
+        {
+          path: "tests/mixed-path-timeout-target.spec.ts",
+          scope: "project",
+          timeout_seconds: 0,
+          note: "a",
+        },
+        {
+          path: "tests/mixed-path-timeout-target.spec.ts",
+          scope: "project",
+          note: "z",
+        },
+      ]);
+
+      const result = await runTestAll({ status: "open" }, { path: context.pmPath });
+      expect(result.totals.items).toBe(1);
+      expect(result.totals.linked_tests).toBe(2);
+      expect(result.passed).toBe(0);
+      expect(result.failed).toBe(0);
+      expect(result.skipped).toBe(2);
+    });
+  });
+
   it("handles malformed linked tests without path via deterministic duplicate skip behavior", async () => {
     await withTempPmPath(async (context) => {
       const malformedA = createTaskWithTests(context, {
@@ -302,6 +375,29 @@ describe("runTestAll", () => {
         true,
       );
       expect(runResults.some((entry) => (entry.error ?? "").includes("Duplicate linked test skipped"))).toBe(true);
+    });
+  });
+
+  it("runs unique markdown-format tests without injecting timeout_seconds", async () => {
+    await withTempPmPath(async (context) => {
+      const formatResult = context.runCli(
+        ["config", "project", "set", "item-format", "--format", "json_markdown", "--json"],
+        { expectJson: true },
+      );
+      expect(formatResult.code).toBe(0);
+
+      createTaskWithTests(context, {
+        title: "Markdown Unique Timeout Source",
+        status: "open",
+        testEntries: ["command=node -e \"process.stdout.write('markdown-unique-timeout-token')\",scope=project"],
+      });
+
+      const result = await runTestAll({ status: "open" }, { path: context.pmPath });
+      expect(result.totals.items).toBe(1);
+      expect(result.totals.linked_tests).toBe(1);
+      expect(result.passed).toBe(1);
+      expect(result.failed).toBe(0);
+      expect(result.skipped).toBe(0);
     });
   });
 });

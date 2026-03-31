@@ -1,0 +1,32 @@
+front_matter:
+  id: pm-pg9
+  title: "M2: Append-only history writer"
+  description: Implement append-only JSONL history writes with hashes.
+  type: Task
+  status: closed
+  priority: 1
+  tags[4]: "area:history",core,"milestone:2",pm-cli
+  created_at: "2026-02-17T23:02:08.633Z"
+  updated_at: "2026-03-03T20:20:11.865Z"
+  deadline: "2026-02-27T23:02:08.633Z"
+  author: steve
+  estimated_minutes: 120
+  acceptance_criteria: History appends are durable deterministic and never rewrite prior lines.
+  dependencies[2]{id,kind,created_at,author,source_kind}:
+    pm-c0r,parent,"2026-02-17T23:02:08.633Z",steve,null
+    pm-u9r,blocks,"2026-02-17T23:02:08.633Z",steve,null
+  comments[3]{created_at,author,text}:
+    "2026-03-03T20:09:44.136Z",cursor-maintainer,"Planned changeset: verify append-only history writer behavior against implementation and add focused determinism regression coverage asserting appendHistoryEntry preserves prior JSONL lines while appending new entries."
+    "2026-03-03T20:10:09.692Z",cursor-maintainer,"Implemented focused regression in tests/unit/determinism.spec.ts: appendHistoryEntry now has explicit append-only verification that first JSONL line remains unchanged after a second append and entries stay ordered/deterministic."
+    "2026-03-03T20:20:05.176Z",cursor-maintainer,"Evidence: node dist/cli.js test pm-pg9 --run --timeout 3600 --json passed (linked_tests=2; passed=2; failed=0) including node scripts/run-tests.mjs coverage and node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts. Regression sweeps passed: node dist/cli.js test-all --status in_progress --timeout 3600 --json totals items=9 linked_tests=32 passed=14 failed=0 skipped=18; node dist/cli.js test-all --status closed --timeout 3600 --json totals items=32 linked_tests=113 passed=48 failed=0 skipped=65. Coverage statement: coverage remained 100% lines/branches/functions/statements. Follow-up items created: none."
+  files[2]{path,scope,note}:
+    src/core/history/history.ts,project,append-only history writer behavior
+    tests/unit/determinism.spec.ts,project,append-only history regression coverage
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,3600,coverage gate verification
+    node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts,null,project,1200,targeted history determinism regression
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,dogfood workflow
+    PRD.md,project,governing spec
+    README.md,project,public contract
+body: Write mutation events with hash metadata into per-item JSONL files.

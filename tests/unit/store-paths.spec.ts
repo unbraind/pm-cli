@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   getHistoryPath,
+  getItemFormatFromPath,
   getItemPath,
   getLockPath,
   getSettingsPath,
@@ -74,7 +75,11 @@ describe("core/store/paths", () => {
     expect(getSettingsPath(pmRoot)).toBe(path.join(pmRoot, "settings.json"));
     expect(getTypeDirPath(pmRoot, "Task")).toBe(path.join(pmRoot, "tasks"));
     expect(getItemPath(pmRoot, "Task", id)).toBe(path.join(pmRoot, "tasks", `${id}.md`));
+    expect(getItemPath(pmRoot, "Task", id, "toon")).toBe(path.join(pmRoot, "tasks", `${id}.toon`));
     expect(getHistoryPath(pmRoot, id)).toBe(path.join(pmRoot, "history", `${id}.jsonl`));
     expect(getLockPath(pmRoot, id)).toBe(path.join(pmRoot, "locks", `${id}.lock`));
+    expect(getItemFormatFromPath(path.join(pmRoot, "tasks", `${id}.md`))).toBe("json_markdown");
+    expect(getItemFormatFromPath(path.join(pmRoot, "tasks", `${id}.toon`))).toBe("toon");
+    expect(getItemFormatFromPath(path.join(pmRoot, "tasks", `${id}.txt`))).toBeNull();
   });
 });

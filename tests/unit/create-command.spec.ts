@@ -297,7 +297,7 @@ describe("runCreate", () => {
 
       expect(events).toEqual([
         `lock:create:${result.item.id}.lock`,
-        `create:${result.item.id}.md`,
+        `create:${result.item.id}.toon`,
         `create:history:${result.item.id}.jsonl`,
         `lock:release:${result.item.id}.lock`,
       ]);

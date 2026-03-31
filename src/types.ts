@@ -41,6 +41,9 @@ export const CONFIDENCE_TEXT_VALUES = ["low", "medium", "high"] as const;
 export type ConfidenceTextLevel = (typeof CONFIDENCE_TEXT_VALUES)[number];
 export type ConfidenceValue = number | ConfidenceTextLevel;
 
+export const ITEM_FORMAT_VALUES = ["toon", "json_markdown"] as const;
+export type ItemFormat = (typeof ITEM_FORMAT_VALUES)[number];
+
 export interface Dependency {
   id: string;
   kind: DependencyKind;
@@ -166,6 +169,7 @@ export interface PmSettings {
   version: number;
   id_prefix: string;
   author_default: string;
+  item_format: ItemFormat;
   locks: {
     ttl_seconds: number;
   };

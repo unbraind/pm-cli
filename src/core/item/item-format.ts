@@ -1,4 +1,6 @@
+import { decode as decodeToon, encode as encodeToon } from "@toon-format/toon";
 import type { Comment, Dependency, ItemDocument, ItemFrontMatter, LinkedDoc, LinkedFile, LinkedTest, LogNote } from "../../types/index.js";
+import type { ItemFormat } from "../../types/index.js";
 import { CONFIDENCE_TEXT_VALUES, ISSUE_SEVERITY_VALUES, ITEM_TYPE_VALUES, STATUS_VALUES } from "../../types/index.js";
 import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
@@ -379,7 +381,7 @@ export function splitFrontMatter(content: string): { frontMatter: string; body: 
   return { frontMatter, body };
 }
 
-export function parseItemDocument(content: string): ItemDocument {
+function parseJsonMarkdownItemDocument(content: string): ItemDocument {
   const { frontMatter, body } = splitFrontMatter(content);
   if (!frontMatter) {
     const trimmed = content.trimStart();
@@ -403,7 +405,31 @@ export function parseItemDocument(content: string): ItemDocument {
   };
 }
 
-export function serializeItemDocument(document: ItemDocument): string {
+function parseToonItemDocument(content: string): ItemDocument {
+  let parsed: unknown;
+  try {
+    parsed = decodeToon(content);
+  } catch {
+    validationError("TOON item document is not valid TOON");
+  }
+  assertFrontMatterCondition(
+    typeof parsed === "object" && parsed !== null && !Array.isArray(parsed),
+    "TOON item document must be an object",
+  );
+  const record = parsed as Record<string, unknown>;
+  assertFrontMatterCondition(record.front_matter !== undefined, "TOON item document must include front_matter");
+  assertValidFrontMatter(record.front_matter);
+  assertFrontMatterCondition(
+    record.body === undefined || typeof record.body === "string",
+    "TOON item document body must be a string",
+  );
+  return {
+    front_matter: normalizeFrontMatter(record.front_matter),
+    body: normalizeBody(typeof record.body === "string" ? record.body : ""),
+  };
+}
+
+function serializeJsonMarkdownItemDocument(document: ItemDocument): string {
   const normalizedFrontMatter = normalizeFrontMatter(document.front_matter);
   const orderedFrontMatter = orderFrontMatter(normalizedFrontMatter);
   const serializedFrontMatter = JSON.stringify(orderedFrontMatter, null, 2);
@@ -412,6 +438,23 @@ export function serializeItemDocument(document: ItemDocument): string {
     return `${serializedFrontMatter}\n`;
   }
   return `${serializedFrontMatter}\n\n${normalizedBody}\n`;
+}
+
+function serializeToonItemDocument(document: ItemDocument): string {
+  const normalizedFrontMatter = normalizeFrontMatter(document.front_matter);
+  const orderedFrontMatter = orderFrontMatter(normalizedFrontMatter);
+  const normalizedBody = normalizeBody(document.body ?? "");
+  return `${encodeToon({ front_matter: orderedFrontMatter, body: normalizedBody })}\n`;
+}
+
+export function parseItemDocument(content: string, options: { format?: ItemFormat } = {}): ItemDocument {
+  const format = options.format ?? "json_markdown";
+  return format === "toon" ? parseToonItemDocument(content) : parseJsonMarkdownItemDocument(content);
+}
+
+export function serializeItemDocument(document: ItemDocument, options: { format?: ItemFormat } = {}): string {
+  const format = options.format ?? "json_markdown";
+  return format === "toon" ? serializeToonItemDocument(document) : serializeJsonMarkdownItemDocument(document);
 }
 
 export function canonicalDocument(document: ItemDocument): ItemDocument {

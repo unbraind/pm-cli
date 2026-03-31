@@ -1,0 +1,33 @@
+front_matter:
+  id: pm-bfd9
+  title: "M5 roadmap: Broader override surfaces"
+  description: Expand extension command/renderer override surfaces with richer command execution context for deterministic runtime customization.
+  type: Task
+  status: closed
+  priority: 2
+  tags[4]: "area:extensions","milestone:5",pm-cli,roadmap
+  created_at: "2026-03-07T14:01:19.143Z"
+  updated_at: "2026-03-07T21:28:27.214Z"
+  author: maintainer-agent
+  estimated_minutes: 120
+  acceptance_criteria: Command and renderer override surfaces accept richer command execution context; docs and tests cover new behavior; regression sweeps remain green with 100% coverage.
+  comments[3]{created_at,author,text}:
+    "2026-03-07T21:02:57.694Z",maintainer-agent,"Planned changeset: docs-first update PRD/README override-surface contract to include richer command execution context for command and renderer overrides, then implement loader/runtime context plumbing with regression tests before running pm test and pm test-all sweeps."
+    "2026-03-07T21:05:48.759Z",maintainer-agent,"Docs-first updates landed in PRD.md and README.md: override/renderer contract now states cloned command args/options/global snapshots plus pm_root metadata are available during override execution. Implementation in progress in loader/runtime plumbing and unit tests."
+    "2026-03-07T21:28:26.849Z",maintainer-agent,"Implemented broader override surfaces: command and renderer overrides now receive cloned command args/options/global snapshots plus pm_root metadata and isolated result snapshots; runtime context plumbing now carries command options/global state (including dynamic extension command paths). Added/updated unit coverage in tests/unit/extension-loader.spec.ts and tests/unit/extensions-runtime.spec.ts; updated PRD.md and README.md contract text. Evidence: pm test pm-bfd9 --run --timeout 3600 --json passed 2/2 linked tests; pm test-all --status in_progress --timeout 3600 --json passed totals items=1 linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status closed --timeout 3600 --json passed totals items=135 linked_tests=350 passed=63 failed=0 skipped=287; coverage remained 100% lines/branches/functions/statements."
+  files[6]{path,scope,note}:
+    src/cli/main.ts,project,propagate parsed command options/global metadata into active override context
+    src/core/extensions/index.ts,project,active runtime context plumbing for overrides
+    src/core/extensions/loader.ts,project,expand override context surface
+    src/core/output/output.ts,project,override invocation path
+    tests/unit/extension-loader.spec.ts,project,unit regressions for override context expansion
+    tests/unit/extensions-runtime.spec.ts,project,verify active override/renderer context propagation
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,3600,full coverage gate for release readiness
+    node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,1200,targeted override-surface unit suite
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,maintainer workflow and dogfood policy
+    PRD.md,project,governing spec for extension override behavior
+    README.md,project,public behavior contract for override surfaces
+  close_reason: "Override surfaces expanded with richer contextual snapshots; docs, tests, and regression sweeps passed with 100% coverage."
+body: Implement broader override surfaces for renderers and commands.

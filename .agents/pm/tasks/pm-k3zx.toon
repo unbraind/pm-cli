@@ -1,0 +1,40 @@
+front_matter:
+  id: pm-k3zx
+  title: Harden recursive test-all detection for global-flag invocation forms
+  description: Prevent pm test linked-command recursion bypass when test-all is invoked with global flags before the subcommand and keep runtime skip parity.
+  type: Task
+  status: closed
+  priority: 1
+  tags[6]: "area:test-command",code,"milestone:root",pm-cli,"priority:1",tests
+  created_at: "2026-03-04T18:43:55.776Z"
+  updated_at: "2026-03-04T19:08:10.823Z"
+  deadline: "2026-03-06T23:59:00.000Z"
+  author: cursor-maintainer
+  estimated_minutes: 75
+  acceptance_criteria: "Met: linked test commands invoking test-all via pm, npx pm-cli/pm, node dist/cli.js, and global-flag variants are rejected or runtime-skipped deterministically; regression tests and coverage gate pass at 100 percent."
+  dependencies[1]{id,kind,created_at,author,source_kind}:
+    pm-j7a,parent,"2026-03-04T18:43:55.776Z",cursor-maintainer,null
+  comments[5]{created_at,author,text}:
+    "2026-03-04T18:43:55.776Z",cursor-maintainer,This task hardens recursive test-all guard coverage for flag-before-subcommand invocation forms.
+    "2026-03-04T18:44:09.466Z",cursor-maintainer,"Planned changeset: replace substring recursion checks with token-aware invocation parsing so pm/npx/node forms still detect test-all when global flags precede the subcommand; add unit regressions for add-time rejection and runtime skip parity."
+    "2026-03-04T18:45:09.446Z",cursor-maintainer,"Docs-first alignment completed before implementation: clarified PRD README and AGENTS that recursive pm test-all detection and runtime skip rules include global-flag invocation forms such as pm --json test-all."
+    "2026-03-04T19:08:10.303Z",cursor-maintainer,"Implemented token-aware recursive test-all detection in src/cli/commands/test.ts for pm, node dist/cli.js, direct dist/cli.js, and npx pm-cli/pm forms with global-flag and env-prefix handling; added regression scenarios in tests/unit/test-command.spec.ts for add-time rejection and runtime skip parity."
+    "2026-03-04T19:08:10.479Z",cursor-maintainer,"Evidence: pm test pm-k3zx --run --timeout 1800 --json passed (linked_tests=2 passed=2 failed=0) including node scripts/run-tests.mjs coverage at 100 percent lines/branches/functions/statements; pm test-all --status in_progress --timeout 1800 --json passed (items=1 linked_tests=2 passed=2 failed=0); pm test-all --status closed --timeout 1800 --json passed (items=53 linked_tests=177 passed=56 failed=0 skipped=121)."
+  notes[1]{created_at,author,text}:
+    "2026-03-04T18:43:55.776Z",cursor-maintainer,Implement parser-safe detection then add unit tests for add-time rejection and runtime skip parity.
+  learnings[1]{created_at,author,text}:
+    "2026-03-04T18:43:55.776Z",cursor-maintainer,Safety guards should parse invocation tokens rather than rely on substring matching for CLI command detection.
+  files[5]{path,scope,note}:
+    AGENTS.md,project,docs-first recursion guard clarification
+    PRD.md,project,docs-first recursion guard clarification
+    README.md,project,docs-first recursion guard clarification
+    src/cli/commands/test.ts,project,recursive invocation detection logic
+    tests/unit/test-command.spec.ts,project,regression coverage for recursion variants
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,1800,full coverage gate
+    node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,240,targeted regression coverage
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,dogfood and test safety requirements
+    PRD.md,project,authoritative test safety contract
+    README.md,project,public command safety contract
+body: "Context: runTest currently blocks obvious recursive test-all forms but misses global-flag-before-subcommand variants. Approach: strengthen command token parsing for pm, npx pm-cli, and node dist/cli.js forms, and add regression tests for add-time rejection plus runtime skip behavior."

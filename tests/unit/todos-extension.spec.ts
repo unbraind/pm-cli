@@ -928,7 +928,7 @@ describe("built-in todos extension import/export", () => {
       ]);
       expect(hookEvents).toContain("read:todos-hooked-import");
       expect(hookEvents).toContain("read:hooked.md");
-      expect(hookEvents).toContain("write:import:pm-hooked.md");
+      expect(hookEvents).toContain("write:import:pm-hooked.toon");
       expect(hookEvents).toContain("write:import:history:pm-hooked.jsonl");
     });
   });

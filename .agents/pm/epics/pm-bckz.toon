@@ -1,0 +1,20 @@
+front_matter:
+  id: pm-bckz
+  title: TOON item storage migration
+  description: Switch default item storage to TOON while preserving full JSON/Markdown compatibility and JSONL history semantics.
+  type: Epic
+  status: closed
+  priority: 0
+  tags[4]: migration,pm-cli,storage,toon
+  created_at: "2026-03-31T20:13:02.029Z"
+  updated_at: "2026-03-31T20:58:12.210Z"
+  author: codex-agent
+  estimated_minutes: 480
+  acceptance_criteria: TOON is default item format and json/markdown remains fully supported with automatic migration and explicit legacy format selection before mutations.
+  comments[2]{created_at,author,text}:
+    "2026-03-31T20:13:02.029Z",codex-agent,Epic created for TOON migration tracking.
+    "2026-03-31T20:14:00.978Z",codex-agent,"Created and claimed Epic Feature and Task hierarchy for TOON migration: pm-5cbm pm-z8bl pm-u919 pm-9689 pm-oex4 pm-s0ne pm-3aga pm-ybpq."
+  notes[1]{created_at,author,text}:
+    "2026-03-31T20:13:02.029Z",codex-agent,Execute codec migration integration and verification workstreams.
+  close_reason: TOON item storage migration completed
+body: Coordinate rollout of dual-format item storage migration automation and compatibility gating for existing repositories.

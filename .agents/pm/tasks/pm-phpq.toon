@@ -1,0 +1,36 @@
+front_matter:
+  id: pm-phpq
+  title: Release-readiness maintenance loop 2026-03-07 run 2
+  description: "Run full docs-vs-implementation audit, implement one concrete gap fix, and verify via pm-driven tests."
+  type: Task
+  status: closed
+  priority: 0
+  tags[9]: "area:docs","area:release-readiness","area:tests",code,doc,"milestone:6",pm-cli,"priority:0",tests
+  created_at: "2026-03-07T07:23:53.401Z"
+  updated_at: "2026-03-07T07:36:50.077Z"
+  deadline: "2026-03-08T23:59:00.000Z"
+  author: maintainer-agent
+  estimated_minutes: 120
+  acceptance_criteria: 1) Identify and fix at least one docs/implementation/test contract gap. 2) Run linked pm test and pm test-all regression sweeps. 3) Keep coverage at 100 percent and log evidence.
+  comments[5]{created_at,author,text}:
+    "2026-03-07T07:23:53.401Z",maintainer-agent,This item exists to keep docs implementation and tests aligned while preserving release readiness.
+    "2026-03-07T07:24:12.786Z",maintainer-agent,Starting gap audit from live --help output and contract tests to identify the smallest high-value hardening change for this run.
+    "2026-03-07T07:25:30.966Z",maintainer-agent,"Implementing help-contract hardening: remove misleading default-array text from required create seed flags by adjusting option wiring and add a regression assertion."
+    "2026-03-07T07:36:17.106Z",maintainer-agent,"Implemented create-help hardening: removed default-array rendering from required seed flags by dropping default [] registration for create repeatable options and making collector resilient to undefined accumulator."
+    "2026-03-07T07:36:22.743Z",maintainer-agent,"Evidence: node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts passed (28/28). pm test pm-phpq --run passed. pm test-all --status in_progress passed (items=1 linked_tests=1). pm test-all --status closed passed (items=115 linked_tests=311 passed=62 skipped=249 failed=0; dedupe behavior exercised). node scripts/run-tests.mjs coverage passed with 100% lines/branches/functions/statements."
+  notes[1]{created_at,author,text}:
+    "2026-03-07T07:23:53.401Z",maintainer-agent,Start with authoritative doc + help output audit then implement smallest high-value hardening patch.
+  files[5]{path,scope,note}:
+    PRD.md,project,authoritative requirements baseline
+    src/cli/commands/create.ts,project,candidate help/contract hardening target
+    src/cli/main.ts,project,create option wiring adjusted to avoid misleading default help text
+    tests/integration/help-readme-contract.spec.ts,project,candidate contract test target
+    tests/integration/release-readiness-contract.spec.ts,project,create-help regression assertion
+  tests[1]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs test,null,project,240,sandbox-safe regression runner
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,maintainer operating contract
+    PRD.md,project,authoritative product requirements
+    README.md,project,public contract parity
+  close_reason: "Create help now omits misleading default-array text for required seed flags; regression contract test added; pm test, test-all sweeps, and coverage passed at 100%."
+body: Idempotent maintainer loop task for 2026-03-07 run 2.

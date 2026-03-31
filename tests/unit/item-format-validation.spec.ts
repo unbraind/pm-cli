@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeFrontMatter, parseItemDocument } from "../../src/item-format.js";
+import { normalizeFrontMatter, parseItemDocument, serializeItemDocument } from "../../src/item-format.js";
 
 const FIXED_TS = "2026-02-22T00:00:00.000Z";
 
@@ -209,5 +209,56 @@ describe("item-format front-matter validation", () => {
       severity: "urgent",
     } as unknown as Parameters<typeof normalizeFrontMatter>[0]);
     expect(normalized.severity).toBeUndefined();
+  });
+
+  it("round-trips TOON item documents while preserving canonical document shape", () => {
+    const source = parseItemDocument(buildSource({ tags: ["Alpha", "beta"], confidence: "med" }));
+    const serializedToon = serializeItemDocument(source, { format: "toon" });
+    const parsedToon = parseItemDocument(serializedToon, { format: "toon" });
+    expect(parsedToon).toEqual({
+      front_matter: {
+        ...source.front_matter,
+        tags: ["alpha", "beta"],
+        confidence: "medium",
+      },
+      body: source.body,
+    });
+  });
+
+  it("throws when TOON item document is malformed", () => {
+    expect(() => parseItemDocument("front_matter: [", { format: "toon" })).toThrow("front matter must be an object");
+  });
+
+  it("throws when TOON decoding returns a non-object value", () => {
+    expect(() => parseItemDocument("<<not-valid-toon>>", { format: "toon" })).toThrow("TOON item document must be an object");
+  });
+
+  it("parses JSON front matter with escaped string content", () => {
+    const parsed = parseItemDocument(
+      buildSource({
+        description: String.raw`Escaped quote \" and escaped slash \\ in text`,
+      }),
+    );
+    expect(parsed.front_matter.description).toContain("Escaped quote");
+  });
+
+  it("defaults TOON body to empty string when body is omitted", () => {
+    const withBody = serializeItemDocument(parseItemDocument(buildSource()), { format: "toon" });
+    const withoutBody = withBody.replace(/\nbody:[\s\S]*$/, "");
+    const parsed = parseItemDocument(withoutBody, { format: "toon" });
+    expect(parsed.body).toBe("");
+  });
+
+  it("serializes TOON with empty body when document body is undefined", () => {
+    const parsed = parseItemDocument(buildSource());
+    const serialized = serializeItemDocument(
+      {
+        ...parsed,
+        body: undefined as unknown as string,
+      },
+      { format: "toon" },
+    );
+    const roundTrip = parseItemDocument(serialized, { format: "toon" });
+    expect(roundTrip.body).toBe("");
   });
 });

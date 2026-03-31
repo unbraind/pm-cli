@@ -1,0 +1,39 @@
+front_matter:
+  id: pm-4iga
+  title: "M4 follow-up: exact-title lexical boost for deterministic search ranking"
+  description: Improve keyword and hybrid relevance by adding deterministic exact-title token match weighting while preserving stable ordering and output contracts.
+  type: Task
+  status: closed
+  priority: 1
+  tags[8]: "area:search",code,doc,"milestone:4",pm-cli,"priority:1",roadmap,tests
+  created_at: "2026-03-06T22:11:04.906Z"
+  updated_at: "2026-03-06T22:25:48.883Z"
+  deadline: "2026-03-08T22:11:04.906Z"
+  author: maintainer-agent
+  estimated_minutes: 120
+  acceptance_criteria: Keyword and hybrid search apply deterministic exact-title token boost; docs are aligned first; tests cover ranking behavior; pm test + test-all sweeps pass with 100% coverage.
+  dependencies[1]{id,kind,created_at,author,source_kind}:
+    pm-f45,related,"2026-03-06T22:11:04.906Z",maintainer-agent,null
+  comments[5]{created_at,author,text}:
+    "2026-03-06T22:11:04.906Z",maintainer-agent,"Why this exists: Milestone 4 still tracks advanced relevance tuning and exact-title boosting is a bounded deterministic increment."
+    "2026-03-06T22:11:18.394Z",maintainer-agent,"Planned changeset: docs-first update PRD/README search tuning notes for exact-title boost, then implement deterministic title-token bonus in keyword/hybrid scoring and add ranking assertions in search command tests."
+    "2026-03-06T22:12:41.864Z",maintainer-agent,"Implemented docs-first + code changes: PRD/README now describe deterministic exact-title token lexical boost, search scoring adds additive full-token title bonus, and unit tests now verify exact-token titles outrank substring-only title matches."
+    "2026-03-06T22:15:40.081Z",maintainer-agent,"Follow-up during verification: coverage gate revealed nondeterministic branch hit in test-all timeout dedupe path due random item-id ordering. Added deterministic single-item timeout-variant test to always cover max-timeout branch."
+    "2026-03-06T22:25:48.581Z",maintainer-agent,"Evidence: pm test pm-4iga --run --timeout 7200 --json passed linked tests (2/2). pm test-all --status in_progress --timeout 7200 --json passed (items=1 linked_tests=2 passed=2 failed=0 skipped=0). pm test-all --status closed --timeout 7200 --json passed (items=109 linked_tests=299 passed=63 failed=0 skipped=236). Coverage gate is back to 100% lines/branches/functions/statements after deterministic timeout-branch coverage hardening in tests/unit/test-all-command.spec.ts."
+  notes[1]{created_at,author,text}:
+    "2026-03-06T22:11:04.906Z",maintainer-agent,Plan docs-first then scoring implementation then ranking tests and full verification sweeps.
+  files[5]{path,scope,note}:
+    PRD.md,project,authoritative milestone and search scoring update
+    README.md,project,document exact-title lexical boost baseline
+    src/cli/commands/search.ts,project,keyword and hybrid scoring logic
+    tests/unit/search-command.spec.ts,project,exact-title ranking regression coverage
+    tests/unit/test-all-command.spec.ts,project,stabilize deterministic coverage for timeout max-branch
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,2400,coverage gate
+    node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,1800,search ranking regression
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,dogfood workflow rules
+    PRD.md,project,authoritative search roadmap contract
+    README.md,project,public search contract
+  close_reason: Exact-title lexical boost is implemented and docs/tests are aligned with deterministic 100% coverage verification evidence.
+body: "Advance PRD Milestone 4 hybrid relevance tuning with a bounded deterministic lexical boost for exact title-token matches. Update docs first, then implement scoring changes and regression coverage."

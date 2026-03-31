@@ -318,10 +318,11 @@ async function importTodoCandidate(candidate: ParsedTodoCandidate, runtime: Todo
   const createdAt = toIsoString(candidate.frontMatter.created_at) ?? nowIso();
   const updatedAt = toIsoString(candidate.frontMatter.updated_at) ?? createdAt;
   const type = toItemType(candidate.frontMatter.type);
-  const itemPath = getItemPath(runtime.pmRoot, type, id);
-  if (await pathExists(itemPath)) {
+  const located = await locateItem(runtime.pmRoot, id, runtime.settings.id_prefix, runtime.settings.item_format);
+  if (located) {
     return { warning: `todos_import_item_exists:${id}` };
   }
+  const itemPath = getItemPath(runtime.pmRoot, type, id, runtime.settings.item_format);
 
   const afterDocument = canonicalDocument({
     front_matter: normalizeFrontMatter({
@@ -385,7 +386,7 @@ async function importTodoCandidate(candidate: ParsedTodoCandidate, runtime: Todo
   try {
     const releaseLock = await acquireLock(runtime.pmRoot, id, runtime.settings.locks.ttl_seconds, runtime.author);
     try {
-      await writeFileAtomic(itemPath, serializeItemDocument(afterDocument));
+      await writeFileAtomic(itemPath, serializeItemDocument(afterDocument, { format: runtime.settings.item_format }));
       try {
         const historyEntry = createHistoryEntry({
           nowIso: nowIso(),
@@ -507,11 +508,11 @@ export async function runTodosExport(options: TodosExportOptions, global: Global
   const warnings: string[] = [];
   const ids: string[] = [];
   let exported = 0;
-  const items = await listAllFrontMatter(pmRoot);
+  const items = await listAllFrontMatter(pmRoot, settings.item_format);
   const sorted = [...items].sort((left, right) => left.id.localeCompare(right.id));
 
   for (const item of sorted) {
-    const located = await locateItem(pmRoot, item.id, settings.id_prefix);
+    const located = await locateItem(pmRoot, item.id, settings.id_prefix, settings.item_format);
     if (!located) {
       warnings.push(`todos_export_missing_item:${item.id}`);
       continue;

@@ -1,0 +1,22 @@
+front_matter:
+  id: pm-5cbm
+  title: Dual-format item codec and storage support
+  description: Implement TOON and JSON/Markdown item codec support with extension-aware lookup and canonical normalization stability.
+  type: Feature
+  status: closed
+  priority: 1
+  tags[4]: codec,pm-cli,storage,toon
+  created_at: "2026-03-31T20:13:16.713Z"
+  updated_at: "2026-03-31T20:58:10.312Z"
+  author: codex-agent
+  estimated_minutes: 240
+  acceptance_criteria: Item read and write paths support both .toon and .md with deterministic canonical document behavior.
+  parent: pm-bckz
+  dependencies[1]{id,kind,created_at,author,source_kind}:
+    pm-bckz,parent,"2026-03-31T20:13:16.713Z",codex-agent,null
+  comments[1]{created_at,author,text}:
+    "2026-03-31T20:13:16.713Z",codex-agent,Feature tracks codec and storage changes.
+  notes[1]{created_at,author,text}:
+    "2026-03-31T20:13:16.713Z",codex-agent,Prioritize canonical document and compatibility behavior.
+  close_reason: dual-format codec and storage feature delivered
+body: Add full dual-format item parsing and serialization and ensure store/path/id logic resolves both .toon and .md items safely.

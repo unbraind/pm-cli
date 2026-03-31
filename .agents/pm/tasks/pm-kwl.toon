@@ -1,0 +1,35 @@
+front_matter:
+  id: pm-kwl
+  title: "M3: comments files docs and test commands"
+  description: Implement linked metadata commands and normalize test seed timeout aliases for doc parity.
+  type: Task
+  status: closed
+  priority: 1
+  tags[4]: "area:linked-ops",core,"milestone:3",pm-cli
+  created_at: "2026-02-17T23:02:09.505Z"
+  updated_at: "2026-02-18T02:01:02.528Z"
+  deadline: "2026-03-03T23:02:09.505Z"
+  author: steve
+  estimated_minutes: 150
+  acceptance_criteria: comments/files/docs/test flows are deterministic and both timeout and timeout_seconds seed keys parse to timeout_seconds metadata.
+  dependencies[2]{id,kind,created_at,author,source_kind}:
+    pm-54d,parent,"2026-02-17T23:02:09.505Z",steve,null
+    pm-c0r,blocks,"2026-02-17T23:02:09.505Z",steve,null
+  comments[3]{created_at,author,text}:
+    "2026-02-18T01:57:47.015Z",cursor-maintainer,"Planned change-set: align linked test seed parsing with docs by accepting timeout alias and canonical timeout_seconds, update docs examples for deterministic guidance, and add integration coverage for alias behavior."
+    "2026-02-18T02:01:01.979Z",cursor-maintainer,"Implemented timeout alias parity for linked test seeds: create/test command parsers now accept timeout (legacy) and timeout_seconds (canonical), rejecting mismatched dual values for deterministic behavior."
+    "2026-02-18T02:01:02.140Z",cursor-maintainer,"Evidence: pnpm build passed. pm test pm-kwl --run --timeout 600 --json passed linked commands (sandboxed integration + sandboxed coverage) with coverage at 100% lines/branches/functions/statements. pm test-all --status in_progress --timeout 600 --json passed totals items=6 linked_tests=11 passed=11 failed=0 skipped=0."
+  files[5]{path,scope,note}:
+    AGENTS.md,project,align command recipe timeout key wording
+    README.md,project,align linked test seed examples
+    src/commands/create.ts,project,normalize test seed timeout alias on create path
+    src/commands/test.ts,project,accept timeout alias in linked test seed parser
+    tests/integration/cli.integration.spec.ts,project,assert timeout alias accepted in create test seed
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,600,full coverage regression gate
+    node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,360,integration coverage for timeout alias
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,dogfood command recipe alignment
+    PRD.md,project,canonical seed schema and command contracts
+    README.md,project,quickstart linked test examples
+body: Implement comment and linked artifact command handlers.

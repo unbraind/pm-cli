@@ -1,0 +1,39 @@
+front_matter:
+  id: pm-vdh
+  title: "M0: Deterministic serializer utilities"
+  description: Implement and validate deterministic serialization helpers used by hashing/history paths.
+  type: Task
+  status: closed
+  priority: 1
+  tags[4]: "area:determinism",core,"milestone:0",pm-cli
+  created_at: "2026-02-17T23:02:06.839Z"
+  updated_at: "2026-02-19T01:28:01.998Z"
+  deadline: "2026-02-20T23:02:06.839Z"
+  author: steve
+  estimated_minutes: 120
+  acceptance_criteria: Serialization helpers produce stable deterministic bytes across supported JSON-like inputs and edge cases are covered by automated tests.
+  dependencies[1]{id,kind,created_at,author,source_kind}:
+    pm-2xl,parent,"2026-02-17T23:02:06.839Z",steve,null
+  comments[8]{created_at,author,text}:
+    "2026-02-19T00:16:29.256Z",maintainer-agent,"Planned changeset: harden deterministic serialization utilities for JSON-like and edge-case inputs, add explicit unit coverage for sorting/undefined-skipping/fallback coercion behavior, and include the core serializer utility in enforced coverage scope."
+    "2026-02-19T00:17:34.181Z",maintainer-agent,"Implemented serializer hardening: stableStringify now canonicalizes Date values and respects object toJSON outputs when they differ from the original object, while preserving deterministic sorted-key behavior for plain objects and undefined-field omission."
+    "2026-02-19T00:39:25.049Z",maintainer-agent,"Follow-up changeset: replaced generic fallback stringification in stableStringify with explicit bigint/undefined/symbol/function handling plus deterministic terminal fallback token to satisfy lint quality constraints without changing canonical object ordering."
+    "2026-02-19T00:41:12.844Z",maintainer-agent,"Coverage follow-up fix: refactored serializer type-branch flow to eliminate an unreachable terminal fallback line while retaining deterministic handling for bigint/undefined/symbol/function/Date/toJSON/object values."
+    "2026-02-19T00:41:45.626Z",maintainer-agent,"Type-safety correction: switched serializer branch guards back to direct typeof checks so TypeScript can narrow unknown values correctly without reintroducing non-deterministic fallback behavior."
+    "2026-02-19T00:42:51.606Z",maintainer-agent,Added serializer unit assertion for anonymous function fallback to close remaining branch-coverage gap in core/shared/serialization.ts.
+    "2026-02-19T01:06:56.887Z",maintainer-agent,"Lint follow-up: replaced typeof-undefined check with direct undefined comparison and moved namedFallback helper to test-module scope to satisfy static quality warnings without behavior changes."
+    "2026-02-19T01:28:01.655Z",maintainer-agent,"Evidence: node dist/cli.js test pm-vdh --run --timeout 1800 --json passed all linked checks (coverage + targeted determinism tests + build). Coverage gate remains 100% lines/branches/functions/statements, including src/core/shared/serialization.ts. Regression sweeps passed with no failures: node dist/cli.js test-all --status in_progress --timeout 1800 --json => items=5 linked_tests=23 passed=22 failed=0 skipped=1; node dist/cli.js test-all --status closed --timeout 1800 --json => items=13 linked_tests=34 passed=31 failed=0 skipped=3."
+  files[4]{path,scope,note}:
+    src/core/shared/serialization.ts,project,deterministic serializer implementation
+    tests/unit/determinism.spec.ts,project,existing determinism regression coverage
+    tests/unit/serialization-utils.spec.ts,project,new edge-case serializer tests
+    vitest.config.ts,project,coverage include for deterministic serializer utility
+  tests[3]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,1200,coverage gate in sandbox
+    node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts tests/unit/serialization-utils.spec.ts,null,project,600,targeted serializer determinism tests
+    pnpm build,null,project,240,compile validation
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,dogfood workflow
+    PRD.md,project,governing spec
+    README.md,project,user-facing contract
+body: Build reusable deterministic serialization and hashing utilities.

@@ -52,7 +52,7 @@ export async function runComments(id: string, options: CommentsCommandOptions, g
   const limit = parseLimit(options.limit);
 
   if (options.add === undefined) {
-    const located = await locateItem(pmRoot, id, settings.id_prefix);
+    const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format);
     if (!located) {
       throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
     }

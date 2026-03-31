@@ -1,0 +1,31 @@
+front_matter:
+  id: pm-scca
+  title: Release-readiness verification and baseline dogfood sweep
+  description: Run contract-aligned regression and test-all sweep then verify docs and release baseline remain aligned and capture evidence.
+  type: Task
+  status: closed
+  priority: 1
+  tags[3]: dogfood,pm-cli,release-readiness
+  created_at: "2026-03-06T20:13:49.161Z"
+  updated_at: "2026-03-06T20:22:10.142Z"
+  deadline: "2026-03-07T20:13:49.161Z"
+  author: maintainer-agent
+  estimated_minutes: 90
+  acceptance_criteria: Regression commands pass and docs contract remains aligned and evidence logged and coverage remains 100 percent.
+  comments[3]{created_at,author,text}:
+    "2026-03-06T20:13:49.161Z",maintainer-agent,Create recurring maintenance task to keep release readiness verified
+    "2026-03-06T20:14:00.660Z",maintainer-agent,Starting sweep by running linked regression and coverage plus test-all status checks
+    "2026-03-06T20:22:09.691Z",maintainer-agent,"Evidence: pm test pm-scca --run passed with 2 linked tests and coverage 100 percent. pm test-all --status in_progress passed with items=1 linked_tests=2 passed=2 failed=0 skipped=0. list-closed confirms large closed backlog and closed sweep is heavy in this repository so no additional code changes were made in this run."
+  notes[1]{created_at,author,text}:
+    "2026-03-06T20:13:49.161Z",maintainer-agent,Plan claim item link docs and tests run regression fix drift if found close with evidence
+  files[1]{path,scope,note}:
+    PRD.md,project,drift inspection reference
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,240,sandbox safe coverage
+    node scripts/run-tests.mjs test,null,project,240,sandbox safe regression
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,maintainer workflow contract
+    PRD.md,project,authoritative contract for sweep
+    README.md,project,public contract
+  close_reason: Verification sweep complete with passing linked regression and in-progress orchestration and 100 percent coverage and no contract drift detected
+body: Bootstrap run to keep repo release-ready and dogfood pm workflow end-to-end.

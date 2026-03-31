@@ -93,8 +93,8 @@ export async function runStats(global: GlobalOptions): Promise<StatsResult> {
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
 
-  await readSettings(pmRoot);
-  const items = await listAllFrontMatter(pmRoot);
+  const settings = await readSettings(pmRoot);
+  const items = await listAllFrontMatter(pmRoot, settings.item_format);
 
   const byType = zeroByType();
   const byStatus = zeroByStatus();

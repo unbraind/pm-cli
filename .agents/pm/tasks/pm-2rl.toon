@@ -1,0 +1,39 @@
+front_matter:
+  id: pm-2rl
+  title: Fix sandbox runner passthrough for targeted test commands
+  description: Ensure scripts/run-tests.mjs preserves targeted Vitest file filters and keeps sandbox PM_PATH safety for linked tests.
+  type: Task
+  status: closed
+  priority: 2
+  tags[5]: "area:testing","milestone:6",pm-cli,"priority:2",tests
+  created_at: "2026-02-19T02:36:38.700Z"
+  updated_at: "2026-02-19T04:00:56.376Z"
+  deadline: "2026-02-26T02:36:38.700Z"
+  author: maintainer-agent
+  estimated_minutes: 45
+  acceptance_criteria: Running node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts executes only requested files in sandbox; pm-linked targeted tests no longer fan out to full suite.
+  dependencies[1]{id,kind,created_at,author,source_kind}:
+    pm-jiw,parent,"2026-02-19T02:36:38.700Z",maintainer-agent,null
+  comments[5]{created_at,author,text}:
+    "2026-02-19T02:36:38.700Z",maintainer-agent,"Created from verification evidence: targeted linked tests currently fan out to full-suite runs; fix is required for efficient deterministic pm test-all sweeps."
+    "2026-02-19T03:19:51.483Z",maintainer-agent,"Intent: patch sandbox runner argument forwarding so targeted filters after '--' are normalized before invoking Vitest, then verify with targeted run + coverage + test-all sweeps."
+    "2026-02-19T03:22:04.362Z",maintainer-agent,"Implemented docs-first + code changeset: README now documents '-- <vitest args...>' passthrough contract; scripts/run-tests.mjs now normalizes leading '--', runs build explicitly, and invokes vitest directly via pnpm exec to preserve targeted file filters. Added integration test tests/integration/run-tests-script.integration.spec.ts to lock this behavior."
+    "2026-02-19T03:47:33.354Z",maintainer-agent,"Follow-up hardening: added PM_RUN_TESTS_SKIP_BUILD=1 support in scripts/run-tests.mjs and use it in tests/integration/run-tests-script.integration.spec.ts to prevent nested build races when run-tests is invoked from within an active Vitest run."
+    "2026-02-19T04:00:47.193Z",maintainer-agent,"Evidence: pm test pm-2rl --run --timeout 1800 --json passed 3/3 linked commands (coverage + targeted integration + targeted health). Regression sweeps passed after metadata cleanup and race hardening: pm test-all --status in_progress --timeout 1800 --json => items=5 linked_tests=23 passed=22 failed=0 skipped=1; pm test-all --status closed --timeout 1800 --json => items=14 linked_tests=37 passed=34 failed=0 skipped=3. Coverage gate remains 100% lines/branches/functions/statements in sandboxed runs. Follow-up maintenance applied: removed stale pm-wo8 linked command/path for tests/unit/create-update-command.spec.ts that became invalid once targeted passthrough was fixed."
+  notes[1]{created_at,author,text}:
+    "2026-02-19T02:36:38.700Z",maintainer-agent,"Plan: adjust run-tests script or package scripts to preserve forwarded args after mode selection; add integration assertion for filtered execution."
+  learnings[1]{created_at,author,text}:
+    "2026-02-19T02:36:38.700Z",maintainer-agent,Long regression sweeps revealed that targeted linked test commands currently execute full suites due argument forwarding behavior.
+  files[3]{path,scope,note}:
+    README.md,project,document targeted passthrough behavior
+    scripts/run-tests.mjs,project,fix argument passthrough semantics
+    tests/integration/run-tests-script.integration.spec.ts,project,verify runner targeted passthrough contract
+  tests[3]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,1800,coverage gate in sandbox after runner fix
+    node scripts/run-tests.mjs test -- tests/integration/run-tests-script.integration.spec.ts,null,project,900,runner passthrough regression
+    node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts,null,project,600,verify targeted execution remains filtered
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,dogfood workflow contract
+    PRD.md,project,governing spec
+    README.md,project,document sandbox runner targeted command behavior
+body: "Observed during pm test-all sweeps: commands like node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts trigger full-suite execution, which inflates regression runtime and weakens item-level test specificity. Implement deterministic passthrough so targeted linked commands execute only requested tests while preserving sandbox PM_PATH safety."

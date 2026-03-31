@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import path from "node:path";
 import type { ItemFrontMatter } from "../../src/types.js";
 import { EXIT_CODE } from "../../src/constants.js";
+import { serializeItemDocument } from "../../src/item-format.js";
 import { readJsonFixture } from "../helpers/fixtures.js";
 
 const pathExistsMock = vi.fn<() => Promise<boolean>>();
@@ -1145,5 +1146,73 @@ describe("runSearch", () => {
     } as unknown as { id_prefix: string });
     const tunedResult = await runSearch("tunetoken", { mode: "keyword" }, { path: "/tmp/pm-search" });
     expect(tunedResult.items[0]?.item.id).toBe("pm-tuning-body");
+  });
+
+  it("falls back to alternate item format path when preferred file is missing", async () => {
+    const fallbackItem = makeFrontMatter({
+      id: "pm-fallback-format",
+      title: "Fallback format title",
+      description: "Preferred TOON file missing",
+    });
+    listAllFrontMatterMock.mockResolvedValue([fallbackItem]);
+    readSettingsMock.mockResolvedValue({
+      id_prefix: "pm-",
+      item_format: "toon",
+    } as unknown as { id_prefix: string });
+    readFileMock.mockImplementation(async (targetPath) => {
+      if (targetPath.endsWith(".toon")) {
+        throw new Error("ENOENT preferred format");
+      }
+      if (targetPath.endsWith(".md")) {
+        return serializeDocument(fallbackItem, "fallback body");
+      }
+      throw new Error(`Unexpected path: ${targetPath}`);
+    });
+
+    const { runSearch } = await import("../../src/cli/commands/search.js");
+    const result = await runSearch("fallback", { mode: "keyword" }, { path: "/tmp/pm-search" });
+    expect(result.items[0]?.item.id).toBe("pm-fallback-format");
+    expect(runActiveOnReadHooksMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: expect.stringMatching(/pm-fallback-format\.md$/),
+      }),
+    );
+  });
+
+  it("falls back from json_markdown preference to TOON item file when markdown path is missing", async () => {
+    const fallbackItem = makeFrontMatter({
+      id: "pm-fallback-toon",
+      title: "Fallback toon title",
+      description: "Preferred markdown file missing",
+    });
+    listAllFrontMatterMock.mockResolvedValue([fallbackItem]);
+    readSettingsMock.mockResolvedValue({
+      id_prefix: "pm-",
+      item_format: "json_markdown",
+    } as unknown as { id_prefix: string });
+    readFileMock.mockImplementation(async (targetPath) => {
+      if (targetPath.endsWith(".md")) {
+        throw new Error("ENOENT preferred markdown");
+      }
+      if (targetPath.endsWith(".toon")) {
+        return serializeItemDocument(
+          {
+            front_matter: fallbackItem,
+            body: "fallback toon body",
+          },
+          { format: "toon" },
+        );
+      }
+      throw new Error(`Unexpected path: ${targetPath}`);
+    });
+
+    const { runSearch } = await import("../../src/cli/commands/search.js");
+    const result = await runSearch("fallback", { mode: "keyword" }, { path: "/tmp/pm-search" });
+    expect(result.items[0]?.item.id).toBe("pm-fallback-toon");
+    expect(runActiveOnReadHooksMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: expect.stringMatching(/pm-fallback-toon\.toon$/),
+      }),
+    );
   });
 });

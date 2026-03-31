@@ -106,11 +106,12 @@ src/
 
 ## Item Storage
 
-Each item is stored as a Markdown file:
+Each item is stored as a format-configured document file:
 
 ```
 .agents/pm/
-  <type-plural>/<id>.md     e.g. tasks/pm-a1b2.md
+  <type-plural>/<id>.toon   default item storage (TOON full object)
+  <type-plural>/<id>.md     legacy-compatible JSON front matter + markdown body
   history/<id>.jsonl        append-only RFC6902 patch log
   locks/<id>.lock           exclusive lock metadata (JSON)
   settings.json             project configuration
@@ -121,6 +122,20 @@ Each item is stored as a Markdown file:
 
 ### Item File Format
 
+Default TOON item document:
+
+```toon
+front_matter:
+  id: pm-a1b2
+  title: ...
+  # ...
+body: |
+  Optional markdown body here.
+```
+
+Legacy markdown-compatible item document:
+
+```md
 ```
 {
   "id": "pm-a1b2",
@@ -131,19 +146,19 @@ Each item is stored as a Markdown file:
 Optional markdown body here.
 ```
 
-Fields are serialized in canonical key order (defined in `item-format.ts`).
+Fields are normalized and serialized in canonical key order (defined in `item-format.ts`) before hashing/history patch generation, regardless of on-disk item format.
 
 ## Mutation Contract
 
 Every item mutation follows this sequence:
 
 1. **Acquire lock** — exclusive open on `locks/<id>.lock`; reject if stale and no `--force`
-2. **Read current item** — parse front-matter + body
+2. **Read current item** — parse configured-format item (`.toon` or `.md`) into canonical `{ front_matter, body }`
 3. **Compute `before_hash`** — SHA-256 of canonical `{ front_matter, body }` JSON
 4. **Apply mutation** — in-memory model update
 5. **Update `updated_at`** — every mutation must change this timestamp
 6. **Compute patch + `after_hash`** — RFC6902 diff; SHA-256 of new canonical state
-7. **Atomic write** — write to temp file; `rename` to target (single syscall, OS-atomic)
+7. **Atomic write** — write configured-format item file via temp + `rename` (single syscall, OS-atomic)
 8. **Append history line** — JSONL append to `history/<id>.jsonl`
 9. **Release lock** — unlink lock file
 
@@ -205,6 +220,7 @@ Weights are configurable via `settings.json` under `search.tuning`.
 |-----|-------------|
 | `id_prefix` | Prefix for generated IDs (default `pm-`) |
 | `author_default` | Default author for mutations |
+| `item_format` | Item storage format: `toon` (default) or `json_markdown` |
 | `locks.ttl_seconds` | Lock TTL (default 1800) |
 | `output.default_format` | `toon` or `json` |
 | `search.*` | Search provider and tuning settings |
@@ -212,6 +228,8 @@ Weights are configurable via `settings.json` under `search.tuning`.
 | `vector_store.qdrant` / `vector_store.lancedb` | Vector store config |
 
 Precedence: CLI flags > env vars (`PM_PATH`, `PM_AUTHOR`, etc.) > `settings.json` > hard defaults.
+
+For repositories created before `item_format` existed, mutating item commands are blocked until an explicit format is selected through `pm config ... item-format --format ...`. Once selected (or changed), item files are automatically migrated to the configured format, and when both `.md` and `.toon` exist for an item, the configured format is the source of truth.
 
 ## Exit Codes
 

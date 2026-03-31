@@ -1,0 +1,48 @@
+front_matter:
+  id: pm-pq8
+  title: Docs contract sync for release readiness
+  description: Close release-readiness documentation gaps by adding required community files and syncing README/PRD/AGENTS contracts with implemented behavior.
+  type: Task
+  status: closed
+  priority: 0
+  tags[4]: contracts,docs,pm-cli,release-readiness
+  created_at: "2026-02-17T23:37:21.381Z"
+  updated_at: "2026-02-18T01:15:08.275Z"
+  deadline: "2026-02-19T23:37:21.381Z"
+  author: cursor-agent
+  estimated_minutes: 180
+  acceptance_criteria: "PRD, README, and AGENTS match implementation; LICENSE, CHANGELOG, CONTRIBUTING, SECURITY, and CODE_OF_CONDUCT exist with release-ready baseline content."
+  dependencies[1]{id,kind,created_at,author,source_kind}:
+    pm-ote,parent,"2026-02-17T23:37:21.381Z",cursor-agent,null
+  comments[9]{created_at,author,text}:
+    "2026-02-17T23:38:07.132Z",cursor-agent,"Phase 0 complete: created epic pm-ote and child items pm-pq8, pm-2c8, pm-912, pm-wo8, pm-cyj, pm-tq1 with explicit dependencies."
+    "2026-02-17T23:42:24.565Z",cursor-agent,"Updated docs-first contracts before code behavior changes: command surface scoped to v0.1, release-ready structure defined, sandbox PM_PATH test safety codified, and release checklist added."
+    "2026-02-18T00:16:09.388Z",cursor-agent,Updated README installation contract with explicit npm update command and installer idempotent update guidance.
+    "2026-02-18T00:17:34.704Z",cursor-agent,Added AGENTS guidance to avoid linking pm test-all as an item-level test command to prevent recursive orchestration loops.
+    "2026-02-18T01:08:09.726Z",steve,"Planned change-set: add missing release/community docs (LICENSE, CHANGELOG, CONTRIBUTING, SECURITY, CODE_OF_CONDUCT), then verify command/docs parity and execute sandbox-safe test flow."
+    "2026-02-18T01:12:13.482Z",steve,"Implemented docs-first release baseline: updated PRD/README/AGENTS contracts, added root community docs (LICENSE, CHANGELOG, CONTRIBUTING, SECURITY, CODE_OF_CONDUCT), and added scripts/run-tests.mjs sandbox runner for pm-linked test execution."
+    "2026-02-18T01:13:45.460Z",steve,"Evidence: pm test pm-pq8 --run passed (node scripts/run-tests.mjs coverage). pm test-all --status in_progress --timeout 1800 passed with totals items=7 linked_tests=9 passed=9 failed=0 skipped=0. Coverage remains 100% (lines/branches/functions/statements)."
+    "2026-02-18T01:14:15.245Z",steve,"Follow-up: adjust README FAQ to mark restore/history commands as roadmap-only in current v0.1 surface."
+    "2026-02-18T01:15:07.896Z",steve,"Follow-up implemented: README FAQ now marks restore/history as roadmap-only in current v0.1 surface to match --help command set. Verification rerun passed: pm test pm-pq8 --run and pm test-all --status in_progress (items=7, linked_tests=9, passed=9, failed=0). Coverage remains 100% across all enforced metrics."
+  files[9]{path,scope,note}:
+    AGENTS.md,project,Dogfood workflow and sandbox testing rules
+    CHANGELOG.md,project,required community file
+    CODE_OF_CONDUCT.md,project,recommended conduct policy
+    CONTRIBUTING.md,project,required community file
+    LICENSE,project,required community file
+    PRD.md,project,Authoritative command surface and test policy updates
+    README.md,project,Docs-first release contract alignment
+    scripts/run-tests.mjs,project,sandbox-safe pm-linked test runner
+    SECURITY.md,project,recommended security policy
+  tests[1]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,1200,Sandbox coverage gate for docs and release baseline
+  docs[8]{path,scope,note}:
+    AGENTS.md,project,Contributor workflow contract
+    CHANGELOG.md,project,release changelog baseline
+    CODE_OF_CONDUCT.md,project,contributor conduct policy
+    CONTRIBUTING.md,project,contributor workflow and testing
+    LICENSE,project,MIT license baseline
+    PRD.md,project,Authoritative behavior contract
+    README.md,project,Public contract sync
+    SECURITY.md,project,security reporting policy
+body: Authoritative contracts must stay ahead of implementation. This task owns docs-first updates and final sync for release readiness.

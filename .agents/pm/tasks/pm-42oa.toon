@@ -1,0 +1,38 @@
+front_matter:
+  id: pm-42oa
+  title: "M5 follow-up: report pending extension migrations in health"
+  description: Surface extension migration registration status in pm health so pending/failed migration visibility is explicit.
+  type: Task
+  status: closed
+  priority: 1
+  tags[8]: "area:extensions","area:health",code,docs,"milestone:5",pm-cli,"priority:1",tests
+  created_at: "2026-03-06T07:18:07.309Z"
+  updated_at: "2026-03-06T07:40:43.536Z"
+  deadline: "2026-03-08T07:18:07.309Z"
+  author: cursor-maintainer
+  estimated_minutes: 90
+  acceptance_criteria: pm health reports deterministic migration status summary with pending/failed visibility from extension migration registrations; docs are updated first; targeted and regression sweeps pass with coverage at 100%.
+  comments[6]{created_at,author,text}:
+    "2026-03-06T07:18:07.309Z",cursor-maintainer,Need explicit migration status visibility in health output to close extension registration runtime gap.
+    "2026-03-06T07:18:45.598Z",cursor-maintainer,"Planned changeset: docs-first update PRD/README migration diagnostics contract, then implement health migration pending/failed summary from extension registration + activation data with targeted unit coverage and full pm verification sweeps."
+    "2026-03-06T07:20:39.763Z",cursor-maintainer,"Docs-first update completed: PRD section 14.4/14.6 and README extension baseline now define deterministic migration status summaries in health diagnostics (failed when status=failed, otherwise pending) and clarify core-write migration blocking remains roadmap."
+    "2026-03-06T07:21:47.859Z",cursor-maintainer,"Implemented health migration diagnostics: runHealth now summarizes registered extension migrations into activation.migration_status (pending/failed with counts), emits deterministic warning codes extension_migration_pending and extension_migration_failed, and unit coverage now includes a migration-ext scenario asserting warning/output shape parity."
+    "2026-03-06T07:24:41.739Z",cursor-maintainer,"Follow-up after initial pm test run: coverage dropped below 100% in health.ts migration helpers. Added deterministic migration ordering/fallback-id/error-reason coverage by expanding health unit test with global+project migration registrations and mixed pending/failed definitions."
+    "2026-03-06T07:40:35.441Z",cursor-maintainer,"Verification evidence: (1) pm test pm-42oa --run --timeout 7200 --json => 4/4 linked tests passed (coverage, full suite, targeted health spec, build), with coverage report at 100% statements/branches/functions/lines. (2) pm test-all --status in_progress --timeout 7200 --json => items=1 linked_tests=4 passed=4 failed=0 skipped=0. (3) pm test-all --status closed --timeout 7200 --json => items=80 linked_tests=241 passed=62 failed=0 skipped=179. Regression and coverage gates are green after migration-status health diagnostics updates."
+  notes[1]{created_at,author,text}:
+    "2026-03-06T07:18:07.309Z",cursor-maintainer,Plan docs-first then health command migration summary plus tests and mandatory pm test sweeps.
+  files[4]{path,scope,note}:
+    PRD.md,project,docs-first migration status baseline update
+    README.md,project,docs-first migration status contract
+    src/cli/commands/health.ts,project,planned migration health diagnostics
+    tests/unit/health-command.spec.ts,project,migration status regression coverage
+  tests[4]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs coverage,null,project,240,sandboxed coverage gate
+    node scripts/run-tests.mjs test,null,project,240,sandboxed full suite
+    node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts,null,project,240,targeted health migration tests
+    pnpm build,null,project,240,build verification
+  docs[3]{path,scope,note}:
+    AGENTS.md,project,governing spec
+    PRD.md,project,migration health contract
+    README.md,project,governing spec
+body: Implement docs-first migration visibility for extension registrations. Add deterministic health diagnostics for pending/failed migration status and regression tests.

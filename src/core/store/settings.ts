@@ -10,6 +10,7 @@ const settingsSchema = z.object({
   version: z.number().int(),
   id_prefix: z.string(),
   author_default: z.string(),
+  item_format: z.union([z.literal("toon"), z.literal("json_markdown")]).optional(),
   locks: z.object({
     ttl_seconds: z.number().int(),
   }),
@@ -57,8 +58,25 @@ const settingsSchema = z.object({
 
 const SETTINGS_WRITE_OP = "settings:write";
 
+export interface SettingsReadMetadata {
+  has_explicit_item_format: boolean;
+}
+
+export interface SettingsReadResult {
+  settings: PmSettings;
+  metadata: SettingsReadMetadata;
+}
+
 function cloneDefaults(): PmSettings {
   return structuredClone(SETTINGS_DEFAULTS);
+}
+
+function hasExplicitItemFormat(raw: unknown): boolean {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return false;
+  }
+  const itemFormat = (raw as Record<string, unknown>).item_format;
+  return itemFormat === "toon" || itemFormat === "json_markdown";
 }
 
 function mergeSettings(raw: unknown): PmSettings {
@@ -71,6 +89,7 @@ function mergeSettings(raw: unknown): PmSettings {
   return {
     ...defaults,
     ...settings,
+    item_format: settings.item_format ?? defaults.item_format,
     locks: { ...defaults.locks, ...settings.locks },
     output: { ...defaults.output, ...settings.output },
     workflow: {
@@ -97,6 +116,7 @@ export function serializeSettings(settings: PmSettings): string {
     "version",
     "id_prefix",
     "author_default",
+    "item_format",
     "locks",
     "output",
     "workflow",
@@ -140,21 +160,41 @@ export function serializeSettings(settings: PmSettings): string {
   return `${JSON.stringify(ordered, null, 2)}\n`;
 }
 
-export async function readSettings(pmRoot: string): Promise<PmSettings> {
+export async function readSettingsWithMetadata(pmRoot: string): Promise<SettingsReadResult> {
   const settingsPath = getSettingsPath(pmRoot);
   const raw = await readFileIfExists(settingsPath);
   if (raw === null) {
-    return cloneDefaults();
+    return {
+      settings: cloneDefaults(),
+      metadata: {
+        has_explicit_item_format: false,
+      },
+    };
   }
   await runActiveOnReadHooks({
     path: settingsPath,
     scope: "project",
   });
   try {
-    return mergeSettings(JSON.parse(raw));
+    const parsed = JSON.parse(raw) as unknown;
+    return {
+      settings: mergeSettings(parsed),
+      metadata: {
+        has_explicit_item_format: hasExplicitItemFormat(parsed),
+      },
+    };
   } catch {
-    return cloneDefaults();
+    return {
+      settings: cloneDefaults(),
+      metadata: {
+        has_explicit_item_format: false,
+      },
+    };
   }
+}
+
+export async function readSettings(pmRoot: string): Promise<PmSettings> {
+  return (await readSettingsWithMetadata(pmRoot)).settings;
 }
 
 export async function writeSettings(pmRoot: string, settings: PmSettings, op = SETTINGS_WRITE_OP): Promise<void> {

@@ -1,16 +1,14 @@
-import fs from "node:fs/promises";
 import path from "node:path";
-import { runActiveOnIndexHooks, runActiveOnReadHooks, runActiveOnWriteHooks } from "../../core/extensions/index.js";
+import { runActiveOnIndexHooks, runActiveOnWriteHooks } from "../../core/extensions/index.js";
 import { pathExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
-import { parseItemDocument } from "../../core/item/item-format.js";
 import { executeEmbeddingBatchesWithRetry } from "../../core/search/embedding-batches.js";
 import { resolveEmbeddingProviders } from "../../core/search/providers.js";
 import { executeVectorUpsert, resolveVectorStores } from "../../core/search/vector-stores.js";
-import { EXIT_CODE, TYPE_TO_FOLDER } from "../../core/shared/constants.js";
+import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
-import { listAllFrontMatter } from "../../core/store/item-store.js";
+import { listAllFrontMatterWithBody } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemDocument } from "../../types/index.js";
@@ -45,20 +43,15 @@ function parseMode(raw: string | undefined): "keyword" | "semantic" | "hybrid" {
   throw new PmCliError("Reindex mode must be one of keyword|semantic|hybrid", EXIT_CODE.USAGE);
 }
 
-async function loadDocuments(pmRoot: string): Promise<ItemDocument[]> {
-  const items = await listAllFrontMatter(pmRoot);
-  const sortedItems = [...items].sort((a, b) => a.id.localeCompare(b.id));
-  const documents: ItemDocument[] = [];
-  for (const item of sortedItems) {
-    const itemPath = path.join(pmRoot, TYPE_TO_FOLDER[item.type], `${item.id}.md`);
-    const raw = await fs.readFile(itemPath, "utf8");
-    await runActiveOnReadHooks({
-      path: itemPath,
-      scope: "project",
-    });
-    documents.push(parseItemDocument(raw));
-  }
-  return documents;
+async function loadDocuments(pmRoot: string, itemFormat: "toon" | "json_markdown"): Promise<ItemDocument[]> {
+  const items = await listAllFrontMatterWithBody(pmRoot, itemFormat);
+  return items.map((item) => {
+    const { body, ...frontMatter } = item;
+    return {
+      front_matter: frontMatter,
+      body,
+    };
+  });
 }
 
 function buildKeywordRecord(document: ItemDocument, mode: "keyword" | "semantic" | "hybrid"): Record<string, unknown> {
@@ -117,7 +110,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
     activeVectorStore = vectorResolution.active;
   }
   const mode = requestedMode;
-  const documents = await loadDocuments(pmRoot);
+  const documents = await loadDocuments(pmRoot, settings.item_format);
   const generatedAt = nowIso();
 
   const manifest = {

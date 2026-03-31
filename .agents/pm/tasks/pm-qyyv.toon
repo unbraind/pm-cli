@@ -1,0 +1,28 @@
+front_matter:
+  id: pm-qyyv
+  title: "M4 roadmap: Broader multi-factor tuning for hybrid search"
+  description: Implement broader multi-factor tuning.
+  type: Task
+  status: closed
+  priority: 2
+  tags[4]: "area:search","milestone:4",pm-cli,roadmap
+  created_at: "2026-03-07T14:01:18.657Z"
+  updated_at: "2026-03-07T20:26:38.737Z"
+  author: maintainer-agent
+  estimated_minutes: 120
+  acceptance_criteria: Multi-factor tuning configurable and applied.
+  comments[3]{created_at,author,text}:
+    "2026-03-07T20:00:20.030Z",maintainer-agent,Implemented configurable keyword scoring tuning (weights + title exact bonus) and added deterministic unit coverage for tuning resolution and ranking influence.
+    "2026-03-07T20:26:31.777Z",maintainer-agent,"Aligned PRD/README with implemented search tuning: optional settings.search.tuning now documented with deterministic defaults and milestone wording updated to reflect implemented multi-factor lexical tuning."
+    "2026-03-07T20:26:31.965Z",maintainer-agent,"Evidence: pm test pm-qyyv --run passed; pm test-all --status in_progress passed with deterministic duplicate skip; pm test-all --status closed passed (failed=0)."
+  files[3]{path,scope,note}:
+    src/cli/commands/search.ts,project,planned change
+    src/types.ts,project,search tuning settings contract
+    tests/unit/search-command.spec.ts,project,multi-factor tuning coverage
+  tests[1]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs test,null,project,240,sandbox-safe regression
+  docs[2]{path,scope,note}:
+    PRD.md,project,governing spec
+    README.md,project,search tuning contract
+  close_reason: Implemented configurable multi-factor lexical tuning and synchronized PRD/README contracts; pm test and regression sweeps passed.
+body: Implement broader multi-factor tuning for hybrid search mode.
