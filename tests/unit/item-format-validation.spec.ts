@@ -263,6 +263,8 @@ describe("item-format front-matter validation", () => {
   it("round-trips TOON item documents while preserving canonical document shape", () => {
     const source = parseItemDocument(buildSource({ tags: ["Alpha", "beta"], confidence: "med" }));
     const serializedToon = serializeItemDocument(source, { format: "toon" });
+    expect(serializedToon.startsWith("front_matter:")).toBe(false);
+    expect(serializedToon.startsWith("id: ")).toBe(true);
     const parsedToon = parseItemDocument(serializedToon, { format: "toon" });
     expect(parsedToon).toEqual({
       front_matter: {
@@ -272,6 +274,68 @@ describe("item-format front-matter validation", () => {
       },
       body: source.body,
     });
+  });
+
+  it("parses TOON root-object item documents without front_matter wrapper", () => {
+    const parsed = parseItemDocument(
+      [
+        "id: pm-root-item",
+        "title: Root object title",
+        "description: Root object description",
+        "type: Task",
+        "status: open",
+        "priority: 1",
+        "tags[2]: beta,alpha",
+        `created_at: "${FIXED_TS}"`,
+        `updated_at: "${FIXED_TS}"`,
+        "body: Root object body",
+      ].join("\n"),
+      { format: "toon" },
+    );
+    expect(parsed.front_matter.id).toBe("pm-root-item");
+    expect(parsed.front_matter.tags).toEqual(["alpha", "beta"]);
+    expect(parsed.body).toBe("Root object body");
+  });
+
+  it("keeps backward compatibility with legacy wrapped TOON item documents", () => {
+    const parsed = parseItemDocument(
+      [
+        "front_matter:",
+        "  id: pm-legacy-wrapped",
+        "  title: Legacy title",
+        "  description: Legacy description",
+        "  type: Task",
+        "  status: open",
+        "  priority: 1",
+        "  tags[2]: beta,alpha",
+        `  created_at: "${FIXED_TS}"`,
+        `  updated_at: "${FIXED_TS}"`,
+        "body: Legacy body",
+      ].join("\n"),
+      { format: "toon" },
+    );
+    expect(parsed.front_matter.id).toBe("pm-legacy-wrapped");
+    expect(parsed.front_matter.tags).toEqual(["alpha", "beta"]);
+    expect(parsed.body).toBe("Legacy body");
+  });
+
+  it("defaults body to empty string for legacy wrapped TOON without body field", () => {
+    const parsed = parseItemDocument(
+      [
+        "front_matter:",
+        "  id: pm-legacy-no-body",
+        "  title: Legacy no body",
+        "  description: Legacy no body description",
+        "  type: Task",
+        "  status: open",
+        "  priority: 1",
+        "  tags[1]: alpha",
+        `  created_at: "${FIXED_TS}"`,
+        `  updated_at: "${FIXED_TS}"`,
+      ].join("\n"),
+      { format: "toon" },
+    );
+    expect(parsed.body).toBe("");
   });
 
   it("throws when TOON item document is malformed", () => {

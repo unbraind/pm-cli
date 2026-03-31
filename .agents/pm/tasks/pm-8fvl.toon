@@ -1,40 +1,39 @@
-front_matter:
-  id: pm-8fvl
-  title: Harden recursive test-all detection for npx package specs
-  description: Reject linked test commands that invoke pm test-all via npx package-spec forms like pm-cli@latest.
-  type: Task
-  status: closed
-  priority: 1
-  tags[6]: "area:test-command",code,"milestone:3",pm-cli,"priority:1",tests
-  created_at: "2026-03-05T00:01:19.931Z"
-  updated_at: "2026-03-05T00:16:36.548Z"
-  deadline: "2026-03-06T00:01:19.000Z"
-  author: cursor-maintainer
-  estimated_minutes: 75
-  acceptance_criteria: pm test --add rejects recursive test-all invocations launched through npx package specs such as pm-cli@latest; unit tests cover detection paths; sandboxed regression and coverage remain at 100 percent.
-  dependencies[1]{id,kind,created_at,author,source_kind}:
-    pm-k3zx,related,"2026-03-05T00:01:19.931Z",cursor-maintainer,null
-  comments[7]{created_at,author,text}:
-    "2026-03-05T00:01:19.931Z",cursor-maintainer,Docs require recursive pm test-all entries to be rejected and package-spec launchers currently bypass validation.
-    "2026-03-05T00:01:31.917Z",cursor-maintainer,"Planned changeset: update PRD/README wording to explicitly include npx package-spec recursive forms, then harden src/cli/commands/test.ts detection and add unit regression coverage."
-    "2026-03-05T00:02:54.435Z",cursor-maintainer,"Docs-first update completed: PRD README and AGENTS now explicitly include package-spec launcher forms (for example npx pm-cli@latest --json test-all) in recursive test-all reject/skip requirements."
-    "2026-03-05T00:03:35.199Z",cursor-maintainer,Implemented parser hardening in src/cli/commands/test.ts by normalizing package specifiers before pm-cli launcher matching; added unit regressions for npx pm-cli@latest and npx pm-cli@0.1.0 add-time rejection plus runtime skip coverage.
-    "2026-03-05T00:05:16.901Z",cursor-maintainer,"Follow-up fix after initial coverage run: removed unreachable empty-specifier branch in normalizePackageSpecifier and added scoped package regression cases (npx @scope/pm-cli@latest recursive reject plus npx @scope non-pm passthrough) to restore 100% coverage."
-    "2026-03-05T00:06:21.258Z",cursor-maintainer,"Coverage follow-up: added npx @scope/pm-cli recursive rejection case to exercise scoped package branch without explicit version suffix so branch coverage remains at 100 percent."
-    "2026-03-05T00:16:32.203Z",cursor-maintainer,"Evidence: pm test pm-8fvl --run --timeout 2400 --json passed 2/2 linked tests (coverage + targeted test-command suite). pm test-all --status in_progress --timeout 2400 --json totals items=1 linked_tests=2 passed=2 failed=0 skipped=0. pm test-all --status closed --timeout 2400 --json totals items=64 linked_tests=202 passed=57 failed=0 skipped=145. Coverage gate output reports 100% statements/branches/functions/lines."
-  notes[1]{created_at,author,text}:
-    "2026-03-05T00:01:19.931Z",cursor-maintainer,Plan docs-first clarification then parser hardening in src/cli/commands/test.ts plus targeted unit regressions.
-  files[5]{path,scope,note}:
-    AGENTS.md,project,agent rule alignment for recursive launcher forms
-    PRD.md,project,docs-first recursive launcher contract update
-    README.md,project,docs-first recursive launcher contract update
-    src/cli/commands/test.ts,project,recursive invocation detection logic
-    tests/unit/test-command.spec.ts,project,coverage for npx package-spec recursion variants
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,1800,coverage gate
-    node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,1200,targeted recursion guard regression
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,authoritative agent workflow contract
-    PRD.md,project,authoritative recursive command safety contract
-    README.md,project,public test command behavior contract
+id: pm-8fvl
+title: Harden recursive test-all detection for npx package specs
+description: Reject linked test commands that invoke pm test-all via npx package-spec forms like pm-cli@latest.
+type: Task
+status: closed
+priority: 1
+tags[6]: "area:test-command",code,"milestone:3",pm-cli,"priority:1",tests
+created_at: "2026-03-05T00:01:19.931Z"
+updated_at: "2026-03-05T00:16:36.548Z"
+deadline: "2026-03-06T00:01:19.000Z"
+author: cursor-maintainer
+estimated_minutes: 75
+acceptance_criteria: pm test --add rejects recursive test-all invocations launched through npx package specs such as pm-cli@latest; unit tests cover detection paths; sandboxed regression and coverage remain at 100 percent.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-k3zx,related,"2026-03-05T00:01:19.931Z",cursor-maintainer,null
+comments[7]{created_at,author,text}:
+  "2026-03-05T00:01:19.931Z",cursor-maintainer,Docs require recursive pm test-all entries to be rejected and package-spec launchers currently bypass validation.
+  "2026-03-05T00:01:31.917Z",cursor-maintainer,"Planned changeset: update PRD/README wording to explicitly include npx package-spec recursive forms, then harden src/cli/commands/test.ts detection and add unit regression coverage."
+  "2026-03-05T00:02:54.435Z",cursor-maintainer,"Docs-first update completed: PRD README and AGENTS now explicitly include package-spec launcher forms (for example npx pm-cli@latest --json test-all) in recursive test-all reject/skip requirements."
+  "2026-03-05T00:03:35.199Z",cursor-maintainer,Implemented parser hardening in src/cli/commands/test.ts by normalizing package specifiers before pm-cli launcher matching; added unit regressions for npx pm-cli@latest and npx pm-cli@0.1.0 add-time rejection plus runtime skip coverage.
+  "2026-03-05T00:05:16.901Z",cursor-maintainer,"Follow-up fix after initial coverage run: removed unreachable empty-specifier branch in normalizePackageSpecifier and added scoped package regression cases (npx @scope/pm-cli@latest recursive reject plus npx @scope non-pm passthrough) to restore 100% coverage."
+  "2026-03-05T00:06:21.258Z",cursor-maintainer,"Coverage follow-up: added npx @scope/pm-cli recursive rejection case to exercise scoped package branch without explicit version suffix so branch coverage remains at 100 percent."
+  "2026-03-05T00:16:32.203Z",cursor-maintainer,"Evidence: pm test pm-8fvl --run --timeout 2400 --json passed 2/2 linked tests (coverage + targeted test-command suite). pm test-all --status in_progress --timeout 2400 --json totals items=1 linked_tests=2 passed=2 failed=0 skipped=0. pm test-all --status closed --timeout 2400 --json totals items=64 linked_tests=202 passed=57 failed=0 skipped=145. Coverage gate output reports 100% statements/branches/functions/lines."
+notes[1]{created_at,author,text}:
+  "2026-03-05T00:01:19.931Z",cursor-maintainer,Plan docs-first clarification then parser hardening in src/cli/commands/test.ts plus targeted unit regressions.
+files[5]{path,scope,note}:
+  AGENTS.md,project,agent rule alignment for recursive launcher forms
+  PRD.md,project,docs-first recursive launcher contract update
+  README.md,project,docs-first recursive launcher contract update
+  src/cli/commands/test.ts,project,recursive invocation detection logic
+  tests/unit/test-command.spec.ts,project,coverage for npx package-spec recursion variants
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,1800,coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,1200,targeted recursion guard regression
+docs[3]{path,scope,note}:
+  AGENTS.md,project,authoritative agent workflow contract
+  PRD.md,project,authoritative recursive command safety contract
+  README.md,project,public test command behavior contract
 body: Current validation catches pm test-all recursion for direct pm/node/npx forms but allows package-spec invocations such as npx pm-cli@latest --json test-all. This task hardens parser coverage and keeps runtime skip logic aligned with docs.

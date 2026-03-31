@@ -1,33 +1,32 @@
-front_matter:
-  id: pm-2joy
-  title: Release-readiness contract audit and next fix (2026-03-06 run 4)
-  description: Audit PRD README AGENTS and implementation parity then deliver the next highest-value contract-aligned improvement.
-  type: Chore
-  status: closed
-  priority: 0
-  tags[4]: contract-sync,maintenance,pm-cli,release-readiness
-  created_at: "2026-03-06T18:55:19.104Z"
-  updated_at: "2026-03-06T19:11:33.496Z"
-  deadline: "2026-03-07T18:55:19.104Z"
-  author: maintainer-agent
-  estimated_minutes: 120
-  acceptance_criteria: "One concrete contract-aligned improvement is implemented, verified with sandbox-safe regression and coverage, and evidence is logged."
-  comments[5]{created_at,author,text}:
-    "2026-03-06T18:55:19.104Z",maintainer-agent,Start run 4 maintenance loop with focused discovery and no duplicate work.
-    "2026-03-06T18:55:38.050Z",maintainer-agent,"Discovery: running focused contract checks (release-readiness and help/readme suites) to identify the smallest high-value drift fix for this run."
-    "2026-03-06T18:56:38.369Z",maintainer-agent,"Planned changeset: add release-readiness contract coverage that asserts pm --version output matches package.json version and semver format."
-    "2026-03-06T19:11:27.485Z",maintainer-agent,"Implemented changeset: added release-readiness contract coverage in tests/integration/release-readiness-contract.spec.ts to assert --version output matches package.json semantic version metadata and prevent packaging/version drift."
-    "2026-03-06T19:11:27.630Z",maintainer-agent,"Evidence: node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts passed (24/24). node dist/cli.js test pm-2joy --run --timeout 3600 passed linked tests (2 passed, 0 failed) including node scripts/run-tests.mjs coverage and node scripts/run-tests.mjs test, with coverage remaining 100% lines/branches/functions/statements. node dist/cli.js test-all --status in_progress --timeout 3600 passed (items=1 linked_tests=2 passed=2 failed=0 skipped=0). node dist/cli.js test-all --status closed --timeout 3600 passed (items=100 linked_tests=283 passed=63 failed=0 skipped=220). Follow-up items: none."
-  notes[1]{created_at,author,text}:
-    "2026-03-06T18:55:19.104Z",maintainer-agent,Bootstrap complete next step is focused contract checks to pick smallest high-value fix.
-  files[1]{path,scope,note}:
-    tests/integration/release-readiness-contract.spec.ts,project,version parity contract guard
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,600,sandbox-safe coverage gate
-    node scripts/run-tests.mjs test,null,project,240,sandbox-safe regression
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,agent workflow contract
-    PRD.md,project,authoritative contract
-    README.md,project,public contract
-  close_reason: Added --version parity guard in release-readiness contracts and completed required sandbox-safe verification sweeps with 100% coverage intact.
+id: pm-2joy
+title: Release-readiness contract audit and next fix (2026-03-06 run 4)
+description: Audit PRD README AGENTS and implementation parity then deliver the next highest-value contract-aligned improvement.
+type: Chore
+status: closed
+priority: 0
+tags[4]: contract-sync,maintenance,pm-cli,release-readiness
+created_at: "2026-03-06T18:55:19.104Z"
+updated_at: "2026-03-06T19:11:33.496Z"
+deadline: "2026-03-07T18:55:19.104Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: "One concrete contract-aligned improvement is implemented, verified with sandbox-safe regression and coverage, and evidence is logged."
+comments[5]{created_at,author,text}:
+  "2026-03-06T18:55:19.104Z",maintainer-agent,Start run 4 maintenance loop with focused discovery and no duplicate work.
+  "2026-03-06T18:55:38.050Z",maintainer-agent,"Discovery: running focused contract checks (release-readiness and help/readme suites) to identify the smallest high-value drift fix for this run."
+  "2026-03-06T18:56:38.369Z",maintainer-agent,"Planned changeset: add release-readiness contract coverage that asserts pm --version output matches package.json version and semver format."
+  "2026-03-06T19:11:27.485Z",maintainer-agent,"Implemented changeset: added release-readiness contract coverage in tests/integration/release-readiness-contract.spec.ts to assert --version output matches package.json semantic version metadata and prevent packaging/version drift."
+  "2026-03-06T19:11:27.630Z",maintainer-agent,"Evidence: node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts passed (24/24). node dist/cli.js test pm-2joy --run --timeout 3600 passed linked tests (2 passed, 0 failed) including node scripts/run-tests.mjs coverage and node scripts/run-tests.mjs test, with coverage remaining 100% lines/branches/functions/statements. node dist/cli.js test-all --status in_progress --timeout 3600 passed (items=1 linked_tests=2 passed=2 failed=0 skipped=0). node dist/cli.js test-all --status closed --timeout 3600 passed (items=100 linked_tests=283 passed=63 failed=0 skipped=220). Follow-up items: none."
+notes[1]{created_at,author,text}:
+  "2026-03-06T18:55:19.104Z",maintainer-agent,Bootstrap complete next step is focused contract checks to pick smallest high-value fix.
+files[1]{path,scope,note}:
+  tests/integration/release-readiness-contract.spec.ts,project,version parity contract guard
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,600,sandbox-safe coverage gate
+  node scripts/run-tests.mjs test,null,project,240,sandbox-safe regression
+docs[3]{path,scope,note}:
+  AGENTS.md,project,agent workflow contract
+  PRD.md,project,authoritative contract
+  README.md,project,public contract
+close_reason: Added --version parity guard in release-readiness contracts and completed required sandbox-safe verification sweeps with 100% coverage intact.
 body: Maintain release-readiness by completing one focused contract-aligned improvement with full dogfood evidence.

@@ -1,26 +1,25 @@
-front_matter:
-  id: pm-6hhn
-  title: PRD Milestone 0 - Foundations
-  description: Establish deterministic storage schema core invariants and baseline command behavior.
-  type: Epic
-  status: canceled
-  priority: 0
-  tags[7]: "area:milestone",code,docs,"milestone:0",pm-cli,"priority:0",tests
-  created_at: "2026-03-06T22:55:53.278Z"
-  updated_at: "2026-03-06T23:18:35.604Z"
-  deadline: "2026-03-20T22:55:53.278Z"
-  author: maintainer-agent
-  estimated_minutes: 240
-  acceptance_criteria: Milestone 0 deliverables in PRD section 21 are fully represented by linked features and validated evidence.
-  comments[2]{created_at,author,text}:
-    "2026-03-06T22:55:53.278Z",maintainer-agent,Milestone 0 seeded from PRD to establish complete dogfood planning coverage.
-    "2026-03-06T23:18:35.452Z",maintainer-agent,Duplicate milestone epic identified during tracker normalization. Canonical milestone item is pm-2xl for Milestone 0; this seeded duplicate is being canceled to keep backlog deterministic and non-overlapping.
-  notes[1]{created_at,author,text}:
-    "2026-03-06T22:55:53.278Z",maintainer-agent,Next step create or link concrete features and tasks under this milestone.
-  files[1]{path,scope,note}:
-    PRD.md,project,milestone source
-  tests[1]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs test,null,project,600,sandbox-safe regression
-  docs[1]{path,scope,note}:
-    PRD.md,project,milestone definition
+id: pm-6hhn
+title: PRD Milestone 0 - Foundations
+description: Establish deterministic storage schema core invariants and baseline command behavior.
+type: Epic
+status: canceled
+priority: 0
+tags[7]: "area:milestone",code,docs,"milestone:0",pm-cli,"priority:0",tests
+created_at: "2026-03-06T22:55:53.278Z"
+updated_at: "2026-03-06T23:18:35.604Z"
+deadline: "2026-03-20T22:55:53.278Z"
+author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: Milestone 0 deliverables in PRD section 21 are fully represented by linked features and validated evidence.
+comments[2]{created_at,author,text}:
+  "2026-03-06T22:55:53.278Z",maintainer-agent,Milestone 0 seeded from PRD to establish complete dogfood planning coverage.
+  "2026-03-06T23:18:35.452Z",maintainer-agent,Duplicate milestone epic identified during tracker normalization. Canonical milestone item is pm-2xl for Milestone 0; this seeded duplicate is being canceled to keep backlog deterministic and non-overlapping.
+notes[1]{created_at,author,text}:
+  "2026-03-06T22:55:53.278Z",maintainer-agent,Next step create or link concrete features and tasks under this milestone.
+files[1]{path,scope,note}:
+  PRD.md,project,milestone source
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,600,sandbox-safe regression
+docs[1]{path,scope,note}:
+  PRD.md,project,milestone definition
 body: Canonical milestone tracking item seeded from PRD section 21. Child features and tasks should attach here via dependencies.

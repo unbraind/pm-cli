@@ -1,32 +1,31 @@
-front_matter:
-  id: pm-w1r6
-  title: Add --title and -t support for pm update
-  description: Support updating item title via pm update with --title/-t options.
-  type: Task
-  status: closed
-  priority: 0
-  tags[5]: "area:cli",code,doc,pm-cli,tests
-  created_at: "2026-03-07T13:10:28.926Z"
-  updated_at: "2026-03-07T13:15:39.792Z"
-  deadline: "2026-03-09T13:10:28.926Z"
-  author: maintainer-agent
-  estimated_minutes: 60
-  acceptance_criteria: pm update accepts --title and -t to modify item title; PRD/README reflect this.
-  comments[3]{created_at,author,text}:
-    "2026-03-07T13:10:28.926Z",maintainer-agent,Users should be able to update item title without editing files manually
-    "2026-03-07T13:15:39.434Z",unknown,"Implemented --title/-t support for pm update. Updated PRD and README command contract, added option parsing in src/cli/main.ts and src/cli/commands/update.ts, added Pi wrapper action mapping. Tests updated to assert the new flag and title modification behavior."
-    "2026-03-07T13:15:39.592Z",unknown,"Evidence: pnpm test:coverage passed (100% lines/branches/functions/statements). PRD.md and README.md aligned. Contract tests and Pi agent wrapper tests passed."
-  notes[1]{created_at,author,text}:
-    "2026-03-07T13:10:28.926Z",maintainer-agent,Need to update PRD and README first then cli and tests
-  files[6]{path,scope,note}:
-    PRD.md,project,null
-    README.md,project,null
-    src/cli/commands/update.ts,project,null
-    src/cli/main.ts,project,null
-    tests/integration/release-readiness-contract.spec.ts,project,null
-    tests/unit/update-command.spec.ts,project,null
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,3600,null
-    node scripts/run-tests.mjs test,null,project,240,null
-  close_reason: Added --title update parity across CLI docs and wrapper with 100% coverage and passing tests.
+id: pm-w1r6
+title: Add --title and -t support for pm update
+description: Support updating item title via pm update with --title/-t options.
+type: Task
+status: closed
+priority: 0
+tags[5]: "area:cli",code,doc,pm-cli,tests
+created_at: "2026-03-07T13:10:28.926Z"
+updated_at: "2026-03-07T13:15:39.792Z"
+deadline: "2026-03-09T13:10:28.926Z"
+author: maintainer-agent
+estimated_minutes: 60
+acceptance_criteria: pm update accepts --title and -t to modify item title; PRD/README reflect this.
+comments[3]{created_at,author,text}:
+  "2026-03-07T13:10:28.926Z",maintainer-agent,Users should be able to update item title without editing files manually
+  "2026-03-07T13:15:39.434Z",unknown,"Implemented --title/-t support for pm update. Updated PRD and README command contract, added option parsing in src/cli/main.ts and src/cli/commands/update.ts, added Pi wrapper action mapping. Tests updated to assert the new flag and title modification behavior."
+  "2026-03-07T13:15:39.592Z",unknown,"Evidence: pnpm test:coverage passed (100% lines/branches/functions/statements). PRD.md and README.md aligned. Contract tests and Pi agent wrapper tests passed."
+notes[1]{created_at,author,text}:
+  "2026-03-07T13:10:28.926Z",maintainer-agent,Need to update PRD and README first then cli and tests
+files[6]{path,scope,note}:
+  PRD.md,project,null
+  README.md,project,null
+  src/cli/commands/update.ts,project,null
+  src/cli/main.ts,project,null
+  tests/integration/release-readiness-contract.spec.ts,project,null
+  tests/unit/update-command.spec.ts,project,null
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,null
+  node scripts/run-tests.mjs test,null,project,240,null
+close_reason: Added --title update parity across CLI docs and wrapper with 100% coverage and passing tests.
 body: Add --title and -t support for pm update. Update PRD.md README.md src/cli/main.ts and tests.

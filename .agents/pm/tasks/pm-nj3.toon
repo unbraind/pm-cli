@@ -1,42 +1,41 @@
-front_matter:
-  id: pm-nj3
-  title: "M4: Reindex command"
-  description: Implement keyword baseline reindex operations for deterministic search cache artifacts.
-  type: Task
-  status: closed
-  priority: 1
-  tags[4]: "area:reindex",core,"milestone:4",pm-cli
-  created_at: "2026-02-17T23:02:10.920Z"
-  updated_at: "2026-02-18T22:21:57.170Z"
-  deadline: "2026-03-07T23:02:10.920Z"
-  author: steve
-  estimated_minutes: 90
-  acceptance_criteria: pm reindex rebuilds index/manifest.json and search/embeddings.jsonl deterministically; tests and coverage remain 100%.
-  dependencies[2]{id,kind,created_at,author,source_kind}:
-    pm-54d,blocks,"2026-02-17T23:02:10.920Z",steve,null
-    pm-f45,parent,"2026-02-17T23:02:10.920Z",steve,null
-  comments[4]{created_at,author,text}:
-    "2026-02-18T22:00:24.444Z",cursor-maintainer,"Planned change-set: docs-first add reindex command contract for keyword cache rebuild baseline, then implement pm reindex command + unit/integration coverage and run pm test/pm test-all evidence."
-    "2026-02-18T22:01:25.957Z",cursor-maintainer,"Docs-first alignment applied: README and PRD now treat pm reindex as implemented keyword-cache baseline, while semantic/vector reindex behavior remains roadmap. Updated command matrix/output contract and milestone wording accordingly before code changes."
-    "2026-02-18T22:03:49.076Z",cursor-maintainer,"Implemented reindex command baseline: added src/cli/commands/reindex.ts plus CLI wiring (main.ts + command index + legacy wrapper), updated integration + unit tests, and expanded coverage include for src/cli/commands/reindex.ts."
-    "2026-02-18T22:21:56.803Z",cursor-maintainer,"Evidence: pm test pm-nj3 --run --timeout 1800 --json passed all linked tests (coverage/test/targeted reindex), with coverage at 100% lines/branches/functions/statements including src/cli/commands/reindex.ts. Regression sweeps: pm test-all --status in_progress --timeout 1800 --json => items=4 linked_tests=17 passed=16 failed=0 skipped=1; pm test-all --status closed --timeout 1800 --json => items=12 linked_tests=31 passed=28 failed=0 skipped=3."
-  files[10]{path,scope,note}:
-    PRD.md,project,docs-first command contract update
-    README.md,project,docs-first command contract update
-    src/cli/commands/index.ts,project,export reindex handler
-    src/cli/commands/reindex.ts,project,implement keyword reindex
-    src/cli/main.ts,project,register reindex command
-    src/commands/reindex.ts,project,legacy wrapper export
-    tests/integration/cli.integration.spec.ts,project,integration reindex smoke
-    tests/unit/reindex-command.spec.ts,project,unit coverage for reindex
-    tests/unit/structure-exports.spec.ts,project,export surface check for reindex
-    vitest.config.ts,project,coverage include for reindex command
-  tests[3]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,1800,sandboxed coverage gate
-    node scripts/run-tests.mjs test,null,project,1800,sandboxed regression suite
-    node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts,null,project,600,targeted reindex unit tests
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,agent operating rules
-    PRD.md,project,governing spec
-    README.md,project,public contract
+id: pm-nj3
+title: "M4: Reindex command"
+description: Implement keyword baseline reindex operations for deterministic search cache artifacts.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:reindex",core,"milestone:4",pm-cli
+created_at: "2026-02-17T23:02:10.920Z"
+updated_at: "2026-02-18T22:21:57.170Z"
+deadline: "2026-03-07T23:02:10.920Z"
+author: steve
+estimated_minutes: 90
+acceptance_criteria: pm reindex rebuilds index/manifest.json and search/embeddings.jsonl deterministically; tests and coverage remain 100%.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-54d,blocks,"2026-02-17T23:02:10.920Z",steve,null
+  pm-f45,parent,"2026-02-17T23:02:10.920Z",steve,null
+comments[4]{created_at,author,text}:
+  "2026-02-18T22:00:24.444Z",cursor-maintainer,"Planned change-set: docs-first add reindex command contract for keyword cache rebuild baseline, then implement pm reindex command + unit/integration coverage and run pm test/pm test-all evidence."
+  "2026-02-18T22:01:25.957Z",cursor-maintainer,"Docs-first alignment applied: README and PRD now treat pm reindex as implemented keyword-cache baseline, while semantic/vector reindex behavior remains roadmap. Updated command matrix/output contract and milestone wording accordingly before code changes."
+  "2026-02-18T22:03:49.076Z",cursor-maintainer,"Implemented reindex command baseline: added src/cli/commands/reindex.ts plus CLI wiring (main.ts + command index + legacy wrapper), updated integration + unit tests, and expanded coverage include for src/cli/commands/reindex.ts."
+  "2026-02-18T22:21:56.803Z",cursor-maintainer,"Evidence: pm test pm-nj3 --run --timeout 1800 --json passed all linked tests (coverage/test/targeted reindex), with coverage at 100% lines/branches/functions/statements including src/cli/commands/reindex.ts. Regression sweeps: pm test-all --status in_progress --timeout 1800 --json => items=4 linked_tests=17 passed=16 failed=0 skipped=1; pm test-all --status closed --timeout 1800 --json => items=12 linked_tests=31 passed=28 failed=0 skipped=3."
+files[10]{path,scope,note}:
+  PRD.md,project,docs-first command contract update
+  README.md,project,docs-first command contract update
+  src/cli/commands/index.ts,project,export reindex handler
+  src/cli/commands/reindex.ts,project,implement keyword reindex
+  src/cli/main.ts,project,register reindex command
+  src/commands/reindex.ts,project,legacy wrapper export
+  tests/integration/cli.integration.spec.ts,project,integration reindex smoke
+  tests/unit/reindex-command.spec.ts,project,unit coverage for reindex
+  tests/unit/structure-exports.spec.ts,project,export surface check for reindex
+  vitest.config.ts,project,coverage include for reindex command
+tests[3]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,1800,sandboxed coverage gate
+  node scripts/run-tests.mjs test,null,project,1800,sandboxed regression suite
+  node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts,null,project,600,targeted reindex unit tests
+docs[3]{path,scope,note}:
+  AGENTS.md,project,agent operating rules
+  PRD.md,project,governing spec
+  README.md,project,public contract
 body: Add reindex workflows for search pipelines.

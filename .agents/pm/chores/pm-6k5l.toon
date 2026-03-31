@@ -1,45 +1,44 @@
-front_matter:
-  id: pm-6k5l
-  title: Maintain release readiness 2026-03-09 (Run 5)
-  description: Track cleanup of legacy create_tasks.sh and finalize release-tracking artifacts while revalidating regression and coverage gates.
-  type: Chore
-  status: closed
-  priority: 0
-  tags[7]: "area:maintenance","area:tests",code,doc,"milestone:6",pm-cli,"priority:0"
-  created_at: "2026-03-09T15:52:30.417Z"
-  updated_at: "2026-03-09T16:29:47.648Z"
-  deadline: "2026-03-10T16:00:00.000Z"
-  author: maintainer-agent
-  estimated_minutes: 45
-  acceptance_criteria: Legacy create_tasks.sh removed with no references and pm tracking evidence updated and regression plus coverage gates pass at 100 percent.
-  goal: Release-hardening
-  objective: Keep repository release-ready post launch
-  value: Reduce maintenance drift and prevent stale workflows
-  impact: Lowers risk of invalid pm item seeding
-  outcome: Repo stays green with simplified maintainer workflow
-  why_now: Immediate cleanup after launch prevents stale script reuse
-  sprint: maintainer-loop-2026-03-09-5
-  release: v0.1
-  comments[6]{created_at,author,text}:
-    "2026-03-09T15:52:30.417Z",maintainer-agent,Why this exists keep post release repo state clean and release ready while enforcing dogfood tracking
-    "2026-03-09T15:52:46.132Z",maintainer-agent,Intended changeset remove obsolete create_tasks.sh and keep release evidence current with full regression verification
-    "2026-03-09T16:10:28.479Z",maintainer-agent,Observed regression in closed sweep item pm-tq1 installer command fails with npm EEXIST when prefix already contains pm binary; implementing idempotent installer fix
-    "2026-03-09T16:29:36.935Z",maintainer-agent,Implemented installer idempotency fix by adding npm --force in scripts/install.sh and scripts/install.ps1 and added release-readiness contract assertions for --force in tests/integration/release-readiness-contract.spec.ts
-    "2026-03-09T16:29:38.297Z",maintainer-agent,Validation evidence pm test pm-6k5l --run passed after changes including node scripts/run-tests.mjs coverage and targeted cli integration tests; pm test-all --status in_progress passed totals items=1 linked_tests=2 passed=2 failed=0; pm test-all --status closed rerun passed totals items=177 linked_tests=422 passed=79 failed=0 skipped=343
-    "2026-03-09T16:29:38.719Z",maintainer-agent,Coverage evidence from pm-driven runs remains 100 percent for lines branches functions and statements
-  notes[1]{created_at,author,text}:
-    "2026-03-09T15:52:30.417Z",maintainer-agent,Plan claim item link touched files docs and tests run pm test and test all then record evidence with coverage confirmation
-  files[4]{path,scope,note}:
-    create_tasks.sh,project,remove obsolete seed script
-    scripts/install.ps1,project,keep PowerShell installer parity for idempotent updates
-    scripts/install.sh,project,make npm install idempotent under reused prefix
-    tests/integration/cli.integration.spec.ts,project,add regression coverage for repeat install with same prefix
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,2400,full coverage gate
-    node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,targeted installer regression check
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,all-fields and dogfood protocol
-    PRD.md,project,authoritative product requirements
-    README.md,project,public contract alignment
-  close_reason: Installer idempotency fixed and full pm regression sweeps passed with 100 percent coverage
+id: pm-6k5l
+title: Maintain release readiness 2026-03-09 (Run 5)
+description: Track cleanup of legacy create_tasks.sh and finalize release-tracking artifacts while revalidating regression and coverage gates.
+type: Chore
+status: closed
+priority: 0
+tags[7]: "area:maintenance","area:tests",code,doc,"milestone:6",pm-cli,"priority:0"
+created_at: "2026-03-09T15:52:30.417Z"
+updated_at: "2026-03-09T16:29:47.648Z"
+deadline: "2026-03-10T16:00:00.000Z"
+author: maintainer-agent
+estimated_minutes: 45
+acceptance_criteria: Legacy create_tasks.sh removed with no references and pm tracking evidence updated and regression plus coverage gates pass at 100 percent.
+goal: Release-hardening
+objective: Keep repository release-ready post launch
+value: Reduce maintenance drift and prevent stale workflows
+impact: Lowers risk of invalid pm item seeding
+outcome: Repo stays green with simplified maintainer workflow
+why_now: Immediate cleanup after launch prevents stale script reuse
+sprint: maintainer-loop-2026-03-09-5
+release: v0.1
+comments[6]{created_at,author,text}:
+  "2026-03-09T15:52:30.417Z",maintainer-agent,Why this exists keep post release repo state clean and release ready while enforcing dogfood tracking
+  "2026-03-09T15:52:46.132Z",maintainer-agent,Intended changeset remove obsolete create_tasks.sh and keep release evidence current with full regression verification
+  "2026-03-09T16:10:28.479Z",maintainer-agent,Observed regression in closed sweep item pm-tq1 installer command fails with npm EEXIST when prefix already contains pm binary; implementing idempotent installer fix
+  "2026-03-09T16:29:36.935Z",maintainer-agent,Implemented installer idempotency fix by adding npm --force in scripts/install.sh and scripts/install.ps1 and added release-readiness contract assertions for --force in tests/integration/release-readiness-contract.spec.ts
+  "2026-03-09T16:29:38.297Z",maintainer-agent,Validation evidence pm test pm-6k5l --run passed after changes including node scripts/run-tests.mjs coverage and targeted cli integration tests; pm test-all --status in_progress passed totals items=1 linked_tests=2 passed=2 failed=0; pm test-all --status closed rerun passed totals items=177 linked_tests=422 passed=79 failed=0 skipped=343
+  "2026-03-09T16:29:38.719Z",maintainer-agent,Coverage evidence from pm-driven runs remains 100 percent for lines branches functions and statements
+notes[1]{created_at,author,text}:
+  "2026-03-09T15:52:30.417Z",maintainer-agent,Plan claim item link touched files docs and tests run pm test and test all then record evidence with coverage confirmation
+files[4]{path,scope,note}:
+  create_tasks.sh,project,remove obsolete seed script
+  scripts/install.ps1,project,keep PowerShell installer parity for idempotent updates
+  scripts/install.sh,project,make npm install idempotent under reused prefix
+  tests/integration/cli.integration.spec.ts,project,add regression coverage for repeat install with same prefix
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,full coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,targeted installer regression check
+docs[3]{path,scope,note}:
+  AGENTS.md,project,all-fields and dogfood protocol
+  PRD.md,project,authoritative product requirements
+  README.md,project,public contract alignment
+close_reason: Installer idempotency fixed and full pm regression sweeps passed with 100 percent coverage
 body: Post-release maintenance sweep to keep repository release-ready and remove obsolete helper automation that no longer matches all-fields create contract.

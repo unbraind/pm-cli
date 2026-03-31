@@ -1,34 +1,33 @@
-front_matter:
-  id: pm-mwwp
-  title: "M5 hardening: enforce extension capability declarations"
-  description: Require extension APIs to respect manifest capabilities and fail activation when unsupported registration hooks are used.
-  type: Task
-  status: closed
-  priority: 1
-  tags[7]: "area:extensions",code,docs,"milestone:5",pm-cli,"priority:1",tests
-  created_at: "2026-03-06T09:21:20.880Z"
-  updated_at: "2026-03-06T09:40:05.330Z"
-  deadline: "2026-03-08T09:21:08.000Z"
-  author: cursor-maintainer
-  estimated_minutes: 75
-  acceptance_criteria: Extension activation rejects register* or hooks.* calls when required capability is missing; README/PRD describe capability enforcement; all linked and regression tests pass with 100% coverage.
-  comments[4]{created_at,author,text}:
-    "2026-03-06T09:21:20.880Z",cursor-maintainer,Capability list is currently descriptive only and should become an enforced safety boundary.
-    "2026-03-06T09:21:38.917Z",cursor-maintainer,"Planned changeset: docs-first update PRD/README capability contracts, then enforce capability checks in extension API registration/hook methods and add extension-loader regressions."
-    "2026-03-06T09:25:31.855Z",cursor-maintainer,"Implemented docs-first + code changes: PRD/README now require capability-gated extension API registrations, loader now enforces capabilities for registerCommand/registerRenderer/hooks/schema/importer/search APIs, and extension-loader unit regressions cover missing-capability activation failures."
-    "2026-03-06T09:40:04.958Z",cursor-maintainer,"Evidence: docs-first updates landed in PRD.md and README.md. Capability enforcement implemented in src/core/extensions/loader.ts for commands/renderers/hooks/schema/importers/search registration APIs. Regression updates in tests/unit/extension-loader.spec.ts and tests/unit/health-command.spec.ts. Validation commands: pm test pm-mwwp --run --timeout 7200 --json => linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status in_progress --timeout 7200 --json => items=1 linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status closed --timeout 7200 --json => items=84 linked_tests=253 passed=62 failed=0 skipped=191. Coverage statement: node scripts/run-tests.mjs coverage reports 100% lines/branches/functions/statements (All files 100/100/100/100)."
-  notes[1]{created_at,author,text}:
-    "2026-03-06T09:21:20.880Z",cursor-maintainer,Docs-first update then loader capability checks and unit coverage.
-  files[4]{path,scope,note}:
-    PRD.md,project,Capability enforcement contract update
-    README.md,project,Capability-enforcement documentation
-    src/core/extensions/loader.ts,project,Capability enforcement implementation
-    tests/unit/extension-loader.spec.ts,project,Capability-enforcement regression coverage
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,240,Coverage gate proof
-    node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,240,Targeted extension-loader regression
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,Maintainer workflow and safety contract
-    PRD.md,project,Authoritative extension capability contract
-    README.md,project,Public command and extension contract
+id: pm-mwwp
+title: "M5 hardening: enforce extension capability declarations"
+description: Require extension APIs to respect manifest capabilities and fail activation when unsupported registration hooks are used.
+type: Task
+status: closed
+priority: 1
+tags[7]: "area:extensions",code,docs,"milestone:5",pm-cli,"priority:1",tests
+created_at: "2026-03-06T09:21:20.880Z"
+updated_at: "2026-03-06T09:40:05.330Z"
+deadline: "2026-03-08T09:21:08.000Z"
+author: cursor-maintainer
+estimated_minutes: 75
+acceptance_criteria: Extension activation rejects register* or hooks.* calls when required capability is missing; README/PRD describe capability enforcement; all linked and regression tests pass with 100% coverage.
+comments[4]{created_at,author,text}:
+  "2026-03-06T09:21:20.880Z",cursor-maintainer,Capability list is currently descriptive only and should become an enforced safety boundary.
+  "2026-03-06T09:21:38.917Z",cursor-maintainer,"Planned changeset: docs-first update PRD/README capability contracts, then enforce capability checks in extension API registration/hook methods and add extension-loader regressions."
+  "2026-03-06T09:25:31.855Z",cursor-maintainer,"Implemented docs-first + code changes: PRD/README now require capability-gated extension API registrations, loader now enforces capabilities for registerCommand/registerRenderer/hooks/schema/importer/search APIs, and extension-loader unit regressions cover missing-capability activation failures."
+  "2026-03-06T09:40:04.958Z",cursor-maintainer,"Evidence: docs-first updates landed in PRD.md and README.md. Capability enforcement implemented in src/core/extensions/loader.ts for commands/renderers/hooks/schema/importers/search registration APIs. Regression updates in tests/unit/extension-loader.spec.ts and tests/unit/health-command.spec.ts. Validation commands: pm test pm-mwwp --run --timeout 7200 --json => linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status in_progress --timeout 7200 --json => items=1 linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status closed --timeout 7200 --json => items=84 linked_tests=253 passed=62 failed=0 skipped=191. Coverage statement: node scripts/run-tests.mjs coverage reports 100% lines/branches/functions/statements (All files 100/100/100/100)."
+notes[1]{created_at,author,text}:
+  "2026-03-06T09:21:20.880Z",cursor-maintainer,Docs-first update then loader capability checks and unit coverage.
+files[4]{path,scope,note}:
+  PRD.md,project,Capability enforcement contract update
+  README.md,project,Capability-enforcement documentation
+  src/core/extensions/loader.ts,project,Capability enforcement implementation
+  tests/unit/extension-loader.spec.ts,project,Capability-enforcement regression coverage
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,240,Coverage gate proof
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,240,Targeted extension-loader regression
+docs[3]{path,scope,note}:
+  AGENTS.md,project,Maintainer workflow and safety contract
+  PRD.md,project,Authoritative extension capability contract
+  README.md,project,Public command and extension contract
 body: Add capability gating for extension API registration methods so manifests explicitly declare commands/renderers/hooks/schema/importers/search usage. Keep deterministic activation failure behavior and validate with targeted+full regression runs.

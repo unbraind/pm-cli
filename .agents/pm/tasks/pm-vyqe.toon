@@ -1,42 +1,41 @@
-front_matter:
-  id: pm-vyqe
-  title: Add --ac alias for create acceptance criteria
-  description: Support --ac as a deterministic alias to --acceptance-criteria for pm create and document it in authoritative docs.
-  type: Task
-  status: closed
-  priority: 1
-  tags[7]: "area:cli","area:docs",code,"milestone:1",pm-cli,"priority:1",tests
-  created_at: "2026-03-07T00:21:45.673Z"
-  updated_at: "2026-03-07T00:47:58.133Z"
-  deadline: "2026-03-10T23:59:00.000Z"
-  author: maintainer-agent
-  estimated_minutes: 90
-  acceptance_criteria: pm create accepts --ac as an alias of --acceptance-criteria; help docs show alias; regression tests pass with 100% coverage unchanged.
-  dependencies[1]{id,kind,created_at,author,source_kind}:
-    pm-u9r,related,"2026-03-07T00:21:45.673Z",maintainer-agent,null
-  comments[4]{created_at,author,text}:
-    "2026-03-07T00:21:45.673Z",maintainer-agent,Why this exists maintainers need concise acceptance criteria flag alias parity in create contract
-    "2026-03-07T00:21:52.621Z",maintainer-agent,"Planned change-set: update PRD README AGENTS create flag contracts to include --ac alias first, then wire CLI create option alias and add regression assertions for help and parsing behavior."
-    "2026-03-07T00:23:27.493Z",maintainer-agent,"Implemented docs-first alias parity: PRD README and AGENTS now document --ac for create acceptance criteria; CLI create option now registers --acceptance-criteria with --ac alias; integration contracts expanded for required flag coverage and direct alias creation behavior."
-    "2026-03-07T00:47:57.831Z",maintainer-agent,"Evidence: pnpm build passed. pm test pm-vyqe --run --timeout 7200 --json passed (2/2 linked tests). pm test-all --status in_progress --timeout 7200 --json passed with totals items=1 linked_tests=2 passed=2 failed=0 skipped=0. Initial pm test-all --status closed surfaced pre-existing stale linked test in pm-2c8 referencing deleted tests/unit/command-wrapper-exports.spec.ts; fixed via pm test pm-2c8 --remove with force and reran closed sweep successfully: items=114 linked_tests=309 passed=62 failed=0 skipped=247. Coverage remains 100 percent lines branches functions statements."
-  notes[1]{created_at,author,text}:
-    "2026-03-07T00:21:45.673Z",maintainer-agent,Plan update docs first then wire commander alias and extend integration tests
-  learnings[1]{created_at,author,text}:
-    "2026-03-07T00:21:45.673Z",maintainer-agent,none
-  files[7]{path,scope,note}:
-    AGENTS.md,project,all-fields template alias documentation
-    PRD.md,project,create contract alias documentation
-    README.md,project,create help contract alias documentation
-    src/cli/main.ts,project,create option alias wiring
-    tests/integration/cli.integration.spec.ts,project,create alias integration coverage
-    tests/integration/help-readme-contract.spec.ts,project,help readme alias contract regression
-    tests/integration/release-readiness-contract.spec.ts,project,required create flags contract includes alias
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,3600,coverage gate
-    node scripts/run-tests.mjs test -- tests/integration/help-readme-contract.spec.ts,null,project,1800,help readme alias regression
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,maintainer operation contract
-    PRD.md,project,authoritative command contract
-    README.md,project,public command contract
-  close_reason: Implemented create --ac alias parity across docs CLI and regression tests with full sandbox test sweeps passing and 100% coverage maintained.
+id: pm-vyqe
+title: Add --ac alias for create acceptance criteria
+description: Support --ac as a deterministic alias to --acceptance-criteria for pm create and document it in authoritative docs.
+type: Task
+status: closed
+priority: 1
+tags[7]: "area:cli","area:docs",code,"milestone:1",pm-cli,"priority:1",tests
+created_at: "2026-03-07T00:21:45.673Z"
+updated_at: "2026-03-07T00:47:58.133Z"
+deadline: "2026-03-10T23:59:00.000Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: pm create accepts --ac as an alias of --acceptance-criteria; help docs show alias; regression tests pass with 100% coverage unchanged.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-u9r,related,"2026-03-07T00:21:45.673Z",maintainer-agent,null
+comments[4]{created_at,author,text}:
+  "2026-03-07T00:21:45.673Z",maintainer-agent,Why this exists maintainers need concise acceptance criteria flag alias parity in create contract
+  "2026-03-07T00:21:52.621Z",maintainer-agent,"Planned change-set: update PRD README AGENTS create flag contracts to include --ac alias first, then wire CLI create option alias and add regression assertions for help and parsing behavior."
+  "2026-03-07T00:23:27.493Z",maintainer-agent,"Implemented docs-first alias parity: PRD README and AGENTS now document --ac for create acceptance criteria; CLI create option now registers --acceptance-criteria with --ac alias; integration contracts expanded for required flag coverage and direct alias creation behavior."
+  "2026-03-07T00:47:57.831Z",maintainer-agent,"Evidence: pnpm build passed. pm test pm-vyqe --run --timeout 7200 --json passed (2/2 linked tests). pm test-all --status in_progress --timeout 7200 --json passed with totals items=1 linked_tests=2 passed=2 failed=0 skipped=0. Initial pm test-all --status closed surfaced pre-existing stale linked test in pm-2c8 referencing deleted tests/unit/command-wrapper-exports.spec.ts; fixed via pm test pm-2c8 --remove with force and reran closed sweep successfully: items=114 linked_tests=309 passed=62 failed=0 skipped=247. Coverage remains 100 percent lines branches functions statements."
+notes[1]{created_at,author,text}:
+  "2026-03-07T00:21:45.673Z",maintainer-agent,Plan update docs first then wire commander alias and extend integration tests
+learnings[1]{created_at,author,text}:
+  "2026-03-07T00:21:45.673Z",maintainer-agent,none
+files[7]{path,scope,note}:
+  AGENTS.md,project,all-fields template alias documentation
+  PRD.md,project,create contract alias documentation
+  README.md,project,create help contract alias documentation
+  src/cli/main.ts,project,create option alias wiring
+  tests/integration/cli.integration.spec.ts,project,create alias integration coverage
+  tests/integration/help-readme-contract.spec.ts,project,help readme alias contract regression
+  tests/integration/release-readiness-contract.spec.ts,project,required create flags contract includes alias
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/help-readme-contract.spec.ts,null,project,1800,help readme alias regression
+docs[3]{path,scope,note}:
+  AGENTS.md,project,maintainer operation contract
+  PRD.md,project,authoritative command contract
+  README.md,project,public command contract
+close_reason: Implemented create --ac alias parity across docs CLI and regression tests with full sandbox test sweeps passing and 100% coverage maintained.
 body: "Context: maintainer all-fields templates reference --ac but create help currently only advertises --acceptance-criteria. Approach: docs-first contract update then command option alias wiring and regression coverage updates."

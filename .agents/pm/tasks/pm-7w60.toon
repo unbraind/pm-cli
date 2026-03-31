@@ -1,43 +1,42 @@
-front_matter:
-  id: pm-7w60
-  title: Add med alias for risk flag values
-  description: Accept med as risk alias and persist canonical medium value in create and update flows.
-  type: Task
-  status: closed
-  priority: 0
-  tags[7]: "area:cli","area:docs",code,"milestone:7",pm-cli,"priority:0",tests
-  created_at: "2026-03-08T01:20:46.592Z"
-  updated_at: "2026-03-08T01:46:52.198Z"
-  deadline: "2026-03-10T23:59:00.000Z"
-  author: maintainer-agent
-  estimated_minutes: 90
-  acceptance_criteria: Create and update accept risk value med and store medium while docs and tests remain aligned with 100 percent coverage.
-  why_now: Support common shorthand used by planning templates.
-  comments[6]{created_at,author,text}:
-    "2026-03-08T01:20:46.592Z",maintainer-agent,Need med alias parity with maintainer workflow templates
-    "2026-03-08T01:20:51.816Z",maintainer-agent,"Planned change-set docs first: update PRD and README risk option contract to accept med alias and persist medium then implement create and update normalization plus targeted and full regression coverage."
-    "2026-03-08T01:21:51.037Z",maintainer-agent,Docs first update complete in PRD and README. Risk option contract now documents med alias and canonical medium persistence before runtime implementation.
-    "2026-03-08T01:23:00.839Z",maintainer-agent,Implemented risk alias runtime support. create and update now normalize med to canonical medium and help text advertises low med medium high critical values. Added unit integration and release contract regression updates.
-    "2026-03-08T01:35:03.090Z",maintainer-agent,"Evidence: pm test pm-7w60 --run --timeout 7200 passed both linked commands including coverage. pm test-all --status in_progress --timeout 7200 passed with items=1 linked_tests=2 passed=2 failed=0 skipped=0. pm test-all --status closed --timeout 7200 passed with items=142 linked_tests=364 passed=64 failed=0 skipped=300. Coverage remains 100 percent lines branches functions and statements."
-    "2026-03-08T01:46:52.198Z",maintainer-agent,"Post-close verification after final README formatting touch: pm test pm-7w60 --run --timeout 7200 passed both linked commands and coverage remained 100 percent. pm test-all --status in_progress --timeout 7200 returned items=0 linked_tests=0 passed=0 failed=0 skipped=0. pm test-all --status closed --timeout 7200 passed with items=143 linked_tests=366 passed=65 failed=0 skipped=301."
-  notes[1]{created_at,author,text}:
-    "2026-03-08T01:20:46.592Z",maintainer-agent,Implement docs first then normalize med to medium then add unit and integration coverage
-  files[9]{path,scope,note}:
-    PRD.md,project,authoritative risk contract update
-    README.md,project,public risk flag contract update
-    src/cli/commands/create.ts,project,create risk alias normalization
-    src/cli/commands/update.ts,project,update risk alias normalization
-    src/cli/main.ts,project,help text risk alias update
-    tests/integration/cli.integration.spec.ts,project,risk alias integration coverage
-    tests/integration/release-readiness-contract.spec.ts,project,risk alias docs help contract coverage
-    tests/unit/create-command.spec.ts,project,create risk alias unit coverage
-    tests/unit/update-command.spec.ts,project,update risk alias unit coverage
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,7200,coverage gate
-    node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,risk alias targeted regression
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,maintainer workflow contract
-    PRD.md,project,authoritative contract
-    README.md,project,public contract
-  close_reason: Implemented med risk alias normalization with docs and regression coverage evidence.
+id: pm-7w60
+title: Add med alias for risk flag values
+description: Accept med as risk alias and persist canonical medium value in create and update flows.
+type: Task
+status: closed
+priority: 0
+tags[7]: "area:cli","area:docs",code,"milestone:7",pm-cli,"priority:0",tests
+created_at: "2026-03-08T01:20:46.592Z"
+updated_at: "2026-03-08T01:46:52.198Z"
+deadline: "2026-03-10T23:59:00.000Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: Create and update accept risk value med and store medium while docs and tests remain aligned with 100 percent coverage.
+why_now: Support common shorthand used by planning templates.
+comments[6]{created_at,author,text}:
+  "2026-03-08T01:20:46.592Z",maintainer-agent,Need med alias parity with maintainer workflow templates
+  "2026-03-08T01:20:51.816Z",maintainer-agent,"Planned change-set docs first: update PRD and README risk option contract to accept med alias and persist medium then implement create and update normalization plus targeted and full regression coverage."
+  "2026-03-08T01:21:51.037Z",maintainer-agent,Docs first update complete in PRD and README. Risk option contract now documents med alias and canonical medium persistence before runtime implementation.
+  "2026-03-08T01:23:00.839Z",maintainer-agent,Implemented risk alias runtime support. create and update now normalize med to canonical medium and help text advertises low med medium high critical values. Added unit integration and release contract regression updates.
+  "2026-03-08T01:35:03.090Z",maintainer-agent,"Evidence: pm test pm-7w60 --run --timeout 7200 passed both linked commands including coverage. pm test-all --status in_progress --timeout 7200 passed with items=1 linked_tests=2 passed=2 failed=0 skipped=0. pm test-all --status closed --timeout 7200 passed with items=142 linked_tests=364 passed=64 failed=0 skipped=300. Coverage remains 100 percent lines branches functions and statements."
+  "2026-03-08T01:46:52.198Z",maintainer-agent,"Post-close verification after final README formatting touch: pm test pm-7w60 --run --timeout 7200 passed both linked commands and coverage remained 100 percent. pm test-all --status in_progress --timeout 7200 returned items=0 linked_tests=0 passed=0 failed=0 skipped=0. pm test-all --status closed --timeout 7200 passed with items=143 linked_tests=366 passed=65 failed=0 skipped=301."
+notes[1]{created_at,author,text}:
+  "2026-03-08T01:20:46.592Z",maintainer-agent,Implement docs first then normalize med to medium then add unit and integration coverage
+files[9]{path,scope,note}:
+  PRD.md,project,authoritative risk contract update
+  README.md,project,public risk flag contract update
+  src/cli/commands/create.ts,project,create risk alias normalization
+  src/cli/commands/update.ts,project,update risk alias normalization
+  src/cli/main.ts,project,help text risk alias update
+  tests/integration/cli.integration.spec.ts,project,risk alias integration coverage
+  tests/integration/release-readiness-contract.spec.ts,project,risk alias docs help contract coverage
+  tests/unit/create-command.spec.ts,project,create risk alias unit coverage
+  tests/unit/update-command.spec.ts,project,update risk alias unit coverage
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,risk alias targeted regression
+docs[3]{path,scope,note}:
+  AGENTS.md,project,maintainer workflow contract
+  PRD.md,project,authoritative contract
+  README.md,project,public contract
+close_reason: Implemented med risk alias normalization with docs and regression coverage evidence.
 body: Docs first update then CLI normalization then tests.

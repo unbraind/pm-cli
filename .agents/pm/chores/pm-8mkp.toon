@@ -1,36 +1,35 @@
-front_matter:
-  id: pm-8mkp
-  title: README maintainer bootstrap parity with AGENTS
-  description: Add explicit maintainer bootstrap dogfooding guidance to README and enforce it via release-readiness contract tests.
-  type: Chore
-  status: closed
-  priority: 0
-  tags[8]: "area:bootstrap","area:docs",doc,"milestone:6",pm-cli,"priority:0",release-readiness,tests
-  created_at: "2026-03-06T21:55:52.775Z"
-  updated_at: "2026-03-06T22:07:34.887Z"
-  deadline: "2026-03-08T22:00:00.000Z"
-  author: maintainer-agent
-  estimated_minutes: 75
-  acceptance_criteria: "README includes explicit maintainer bootstrap requirements (PM_AUTHOR, npm install -g ., PM_CMD selection, pm --version, PM_PATH/PM_GLOBAL_PATH sandbox guidance), release-readiness tests enforce the section, and full verification sweeps pass with 100% coverage."
-  dependencies[1]{id,kind,created_at,author,source_kind}:
-    pm-m91u,related,"2026-03-06T21:55:52.775Z",maintainer-agent,null
-  comments[4]{created_at,author,text}:
-    "2026-03-06T21:55:52.775Z",maintainer-agent,"Why this exists: README should include maintainer bootstrap parity so release workflows are discoverable in the primary docs."
-    "2026-03-06T21:56:07.832Z",maintainer-agent,"Planned changeset: add a Maintainer Bootstrap section to README with PM_AUTHOR/global-install/PM_CMD selection and sandbox test guidance, then extend release-readiness contract tests to enforce these README tokens."
-    "2026-03-06T21:56:43.333Z",maintainer-agent,"Implemented docs-first parity update: README now contains a Maintainer Bootstrap section aligned with AGENTS/CONTRIBUTING, and release-readiness contract tests now assert required README bootstrap tokens."
-    "2026-03-06T22:07:28.904Z",maintainer-agent,"Evidence: pm test pm-8mkp --run --timeout 7200 --json passed linked tests (2/2). pm test-all --status in_progress --timeout 7200 --json passed (items=1 linked_tests=2 passed=2 failed=0 skipped=0). pm test-all --status closed --timeout 7200 --json passed (items=108 linked_tests=297 passed=63 failed=0 skipped=234). Coverage remains 100% lines/branches/functions/statements."
-  notes[1]{created_at,author,text}:
-    "2026-03-06T21:55:52.775Z",maintainer-agent,"Plan: docs-first README update then release-readiness contract assertions then mandatory pm test and test-all sweeps."
-  files[2]{path,scope,note}:
-    README.md,project,add maintainer bootstrap section
-    tests/integration/release-readiness-contract.spec.ts,project,assert README bootstrap section tokens
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,2400,coverage gate
-    node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,contract regression
-  docs[4]{path,scope,note}:
-    AGENTS.md,project,authoritative maintainer bootstrap policy
-    CONTRIBUTING.md,project,existing bootstrap reference
-    PRD.md,project,release-ready docs contract
-    README.md,project,public maintainer workflow guidance
-  close_reason: README maintainer bootstrap guidance now matches AGENTS/CONTRIBUTING and contract tests enforce parity; verification sweeps passed with 100% coverage.
+id: pm-8mkp
+title: README maintainer bootstrap parity with AGENTS
+description: Add explicit maintainer bootstrap dogfooding guidance to README and enforce it via release-readiness contract tests.
+type: Chore
+status: closed
+priority: 0
+tags[8]: "area:bootstrap","area:docs",doc,"milestone:6",pm-cli,"priority:0",release-readiness,tests
+created_at: "2026-03-06T21:55:52.775Z"
+updated_at: "2026-03-06T22:07:34.887Z"
+deadline: "2026-03-08T22:00:00.000Z"
+author: maintainer-agent
+estimated_minutes: 75
+acceptance_criteria: "README includes explicit maintainer bootstrap requirements (PM_AUTHOR, npm install -g ., PM_CMD selection, pm --version, PM_PATH/PM_GLOBAL_PATH sandbox guidance), release-readiness tests enforce the section, and full verification sweeps pass with 100% coverage."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-m91u,related,"2026-03-06T21:55:52.775Z",maintainer-agent,null
+comments[4]{created_at,author,text}:
+  "2026-03-06T21:55:52.775Z",maintainer-agent,"Why this exists: README should include maintainer bootstrap parity so release workflows are discoverable in the primary docs."
+  "2026-03-06T21:56:07.832Z",maintainer-agent,"Planned changeset: add a Maintainer Bootstrap section to README with PM_AUTHOR/global-install/PM_CMD selection and sandbox test guidance, then extend release-readiness contract tests to enforce these README tokens."
+  "2026-03-06T21:56:43.333Z",maintainer-agent,"Implemented docs-first parity update: README now contains a Maintainer Bootstrap section aligned with AGENTS/CONTRIBUTING, and release-readiness contract tests now assert required README bootstrap tokens."
+  "2026-03-06T22:07:28.904Z",maintainer-agent,"Evidence: pm test pm-8mkp --run --timeout 7200 --json passed linked tests (2/2). pm test-all --status in_progress --timeout 7200 --json passed (items=1 linked_tests=2 passed=2 failed=0 skipped=0). pm test-all --status closed --timeout 7200 --json passed (items=108 linked_tests=297 passed=63 failed=0 skipped=234). Coverage remains 100% lines/branches/functions/statements."
+notes[1]{created_at,author,text}:
+  "2026-03-06T21:55:52.775Z",maintainer-agent,"Plan: docs-first README update then release-readiness contract assertions then mandatory pm test and test-all sweeps."
+files[2]{path,scope,note}:
+  README.md,project,add maintainer bootstrap section
+  tests/integration/release-readiness-contract.spec.ts,project,assert README bootstrap section tokens
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,contract regression
+docs[4]{path,scope,note}:
+  AGENTS.md,project,authoritative maintainer bootstrap policy
+  CONTRIBUTING.md,project,existing bootstrap reference
+  PRD.md,project,release-ready docs contract
+  README.md,project,public maintainer workflow guidance
+close_reason: README maintainer bootstrap guidance now matches AGENTS/CONTRIBUTING and contract tests enforce parity; verification sweeps passed with 100% coverage.
 body: README currently lacks an explicit maintainer bootstrap section even though AGENTS and CONTRIBUTING require it. This change keeps maintainer workflow discoverable from the primary project page and prevents drift with contract tests.

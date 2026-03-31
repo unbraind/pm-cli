@@ -1,38 +1,37 @@
-front_matter:
-  id: pm-mlc3
-  title: Reject flagged package-manager test runners in pm test --add
-  description: Reject sandbox-unsafe linked test runner commands when npm/pnpm flags appear before test invocations (for example pnpm --dir /tmp test).
-  type: Task
-  status: closed
-  priority: 1
-  tags[6]: "area:test-command",code,"milestone:3",pm-cli,"priority:1",tests
-  created_at: "2026-03-05T12:21:41.101Z"
-  updated_at: "2026-03-05T12:34:32.035Z"
-  deadline: "2026-03-06T23:59:00.000Z"
-  author: maintainer-agent
-  estimated_minutes: 90
-  acceptance_criteria: pm test --add rejects sandbox-unsafe direct test runner invocations even when package-manager flags precede test/vitest; unit tests cover variants and coverage remains 100%.
-  dependencies[1]{id,kind,created_at,author,source_kind}:
-    pm-11t5,related,"2026-03-05T12:21:41.101Z",maintainer-agent,null
-  comments[6]{created_at,author,text}:
-    "2026-03-05T12:21:41.101Z",maintainer-agent,"Gap reproduced: pnpm --dir /tmp test currently bypasses sandbox-unsafe runner guard."
-    "2026-03-05T12:21:58.029Z",maintainer-agent,"Intent before edits: harden sandbox-unsafe runner detection so package-manager flags before test/vitest cannot bypass validation; then add targeted regressions for pnpm/npm/yarn/bun flagged variants."
-    "2026-03-05T12:23:38.331Z",maintainer-agent,"Changeset applied: refactored direct test-runner detection in src/cli/commands/test.ts to parse package-manager flags before subcommands (pnpm/npm/yarn/bun/npx), and expanded tests/unit/test-command.spec.ts with flagged unsafe variants plus explicit-env safe allowance coverage."
-    "2026-03-05T12:24:42.507Z",maintainer-agent,"Follow-up coverage hardening: added unsafe regression case './node_modules/.bin/vitest run' to exercise executable-path vitest detection branch and restore 100% gate compliance."
-    "2026-03-05T12:25:44.532Z",maintainer-agent,"Coverage cleanup: removed redundant direct-runner regex fallback branch in src/cli/commands/test.ts because executable suffix checks already cover vitest path executables; behavior unchanged and branch dead code eliminated."
-    "2026-03-05T12:34:17.713Z",maintainer-agent,"Evidence: pm test pm-mlc3 --run --timeout 2400 --json => linked_tests=2 passed=2 failed=0 (coverage gate 100% lines/branches/functions/statements). Regression sweeps: pm test-all --status in_progress --timeout 2400 --json => items=1 linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status closed --timeout 2400 --json => items=69 linked_tests=214 passed=59 failed=0 skipped=155."
-  notes[1]{created_at,author,text}:
-    "2026-03-05T12:21:41.101Z",maintainer-agent,Plan docs-check then parser hardening and unit regression additions.
-  learnings[1]{created_at,author,text}:
-    "2026-03-05T12:21:41.101Z",maintainer-agent,Token-aware launcher parsing must also handle package-manager flag prefixes for runner safety checks.
-  files[2]{path,scope,note}:
-    src/cli/commands/test.ts,project,runner safety detection logic
-    tests/unit/test-command.spec.ts,project,regression coverage for package-manager flag variants
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,2400,coverage gate validation after hardening
-    node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,1200,targeted runner safety regression suite
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,dogfood and test safety policy
-    PRD.md,project,authoritative sandbox-safe test runner contract
-    README.md,project,public sandbox-safe runner contract
+id: pm-mlc3
+title: Reject flagged package-manager test runners in pm test --add
+description: Reject sandbox-unsafe linked test runner commands when npm/pnpm flags appear before test invocations (for example pnpm --dir /tmp test).
+type: Task
+status: closed
+priority: 1
+tags[6]: "area:test-command",code,"milestone:3",pm-cli,"priority:1",tests
+created_at: "2026-03-05T12:21:41.101Z"
+updated_at: "2026-03-05T12:34:32.035Z"
+deadline: "2026-03-06T23:59:00.000Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: pm test --add rejects sandbox-unsafe direct test runner invocations even when package-manager flags precede test/vitest; unit tests cover variants and coverage remains 100%.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-11t5,related,"2026-03-05T12:21:41.101Z",maintainer-agent,null
+comments[6]{created_at,author,text}:
+  "2026-03-05T12:21:41.101Z",maintainer-agent,"Gap reproduced: pnpm --dir /tmp test currently bypasses sandbox-unsafe runner guard."
+  "2026-03-05T12:21:58.029Z",maintainer-agent,"Intent before edits: harden sandbox-unsafe runner detection so package-manager flags before test/vitest cannot bypass validation; then add targeted regressions for pnpm/npm/yarn/bun flagged variants."
+  "2026-03-05T12:23:38.331Z",maintainer-agent,"Changeset applied: refactored direct test-runner detection in src/cli/commands/test.ts to parse package-manager flags before subcommands (pnpm/npm/yarn/bun/npx), and expanded tests/unit/test-command.spec.ts with flagged unsafe variants plus explicit-env safe allowance coverage."
+  "2026-03-05T12:24:42.507Z",maintainer-agent,"Follow-up coverage hardening: added unsafe regression case './node_modules/.bin/vitest run' to exercise executable-path vitest detection branch and restore 100% gate compliance."
+  "2026-03-05T12:25:44.532Z",maintainer-agent,"Coverage cleanup: removed redundant direct-runner regex fallback branch in src/cli/commands/test.ts because executable suffix checks already cover vitest path executables; behavior unchanged and branch dead code eliminated."
+  "2026-03-05T12:34:17.713Z",maintainer-agent,"Evidence: pm test pm-mlc3 --run --timeout 2400 --json => linked_tests=2 passed=2 failed=0 (coverage gate 100% lines/branches/functions/statements). Regression sweeps: pm test-all --status in_progress --timeout 2400 --json => items=1 linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status closed --timeout 2400 --json => items=69 linked_tests=214 passed=59 failed=0 skipped=155."
+notes[1]{created_at,author,text}:
+  "2026-03-05T12:21:41.101Z",maintainer-agent,Plan docs-check then parser hardening and unit regression additions.
+learnings[1]{created_at,author,text}:
+  "2026-03-05T12:21:41.101Z",maintainer-agent,Token-aware launcher parsing must also handle package-manager flag prefixes for runner safety checks.
+files[2]{path,scope,note}:
+  src/cli/commands/test.ts,project,runner safety detection logic
+  tests/unit/test-command.spec.ts,project,regression coverage for package-manager flag variants
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,coverage gate validation after hardening
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,1200,targeted runner safety regression suite
+docs[3]{path,scope,note}:
+  AGENTS.md,project,dogfood and test safety policy
+  PRD.md,project,authoritative sandbox-safe test runner contract
+  README.md,project,public sandbox-safe runner contract
 body: "Observed gap: pm test --add currently accepts commands like 'pnpm --dir /tmp test' which bypass sandbox-safe runner guard. Implement parser-aware detection for npm/pnpm/yarn/bun direct runner invocations with leading flags and add regression coverage."

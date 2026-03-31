@@ -1,58 +1,57 @@
-front_matter:
-  id: pm-ecbn
-  title: Restore full todos import metadata parity
-  description: "Preserve current ItemFrontMatter optional metadata when importing todos markdown so import/export round-trips do not silently drop planning, workflow, and issue fields."
-  type: Task
-  status: closed
-  priority: 1
-  tags[7]: "area:extensions-todos",code,docs,"milestone:5",pm-cli,"priority:1",tests
-  created_at: "2026-03-08T13:57:37.636Z"
-  updated_at: "2026-03-08T14:27:34.644Z"
-  deadline: "2026-03-09T13:56:50.000Z"
-  author: maintainer-agent
-  estimated_minutes: 120
-  acceptance_criteria: Todos import preserves canonical optional front-matter fields currently supported by ItemFrontMatter including planning workflow and issue metadata; PRD and README describe the parity guarantee; targeted and full sandboxed regressions pass with 100% coverage preserved.
-  definition_of_ready: Gap reproduced by code inspection against ItemFrontMatter and no active duplicate item exists.
-  order: 1
-  goal: Release-hardening
-  objective: Close todos import parity drift
-  value: Prevents silent metadata loss in extension workflows.
-  impact: Improves migration safety and cross-tool compatibility for real project tracking.
-  outcome: Todos markdown round-trips preserve canonical pm metadata.
-  why_now: Milestone 5 still documents todos hardening as partial and current import behavior contradicts that intent.
-  parent: pm-3s0
-  risk: medium
-  confidence: high
-  sprint: maintainer-loop-2026-03-08
-  release: v0.1
-  component: extensions/todos
-  regression: true
-  customer_impact: Users importing todos markdown can currently lose planning and issue metadata without warning.
-  dependencies[1]{id,kind,created_at,author,source_kind}:
-    pm-3s0,related,"2026-03-08T13:57:37.636Z",maintainer-agent,null
-  comments[9]{created_at,author,text}:
-    "2026-03-08T13:57:37.636Z",maintainer-agent,Why this exists todos import currently drops many canonical front matter fields even though export writes them.
-    "2026-03-08T13:57:45.631Z",maintainer-agent,"Planned changeset: update PRD and README to state todos import preserves canonical optional ItemFrontMatter fields during round-trip import-export, then hydrate missing import mappings in src/extensions/builtins/todos/import-export.ts and add regression coverage in tests/unit/todos-extension.spec.ts before running pm test and pm test-all sweeps."
-    "2026-03-08T13:59:37.193Z",maintainer-agent,"Implementation update: PRD and README now state todos import preserves canonical optional ItemFrontMatter metadata when present. src/extensions/builtins/todos/import-export.ts now hydrates the missing planning workflow and issue metadata fields with deterministic enum and boolean normalization, and tests/unit/todos-extension.spec.ts adds a focused regression fixture covering those fields."
-    "2026-03-08T14:01:08.967Z",maintainer-agent,"Coverage follow-up: added regression alias coverage for todos import so string false and numeric 1/0 inputs exercise the new boolean normalization branches before rerunning the item-linked coverage gate."
-    "2026-03-08T14:02:20.153Z",maintainer-agent,"Coverage follow-up: added enum sanitization coverage for numeric order, empty risk, invalid severity, and direct boolean regression passthrough so the new todos import helpers meet the 100% coverage gate."
-    "2026-03-08T14:03:39.808Z",maintainer-agent,"Coverage follow-up: added normalization edge coverage for order=not-an-integer, regression=\"0\", and unsupported regression=2 so the remaining todos import helper branches are exercised without broadening runtime behavior."
-    "2026-03-08T14:04:42.852Z",maintainer-agent,"Coverage follow-up: added unsupported regression string coverage so todos import boolean normalization now exercises the remaining string fallthrough branch before final validation."
-    "2026-03-08T14:11:06.155Z",maintainer-agent,"Validation note: concurrent pm test-all sweeps contend on shared coverage artifacts in this repo, so release validation is being rerun sequentially after one parallel in_progress sweep showed a false-negative coverage drop despite standalone pm test passing at 100%."
-    "2026-03-08T14:27:34.337Z",maintainer-agent,"Evidence: pnpm build passed on current changes. pm test pm-ecbn --run --timeout 7200 passed both linked commands after targeted coverage follow-ups; node scripts/run-tests.mjs coverage reports 100% statements branches functions and lines, and node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts passed 20/20. Sequential regression sweeps then passed: pm test-all --status in_progress --timeout 7200 => items=1 linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status closed --timeout 7200 => items=150 linked_tests=382 passed=68 failed=0 skipped=314. Note: parallel test-all sweeps produced a false-negative coverage race on shared coverage artifacts, so final evidence uses the sequential rerun."
-  notes[1]{created_at,author,text}:
-    "2026-03-08T13:57:37.636Z",maintainer-agent,Plan update docs first then hydrate missing fields in todos import and add round trip regression coverage.
-  files[4]{path,scope,note}:
-    PRD.md,project,todos extension parity contract wording
-    README.md,project,public todos extension wording
-    src/extensions/builtins/todos/import-export.ts,project,todos import normalization gap
-    tests/unit/todos-extension.spec.ts,project,round trip parity regression coverage
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,2400,full sandboxed coverage gate
-    node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts,null,project,1200,targeted todos regression
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,dogfood workflow contract
-    PRD.md,project,authoritative extension parity contract
-    README.md,project,public todos extension parity contract
-  close_reason: Todos import now preserves canonical optional metadata and the full sequential regression sweep is green.
+id: pm-ecbn
+title: Restore full todos import metadata parity
+description: "Preserve current ItemFrontMatter optional metadata when importing todos markdown so import/export round-trips do not silently drop planning, workflow, and issue fields."
+type: Task
+status: closed
+priority: 1
+tags[7]: "area:extensions-todos",code,docs,"milestone:5",pm-cli,"priority:1",tests
+created_at: "2026-03-08T13:57:37.636Z"
+updated_at: "2026-03-08T14:27:34.644Z"
+deadline: "2026-03-09T13:56:50.000Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: Todos import preserves canonical optional front-matter fields currently supported by ItemFrontMatter including planning workflow and issue metadata; PRD and README describe the parity guarantee; targeted and full sandboxed regressions pass with 100% coverage preserved.
+definition_of_ready: Gap reproduced by code inspection against ItemFrontMatter and no active duplicate item exists.
+order: 1
+goal: Release-hardening
+objective: Close todos import parity drift
+value: Prevents silent metadata loss in extension workflows.
+impact: Improves migration safety and cross-tool compatibility for real project tracking.
+outcome: Todos markdown round-trips preserve canonical pm metadata.
+why_now: Milestone 5 still documents todos hardening as partial and current import behavior contradicts that intent.
+parent: pm-3s0
+risk: medium
+confidence: high
+sprint: maintainer-loop-2026-03-08
+release: v0.1
+component: extensions/todos
+regression: true
+customer_impact: Users importing todos markdown can currently lose planning and issue metadata without warning.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-3s0,related,"2026-03-08T13:57:37.636Z",maintainer-agent,null
+comments[9]{created_at,author,text}:
+  "2026-03-08T13:57:37.636Z",maintainer-agent,Why this exists todos import currently drops many canonical front matter fields even though export writes them.
+  "2026-03-08T13:57:45.631Z",maintainer-agent,"Planned changeset: update PRD and README to state todos import preserves canonical optional ItemFrontMatter fields during round-trip import-export, then hydrate missing import mappings in src/extensions/builtins/todos/import-export.ts and add regression coverage in tests/unit/todos-extension.spec.ts before running pm test and pm test-all sweeps."
+  "2026-03-08T13:59:37.193Z",maintainer-agent,"Implementation update: PRD and README now state todos import preserves canonical optional ItemFrontMatter metadata when present. src/extensions/builtins/todos/import-export.ts now hydrates the missing planning workflow and issue metadata fields with deterministic enum and boolean normalization, and tests/unit/todos-extension.spec.ts adds a focused regression fixture covering those fields."
+  "2026-03-08T14:01:08.967Z",maintainer-agent,"Coverage follow-up: added regression alias coverage for todos import so string false and numeric 1/0 inputs exercise the new boolean normalization branches before rerunning the item-linked coverage gate."
+  "2026-03-08T14:02:20.153Z",maintainer-agent,"Coverage follow-up: added enum sanitization coverage for numeric order, empty risk, invalid severity, and direct boolean regression passthrough so the new todos import helpers meet the 100% coverage gate."
+  "2026-03-08T14:03:39.808Z",maintainer-agent,"Coverage follow-up: added normalization edge coverage for order=not-an-integer, regression=\"0\", and unsupported regression=2 so the remaining todos import helper branches are exercised without broadening runtime behavior."
+  "2026-03-08T14:04:42.852Z",maintainer-agent,"Coverage follow-up: added unsupported regression string coverage so todos import boolean normalization now exercises the remaining string fallthrough branch before final validation."
+  "2026-03-08T14:11:06.155Z",maintainer-agent,"Validation note: concurrent pm test-all sweeps contend on shared coverage artifacts in this repo, so release validation is being rerun sequentially after one parallel in_progress sweep showed a false-negative coverage drop despite standalone pm test passing at 100%."
+  "2026-03-08T14:27:34.337Z",maintainer-agent,"Evidence: pnpm build passed on current changes. pm test pm-ecbn --run --timeout 7200 passed both linked commands after targeted coverage follow-ups; node scripts/run-tests.mjs coverage reports 100% statements branches functions and lines, and node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts passed 20/20. Sequential regression sweeps then passed: pm test-all --status in_progress --timeout 7200 => items=1 linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status closed --timeout 7200 => items=150 linked_tests=382 passed=68 failed=0 skipped=314. Note: parallel test-all sweeps produced a false-negative coverage race on shared coverage artifacts, so final evidence uses the sequential rerun."
+notes[1]{created_at,author,text}:
+  "2026-03-08T13:57:37.636Z",maintainer-agent,Plan update docs first then hydrate missing fields in todos import and add round trip regression coverage.
+files[4]{path,scope,note}:
+  PRD.md,project,todos extension parity contract wording
+  README.md,project,public todos extension wording
+  src/extensions/builtins/todos/import-export.ts,project,todos import normalization gap
+  tests/unit/todos-extension.spec.ts,project,round trip parity regression coverage
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,full sandboxed coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts,null,project,1200,targeted todos regression
+docs[3]{path,scope,note}:
+  AGENTS.md,project,dogfood workflow contract
+  PRD.md,project,authoritative extension parity contract
+  README.md,project,public todos extension parity contract
+close_reason: Todos import now preserves canonical optional metadata and the full sequential regression sweep is green.
 body: "Current todos export writes full front matter but todos import only hydrates a subset of ItemFrontMatter. This silently drops definition_of_ready, planning metadata, blocked metadata, reviewer/risk/confidence/release, and issue-specific fields on re-import. Update docs first then implement import normalization and regression coverage so round-trips are lossless for canonical fields."

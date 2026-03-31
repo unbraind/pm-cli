@@ -1,34 +1,33 @@
-front_matter:
-  id: pm-r0m
-  title: "M3: list and list-* filters with deterministic sort"
-  description: Implement list commands and deterministic ordering with filters.
-  type: Task
-  status: closed
-  priority: 1
-  tags[4]: "area:list",core,"milestone:3",pm-cli
-  created_at: "2026-02-17T23:02:09.324Z"
-  updated_at: "2026-02-18T18:45:00.399Z"
-  deadline: "2026-03-03T23:02:09.324Z"
-  author: steve
-  estimated_minutes: 120
-  acceptance_criteria: List outputs are filterable and sorted per PRD rules.
-  dependencies[2]{id,kind,created_at,author,source_kind}:
-    pm-54d,parent,"2026-02-17T23:02:09.324Z",steve,null
-    pm-c0r,blocks,"2026-02-17T23:02:09.324Z",steve,null
-  comments[3]{created_at,author,text}:
-    "2026-02-18T18:36:52.182Z",cursor-maintainer,"Planned change-set: verify PRD deterministic list ordering (open before terminal, priority asc, updated_at desc, id asc), tighten any implementation gaps, and add/adjust tests for uncovered branches before running pm test and pm test-all."
-    "2026-02-18T18:38:07.235Z",cursor-maintainer,"Implemented list filter validation hardening: --priority and --limit now require integers, and --type now validates/canonicalizes to Epic|Feature|Task|Chore|Issue (case-insensitive). Added unit coverage for invalid decimal filters, invalid type, and normalized lowercase type filter."
-    "2026-02-18T18:44:50.674Z",cursor-maintainer,"Evidence: pm test pm-r0m --run --timeout 1200 passed (2/2 linked commands: node scripts/run-tests.mjs coverage + node scripts/run-tests.mjs test). Coverage gate remained 100% lines/branches/functions/statements. Regression sweep passed via pm test-all --status in_progress --timeout 1200 (items=5, linked_tests=17, failed=0)."
-  files[4]{path,scope,note}:
-    src/cli/commands/list.ts,project,list command filtering and output contract
-    src/core/store/item-store.ts,project,item retrieval and ordering behavior
-    tests/unit/list-command.spec.ts,project,list filter validation and normalization cases
-    tests/unit/list-sort-branches.spec.ts,project,unit coverage for deterministic ordering branches
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,900,sandboxed full coverage gate
-    node scripts/run-tests.mjs test,null,project,900,sandboxed regression test gate
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,dogfood and test safety workflow
-    PRD.md,project,authoritative requirements for list sorting and filters
-    README.md,project,public command surface contract for list/list-*
+id: pm-r0m
+title: "M3: list and list-* filters with deterministic sort"
+description: Implement list commands and deterministic ordering with filters.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:list",core,"milestone:3",pm-cli
+created_at: "2026-02-17T23:02:09.324Z"
+updated_at: "2026-02-18T18:45:00.399Z"
+deadline: "2026-03-03T23:02:09.324Z"
+author: steve
+estimated_minutes: 120
+acceptance_criteria: List outputs are filterable and sorted per PRD rules.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-54d,parent,"2026-02-17T23:02:09.324Z",steve,null
+  pm-c0r,blocks,"2026-02-17T23:02:09.324Z",steve,null
+comments[3]{created_at,author,text}:
+  "2026-02-18T18:36:52.182Z",cursor-maintainer,"Planned change-set: verify PRD deterministic list ordering (open before terminal, priority asc, updated_at desc, id asc), tighten any implementation gaps, and add/adjust tests for uncovered branches before running pm test and pm test-all."
+  "2026-02-18T18:38:07.235Z",cursor-maintainer,"Implemented list filter validation hardening: --priority and --limit now require integers, and --type now validates/canonicalizes to Epic|Feature|Task|Chore|Issue (case-insensitive). Added unit coverage for invalid decimal filters, invalid type, and normalized lowercase type filter."
+  "2026-02-18T18:44:50.674Z",cursor-maintainer,"Evidence: pm test pm-r0m --run --timeout 1200 passed (2/2 linked commands: node scripts/run-tests.mjs coverage + node scripts/run-tests.mjs test). Coverage gate remained 100% lines/branches/functions/statements. Regression sweep passed via pm test-all --status in_progress --timeout 1200 (items=5, linked_tests=17, failed=0)."
+files[4]{path,scope,note}:
+  src/cli/commands/list.ts,project,list command filtering and output contract
+  src/core/store/item-store.ts,project,item retrieval and ordering behavior
+  tests/unit/list-command.spec.ts,project,list filter validation and normalization cases
+  tests/unit/list-sort-branches.spec.ts,project,unit coverage for deterministic ordering branches
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,900,sandboxed full coverage gate
+  node scripts/run-tests.mjs test,null,project,900,sandboxed regression test gate
+docs[3]{path,scope,note}:
+  AGENTS.md,project,dogfood and test safety workflow
+  PRD.md,project,authoritative requirements for list sorting and filters
+  README.md,project,public command surface contract for list/list-*
 body: Implement deterministic listing and filter processing.

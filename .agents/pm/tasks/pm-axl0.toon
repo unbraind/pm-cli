@@ -1,58 +1,57 @@
-front_matter:
-  id: pm-axl0
-  title: Fix Beads Import Lossiness
-  description: "Make beads import preserve Beads dependency kinds and source metadata, owner fallback, due dates, and structured import fields without touching live tracker data during validation."
-  type: Task
-  status: closed
-  priority: 0
-  tags[3]: beads,import,pm-cli
-  created_at: "2026-03-12T21:42:11.716Z"
-  updated_at: "2026-03-12T22:08:19.528Z"
-  deadline: "2026-03-13T21:42:11.716Z"
-  author: codex-maintainer
-  estimated_minutes: 180
-  acceptance_criteria: "Beads import preserves owner fallback, due_at, dependency kind/source metadata, and structured design/closed_at fields; regression tests cover the mapping; isolated temp-folder validation against the real Beads dataset runs without writing to this repo tracker."
-  definition_of_ready: Bug report analyzed and safe validation plan defined.
-  goal: Migration safety
-  objective: Lossless Beads import
-  value: Prevents migration data loss
-  impact: Allows safe pm adoption for Beads workspaces
-  outcome: Beads imports retain critical source semantics
-  why_now: A real migration is blocked on current importer behavior
-  risk: high
-  confidence: medium
-  sprint: maintainer-loop
-  customer_impact: Migration data would be lost without this fix
-  comments[2]{created_at,author,text}:
-    "2026-03-12T21:42:11.716Z",codex-maintainer,Track the reported Beads import lossiness and validate only in isolated temp workspaces.
-    "2026-03-12T22:08:13.057Z",codex-maintainer,"Implemented lossless Beads import fixes: dependency kind now reads type then kind, Beads-specific kinds are preserved (with source_kind when needed), assignee falls back to owner, due_at maps to deadline, closed_at/design/source_type/source_owner/external_ref are stored structurally, timestamps keep source offsets, stdin and safer auto-discovery are supported, and --preserve-source-ids keeps source ids intact. Evidence: PM_AUTHOR=codex-maintainer pm test pm-axl0 --run --json passed both linked regressions; PM_AUTHOR=codex-maintainer node scripts/run-tests.mjs coverage passed with 54 files / 551 tests / 100% statements, branches, functions, and lines. Isolated real-data validation used a temp tracker with explicit PM_PATH and PM_GLOBAL_PATH plus copied Beads data from a local issues.jsonl export; import succeeded with 2282 imported, 0 skipped, autodiscovered source=issues.jsonl, dependency/source-type/closed_at/design counts preserved, and no existing tracker data was overwritten."
-  notes[1]{created_at,author,text}:
-    "2026-03-12T21:42:11.716Z",codex-maintainer,Start with importer mapping gaps then validate against real external Beads data under sandboxed PM_PATH and PM_GLOBAL_PATH.
-  files[19]{path,scope,note}:
-    PRD.md,project,Document beads import behavior contract
-    README.md,project,Document beads import auto-discovery and source-id preservation
-    src/cli/commands/beads.ts,project,Beads import compatibility mapping and auto-discovery
-    src/cli/commands/list.ts,project,Timestamp-aware list sorting for preserved offsets
-    src/cli/commands/search.ts,project,Timestamp-aware search sorting for preserved offsets
-    src/cli/main.ts,project,Beads import CLI flags
-    src/core/item/id.ts,project,Allow raw preserved source ids to remain addressable
-    src/core/item/item-format.ts,project,Structured field preservation and timestamp-safe sorting
-    src/core/shared/constants.ts,project,Expanded dependency kind compatibility constants
-    src/core/shared/time.ts,project,Timestamp comparison helpers for offset-preserving imports
-    src/core/store/item-store.ts,project,Fallback item lookup for preserved source ids
-    src/extensions/builtins/beads/index.ts,project,Extension option coercion for preserve-source-ids
-    src/types.ts,project,Beads compatibility metadata fields and dependency kinds
-    tests/fixtures/beads/import-records.jsonl,project,Fixture coverage for lossless Beads mappings
-    tests/unit/beads-command.spec.ts,project,Regression coverage for owner due_at design closed_at dependency kinds and source ids
-    tests/unit/builtin-extension-entrypoints.spec.ts,project,Extension option coverage
-    tests/unit/item-format-validation.spec.ts,project,Structured metadata and dependency source_kind coverage
-    tests/unit/item-store.spec.ts,project,Store coverage for imported metadata persistence
-    tests/unit/shared-constants-errors.spec.ts,project,Dependency kind validation coverage
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    "node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t \"imports Beads JSONL records through the beads import CLI command\"",null,project,900,CLI-level beads import integration regression
-    node scripts/run-tests.mjs test -- tests/unit/beads-command.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/list-command.spec.ts tests/unit/search-command.spec.ts,null,project,900,Focused unit regression set for beads import and timestamp comparisons
-  docs[2]{path,scope,note}:
-    PRD.md,project,Beads import contract updates
-    README.md,project,User-facing beads import behavior and safety notes
-  close_reason: Beads import lossiness fixed and validated in isolated temp trackers with linked tests and full coverage passing
+id: pm-axl0
+title: Fix Beads Import Lossiness
+description: "Make beads import preserve Beads dependency kinds and source metadata, owner fallback, due dates, and structured import fields without touching live tracker data during validation."
+type: Task
+status: closed
+priority: 0
+tags[3]: beads,import,pm-cli
+created_at: "2026-03-12T21:42:11.716Z"
+updated_at: "2026-03-12T22:08:19.528Z"
+deadline: "2026-03-13T21:42:11.716Z"
+author: codex-maintainer
+estimated_minutes: 180
+acceptance_criteria: "Beads import preserves owner fallback, due_at, dependency kind/source metadata, and structured design/closed_at fields; regression tests cover the mapping; isolated temp-folder validation against the real Beads dataset runs without writing to this repo tracker."
+definition_of_ready: Bug report analyzed and safe validation plan defined.
+goal: Migration safety
+objective: Lossless Beads import
+value: Prevents migration data loss
+impact: Allows safe pm adoption for Beads workspaces
+outcome: Beads imports retain critical source semantics
+why_now: A real migration is blocked on current importer behavior
+risk: high
+confidence: medium
+sprint: maintainer-loop
+customer_impact: Migration data would be lost without this fix
+comments[2]{created_at,author,text}:
+  "2026-03-12T21:42:11.716Z",codex-maintainer,Track the reported Beads import lossiness and validate only in isolated temp workspaces.
+  "2026-03-12T22:08:13.057Z",codex-maintainer,"Implemented lossless Beads import fixes: dependency kind now reads type then kind, Beads-specific kinds are preserved (with source_kind when needed), assignee falls back to owner, due_at maps to deadline, closed_at/design/source_type/source_owner/external_ref are stored structurally, timestamps keep source offsets, stdin and safer auto-discovery are supported, and --preserve-source-ids keeps source ids intact. Evidence: PM_AUTHOR=codex-maintainer pm test pm-axl0 --run --json passed both linked regressions; PM_AUTHOR=codex-maintainer node scripts/run-tests.mjs coverage passed with 54 files / 551 tests / 100% statements, branches, functions, and lines. Isolated real-data validation used a temp tracker with explicit PM_PATH and PM_GLOBAL_PATH plus copied Beads data from a local issues.jsonl export; import succeeded with 2282 imported, 0 skipped, autodiscovered source=issues.jsonl, dependency/source-type/closed_at/design counts preserved, and no existing tracker data was overwritten."
+notes[1]{created_at,author,text}:
+  "2026-03-12T21:42:11.716Z",codex-maintainer,Start with importer mapping gaps then validate against real external Beads data under sandboxed PM_PATH and PM_GLOBAL_PATH.
+files[19]{path,scope,note}:
+  PRD.md,project,Document beads import behavior contract
+  README.md,project,Document beads import auto-discovery and source-id preservation
+  src/cli/commands/beads.ts,project,Beads import compatibility mapping and auto-discovery
+  src/cli/commands/list.ts,project,Timestamp-aware list sorting for preserved offsets
+  src/cli/commands/search.ts,project,Timestamp-aware search sorting for preserved offsets
+  src/cli/main.ts,project,Beads import CLI flags
+  src/core/item/id.ts,project,Allow raw preserved source ids to remain addressable
+  src/core/item/item-format.ts,project,Structured field preservation and timestamp-safe sorting
+  src/core/shared/constants.ts,project,Expanded dependency kind compatibility constants
+  src/core/shared/time.ts,project,Timestamp comparison helpers for offset-preserving imports
+  src/core/store/item-store.ts,project,Fallback item lookup for preserved source ids
+  src/extensions/builtins/beads/index.ts,project,Extension option coercion for preserve-source-ids
+  src/types.ts,project,Beads compatibility metadata fields and dependency kinds
+  tests/fixtures/beads/import-records.jsonl,project,Fixture coverage for lossless Beads mappings
+  tests/unit/beads-command.spec.ts,project,Regression coverage for owner due_at design closed_at dependency kinds and source ids
+  tests/unit/builtin-extension-entrypoints.spec.ts,project,Extension option coverage
+  tests/unit/item-format-validation.spec.ts,project,Structured metadata and dependency source_kind coverage
+  tests/unit/item-store.spec.ts,project,Store coverage for imported metadata persistence
+  tests/unit/shared-constants-errors.spec.ts,project,Dependency kind validation coverage
+tests[2]{command,path,scope,timeout_seconds,note}:
+  "node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t \"imports Beads JSONL records through the beads import CLI command\"",null,project,900,CLI-level beads import integration regression
+  node scripts/run-tests.mjs test -- tests/unit/beads-command.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/list-command.spec.ts tests/unit/search-command.spec.ts,null,project,900,Focused unit regression set for beads import and timestamp comparisons
+docs[2]{path,scope,note}:
+  PRD.md,project,Beads import contract updates
+  README.md,project,User-facing beads import behavior and safety notes
+close_reason: Beads import lossiness fixed and validated in isolated temp trackers with linked tests and full coverage passing
 body: Address the reported migration blockers in beads import and validate with a temp workspace plus real Beads export data from a local Beads workspace.

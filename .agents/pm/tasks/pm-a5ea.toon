@@ -1,35 +1,34 @@
-front_matter:
-  id: pm-a5ea
-  title: Release-readiness maintenance loop 2026-03-07 run 8
-  description: Add release-readiness contract coverage for pm delete help output to keep delete mutation metadata parity deterministic.
-  type: Task
-  status: closed
-  priority: 0
-  tags[9]: "area:cli","area:docs","area:tests",code,doc,"milestone:6",pm-cli,"priority:0",tests
-  created_at: "2026-03-07T10:12:40.909Z"
-  updated_at: "2026-03-07T10:24:11.962Z"
-  deadline: "2026-03-08T23:59:00.000Z"
-  author: maintainer-agent
-  estimated_minutes: 90
-  acceptance_criteria: 1) release-readiness contract suite asserts pm delete --help metadata flags and usage semantics. 2) pm test <item> --run plus pm test-all sweeps for in_progress and closed pass. 3) coverage remains 100%.
-  dependencies[1]{id,kind,created_at,author,source_kind}:
-    pm-wjdr,related,"2026-03-07T10:12:40.909Z",maintainer-agent,null
-  comments[4]{created_at,author,text}:
-    "2026-03-07T10:12:40.909Z",maintainer-agent,This run exists to extend help-contract hardening to pm delete.
-    "2026-03-07T10:12:50.847Z",maintainer-agent,"Intended change-set: extend release-readiness contract tests with pm delete --help assertions for required metadata flags and usage/description semantics."
-    "2026-03-07T10:13:05.917Z",maintainer-agent,"Implemented release-readiness contract hardening in tests/integration/release-readiness-contract.spec.ts: added REQUIRED_DELETE_FLAGS and a new pm delete --help assertion block validating PRD row parity, usage text, description text, and required mutation metadata flags."
-    "2026-03-07T10:24:11.658Z",maintainer-agent,"Evidence: pnpm build passed. pm test pm-a5ea --run --timeout 7200 --json passed all linked tests (3/3). pm test-all --status in_progress --timeout 7200 --json passed (items=1 linked_tests=3 passed=3 failed=0 skipped=0). pm test-all --status closed --timeout 7200 --json passed (items=121 linked_tests=327 passed=62 failed=0 skipped=265). Coverage remains 100% lines/branches/functions/statements (All files 100/100/100/100)."
-  notes[1]{created_at,author,text}:
-    "2026-03-07T10:12:40.909Z",maintainer-agent,Plan docs parity check then targeted release-readiness test update and mandatory verification sweeps.
-  files[1]{path,scope,note}:
-    tests/integration/release-readiness-contract.spec.ts,project,delete help contract assertion
-  tests[3]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,2400,coverage gate
-    node scripts/run-tests.mjs test,null,project,240,sandbox-safe regression
-    node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1200,targeted contract regression
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,maintainer workflow contract
-    PRD.md,project,authoritative delete command contract
-    README.md,project,public delete command contract
-  close_reason: Added delete-help contract coverage; pm test and test-all sweeps passed; coverage remains 100%.
+id: pm-a5ea
+title: Release-readiness maintenance loop 2026-03-07 run 8
+description: Add release-readiness contract coverage for pm delete help output to keep delete mutation metadata parity deterministic.
+type: Task
+status: closed
+priority: 0
+tags[9]: "area:cli","area:docs","area:tests",code,doc,"milestone:6",pm-cli,"priority:0",tests
+created_at: "2026-03-07T10:12:40.909Z"
+updated_at: "2026-03-07T10:24:11.962Z"
+deadline: "2026-03-08T23:59:00.000Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: 1) release-readiness contract suite asserts pm delete --help metadata flags and usage semantics. 2) pm test <item> --run plus pm test-all sweeps for in_progress and closed pass. 3) coverage remains 100%.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-wjdr,related,"2026-03-07T10:12:40.909Z",maintainer-agent,null
+comments[4]{created_at,author,text}:
+  "2026-03-07T10:12:40.909Z",maintainer-agent,This run exists to extend help-contract hardening to pm delete.
+  "2026-03-07T10:12:50.847Z",maintainer-agent,"Intended change-set: extend release-readiness contract tests with pm delete --help assertions for required metadata flags and usage/description semantics."
+  "2026-03-07T10:13:05.917Z",maintainer-agent,"Implemented release-readiness contract hardening in tests/integration/release-readiness-contract.spec.ts: added REQUIRED_DELETE_FLAGS and a new pm delete --help assertion block validating PRD row parity, usage text, description text, and required mutation metadata flags."
+  "2026-03-07T10:24:11.658Z",maintainer-agent,"Evidence: pnpm build passed. pm test pm-a5ea --run --timeout 7200 --json passed all linked tests (3/3). pm test-all --status in_progress --timeout 7200 --json passed (items=1 linked_tests=3 passed=3 failed=0 skipped=0). pm test-all --status closed --timeout 7200 --json passed (items=121 linked_tests=327 passed=62 failed=0 skipped=265). Coverage remains 100% lines/branches/functions/statements (All files 100/100/100/100)."
+notes[1]{created_at,author,text}:
+  "2026-03-07T10:12:40.909Z",maintainer-agent,Plan docs parity check then targeted release-readiness test update and mandatory verification sweeps.
+files[1]{path,scope,note}:
+  tests/integration/release-readiness-contract.spec.ts,project,delete help contract assertion
+tests[3]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,coverage gate
+  node scripts/run-tests.mjs test,null,project,240,sandbox-safe regression
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1200,targeted contract regression
+docs[3]{path,scope,note}:
+  AGENTS.md,project,maintainer workflow contract
+  PRD.md,project,authoritative delete command contract
+  README.md,project,public delete command contract
+close_reason: Added delete-help contract coverage; pm test and test-all sweeps passed; coverage remains 100%.
 body: "Audit delete command contract parity across PRD/README/help, add focused assertion, then run mandatory pm test sweeps with coverage evidence."

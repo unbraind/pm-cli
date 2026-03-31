@@ -1,49 +1,48 @@
-front_matter:
-  id: pm-ysgr
-  title: Add create/update reminder flags and mutation paths
-  description: Implement reminder flag parsing and deterministic mutation semantics in create/update workflows.
-  type: Task
-  status: closed
-  priority: 1
-  tags[4]: "area:cli","area:reminders",code,pm-cli
-  created_at: "2026-03-31T21:28:12.872Z"
-  updated_at: "2026-03-31T21:44:30.632Z"
-  deadline: "2026-04-07T21:28:12.872Z"
-  author: codex-agent
-  estimated_minutes: 120
-  acceptance_criteria: "Create/update commands accept reminders, support none/unset behavior, and preserve deterministic changed fields/history."
-  definition_of_ready: Reminder CLI argument format is finalized.
-  order: 6
-  goal: Agent planning ergonomics
-  objective: Support reminder mutations
-  value: Direct reminder authoring in pm
-  impact: Less manual follow-up overhead
-  outcome: Create/update can persist reminders
-  why_now: Reminder schema alone is insufficient without CLI mutation support.
-  parent: pm-c877
-  risk: medium
-  confidence: high
-  sprint: calendar-rollout
-  release: vnext
-  component: cli/create-update
-  regression: true
-  customer_impact: Allows agents to author reminders directly in tracker items.
-  dependencies[2]{id,kind,created_at,author,source_kind}:
-    pm-7e6n,blocks,"2026-03-31T21:28:12.872Z",codex-agent,null
-    pm-c877,parent,"2026-03-31T21:28:12.872Z",codex-agent,null
-  comments[3]{created_at,author,text}:
-    "2026-03-31T21:28:12.872Z",codex-agent,Task created for create/update reminder flag support.
-    "2026-03-31T21:44:08.392Z",codex-agent,Implemented persistent reminder flag parsing for create/update with deterministic none-clearing behavior and input validation.
-    "2026-03-31T21:44:28.944Z",codex-agent,"Evidence: create/update reminder command tests passed via pm test --run."
-  notes[1]{created_at,author,text}:
-    "2026-03-31T21:28:12.872Z",codex-agent,Validate both malformed reminder input and none clear behavior.
-  files[3]{path,scope,note}:
-    src/cli/commands/create.ts,project,reminder create parsing
-    src/cli/commands/update.ts,project,update reminder mutation behavior
-    src/cli/main.ts,project,wire reminder flags into create/update option normalization
-  tests[1]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,null,project,1800,create update reminder coverage
-  docs[1]{path,scope,note}:
-    README.md,project,create update reminder flag docs
-  close_reason: Create/update reminder flags and mutation semantics implemented and verified.
+id: pm-ysgr
+title: Add create/update reminder flags and mutation paths
+description: Implement reminder flag parsing and deterministic mutation semantics in create/update workflows.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:cli","area:reminders",code,pm-cli
+created_at: "2026-03-31T21:28:12.872Z"
+updated_at: "2026-03-31T21:44:30.632Z"
+deadline: "2026-04-07T21:28:12.872Z"
+author: codex-agent
+estimated_minutes: 120
+acceptance_criteria: "Create/update commands accept reminders, support none/unset behavior, and preserve deterministic changed fields/history."
+definition_of_ready: Reminder CLI argument format is finalized.
+order: 6
+goal: Agent planning ergonomics
+objective: Support reminder mutations
+value: Direct reminder authoring in pm
+impact: Less manual follow-up overhead
+outcome: Create/update can persist reminders
+why_now: Reminder schema alone is insufficient without CLI mutation support.
+parent: pm-c877
+risk: medium
+confidence: high
+sprint: calendar-rollout
+release: vnext
+component: cli/create-update
+regression: true
+customer_impact: Allows agents to author reminders directly in tracker items.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-7e6n,blocks,"2026-03-31T21:28:12.872Z",codex-agent,null
+  pm-c877,parent,"2026-03-31T21:28:12.872Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-03-31T21:28:12.872Z",codex-agent,Task created for create/update reminder flag support.
+  "2026-03-31T21:44:08.392Z",codex-agent,Implemented persistent reminder flag parsing for create/update with deterministic none-clearing behavior and input validation.
+  "2026-03-31T21:44:28.944Z",codex-agent,"Evidence: create/update reminder command tests passed via pm test --run."
+notes[1]{created_at,author,text}:
+  "2026-03-31T21:28:12.872Z",codex-agent,Validate both malformed reminder input and none clear behavior.
+files[3]{path,scope,note}:
+  src/cli/commands/create.ts,project,reminder create parsing
+  src/cli/commands/update.ts,project,update reminder mutation behavior
+  src/cli/main.ts,project,wire reminder flags into create/update option normalization
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,null,project,1800,create update reminder coverage
+docs[1]{path,scope,note}:
+  README.md,project,create update reminder flag docs
+close_reason: Create/update reminder flags and mutation semantics implemented and verified.
 body: Task for command-level reminder mutation support.

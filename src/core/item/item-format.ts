@@ -446,15 +446,28 @@ function parseToonItemDocument(content: string): ItemDocument {
     "TOON item document must be an object",
   );
   const record = parsed as Record<string, unknown>;
-  assertFrontMatterCondition(record.front_matter !== undefined, "TOON item document must include front_matter");
-  assertValidFrontMatter(record.front_matter);
+
+  if (Object.prototype.hasOwnProperty.call(record, "front_matter")) {
+    assertValidFrontMatter(record.front_matter);
+    assertFrontMatterCondition(
+      record.body === undefined || typeof record.body === "string",
+      "TOON item document body must be a string",
+    );
+    return {
+      front_matter: normalizeFrontMatter(record.front_matter),
+      body: normalizeBody(typeof record.body === "string" ? record.body : ""),
+    };
+  }
+
+  const { body, ...frontMatterRecord } = record;
   assertFrontMatterCondition(
-    record.body === undefined || typeof record.body === "string",
+    body === undefined || typeof body === "string",
     "TOON item document body must be a string",
   );
+  assertValidFrontMatter(frontMatterRecord);
   return {
-    front_matter: normalizeFrontMatter(record.front_matter),
-    body: normalizeBody(typeof record.body === "string" ? record.body : ""),
+    front_matter: normalizeFrontMatter(frontMatterRecord),
+    body: normalizeBody(typeof body === "string" ? body : ""),
   };
 }
 
@@ -473,7 +486,7 @@ function serializeToonItemDocument(document: ItemDocument): string {
   const normalizedFrontMatter = normalizeFrontMatter(document.front_matter);
   const orderedFrontMatter = orderFrontMatter(normalizedFrontMatter);
   const normalizedBody = normalizeBody(document.body ?? "");
-  return `${encodeToon({ front_matter: orderedFrontMatter, body: normalizedBody })}\n`;
+  return `${encodeToon({ ...orderedFrontMatter, body: normalizedBody })}\n`;
 }
 
 export function parseItemDocument(content: string, options: { format?: ItemFormat } = {}): ItemDocument {

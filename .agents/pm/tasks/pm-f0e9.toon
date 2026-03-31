@@ -1,35 +1,34 @@
-front_matter:
-  id: pm-f0e9
-  title: Release-readiness maintenance loop 2026-03-07 run 5
-  description: Add release-readiness contract coverage for pm comments help output to keep command help parity deterministic.
-  type: Task
-  status: closed
-  priority: 0
-  tags[9]: "area:cli","area:docs","area:tests",code,doc,"milestone:6",pm-cli,"priority:0",tests
-  created_at: "2026-03-07T08:20:06.195Z"
-  updated_at: "2026-03-07T08:31:44.192Z"
-  deadline: "2026-03-08T23:59:00.000Z"
-  author: maintainer-agent
-  estimated_minutes: 90
-  acceptance_criteria: "1) release-readiness contract suite asserts pm comments --help flag presence and no synthetic default-array text. 2) pm test <item> --run, pm test-all --status in_progress, and pm test-all --status closed pass. 3) coverage remains 100%."
-  dependencies[1]{id,kind,created_at,author,source_kind}:
-    pm-iziy,related,"2026-03-07T08:20:06.195Z",maintainer-agent,null
-  comments[4]{created_at,author,text}:
-    "2026-03-07T08:20:06.195Z",maintainer-agent,This run exists to extend help-contract hardening to pm comments.
-    "2026-03-07T08:20:16.114Z",maintainer-agent,"Intended change-set: extend release-readiness contract tests with pm comments --help assertions for required flags and synthetic default-array absence."
-    "2026-03-07T08:20:44.913Z",maintainer-agent,"Implemented release-readiness contract hardening in tests/integration/release-readiness-contract.spec.ts: added REQUIRED_COMMENTS_FLAGS and a new pm comments --help assertion block checking required flags and absence of synthetic default-array text."
-    "2026-03-07T08:31:43.888Z",maintainer-agent,"Evidence: pm test pm-f0e9 --run --timeout 7200 --json passed all linked tests (3/3). pm test-all --status in_progress --timeout 7200 --json passed (items=1 linked_tests=3 passed=3 failed=0 skipped=0). pm test-all --status closed --timeout 7200 --json passed (items=118 linked_tests=318 passed=62 failed=0 skipped=256). Coverage remains 100% lines/branches/functions/statements in sandbox runs."
-  notes[1]{created_at,author,text}:
-    "2026-03-07T08:20:06.195Z",maintainer-agent,Plan docs parity check then targeted release-readiness test update and mandatory verification sweeps.
-  files[1]{path,scope,note}:
-    tests/integration/release-readiness-contract.spec.ts,project,add comments help contract assertion
-  tests[3]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,2400,coverage gate
-    node scripts/run-tests.mjs test,null,project,240,sandbox-safe regression
-    node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1200,targeted contract regression
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,maintainer workflow contract
-    PRD.md,project,authoritative command/help determinism contract
-    README.md,project,public command contract
-  close_reason: Added pm comments help contract coverage and all required pm regression sweeps passed with 100% coverage.
+id: pm-f0e9
+title: Release-readiness maintenance loop 2026-03-07 run 5
+description: Add release-readiness contract coverage for pm comments help output to keep command help parity deterministic.
+type: Task
+status: closed
+priority: 0
+tags[9]: "area:cli","area:docs","area:tests",code,doc,"milestone:6",pm-cli,"priority:0",tests
+created_at: "2026-03-07T08:20:06.195Z"
+updated_at: "2026-03-07T08:31:44.192Z"
+deadline: "2026-03-08T23:59:00.000Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: "1) release-readiness contract suite asserts pm comments --help flag presence and no synthetic default-array text. 2) pm test <item> --run, pm test-all --status in_progress, and pm test-all --status closed pass. 3) coverage remains 100%."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-iziy,related,"2026-03-07T08:20:06.195Z",maintainer-agent,null
+comments[4]{created_at,author,text}:
+  "2026-03-07T08:20:06.195Z",maintainer-agent,This run exists to extend help-contract hardening to pm comments.
+  "2026-03-07T08:20:16.114Z",maintainer-agent,"Intended change-set: extend release-readiness contract tests with pm comments --help assertions for required flags and synthetic default-array absence."
+  "2026-03-07T08:20:44.913Z",maintainer-agent,"Implemented release-readiness contract hardening in tests/integration/release-readiness-contract.spec.ts: added REQUIRED_COMMENTS_FLAGS and a new pm comments --help assertion block checking required flags and absence of synthetic default-array text."
+  "2026-03-07T08:31:43.888Z",maintainer-agent,"Evidence: pm test pm-f0e9 --run --timeout 7200 --json passed all linked tests (3/3). pm test-all --status in_progress --timeout 7200 --json passed (items=1 linked_tests=3 passed=3 failed=0 skipped=0). pm test-all --status closed --timeout 7200 --json passed (items=118 linked_tests=318 passed=62 failed=0 skipped=256). Coverage remains 100% lines/branches/functions/statements in sandbox runs."
+notes[1]{created_at,author,text}:
+  "2026-03-07T08:20:06.195Z",maintainer-agent,Plan docs parity check then targeted release-readiness test update and mandatory verification sweeps.
+files[1]{path,scope,note}:
+  tests/integration/release-readiness-contract.spec.ts,project,add comments help contract assertion
+tests[3]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,coverage gate
+  node scripts/run-tests.mjs test,null,project,240,sandbox-safe regression
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1200,targeted contract regression
+docs[3]{path,scope,note}:
+  AGENTS.md,project,maintainer workflow contract
+  PRD.md,project,authoritative command/help determinism contract
+  README.md,project,public command contract
+close_reason: Added pm comments help contract coverage and all required pm regression sweeps passed with 100% coverage.
 body: "Context: no active backlog items remain, so this loop adds one incremental release-hardening guard. Approach: assert pm comments --help includes required flags and does not emit synthetic default-array text."

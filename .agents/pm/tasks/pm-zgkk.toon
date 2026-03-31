@@ -1,47 +1,46 @@
-front_matter:
-  id: pm-zgkk
-  title: "M4: Mutation-triggered search cache invalidation"
-  description: Invalidate deterministic search cache artifacts after item mutations so stale index/search artifacts are never treated as current between reindex runs.
-  type: Task
-  status: closed
-  priority: 1
-  tags[5]: "area:search-indexing",code,"milestone:4",pm-cli,"priority:1"
-  created_at: "2026-03-03T22:38:40.837Z"
-  updated_at: "2026-03-03T22:57:30.315Z"
-  deadline: "2026-03-10T23:59:00.000Z"
-  author: cursor-maintainer-agent
-  estimated_minutes: 150
-  acceptance_criteria: After successful mutating commands stale search cache artifacts are invalidated deterministically as best effort and non-fatal docs reflect behavior and regression coverage remains 100%.
-  dependencies[2]{id,kind,created_at,author,source_kind}:
-    pm-cwp,related,"2026-03-03T22:38:40.837Z",cursor-maintainer-agent,null
-    pm-f45,parent,"2026-03-03T22:38:40.837Z",cursor-maintainer-agent,null
-  comments[6]{created_at,author,text}:
-    "2026-03-03T22:38:40.837Z",cursor-maintainer-agent,Gap discovered during docs and implementation audit because reindex artifacts can become stale after mutations.
-    "2026-03-03T22:38:57.674Z",cursor-maintainer-agent,"Planned changeset: docs-first define mutation-triggered search cache invalidation baseline then add shared post-mutation invalidation helper and wire it into mutating command paths with deterministic non-fatal behavior."
-    "2026-03-03T22:44:28.774Z",cursor-maintainer-agent,Implemented docs-first baseline update in PRD and README then wired post-mutation search cache invalidation in CLI mutating command paths and added unit plus integration regression coverage.
-    "2026-03-03T22:46:10.638Z",cursor-maintainer-agent,"Follow-up fix: added src/core/search/cache.ts to vitest coverage include list to preserve release-readiness coverage-contract parity after introducing the new helper module."
-    "2026-03-03T22:47:23.327Z",cursor-maintainer-agent,"Follow-up fix: removed branchy warning formatting in src/core/search/cache.ts by normalizing warning reason via String(error) to preserve 100% global branch coverage."
-    "2026-03-03T22:57:18.614Z",cursor-maintainer-agent,"Evidence: pnpm build passed. Mandatory run passed: node dist/cli.js test pm-zgkk --run --timeout 7200 --json with linked results passed=4 failed=0 skipped=0. Regression sweeps passed: node dist/cli.js test-all --status in_progress --timeout 7200 --json => totals items=8 linked_tests=34 passed=15 failed=0 skipped=19; node dist/cli.js test-all --status closed --timeout 7200 --json => totals items=34 linked_tests=119 passed=49 failed=0 skipped=70. Coverage proof: sandboxed coverage run reports All files 100% lines branches functions and statements. Follow-up items created: none."
-  notes[1]{created_at,author,text}:
-    "2026-03-03T22:38:40.837Z",cursor-maintainer-agent,Plan is docs-first invalidation baseline then post-mutation invalidation helper then unit and integration coverage.
-  learnings[1]{created_at,author,text}:
-    "2026-03-03T22:38:40.837Z",cursor-maintainer-agent,Search freshness improves incrementally via deterministic invalidation before full mutation-triggered embedding refresh.
-  files[8]{path,scope,note}:
-    PRD.md,project,docs-first mutation cache invalidation baseline
-    README.md,project,docs-first search freshness baseline update
-    src/cli/main.ts,project,wire mutation success invalidation across command actions
-    src/core/search,project,planned invalidation helper location
-    src/core/search/cache.ts,project,new helper to invalidate search cache artifacts
-    tests/integration/cli.integration.spec.ts,project,regression for post-mutation cache invalidation
-    tests/unit/search-cache.spec.ts,project,unit coverage for cache invalidation helper
-    vitest.config.ts,project,coverage include alignment for new search cache helper
-  tests[4]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,1800,coverage gate regression
-    node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1200,mutation invalidation integration regression
-    node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts,null,project,900,targeted cache invalidation unit regression
-    node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,900,search helper regression
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,agent workflow and test-safety contract
-    PRD.md,project,governing search behavior contract
-    README.md,project,user-facing search freshness contract
+id: pm-zgkk
+title: "M4: Mutation-triggered search cache invalidation"
+description: Invalidate deterministic search cache artifacts after item mutations so stale index/search artifacts are never treated as current between reindex runs.
+type: Task
+status: closed
+priority: 1
+tags[5]: "area:search-indexing",code,"milestone:4",pm-cli,"priority:1"
+created_at: "2026-03-03T22:38:40.837Z"
+updated_at: "2026-03-03T22:57:30.315Z"
+deadline: "2026-03-10T23:59:00.000Z"
+author: cursor-maintainer-agent
+estimated_minutes: 150
+acceptance_criteria: After successful mutating commands stale search cache artifacts are invalidated deterministically as best effort and non-fatal docs reflect behavior and regression coverage remains 100%.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-cwp,related,"2026-03-03T22:38:40.837Z",cursor-maintainer-agent,null
+  pm-f45,parent,"2026-03-03T22:38:40.837Z",cursor-maintainer-agent,null
+comments[6]{created_at,author,text}:
+  "2026-03-03T22:38:40.837Z",cursor-maintainer-agent,Gap discovered during docs and implementation audit because reindex artifacts can become stale after mutations.
+  "2026-03-03T22:38:57.674Z",cursor-maintainer-agent,"Planned changeset: docs-first define mutation-triggered search cache invalidation baseline then add shared post-mutation invalidation helper and wire it into mutating command paths with deterministic non-fatal behavior."
+  "2026-03-03T22:44:28.774Z",cursor-maintainer-agent,Implemented docs-first baseline update in PRD and README then wired post-mutation search cache invalidation in CLI mutating command paths and added unit plus integration regression coverage.
+  "2026-03-03T22:46:10.638Z",cursor-maintainer-agent,"Follow-up fix: added src/core/search/cache.ts to vitest coverage include list to preserve release-readiness coverage-contract parity after introducing the new helper module."
+  "2026-03-03T22:47:23.327Z",cursor-maintainer-agent,"Follow-up fix: removed branchy warning formatting in src/core/search/cache.ts by normalizing warning reason via String(error) to preserve 100% global branch coverage."
+  "2026-03-03T22:57:18.614Z",cursor-maintainer-agent,"Evidence: pnpm build passed. Mandatory run passed: node dist/cli.js test pm-zgkk --run --timeout 7200 --json with linked results passed=4 failed=0 skipped=0. Regression sweeps passed: node dist/cli.js test-all --status in_progress --timeout 7200 --json => totals items=8 linked_tests=34 passed=15 failed=0 skipped=19; node dist/cli.js test-all --status closed --timeout 7200 --json => totals items=34 linked_tests=119 passed=49 failed=0 skipped=70. Coverage proof: sandboxed coverage run reports All files 100% lines branches functions and statements. Follow-up items created: none."
+notes[1]{created_at,author,text}:
+  "2026-03-03T22:38:40.837Z",cursor-maintainer-agent,Plan is docs-first invalidation baseline then post-mutation invalidation helper then unit and integration coverage.
+learnings[1]{created_at,author,text}:
+  "2026-03-03T22:38:40.837Z",cursor-maintainer-agent,Search freshness improves incrementally via deterministic invalidation before full mutation-triggered embedding refresh.
+files[8]{path,scope,note}:
+  PRD.md,project,docs-first mutation cache invalidation baseline
+  README.md,project,docs-first search freshness baseline update
+  src/cli/main.ts,project,wire mutation success invalidation across command actions
+  src/core/search,project,planned invalidation helper location
+  src/core/search/cache.ts,project,new helper to invalidate search cache artifacts
+  tests/integration/cli.integration.spec.ts,project,regression for post-mutation cache invalidation
+  tests/unit/search-cache.spec.ts,project,unit coverage for cache invalidation helper
+  vitest.config.ts,project,coverage include alignment for new search cache helper
+tests[4]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,1800,coverage gate regression
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1200,mutation invalidation integration regression
+  node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts,null,project,900,targeted cache invalidation unit regression
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,900,search helper regression
+docs[3]{path,scope,note}:
+  AGENTS.md,project,agent workflow and test-safety contract
+  PRD.md,project,governing search behavior contract
+  README.md,project,user-facing search freshness contract
 body: Implement a deterministic post-mutation invalidation step that removes stale index/manifest.json and search/embeddings.jsonl artifacts after successful writes with failure containment and docs/tests parity.

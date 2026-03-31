@@ -1,44 +1,43 @@
-front_matter:
-  id: pm-phob
-  title: Promote strategic metadata flags into canonical create/update contract
-  description: Add first-class item metadata for planning and business linkage by promoting planned-only flags into supported create/update schema and CLI help.
-  type: Task
-  status: closed
-  priority: 0
-  tags[8]: "area:cli","area:docs","area:schema",code,"milestone:7",pm-cli,"priority:0",tests
-  created_at: "2026-03-08T00:44:03.331Z"
-  updated_at: "2026-03-08T01:03:55.142Z"
-  deadline: "2026-03-10T00:44:03.331Z"
-  author: maintainer-agent
-  estimated_minutes: 240
-  acceptance_criteria: "Create/update accept and persist order/rank, definition-of-ready, goal/objective, and value/impact/outcome/why-now fields with none-unset semantics; PRD/README/AGENTS and release-readiness tests stay aligned; full regression and 100% coverage remain green."
-  risk: medium
-  comments[5]{created_at,author,text}:
-    "2026-03-08T00:44:03.331Z",maintainer-agent,Needed to support richer all-fields maintainer workflows and business-context planning metadata.
-    "2026-03-08T00:44:19.299Z",maintainer-agent,"Planned change-set: docs-first promotion of selected planned flags (order/rank, definition-of-ready, goal/objective, value/impact/outcome/why-now), then schema+CLI create/update wiring with none-unset semantics and updated release-contract/unit/integration tests."
-    "2026-03-08T00:45:10.647Z",maintainer-agent,"Docs-first update complete in PRD/README/AGENTS. Next implementing front-matter schema, canonical key ordering, create/update option parsing, and help aliases for order/rank + definition-of-ready + goal/objective + value/impact/outcome/why-now."
-    "2026-03-08T01:03:29.198Z",maintainer-agent,"Implemented docs-first strategic metadata promotion: create/update now support order/rank, definition-of-ready, goal/objective, and value/impact/outcome/why-now with none-unset semantics and deterministic front-matter key ordering. Evidence: pm test pm-phob --run --timeout 7200 passed (2/2 linked commands, including coverage + full test); pm test-all --status in_progress --timeout 7200 passed (items=1 linked_tests=2 passed=2 failed=0 skipped=0); pm test-all --status closed --timeout 7200 passed (items=141 linked_tests=362 passed=64 failed=0 skipped=298 dedup). Coverage remained 100% lines/branches/functions/statements."
-    "2026-03-08T01:03:55.142Z",maintainer-agent,"Post-close validation: pnpm build and pnpm typecheck both pass on updated tree."
-  notes[1]{created_at,author,text}:
-    "2026-03-08T00:44:03.331Z",maintainer-agent,Implement docs-first then schema/types then create/update flag wiring then release-contract + unit + integration coverage.
-  files[11]{path,scope,note}:
-    src/cli/commands/create.ts,project,create command option parsing
-    src/cli/commands/update.ts,project,update command option parsing
-    src/cli/main.ts,project,create and update option wiring
-    src/core/item/item-format.ts,project,normalization and persistence
-    src/core/shared/constants.ts,project,canonical key order
-    src/types.ts,project,front matter field types
-    tests/integration/cli.integration.spec.ts,project,integration flag coverage
-    tests/integration/release-readiness-contract.spec.ts,project,doc/help contract alignment
-    tests/unit/create-command.spec.ts,project,unit create coverage
-    tests/unit/shared-constants-errors.spec.ts,project,key-order contract coverage
-    tests/unit/update-command.spec.ts,project,unit update coverage
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,7200,full coverage safety
-    node scripts/run-tests.mjs test,null,project,7200,sandbox-safe full regression
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,agent workflow contract
-    PRD.md,project,authoritative contract
-    README.md,project,public contract
-  close_reason: "Shipped canonical strategic metadata flags (order/rank, definition_of_ready, goal/objective, value/impact/outcome/why_now) with docs, tests, and 100% coverage evidence."
+id: pm-phob
+title: Promote strategic metadata flags into canonical create/update contract
+description: Add first-class item metadata for planning and business linkage by promoting planned-only flags into supported create/update schema and CLI help.
+type: Task
+status: closed
+priority: 0
+tags[8]: "area:cli","area:docs","area:schema",code,"milestone:7",pm-cli,"priority:0",tests
+created_at: "2026-03-08T00:44:03.331Z"
+updated_at: "2026-03-08T01:03:55.142Z"
+deadline: "2026-03-10T00:44:03.331Z"
+author: maintainer-agent
+estimated_minutes: 240
+acceptance_criteria: "Create/update accept and persist order/rank, definition-of-ready, goal/objective, and value/impact/outcome/why-now fields with none-unset semantics; PRD/README/AGENTS and release-readiness tests stay aligned; full regression and 100% coverage remain green."
+risk: medium
+comments[5]{created_at,author,text}:
+  "2026-03-08T00:44:03.331Z",maintainer-agent,Needed to support richer all-fields maintainer workflows and business-context planning metadata.
+  "2026-03-08T00:44:19.299Z",maintainer-agent,"Planned change-set: docs-first promotion of selected planned flags (order/rank, definition-of-ready, goal/objective, value/impact/outcome/why-now), then schema+CLI create/update wiring with none-unset semantics and updated release-contract/unit/integration tests."
+  "2026-03-08T00:45:10.647Z",maintainer-agent,"Docs-first update complete in PRD/README/AGENTS. Next implementing front-matter schema, canonical key ordering, create/update option parsing, and help aliases for order/rank + definition-of-ready + goal/objective + value/impact/outcome/why-now."
+  "2026-03-08T01:03:29.198Z",maintainer-agent,"Implemented docs-first strategic metadata promotion: create/update now support order/rank, definition-of-ready, goal/objective, and value/impact/outcome/why-now with none-unset semantics and deterministic front-matter key ordering. Evidence: pm test pm-phob --run --timeout 7200 passed (2/2 linked commands, including coverage + full test); pm test-all --status in_progress --timeout 7200 passed (items=1 linked_tests=2 passed=2 failed=0 skipped=0); pm test-all --status closed --timeout 7200 passed (items=141 linked_tests=362 passed=64 failed=0 skipped=298 dedup). Coverage remained 100% lines/branches/functions/statements."
+  "2026-03-08T01:03:55.142Z",maintainer-agent,"Post-close validation: pnpm build and pnpm typecheck both pass on updated tree."
+notes[1]{created_at,author,text}:
+  "2026-03-08T00:44:03.331Z",maintainer-agent,Implement docs-first then schema/types then create/update flag wiring then release-contract + unit + integration coverage.
+files[11]{path,scope,note}:
+  src/cli/commands/create.ts,project,create command option parsing
+  src/cli/commands/update.ts,project,update command option parsing
+  src/cli/main.ts,project,create and update option wiring
+  src/core/item/item-format.ts,project,normalization and persistence
+  src/core/shared/constants.ts,project,canonical key order
+  src/types.ts,project,front matter field types
+  tests/integration/cli.integration.spec.ts,project,integration flag coverage
+  tests/integration/release-readiness-contract.spec.ts,project,doc/help contract alignment
+  tests/unit/create-command.spec.ts,project,unit create coverage
+  tests/unit/shared-constants-errors.spec.ts,project,key-order contract coverage
+  tests/unit/update-command.spec.ts,project,unit update coverage
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,full coverage safety
+  node scripts/run-tests.mjs test,null,project,7200,sandbox-safe full regression
+docs[3]{path,scope,note}:
+  AGENTS.md,project,agent workflow contract
+  PRD.md,project,authoritative contract
+  README.md,project,public contract
+close_reason: "Shipped canonical strategic metadata flags (order/rank, definition_of_ready, goal/objective, value/impact/outcome/why_now) with docs, tests, and 100% coverage evidence."
 body: "Docs-first change: move selected planned flags into canonical support and wire deterministic serialization + create/update parsing + tests."

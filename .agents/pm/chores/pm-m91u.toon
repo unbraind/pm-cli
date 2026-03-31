@@ -1,35 +1,34 @@
-front_matter:
-  id: pm-m91u
-  title: Contributing maintainer bootstrap global-install parity
-  description: Align CONTRIBUTING maintainer bootstrap with AGENTS requirement to refresh global pm from this repository before mutations.
-  type: Chore
-  status: closed
-  priority: 0
-  tags[8]: "area:bootstrap","area:docs",doc,"milestone:6",pm-cli,"priority:0",release-readiness,tests
-  created_at: "2026-03-06T21:09:54.214Z"
-  updated_at: "2026-03-06T21:21:21.586Z"
-  deadline: "2026-03-07T21:09:54.214Z"
-  author: maintainer-agent
-  estimated_minutes: 75
-  acceptance_criteria: CONTRIBUTING maintainer bootstrap explicitly requires npm install -g . and pm --version verification before mutation runs; release-readiness tests enforce this contract and 100% coverage remains intact.
-  dependencies[1]{id,kind,created_at,author,source_kind}:
-    pm-uh4d,related,"2026-03-06T21:09:54.214Z",maintainer-agent,null
-  comments[4]{created_at,author,text}:
-    "2026-03-06T21:09:54.214Z",maintainer-agent,"Why this exists: AGENTS already requires global install refresh but CONTRIBUTING bootstrap omits the explicit command."
-    "2026-03-06T21:10:17.174Z",maintainer-agent,"Planned changeset: update CONTRIBUTING maintainer bootstrap to include npm install -g . refresh requirement and add release-readiness contract assertions to keep CONTRIBUTING aligned with AGENTS bootstrap policy."
-    "2026-03-06T21:10:44.627Z",maintainer-agent,"Implemented docs-first parity update: CONTRIBUTING maintainer bootstrap now requires npm install -g . + pm --version before selecting PM_CMD, and release-readiness contract tests now assert CONTRIBUTING bootstrap tokens for global-install dogfooding parity."
-    "2026-03-06T21:21:21.243Z",maintainer-agent,"Evidence: refreshed global install from repo (npm install -g . => up to date; pm --version => 0.1.0). pnpm build passed. pm test pm-m91u --run --timeout 7200 --json passed linked tests (2 passed, 0 failed, 0 skipped). pm test-all --status in_progress --timeout 7200 --json passed (items=1 linked_tests=2 passed=2 failed=0 skipped=0). pm test-all --status closed --timeout 7200 --json passed (items=106 linked_tests=294 passed=63 failed=0 skipped=231). Coverage remains 100% lines/branches/functions/statements."
-  notes[1]{created_at,author,text}:
-    "2026-03-06T21:09:54.214Z",maintainer-agent,"Plan: docs-first update CONTRIBUTING then add release-readiness assertion and run pm test + pm test-all sweeps."
-  files[2]{path,scope,note}:
-    CONTRIBUTING.md,project,maintainer bootstrap guidance
-    tests/integration/release-readiness-contract.spec.ts,project,contract guard for contributing bootstrap
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,2400,sandbox-safe coverage gate
-    node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,release-readiness contract regression
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,authoritative maintainer bootstrap requirement
-    PRD.md,project,release-ready docs contract
-    README.md,project,public bootstrap and release guidance
-  close_reason: CONTRIBUTING bootstrap now includes required global install refresh and contract test guard; required build + pm test + pm test-all sweeps passed with 100% coverage.
+id: pm-m91u
+title: Contributing maintainer bootstrap global-install parity
+description: Align CONTRIBUTING maintainer bootstrap with AGENTS requirement to refresh global pm from this repository before mutations.
+type: Chore
+status: closed
+priority: 0
+tags[8]: "area:bootstrap","area:docs",doc,"milestone:6",pm-cli,"priority:0",release-readiness,tests
+created_at: "2026-03-06T21:09:54.214Z"
+updated_at: "2026-03-06T21:21:21.586Z"
+deadline: "2026-03-07T21:09:54.214Z"
+author: maintainer-agent
+estimated_minutes: 75
+acceptance_criteria: CONTRIBUTING maintainer bootstrap explicitly requires npm install -g . and pm --version verification before mutation runs; release-readiness tests enforce this contract and 100% coverage remains intact.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-uh4d,related,"2026-03-06T21:09:54.214Z",maintainer-agent,null
+comments[4]{created_at,author,text}:
+  "2026-03-06T21:09:54.214Z",maintainer-agent,"Why this exists: AGENTS already requires global install refresh but CONTRIBUTING bootstrap omits the explicit command."
+  "2026-03-06T21:10:17.174Z",maintainer-agent,"Planned changeset: update CONTRIBUTING maintainer bootstrap to include npm install -g . refresh requirement and add release-readiness contract assertions to keep CONTRIBUTING aligned with AGENTS bootstrap policy."
+  "2026-03-06T21:10:44.627Z",maintainer-agent,"Implemented docs-first parity update: CONTRIBUTING maintainer bootstrap now requires npm install -g . + pm --version before selecting PM_CMD, and release-readiness contract tests now assert CONTRIBUTING bootstrap tokens for global-install dogfooding parity."
+  "2026-03-06T21:21:21.243Z",maintainer-agent,"Evidence: refreshed global install from repo (npm install -g . => up to date; pm --version => 0.1.0). pnpm build passed. pm test pm-m91u --run --timeout 7200 --json passed linked tests (2 passed, 0 failed, 0 skipped). pm test-all --status in_progress --timeout 7200 --json passed (items=1 linked_tests=2 passed=2 failed=0 skipped=0). pm test-all --status closed --timeout 7200 --json passed (items=106 linked_tests=294 passed=63 failed=0 skipped=231). Coverage remains 100% lines/branches/functions/statements."
+notes[1]{created_at,author,text}:
+  "2026-03-06T21:09:54.214Z",maintainer-agent,"Plan: docs-first update CONTRIBUTING then add release-readiness assertion and run pm test + pm test-all sweeps."
+files[2]{path,scope,note}:
+  CONTRIBUTING.md,project,maintainer bootstrap guidance
+  tests/integration/release-readiness-contract.spec.ts,project,contract guard for contributing bootstrap
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,sandbox-safe coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,release-readiness contract regression
+docs[3]{path,scope,note}:
+  AGENTS.md,project,authoritative maintainer bootstrap requirement
+  PRD.md,project,release-ready docs contract
+  README.md,project,public bootstrap and release guidance
+close_reason: CONTRIBUTING bootstrap now includes required global install refresh and contract test guard; required build + pm test + pm test-all sweeps passed with 100% coverage.
 body: "Docs-first parity change: add explicit npm install -g . bootstrap step to CONTRIBUTING maintainer workflow and guard with release-readiness contract coverage."

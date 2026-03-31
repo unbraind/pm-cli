@@ -1,40 +1,39 @@
-front_matter:
-  id: pm-v6e
-  title: Deduplicate test-all linked test execution across items
-  description: "test-all currently re-runs identical linked commands/files for multiple items, causing excessive runtime on large boards."
-  type: Issue
-  status: closed
-  priority: 1
-  tags[6]: "area:test-all",code,"milestone:3",pm-cli,"priority:1",tests
-  created_at: "2026-02-20T20:58:59.997Z"
-  updated_at: "2026-02-20T21:47:55.636Z"
-  deadline: "2026-02-27T20:58:59.000Z"
-  author: steve-maintainer
-  estimated_minutes: 120
-  acceptance_criteria: "test-all executes each unique linked command/path at most once per invocation, duplicates are marked skipped (not failed), totals remain deterministic, and unit/integration tests cover duplicate command and duplicate path scenarios."
-  dependencies[2]{id,kind,created_at,author,source_kind}:
-    pm-54d,parent,"2026-02-20T20:58:59.997Z",steve-maintainer,null
-    pm-66o,related,"2026-02-20T20:58:59.997Z",steve-maintainer,null
-  comments[5]{created_at,author,text}:
-    "2026-02-20T20:58:59.997Z",steve-maintainer,"Issue requested: test-all should skip duplicate linked commands/files to reduce runtime on repos where many items share the same linked tests."
-    "2026-02-20T21:05:34.649Z",cursor-maintainer,Implement deterministic test-all dedupe by normalized command/path key; duplicates should be skipped with explicit reason and excluded from duplicate execution.
-    "2026-02-20T21:09:21.362Z",cursor-maintainer,"Docs-first update completed in PRD.md and README.md to codify duplicate skip semantics for test-all. Implemented test-all dedupe by normalized linked-test keys (command/path), executing each unique key once and returning deterministic skipped results for duplicates."
-    "2026-02-20T21:17:13.009Z",cursor-maintainer,Fixed wrapper export parity by re-exporting runLinkedTests from src/commands/test.ts; this resolves command-wrapper-exports regression triggered by new shared runner export.
-    "2026-02-20T21:47:55.205Z",cursor-maintainer,"Evidence: (1) node dist/cli.js test pm-v6e --run --timeout 1200 --json passed (tests/unit/test-all-command.spec.ts: 5/5). (2) node dist/cli.js test-all --status in_progress --timeout 1800 --json passed with totals items=10 linked_tests=52 passed=34 failed=0 skipped=18. (3) node dist/cli.js test-all --status closed --timeout 1800 --json passed with totals items=19 linked_tests=53 passed=19 failed=0 skipped=34. Coverage proof: in in_progress run_results, command node scripts/run-tests.mjs coverage returned status=passed exit_code=0, keeping the 100% coverage gate satisfied."
-  notes[1]{created_at,author,text}:
-    "2026-02-20T20:58:59.997Z",steve-maintainer,Likely implementation point is src/cli/commands/test-all.ts by tracking a normalized command/path key set per invocation.
-  learnings[1]{created_at,author,text}:
-    "2026-02-20T20:58:59.997Z",steve-maintainer,Performance bottleneck scales with duplicate linked tests across items; deduping at orchestration layer should reduce wall time substantially.
-  files[6]{path,scope,note}:
-    PRD.md,project,document test-all duplicate skip semantics
-    README.md,project,document deterministic duplicate-skip orchestration behavior
-    src/cli/commands/test-all.ts,project,deduplicate execution keys for linked tests
-    src/cli/commands/test.ts,project,export shared linked-test runner for test-all dedupe
-    src/commands/test.ts,project,keep legacy wrapper export surface aligned after runLinkedTests export
-    tests/unit/test-all-command.spec.ts,project,add duplicate skip behavior coverage
-  tests[1]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs test -- tests/unit/test-all-command.spec.ts,null,project,900,targeted test-all dedupe behavior regression
-  docs[2]{path,scope,note}:
-    PRD.md,project,update test-all deterministic orchestration contract if behavior/output changes
-    README.md,project,document duplicate-skip semantics for test-all
+id: pm-v6e
+title: Deduplicate test-all linked test execution across items
+description: "test-all currently re-runs identical linked commands/files for multiple items, causing excessive runtime on large boards."
+type: Issue
+status: closed
+priority: 1
+tags[6]: "area:test-all",code,"milestone:3",pm-cli,"priority:1",tests
+created_at: "2026-02-20T20:58:59.997Z"
+updated_at: "2026-02-20T21:47:55.636Z"
+deadline: "2026-02-27T20:58:59.000Z"
+author: steve-maintainer
+estimated_minutes: 120
+acceptance_criteria: "test-all executes each unique linked command/path at most once per invocation, duplicates are marked skipped (not failed), totals remain deterministic, and unit/integration tests cover duplicate command and duplicate path scenarios."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-54d,parent,"2026-02-20T20:58:59.997Z",steve-maintainer,null
+  pm-66o,related,"2026-02-20T20:58:59.997Z",steve-maintainer,null
+comments[5]{created_at,author,text}:
+  "2026-02-20T20:58:59.997Z",steve-maintainer,"Issue requested: test-all should skip duplicate linked commands/files to reduce runtime on repos where many items share the same linked tests."
+  "2026-02-20T21:05:34.649Z",cursor-maintainer,Implement deterministic test-all dedupe by normalized command/path key; duplicates should be skipped with explicit reason and excluded from duplicate execution.
+  "2026-02-20T21:09:21.362Z",cursor-maintainer,"Docs-first update completed in PRD.md and README.md to codify duplicate skip semantics for test-all. Implemented test-all dedupe by normalized linked-test keys (command/path), executing each unique key once and returning deterministic skipped results for duplicates."
+  "2026-02-20T21:17:13.009Z",cursor-maintainer,Fixed wrapper export parity by re-exporting runLinkedTests from src/commands/test.ts; this resolves command-wrapper-exports regression triggered by new shared runner export.
+  "2026-02-20T21:47:55.205Z",cursor-maintainer,"Evidence: (1) node dist/cli.js test pm-v6e --run --timeout 1200 --json passed (tests/unit/test-all-command.spec.ts: 5/5). (2) node dist/cli.js test-all --status in_progress --timeout 1800 --json passed with totals items=10 linked_tests=52 passed=34 failed=0 skipped=18. (3) node dist/cli.js test-all --status closed --timeout 1800 --json passed with totals items=19 linked_tests=53 passed=19 failed=0 skipped=34. Coverage proof: in in_progress run_results, command node scripts/run-tests.mjs coverage returned status=passed exit_code=0, keeping the 100% coverage gate satisfied."
+notes[1]{created_at,author,text}:
+  "2026-02-20T20:58:59.997Z",steve-maintainer,Likely implementation point is src/cli/commands/test-all.ts by tracking a normalized command/path key set per invocation.
+learnings[1]{created_at,author,text}:
+  "2026-02-20T20:58:59.997Z",steve-maintainer,Performance bottleneck scales with duplicate linked tests across items; deduping at orchestration layer should reduce wall time substantially.
+files[6]{path,scope,note}:
+  PRD.md,project,document test-all duplicate skip semantics
+  README.md,project,document deterministic duplicate-skip orchestration behavior
+  src/cli/commands/test-all.ts,project,deduplicate execution keys for linked tests
+  src/cli/commands/test.ts,project,export shared linked-test runner for test-all dedupe
+  src/commands/test.ts,project,keep legacy wrapper export surface aligned after runLinkedTests export
+  tests/unit/test-all-command.spec.ts,project,add duplicate skip behavior coverage
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-all-command.spec.ts,null,project,900,targeted test-all dedupe behavior regression
+docs[2]{path,scope,note}:
+  PRD.md,project,update test-all deterministic orchestration contract if behavior/output changes
+  README.md,project,document duplicate-skip semantics for test-all
 body: "Problem: when multiple items link the same test command/path, pm test-all executes duplicates repeatedly. Proposed behavior: skip duplicate command/path entries within a single test-all run while preserving deterministic results and reporting."

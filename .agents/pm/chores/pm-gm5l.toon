@@ -1,31 +1,30 @@
-front_matter:
-  id: pm-gm5l
-  title: Harden settings serialization contract coverage
-  description: Strengthen release-readiness tests to enforce exact settings.json key ordering from PRD defaults.
-  type: Chore
-  status: closed
-  priority: 1
-  tags[4]: "area:docs","area:tests",pm-cli,release-readiness
-  created_at: "2026-03-06T14:49:38.366Z"
-  updated_at: "2026-03-06T15:02:59.184Z"
-  deadline: "2026-03-07T14:49:38.366Z"
-  author: maintainer-agent
-  estimated_minutes: 60
-  acceptance_criteria: settings-store coverage asserts exact top-level and nested settings key order from PRD defaults; targeted and full sandboxed regressions pass with coverage at 100%.
-  dependencies[1]{id,kind,created_at,author,source_kind}:
-    pm-wo8,related,"2026-03-06T14:49:38.366Z",maintainer-agent,null
-  comments[3]{created_at,author,text}:
-    "2026-03-06T14:49:38.366Z",maintainer-agent,"Why this exists: PRD requires exact settings key order and this guard prevents silent serializer drift."
-    "2026-03-06T14:49:48.673Z",maintainer-agent,"Planned changeset: strengthen settings-store unit assertions to enforce exact PRD key order across top-level and nested settings blocks without changing runtime behavior."
-    "2026-03-06T15:02:55.141Z",maintainer-agent,"Implemented settings-store contract hardening: tests/unit/settings-store.spec.ts now asserts exact serialized settings key order for top-level and nested objects (locks, output, extensions, search, providers, vector_store). Evidence: pm test pm-gm5l --run --timeout 3600 --json passed 2/2 linked tests; pm test-all --status in_progress --timeout 3600 --json passed totals items=1 linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status closed --timeout 3600 --json passed totals items=91 linked_tests=267 passed=63 failed=0 skipped=204. Coverage remains 100% lines/branches/functions/statements."
-  notes[1]{created_at,author,text}:
-    "2026-03-06T14:49:38.366Z",maintainer-agent,"Plan: tighten settings-store assertions for exact key order and verify with sandboxed targeted plus coverage runs."
-  files[1]{path,scope,note}:
-    tests/unit/settings-store.spec.ts,project,add exact key-order contract assertions
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,2400,full sandboxed coverage gate
-    node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts,null,project,600,targeted sandbox regression
-  docs[1]{path,scope,note}:
-    PRD.md,project,authoritative settings key-order contract
-  close_reason: settings serialization contract coverage hardened with exact key-order assertions and passing sandboxed regressions
+id: pm-gm5l
+title: Harden settings serialization contract coverage
+description: Strengthen release-readiness tests to enforce exact settings.json key ordering from PRD defaults.
+type: Chore
+status: closed
+priority: 1
+tags[4]: "area:docs","area:tests",pm-cli,release-readiness
+created_at: "2026-03-06T14:49:38.366Z"
+updated_at: "2026-03-06T15:02:59.184Z"
+deadline: "2026-03-07T14:49:38.366Z"
+author: maintainer-agent
+estimated_minutes: 60
+acceptance_criteria: settings-store coverage asserts exact top-level and nested settings key order from PRD defaults; targeted and full sandboxed regressions pass with coverage at 100%.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-wo8,related,"2026-03-06T14:49:38.366Z",maintainer-agent,null
+comments[3]{created_at,author,text}:
+  "2026-03-06T14:49:38.366Z",maintainer-agent,"Why this exists: PRD requires exact settings key order and this guard prevents silent serializer drift."
+  "2026-03-06T14:49:48.673Z",maintainer-agent,"Planned changeset: strengthen settings-store unit assertions to enforce exact PRD key order across top-level and nested settings blocks without changing runtime behavior."
+  "2026-03-06T15:02:55.141Z",maintainer-agent,"Implemented settings-store contract hardening: tests/unit/settings-store.spec.ts now asserts exact serialized settings key order for top-level and nested objects (locks, output, extensions, search, providers, vector_store). Evidence: pm test pm-gm5l --run --timeout 3600 --json passed 2/2 linked tests; pm test-all --status in_progress --timeout 3600 --json passed totals items=1 linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status closed --timeout 3600 --json passed totals items=91 linked_tests=267 passed=63 failed=0 skipped=204. Coverage remains 100% lines/branches/functions/statements."
+notes[1]{created_at,author,text}:
+  "2026-03-06T14:49:38.366Z",maintainer-agent,"Plan: tighten settings-store assertions for exact key order and verify with sandboxed targeted plus coverage runs."
+files[1]{path,scope,note}:
+  tests/unit/settings-store.spec.ts,project,add exact key-order contract assertions
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,full sandboxed coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts,null,project,600,targeted sandbox regression
+docs[1]{path,scope,note}:
+  PRD.md,project,authoritative settings key-order contract
+close_reason: settings serialization contract coverage hardened with exact key-order assertions and passing sandboxed regressions
 body: Add deterministic assertions for top-level and nested settings key order and keep docs-contract coverage aligned.

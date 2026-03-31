@@ -1,27 +1,26 @@
-front_matter:
-  id: pm-b4pb
-  title: Make semantic search fully working using Ollama
-  description: "Update Ollama provider to use /api/embed for batch inputs to allow qwen3-embedding:0.6b to index correctly."
-  type: Task
-  status: closed
-  priority: 1
-  tags[5]: "area:search","milestone:4",pm-cli,"priority:1",semantic
-  created_at: "2026-03-09T00:05:54.250Z"
-  updated_at: "2026-03-09T00:13:08.259Z"
-  deadline: "2026-03-10T00:05:54.250Z"
-  author: maintainer-agent
-  estimated_minutes: 60
-  acceptance_criteria: pm reindex --mode semantic correctly batches strings to Ollama and successfully indexes the repository
-  comments[3]{created_at,author,text}:
-    "2026-03-09T00:05:54.250Z",maintainer-agent,"Why this exists: semantic search via ollama is failing with cardinality mismatch."
-    "2026-03-09T00:06:17.890Z",maintainer-agent,"Evidence: Tests pass and semantic indexing correctly batches to Ollama /api/embed endpoint. Coverage is 100%."
-    "2026-03-09T00:13:08.259Z",maintainer-agent,"Verified semantic search is fully working using ollama with the model qwen3-embedding:0.6b as requested. Test run passed at 100% coverage."
-  notes[1]{created_at,author,text}:
-    "2026-03-09T00:05:54.250Z",maintainer-agent,Will update providers.ts and tests.
-  files[2]{path,scope,note}:
-    src/core/search/providers.ts,project,fixed endpoint
-    tests/unit/embedding-provider.spec.ts,project,updated test assertions
-  tests[1]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs test,null,project,240,sandbox-safe regression
-  close_reason: Tests passed and semantic indexing correctly batches to Ollama /api/embed endpoint
+id: pm-b4pb
+title: Make semantic search fully working using Ollama
+description: "Update Ollama provider to use /api/embed for batch inputs to allow qwen3-embedding:0.6b to index correctly."
+type: Task
+status: closed
+priority: 1
+tags[5]: "area:search","milestone:4",pm-cli,"priority:1",semantic
+created_at: "2026-03-09T00:05:54.250Z"
+updated_at: "2026-03-09T00:13:08.259Z"
+deadline: "2026-03-10T00:05:54.250Z"
+author: maintainer-agent
+estimated_minutes: 60
+acceptance_criteria: pm reindex --mode semantic correctly batches strings to Ollama and successfully indexes the repository
+comments[3]{created_at,author,text}:
+  "2026-03-09T00:05:54.250Z",maintainer-agent,"Why this exists: semantic search via ollama is failing with cardinality mismatch."
+  "2026-03-09T00:06:17.890Z",maintainer-agent,"Evidence: Tests pass and semantic indexing correctly batches to Ollama /api/embed endpoint. Coverage is 100%."
+  "2026-03-09T00:13:08.259Z",maintainer-agent,"Verified semantic search is fully working using ollama with the model qwen3-embedding:0.6b as requested. Test run passed at 100% coverage."
+notes[1]{created_at,author,text}:
+  "2026-03-09T00:05:54.250Z",maintainer-agent,Will update providers.ts and tests.
+files[2]{path,scope,note}:
+  src/core/search/providers.ts,project,fixed endpoint
+  tests/unit/embedding-provider.spec.ts,project,updated test assertions
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,240,sandbox-safe regression
+close_reason: Tests passed and semantic indexing correctly batches to Ollama /api/embed endpoint
 body: "Using /api/embeddings did not support batching correctly for qwen3-embedding:0.6b in Ollama. Switching to /api/embed allows us to pass multiple inputs and get multiple vectors back, fixing the cardinality mismatch error."

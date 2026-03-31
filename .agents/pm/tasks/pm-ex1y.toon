@@ -1,40 +1,39 @@
-front_matter:
-  id: pm-ex1y
-  title: Add list-draft command parity for draft status
-  description: Add a dedicated list-draft command to make draft lifecycle selection symmetrical with other status list commands.
-  type: Task
-  status: closed
-  priority: 0
-  tags[7]: "area:cli",code,docs,"milestone:3",pm-cli,"priority:0",tests
-  created_at: "2026-03-06T23:44:33.076Z"
-  updated_at: "2026-03-07T00:04:49.101Z"
-  deadline: "2026-03-10T23:59:00.000Z"
-  author: maintainer-agent
-  estimated_minutes: 90
-  acceptance_criteria: "pm list-draft is available in help, returns only draft items with existing list filters, docs are updated first, and regression + coverage remain 100%."
-  dependencies[1]{id,kind,created_at,author,source_kind}:
-    pm-54d,related,"2026-03-06T23:44:33.076Z",maintainer-agent,null
-  comments[4]{created_at,author,text}:
-    "2026-03-06T23:44:33.076Z",maintainer-agent,Draft is a canonical status but lacks a dedicated list command; add parity command for agent workflow loops.
-    "2026-03-06T23:45:01.873Z",maintainer-agent,"Planned change-set: update PRD and README command matrices first, then add list-draft command wiring in CLI and extend integration contract tests for draft-status listing and help output."
-    "2026-03-06T23:51:54.384Z",maintainer-agent,"Implemented docs-first + code changes: added list-draft to PRD/README command contracts, registered list-draft command in CLI, added Pi wrapper action mapping for list-draft, and expanded integration/unit tests for draft-status listing behavior."
-    "2026-03-07T00:04:48.775Z",maintainer-agent,"Evidence: pnpm build passed. pm test pm-ex1y --run --timeout 7200 --json passed (3/3 linked tests). pm test-all --status in_progress --timeout 7200 --json passed (items=1 linked_tests=3 passed=3 failed=0 skipped=0). pm test-all --status closed --timeout 7200 --json passed (items=113 linked_tests=307 passed=63 failed=0 skipped=244). Coverage remains 100% lines/branches/functions/statements in sandbox coverage runs."
-  notes[1]{created_at,author,text}:
-    "2026-03-06T23:44:33.076Z",maintainer-agent,Docs-first then CLI registration then integration/unit test coverage.
-  files[6]{path,scope,note}:
-    .pi/extensions/pm-cli/index.ts,project,pi action mapping parity for list-draft
-    PRD.md,project,command contract includes list-draft
-    README.md,project,document list-draft command
-    src/cli/main.ts,project,add list-draft command registration
-    tests/integration/cli.integration.spec.ts,project,integration coverage for list-draft
-    tests/unit/pi-agent-extension.spec.ts,project,list-draft wrapper action coverage
-  tests[3]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,3600,coverage gate
-    node scripts/run-tests.mjs test,null,project,3600,full sandbox regression
-    node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,cli command surface regression
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,agent workflow command usage
-    PRD.md,project,command surface contract
-    README.md,project,public command surface
-  close_reason: Added list-draft command parity across CLI/docs/Pi wrapper with passing regression and 100% coverage.
+id: pm-ex1y
+title: Add list-draft command parity for draft status
+description: Add a dedicated list-draft command to make draft lifecycle selection symmetrical with other status list commands.
+type: Task
+status: closed
+priority: 0
+tags[7]: "area:cli",code,docs,"milestone:3",pm-cli,"priority:0",tests
+created_at: "2026-03-06T23:44:33.076Z"
+updated_at: "2026-03-07T00:04:49.101Z"
+deadline: "2026-03-10T23:59:00.000Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: "pm list-draft is available in help, returns only draft items with existing list filters, docs are updated first, and regression + coverage remain 100%."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-54d,related,"2026-03-06T23:44:33.076Z",maintainer-agent,null
+comments[4]{created_at,author,text}:
+  "2026-03-06T23:44:33.076Z",maintainer-agent,Draft is a canonical status but lacks a dedicated list command; add parity command for agent workflow loops.
+  "2026-03-06T23:45:01.873Z",maintainer-agent,"Planned change-set: update PRD and README command matrices first, then add list-draft command wiring in CLI and extend integration contract tests for draft-status listing and help output."
+  "2026-03-06T23:51:54.384Z",maintainer-agent,"Implemented docs-first + code changes: added list-draft to PRD/README command contracts, registered list-draft command in CLI, added Pi wrapper action mapping for list-draft, and expanded integration/unit tests for draft-status listing behavior."
+  "2026-03-07T00:04:48.775Z",maintainer-agent,"Evidence: pnpm build passed. pm test pm-ex1y --run --timeout 7200 --json passed (3/3 linked tests). pm test-all --status in_progress --timeout 7200 --json passed (items=1 linked_tests=3 passed=3 failed=0 skipped=0). pm test-all --status closed --timeout 7200 --json passed (items=113 linked_tests=307 passed=63 failed=0 skipped=244). Coverage remains 100% lines/branches/functions/statements in sandbox coverage runs."
+notes[1]{created_at,author,text}:
+  "2026-03-06T23:44:33.076Z",maintainer-agent,Docs-first then CLI registration then integration/unit test coverage.
+files[6]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,pi action mapping parity for list-draft
+  PRD.md,project,command contract includes list-draft
+  README.md,project,document list-draft command
+  src/cli/main.ts,project,add list-draft command registration
+  tests/integration/cli.integration.spec.ts,project,integration coverage for list-draft
+  tests/unit/pi-agent-extension.spec.ts,project,list-draft wrapper action coverage
+tests[3]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,coverage gate
+  node scripts/run-tests.mjs test,null,project,3600,full sandbox regression
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,cli command surface regression
+docs[3]{path,scope,note}:
+  AGENTS.md,project,agent workflow command usage
+  PRD.md,project,command surface contract
+  README.md,project,public command surface
+close_reason: Added list-draft command parity across CLI/docs/Pi wrapper with passing regression and 100% coverage.
 body: "Implement list-draft command wiring, documentation, and tests while preserving deterministic list filtering behavior."

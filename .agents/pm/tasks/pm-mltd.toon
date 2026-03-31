@@ -1,44 +1,43 @@
-front_matter:
-  id: pm-mltd
-  title: Expand README quick start create example to full field surface
-  description: "Update the README quick start pm create example so it demonstrates every currently available create field with plausible sample data while treating markdown files strictly as documentation, not contract sources."
-  type: Task
-  status: closed
-  priority: 1
-  tags[4]: "area:docs",pm-cli,quickstart,readme
-  created_at: "2026-03-12T23:22:33.164Z"
-  updated_at: "2026-03-12T23:30:13.829Z"
-  deadline: "2026-03-13T23:22:33.164Z"
-  author: codex-maintainer
-  estimated_minutes: 60
-  acceptance_criteria: README quick start shows all currently supported pm create fields with plausible public-safe values; runtime create-field verification passes; no markdown docs are used as contract sources for this work.
-  definition_of_ready: "README quick start location, create CLI field surface, and runtime verification paths are identified."
-  goal: Release-ready docs
-  objective: Make the create command surface obvious to new users
-  value: Reduces ambiguity around optional metadata and seed flags
-  impact: Fewer incorrect create invocations and better discoverability
-  outcome: Users can see the full create surface from the README quick start
-  why_now: "The quick start is the first public example many users will copy, so it must show the full contract clearly."
-  risk: low
-  confidence: high
-  environment: docs
-  expected_result: README quick start create example demonstrates the complete field surface.
-  affected_version: 2026.3.9
-  component: documentation
-  customer_impact: Users should understand the full pm create capability without reading source code.
-  comments[4]{created_at,author,text}:
-    "2026-03-12T23:22:33.164Z",codex-maintainer,Track public README quick start expansion and pre-push leak review.
-    "2026-03-12T23:25:16.747Z",codex-maintainer,"Constraint update from user: markdown files are documentation only and must not be treated as contract sources; verification for this work will rely on pm runtime behavior and source/tests instead."
-    "2026-03-12T23:27:32.623Z",codex-maintainer,"Planned change-set: replace the minimal README quick start create example with one exhaustive all-fields example, then verify using runtime create coverage, a sandboxed sample invocation, and a secret scan instead of markdown-contract checks."
-    "2026-03-12T23:29:57.500Z",codex-maintainer,"Implemented README quick start expansion: the create example now shows every field with plausible public-safe sample data and explicitly states that CLI help/runtime behavior are authoritative while README content is illustrative. Evidence: sandboxed sample create invocation succeeded with the full all-fields command; pm test pm-mltd --run passed after fixing a shell-fragile linked test command; node scripts/run-tests.mjs coverage passed with 54 files and 528 tests at 100 percent coverage; node scripts/check-secrets.mjs reported no credential-like secrets in tracked files."
-  notes[1]{created_at,author,text}:
-    "2026-03-12T23:22:33.164Z",codex-maintainer,Plan is to update README plus any contract tests that assert quick start content.
-  files[3]{path,scope,note}:
-    README.md,project,quick start create example to expand
-    src/cli/main.ts,project,create command field surface reference
-    tests/integration/cli.integration.spec.ts,project,runtime create-field coverage
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,sandboxed runtime create-field verification
-    pnpm build,null,project,300,TypeScript build verification
-  close_reason: "README quick start now shows the full create field surface; runtime create verification, sandbox sample, coverage, and secret scan passed."
+id: pm-mltd
+title: Expand README quick start create example to full field surface
+description: "Update the README quick start pm create example so it demonstrates every currently available create field with plausible sample data while treating markdown files strictly as documentation, not contract sources."
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:docs",pm-cli,quickstart,readme
+created_at: "2026-03-12T23:22:33.164Z"
+updated_at: "2026-03-12T23:30:13.829Z"
+deadline: "2026-03-13T23:22:33.164Z"
+author: codex-maintainer
+estimated_minutes: 60
+acceptance_criteria: README quick start shows all currently supported pm create fields with plausible public-safe values; runtime create-field verification passes; no markdown docs are used as contract sources for this work.
+definition_of_ready: "README quick start location, create CLI field surface, and runtime verification paths are identified."
+goal: Release-ready docs
+objective: Make the create command surface obvious to new users
+value: Reduces ambiguity around optional metadata and seed flags
+impact: Fewer incorrect create invocations and better discoverability
+outcome: Users can see the full create surface from the README quick start
+why_now: "The quick start is the first public example many users will copy, so it must show the full contract clearly."
+risk: low
+confidence: high
+environment: docs
+expected_result: README quick start create example demonstrates the complete field surface.
+affected_version: 2026.3.9
+component: documentation
+customer_impact: Users should understand the full pm create capability without reading source code.
+comments[4]{created_at,author,text}:
+  "2026-03-12T23:22:33.164Z",codex-maintainer,Track public README quick start expansion and pre-push leak review.
+  "2026-03-12T23:25:16.747Z",codex-maintainer,"Constraint update from user: markdown files are documentation only and must not be treated as contract sources; verification for this work will rely on pm runtime behavior and source/tests instead."
+  "2026-03-12T23:27:32.623Z",codex-maintainer,"Planned change-set: replace the minimal README quick start create example with one exhaustive all-fields example, then verify using runtime create coverage, a sandboxed sample invocation, and a secret scan instead of markdown-contract checks."
+  "2026-03-12T23:29:57.500Z",codex-maintainer,"Implemented README quick start expansion: the create example now shows every field with plausible public-safe sample data and explicitly states that CLI help/runtime behavior are authoritative while README content is illustrative. Evidence: sandboxed sample create invocation succeeded with the full all-fields command; pm test pm-mltd --run passed after fixing a shell-fragile linked test command; node scripts/run-tests.mjs coverage passed with 54 files and 528 tests at 100 percent coverage; node scripts/check-secrets.mjs reported no credential-like secrets in tracked files."
+notes[1]{created_at,author,text}:
+  "2026-03-12T23:22:33.164Z",codex-maintainer,Plan is to update README plus any contract tests that assert quick start content.
+files[3]{path,scope,note}:
+  README.md,project,quick start create example to expand
+  src/cli/main.ts,project,create command field surface reference
+  tests/integration/cli.integration.spec.ts,project,runtime create-field coverage
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,sandboxed runtime create-field verification
+  pnpm build,null,project,300,TypeScript build verification
+close_reason: "README quick start now shows the full create field surface; runtime create verification, sandbox sample, coverage, and secret scan passed."
 body: "Refresh the public quick start snippet to be an exhaustive, realistic create example that users can copy and adapt."

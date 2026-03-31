@@ -1,54 +1,53 @@
-front_matter:
-  id: pm-2v01
-  title: Update docs and finalize calendar/reminder release changes
-  description: "Update README, PRD, architecture, AGENTS, changelog, and complete verification/closure workflow for calendar/reminder feature."
-  type: Task
-  status: closed
-  priority: 1
-  tags[4]: "area:docs","area:release",code,pm-cli
-  created_at: "2026-03-31T21:29:03.438Z"
-  updated_at: "2026-03-31T22:09:06.617Z"
-  deadline: "2026-04-07T21:29:03.438Z"
-  author: codex-agent
-  estimated_minutes: 120
-  acceptance_criteria: "All required docs are updated, tests pass, coverage stays 100%, and changes are ready to commit/push."
-  definition_of_ready: Implementation and tests are substantially complete.
-  order: 11
-  goal: Agent planning ergonomics
-  objective: Ship documented feature
-  value: Clear adoption path
-  impact: Lower support load and misuse risk
-  outcome: Calendar/reminder docs and release checks complete
-  why_now: Docs and verification are mandatory before commit and push.
-  parent: pm-122q
-  risk: medium
-  confidence: high
-  sprint: calendar-rollout
-  release: vnext
-  component: docs/release
-  regression: true
-  customer_impact: Users and agents get accurate usage docs and stable rollout.
-  dependencies[3]{id,kind,created_at,author,source_kind}:
-    pm-122q,parent,"2026-03-31T21:29:03.438Z",codex-agent,null
-    pm-qze9,related,"2026-03-31T21:29:03.438Z",codex-agent,null
-    pm-tyq3,blocks,"2026-03-31T21:29:03.438Z",codex-agent,null
-  comments[3]{created_at,author,text}:
-    "2026-03-31T21:29:03.438Z",codex-agent,Task created for docs and release finalization workstream.
-    "2026-03-31T22:06:14.282Z",codex-agent,Updated README PRD ARCHITECTURE AGENTS CHANGELOG and extension docs for calendar/reminder behavior including markdown-default scope and integration parity.
-    "2026-03-31T22:09:05.028Z",codex-agent,"Evidence: linked final regression and coverage runs passed via pm test --run; coverage remains 100% across lines/branches/functions/statements."
-  notes[1]{created_at,author,text}:
-    "2026-03-31T21:29:03.438Z",codex-agent,Ensure explicit note that global TOON default remains unchanged.
-  files[6]{path,scope,note}:
-    AGENTS.md,project,agent workflow guidance for calendar and reminders
-    CHANGELOG.md,project,unreleased calendar/reminder entries
-    docs/ARCHITECTURE.md,project,calendar pipeline and reminder storage architecture
-    docs/EXTENSIONS.md,project,Pi wrapper calendar/reminder parity docs
-    PRD.md,project,calendar and reminder product/runtime contract updates
-    README.md,project,calendar reminder docs
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,2400,final 100 percent coverage verification
-    node scripts/run-tests.mjs test,null,project,2400,final regression run
-  docs[1]{path,scope,note}:
-    CHANGELOG.md,project,unreleased entries for calendar reminders
-  close_reason: Documentation and release-final verification completed with full regression and coverage passing.
+id: pm-2v01
+title: Update docs and finalize calendar/reminder release changes
+description: "Update README, PRD, architecture, AGENTS, changelog, and complete verification/closure workflow for calendar/reminder feature."
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:docs","area:release",code,pm-cli
+created_at: "2026-03-31T21:29:03.438Z"
+updated_at: "2026-03-31T22:09:06.617Z"
+deadline: "2026-04-07T21:29:03.438Z"
+author: codex-agent
+estimated_minutes: 120
+acceptance_criteria: "All required docs are updated, tests pass, coverage stays 100%, and changes are ready to commit/push."
+definition_of_ready: Implementation and tests are substantially complete.
+order: 11
+goal: Agent planning ergonomics
+objective: Ship documented feature
+value: Clear adoption path
+impact: Lower support load and misuse risk
+outcome: Calendar/reminder docs and release checks complete
+why_now: Docs and verification are mandatory before commit and push.
+parent: pm-122q
+risk: medium
+confidence: high
+sprint: calendar-rollout
+release: vnext
+component: docs/release
+regression: true
+customer_impact: Users and agents get accurate usage docs and stable rollout.
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-122q,parent,"2026-03-31T21:29:03.438Z",codex-agent,null
+  pm-qze9,related,"2026-03-31T21:29:03.438Z",codex-agent,null
+  pm-tyq3,blocks,"2026-03-31T21:29:03.438Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-03-31T21:29:03.438Z",codex-agent,Task created for docs and release finalization workstream.
+  "2026-03-31T22:06:14.282Z",codex-agent,Updated README PRD ARCHITECTURE AGENTS CHANGELOG and extension docs for calendar/reminder behavior including markdown-default scope and integration parity.
+  "2026-03-31T22:09:05.028Z",codex-agent,"Evidence: linked final regression and coverage runs passed via pm test --run; coverage remains 100% across lines/branches/functions/statements."
+notes[1]{created_at,author,text}:
+  "2026-03-31T21:29:03.438Z",codex-agent,Ensure explicit note that global TOON default remains unchanged.
+files[6]{path,scope,note}:
+  AGENTS.md,project,agent workflow guidance for calendar and reminders
+  CHANGELOG.md,project,unreleased calendar/reminder entries
+  docs/ARCHITECTURE.md,project,calendar pipeline and reminder storage architecture
+  docs/EXTENSIONS.md,project,Pi wrapper calendar/reminder parity docs
+  PRD.md,project,calendar and reminder product/runtime contract updates
+  README.md,project,calendar reminder docs
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,final 100 percent coverage verification
+  node scripts/run-tests.mjs test,null,project,2400,final regression run
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,unreleased entries for calendar reminders
+close_reason: Documentation and release-final verification completed with full regression and coverage passing.
 body: Task for documentation parity and final release-readiness checks.

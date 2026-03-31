@@ -21,7 +21,7 @@
 
 ## Item Storage Formats
 
-- Default item format is TOON (`.toon`) using full `{ front_matter, body }` object storage.
+- Default item format is TOON (`.toon`) using root-object field storage (`id`, `title`, ..., `body`).
 - JSON front matter + markdown body (`.md`) is a fully supported alternative format.
 - History files always remain JSONL (`history/<id>.jsonl`).
 - Set project item storage format with:

@@ -111,7 +111,7 @@ Each item is stored as a format-configured document file:
 
 ```
 .agents/pm/
-  <type-plural>/<id>.toon   default item storage (TOON full object)
+  <type-plural>/<id>.toon   default item storage (TOON root-object fields)
   <type-plural>/<id>.md     fully supported JSON front matter + markdown body
   history/<id>.jsonl        append-only RFC6902 patch log
   locks/<id>.lock           exclusive lock metadata (JSON)
@@ -126,10 +126,9 @@ Each item is stored as a format-configured document file:
 Default TOON item document:
 
 ```toon
-front_matter:
-  id: pm-a1b2
-  title: ...
-  # ...
+id: pm-a1b2
+title: ...
+# ...
 body: |
   Optional markdown body here.
 ```

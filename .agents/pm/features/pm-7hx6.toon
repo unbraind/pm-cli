@@ -1,43 +1,42 @@
-front_matter:
-  id: pm-7hx6
-  title: Add pm completion command for bash/zsh/fish shell completion
-  description: Implement pm completion command
-  type: Feature
-  status: closed
-  priority: 1
-  tags[6]: "area:cli",code,docs,"milestone:6",pm-cli,tests
-  created_at: "2026-03-08T18:01:45.100Z"
-  updated_at: "2026-03-08T18:11:50.163Z"
-  deadline: "2026-03-09T18:01:45.100Z"
-  author: maintainer-agent
-  estimated_minutes: 90
-  acceptance_criteria: pm completion bash/zsh/fish outputs valid scripts
-  definition_of_ready: PRD and README updated; test plan ready
-  order: 1
-  goal: Production-ready CLI usability
-  objective: Add shell tab completion
-  value: Standard feature for production CLI tools
-  impact: Improves discoverability and usability
-  outcome: pm tab completion in bash/zsh/fish
-  why_now: Highest-impact usability gap remaining
-  risk: low
-  confidence: high
-  sprint: release-hardening
-  release: v0.1.1
-  comments[2]{created_at,author,text}:
-    "2026-03-08T18:01:45.100Z",maintainer-agent,Starting implementation of shell completion command
-    "2026-03-08T18:11:41.930Z",maintainer-agent,"Implementation complete. Files changed: src/cli/commands/completion.ts (new, 260 lines), src/cli/commands/index.ts (export added), src/cli/main.ts (command registered), tests/unit/completion-command.spec.ts (new, 47 tests), vitest.config.ts (include added), CHANGELOG.md/README.md/PRD.md (docs updated). Evidence: 522 tests pass at 100% lines/branches/functions/statements coverage. pm completion bash/zsh/fish all output valid scripts. --json mode returns {shell, script, setup_hint}. Unknown shell returns exit code 2."
-  notes[1]{created_at,author,text}:
-    "2026-03-08T18:01:45.100Z",maintainer-agent,completion.ts generates bash/zsh/fish scripts
-  files[5]{path,scope,note}:
-    CHANGELOG.md,project,documented shell completion feature
-    src/cli/commands/completion.ts,project,new file
-    src/cli/main.ts,project,register command
-    tests/unit/completion-command.spec.ts,project,47 tests covering all completion shells and CLI behavior
-    vitest.config.ts,project,added completion.ts to coverage include list
-  tests[1]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,600,coverage gate
-  docs[1]{path,scope,note}:
-    PRD.md,project,spec
-  close_reason: "Shell completion implemented for bash/zsh/fish. 47 new tests cover all code paths. 522 total tests pass at 100% coverage. All docs (PRD, README, CHANGELOG) updated per R1."
+id: pm-7hx6
+title: Add pm completion command for bash/zsh/fish shell completion
+description: Implement pm completion command
+type: Feature
+status: closed
+priority: 1
+tags[6]: "area:cli",code,docs,"milestone:6",pm-cli,tests
+created_at: "2026-03-08T18:01:45.100Z"
+updated_at: "2026-03-08T18:11:50.163Z"
+deadline: "2026-03-09T18:01:45.100Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: pm completion bash/zsh/fish outputs valid scripts
+definition_of_ready: PRD and README updated; test plan ready
+order: 1
+goal: Production-ready CLI usability
+objective: Add shell tab completion
+value: Standard feature for production CLI tools
+impact: Improves discoverability and usability
+outcome: pm tab completion in bash/zsh/fish
+why_now: Highest-impact usability gap remaining
+risk: low
+confidence: high
+sprint: release-hardening
+release: v0.1.1
+comments[2]{created_at,author,text}:
+  "2026-03-08T18:01:45.100Z",maintainer-agent,Starting implementation of shell completion command
+  "2026-03-08T18:11:41.930Z",maintainer-agent,"Implementation complete. Files changed: src/cli/commands/completion.ts (new, 260 lines), src/cli/commands/index.ts (export added), src/cli/main.ts (command registered), tests/unit/completion-command.spec.ts (new, 47 tests), vitest.config.ts (include added), CHANGELOG.md/README.md/PRD.md (docs updated). Evidence: 522 tests pass at 100% lines/branches/functions/statements coverage. pm completion bash/zsh/fish all output valid scripts. --json mode returns {shell, script, setup_hint}. Unknown shell returns exit code 2."
+notes[1]{created_at,author,text}:
+  "2026-03-08T18:01:45.100Z",maintainer-agent,completion.ts generates bash/zsh/fish scripts
+files[5]{path,scope,note}:
+  CHANGELOG.md,project,documented shell completion feature
+  src/cli/commands/completion.ts,project,new file
+  src/cli/main.ts,project,register command
+  tests/unit/completion-command.spec.ts,project,47 tests covering all completion shells and CLI behavior
+  vitest.config.ts,project,added completion.ts to coverage include list
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,600,coverage gate
+docs[1]{path,scope,note}:
+  PRD.md,project,spec
+close_reason: "Shell completion implemented for bash/zsh/fish. 47 new tests cover all code paths. 522 total tests pass at 100% coverage. All docs (PRD, README, CHANGELOG) updated per R1."
 body: Shell completion feature

@@ -1,40 +1,39 @@
-front_matter:
-  id: pm-0e8w
-  title: "M5: Harden extension command handler context sandbox"
-  description: Prevent extension command handlers from mutating caller global options by passing isolated context snapshots.
-  type: Task
-  status: closed
-  priority: 1
-  tags[7]: "area:extensions",code,docs,"milestone:5",pm-cli,"priority:1",tests
-  created_at: "2026-03-04T19:41:50.932Z"
-  updated_at: "2026-03-04T19:52:55.000Z"
-  deadline: "2026-03-06T19:41:50.000Z"
-  author: steve
-  estimated_minutes: 90
-  acceptance_criteria: "runCommandHandler provides isolated context snapshots (args/options/global), docs reflect the sandbox boundary behavior, and unit plus regression tests remain 100% coverage compliant."
-  dependencies[1]{id,kind,created_at,author,source_kind}:
-    pm-b1w,parent,"2026-03-04T19:41:50.932Z",steve,null
-  comments[5]{created_at,author,text}:
-    "2026-03-04T19:41:50.932Z",steve,"Why this exists: close a remaining Milestone 5 sandbox boundary gap where extension handlers can mutate caller runtime option state."
-    "2026-03-04T19:42:14.718Z",steve,"Planned change-set: docs-first contract update for command-handler context isolation, then clone global options in runCommandHandler and add mutation-isolation unit coverage."
-    "2026-03-04T19:43:21.518Z",steve,"Docs-first update completed: PRD and README now explicitly require command-handler execution to receive cloned args/options/global snapshots so extension mutation cannot alter caller runtime command state."
-    "2026-03-04T19:44:00.179Z",steve,"Implemented code change: runCommandHandler now passes a cloned global options snapshot to extension handlers, matching existing args/options cloning and preventing handler mutation from leaking into caller command state."
-    "2026-03-04T19:52:45.110Z",steve,"Evidence: pm test pm-0e8w --run --timeout 1800 --json passed 3/3 linked checks (coverage, targeted extension-loader test, build). pm test-all --status in_progress --timeout 1800 --json passed totals items=1 linked_tests=3 passed=3 failed=0 skipped=0. pm test-all --status closed --timeout 1800 --json passed totals items=55 linked_tests=181 passed=56 failed=0 skipped=125. Coverage output remains 100% lines/branches/functions/statements."
-  notes[1]{created_at,author,text}:
-    "2026-03-04T19:41:50.932Z",steve,"Validation plan: docs first updates then loader runtime unit coverage then pm test and test-all sweeps."
-  learnings[1]{created_at,author,text}:
-    "2026-03-04T19:41:50.932Z",steve,"Initial hypothesis: cloning global options in runCommandHandler is sufficient because global options are flat primitives."
-  files[4]{path,scope,note}:
-    PRD.md,project,document command-handler context snapshot isolation baseline
-    README.md,project,document extension handler mutation isolation contract
-    src/core/extensions/loader.ts,project,command-handler context snapshot hardening
-    tests/unit/extension-loader.spec.ts,project,unit coverage for context isolation
-  tests[3]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,1800,coverage gate in sandbox
-    node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,900,targeted extension loader regression
-    pnpm build,null,project,600,compile verification
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,workflow and dogfood policy
-    PRD.md,project,governing extension sandbox boundary contract
-    README.md,project,user-facing extension behavior notes
+id: pm-0e8w
+title: "M5: Harden extension command handler context sandbox"
+description: Prevent extension command handlers from mutating caller global options by passing isolated context snapshots.
+type: Task
+status: closed
+priority: 1
+tags[7]: "area:extensions",code,docs,"milestone:5",pm-cli,"priority:1",tests
+created_at: "2026-03-04T19:41:50.932Z"
+updated_at: "2026-03-04T19:52:55.000Z"
+deadline: "2026-03-06T19:41:50.000Z"
+author: steve
+estimated_minutes: 90
+acceptance_criteria: "runCommandHandler provides isolated context snapshots (args/options/global), docs reflect the sandbox boundary behavior, and unit plus regression tests remain 100% coverage compliant."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-b1w,parent,"2026-03-04T19:41:50.932Z",steve,null
+comments[5]{created_at,author,text}:
+  "2026-03-04T19:41:50.932Z",steve,"Why this exists: close a remaining Milestone 5 sandbox boundary gap where extension handlers can mutate caller runtime option state."
+  "2026-03-04T19:42:14.718Z",steve,"Planned change-set: docs-first contract update for command-handler context isolation, then clone global options in runCommandHandler and add mutation-isolation unit coverage."
+  "2026-03-04T19:43:21.518Z",steve,"Docs-first update completed: PRD and README now explicitly require command-handler execution to receive cloned args/options/global snapshots so extension mutation cannot alter caller runtime command state."
+  "2026-03-04T19:44:00.179Z",steve,"Implemented code change: runCommandHandler now passes a cloned global options snapshot to extension handlers, matching existing args/options cloning and preventing handler mutation from leaking into caller command state."
+  "2026-03-04T19:52:45.110Z",steve,"Evidence: pm test pm-0e8w --run --timeout 1800 --json passed 3/3 linked checks (coverage, targeted extension-loader test, build). pm test-all --status in_progress --timeout 1800 --json passed totals items=1 linked_tests=3 passed=3 failed=0 skipped=0. pm test-all --status closed --timeout 1800 --json passed totals items=55 linked_tests=181 passed=56 failed=0 skipped=125. Coverage output remains 100% lines/branches/functions/statements."
+notes[1]{created_at,author,text}:
+  "2026-03-04T19:41:50.932Z",steve,"Validation plan: docs first updates then loader runtime unit coverage then pm test and test-all sweeps."
+learnings[1]{created_at,author,text}:
+  "2026-03-04T19:41:50.932Z",steve,"Initial hypothesis: cloning global options in runCommandHandler is sufficient because global options are flat primitives."
+files[4]{path,scope,note}:
+  PRD.md,project,document command-handler context snapshot isolation baseline
+  README.md,project,document extension handler mutation isolation contract
+  src/core/extensions/loader.ts,project,command-handler context snapshot hardening
+  tests/unit/extension-loader.spec.ts,project,unit coverage for context isolation
+tests[3]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,1800,coverage gate in sandbox
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,900,targeted extension loader regression
+  pnpm build,null,project,600,compile verification
+docs[3]{path,scope,note}:
+  AGENTS.md,project,workflow and dogfood policy
+  PRD.md,project,governing extension sandbox boundary contract
+  README.md,project,user-facing extension behavior notes
 body: "Milestone 5 hardening follow-up: extension command handlers currently receive mutable runtime context references. Harden the command-handler boundary so handler mutations do not leak back into caller command execution state."

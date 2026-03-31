@@ -1,47 +1,46 @@
-front_matter:
-  id: pm-tuhf
-  title: Calendar command with markdown default and multi-view rendering
-  description: "Implement pm calendar command with agenda/day/week/month views, deterministic event ordering, and markdown output by default for agent readability."
-  type: Feature
-  status: closed
-  priority: 1
-  tags[4]: agent-ux,"area:calendar",output,pm-cli
-  created_at: "2026-03-31T21:27:29.408Z"
-  updated_at: "2026-03-31T22:09:20.417Z"
-  deadline: "2026-04-10T21:27:29.408Z"
-  author: codex-agent
-  estimated_minutes: 240
-  acceptance_criteria: pm calendar supports agenda/day/week/month views with deterministic filters and markdown default output unless overridden.
-  definition_of_ready: Calendar command contracts and filters are defined.
-  order: 2
-  goal: Agent planning ergonomics
-  objective: Ship calendar command
-  value: Readable date-centric execution context
-  impact: Reduced planning ambiguity for autonomous agents
-  outcome: Stable calendar views for deadlines and reminders
-  why_now: Calendar views are missing from current CLI workflow.
-  parent: pm-qh3p
-  risk: medium
-  confidence: high
-  sprint: calendar-rollout
-  release: vnext
-  component: cli/calendar
-  regression: true
-  customer_impact: Improves deadline and planning visibility for agents.
-  dependencies[3]{id,kind,created_at,author,source_kind}:
-    pm-0lbm,related,"2026-03-31T21:27:29.408Z",codex-agent,null
-    pm-qh3p,parent,"2026-03-31T21:27:29.408Z",codex-agent,null
-    pm-r0m,related,"2026-03-31T21:27:29.408Z",codex-agent,null
-  comments[2]{created_at,author,text}:
-    "2026-03-31T21:27:29.408Z",codex-agent,Feature created for calendar command and markdown default behavior.
-    "2026-03-31T22:09:19.547Z",codex-agent,Feature complete via closed tasks pm-ezri and pm-kglq; calendar core views plus markdown-default output behavior verified.
-  notes[1]{created_at,author,text}:
-    "2026-03-31T21:27:29.408Z",codex-agent,Use command-specific output switching to avoid global format regressions.
-  files[1]{path,scope,note}:
-    src/cli/commands/calendar.ts,project,new calendar command implementation
-  tests[1]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs test,null,project,1800,sandbox-safe command regression
-  docs[1]{path,scope,note}:
-    README.md,project,calendar command user documentation
-  close_reason: Calendar command core views and markdown-default output are implemented and regression-tested.
+id: pm-tuhf
+title: Calendar command with markdown default and multi-view rendering
+description: "Implement pm calendar command with agenda/day/week/month views, deterministic event ordering, and markdown output by default for agent readability."
+type: Feature
+status: closed
+priority: 1
+tags[4]: agent-ux,"area:calendar",output,pm-cli
+created_at: "2026-03-31T21:27:29.408Z"
+updated_at: "2026-03-31T22:09:20.417Z"
+deadline: "2026-04-10T21:27:29.408Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: pm calendar supports agenda/day/week/month views with deterministic filters and markdown default output unless overridden.
+definition_of_ready: Calendar command contracts and filters are defined.
+order: 2
+goal: Agent planning ergonomics
+objective: Ship calendar command
+value: Readable date-centric execution context
+impact: Reduced planning ambiguity for autonomous agents
+outcome: Stable calendar views for deadlines and reminders
+why_now: Calendar views are missing from current CLI workflow.
+parent: pm-qh3p
+risk: medium
+confidence: high
+sprint: calendar-rollout
+release: vnext
+component: cli/calendar
+regression: true
+customer_impact: Improves deadline and planning visibility for agents.
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-0lbm,related,"2026-03-31T21:27:29.408Z",codex-agent,null
+  pm-qh3p,parent,"2026-03-31T21:27:29.408Z",codex-agent,null
+  pm-r0m,related,"2026-03-31T21:27:29.408Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-03-31T21:27:29.408Z",codex-agent,Feature created for calendar command and markdown default behavior.
+  "2026-03-31T22:09:19.547Z",codex-agent,Feature complete via closed tasks pm-ezri and pm-kglq; calendar core views plus markdown-default output behavior verified.
+notes[1]{created_at,author,text}:
+  "2026-03-31T21:27:29.408Z",codex-agent,Use command-specific output switching to avoid global format regressions.
+files[1]{path,scope,note}:
+  src/cli/commands/calendar.ts,project,new calendar command implementation
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,1800,sandbox-safe command regression
+docs[1]{path,scope,note}:
+  README.md,project,calendar command user documentation
+close_reason: Calendar command core views and markdown-default output are implemented and regression-tested.
 body: "Feature A for command wiring, view rendering, and calendar output contracts."

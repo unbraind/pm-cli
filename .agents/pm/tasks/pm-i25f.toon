@@ -1,37 +1,36 @@
-front_matter:
-  id: pm-i25f
-  title: "M4: Honor embedding batch + retry settings in semantic indexing"
-  description: Wire search.embedding_batch_size and search.scanner_max_batch_retries into semantic reindex and mutation refresh flows with deterministic retry warnings.
-  type: Task
-  status: closed
-  priority: 1
-  tags[6]: "area:search",code,"milestone:4",pm-cli,"priority:1",tests
-  created_at: "2026-03-07T10:27:27.606Z"
-  updated_at: "2026-03-07T10:44:20.607Z"
-  deadline: "2026-03-08T23:59:00.000Z"
-  author: maintainer-agent
-  estimated_minutes: 120
-  acceptance_criteria: Semantic embedding generation uses search.embedding_batch_size batches and retries each failed batch up to search.scanner_max_batch_retries with deterministic warning output; tests cover success and failure paths.
-  comments[4]{created_at,author,text}:
-    "2026-03-07T10:27:27.606Z",maintainer-agent,Roadmap gap settings expose embedding_batch_size and scanner_max_batch_retries but command-path semantic indexing does not consume them yet.
-    "2026-03-07T10:27:34.029Z",maintainer-agent,"Planned change-set: docs-first clarify that semantic reindex and mutation refresh honor embedding_batch_size and scanner_max_batch_retries, then implement shared batched embedding retry helper and add deterministic unit coverage for retry exhaustion behavior."
-    "2026-03-07T10:29:51.560Z",maintainer-agent,"Implemented docs-first and code change-set: added shared embedding batch+retry helper, wired semantic reindex and mutation semantic refresh to honor settings.search.embedding_batch_size and settings.search.scanner_max_batch_retries, and added targeted unit tests for retry success paths."
-    "2026-03-07T10:44:09.924Z",maintainer-agent,"Evidence: (1) pm test pm-i25f --run --timeout 2400 --json passed 3/3 linked tests including node scripts/run-tests.mjs coverage with 100% statements/branches/functions/lines. (2) pm test-all --status in_progress --timeout 2400 --json passed totals items=1 linked_tests=3 passed=3 failed=0 skipped=0. (3) pm test-all --status closed --timeout 2400 --json passed totals items=122 linked_tests=330 passed=62 failed=0 skipped=268. Behavior proof: semantic embedding execution now honors settings.search.embedding_batch_size + settings.search.scanner_max_batch_retries in reindex and mutation refresh paths with deterministic retry-success warnings."
-  notes[1]{created_at,author,text}:
-    "2026-03-07T10:27:27.606Z",maintainer-agent,Plan docs-first update then shared batched retry helper then reindex and cache tests.
-  files[5]{path,scope,note}:
-    src/cli/commands/reindex.ts,project,semantic reindex batching wiring
-    src/core/search/cache.ts,project,mutation refresh batching wiring
-    src/core/search/embedding-batches.ts,project,shared embedding batching+retry helper
-    tests/unit/reindex-command.spec.ts,project,reindex batching tests
-    tests/unit/search-cache.spec.ts,project,semantic refresh batching tests
-  tests[3]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,2400,coverage gate
-    node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts,null,project,1800,targeted reindex regression
-    node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts,null,project,1800,targeted semantic refresh regression
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,maintainer workflow contract
-    PRD.md,project,search settings contract
-    README.md,project,public search settings behavior
-  close_reason: Implemented batched semantic embedding execution with deterministic retry policy and full passing regression sweeps
+id: pm-i25f
+title: "M4: Honor embedding batch + retry settings in semantic indexing"
+description: Wire search.embedding_batch_size and search.scanner_max_batch_retries into semantic reindex and mutation refresh flows with deterministic retry warnings.
+type: Task
+status: closed
+priority: 1
+tags[6]: "area:search",code,"milestone:4",pm-cli,"priority:1",tests
+created_at: "2026-03-07T10:27:27.606Z"
+updated_at: "2026-03-07T10:44:20.607Z"
+deadline: "2026-03-08T23:59:00.000Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: Semantic embedding generation uses search.embedding_batch_size batches and retries each failed batch up to search.scanner_max_batch_retries with deterministic warning output; tests cover success and failure paths.
+comments[4]{created_at,author,text}:
+  "2026-03-07T10:27:27.606Z",maintainer-agent,Roadmap gap settings expose embedding_batch_size and scanner_max_batch_retries but command-path semantic indexing does not consume them yet.
+  "2026-03-07T10:27:34.029Z",maintainer-agent,"Planned change-set: docs-first clarify that semantic reindex and mutation refresh honor embedding_batch_size and scanner_max_batch_retries, then implement shared batched embedding retry helper and add deterministic unit coverage for retry exhaustion behavior."
+  "2026-03-07T10:29:51.560Z",maintainer-agent,"Implemented docs-first and code change-set: added shared embedding batch+retry helper, wired semantic reindex and mutation semantic refresh to honor settings.search.embedding_batch_size and settings.search.scanner_max_batch_retries, and added targeted unit tests for retry success paths."
+  "2026-03-07T10:44:09.924Z",maintainer-agent,"Evidence: (1) pm test pm-i25f --run --timeout 2400 --json passed 3/3 linked tests including node scripts/run-tests.mjs coverage with 100% statements/branches/functions/lines. (2) pm test-all --status in_progress --timeout 2400 --json passed totals items=1 linked_tests=3 passed=3 failed=0 skipped=0. (3) pm test-all --status closed --timeout 2400 --json passed totals items=122 linked_tests=330 passed=62 failed=0 skipped=268. Behavior proof: semantic embedding execution now honors settings.search.embedding_batch_size + settings.search.scanner_max_batch_retries in reindex and mutation refresh paths with deterministic retry-success warnings."
+notes[1]{created_at,author,text}:
+  "2026-03-07T10:27:27.606Z",maintainer-agent,Plan docs-first update then shared batched retry helper then reindex and cache tests.
+files[5]{path,scope,note}:
+  src/cli/commands/reindex.ts,project,semantic reindex batching wiring
+  src/core/search/cache.ts,project,mutation refresh batching wiring
+  src/core/search/embedding-batches.ts,project,shared embedding batching+retry helper
+  tests/unit/reindex-command.spec.ts,project,reindex batching tests
+  tests/unit/search-cache.spec.ts,project,semantic refresh batching tests
+tests[3]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts,null,project,1800,targeted reindex regression
+  node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts,null,project,1800,targeted semantic refresh regression
+docs[3]{path,scope,note}:
+  AGENTS.md,project,maintainer workflow contract
+  PRD.md,project,search settings contract
+  README.md,project,public search settings behavior
+close_reason: Implemented batched semantic embedding execution with deterministic retry policy and full passing regression sweeps
 body: Implement deterministic batched embedding execution for semantic/hybrid reindex and mutation refresh. Respect configured batch size and retry attempts. Preserve vector upsert determinism and emit stable warnings when retries are exhausted.

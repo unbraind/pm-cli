@@ -1,39 +1,38 @@
-front_matter:
-  id: pm-3qrp
-  title: Add --ac alias parity for pm update acceptance criteria
-  description: Support --ac as an alias for --acceptance-criteria on pm update and keep docs/contracts aligned.
-  type: Task
-  status: closed
-  priority: 0
-  tags[8]: "area:cli","area:docs",code,doc,"milestone:1",pm-cli,"priority:0",tests
-  created_at: "2026-03-07T11:19:34.615Z"
-  updated_at: "2026-03-07T11:35:24.602Z"
-  deadline: "2026-03-09T23:59:00.000Z"
-  author: maintainer-agent
-  estimated_minutes: 90
-  acceptance_criteria: pm update accepts --ac as alias for --acceptance-criteria; help/docs mention alias; regression and release-readiness contract tests pass with 100% coverage unchanged.
-  dependencies[1]{id,kind,created_at,author,source_kind}:
-    pm-cujj,related,"2026-03-07T11:19:34.615Z",maintainer-agent,null
-  comments[3]{created_at,author,text}:
-    "2026-03-07T11:19:34.615Z",maintainer-agent,Gap discovered during release-readiness audit update accepts only --acceptance-criteria while create already supports --ac alias.
-    "2026-03-07T11:19:40.777Z",maintainer-agent,"Intended change-set: update PRD and README update-option contracts to include --ac alias, then wire Commander option/normalizeUpdateOptions alias handling and add integration assertions for help and alias behavior."
-    "2026-03-07T11:35:24.445Z",maintainer-agent,"Evidence: tests passed, coverage remains 100%."
-  notes[1]{created_at,author,text}:
-    "2026-03-07T11:19:34.615Z",maintainer-agent,Implement docs-first then CLI normalizeUpdateOptions alias wiring and integration test assertions.
-  files[6]{path,scope,note}:
-    PRD.md,project,update command contract
-    README.md,project,public update command contract
-    src/cli/main.ts,project,update alias option wiring
-    tests/integration/cli.integration.spec.ts,project,update alias behavior regression
-    tests/integration/release-readiness-contract.spec.ts,project,update help contract regression
-    tests/integration/run-tests-script.integration.spec.ts,project,fixed vitest output check
-  tests[3]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,3600,coverage gate
-    node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,update alias integration
-    node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,contract parity regression
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,maintainer workflow contract
-    PRD.md,project,authoritative command contract
-    README.md,project,public command contract
-  close_reason: pm update --ac alias parity works with tests passing
+id: pm-3qrp
+title: Add --ac alias parity for pm update acceptance criteria
+description: Support --ac as an alias for --acceptance-criteria on pm update and keep docs/contracts aligned.
+type: Task
+status: closed
+priority: 0
+tags[8]: "area:cli","area:docs",code,doc,"milestone:1",pm-cli,"priority:0",tests
+created_at: "2026-03-07T11:19:34.615Z"
+updated_at: "2026-03-07T11:35:24.602Z"
+deadline: "2026-03-09T23:59:00.000Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: pm update accepts --ac as alias for --acceptance-criteria; help/docs mention alias; regression and release-readiness contract tests pass with 100% coverage unchanged.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-cujj,related,"2026-03-07T11:19:34.615Z",maintainer-agent,null
+comments[3]{created_at,author,text}:
+  "2026-03-07T11:19:34.615Z",maintainer-agent,Gap discovered during release-readiness audit update accepts only --acceptance-criteria while create already supports --ac alias.
+  "2026-03-07T11:19:40.777Z",maintainer-agent,"Intended change-set: update PRD and README update-option contracts to include --ac alias, then wire Commander option/normalizeUpdateOptions alias handling and add integration assertions for help and alias behavior."
+  "2026-03-07T11:35:24.445Z",maintainer-agent,"Evidence: tests passed, coverage remains 100%."
+notes[1]{created_at,author,text}:
+  "2026-03-07T11:19:34.615Z",maintainer-agent,Implement docs-first then CLI normalizeUpdateOptions alias wiring and integration test assertions.
+files[6]{path,scope,note}:
+  PRD.md,project,update command contract
+  README.md,project,public update command contract
+  src/cli/main.ts,project,update alias option wiring
+  tests/integration/cli.integration.spec.ts,project,update alias behavior regression
+  tests/integration/release-readiness-contract.spec.ts,project,update help contract regression
+  tests/integration/run-tests-script.integration.spec.ts,project,fixed vitest output check
+tests[3]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,update alias integration
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,contract parity regression
+docs[3]{path,scope,note}:
+  AGENTS.md,project,maintainer workflow contract
+  PRD.md,project,authoritative command contract
+  README.md,project,public command contract
+close_reason: pm update --ac alias parity works with tests passing
 body: "Docs-first parity hardening: add --ac alias support to pm update, align command help and authoritative docs, and extend regression coverage."

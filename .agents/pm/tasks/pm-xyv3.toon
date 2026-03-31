@@ -1,38 +1,37 @@
-front_matter:
-  id: pm-xyv3
-  title: "M5 follow-up: activity history directory read hook dispatch"
-  description: Dispatch extension onRead hooks for history-directory scans in activity command flow.
-  type: Task
-  status: closed
-  priority: 1
-  tags[5]: "area:extensions-hooks",code,"milestone:5",pm-cli,"priority:1"
-  created_at: "2026-03-04T20:23:40.638Z"
-  updated_at: "2026-03-04T20:34:55.660Z"
-  deadline: "2026-03-06T20:23:22.000Z"
-  author: maintainer-agent
-  estimated_minutes: 60
-  acceptance_criteria: Activity command dispatches onRead for history directory scans; docs stay aligned; sandboxed tests pass with 100% coverage and pm regression sweeps pass.
-  dependencies[1]{id,kind,created_at,author,source_kind}:
-    pm-b1w,parent,"2026-03-04T20:23:40.638Z",maintainer-agent,null
-  comments[4]{created_at,author,text}:
-    "2026-03-04T20:23:40.638Z",maintainer-agent,Activity should dispatch onRead for history directory scans before stream reads.
-    "2026-03-04T20:23:55.497Z",maintainer-agent,"Planned change-set: docs-first wording update in PRD/README, then activity command onRead dispatch for history directory enumeration plus integration assertion update for read:history event; finish with mandatory pm test and pm test-all sweeps."
-    "2026-03-04T20:25:23.721Z",maintainer-agent,"Implemented docs-first updates in PRD/README to include history/activity directory-scan read hooks, then added runActiveOnReadHooks dispatch for activity history directory enumeration and unit regression coverage in history-activity-command spec."
-    "2026-03-04T20:34:55.311Z",maintainer-agent,"Evidence: pm test pm-xyv3 --run --timeout 7200 --json passed 3/3 linked tests (coverage + integration + unit); pm test-all --status in_progress --timeout 7200 --json totals items=1 linked_tests=3 passed=3 failed=0 skipped=0; pm test-all --status closed --timeout 7200 --json totals items=57 linked_tests=186 passed=56 failed=0 skipped=130. Coverage remained 100% lines/branches/functions/statements. Changed files: PRD.md, README.md, src/cli/commands/activity.ts, tests/unit/history-activity-command.spec.ts."
-  notes[1]{created_at,author,text}:
-    "2026-03-04T20:23:40.638Z",maintainer-agent,Docs-first then code/tests then mandatory pm test and pm test-all sweeps.
-  learnings[1]{created_at,author,text}:
-    "2026-03-04T20:23:40.638Z",maintainer-agent,Track hook call-site parity at directory and file read levels.
-  files[3]{path,scope,note}:
-    src/cli/commands/activity.ts,project,add history-directory onRead hook dispatch
-    tests/integration/cli.integration.spec.ts,project,assert read hook event for history directory scan
-    tests/unit/history-activity-command.spec.ts,project,assert activity onRead hook for history directory scans
-  tests[3]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,3600,coverage gate remains 100 percent
-    node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,targeted integration regression for activity onRead directory dispatch
-    node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts,null,project,900,targeted unit regression for activity directory hook dispatch
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,governing workflow and closure protocol
-    PRD.md,project,update hook lifecycle wording for activity directory scan
-    README.md,project,document activity history-directory onRead dispatch
+id: pm-xyv3
+title: "M5 follow-up: activity history directory read hook dispatch"
+description: Dispatch extension onRead hooks for history-directory scans in activity command flow.
+type: Task
+status: closed
+priority: 1
+tags[5]: "area:extensions-hooks",code,"milestone:5",pm-cli,"priority:1"
+created_at: "2026-03-04T20:23:40.638Z"
+updated_at: "2026-03-04T20:34:55.660Z"
+deadline: "2026-03-06T20:23:22.000Z"
+author: maintainer-agent
+estimated_minutes: 60
+acceptance_criteria: Activity command dispatches onRead for history directory scans; docs stay aligned; sandboxed tests pass with 100% coverage and pm regression sweeps pass.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-b1w,parent,"2026-03-04T20:23:40.638Z",maintainer-agent,null
+comments[4]{created_at,author,text}:
+  "2026-03-04T20:23:40.638Z",maintainer-agent,Activity should dispatch onRead for history directory scans before stream reads.
+  "2026-03-04T20:23:55.497Z",maintainer-agent,"Planned change-set: docs-first wording update in PRD/README, then activity command onRead dispatch for history directory enumeration plus integration assertion update for read:history event; finish with mandatory pm test and pm test-all sweeps."
+  "2026-03-04T20:25:23.721Z",maintainer-agent,"Implemented docs-first updates in PRD/README to include history/activity directory-scan read hooks, then added runActiveOnReadHooks dispatch for activity history directory enumeration and unit regression coverage in history-activity-command spec."
+  "2026-03-04T20:34:55.311Z",maintainer-agent,"Evidence: pm test pm-xyv3 --run --timeout 7200 --json passed 3/3 linked tests (coverage + integration + unit); pm test-all --status in_progress --timeout 7200 --json totals items=1 linked_tests=3 passed=3 failed=0 skipped=0; pm test-all --status closed --timeout 7200 --json totals items=57 linked_tests=186 passed=56 failed=0 skipped=130. Coverage remained 100% lines/branches/functions/statements. Changed files: PRD.md, README.md, src/cli/commands/activity.ts, tests/unit/history-activity-command.spec.ts."
+notes[1]{created_at,author,text}:
+  "2026-03-04T20:23:40.638Z",maintainer-agent,Docs-first then code/tests then mandatory pm test and pm test-all sweeps.
+learnings[1]{created_at,author,text}:
+  "2026-03-04T20:23:40.638Z",maintainer-agent,Track hook call-site parity at directory and file read levels.
+files[3]{path,scope,note}:
+  src/cli/commands/activity.ts,project,add history-directory onRead hook dispatch
+  tests/integration/cli.integration.spec.ts,project,assert read hook event for history directory scan
+  tests/unit/history-activity-command.spec.ts,project,assert activity onRead hook for history directory scans
+tests[3]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,coverage gate remains 100 percent
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,targeted integration regression for activity onRead directory dispatch
+  node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts,null,project,900,targeted unit regression for activity directory hook dispatch
+docs[3]{path,scope,note}:
+  AGENTS.md,project,governing workflow and closure protocol
+  PRD.md,project,update hook lifecycle wording for activity directory scan
+  README.md,project,document activity history-directory onRead dispatch
 body: Expand hook lifecycle call-site coverage so activity emits a deterministic onRead event for history directory enumeration before reading stream files.

@@ -1,47 +1,46 @@
-front_matter:
-  id: pm-c877
-  title: Persistent reminder item fields and CLI mutation support
-  description: Add first-class reminder fields on items and create/update flag support with deterministic validation and storage.
-  type: Feature
-  status: closed
-  priority: 1
-  tags[4]: "area:reminders","area:schema",core,pm-cli
-  created_at: "2026-03-31T21:27:38.931Z"
-  updated_at: "2026-03-31T22:09:18.630Z"
-  deadline: "2026-04-10T21:27:38.931Z"
-  author: codex-agent
-  estimated_minutes: 220
-  acceptance_criteria: "Items support reminders with deterministic normalization, validation, and mutation via create/update commands."
-  definition_of_ready: Reminder data model and compatibility constraints are specified.
-  order: 3
-  goal: Agent planning ergonomics
-  objective: Ship persistent reminders
-  value: Durable reminder scheduling data
-  impact: Less manual deadline tracking overhead
-  outcome: Reminder metadata is first-class and queryable
-  why_now: Agents currently lack durable reminder primitives in pm items.
-  parent: pm-qh3p
-  risk: medium
-  confidence: high
-  sprint: calendar-rollout
-  release: vnext
-  component: core/item-format
-  regression: true
-  customer_impact: Lets agents store explicit reminder metadata on tasks.
-  dependencies[3]{id,kind,created_at,author,source_kind}:
-    pm-2p6q,related,"2026-03-31T21:27:38.931Z",codex-agent,null
-    pm-qh3p,parent,"2026-03-31T21:27:38.931Z",codex-agent,null
-    pm-r0m,related,"2026-03-31T21:27:38.931Z",codex-agent,null
-  comments[2]{created_at,author,text}:
-    "2026-03-31T21:27:38.931Z",codex-agent,Feature created for persistent reminder field support.
-    "2026-03-31T22:09:17.899Z",codex-agent,Feature complete via closed tasks pm-7e6n and pm-ysgr; reminder schema plus create/update mutation support shipped with passing tests.
-  notes[1]{created_at,author,text}:
-    "2026-03-31T21:27:38.931Z",codex-agent,Keep reminder fields optional to preserve backward compatibility.
-  files[1]{path,scope,note}:
-    src/core/item/item-format.ts,project,reminder field validation and normalization
-  tests[1]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs test,null,project,1800,schema regression tests
-  docs[1]{path,scope,note}:
-    PRD.md,project,schema and command contract updates
-  close_reason: Persistent reminder fields and CLI mutation support are fully implemented and validated.
+id: pm-c877
+title: Persistent reminder item fields and CLI mutation support
+description: Add first-class reminder fields on items and create/update flag support with deterministic validation and storage.
+type: Feature
+status: closed
+priority: 1
+tags[4]: "area:reminders","area:schema",core,pm-cli
+created_at: "2026-03-31T21:27:38.931Z"
+updated_at: "2026-03-31T22:09:18.630Z"
+deadline: "2026-04-10T21:27:38.931Z"
+author: codex-agent
+estimated_minutes: 220
+acceptance_criteria: "Items support reminders with deterministic normalization, validation, and mutation via create/update commands."
+definition_of_ready: Reminder data model and compatibility constraints are specified.
+order: 3
+goal: Agent planning ergonomics
+objective: Ship persistent reminders
+value: Durable reminder scheduling data
+impact: Less manual deadline tracking overhead
+outcome: Reminder metadata is first-class and queryable
+why_now: Agents currently lack durable reminder primitives in pm items.
+parent: pm-qh3p
+risk: medium
+confidence: high
+sprint: calendar-rollout
+release: vnext
+component: core/item-format
+regression: true
+customer_impact: Lets agents store explicit reminder metadata on tasks.
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-2p6q,related,"2026-03-31T21:27:38.931Z",codex-agent,null
+  pm-qh3p,parent,"2026-03-31T21:27:38.931Z",codex-agent,null
+  pm-r0m,related,"2026-03-31T21:27:38.931Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-03-31T21:27:38.931Z",codex-agent,Feature created for persistent reminder field support.
+  "2026-03-31T22:09:17.899Z",codex-agent,Feature complete via closed tasks pm-7e6n and pm-ysgr; reminder schema plus create/update mutation support shipped with passing tests.
+notes[1]{created_at,author,text}:
+  "2026-03-31T21:27:38.931Z",codex-agent,Keep reminder fields optional to preserve backward compatibility.
+files[1]{path,scope,note}:
+  src/core/item/item-format.ts,project,reminder field validation and normalization
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,1800,schema regression tests
+docs[1]{path,scope,note}:
+  PRD.md,project,schema and command contract updates
+close_reason: Persistent reminder fields and CLI mutation support are fully implemented and validated.
 body: "Feature B for reminder schema, parser, serializer, and mutation command support."

@@ -1,51 +1,50 @@
-front_matter:
-  id: pm-096j
-  title: Pi wrapper all-fields create/update parity
-  description: Docs-first align the Pi extension wrapper with the CLI's canonical create/update metadata surface so Pi calls can pass every current maintainer-required field deterministically.
-  type: Task
-  status: closed
-  priority: 0
-  tags[8]: "area:docs","area:extensions-pi",code,"milestone:6",pm-cli,"priority:0",release-readiness,tests
-  created_at: "2026-03-08T16:08:41.139Z"
-  updated_at: "2026-03-08T16:41:43.299Z"
-  deadline: "2026-03-09T16:10:00.000Z"
-  author: maintainer-agent
-  estimated_minutes: 150
-  acceptance_criteria: "Pi wrapper create/update mappings and schema expose the current canonical metadata fields required by the CLI docs, docs remain authoritative, and sandbox-safe wrapper/unit/release-contract coverage stays at 100 percent."
-  definition_of_ready: Gap confirmed by comparing .pi/extensions/pm-cli/index.ts against current create/update field contracts in PRD.md README.md and AGENTS.md.
-  order: 1
-  goal: Release-hardening
-  objective: Keep Pi wrapper action parity aligned with current CLI create/update contracts
-  value: Pi-based agents can use pm without losing required metadata
-  impact: Removes docs-to-wrapper drift in release-readiness workflows
-  outcome: Pi wrapper forwards full create/update metadata deterministically
-  why_now: AGENTS.md now requires all fields/options on tracked items but the wrapper currently omits several canonical fields
-  risk: medium
-  confidence: high
-  sprint: maintainer-loop-2026-03-08
-  release: v0.1
-  dependencies[1]{id,kind,created_at,author,source_kind}:
-    pm-igv,related,"2026-03-08T16:08:41.139Z",maintainer-agent,null
-  comments[4]{created_at,author,text}:
-    "2026-03-08T16:08:41.139Z",maintainer-agent,Why this exists because Pi wrapper docs claim broad action parity but the current create update mapper omits newer canonical metadata fields.
-    "2026-03-08T16:08:48.319Z",maintainer-agent,"Planned changeset before edits: make docs explicit about Pi wrapper create and update all-fields parity, then add schema plus arg mapping coverage for the missing metadata fields and close the gap with targeted release-contract assertions."
-    "2026-03-08T16:11:29.407Z",maintainer-agent,"Docs-first and implementation patch complete: PRD README and AGENTS now state Pi wrapper create update parity for canonical camelCase scalar metadata, and .pi/extensions/pm-cli/index.ts plus pi-agent tests now cover shared planning workflow and issue field forwarding."
-    "2026-03-08T16:41:40.799Z",maintainer-agent,"Evidence: pm test pm-096j --run --timeout 7200 --json passed both linked commands including node scripts/run-tests.mjs coverage at 100 percent statements branches functions and lines. pnpm build passed. pm test-all --status in_progress --timeout 7200 --json passed on sequential rerun with items=1 linked_tests=2 passed=2 failed=0 skipped=0. pm test-all --status closed --timeout 7200 --json passed on sequential rerun with items=153 linked_tests=389 passed=71 failed=0 skipped=318. Initial concurrent test-all sweeps produced a transient shared-coverage false negative so evidence is recorded from the sequential reruns."
-  notes[1]{created_at,author,text}:
-    "2026-03-08T16:08:41.139Z",maintainer-agent,Plan update docs first then implement schema and arg mapping then extend wrapper and release contract coverage before pm validation.
-  files[6]{path,scope,note}:
-    .pi/extensions/pm-cli/index.ts,project,Pi wrapper action schema and arg mapping
-    AGENTS.md,project,Pi wrapper all-fields example
-    PRD.md,project,explicit Pi wrapper parity contract
-    README.md,project,public Pi wrapper parity contract
-    tests/integration/release-readiness-contract.spec.ts,project,docs wrapper contract guard
-    tests/unit/pi-agent-extension.spec.ts,project,wrapper parity regression coverage
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,7200,sandbox-safe 100 percent coverage gate
-    node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-contract.spec.ts tests/integration/help-readme-contract.spec.ts,null,project,7200,targeted Pi wrapper parity regression
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,maintainer workflow contract
-    PRD.md,project,governing Pi wrapper contract
-    README.md,project,public Pi wrapper contract
-  close_reason: "Pi wrapper create update all-fields parity implemented with docs, schema, arg mapping, and passing sequential pm validation at 100 percent coverage."
+id: pm-096j
+title: Pi wrapper all-fields create/update parity
+description: Docs-first align the Pi extension wrapper with the CLI's canonical create/update metadata surface so Pi calls can pass every current maintainer-required field deterministically.
+type: Task
+status: closed
+priority: 0
+tags[8]: "area:docs","area:extensions-pi",code,"milestone:6",pm-cli,"priority:0",release-readiness,tests
+created_at: "2026-03-08T16:08:41.139Z"
+updated_at: "2026-03-08T16:41:43.299Z"
+deadline: "2026-03-09T16:10:00.000Z"
+author: maintainer-agent
+estimated_minutes: 150
+acceptance_criteria: "Pi wrapper create/update mappings and schema expose the current canonical metadata fields required by the CLI docs, docs remain authoritative, and sandbox-safe wrapper/unit/release-contract coverage stays at 100 percent."
+definition_of_ready: Gap confirmed by comparing .pi/extensions/pm-cli/index.ts against current create/update field contracts in PRD.md README.md and AGENTS.md.
+order: 1
+goal: Release-hardening
+objective: Keep Pi wrapper action parity aligned with current CLI create/update contracts
+value: Pi-based agents can use pm without losing required metadata
+impact: Removes docs-to-wrapper drift in release-readiness workflows
+outcome: Pi wrapper forwards full create/update metadata deterministically
+why_now: AGENTS.md now requires all fields/options on tracked items but the wrapper currently omits several canonical fields
+risk: medium
+confidence: high
+sprint: maintainer-loop-2026-03-08
+release: v0.1
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-igv,related,"2026-03-08T16:08:41.139Z",maintainer-agent,null
+comments[4]{created_at,author,text}:
+  "2026-03-08T16:08:41.139Z",maintainer-agent,Why this exists because Pi wrapper docs claim broad action parity but the current create update mapper omits newer canonical metadata fields.
+  "2026-03-08T16:08:48.319Z",maintainer-agent,"Planned changeset before edits: make docs explicit about Pi wrapper create and update all-fields parity, then add schema plus arg mapping coverage for the missing metadata fields and close the gap with targeted release-contract assertions."
+  "2026-03-08T16:11:29.407Z",maintainer-agent,"Docs-first and implementation patch complete: PRD README and AGENTS now state Pi wrapper create update parity for canonical camelCase scalar metadata, and .pi/extensions/pm-cli/index.ts plus pi-agent tests now cover shared planning workflow and issue field forwarding."
+  "2026-03-08T16:41:40.799Z",maintainer-agent,"Evidence: pm test pm-096j --run --timeout 7200 --json passed both linked commands including node scripts/run-tests.mjs coverage at 100 percent statements branches functions and lines. pnpm build passed. pm test-all --status in_progress --timeout 7200 --json passed on sequential rerun with items=1 linked_tests=2 passed=2 failed=0 skipped=0. pm test-all --status closed --timeout 7200 --json passed on sequential rerun with items=153 linked_tests=389 passed=71 failed=0 skipped=318. Initial concurrent test-all sweeps produced a transient shared-coverage false negative so evidence is recorded from the sequential reruns."
+notes[1]{created_at,author,text}:
+  "2026-03-08T16:08:41.139Z",maintainer-agent,Plan update docs first then implement schema and arg mapping then extend wrapper and release contract coverage before pm validation.
+files[6]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,Pi wrapper action schema and arg mapping
+  AGENTS.md,project,Pi wrapper all-fields example
+  PRD.md,project,explicit Pi wrapper parity contract
+  README.md,project,public Pi wrapper parity contract
+  tests/integration/release-readiness-contract.spec.ts,project,docs wrapper contract guard
+  tests/unit/pi-agent-extension.spec.ts,project,wrapper parity regression coverage
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,sandbox-safe 100 percent coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-contract.spec.ts tests/integration/help-readme-contract.spec.ts,null,project,7200,targeted Pi wrapper parity regression
+docs[3]{path,scope,note}:
+  AGENTS.md,project,maintainer workflow contract
+  PRD.md,project,governing Pi wrapper contract
+  README.md,project,public Pi wrapper contract
+close_reason: "Pi wrapper create update all-fields parity implemented with docs, schema, arg mapping, and passing sequential pm validation at 100 percent coverage."
 body: Current Pi wrapper mapping omits newer create/update metadata fields that are already canonical in PRD.md README.md and AGENTS.md. This task restores parity so Pi-driven maintainer runs can express full item intent without falling back to raw CLI invocation.

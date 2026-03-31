@@ -1,32 +1,31 @@
-front_matter:
-  id: pm-x89f
-  title: Release-readiness contract audit and next fix (2026-03-06 run 5)
-  description: Audit PRD README AGENTS alignment and implement the next highest-value contract guard without duplicating prior work.
-  type: Chore
-  status: closed
-  priority: 0
-  tags[4]: contract-sync,maintenance,pm-cli,release-readiness
-  created_at: "2026-03-06T19:26:24.210Z"
-  updated_at: "2026-03-06T19:39:02.287Z"
-  deadline: "2026-03-07T19:26:24.210Z"
-  author: maintainer-agent
-  estimated_minutes: 90
-  acceptance_criteria: "Release-readiness tests enforce that planned/not-yet-canonical flags are absent from active create/help contracts, and sandbox-safe verification passes with 100% coverage preserved."
-  comments[4]{created_at,author,text}:
-    "2026-03-06T19:26:24.210Z",maintainer-agent,Bootstrap run 5 from empty active queue and choose smallest high-value non-duplicate contract guard.
-    "2026-03-06T19:26:33.676Z",maintainer-agent,"Planned changeset: extend release-readiness integration contracts to assert planned/not-yet-canonical create flags remain absent from active CLI help and docs-backed create contract sections."
-    "2026-03-06T19:39:01.784Z",maintainer-agent,"Implemented changeset: added a release-readiness integration guard in tests/integration/release-readiness-contract.spec.ts that asserts planned/not-yet-canonical flags remain absent from active create contract sections (PRD/README/AGENTS) and from pm create --help output."
-    "2026-03-06T19:39:01.951Z",maintainer-agent,"Evidence: node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts passed (25/25). pm test pm-x89f --run --timeout 3600 passed linked tests (2 passed, 0 failed), including node scripts/run-tests.mjs coverage with 100% lines/branches/functions/statements. pm test-all --status in_progress --timeout 3600 passed (items=1 linked_tests=2 passed=2 failed=0 skipped=0). pm test-all --status closed --timeout 3600 passed (items=101 linked_tests=285 passed=63 failed=0 skipped=222). Follow-up items: none."
-  notes[1]{created_at,author,text}:
-    "2026-03-06T19:26:24.210Z",maintainer-agent,Add integration guard for planned flag absence in CLI help and docs-backed create contract.
-  files[1]{path,scope,note}:
-    tests/integration/release-readiness-contract.spec.ts,project,add planned-flag absence contract test
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,600,sandbox-safe coverage gate
-    node scripts/run-tests.mjs test,null,project,240,sandbox-safe regression
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,agent workflow contract
-    PRD.md,project,authoritative contract
-    README.md,project,public contract
-  close_reason: Planned-flag absence contract guard added and full sandbox-safe verification sweeps passed with 100% coverage intact.
+id: pm-x89f
+title: Release-readiness contract audit and next fix (2026-03-06 run 5)
+description: Audit PRD README AGENTS alignment and implement the next highest-value contract guard without duplicating prior work.
+type: Chore
+status: closed
+priority: 0
+tags[4]: contract-sync,maintenance,pm-cli,release-readiness
+created_at: "2026-03-06T19:26:24.210Z"
+updated_at: "2026-03-06T19:39:02.287Z"
+deadline: "2026-03-07T19:26:24.210Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: "Release-readiness tests enforce that planned/not-yet-canonical flags are absent from active create/help contracts, and sandbox-safe verification passes with 100% coverage preserved."
+comments[4]{created_at,author,text}:
+  "2026-03-06T19:26:24.210Z",maintainer-agent,Bootstrap run 5 from empty active queue and choose smallest high-value non-duplicate contract guard.
+  "2026-03-06T19:26:33.676Z",maintainer-agent,"Planned changeset: extend release-readiness integration contracts to assert planned/not-yet-canonical create flags remain absent from active CLI help and docs-backed create contract sections."
+  "2026-03-06T19:39:01.784Z",maintainer-agent,"Implemented changeset: added a release-readiness integration guard in tests/integration/release-readiness-contract.spec.ts that asserts planned/not-yet-canonical flags remain absent from active create contract sections (PRD/README/AGENTS) and from pm create --help output."
+  "2026-03-06T19:39:01.951Z",maintainer-agent,"Evidence: node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts passed (25/25). pm test pm-x89f --run --timeout 3600 passed linked tests (2 passed, 0 failed), including node scripts/run-tests.mjs coverage with 100% lines/branches/functions/statements. pm test-all --status in_progress --timeout 3600 passed (items=1 linked_tests=2 passed=2 failed=0 skipped=0). pm test-all --status closed --timeout 3600 passed (items=101 linked_tests=285 passed=63 failed=0 skipped=222). Follow-up items: none."
+notes[1]{created_at,author,text}:
+  "2026-03-06T19:26:24.210Z",maintainer-agent,Add integration guard for planned flag absence in CLI help and docs-backed create contract.
+files[1]{path,scope,note}:
+  tests/integration/release-readiness-contract.spec.ts,project,add planned-flag absence contract test
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,600,sandbox-safe coverage gate
+  node scripts/run-tests.mjs test,null,project,240,sandbox-safe regression
+docs[3]{path,scope,note}:
+  AGENTS.md,project,agent workflow contract
+  PRD.md,project,authoritative contract
+  README.md,project,public contract
+close_reason: Planned-flag absence contract guard added and full sandbox-safe verification sweeps passed with 100% coverage intact.
 body: "Targeted improvement for this run: guard against accidental exposure of planned/not-yet-canonical flags in active CLI help and user-facing create contracts."

@@ -1,32 +1,31 @@
-front_matter:
-  id: pm-nkx
-  title: "M1: Lock acquire release with TTL and conflicts"
-  description: Implement lock file behavior stale handling and conflict exit flow.
-  type: Task
-  status: closed
-  priority: 1
-  tags[4]: "area:locking",core,"milestone:1",pm-cli
-  created_at: "2026-02-17T23:02:08.036Z"
-  updated_at: "2026-02-22T19:17:01.504Z"
-  deadline: "2026-02-23T23:02:08.036Z"
-  author: steve
-  estimated_minutes: 120
-  acceptance_criteria: "Met: Lock behavior enforces conflict and stale lock policy, verified by linked lock tests and full regression sweeps."
-  dependencies[2]{id,kind,created_at,author,source_kind}:
-    pm-2xl,blocks,"2026-02-17T23:02:08.036Z",steve,null
-    pm-u9r,parent,"2026-02-17T23:02:08.036Z",steve,null
-  comments[2]{created_at,author,text}:
-    "2026-02-22T19:06:47.516Z",cursor-maintainer,"Validation plan: confirm lock acquire/release TTL conflict behavior against src/core/lock/lock.ts and close this stale-open task if linked tests and regression sweeps pass."
-    "2026-02-22T19:17:01.051Z",cursor-maintainer,"Evidence: pm test pm-nkx --run --timeout 3600 --json passed 2/2 linked tests (coverage + targeted lock suite); pm test-all --status in_progress --timeout 3600 --json totals items=9 linked_tests=30 passed=11 failed=0 skipped=19; pm test-all --status closed --timeout 3600 --json totals items=27 linked_tests=101 passed=46 failed=0 skipped=55. Coverage remains 100% lines/branches/functions/statements."
-  files[3]{path,scope,note}:
-    src/core/lock/lock.ts,project,lock acquire release implementation
-    src/core/store/item-store.ts,project,mutation lock integration
-    tests/unit/core-item-lock-coverage.spec.ts,project,lock conflict and stale handling coverage
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,2400,coverage gate verification
-    node scripts/run-tests.mjs test -- tests/unit/core-item-lock-coverage.spec.ts,null,project,900,targeted lock behavior verification
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,agent workflow contract
-    PRD.md,project,governing spec
-    README.md,project,user-facing contract
+id: pm-nkx
+title: "M1: Lock acquire release with TTL and conflicts"
+description: Implement lock file behavior stale handling and conflict exit flow.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:locking",core,"milestone:1",pm-cli
+created_at: "2026-02-17T23:02:08.036Z"
+updated_at: "2026-02-22T19:17:01.504Z"
+deadline: "2026-02-23T23:02:08.036Z"
+author: steve
+estimated_minutes: 120
+acceptance_criteria: "Met: Lock behavior enforces conflict and stale lock policy, verified by linked lock tests and full regression sweeps."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-2xl,blocks,"2026-02-17T23:02:08.036Z",steve,null
+  pm-u9r,parent,"2026-02-17T23:02:08.036Z",steve,null
+comments[2]{created_at,author,text}:
+  "2026-02-22T19:06:47.516Z",cursor-maintainer,"Validation plan: confirm lock acquire/release TTL conflict behavior against src/core/lock/lock.ts and close this stale-open task if linked tests and regression sweeps pass."
+  "2026-02-22T19:17:01.051Z",cursor-maintainer,"Evidence: pm test pm-nkx --run --timeout 3600 --json passed 2/2 linked tests (coverage + targeted lock suite); pm test-all --status in_progress --timeout 3600 --json totals items=9 linked_tests=30 passed=11 failed=0 skipped=19; pm test-all --status closed --timeout 3600 --json totals items=27 linked_tests=101 passed=46 failed=0 skipped=55. Coverage remains 100% lines/branches/functions/statements."
+files[3]{path,scope,note}:
+  src/core/lock/lock.ts,project,lock acquire release implementation
+  src/core/store/item-store.ts,project,mutation lock integration
+  tests/unit/core-item-lock-coverage.spec.ts,project,lock conflict and stale handling coverage
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,coverage gate verification
+  node scripts/run-tests.mjs test -- tests/unit/core-item-lock-coverage.spec.ts,null,project,900,targeted lock behavior verification
+docs[3]{path,scope,note}:
+  AGENTS.md,project,agent workflow contract
+  PRD.md,project,governing spec
+  README.md,project,user-facing contract
 body: Implement lock acquire and release primitives with TTL support.

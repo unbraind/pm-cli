@@ -1,32 +1,31 @@
-front_matter:
-  id: pm-mpd6
-  title: Release-readiness drift audit and sync
-  description: "Audit PRD/README/AGENTS alignment, verify baseline quality gates, and apply the next highest-value fix."
-  type: Task
-  status: closed
-  priority: 0
-  tags[4]: docs-sync,maintenance,pm-cli,release-readiness
-  created_at: "2026-03-06T15:05:41.451Z"
-  updated_at: "2026-03-06T15:12:03.472Z"
-  deadline: "2026-03-07T15:05:41.451Z"
-  author: maintainer-agent
-  estimated_minutes: 90
-  acceptance_criteria: "Contract drift identified or ruled out, linked tests executed via sandbox-safe commands, and evidence logged with coverage status."
-  comments[4]{created_at,author,text}:
-    "2026-03-06T15:05:41.451Z",maintainer-agent,Seed long-running maintainer loop and capture baseline discovery before edits.
-    "2026-03-06T15:06:05.407Z",maintainer-agent,"Starting drift audit: verify PRD/README/AGENTS alignment and run sandbox-safe regression to identify the next highest-value fix."
-    "2026-03-06T15:08:57.667Z",maintainer-agent,"Planned changeset: update AGENTS.md validation steps to explicitly include sandbox-safe coverage verification and coverage evidence logging."
-    "2026-03-06T15:11:40.338Z",maintainer-agent,"Implemented AGENTS.md workflow sync to require sandbox-safe coverage verification before close. Evidence: pm test pm-mpd6 --run passed (linked test + coverage), pm test-all --status in_progress passed (2 passed, 0 failed), and coverage remains 100% across lines/branches/functions/statements."
-  notes[1]{created_at,author,text}:
-    "2026-03-06T15:05:41.451Z",maintainer-agent,Start with docs-contract audit then choose the smallest high-value change and verify with coverage.
-  files[1]{path,scope,note}:
-    AGENTS.md,project,sync validation workflow with PRD coverage contract
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,300,sandbox-safe coverage gate
-    node scripts/run-tests.mjs test,null,project,240,sandbox-safe regression
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,workflow contract
-    PRD.md,project,authoritative contract
-    README.md,project,public contract
-  close_reason: Synced AGENTS validation workflow with PRD coverage policy; sandbox-safe tests and coverage passed.
+id: pm-mpd6
+title: Release-readiness drift audit and sync
+description: "Audit PRD/README/AGENTS alignment, verify baseline quality gates, and apply the next highest-value fix."
+type: Task
+status: closed
+priority: 0
+tags[4]: docs-sync,maintenance,pm-cli,release-readiness
+created_at: "2026-03-06T15:05:41.451Z"
+updated_at: "2026-03-06T15:12:03.472Z"
+deadline: "2026-03-07T15:05:41.451Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: "Contract drift identified or ruled out, linked tests executed via sandbox-safe commands, and evidence logged with coverage status."
+comments[4]{created_at,author,text}:
+  "2026-03-06T15:05:41.451Z",maintainer-agent,Seed long-running maintainer loop and capture baseline discovery before edits.
+  "2026-03-06T15:06:05.407Z",maintainer-agent,"Starting drift audit: verify PRD/README/AGENTS alignment and run sandbox-safe regression to identify the next highest-value fix."
+  "2026-03-06T15:08:57.667Z",maintainer-agent,"Planned changeset: update AGENTS.md validation steps to explicitly include sandbox-safe coverage verification and coverage evidence logging."
+  "2026-03-06T15:11:40.338Z",maintainer-agent,"Implemented AGENTS.md workflow sync to require sandbox-safe coverage verification before close. Evidence: pm test pm-mpd6 --run passed (linked test + coverage), pm test-all --status in_progress passed (2 passed, 0 failed), and coverage remains 100% across lines/branches/functions/statements."
+notes[1]{created_at,author,text}:
+  "2026-03-06T15:05:41.451Z",maintainer-agent,Start with docs-contract audit then choose the smallest high-value change and verify with coverage.
+files[1]{path,scope,note}:
+  AGENTS.md,project,sync validation workflow with PRD coverage contract
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,300,sandbox-safe coverage gate
+  node scripts/run-tests.mjs test,null,project,240,sandbox-safe regression
+docs[3]{path,scope,note}:
+  AGENTS.md,project,workflow contract
+  PRD.md,project,authoritative contract
+  README.md,project,public contract
+close_reason: Synced AGENTS validation workflow with PRD coverage policy; sandbox-safe tests and coverage passed.
 body: "Run maintainer bootstrap, detect contract drift, and implement one scoped improvement with full evidence."

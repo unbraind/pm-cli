@@ -1,42 +1,41 @@
-front_matter:
-  id: pm-fdla
-  title: "M4 follow-up: remove deleted items from semantic vector indexes"
-  description: Ensure mutation-triggered semantic refresh removes vector entries for deleted items so semantic/hybrid search indexes stay fresh.
-  type: Task
-  status: closed
-  priority: 1
-  tags[7]: "area:search",code,docs,"milestone:4",pm-cli,"priority:1",tests
-  created_at: "2026-03-05T13:05:50.978Z"
-  updated_at: "2026-03-05T13:33:52.425Z"
-  deadline: "2026-03-06T23:59:00.000Z"
-  author: maintainer-agent
-  estimated_minutes: 90
-  acceptance_criteria: Delete and other missing-ID mutation refresh paths remove corresponding vectors in active stores (Qdrant/LanceDB). Warnings stay deterministic and coverage remains 100%.
-  dependencies[1]{id,kind,created_at,author,source_kind}:
-    pm-f45,parent,"2026-03-05T13:05:50.978Z",maintainer-agent,null
-  comments[7]{created_at,author,text}:
-    "2026-03-05T13:05:50.978Z",maintainer-agent,Why this exists semantic mutation refresh skips missing IDs and delete flows can leave stale vector records
-    "2026-03-05T13:06:04.251Z",maintainer-agent,"Planned change-set docs first: clarify semantic mutation refresh delete behavior in PRD and README, then implement vector-store delete execution and missing-ID refresh pruning with deterministic warnings plus targeted/unit regression tests."
-    "2026-03-05T13:07:11.485Z",maintainer-agent,"Docs-first update complete: PRD and README now explicitly require mutation refresh to prune vectors for missing or deleted affected IDs while preserving deterministic warning behavior on failures."
-    "2026-03-05T13:09:56.362Z",maintainer-agent,"Implemented code changes: added vector delete plan/execution in src/core/search/vector-stores.ts and wired src/core/search/cache.ts mutation refresh to prune missing IDs via best-effort vector deletes while keeping deterministic warning/skip behavior for failures."
-    "2026-03-05T13:09:56.589Z",maintainer-agent,Added regression coverage in tests/unit/vector-store-adapter.spec.ts for build/execute delete behavior and in tests/unit/search-cache.spec.ts for successful missing-ID prune plus deterministic prune-failure warnings.
-    "2026-03-05T13:33:15.768Z",maintainer-agent,"Evidence: pm test pm-fdla --run --timeout 3600 --json passed all linked tests (coverage + targeted search-cache + targeted vector-store-adapter). Regression sweeps passed: pm test-all --status in_progress --timeout 3600 --json => items=1 linked_tests=3 passed=3 failed=0 skipped=0; pm test-all --status closed --timeout 3600 --json => items=71 linked_tests=218 passed=59 failed=0 skipped=159 deterministic dedupe. Coverage proof from linked coverage command remains 100% lines/branches/functions/statements (All files 100/100/100/100). Follow-up items created: none."
-    "2026-03-05T13:33:52.425Z",maintainer-agent,"Post-close release-readiness check: rebuilt and reinstalled pm-cli globally from this repository (pnpm build && npm install -g /home/steve/GITHUB_RELEASE/pm-cli), then verified pm --version=0.1.0 and command availability on PATH."
-  notes[1]{created_at,author,text}:
-    "2026-03-05T13:05:50.978Z",maintainer-agent,Plan docs first updates in PRD and README then vector delete support plus unit and integration tests
-  files[6]{path,scope,note}:
-    PRD.md,project,docs-first semantic refresh delete-pruning contract
-    README.md,project,docs-first search baseline delete-pruning contract
-    src/core/search/cache.ts,project,mutation semantic refresh flow
-    src/core/search/vector-stores.ts,project,vector store execution primitives
-    tests/unit/search-cache.spec.ts,project,mutation semantic refresh behavior coverage
-    tests/unit/vector-store-adapter.spec.ts,project,vector store operation coverage
-  tests[3]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,2400,coverage gate
-    node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts,null,project,1200,targeted mutation refresh regression
-    node scripts/run-tests.mjs test -- tests/unit/vector-store-adapter.spec.ts,null,project,1200,vector store delete operation regression
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,dogfood workflow and test safety
-    PRD.md,project,authoritative semantic refresh contract
-    README.md,project,user-facing semantic refresh contract
+id: pm-fdla
+title: "M4 follow-up: remove deleted items from semantic vector indexes"
+description: Ensure mutation-triggered semantic refresh removes vector entries for deleted items so semantic/hybrid search indexes stay fresh.
+type: Task
+status: closed
+priority: 1
+tags[7]: "area:search",code,docs,"milestone:4",pm-cli,"priority:1",tests
+created_at: "2026-03-05T13:05:50.978Z"
+updated_at: "2026-03-05T13:33:52.425Z"
+deadline: "2026-03-06T23:59:00.000Z"
+author: maintainer-agent
+estimated_minutes: 90
+acceptance_criteria: Delete and other missing-ID mutation refresh paths remove corresponding vectors in active stores (Qdrant/LanceDB). Warnings stay deterministic and coverage remains 100%.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-f45,parent,"2026-03-05T13:05:50.978Z",maintainer-agent,null
+comments[7]{created_at,author,text}:
+  "2026-03-05T13:05:50.978Z",maintainer-agent,Why this exists semantic mutation refresh skips missing IDs and delete flows can leave stale vector records
+  "2026-03-05T13:06:04.251Z",maintainer-agent,"Planned change-set docs first: clarify semantic mutation refresh delete behavior in PRD and README, then implement vector-store delete execution and missing-ID refresh pruning with deterministic warnings plus targeted/unit regression tests."
+  "2026-03-05T13:07:11.485Z",maintainer-agent,"Docs-first update complete: PRD and README now explicitly require mutation refresh to prune vectors for missing or deleted affected IDs while preserving deterministic warning behavior on failures."
+  "2026-03-05T13:09:56.362Z",maintainer-agent,"Implemented code changes: added vector delete plan/execution in src/core/search/vector-stores.ts and wired src/core/search/cache.ts mutation refresh to prune missing IDs via best-effort vector deletes while keeping deterministic warning/skip behavior for failures."
+  "2026-03-05T13:09:56.589Z",maintainer-agent,Added regression coverage in tests/unit/vector-store-adapter.spec.ts for build/execute delete behavior and in tests/unit/search-cache.spec.ts for successful missing-ID prune plus deterministic prune-failure warnings.
+  "2026-03-05T13:33:15.768Z",maintainer-agent,"Evidence: pm test pm-fdla --run --timeout 3600 --json passed all linked tests (coverage + targeted search-cache + targeted vector-store-adapter). Regression sweeps passed: pm test-all --status in_progress --timeout 3600 --json => items=1 linked_tests=3 passed=3 failed=0 skipped=0; pm test-all --status closed --timeout 3600 --json => items=71 linked_tests=218 passed=59 failed=0 skipped=159 deterministic dedupe. Coverage proof from linked coverage command remains 100% lines/branches/functions/statements (All files 100/100/100/100). Follow-up items created: none."
+  "2026-03-05T13:33:52.425Z",maintainer-agent,"Post-close release-readiness check: rebuilt and reinstalled pm-cli globally from this repository (pnpm build && npm install -g /home/steve/GITHUB_RELEASE/pm-cli), then verified pm --version=0.1.0 and command availability on PATH."
+notes[1]{created_at,author,text}:
+  "2026-03-05T13:05:50.978Z",maintainer-agent,Plan docs first updates in PRD and README then vector delete support plus unit and integration tests
+files[6]{path,scope,note}:
+  PRD.md,project,docs-first semantic refresh delete-pruning contract
+  README.md,project,docs-first search baseline delete-pruning contract
+  src/core/search/cache.ts,project,mutation semantic refresh flow
+  src/core/search/vector-stores.ts,project,vector store execution primitives
+  tests/unit/search-cache.spec.ts,project,mutation semantic refresh behavior coverage
+  tests/unit/vector-store-adapter.spec.ts,project,vector store operation coverage
+tests[3]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts,null,project,1200,targeted mutation refresh regression
+  node scripts/run-tests.mjs test -- tests/unit/vector-store-adapter.spec.ts,null,project,1200,vector store delete operation regression
+docs[3]{path,scope,note}:
+  AGENTS.md,project,dogfood workflow and test safety
+  PRD.md,project,authoritative semantic refresh contract
+  README.md,project,user-facing semantic refresh contract
 body: "Delete mutations currently refresh existing item embeddings but skip missing IDs. This can leave stale vectors in configured stores. This task adds docs-first contract clarification, vector-delete execution support, and mutation refresh behavior that prunes deleted IDs."

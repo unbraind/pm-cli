@@ -1,38 +1,37 @@
-front_matter:
-  id: pm-433d
-  title: "M5 follow-up: normalize extension command path whitespace"
-  description: Canonicalize internal whitespace for extension command names so overrides/handlers match deterministically regardless of spacing.
-  type: Task
-  status: closed
-  priority: 1
-  tags[6]: "area:extensions",code,"milestone:5",pm-cli,"priority:1",tests
-  created_at: "2026-03-04T15:51:09.392Z"
-  updated_at: "2026-03-04T16:01:29.757Z"
-  deadline: "2026-03-07T15:51:09.000Z"
-  author: maintainer-agent
-  estimated_minutes: 75
-  acceptance_criteria: "Met: extension command overrides and handlers now canonicalize repeated internal whitespace and match equivalent command paths deterministically; docs + tests updated and regression/coverage runs passed."
-  dependencies[1]{id,kind,created_at,author,source_kind}:
-    pm-b1w,parent,"2026-03-04T15:51:09.392Z",maintainer-agent,null
-  comments[4]{created_at,author,text}:
-    "2026-03-04T15:51:09.392Z",maintainer-agent,Whitespace normalization gap found in extension command name matching; this task closes that deterministic matching hole.
-    "2026-03-04T15:51:17.623Z",maintainer-agent,"Starting implementation: normalize extension command name canonicalization to collapse repeated internal whitespace for both registration and dispatch, then add loader unit tests."
-    "2026-03-04T15:52:32.273Z",maintainer-agent,"Implemented docs+code changes: PRD/README now document extension command-name canonicalization (trim/lowercase/internal whitespace collapse); loader normalizeCommandName now collapses internal whitespace; extension-loader unit tests now cover canonicalized override/handler registration and dispatch matching."
-    "2026-03-04T16:01:29.261Z",maintainer-agent,"Evidence: pm test pm-433d --run --timeout 3600 --json passed (2/2 linked tests). pm test-all --status in_progress --timeout 3600 --json passed (items=1 linked_tests=2 passed=2 failed=0 skipped=0). pm test-all --status closed --timeout 3600 --json passed (items=50 linked_tests=173 passed=56 failed=0 skipped=117). Coverage remained 100% for lines/branches/functions/statements in coverage runs."
-  notes[1]{created_at,author,text}:
-    "2026-03-04T15:51:09.392Z",maintainer-agent,"Plan: docs check -> implement normalizeCommandName collapse -> add unit tests -> run pm test and pm test-all."
-  learnings[1]{created_at,author,text}:
-    "2026-03-04T15:51:09.392Z",maintainer-agent,none
-  files[4]{path,scope,note}:
-    PRD.md,project,docs contract for command-path canonicalization
-    README.md,project,public docs for canonicalized extension command paths
-    src/core/extensions/loader.ts,project,command name normalization
-    tests/unit/extension-loader.spec.ts,project,whitespace normalization tests
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,3600,full coverage gate regression
-    node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,900,targeted extension loader tests
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,agent workflow requirements
-    PRD.md,project,governing extension semantics
-    README.md,project,public command semantics
+id: pm-433d
+title: "M5 follow-up: normalize extension command path whitespace"
+description: Canonicalize internal whitespace for extension command names so overrides/handlers match deterministically regardless of spacing.
+type: Task
+status: closed
+priority: 1
+tags[6]: "area:extensions",code,"milestone:5",pm-cli,"priority:1",tests
+created_at: "2026-03-04T15:51:09.392Z"
+updated_at: "2026-03-04T16:01:29.757Z"
+deadline: "2026-03-07T15:51:09.000Z"
+author: maintainer-agent
+estimated_minutes: 75
+acceptance_criteria: "Met: extension command overrides and handlers now canonicalize repeated internal whitespace and match equivalent command paths deterministically; docs + tests updated and regression/coverage runs passed."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-b1w,parent,"2026-03-04T15:51:09.392Z",maintainer-agent,null
+comments[4]{created_at,author,text}:
+  "2026-03-04T15:51:09.392Z",maintainer-agent,Whitespace normalization gap found in extension command name matching; this task closes that deterministic matching hole.
+  "2026-03-04T15:51:17.623Z",maintainer-agent,"Starting implementation: normalize extension command name canonicalization to collapse repeated internal whitespace for both registration and dispatch, then add loader unit tests."
+  "2026-03-04T15:52:32.273Z",maintainer-agent,"Implemented docs+code changes: PRD/README now document extension command-name canonicalization (trim/lowercase/internal whitespace collapse); loader normalizeCommandName now collapses internal whitespace; extension-loader unit tests now cover canonicalized override/handler registration and dispatch matching."
+  "2026-03-04T16:01:29.261Z",maintainer-agent,"Evidence: pm test pm-433d --run --timeout 3600 --json passed (2/2 linked tests). pm test-all --status in_progress --timeout 3600 --json passed (items=1 linked_tests=2 passed=2 failed=0 skipped=0). pm test-all --status closed --timeout 3600 --json passed (items=50 linked_tests=173 passed=56 failed=0 skipped=117). Coverage remained 100% for lines/branches/functions/statements in coverage runs."
+notes[1]{created_at,author,text}:
+  "2026-03-04T15:51:09.392Z",maintainer-agent,"Plan: docs check -> implement normalizeCommandName collapse -> add unit tests -> run pm test and pm test-all."
+learnings[1]{created_at,author,text}:
+  "2026-03-04T15:51:09.392Z",maintainer-agent,none
+files[4]{path,scope,note}:
+  PRD.md,project,docs contract for command-path canonicalization
+  README.md,project,public docs for canonicalized extension command paths
+  src/core/extensions/loader.ts,project,command name normalization
+  tests/unit/extension-loader.spec.ts,project,whitespace normalization tests
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,full coverage gate regression
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,900,targeted extension loader tests
+docs[3]{path,scope,note}:
+  AGENTS.md,project,agent workflow requirements
+  PRD.md,project,governing extension semantics
+  README.md,project,public command semantics
 body: "Follow-up to extension command surfaces: normalize command names by collapsing repeated whitespace before registration and dispatch, then add unit coverage for override/handler matching with irregular spacing."

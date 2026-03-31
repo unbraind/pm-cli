@@ -1,31 +1,30 @@
-front_matter:
-  id: pm-15o
-  title: "M6: Command help and README examples validated in tests"
-  description: Validate docs examples and help text through automated tests.
-  type: Task
-  status: closed
-  priority: 1
-  tags[4]: "area:docs-validation",core,"milestone:6",pm-cli
-  created_at: "2026-02-17T23:02:12.823Z"
-  updated_at: "2026-02-18T01:49:59.774Z"
-  deadline: "2026-03-19T23:02:12.823Z"
-  author: steve
-  estimated_minutes: 90
-  acceptance_criteria: README and help examples are exercised and passing in tests.
-  dependencies[2]{id,kind,created_at,author,source_kind}:
-    pm-b1w,blocks,"2026-02-17T23:02:12.823Z",steve,null
-    pm-jiw,parent,"2026-02-17T23:02:12.823Z",steve,null
-  comments[3]{created_at,author,text}:
-    "2026-02-18T01:45:31.886Z",agent,"Planned change-set: add integration tests that validate pm --help contract against README command list and execute sandboxed quickstart command flow examples to keep docs and behavior aligned."
-    "2026-02-18T01:46:42.920Z",agent,"Implemented tests/integration/help-readme-contract.spec.ts with two coverage paths: README core/roadmap/flags contract validation against pm --help, and sandboxed README quickstart lifecycle execution (init/create/list-open/claim/update/files/test/comments/update/release)."
-    "2026-02-18T01:49:59.427Z",agent,"Evidence: pm test pm-15o --run --timeout 900 --json passed both linked commands (targeted integration + full coverage). pm test-all --status in_progress --timeout 900 --json passed with totals items=6 linked_tests=11 passed=11 failed=0 skipped=0. Coverage remains 100% lines/branches/functions/statements."
-  files[1]{path,scope,note}:
-    tests/integration/help-readme-contract.spec.ts,project,validate help and README quickstart flows
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,420,full regression coverage gate
-    node scripts/run-tests.mjs test -- tests/integration/help-readme-contract.spec.ts,null,project,240,help and README contract integration
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,dogfood workflow compliance
-    PRD.md,project,governing spec
-    README.md,project,validate examples and documented command surface
+id: pm-15o
+title: "M6: Command help and README examples validated in tests"
+description: Validate docs examples and help text through automated tests.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:docs-validation",core,"milestone:6",pm-cli
+created_at: "2026-02-17T23:02:12.823Z"
+updated_at: "2026-02-18T01:49:59.774Z"
+deadline: "2026-03-19T23:02:12.823Z"
+author: steve
+estimated_minutes: 90
+acceptance_criteria: README and help examples are exercised and passing in tests.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-b1w,blocks,"2026-02-17T23:02:12.823Z",steve,null
+  pm-jiw,parent,"2026-02-17T23:02:12.823Z",steve,null
+comments[3]{created_at,author,text}:
+  "2026-02-18T01:45:31.886Z",agent,"Planned change-set: add integration tests that validate pm --help contract against README command list and execute sandboxed quickstart command flow examples to keep docs and behavior aligned."
+  "2026-02-18T01:46:42.920Z",agent,"Implemented tests/integration/help-readme-contract.spec.ts with two coverage paths: README core/roadmap/flags contract validation against pm --help, and sandboxed README quickstart lifecycle execution (init/create/list-open/claim/update/files/test/comments/update/release)."
+  "2026-02-18T01:49:59.427Z",agent,"Evidence: pm test pm-15o --run --timeout 900 --json passed both linked commands (targeted integration + full coverage). pm test-all --status in_progress --timeout 900 --json passed with totals items=6 linked_tests=11 passed=11 failed=0 skipped=0. Coverage remains 100% lines/branches/functions/statements."
+files[1]{path,scope,note}:
+  tests/integration/help-readme-contract.spec.ts,project,validate help and README quickstart flows
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,420,full regression coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/help-readme-contract.spec.ts,null,project,240,help and README contract integration
+docs[3]{path,scope,note}:
+  AGENTS.md,project,dogfood workflow compliance
+  PRD.md,project,governing spec
+  README.md,project,validate examples and documented command surface
 body: Automate validation for command help and README examples.

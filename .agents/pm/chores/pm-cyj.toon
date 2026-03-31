@@ -1,35 +1,34 @@
-front_matter:
-  id: pm-cyj
-  title: Packaging hardening for npm release
-  description: "Ensure package metadata, bin mapping, file allowlist, and prepublish build behavior are release-ready."
-  type: Chore
-  status: closed
-  priority: 0
-  tags[4]: npm,packaging,pm-cli,release-readiness
-  created_at: "2026-02-17T23:37:47.025Z"
-  updated_at: "2026-02-18T01:23:45.114Z"
-  deadline: "2026-02-21T23:37:47.025Z"
-  author: cursor-agent
-  estimated_minutes: 180
-  acceptance_criteria: "npm pack includes only required files, bin maps to built CLI, and prepublish checks/build safeguards are in place."
-  dependencies[4]{id,kind,created_at,author,source_kind}:
-    pm-2c8,related,"2026-02-17T23:37:47.025Z",cursor-agent,null
-    pm-912,related,"2026-02-17T23:37:47.025Z",cursor-agent,null
-    pm-ote,parent,"2026-02-17T23:37:47.025Z",cursor-agent,null
-    pm-pq8,related,"2026-02-17T23:37:47.025Z",cursor-agent,null
-  comments[4]{created_at,author,text}:
-    "2026-02-18T00:06:40.377Z",cursor-agent,"Packaging evidence: npm pack --dry-run succeeds, bin remains pm->dist/cli.js, dist artifacts are included, and publish payload uses a files allowlist excluding .agents project data."
-    "2026-02-18T00:16:41.772Z",cursor-agent,Final npm pack smoke check passes with scripts/install.sh and scripts/install.ps1 included in package allowlist alongside dist and docs.
-    "2026-02-18T01:22:33.253Z",steve,"Planned change-set: add npm pack --dry-run smoke gate to CI so package payload validation runs continuously in release-readiness workflows."
-    "2026-02-18T01:23:27.006Z",steve,"Evidence: updated .github/workflows/ci.yml to add CI step 'Packaging smoke check' running npm pack --dry-run. Validation: pm test pm-cyj --run --timeout 180 passed (npm pack --dry-run, exit 0). Regression: pm test-all --status in_progress --timeout 300 passed with totals items=6 linked_tests=8 passed=8 failed=0 skipped=0. Coverage proof from linked sandbox command node scripts/run-tests.mjs coverage remained 100% statements/branches/functions/lines."
-  files[3]{path,scope,note}:
-    .github/workflows/ci.yml,project,add npm pack dry-run CI gate
-    .gitignore,project,Ignore coverage artifacts from local verification runs
-    package.json,project,Added files allowlist and prepublish build guard
-  tests[1]{command,path,scope,timeout_seconds,note}:
-    npm pack --dry-run,null,project,120,Validate packaged file set excludes dev artifacts
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,dogfood workflow contract
-    PRD.md,project,governing spec
-    README.md,project,release checklist contract
+id: pm-cyj
+title: Packaging hardening for npm release
+description: "Ensure package metadata, bin mapping, file allowlist, and prepublish build behavior are release-ready."
+type: Chore
+status: closed
+priority: 0
+tags[4]: npm,packaging,pm-cli,release-readiness
+created_at: "2026-02-17T23:37:47.025Z"
+updated_at: "2026-02-18T01:23:45.114Z"
+deadline: "2026-02-21T23:37:47.025Z"
+author: cursor-agent
+estimated_minutes: 180
+acceptance_criteria: "npm pack includes only required files, bin maps to built CLI, and prepublish checks/build safeguards are in place."
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-2c8,related,"2026-02-17T23:37:47.025Z",cursor-agent,null
+  pm-912,related,"2026-02-17T23:37:47.025Z",cursor-agent,null
+  pm-ote,parent,"2026-02-17T23:37:47.025Z",cursor-agent,null
+  pm-pq8,related,"2026-02-17T23:37:47.025Z",cursor-agent,null
+comments[4]{created_at,author,text}:
+  "2026-02-18T00:06:40.377Z",cursor-agent,"Packaging evidence: npm pack --dry-run succeeds, bin remains pm->dist/cli.js, dist artifacts are included, and publish payload uses a files allowlist excluding .agents project data."
+  "2026-02-18T00:16:41.772Z",cursor-agent,Final npm pack smoke check passes with scripts/install.sh and scripts/install.ps1 included in package allowlist alongside dist and docs.
+  "2026-02-18T01:22:33.253Z",steve,"Planned change-set: add npm pack --dry-run smoke gate to CI so package payload validation runs continuously in release-readiness workflows."
+  "2026-02-18T01:23:27.006Z",steve,"Evidence: updated .github/workflows/ci.yml to add CI step 'Packaging smoke check' running npm pack --dry-run. Validation: pm test pm-cyj --run --timeout 180 passed (npm pack --dry-run, exit 0). Regression: pm test-all --status in_progress --timeout 300 passed with totals items=6 linked_tests=8 passed=8 failed=0 skipped=0. Coverage proof from linked sandbox command node scripts/run-tests.mjs coverage remained 100% statements/branches/functions/lines."
+files[3]{path,scope,note}:
+  .github/workflows/ci.yml,project,add npm pack dry-run CI gate
+  .gitignore,project,Ignore coverage artifacts from local verification runs
+  package.json,project,Added files allowlist and prepublish build guard
+tests[1]{command,path,scope,timeout_seconds,note}:
+  npm pack --dry-run,null,project,120,Validate packaged file set excludes dev artifacts
+docs[3]{path,scope,note}:
+  AGENTS.md,project,dogfood workflow contract
+  PRD.md,project,governing spec
+  README.md,project,release checklist contract
 body: Harden package.json and packaging filters to ship only runtime assets and docs while preserving pm command entrypoint compatibility.

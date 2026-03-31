@@ -1,33 +1,32 @@
-front_matter:
-  id: pm-l4o
-  title: "M1: Markdown item parser and serializer"
-  description: Implement JSON front matter plus body parse and write flow.
-  type: Task
-  status: closed
-  priority: 1
-  tags[4]: "area:item-io",core,"milestone:1",pm-cli
-  created_at: "2026-02-17T23:02:07.611Z"
-  updated_at: "2026-02-23T00:02:13.393Z"
-  deadline: "2026-02-23T23:02:07.611Z"
-  author: steve
-  estimated_minutes: 150
-  acceptance_criteria: Item parser and serializer round-trip without semantic drift.
-  dependencies[2]{id,kind,created_at,author,source_kind}:
-    pm-2xl,blocks,"2026-02-17T23:02:07.611Z",steve,null
-    pm-u9r,parent,"2026-02-17T23:02:07.611Z",steve,null
-  comments[2]{created_at,author,text}:
-    "2026-02-22T23:45:15.158Z",cursor-maintainer,"Planned changeset: validate parser/serializer round-trip behavior against current implementation and tests, link canonical docs/files/tests, then run pm-linked verification and regression sweeps before closure decision."
-    "2026-02-23T00:02:12.781Z",cursor-maintainer,"Evidence: ran pm test pm-l4o --run --timeout 3600 --json (3/3 linked tests passed), pm test-all --status in_progress --timeout 3600 --json (totals items=9 linked_tests=32 passed=13 failed=0 skipped=19), and pm test-all --status closed --timeout 3600 --json (totals items=29 linked_tests=104 passed=46 failed=0 skipped=58). Coverage statement: sandboxed coverage run in pm-linked tests remains 100% lines/branches/functions/statements. Acceptance criteria met: parser/serializer round-trip behaves without semantic drift in targeted determinism and front-matter validation tests."
-  files[3]{path,scope,note}:
-    src/core/item/item-format.ts,project,parser and serializer implementation
-    tests/unit/determinism.spec.ts,project,canonical round-trip determinism coverage
-    tests/unit/item-format-validation.spec.ts,project,front-matter validation coverage
-  tests[3]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,2400,full sandboxed coverage gate
-    node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts,null,project,900,targeted serialization round-trip
-    node scripts/run-tests.mjs test -- tests/unit/item-format-validation.spec.ts,null,project,900,targeted front-matter validation
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,agent workflow contract
-    PRD.md,project,governing spec
-    README.md,project,public contract
+id: pm-l4o
+title: "M1: Markdown item parser and serializer"
+description: Implement JSON front matter plus body parse and write flow.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:item-io",core,"milestone:1",pm-cli
+created_at: "2026-02-17T23:02:07.611Z"
+updated_at: "2026-02-23T00:02:13.393Z"
+deadline: "2026-02-23T23:02:07.611Z"
+author: steve
+estimated_minutes: 150
+acceptance_criteria: Item parser and serializer round-trip without semantic drift.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-2xl,blocks,"2026-02-17T23:02:07.611Z",steve,null
+  pm-u9r,parent,"2026-02-17T23:02:07.611Z",steve,null
+comments[2]{created_at,author,text}:
+  "2026-02-22T23:45:15.158Z",cursor-maintainer,"Planned changeset: validate parser/serializer round-trip behavior against current implementation and tests, link canonical docs/files/tests, then run pm-linked verification and regression sweeps before closure decision."
+  "2026-02-23T00:02:12.781Z",cursor-maintainer,"Evidence: ran pm test pm-l4o --run --timeout 3600 --json (3/3 linked tests passed), pm test-all --status in_progress --timeout 3600 --json (totals items=9 linked_tests=32 passed=13 failed=0 skipped=19), and pm test-all --status closed --timeout 3600 --json (totals items=29 linked_tests=104 passed=46 failed=0 skipped=58). Coverage statement: sandboxed coverage run in pm-linked tests remains 100% lines/branches/functions/statements. Acceptance criteria met: parser/serializer round-trip behaves without semantic drift in targeted determinism and front-matter validation tests."
+files[3]{path,scope,note}:
+  src/core/item/item-format.ts,project,parser and serializer implementation
+  tests/unit/determinism.spec.ts,project,canonical round-trip determinism coverage
+  tests/unit/item-format-validation.spec.ts,project,front-matter validation coverage
+tests[3]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,full sandboxed coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts,null,project,900,targeted serialization round-trip
+  node scripts/run-tests.mjs test -- tests/unit/item-format-validation.spec.ts,null,project,900,targeted front-matter validation
+docs[3]{path,scope,note}:
+  AGENTS.md,project,agent workflow contract
+  PRD.md,project,governing spec
+  README.md,project,public contract
 body: Implement parser and canonical serializer for item markdown files.

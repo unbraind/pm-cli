@@ -1,45 +1,44 @@
-front_matter:
-  id: pm-6mn1
-  title: "M4 follow-up: semantic/hybrid search limit=0 deterministic empty result"
-  description: "Make semantic and hybrid search return deterministic empty results when --limit 0 is requested, without vector query execution."
-  type: Task
-  status: closed
-  priority: 1
-  tags[7]: "area:search",code,docs,"milestone:4",pm-cli,"priority:1",tests
-  created_at: "2026-03-08T11:09:48.873Z"
-  updated_at: "2026-03-08T11:26:27.996Z"
-  deadline: "2026-03-10T23:59:00.000Z"
-  author: maintainer-agent
-  estimated_minutes: 75
-  acceptance_criteria: Semantic and hybrid search with --limit 0 return empty deterministic results and do not issue embedding/vector queries; docs and tests updated.
-  definition_of_ready: Reproduced semantic/hybrid --limit 0 failure path and identified command/test touch points.
-  order: 1
-  why_now: Close an edge-case contract gap before release sweeps.
-  parent: pm-f45
-  risk: low
-  confidence: high
-  component: search
-  regression: true
-  dependencies[1]{id,kind,created_at,author,source_kind}:
-    pm-f45,parent,"2026-03-08T11:09:48.873Z",maintainer-agent,null
-  comments[4]{created_at,author,text}:
-    "2026-03-08T11:09:48.873Z",maintainer-agent,"Why this exists: semantic/hybrid --limit 0 should be deterministic empty output instead of runtime vector limit errors."
-    "2026-03-08T11:09:58.857Z",maintainer-agent,"Planned change-set: docs-first note for search limit=0 semantics, then implement semantic/hybrid early return in runSearch and add regression tests asserting no embedding/vector calls when limit is zero."
-    "2026-03-08T11:10:25.845Z",maintainer-agent,"Docs-first update complete: PRD and README now explicitly specify that --limit 0 yields deterministic empty search results after mode/config validation without embedding/vector requests."
-    "2026-03-08T11:26:12.027Z",maintainer-agent,"Implemented runSearch limit-zero hardening: keyword mode now returns deterministic empty results when limit is 0, and semantic/hybrid modes now return deterministic empty results after provider/vector validation when limit is 0, avoiding embedding/vector query execution. Added regression unit test coverage for semantic+hybrid limit=0 fetch bypass and updated PRD/README contracts. Evidence: pm test pm-6mn1 --run --timeout 7200 --json passed (2/2 linked tests, coverage run shows 51 files and 455 tests passing with 100% lines/branches/functions/statements); pm test-all --status in_progress --timeout 7200 --json passed totals items=1 linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status closed --timeout 7200 --json passed totals items=146 linked_tests=374 passed=67 failed=0 skipped=307."
-  notes[1]{created_at,author,text}:
-    "2026-03-08T11:09:48.873Z",maintainer-agent,"Plan: docs-first note update then implement short-circuit in runSearch and add fetch-call regression coverage."
-  files[4]{path,scope,note}:
-    PRD.md,project,limit-zero semantic/hybrid behavior contract
-    README.md,project,public limit-zero search behavior note
-    src/cli/commands/search.ts,project,semantic/hybrid limit-0 short-circuit
-    tests/unit/search-command.spec.ts,project,regression coverage for limit-zero mode
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,1200,coverage gate
-    node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,240,targeted search regression
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,maintainer workflow contract
-    PRD.md,project,search limit behavior contract
-    README.md,project,public search behavior reference
-  close_reason: Implemented deterministic semantic/hybrid limit=0 empty-result short-circuit with regression tests; pm test and test-all sweeps passed with 100% coverage.
+id: pm-6mn1
+title: "M4 follow-up: semantic/hybrid search limit=0 deterministic empty result"
+description: "Make semantic and hybrid search return deterministic empty results when --limit 0 is requested, without vector query execution."
+type: Task
+status: closed
+priority: 1
+tags[7]: "area:search",code,docs,"milestone:4",pm-cli,"priority:1",tests
+created_at: "2026-03-08T11:09:48.873Z"
+updated_at: "2026-03-08T11:26:27.996Z"
+deadline: "2026-03-10T23:59:00.000Z"
+author: maintainer-agent
+estimated_minutes: 75
+acceptance_criteria: Semantic and hybrid search with --limit 0 return empty deterministic results and do not issue embedding/vector queries; docs and tests updated.
+definition_of_ready: Reproduced semantic/hybrid --limit 0 failure path and identified command/test touch points.
+order: 1
+why_now: Close an edge-case contract gap before release sweeps.
+parent: pm-f45
+risk: low
+confidence: high
+component: search
+regression: true
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-f45,parent,"2026-03-08T11:09:48.873Z",maintainer-agent,null
+comments[4]{created_at,author,text}:
+  "2026-03-08T11:09:48.873Z",maintainer-agent,"Why this exists: semantic/hybrid --limit 0 should be deterministic empty output instead of runtime vector limit errors."
+  "2026-03-08T11:09:58.857Z",maintainer-agent,"Planned change-set: docs-first note for search limit=0 semantics, then implement semantic/hybrid early return in runSearch and add regression tests asserting no embedding/vector calls when limit is zero."
+  "2026-03-08T11:10:25.845Z",maintainer-agent,"Docs-first update complete: PRD and README now explicitly specify that --limit 0 yields deterministic empty search results after mode/config validation without embedding/vector requests."
+  "2026-03-08T11:26:12.027Z",maintainer-agent,"Implemented runSearch limit-zero hardening: keyword mode now returns deterministic empty results when limit is 0, and semantic/hybrid modes now return deterministic empty results after provider/vector validation when limit is 0, avoiding embedding/vector query execution. Added regression unit test coverage for semantic+hybrid limit=0 fetch bypass and updated PRD/README contracts. Evidence: pm test pm-6mn1 --run --timeout 7200 --json passed (2/2 linked tests, coverage run shows 51 files and 455 tests passing with 100% lines/branches/functions/statements); pm test-all --status in_progress --timeout 7200 --json passed totals items=1 linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status closed --timeout 7200 --json passed totals items=146 linked_tests=374 passed=67 failed=0 skipped=307."
+notes[1]{created_at,author,text}:
+  "2026-03-08T11:09:48.873Z",maintainer-agent,"Plan: docs-first note update then implement short-circuit in runSearch and add fetch-call regression coverage."
+files[4]{path,scope,note}:
+  PRD.md,project,limit-zero semantic/hybrid behavior contract
+  README.md,project,public limit-zero search behavior note
+  src/cli/commands/search.ts,project,semantic/hybrid limit-0 short-circuit
+  tests/unit/search-command.spec.ts,project,regression coverage for limit-zero mode
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,1200,coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,240,targeted search regression
+docs[3]{path,scope,note}:
+  AGENTS.md,project,maintainer workflow contract
+  PRD.md,project,search limit behavior contract
+  README.md,project,public search behavior reference
+close_reason: Implemented deterministic semantic/hybrid limit=0 empty-result short-circuit with regression tests; pm test and test-all sweeps passed with 100% coverage.
 body: Address semantic/hybrid --limit 0 behavior drift and add regression coverage.

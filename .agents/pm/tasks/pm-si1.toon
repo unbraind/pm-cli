@@ -1,42 +1,41 @@
-front_matter:
-  id: pm-si1
-  title: "M6: Fixture corpus for restore import and search"
-  description: "Create deterministic fixture corpus consumed by restore, beads import, and search command regressions."
-  type: Task
-  status: closed
-  priority: 1
-  tags[4]: "area:fixtures",core,"milestone:6",pm-cli
-  created_at: "2026-02-17T23:02:12.642Z"
-  updated_at: "2026-02-20T10:12:29.810Z"
-  deadline: "2026-03-19T23:02:12.642Z"
-  author: steve
-  estimated_minutes: 180
-  acceptance_criteria: Fixtures live under tests/fixtures and are consumed by restore/beads/search tests; pm test and test-all pass with 100% coverage.
-  dependencies[2]{id,kind,created_at,author,source_kind}:
-    pm-b1w,blocks,"2026-02-17T23:02:12.642Z",steve,null
-    pm-jiw,parent,"2026-02-17T23:02:12.642Z",steve,null
-  comments[4]{created_at,author,text}:
-    "2026-02-20T09:14:28.160Z",cursor-maintainer-agent,"Planned change-set: add deterministic fixture corpus under tests/fixtures for restore, beads import, and keyword search scenarios; refactor/extend unit tests to consume fixtures; then run pm test + test-all and log 100% coverage evidence."
-    "2026-02-20T09:19:03.247Z",cursor-maintainer-agent,"Implemented change-set: added deterministic fixture corpus files under tests/fixtures (restore create seed, beads import/conversion JSONL, search keyword corpus) plus shared fixture loader helpers; updated restore/beads/search unit tests to consume these fixtures; updated PRD Milestone 6 checklist to mark fixture corpus complete."
-    "2026-02-20T09:42:54.056Z",cursor-maintainer-agent,"Follow-up cleanup: removed an unused local assignment in beads fixture test wiring (updatedAt) to keep static analysis clean without behavioral change."
-    "2026-02-20T10:12:03.337Z",cursor-maintainer-agent,"Evidence: node dist/cli.js test pm-si1 --run --timeout 2400 --json passed 4/4 linked tests (coverage + restore/beads/search fixture regressions). Regression sweeps (rerun after lint cleanup) passed: node dist/cli.js test-all --status in_progress --timeout 2400 --json => items=9 linked_tests=45 passed=44 failed=0 skipped=1; node dist/cli.js test-all --status closed --timeout 2400 --json => items=18 linked_tests=49 passed=46 failed=0 skipped=3. Coverage proof: node scripts/run-tests.mjs coverage reports 100% lines/branches/functions/statements. Follow-up items created: none."
-  files[9]{path,scope,note}:
-    tests/fixtures/beads/conversion-branches.jsonl,project,beads conversion branch fixture corpus
-    tests/fixtures/beads/import-records.jsonl,project,beads import fixture corpus
-    tests/fixtures/restore/create-seed.json,project,restore create seed fixture
-    tests/fixtures/restore/history-stream.jsonl,project,deterministic restore fixture stream
-    tests/fixtures/search/keyword-corpus.json,project,search keyword corpus fixture
-    tests/helpers/fixtures.ts,project,shared deterministic fixture loader helpers
-    tests/unit/beads-command.spec.ts,project,beads fixture-driven tests
-    tests/unit/restore-command.spec.ts,project,restore fixture-driven tests
-    tests/unit/search-command.spec.ts,project,search fixture-driven tests
-  tests[4]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,2400,full sandboxed coverage gate
-    node scripts/run-tests.mjs test -- tests/unit/beads-command.spec.ts,null,project,900,beads fixture regression
-    node scripts/run-tests.mjs test -- tests/unit/restore-command.spec.ts,null,project,900,restore fixture regression
-    node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,900,search fixture regression
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,dogfood workflow and evidence protocol
-    PRD.md,project,governing spec for milestone 6 fixtures
-    README.md,project,public behavior and testing contract
+id: pm-si1
+title: "M6: Fixture corpus for restore import and search"
+description: "Create deterministic fixture corpus consumed by restore, beads import, and search command regressions."
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:fixtures",core,"milestone:6",pm-cli
+created_at: "2026-02-17T23:02:12.642Z"
+updated_at: "2026-02-20T10:12:29.810Z"
+deadline: "2026-03-19T23:02:12.642Z"
+author: steve
+estimated_minutes: 180
+acceptance_criteria: Fixtures live under tests/fixtures and are consumed by restore/beads/search tests; pm test and test-all pass with 100% coverage.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-b1w,blocks,"2026-02-17T23:02:12.642Z",steve,null
+  pm-jiw,parent,"2026-02-17T23:02:12.642Z",steve,null
+comments[4]{created_at,author,text}:
+  "2026-02-20T09:14:28.160Z",cursor-maintainer-agent,"Planned change-set: add deterministic fixture corpus under tests/fixtures for restore, beads import, and keyword search scenarios; refactor/extend unit tests to consume fixtures; then run pm test + test-all and log 100% coverage evidence."
+  "2026-02-20T09:19:03.247Z",cursor-maintainer-agent,"Implemented change-set: added deterministic fixture corpus files under tests/fixtures (restore create seed, beads import/conversion JSONL, search keyword corpus) plus shared fixture loader helpers; updated restore/beads/search unit tests to consume these fixtures; updated PRD Milestone 6 checklist to mark fixture corpus complete."
+  "2026-02-20T09:42:54.056Z",cursor-maintainer-agent,"Follow-up cleanup: removed an unused local assignment in beads fixture test wiring (updatedAt) to keep static analysis clean without behavioral change."
+  "2026-02-20T10:12:03.337Z",cursor-maintainer-agent,"Evidence: node dist/cli.js test pm-si1 --run --timeout 2400 --json passed 4/4 linked tests (coverage + restore/beads/search fixture regressions). Regression sweeps (rerun after lint cleanup) passed: node dist/cli.js test-all --status in_progress --timeout 2400 --json => items=9 linked_tests=45 passed=44 failed=0 skipped=1; node dist/cli.js test-all --status closed --timeout 2400 --json => items=18 linked_tests=49 passed=46 failed=0 skipped=3. Coverage proof: node scripts/run-tests.mjs coverage reports 100% lines/branches/functions/statements. Follow-up items created: none."
+files[9]{path,scope,note}:
+  tests/fixtures/beads/conversion-branches.jsonl,project,beads conversion branch fixture corpus
+  tests/fixtures/beads/import-records.jsonl,project,beads import fixture corpus
+  tests/fixtures/restore/create-seed.json,project,restore create seed fixture
+  tests/fixtures/restore/history-stream.jsonl,project,deterministic restore fixture stream
+  tests/fixtures/search/keyword-corpus.json,project,search keyword corpus fixture
+  tests/helpers/fixtures.ts,project,shared deterministic fixture loader helpers
+  tests/unit/beads-command.spec.ts,project,beads fixture-driven tests
+  tests/unit/restore-command.spec.ts,project,restore fixture-driven tests
+  tests/unit/search-command.spec.ts,project,search fixture-driven tests
+tests[4]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,full sandboxed coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/beads-command.spec.ts,null,project,900,beads fixture regression
+  node scripts/run-tests.mjs test -- tests/unit/restore-command.spec.ts,null,project,900,restore fixture regression
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,900,search fixture regression
+docs[3]{path,scope,note}:
+  AGENTS.md,project,dogfood workflow and evidence protocol
+  PRD.md,project,governing spec for milestone 6 fixtures
+  README.md,project,public behavior and testing contract
 body: Add deterministic fixture corpus for test coverage.

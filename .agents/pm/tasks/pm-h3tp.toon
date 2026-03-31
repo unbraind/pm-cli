@@ -1,0 +1,46 @@
+id: pm-h3tp
+title: Remove TOON front_matter wrapper from item files
+description: "Emit and parse TOON item documents as root objects so .toon files no longer begin with front_matter: while preserving canonical ItemDocument behavior."
+type: Task
+status: closed
+priority: 1
+tags[4]: bugfix,item-format,pm-cli,toon
+created_at: "2026-03-31T22:15:11.346Z"
+updated_at: "2026-03-31T22:24:27.876Z"
+deadline: "2026-04-01T22:15:11.346Z"
+author: codex-agent
+estimated_minutes: 150
+acceptance_criteria: "TOON serialization writes front-matter fields at depth 0 with no top-level front_matter key, parser remains backward compatible with wrapped legacy files, and item-format tests plus regression suite pass."
+definition_of_ready: Spec references and existing pm item scan completed.
+order: 1
+goal: TOON compliance hardening
+objective: Remove wrapper key from item files
+value: Cleaner human-readable TOON and strict spec alignment
+impact: Prevents format drift and improves interoperability with TOON tooling
+outcome: All pm .toon item files no longer start with front_matter
+why_now: Recent changes introduced wrapper output across all item files and need immediate correction
+risk: medium
+confidence: high
+component: core/item-format
+regression: true
+customer_impact: Users and agents see cleaner TOON files and consistent format semantics.
+comments[4]{created_at,author,text}:
+  "2026-03-31T22:15:11.346Z",codex-agent,TOON output currently wraps item metadata under front_matter and should emit root-level fields.
+  "2026-03-31T22:16:50.485Z",codex-agent,"Implemented codec changes in item-format: TOON serializer now writes root-level fields plus body, parser accepts both new root-object shape and legacy wrapped front_matter shape for backward compatibility; updated validation tests and docs to reflect unwrapped TOON item format."
+  "2026-03-31T22:22:47.310Z",codex-agent,"Evidence: node scripts/run-tests.mjs test -- tests/unit/item-format-validation.spec.ts tests/unit/item-format-migration.spec.ts tests/unit/item-store.spec.ts passed (40/40); node scripts/run-tests.mjs coverage passed with 57/57 files and 578/578 tests plus 100% statements/branches/functions/lines. Migration verification: config set item-format json_markdown then toon scanned and migrated 239 items each pass, and rg '^front_matter:' .agents/pm returned zero matches so all item .toon files now start with root fields (for example id:)."
+  "2026-03-31T22:24:14.558Z",codex-agent,"pm test pm-h3tp --run --timeout 7200 passed all 3 linked commands: full coverage gate and both targeted TOON codec regressions."
+notes[1]{created_at,author,text}:
+  "2026-03-31T22:15:11.346Z",codex-agent,Keep parse compatibility for legacy wrapped files while writing canonical unwrapped TOON.
+files[3]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,TOON item storage shape documentation
+  src/core/item/item-format.ts,project,serializer and parser behavior
+  tests/unit/item-format-validation.spec.ts,project,TOON root object and legacy compatibility coverage
+tests[3]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,full regression and coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/item-format-validation.spec.ts tests/unit/item-format-migration.spec.ts,null,project,1800,targeted TOON codec regression
+  node scripts/run-tests.mjs test -- tests/unit/item-format-validation.spec.ts tests/unit/item-format-migration.spec.ts tests/unit/item-store.spec.ts,null,project,2400,targeted TOON codec regression
+docs[2]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,root-object TOON format example
+  README.md,project,document TOON storage shape
+close_reason: "TOON item serialization now emits root-object fields without front_matter wrapper, parser remains backward compatible, all .toon items were migrated, and linked tests plus coverage passed."
+body: Fix TOON serialization/parsing to comply with TOON root object conventions and migrate existing tracker .toon items away from the front_matter wrapper.

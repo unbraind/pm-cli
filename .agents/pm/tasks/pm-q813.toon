@@ -1,39 +1,38 @@
-front_matter:
-  id: pm-q813
-  title: Harden sandbox guard for run-script test commands
-  description: Reject unsandboxed package-manager run-script test commands in pm test --add (npm/pnpm/yarn/bun run test variants) while preserving explicit sandbox overrides.
-  type: Task
-  status: closed
-  priority: 1
-  tags[7]: "area:test-safety",code,doc,"milestone:5",pm-cli,"priority:1",tests
-  created_at: "2026-03-06T08:50:46.032Z"
-  updated_at: "2026-03-06T09:10:24.354Z"
-  deadline: "2026-03-07T23:59:59.000Z"
-  author: maintainer-agent
-  estimated_minutes: 75
-  acceptance_criteria: pm test --add rejects unsandboxed npm/pnpm/yarn/bun run-script test variants; explicit PM_PATH+PM_GLOBAL_PATH variants remain allowed; PRD/README/AGENTS docs mention run-script variants; unit coverage remains 100%.
-  dependencies[1]{id,kind,created_at,author,source_kind}:
-    pm-b1w,related,"2026-03-06T08:50:46.032Z",maintainer-agent,null
-  comments[6]{created_at,author,text}:
-    "2026-03-06T08:50:46.032Z",maintainer-agent,Need to close run-script loophole so sandbox safety policy cannot be bypassed via npm or pnpm or yarn or bun run test wrappers.
-    "2026-03-06T08:50:57.779Z",maintainer-agent,"Docs-first change: tighten sandbox policy text to explicitly include npm/pnpm/yarn/bun run-script test variants; then harden test command parsing and extend unit coverage for rejected and allowed run-script cases."
-    "2026-03-06T08:52:02.546Z",maintainer-agent,"Docs-first update completed: PRD README and AGENTS now explicitly call out unsandboxed run-script variants (npm/pnpm/yarn/bun run test) as sandbox-unsafe unless PM_PATH and PM_GLOBAL_PATH are explicitly set."
-    "2026-03-06T08:52:41.301Z",maintainer-agent,"Implementation step starting: update src/cli/commands/test.ts direct-runner parsing so package-manager run/run-script wrappers resolve their script subcommand before sandbox-safety classification."
-    "2026-03-06T08:54:32.749Z",maintainer-agent,Implemented parser hardening in src/cli/commands/test.ts by resolving package-manager run/run-script wrappers to their effective script subcommand before direct runner classification; updated tests/unit/test-command.spec.ts with new unsafe run-script cases and explicit-sandbox allow path.
-    "2026-03-06T09:10:00.127Z",maintainer-agent,"Verification evidence: pm test pm-q813 --run --timeout 7200 --json passed 2/2 linked tests (coverage + targeted unit spec). pm test-all --status in_progress --timeout 7200 --json totals: items=1 linked_tests=2 passed=2 failed=0 skipped=0. pm test-all --status closed --timeout 7200 --json totals: items=83 linked_tests=251 passed=62 failed=0 skipped=189. Coverage gate remained at 100% lines branches functions and statements."
-  notes[1]{created_at,author,text}:
-    "2026-03-06T08:50:46.032Z",maintainer-agent,Plan docs-first updates then parser hardening in test command then unit regression and pm test sweeps.
-  files[5]{path,scope,note}:
-    AGENTS.md,project,agent workflow test safety policy
-    PRD.md,project,policy wording for run-script variants
-    README.md,project,public test safety examples
-    src/cli/commands/test.ts,project,run-script direct runner detection
-    tests/unit/test-command.spec.ts,project,coverage for run-script detection
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,7200,coverage gate
-    node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,2400,targeted unit regression
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,agent operating rules
-    PRD.md,project,authoritative sandbox policy
-    README.md,project,public command contract
+id: pm-q813
+title: Harden sandbox guard for run-script test commands
+description: Reject unsandboxed package-manager run-script test commands in pm test --add (npm/pnpm/yarn/bun run test variants) while preserving explicit sandbox overrides.
+type: Task
+status: closed
+priority: 1
+tags[7]: "area:test-safety",code,doc,"milestone:5",pm-cli,"priority:1",tests
+created_at: "2026-03-06T08:50:46.032Z"
+updated_at: "2026-03-06T09:10:24.354Z"
+deadline: "2026-03-07T23:59:59.000Z"
+author: maintainer-agent
+estimated_minutes: 75
+acceptance_criteria: pm test --add rejects unsandboxed npm/pnpm/yarn/bun run-script test variants; explicit PM_PATH+PM_GLOBAL_PATH variants remain allowed; PRD/README/AGENTS docs mention run-script variants; unit coverage remains 100%.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-b1w,related,"2026-03-06T08:50:46.032Z",maintainer-agent,null
+comments[6]{created_at,author,text}:
+  "2026-03-06T08:50:46.032Z",maintainer-agent,Need to close run-script loophole so sandbox safety policy cannot be bypassed via npm or pnpm or yarn or bun run test wrappers.
+  "2026-03-06T08:50:57.779Z",maintainer-agent,"Docs-first change: tighten sandbox policy text to explicitly include npm/pnpm/yarn/bun run-script test variants; then harden test command parsing and extend unit coverage for rejected and allowed run-script cases."
+  "2026-03-06T08:52:02.546Z",maintainer-agent,"Docs-first update completed: PRD README and AGENTS now explicitly call out unsandboxed run-script variants (npm/pnpm/yarn/bun run test) as sandbox-unsafe unless PM_PATH and PM_GLOBAL_PATH are explicitly set."
+  "2026-03-06T08:52:41.301Z",maintainer-agent,"Implementation step starting: update src/cli/commands/test.ts direct-runner parsing so package-manager run/run-script wrappers resolve their script subcommand before sandbox-safety classification."
+  "2026-03-06T08:54:32.749Z",maintainer-agent,Implemented parser hardening in src/cli/commands/test.ts by resolving package-manager run/run-script wrappers to their effective script subcommand before direct runner classification; updated tests/unit/test-command.spec.ts with new unsafe run-script cases and explicit-sandbox allow path.
+  "2026-03-06T09:10:00.127Z",maintainer-agent,"Verification evidence: pm test pm-q813 --run --timeout 7200 --json passed 2/2 linked tests (coverage + targeted unit spec). pm test-all --status in_progress --timeout 7200 --json totals: items=1 linked_tests=2 passed=2 failed=0 skipped=0. pm test-all --status closed --timeout 7200 --json totals: items=83 linked_tests=251 passed=62 failed=0 skipped=189. Coverage gate remained at 100% lines branches functions and statements."
+notes[1]{created_at,author,text}:
+  "2026-03-06T08:50:46.032Z",maintainer-agent,Plan docs-first updates then parser hardening in test command then unit regression and pm test sweeps.
+files[5]{path,scope,note}:
+  AGENTS.md,project,agent workflow test safety policy
+  PRD.md,project,policy wording for run-script variants
+  README.md,project,public test safety examples
+  src/cli/commands/test.ts,project,run-script direct runner detection
+  tests/unit/test-command.spec.ts,project,coverage for run-script detection
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,2400,targeted unit regression
+docs[3]{path,scope,note}:
+  AGENTS.md,project,agent operating rules
+  PRD.md,project,authoritative sandbox policy
+  README.md,project,public command contract
 body: "Docs-first hardening follow-up: extend direct test-runner detection so run-script wrappers (e.g. npm run test) are treated as test runners for sandbox-safety validation. Keep explicit PM_PATH+PM_GLOBAL_PATH overrides and scripts/run-tests wrapper behavior unchanged."

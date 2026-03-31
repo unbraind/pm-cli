@@ -1,35 +1,34 @@
-front_matter:
-  id: pm-e6qb
-  title: Pi wrapper fallback path hardening
-  description: Make Pi wrapper node fallback resolve the built CLI path deterministically instead of assuming cwd-relative dist/cli.js.
-  type: Task
-  status: closed
-  priority: 1
-  tags[6]: "area:extensions-pi",code,"milestone:5",pm-cli,"priority:1",tests
-  created_at: "2026-03-05T00:27:48.810Z"
-  updated_at: "2026-03-05T09:33:50.129Z"
-  deadline: "2026-03-06T00:27:48.810Z"
-  author: maintainer-agent
-  estimated_minutes: 75
-  acceptance_criteria: "Pi wrapper falls back to node with a deterministic CLI path that does not depend on cwd, and unit + regression runs pass with 100 percent coverage gate maintained."
-  dependencies[1]{id,kind,created_at,author,source_kind}:
-    pm-ni7x,related,"2026-03-05T00:27:48.810Z",maintainer-agent,null
-  comments[5]{created_at,author,text}:
-    "2026-03-05T00:27:48.810Z",maintainer-agent,"Why this exists: wrapper fallback should remain reliable when Pi executes outside repo root."
-    "2026-03-05T00:28:18.833Z",maintainer-agent,"Planned change-set: resolve node fallback CLI path from wrapper module location and adjust unit tests to assert deterministic absolute fallback path behavior without cwd assumptions."
-    "2026-03-05T00:29:54.856Z",maintainer-agent,"Implemented changeset: docs/pi/extensions/pm/index.ts now resolves NODE_FALLBACK_CLI_PATH from import.meta.url and uses that absolute path for node fallback invocation; tests/unit/pi-agent-extension.spec.ts now asserts the fallback arg is absolute and ends with dist/cli.js while preserving existing fallback behavior checks."
-    "2026-03-05T00:40:21.796Z",maintainer-agent,"Evidence: pm test pm-e6qb --run --timeout 7200 --json passed 2/2 linked tests; pm test-all --status in_progress --timeout 7200 --json passed totals items=1 linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status closed --timeout 7200 --json passed totals items=65 linked_tests=204 passed=57 failed=0 skipped=147. Coverage proof remained 100 percent lines/branches/functions/statements (All files 100/100/100/100) from sandboxed run-tests coverage output. Docs alignment check: PRD/README/AGENTS contracts remain accurate with this internal fallback-path hardening; no contract text change required."
-    "2026-03-05T00:42:34.255Z",maintainer-agent,"Post-close maintainer check: refreshed global install via npm install -g . and verified pm --version reports 0.1.0."
-  notes[1]{created_at,author,text}:
-    "2026-03-05T00:27:48.810Z",maintainer-agent,"Plan: update wrapper fallback path construction and extend pi-agent-extension unit assertions."
-  files[2]{path,scope,note}:
-    .pi/extensions/pm-cli/index.ts,project,Pi wrapper project-scoped module path
-    tests/unit/pi-agent-extension.spec.ts,project,fallback regression assertions
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,2400,sandboxed coverage gate
-    node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts,null,project,1200,targeted Pi wrapper regression
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,workflow contract
-    PRD.md,project,governing spec
-    README.md,project,public contract reference
+id: pm-e6qb
+title: Pi wrapper fallback path hardening
+description: Make Pi wrapper node fallback resolve the built CLI path deterministically instead of assuming cwd-relative dist/cli.js.
+type: Task
+status: closed
+priority: 1
+tags[6]: "area:extensions-pi",code,"milestone:5",pm-cli,"priority:1",tests
+created_at: "2026-03-05T00:27:48.810Z"
+updated_at: "2026-03-05T09:33:50.129Z"
+deadline: "2026-03-06T00:27:48.810Z"
+author: maintainer-agent
+estimated_minutes: 75
+acceptance_criteria: "Pi wrapper falls back to node with a deterministic CLI path that does not depend on cwd, and unit + regression runs pass with 100 percent coverage gate maintained."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ni7x,related,"2026-03-05T00:27:48.810Z",maintainer-agent,null
+comments[5]{created_at,author,text}:
+  "2026-03-05T00:27:48.810Z",maintainer-agent,"Why this exists: wrapper fallback should remain reliable when Pi executes outside repo root."
+  "2026-03-05T00:28:18.833Z",maintainer-agent,"Planned change-set: resolve node fallback CLI path from wrapper module location and adjust unit tests to assert deterministic absolute fallback path behavior without cwd assumptions."
+  "2026-03-05T00:29:54.856Z",maintainer-agent,"Implemented changeset: docs/pi/extensions/pm/index.ts now resolves NODE_FALLBACK_CLI_PATH from import.meta.url and uses that absolute path for node fallback invocation; tests/unit/pi-agent-extension.spec.ts now asserts the fallback arg is absolute and ends with dist/cli.js while preserving existing fallback behavior checks."
+  "2026-03-05T00:40:21.796Z",maintainer-agent,"Evidence: pm test pm-e6qb --run --timeout 7200 --json passed 2/2 linked tests; pm test-all --status in_progress --timeout 7200 --json passed totals items=1 linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status closed --timeout 7200 --json passed totals items=65 linked_tests=204 passed=57 failed=0 skipped=147. Coverage proof remained 100 percent lines/branches/functions/statements (All files 100/100/100/100) from sandboxed run-tests coverage output. Docs alignment check: PRD/README/AGENTS contracts remain accurate with this internal fallback-path hardening; no contract text change required."
+  "2026-03-05T00:42:34.255Z",maintainer-agent,"Post-close maintainer check: refreshed global install via npm install -g . and verified pm --version reports 0.1.0."
+notes[1]{created_at,author,text}:
+  "2026-03-05T00:27:48.810Z",maintainer-agent,"Plan: update wrapper fallback path construction and extend pi-agent-extension unit assertions."
+files[2]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,Pi wrapper project-scoped module path
+  tests/unit/pi-agent-extension.spec.ts,project,fallback regression assertions
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,sandboxed coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts,null,project,1200,targeted Pi wrapper regression
+docs[3]{path,scope,note}:
+  AGENTS.md,project,workflow contract
+  PRD.md,project,governing spec
+  README.md,project,public contract reference
 body: "Context: docs/pi/extensions/pm/index.ts currently falls back to node dist/cli.js when pm is unavailable, which assumes the current working directory is the repository root. Approach: resolve fallback CLI path from module location and add targeted regression tests for deterministic fallback arg shape."

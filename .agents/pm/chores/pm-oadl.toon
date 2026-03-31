@@ -1,34 +1,33 @@
-front_matter:
-  id: pm-oadl
-  title: Release readiness contract audit and next fix
-  description: "Audit current repo against PRD/README/AGENTS, run safe regressions, and implement the highest-value contract-aligned fix."
-  type: Chore
-  status: closed
-  priority: 0
-  tags[3]: maintainer,pm-cli,release-readiness
-  created_at: "2026-03-06T15:16:40.917Z"
-  updated_at: "2026-03-06T15:24:30.180Z"
-  deadline: "2026-03-07T15:16:40.917Z"
-  author: maintainer-agent
-  estimated_minutes: 120
-  acceptance_criteria: One contract-aligned improvement is implemented and verified with sandbox-safe tests and coverage evidence logged.
-  comments[5]{created_at,author,text}:
-    "2026-03-06T15:16:40.917Z",maintainer-agent,Starting maintainer run to keep repo release-ready and contract-aligned.
-    "2026-03-06T15:17:01.264Z",maintainer-agent,"Plan: detect PRD README AGENTS drift and implement the smallest highest-value contract-alignment fix."
-    "2026-03-06T15:19:39.203Z",maintainer-agent,"Next changeset: add a contract test that enforces AGENTS all-flags pm create template parity with required CLI create flags."
-    "2026-03-06T15:19:59.340Z",maintainer-agent,"Refined changeset: document repo-local PM_CMD bootstrap guidance in AGENTS and add a release-contract test to keep that guidance from drifting."
-    "2026-03-06T15:24:29.987Z",maintainer-agent,"Evidence: added AGENTS session bootstrap guidance and a release-readiness contract test for PM_CMD/PM_AUTHOR workflow tokens. Commands run: node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts; node dist/cli.js test pm-oadl --run; node dist/cli.js test-all --status in_progress. Result: all passed and coverage remains 100 percent."
-  notes[1]{created_at,author,text}:
-    "2026-03-06T15:16:40.917Z",maintainer-agent,First detect drift and pick smallest high-value fix before broad refactors.
-  files[2]{path,scope,note}:
-    AGENTS.md,project,bootstrap invocation guidance
-    tests/integration/release-readiness-contract.spec.ts,project,contract guard for AGENTS bootstrap guidance
-  tests[2]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,600,sandbox-safe coverage gate
-    node scripts/run-tests.mjs test,null,project,240,sandbox-safe regression command
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,workflow contract
-    PRD.md,project,authoritative behavior contract
-    README.md,project,public contract
-  close_reason: Added AGENTS bootstrap invocation guidance and contract guardrails; linked regression and in-progress sweep passed with 100 percent coverage.
+id: pm-oadl
+title: Release readiness contract audit and next fix
+description: "Audit current repo against PRD/README/AGENTS, run safe regressions, and implement the highest-value contract-aligned fix."
+type: Chore
+status: closed
+priority: 0
+tags[3]: maintainer,pm-cli,release-readiness
+created_at: "2026-03-06T15:16:40.917Z"
+updated_at: "2026-03-06T15:24:30.180Z"
+deadline: "2026-03-07T15:16:40.917Z"
+author: maintainer-agent
+estimated_minutes: 120
+acceptance_criteria: One contract-aligned improvement is implemented and verified with sandbox-safe tests and coverage evidence logged.
+comments[5]{created_at,author,text}:
+  "2026-03-06T15:16:40.917Z",maintainer-agent,Starting maintainer run to keep repo release-ready and contract-aligned.
+  "2026-03-06T15:17:01.264Z",maintainer-agent,"Plan: detect PRD README AGENTS drift and implement the smallest highest-value contract-alignment fix."
+  "2026-03-06T15:19:39.203Z",maintainer-agent,"Next changeset: add a contract test that enforces AGENTS all-flags pm create template parity with required CLI create flags."
+  "2026-03-06T15:19:59.340Z",maintainer-agent,"Refined changeset: document repo-local PM_CMD bootstrap guidance in AGENTS and add a release-contract test to keep that guidance from drifting."
+  "2026-03-06T15:24:29.987Z",maintainer-agent,"Evidence: added AGENTS session bootstrap guidance and a release-readiness contract test for PM_CMD/PM_AUTHOR workflow tokens. Commands run: node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts; node dist/cli.js test pm-oadl --run; node dist/cli.js test-all --status in_progress. Result: all passed and coverage remains 100 percent."
+notes[1]{created_at,author,text}:
+  "2026-03-06T15:16:40.917Z",maintainer-agent,First detect drift and pick smallest high-value fix before broad refactors.
+files[2]{path,scope,note}:
+  AGENTS.md,project,bootstrap invocation guidance
+  tests/integration/release-readiness-contract.spec.ts,project,contract guard for AGENTS bootstrap guidance
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,600,sandbox-safe coverage gate
+  node scripts/run-tests.mjs test,null,project,240,sandbox-safe regression command
+docs[3]{path,scope,note}:
+  AGENTS.md,project,workflow contract
+  PRD.md,project,authoritative behavior contract
+  README.md,project,public contract
+close_reason: Added AGENTS bootstrap invocation guidance and contract guardrails; linked regression and in-progress sweep passed with 100 percent coverage.
 body: "Continuous maintainer run: bootstrap, detect drift, implement one high-value improvement, verify, and document evidence."

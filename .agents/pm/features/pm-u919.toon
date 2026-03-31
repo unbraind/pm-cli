@@ -1,22 +1,21 @@
-front_matter:
-  id: pm-u919
-  title: Command integration tests and docs for TOON storage
-  description: Integrate TOON item format behavior across commands and extensions and validate with targeted and full regression suites.
-  type: Feature
-  status: closed
-  priority: 1
-  tags[5]: commands,docs,pm-cli,tests,toon
-  created_at: "2026-03-31T20:13:17.035Z"
-  updated_at: "2026-03-31T20:58:11.571Z"
-  author: codex-agent
-  estimated_minutes: 300
-  acceptance_criteria: All relevant commands/extensions honor configured item format and docs plus regression suites validate behavior.
-  parent: pm-bckz
-  dependencies[1]{id,kind,created_at,author,source_kind}:
-    pm-bckz,parent,"2026-03-31T20:13:17.035Z",codex-agent,null
-  comments[1]{created_at,author,text}:
-    "2026-03-31T20:13:17.035Z",codex-agent,Feature tracks integration and verification completion.
-  notes[1]{created_at,author,text}:
-    "2026-03-31T20:13:17.035Z",codex-agent,Close only after full sandbox tests and coverage pass.
-  close_reason: command integration docs and verification feature delivered
+id: pm-u919
+title: Command integration tests and docs for TOON storage
+description: Integrate TOON item format behavior across commands and extensions and validate with targeted and full regression suites.
+type: Feature
+status: closed
+priority: 1
+tags[5]: commands,docs,pm-cli,tests,toon
+created_at: "2026-03-31T20:13:17.035Z"
+updated_at: "2026-03-31T20:58:11.571Z"
+author: codex-agent
+estimated_minutes: 300
+acceptance_criteria: All relevant commands/extensions honor configured item format and docs plus regression suites validate behavior.
+parent: pm-bckz
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-bckz,parent,"2026-03-31T20:13:17.035Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-03-31T20:13:17.035Z",codex-agent,Feature tracks integration and verification completion.
+notes[1]{created_at,author,text}:
+  "2026-03-31T20:13:17.035Z",codex-agent,Close only after full sandbox tests and coverage pass.
+close_reason: command integration docs and verification feature delivered
 body: Update command and extension call sites and documentation then verify compatibility with full tests and coverage.

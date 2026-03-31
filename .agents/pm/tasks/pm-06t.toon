@@ -1,74 +1,73 @@
-front_matter:
-  id: pm-06t
-  title: "M1: Core command set init create get update append delete claim release close"
-  description: Implement remaining core close command with deterministic output and atomic history writes while keeping delete deferred to roadmap.
-  type: Task
-  status: closed
-  priority: 1
-  tags[4]: "area:commands",core,"milestone:1",pm-cli
-  created_at: "2026-02-17T23:02:08.240Z"
-  updated_at: "2026-03-05T09:34:42.762Z"
-  deadline: "2026-02-23T23:02:08.240Z"
-  author: steve
-  estimated_minutes: 180
-  acceptance_criteria: "create command requires all explicit scalar and repeatable seed flags (use none for explicit empty), docs/help/tests remain aligned, and sandboxed pm test + test-all sweeps pass with coverage still 100%."
-  dependencies[2]{id,kind,created_at,author,source_kind}:
-    pm-2xl,blocks,"2026-02-17T23:02:08.240Z",steve,null
-    pm-u9r,parent,"2026-02-17T23:02:08.240Z",steve,null
-  comments[18]{created_at,author,text}:
-    "2026-02-17T23:13:38.874Z",steve,Implemented init/create plus list/get/update/append/comments/files/test/docs/claim/release with deterministic serialization atomic writes and history patches. Verified with pnpm build and list-open/get/update flows.
-    "2026-02-17T23:13:49.374Z",steve,"Verification run succeeded: linked test command list-open passed and pnpm build passed after session-id persistence fixes."
-    "2026-02-17T23:16:06.137Z",steve,"Added persistent settings-backed session id generation and improved seed parser to support quoted comma values, then revalidated with pnpm build."
-    "2026-02-17T23:17:33.001Z",steve,"Added create rollback guard to remove partially written items on any post-write failure, then re-ran pnpm build and linked test execution successfully."
-    "2026-02-18T18:21:23.324Z",cursor-maintainer,"Compliance fix: replace unsandboxed list-open smoke command with sandbox-safe run-tests wrapper so linked tests never read/write repo .agents/pm data."
-    "2026-02-18T18:26:16.622Z",cursor-maintainer,"Evidence: sandbox-safe linked tests validated with pm test pm-06t --run (node scripts/run-tests.mjs test + pnpm build both passed). Regression sweep pm test-all --status in_progress --timeout 1800 --json passed totals items=4 linked_tests=15 passed=15 failed=0 skipped=0."
-    "2026-02-21T13:58:09.423Z",maintainer-agent,"Planned changeset: update PRD/README command tables first, then implement runClose + CLI wiring + unit/integration coverage; keep delete deferred and explicitly documented."
-    "2026-02-21T14:01:41.897Z",maintainer-agent,"Implemented docs-first close-command changeset: PRD/README now classify close as core and delete as roadmap; added runClose command, CLI wiring, command exports, and focused unit/integration tests."
-    "2026-02-21T14:11:41.220Z",maintainer-agent,"Evidence: ran pm test pm-06t --run --timeout 3600 --json (all 4 linked checks passed: node scripts/run-tests.mjs coverage, node scripts/run-tests.mjs test, focused close-command test slice, pnpm build). Coverage gate remained green under the enforced 100% thresholds. Regression sweeps passed: pm test-all --status in_progress --timeout 3600 --json => items=11 linked_tests=62 passed=36 failed=0 skipped=26; pm test-all --status closed --timeout 3600 --json => items=21 linked_tests=57 passed=20 failed=0 skipped=37. Follow-up items created: none."
-    "2026-02-21T14:12:19.231Z",maintainer-agent,"Handoff note: close command implementation/docs/tests completed this iteration; item remains in_progress for future delete-command roadmap work. Releasing claim until next session."
-    "2026-02-22T15:10:05.016Z",cursor-maintainer,"Planned change-set: enforce create --assigned-to-session as an explicit required flag to match PRD/README/AGENTS all-fields contract; update CLI normalization and Pi wrapper create arg builder defaulting to none for omitted input, then validate with focused + regression coverage."
-    "2026-02-22T15:36:02.797Z",cursor-maintainer,"Implemented create all-fields contract parity: create now requires --assigned-to-session in CLI command wiring/normalization (src/cli/main.ts + src/cli/commands/create.ts), Pi wrapper create args now always include --assigned-to-session (default none when omitted) in docs/pi/extensions/pm/index.ts, and regression tests were added/updated in tests/integration/cli.integration.spec.ts, tests/unit/pi-agent-extension.spec.ts, and tests/unit/todos-extension.spec.ts. Evidence: pnpm build passed; node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts tests/unit/todos-extension.spec.ts tests/integration/cli.integration.spec.ts passed. Required pm validation rerun after fixture updates: pm test pm-06t --run --timeout 3600 --json passed all 6 linked tests (including node scripts/run-tests.mjs coverage), pm test-all --status in_progress --timeout 3600 --json passed totals items=10 linked_tests=37 passed=16 failed=0 skipped=21, and pm test-all --status closed --timeout 3600 --json passed totals items=24 linked_tests=90 passed=43 failed=0 skipped=47. Coverage statement: coverage gate remained at 100% lines/branches/functions/statements in sandboxed runs. Follow-up items created: none."
-    "2026-02-22T16:07:49.269Z",cursor-maintainer,"Planned docs-first change-set: require explicit repeatable create seed flags (--dep/--comment/--note/--learning/--file/--test/--doc) using none as empty sentinel, then enforce in CLI normalization and Pi wrapper arg defaults with integration/unit coverage updates."
-    "2026-02-22T16:12:23.919Z",cursor-maintainer,"Implemented docs-first contract hardening: README.md + PRD.md now require every repeatable create seed flag to be passed explicitly (use none for empty), AGENTS.md template section documents the same requirement, src/cli/main.ts normalizeCreateOptions now enforces presence of --dep/--comment/--note/--learning/--file/--test/--doc, docs/pi/extensions/pm/index.ts defaults omitted create repeatables to none, and tests were updated in tests/integration/cli.integration.spec.ts + tests/unit/pi-agent-extension.spec.ts."
-    "2026-02-22T16:27:52.824Z",cursor-maintainer,"Evidence: pm test pm-06t --run --timeout 3600 --json passed (6/6 linked tests). Regression sweeps passed: pm test-all --status in_progress --timeout 3600 --json => totals items=9 linked_tests=34 passed=14 failed=0 skipped=20; pm test-all --status closed --timeout 3600 --json => totals items=24 linked_tests=92 passed=43 failed=0 skipped=49. Coverage proof remains 100% lines/branches/functions/statements in sandboxed coverage runs. Commands now enforce explicit create repeatable seed flags with none sentinel and Pi wrapper defaults omitted create repeatables to none."
-    "2026-02-22T16:32:21.287Z",maintainer-agent,"Planned change-set: run release-readiness contract checks to detect any remaining docs/help/implementation drift in create command surface, then apply docs-first fixes and tests if required."
-    "2026-02-22T17:00:17.473Z",maintainer-agent,"Blocked from closure this run: pm test-all --status closed failed (exit 5) due timeout in tests/integration/cli.integration.spec.ts > restores an item by version through CLI during pm-66o linked regression command. Pausing pm-06t closure while fixing reliability in pm-66o."
-    "2026-02-22T17:15:46.593Z",maintainer-agent,"Unblock note: pm-66o reliability fix removed closed-sweep timeout flake; latest validation is green: pm test pm-06t --run passed (6/6), pm test-all --status in_progress passed (items=10 linked_tests=35 passed=15 failed=0 skipped=20), and pm test-all --status closed passed (items=24 linked_tests=92 passed=43 failed=0 skipped=49) with coverage gate still 100%."
-  files[25]{path,scope,note}:
-    .pi/extensions/pm-cli/index.ts,project,Pi wrapper project-scoped module path
-    AGENTS.md,project,create repeatable seed requirement note
-    PRD.md,project,core vs roadmap command list update
-    README.md,project,command matrix updated for close
-    src/cli.ts,project,command registration and global flags
-    src/cli/commands/close.ts,project,close command implementation
-    src/cli/commands/index.ts,project,export runClose
-    src/cli/main.ts,project,register close command
-    src/commands/claim.ts,project,session ownership commands
-    src/commands/close.ts,project,compat re-export for close command
-    src/commands/comments.ts,project,comments mutation and listing
-    src/commands/create.ts,project,create rollback and session-aware lock usage
-    src/commands/docs.ts,project,linked docs tracking command
-    src/commands/files.ts,project,linked file tracking command
-    src/commands/test.ts,project,linked test tracking and optional execution
-    src/commands/update.ts,project,update command implementation
-    src/item-format.ts,project,undefined-key normalization cleanup
-    src/item-store.ts,project,shared lock mutate and history pipeline
-    src/parse.ts,project,CSV key-value parser with quoted comma support
-    src/settings.ts,project,persistent session id generation
-    tests/integration/cli.integration.spec.ts,project,exercise close command in lifecycle
-    tests/integration/release-readiness-contract.spec.ts,project,doc/help command alignment contract
-    tests/unit/close-command.spec.ts,project,unit coverage for runClose
-    tests/unit/pi-agent-extension.spec.ts,project,assert Pi wrapper emits required assigned-to-session flag
-    tests/unit/todos-extension.spec.ts,project,update create fixtures for required assigned-to-session contract
-  tests[6]{command,path,scope,timeout_seconds,note}:
-    node scripts/run-tests.mjs coverage,null,project,3600,full coverage gate in sandbox
-    node scripts/run-tests.mjs test,null,project,1200,Sandboxed core command regression
-    node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,1800,sandboxed focused validation for close command
-    node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts,null,project,1800,targeted create/PI parity regression
-    node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts,null,project,900,validate create-required assigned flag across todos fixtures
-    pnpm build,null,project,120,TypeScript build verification
-  docs[3]{path,scope,note}:
-    AGENTS.md,project,agent workflow and dogfood protocol
-    PRD.md,project,authoritative behavior contract
-    README.md,project,user-facing command contract
+id: pm-06t
+title: "M1: Core command set init create get update append delete claim release close"
+description: Implement remaining core close command with deterministic output and atomic history writes while keeping delete deferred to roadmap.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:commands",core,"milestone:1",pm-cli
+created_at: "2026-02-17T23:02:08.240Z"
+updated_at: "2026-03-05T09:34:42.762Z"
+deadline: "2026-02-23T23:02:08.240Z"
+author: steve
+estimated_minutes: 180
+acceptance_criteria: "create command requires all explicit scalar and repeatable seed flags (use none for explicit empty), docs/help/tests remain aligned, and sandboxed pm test + test-all sweeps pass with coverage still 100%."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-2xl,blocks,"2026-02-17T23:02:08.240Z",steve,null
+  pm-u9r,parent,"2026-02-17T23:02:08.240Z",steve,null
+comments[18]{created_at,author,text}:
+  "2026-02-17T23:13:38.874Z",steve,Implemented init/create plus list/get/update/append/comments/files/test/docs/claim/release with deterministic serialization atomic writes and history patches. Verified with pnpm build and list-open/get/update flows.
+  "2026-02-17T23:13:49.374Z",steve,"Verification run succeeded: linked test command list-open passed and pnpm build passed after session-id persistence fixes."
+  "2026-02-17T23:16:06.137Z",steve,"Added persistent settings-backed session id generation and improved seed parser to support quoted comma values, then revalidated with pnpm build."
+  "2026-02-17T23:17:33.001Z",steve,"Added create rollback guard to remove partially written items on any post-write failure, then re-ran pnpm build and linked test execution successfully."
+  "2026-02-18T18:21:23.324Z",cursor-maintainer,"Compliance fix: replace unsandboxed list-open smoke command with sandbox-safe run-tests wrapper so linked tests never read/write repo .agents/pm data."
+  "2026-02-18T18:26:16.622Z",cursor-maintainer,"Evidence: sandbox-safe linked tests validated with pm test pm-06t --run (node scripts/run-tests.mjs test + pnpm build both passed). Regression sweep pm test-all --status in_progress --timeout 1800 --json passed totals items=4 linked_tests=15 passed=15 failed=0 skipped=0."
+  "2026-02-21T13:58:09.423Z",maintainer-agent,"Planned changeset: update PRD/README command tables first, then implement runClose + CLI wiring + unit/integration coverage; keep delete deferred and explicitly documented."
+  "2026-02-21T14:01:41.897Z",maintainer-agent,"Implemented docs-first close-command changeset: PRD/README now classify close as core and delete as roadmap; added runClose command, CLI wiring, command exports, and focused unit/integration tests."
+  "2026-02-21T14:11:41.220Z",maintainer-agent,"Evidence: ran pm test pm-06t --run --timeout 3600 --json (all 4 linked checks passed: node scripts/run-tests.mjs coverage, node scripts/run-tests.mjs test, focused close-command test slice, pnpm build). Coverage gate remained green under the enforced 100% thresholds. Regression sweeps passed: pm test-all --status in_progress --timeout 3600 --json => items=11 linked_tests=62 passed=36 failed=0 skipped=26; pm test-all --status closed --timeout 3600 --json => items=21 linked_tests=57 passed=20 failed=0 skipped=37. Follow-up items created: none."
+  "2026-02-21T14:12:19.231Z",maintainer-agent,"Handoff note: close command implementation/docs/tests completed this iteration; item remains in_progress for future delete-command roadmap work. Releasing claim until next session."
+  "2026-02-22T15:10:05.016Z",cursor-maintainer,"Planned change-set: enforce create --assigned-to-session as an explicit required flag to match PRD/README/AGENTS all-fields contract; update CLI normalization and Pi wrapper create arg builder defaulting to none for omitted input, then validate with focused + regression coverage."
+  "2026-02-22T15:36:02.797Z",cursor-maintainer,"Implemented create all-fields contract parity: create now requires --assigned-to-session in CLI command wiring/normalization (src/cli/main.ts + src/cli/commands/create.ts), Pi wrapper create args now always include --assigned-to-session (default none when omitted) in docs/pi/extensions/pm/index.ts, and regression tests were added/updated in tests/integration/cli.integration.spec.ts, tests/unit/pi-agent-extension.spec.ts, and tests/unit/todos-extension.spec.ts. Evidence: pnpm build passed; node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts tests/unit/todos-extension.spec.ts tests/integration/cli.integration.spec.ts passed. Required pm validation rerun after fixture updates: pm test pm-06t --run --timeout 3600 --json passed all 6 linked tests (including node scripts/run-tests.mjs coverage), pm test-all --status in_progress --timeout 3600 --json passed totals items=10 linked_tests=37 passed=16 failed=0 skipped=21, and pm test-all --status closed --timeout 3600 --json passed totals items=24 linked_tests=90 passed=43 failed=0 skipped=47. Coverage statement: coverage gate remained at 100% lines/branches/functions/statements in sandboxed runs. Follow-up items created: none."
+  "2026-02-22T16:07:49.269Z",cursor-maintainer,"Planned docs-first change-set: require explicit repeatable create seed flags (--dep/--comment/--note/--learning/--file/--test/--doc) using none as empty sentinel, then enforce in CLI normalization and Pi wrapper arg defaults with integration/unit coverage updates."
+  "2026-02-22T16:12:23.919Z",cursor-maintainer,"Implemented docs-first contract hardening: README.md + PRD.md now require every repeatable create seed flag to be passed explicitly (use none for empty), AGENTS.md template section documents the same requirement, src/cli/main.ts normalizeCreateOptions now enforces presence of --dep/--comment/--note/--learning/--file/--test/--doc, docs/pi/extensions/pm/index.ts defaults omitted create repeatables to none, and tests were updated in tests/integration/cli.integration.spec.ts + tests/unit/pi-agent-extension.spec.ts."
+  "2026-02-22T16:27:52.824Z",cursor-maintainer,"Evidence: pm test pm-06t --run --timeout 3600 --json passed (6/6 linked tests). Regression sweeps passed: pm test-all --status in_progress --timeout 3600 --json => totals items=9 linked_tests=34 passed=14 failed=0 skipped=20; pm test-all --status closed --timeout 3600 --json => totals items=24 linked_tests=92 passed=43 failed=0 skipped=49. Coverage proof remains 100% lines/branches/functions/statements in sandboxed coverage runs. Commands now enforce explicit create repeatable seed flags with none sentinel and Pi wrapper defaults omitted create repeatables to none."
+  "2026-02-22T16:32:21.287Z",maintainer-agent,"Planned change-set: run release-readiness contract checks to detect any remaining docs/help/implementation drift in create command surface, then apply docs-first fixes and tests if required."
+  "2026-02-22T17:00:17.473Z",maintainer-agent,"Blocked from closure this run: pm test-all --status closed failed (exit 5) due timeout in tests/integration/cli.integration.spec.ts > restores an item by version through CLI during pm-66o linked regression command. Pausing pm-06t closure while fixing reliability in pm-66o."
+  "2026-02-22T17:15:46.593Z",maintainer-agent,"Unblock note: pm-66o reliability fix removed closed-sweep timeout flake; latest validation is green: pm test pm-06t --run passed (6/6), pm test-all --status in_progress passed (items=10 linked_tests=35 passed=15 failed=0 skipped=20), and pm test-all --status closed passed (items=24 linked_tests=92 passed=43 failed=0 skipped=49) with coverage gate still 100%."
+files[25]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,Pi wrapper project-scoped module path
+  AGENTS.md,project,create repeatable seed requirement note
+  PRD.md,project,core vs roadmap command list update
+  README.md,project,command matrix updated for close
+  src/cli.ts,project,command registration and global flags
+  src/cli/commands/close.ts,project,close command implementation
+  src/cli/commands/index.ts,project,export runClose
+  src/cli/main.ts,project,register close command
+  src/commands/claim.ts,project,session ownership commands
+  src/commands/close.ts,project,compat re-export for close command
+  src/commands/comments.ts,project,comments mutation and listing
+  src/commands/create.ts,project,create rollback and session-aware lock usage
+  src/commands/docs.ts,project,linked docs tracking command
+  src/commands/files.ts,project,linked file tracking command
+  src/commands/test.ts,project,linked test tracking and optional execution
+  src/commands/update.ts,project,update command implementation
+  src/item-format.ts,project,undefined-key normalization cleanup
+  src/item-store.ts,project,shared lock mutate and history pipeline
+  src/parse.ts,project,CSV key-value parser with quoted comma support
+  src/settings.ts,project,persistent session id generation
+  tests/integration/cli.integration.spec.ts,project,exercise close command in lifecycle
+  tests/integration/release-readiness-contract.spec.ts,project,doc/help command alignment contract
+  tests/unit/close-command.spec.ts,project,unit coverage for runClose
+  tests/unit/pi-agent-extension.spec.ts,project,assert Pi wrapper emits required assigned-to-session flag
+  tests/unit/todos-extension.spec.ts,project,update create fixtures for required assigned-to-session contract
+tests[6]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,full coverage gate in sandbox
+  node scripts/run-tests.mjs test,null,project,1200,Sandboxed core command regression
+  node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,1800,sandboxed focused validation for close command
+  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts,null,project,1800,targeted create/PI parity regression
+  node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts,null,project,900,validate create-required assigned flag across todos fixtures
+  pnpm build,null,project,120,TypeScript build verification
+docs[3]{path,scope,note}:
+  AGENTS.md,project,agent workflow and dogfood protocol
+  PRD.md,project,authoritative behavior contract
+  README.md,project,user-facing command contract
 body: "Implement primary mutation and ownership commands.\n\nAdded shared mutation helper and integrated command handlers for list get update append comments files docs test claim release."
