@@ -31,6 +31,7 @@ describe("Pi agent extension wrapper for pm", () => {
       linkedFile: ["none"],
       linkedTest: ["none"],
       doc: ["none"],
+      reminder: ["none"],
       path: "/tmp/pm-sandbox",
     });
 
@@ -51,6 +52,8 @@ describe("Pi agent extension wrapper for pm", () => {
         "--priority",
         "1",
         "--assignee",
+        "none",
+        "--reminder",
         "none",
       ]),
     );
@@ -409,6 +412,20 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(
       (tool.parameters as { properties: { includeLinked: { type: string } } }).properties.includeLinked.type,
     ).toBe("boolean");
+    expect((tool.parameters as { properties: { view: { type: string } } }).properties.view.type).toBe("string");
+    expect((tool.parameters as { properties: { past: { type: string } } }).properties.past.type).toBe("boolean");
+    expect(
+      (
+        tool.parameters as {
+          properties: {
+            reminder: { type: string; items: { type: string } };
+          };
+        }
+      ).properties.reminder,
+    ).toEqual({
+      type: "array",
+      items: { type: "string" },
+    });
     expect((tool.parameters as { properties: { blockedBy: { type: string } } }).properties.blockedBy.type).toBe(
       "string",
     );
@@ -545,6 +562,56 @@ describe("Pi agent extension wrapper for pm", () => {
       "2026-01-01T00:00:00.000Z",
       "--limit",
       "20",
+    ]);
+
+    expect(
+      buildPmCliArgs({
+        action: "calendar",
+        view: "week",
+        date: "2026-03-03T00:00:00.000Z",
+        from: "2026-03-01T00:00:00.000Z",
+        to: "2026-03-08T00:00:00.000Z",
+        past: true,
+        type: "Task",
+        tag: "pi",
+        priority: "1",
+        status: "open",
+        assignee: "none",
+        sprint: "sprint-7",
+        release: "vnext",
+        limit: "20",
+        format: "markdown",
+      }),
+    ).toEqual([
+      "--json",
+      "calendar",
+      "--view",
+      "week",
+      "--date",
+      "2026-03-03T00:00:00.000Z",
+      "--from",
+      "2026-03-01T00:00:00.000Z",
+      "--to",
+      "2026-03-08T00:00:00.000Z",
+      "--past",
+      "--type",
+      "Task",
+      "--tag",
+      "pi",
+      "--priority",
+      "1",
+      "--status",
+      "open",
+      "--assignee",
+      "none",
+      "--sprint",
+      "sprint-7",
+      "--release",
+      "vnext",
+      "--limit",
+      "20",
+      "--format",
+      "markdown",
     ]);
 
     expect(

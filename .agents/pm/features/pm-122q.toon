@@ -1,0 +1,47 @@
+front_matter:
+  id: pm-122q
+  title: Agent integration and docs hardening for calendar/reminders
+  description: "Extend completion, Pi wrapper, release/runtime contracts, and docs so calendar and reminders are agent-friendly and safely documented."
+  type: Feature
+  status: closed
+  priority: 1
+  tags[4]: agent-ux,"area:calendar","area:docs",pm-cli
+  created_at: "2026-03-31T21:27:49.453Z"
+  updated_at: "2026-03-31T22:09:21.992Z"
+  deadline: "2026-04-10T21:27:49.453Z"
+  author: codex-agent
+  estimated_minutes: 200
+  acceptance_criteria: "Completion, Pi wrapper, tests, and docs include calendar/reminder support with no regressions."
+  definition_of_ready: Command surface and documentation touchpoints are identified.
+  order: 4
+  goal: Agent planning ergonomics
+  objective: Ship integrations and docs
+  value: Reliable discoverability and automation interfaces
+  impact: Lower adoption friction and fewer contract mismatches
+  outcome: Calendar/reminder behavior is fully documented and test-guarded
+  why_now: Feature value depends on strong integration and docs parity.
+  parent: pm-qh3p
+  risk: medium
+  confidence: high
+  sprint: calendar-rollout
+  release: vnext
+  component: docs/runtime-contract
+  regression: true
+  customer_impact: Makes the new capability discoverable and automatable for agents and users.
+  dependencies[3]{id,kind,created_at,author,source_kind}:
+    pm-0lbm,related,"2026-03-31T21:27:49.453Z",codex-agent,null
+    pm-igv,related,"2026-03-31T21:27:49.453Z",codex-agent,null
+    pm-qh3p,parent,"2026-03-31T21:27:49.453Z",codex-agent,null
+  comments[2]{created_at,author,text}:
+    "2026-03-31T21:27:49.453Z",codex-agent,Feature created to track integrations and docs hardening scope.
+    "2026-03-31T22:09:21.219Z",codex-agent,"Feature complete via closed tasks pm-qze9 pm-tyq3 pm-2v01; integrations, docs, and release-readiness tests all pass at 100% coverage."
+  notes[1]{created_at,author,text}:
+    "2026-03-31T21:27:49.453Z",codex-agent,Keep release-readiness runtime tests aligned with new command surface.
+  files[1]{path,scope,note}:
+    .pi/extensions/pm-cli/index.ts,project,pi wrapper action parity
+  tests[1]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs test,null,project,1800,integration and docs contract regression
+  docs[1]{path,scope,note}:
+    README.md,project,calendar/reminder command docs
+  close_reason: Integration surfaces and documentation hardening for calendar/reminders are complete with full test coverage.
+body: "Feature C for integration surfaces, compatibility contracts, and user/developer documentation updates."

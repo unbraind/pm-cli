@@ -20,6 +20,7 @@ import type {
   LinkedFile,
   LinkedTest,
   LogNote,
+  Reminder,
 } from "../../types/index.js";
 import {
   CONFIDENCE_TEXT_VALUES,
@@ -82,6 +83,7 @@ export interface CreateCommandOptions {
   file?: string[];
   test?: string[];
   doc?: string[];
+  reminder?: string[];
 }
 
 export interface CreateResult {
@@ -286,6 +288,33 @@ function parseDocs(raw: string[] | undefined): { values: LinkedDoc[] | undefined
   return { values, explicitEmpty: false };
 }
 
+function parseReminders(raw: string[] | undefined, nowValue: string): { values: Reminder[] | undefined; explicitEmpty: boolean } {
+  if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
+  if (raw.some((entry) => isNoneToken(entry))) {
+    if (raw.length > 1) {
+      throw new PmCliError("--reminder cannot mix 'none' with reminder values", EXIT_CODE.USAGE);
+    }
+    return { values: undefined, explicitEmpty: true };
+  }
+  const values = raw.map((entry) => {
+    const kv = parseCsvKv(entry, "--reminder");
+    const atRaw = parseOptionalString(kv.at);
+    const textRaw = parseOptionalString(kv.text);
+    if (!atRaw || !textRaw) {
+      throw new PmCliError("--reminder requires at=<iso|relative> and text=<value>", EXIT_CODE.USAGE);
+    }
+    const text = textRaw.trim();
+    if (!text) {
+      throw new PmCliError("--reminder text must not be empty", EXIT_CODE.USAGE);
+    }
+    return {
+      at: resolveIsoOrRelative(atRaw, new Date(nowValue)),
+      text,
+    };
+  });
+  return { values, explicitEmpty: false };
+}
+
 function buildChangedFields(frontMatter: ItemFrontMatter, explicitUnsets: string[]): string[] {
   const changed = [
     ...FRONT_MATTER_KEY_ORDER.filter((key) => frontMatter[key] !== undefined),
@@ -349,6 +378,8 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   if (tests.explicitEmpty) explicitUnsets.push("tests");
   const docs = parseDocs(options.doc);
   if (docs.explicitEmpty) explicitUnsets.push("docs");
+  const reminders = parseReminders(options.reminder, nowValue);
+  if (reminders.explicitEmpty) explicitUnsets.push("reminders");
 
   const scalarExplicitUnsetCandidates: ReadonlyArray<readonly [string | undefined, string]> = [
     [options.deadline, "deadline"],
@@ -499,6 +530,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     files: files.values,
     tests: tests.values,
     docs: docs.values,
+    reminders: reminders.values,
   });
 
   const afterDocument: ItemDocument = canonicalDocument({

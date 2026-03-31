@@ -37,6 +37,7 @@ export const FRONT_MATTER_KEY_ORDER: ReadonlyArray<keyof ItemFrontMatter> = [
   "created_at",
   "updated_at",
   "deadline",
+  "reminders",
   "closed_at",
   "assignee",
   "source_owner",

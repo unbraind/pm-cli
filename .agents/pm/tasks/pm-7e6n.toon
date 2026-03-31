@@ -1,0 +1,50 @@
+front_matter:
+  id: pm-7e6n
+  title: Implement reminder schema validation and deterministic ordering
+  description: "Add reminder structures to item types, front-matter key ordering, and item-format validation/normalization."
+  type: Task
+  status: closed
+  priority: 1
+  tags[4]: "area:reminders","area:schema",code,pm-cli
+  created_at: "2026-03-31T21:28:01.402Z"
+  updated_at: "2026-03-31T21:43:57.503Z"
+  deadline: "2026-04-07T21:28:01.402Z"
+  author: codex-agent
+  estimated_minutes: 120
+  acceptance_criteria: "Reminder schema is validated, normalized, ordered deterministically, and backward compatible when absent."
+  definition_of_ready: Reminder schema details are finalized.
+  order: 5
+  goal: Agent planning ergonomics
+  objective: Implement reminders
+  value: Durable reminder metadata
+  impact: Stable downstream command behavior
+  outcome: Reminder field support in core schema
+  why_now: Calendar feature depends on persistent reminder fields.
+  parent: pm-c877
+  risk: medium
+  confidence: high
+  sprint: calendar-rollout
+  release: vnext
+  component: core/item-format
+  regression: true
+  customer_impact: Ensures reminder data is safely persisted.
+  dependencies[2]{id,kind,created_at,author,source_kind}:
+    pm-2p6q,related,"2026-03-31T21:28:01.402Z",codex-agent,null
+    pm-c877,parent,"2026-03-31T21:28:01.402Z",codex-agent,null
+  comments[3]{created_at,author,text}:
+    "2026-03-31T21:28:01.402Z",codex-agent,Task created for reminder schema and normalization work.
+    "2026-03-31T21:43:35.258Z",codex-agent,Implemented reminder schema support across types/constants/item-format with strict validation and deterministic reminder sorting.
+    "2026-03-31T21:43:55.724Z",codex-agent,"Evidence: linked schema tests passed via pm test --run (item-format-validation + shared-constants reminder checks)."
+  notes[1]{created_at,author,text}:
+    "2026-03-31T21:28:01.402Z",codex-agent,Add tests for malformed and valid reminder structures.
+  files[3]{path,scope,note}:
+    src/core/item/item-format.ts,project,reminder validation logic
+    src/core/shared/constants.ts,project,front-matter key-order includes reminders
+    src/types.ts,project,add Reminder type and front-matter field
+  tests[2]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs test -- tests/unit/item-format-validation.spec.ts,null,project,1800,schema coverage
+    node scripts/run-tests.mjs test -- tests/unit/item-format-validation.spec.ts tests/unit/shared-constants-errors.spec.ts,null,project,1800,schema and constants reminder coverage
+  docs[1]{path,scope,note}:
+    PRD.md,project,schema contract updates
+  close_reason: Reminder schema validation and deterministic ordering shipped with passing linked tests.
+body: Task for schema-level reminder support before command wiring.

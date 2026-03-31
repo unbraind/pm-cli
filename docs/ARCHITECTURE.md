@@ -32,6 +32,7 @@ src/
       claim.ts                   pm claim / release
       release.ts                 (re-exports from claim.ts)
       list.ts                    pm list (active-only: excludes closed/canceled) / list-all / list-* commands
+      calendar.ts                pm calendar / pm cal (agenda/day/week/month views)
       comments.ts                pm comments
       files.ts                   pm files
       docs.ts                    pm docs
@@ -148,6 +149,12 @@ Optional markdown body here.
 
 Fields are normalized and serialized in canonical key order (defined in `item-format.ts`) before hashing/history patch generation, regardless of on-disk item format.
 
+Reminder metadata is persisted directly in item front matter:
+
+- `reminders?: Array<{ at: ISO timestamp; text: string }>`
+- reminders are normalized and sorted deterministically by `at` then `text`
+- `pm create` and `pm update` support repeatable `--reminder at=<iso|relative>,text=<text>` values (`none` clears)
+
 ### Parallel Git/Worktree Safety
 
 `pm` storage is designed for high-concurrency git workflows (branches, worktrees, and multi-host collaboration):
@@ -175,6 +182,27 @@ Every item mutation follows this sequence:
 9. **Release lock** — unlink lock file
 
 If step 7 or 8 fails, the item file is rolled back (if write succeeded) before returning failure.
+
+## Calendar Pipeline
+
+`pm calendar` (`pm cal`) is a read-only projection command that derives scheduling events from existing item metadata.
+
+Pipeline:
+
+1. Resolve PM root and load settings.
+2. Read all item front matter records.
+3. Apply deterministic item filters (`type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`).
+4. Expand each item into events:
+   - deadline event (if `deadline` is set)
+   - reminder events (for each `reminders[]` entry)
+5. Apply view windows:
+   - `agenda` (default, optional `--from`/`--to`)
+   - `day`, `week`, `month` (anchored by `--date`)
+   - `--past` toggles lower-bound behavior for bounded views
+6. Sort events deterministically by timestamp, priority, item id, event kind, then reminder text.
+7. Bucket events by UTC date and compute summary counts.
+
+Output behavior is command-specific: `pm calendar` defaults to markdown for agent/human readability while keeping explicit `--format`/`--json` overrides. Global TOON defaults for other commands are unchanged.
 
 ## History and Restore
 

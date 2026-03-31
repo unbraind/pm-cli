@@ -12,6 +12,7 @@
 - Git-native items that stay reviewable in diffs
 - Safe multi-agent workflows with claims, locks, and restore
 - Deterministic output with TOON by default and `--json` when needed
+- Agent-friendly calendar views (`pm calendar` / `pm cal`) with markdown default output
 - First-class dual item storage formats: TOON (`.toon`) and JSON-front-matter Markdown (`.md`)
 - Compact TOON documents that are easier to review in terminal and GitHub web UI
 - Automatic item format migration when `item-format` config changes
@@ -119,6 +120,61 @@ pm claim <item-id>
 ```
 
 From there, use `pm update`, `pm comments`, `pm files`, `pm test`, `pm search`, and `pm close` as work progresses.
+
+## Calendar and Reminders
+
+`pm` now supports persistent item reminders plus a dedicated calendar surface for deadline and reminder planning.
+
+### Reminder fields on items
+
+- `pm create` and `pm update` accept repeatable `--reminder` flags.
+- Reminder value format: `at=<iso|relative>,text=<text>`.
+- Use `none` to explicitly clear reminders in create/update flows.
+
+Examples:
+
+```bash
+pm create \
+  --title "Prepare release notes" \
+  --description "Draft and review release notes for vnext." \
+  --type Task \
+  --status open \
+  --priority 1 \
+  --tags "release,docs" \
+  --body "" \
+  --deadline +2d \
+  --reminder "at=+1d,text=Start first draft" \
+  --reminder "at=+36h,text=Send review draft" \
+  --estimate 45 \
+  --acceptance-criteria "Release notes merged and linked." \
+  --author "maintainer-agent" \
+  --message "Create release notes task with reminders" \
+  --assignee none \
+  --dep none --comment none --note none --learning none --file none --test none --doc none
+
+pm update pm-a1b2 --reminder "at=+4h,text=Follow up with reviewer"
+pm update pm-a1b2 --reminder none
+```
+
+### Calendar command (`pm calendar` / `pm cal`)
+
+- Views: `agenda` (default), `day`, `week`, `month`
+- Default output for calendar is markdown (command-specific override)
+- Explicit output override: `--format markdown|toon|json` or global `--json`
+- Past toggles and range controls:
+  - `--past` includes past events in bounded views
+  - `--from` / `--to` supported on `agenda`
+  - `--date` anchors day/week/month calculations
+- Shared filters: `--type`, `--tag`, `--priority`, `--status`, `--assignee`, `--sprint`, `--release`, `--limit`
+
+Examples:
+
+```bash
+pm calendar
+pm cal --view week --date +2d --past
+pm calendar --view agenda --from 2026-04-01T00:00:00.000Z --to 2026-04-08T00:00:00.000Z --assignee alex
+pm calendar --view month --tag release --format json
+```
 
 ## Documentation
 

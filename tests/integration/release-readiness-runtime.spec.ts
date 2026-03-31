@@ -56,7 +56,7 @@ function escapeRegExp(value: string): string {
 
 function expectHelpContainsCommands(helpOutput: string, commands: string[]): void {
   for (const command of commands) {
-    const commandRegex = new RegExp(String.raw`\n\s+${escapeRegExp(command)}(?:\s|\[|<)`);
+    const commandRegex = new RegExp(String.raw`\n\s+${escapeRegExp(command)}(?:\||\s|\[|<)`);
     expect(helpOutput).toMatch(commandRegex);
   }
 }
@@ -85,6 +85,7 @@ const CORE_COMMANDS = [
   "list-blocked",
   "list-closed",
   "list-canceled",
+  "calendar",
   "search",
   "reindex",
   "get",
@@ -123,6 +124,7 @@ const REQUIRED_CREATE_FLAGS = [
   "--author",
   "--message",
   "--assignee",
+  "--reminder",
   "--dep",
   "--comment",
   "--note",
@@ -144,6 +146,7 @@ const REQUIRED_UPDATE_FLAGS = [
   "--acceptance-criteria",
   "--ac",
   "--assignee",
+  "--reminder",
   "--author",
   "--message",
   "--force",
@@ -178,6 +181,22 @@ const REQUIRED_RESTORE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_CLOSE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_DELETE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_APPEND_FLAGS = ["--body", "--author", "--message", "--force"];
+const REQUIRED_CALENDAR_FLAGS = [
+  "--view",
+  "--date",
+  "--from",
+  "--to",
+  "--past",
+  "--type",
+  "--tag",
+  "--priority",
+  "--status",
+  "--assignee",
+  "--sprint",
+  "--release",
+  "--limit",
+  "--format",
+];
 
 describe("release readiness runtime coverage", () => {
   it("shows the expected core commands in top-level help", async () => {
@@ -328,6 +347,18 @@ describe("release readiness runtime coverage", () => {
       for (const flag of ISSUE_METADATA_UPDATE_FLAG_TOKENS) {
         expect(help.stdout).toContain(flag);
       }
+    });
+  });
+
+  it("keeps calendar help aligned with view/filter/output flags", async () => {
+    await withTempPmPath(async (context) => {
+      const help = context.runCli(["calendar", "--help"]);
+      expect(help.code).toBe(0);
+      for (const flag of REQUIRED_CALENDAR_FLAGS) {
+        expect(help.stdout).toContain(flag);
+      }
+      expect(help.stdout).toContain("agenda|day|week|month");
+      expect(help.stdout).toContain("markdown|toon|json");
     });
   });
 
@@ -653,6 +684,10 @@ describe("release readiness runtime coverage", () => {
       const listResult = context.runCli(["list-open", "--limit", "20", "--json"], { expectJson: true });
       expect(listResult.code).toBe(0);
       expectTopLevelKeyOrder(listResult.json, ["items", "count", "filters", "now"]);
+
+      const calendarResult = context.runCli(["calendar", "--json", "--view", "agenda", "--limit", "20"], { expectJson: true });
+      expect(calendarResult.code).toBe(0);
+      expectTopLevelKeyOrder(calendarResult.json, ["view", "output_default", "now", "anchor", "range", "filters", "summary", "events", "days"]);
 
       const searchResult = context.runCli(["search", "--mode", "keyword", "--limit", "20", "runtime", "--json"], {
         expectJson: true,

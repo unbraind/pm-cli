@@ -6,7 +6,7 @@ This document defines how coding agents must use `pm` for planning, execution, a
 
 - Use `pm` as the system of record for project work.
 - Prefer deterministic, script-friendly command usage (`--json` when strict parsing is needed).
-- Default to TOON output when human + model readability and low token use are desired.
+- Default to TOON output when human + model readability and low token use are desired (calendar command is the intentional exception and defaults to markdown unless overridden).
 - Never make destructive item changes outside `pm` mutations.
 - Every mutation must produce a history entry.
 
@@ -214,9 +214,11 @@ pm config project set definition-of-done --criterion "tests pass" --criterion "l
 pm list-open --type Task --priority 0 --limit 5
 pm claim pm-a1b2
 pm update pm-a1b2 --status in_progress --description "Implement restore replay"
+pm update pm-a1b2 --reminder "at=+1d,text=Follow up on restore replay tests"
 pm files pm-a1b2 --add path=src/history.ts,scope=project,note="restore implementation"
 pm test pm-a1b2 --add command="node scripts/run-tests.mjs test",scope=project,timeout_seconds=240
 pm comments pm-a1b2 --add "Restore replay implemented with hash checks"
+pm calendar --view agenda --assignee codex-agent --format markdown
 pm test pm-a1b2 --run
 node scripts/run-tests.mjs coverage
 pm close pm-a1b2 "history replay tests passed; restore emits restore history event" --author "..." --message "Close: history replay tests passed; restore emits restore history event"
@@ -243,7 +245,8 @@ Reference implementation source lives at `.pi/extensions/pm-cli/index.ts` as a P
 Install the bundled Pi extension with `pm install pi --project` (default) or `pm install pi --global`.
 Load it in Pi with `pi -e ./.pi/extensions/pm-cli/index.ts` (or copy to `.pi/extensions/`).
 Use `action: "completion"` with `shell: "bash"|"zsh"|"fish"` to forward to `pm completion <shell>`.
-For `create` and `update`, use camelCase wrapper parameters for the canonical CLI scalar fields such as `parent`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blockedBy`, `blockedReason`, `unblockNote`, `definitionOfReady`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `whyNow`, `reporter`, `severity`, `environment`, `reproSteps`, `resolution`, `expectedResult`, `actualResult`, `affectedVersion`, `fixedVersion`, `component`, `regression`, and `customerImpact`.
+Use `action: "calendar"` for date-centric event views (`view`, `date`, `from`, `to`, `past`, `type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`, `format`).
+For `create` and `update`, use camelCase wrapper parameters for the canonical CLI scalar fields such as `parent`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blockedBy`, `blockedReason`, `unblockNote`, `definitionOfReady`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `whyNow`, `reporter`, `severity`, `environment`, `reproSteps`, `resolution`, `expectedResult`, `actualResult`, `affectedVersion`, `fixedVersion`, `component`, `regression`, and `customerImpact`; use repeatable `reminder` values for persistent reminders (`at=<iso|relative>,text=<text>`).
 
 ### Example: list open tasks
 

@@ -63,6 +63,55 @@ describe("item-format front-matter validation", () => {
     );
   });
 
+  it("parses and normalizes reminders deterministically", () => {
+    const parsed = parseItemDocument(
+      buildSource({
+        reminders: [
+          { at: "2026-02-23T10:00:00.000Z", text: " second reminder " },
+          { at: "2026-02-22T10:00:00.000Z", text: "first reminder" },
+          { at: "2026-02-23T10:00:00.000Z", text: "alpha reminder" },
+        ],
+      }),
+    );
+
+    expect(parsed.front_matter.reminders).toEqual([
+      { at: "2026-02-22T10:00:00.000Z", text: "first reminder" },
+      { at: "2026-02-23T10:00:00.000Z", text: "alpha reminder" },
+      { at: "2026-02-23T10:00:00.000Z", text: "second reminder" },
+    ]);
+  });
+
+  it("drops reminders that normalize to empty text in direct normalize fallback", () => {
+    const normalized = normalizeFrontMatter({
+      id: "pm-reminder-empty-normalize",
+      title: "Reminder normalize fallback",
+      description: "normalize fallback",
+      type: "Task",
+      status: "open",
+      priority: 1,
+      tags: [],
+      created_at: FIXED_TS,
+      updated_at: FIXED_TS,
+      reminders: [{ at: FIXED_TS, text: "   " }],
+    } as unknown as Parameters<typeof normalizeFrontMatter>[0]);
+
+    expect(normalized.reminders).toBeUndefined();
+  });
+
+  it("throws on invalid reminder structures", () => {
+    expect(() => parseItemDocument(buildSource({ reminders: "tomorrow" }))).toThrow("reminders must be an array");
+    expect(() => parseItemDocument(buildSource({ reminders: [42] }))).toThrow("reminders entries must be objects");
+    expect(() => parseItemDocument(buildSource({ reminders: [{ text: "missing at" }] }))).toThrow(
+      "reminder.at must be a string",
+    );
+    expect(() => parseItemDocument(buildSource({ reminders: [{ at: "invalid", text: "bad ts" }] }))).toThrow(
+      "reminder.at must be a valid ISO timestamp",
+    );
+    expect(() => parseItemDocument(buildSource({ reminders: [{ at: FIXED_TS, text: "" }] }))).toThrow(
+      "reminder.text must not be empty",
+    );
+  });
+
   it("parses Beads compatibility fields and sorts dependency source_kind ties deterministically", () => {
     const normalizedDirect = normalizeFrontMatter({
       id: "pm-sort-source-kind",

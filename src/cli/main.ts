@@ -6,6 +6,7 @@ import { Command } from "commander";
 import {
   runAppend,
   runActivity,
+  runCalendar,
   runClaim,
   runClose,
   runComments,
@@ -25,11 +26,14 @@ import {
   runSearch,
   runReindex,
   runRestore,
+  renderCalendarMarkdown,
   runRelease,
+  resolveCalendarOutputFormat,
   runStats,
   runTest,
   runTestAll,
   runUpdate,
+  type CalendarOptions,
   type CreateCommandOptions,
   type ListOptions,
 } from "./commands/index.js";
@@ -822,6 +826,7 @@ function normalizeCreateOptions(commandOptions: Record<string, unknown>): Create
     file: requiredRepeatable("file", "--file"),
     test: requiredRepeatable("test", "--test"),
     doc: requiredRepeatable("doc", "--doc"),
+    reminder: Array.isArray(commandOptions.reminder) ? (commandOptions.reminder as string[]) : undefined,
   };
 }
 
@@ -899,6 +904,7 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
     customerImpact:
       (typeof commandOptions.customerImpact === "string" ? commandOptions.customerImpact : undefined) ??
       (typeof commandOptions.customer_impact === "string" ? commandOptions.customer_impact : undefined),
+    reminder: Array.isArray(commandOptions.reminder) ? (commandOptions.reminder as string[]) : undefined,
   };
 }
 
@@ -927,6 +933,25 @@ function normalizeSearchOptions(options: Record<string, unknown>): Record<string
     deadlineBefore: typeof options.deadlineBefore === "string" ? options.deadlineBefore : undefined,
     deadlineAfter: typeof options.deadlineAfter === "string" ? options.deadlineAfter : undefined,
     limit: typeof options.limit === "string" ? options.limit : undefined,
+  };
+}
+
+function normalizeCalendarOptions(options: Record<string, unknown>): CalendarOptions {
+  return {
+    view: typeof options.view === "string" ? options.view : undefined,
+    date: typeof options.date === "string" ? options.date : undefined,
+    from: typeof options.from === "string" ? options.from : undefined,
+    to: typeof options.to === "string" ? options.to : undefined,
+    past: options.past === true ? true : undefined,
+    limit: typeof options.limit === "string" ? options.limit : undefined,
+    type: typeof options.type === "string" ? options.type : undefined,
+    tag: typeof options.tag === "string" ? options.tag : undefined,
+    priority: typeof options.priority === "string" ? options.priority : undefined,
+    status: typeof options.status === "string" ? options.status : undefined,
+    assignee: typeof options.assignee === "string" ? options.assignee : undefined,
+    sprint: typeof options.sprint === "string" ? options.sprint : undefined,
+    release: typeof options.release === "string" ? options.release : undefined,
+    format: typeof options.format === "string" ? options.format : undefined,
   };
 }
 
@@ -1137,6 +1162,7 @@ program
   .option("--customer-impact <value>", "Customer impact summary, or none")
   .option("--customer_impact <value>", "Alias for --customer-impact")
   .option("--dep <value>", "Seed dependency entry (required; use none for empty)", collect)
+  .option("--reminder <value>", "Seed reminder entry at=<iso|relative>,text=<text> (repeatable; use none for empty)", collect)
   .option("--comment <value>", "Seed comment entry (required; use none for empty)", collect)
   .option("--note <value>", "Seed note entry (required; use none for empty)", collect)
   .option("--learning <value>", "Seed learning entry (required; use none for empty)", collect)
@@ -1190,6 +1216,49 @@ registerListCommand("list-in-progress", "List in-progress items with optional fi
 registerListCommand("list-blocked", "List blocked items with optional filters.", "blocked");
 registerListCommand("list-closed", "List closed items with optional filters.", "closed");
 registerListCommand("list-canceled", "List canceled items with optional filters.", "canceled");
+
+function registerCalendarCommand(): void {
+  program
+    .command("calendar")
+    .alias("cal")
+    .description("Show deadline/reminder calendar views (agenda/day/week/month).")
+    .option("--view <value>", "Calendar view: agenda|day|week|month (default: agenda)")
+    .option("--date <value>", "Anchor date/time for view calculations (ISO or relative)")
+    .option("--from <value>", "Agenda lower bound (ISO or relative)")
+    .option("--to <value>", "Agenda upper bound (ISO or relative)")
+    .option("--past", "Include past entries in the selected view")
+    .option("--type <value>", "Filter by item type")
+    .option("--tag <value>", "Filter by tag")
+    .option("--priority <value>", "Filter by priority")
+    .option("--status <value>", "Filter by status")
+    .option("--assignee <value>", "Filter by assignee (use 'none' for unassigned)")
+    .option("--sprint <value>", "Filter by sprint")
+    .option("--release <value>", "Filter by release")
+    .option("--limit <n>", "Limit returned event count")
+    .option("--format <value>", "Calendar output format override: markdown|toon|json")
+    .action(async (options: Record<string, unknown>, actionCommand) => {
+      const globalOptions = getGlobalOptions(actionCommand);
+      const startedAt = Date.now();
+      const normalized = normalizeCalendarOptions(options);
+      const result = await runCalendar(normalized, globalOptions);
+      const outputFormat = resolveCalendarOutputFormat(normalized, globalOptions);
+      if (outputFormat === "markdown") {
+        if (!globalOptions.quiet) {
+          process.stdout.write(`${renderCalendarMarkdown(result)}\n`);
+        }
+      } else {
+        printResult(result, {
+          ...globalOptions,
+          json: outputFormat === "json",
+        });
+      }
+      if (globalOptions.profile) {
+        printError(`profile:command=calendar took_ms=${Date.now() - startedAt}`);
+      }
+    });
+}
+
+registerCalendarCommand();
 
 program
   .command("beads")
@@ -1430,6 +1499,7 @@ program
   .option("--regression <value>", "Set regression marker: true|false|1|0 (or none)")
   .option("--customer-impact <value>", "Set customer impact summary (or none)")
   .option("--customer_impact <value>", "Alias for --customer-impact")
+  .option("--reminder <value>", "Set reminders at=<iso|relative>,text=<text> (repeatable; use none to clear)", collect)
   .option("--force", "Force ownership override")
   .action(async (id: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);

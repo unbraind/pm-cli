@@ -34,6 +34,8 @@ describe("generateBashScript", () => {
       "list-closed",
       "list-canceled",
       "list-draft",
+      "calendar",
+      "cal",
       "search",
       "reindex",
       "history",
@@ -81,6 +83,7 @@ describe("generateBashScript", () => {
     expect(script).toContain("--description");
     expect(script).toContain("--acceptance-criteria");
     expect(script).toContain("--dep");
+    expect(script).toContain("--reminder");
     expect(script).toContain("--comment");
     expect(script).toContain("--note");
     expect(script).toContain("--learning");
@@ -91,6 +94,17 @@ describe("generateBashScript", () => {
     expect(script).toContain("--force");
     expect(script).toContain("--message");
     expect(script).toContain("--author");
+    expect(script).toContain("--reminder");
+  });
+
+  it("includes calendar-specific flags", () => {
+    const script = generateBashScript();
+    expect(script).toContain("calendar|cal");
+    expect(script).toContain("--view");
+    expect(script).toContain("--from");
+    expect(script).toContain("--to");
+    expect(script).toContain("--past");
+    expect(script).toContain("--format");
   });
 
   it("includes search-specific flags", () => {
@@ -141,6 +155,8 @@ describe("generateZshScript", () => {
     expect(script).toContain("install:Install supported integrations and extensions");
     expect(script).toContain("create:Create a new project management item");
     expect(script).toContain("completion:Generate shell completion");
+    expect(script).toContain("calendar:Show calendar views for deadlines and reminders");
+    expect(script).toContain("cal:Alias for calendar");
     expect(script).toContain("beads:Built-in Beads extension commands");
     expect(script).toContain("todos:Built-in todos extension commands");
   });
@@ -186,6 +202,15 @@ describe("generateZshScript", () => {
     expect(script).toContain("--limit");
     expect(script).toContain("--include-body");
   });
+
+  it("includes zsh calendar and reminder flags", () => {
+    const script = generateZshScript();
+    expect(script).toContain("calendar|cal");
+    expect(script).toContain("--view");
+    expect(script).toContain("--past");
+    expect(script).toContain("--format");
+    expect(script).toContain("--reminder");
+  });
 });
 
 describe("generateFishScript", () => {
@@ -218,6 +243,7 @@ describe("generateFishScript", () => {
       ["init", "Initialize"],
       ["install", "Install supported integrations and extensions"],
       ["create", "Create"],
+      ["calendar", "deadline/reminder calendar views"],
       ["get", "Show item details"],
       ["search", "Search items"],
       ["completion", "Generate shell completion"],
@@ -292,6 +318,15 @@ describe("generateFishScript", () => {
     const script = generateFishScript();
     expect(script).toContain("__fish_seen_subcommand_from update");
     expect(script).toContain("-l force");
+    expect(script).toContain("-l reminder");
+  });
+
+  it("includes fish calendar completions", () => {
+    const script = generateFishScript();
+    expect(script).toContain("__fish_seen_subcommand_from calendar cal");
+    expect(script).toContain("-l view");
+    expect(script).toContain("-l past");
+    expect(script).toContain("-l format");
   });
 });
 

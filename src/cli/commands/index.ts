@@ -6,6 +6,17 @@ export { runClaim, runRelease } from "./claim.js";
 export { runClose, type CloseCommandOptions, type CloseResult } from "./close.js";
 export { runComments } from "./comments.js";
 export { runConfig, type ConfigCommandOptions, type ConfigResult } from "./config.js";
+export {
+  CALENDAR_OUTPUT_VALUES,
+  CALENDAR_VIEW_VALUES,
+  renderCalendarMarkdown,
+  resolveCalendarOutputFormat,
+  runCalendar,
+  type CalendarOptions,
+  type CalendarOutputFormat,
+  type CalendarResult,
+  type CalendarView,
+} from "./calendar.js";
 export { runCreate, type CreateCommandOptions } from "./create.js";
 export { runDelete, type DeleteCommandOptions, type DeleteResult } from "./delete.js";
 export { runDocs } from "./docs.js";

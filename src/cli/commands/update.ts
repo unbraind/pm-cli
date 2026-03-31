@@ -1,5 +1,5 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
-import { parseOptionalNumber, parseTags } from "../../core/item/parse.js";
+import { parseCsvKv, parseOptionalNumber, parseTags } from "../../core/item/parse.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -7,6 +7,7 @@ import { isNoneToken, resolveIsoOrRelative } from "../../core/shared/time.js";
 import { mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
+import type { Reminder } from "../../types/index.js";
 import { CONFIDENCE_TEXT_VALUES, ISSUE_SEVERITY_VALUES, ITEM_TYPE_VALUES, RISK_VALUES, STATUS_VALUES } from "../../types/index.js";
 
 export interface UpdateCommandOptions {
@@ -53,6 +54,7 @@ export interface UpdateCommandOptions {
   component?: string;
   regression?: string;
   customerImpact?: string;
+  reminder?: string[];
 }
 
 export interface UpdateResult {
@@ -110,6 +112,21 @@ function parseRegressionInput(value: string): boolean {
   throw new PmCliError("Regression must be one of true|false|1|0", EXIT_CODE.USAGE);
 }
 
+function parseReminderEntries(raw: string[], nowValue: Date): Reminder[] {
+  return raw.map((entry) => {
+    const kv = parseCsvKv(entry, "--reminder");
+    const atRaw = kv.at?.trim();
+    const textRaw = kv.text?.trim();
+    if (!atRaw || !textRaw || isNoneToken(atRaw) || isNoneToken(textRaw)) {
+      throw new PmCliError("--reminder requires at=<iso|relative> and text=<value>", EXIT_CODE.USAGE);
+    }
+    return {
+      at: resolveIsoOrRelative(atRaw, nowValue),
+      text: textRaw,
+    };
+  });
+}
+
 function ensurePriority(raw: string): 0 | 1 | 2 | 3 | 4 {
   const parsed = parseOptionalNumber(raw, "priority");
   if (![0, 1, 2, 3, 4].includes(parsed)) {
@@ -125,6 +142,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   }
   const settings = await readSettings(pmRoot);
   const author = toAuthor(options.author, settings.author_default);
+  const nowValue = new Date();
 
   const changedFlags = [
     options.title !== undefined,
@@ -167,6 +185,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     options.component !== undefined,
     options.regression !== undefined,
     options.customerImpact !== undefined,
+    options.reminder !== undefined,
   ].some(Boolean);
 
   if (!changedFlags) {
@@ -492,6 +511,17 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
           document.front_matter.customer_impact = options.customerImpact.trim();
         }
         changedFields.push("customer_impact");
+      }
+      if (options.reminder !== undefined) {
+        if (options.reminder.some((entry) => isNoneToken(entry))) {
+          if (options.reminder.length > 1) {
+            throw new PmCliError("--reminder cannot mix 'none' with reminder values", EXIT_CODE.USAGE);
+          }
+          delete document.front_matter.reminders;
+        } else {
+          document.front_matter.reminders = parseReminderEntries(options.reminder, nowValue);
+        }
+        changedFields.push("reminders");
       }
 
       return { changedFields };

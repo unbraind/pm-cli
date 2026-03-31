@@ -12,6 +12,7 @@ export const PM_TOOL_ACTIONS = [
   "list-blocked",
   "list-closed",
   "list-canceled",
+  "calendar",
   "get",
   "search",
   "reindex",
@@ -107,6 +108,11 @@ export interface PmToolParameters {
   outcome?: string;
   whyNow?: string;
   mode?: string;
+  view?: string;
+  date?: string;
+  from?: string;
+  to?: string;
+  past?: boolean;
   includeLinked?: boolean;
   tag?: string;
   deadlineBefore?: string;
@@ -128,6 +134,7 @@ export interface PmToolParameters {
   linkedFile?: string[];
   linkedTest?: string[];
   doc?: string[];
+  reminder?: string[];
   criterion?: string[];
   format?: string;
 }
@@ -227,6 +234,11 @@ export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = {
     outcome: { type: "string" },
     whyNow: { type: "string" },
     mode: { type: "string" },
+    view: { type: "string" },
+    date: { type: "string" },
+    from: { type: "string" },
+    to: { type: "string" },
+    past: { type: "boolean" },
     includeLinked: { type: "boolean" },
     tag: { type: "string" },
     deadlineBefore: { type: "string" },
@@ -248,6 +260,7 @@ export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = {
     linkedFile: { type: "array", items: { type: "string" } },
     linkedTest: { type: "array", items: { type: "string" } },
     doc: { type: "array", items: { type: "string" } },
+    reminder: { type: "array", items: { type: "string" } },
     criterion: { type: "array", items: { type: "string" } },
     format: { type: "string" },
   },
@@ -317,6 +330,9 @@ function addListFilters(args: string[], params: PmToolParameters): void {
   pushOption(args, "--priority", params.priority);
   pushOption(args, "--deadline-before", params.deadlineBefore);
   pushOption(args, "--deadline-after", params.deadlineAfter);
+  pushOption(args, "--assignee", params.assignee);
+  pushOption(args, "--sprint", params.sprint);
+  pushOption(args, "--release", params.release);
   pushOption(args, "--limit", params.limit);
 }
 
@@ -336,6 +352,7 @@ function addCreateFlags(args: string[], params: PmToolParameters): void {
   const assignee = typeof params.assignee === "string" && params.assignee.length > 0 ? params.assignee : "none";
   pushOption(args, "--assignee", assignee);
   addSharedCreateUpdateFlags(args, params);
+  pushRepeatable(args, "--reminder", params.reminder);
   pushRepeatableOrNone(args, "--dep", params.dep);
   pushRepeatableOrNone(args, "--comment", params.comment);
   pushRepeatableOrNone(args, "--note", params.note);
@@ -359,6 +376,7 @@ function addUpdateFlags(args: string[], params: PmToolParameters): void {
   pushOption(args, "--message", params.message, true);
   pushOption(args, "--assignee", params.assignee);
   addSharedCreateUpdateFlags(args, params);
+  pushRepeatable(args, "--reminder", params.reminder);
   if (params.force) {
     args.push("--force");
   }
@@ -495,6 +513,25 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
     case "list-canceled":
       args.push(action);
       addListFilters(args, params);
+      return args;
+    case "calendar":
+      args.push("calendar");
+      pushOption(args, "--view", params.view);
+      pushOption(args, "--date", params.date);
+      pushOption(args, "--from", params.from);
+      pushOption(args, "--to", params.to);
+      if (params.past) {
+        args.push("--past");
+      }
+      pushOption(args, "--type", params.type);
+      pushOption(args, "--tag", params.tag);
+      pushOption(args, "--priority", params.priority);
+      pushOption(args, "--status", params.status);
+      pushOption(args, "--assignee", params.assignee);
+      pushOption(args, "--sprint", params.sprint);
+      pushOption(args, "--release", params.release);
+      pushOption(args, "--limit", params.limit);
+      pushOption(args, "--format", params.format);
       return args;
     case "get":
       args.push("get", requireString(params.id, "id", action));

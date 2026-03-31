@@ -24,6 +24,8 @@ const ALL_COMMANDS = [
   "list-blocked",
   "list-closed",
   "list-canceled",
+  "calendar",
+  "cal",
   "get",
   "search",
   "reindex",
@@ -54,10 +56,13 @@ const LIST_FLAGS =
   "--type --tag --priority --deadline-before --deadline-after --assignee --sprint --release --limit --include-body --json --quiet --path --no-extensions --profile --help";
 
 const CREATE_FLAGS =
-  "-t --title -d --description --type -s --status -p --priority --tags -b --body --deadline --estimate --estimated-minutes --acceptance-criteria --ac --author --message --assignee --parent --reviewer --risk --confidence --sprint --release --blocked-by --blocked-reason --unblock-note --reporter --severity --environment --repro-steps --resolution --expected-result --actual-result --affected-version --fixed-version --component --regression --customer-impact --definition-of-ready --order --rank --goal --objective --value --impact --outcome --why-now --dep --comment --note --learning --file --test --doc --json --quiet --path --no-extensions --profile --help";
+  "-t --title -d --description --type -s --status -p --priority --tags -b --body --deadline --estimate --estimated-minutes --acceptance-criteria --ac --author --message --assignee --parent --reviewer --risk --confidence --sprint --release --blocked-by --blocked-reason --unblock-note --reporter --severity --environment --repro-steps --resolution --expected-result --actual-result --affected-version --fixed-version --component --regression --customer-impact --definition-of-ready --order --rank --goal --objective --value --impact --outcome --why-now --dep --reminder --comment --note --learning --file --test --doc --json --quiet --path --no-extensions --profile --help";
 
 const UPDATE_FLAGS =
-  "-t --title -d --description -s --status -p --priority --type --tags --deadline --estimate --estimated-minutes --acceptance-criteria --ac --assignee --parent --reviewer --risk --confidence --sprint --release --blocked-by --blocked-reason --unblock-note --reporter --severity --environment --repro-steps --resolution --expected-result --actual-result --affected-version --fixed-version --component --regression --customer-impact --definition-of-ready --order --rank --goal --objective --value --impact --outcome --why-now --author --message --force --json --quiet --path --no-extensions --profile --help";
+  "-t --title -d --description -s --status -p --priority --type --tags --deadline --estimate --estimated-minutes --acceptance-criteria --ac --assignee --parent --reviewer --risk --confidence --sprint --release --blocked-by --blocked-reason --unblock-note --reporter --severity --environment --repro-steps --resolution --expected-result --actual-result --affected-version --fixed-version --component --regression --customer-impact --definition-of-ready --order --rank --goal --objective --value --impact --outcome --why-now --author --message --reminder --force --json --quiet --path --no-extensions --profile --help";
+
+const CALENDAR_FLAGS =
+  "--view --date --from --to --past --type --tag --priority --status --assignee --sprint --release --limit --format --json --quiet --path --no-extensions --profile --help";
 
 const SEARCH_FLAGS =
   "--mode --include-linked --limit --type --tag --priority --deadline-before --deadline-after --json --quiet --path --no-extensions --profile --help";
@@ -100,6 +105,9 @@ export function generateBashScript(): string {
     "    update)",
     `      COMPREPLY=(${compgen(UPDATE_FLAGS)})`,
     "      ;;",
+    "    calendar|cal)",
+      `      COMPREPLY=(${compgen(CALENDAR_FLAGS)})`,
+      "      ;;",
     "    search)",
     `      COMPREPLY=(${compgen(SEARCH_FLAGS)})`,
     "      ;;",
@@ -171,6 +179,8 @@ _pm_commands() {
     'list-blocked:List blocked items with optional filters'
     'list-closed:List closed items with optional filters'
     'list-canceled:List canceled items with optional filters'
+    'calendar:Show calendar views for deadlines and reminders'
+    'cal:Alias for calendar'
     'get:Show item details by ID'
     'search:Search items with keyword, semantic, or hybrid modes'
     'reindex:Rebuild search artifacts'
@@ -243,6 +253,7 @@ _pm() {
             '--deadline[Deadline (ISO or relative +1d/+2w)]:deadline' \\
             '--estimate[Estimated minutes]:minutes' \\
             '--acceptance-criteria[Acceptance criteria]:criteria' \\
+            '--reminder[Reminder entry at=<iso|relative>,text=<text>]:reminder' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--assignee[Assignee (none to unset)]:assignee' \\
@@ -257,9 +268,29 @@ _pm() {
             '(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)' \\
             '--type[Item type]:(Epic Feature Task Chore Issue)' \\
             '--tags[Comma-separated tags]:tags' \\
+            '--reminder[Reminder entry at=<iso|relative>,text=<text> (none to clear)]:reminder' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        calendar|cal)
+          _arguments \\
+            '--view[Calendar view]:(agenda day week month)' \\
+            '--date[Anchor date/time (ISO or relative)]:date' \\
+            '--from[Agenda lower bound]:date' \\
+            '--to[Agenda upper bound]:date' \\
+            '--past[Include past entries]' \\
+            '--type[Filter by type]:(Epic Feature Task Chore Issue)' \\
+            '--tag[Filter by tag]:tag' \\
+            '--priority[Filter by priority]:(0 1 2 3 4)' \\
+            '--status[Filter by status]:(draft open in_progress blocked closed canceled)' \\
+            '--assignee[Filter by assignee]:assignee' \\
+            '--sprint[Filter by sprint]:sprint' \\
+            '--release[Filter by release]:release' \\
+            '--limit[Limit returned events]:number' \\
+            '--format[Output override]:(markdown toon json)' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -351,7 +382,7 @@ complete -c pm -s h -l help -d 'Display help'
 
 # Helper: true when no subcommand has been given yet
 function __pm_no_subcommand
-  not __fish_seen_subcommand_from init config install create list list-all list-draft list-open list-in-progress list-blocked list-closed list-canceled get search reindex history activity restore update close delete append comments files docs test test-all stats health gc claim release beads todos completion help
+  not __fish_seen_subcommand_from init config install create list list-all list-draft list-open list-in-progress list-blocked list-closed list-canceled calendar cal get search reindex history activity restore update close delete append comments files docs test test-all stats health gc claim release beads todos completion help
 end
 
 # Subcommands
@@ -367,6 +398,8 @@ complete -c pm -n __pm_no_subcommand -a list-in-progress -d 'List in-progress it
 complete -c pm -n __pm_no_subcommand -a list-blocked  -d 'List blocked items with optional filters'
 complete -c pm -n __pm_no_subcommand -a list-closed   -d 'List closed items with optional filters'
 complete -c pm -n __pm_no_subcommand -a list-canceled -d 'List canceled items with optional filters'
+complete -c pm -n __pm_no_subcommand -a calendar      -d 'Show deadline/reminder calendar views'
+complete -c pm -n __pm_no_subcommand -a cal           -d 'Alias for calendar'
 complete -c pm -n __pm_no_subcommand -a get           -d 'Show item details by ID'
 complete -c pm -n __pm_no_subcommand -a search        -d 'Search items with keyword, semantic, or hybrid modes'
 complete -c pm -n __pm_no_subcommand -a reindex       -d 'Rebuild search artifacts'
@@ -416,6 +449,7 @@ complete -c pm -n '__fish_seen_subcommand_from create' -s b -l body             
 complete -c pm -n '__fish_seen_subcommand_from create' -l deadline                -d 'Deadline (ISO or relative +1d/+2w)' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l estimate                -d 'Estimated minutes' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l acceptance-criteria     -d 'Acceptance criteria' -r
+complete -c pm -n '__fish_seen_subcommand_from create' -l reminder                -d 'Reminder entry at=<iso|relative>,text=<text>' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l author                  -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l message                 -d 'History message' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l assignee                -d 'Assignee (none to unset)' -r
@@ -426,6 +460,7 @@ complete -c pm -n '__fish_seen_subcommand_from update' -s d -l description      
 complete -c pm -n '__fish_seen_subcommand_from update' -s s -l status             -d 'Item status' -r -a 'draft open in_progress blocked canceled'
 complete -c pm -n '__fish_seen_subcommand_from update' -s p -l priority           -d 'Priority (0-4)' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from update' -l type                    -d 'Item type' -r -a 'Epic Feature Task Chore Issue'
+complete -c pm -n '__fish_seen_subcommand_from update' -l reminder                -d 'Reminder entry at=<iso|relative>,text=<text> (none to clear)' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l author                  -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l message                 -d 'History message' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l force                   -d 'Force override'
@@ -437,6 +472,22 @@ complete -c pm -n '__fish_seen_subcommand_from search' -l limit          -d 'Max
 complete -c pm -n '__fish_seen_subcommand_from search' -l type           -d 'Filter by type' -r -a 'Epic Feature Task Chore Issue'
 complete -c pm -n '__fish_seen_subcommand_from search' -l tag            -d 'Filter by tag' -r
 complete -c pm -n '__fish_seen_subcommand_from search' -l priority       -d 'Filter by priority' -r -a '0 1 2 3 4'
+
+# calendar flags
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l view      -d 'Calendar view' -r -a 'agenda day week month'
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l date      -d 'Anchor date/time (ISO or relative)' -r
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l from      -d 'Agenda lower bound (ISO or relative)' -r
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l to        -d 'Agenda upper bound (ISO or relative)' -r
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l past      -d 'Include past entries'
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l type      -d 'Filter by type' -r -a 'Epic Feature Task Chore Issue'
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l tag       -d 'Filter by tag' -r
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l priority  -d 'Filter by priority' -r -a '0 1 2 3 4'
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l status    -d 'Filter by status' -r -a 'draft open in_progress blocked closed canceled'
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l assignee  -d 'Filter by assignee (none for unassigned)' -r
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l sprint    -d 'Filter by sprint' -r
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l release   -d 'Filter by release' -r
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l limit     -d 'Limit returned events' -r
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l format    -d 'Output override' -r -a 'markdown toon json'
 
 # reindex flags
 complete -c pm -n '__fish_seen_subcommand_from reindex' -l mode -d 'Reindex mode' -r -a 'keyword semantic hybrid'

@@ -1,0 +1,50 @@
+front_matter:
+  id: pm-kglq
+  title: Implement calendar markdown default and explicit output overrides
+  description: Add calendar-specific markdown default rendering while preserving TOON/JSON contracts and explicit override behavior.
+  type: Task
+  status: closed
+  priority: 1
+  tags[4]: "area:calendar","area:output",code,pm-cli
+  created_at: "2026-03-31T21:28:33.277Z"
+  updated_at: "2026-03-31T21:45:26.197Z"
+  deadline: "2026-04-07T21:28:33.277Z"
+  author: codex-agent
+  estimated_minutes: 90
+  acceptance_criteria: "Calendar defaults to markdown output, supports explicit json/toon overrides, and does not alter global output defaults."
+  definition_of_ready: Output precedence and override semantics are documented.
+  order: 8
+  goal: Agent planning ergonomics
+  objective: Ship markdown default
+  value: Readable default calendar output
+  impact: Fewer parsing steps for agents
+  outcome: Calendar output is ergonomic and deterministic
+  why_now: Output behavior is part of core calendar usability.
+  parent: pm-tuhf
+  risk: medium
+  confidence: high
+  sprint: calendar-rollout
+  release: vnext
+  component: core/output
+  regression: true
+  customer_impact: Ensures human/agent-readable default output for calendar workflows.
+  dependencies[3]{id,kind,created_at,author,source_kind}:
+    pm-3aga,related,"2026-03-31T21:28:33.277Z",codex-agent,null
+    pm-ezri,blocks,"2026-03-31T21:28:33.277Z",codex-agent,null
+    pm-tuhf,parent,"2026-03-31T21:28:33.277Z",codex-agent,null
+  comments[3]{created_at,author,text}:
+    "2026-03-31T21:28:33.277Z",codex-agent,Task created for markdown-default calendar output handling.
+    "2026-03-31T21:45:12.525Z",codex-agent,Added calendar-specific markdown default rendering with explicit --format and --json override precedence checks.
+    "2026-03-31T21:45:24.102Z",codex-agent,"Evidence: output behavior tests passed including calendar output precedence."
+  notes[1]{created_at,author,text}:
+    "2026-03-31T21:28:33.277Z",codex-agent,Avoid changes to global TOON default behavior for existing commands.
+  files[3]{path,scope,note}:
+    src/cli/commands/calendar.ts,project,markdown renderer and format resolution
+    src/cli/main.ts,project,calendar output switch logic
+    tests/unit/calendar-command.spec.ts,project,output precedence tests
+  tests[1]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs test -- tests/unit/output.spec.ts tests/unit/calendar-command.spec.ts,null,project,1800,output behavior coverage
+  docs[1]{path,scope,note}:
+    README.md,project,calendar output mode documentation
+  close_reason: Calendar markdown default and output override behavior implemented and verified.
+body: Task for command-specific output strategy and markdown renderer utility.

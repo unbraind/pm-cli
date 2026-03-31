@@ -22,6 +22,7 @@ Existing trackers either rely on hosted backends, store state in non-diff-friend
 - Store all core tracker data in project-local files under `.agents/pm` by default.
 - Model work as first-class items: `Epic`, `Feature`, `Task`, `Chore`, `Issue`.
 - Support full item lifecycle operations, deterministic listing/filtering, and rich metadata.
+- Support reminder-aware scheduling workflows with deterministic calendar views for agents and humans.
 - Provide append-only item history with patch-level restore.
 - Provide safe mutation under concurrent access (claim/release + lock + atomic writes).
 - Default stdout to TOON; support `--json` parity for every command.
@@ -241,6 +242,7 @@ Optional fields:
 
 - `assignee?: string`
 - `deadline?: ISO string` (relative input resolved to ISO at write time)
+- `reminders?: Reminder[]` where `Reminder = { at: ISO string; text: string }`
 - `dependencies?: Dependency[]`
 - `comments?: Comment[]`
 - `author?: string`
@@ -290,6 +292,7 @@ Types:
 - `LinkedFile = { path: string; scope: "project" | "global"; note?: string }`
 - `LinkedTest = { command?: string; path?: string; scope: "project" | "global"; timeout_seconds?: number; note?: string }`
 - `LinkedDoc = { path: string; scope: "project" | "global"; note?: string }`
+- `Reminder = { at: string; text: string }`
 - `IssueSeverity = "low" | "medium" | "high" | "critical"`
 
 ### 7.2 Canonical key order
@@ -306,47 +309,48 @@ Keys MUST serialize in this order:
 8. `created_at`
 9. `updated_at`
 10. `deadline`
-11. `assignee`
-12. `author`
-13. `estimated_minutes`
-14. `acceptance_criteria`
-15. `definition_of_ready`
-16. `order`
-17. `goal`
-18. `objective`
-19. `value`
-20. `impact`
-21. `outcome`
-22. `why_now`
-23. `parent`
-24. `reviewer`
-25. `risk`
-26. `confidence`
-27. `sprint`
-28. `release`
-29. `blocked_by`
-30. `blocked_reason`
-31. `unblock_note`
-32. `reporter`
-33. `severity`
-34. `environment`
-35. `repro_steps`
-36. `resolution`
-37. `expected_result`
-38. `actual_result`
-39. `affected_version`
-40. `fixed_version`
-41. `component`
-42. `regression`
-43. `customer_impact`
-44. `dependencies`
-45. `comments`
-46. `notes`
-47. `learnings`
-48. `files`
-49. `tests`
-50. `docs`
-51. `close_reason`
+11. `reminders`
+12. `assignee`
+13. `author`
+14. `estimated_minutes`
+15. `acceptance_criteria`
+16. `definition_of_ready`
+17. `order`
+18. `goal`
+19. `objective`
+20. `value`
+21. `impact`
+22. `outcome`
+23. `why_now`
+24. `parent`
+25. `reviewer`
+26. `risk`
+27. `confidence`
+28. `sprint`
+29. `release`
+30. `blocked_by`
+31. `blocked_reason`
+32. `unblock_note`
+33. `reporter`
+34. `severity`
+35. `environment`
+36. `repro_steps`
+37. `resolution`
+38. `expected_result`
+39. `actual_result`
+40. `affected_version`
+41. `fixed_version`
+42. `component`
+43. `regression`
+44. `customer_impact`
+45. `dependencies`
+46. `comments`
+47. `notes`
+48. `learnings`
+49. `files`
+50. `tests`
+51. `docs`
+52. `close_reason`
 
 Unset optional fields are omitted.
 
@@ -359,6 +363,7 @@ Unset optional fields are omitted.
 - `confidence` CLI input accepts integers `0..100` or `low|med|medium|high`; `med` persists as `medium`.
 - `severity` CLI input alias `med` normalizes to canonical stored value `medium`.
 - `dependencies`, `comments`, `notes`, `learnings` sorted by `created_at` ascending; stable tie-break by text/id.
+- `reminders` sorted by `at` ascending, then `text` ascending.
 - `files` sorted by `scope` asc, then `path` asc, then `note` asc.
 - `tests` sorted by `scope` asc, then `path` asc, then `command` asc, then `timeout_seconds` asc, then `note` asc.
 - `docs` sorted by `scope` asc, then `path` asc, then `note` asc.
@@ -544,6 +549,11 @@ If any step fails, return non-zero exit code and preserve prior item bytes.
 - `--profile` print deterministic timing diagnostics (stderr)
 - `--version` print CLI version
 
+Default output note:
+
+- Core default remains TOON.
+- `pm calendar` is a deliberate exception and defaults to markdown unless explicitly overridden by `--format` or `--json`.
+
 ### 11.2 Exit codes
 
 - `0` success
@@ -568,6 +578,7 @@ If any step fails, return non-zero exit code and preserve prior item bytes.
 - `pm get <ID>`
 - `pm search <keywords>`
 - `pm reindex`
+- `pm calendar` (alias: `pm cal`)
 - `pm create`
 - `pm update <ID>`
 - `pm append <ID>`
@@ -653,6 +664,7 @@ Mutating `create` flags (repeatable, each required at least once; use `none` for
 - `--file` value format: `path=<p>,scope=<project|global>,note=<n?>`
 - `--test` value format: `command=<c?>,path=<p?>,scope=<project|global>,timeout_seconds=<n?>,note=<n?>`
 - `--doc` value format: `path=<p>,scope=<project|global>,note=<n?>`
+- `--reminder` value format: `at=<iso|relative>,text=<text>` (`none` for explicit clear)
 
 Mutating `update` (v0.1 baseline):
 
@@ -697,6 +709,7 @@ Mutating `update` (v0.1 baseline):
 - `--why-now`, `--why_now`
 - `--author`
 - `--message`
+- `--reminder` (repeatable `at=<iso|relative>,text=<text>`; `none` clears)
 
 `pm update` status semantics:
 
@@ -740,6 +753,7 @@ All commands return deterministic top-level objects (TOON by default, JSON with 
 | `pm get <ID>` | normalized id | `{ item, body, linked: { files, tests, docs } }` |
 | `pm search <keywords>` | keyword query + optional mode/include-linked/limit filters | `{ query, mode, items, count, filters, now }` |
 | `pm reindex` | optional `--mode` (`keyword|semantic|hybrid` baseline) | `{ ok, mode, total_items, artifacts, warnings, generated_at }` |
+| `pm calendar` / `pm cal` | `--view agenda|day|week|month`, `--date`, `--from`/`--to` (agenda), `--past`, and list-like filters (`type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`) | `{ view, output_default, now, anchor, range, filters, summary, events, days }` (defaults to markdown unless `--format` or `--json` override) |
 | `pm beads import [--file <path\|->] [--preserve-source-ids]` | optional Beads JSONL source path (`.beads/issues.jsonl` auto-discovered first, then `issues.jsonl`; implicit `sync_base.jsonl` fallback is refused as unsafe) | `{ ok, source, imported, skipped, ids, warnings }` |
 | `pm todos import --folder <path?>` | optional todos markdown source folder (defaults to `.pi/todos`); preserves canonical optional `ItemFrontMatter` metadata when present and applies deterministic defaults for missing PM fields | `{ ok, folder, imported, skipped, ids, warnings }` |
 | `pm todos export --folder <path?>` | optional todos markdown destination folder (defaults to `.pi/todos`) | `{ ok, folder, exported, ids, warnings }` |

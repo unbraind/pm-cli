@@ -1,0 +1,51 @@
+front_matter:
+  id: pm-qze9
+  title: Update completion and Pi wrapper for calendar/reminder support
+  description: Extend shell completion and Pi extension action mappings for calendar command and reminder-related flags.
+  type: Task
+  status: closed
+  priority: 1
+  tags[4]: "area:calendar","area:integration",code,pm-cli
+  created_at: "2026-03-31T21:28:44.478Z"
+  updated_at: "2026-03-31T21:45:53.975Z"
+  deadline: "2026-04-07T21:28:44.478Z"
+  author: codex-agent
+  estimated_minutes: 100
+  acceptance_criteria: Completion scripts and Pi wrapper support calendar actions/flags with deterministic argument mapping.
+  definition_of_ready: Calendar CLI flag set is stable for integration updates.
+  order: 9
+  goal: Agent planning ergonomics
+  objective: Update integrations
+  value: Consistent automation surfaces
+  impact: Improved discoverability and tool interoperability
+  outcome: Completion and Pi wrapper are calendar-aware
+  why_now: Integrations must ship with core feature for agent usability.
+  parent: pm-122q
+  risk: medium
+  confidence: high
+  sprint: calendar-rollout
+  release: vnext
+  component: integration/pi-completion
+  regression: true
+  customer_impact: Calendar functionality becomes automatable via Pi and easier to discover via completion.
+  dependencies[3]{id,kind,created_at,author,source_kind}:
+    pm-122q,parent,"2026-03-31T21:28:44.478Z",codex-agent,null
+    pm-ezri,related,"2026-03-31T21:28:44.478Z",codex-agent,null
+    pm-kglq,blocks,"2026-03-31T21:28:44.478Z",codex-agent,null
+  comments[3]{created_at,author,text}:
+    "2026-03-31T21:28:44.478Z",codex-agent,Task created for completion and Pi wrapper updates.
+    "2026-03-31T21:45:39.035Z",codex-agent,Updated shell completion scripts and Pi wrapper schema/action mappings to include calendar command and reminder flags.
+    "2026-03-31T21:45:52.145Z",codex-agent,"Evidence: completion and Pi wrapper unit tests passed via pm test --run."
+  notes[1]{created_at,author,text}:
+    "2026-03-31T21:28:44.478Z",codex-agent,Keep wrapper schema parity with CLI options to avoid drift.
+  files[4]{path,scope,note}:
+    .pi/extensions/pm-cli/index.ts,project,calendar wrapper action mapping
+    src/cli/commands/completion.ts,project,calendar command and reminder flag completion surface
+    tests/unit/completion-command.spec.ts,project,completion regressions for calendar and reminder flags
+    tests/unit/pi-agent-extension.spec.ts,project,wrapper schema and arg mapping tests
+  tests[1]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs test -- tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,1800,integration surface tests
+  docs[1]{path,scope,note}:
+    docs/EXTENSIONS.md,project,pi wrapper/command surface reference
+  close_reason: Completion and Pi wrapper calendar/reminder integration shipped with passing tests.
+body: Task for integration surfaces used by agents and shell users.

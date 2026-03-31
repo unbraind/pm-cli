@@ -30,6 +30,7 @@ export default defineConfig({
         "src/cli/commands/history.ts",
         "src/cli/commands/install.ts",
         "src/cli/commands/list.ts",
+        "src/cli/commands/calendar.ts",
         "src/cli/commands/search.ts",
         "src/cli/commands/reindex.ts",
         "src/cli/commands/restore.ts",

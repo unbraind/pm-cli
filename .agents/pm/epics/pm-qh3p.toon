@@ -1,0 +1,47 @@
+front_matter:
+  id: pm-qh3p
+  title: Agent-optimized calendar and reminders
+  description: "Deliver a powerful agent-first calendar workflow for deadlines, reminders, and date planning without breaking existing users."
+  type: Epic
+  status: closed
+  priority: 0
+  tags[5]: agent-ux,"area:calendar","area:reminders",core,pm-cli
+  created_at: "2026-03-31T21:27:17.807Z"
+  updated_at: "2026-03-31T22:09:23.574Z"
+  deadline: "2026-04-14T21:27:17.807Z"
+  author: codex-agent
+  estimated_minutes: 480
+  acceptance_criteria: "Calendar and reminder capabilities are implemented, tested, documented, and backward compatible."
+  definition_of_ready: Calendar scope and compatibility constraints are defined.
+  order: 1
+  goal: Agent planning ergonomics
+  objective: Ship calendar and reminders
+  value: Enables deadline-centric autonomous execution
+  impact: Faster and safer date-driven task management
+  outcome: Agents can schedule and track work in-calendar
+  why_now: Agents need better native date orchestration to reduce deadline misses.
+  risk: medium
+  confidence: high
+  sprint: calendar-rollout
+  release: vnext
+  component: cli/calendar
+  regression: false
+  customer_impact: Improves agent deadline and reminder planning workflows.
+  dependencies[3]{id,kind,created_at,author,source_kind}:
+    pm-2fj,related,"2026-03-31T21:27:17.807Z",codex-agent,null
+    pm-2p6q,related,"2026-03-31T21:27:17.807Z",codex-agent,null
+    pm-r0m,related,"2026-03-31T21:27:17.807Z",codex-agent,null
+  comments[3]{created_at,author,text}:
+    "2026-03-31T21:27:17.807Z",codex-agent,Calendar epic created after duplicate scan across existing pm items.
+    "2026-03-31T21:29:17.884Z",codex-agent,"Hierarchy seeded after duplicate scan: features pm-tuhf pm-c877 pm-122q; tasks pm-7e6n pm-ysgr pm-ezri pm-kglq pm-qze9 pm-tyq3 pm-2v01. Linked related historical items pm-r0m pm-2p6q pm-0lbm pm-2fj for continuity."
+    "2026-03-31T22:09:22.767Z",codex-agent,"Epic complete: features pm-c877 pm-tuhf pm-122q are closed; full regression and 100% coverage passed with documented release-ready calendar/reminder support."
+  notes[1]{created_at,author,text}:
+    "2026-03-31T21:27:17.807Z",codex-agent,Keep TOON default globally and scope markdown default to calendar command.
+  files[1]{path,scope,note}:
+    src/cli/main.ts,project,calendar command wiring
+  tests[1]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs test,null,project,1800,sandbox-safe regression gate
+  docs[1]{path,scope,note}:
+    PRD.md,project,calendar requirements and contract updates
+  close_reason: Agent-optimized calendar and reminder rollout completed end-to-end without regressions.
+body: "Epic for calendar command, persistent reminders, agent integrations, and documentation hardening."

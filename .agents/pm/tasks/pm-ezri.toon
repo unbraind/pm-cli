@@ -1,0 +1,50 @@
+front_matter:
+  id: pm-ezri
+  title: Implement calendar command core views and filtering
+  description: "Build pm calendar core logic for agenda/day/week/month views, filters, and deterministic event sorting."
+  type: Task
+  status: closed
+  priority: 1
+  tags[4]: "area:calendar","area:cli",code,pm-cli
+  created_at: "2026-03-31T21:28:24.041Z"
+  updated_at: "2026-03-31T21:45:02.474Z"
+  deadline: "2026-04-07T21:28:24.041Z"
+  author: codex-agent
+  estimated_minutes: 150
+  acceptance_criteria: Calendar command computes deterministic event sets and supports agenda/day/week/month views with past handling.
+  definition_of_ready: Calendar views and filter semantics are agreed.
+  order: 7
+  goal: Agent planning ergonomics
+  objective: Implement calendar views
+  value: Date-centric execution visibility
+  impact: Better scheduling decisions
+  outcome: Reliable calendar command behavior
+  why_now: Core command must exist before output and integrations.
+  parent: pm-tuhf
+  risk: medium
+  confidence: high
+  sprint: calendar-rollout
+  release: vnext
+  component: cli/calendar
+  regression: true
+  customer_impact: Provides practical deadline/reminder calendar views for agents.
+  dependencies[3]{id,kind,created_at,author,source_kind}:
+    pm-r0m,related,"2026-03-31T21:28:24.041Z",codex-agent,null
+    pm-tuhf,parent,"2026-03-31T21:28:24.041Z",codex-agent,null
+    pm-ysgr,blocks,"2026-03-31T21:28:24.041Z",codex-agent,null
+  comments[3]{created_at,author,text}:
+    "2026-03-31T21:28:24.041Z",codex-agent,Task created for calendar command core event/view logic.
+    "2026-03-31T21:44:49.124Z",codex-agent,"Implemented calendar core command with agenda/day/week/month views, deterministic event sorting, filter support, and past-window handling."
+    "2026-03-31T21:45:00.260Z",codex-agent,"Evidence: calendar command unit tests passed via pm test --run."
+  notes[1]{created_at,author,text}:
+    "2026-03-31T21:28:24.041Z",codex-agent,Ensure deterministic ordering and predictable date windows.
+  files[3]{path,scope,note}:
+    src/cli/commands/calendar.ts,project,calendar core command implementation
+    src/cli/commands/index.ts,project,export calendar module
+    src/cli/main.ts,project,register calendar command and options
+  tests[1]{command,path,scope,timeout_seconds,note}:
+    node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts,null,project,1800,calendar unit coverage
+  docs[1]{path,scope,note}:
+    docs/ARCHITECTURE.md,project,calendar architecture flow
+  close_reason: Calendar core views and deterministic filtering implemented with passing tests.
+body: Task for runCalendar event pipeline and view composition.

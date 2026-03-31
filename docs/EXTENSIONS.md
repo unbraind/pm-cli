@@ -326,4 +326,9 @@ pm install pi          # to current project .pi/extensions/pm-cli/index.ts
 pm install pi --global # to PI_CODING_AGENT_DIR/extensions/pm-cli/index.ts
 ```
 
+Current wrapper parity includes:
+
+- `action: "calendar"` for `pm calendar` / `pm cal` (`view`, `date`, `from`, `to`, `past`, `type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`, `format`)
+- `create`/`update` reminder forwarding via repeatable `reminder` values (`at=<iso|relative>,text=<text>`)
+
 See [AGENTS.md](../AGENTS.md) section 9 for full usage details.

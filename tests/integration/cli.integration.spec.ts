@@ -338,6 +338,92 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("supports calendar views, markdown default output, and reminder events", async () => {
+    await withTempPmPath(async (context) => {
+      const createResult = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Calendar integration item",
+          "--description",
+          "Validate calendar and reminder flows",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,calendar",
+          "--body",
+          "",
+          "--deadline",
+          "2026-04-02T12:00:00.000Z",
+          "--estimate",
+          "25",
+          "--acceptance-criteria",
+          "Calendar command renders reminder and deadline events",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create calendar integration item",
+          "--assignee",
+          "none",
+          "--reminder",
+          "at=2026-04-02T09:30:00.000Z,text=calendar reminder",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(createResult.code).toBe(0);
+
+      const calendarJson = context.runCli(
+        ["calendar", "--json", "--view", "agenda", "--date", "2026-04-02T00:00:00.000Z", "--limit", "10"],
+        { expectJson: true },
+      );
+      expect(calendarJson.code).toBe(0);
+      const payload = calendarJson.json as {
+        view: string;
+        summary: { events: number; deadlines: number; reminders: number };
+        events: Array<{ kind: string; reminder_text: string | null }>;
+      };
+      expect(payload.view).toBe("agenda");
+      expect(payload.summary.events).toBe(2);
+      expect(payload.summary.deadlines).toBe(1);
+      expect(payload.summary.reminders).toBe(1);
+      expect(payload.events.map((entry) => entry.kind)).toEqual(["reminder", "deadline"]);
+      expect(payload.events[0]?.reminder_text).toBe("calendar reminder");
+
+      const markdownCalendar = context.runCli(["calendar", "--view", "agenda", "--date", "2026-04-02T00:00:00.000Z", "--limit", "10"]);
+      expect(markdownCalendar.code).toBe(0);
+      expect(markdownCalendar.stdout).toContain("# pm calendar (agenda)");
+      expect(markdownCalendar.stdout).toContain("[reminder]");
+      expect(markdownCalendar.stdout).toContain("[deadline]");
+
+      const aliasCalendar = context.runCli(["cal", "--json", "--view", "day", "--date", "2026-04-02T00:00:00.000Z", "--past"], {
+        expectJson: true,
+      });
+      expect(aliasCalendar.code).toBe(0);
+      const aliasPayload = aliasCalendar.json as { view: string; summary: { events: number } };
+      expect(aliasPayload.view).toBe("day");
+      expect(aliasPayload.summary.events).toBe(2);
+    });
+  });
+
   it("accepts extended optional field flags for create/update including blocked aliases", async () => {
     await withTempPmPath(async (context) => {
       const createResult = context.runCli(

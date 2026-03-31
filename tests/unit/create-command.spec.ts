@@ -93,6 +93,10 @@ describe("runCreate", () => {
           impact: "impact-seed",
           outcome: "outcome-seed",
           whyNow: "why-now-seed",
+          reminder: [
+            "at=2026-03-02T09:00:00.000Z,text=reminder beta",
+            "at=2026-03-02T09:00:00.000Z,text=reminder alpha",
+          ],
         }),
         { path: context.pmPath },
       );
@@ -150,6 +154,7 @@ describe("runCreate", () => {
           "files",
           "tests",
           "docs",
+          "reminders",
           "body",
         ]),
       );
@@ -215,6 +220,10 @@ describe("runCreate", () => {
           }),
         ]),
       );
+      expect(result.item.reminders).toEqual([
+        { at: "2026-03-02T09:00:00.000Z", text: "reminder alpha" },
+        { at: "2026-03-02T09:00:00.000Z", text: "reminder beta" },
+      ]);
 
       const history = readCreateHistory(context, result.item.id);
       const createEntry = [...history].reverse().find((entry) => entry.op === "create");
@@ -348,6 +357,7 @@ describe("runCreate", () => {
             component: "none",
             regression: "none",
             customerImpact: "none",
+            reminder: ["none"],
             message: "",
             dep: ["none"],
             comment: ["none"],
@@ -400,6 +410,7 @@ describe("runCreate", () => {
         expect(result.item.files).toBeUndefined();
         expect(result.item.tests).toBeUndefined();
         expect(result.item.docs).toBeUndefined();
+        expect(result.item.reminders).toBeUndefined();
         expect(result.item.author).toBe("unknown");
 
         expect(result.changed_fields).toEqual(
@@ -445,6 +456,7 @@ describe("runCreate", () => {
             "unset:files",
             "unset:tests",
             "unset:docs",
+            "unset:reminders",
           ]),
         );
 
@@ -812,6 +824,46 @@ describe("runCreate", () => {
         runCreate(
           baseCreateOptions({
             doc: ["scope=project"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+    });
+  });
+
+  it("validates reminder seed parsing", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            reminder: ["none", "at=2026-03-02T09:00:00.000Z,text=mixed"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            reminder: ["text=missing-at"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            reminder: ["at=+1d,text=   "],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            reminder: ['at=+1d,text="   "'],
           }),
           { path: context.pmPath },
         ),

@@ -1,5 +1,5 @@
 import { decode as decodeToon, encode as encodeToon } from "@toon-format/toon";
-import type { Comment, Dependency, ItemDocument, ItemFrontMatter, LinkedDoc, LinkedFile, LinkedTest, LogNote } from "../../types/index.js";
+import type { Comment, Dependency, ItemDocument, ItemFrontMatter, LinkedDoc, LinkedFile, LinkedTest, LogNote, Reminder } from "../../types/index.js";
 import type { ItemFormat } from "../../types/index.js";
 import { CONFIDENCE_TEXT_VALUES, ISSUE_SEVERITY_VALUES, ITEM_TYPE_VALUES, STATUS_VALUES } from "../../types/index.js";
 import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
@@ -117,6 +117,18 @@ function assertValidFrontMatter(frontMatter: unknown): asserts frontMatter is It
   if (record.deadline !== undefined) {
     assertTimestampField(record, "deadline");
   }
+  if (record.reminders !== undefined) {
+    const reminders = record.reminders;
+    assertFrontMatterCondition(Array.isArray(reminders), "reminders must be an array");
+    for (const reminder of reminders as unknown[]) {
+      assertFrontMatterCondition(typeof reminder === "object" && reminder !== null && !Array.isArray(reminder), "reminders entries must be objects");
+      const reminderRecord = reminder as Record<string, unknown>;
+      assertFrontMatterCondition(typeof reminderRecord.at === "string", "reminder.at must be a string");
+      assertFrontMatterCondition(isTimestampLiteral(reminderRecord.at as string), "reminder.at must be a valid ISO timestamp");
+      assertFrontMatterCondition(typeof reminderRecord.text === "string", "reminder.text must be a string");
+      assertFrontMatterCondition((reminderRecord.text as string).trim().length > 0, "reminder.text must not be empty");
+    }
+  }
   if (record.closed_at !== undefined) {
     const closedAt = record.closed_at;
     assertFrontMatterCondition(typeof closedAt === "string", "closed_at must be a string");
@@ -160,6 +172,22 @@ function sortLogValues<T extends Comment | LogNote>(values: T[] | undefined): T[
     if (byText !== 0) return byText;
     return a.author.localeCompare(b.author);
   });
+}
+
+function sortReminders(values: Reminder[] | undefined): Reminder[] | undefined {
+  if (!values || values.length === 0) return undefined;
+  const normalized = [...values]
+    .map((value) => ({
+      at: value.at,
+      text: value.text.trim(),
+    }))
+    .filter((value) => value.text.length > 0)
+    .sort((a, b) => {
+      const byAt = compareTimestampStrings(a.at, b.at);
+      if (byAt !== 0) return byAt;
+      return a.text.localeCompare(b.text);
+    });
+  return normalized.length === 0 ? undefined : normalized;
 }
 
 function sortFiles(values: LinkedFile[] | undefined): LinkedFile[] | undefined {
@@ -277,6 +305,7 @@ export function normalizeFrontMatter(frontMatter: ItemFrontMatter): ItemFrontMat
     tests: sortTests(frontMatter.tests),
     docs: sortDocs(frontMatter.docs),
     deadline: frontMatter.deadline || undefined,
+    reminders: sortReminders(frontMatter.reminders),
     closed_at: frontMatter.closed_at || undefined,
     assignee: frontMatter.assignee?.trim() || undefined,
     source_owner: frontMatter.source_owner?.trim() || undefined,

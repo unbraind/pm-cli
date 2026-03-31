@@ -142,6 +142,10 @@ describe("runUpdate", () => {
           component: " cli/update ",
           regression: "true",
           customerImpact: " triage reports missing details ",
+          reminder: [
+            "at=2026-03-03T12:00:00.000Z,text= reminder beta ",
+            "at=2026-03-03T12:00:00.000Z,text=reminder alpha",
+          ],
           author: " explicit-author ",
           message: "apply explicit update",
         },
@@ -190,6 +194,7 @@ describe("runUpdate", () => {
           "component",
           "regression",
           "customer_impact",
+          "reminders",
         ]),
       );
 
@@ -234,6 +239,10 @@ describe("runUpdate", () => {
       expect(item.component).toBe("cli/update");
       expect(item.regression).toBe(true);
       expect(item.customer_impact).toBe("triage reports missing details");
+      expect(item.reminders).toEqual([
+        { at: "2026-03-03T12:00:00.000Z", text: "reminder alpha" },
+        { at: "2026-03-03T12:00:00.000Z", text: "reminder beta" },
+      ]);
       expect(latestUpdateAuthor(context, id)).toBe("explicit-author");
 
       const mediumConfidence = await runUpdate(
@@ -313,6 +322,7 @@ describe("runUpdate", () => {
           component: "none",
           regression: "none",
           customerImpact: "none",
+          reminder: ["none"],
           author: "active-owner",
           message: "cancel and clear optional fields",
         },
@@ -356,6 +366,7 @@ describe("runUpdate", () => {
           "component",
           "regression",
           "customer_impact",
+          "reminders",
         ]),
       );
 
@@ -394,6 +405,7 @@ describe("runUpdate", () => {
       expect(item.component).toBeUndefined();
       expect(item.regression).toBeUndefined();
       expect(item.customer_impact).toBeUndefined();
+      expect(item.reminders).toBeUndefined();
     });
   });
 
@@ -455,6 +467,36 @@ describe("runUpdate", () => {
       await expect(runUpdate(id, { order: "1", rank: "2" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
+    });
+  });
+
+  it("validates reminder update inputs", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-invalid-reminders");
+
+      await expect(
+        runUpdate(
+          id,
+          { reminder: ["none", "at=2026-03-03T12:00:00.000Z,text=mixed"] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          { reminder: ["text=missing-at"] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          { reminder: ["at=+1d,text=   "] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
     });
   });
 

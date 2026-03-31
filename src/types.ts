@@ -84,6 +84,11 @@ export interface LinkedDoc {
   note?: string;
 }
 
+export interface Reminder {
+  at: string;
+  text: string;
+}
+
 export interface ItemFrontMatter {
   id: string;
   title: string;
@@ -96,6 +101,7 @@ export interface ItemFrontMatter {
   created_at: string;
   updated_at: string;
   deadline?: string;
+  reminders?: Reminder[];
   closed_at?: string;
   assignee?: string;
   source_owner?: string;
