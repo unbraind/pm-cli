@@ -5,20 +5,23 @@
 [![Node >=20](https://img.shields.io/node/v/%40unbrained%2Fpm-cli)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-`pm` is a git-native project management CLI for humans and coding agents. It stores items as TOON (`.toon`) by default with full JSON-front-matter Markdown (`.md`) compatibility, keeps append-only JSONL history, and supports safe collaboration.
+`pm` is a git-native project management CLI for humans and coding agents. It stores items as TOON (`.toon`) by default with full first-class JSON-front-matter Markdown (`.md`) support, keeps append-only JSONL history, and supports safe collaboration.
 
 ## Highlights
 
 - Git-native items that stay reviewable in diffs
 - Safe multi-agent workflows with claims, locks, and restore
 - Deterministic output with TOON by default and `--json` when needed
+- First-class dual item storage formats: TOON (`.toon`) and JSON-front-matter Markdown (`.md`)
+- Compact TOON documents that are easier to review in terminal and GitHub web UI
 - Automatic item format migration when `item-format` config changes
+- Deterministic canonical normalization and atomic writes for parallel git/worktree workflows
 - Optional search and extension support for more advanced setups
 
 ## Item Storage Formats
 
 - Default item format is TOON (`.toon`) using full `{ front_matter, body }` object storage.
-- Legacy JSON front matter + markdown body (`.md`) remains fully supported.
+- JSON front matter + markdown body (`.md`) is a fully supported alternative format.
 - History files always remain JSONL (`history/<id>.jsonl`).
 - Set project item storage format with:
 
@@ -29,6 +32,15 @@ pm config project set item-format --format json_markdown
 ```
 
 Changing `item-format` automatically migrates item files to the configured format.
+
+## Parallel Git and Worktree Robustness
+
+- TOON and JSON/Markdown are equally supported item formats; teams can choose either format per repository.
+- Canonical normalization (stable field ordering and deterministic serialization) reduces diff churn and helps keep merges predictable.
+- Item writes are atomic (temp file + rename), which prevents partial writes and corruption during concurrent local operations.
+- Item history remains append-only JSONL with before/after hashes, so changes are auditable and recoverable with `pm history` and `pm restore`.
+- When both `.toon` and `.md` exist for one item ID, configured `item_format` is the source of truth and automatic migration removes split-format drift.
+- Concurrent edits to the exact same content can still require normal git conflict resolution; the storage model is designed to avoid silent data loss and make reconciliation explicit.
 
 ## Install
 

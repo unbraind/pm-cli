@@ -111,7 +111,7 @@ Each item is stored as a format-configured document file:
 ```
 .agents/pm/
   <type-plural>/<id>.toon   default item storage (TOON full object)
-  <type-plural>/<id>.md     legacy-compatible JSON front matter + markdown body
+  <type-plural>/<id>.md     fully supported JSON front matter + markdown body
   history/<id>.jsonl        append-only RFC6902 patch log
   locks/<id>.lock           exclusive lock metadata (JSON)
   settings.json             project configuration
@@ -133,7 +133,7 @@ body: |
   Optional markdown body here.
 ```
 
-Legacy markdown-compatible item document:
+Alternative markdown item document:
 
 ```md
 ```
@@ -147,6 +147,18 @@ Optional markdown body here.
 ```
 
 Fields are normalized and serialized in canonical key order (defined in `item-format.ts`) before hashing/history patch generation, regardless of on-disk item format.
+
+### Parallel Git/Worktree Safety
+
+`pm` storage is designed for high-concurrency git workflows (branches, worktrees, and multi-host collaboration):
+
+1. **First-class dual formats** — `.toon` and `.md` are both supported for item storage.
+2. **Single format of record per repo** — `settings.item_format` defines the canonical extension; migration removes alternate-extension drift.
+3. **Deterministic canonicalization** — normalized fields and stable ordering reduce diff noise and improve merge predictability.
+4. **Atomic writes** — item files are replaced via temp + `rename`, preventing torn writes.
+5. **Append-only history** — `history/<id>.jsonl` records RFC6902 patches with before/after hashes for auditability and restore.
+
+If concurrent edits modify the same semantic fields on separate branches, git can still surface textual conflicts. In those cases, the deterministic canonical model plus append-only history is intended to make reconciliation explicit and loss-resistant rather than silent.
 
 ## Mutation Contract
 
