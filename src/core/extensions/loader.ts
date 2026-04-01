@@ -895,6 +895,162 @@ function normalizeRegistrationRecordList(name: string, value: unknown): Array<Re
   return value.map((entry) => normalizeRegistrationRecord(name, entry));
 }
 
+function asRegistrationRecord(name: string, value: unknown): Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new TypeError(`${name} requires an object definition`);
+  }
+  return value as Record<string, unknown>;
+}
+
+function assertOptionalBooleanField(name: string, value: unknown): void {
+  if (value !== undefined && typeof value !== "boolean") {
+    throw new TypeError(`${name} must be a boolean when provided`);
+  }
+}
+
+function assertOptionalStringField(name: string, value: unknown): void {
+  if (value === undefined) {
+    return;
+  }
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new TypeError(`${name} must be a non-empty string when provided`);
+  }
+}
+
+function assertOptionalStringArrayField(name: string, value: unknown): void {
+  if (value === undefined) {
+    return;
+  }
+  if (!Array.isArray(value)) {
+    throw new TypeError(`${name} must be an array of non-empty strings when provided`);
+  }
+  for (const [index, entry] of value.entries()) {
+    if (typeof entry !== "string" || entry.trim().length === 0) {
+      throw new TypeError(`${name}[${index}] must be a non-empty string`);
+    }
+  }
+}
+
+function validateFlagDefinitions(flags: unknown): void {
+  if (!Array.isArray(flags)) {
+    throw new TypeError("registerFlags flags requires an array of object definitions");
+  }
+  for (const [index, raw] of flags.entries()) {
+    const record = asRegistrationRecord(`registerFlags flags[${index}]`, raw);
+    const long = record.long;
+    const short = record.short;
+    if (long === undefined && short === undefined) {
+      throw new TypeError(`registerFlags flags[${index}] requires at least one of long or short`);
+    }
+    assertOptionalStringField(`registerFlags flags[${index}].long`, long);
+    assertOptionalStringField(`registerFlags flags[${index}].short`, short);
+    assertOptionalStringField(`registerFlags flags[${index}].value_name`, record.value_name);
+    assertOptionalStringField(`registerFlags flags[${index}].description`, record.description);
+    assertOptionalBooleanField(`registerFlags flags[${index}].required`, record.required);
+    assertOptionalBooleanField(`registerFlags flags[${index}].enabled`, record.enabled);
+    assertOptionalBooleanField(`registerFlags flags[${index}].visible`, record.visible);
+  }
+}
+
+function validateItemFieldDefinitions(fields: unknown): void {
+  if (!Array.isArray(fields)) {
+    throw new TypeError("registerItemFields fields requires an array of object definitions");
+  }
+  for (const [index, raw] of fields.entries()) {
+    const record = asRegistrationRecord(`registerItemFields fields[${index}]`, raw);
+    assertNonEmptyString(`registerItemFields fields[${index}].name`, record.name);
+    assertNonEmptyString(`registerItemFields fields[${index}].type`, record.type);
+    assertOptionalBooleanField(`registerItemFields fields[${index}].optional`, record.optional);
+  }
+}
+
+function validateItemTypeDefinitions(types: unknown): void {
+  if (!Array.isArray(types)) {
+    throw new TypeError("registerItemTypes types requires an array of object definitions");
+  }
+  for (const [typeIndex, raw] of types.entries()) {
+    const record = asRegistrationRecord(`registerItemTypes types[${typeIndex}]`, raw);
+    assertNonEmptyString(`registerItemTypes types[${typeIndex}].name`, record.name);
+    assertOptionalStringField(`registerItemTypes types[${typeIndex}].folder`, record.folder);
+    assertOptionalStringArrayField(`registerItemTypes types[${typeIndex}].aliases`, record.aliases);
+    assertOptionalStringArrayField(
+      `registerItemTypes types[${typeIndex}].required_create_fields`,
+      record.required_create_fields,
+    );
+    assertOptionalStringArrayField(
+      `registerItemTypes types[${typeIndex}].required_create_repeatables`,
+      record.required_create_repeatables,
+    );
+
+    if (record.command_option_policies !== undefined) {
+      if (!Array.isArray(record.command_option_policies)) {
+        throw new TypeError(
+          `registerItemTypes types[${typeIndex}].command_option_policies must be an array when provided`,
+        );
+      }
+      for (const [policyIndex, rawPolicy] of record.command_option_policies.entries()) {
+        const policy = asRegistrationRecord(
+          `registerItemTypes types[${typeIndex}].command_option_policies[${policyIndex}]`,
+          rawPolicy,
+        );
+        assertNonEmptyString(
+          `registerItemTypes types[${typeIndex}].command_option_policies[${policyIndex}].command`,
+          policy.command,
+        );
+        assertNonEmptyString(
+          `registerItemTypes types[${typeIndex}].command_option_policies[${policyIndex}].option`,
+          policy.option,
+        );
+        assertOptionalBooleanField(
+          `registerItemTypes types[${typeIndex}].command_option_policies[${policyIndex}].enabled`,
+          policy.enabled,
+        );
+        assertOptionalBooleanField(
+          `registerItemTypes types[${typeIndex}].command_option_policies[${policyIndex}].required`,
+          policy.required,
+        );
+        assertOptionalBooleanField(
+          `registerItemTypes types[${typeIndex}].command_option_policies[${policyIndex}].visible`,
+          policy.visible,
+        );
+      }
+    }
+
+    if (record.options !== undefined) {
+      if (!Array.isArray(record.options)) {
+        throw new TypeError(`registerItemTypes types[${typeIndex}].options must be an array when provided`);
+      }
+      for (const [optionIndex, rawOption] of record.options.entries()) {
+        const option = asRegistrationRecord(`registerItemTypes types[${typeIndex}].options[${optionIndex}]`, rawOption);
+        assertNonEmptyString(`registerItemTypes types[${typeIndex}].options[${optionIndex}].key`, option.key);
+        assertOptionalStringArrayField(`registerItemTypes types[${typeIndex}].options[${optionIndex}].values`, option.values);
+        assertOptionalBooleanField(`registerItemTypes types[${typeIndex}].options[${optionIndex}].required`, option.required);
+        assertOptionalStringArrayField(
+          `registerItemTypes types[${typeIndex}].options[${optionIndex}].aliases`,
+          option.aliases,
+        );
+      }
+    }
+  }
+}
+
+function validateMigrationDefinition(definition: unknown): void {
+  const record = asRegistrationRecord("registerMigration definition", definition);
+  if (record.id !== undefined && typeof record.id !== "string") {
+    throw new TypeError("registerMigration definition.id must be a string when provided");
+  }
+  if (record.description !== undefined && typeof record.description !== "string") {
+    throw new TypeError("registerMigration definition.description must be a string when provided");
+  }
+  if (record.status !== undefined && typeof record.status !== "string") {
+    throw new TypeError("registerMigration definition.status must be a string when provided");
+  }
+  assertOptionalBooleanField("registerMigration definition.mandatory", record.mandatory);
+  if (record.run !== undefined && typeof record.run !== "function") {
+    throw new TypeError("registerMigration definition.run must be a function when provided");
+  }
+}
+
 function attachRuntimeDefinition<TEntry extends { definition: Record<string, unknown> }>(
   entry: TEntry,
   runtimeDefinition: Record<string, unknown>,
@@ -1003,6 +1159,7 @@ function createExtensionApi(
   const registerFlags = (targetCommand: string, flags: FlagDefinition[]): void => {
     assertExtensionCapability(extension, "schema", "registerFlags");
     const normalizedTargetCommand = normalizeCommandName(assertNonEmptyString("registerFlags targetCommand", targetCommand));
+    validateFlagDefinitions(flags);
     const normalizedFlags = normalizeRegistrationRecordList("registerFlags flags", flags);
     if (normalizedFlags.length === 0) {
       throw new TypeError("registerFlags requires at least one flag definition");
@@ -1016,6 +1173,7 @@ function createExtensionApi(
   };
   const registerItemFields = (fields: SchemaFieldDefinition[]): void => {
     assertExtensionCapability(extension, "schema", "registerItemFields");
+    validateItemFieldDefinitions(fields);
     const normalizedFields = normalizeRegistrationRecordList("registerItemFields fields", fields);
     if (normalizedFields.length === 0) {
       throw new TypeError("registerItemFields requires at least one field definition");
@@ -1028,6 +1186,7 @@ function createExtensionApi(
   };
   const registerItemTypes = (types: SchemaItemTypeDefinition[]): void => {
     assertExtensionCapability(extension, "schema", "registerItemTypes");
+    validateItemTypeDefinitions(types);
     const normalizedTypes = normalizeRegistrationRecordList("registerItemTypes types", types);
     if (normalizedTypes.length === 0) {
       throw new TypeError("registerItemTypes requires at least one type definition");
@@ -1040,6 +1199,7 @@ function createExtensionApi(
   };
   const registerMigration = (definition: SchemaMigrationDefinition): void => {
     assertExtensionCapability(extension, "schema", "registerMigration");
+    validateMigrationDefinition(definition);
     const runtimeDefinition = normalizeRuntimeRegistrationRecord("registerMigration definition", definition);
     registrations.migrations.push(
       attachRuntimeDefinition(

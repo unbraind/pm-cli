@@ -103,11 +103,26 @@ src/
       todos/
         index.ts                 todos extension activate()
         import-export.ts         todos import/export logic
+  sdk/
+    cli-contracts.ts             Canonical command/action contracts + JSON Schema exports
+    index.ts                     Public SDK exports
   command-types.ts               (re-export shim)
   constants.ts                   (re-export shim)
   errors.ts                      (re-export shim)
   ... (other re-export shims for backward compat)
 ```
+
+## Command Contract Registry
+
+Command/action contract metadata is centralized in `src/sdk/cli-contracts.ts`.
+
+The same registry drives:
+
+- commander option normalization in `src/cli/main.ts`
+- shell completion flag/command surfaces in `src/cli/commands/completion.ts`
+- Pi wrapper action enum, tool `inputSchema`, and CLI arg mapping in `.pi/extensions/pm-cli/index.ts`
+
+This keeps human CLI UX and machine-facing contracts aligned while preserving additive/backward-compatible evolution.
 
 ## Item Storage
 
@@ -304,8 +319,11 @@ Project-local extensions override global by default. Runtime dispatch is extensi
 
 Runtime registration wiring now includes:
 
+- `registerFlags(...)` deterministic shape validation (`long`/`short` presence plus typed metadata) before dynamic help registration.
 - `registerItemFields(...)` defaults/validation on create and update write paths.
+- `registerItemTypes(...)` deterministic schema validation for required type/policy/option fields before type-registry merge.
 - `registerMigration(...)` mandatory migration execution + write gating in command preflight.
+- `registerMigration(...)` activation-time validation for typed migration metadata (`id`, `description`, `status`, `mandatory`, `run`) when provided.
 - `registerSearchProvider(...)` selected by `settings.search.provider` for live `pm search` execution.
 - `registerVectorStoreAdapter(...)` selected by `settings.vector_store.adapter` for live `pm search` query and `pm reindex` upsert execution.
 

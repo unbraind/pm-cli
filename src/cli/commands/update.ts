@@ -372,44 +372,8 @@ function ensurePriority(raw: string): 0 | 1 | 2 | 3 | 4 {
   return parsed as 0 | 1 | 2 | 3 | 4;
 }
 
-const UPDATE_OPTION_KEY_ALIASES: Record<string, string> = {
-  "estimated-minutes": "estimatedMinutes",
-  estimated_minutes: "estimatedMinutes",
-  estimate: "estimatedMinutes",
-  "acceptance-criteria": "acceptanceCriteria",
-  acceptance_criteria: "acceptanceCriteria",
-  ac: "acceptanceCriteria",
-  "definition-of-ready": "definitionOfReady",
-  definition_of_ready: "definitionOfReady",
-  rank: "order",
-  "why-now": "whyNow",
-  why_now: "whyNow",
-  "blocked-by": "blockedBy",
-  blocked_by: "blockedBy",
-  "blocked-reason": "blockedReason",
-  blocked_reason: "blockedReason",
-  "unblock-note": "unblockNote",
-  unblock_note: "unblockNote",
-  "repro-steps": "reproSteps",
-  repro_steps: "reproSteps",
-  "expected-result": "expectedResult",
-  expected_result: "expectedResult",
-  "actual-result": "actualResult",
-  actual_result: "actualResult",
-  "affected-version": "affectedVersion",
-  affected_version: "affectedVersion",
-  "fixed-version": "fixedVersion",
-  fixed_version: "fixedVersion",
-  "customer-impact": "customerImpact",
-  customer_impact: "customerImpact",
-  "type-option": "typeOption",
-  type_option: "typeOption",
-  type_options: "typeOption",
-};
-
 function normalizeUpdatePolicyOptionKey(raw: string, typeName: string): string {
-  const candidate = UPDATE_OPTION_KEY_ALIASES[raw] ?? raw;
-  const canonical = canonicalizeCommandOptionKey("update", candidate);
+  const canonical = canonicalizeCommandOptionKey("update", raw);
   if (!canonical) {
     throw new PmCliError(
       `Unsupported command_option_policies option "${raw}" for update command on type "${typeName}"`,

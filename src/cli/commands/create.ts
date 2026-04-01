@@ -514,44 +514,8 @@ function buildHistoryMessage(baseMessage: string | undefined, explicitUnsets: st
   return trimmed ? `${trimmed} | ${suffix}` : suffix;
 }
 
-const CREATE_OPTION_KEY_ALIASES: Record<string, string> = {
-  "definition-of-ready": "definitionOfReady",
-  definition_of_ready: "definitionOfReady",
-  "why-now": "whyNow",
-  why_now: "whyNow",
-  "blocked-by": "blockedBy",
-  blocked_by: "blockedBy",
-  "blocked-reason": "blockedReason",
-  blocked_reason: "blockedReason",
-  "unblock-note": "unblockNote",
-  unblock_note: "unblockNote",
-  "repro-steps": "reproSteps",
-  repro_steps: "reproSteps",
-  "expected-result": "expectedResult",
-  expected_result: "expectedResult",
-  "actual-result": "actualResult",
-  actual_result: "actualResult",
-  "affected-version": "affectedVersion",
-  affected_version: "affectedVersion",
-  "fixed-version": "fixedVersion",
-  fixed_version: "fixedVersion",
-  "customer-impact": "customerImpact",
-  customer_impact: "customerImpact",
-  "type-option": "typeOption",
-  type_option: "typeOption",
-  estimated_minutes: "estimatedMinutes",
-  "estimated-minutes": "estimatedMinutes",
-  estimate: "estimatedMinutes",
-  "acceptance-criteria": "acceptanceCriteria",
-  acceptance_criteria: "acceptanceCriteria",
-  ac: "acceptanceCriteria",
-  rank: "order",
-  type_options: "typeOption",
-};
-
 function normalizeCreatePolicyOptionKey(raw: string, typeName: string, sourceLabel: string): string {
-  const candidate = CREATE_OPTION_KEY_ALIASES[raw] ?? raw;
-  const canonical = canonicalizeCommandOptionKey("create", candidate);
+  const canonical = canonicalizeCommandOptionKey("create", raw);
   if (!canonical) {
     throw new PmCliError(
       `Unsupported ${sourceLabel} entry "${raw}" for type "${typeName}"`,

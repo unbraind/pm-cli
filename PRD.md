@@ -783,6 +783,14 @@ Mutation safety:
 
 All commands return deterministic top-level objects (TOON by default, JSON with `--json`).
 
+Canonical command/action schema metadata is centralized in `src/sdk/cli-contracts.ts` and reused across:
+
+- commander normalization in `src/cli/main.ts`
+- shell completion generation in `src/cli/commands/completion.ts`
+- Pi wrapper `inputSchema` + action mapping in `.pi/extensions/pm-cli/index.ts`
+
+Contract compatibility policy is additive-first: existing command names/flags/aliases remain valid, while new machine-readable fields may be appended without changing existing semantics.
+
 | Command | Key inputs | Output object |
 | --- | --- | --- |
 | `pm init [PREFIX]` | optional prefix, `--path` | `{ ok, path, settings, created_dirs, warnings }` |
@@ -1157,6 +1165,7 @@ Current baseline status (release-hardening):
 
 - Implemented as a Pi agent extension source module at `.pi/extensions/pm-cli/index.ts` (outside the `pm` CLI command surface).
 - Registers one Pi tool named `pm` via Pi's extension API (`registerTool`) and maps `action` + command-shaped fields to `pm` CLI invocations.
+- Tool action enums and parameter JSON Schema are sourced from the shared command contract registry (`src/sdk/cli-contracts.ts`) to avoid drift with core CLI/completion surfaces.
 - Action dispatch currently covers the full v0.1 command-aligned set (`init`, `config`, `create`, `list`, `list-all`, `list-draft`, `list-open`, `list-in-progress`, `list-blocked`, `list-closed`, `list-canceled`, `calendar`, `context`, `get`, `search`, `reindex`, `history`, `activity`, `restore`, `update`, `close`, `delete`, `append`, `comments`, `files`, `docs`, `test`, `test-all`, `stats`, `health`, `gc`, `completion`, `claim`, `release`) plus extension action aliases (`beads-import`, `todos-import`, `todos-export`) and workflow presets (`start-task`, `pause-task`, `close-task`).
 - Invocation fallback order is deterministic for distribution resilience: attempt `pm` first, then fallback to packaged `node <package-root>/dist/cli.js` when `pm` is unavailable.
 
@@ -1175,6 +1184,13 @@ Current baseline status (release-hardening):
   - `details: <structured object>`
 
 Wrapper behavior must remain aligned with CLI semantics and exit conditions.
+
+Schema-capability registrations are also validated deterministically at activation-time:
+
+- `registerFlags`: each entry must provide at least one of `long`/`short`; optional metadata fields must match expected scalar types.
+- `registerItemFields`: each entry requires non-empty `name` and `type`.
+- `registerItemTypes`: each type requires non-empty `name`; nested `options[]` and `command_option_policies[]` entries enforce required key fields and boolean toggles.
+- `registerMigration`: typed migration metadata (`id`, `description`, `status`, `mandatory`, `run`) is validated when provided.
 
 ## 16) Security and Data Integrity
 

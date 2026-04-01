@@ -23,6 +23,20 @@
 - Deterministic canonical normalization and atomic writes for parallel git/worktree workflows
 - Optional search and extension support for more advanced setups
 
+## Unified Command Contracts
+
+`pm` now centralizes command/action contract metadata in `src/sdk/cli-contracts.ts` and uses it across:
+
+- CLI option normalization in `src/cli/main.ts`
+- Shell completion generation in `src/cli/commands/completion.ts`
+- Pi wrapper tool actions, JSON Schema, and arg mapping in `.pi/extensions/pm-cli/index.ts`
+
+Compatibility policy for command contracts:
+
+- Existing commands/flags and aliases remain valid.
+- Contract evolution is additive-first (new schema properties/flags can be added without breaking existing consumers).
+- `--json` remains the full machine payload; default TOON remains sparse/token-efficient.
+
 ## Item Storage Formats
 
 - Default item format is TOON (`.toon`) using root-object field storage (`id`, `title`, ..., `body`).

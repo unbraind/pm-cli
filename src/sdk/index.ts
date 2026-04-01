@@ -1,4 +1,5 @@
 import type { ExtensionApi, ExtensionManifest } from "../core/extensions/loader.js";
+export * from "./cli-contracts.js";
 
 export const EXTENSION_CAPABILITIES = ["commands", "renderers", "hooks", "schema", "importers", "search"] as const;
 export type ExtensionCapability = (typeof EXTENSION_CAPABILITIES)[number];

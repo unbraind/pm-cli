@@ -86,6 +86,18 @@ import type { ItemStatus, PmSettings } from "../types/index.js";
 import { parseLooseCommandOptions } from "./extension-command-options.js";
 import { attachRichHelpText } from "./help-content.js";
 import { formatCommanderErrorForDisplay, formatPmCliErrorForDisplay } from "./error-guidance.js";
+import {
+  CALENDAR_COMMANDER_STRING_OPTION_CONTRACTS,
+  CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS,
+  CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
+  CREATE_COMMANDER_STRING_OPTION_CONTRACTS,
+  LIST_COMMANDER_STRING_OPTION_CONTRACTS,
+  SEARCH_COMMANDER_STRING_OPTION_CONTRACTS,
+  UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
+  UPDATE_COMMANDER_STRING_OPTION_CONTRACTS,
+  readFirstStringFromCommanderOptions,
+  readStringArrayFromCommanderOptions,
+} from "../sdk/cli-contracts.js";
 
 function collect(value: string, previous: string[] | undefined): string[] {
   const next = previous ?? [];
@@ -1038,237 +1050,250 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command): Promi
 }
 
 function normalizeCreateOptions(commandOptions: Record<string, unknown>): CreateCommandOptions {
-  const readStringOption = (...keys: string[]): string | undefined => {
-    for (const key of keys) {
-      if (typeof commandOptions[key] === "string") {
-        return commandOptions[key] as string;
-      }
-    }
-    return undefined;
-  };
-  const estimatedMinutes =
-    readStringOption("estimate", "estimatedMinutes", "estimated_minutes");
-  const type = readStringOption("type");
+  const readCreateString = (target: string): string | undefined =>
+    readFirstStringFromCommanderOptions(
+      commandOptions,
+      CREATE_COMMANDER_STRING_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
+        target,
+        keys: [target],
+      },
+    );
+  const readCreateList = (target: string): string[] | undefined =>
+    readStringArrayFromCommanderOptions(
+      commandOptions,
+      CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
+        target,
+        keys: [target],
+      },
+    );
+
+  const type = readCreateString("type");
   if (type === undefined) {
     throw new PmCliError("Missing required option --type", EXIT_CODE.USAGE);
   }
 
   return {
-    title: readStringOption("title"),
-    description: readStringOption("description"),
+    title: readCreateString("title"),
+    description: readCreateString("description"),
     type,
-    status: readStringOption("status"),
-    priority: readStringOption("priority"),
-    tags: readStringOption("tags"),
-    body: readStringOption("body"),
-    deadline: readStringOption("deadline"),
-    estimatedMinutes,
-    acceptanceCriteria: readStringOption("acceptanceCriteria", "acceptance_criteria", "ac"),
-    definitionOfReady: readStringOption("definitionOfReady", "definition_of_ready"),
-    order: readStringOption("order"),
-    rank: readStringOption("rank"),
-    goal: readStringOption("goal"),
-    objective: readStringOption("objective"),
-    value: readStringOption("value"),
-    impact: readStringOption("impact"),
-    outcome: readStringOption("outcome"),
-    whyNow: readStringOption("whyNow", "why_now"),
-    author: readStringOption("author"),
-    message: readStringOption("message"),
-    assignee: readStringOption("assignee"),
-    parent: readStringOption("parent"),
-    reviewer: readStringOption("reviewer"),
-    risk: readStringOption("risk"),
-    confidence: readStringOption("confidence"),
-    sprint: readStringOption("sprint"),
-    release: readStringOption("release"),
-    blockedBy: readStringOption("blockedBy", "blocked_by"),
-    blockedReason: readStringOption("blockedReason", "blocked_reason"),
-    unblockNote: readStringOption("unblockNote", "unblock_note"),
-    reporter: readStringOption("reporter"),
-    severity: readStringOption("severity"),
-    environment: readStringOption("environment"),
-    reproSteps: readStringOption("reproSteps", "repro_steps"),
-    resolution: readStringOption("resolution"),
-    expectedResult: readStringOption("expectedResult", "expected_result"),
-    actualResult: readStringOption("actualResult", "actual_result"),
-    affectedVersion: readStringOption("affectedVersion", "affected_version"),
-    fixedVersion: readStringOption("fixedVersion", "fixed_version"),
-    component: readStringOption("component"),
-    regression: readStringOption("regression"),
-    customerImpact: readStringOption("customerImpact", "customer_impact"),
-    dep: Array.isArray(commandOptions.dep) ? (commandOptions.dep as string[]) : undefined,
-    comment: Array.isArray(commandOptions.comment) ? (commandOptions.comment as string[]) : undefined,
-    note: Array.isArray(commandOptions.note) ? (commandOptions.note as string[]) : undefined,
-    learning: Array.isArray(commandOptions.learning) ? (commandOptions.learning as string[]) : undefined,
-    file: Array.isArray(commandOptions.file) ? (commandOptions.file as string[]) : undefined,
-    test: Array.isArray(commandOptions.test) ? (commandOptions.test as string[]) : undefined,
-    doc: Array.isArray(commandOptions.doc) ? (commandOptions.doc as string[]) : undefined,
-    reminder: Array.isArray(commandOptions.reminder) ? (commandOptions.reminder as string[]) : undefined,
-    event: Array.isArray(commandOptions.event) ? (commandOptions.event as string[]) : undefined,
-    typeOption: Array.isArray(commandOptions.typeOption)
-      ? (commandOptions.typeOption as string[])
-      : Array.isArray(commandOptions.type_option)
-        ? (commandOptions.type_option as string[])
-        : undefined,
+    status: readCreateString("status"),
+    priority: readCreateString("priority"),
+    tags: readCreateString("tags"),
+    body: readCreateString("body"),
+    deadline: readCreateString("deadline"),
+    estimatedMinutes: readCreateString("estimatedMinutes"),
+    acceptanceCriteria: readCreateString("acceptanceCriteria"),
+    definitionOfReady: readCreateString("definitionOfReady"),
+    order: readCreateString("order"),
+    rank: readCreateString("rank"),
+    goal: readCreateString("goal"),
+    objective: readCreateString("objective"),
+    value: readCreateString("value"),
+    impact: readCreateString("impact"),
+    outcome: readCreateString("outcome"),
+    whyNow: readCreateString("whyNow"),
+    author: readCreateString("author"),
+    message: readCreateString("message"),
+    assignee: readCreateString("assignee"),
+    parent: readCreateString("parent"),
+    reviewer: readCreateString("reviewer"),
+    risk: readCreateString("risk"),
+    confidence: readCreateString("confidence"),
+    sprint: readCreateString("sprint"),
+    release: readCreateString("release"),
+    blockedBy: readCreateString("blockedBy"),
+    blockedReason: readCreateString("blockedReason"),
+    unblockNote: readCreateString("unblockNote"),
+    reporter: readCreateString("reporter"),
+    severity: readCreateString("severity"),
+    environment: readCreateString("environment"),
+    reproSteps: readCreateString("reproSteps"),
+    resolution: readCreateString("resolution"),
+    expectedResult: readCreateString("expectedResult"),
+    actualResult: readCreateString("actualResult"),
+    affectedVersion: readCreateString("affectedVersion"),
+    fixedVersion: readCreateString("fixedVersion"),
+    component: readCreateString("component"),
+    regression: readCreateString("regression"),
+    customerImpact: readCreateString("customerImpact"),
+    dep: readCreateList("dep"),
+    comment: readCreateList("comment"),
+    note: readCreateList("note"),
+    learning: readCreateList("learning"),
+    file: readCreateList("file"),
+    test: readCreateList("test"),
+    doc: readCreateList("doc"),
+    reminder: readCreateList("reminder"),
+    event: readCreateList("event"),
+    typeOption: readCreateList("typeOption"),
   };
 }
 
 function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record<string, unknown> {
-  const estimatedMinutes =
-    (typeof commandOptions.estimate === "string" ? commandOptions.estimate : undefined) ??
-    (typeof commandOptions.estimatedMinutes === "string" ? commandOptions.estimatedMinutes : undefined) ??
-    (typeof commandOptions.estimated_minutes === "string" ? commandOptions.estimated_minutes : undefined);
+  const readUpdateString = (target: string): string | undefined =>
+    readFirstStringFromCommanderOptions(
+      commandOptions,
+      UPDATE_COMMANDER_STRING_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
+        target,
+        keys: [target],
+      },
+    );
+  const readUpdateList = (target: string): string[] | undefined =>
+    readStringArrayFromCommanderOptions(
+      commandOptions,
+      UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
+        target,
+        keys: [target],
+      },
+    );
 
   return {
-    description: typeof commandOptions.description === "string" ? commandOptions.description : undefined,
-    status: typeof commandOptions.status === "string" ? commandOptions.status : undefined,
-    priority: typeof commandOptions.priority === "string" ? commandOptions.priority : undefined,
-    type: typeof commandOptions.type === "string" ? commandOptions.type : undefined,
-    tags: typeof commandOptions.tags === "string" ? commandOptions.tags : undefined,
-    deadline: typeof commandOptions.deadline === "string" ? commandOptions.deadline : undefined,
-    estimatedMinutes,
-    acceptanceCriteria:
-      (typeof commandOptions.acceptanceCriteria === "string" ? commandOptions.acceptanceCriteria : undefined) ??
-      (typeof commandOptions.acceptance_criteria === "string" ? commandOptions.acceptance_criteria : undefined) ??
-      (typeof commandOptions.ac === "string" ? commandOptions.ac : undefined),
-    definitionOfReady:
-      (typeof commandOptions.definitionOfReady === "string" ? commandOptions.definitionOfReady : undefined) ??
-      (typeof commandOptions.definition_of_ready === "string" ? commandOptions.definition_of_ready : undefined),
-    order: typeof commandOptions.order === "string" ? commandOptions.order : undefined,
-    rank: typeof commandOptions.rank === "string" ? commandOptions.rank : undefined,
-    goal: typeof commandOptions.goal === "string" ? commandOptions.goal : undefined,
-    objective: typeof commandOptions.objective === "string" ? commandOptions.objective : undefined,
-    value: typeof commandOptions.value === "string" ? commandOptions.value : undefined,
-    impact: typeof commandOptions.impact === "string" ? commandOptions.impact : undefined,
-    outcome: typeof commandOptions.outcome === "string" ? commandOptions.outcome : undefined,
-    whyNow:
-      (typeof commandOptions.whyNow === "string" ? commandOptions.whyNow : undefined) ??
-      (typeof commandOptions.why_now === "string" ? commandOptions.why_now : undefined),
-    author: typeof commandOptions.author === "string" ? commandOptions.author : undefined,
-    message: typeof commandOptions.message === "string" ? commandOptions.message : undefined,
+    title: readUpdateString("title"),
+    description: readUpdateString("description"),
+    status: readUpdateString("status"),
+    priority: readUpdateString("priority"),
+    type: readUpdateString("type"),
+    tags: readUpdateString("tags"),
+    deadline: readUpdateString("deadline"),
+    estimatedMinutes: readUpdateString("estimatedMinutes"),
+    acceptanceCriteria: readUpdateString("acceptanceCriteria"),
+    definitionOfReady: readUpdateString("definitionOfReady"),
+    order: readUpdateString("order"),
+    rank: readUpdateString("rank"),
+    goal: readUpdateString("goal"),
+    objective: readUpdateString("objective"),
+    value: readUpdateString("value"),
+    impact: readUpdateString("impact"),
+    outcome: readUpdateString("outcome"),
+    whyNow: readUpdateString("whyNow"),
+    author: readUpdateString("author"),
+    message: readUpdateString("message"),
     force: Boolean(commandOptions.force),
-    assignee: typeof commandOptions.assignee === "string" ? commandOptions.assignee : undefined,
-    parent: typeof commandOptions.parent === "string" ? commandOptions.parent : undefined,
-    reviewer: typeof commandOptions.reviewer === "string" ? commandOptions.reviewer : undefined,
-    risk: typeof commandOptions.risk === "string" ? commandOptions.risk : undefined,
-    confidence: typeof commandOptions.confidence === "string" ? commandOptions.confidence : undefined,
-    sprint: typeof commandOptions.sprint === "string" ? commandOptions.sprint : undefined,
-    release: typeof commandOptions.release === "string" ? commandOptions.release : undefined,
-    blockedBy:
-      (typeof commandOptions.blockedBy === "string" ? commandOptions.blockedBy : undefined) ??
-      (typeof commandOptions.blocked_by === "string" ? commandOptions.blocked_by : undefined),
-    blockedReason:
-      (typeof commandOptions.blockedReason === "string" ? commandOptions.blockedReason : undefined) ??
-      (typeof commandOptions.blocked_reason === "string" ? commandOptions.blocked_reason : undefined),
-    unblockNote:
-      (typeof commandOptions.unblockNote === "string" ? commandOptions.unblockNote : undefined) ??
-      (typeof commandOptions.unblock_note === "string" ? commandOptions.unblock_note : undefined),
-    reporter: typeof commandOptions.reporter === "string" ? commandOptions.reporter : undefined,
-    severity: typeof commandOptions.severity === "string" ? commandOptions.severity : undefined,
-    environment: typeof commandOptions.environment === "string" ? commandOptions.environment : undefined,
-    reproSteps:
-      (typeof commandOptions.reproSteps === "string" ? commandOptions.reproSteps : undefined) ??
-      (typeof commandOptions.repro_steps === "string" ? commandOptions.repro_steps : undefined),
-    resolution: typeof commandOptions.resolution === "string" ? commandOptions.resolution : undefined,
-    expectedResult:
-      (typeof commandOptions.expectedResult === "string" ? commandOptions.expectedResult : undefined) ??
-      (typeof commandOptions.expected_result === "string" ? commandOptions.expected_result : undefined),
-    actualResult:
-      (typeof commandOptions.actualResult === "string" ? commandOptions.actualResult : undefined) ??
-      (typeof commandOptions.actual_result === "string" ? commandOptions.actual_result : undefined),
-    affectedVersion:
-      (typeof commandOptions.affectedVersion === "string" ? commandOptions.affectedVersion : undefined) ??
-      (typeof commandOptions.affected_version === "string" ? commandOptions.affected_version : undefined),
-    fixedVersion:
-      (typeof commandOptions.fixedVersion === "string" ? commandOptions.fixedVersion : undefined) ??
-      (typeof commandOptions.fixed_version === "string" ? commandOptions.fixed_version : undefined),
-    component: typeof commandOptions.component === "string" ? commandOptions.component : undefined,
-    regression: typeof commandOptions.regression === "string" ? commandOptions.regression : undefined,
-    customerImpact:
-      (typeof commandOptions.customerImpact === "string" ? commandOptions.customerImpact : undefined) ??
-      (typeof commandOptions.customer_impact === "string" ? commandOptions.customer_impact : undefined),
-    reminder: Array.isArray(commandOptions.reminder) ? (commandOptions.reminder as string[]) : undefined,
-    event: Array.isArray(commandOptions.event) ? (commandOptions.event as string[]) : undefined,
-    typeOption: Array.isArray(commandOptions.typeOption)
-      ? (commandOptions.typeOption as string[])
-      : Array.isArray(commandOptions.type_option)
-        ? (commandOptions.type_option as string[])
-        : undefined,
+    assignee: readUpdateString("assignee"),
+    parent: readUpdateString("parent"),
+    reviewer: readUpdateString("reviewer"),
+    risk: readUpdateString("risk"),
+    confidence: readUpdateString("confidence"),
+    sprint: readUpdateString("sprint"),
+    release: readUpdateString("release"),
+    blockedBy: readUpdateString("blockedBy"),
+    blockedReason: readUpdateString("blockedReason"),
+    unblockNote: readUpdateString("unblockNote"),
+    reporter: readUpdateString("reporter"),
+    severity: readUpdateString("severity"),
+    environment: readUpdateString("environment"),
+    reproSteps: readUpdateString("reproSteps"),
+    resolution: readUpdateString("resolution"),
+    expectedResult: readUpdateString("expectedResult"),
+    actualResult: readUpdateString("actualResult"),
+    affectedVersion: readUpdateString("affectedVersion"),
+    fixedVersion: readUpdateString("fixedVersion"),
+    component: readUpdateString("component"),
+    regression: readUpdateString("regression"),
+    customerImpact: readUpdateString("customerImpact"),
+    reminder: readUpdateList("reminder"),
+    event: readUpdateList("event"),
+    typeOption: readUpdateList("typeOption"),
   };
 }
 
 function normalizeListOptions(options: Record<string, unknown>): ListOptions {
+  const readListString = (target: string): string | undefined =>
+    readFirstStringFromCommanderOptions(
+      options,
+      LIST_COMMANDER_STRING_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
+        target,
+        keys: [target],
+      },
+    );
   return {
-    type: typeof options.type === "string" ? options.type : undefined,
-    tag: typeof options.tag === "string" ? options.tag : undefined,
-    priority: typeof options.priority === "string" ? options.priority : undefined,
-    deadlineBefore: typeof options.deadlineBefore === "string" ? options.deadlineBefore : undefined,
-    deadlineAfter: typeof options.deadlineAfter === "string" ? options.deadlineAfter : undefined,
-    assignee: typeof options.assignee === "string" ? options.assignee : undefined,
-    sprint: typeof options.sprint === "string" ? options.sprint : undefined,
-    release: typeof options.release === "string" ? options.release : undefined,
-    limit: typeof options.limit === "string" ? options.limit : undefined,
+    type: readListString("type"),
+    tag: readListString("tag"),
+    priority: readListString("priority"),
+    deadlineBefore: readListString("deadlineBefore"),
+    deadlineAfter: readListString("deadlineAfter"),
+    assignee: readListString("assignee"),
+    sprint: readListString("sprint"),
+    release: readListString("release"),
+    limit: readListString("limit"),
     includeBody: options.includeBody === true ? true : undefined,
   };
 }
 
 function normalizeSearchOptions(options: Record<string, unknown>): Record<string, string | boolean | undefined> {
+  const readSearchString = (target: string): string | undefined =>
+    readFirstStringFromCommanderOptions(
+      options,
+      SEARCH_COMMANDER_STRING_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
+        target,
+        keys: [target],
+      },
+    );
   return {
-    mode: typeof options.mode === "string" ? options.mode : undefined,
+    mode: readSearchString("mode"),
     includeLinked: options.includeLinked === true ? true : undefined,
-    type: typeof options.type === "string" ? options.type : undefined,
-    tag: typeof options.tag === "string" ? options.tag : undefined,
-    priority: typeof options.priority === "string" ? options.priority : undefined,
-    deadlineBefore: typeof options.deadlineBefore === "string" ? options.deadlineBefore : undefined,
-    deadlineAfter: typeof options.deadlineAfter === "string" ? options.deadlineAfter : undefined,
-    limit: typeof options.limit === "string" ? options.limit : undefined,
+    type: readSearchString("type"),
+    tag: readSearchString("tag"),
+    priority: readSearchString("priority"),
+    deadlineBefore: readSearchString("deadlineBefore"),
+    deadlineAfter: readSearchString("deadlineAfter"),
+    limit: readSearchString("limit"),
   };
 }
 
 function normalizeCalendarOptions(options: Record<string, unknown>): CalendarOptions {
+  const readCalendarString = (target: string): string | undefined =>
+    readFirstStringFromCommanderOptions(
+      options,
+      CALENDAR_COMMANDER_STRING_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
+        target,
+        keys: [target],
+      },
+    );
   return {
-    view: typeof options.view === "string" ? options.view : undefined,
-    date: typeof options.date === "string" ? options.date : undefined,
-    from: typeof options.from === "string" ? options.from : undefined,
-    to: typeof options.to === "string" ? options.to : undefined,
+    view: readCalendarString("view"),
+    date: readCalendarString("date"),
+    from: readCalendarString("from"),
+    to: readCalendarString("to"),
     past: options.past === true ? true : undefined,
-    limit: typeof options.limit === "string" ? options.limit : undefined,
-    type: typeof options.type === "string" ? options.type : undefined,
-    tag: typeof options.tag === "string" ? options.tag : undefined,
-    priority: typeof options.priority === "string" ? options.priority : undefined,
-    status: typeof options.status === "string" ? options.status : undefined,
-    assignee: typeof options.assignee === "string" ? options.assignee : undefined,
-    sprint: typeof options.sprint === "string" ? options.sprint : undefined,
-    release: typeof options.release === "string" ? options.release : undefined,
-    include: typeof options.include === "string" ? options.include : undefined,
-    recurrenceLookaheadDays:
-      (typeof options.recurrenceLookaheadDays === "string" ? options.recurrenceLookaheadDays : undefined) ??
-      (typeof options.recurrence_lookahead_days === "string" ? options.recurrence_lookahead_days : undefined),
-    recurrenceLookbackDays:
-      (typeof options.recurrenceLookbackDays === "string" ? options.recurrenceLookbackDays : undefined) ??
-      (typeof options.recurrence_lookback_days === "string" ? options.recurrence_lookback_days : undefined),
-    occurrenceLimit:
-      (typeof options.occurrenceLimit === "string" ? options.occurrenceLimit : undefined) ??
-      (typeof options.occurrence_limit === "string" ? options.occurrence_limit : undefined),
-    format: typeof options.format === "string" ? options.format : undefined,
+    limit: readCalendarString("limit"),
+    type: readCalendarString("type"),
+    tag: readCalendarString("tag"),
+    priority: readCalendarString("priority"),
+    status: readCalendarString("status"),
+    assignee: readCalendarString("assignee"),
+    sprint: readCalendarString("sprint"),
+    release: readCalendarString("release"),
+    include: readCalendarString("include"),
+    recurrenceLookaheadDays: readCalendarString("recurrenceLookaheadDays"),
+    recurrenceLookbackDays: readCalendarString("recurrenceLookbackDays"),
+    occurrenceLimit: readCalendarString("occurrenceLimit"),
+    format: readCalendarString("format"),
   };
 }
 
 function normalizeContextOptions(options: Record<string, unknown>): ContextOptions {
+  const readContextString = (target: string): string | undefined =>
+    readFirstStringFromCommanderOptions(
+      options,
+      CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
+        target,
+        keys: [target],
+      },
+    );
   return {
-    date: typeof options.date === "string" ? options.date : undefined,
-    from: typeof options.from === "string" ? options.from : undefined,
-    to: typeof options.to === "string" ? options.to : undefined,
+    date: readContextString("date"),
+    from: readContextString("from"),
+    to: readContextString("to"),
     past: options.past === true ? true : undefined,
-    type: typeof options.type === "string" ? options.type : undefined,
-    tag: typeof options.tag === "string" ? options.tag : undefined,
-    priority: typeof options.priority === "string" ? options.priority : undefined,
-    assignee: typeof options.assignee === "string" ? options.assignee : undefined,
-    sprint: typeof options.sprint === "string" ? options.sprint : undefined,
-    release: typeof options.release === "string" ? options.release : undefined,
-    limit: typeof options.limit === "string" ? options.limit : undefined,
-    format: typeof options.format === "string" ? options.format : undefined,
+    type: readContextString("type"),
+    tag: readContextString("tag"),
+    priority: readContextString("priority"),
+    assignee: readContextString("assignee"),
+    sprint: readContextString("sprint"),
+    release: readContextString("release"),
+    limit: readContextString("limit"),
+    format: readContextString("format"),
   };
 }
 

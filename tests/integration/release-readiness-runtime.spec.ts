@@ -1121,6 +1121,7 @@ describe("release readiness runtime coverage", () => {
       "src/cli/main.ts",
       "src/core/item/type-registry.ts",
       "src/core/output/command-aware.ts",
+      "src/sdk/cli-contracts.ts",
     ]);
   });
 

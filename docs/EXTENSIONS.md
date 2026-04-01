@@ -109,6 +109,7 @@ Supported metadata for dynamic extension help rendering:
 - `required: true` appends a `[required]` marker in help.
 - `enabled: false` appends a `[disabled]` marker in help.
 - `visible: false` hides the flag from dynamic help output.
+- Validation contract: each entry must provide at least one of `long` or `short`; optional metadata fields must match expected scalar types.
 
 Core help output now also appends command-level narrative sections (why/examples/tips). Dynamic extension commands still receive flag-level rendering from `registerFlags(...)`, so extension authors should provide explicit `description` text on each flag to keep help high-signal.
 
@@ -172,6 +173,8 @@ api.registerItemFields([
 ]);
 ```
 
+Validation contract: each field entry must include non-empty `name` and `type`; `optional` must be boolean when provided.
+
 ### `api.registerItemTypes(types)`
 
 Register custom item types and per-type create/type-option rules:
@@ -206,6 +209,14 @@ api.registerItemTypes([
 ]);
 ```
 
+Validation contract highlights:
+
+- each type entry must include non-empty `name`
+- `aliases`, `required_create_fields`, and `required_create_repeatables` must be arrays of non-empty strings when provided
+- `options[]` entries require non-empty `key`
+- `command_option_policies[]` entries require non-empty `command` and `option`
+- optional boolean toggles (`enabled`, `required`, `visible`) must be booleans when provided
+
 Notes:
 
 - Requires `schema` capability in the extension manifest.
@@ -228,6 +239,8 @@ api.registerMigration({
   },
 });
 ```
+
+Validation contract: migration definitions must be objects; when provided, `id`/`description`/`status` must be strings, `mandatory` must be boolean, and `run` must be a function.
 
 Migrations with `mandatory: true` and `status` not `"applied"` block write commands until resolved (bypass with `--force`).
 

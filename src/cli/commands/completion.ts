@@ -1,5 +1,16 @@
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import {
+  CALENDAR_FLAG_CONTRACTS,
+  CONTEXT_FLAG_CONTRACTS,
+  CREATE_FLAG_CONTRACTS,
+  GLOBAL_FLAG_CONTRACTS,
+  LIST_FILTER_FLAG_CONTRACTS,
+  PM_CORE_COMMAND_NAMES,
+  SEARCH_FLAG_CONTRACTS,
+  UPDATE_FLAG_CONTRACTS,
+  toCompletionFlagString,
+} from "../../sdk/cli-contracts.js";
 
 export type CompletionShell = "bash" | "zsh" | "fish";
 
@@ -12,72 +23,19 @@ export interface CompletionResult {
 const VALID_SHELLS: CompletionShell[] = ["bash", "zsh", "fish"];
 const DEFAULT_ITEM_TYPES = ["Epic", "Feature", "Task", "Chore", "Issue"];
 
-const ALL_COMMANDS = [
-  "init",
-  "config",
-  "install",
-  "create",
-  "list",
-  "list-all",
-  "list-draft",
-  "list-open",
-  "list-in-progress",
-  "list-blocked",
-  "list-closed",
-  "list-canceled",
-  "calendar",
-  "cal",
-  "context",
-  "ctx",
-  "get",
-  "search",
-  "reindex",
-  "history",
-  "activity",
-  "restore",
-  "update",
-  "close",
-  "delete",
-  "append",
-  "comments",
-  "notes",
-  "learnings",
-  "files",
-  "docs",
-  "test",
-  "test-all",
-  "stats",
-  "health",
-  "gc",
-  "claim",
-  "release",
-  "beads",
-  "todos",
-  "completion",
-  "help",
-];
-
-const LIST_FLAGS =
-  "--type --tag --priority --deadline-before --deadline-after --assignee --sprint --release --limit --include-body --json --quiet --path --no-extensions --profile --help";
-
-const CREATE_FLAGS =
-  "-t --title -d --description --type -s --status -p --priority --tags -b --body --deadline --estimate --estimated-minutes --acceptance-criteria --ac --author --message --assignee --parent --reviewer --risk --confidence --sprint --release --blocked-by --blocked-reason --unblock-note --reporter --severity --environment --repro-steps --resolution --expected-result --actual-result --affected-version --fixed-version --component --regression --customer-impact --definition-of-ready --order --rank --goal --objective --value --impact --outcome --why-now --dep --type-option --type_option --reminder --event --comment --note --learning --file --test --doc --json --quiet --path --no-extensions --profile --help";
-
-const UPDATE_FLAGS =
-  "-t --title -d --description -s --status -p --priority --type --tags --deadline --estimate --estimated-minutes --acceptance-criteria --ac --assignee --parent --reviewer --risk --confidence --sprint --release --blocked-by --blocked-reason --unblock-note --reporter --severity --environment --repro-steps --resolution --expected-result --actual-result --affected-version --fixed-version --component --regression --customer-impact --definition-of-ready --order --rank --goal --objective --value --impact --outcome --why-now --author --message --reminder --event --type-option --type_option --force --json --quiet --path --no-extensions --profile --help";
-
-const CALENDAR_FLAGS =
-  "--view --date --from --to --past --type --tag --priority --status --assignee --sprint --release --include --recurrence-lookahead-days --recurrence-lookback-days --occurrence-limit --limit --format --json --quiet --path --no-extensions --profile --help";
-
-const CONTEXT_FLAGS =
-  "--date --from --to --past --type --tag --priority --assignee --sprint --release --limit --format --json --quiet --path --no-extensions --profile --help";
-
-const SEARCH_FLAGS =
-  "--mode --include-linked --limit --type --tag --priority --deadline-before --deadline-after --json --quiet --path --no-extensions --profile --help";
+const ALL_COMMANDS = [...PM_CORE_COMMAND_NAMES];
+const LIST_FLAGS = toCompletionFlagString(LIST_FILTER_FLAG_CONTRACTS);
+const CREATE_FLAGS = toCompletionFlagString(CREATE_FLAG_CONTRACTS);
+const UPDATE_FLAGS = toCompletionFlagString(UPDATE_FLAG_CONTRACTS);
+const CALENDAR_FLAGS = toCompletionFlagString(CALENDAR_FLAG_CONTRACTS);
+const CONTEXT_FLAGS = toCompletionFlagString(CONTEXT_FLAG_CONTRACTS);
+const SEARCH_FLAGS = toCompletionFlagString(SEARCH_FLAG_CONTRACTS);
 
 const MUTATION_FLAGS = "--author --message --force --json --quiet --path --no-extensions --profile --help";
 
-const GLOBAL_FLAGS = "--json --quiet --path --no-extensions --profile --version --help";
+const GLOBAL_FLAGS = GLOBAL_FLAG_CONTRACTS.flatMap((entry) => [entry.short, entry.flag])
+  .filter((value): value is string => Boolean(value))
+  .join(" ");
 
 export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES): string {
   const cmds = ALL_COMMANDS.join(" ");
@@ -411,16 +369,8 @@ compdef _pm pm`;
 }
 
 export function generateFishScript(itemTypes: string[] = DEFAULT_ITEM_TYPES): string {
-  const listCmds = [
-    "list",
-    "list-all",
-    "list-draft",
-    "list-open",
-    "list-in-progress",
-    "list-blocked",
-    "list-closed",
-    "list-canceled",
-  ].join(" ");
+  const listCmds = ALL_COMMANDS.filter((command) => command === "list" || command.startsWith("list-")).join(" ");
+  const noSubcommandList = ALL_COMMANDS.join(" ");
   const typeChoices = itemTypes.join(" ");
   return `# Fish shell completion for pm
 # Save to ~/.config/fish/completions/pm.fish
@@ -440,7 +390,7 @@ complete -c pm -s h -l help -d 'Display help'
 
 # Helper: true when no subcommand has been given yet
 function __pm_no_subcommand
-  not __fish_seen_subcommand_from init config install create list list-all list-draft list-open list-in-progress list-blocked list-closed list-canceled calendar cal context ctx get search reindex history activity restore update close delete append comments notes learnings files docs test test-all stats health gc claim release beads todos completion help
+  not __fish_seen_subcommand_from ${noSubcommandList}
 end
 
 # Subcommands

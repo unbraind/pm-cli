@@ -1,49 +1,18 @@
 import { fileURLToPath } from "node:url";
+import {
+  PM_TOOL_ACTIONS as SHARED_PM_TOOL_ACTIONS,
+  PM_TOOL_PARAMETERS_SCHEMA as SHARED_PM_TOOL_PARAMETERS_SCHEMA,
+  PI_CALENDAR_OPTION_CONTRACTS,
+  PI_CONTEXT_OPTION_CONTRACTS,
+  PI_CREATE_OPTION_CONTRACTS,
+  PI_LIST_FILTER_OPTION_CONTRACTS,
+  PI_SEARCH_FILTER_OPTION_CONTRACTS,
+  PI_SHARED_CREATE_UPDATE_OPTION_CONTRACTS,
+  PI_UPDATE_OPTION_CONTRACTS,
+  type PiOptionFlagContract,
+} from "@unbrained/pm-cli/sdk";
 
-export const PM_TOOL_ACTIONS = [
-  "init",
-  "config",
-  "create",
-  "list",
-  "list-all",
-  "list-draft",
-  "list-open",
-  "list-in-progress",
-  "list-blocked",
-  "list-closed",
-  "list-canceled",
-  "calendar",
-  "context",
-  "get",
-  "search",
-  "reindex",
-  "history",
-  "activity",
-  "restore",
-  "update",
-  "close",
-  "delete",
-  "append",
-  "comments",
-  "notes",
-  "learnings",
-  "files",
-  "docs",
-  "test",
-  "test-all",
-  "stats",
-  "health",
-  "gc",
-  "completion",
-  "claim",
-  "release",
-  "beads-import",
-  "todos-import",
-  "todos-export",
-  "start-task",
-  "pause-task",
-  "close-task",
-] as const;
+export const PM_TOOL_ACTIONS = [...SHARED_PM_TOOL_ACTIONS] as const;
 
 export type PmToolAction = (typeof PM_TOOL_ACTIONS)[number];
 type NumericFlagInput = string | number;
@@ -179,107 +148,7 @@ export interface PiExtensionApi {
   exec(command: string, args: string[], options?: { signal?: AbortSignal; timeout?: number }): Promise<PiExecResult>;
 }
 
-export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = {
-  type: "object",
-  additionalProperties: false,
-  required: ["action"],
-  properties: {
-    action: { type: "string", enum: [...PM_TOOL_ACTIONS] },
-    json: { type: "boolean", default: true },
-    quiet: { type: "boolean" },
-    profile: { type: "boolean" },
-    noExtensions: { type: "boolean" },
-    path: { type: "string" },
-    pmExecutable: { type: "string" },
-    timeoutMs: { type: "number" },
-    id: { type: "string" },
-    target: { type: "string" },
-    query: { type: "string" },
-    keywords: { type: "string" },
-    prefix: { type: "string" },
-    scope: { type: "string" },
-    configAction: { type: "string" },
-    key: { type: "string" },
-    title: { type: "string" },
-    description: { type: "string" },
-    type: { type: "string" },
-    status: { type: "string" },
-    priority: { anyOf: [{ type: "string" }, { type: "number" }] },
-    tags: { type: "string" },
-    body: { type: "string" },
-    deadline: { type: "string" },
-    estimate: { anyOf: [{ type: "string" }, { type: "number" }] },
-    acceptanceCriteria: { type: "string" },
-    author: { type: "string" },
-    message: { type: "string" },
-    assignee: { type: "string" },
-    parent: { type: "string" },
-    reviewer: { type: "string" },
-    risk: { type: "string" },
-    confidence: { anyOf: [{ type: "string" }, { type: "number" }] },
-    sprint: { type: "string" },
-    release: { type: "string" },
-    blockedBy: { type: "string" },
-    blockedReason: { type: "string" },
-    unblockNote: { type: "string" },
-    reporter: { type: "string" },
-    severity: { type: "string" },
-    environment: { type: "string" },
-    reproSteps: { type: "string" },
-    resolution: { type: "string" },
-    expectedResult: { type: "string" },
-    actualResult: { type: "string" },
-    affectedVersion: { type: "string" },
-    fixedVersion: { type: "string" },
-    component: { type: "string" },
-    regression: { anyOf: [{ type: "boolean" }, { type: "string" }, { type: "number" }] },
-    customerImpact: { type: "string" },
-    definitionOfReady: { type: "string" },
-    order: { anyOf: [{ type: "string" }, { type: "number" }] },
-    goal: { type: "string" },
-    objective: { type: "string" },
-    value: { type: "string" },
-    impact: { type: "string" },
-    outcome: { type: "string" },
-    whyNow: { type: "string" },
-    mode: { type: "string" },
-    view: { type: "string" },
-    date: { type: "string" },
-    from: { type: "string" },
-    to: { type: "string" },
-    past: { type: "boolean" },
-    include: { type: "string" },
-    recurrenceLookaheadDays: { anyOf: [{ type: "string" }, { type: "number" }] },
-    recurrenceLookbackDays: { anyOf: [{ type: "string" }, { type: "number" }] },
-    occurrenceLimit: { anyOf: [{ type: "string" }, { type: "number" }] },
-    includeLinked: { type: "boolean" },
-    tag: { type: "string" },
-    deadlineBefore: { type: "string" },
-    deadlineAfter: { type: "string" },
-    limit: { anyOf: [{ type: "string" }, { type: "number" }] },
-    timeout: { anyOf: [{ type: "string" }, { type: "number" }] },
-    force: { type: "boolean" },
-    run: { type: "boolean" },
-    shell: { type: "string" },
-    file: { type: "string" },
-    folder: { type: "string" },
-    text: { type: "string" },
-    add: { type: "array", items: { type: "string" } },
-    remove: { type: "array", items: { type: "string" } },
-    dep: { type: "array", items: { type: "string" } },
-    comment: { type: "array", items: { type: "string" } },
-    note: { type: "array", items: { type: "string" } },
-    learning: { type: "array", items: { type: "string" } },
-    linkedFile: { type: "array", items: { type: "string" } },
-    linkedTest: { type: "array", items: { type: "string" } },
-    doc: { type: "array", items: { type: "string" } },
-    reminder: { type: "array", items: { type: "string" } },
-    event: { type: "array", items: { type: "string" } },
-    typeOption: { type: "array", items: { type: "string" } },
-    criterion: { type: "array", items: { type: "string" } },
-    format: { type: "string" },
-  },
-};
+export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = { ...SHARED_PM_TOOL_PARAMETERS_SCHEMA };
 
 function isPmToolAction(action: string): action is PmToolAction {
   return (PM_TOOL_ACTIONS as readonly string[]).includes(action);
@@ -332,6 +201,26 @@ function pushRepeatableOrNone(args: string[], flag: string, values: string[] | u
   }
 }
 
+function pushContractedFlags(args: string[], params: PmToolParameters, contracts: PiOptionFlagContract[]): void {
+  const paramValues = params as unknown as Record<string, unknown>;
+  for (const contract of contracts) {
+    const value = paramValues[contract.param];
+    if (contract.repeatableOrNone) {
+      pushRepeatableOrNone(args, contract.flag, Array.isArray(value) ? (value as string[]) : undefined);
+      continue;
+    }
+    if (contract.repeatable) {
+      pushRepeatable(args, contract.flag, Array.isArray(value) ? (value as string[]) : undefined);
+      continue;
+    }
+    if (contract.booleanish) {
+      pushBooleanishOption(args, contract.flag, value as BooleanFlagInput | undefined);
+      continue;
+    }
+    pushOption(args, contract.flag, value as string | number | undefined, contract.allowEmpty ?? false);
+  }
+}
+
 function requireString(value: string | undefined, name: string, action: PmToolAction): string {
   if (typeof value !== "string" || value.length === 0) {
     throw new Error(`Action "${action}" requires "${name}".`);
@@ -340,97 +229,32 @@ function requireString(value: string | undefined, name: string, action: PmToolAc
 }
 
 function addListFilters(args: string[], params: PmToolParameters): void {
-  pushOption(args, "--type", params.type);
-  pushOption(args, "--tag", params.tag);
-  pushOption(args, "--priority", params.priority);
-  pushOption(args, "--deadline-before", params.deadlineBefore);
-  pushOption(args, "--deadline-after", params.deadlineAfter);
-  pushOption(args, "--assignee", params.assignee);
-  pushOption(args, "--sprint", params.sprint);
-  pushOption(args, "--release", params.release);
-  pushOption(args, "--limit", params.limit);
+  pushContractedFlags(args, params, PI_LIST_FILTER_OPTION_CONTRACTS);
 }
 
 function addCreateFlags(args: string[], params: PmToolParameters): void {
-  pushOption(args, "--title", params.title);
-  pushOption(args, "--description", params.description, true);
-  pushOption(args, "--type", params.type);
-  pushOption(args, "--status", params.status);
-  pushOption(args, "--priority", params.priority);
-  pushOption(args, "--tags", params.tags, true);
-  pushOption(args, "--body", params.body, true);
-  pushOption(args, "--deadline", params.deadline);
-  pushOption(args, "--estimate", params.estimate);
-  pushOption(args, "--acceptance-criteria", params.acceptanceCriteria, true);
-  pushOption(args, "--author", params.author);
-  pushOption(args, "--message", params.message, true);
+  const scalarContracts = PI_CREATE_OPTION_CONTRACTS.filter((entry) => !entry.repeatable && !entry.repeatableOrNone);
+  const repeatableContracts = PI_CREATE_OPTION_CONTRACTS.filter((entry) => entry.repeatable || entry.repeatableOrNone);
+  pushContractedFlags(args, params, scalarContracts);
   const assignee = typeof params.assignee === "string" && params.assignee.length > 0 ? params.assignee : "none";
   pushOption(args, "--assignee", assignee);
   addSharedCreateUpdateFlags(args, params);
-  pushRepeatable(args, "--reminder", params.reminder);
-  pushRepeatable(args, "--event", params.event);
-  pushRepeatable(args, "--type-option", params.typeOption);
-  pushRepeatableOrNone(args, "--dep", params.dep);
-  pushRepeatableOrNone(args, "--comment", params.comment);
-  pushRepeatableOrNone(args, "--note", params.note);
-  pushRepeatableOrNone(args, "--learning", params.learning);
-  pushRepeatableOrNone(args, "--file", params.linkedFile);
-  pushRepeatableOrNone(args, "--test", params.linkedTest);
-  pushRepeatableOrNone(args, "--doc", params.doc);
+  pushContractedFlags(args, params, repeatableContracts);
 }
 
 function addUpdateFlags(args: string[], params: PmToolParameters): void {
-  pushOption(args, "--title", params.title);
-  pushOption(args, "--description", params.description, true);
-  pushOption(args, "--status", params.status);
-  pushOption(args, "--priority", params.priority);
-  pushOption(args, "--type", params.type);
-  pushOption(args, "--tags", params.tags, true);
-  pushOption(args, "--deadline", params.deadline);
-  pushOption(args, "--estimate", params.estimate);
-  pushOption(args, "--acceptance-criteria", params.acceptanceCriteria, true);
-  pushOption(args, "--author", params.author);
-  pushOption(args, "--message", params.message, true);
-  pushOption(args, "--assignee", params.assignee);
+  const scalarContracts = PI_UPDATE_OPTION_CONTRACTS.filter((entry) => !entry.repeatable && !entry.repeatableOrNone);
+  const repeatableContracts = PI_UPDATE_OPTION_CONTRACTS.filter((entry) => entry.repeatable || entry.repeatableOrNone);
+  pushContractedFlags(args, params, scalarContracts);
   addSharedCreateUpdateFlags(args, params);
-  pushRepeatable(args, "--reminder", params.reminder);
-  pushRepeatable(args, "--event", params.event);
-  pushRepeatable(args, "--type-option", params.typeOption);
+  pushContractedFlags(args, params, repeatableContracts);
   if (params.force) {
     args.push("--force");
   }
 }
 
 function addSharedCreateUpdateFlags(args: string[], params: PmToolParameters): void {
-  pushOption(args, "--parent", params.parent);
-  pushOption(args, "--reviewer", params.reviewer);
-  pushOption(args, "--risk", params.risk);
-  pushOption(args, "--confidence", params.confidence);
-  pushOption(args, "--sprint", params.sprint);
-  pushOption(args, "--release", params.release);
-  pushOption(args, "--blocked-by", params.blockedBy);
-  pushOption(args, "--blocked-reason", params.blockedReason);
-  pushOption(args, "--unblock-note", params.unblockNote);
-  pushOption(args, "--reporter", params.reporter);
-  pushOption(args, "--severity", params.severity);
-  pushOption(args, "--environment", params.environment);
-  pushOption(args, "--repro-steps", params.reproSteps);
-  pushOption(args, "--resolution", params.resolution);
-  pushOption(args, "--expected-result", params.expectedResult);
-  pushOption(args, "--actual-result", params.actualResult);
-  pushOption(args, "--affected-version", params.affectedVersion);
-  pushOption(args, "--fixed-version", params.fixedVersion);
-  pushOption(args, "--component", params.component);
-  pushBooleanishOption(args, "--regression", params.regression);
-  pushOption(args, "--customer-impact", params.customerImpact);
-  pushOption(args, "--definition-of-ready", params.definitionOfReady, true);
-  pushOption(args, "--order", params.order);
-  pushOption(args, "--goal", params.goal);
-  pushOption(args, "--objective", params.objective);
-  pushOption(args, "--value", params.value);
-  pushOption(args, "--impact", params.impact);
-  pushOption(args, "--outcome", params.outcome);
-  pushOption(args, "--why-now", params.whyNow);
+  pushContractedFlags(args, params, PI_SHARED_CREATE_UPDATE_OPTION_CONTRACTS);
 }
 
 function addAuthorMessageForceFlags(args: string[], params: PmToolParameters): void {
@@ -535,43 +359,29 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       return args;
     case "calendar":
       args.push("calendar");
-      pushOption(args, "--view", params.view);
-      pushOption(args, "--date", params.date);
-      pushOption(args, "--from", params.from);
-      pushOption(args, "--to", params.to);
+      const calendarAnchors = PI_CALENDAR_OPTION_CONTRACTS.filter((entry) =>
+        ["view", "date", "from", "to"].includes(entry.param),
+      );
+      const calendarRemainder = PI_CALENDAR_OPTION_CONTRACTS.filter(
+        (entry) => !["view", "date", "from", "to"].includes(entry.param),
+      );
+      pushContractedFlags(args, params, calendarAnchors);
       if (params.past) {
         args.push("--past");
       }
-      pushOption(args, "--type", params.type);
-      pushOption(args, "--tag", params.tag);
-      pushOption(args, "--priority", params.priority);
-      pushOption(args, "--status", params.status);
-      pushOption(args, "--assignee", params.assignee);
-      pushOption(args, "--sprint", params.sprint);
-      pushOption(args, "--release", params.release);
-      pushOption(args, "--include", params.include);
-      pushOption(args, "--recurrence-lookahead-days", params.recurrenceLookaheadDays);
-      pushOption(args, "--recurrence-lookback-days", params.recurrenceLookbackDays);
-      pushOption(args, "--occurrence-limit", params.occurrenceLimit);
-      pushOption(args, "--limit", params.limit);
-      pushOption(args, "--format", params.format);
+      pushContractedFlags(args, params, calendarRemainder);
       return args;
     case "context":
       args.push("context");
-      pushOption(args, "--date", params.date);
-      pushOption(args, "--from", params.from);
-      pushOption(args, "--to", params.to);
+      const contextAnchors = PI_CONTEXT_OPTION_CONTRACTS.filter((entry) => ["date", "from", "to"].includes(entry.param));
+      const contextRemainder = PI_CONTEXT_OPTION_CONTRACTS.filter(
+        (entry) => !["date", "from", "to"].includes(entry.param),
+      );
+      pushContractedFlags(args, params, contextAnchors);
       if (params.past) {
         args.push("--past");
       }
-      pushOption(args, "--type", params.type);
-      pushOption(args, "--tag", params.tag);
-      pushOption(args, "--priority", params.priority);
-      pushOption(args, "--assignee", params.assignee);
-      pushOption(args, "--sprint", params.sprint);
-      pushOption(args, "--release", params.release);
-      pushOption(args, "--limit", params.limit);
-      pushOption(args, "--format", params.format);
+      pushContractedFlags(args, params, contextRemainder);
       return args;
     case "get":
       args.push("get", requireString(params.id, "id", action));
@@ -582,7 +392,7 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       if (params.includeLinked) {
         args.push("--include-linked");
       }
-      addListFilters(args, params);
+      pushContractedFlags(args, params, PI_SEARCH_FILTER_OPTION_CONTRACTS);
       return args;
     case "reindex":
       args.push("reindex");
