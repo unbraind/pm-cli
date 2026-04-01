@@ -117,6 +117,20 @@ describe("core/store/item-store", () => {
     });
   });
 
+  it("emits deterministic warnings when unreadable items are skipped during listing", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const validId = "pm-list-warning-valid";
+      await writeTaskItem(pmPath, validId, { description: "valid item" }, "toon");
+      const unreadablePath = path.join(pmPath, "tasks", "pm-list-warning-bad.toon");
+      await fs.writeFile(unreadablePath, "{ invalid-toon", "utf8");
+
+      const warnings: string[] = [];
+      const items = await listAllFrontMatter(pmPath, "toon", undefined, warnings);
+      expect(items.some((entry) => entry.id === validId)).toBe(true);
+      expect(warnings).toContain("item_list_item_read_failed:tasks/pm-list-warning-bad.toon");
+    });
+  });
+
   it("rolls back the item file when history append fails", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-item-store-rollback";

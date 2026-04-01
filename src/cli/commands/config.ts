@@ -50,6 +50,7 @@ export interface ConfigResult {
   };
   settings_path: string;
   changed: boolean;
+  warnings?: string[];
 }
 
 function normalizeScope(value: string): ConfigScope {
@@ -114,6 +115,20 @@ function normalizeHistoryMissingStreamPolicy(value: string | undefined): History
   );
 }
 
+function normalizeWarnings(values: string[]): string[] {
+  return [...new Set(values)].sort((left, right) => left.localeCompare(right));
+}
+
+function withWarnings(result: ConfigResult, warnings: string[]): ConfigResult {
+  if (warnings.length === 0) {
+    return result;
+  }
+  return {
+    ...result,
+    warnings,
+  };
+}
+
 async function resolveSettingsTarget(
   scope: ConfigScope,
   global: GlobalOptions,
@@ -138,35 +153,36 @@ export async function runConfig(
   const action = normalizeAction(actionValue);
   const key = normalizeKey(keyValue);
   const target = await resolveSettingsTarget(scope, global);
-  const { settings, metadata } = await readSettingsWithMetadata(target.pmRoot);
+  const { settings, metadata, warnings: settingsReadWarnings } = await readSettingsWithMetadata(target.pmRoot);
+  const warnings = normalizeWarnings(settingsReadWarnings);
 
   if (action === "get") {
     if (key === "item_format") {
-      return {
+      return withWarnings({
         scope,
         key,
         format: settings.item_format,
         has_explicit_item_format: metadata.has_explicit_item_format,
         settings_path: target.settingsPath,
         changed: false,
-      };
+      }, warnings);
     }
     if (key === "history_missing_stream_policy") {
-      return {
+      return withWarnings({
         scope,
         key,
         policy: settings.history.missing_stream,
         settings_path: target.settingsPath,
         changed: false,
-      };
+      }, warnings);
     }
-    return {
+    return withWarnings({
       scope,
       key,
       criteria: [...settings.workflow.definition_of_done],
       settings_path: target.settingsPath,
       changed: false,
-    };
+    }, warnings);
   }
 
   if (key === "item_format") {
@@ -191,7 +207,7 @@ export async function runConfig(
         warnings: migrated.warnings,
       };
     }
-    return {
+    return withWarnings({
       scope,
       key,
       format: settings.item_format,
@@ -199,7 +215,7 @@ export async function runConfig(
       migration,
       settings_path: target.settingsPath,
       changed,
-    };
+    }, warnings);
   }
 
   if (key === "history_missing_stream_policy") {
@@ -209,13 +225,13 @@ export async function runConfig(
     if (changed) {
       await writeSettings(target.pmRoot, settings, "config:set:history_missing_stream_policy");
     }
-    return {
+    return withWarnings({
       scope,
       key,
       policy: settings.history.missing_stream,
       settings_path: target.settingsPath,
       changed,
-    };
+    }, warnings);
   }
 
   const nextCriteria = normalizeCriteria(options.criterion);
@@ -228,11 +244,11 @@ export async function runConfig(
     await writeSettings(target.pmRoot, settings, "config:set:definition_of_done");
   }
 
-  return {
+  return withWarnings({
     scope,
     key,
     criteria: [...settings.workflow.definition_of_done],
     settings_path: target.settingsPath,
     changed,
-  };
+  }, warnings);
 }

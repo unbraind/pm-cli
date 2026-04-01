@@ -84,6 +84,7 @@ export interface ContextResult {
     summary: ContextAgendaSummary;
     events: CalendarEvent[];
   };
+  warnings?: string[];
 }
 
 const ACTIVE_STATUSES = new Set<ItemStatus>(["in_progress", "open"]);
@@ -329,6 +330,9 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
   const agenda = await runCalendar(calendarOptions, global);
   const agendaEvents = filterTerminalCalendarEvents(agenda.events).slice(0, limit);
   const agendaSummary = summarizeAgenda(agendaEvents);
+  const warnings = [...new Set([...(listed.warnings ?? []), ...(agenda.warnings ?? [])])].sort((left, right) =>
+    left.localeCompare(right),
+  );
 
   const inProgressCount = activeItems.filter((item) => item.status === "in_progress").length;
   const openCount = activeItems.filter((item) => item.status === "open").length;
@@ -370,5 +374,6 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
       summary: agendaSummary,
       events: agendaEvents,
     },
+    ...(warnings.length > 0 ? { warnings } : {}),
   };
 }

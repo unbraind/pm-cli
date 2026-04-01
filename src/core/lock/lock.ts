@@ -15,16 +15,78 @@ interface LockInfo {
 
 type LockWriteOp = "lock:create" | "lock:release" | "lock:stale_remove";
 
-async function readLockInfo(lockPath: string): Promise<LockInfo | null> {
+interface LockReadResult {
+  info: LockInfo | null;
+  warnings: string[];
+}
+
+function parseLockInfo(raw: string): LockReadResult {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw) as unknown;
+  } catch {
+    return {
+      info: null,
+      warnings: ["lock_info_invalid_json"],
+    };
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    return {
+      info: null,
+      warnings: ["lock_info_invalid_shape"],
+    };
+  }
+  const candidate = parsed as Record<string, unknown>;
+  const id = candidate.id;
+  const pid = candidate.pid;
+  const owner = candidate.owner;
+  const createdAt = candidate.created_at;
+  const ttlSeconds = candidate.ttl_seconds;
+  if (
+    typeof id !== "string" ||
+    typeof pid !== "number" ||
+    !Number.isFinite(pid) ||
+    typeof owner !== "string" ||
+    typeof createdAt !== "string" ||
+    typeof ttlSeconds !== "number" ||
+    !Number.isFinite(ttlSeconds)
+  ) {
+    return {
+      info: null,
+      warnings: ["lock_info_invalid_shape"],
+    };
+  }
+  return {
+    info: {
+      id,
+      pid,
+      owner,
+      created_at: createdAt,
+      ttl_seconds: ttlSeconds,
+    },
+    warnings: [],
+  };
+}
+
+async function readLockInfo(lockPath: string): Promise<LockReadResult> {
   try {
     const raw = await fs.readFile(lockPath, "utf8");
     await runActiveOnReadHooks({
       path: lockPath,
       scope: "project",
     });
-    return JSON.parse(raw) as LockInfo;
-  } catch {
-    return null;
+    return parseLockInfo(raw);
+  } catch (error: unknown) {
+    if (isErrno(error, "ENOENT")) {
+      return {
+        info: null,
+        warnings: [],
+      };
+    }
+    return {
+      info: null,
+      warnings: ["lock_info_read_failed"],
+    };
   }
 }
 
@@ -80,14 +142,15 @@ function lockOwnerSuffix(info: LockInfo | null): string {
 }
 
 async function handleExistingLock(lockPath: string, id: string, ttlSeconds: number, force: boolean): Promise<void> {
-  const info = await readLockInfo(lockPath);
-  if (!isStaleLock(info, ttlSeconds)) {
-    throw new PmCliError(`Item ${id} is locked${lockOwnerSuffix(info)}`, EXIT_CODE.CONFLICT);
+  const lockInfo = await readLockInfo(lockPath);
+  if (!isStaleLock(lockInfo.info, ttlSeconds)) {
+    throw new PmCliError(`Item ${id} is locked${lockOwnerSuffix(lockInfo.info)}`, EXIT_CODE.CONFLICT);
   }
 
   if (!force) {
+    const warningSuffix = lockInfo.warnings.length > 0 ? ` (${lockInfo.warnings.join(",")})` : "";
     throw new PmCliError(
-      `Item ${id} lock is stale; rerun with --force when supported for this command`,
+      `Item ${id} lock is stale${warningSuffix}; rerun with --force when supported for this command`,
       EXIT_CODE.CONFLICT,
     );
   }

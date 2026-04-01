@@ -34,6 +34,8 @@ describe("core/store/settings", () => {
       const settings = await readSettings(pmRoot);
       expect(settings).toEqual(SETTINGS_DEFAULTS);
       expect(settings).not.toBe(SETTINGS_DEFAULTS);
+      const metadataRead = await readSettingsWithMetadata(pmRoot);
+      expect(metadataRead.warnings).toEqual([]);
     });
   });
 
@@ -45,6 +47,9 @@ describe("core/store/settings", () => {
 
       const settings = await readSettings(pmRoot);
       expect(settings).toEqual(SETTINGS_DEFAULTS);
+      const metadataRead = await readSettingsWithMetadata(pmRoot);
+      expect(metadataRead.settings).toEqual(SETTINGS_DEFAULTS);
+      expect(metadataRead.warnings).toEqual(["settings_read_invalid_json"]);
     });
   });
 
@@ -56,6 +61,9 @@ describe("core/store/settings", () => {
 
       const settings = await readSettings(pmRoot);
       expect(settings).toEqual(SETTINGS_DEFAULTS);
+      const metadataRead = await readSettingsWithMetadata(pmRoot);
+      expect(metadataRead.settings).toEqual(SETTINGS_DEFAULTS);
+      expect(metadataRead.warnings).toEqual(["settings_read_invalid_schema"]);
     });
   });
 

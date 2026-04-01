@@ -101,6 +101,7 @@ export interface CalendarResult {
   };
   events: CalendarEvent[];
   days: CalendarDayBucket[];
+  warnings?: string[];
 }
 
 const UTC_DAY_TO_WEEKDAY = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
@@ -738,7 +739,8 @@ export async function runCalendar(options: CalendarOptions, global: GlobalOption
 
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
+  const listWarnings: string[] = [];
+  const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings);
   const filteredItems = filterItems(items, options, typeRegistry);
   const recurringWindow = buildRecurringEventWindow(
     rangeBounds.start,
@@ -751,6 +753,7 @@ export async function runCalendar(options: CalendarOptions, global: GlobalOption
   const rangedEvents = seededEvents.filter((event) => includeEventInWindow(event, rangeBounds.start, rangeBounds.end));
   const limitedEvents = limit === undefined ? rangedEvents : rangedEvents.slice(0, limit);
   const days = bucketEventsByDay(limitedEvents);
+  const warnings = [...new Set(listWarnings)].sort((left, right) => left.localeCompare(right));
 
   return {
     view,
@@ -781,5 +784,6 @@ export async function runCalendar(options: CalendarOptions, global: GlobalOption
     summary: summarize(limitedEvents),
     events: limitedEvents,
     days,
+    ...(warnings.length > 0 ? { warnings } : {}),
   };
 }

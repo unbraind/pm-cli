@@ -31,6 +31,7 @@ export interface ListResult {
   count: number;
   filters: Record<string, unknown>;
   now: string;
+  warnings?: string[];
 }
 
 function isTerminal(status: ItemStatus): boolean {
@@ -127,14 +128,16 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
   }
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const listWarnings: string[] = [];
   const items = options.includeBody
-    ? await listAllFrontMatterWithBody(pmRoot, settings.item_format, typeRegistry.type_to_folder)
-    : await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
+    ? await listAllFrontMatterWithBody(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings)
+    : await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings);
   const filtered = applyFilters(items, status, options, typeRegistry);
   const sorted = sortItems(filtered);
   const limit = parseLimit(options.limit);
   const limited = limit === undefined ? sorted : sorted.slice(0, limit);
   const now = nowIso();
+  const warnings = [...new Set(listWarnings)].sort((left, right) => left.localeCompare(right));
   return {
     items: limited,
     count: limited.length,
@@ -152,5 +155,6 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
       include_body: options.includeBody ?? null,
     },
     now,
+    ...(warnings.length > 0 ? { warnings } : {}),
   };
 }

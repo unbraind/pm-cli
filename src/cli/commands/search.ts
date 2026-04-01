@@ -57,6 +57,7 @@ export interface SearchResult {
   count: number;
   filters: Record<string, unknown>;
   now: string;
+  warnings?: string[];
 }
 
 interface ExtensionSearchProviderContext {
@@ -470,6 +471,7 @@ function emptySearchResult(
   includeLinked: boolean,
   scoreThreshold: number,
   hybridSemanticWeight: number,
+  warnings: string[],
 ): SearchResult {
   return {
     query: query.trim(),
@@ -489,6 +491,7 @@ function emptySearchResult(
       limit: options.limit ?? null,
     },
     now: nowIso(),
+    ...(warnings.length > 0 ? { warnings } : {}),
   };
 }
 
@@ -738,8 +741,10 @@ async function loadDocuments(
   pmRoot: string,
   itemFormat: ItemFormat,
   typeToFolder: Record<string, string>,
-): Promise<ItemDocument[]> {
-  const items = await listAllFrontMatter(pmRoot, itemFormat, typeToFolder);
+): Promise<{ documents: ItemDocument[]; warnings: string[] }> {
+  const listWarnings: string[] = [];
+  const items = await listAllFrontMatter(pmRoot, itemFormat, typeToFolder, listWarnings);
+  const warnings = [...new Set(listWarnings)].sort((left, right) => left.localeCompare(right));
   const documents: ItemDocument[] = [];
   for (const item of items) {
     const preferredPath = getItemPath(pmRoot, item.type, item.id, itemFormat, typeToFolder);
@@ -763,7 +768,10 @@ async function loadDocuments(
     });
     documents.push(parseItemDocument(raw, { format: fallbackFormat }));
   }
-  return documents;
+  return {
+    documents,
+    warnings,
+  };
 }
 
 export async function runSearch(query: string, options: SearchOptions, global: GlobalOptions): Promise<SearchResult> {
@@ -791,10 +799,12 @@ export async function runSearch(query: string, options: SearchOptions, global: G
     hasProvider: providerResolution.active !== null || extensionSearchProvider !== null,
     hasVectorStore: vectorResolution.active !== null || extensionVectorAdapter !== null,
   });
-  const allDocuments = await loadDocuments(pmRoot, settings.item_format ?? "json_markdown", typeRegistry.type_to_folder);
+  const loadedDocuments = await loadDocuments(pmRoot, settings.item_format ?? "json_markdown", typeRegistry.type_to_folder);
+  const warnings = loadedDocuments.warnings;
+  const allDocuments = loadedDocuments.documents;
   const filteredDocuments = applyFilters(allDocuments, options, typeRegistry);
   if (effectiveMode === "keyword" && (filteredDocuments.length === 0 || limit === 0)) {
-    return emptySearchResult(query, effectiveMode, options, includeLinked, scoreThreshold, hybridSemanticWeight);
+    return emptySearchResult(query, effectiveMode, options, includeLinked, scoreThreshold, hybridSemanticWeight, warnings);
   }
 
   const projectRoot = process.cwd();
@@ -817,7 +827,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
         requireSemanticDependencies(effectiveMode, providerResolution, vectorResolution, extensionVectorAdapter !== null);
       }
       if (filteredDocuments.length === 0 || limit === 0) {
-        return emptySearchResult(query, effectiveMode, options, includeLinked, scoreThreshold, hybridSemanticWeight);
+        return emptySearchResult(query, effectiveMode, options, includeLinked, scoreThreshold, hybridSemanticWeight, warnings);
       }
       const filteredById = new Map(filteredDocuments.map((document) => [document.front_matter.id, document]));
       const canUseBuiltInSemantic =
@@ -899,5 +909,6 @@ export async function runSearch(query: string, options: SearchOptions, global: G
       limit: options.limit ?? null,
     },
     now: nowIso(),
+    ...(warnings.length > 0 ? { warnings } : {}),
   };
 }

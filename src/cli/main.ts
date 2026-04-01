@@ -641,7 +641,10 @@ async function enforceItemFormatWriteGateAndPreflightMigration(
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     return;
   }
-  const { settings, metadata } = await readSettingsWithMetadata(pmRoot);
+  const { settings, metadata, warnings } = await readSettingsWithMetadata(pmRoot);
+  for (const warning of warnings) {
+    printError(`warning:${warning}`);
+  }
   if (decision.enforce_item_format_gate && !metadata.has_explicit_item_format) {
     throw new PmCliError(
       `Write command "${commandPath}" requires explicit item format selection before mutations. Run "pm config project set item-format --format toon" or "pm config project set item-format --format json_markdown".`,

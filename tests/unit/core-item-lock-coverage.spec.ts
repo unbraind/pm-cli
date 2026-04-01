@@ -279,6 +279,26 @@ describe("core/lock/lock additional branch coverage", () => {
         exitCode: EXIT_CODE.CONFLICT,
         message: expect.stringContaining("lock is stale"),
       });
+      await expect(acquireLock(pmPath, id, 60, "owner-a", false)).rejects.toMatchObject({
+        message: expect.stringContaining("lock_info_invalid_json"),
+      });
+    });
+  });
+
+  it("surfaces deterministic warning tokens when lock metadata cannot be read", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-read-failed";
+      const lockPath = getLockPath(pmPath, id);
+      await fs.writeFile(lockPath, `${JSON.stringify({ id, pid: 1, owner: "other-owner", created_at: STALE_TS, ttl_seconds: 60 })}\n`);
+      const readSpy = vi.spyOn(fs, "readFile").mockRejectedValueOnce(Object.assign(new Error("permission denied"), { code: "EACCES" }));
+      try {
+        await expect(acquireLock(pmPath, id, 60, "owner-a", false)).rejects.toMatchObject({
+          exitCode: EXIT_CODE.CONFLICT,
+          message: expect.stringContaining("lock_info_read_failed"),
+        });
+      } finally {
+        readSpy.mockRestore();
+      }
     });
   });
 

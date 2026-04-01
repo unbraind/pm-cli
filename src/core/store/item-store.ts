@@ -35,6 +35,19 @@ async function fileExists(targetPath: string): Promise<boolean> {
   }
 }
 
+function isErrno(error: unknown, code: string): boolean {
+  return typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === code;
+}
+
+function appendWarning(warnings: string[] | undefined, warning: string): void {
+  if (!warnings) {
+    return;
+  }
+  if (!warnings.includes(warning)) {
+    warnings.push(warning);
+  }
+}
+
 function resolveItemFormatSearchOrder(preferredFormat?: ItemFormat): ItemFormat[] {
   if (preferredFormat === "toon") {
     return ["toon", "json_markdown"];
@@ -89,8 +102,9 @@ export async function listAllFrontMatter(
   pmRoot: string,
   preferredFormat?: ItemFormat,
   typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
+  warnings?: string[],
 ): Promise<ItemFrontMatter[]> {
-  const documents = await listAllDocuments(pmRoot, preferredFormat, typeToFolder);
+  const documents = await listAllDocuments(pmRoot, preferredFormat, typeToFolder, warnings);
   return documents.map((document) => document.front_matter);
 }
 
@@ -98,8 +112,9 @@ export async function listAllFrontMatterWithBody(
   pmRoot: string,
   preferredFormat?: ItemFormat,
   typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
+  warnings?: string[],
 ): Promise<Array<ItemFrontMatter & { body: string }>> {
-  const documents = await listAllDocuments(pmRoot, preferredFormat, typeToFolder);
+  const documents = await listAllDocuments(pmRoot, preferredFormat, typeToFolder, warnings);
   return documents.map((document) => ({
     ...document.front_matter,
     body: document.body,
@@ -110,6 +125,7 @@ async function listAllDocuments(
   pmRoot: string,
   preferredFormat?: ItemFormat,
   typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
+  warnings?: string[],
 ): Promise<ItemDocument[]> {
   const entries = Object.entries(typeToFolder) as Array<[ItemType, string]>;
   const documentsById = new Map<string, { document: ItemDocument; itemFormat: ItemFormat }>();
@@ -118,7 +134,10 @@ async function listAllDocuments(
     let files: string[] = [];
     try {
       files = await fs.readdir(dirPath);
-    } catch {
+    } catch (error: unknown) {
+      if (!isErrno(error, "ENOENT")) {
+        appendWarning(warnings, `item_list_directory_read_failed:${folder}`);
+      }
       continue;
     }
     for (const file of files.filter((entry) => ITEM_FILE_EXTENSIONS.some((ext) => entry.toLowerCase().endsWith(ext)))) {
@@ -149,7 +168,7 @@ async function listAllDocuments(
           });
         }
       } catch {
-        // skip unreadable items
+        appendWarning(warnings, `item_list_item_read_failed:${folder}/${file}`);
       }
     }
   }

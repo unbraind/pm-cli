@@ -20,7 +20,7 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
 import { listAllFrontMatterWithBody } from "../../core/store/item-store.js";
 import { getHistoryPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
+import { readSettingsWithMetadata } from "../../core/store/settings.js";
 import type { PmSettings } from "../../types/index.js";
 
 type HealthStatus = "ok" | "warn";
@@ -433,7 +433,7 @@ async function buildVectorizationCheck(
   };
 }
 
-function validateSettingsValues(settings: Awaited<ReturnType<typeof readSettings>>): string[] {
+function validateSettingsValues(settings: PmSettings): string[] {
   const warnings: string[] = [];
   if (settings.id_prefix.trim().length === 0) {
     warnings.push("settings:id_prefix_empty");
@@ -451,7 +451,8 @@ export async function runHealth(global: GlobalOptions): Promise<HealthResult> {
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
 
-  const settings = await readSettings(pmRoot);
+  const { settings, warnings: settingsReadWarnings } = await readSettingsWithMetadata(pmRoot);
+  const normalizedSettingsReadWarnings = [...new Set(settingsReadWarnings)];
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const requiredDirs = [...new Set([...PM_REQUIRED_SUBDIRS.filter((entry) => entry.length > 0), ...typeRegistry.folders])];
   const missingDirs: string[] = [];
@@ -471,7 +472,9 @@ export async function runHealth(global: GlobalOptions): Promise<HealthResult> {
 
   const settingWarnings = validateSettingsValues(settings);
   const extensionCheck = await buildExtensionCheck(pmRoot, settings, Boolean(global.noExtensions));
-  const items = await listAllFrontMatterWithBody(pmRoot, settings.item_format, typeRegistry.type_to_folder);
+  const itemReadWarnings: string[] = [];
+  const items = await listAllFrontMatterWithBody(pmRoot, settings.item_format, typeRegistry.type_to_folder, itemReadWarnings);
+  const normalizedItemReadWarnings = [...new Set(itemReadWarnings)];
   const historyPolicy = await enforceHistoryStreamPolicyForItems({
     pmRoot,
     settings,
@@ -485,12 +488,13 @@ export async function runHealth(global: GlobalOptions): Promise<HealthResult> {
   const checks: HealthCheck[] = [
     {
       name: "settings",
-      status: "ok",
+      status: normalizedSettingsReadWarnings.length === 0 ? "ok" : "warn",
       details: {
         path: settingsPath,
         version: settings.version,
         id_prefix: settings.id_prefix,
         locks_ttl_seconds: settings.locks.ttl_seconds,
+        warnings: normalizedSettingsReadWarnings,
       },
     },
     {
@@ -523,7 +527,9 @@ export async function runHealth(global: GlobalOptions): Promise<HealthResult> {
 
   const warnings = [
     ...missingDirs.map((dir) => `missing_directory:${dir}`),
+    ...normalizedSettingsReadWarnings,
     ...settingWarnings,
+    ...normalizedItemReadWarnings,
     ...extensionCheck.warnings,
     ...historyPolicy.warnings,
     ...historySummary.warnings,
@@ -531,10 +537,11 @@ export async function runHealth(global: GlobalOptions): Promise<HealthResult> {
     ...vectorizationCheck.warnings,
     ...hookWarnings,
   ];
+  const normalizedWarnings = [...new Set(warnings)];
   return {
-    ok: warnings.length === 0,
+    ok: normalizedWarnings.length === 0,
     checks,
-    warnings,
+    warnings: normalizedWarnings,
     generated_at: nowIso(),
   };
 }

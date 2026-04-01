@@ -108,10 +108,21 @@ export interface SettingsReadMetadata {
 export interface SettingsReadResult {
   settings: PmSettings;
   metadata: SettingsReadMetadata;
+  warnings: string[];
 }
 
 function cloneDefaults(): PmSettings {
   return structuredClone(SETTINGS_DEFAULTS);
+}
+
+function buildFallbackSettingsReadResult(warning?: string): SettingsReadResult {
+  return {
+    settings: cloneDefaults(),
+    metadata: {
+      has_explicit_item_format: false,
+    },
+    warnings: warning ? [warning] : [],
+  };
 }
 
 function hasExplicitItemFormat(raw: unknown): boolean {
@@ -310,32 +321,35 @@ export async function readSettingsWithMetadata(pmRoot: string): Promise<Settings
   const settingsPath = getSettingsPath(pmRoot);
   const raw = await readFileIfExists(settingsPath);
   if (raw === null) {
-    return {
-      settings: cloneDefaults(),
-      metadata: {
-        has_explicit_item_format: false,
-      },
-    };
+    return buildFallbackSettingsReadResult();
   }
   await runActiveOnReadHooks({
     path: settingsPath,
     scope: "project",
   });
+
+  let parsed: unknown;
   try {
-    const parsed = JSON.parse(raw) as unknown;
+    parsed = JSON.parse(raw) as unknown;
+  } catch {
+    return buildFallbackSettingsReadResult("settings_read_invalid_json");
+  }
+
+  const validated = settingsSchema.safeParse(parsed);
+  if (!validated.success) {
+    return buildFallbackSettingsReadResult("settings_read_invalid_schema");
+  }
+
+  try {
     return {
-      settings: mergeSettings(parsed),
+      settings: mergeSettings(validated.data),
       metadata: {
         has_explicit_item_format: hasExplicitItemFormat(parsed),
       },
+      warnings: [],
     };
   } catch {
-    return {
-      settings: cloneDefaults(),
-      metadata: {
-        has_explicit_item_format: false,
-      },
-    };
+    return buildFallbackSettingsReadResult("settings_read_merge_failed");
   }
 }
 
