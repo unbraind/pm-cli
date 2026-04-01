@@ -1,9 +1,8 @@
 node_modules/
 dist/
 coverage/
-.gemini/settings.json
-
+.gemini/
 # Local vector store and search index cache (optional, rebuilt on demand via pm reindex)
 .agents/pm/search/lancedb/
 .agents/pm/index/manifest.json
-.agents/pm/search/embeddings.jsonl
+.agents/pm/search/

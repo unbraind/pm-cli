@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:output","area:terminal","area:tests",compatibility,pm-cli
 created_at: "2026-04-01T11:57:58.237Z"
-updated_at: "2026-04-01T12:22:46.589Z"
+updated_at: "2026-04-01T19:12:51.757Z"
 deadline: "2026-04-11T11:57:58.237Z"
 author: cursor-agent
 estimated_minutes: 220
@@ -28,16 +28,19 @@ customer_impact: Improves trust in command completion and result interpretation.
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-mudv,parent,"2026-04-01T11:57:58.237Z",cursor-agent,null
   pm-wo8,related,"2026-04-01T11:57:58.237Z",cursor-agent,null
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-01T11:57:58.237Z",cursor-agent,Feature created for exit and subprocess reliability in terminal-emulated environments.
+  "2026-04-01T18:53:11.471Z",cursor-agent,"Runtime follow-up scope for reopened feature: replace buffered exec-linked-test path with robust spawn orchestration while preserving output and exit-code contracts. Includes default progress heartbeat on stderr for long runs and cross-platform timeout termination hardening."
+  "2026-04-01T19:10:50.007Z",cursor-agent,"Runtime feature follow-up delivered: linked tests now stream via spawn orchestration with deterministic completion semantics in PTY environments while preserving output/exit contracts. Evidence: targeted runtime suites pass and pty reproduction shows periodic linked-test progress lines before final JSON completion."
 notes[1]{created_at,author,text}:
   "2026-04-01T11:57:58.237Z",cursor-agent,Refactor main error exits to process.exitCode and harden runLinkedTests subprocess options/diagnostics.
 files[2]{path,scope,note}:
   src/cli/commands/test.ts,project,linked-test subprocess behavior
   src/cli/main.ts,project,graceful exit semantics
-tests[1]{command,path,scope,timeout_seconds,note}:
+tests[2]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,runtime contract regressions
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,spawn-heartbeat-runtime-validation
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,runtime behavior notes
-close_reason: exit/output and linked-test runtime hardening delivered and validated
+close_reason: runtime follow-up hardening delivered and validated
 body: Feature for exit/output reliability and linked-test anti-hang behavior.

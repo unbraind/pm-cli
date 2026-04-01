@@ -615,4 +615,94 @@ describe("runTest", () => {
       expect(run.run_results[0]?.error ?? "").toContain("maxBuffer=20971520");
     });
   });
+
+  it("terminates stubborn timed-out linked commands without hanging", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "linked-test-stubborn-timeout");
+      await runTest(
+        id,
+        {
+          add: ['command=node -e "process.on(\'SIGTERM\', () => {}); setInterval(() => {}, 1000)",scope=project'],
+          message: "seed stubborn timeout command",
+        },
+        { path: context.pmPath },
+      );
+
+      const previousForceKillDelay = process.env.PM_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS;
+      process.env.PM_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS = "20";
+      try {
+        const startedAt = Date.now();
+        const run = await runTest(
+          id,
+          {
+            run: true,
+            timeout: "0.02",
+          },
+          { path: context.pmPath },
+        );
+        const elapsedMs = Date.now() - startedAt;
+
+        expect(elapsedMs).toBeLessThan(3000);
+        expect(run.run_results).toHaveLength(1);
+        expect(run.run_results[0]?.status).toBe("failed");
+        expect(run.run_results[0]?.error ?? "").toContain("timed out after");
+      } finally {
+        if (previousForceKillDelay === undefined) {
+          delete process.env.PM_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS;
+        } else {
+          process.env.PM_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS = previousForceKillDelay;
+        }
+      }
+    });
+  });
+
+  it("emits heartbeat progress to stderr for interactive terminal runs", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "linked-test-heartbeat-progress");
+      await runTest(
+        id,
+        {
+          add: ['command=node -e "setTimeout(() => {}, 60)",scope=project,timeout_seconds=5'],
+          message: "seed heartbeat command",
+        },
+        { path: context.pmPath },
+      );
+
+      const previousHeartbeatInterval = process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS;
+      process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS = "10";
+      const originalIsTTY = process.stderr.isTTY;
+      Object.defineProperty(process.stderr, "isTTY", {
+        value: true,
+        configurable: true,
+      });
+      const stderrWriteSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+      try {
+        const run = await runTest(
+          id,
+          {
+            run: true,
+            timeout: "5",
+          },
+          { path: context.pmPath },
+        );
+        expect(run.run_results).toHaveLength(1);
+        expect(run.run_results[0]?.status).toBe("passed");
+
+        const stderrOutput = stderrWriteSpy.mock.calls.map((entry) => String(entry[0])).join("");
+        expect(stderrOutput).toContain("[pm test] linked-test 1/1 start");
+        expect(stderrOutput).toContain("[pm test] linked-test 1/1 running");
+        expect(stderrOutput).toContain("[pm test] linked-test 1/1 end status=passed");
+      } finally {
+        if (previousHeartbeatInterval === undefined) {
+          delete process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS;
+        } else {
+          process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS = previousHeartbeatInterval;
+        }
+        Object.defineProperty(process.stderr, "isTTY", {
+          value: originalIsTTY,
+          configurable: true,
+        });
+      }
+    });
+  });
 });

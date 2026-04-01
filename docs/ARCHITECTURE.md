@@ -270,7 +270,7 @@ Pipeline:
 2. **Sparse TOON fallback output** — default TOON output renders command payloads directly and recursively omits `null`/`undefined`/empty arrays/empty objects to reduce token overhead while preserving meaningful scalar values.
 3. **Fail-fast stdin semantics** — stdin token readers reject interactive TTY stdin for piped-only flows (`-`) and provide explicit EOF guidance instead of waiting indefinitely.
 4. **Graceful error exits** — CLI error handling preserves canonical exit codes using graceful `process.exitCode` semantics to reduce output truncation risk under buffered writes.
-5. **Non-interactive linked test runs** — linked test subprocess execution closes child stdin immediately, applies deterministic runtime environment defaults, and surfaces explicit timeout/maxBuffer diagnostics.
+5. **Linked test runtime hardening** — linked test subprocess execution uses shell-compatible spawn orchestration, closes child stdin immediately, applies deterministic runtime environment defaults, emits interactive stderr heartbeat progress for long runs, and enforces timeout/maxBuffer diagnostics with force-kill fallback for stubborn process trees.
 
 ## Help and Error Guidance Pipeline
 

@@ -420,4 +420,37 @@ describe("runTestAll", () => {
       expect(result.skipped).toBe(0);
     });
   });
+
+  it("completes deterministically when a linked command ignores SIGTERM on timeout", async () => {
+    await withTempPmPath(async (context) => {
+      createTaskWithTests(context, {
+        title: "Stubborn Timeout Test-All Source",
+        status: "open",
+        testEntries: ['command=node -e "process.on(\'SIGTERM\', () => {}); setInterval(() => {}, 1000)",scope=project'],
+      });
+
+      const previousForceKillDelay = process.env.PM_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS;
+      process.env.PM_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS = "20";
+      try {
+        const startedAt = Date.now();
+        const result = await runTestAll({ status: "open", timeout: "0.02" }, { path: context.pmPath });
+        const elapsedMs = Date.now() - startedAt;
+
+        expect(elapsedMs).toBeLessThan(3000);
+        expect(result.totals.items).toBe(1);
+        expect(result.totals.linked_tests).toBe(1);
+        expect(result.failed).toBe(1);
+        expect(result.passed).toBe(0);
+        expect(result.skipped).toBe(0);
+        expect(result.results[0]?.run_results[0]?.status).toBe("failed");
+        expect(result.results[0]?.run_results[0]?.error ?? "").toContain("timed out after");
+      } finally {
+        if (previousForceKillDelay === undefined) {
+          delete process.env.PM_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS;
+        } else {
+          process.env.PM_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS = previousForceKillDelay;
+        }
+      }
+    });
+  });
 });

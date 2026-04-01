@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:terminal","area:tests",code,compatibility,pm-cli
 created_at: "2026-04-01T12:00:06.349Z"
-updated_at: "2026-04-01T12:22:31.217Z"
+updated_at: "2026-04-01T19:12:49.252Z"
 deadline: "2026-04-08T12:00:06.349Z"
 author: cursor-agent
 estimated_minutes: 130
@@ -27,9 +27,11 @@ regression: true
 customer_impact: More reliable test-run behavior for users and agents.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-axlr,parent,"2026-04-01T12:00:06.349Z",cursor-agent,null
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-01T12:00:06.349Z",cursor-agent,Task corresponds to plan workstream C.
   "2026-04-01T12:05:24.487Z",cursor-agent,"Implemented linked-test subprocess hardening in src/cli/commands/test.ts: execution now closes child stdin immediately to force EOF in non-interactive runs, sets FORCE_COLOR=0 and windowsHide=true for stable cross-terminal behavior, and enriches failure diagnostics for timeout and maxBuffer cases. Evidence: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts passed (22/22)."
+  "2026-04-01T18:53:11.431Z",cursor-agent,"Task reopened as continuation (no duplicate): implement spawn-based linked-test execution core, add periodic stderr heartbeat during long-running test commands, and ensure deterministic timeout failure with robust child-process termination."
+  "2026-04-01T19:10:49.222Z",cursor-agent,"Implemented second-pass linked-test runtime hardening in src/cli/commands/test.ts: moved from buffered exec to shell-compatible spawn orchestration, added interactive stderr heartbeat progress, and enforced timeout maxBuffer deterministic termination with force-kill fallback for stubborn process trees. Verification: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts (26/26)."
 notes[1]{created_at,author,text}:
   "2026-04-01T12:00:06.349Z",cursor-agent,Preserve command contract while improving stdin/timeout/buffer failure visibility.
 files[1]{path,scope,note}:
@@ -38,5 +40,5 @@ tests[1]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,2400,linked-test execution regressions
 docs[1]{path,scope,note}:
   PRD.md,project,test command safety contract
-close_reason: linked-test subprocess anti-hang hardening shipped with deterministic diagnostics
+close_reason: spawn-based linked-test runner with heartbeat and deterministic timeout termination validated
 body: Implement subprocess execution hardening in test command.

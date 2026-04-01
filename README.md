@@ -249,6 +249,8 @@ printf '%s\n' 'at: +1d' 'text: reminder from piped stdin' | pm update pm-a1b2 --
   - `pm docs <ID> --add/--remove`
 - `pm update` intentionally does not accept `--file` or `--doc`; command guidance points to `pm files` / `pm docs`.
 - `pm test <ID> --add` intentionally enforces sandbox-safe command entries. Use `node scripts/run-tests.mjs ...` for linked commands, or link specific specs with `--add "path=tests/..."`
+- `pm test <ID> --run` and `pm test-all` now emit heartbeat/progress lines to stderr in interactive terminals during long-running linked commands so active runs are visible instead of appearing stalled.
+- Linked test timeout handling uses deterministic process termination (including force-kill fallback) and reports explicit timeout/maxBuffer diagnostics in `run_results`.
 - `pm list` / `pm list-*` return front-matter rows by default; pass `--include-body` when body projection is needed.
 
 ## Terminal Compatibility
@@ -259,6 +261,9 @@ printf '%s\n' 'at: +1d' 'text: reminder from piped stdin' | pm update pm-a1b2 --
 - Error exits preserve deterministic exit-code mapping while using graceful `process.exitCode` behavior.
 - Stdin token entry (`-`) requires piped stdin when invoked from an interactive TTY.
 - `pm beads import --file -` follows the same stdin guard: if stdin is interactive TTY, `pm` returns usage guidance instead of waiting for EOF.
+- Linked test execution uses shell-compatible spawn orchestration instead of buffered one-shot capture, reducing silent long-run behavior in IDE-integrated terminals.
+- During interactive runs, linked tests print periodic stderr heartbeat lines (`[pm test] linked-test ... running`) until completion.
+- Timeout paths attempt graceful termination first, then deterministic force-kill fallback for stubborn subprocess trees.
 - For manual EOF in interactive sessions:
   - Unix/macOS terminals: `Ctrl+D`
   - Windows terminals: `Ctrl+Z` then `Enter`

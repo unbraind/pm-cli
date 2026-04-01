@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: "area:cli","area:docs","area:terminal",compatibility,pm-cli
 created_at: "2026-04-01T11:57:17.043Z"
-updated_at: "2026-04-01T12:22:47.971Z"
+updated_at: "2026-04-01T19:12:53.204Z"
 deadline: "2026-04-15T11:57:17.043Z"
 author: cursor-agent
 estimated_minutes: 420
@@ -27,15 +27,18 @@ customer_impact: Improves reliability for all users running pm in IDE or emulate
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-nhgt,related,"2026-04-01T11:57:17.043Z",cursor-agent,null
   pm-wo8,related,"2026-04-01T11:57:17.043Z",cursor-agent,null
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-01T11:57:17.043Z",cursor-agent,Created after list-open/list-in-progress/list-blocked plus terminal-focused search showed no duplicate item for this scope.
+  "2026-04-01T18:53:10.935Z",cursor-agent,"Follow-up continuation of this existing terminal epic (no duplicate item created). Reproduced residual behavior on 2026-04-01: pm test-all --status in_progress --timeout 60 --json remained silent for about 170s before final output/exit while linked tests were active. Acceptance delta for reopen: spawn-based linked-test orchestration, default stderr heartbeat/progress, and deterministic timeout tree termination across PTY environments."
+  "2026-04-01T19:10:50.178Z",cursor-agent,"Reproduced and validated PTY reliability follow-up end to end: script -q -c \"pm test-all --status in_progress --timeout 60 --json\" /tmp/pm-test-all-pty.log now shows continuous [pm test] linked-test heartbeat progress lines and deterministic completion payload instead of long silent intervals. Full regression remains green (node scripts/run-tests.mjs test: 693/693)."
 notes[1]{created_at,author,text}:
   "2026-04-01T11:57:17.043Z",cursor-agent,"Implement in phased streams: stdin fail-safe,graceful exits,subprocess anti-hang,regression tests,docs parity."
 files[1]{path,scope,note}:
   src/cli/main.ts,project,global exit path hardening
 tests[1]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test,null,project,3600,full regression baseline
-docs[1]{path,scope,note}:
+docs[2]{path,scope,note}:
   PRD.md,project,terminal compatibility contract
-close_reason: universal terminal compatibility hardening delivered across stdin exit subprocess tests and docs
+  README.md,project,terminal-compatibility-follow-up-contract
+close_reason: universal terminal hardening follow-up completed with PTY verification
 body: Track universal terminal compatibility improvements and rollout evidence.

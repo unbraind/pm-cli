@@ -1,8 +1,7 @@
-import { exec as execCb } from "node:child_process";
+import { spawn, type ChildProcess } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { promisify } from "node:util";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
@@ -17,29 +16,46 @@ import { runInit } from "./init.js";
 import { SCOPE_VALUES } from "../../types/index.js";
 import type { LinkedTest, LinkScope } from "../../types/index.js";
 
-const exec = promisify(execCb);
 const TEST_OUTPUT_MAX_BUFFER_BYTES = 20 * 1024 * 1024;
+const DEFAULT_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS = 3000;
+const DEFAULT_LINKED_TEST_HEARTBEAT_INTERVAL_MS = 10000;
+const MAX_LINKED_TEST_COMMAND_LABEL_LENGTH = 120;
 
-interface ExecRunResult {
+function readPositiveIntegerEnv(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (typeof raw !== "string" || raw.trim().length === 0) {
+    return fallback;
+  }
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback;
+  }
+  return parsed;
+}
+
+function linkedTestTimeoutForceKillDelayMs(): number {
+  return readPositiveIntegerEnv("PM_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS", DEFAULT_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS);
+}
+
+function linkedTestHeartbeatIntervalMs(): number {
+  return readPositiveIntegerEnv("PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS", DEFAULT_LINKED_TEST_HEARTBEAT_INTERVAL_MS);
+}
+
+interface LinkedTestExecutionResult {
   stdout: string;
   stderr: string;
-}
-
-interface ExecRunError {
-  code?: number | string | null;
-  stdout?: string;
-  stderr?: string;
-  message?: string;
-  killed?: boolean;
+  exitCode: number | null;
   signal?: NodeJS.Signals | null;
+  timedOut: boolean;
+  maxBufferExceeded: boolean;
+  spawnError?: string;
 }
 
-interface ExecRunPromise extends Promise<ExecRunResult> {
-  child?: {
-    stdin?: {
-      end: () => void;
-    } | null;
-  };
+interface LinkedTestProgressContext {
+  index: number;
+  total: number;
+  timeoutMs: number;
+  command: string;
 }
 
 export interface TestCommandOptions {
@@ -467,26 +483,253 @@ function parseRemoveEntries(raw: string[] | undefined): string[] {
   });
 }
 
-function closeLinkedTestStdin(execution: ExecRunPromise): void {
+function closeLinkedTestStdin(child: ChildProcess): void {
   // Force EOF on child stdin so non-interactive runs do not wait on input.
   try {
-    execution.child?.stdin?.end();
+    child.stdin?.end();
   } catch {
     // Child stdin can already be closed depending on command startup timing.
   }
 }
 
-function formatLinkedTestExecutionError(error: ExecRunError, timeoutMs: number): string {
+function summarizeLinkedTestCommand(command: string): string {
+  const normalized = command.trim().replaceAll(/\s+/g, " ");
+  if (normalized.length <= MAX_LINKED_TEST_COMMAND_LABEL_LENGTH) {
+    return normalized;
+  }
+  return `${normalized.slice(0, MAX_LINKED_TEST_COMMAND_LABEL_LENGTH - 3)}...`;
+}
+
+function shouldEmitLinkedTestProgress(): boolean {
+  return process.stderr.isTTY === true;
+}
+
+function emitLinkedTestProgress(message: string): void {
+  try {
+    process.stderr.write(`${message}\n`);
+  } catch {
+    // Ignore transient stderr write failures.
+  }
+}
+
+function beginLinkedTestProgress(context: LinkedTestProgressContext): NodeJS.Timeout | null {
+  if (!shouldEmitLinkedTestProgress()) {
+    return null;
+  }
+  const commandLabel = summarizeLinkedTestCommand(context.command);
+  const startAt = Date.now();
+  emitLinkedTestProgress(
+    `[pm test] linked-test ${context.index}/${context.total} start timeout_ms=${context.timeoutMs} command="${commandLabel}"`,
+  );
+  const heartbeat = setInterval(() => {
+    const elapsedMs = Date.now() - startAt;
+    emitLinkedTestProgress(
+      `[pm test] linked-test ${context.index}/${context.total} running elapsed_ms=${elapsedMs} command="${commandLabel}"`,
+    );
+  }, linkedTestHeartbeatIntervalMs());
+  heartbeat.unref?.();
+  return heartbeat;
+}
+
+function endLinkedTestProgress(
+  context: LinkedTestProgressContext,
+  executionResult: Pick<LinkedTestExecutionResult, "timedOut" | "maxBufferExceeded" | "exitCode" | "signal">,
+  startedAt: number,
+): void {
+  if (!shouldEmitLinkedTestProgress()) {
+    return;
+  }
+  const commandLabel = summarizeLinkedTestCommand(context.command);
+  const elapsedMs = Date.now() - startedAt;
+  const failed = executionResult.timedOut || executionResult.maxBufferExceeded || executionResult.exitCode !== 0;
+  const statusLabel = failed ? "failed" : "passed";
+  const reasonTokens: string[] = [];
+  if (executionResult.timedOut) {
+    reasonTokens.push("reason=timeout");
+  }
+  if (executionResult.maxBufferExceeded) {
+    reasonTokens.push("reason=max_buffer");
+  }
+  if (executionResult.signal) {
+    reasonTokens.push(`signal=${executionResult.signal}`);
+  }
+  const exitLabel = executionResult.exitCode === null ? "null" : String(executionResult.exitCode);
+  const reasonSuffix = reasonTokens.length > 0 ? ` ${reasonTokens.join(" ")}` : "";
+  emitLinkedTestProgress(
+    `[pm test] linked-test ${context.index}/${context.total} end status=${statusLabel} exit_code=${exitLabel} elapsed_ms=${elapsedMs}${reasonSuffix} command="${commandLabel}"`,
+  );
+}
+
+async function killProcessTree(pid: number): Promise<void> {
+  if (!Number.isInteger(pid) || pid <= 0) {
+    return;
+  }
+  if (process.platform === "win32") {
+    await new Promise<void>((resolve) => {
+      const killer = spawn("taskkill", ["/pid", String(pid), "/T", "/F"], {
+        stdio: "ignore",
+        windowsHide: true,
+      });
+      killer.on("error", () => resolve());
+      killer.on("close", () => resolve());
+    });
+    return;
+  }
+  try {
+    process.kill(-pid, "SIGKILL");
+    return;
+  } catch {
+    // Fall back to direct child kill when no process group is available.
+  }
+  try {
+    process.kill(pid, "SIGKILL");
+  } catch {
+    // The process can already be gone.
+  }
+}
+
+async function runLinkedTestCommand(
+  command: string,
+  timeoutMs: number,
+  env: NodeJS.ProcessEnv,
+  progressContext: LinkedTestProgressContext,
+): Promise<LinkedTestExecutionResult> {
+  const startedAt = Date.now();
+  const heartbeat = beginLinkedTestProgress(progressContext);
+  const child = spawn(command, {
+    cwd: process.cwd(),
+    env,
+    shell: true,
+    windowsHide: true,
+    detached: process.platform !== "win32",
+    stdio: ["pipe", "pipe", "pipe"],
+  });
+  closeLinkedTestStdin(child);
+
+  let stdout = "";
+  let stderr = "";
+  let stdoutBytes = 0;
+  let stderrBytes = 0;
+  let timedOut = false;
+  let maxBufferExceeded = false;
+  let spawnError: string | undefined;
+  let forceKillTimer: NodeJS.Timeout | null = null;
+  let timedOutTimer: NodeJS.Timeout | null = null;
+  let terminationRequested = false;
+
+  const clearTimers = (): void => {
+    if (heartbeat) {
+      clearInterval(heartbeat);
+    }
+    if (timedOutTimer) {
+      clearTimeout(timedOutTimer);
+      timedOutTimer = null;
+    }
+    if (forceKillTimer) {
+      clearTimeout(forceKillTimer);
+      forceKillTimer = null;
+    }
+  };
+
+  const requestTermination = async (): Promise<void> => {
+    if (terminationRequested) {
+      return;
+    }
+    terminationRequested = true;
+    const pid = child.pid;
+    if (!pid || pid <= 0) {
+      try {
+        child.kill("SIGTERM");
+      } catch {
+        // Child can already be closed.
+      }
+      return;
+    }
+    if (process.platform === "win32") {
+      await killProcessTree(pid);
+      return;
+    }
+    try {
+      process.kill(-pid, "SIGTERM");
+    } catch {
+      try {
+        child.kill("SIGTERM");
+      } catch {
+        // Child can already be closed.
+      }
+    }
+    forceKillTimer = setTimeout(() => {
+      void killProcessTree(pid);
+    }, linkedTestTimeoutForceKillDelayMs());
+    forceKillTimer.unref?.();
+  };
+
+  const appendChunk = (chunk: Buffer | string, target: "stdout" | "stderr"): void => {
+    const text = typeof chunk === "string" ? chunk : chunk.toString("utf8");
+    const bytes = Buffer.byteLength(text);
+    if (target === "stdout") {
+      stdoutBytes += bytes;
+      if (stdoutBytes <= TEST_OUTPUT_MAX_BUFFER_BYTES) {
+        stdout += text;
+      }
+    } else {
+      stderrBytes += bytes;
+      if (stderrBytes <= TEST_OUTPUT_MAX_BUFFER_BYTES) {
+        stderr += text;
+      }
+    }
+    if (!maxBufferExceeded && (stdoutBytes > TEST_OUTPUT_MAX_BUFFER_BYTES || stderrBytes > TEST_OUTPUT_MAX_BUFFER_BYTES)) {
+      maxBufferExceeded = true;
+      void requestTermination();
+    }
+  };
+
+  child.stdout?.on("data", (chunk) => appendChunk(chunk, "stdout"));
+  child.stderr?.on("data", (chunk) => appendChunk(chunk, "stderr"));
+  child.on("error", (error) => {
+    spawnError = error.message;
+  });
+
+  timedOutTimer = setTimeout(() => {
+    timedOut = true;
+    void requestTermination();
+  }, timeoutMs);
+  timedOutTimer.unref?.();
+
+  const { code, signal } = await new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolve) => {
+    child.on("close", (closeCode, closeSignal) => {
+      resolve({
+        code: closeCode,
+        signal: closeSignal,
+      });
+    });
+  });
+  clearTimers();
+  const executionResult: LinkedTestExecutionResult = {
+    stdout,
+    stderr,
+    exitCode: code,
+    signal,
+    timedOut,
+    maxBufferExceeded,
+    spawnError,
+  };
+  endLinkedTestProgress(progressContext, executionResult, startedAt);
+  return executionResult;
+}
+
+function formatLinkedTestExecutionError(result: LinkedTestExecutionResult, timeoutMs: number): string {
   const details: string[] = [];
-  if (error.code === "ERR_CHILD_PROCESS_STDIO_MAXBUFFER") {
+  if (result.maxBufferExceeded) {
     details.push(
       `Linked test output exceeded maxBuffer=${TEST_OUTPUT_MAX_BUFFER_BYTES} bytes. Reduce output volume or split the command.`,
     );
   }
-  if (error.killed && error.signal === "SIGTERM" && timeoutMs > 0) {
+  if (result.timedOut && timeoutMs > 0) {
     details.push(`Linked test timed out after ${timeoutMs}ms.`);
   }
-  const baseMessage = error.message?.trim() || "Linked test command failed.";
+  const signalMessage = result.signal ? `Linked test command terminated by signal ${result.signal}.` : undefined;
+  const baseMessage = result.spawnError?.trim() || signalMessage || "Linked test command failed.";
   if (details.length === 0) {
     return baseMessage;
   }
@@ -504,7 +747,8 @@ export async function runLinkedTests(
 
   try {
     await runInit(undefined, { path: sandboxPmPath });
-    for (const linkedTest of tests) {
+    for (let index = 0; index < tests.length; index += 1) {
+      const linkedTest = tests[index];
       if (!linkedTest.command) {
         results.push({
           command: linkedTest.command,
@@ -525,41 +769,43 @@ export async function runLinkedTests(
         continue;
       }
       const timeoutMs = ((linkedTest.timeout_seconds ?? defaultTimeoutSeconds ?? 120) * 1000);
-      try {
-        const execution = exec(linkedTest.command, {
-          timeout: timeoutMs,
-          cwd: process.cwd(),
-          maxBuffer: TEST_OUTPUT_MAX_BUFFER_BYTES,
-          windowsHide: true,
-          env: {
-            ...process.env,
-            FORCE_COLOR: "0",
-            PM_PATH: sandboxPmPath,
-            PM_GLOBAL_PATH: sandboxGlobalPath,
-          },
-        }) as ExecRunPromise;
-        closeLinkedTestStdin(execution);
-        const executed = await execution;
+      const execution = await runLinkedTestCommand(
+        linkedTest.command,
+        timeoutMs,
+        {
+          ...process.env,
+          FORCE_COLOR: "0",
+          PM_PATH: sandboxPmPath,
+          PM_GLOBAL_PATH: sandboxGlobalPath,
+        },
+        {
+          index: index + 1,
+          total: tests.length,
+          timeoutMs,
+          command: linkedTest.command,
+        },
+      );
+      const passed = execution.exitCode === 0 && !execution.timedOut && !execution.maxBufferExceeded;
+      if (passed) {
         results.push({
           command: linkedTest.command,
           path: linkedTest.path,
           status: "passed",
           exit_code: 0,
-          stdout: executed.stdout,
-          stderr: executed.stderr,
+          stdout: execution.stdout,
+          stderr: execution.stderr,
         });
-      } catch (error: unknown) {
-        const err = error as ExecRunError;
-        results.push({
-          command: linkedTest.command,
-          path: linkedTest.path,
-          status: "failed",
-          exit_code: typeof err.code === "number" ? err.code : 1,
-          stdout: err.stdout,
-          stderr: err.stderr,
-          error: formatLinkedTestExecutionError(err, timeoutMs),
-        });
+        continue;
       }
+      results.push({
+        command: linkedTest.command,
+        path: linkedTest.path,
+        status: "failed",
+        exit_code: typeof execution.exitCode === "number" ? execution.exitCode : 1,
+        stdout: execution.stdout,
+        stderr: execution.stderr,
+        error: formatLinkedTestExecutionError(execution, timeoutMs),
+      });
     }
   } finally {
     await rm(sandboxRoot, { recursive: true, force: true });

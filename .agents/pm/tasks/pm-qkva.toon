@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:docs","area:terminal",compatibility,doc,pm-cli
 created_at: "2026-04-01T12:00:27.553Z"
-updated_at: "2026-04-01T12:22:32.603Z"
+updated_at: "2026-04-01T19:12:50.974Z"
 deadline: "2026-04-08T12:00:27.553Z"
 author: cursor-agent
 estimated_minutes: 90
@@ -27,9 +27,11 @@ regression: true
 customer_impact: Users can self-serve terminal-safe usage patterns.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-t6f7,parent,"2026-04-01T12:00:27.553Z",cursor-agent,null
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-01T12:00:27.553Z",cursor-agent,Task corresponds to plan workstream E docs parity update.
   "2026-04-01T12:12:02.132Z",cursor-agent,"Updated docs for terminal compatibility across README.md, AGENTS.md, PRD.md, docs/ARCHITECTURE.md, CONTRIBUTING.md, and CHANGELOG.md. Also refreshed linked docs-contract test command to current integration suites. Evidence: node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts passed (24/24)."
+  "2026-04-01T18:53:11.696Z",cursor-agent,Task reopened to update docs with explicit long-running linked-test progress and timeout/termination expectations across IDE-integrated and emulated PTY terminals.
+  "2026-04-01T19:10:49.683Z",cursor-agent,"Updated terminal compatibility docs in README.md, docs/ARCHITECTURE.md, PRD.md, and CHANGELOG.md to document spawn-based linked-test runtime behavior, default stderr heartbeat progress in interactive terminals, and timeout force-kill fallback expectations. Verification context: node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts remains passing as part of full regression."
 notes[1]{created_at,author,text}:
   "2026-04-01T12:00:27.553Z",cursor-agent,Add concise compatibility guarantees and limitations section plus stdin EOF guidance.
 files[6]{path,scope,note}:
@@ -41,7 +43,10 @@ files[6]{path,scope,note}:
   README.md,project,terminal compatibility section
 tests[1]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,docs/runtime contract checks
-docs[1]{path,scope,note}:
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,unreleased-hardening-notes
+  docs/ARCHITECTURE.md,project,terminal-runtime-hardening-architecture
+  PRD.md,project,terminal-contract-updates
   README.md,project,primary user docs
-close_reason: terminal compatibility docs updated across required repository docs
+close_reason: terminal compatibility docs updated for heartbeat and timeout termination expectations
 body: Docs parity task for terminal compatibility hardening rollout.

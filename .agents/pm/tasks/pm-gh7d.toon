@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:terminal","area:tests",code,compatibility,pm-cli
 created_at: "2026-04-01T12:00:15.766Z"
-updated_at: "2026-04-01T12:22:31.909Z"
+updated_at: "2026-04-01T19:12:50.225Z"
 deadline: "2026-04-08T12:00:15.766Z"
 author: cursor-agent
 estimated_minutes: 110
@@ -27,19 +27,23 @@ regression: true
 customer_impact: Ensures current workflows remain stable.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-t6f7,parent,"2026-04-01T12:00:15.766Z",cursor-agent,null
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-01T12:00:15.766Z",cursor-agent,Task corresponds to plan workstream D.
   "2026-04-01T12:06:56.221Z",cursor-agent,"Expanded terminal compatibility regressions: tests/unit/test-command.spec.ts now asserts timeout diagnostic messaging and adds a deterministic maxBuffer overflow case; tests/unit/beads-command.spec.ts covers interactive TTY fail-fast for --file -. Validation evidence: node scripts/run-tests.mjs test -- tests/unit/parse-utils.spec.ts tests/unit/beads-command.spec.ts tests/unit/test-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts passed (97/97)."
+  "2026-04-01T18:53:11.621Z",cursor-agent,Task reopened to add regression coverage for long-run visibility and stubborn timeout handling so terminal/agent environments do not misinterpret active test runs as hangs.
+  "2026-04-01T19:10:49.575Z",cursor-agent,"Expanded regressions: tests/unit/test-command.spec.ts now covers stubborn timeout termination and interactive heartbeat emission; tests/unit/test-all-command.spec.ts now covers deterministic completion when linked commands ignore SIGTERM. Verification: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts (90/90)."
 notes[1]{created_at,author,text}:
   "2026-04-01T12:00:15.766Z",cursor-agent,"Cover parse-utils,beads,test-command,cli integration,and release-readiness runtime contracts."
-files[4]{path,scope,note}:
+files[5]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,runtime contract
   tests/unit/beads-command.spec.ts,project,stdin behavior
   tests/unit/parse-utils.spec.ts,project,stdin token guidance regression
+  tests/unit/test-all-command.spec.ts,project,deterministic-timeout-termination-in-test-all
   tests/unit/test-command.spec.ts,project,subprocess runtime behavior
-tests[1]{command,path,scope,timeout_seconds,note}:
+tests[2]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/parse-utils.spec.ts tests/unit/beads-command.spec.ts tests/unit/test-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,3000,terminal compatibility regression suite
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,expanded-runtime-regressions-with-integration-contracts
 docs[1]{path,scope,note}:
   CONTRIBUTING.md,project,test guidance
-close_reason: terminal compatibility regressions added and passing across unit and integration suites
+close_reason: terminal regressions expanded for heartbeat and stubborn timeout paths
 body: Implement regression tests that protect existing users during terminal hardening rollout.
