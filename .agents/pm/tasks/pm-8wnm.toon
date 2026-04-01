@@ -1,0 +1,49 @@
+id: pm-8wnm
+title: Add history missing-stream policy setting and config support
+description: Introduce history policy in settings defaults/schema/serialization and expose config get/set surface.
+type: Task
+status: in_progress
+priority: 1
+tags[3]: "area:config","area:history",pm-cli
+created_at: "2026-04-01T15:27:04.794Z"
+updated_at: "2026-04-01T15:30:18.718Z"
+deadline: "2026-04-06T15:27:04.794Z"
+author: cursor-agent
+estimated_minutes: 120
+acceptance_criteria: Settings include history policy defaults and validation; config command can get/set policy deterministically; CLI help/docs parity is maintained.
+definition_of_ready: Feature parent exists and settings/config touchpoints are identified.
+order: 1
+goal: Storage resilience
+objective: Expose policy as configuration
+value: Makes behavior explicit and controllable
+impact: Enables strict governance without breaking defaults
+outcome: Users can configure missing-history policy
+why_now: Policy enforcement must be settings-driven
+parent: pm-kb21
+risk: low
+confidence: high
+sprint: history-hardening
+release: vnext
+component: settings
+customer_impact: Users can opt into strict enforcement when required
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-kb21,parent,"2026-04-01T15:27:04.794Z",cursor-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T15:27:04.794Z",cursor-agent,Task seeds settings/config model changes for missing history stream policy.
+  "2026-04-01T15:30:17.724Z",cursor-agent,"Implemented settings/config policy surface: added history.missing_stream enum default (auto_create), settings schema/merge/serialize support, config get/set key and --policy CLI wiring. Verification: pnpm build passed; node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/shared-constants-errors.spec.ts passed (26/26)."
+notes[1]{created_at,author,text}:
+  "2026-04-01T15:27:04.794Z",cursor-agent,"Includes settings type updates,constants defaults,settings schema merge serialize,config command routes,and CLI option help."
+files[8]{path,scope,note}:
+  src/cli/commands/config.ts,project,config key get set support for history policy
+  src/cli/main.ts,project,config CLI policy flag wiring
+  src/core/shared/constants.ts,project,history default policy
+  src/core/store/settings.ts,project,schema and serialization updates
+  src/types.ts,project,add history settings type
+  tests/unit/config-command.spec.ts,project,config policy tests
+  tests/unit/settings-store.spec.ts,project,settings key order history tests
+  tests/unit/shared-constants-errors.spec.ts,project,default history policy assertion
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts,null,project,3600,targeted settings/config coverage
+docs[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,settings key documentation
+body: Implement PmSettings history policy model with non-breaking default and CLI config support.

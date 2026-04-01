@@ -1,0 +1,48 @@
+id: pm-g6qd
+title: Extend restore to recover missing or deleted item files from history
+description: "Allow restore to operate from history streams when item files are absent, with deterministic replay validation and safe write/rollback behavior."
+type: Task
+status: in_progress
+priority: 1
+tags[3]: "area:history","area:restore",pm-cli
+created_at: "2026-04-01T15:27:26.599Z"
+updated_at: "2026-04-01T15:43:00.638Z"
+deadline: "2026-04-06T15:27:26.599Z"
+author: cursor-agent
+estimated_minutes: 150
+acceptance_criteria: "pm restore succeeds for missing/deleted item file when history stream exists, appends restore history event correctly, and preserves conflict/hash/rollback guarantees."
+definition_of_ready: Policy helper and command contracts are identified for restore integration.
+order: 3
+goal: Storage resilience
+objective: Recover items from history-only state
+value: Improves disaster recovery and auditability
+impact: Reduces hard failures when item files are lost
+outcome: Restore can recreate items from history replay
+why_now: Current restore requires item presence and fails on recoverable states
+parent: pm-kb21
+risk: medium
+confidence: high
+sprint: history-hardening
+release: vnext
+unblock_note: Shared policy enforcement is implemented; proceed with restore history-only recovery
+component: restore
+regression: true
+customer_impact: Users can recover deleted or missing item files without manual reconstruction
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-1tyv,blocks,"2026-04-01T15:27:26.599Z",cursor-agent,null
+  pm-9lc,related,"2026-04-01T15:27:26.599Z",cursor-agent,null
+  pm-kb21,parent,"2026-04-01T15:27:26.599Z",cursor-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T15:27:26.599Z",cursor-agent,Task adds history-only restore fallback for missing/deleted item files.
+  "2026-04-01T15:39:36.115Z",cursor-agent,"Implemented restore recovery for missing/deleted item files from history streams: restore now resolves history-only subjects when item file is absent, reconstructs current state from history for restore event diffs, and preserves lock + rollback behavior. Added unit coverage for missing-file and deleted-item recovery and integration coverage for strict policy failures and history-only restore. Verification: pnpm build passed; node scripts/run-tests.mjs test -- tests/unit/restore-command.spec.ts tests/integration/cli.integration.spec.ts passed."
+notes[1]{created_at,author,text}:
+  "2026-04-01T15:27:26.599Z",cursor-agent,"Ensure replay target resolution,before-state reconstruction,write path,locking,and rollback logic remain deterministic."
+files[3]{path,scope,note}:
+  src/cli/commands/restore.ts,project,restore fallback implementation
+  tests/integration/cli.integration.spec.ts,project,strict mode + deleted-item restore CLI regression
+  tests/unit/restore-command.spec.ts,project,missing-item and deleted-item restore coverage
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/restore-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,5400,restore unit and integration coverage
+docs[1]{path,scope,note}:
+  README.md,project,restore behavior contract
+body: Implement history-only restore resolution and recovery while preserving lock semantics and append-only history guarantees.

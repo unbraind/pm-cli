@@ -108,6 +108,7 @@ describe("shared constants and errors contracts", () => {
     expect(SETTINGS_DEFAULTS.author_default).toBe("");
     expect(SETTINGS_DEFAULTS.locks.ttl_seconds).toBe(1800);
     expect(SETTINGS_DEFAULTS.output.default_format).toBe("toon");
+    expect(SETTINGS_DEFAULTS.history.missing_stream).toBe("auto_create");
     expect(SETTINGS_DEFAULTS.item_types.definitions).toEqual([]);
     expect(SETTINGS_DEFAULTS.extensions.enabled).toEqual([]);
     expect(SETTINGS_DEFAULTS.extensions.disabled).toEqual([]);

@@ -128,6 +128,28 @@ describe("runHistory and runActivity", () => {
     });
   });
 
+  it("fails history and activity in strict mode when required streams are missing", async () => {
+    await withTempPmPath(async (context) => {
+      const historyId = createItem(context, "Strict History Missing Stream");
+      const activityId = createItem(context, "Strict Activity Missing Stream");
+      const strictSet = context.runCli(
+        ["config", "project", "set", "history-missing-stream-policy", "--policy", "strict_error", "--json"],
+        { expectJson: true },
+      );
+      expect(strictSet.code).toBe(0);
+
+      await rm(path.join(context.pmPath, "history", `${historyId}.jsonl`), { force: true });
+      await rm(path.join(context.pmPath, "history", `${activityId}.jsonl`), { force: true });
+
+      await expect(runHistory(historyId, {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.NOT_FOUND,
+      });
+      await expect(runActivity({}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.NOT_FOUND,
+      });
+    });
+  });
+
   it("rejects malformed history lines", async () => {
     await withTempPmPath(async (context) => {
       const id = createItem(context, "Malformed History");
@@ -183,7 +205,7 @@ describe("runHistory and runActivity", () => {
     });
   });
 
-  it("propagates non-ENOENT history directory read errors", async () => {
+  it("propagates non-missing history directory shape errors", async () => {
     await withTempPmPath(async (context) => {
       createItem(context, "Activity Invalid History Directory");
       const historyDir = path.join(context.pmPath, "history");
@@ -191,7 +213,7 @@ describe("runHistory and runActivity", () => {
       await writeFile(historyDir, "not-a-directory", "utf8");
 
       await expect(runActivity({}, { path: context.pmPath })).rejects.toMatchObject({
-        code: "ENOTDIR",
+        code: "EEXIST",
       });
     });
   });

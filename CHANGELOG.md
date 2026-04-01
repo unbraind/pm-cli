@@ -32,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added Ollama-aware semantic auto-default resolution for `pm search`/`pm reindex` when semantic settings are unset and local Ollama is installed, including compatibility-safe fallback to keyword mode for implicit default search when auto semantic execution fails.
 - Added `pm health` history drift diagnostics (`history_drift`) that detect missing/unreadable history streams and item/hash mismatches against latest history `after_hash`.
 - Added `pm health` vectorization diagnostics (`vectorization`) with targeted stale-ID semantic refresh and deterministic vectorization ledger tracking (`search/vectorization-status.json`).
+- Added configurable missing history-stream policy at `settings.history.missing_stream` with `pm config <project|global> get|set history-missing-stream-policy --policy auto_create|strict_error`.
+- Added history-only restore recovery so `pm restore` can recreate missing/deleted item files when the corresponding history stream exists.
 
 ### Changed
 - Commander error output now emits a single high-signal structured guidance payload (duplicate default commander stderr lines are suppressed).
@@ -49,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pm beads import --file -` now fails fast when stdin is an interactive TTY and returns explicit piped-input/EOF guidance instead of waiting for manual stream termination.
 - CLI top-level error handling now preserves canonical exit-code mapping via graceful `process.exitCode` semantics to reduce buffered output truncation risk in emulated terminal environments.
 - Linked test runtime execution now closes child stdin for non-interactive runs and appends deterministic timeout/maxBuffer diagnostics when subprocess execution fails.
+- History-touching commands now enforce `settings.history.missing_stream` consistently across read/diagnostic paths (`history`, `activity`, `stats`, `health`) and existing-item mutation/restore flows.
 
 ## [2026.3.12] - 2026-03-12
 

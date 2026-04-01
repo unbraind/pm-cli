@@ -98,6 +98,9 @@ export const SETTINGS_DEFAULTS: PmSettings = {
   output: {
     default_format: "toon",
   },
+  history: {
+    missing_stream: "auto_create",
+  },
   workflow: {
     definition_of_done: [],
   },

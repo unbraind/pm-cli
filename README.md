@@ -158,6 +158,27 @@ pm reindex --mode hybrid
 
 The vectorization ledger is also refreshed during `pm reindex --mode semantic|hybrid` to keep health diagnostics aligned with the latest indexed corpus.
 
+## Missing History Stream Policy
+
+`settings.history.missing_stream` controls behavior when an item's `history/<id>.jsonl` stream is missing:
+
+- `auto_create` (default)
+  - missing streams for existing items are created automatically before history-touching command paths continue
+- `strict_error`
+  - history-touching command paths fail with a deterministic error instead of creating missing streams
+
+Configure policy with:
+
+```bash
+pm config project set history-missing-stream-policy --policy auto_create
+pm config project set history-missing-stream-policy --policy strict_error
+pm config project get history-missing-stream-policy --json
+```
+
+Policy enforcement applies to `pm history`, `pm activity`, `pm stats`, `pm health`, restore, and existing-item mutation paths.
+
+`pm restore` also supports history-only recovery when an item file is missing or deleted but its history stream still exists.
+
 ## Deadline and Date Inputs
 
 - Date/time inputs used by `--deadline`, `--deadline-before`, `--deadline-after`, calendar `--date/--from/--to`, reminders, and events accept:

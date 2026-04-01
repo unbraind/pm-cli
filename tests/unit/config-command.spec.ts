@@ -247,6 +247,75 @@ describe("runConfig", () => {
     });
   });
 
+  it("gets and sets history missing-stream policy", async () => {
+    await withTempRoot(async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      const getDefault = await runConfig(
+        "project",
+        "get",
+        "history-missing-stream-policy",
+        {},
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(getDefault.key).toBe("history_missing_stream_policy");
+      expect(getDefault.policy).toBe("auto_create");
+      expect(getDefault.changed).toBe(false);
+
+      const setStrict = await runConfig(
+        "project",
+        "set",
+        "history_missing_stream_policy",
+        { policy: "strict-error" },
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(setStrict.policy).toBe("strict_error");
+      expect(setStrict.changed).toBe(true);
+
+      const setStrictAgain = await runConfig(
+        "project",
+        "set",
+        "history-missing-stream-policy",
+        { policy: "strict_error" },
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(setStrictAgain.policy).toBe("strict_error");
+      expect(setStrictAgain.changed).toBe(false);
+    });
+  });
+
+  it("requires --policy when setting history missing-stream policy and validates values", async () => {
+    await withTempRoot(async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      await expect(
+        runConfig(
+          "project",
+          "set",
+          "history-missing-stream-policy",
+          {},
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+
+      await expect(
+        runConfig(
+          "project",
+          "set",
+          "history_missing_stream_policy",
+          { policy: "warn" },
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
   it("treats legacy settings without item_format as changed when explicitly setting default format", async () => {
     await withTempRoot(async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");

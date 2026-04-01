@@ -16,13 +16,22 @@ import type { ItemFormat } from "../../types/index.js";
 const CONFIG_SCOPE_VALUES = ["project", "global"] as const;
 type ConfigScope = (typeof CONFIG_SCOPE_VALUES)[number];
 
-const CONFIG_KEY_VALUES = ["definition-of-done", "definition_of_done", "item-format", "item_format"] as const;
+const CONFIG_KEY_VALUES = [
+  "definition-of-done",
+  "definition_of_done",
+  "item-format",
+  "item_format",
+  "history-missing-stream-policy",
+  "history_missing_stream_policy",
+] as const;
 type ConfigAction = "get" | "set";
-type ConfigKey = "definition_of_done" | "item_format";
+type ConfigKey = "definition_of_done" | "item_format" | "history_missing_stream_policy";
+type HistoryMissingStreamPolicy = "auto_create" | "strict_error";
 
 export interface ConfigCommandOptions {
   criterion?: string[];
   format?: string;
+  policy?: string;
 }
 
 export interface ConfigResult {
@@ -30,6 +39,7 @@ export interface ConfigResult {
   key: ConfigKey;
   criteria?: string[];
   format?: ItemFormat;
+  policy?: HistoryMissingStreamPolicy;
   has_explicit_item_format?: boolean;
   migration?: {
     target_format: ItemFormat;
@@ -64,6 +74,9 @@ function normalizeKey(value: string): ConfigKey {
     if (value === "item-format" || value === "item_format") {
       return "item_format";
     }
+    if (value === "history-missing-stream-policy" || value === "history_missing_stream_policy") {
+      return "history_missing_stream_policy";
+    }
     return "definition_of_done";
   }
   throw new PmCliError(
@@ -88,6 +101,17 @@ function normalizeItemFormat(value: string | undefined): ItemFormat {
     return normalized;
   }
   throw new PmCliError('Config set item-format requires --format with one of: toon, json_markdown', EXIT_CODE.USAGE);
+}
+
+function normalizeHistoryMissingStreamPolicy(value: string | undefined): HistoryMissingStreamPolicy {
+  const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
+  if (normalized === "auto_create" || normalized === "strict_error") {
+    return normalized;
+  }
+  throw new PmCliError(
+    "Config set history-missing-stream-policy requires --policy with one of: auto_create, strict_error",
+    EXIT_CODE.USAGE,
+  );
 }
 
 async function resolveSettingsTarget(
@@ -123,6 +147,15 @@ export async function runConfig(
         key,
         format: settings.item_format,
         has_explicit_item_format: metadata.has_explicit_item_format,
+        settings_path: target.settingsPath,
+        changed: false,
+      };
+    }
+    if (key === "history_missing_stream_policy") {
+      return {
+        scope,
+        key,
+        policy: settings.history.missing_stream,
         settings_path: target.settingsPath,
         changed: false,
       };
@@ -164,6 +197,22 @@ export async function runConfig(
       format: settings.item_format,
       has_explicit_item_format: true,
       migration,
+      settings_path: target.settingsPath,
+      changed,
+    };
+  }
+
+  if (key === "history_missing_stream_policy") {
+    const nextPolicy = normalizeHistoryMissingStreamPolicy(options.policy);
+    const changed = settings.history.missing_stream !== nextPolicy;
+    settings.history.missing_stream = nextPolicy;
+    if (changed) {
+      await writeSettings(target.pmRoot, settings, "config:set:history_missing_stream_policy");
+    }
+    return {
+      scope,
+      key,
+      policy: settings.history.missing_stream,
       settings_path: target.settingsPath,
       changed,
     };

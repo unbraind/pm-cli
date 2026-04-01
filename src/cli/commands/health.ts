@@ -5,6 +5,7 @@ import { getEnabledBuiltInExtensions } from "../../core/extensions/builtins.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { activateExtensions, getActiveExtensionRegistrations, loadExtensions, runActiveOnReadHooks } from "../../core/extensions/index.js";
 import { hashDocument } from "../../core/history/history.js";
+import { enforceHistoryStreamPolicyForItems } from "../../core/history/history-stream-policy.js";
 import {
   readVectorizationStatusLedger,
   refreshSemanticEmbeddingsForMutatedItems,
@@ -468,6 +469,12 @@ export async function runHealth(global: GlobalOptions): Promise<HealthResult> {
   const settingWarnings = validateSettingsValues(settings);
   const extensionCheck = await buildExtensionCheck(pmRoot, settings, Boolean(global.noExtensions));
   const items = await listAllFrontMatterWithBody(pmRoot, settings.item_format, typeRegistry.type_to_folder);
+  const historyPolicy = await enforceHistoryStreamPolicyForItems({
+    pmRoot,
+    settings,
+    itemIds: items.map((item) => item.id),
+    commandLabel: "health",
+  });
   const historySummary = await countHistoryStreams(pmRoot);
   const historyDriftCheck = await buildHistoryDriftCheck(pmRoot, items);
   const vectorizationCheck = await buildVectorizationCheck(pmRoot, settings, items);
@@ -515,6 +522,7 @@ export async function runHealth(global: GlobalOptions): Promise<HealthResult> {
     ...missingDirs.map((dir) => `missing_directory:${dir}`),
     ...settingWarnings,
     ...extensionCheck.warnings,
+    ...historyPolicy.warnings,
     ...historySummary.warnings,
     ...historyDriftCheck.warnings,
     ...vectorizationCheck.warnings,

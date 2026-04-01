@@ -1,10 +1,13 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { getActiveExtensionRegistrations, runActiveOnReadHooks } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
-import { runActiveOnReadHooks } from "../../core/extensions/index.js";
+import { enforceHistoryStreamPolicyForItems } from "../../core/history/history-stream-policy.js";
+import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { listAllFrontMatter } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { readHistoryEntries } from "./history.js";
@@ -69,7 +72,15 @@ export async function runActivity(options: ActivityCommandOptions, global: Globa
   }
 
   const limit = parseLimit(options.limit);
-  await readSettings(pmRoot);
+  const settings = await readSettings(pmRoot);
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
+  await enforceHistoryStreamPolicyForItems({
+    pmRoot,
+    settings,
+    itemIds: items.map((item) => item.id),
+    commandLabel: "activity",
+  });
   const historyDir = path.join(pmRoot, "history");
   await runActiveOnReadHooks({
     path: historyDir,

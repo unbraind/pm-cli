@@ -4,6 +4,7 @@ import { getActiveExtensionRegistrations, runActiveOnReadHooks, runActiveOnWrite
 import { EMPTY_CANONICAL_DOCUMENT, EXIT_CODE, TYPE_TO_FOLDER } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { appendHistoryEntry, createHistoryEntry } from "../history/history.js";
+import { enforceHistoryStreamPolicyForItem } from "../history/history-stream-policy.js";
 import { canonicalDocument, parseItemDocument, serializeItemDocument } from "../item/item-format.js";
 import { resolveItemTypeRegistry } from "../item/type-registry.js";
 import { acquireLock } from "../lock/lock.js";
@@ -188,6 +189,12 @@ export async function mutateItem(params: {
         EXIT_CODE.CONFLICT,
       );
     }
+    const historyPolicy = await enforceHistoryStreamPolicyForItem({
+      pmRoot: params.pmRoot,
+      settings: params.settings,
+      itemId: located.id,
+      commandLabel: params.op,
+    });
 
     const beforeDocument = canonicalDocument(document);
     const mutableDocument = canonicalDocument(structuredClone(document));
@@ -243,7 +250,7 @@ export async function mutateItem(params: {
       item: afterDocument.front_matter,
       body: afterDocument.body,
       changedFields: mutation.changedFields,
-      warnings: [...(mutation.warnings ?? []), ...hookWarnings],
+      warnings: [...(mutation.warnings ?? []), ...historyPolicy.warnings, ...hookWarnings],
     };
   } finally {
     await releaseLock();
@@ -282,6 +289,12 @@ export async function deleteItem(params: {
         EXIT_CODE.CONFLICT,
       );
     }
+    const historyPolicy = await enforceHistoryStreamPolicyForItem({
+      pmRoot: params.pmRoot,
+      settings: params.settings,
+      itemId: located.id,
+      commandLabel: "delete",
+    });
 
     const beforeDocument = canonicalDocument(document);
     const deletionTimestamp = nowIso();
@@ -319,7 +332,7 @@ export async function deleteItem(params: {
     return {
       item: beforeDocument.front_matter,
       changedFields: ["deleted"],
-      warnings: hookWarnings,
+      warnings: [...historyPolicy.warnings, ...hookWarnings],
     };
   } finally {
     await releaseLock();

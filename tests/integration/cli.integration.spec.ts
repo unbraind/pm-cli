@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { describe, expect, it } from "vitest";
@@ -3228,6 +3228,173 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(addRecursiveLink.stderr).toContain("must not invoke");
     });
   });
+
+it("enforces strict missing-stream policy across history-touching CLI commands", async () => {
+  await withTempPmPath(async (context) => {
+    const create = context.runCli(
+      [
+        "create",
+        "--json",
+        "--title",
+        "Strict policy CLI fixture",
+        "--description",
+        "Exercise strict missing-stream behavior",
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--priority",
+        "1",
+        "--tags",
+        "integration,history,strict",
+        "--body",
+        "strict-body",
+        "--deadline",
+        "none",
+        "--estimate",
+        "10",
+        "--acceptance-criteria",
+        "Strict mode fails when stream is missing",
+        "--author",
+        "integration-test",
+        "--message",
+        "Create strict-mode fixture",
+        "--assignee",
+        "none",
+        "--dep",
+        "none",
+        "--comment",
+        "none",
+        "--note",
+        "none",
+        "--learning",
+        "none",
+        "--file",
+        "none",
+        "--test",
+        "none",
+        "--doc",
+        "none",
+      ],
+      { expectJson: true },
+    );
+    expect(create.code).toBe(0);
+    const id = (create.json as { item: { id: string } }).item.id;
+    const strictSet = context.runCli(
+      ["config", "project", "set", "history-missing-stream-policy", "--policy", "strict_error", "--json"],
+      { expectJson: true },
+    );
+    expect(strictSet.code).toBe(0);
+    await rm(path.join(context.pmPath, "history", `${id}.jsonl`), { force: true });
+
+    expect(context.runCli(["history", id, "--json"]).code).toBe(3);
+    expect(context.runCli(["activity", "--json"]).code).toBe(3);
+    expect(context.runCli(["stats", "--json"]).code).toBe(3);
+    expect(context.runCli(["health", "--json"]).code).toBe(3);
+    expect(
+      context.runCli(["update", id, "--json", "--status", "in_progress", "--author", "integration-test", "--message", "strict update"])
+        .code,
+    ).toBe(3);
+    expect(context.runCli(["restore", id, "1", "--json", "--author", "integration-test"]).code).toBe(3);
+  });
+}, 120_000);
+
+it("restores a deleted item from history-only state through CLI", async () => {
+  await withTempPmPath(async (context) => {
+    const create = context.runCli(
+      [
+        "create",
+        "--json",
+        "--title",
+        "Deleted restore CLI Item",
+        "--description",
+        "Verify restore recovery when item file is missing",
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--priority",
+        "1",
+        "--tags",
+        "integration,restore,history-only",
+        "--body",
+        "seed-body",
+        "--deadline",
+        "none",
+        "--estimate",
+        "10",
+        "--acceptance-criteria",
+        "Restore recreates deleted item from history",
+        "--author",
+        "integration-test",
+        "--message",
+        "Create deleted restore fixture",
+        "--assignee",
+        "none",
+        "--dep",
+        "none",
+        "--comment",
+        "none",
+        "--note",
+        "none",
+        "--learning",
+        "none",
+        "--file",
+        "none",
+        "--test",
+        "none",
+        "--doc",
+        "none",
+      ],
+      { expectJson: true },
+    );
+    expect(create.code).toBe(0);
+    const id = (create.json as { item: { id: string } }).item.id;
+
+    const update = context.runCli(
+      [
+        "update",
+        id,
+        "--json",
+        "--status",
+        "in_progress",
+        "--description",
+        "updated-before-delete",
+        "--author",
+        "integration-test",
+        "--message",
+        "Update before delete",
+      ],
+      { expectJson: true },
+    );
+    expect(update.code).toBe(0);
+
+    const deleted = context.runCli(
+      ["delete", id, "--json", "--author", "integration-test", "--message", "Delete before history-only restore"],
+      { expectJson: true },
+    );
+    expect(deleted.code).toBe(0);
+
+    const restore = context.runCli(
+      ["restore", id, "2", "--json", "--author", "integration-test", "--message", "Restore from history-only state"],
+      { expectJson: true },
+    );
+    expect(restore.code).toBe(0);
+    const restoreJson = restore.json as {
+      item: { status: string };
+      restored_from: { kind: string; history_index: number };
+    };
+    expect(restoreJson.item.status).toBe("in_progress");
+    expect(restoreJson.restored_from.kind).toBe("version");
+    expect(restoreJson.restored_from.history_index).toBe(2);
+
+    const get = context.runCli(["get", id, "--json"], { expectJson: true });
+    expect(get.code).toBe(0);
+    const getJson = get.json as { item: { status: string }; body: string };
+    expect(getJson.item.status).toBe("in_progress");
+    expect(getJson.body).toBe("seed-body");
+  });
+}, 120_000);
 
 it("restores an item by version through CLI", async () => {
     await withTempPmPath(async (context) => {

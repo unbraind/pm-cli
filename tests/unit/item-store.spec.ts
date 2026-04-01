@@ -148,4 +148,33 @@ describe("core/store/item-store", () => {
       expect(parseItemDocument(rawAfterFailure).front_matter.description).toBe("original description");
     });
   });
+
+  it("fails in strict mode when an existing item stream is missing", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-item-store-strict-missing-history";
+      const { itemPath } = await writeTaskItem(pmPath, id);
+      const originalRaw = await fs.readFile(itemPath, "utf8");
+      const settings = await readSettings(pmPath);
+      settings.history.missing_stream = "strict_error";
+
+      await expect(
+        mutateItem({
+          pmRoot: pmPath,
+          settings,
+          id,
+          op: "update",
+          author: "unit-author",
+          mutate: (document) => {
+            document.front_matter.description = "should not persist";
+            return { changedFields: ["description"] };
+          },
+        }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.NOT_FOUND,
+      });
+
+      const rawAfterFailure = await fs.readFile(itemPath, "utf8");
+      expect(rawAfterFailure).toBe(originalRaw);
+    });
+  });
 });

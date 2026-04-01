@@ -1,0 +1,55 @@
+id: pm-1tyv
+title: Implement shared history-stream policy helper and command enforcement
+description: Add reusable strict-vs-auto stream handling and apply it to history/activity/stats/health plus existing-item mutation paths.
+type: Task
+status: in_progress
+priority: 1
+tags[3]: "area:commands","area:history",pm-cli
+created_at: "2026-04-01T15:27:15.596Z"
+updated_at: "2026-04-01T15:39:33.263Z"
+deadline: "2026-04-06T15:27:15.596Z"
+author: cursor-agent
+estimated_minutes: 180
+acceptance_criteria: History policy helper is reusable; history/activity/stats/health and existing-item mutation flows enforce strict mode and auto-create defaults consistently with deterministic errors.
+definition_of_ready: Settings/config task provides policy key and expected enum values.
+order: 2
+goal: Storage resilience
+objective: Unify missing-stream runtime behavior
+value: Avoids divergent command behavior
+impact: Improves reliability and operator trust
+outcome: All history-touching flows follow one policy model
+why_now: Current behavior differs by command and failure mode
+parent: pm-kb21
+risk: medium
+confidence: high
+sprint: history-hardening
+release: vnext
+unblock_note: Settings policy surface implemented; begin helper and enforcement wiring
+component: history-runtime
+regression: true
+customer_impact: Consistent behavior across history diagnostics and mutations
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-8wnm,blocks,"2026-04-01T15:27:15.596Z",cursor-agent,null
+  pm-kb21,parent,"2026-04-01T15:27:15.596Z",cursor-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T15:27:15.596Z",cursor-agent,Task focuses on reusable helper plus read/diagnostic/mutation enforcement wiring.
+  "2026-04-01T15:39:32.464Z",cursor-agent,"Implemented shared history-stream policy helper and command enforcement. Added src/core/history/history-stream-policy.ts and wired policy checks into history/activity/stats/health plus item-store mutate/delete flows. Added strict-mode regressions in unit suites. Verification: pnpm build passed; node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts tests/unit/stats-command.spec.ts tests/unit/health-command.spec.ts tests/unit/item-store.spec.ts passed."
+notes[1]{created_at,author,text}:
+  "2026-04-01T15:27:15.596Z",cursor-agent,"Primary command targets: history,activity,stats,health,item-store mutate/delete and restore prechecks."
+files[11]{path,scope,note}:
+  src/cli/commands/activity.ts,project,enforce policy across existing item streams
+  src/cli/commands/health.ts,project,enforce policy prior to drift checks
+  src/cli/commands/history.ts,project,enforce policy for item history reads
+  src/cli/commands/stats.ts,project,enforce policy before history totals
+  src/core/history/history-stream-policy.ts,project,new strict-vs-auto policy helper
+  src/core/history/history.ts,project,core helper integration anchor
+  src/core/store/item-store.ts,project,enforce policy for mutate/delete existing items
+  tests/unit/health-command.spec.ts,project,strict mode health regression
+  tests/unit/history-activity-command.spec.ts,project,strict mode and shape-error regression coverage
+  tests/unit/item-store.spec.ts,project,strict mode mutation regression
+  tests/unit/stats-command.spec.ts,project,strict mode stats regression
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts tests/unit/stats-command.spec.ts tests/unit/health-command.spec.ts tests/unit/item-store.spec.ts,null,project,5400,targeted runtime enforcement coverage
+docs[1]{path,scope,note}:
+  PRD.md,project,history-touching command requirements
+body: "Centralize missing-history stream policy checks/creation and wire into all required read, diagnostic, and mutation entry points."

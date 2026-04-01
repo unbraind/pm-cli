@@ -239,6 +239,9 @@ export interface PmSettings {
   output: {
     default_format: "toon" | "json";
   };
+  history: {
+    missing_stream: "auto_create" | "strict_error";
+  };
   workflow: {
     definition_of_done: string[];
   };

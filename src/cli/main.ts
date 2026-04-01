@@ -1385,9 +1385,13 @@ program
   .command("config")
   .argument("<scope>", "Config scope: project|global")
   .argument("<action>", "Config action: get|set")
-  .argument("<key>", "Config key: definition-of-done|item-format")
+  .argument("<key>", "Config key: definition-of-done|item-format|history-missing-stream-policy")
   .option("--criterion <text>", "Definition-of-Done criterion (repeatable for set)", collect)
   .option("--format <value>", "Item format for item-format key: toon|json_markdown")
+  .option(
+    "--policy <value>",
+    "History missing-stream policy for history-missing-stream-policy key: auto_create|strict_error",
+  )
   .description("Read or update pm settings for the current workspace or global profile.")
   .action(async (scope: string, action: string, key: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
@@ -1400,6 +1404,7 @@ program
       {
         criterion: criteria,
         format: typeof options.format === "string" ? options.format : undefined,
+        policy: typeof options.policy === "string" ? options.policy : undefined,
       },
       globalOptions,
     );

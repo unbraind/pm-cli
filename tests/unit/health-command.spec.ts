@@ -206,6 +206,20 @@ describe("runHealth", () => {
     });
   });
 
+  it("fails in strict mode when required history streams are missing", async () => {
+    await withTempPmPath(async (context) => {
+      const missingId = createSeedItem(context);
+      const settings = await readSettings(context.pmPath);
+      settings.history.missing_stream = "strict_error";
+      await writeSettings(context.pmPath, settings);
+      await rm(path.join(context.pmPath, "history", `${missingId}.jsonl`), { force: true });
+
+      await expect(runHealth({ path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.NOT_FOUND,
+      });
+    });
+  });
+
   it("auto-refreshes stale vectorization entries through targeted semantic refresh", async () => {
     await withTempPmPath(async (context) => {
       const itemId = createSeedItem(context);

@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { getActiveExtensionRegistrations, runActiveOnReadHooks } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
+import { enforceHistoryStreamPolicyForItems } from "../../core/history/history-stream-policy.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -97,6 +98,12 @@ export async function runStats(global: GlobalOptions): Promise<StatsResult> {
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
+  await enforceHistoryStreamPolicyForItems({
+    pmRoot,
+    settings,
+    itemIds: items.map((item) => item.id),
+    commandLabel: "stats",
+  });
 
   const byType = zeroByType(typeRegistry.types);
   const byStatus = zeroByStatus();

@@ -1,0 +1,45 @@
+id: pm-ofh9
+title: History stream resilience and restore recovery hardening
+description: Implement settings-driven missing-history stream policy and restore recovery for missing/deleted item files while preserving default compatibility.
+type: Epic
+status: open
+priority: 0
+tags[4]: "area:history","area:restore",core,pm-cli
+created_at: "2026-04-01T15:26:39.295Z"
+updated_at: "2026-04-01T15:59:05.275Z"
+deadline: "2026-04-08T15:26:39.295Z"
+author: cursor-agent
+estimated_minutes: 300
+acceptance_criteria: "Default mode auto-creates missing history streams safely, strict mode fails deterministically across history-touching commands, restore can recover missing/deleted item files from history, and full verification/docs updates pass."
+definition_of_ready: No active duplicate tracking item exists; target command/test/doc surfaces are identified.
+order: 1
+goal: Storage resilience
+objective: Harden history and restore behavior
+value: Prevents silent drift and improves recoverability
+impact: More reliable history and restore workflows for maintainers and agents
+outcome: Deterministic missing-stream policy and recovery behavior
+why_now: Current behavior is inconsistent across commands and recovery scenarios
+risk: medium
+confidence: high
+sprint: history-hardening
+release: vnext
+component: history-core
+customer_impact: Improves reliability for all users when history streams/items are missing
+dependencies[5]{id,kind,created_at,author,source_kind}:
+  pm-1hkq,related,"2026-04-01T15:26:39.295Z",cursor-agent,null
+  pm-4yl0,related,"2026-04-01T15:26:39.295Z",cursor-agent,null
+  pm-9lc,related,"2026-04-01T15:26:39.295Z",cursor-agent,null
+  pm-c0r,related,"2026-04-01T15:26:39.295Z",cursor-agent,null
+  pm-er7n,related,"2026-04-01T15:26:39.295Z",cursor-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T15:26:39.295Z",cursor-agent,Created after de-dup checks found no active item for strict missing-history policy plus restore missing-item recovery scope.
+  "2026-04-01T15:59:05.275Z",cursor-agent,"Epic delivery evidence: implemented missing-stream policy configuration and enforcement across history-touching paths, added restore recovery for missing/deleted item files from history-only state, updated docs/changelog, and verified with full build/test sweeps. Known residual: global coverage gate remains below strict 100% thresholds (97.32/95.02/98.10/97.02)."
+notes[1]{created_at,author,text}:
+  "2026-04-01T15:26:39.295Z",cursor-agent,Implementation follows docs-first updates plus command/test hardening with compatibility-safe defaults.
+files[1]{path,scope,note}:
+  src/cli/commands/history.ts,project,history command policy touchpoint
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,7200,full sandbox-safe regression baseline
+docs[1]{path,scope,note}:
+  PRD.md,project,normative behavior contract updates
+body: "Coordinate strict-vs-auto history-stream handling and restore recovery hardening across commands, tests, and docs."

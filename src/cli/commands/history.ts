@@ -1,4 +1,5 @@
 import { pathExists, readFileIfExists } from "../../core/fs/fs-utils.js";
+import { enforceHistoryStreamPolicyForItem } from "../../core/history/history-stream-policy.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -86,6 +87,14 @@ export async function runHistory(id: string, options: HistoryCommandOptions, glo
   const historyPath = getHistoryPath(pmRoot, resolvedId);
   if (!located && !(await pathExists(historyPath))) {
     throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
+  }
+  if (located) {
+    await enforceHistoryStreamPolicyForItem({
+      pmRoot,
+      settings,
+      itemId: located.id,
+      commandLabel: "history",
+    });
   }
 
   const history = limitEntries(await readHistoryEntries(historyPath, resolvedId), limit);

@@ -111,6 +111,26 @@ describe("runStats", () => {
     });
   });
 
+  it("fails in strict mode when required history streams are missing", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, {
+        title: "Strict stats missing stream",
+        type: "Task",
+        status: "open",
+      });
+      const strictSet = context.runCli(
+        ["config", "project", "set", "history-missing-stream-policy", "--policy", "strict_error", "--json"],
+        { expectJson: true },
+      );
+      expect(strictSet.code).toBe(0);
+      await rm(path.join(context.pmPath, "history", `${id}.jsonl`), { force: true });
+
+      await expect(runStats({ path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.NOT_FOUND,
+      });
+    });
+  });
+
   it("aggregates deterministic item and history summaries", async () => {
     await withTempPmPath(async (context) => {
       const epicId = createItem(context, {

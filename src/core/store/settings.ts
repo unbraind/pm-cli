@@ -48,6 +48,11 @@ const settingsSchema = z.object({
   output: z.object({
     default_format: z.union([z.literal("toon"), z.literal("json")]),
   }),
+  history: z
+    .object({
+      missing_stream: z.union([z.literal("auto_create"), z.literal("strict_error")]),
+    })
+    .optional(),
   workflow: z
     .object({
       definition_of_done: z.array(z.string()),
@@ -223,6 +228,7 @@ function mergeSettings(raw: unknown): PmSettings {
     item_format: settings.item_format ?? defaults.item_format,
     locks: { ...defaults.locks, ...settings.locks },
     output: { ...defaults.output, ...settings.output },
+    history: { ...defaults.history, ...(settings.history ?? {}) },
     workflow: {
       definition_of_done: [...(settings.workflow?.definition_of_done ?? defaults.workflow.definition_of_done)],
     },
@@ -254,6 +260,7 @@ export function serializeSettings(settings: PmSettings): string {
     "item_format",
     "locks",
     "output",
+    "history",
     "workflow",
     "item_types",
     "extensions",
@@ -264,6 +271,7 @@ export function serializeSettings(settings: PmSettings): string {
 
   ordered.locks = orderObject(ordered.locks as Record<string, unknown>, ["ttl_seconds"]);
   ordered.output = orderObject(ordered.output as Record<string, unknown>, ["default_format"]);
+  ordered.history = orderObject(ordered.history as Record<string, unknown>, ["missing_stream"]);
   ordered.workflow = orderObject(ordered.workflow as Record<string, unknown>, ["definition_of_done"]);
   ordered.item_types = orderObject(ordered.item_types as Record<string, unknown>, ["definitions"]);
   ordered.extensions = orderObject(ordered.extensions as Record<string, unknown>, ["enabled", "disabled"]);

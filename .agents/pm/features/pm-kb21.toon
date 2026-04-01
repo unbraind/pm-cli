@@ -1,0 +1,45 @@
+id: pm-kb21
+title: Implement missing-history stream policy and restore fallback
+description: Ship strict-vs-auto history stream behavior plus restore missing-item recovery across command surfaces.
+type: Feature
+status: open
+priority: 1
+tags[3]: "area:history","area:restore",pm-cli
+created_at: "2026-04-01T15:26:50.133Z"
+updated_at: "2026-04-01T15:59:04.817Z"
+deadline: "2026-04-07T15:26:50.133Z"
+author: cursor-agent
+estimated_minutes: 240
+acceptance_criteria: "All history-touching commands honor configured missing-stream policy, restore can recover deleted/missing items from history-only state, and full verification succeeds."
+definition_of_ready: Epic is in place and command/test/doc touchpoints are identified.
+order: 2
+goal: Storage resilience
+objective: Deliver policy-driven history behavior
+value: Makes missing-history handling explicit and predictable
+impact: Reduces operational failures and recovery dead-ends
+outcome: Consistent command behavior in strict and default modes
+why_now: "Current flows are inconsistent between diagnostics, mutations, and restore"
+parent: pm-ofh9
+risk: medium
+confidence: high
+sprint: history-hardening
+release: vnext
+component: history-policy
+regression: true
+customer_impact: Prevents surprising failures when history files are missing
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-9lc,related,"2026-04-01T15:26:50.133Z",cursor-agent,null
+  pm-er7n,related,"2026-04-01T15:26:50.133Z",cursor-agent,null
+  pm-ofh9,parent,"2026-04-01T15:26:50.133Z",cursor-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T15:26:50.133Z",cursor-agent,Feature created from accepted implementation plan with no active duplicate scope found.
+  "2026-04-01T15:59:04.817Z",cursor-agent,"Feature implementation complete across settings/config, strict-vs-auto history policy enforcement, restore history-only recovery, regression tests, and docs/changelog updates. Verification: full build + full test suite pass; coverage gate remains below repository-wide 100% thresholds (pre-existing baseline)."
+notes[1]{created_at,author,text}:
+  "2026-04-01T15:26:50.133Z",cursor-agent,Will execute settings/helper/command/recovery/test/docs workstreams as linked child tasks.
+files[1]{path,scope,note}:
+  src/core/store/settings.ts,project,settings surface
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,final coverage gate
+docs[1]{path,scope,note}:
+  README.md,project,user-visible behavior docs
+body: "Feature delivery includes settings/config surface, shared policy helper, command wiring, tests, and docs/changelog updates."

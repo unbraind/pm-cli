@@ -188,13 +188,14 @@ Every item mutation follows this sequence:
 
 1. **Acquire lock** — exclusive open on `locks/<id>.lock`; reject if stale and no `--force`
 2. **Read current item** — parse configured-format item (`.toon` or `.md`) into canonical `{ front_matter, body }`
-3. **Compute `before_hash`** — SHA-256 of canonical `{ front_matter, body }` JSON
-4. **Apply mutation** — in-memory model update
-5. **Update `updated_at`** — every mutation must change this timestamp
-6. **Compute patch + `after_hash`** — RFC6902 diff; SHA-256 of new canonical state
-7. **Atomic write** — write configured-format item file via temp + `rename` (single syscall, OS-atomic)
-8. **Append history line** — JSONL append to `history/<id>.jsonl`
-9. **Release lock** — unlink lock file
+3. **Enforce history stream policy** — for existing-item mutations, apply `settings.history.missing_stream` (`auto_create` or `strict_error`) before mutation writes
+4. **Compute `before_hash`** — SHA-256 of canonical `{ front_matter, body }` JSON
+5. **Apply mutation** — in-memory model update
+6. **Update `updated_at`** — every mutation must change this timestamp
+7. **Compute patch + `after_hash`** — RFC6902 diff; SHA-256 of new canonical state
+8. **Atomic write** — write configured-format item file via temp + `rename` (single syscall, OS-atomic)
+9. **Append history line** — JSONL append to `history/<id>.jsonl`
+10. **Release lock** — unlink lock file
 
 If step 7 or 8 fails, the item file is rolled back (if write succeeded) before returning failure.
 
@@ -355,6 +356,7 @@ Weights are configurable via `settings.json` under `search.tuning`.
 | `item_format` | Item storage format: `toon` (default) or `json_markdown` |
 | `locks.ttl_seconds` | Lock TTL (default 1800) |
 | `output.default_format` | `toon` or `json` |
+| `history.missing_stream` | Missing history-stream policy: `auto_create` (default) or `strict_error` |
 | `item_types.definitions[]` | Custom type names, aliases, folders, required fields/repeatables, `--type-option` definitions, and `command_option_policies` (`required`/`enabled`/`visible`) |
 | `search.*` | Search provider and tuning settings |
 | `providers.openai` / `providers.ollama` | Embedding provider config |
@@ -363,6 +365,8 @@ Weights are configurable via `settings.json` under `search.tuning`.
 Precedence: CLI flags > env vars (`PM_PATH`, `PM_AUTHOR`, etc.) > `settings.json` > hard defaults.
 
 For repositories created before `item_format` existed, mutating item commands are blocked until an explicit format is selected through `pm config ... item-format --format ...`. Once selected (or changed), item files are automatically migrated to the configured format, and when both `.md` and `.toon` exist for an item, the configured format is the source of truth.
+
+History stream policy can be configured via `pm config ... history-missing-stream-policy --policy ...`. In `auto_create`, required missing streams for existing item IDs are created before history-touching command paths continue; in `strict_error`, those command paths fail fast. Restore also supports history-only recovery when an item file is missing/deleted but the stream exists.
 
 ## Exit Codes
 

@@ -483,7 +483,7 @@ Canonical patch document shape:
 
 `pm restore <ID> <TIMESTAMP|VERSION>`
 
-1. Resolve item and load full history.
+1. Resolve item or matching history stream for ID and load full history.
 2. Replay patches from initial create through target version/timestamp.
 3. Rebuild exact canonical document (`front_matter` + `body`).
 4. Write item atomically.
@@ -493,6 +493,15 @@ Guarantees:
 
 - History is immutable (restore appends, never rewrites old entries).
 - Restored item bytes match canonical serialization of target state exactly.
+
+### 9.4 Missing history stream policy
+
+`settings.history.missing_stream` controls missing-stream behavior for history-touching command paths:
+
+- `auto_create` (default): create missing streams for existing item IDs, then continue command execution.
+- `strict_error`: fail fast when a required stream is missing.
+
+Scope: this policy applies to read/diagnostic paths (`history`, `activity`, `stats`, `health`) and existing-item mutation/restore flows.
 
 ## 10) Concurrency, Claiming, Locking, Safe Writes
 
@@ -611,6 +620,10 @@ Help and error UX note:
 - `pm restore <ID> <TIMESTAMP|VERSION>`
 - `pm config <project|global> set definition-of-done --criterion <text>`
 - `pm config <project|global> get definition-of-done`
+- `pm config <project|global> set item-format --format toon|json_markdown`
+- `pm config <project|global> get item-format`
+- `pm config <project|global> set history-missing-stream-policy --policy auto_create|strict_error`
+- `pm config <project|global> get history-missing-stream-policy`
 - `pm close <ID> <TEXT>`
 - `pm beads import [--file <path>]`
 - `pm todos import [--folder <path>]`
@@ -1182,6 +1195,7 @@ Wrapper behavior must remain aligned with CLI semantics and exit conditions.
 - `author_default`
 - `locks.ttl_seconds`
 - `output.default_format`
+- `history.missing_stream`
 - `workflow.definition_of_done[]`
 - `item_types.definitions[]` (custom type aliases/folders, required create fields/repeatables, `options[]`, and optional `command_option_policies[]`)
 - `extensions.enabled[]`
@@ -1214,6 +1228,9 @@ Default `settings.json` object written by `pm init`:
   },
   "output": {
     "default_format": "toon"
+  },
+  "history": {
+    "missing_stream": "auto_create"
   },
   "workflow": {
     "definition_of_done": []
@@ -1262,6 +1279,11 @@ Definition-of-Done config baseline:
 - `pm config global set definition-of-done --criterion <text>` replaces the global criteria list in `~/.pm-cli/settings.json` (or `PM_GLOBAL_PATH/settings.json`).
 - `pm config <project|global> get definition-of-done` returns the currently effective list for the selected scope with deterministic TOON/JSON output.
 - Empty criteria are rejected; duplicate criteria are deduplicated with lexicographic ordering.
+
+History missing-stream policy config baseline:
+
+- `pm config <project|global> set history-missing-stream-policy --policy auto_create|strict_error` updates `settings.history.missing_stream`.
+- `pm config <project|global> get history-missing-stream-policy` returns the active policy.
 
 Notes:
 

@@ -292,6 +292,75 @@ describe("runRestore", () => {
     });
   });
 
+  it("fails in strict mode when history stream is missing without auto-creating it", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createRestoreFixture(context, "Strict Missing History Item");
+      const strictSet = context.runCli(
+        ["config", "project", "set", "history-missing-stream-policy", "--policy", "strict_error", "--json"],
+        { expectJson: true },
+      );
+      expect(strictSet.code).toBe(0);
+
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      await unlink(historyPath);
+
+      await expect(runRestore(id, "1", {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.NOT_FOUND,
+      });
+      await expect(readFile(historyPath, "utf8")).rejects.toBeDefined();
+    });
+  });
+
+  it("restores an item when the item file is missing but history stream exists", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createRestoreFixture(context, "Missing Item File Restore");
+      const itemPath = path.join(context.pmPath, "tasks", `${id}.toon`);
+      await unlink(itemPath);
+      await expect(readFile(itemPath, "utf8")).rejects.toBeDefined();
+
+      const restored = await runRestore(id, "1", { author: "test-author" }, { path: context.pmPath });
+      expect(restored.item.id).toBe(id);
+      expect(restored.restored_from.history_index).toBe(1);
+
+      const get = context.runCli(["get", id, "--json"], { expectJson: true });
+      expect(get.code).toBe(0);
+      const getJson = get.json as { item: { status: string }; body: string };
+      expect(getJson.item.status).toBe(restoreCreateSeedFixture.status);
+      expect(getJson.body).toBe(restoreCreateSeedFixture.body);
+    });
+  });
+
+  it("restores a deleted item from history when target predates delete tombstone", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createRestoreFixture(context, "Deleted Item Restore");
+      const deleted = context.runCli(
+        ["delete", id, "--json", "--author", "test-author", "--message", "delete before restore recovery"],
+        { expectJson: true },
+      );
+      expect(deleted.code).toBe(0);
+
+      const restored = await runRestore(
+        id,
+        "3",
+        { author: "test-author", message: "restore deleted item from history stream" },
+        { path: context.pmPath },
+      );
+      expect(restored.item.id).toBe(id);
+      expect(restored.restored_from.history_index).toBe(3);
+
+      const get = context.runCli(["get", id, "--json"], { expectJson: true });
+      expect(get.code).toBe(0);
+      const getJson = get.json as { item: { status: string }; body: string };
+      expect(getJson.item.status).toBe("in_progress");
+      expect(getJson.body).toContain("second body section");
+
+      const history = context.runCli(["history", id, "--json"], { expectJson: true });
+      expect(history.code).toBe(0);
+      const historyJson = history.json as { history: Array<{ op: string }> };
+      expect(historyJson.history.at(-1)?.op).toBe("restore");
+    });
+  });
+
   it("fails when replay resolves to a different item id", async () => {
     await withTempPmPath(async (context) => {
       const id = createRestoreFixture(context, "Mismatched ID Item");

@@ -2,6 +2,8 @@ import jsonPatch from "fast-json-patch";
 import fs from "node:fs/promises";
 import { pathExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { appendHistoryEntry, createHistoryEntry } from "../../core/history/history.js";
+import { enforceHistoryStreamPolicyForItem } from "../../core/history/history-stream-policy.js";
+import { normalizeItemId, normalizeRawItemId } from "../../core/item/id.js";
 import { canonicalDocument, serializeItemDocument } from "../../core/item/item-format.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { acquireLock } from "../../core/lock/lock.js";
@@ -26,6 +28,13 @@ interface ResolvedRestoreTarget {
   kind: "version" | "timestamp";
   raw: string;
   historyIndex: number;
+}
+
+interface ResolvedRestoreSubject {
+  id: string;
+  historyPath: string;
+  located: Awaited<ReturnType<typeof locateItem>>;
+  historyPolicyWarnings: string[];
 }
 
 export interface RestoreCommandOptions {
@@ -59,6 +68,12 @@ function toAuthor(candidate: string | undefined, defaultAuthor: string): string 
 }
 
 function toReplayDocument(document: ItemDocument): CanonicalReplayDocument {
+  if (!document.front_matter || Object.keys(document.front_matter).length === 0) {
+    return {
+      front_matter: {},
+      body: document.body ?? "",
+    };
+  }
   const canonical = canonicalDocument(document);
   return {
     front_matter: orderObject(
@@ -196,6 +211,74 @@ function replayToTarget(history: HistoryEntry[], targetIndex: number): Canonical
   return document;
 }
 
+function ensureMaterializedRestoreTarget(
+  replayDocument: CanonicalReplayDocument,
+  target: ResolvedRestoreTarget,
+): CanonicalReplayDocument {
+  if (Object.keys(replayDocument.front_matter).length > 0) {
+    return replayDocument;
+  }
+  throw new PmCliError(
+    `Restore target ${target.raw} resolves to a deleted state; choose a version or timestamp where the item exists.`,
+    EXIT_CODE.USAGE,
+  );
+}
+
+function replayCurrentDocument(history: HistoryEntry[]): ItemDocument {
+  const currentReplay = replayToTarget(history, history.length - 1);
+  if (Object.keys(currentReplay.front_matter).length === 0) {
+    return {
+      front_matter: {} as ItemFrontMatter,
+      body: currentReplay.body,
+    };
+  }
+  return canonicalDocument({
+    front_matter: currentReplay.front_matter as unknown as ItemFrontMatter,
+    body: currentReplay.body,
+  });
+}
+
+async function resolveRestoreSubject(
+  pmRoot: string,
+  id: string,
+  settings: Awaited<ReturnType<typeof readSettings>>,
+  typeToFolder: Record<string, string>,
+): Promise<ResolvedRestoreSubject> {
+  const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeToFolder);
+  if (located) {
+    const historyPath = getHistoryPath(pmRoot, located.id);
+    const historyPolicy = await enforceHistoryStreamPolicyForItem({
+      pmRoot,
+      settings,
+      itemId: located.id,
+      commandLabel: "restore",
+    });
+    return {
+      id: located.id,
+      historyPath,
+      located,
+      historyPolicyWarnings: historyPolicy.warnings,
+    };
+  }
+
+  const normalizedId = normalizeItemId(id, settings.id_prefix);
+  const rawNormalizedId = normalizeRawItemId(id);
+  const candidateIds = normalizedId === rawNormalizedId ? [normalizedId] : [normalizedId, rawNormalizedId];
+  for (const candidateId of candidateIds) {
+    const historyPath = getHistoryPath(pmRoot, candidateId);
+    if (await pathExists(historyPath)) {
+      return {
+        id: candidateId,
+        historyPath,
+        located: null,
+        historyPolicyWarnings: [],
+      };
+    }
+  }
+
+  throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
+}
+
 function changedFields(beforeDocument: ItemDocument, afterDocument: ItemDocument): string[] {
   const beforeReplay = toReplayDocument(beforeDocument);
   const afterReplay = toReplayDocument(afterDocument);
@@ -227,27 +310,23 @@ export async function runRestore(
 
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
-  if (!located) {
-    throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
-  }
-
-  const historyPath = getHistoryPath(pmRoot, located.id);
-  const history = await readHistoryEntries(historyPath, located.id);
+  const subject = await resolveRestoreSubject(pmRoot, id, settings, typeRegistry.type_to_folder);
+  const resolvedId = subject.id;
+  const history = await readHistoryEntries(subject.historyPath, resolvedId);
   if (history.length === 0) {
-    throw new PmCliError(`No history exists for ${located.id}; restore is unavailable.`, EXIT_CODE.NOT_FOUND);
+    throw new PmCliError(`No history exists for ${resolvedId}; restore is unavailable.`, EXIT_CODE.NOT_FOUND);
   }
 
   const resolvedTarget = ensureReplayTarget(target, history);
-  const replayDocument = replayToTarget(history, resolvedTarget.historyIndex);
+  const replayDocument = ensureMaterializedRestoreTarget(replayToTarget(history, resolvedTarget.historyIndex), resolvedTarget);
   const restoredDocument = canonicalDocument({
     front_matter: replayDocument.front_matter as unknown as ItemFrontMatter,
     body: replayDocument.body,
   });
 
-  if (restoredDocument.front_matter.id !== located.id) {
+  if (restoredDocument.front_matter.id !== resolvedId) {
     throw new PmCliError(
-      `Restore target resolved to item ${restoredDocument.front_matter.id}, expected ${located.id}.`,
+      `Restore target resolved to item ${restoredDocument.front_matter.id}, expected ${resolvedId}.`,
       EXIT_CODE.GENERIC_FAILURE,
     );
   }
@@ -255,52 +334,64 @@ export async function runRestore(
   const author = toAuthor(options.author, settings.author_default);
   const releaseLock = await acquireLock(
     pmRoot,
-    located.id,
+    resolvedId,
     settings.locks.ttl_seconds,
     author,
     Boolean(options.force),
   );
 
   try {
-    const { raw: originalRaw, document: currentDocument } = await readLocatedItem(located);
-    const assigned = currentDocument.front_matter.assignee?.trim();
+    const existingItemPath = subject.located?.itemPath ?? null;
+    const itemFormat = subject.located?.item_format ?? settings.item_format;
+    let resolvedCurrentDocument: ItemDocument;
+    let resolvedOriginalRaw: string | null = null;
+    if (subject.located) {
+      const loaded = await readLocatedItem(subject.located);
+      resolvedCurrentDocument = loaded.document;
+      resolvedOriginalRaw = loaded.raw;
+    } else {
+      resolvedCurrentDocument = replayCurrentDocument(history);
+    }
+    const assigned = resolvedCurrentDocument.front_matter.assignee?.trim();
     if (assigned && assigned !== author && !options.force) {
       throw new PmCliError(
-        `Item ${located.id} is assigned to ${assigned}. Use --force to override.`,
+        `Item ${resolvedId} is assigned to ${assigned}. Use --force to override.`,
         EXIT_CODE.CONFLICT,
       );
     }
 
-    const serializedRestore = serializeItemDocument(restoredDocument, { format: located.item_format });
+    const serializedRestore = serializeItemDocument(restoredDocument, { format: itemFormat });
     const restoredItemPath = getItemPath(
       pmRoot,
       restoredDocument.front_matter.type,
-      located.id,
-      located.item_format,
+      resolvedId,
+      itemFormat,
       typeRegistry.type_to_folder,
     );
     await writeFileAtomic(restoredItemPath, serializedRestore);
-    if (restoredItemPath !== located.itemPath) {
-      await fs.rm(located.itemPath);
+    if (existingItemPath && restoredItemPath !== existingItemPath) {
+      await fs.rm(existingItemPath);
     }
 
     const historyEntry = createHistoryEntry({
       nowIso: nowIso(),
       author,
       op: "restore",
-      before: currentDocument,
+      before: resolvedCurrentDocument,
       after: restoredDocument,
       message: options.message,
     });
 
     try {
-      await appendHistoryEntry(historyPath, historyEntry);
+      await appendHistoryEntry(subject.historyPath, historyEntry);
     } catch (error: unknown) {
-      if (restoredItemPath !== located.itemPath) {
-        await writeFileAtomic(located.itemPath, originalRaw);
+      if (existingItemPath && resolvedOriginalRaw !== null && restoredItemPath !== existingItemPath) {
+        await writeFileAtomic(existingItemPath, resolvedOriginalRaw);
         await fs.rm(restoredItemPath, { force: true });
+      } else if (existingItemPath && resolvedOriginalRaw !== null) {
+        await writeFileAtomic(existingItemPath, resolvedOriginalRaw);
       } else {
-        await writeFileAtomic(located.itemPath, originalRaw);
+        await fs.rm(restoredItemPath, { force: true });
       }
       throw error;
     }
@@ -311,7 +402,7 @@ export async function runRestore(
         op: "restore",
       })),
       ...(await runActiveOnWriteHooks({
-        path: historyPath,
+        path: subject.historyPath,
         scope: "project",
         op: "restore:history",
       })),
@@ -327,8 +418,8 @@ export async function runRestore(
         entry_ts: targetEntry.ts,
         entry_op: targetEntry.op,
       },
-      changed_fields: changedFields(currentDocument, restoredDocument),
-      warnings: hookWarnings,
+      changed_fields: changedFields(resolvedCurrentDocument, restoredDocument),
+      warnings: [...subject.historyPolicyWarnings, ...hookWarnings],
     };
   } finally {
     await releaseLock();

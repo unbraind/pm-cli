@@ -49,6 +49,7 @@ export default defineConfig({
         "src/core/fs/fs-utils.ts",
         "src/core/fs/index.ts",
         "src/core/history/history.ts",
+        "src/core/history/history-stream-policy.ts",
         "src/core/history/index.ts",
         "src/core/item/id.ts",
         "src/core/item/item-format.ts",
