@@ -126,6 +126,14 @@ export interface ItemTypeOptionDefinition {
   description?: string;
 }
 
+export interface ItemTypeCommandOptionPolicy {
+  command: "create" | "update";
+  option: string;
+  required?: boolean;
+  visible?: boolean;
+  enabled?: boolean;
+}
+
 export interface ItemTypeDefinition {
   name: string;
   folder?: string;
@@ -133,6 +141,7 @@ export interface ItemTypeDefinition {
   required_create_fields?: string[];
   required_create_repeatables?: string[];
   options?: ItemTypeOptionDefinition[];
+  command_option_policies?: ItemTypeCommandOptionPolicy[];
 }
 
 export interface ItemFrontMatter {

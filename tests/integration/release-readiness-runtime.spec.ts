@@ -316,6 +316,20 @@ describe("release readiness runtime coverage", () => {
       expect(help.stdout).not.toContain("Seed linked file entry (required; use none for empty) (default: [])");
       expect(help.stdout).not.toContain("Seed linked test entry (required; use none for empty) (default: [])");
       expect(help.stdout).not.toContain("Seed linked doc entry (required; use none for empty) (default: [])");
+      expect(help.stdout).toContain("Type-aware option policies:");
+      expect(help.stdout).toContain("pass --type <value> with --help");
+    });
+  });
+
+  it("renders type-aware option policy details in create help when --type is provided", async () => {
+    await withTempPmPath(async (context) => {
+      const help = context.runCli(["create", "--help", "--type", "Task"]);
+      expect(help.code).toBe(0);
+      expect(help.stdout).toContain("Type-aware option policies for Task:");
+      expect(help.stdout).toContain("required:");
+      expect(help.stdout).toContain("--message");
+      expect(help.stdout).toContain("disabled:");
+      expect(help.stdout).toContain("hidden:");
     });
   });
 

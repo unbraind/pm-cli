@@ -4,7 +4,11 @@ import { generateItemId, normalizeItemId } from "../../core/item/id.js";
 import { canonicalDocument, normalizeFrontMatter, serializeItemDocument } from "../../core/item/item-format.js";
 import { parseCsvKv, parseOptionalNumber, parseTags } from "../../core/item/parse.js";
 import {
+  canonicalizeCommandOptionKey,
+  commandOptionFlagLabel,
   resolveItemTypeRegistry,
+  resolveCommandOptionPolicyState,
+  type ResolvedItemTypeDefinition,
   resolveTypeDefinition,
   resolveTypeName,
   validateTypeOptions,
@@ -499,43 +503,52 @@ function buildHistoryMessage(baseMessage: string | undefined, explicitUnsets: st
   return trimmed ? `${trimmed} | ${suffix}` : suffix;
 }
 
-const CREATE_FIELD_FLAG_BY_KEY: Record<string, string> = {
-  title: "--title",
-  description: "--description",
-  type: "--type",
-  status: "--status",
-  priority: "--priority",
-  tags: "--tags",
-  body: "--body",
-  deadline: "--deadline",
-  estimatedMinutes: "--estimate/--estimated-minutes",
-  acceptanceCriteria: "--acceptance-criteria/--ac",
-  author: "--author",
-  message: "--message",
-  assignee: "--assignee",
-};
-
-const CREATE_REPEATABLE_FLAG_BY_KEY: Record<string, string> = {
-  dep: "--dep",
-  comment: "--comment",
-  note: "--note",
-  learning: "--learning",
-  file: "--file",
-  test: "--test",
-  doc: "--doc",
-  reminder: "--reminder",
-  event: "--event",
-  typeOption: "--type-option",
-};
-
-const CREATE_FIELD_KEY_ALIASES: Record<string, string> = {
+const CREATE_OPTION_KEY_ALIASES: Record<string, string> = {
+  "definition-of-ready": "definitionOfReady",
+  definition_of_ready: "definitionOfReady",
+  "why-now": "whyNow",
+  why_now: "whyNow",
+  "blocked-by": "blockedBy",
+  blocked_by: "blockedBy",
+  "blocked-reason": "blockedReason",
+  blocked_reason: "blockedReason",
+  "unblock-note": "unblockNote",
+  unblock_note: "unblockNote",
+  "repro-steps": "reproSteps",
+  repro_steps: "reproSteps",
+  "expected-result": "expectedResult",
+  expected_result: "expectedResult",
+  "actual-result": "actualResult",
+  actual_result: "actualResult",
+  "affected-version": "affectedVersion",
+  affected_version: "affectedVersion",
+  "fixed-version": "fixedVersion",
+  fixed_version: "fixedVersion",
+  "customer-impact": "customerImpact",
+  customer_impact: "customerImpact",
+  "type-option": "typeOption",
+  type_option: "typeOption",
   estimated_minutes: "estimatedMinutes",
+  "estimated-minutes": "estimatedMinutes",
+  estimate: "estimatedMinutes",
+  "acceptance-criteria": "acceptanceCriteria",
   acceptance_criteria: "acceptanceCriteria",
-};
-
-const CREATE_REPEATABLE_KEY_ALIASES: Record<string, string> = {
+  ac: "acceptanceCriteria",
+  rank: "order",
   type_options: "typeOption",
 };
+
+function normalizeCreatePolicyOptionKey(raw: string, typeName: string, sourceLabel: string): string {
+  const candidate = CREATE_OPTION_KEY_ALIASES[raw] ?? raw;
+  const canonical = canonicalizeCommandOptionKey("create", candidate);
+  if (!canonical) {
+    throw new PmCliError(
+      `Unsupported ${sourceLabel} entry "${raw}" for type "${typeName}"`,
+      EXIT_CODE.CONFLICT,
+    );
+  }
+  return canonical;
+}
 
 function parseTypeOptions(raw: string[] | undefined): { values: Record<string, string> | undefined; explicitEmpty: boolean } {
   if (!raw || raw.length === 0) {
@@ -582,12 +595,8 @@ function parseTypeOptions(raw: string[] | undefined): { values: Record<string, s
   };
 }
 
-function requireCreateOptionByType(
-  typeName: string,
-  options: CreateCommandOptions,
-  requiredFields: string[],
-  requiredRepeatables: string[],
-): void {
+function requireCreateOptionByType(typeDefinition: ResolvedItemTypeDefinition, options: CreateCommandOptions): void {
+  const typeName = typeDefinition.name;
   const scalarValues: Record<string, unknown> = {
     title: options.title,
     description: options.description,
@@ -599,9 +608,38 @@ function requireCreateOptionByType(
     deadline: options.deadline,
     estimatedMinutes: options.estimatedMinutes,
     acceptanceCriteria: options.acceptanceCriteria,
+    definitionOfReady: options.definitionOfReady,
+    order: options.order ?? options.rank,
+    goal: options.goal,
+    objective: options.objective,
+    value: options.value,
+    impact: options.impact,
+    outcome: options.outcome,
+    whyNow: options.whyNow,
     author: options.author,
     message: options.message,
     assignee: options.assignee,
+    parent: options.parent,
+    reviewer: options.reviewer,
+    risk: options.risk,
+    confidence: options.confidence,
+    sprint: options.sprint,
+    release: options.release,
+    blockedBy: options.blockedBy,
+    blockedReason: options.blockedReason,
+    unblockNote: options.unblockNote,
+    reporter: options.reporter,
+    severity: options.severity,
+    environment: options.environment,
+    reproSteps: options.reproSteps,
+    resolution: options.resolution,
+    expectedResult: options.expectedResult,
+    actualResult: options.actualResult,
+    affectedVersion: options.affectedVersion,
+    fixedVersion: options.fixedVersion,
+    component: options.component,
+    regression: options.regression,
+    customerImpact: options.customerImpact,
   };
   const repeatableValues: Record<string, unknown> = {
     dep: options.dep,
@@ -616,31 +654,45 @@ function requireCreateOptionByType(
     typeOption: options.typeOption,
   };
 
-  for (const field of requiredFields) {
-    const normalizedField = CREATE_FIELD_KEY_ALIASES[field] ?? field;
-    const flag = CREATE_FIELD_FLAG_BY_KEY[normalizedField];
-    if (!flag) {
-      throw new PmCliError(
-        `Unsupported required_create_fields entry "${field}" for type "${typeName}"`,
-        EXIT_CODE.CONFLICT,
-      );
+  const hasOptionValue = (optionKey: string): boolean => {
+    if (optionKey in scalarValues) {
+      return scalarValues[optionKey] !== undefined;
     }
-    if (scalarValues[normalizedField] === undefined) {
-      throw new PmCliError(`Missing required option ${flag} for type "${typeName}"`, EXIT_CODE.USAGE);
+    if (optionKey in repeatableValues) {
+      const value = repeatableValues[optionKey];
+      return Array.isArray(value) && value.length > 0;
+    }
+    return false;
+  };
+
+  const baseRequiredOptions = new Set<string>(["title", "description", "type"]);
+  for (const field of typeDefinition.required_create_fields) {
+    baseRequiredOptions.add(normalizeCreatePolicyOptionKey(field, typeName, "required_create_fields"));
+  }
+  for (const field of typeDefinition.required_create_repeatables) {
+    baseRequiredOptions.add(normalizeCreatePolicyOptionKey(field, typeName, "required_create_repeatables"));
+  }
+
+  const policyState = resolveCommandOptionPolicyState(typeDefinition, "create", baseRequiredOptions);
+  if (policyState.errors.length > 0) {
+    throw new PmCliError(policyState.errors.join("; "), EXIT_CODE.CONFLICT);
+  }
+
+  for (const option of policyState.disabled) {
+    if (hasOptionValue(option)) {
+      throw new PmCliError(
+        `Option ${commandOptionFlagLabel("create", option)} is disabled for type "${typeName}" by command_option_policies`,
+        EXIT_CODE.USAGE,
+      );
     }
   }
-  for (const field of requiredRepeatables) {
-    const normalizedField = CREATE_REPEATABLE_KEY_ALIASES[field] ?? field;
-    const flag = CREATE_REPEATABLE_FLAG_BY_KEY[normalizedField];
-    if (!flag) {
+
+  for (const option of policyState.required) {
+    if (!hasOptionValue(option)) {
       throw new PmCliError(
-        `Unsupported required_create_repeatables entry "${field}" for type "${typeName}"`,
-        EXIT_CODE.CONFLICT,
+        `Missing required option ${commandOptionFlagLabel("create", option)} for type "${typeName}"`,
+        EXIT_CODE.USAGE,
       );
-    }
-    const value = repeatableValues[normalizedField];
-    if (!Array.isArray(value) || value.length === 0) {
-      throw new PmCliError(`Missing required repeatable option ${flag} for type "${typeName}"`, EXIT_CODE.USAGE);
     }
   }
 }
@@ -691,12 +743,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   if (!typeDefinition) {
     throw new PmCliError(`Invalid type value "${options.type}"`, EXIT_CODE.USAGE);
   }
-  requireCreateOptionByType(
-    typeDefinition.name,
-    options,
-    typeDefinition.required_create_fields,
-    typeDefinition.required_create_repeatables,
-  );
+  requireCreateOptionByType(typeDefinition, options);
   const nowValue = nowIso();
   const author = selectAuthor(options.author, settings.author_default);
   const explicitUnsets: string[] = [];

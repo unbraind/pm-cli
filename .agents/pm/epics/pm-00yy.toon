@@ -1,0 +1,40 @@
+id: pm-00yy
+title: Configurable option policies for core commands
+description: "Add settings/extension-driven mandatory, visible, and enabled option controls for create/update help and errors with backward-safe defaults."
+type: Epic
+status: closed
+priority: 0
+tags[4]: agent-ux,"area:cli","area:schema",pm-cli
+created_at: "2026-04-01T01:39:03.952Z"
+updated_at: "2026-04-01T01:58:22.511Z"
+deadline: "2026-04-15T01:39:03.952Z"
+author: codex-agent
+estimated_minutes: 480
+acceptance_criteria: Core create/update support type policy for required/visible/enabled options; help/error guidance maps active policies; default behavior unchanged; tests/docs updated.
+definition_of_ready: Requirements and compatibility guardrails are documented.
+order: 1
+goal: Customizable workflows
+objective: Expose policy-driven option contracts safely
+value: Reduces repeated option misuse loops
+impact: Improves reliability without breaking defaults
+outcome: Policy-aware option UX across create/update
+why_now: Teams need per-domain option policies beyond type/value baselines
+risk: medium
+confidence: high
+component: cli/options
+customer_impact: "Improves agent and user command success rates with clearer, policy-aware UX."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-r15d,discovered_from,"2026-04-01T01:39:03.952Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T01:39:03.952Z",codex-agent,Follow-up scope extends pm-r15d with option visibility and enablement controls.
+  "2026-04-01T01:58:21.515Z",codex-agent,"Follow-up epic delivered via pm-5bwo: command_option_policies model, policy-aware help/error surfaces, and extension metadata markers shipped with docs/tests updates."
+notes[1]{created_at,author,text}:
+  "2026-04-01T01:39:03.952Z",codex-agent,Compatibility-first rollout must preserve default behavior and help contracts.
+files[1]{path,scope,note}:
+  src/cli/main.ts,project,core command/help surface
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,2400,full regression baseline
+docs[1]{path,scope,note}:
+  PRD.md,project,contract alignment
+close_reason: Follow-up option-policy epic completed
+body: Follow-up to pm-r15d for option policy controls on core command UX.

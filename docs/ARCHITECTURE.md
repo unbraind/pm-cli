@@ -157,6 +157,8 @@ Type resolution is centralized in the runtime type registry:
 
 The registry is used by create/update validation, list/search/calendar type filters, completion scripts, and store path routing.
 
+Type definitions can additionally provide `command_option_policies` entries (`create`/`update`) to mark options as required, disabled, or hidden in policy-aware help guidance while preserving default behavior when unset.
+
 Scheduling metadata is persisted directly in item front matter:
 
 - `reminders?: Array<{ at: ISO timestamp; text: string }>`
@@ -282,7 +284,7 @@ Weights are configurable via `settings.json` under `search.tuning`.
 | `item_format` | Item storage format: `toon` (default) or `json_markdown` |
 | `locks.ttl_seconds` | Lock TTL (default 1800) |
 | `output.default_format` | `toon` or `json` |
-| `item_types.definitions[]` | Custom type names, aliases, folders, required fields/repeatables, and `--type-option` definitions |
+| `item_types.definitions[]` | Custom type names, aliases, folders, required fields/repeatables, `--type-option` definitions, and `command_option_policies` (`required`/`enabled`/`visible`) |
 | `search.*` | Search provider and tuning settings |
 | `providers.openai` / `providers.ollama` | Embedding provider config |
 | `vector_store.qdrant` / `vector_store.lancedb` | Vector store config |

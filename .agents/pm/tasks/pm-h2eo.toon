@@ -1,0 +1,41 @@
+id: pm-h2eo
+title: Align extension metadata and completion/wrapper parity
+description: Wire option-policy metadata through extension registration surfaces and keep completion and Pi wrapper behavior aligned.
+type: Task
+status: closed
+priority: 2
+tags[4]: "area:extensions","area:ux",code,pm-cli
+created_at: "2026-04-01T01:40:02.062Z"
+updated_at: "2026-04-01T01:52:45.184Z"
+deadline: "2026-04-09T01:40:02.062Z"
+author: codex-agent
+estimated_minutes: 160
+acceptance_criteria: Extension metadata paths support policy-aware help semantics and completion/Pi wrapper remain consistent with command behavior.
+definition_of_ready: Extension and completion surfaces are mapped.
+order: 5
+goal: Customizable workflows
+objective: Keep extension and tooling parity
+value: Prevents drift between help completion and runtime behavior
+impact: Improves trust in command guidance
+outcome: Consistent policy-aware tooling experience
+why_now: New policy metadata must be reflected across extension and automation surfaces
+parent: pm-5bwo
+risk: medium
+confidence: medium
+component: extensions/tooling
+customer_impact: Improves discoverability and consistency across extension and tooling paths.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-5bwo,parent,"2026-04-01T01:40:02.062Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T01:40:02.062Z",codex-agent,Task covers extension metadata handling and completion plus Pi wrapper parity.
+  "2026-04-01T01:52:43.746Z",codex-agent,Extended dynamic extension flag help metadata to support required/disabled markers and hidden visibility behavior; verified with integration coverage.
+notes[1]{created_at,author,text}:
+  "2026-04-01T01:40:02.062Z",codex-agent,Prefer additive behavior to avoid breaking existing extension contracts.
+files[1]{path,scope,note}:
+  src/core/extensions/loader.ts,project,extension registration metadata
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/completion-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,2400,extension and tooling parity regression
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,extension policy metadata documentation
+close_reason: Extension metadata and tooling parity updates implemented
+body: Ensures extension-facing metadata and user tooling remain coherent with policy-driven option behavior.

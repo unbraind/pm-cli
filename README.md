@@ -137,6 +137,12 @@ From there, use `pm update`, `pm comments`, `pm files`, `pm test`, `pm search`, 
         "aliases": ["assets", "3d-asset"],
         "required_create_fields": ["title", "description", "status", "priority", "message"],
         "required_create_repeatables": [],
+        "command_option_policies": [
+          { "command": "create", "option": "severity", "enabled": false },
+          { "command": "create", "option": "reporter", "enabled": false },
+          { "command": "create", "option": "goal", "visible": false },
+          { "command": "update", "option": "message", "required": true }
+        ],
         "options": [
           {
             "key": "category",
@@ -174,6 +180,12 @@ pm update pm-a1b2 --type-option category=Character --type-option pipeline=Riggin
 
 `--type-option` accepts `key=value` and `key=<name>,value=<value>` formats, and can be cleared with `none`.
 
+`command_option_policies` lets each type mark create/update options as:
+
+- `required: true|false` (mandatory or optional)
+- `enabled: true|false` (accepted or rejected at runtime)
+- `visible: true|false` (shown or hidden in policy-aware help guidance)
+
 ### Improved required `--type` guidance
 
 When `--type` is missing, usage output now includes:
@@ -181,6 +193,8 @@ When `--type` is missing, usage output now includes:
 - why `--type` is required
 - allowed values from the active runtime type registry
 - concrete `pm create` examples (including custom-type usage)
+
+For `pm create --help` and `pm update --help`, add `--type <value>` to render type-aware policy details (required/disabled/hidden option lists) from active settings/extensions.
 
 ## Calendar, Reminders, and Events
 

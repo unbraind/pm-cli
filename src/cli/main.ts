@@ -61,7 +61,12 @@ import {
   type ExtensionRendererRegistry,
 } from "../core/extensions/index.js";
 import { pathExists } from "../core/fs/fs-utils.js";
-import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
+import {
+  commandOptionFlagLabel,
+  resolveCommandOptionPolicyState,
+  resolveItemTypeRegistry,
+  resolveTypeDefinition,
+} from "../core/item/type-registry.js";
 import { refreshSearchArtifactsForMutation } from "../core/search/cache.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -118,7 +123,15 @@ function toNonEmptyFlagString(value: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function toOptionalBoolean(value: unknown): boolean | undefined {
+  return typeof value === "boolean" ? value : undefined;
+}
+
 function formatDynamicExtensionFlagHelpLine(definition: Record<string, unknown>): string | null {
+  const visible = toOptionalBoolean(definition.visible);
+  if (visible === false) {
+    return null;
+  }
   const longName = toNonEmptyFlagString(definition.long);
   if (!longName || !longName.startsWith("--") || longName.length < 3) {
     return null;
@@ -129,7 +142,15 @@ function formatDynamicExtensionFlagHelpLine(definition: Record<string, unknown>)
   const valueName = toNonEmptyFlagString(definition.value_name);
   const valueSuffix = valueName ? ` <${valueName}>` : "";
   const description = toNonEmptyFlagString(definition.description) ?? "Extension-provided option.";
-  return `${shortPrefix}${longName}${valueSuffix}  ${description}`;
+  const markers: string[] = [];
+  if (toOptionalBoolean(definition.required) === true) {
+    markers.push("required");
+  }
+  if (toOptionalBoolean(definition.enabled) === false) {
+    markers.push("disabled");
+  }
+  const markerSuffix = markers.length > 0 ? ` [${markers.join(", ")}]` : "";
+  return `${shortPrefix}${longName}${valueSuffix}  ${description}${markerSuffix}`;
 }
 
 function buildDynamicExtensionFlagHelp(definitions: Array<Record<string, unknown>>): string | null {
@@ -274,6 +295,110 @@ function parseBootstrapGlobalOptions(argv: string[]): { path?: string; noExtensi
     path: pathValue,
     noExtensions,
   };
+}
+
+function parseBootstrapCommandName(argv: string[]): string | undefined {
+  for (let index = 0; index < argv.length; index += 1) {
+    const token = argv[index];
+    if (token === "--") {
+      break;
+    }
+    if (token === "--path") {
+      index += 1;
+      continue;
+    }
+    if (token.startsWith("--path=") || token === "--json" || token === "--quiet" || token === "--no-extensions" || token === "--profile") {
+      continue;
+    }
+    if (token.startsWith("-")) {
+      continue;
+    }
+    return token.trim().toLowerCase();
+  }
+  return undefined;
+}
+
+function parseBootstrapTypeValue(argv: string[]): string | undefined {
+  for (let index = 0; index < argv.length; index += 1) {
+    const token = argv[index];
+    if (token === "--type") {
+      const candidate = argv[index + 1];
+      if (typeof candidate === "string" && candidate.trim().length > 0) {
+        return candidate.trim();
+      }
+      continue;
+    }
+    if (token.startsWith("--type=")) {
+      const candidate = token.slice("--type=".length).trim();
+      if (candidate.length > 0) {
+        return candidate;
+      }
+    }
+  }
+  return undefined;
+}
+
+function buildCreateUpdatePolicyHelpText(
+  commandName: "create" | "update",
+  typeRegistry: ReturnType<typeof resolveItemTypeRegistry>,
+  argv: string[],
+): string {
+  const selectedTypeRaw = parseBootstrapTypeValue(argv);
+  if (!selectedTypeRaw) {
+    const allowed = typeRegistry.types.join("|");
+    return [
+      "",
+      "Type-aware option policies:",
+      "  pass --type <value> with --help to render required/disabled/hidden option policy details for that type.",
+      `  active type values: ${allowed}`,
+    ].join("\n");
+  }
+
+  const typeDefinition = resolveTypeDefinition(selectedTypeRaw, typeRegistry);
+  if (!typeDefinition) {
+    const allowed = typeRegistry.types.join("|");
+    return [
+      "",
+      `Type-aware option policies: type "${selectedTypeRaw}" is not in the active registry.`,
+      `  active type values: ${allowed}`,
+    ].join("\n");
+  }
+
+  const baseRequired =
+    commandName === "create"
+      ? new Set<string>(["title", "description", "type", ...typeDefinition.required_create_fields, ...typeDefinition.required_create_repeatables])
+      : new Set<string>();
+  const policyState = resolveCommandOptionPolicyState(typeDefinition, commandName, baseRequired);
+  const toFlags = (options: string[]): string =>
+    options.length > 0 ? options.map((option) => commandOptionFlagLabel(commandName, option)).join(", ") : "none";
+
+  const lines = [
+    "",
+    `Type-aware option policies for ${typeDefinition.name}:`,
+    `  required: ${toFlags(policyState.required)}`,
+    `  disabled: ${toFlags(policyState.disabled)}`,
+    `  hidden: ${toFlags(policyState.hidden)}`,
+  ];
+  if (policyState.errors.length > 0) {
+    lines.push(`  config errors: ${policyState.errors.join("; ")}`);
+  }
+  return lines.join("\n");
+}
+
+function attachCreateUpdatePolicyHelpText(
+  rootProgram: Command,
+  typeRegistry: ReturnType<typeof resolveItemTypeRegistry>,
+  argv: string[],
+): void {
+  const bootstrapCommand = parseBootstrapCommandName(argv);
+  if (bootstrapCommand !== "create" && bootstrapCommand !== "update") {
+    return;
+  }
+  const command = findDirectChildCommand(rootProgram, bootstrapCommand);
+  if (!command) {
+    return;
+  }
+  command.addHelpText("after", buildCreateUpdatePolicyHelpText(bootstrapCommand, typeRegistry, argv));
 }
 
 interface ActiveExtensionHookContext {
@@ -700,6 +825,8 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command): Promi
       .filter((entry) => entry.length > 0)
       .sort((left, right) => left.localeCompare(right));
     commandFlagHelp = collectDynamicExtensionFlagHelpByCommand(activationResult.registrations.flags);
+    const typeRegistry = resolveItemTypeRegistry(settings, activationResult.registrations);
+    attachCreateUpdatePolicyHelpText(rootProgram, typeRegistry, process.argv.slice(2));
   } catch {
     return;
   }
@@ -1912,8 +2039,10 @@ async function formatCommanderUsageMessage(error: unknown): Promise<string> {
   return [
     message,
     "Why this option is required: --type selects which item contract and folder routing rules are applied.",
+    "Type policy note: settings/extensions can further mark create/update options as required, disabled, or hidden per type.",
     `Allowed values: ${allowedTypes}`,
     'Example: pm create --title "Asset: Forest Map" --description "Track 3D map asset" --type Asset',
+    'Example: pm create --title "Hero character" --description "Track playable model asset" --type Asset --type-option category=Character',
     'Example: pm create --title "Fix auth" --description "Resolve refresh bug" --type Task --status in_progress --priority 1',
   ].join("\n");
 }

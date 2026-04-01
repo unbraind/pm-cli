@@ -4,7 +4,12 @@ import { SETTINGS_DEFAULTS } from "../shared/constants.js";
 import { readFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
 import { getSettingsPath } from "./paths.js";
 import { orderObject } from "../shared/serialization.js";
-import type { ItemTypeDefinition, ItemTypeOptionDefinition, PmSettings } from "../../types/index.js";
+import type {
+  ItemTypeCommandOptionPolicy,
+  ItemTypeDefinition,
+  ItemTypeOptionDefinition,
+  PmSettings,
+} from "../../types/index.js";
 
 const itemTypeOptionSchema = z.object({
   key: z.string(),
@@ -14,6 +19,14 @@ const itemTypeOptionSchema = z.object({
   description: z.string().optional(),
 });
 
+const itemTypeCommandOptionPolicySchema = z.object({
+  command: z.union([z.literal("create"), z.literal("update")]),
+  option: z.string(),
+  required: z.boolean().optional(),
+  visible: z.boolean().optional(),
+  enabled: z.boolean().optional(),
+});
+
 const itemTypeDefinitionSchema = z.object({
   name: z.string(),
   folder: z.string().optional(),
@@ -21,6 +34,7 @@ const itemTypeDefinitionSchema = z.object({
   required_create_fields: z.array(z.string()).optional(),
   required_create_repeatables: z.array(z.string()).optional(),
   options: z.array(itemTypeOptionSchema).optional(),
+  command_option_policies: z.array(itemTypeCommandOptionPolicySchema).optional(),
 });
 
 const settingsSchema = z.object({
@@ -124,6 +138,22 @@ function normalizeItemTypeOptionDefinition(option: ItemTypeOptionDefinition): It
   };
 }
 
+function normalizeItemTypeCommandOptionPolicy(
+  policy: ItemTypeCommandOptionPolicy,
+): ItemTypeCommandOptionPolicy | null {
+  const option = policy.option.trim();
+  if (option.length === 0) {
+    return null;
+  }
+  return {
+    command: policy.command,
+    option,
+    required: policy.required,
+    visible: policy.visible,
+    enabled: policy.enabled,
+  };
+}
+
 function normalizeItemTypeDefinition(definition: ItemTypeDefinition): ItemTypeDefinition | null {
   const name = definition.name.trim();
   if (name.length === 0) {
@@ -132,6 +162,7 @@ function normalizeItemTypeDefinition(definition: ItemTypeDefinition): ItemTypeDe
   const hasRequiredCreateFields = definition.required_create_fields !== undefined;
   const hasRequiredCreateRepeatables = definition.required_create_repeatables !== undefined;
   const hasOptions = definition.options !== undefined;
+  const hasCommandOptionPolicies = definition.command_option_policies !== undefined;
   const folder = definition.folder?.trim();
   const aliases = normalizeStringList(definition.aliases);
   const requiredCreateFields = normalizeStringList(definition.required_create_fields);
@@ -140,6 +171,21 @@ function normalizeItemTypeDefinition(definition: ItemTypeDefinition): ItemTypeDe
     .map((option) => normalizeItemTypeOptionDefinition(option))
     .filter((option): option is ItemTypeOptionDefinition => option !== null)
     .sort((left, right) => left.key.localeCompare(right.key));
+  const commandOptionPolicies = (() => {
+    const dedupedByKey = new Map<string, ItemTypeCommandOptionPolicy>();
+    for (const policy of definition.command_option_policies ?? []) {
+      const normalized = normalizeItemTypeCommandOptionPolicy(policy);
+      if (!normalized) {
+        continue;
+      }
+      dedupedByKey.set(`${normalized.command}:${normalized.option.toLowerCase()}`, normalized);
+    }
+    return [...dedupedByKey.values()].sort((left, right) =>
+      left.command === right.command
+        ? left.option.localeCompare(right.option)
+        : left.command.localeCompare(right.command),
+    );
+  })();
   return {
     name,
     folder: folder && folder.length > 0 ? folder : undefined,
@@ -147,6 +193,7 @@ function normalizeItemTypeDefinition(definition: ItemTypeDefinition): ItemTypeDe
     required_create_fields: hasRequiredCreateFields ? requiredCreateFields : undefined,
     required_create_repeatables: hasRequiredCreateRepeatables ? requiredCreateRepeatables : undefined,
     options: hasOptions ? options : undefined,
+    command_option_policies: hasCommandOptionPolicies ? commandOptionPolicies : undefined,
   };
 }
 

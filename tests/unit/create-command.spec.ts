@@ -1019,6 +1019,127 @@ describe("runCreate", () => {
     });
   });
 
+  it("enforces create command_option_policies required and disabled options for custom types", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        item_types?: { definitions?: Array<Record<string, unknown>> };
+      };
+      settings.item_types = {
+        definitions: [
+          {
+            name: "Asset",
+            folder: "assets",
+            required_create_fields: [],
+            required_create_repeatables: [],
+            command_option_policies: [
+              { command: "create", option: "message", required: true },
+              { command: "create", option: "severity", enabled: false },
+              { command: "create", option: "goal", visible: false },
+            ],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const missingMessage = baseCreateOptions({
+        type: "Asset",
+        message: undefined,
+      });
+      await expect(runCreate(missingMessage, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--message"),
+      });
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            type: "Asset",
+            severity: "high",
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--severity"),
+      });
+
+      const created = await runCreate(
+        baseCreateOptions({
+          type: "Asset",
+          message: "create asset policy-compliant item",
+          severity: undefined,
+        }),
+        { path: context.pmPath },
+      );
+      expect(created.item.type).toBe("Asset");
+      expect(created.item.severity).toBeUndefined();
+    });
+  });
+
+  it("rejects create policies that make an option required and disabled", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        item_types?: { definitions?: Array<Record<string, unknown>> };
+      };
+      settings.item_types = {
+        definitions: [
+          {
+            name: "Asset",
+            required_create_fields: [],
+            required_create_repeatables: [],
+            command_option_policies: [
+              { command: "create", option: "message", required: true, enabled: false },
+            ],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            type: "Asset",
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.CONFLICT });
+    });
+  });
+
+  it("rejects unsupported create command_option_policies option keys", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        item_types?: { definitions?: Array<Record<string, unknown>> };
+      };
+      settings.item_types = {
+        definitions: [
+          {
+            name: "Asset",
+            required_create_fields: [],
+            required_create_repeatables: [],
+            command_option_policies: [{ command: "create", option: "not_real_option", required: true }],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            type: "Asset",
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.CONFLICT,
+        message: expect.stringContaining("command_option_policies"),
+      });
+    });
+  });
+
   it("rolls back item write if history append fails", async () => {
     await withTempPmPath(async (context) => {
       const tasksDir = path.join(context.pmPath, "tasks");

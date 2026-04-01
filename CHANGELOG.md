@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added calendar source and recurrence controls: `--include`, `--recurrence-lookahead-days`, `--recurrence-lookback-days`, and `--occurrence-limit`.
 - Added runtime-configurable item type registry support: `settings.item_types.definitions` plus extension `registerItemTypes(...)` registrations now drive allowed type values, aliases, per-type required create fields/repeatables, option schemas, and type folder routing.
 - Added `--type-option` / `--type_option` support on `pm create` and `pm update` for validated per-type metadata (`key=value` or `key=<name>,value=<value>`, with `none` clear semantics).
+- Added per-type `command_option_policies` support (settings + extension item-type registrations) for `create`/`update` option-level `required`, `enabled`, and `visible` behavior controls.
+- Added type-aware help policy sections for `pm create --help` / `pm update --help` when `--type <value>` is supplied, including required/disabled/hidden option summaries from active settings/extensions.
 
 ### Changed
 - Default `list*` output remains front-matter-only; `body` projection is now explicit and opt-in via `--include-body` to preserve lightweight list payloads.
@@ -23,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Calendar markdown summaries now include scheduled-event counts and event rendering includes recurring/location metadata where present.
 - Type validation/filtering/completion now resolve from the runtime registry across create/update/list/search/calendar/completion/init/health/storage paths while preserving built-in defaults when no custom type config exists.
 - Commander required-option UX for missing `--type` now includes rationale, active allowed values, and concrete fix examples.
+- Dynamic extension command help now supports `registerFlags` policy metadata (`required`, `enabled`, `visible`) with additive markers and hidden-flag suppression.
 
 ## [2026.3.12] - 2026-03-12
 

@@ -97,6 +97,106 @@ describe("runUpdate", () => {
     });
   });
 
+  it("enforces update command_option_policies required and disabled options", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        item_types?: { definitions?: Array<Record<string, unknown>> };
+      };
+      settings.item_types = {
+        definitions: [
+          {
+            name: "Asset",
+            folder: "assets",
+            required_create_fields: [],
+            required_create_repeatables: [],
+            command_option_policies: [
+              { command: "update", option: "message", required: true },
+              { command: "update", option: "goal", enabled: false },
+            ],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const id = createTask(context, "update-policy-seed");
+
+      await expect(
+        runUpdate(
+          id,
+          {
+            type: "Asset",
+            status: "in_progress",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--message"),
+      });
+
+      await expect(
+        runUpdate(
+          id,
+          {
+            type: "Asset",
+            goal: "forbidden-goal",
+            message: "attempt disabled goal option",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--goal"),
+      });
+
+      const updated = await runUpdate(
+        id,
+        {
+          type: "Asset",
+          status: "in_progress",
+          message: "apply update policy compliant change",
+        },
+        { path: context.pmPath },
+      );
+      expect((updated.item as Record<string, unknown>).type).toBe("Asset");
+      expect((updated.item as Record<string, unknown>).status).toBe("in_progress");
+    });
+  });
+
+  it("rejects unsupported update command_option_policies option keys", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        item_types?: { definitions?: Array<Record<string, unknown>> };
+      };
+      settings.item_types = {
+        definitions: [
+          {
+            name: "Task",
+            command_option_policies: [{ command: "update", option: "not_real_option", enabled: false }],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const id = createTask(context, "update-policy-invalid-option");
+      await expect(
+        runUpdate(
+          id,
+          {
+            status: "in_progress",
+            message: "trigger policy validation",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.CONFLICT,
+        message: expect.stringContaining("command_option_policies"),
+      });
+    });
+  });
+
   it("updates scalar fields with valid values", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-explicit-values");

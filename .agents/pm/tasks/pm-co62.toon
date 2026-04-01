@@ -1,0 +1,41 @@
+id: pm-co62
+title: Enforce option policies in create/update and help errors
+description: Apply resolved option policies to create/update validation and improve required and disabled option guidance in command error output.
+type: Task
+status: closed
+priority: 1
+tags[4]: agent-ux,"area:cli",code,pm-cli
+created_at: "2026-04-01T01:39:45.534Z"
+updated_at: "2026-04-01T01:52:42.335Z"
+deadline: "2026-04-08T01:39:45.534Z"
+author: codex-agent
+estimated_minutes: 220
+acceptance_criteria: Create/update reject disabled options and enforce required options by type policy; error output is actionable and policy-aware.
+definition_of_ready: Validation and help code paths are identified.
+order: 4
+goal: Customizable workflows
+objective: Apply policy metadata at runtime
+value: Prevents invalid command combinations
+impact: More predictable CLI behavior
+outcome: Policy-driven enforcement with better guidance
+why_now: Agents frequently fail with missing or invalid option usage loops
+parent: pm-5bwo
+risk: medium
+confidence: high
+component: cli/runtime
+customer_impact: Fewer failed runs and clearer remediation when options are missing or disabled.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-5bwo,parent,"2026-04-01T01:39:45.534Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T01:39:45.534Z",codex-agent,Task covers create update enforcement and commander usage guidance paths.
+  "2026-04-01T01:52:40.868Z",codex-agent,"Added create/update option policy enforcement, disabled-option runtime errors, and policy-aware help/error guidance including missing --type improvements."
+notes[1]{created_at,author,text}:
+  "2026-04-01T01:39:45.534Z",codex-agent,Exit code contracts must remain stable for usage errors.
+files[1]{path,scope,note}:
+  src/cli/commands/create.ts,project,policy enforcement in create
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,runtime enforcement regressions
+docs[1]{path,scope,note}:
+  README.md,project,user-facing policy behavior examples
+close_reason: Runtime enforcement and help/error option-policy guidance implemented
+body: Implements runtime enforcement for required and enabled policies and policy-aware help/error guidance.

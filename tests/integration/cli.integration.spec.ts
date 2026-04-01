@@ -2383,6 +2383,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "    api.registerFlags(' acme   sync ', [",
           "      { long: '--dry-run', short: '-d', description: 'Run without side effects' },",
           "      { long: '--limit', value_name: 'count' },",
+          "      { long: '--required-flag', required: true },",
+          "      { long: '--disabled-flag', enabled: false },",
+          "      { long: '--hidden-flag', visible: false, description: 'Hidden by policy' },",
           "      { long: 'invalid-long', description: 'Ignored invalid long flag' }",
           "    ]);",
           "    api.registerCommand({",
@@ -2406,6 +2409,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(helpResult.stdout).toContain("Extension-provided flags:");
       expect(helpResult.stdout).toContain("-d, --dry-run  Run without side effects");
       expect(helpResult.stdout).toContain("--limit <count>  Extension-provided option.");
+      expect(helpResult.stdout).toContain("--required-flag  Extension-provided option. [required]");
+      expect(helpResult.stdout).toContain("--disabled-flag  Extension-provided option. [disabled]");
+      expect(helpResult.stdout).not.toContain("--hidden-flag");
       expect(helpResult.stdout).not.toContain("Ignored invalid long flag");
 
       const dispatched = context.runCli(["acme", "sync", "--json", "--dry-run", "--limit", "2", "artifact-Z"], {

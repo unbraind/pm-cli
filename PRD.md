@@ -667,6 +667,19 @@ Mutating `create` flags (repeatable, each required at least once; use `none` for
 - `--reminder` value format: `at=<iso|relative>,text=<text>` (`none` for explicit clear)
 - `--type-option` / `--type_option` value format: `key=value` or `key=<name>,value=<value>` (`none` for explicit clear)
 
+Per-type option policy overrides (`settings.item_types.definitions[]` and extension `registerItemTypes(...)`):
+
+- `command_option_policies[].command`: `create` or `update`
+- `command_option_policies[].option`: canonical option key (for example `message`, `severity`, `typeOption`)
+- `required: true|false`: mark option mandatory/optional for the targeted command and type
+- `enabled: true|false`: reject/allow the option at runtime for the targeted command and type
+- `visible: true|false`: show/hide the option in policy-aware help guidance
+
+Help and error guidance:
+
+- `pm create --help` / `pm update --help` accept `--type <value>` to render policy-aware required/disabled/hidden option summaries.
+- Missing `--type` usage errors include rationale, active allowed values, and custom-type examples.
+
 Mutating `update` (v0.1 baseline):
 
 - `--title`, `-t`
@@ -1131,7 +1144,7 @@ Wrapper behavior must remain aligned with CLI semantics and exit conditions.
 - `locks.ttl_seconds`
 - `output.default_format`
 - `workflow.definition_of_done[]`
-- `item_types.definitions[]`
+- `item_types.definitions[]` (custom type aliases/folders, required create fields/repeatables, `options[]`, and optional `command_option_policies[]`)
 - `extensions.enabled[]`
 - `extensions.disabled[]`
 - `search.score_threshold`

@@ -256,6 +256,34 @@ describe("core/store/settings", () => {
     });
   });
 
+  it("normalizes item type command option policies deterministically", async () => {
+    await withTempRoot(async (pmRoot) => {
+      const settings = structuredClone(SETTINGS_DEFAULTS);
+      settings.item_types.definitions = [
+        {
+          name: "Asset",
+          command_option_policies: [
+            { command: "update", option: " goal ", enabled: false },
+            { command: "create", option: " message ", required: true },
+            { command: "create", option: "message", required: false },
+          ],
+        },
+      ];
+
+      await writeSettings(pmRoot, settings);
+      const loaded = await readSettings(pmRoot);
+      expect(loaded.item_types.definitions).toEqual([
+        {
+          name: "Asset",
+          command_option_policies: [
+            { command: "create", option: "message", required: false },
+            { command: "update", option: "goal", enabled: false },
+          ],
+        },
+      ]);
+    });
+  });
+
   it("serializes missing nested provider and vector blocks with deterministic empty objects", () => {
     const sparse = {
       ...structuredClone(SETTINGS_DEFAULTS),

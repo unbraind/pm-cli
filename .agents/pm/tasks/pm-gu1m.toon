@@ -1,0 +1,41 @@
+id: pm-gu1m
+title: Add option-policy schema and registry resolution
+description: Extend settings and type registry models to resolve required visible enabled option policies from settings and extension item-type definitions.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:schema","area:types",code,pm-cli
+created_at: "2026-04-01T01:39:35.712Z"
+updated_at: "2026-04-01T01:52:33.761Z"
+deadline: "2026-04-08T01:39:35.712Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: Schema supports option policy metadata and registry resolves deterministic policy definitions with backward-safe defaults.
+definition_of_ready: Target schema and registry files are identified.
+order: 3
+goal: Customizable workflows
+objective: Resolve configurable option policies
+value: Single source of truth for option requirements
+impact: Enables policy-aware command UX
+outcome: Deterministic policy model resolution
+why_now: Current schema cannot represent option visibility and enablement controls
+parent: pm-5bwo
+risk: medium
+confidence: high
+component: core/schema
+customer_impact: Allows teams to configure command option policies per type.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-5bwo,parent,"2026-04-01T01:39:35.712Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T01:39:35.712Z",codex-agent,Task covers settings and type registry contracts for policy metadata.
+  "2026-04-01T01:52:30.480Z",codex-agent,Implemented command_option_policies schema in settings/types/type-registry and deterministic normalization.
+notes[1]{created_at,author,text}:
+  "2026-04-01T01:39:35.712Z",codex-agent,Defaults must preserve current behavior for existing repositories.
+files[1]{path,scope,note}:
+  src/core/store/settings.ts,project,settings schema and normalization
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/shared-constants-errors.spec.ts,null,project,2400,schema regression coverage
+docs[1]{path,scope,note}:
+  PRD.md,project,settings and contract updates
+close_reason: Schema and registry option-policy model implemented with compatibility-safe defaults
+body: Implements type and settings schema fields plus registry normalization for option policy controls.

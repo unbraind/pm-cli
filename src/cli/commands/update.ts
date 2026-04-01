@@ -1,6 +1,10 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
 import {
+  canonicalizeCommandOptionKey,
+  commandOptionFlagLabel,
   resolveItemTypeRegistry,
+  resolveCommandOptionPolicyState,
+  resolveTypeDefinition,
   resolveTypeName,
   validateTypeOptions,
 } from "../../core/item/type-registry.js";
@@ -349,6 +353,138 @@ function ensurePriority(raw: string): 0 | 1 | 2 | 3 | 4 {
   return parsed as 0 | 1 | 2 | 3 | 4;
 }
 
+const UPDATE_OPTION_KEY_ALIASES: Record<string, string> = {
+  "estimated-minutes": "estimatedMinutes",
+  estimated_minutes: "estimatedMinutes",
+  estimate: "estimatedMinutes",
+  "acceptance-criteria": "acceptanceCriteria",
+  acceptance_criteria: "acceptanceCriteria",
+  ac: "acceptanceCriteria",
+  "definition-of-ready": "definitionOfReady",
+  definition_of_ready: "definitionOfReady",
+  rank: "order",
+  "why-now": "whyNow",
+  why_now: "whyNow",
+  "blocked-by": "blockedBy",
+  blocked_by: "blockedBy",
+  "blocked-reason": "blockedReason",
+  blocked_reason: "blockedReason",
+  "unblock-note": "unblockNote",
+  unblock_note: "unblockNote",
+  "repro-steps": "reproSteps",
+  repro_steps: "reproSteps",
+  "expected-result": "expectedResult",
+  expected_result: "expectedResult",
+  "actual-result": "actualResult",
+  actual_result: "actualResult",
+  "affected-version": "affectedVersion",
+  affected_version: "affectedVersion",
+  "fixed-version": "fixedVersion",
+  fixed_version: "fixedVersion",
+  "customer-impact": "customerImpact",
+  customer_impact: "customerImpact",
+  "type-option": "typeOption",
+  type_option: "typeOption",
+  type_options: "typeOption",
+};
+
+function normalizeUpdatePolicyOptionKey(raw: string, typeName: string): string {
+  const candidate = UPDATE_OPTION_KEY_ALIASES[raw] ?? raw;
+  const canonical = canonicalizeCommandOptionKey("update", candidate);
+  if (!canonical) {
+    throw new PmCliError(
+      `Unsupported command_option_policies option "${raw}" for update command on type "${typeName}"`,
+      EXIT_CODE.CONFLICT,
+    );
+  }
+  return canonical;
+}
+
+function collectProvidedUpdatePolicyOptions(options: UpdateCommandOptions): Set<string> {
+  const provided = new Set<string>();
+  const mark = (optionKey: string, isProvided: boolean): void => {
+    if (isProvided) {
+      provided.add(optionKey);
+    }
+  };
+  mark("title", options.title !== undefined);
+  mark("description", options.description !== undefined);
+  mark("status", options.status !== undefined);
+  mark("priority", options.priority !== undefined);
+  mark("type", options.type !== undefined);
+  mark("tags", options.tags !== undefined);
+  mark("deadline", options.deadline !== undefined);
+  mark("estimatedMinutes", options.estimatedMinutes !== undefined);
+  mark("acceptanceCriteria", options.acceptanceCriteria !== undefined);
+  mark("definitionOfReady", options.definitionOfReady !== undefined);
+  mark("order", options.order !== undefined || options.rank !== undefined);
+  mark("goal", options.goal !== undefined);
+  mark("objective", options.objective !== undefined);
+  mark("value", options.value !== undefined);
+  mark("impact", options.impact !== undefined);
+  mark("outcome", options.outcome !== undefined);
+  mark("whyNow", options.whyNow !== undefined);
+  mark("author", options.author !== undefined);
+  mark("message", options.message !== undefined);
+  mark("assignee", options.assignee !== undefined);
+  mark("parent", options.parent !== undefined);
+  mark("reviewer", options.reviewer !== undefined);
+  mark("risk", options.risk !== undefined);
+  mark("confidence", options.confidence !== undefined);
+  mark("sprint", options.sprint !== undefined);
+  mark("release", options.release !== undefined);
+  mark("blockedBy", options.blockedBy !== undefined);
+  mark("blockedReason", options.blockedReason !== undefined);
+  mark("unblockNote", options.unblockNote !== undefined);
+  mark("reporter", options.reporter !== undefined);
+  mark("severity", options.severity !== undefined);
+  mark("environment", options.environment !== undefined);
+  mark("reproSteps", options.reproSteps !== undefined);
+  mark("resolution", options.resolution !== undefined);
+  mark("expectedResult", options.expectedResult !== undefined);
+  mark("actualResult", options.actualResult !== undefined);
+  mark("affectedVersion", options.affectedVersion !== undefined);
+  mark("fixedVersion", options.fixedVersion !== undefined);
+  mark("component", options.component !== undefined);
+  mark("regression", options.regression !== undefined);
+  mark("customerImpact", options.customerImpact !== undefined);
+  mark("reminder", options.reminder !== undefined);
+  mark("event", options.event !== undefined);
+  mark("typeOption", options.typeOption !== undefined);
+  mark("force", options.force === true);
+  return provided;
+}
+
+function enforceUpdateOptionsByType(typeName: string, options: UpdateCommandOptions, typeRegistry: ReturnType<typeof resolveItemTypeRegistry>): void {
+  const typeDefinition = resolveTypeDefinition(typeName, typeRegistry);
+  if (!typeDefinition) {
+    throw new PmCliError(`Invalid type value "${typeName}"`, EXIT_CODE.USAGE);
+  }
+  const policyState = resolveCommandOptionPolicyState(typeDefinition, "update", []);
+  if (policyState.errors.length > 0) {
+    throw new PmCliError(policyState.errors.join("; "), EXIT_CODE.CONFLICT);
+  }
+
+  const provided = collectProvidedUpdatePolicyOptions(options);
+  for (const disabled of policyState.disabled) {
+    if (provided.has(normalizeUpdatePolicyOptionKey(disabled, typeName))) {
+      throw new PmCliError(
+        `Option ${commandOptionFlagLabel("update", disabled)} is disabled for type "${typeName}" by command_option_policies`,
+        EXIT_CODE.USAGE,
+      );
+    }
+  }
+
+  for (const required of policyState.required) {
+    if (!provided.has(normalizeUpdatePolicyOptionKey(required, typeName))) {
+      throw new PmCliError(
+        `Missing required option ${commandOptionFlagLabel("update", required)} for type "${typeName}"`,
+        EXIT_CODE.USAGE,
+      );
+    }
+  }
+}
+
 export async function runUpdate(id: string, options: UpdateCommandOptions, global: GlobalOptions): Promise<UpdateResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
@@ -466,6 +602,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         activeTypeName = resolvedTypeName;
         changedFields.push("type");
       }
+      enforceUpdateOptionsByType(activeTypeName, options, typeRegistry);
       if (options.typeOption !== undefined) {
         if (options.typeOption.some((entry) => isNoneToken(entry))) {
           if (options.typeOption.length > 1) {

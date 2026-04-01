@@ -88,10 +88,18 @@ Declare flags for a command (displayed in `--help` for dynamic extension command
 
 ```ts
 api.registerFlags("acme sync", [
-  { name: "--dry-run", description: "Simulate without writing" },
-  { name: "--org <name>", description: "Organization name" },
+  { long: "--dry-run", short: "-d", description: "Simulate without writing" },
+  { long: "--org", value_name: "name", description: "Organization name", required: true },
+  { long: "--legacy-mode", enabled: false },
+  { long: "--internal-debug", visible: false },
 ]);
 ```
+
+Supported metadata for dynamic extension help rendering:
+
+- `required: true` appends a `[required]` marker in help.
+- `enabled: false` appends a `[disabled]` marker in help.
+- `visible: false` hides the flag from dynamic help output.
 
 ### `api.registerRenderer(format, renderer)`
 
@@ -149,6 +157,12 @@ api.registerItemTypes([
     aliases: ["assets", "3d-asset"],
     required_create_fields: ["title", "description", "status", "priority", "message"],
     required_create_repeatables: [],
+    command_option_policies: [
+      { command: "create", option: "severity", enabled: false },
+      { command: "create", option: "reporter", enabled: false },
+      { command: "create", option: "goal", visible: false },
+      { command: "update", option: "message", required: true },
+    ],
     options: [
       {
         key: "category",
@@ -170,6 +184,7 @@ Notes:
 - Requires `schema` capability in the extension manifest.
 - Type names and aliases are resolved by the runtime type registry and become available to `--type` filters and completion.
 - Option definitions are validated by `pm create` / `pm update` through `--type-option` flags.
+- `command_option_policies` are enforced by core create/update runtime and surfaced in policy-aware help sections.
 
 ### `api.registerMigration(def)`
 

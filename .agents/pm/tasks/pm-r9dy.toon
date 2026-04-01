@@ -1,0 +1,50 @@
+id: pm-r9dy
+title: Ship regression tests docs and verification evidence
+description: Add regression coverage update docs and record verification evidence for option-policy delivery before close and release handoff.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:docs","area:tests",pm-cli,release
+created_at: "2026-04-01T01:40:10.122Z"
+updated_at: "2026-04-01T01:58:13.991Z"
+deadline: "2026-04-10T01:40:10.122Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: Unit and integration tests cover policy behavior docs are updated and full verification evidence is logged before close.
+definition_of_ready: Validation commands and doc targets are listed.
+order: 6
+goal: Customizable workflows
+objective: Finalize quality and docs for delivery
+value: High confidence release readiness
+impact: Reduces regression risk for existing users
+outcome: Verified and documented option-policy feature
+why_now: Policy changes must be proven safe and documented before release
+parent: pm-5bwo
+risk: low
+confidence: high
+component: tests/docs
+customer_impact: Ensures safe rollout with clear guidance and regression confidence.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-5bwo,parent,"2026-04-01T01:40:10.122Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T01:40:10.122Z",codex-agent,Task captures final tests docs changelog and closure evidence.
+  "2026-04-01T01:58:08.429Z",codex-agent,"Evidence: node scripts/run-tests.mjs test passed (57 files, 595 tests). Focused suites for create/update/settings/help/extensions also passed. node scripts/run-tests.mjs coverage currently fails repository-wide 100% thresholds with global 97.57 statements baseline; no policy-regression failures observed."
+notes[1]{created_at,author,text}:
+  "2026-04-01T01:40:10.122Z",codex-agent,Run sandbox-safe full test and coverage before close.
+files[5]{path,scope,note}:
+  src/cli/commands/create.ts,project,create policy enforcement
+  src/cli/commands/update.ts,project,update policy enforcement
+  src/cli/main.ts,project,policy-aware help and dynamic extension flag markers
+  src/core/item/type-registry.ts,project,command option policy resolver
+  tests/integration/release-readiness-runtime.spec.ts,project,runtime contract coverage
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,full sandbox-safe coverage validation
+  node scripts/run-tests.mjs test,null,project,7200,full sandbox regression
+docs[5]{path,scope,note}:
+  CHANGELOG.md,project,unreleased notes for option policy feature
+  docs/ARCHITECTURE.md,project,architecture notes for option policy model
+  docs/EXTENSIONS.md,project,extension metadata and item-type policy docs
+  PRD.md,project,product requirements updates for policy controls
+  README.md,project,user docs for command_option_policies
+close_reason: Regression tests and docs updates completed with evidence logged
+body: Tracks final regression sweeps docs updates changelog notes and closure evidence for option-policy work.

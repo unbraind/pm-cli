@@ -1,6 +1,11 @@
 import { TYPE_TO_FOLDER } from "../shared/constants.js";
 import type { ExtensionRegistrationRegistry } from "../extensions/loader.js";
-import type { ItemTypeDefinition, ItemTypeOptionDefinition, PmSettings } from "../../types/index.js";
+import type {
+  ItemTypeCommandOptionPolicy,
+  ItemTypeDefinition,
+  ItemTypeOptionDefinition,
+  PmSettings,
+} from "../../types/index.js";
 import { ITEM_TYPE_VALUES } from "../../types/index.js";
 
 export const DEFAULT_REQUIRED_CREATE_FIELDS = [
@@ -20,6 +25,264 @@ export const DEFAULT_REQUIRED_CREATE_FIELDS = [
 
 export const DEFAULT_REQUIRED_CREATE_REPEATABLES = ["dep", "comment", "note", "learning", "file", "test", "doc"] as const;
 
+export type CommandOptionPolicyCommand = "create" | "update";
+
+const CREATE_COMMAND_OPTION_KEYS = [
+  "title",
+  "description",
+  "type",
+  "status",
+  "priority",
+  "tags",
+  "body",
+  "deadline",
+  "estimatedMinutes",
+  "acceptanceCriteria",
+  "definitionOfReady",
+  "order",
+  "goal",
+  "objective",
+  "value",
+  "impact",
+  "outcome",
+  "whyNow",
+  "author",
+  "message",
+  "assignee",
+  "parent",
+  "reviewer",
+  "risk",
+  "confidence",
+  "sprint",
+  "release",
+  "blockedBy",
+  "blockedReason",
+  "unblockNote",
+  "reporter",
+  "severity",
+  "environment",
+  "reproSteps",
+  "resolution",
+  "expectedResult",
+  "actualResult",
+  "affectedVersion",
+  "fixedVersion",
+  "component",
+  "regression",
+  "customerImpact",
+  "dep",
+  "comment",
+  "note",
+  "learning",
+  "file",
+  "test",
+  "doc",
+  "reminder",
+  "event",
+  "typeOption",
+] as const;
+
+const UPDATE_COMMAND_OPTION_KEYS = [
+  "title",
+  "description",
+  "status",
+  "priority",
+  "type",
+  "tags",
+  "deadline",
+  "estimatedMinutes",
+  "acceptanceCriteria",
+  "definitionOfReady",
+  "order",
+  "goal",
+  "objective",
+  "value",
+  "impact",
+  "outcome",
+  "whyNow",
+  "author",
+  "message",
+  "assignee",
+  "parent",
+  "reviewer",
+  "risk",
+  "confidence",
+  "sprint",
+  "release",
+  "blockedBy",
+  "blockedReason",
+  "unblockNote",
+  "reporter",
+  "severity",
+  "environment",
+  "reproSteps",
+  "resolution",
+  "expectedResult",
+  "actualResult",
+  "affectedVersion",
+  "fixedVersion",
+  "component",
+  "regression",
+  "customerImpact",
+  "reminder",
+  "event",
+  "typeOption",
+  "force",
+] as const;
+
+const SHARED_COMMAND_OPTION_ALIASES: Record<string, string> = {
+  "estimated-minutes": "estimatedMinutes",
+  estimated_minutes: "estimatedMinutes",
+  estimate: "estimatedMinutes",
+  "acceptance-criteria": "acceptanceCriteria",
+  acceptance_criteria: "acceptanceCriteria",
+  ac: "acceptanceCriteria",
+  "definition-of-ready": "definitionOfReady",
+  definition_of_ready: "definitionOfReady",
+  rank: "order",
+  "why-now": "whyNow",
+  why_now: "whyNow",
+  "blocked-by": "blockedBy",
+  blocked_by: "blockedBy",
+  "blocked-reason": "blockedReason",
+  blocked_reason: "blockedReason",
+  "unblock-note": "unblockNote",
+  unblock_note: "unblockNote",
+  "repro-steps": "reproSteps",
+  repro_steps: "reproSteps",
+  "expected-result": "expectedResult",
+  expected_result: "expectedResult",
+  "actual-result": "actualResult",
+  actual_result: "actualResult",
+  "affected-version": "affectedVersion",
+  affected_version: "affectedVersion",
+  "fixed-version": "fixedVersion",
+  fixed_version: "fixedVersion",
+  "customer-impact": "customerImpact",
+  customer_impact: "customerImpact",
+  "type-option": "typeOption",
+  type_option: "typeOption",
+  type_options: "typeOption",
+};
+
+const CREATE_COMMAND_OPTION_ALIASES: Record<string, string> = {
+  ...SHARED_COMMAND_OPTION_ALIASES,
+};
+
+const UPDATE_COMMAND_OPTION_ALIASES: Record<string, string> = {
+  ...SHARED_COMMAND_OPTION_ALIASES,
+};
+
+const CREATE_COMMAND_OPTION_FLAG_LABELS: Record<string, string> = {
+  title: "--title",
+  description: "--description",
+  type: "--type",
+  status: "--status",
+  priority: "--priority",
+  tags: "--tags",
+  body: "--body",
+  deadline: "--deadline",
+  estimatedMinutes: "--estimate/--estimated-minutes",
+  acceptanceCriteria: "--acceptance-criteria/--ac",
+  definitionOfReady: "--definition-of-ready",
+  order: "--order/--rank",
+  goal: "--goal",
+  objective: "--objective",
+  value: "--value",
+  impact: "--impact",
+  outcome: "--outcome",
+  whyNow: "--why-now",
+  author: "--author",
+  message: "--message",
+  assignee: "--assignee",
+  parent: "--parent",
+  reviewer: "--reviewer",
+  risk: "--risk",
+  confidence: "--confidence",
+  sprint: "--sprint",
+  release: "--release",
+  blockedBy: "--blocked-by",
+  blockedReason: "--blocked-reason",
+  unblockNote: "--unblock-note",
+  reporter: "--reporter",
+  severity: "--severity",
+  environment: "--environment",
+  reproSteps: "--repro-steps",
+  resolution: "--resolution",
+  expectedResult: "--expected-result",
+  actualResult: "--actual-result",
+  affectedVersion: "--affected-version",
+  fixedVersion: "--fixed-version",
+  component: "--component",
+  regression: "--regression",
+  customerImpact: "--customer-impact",
+  dep: "--dep",
+  comment: "--comment",
+  note: "--note",
+  learning: "--learning",
+  file: "--file",
+  test: "--test",
+  doc: "--doc",
+  reminder: "--reminder",
+  event: "--event",
+  typeOption: "--type-option",
+};
+
+const UPDATE_COMMAND_OPTION_FLAG_LABELS: Record<string, string> = {
+  title: "--title",
+  description: "--description",
+  status: "--status",
+  priority: "--priority",
+  type: "--type",
+  tags: "--tags",
+  deadline: "--deadline",
+  estimatedMinutes: "--estimate/--estimated-minutes",
+  acceptanceCriteria: "--acceptance-criteria/--ac",
+  definitionOfReady: "--definition-of-ready",
+  order: "--order/--rank",
+  goal: "--goal",
+  objective: "--objective",
+  value: "--value",
+  impact: "--impact",
+  outcome: "--outcome",
+  whyNow: "--why-now",
+  assignee: "--assignee",
+  parent: "--parent",
+  reviewer: "--reviewer",
+  risk: "--risk",
+  confidence: "--confidence",
+  sprint: "--sprint",
+  release: "--release",
+  blockedBy: "--blocked-by",
+  blockedReason: "--blocked-reason",
+  unblockNote: "--unblock-note",
+  reporter: "--reporter",
+  severity: "--severity",
+  environment: "--environment",
+  reproSteps: "--repro-steps",
+  resolution: "--resolution",
+  expectedResult: "--expected-result",
+  actualResult: "--actual-result",
+  affectedVersion: "--affected-version",
+  fixedVersion: "--fixed-version",
+  component: "--component",
+  regression: "--regression",
+  customerImpact: "--customer-impact",
+  reminder: "--reminder",
+  event: "--event",
+  typeOption: "--type-option",
+  author: "--author",
+  message: "--message",
+  force: "--force",
+};
+
+export interface CommandOptionPolicyState {
+  required: string[];
+  hidden: string[];
+  disabled: string[];
+  errors: string[];
+}
+
 export interface ResolvedItemTypeDefinition {
   name: string;
   folder: string;
@@ -27,6 +290,7 @@ export interface ResolvedItemTypeDefinition {
   required_create_fields: string[];
   required_create_repeatables: string[];
   options: ItemTypeOptionDefinition[];
+  command_option_policies: ItemTypeCommandOptionPolicy[];
 }
 
 export interface ItemTypeRegistry {
@@ -41,6 +305,38 @@ function normalizeList(values: string[] | undefined): string[] {
   return [...new Set((values ?? []).map((value) => value.trim()).filter((value) => value.length > 0))].sort((left, right) =>
     left.localeCompare(right),
   );
+}
+
+function normalizeCommandOptionToken(value: string): string {
+  return value.trim().replace(/^--+/, "").toLowerCase();
+}
+
+function commandOptionKeys(command: CommandOptionPolicyCommand): readonly string[] {
+  return command === "create" ? CREATE_COMMAND_OPTION_KEYS : UPDATE_COMMAND_OPTION_KEYS;
+}
+
+function commandOptionAliases(command: CommandOptionPolicyCommand): Record<string, string> {
+  return command === "create" ? CREATE_COMMAND_OPTION_ALIASES : UPDATE_COMMAND_OPTION_ALIASES;
+}
+
+export function canonicalizeCommandOptionKey(
+  command: CommandOptionPolicyCommand,
+  rawOption: string,
+): string | undefined {
+  const normalizedToken = normalizeCommandOptionToken(rawOption);
+  if (normalizedToken.length === 0) {
+    return undefined;
+  }
+  const aliased = commandOptionAliases(command)[normalizedToken];
+  if (aliased) {
+    return aliased;
+  }
+  return commandOptionKeys(command).find((candidate) => candidate.toLowerCase() === normalizedToken);
+}
+
+export function commandOptionFlagLabel(command: CommandOptionPolicyCommand, optionKey: string): string {
+  const labels = command === "create" ? CREATE_COMMAND_OPTION_FLAG_LABELS : UPDATE_COMMAND_OPTION_FLAG_LABELS;
+  return labels[optionKey] ?? `--${optionKey.replace(/([A-Z])/g, "-$1").toLowerCase()}`;
 }
 
 function toDefaultFolder(name: string): string {
@@ -75,6 +371,26 @@ function normalizeOptionDefinition(option: ItemTypeOptionDefinition): ItemTypeOp
   };
 }
 
+function normalizeCommandOptionPolicyDefinition(
+  policy: ItemTypeCommandOptionPolicy,
+): ItemTypeCommandOptionPolicy | null {
+  const normalizedCommand = policy.command.trim().toLowerCase();
+  if (normalizedCommand !== "create" && normalizedCommand !== "update") {
+    return null;
+  }
+  const option = policy.option.trim();
+  if (option.length === 0) {
+    return null;
+  }
+  return {
+    command: normalizedCommand,
+    option,
+    required: policy.required,
+    visible: policy.visible,
+    enabled: policy.enabled,
+  };
+}
+
 function normalizeTypeDefinition(definition: ItemTypeDefinition): ItemTypeDefinition | null {
   const name = definition.name.trim();
   if (name.length === 0) {
@@ -83,11 +399,27 @@ function normalizeTypeDefinition(definition: ItemTypeDefinition): ItemTypeDefini
   const hasRequiredCreateFields = definition.required_create_fields !== undefined;
   const hasRequiredCreateRepeatables = definition.required_create_repeatables !== undefined;
   const hasOptions = definition.options !== undefined;
+  const hasCommandOptionPolicies = definition.command_option_policies !== undefined;
   const folder = definition.folder?.trim();
   const options = (definition.options ?? [])
     .map((option) => normalizeOptionDefinition(option))
     .filter((option): option is ItemTypeOptionDefinition => option !== null)
     .sort((left, right) => left.key.localeCompare(right.key));
+  const commandOptionPolicies = (() => {
+    const dedupedByKey = new Map<string, ItemTypeCommandOptionPolicy>();
+    for (const policy of definition.command_option_policies ?? []) {
+      const normalized = normalizeCommandOptionPolicyDefinition(policy);
+      if (!normalized) {
+        continue;
+      }
+      dedupedByKey.set(`${normalized.command}:${normalized.option.toLowerCase()}`, normalized);
+    }
+    return [...dedupedByKey.values()].sort((left, right) =>
+      left.command === right.command
+        ? left.option.localeCompare(right.option)
+        : left.command.localeCompare(right.command),
+    );
+  })();
   return {
     name,
     folder: folder && folder.length > 0 ? folder : undefined,
@@ -100,6 +432,7 @@ function normalizeTypeDefinition(definition: ItemTypeDefinition): ItemTypeDefini
       ? normalizeList(definition.required_create_repeatables)
       : undefined,
     options: hasOptions ? options : undefined,
+    command_option_policies: hasCommandOptionPolicies ? commandOptionPolicies : undefined,
   };
 }
 
@@ -144,6 +477,30 @@ function coerceTypeDefinitionFromUnknown(raw: unknown): ItemTypeDefinition | nul
       });
     }
   }
+  let commandOptionPolicies: ItemTypeCommandOptionPolicy[] | undefined;
+  if (Array.isArray(record.command_option_policies)) {
+    commandOptionPolicies = [];
+    for (const entry of record.command_option_policies) {
+      if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
+        continue;
+      }
+      const policyRecord = entry as Record<string, unknown>;
+      if (typeof policyRecord.command !== "string" || typeof policyRecord.option !== "string") {
+        continue;
+      }
+      const normalizedCommand = policyRecord.command.trim().toLowerCase();
+      if (normalizedCommand !== "create" && normalizedCommand !== "update") {
+        continue;
+      }
+      commandOptionPolicies.push({
+        command: normalizedCommand,
+        option: policyRecord.option,
+        required: policyRecord.required === undefined ? undefined : Boolean(policyRecord.required),
+        visible: policyRecord.visible === undefined ? undefined : Boolean(policyRecord.visible),
+        enabled: policyRecord.enabled === undefined ? undefined : Boolean(policyRecord.enabled),
+      });
+    }
+  }
   return {
     name,
     folder,
@@ -151,6 +508,7 @@ function coerceTypeDefinitionFromUnknown(raw: unknown): ItemTypeDefinition | nul
     required_create_fields: requiredCreateFields,
     required_create_repeatables: requiredCreateRepeatables,
     options,
+    command_option_policies: commandOptionPolicies,
   };
 }
 
@@ -182,6 +540,11 @@ function applyTypeDefinitions(
       : existing?.options
         ? [...existing.options]
         : [];
+    const commandOptionPolicies = normalizedDefinition.command_option_policies
+      ? normalizedDefinition.command_option_policies
+      : existing?.command_option_policies
+        ? [...existing.command_option_policies]
+        : [];
     target.set(lowerName, {
       name: keepName,
       folder,
@@ -189,6 +552,7 @@ function applyTypeDefinitions(
       required_create_fields: requiredCreateFields,
       required_create_repeatables: requiredCreateRepeatables,
       options,
+      command_option_policies: commandOptionPolicies,
     });
   }
 }
@@ -226,6 +590,7 @@ export function resolveItemTypeRegistry(
       required_create_fields: [...DEFAULT_REQUIRED_CREATE_FIELDS],
       required_create_repeatables: [...DEFAULT_REQUIRED_CREATE_REPEATABLES],
       options: [],
+      command_option_policies: [],
     });
   }
 
@@ -270,6 +635,77 @@ export function resolveTypeDefinition(
     return undefined;
   }
   return registry.by_type[resolvedName];
+}
+
+export function resolveCommandOptionPolicyState(
+  typeDefinition: ResolvedItemTypeDefinition,
+  command: CommandOptionPolicyCommand,
+  baseRequiredOptions: Iterable<string>,
+): CommandOptionPolicyState {
+  const errors: string[] = [];
+  const required = new Set<string>();
+  const hidden = new Set<string>();
+  const disabled = new Set<string>();
+
+  for (const rawBase of baseRequiredOptions) {
+    const canonical = canonicalizeCommandOptionKey(command, rawBase);
+    if (!canonical) {
+      errors.push(
+        `Unsupported base required option "${rawBase}" for command "${command}" on type "${typeDefinition.name}"`,
+      );
+      continue;
+    }
+    required.add(canonical);
+  }
+
+  for (const policy of typeDefinition.command_option_policies) {
+    if (policy.command !== command) {
+      continue;
+    }
+    const canonical = canonicalizeCommandOptionKey(command, policy.option);
+    if (!canonical) {
+      errors.push(
+        `Unsupported command_option_policies option "${policy.option}" for command "${command}" on type "${typeDefinition.name}"`,
+      );
+      continue;
+    }
+    if (policy.required !== undefined) {
+      if (policy.required) {
+        required.add(canonical);
+      } else {
+        required.delete(canonical);
+      }
+    }
+    if (policy.visible !== undefined) {
+      if (policy.visible) {
+        hidden.delete(canonical);
+      } else {
+        hidden.add(canonical);
+      }
+    }
+    if (policy.enabled !== undefined) {
+      if (policy.enabled) {
+        disabled.delete(canonical);
+      } else {
+        disabled.add(canonical);
+      }
+    }
+  }
+
+  for (const option of required) {
+    if (disabled.has(option)) {
+      errors.push(
+        `Option "${option}" cannot be both required and disabled for command "${command}" on type "${typeDefinition.name}"`,
+      );
+    }
+  }
+
+  return {
+    required: [...required],
+    hidden: [...hidden].sort((left, right) => left.localeCompare(right)),
+    disabled: [...disabled].sort((left, right) => left.localeCompare(right)),
+    errors,
+  };
 }
 
 export function validateTypeOptions(

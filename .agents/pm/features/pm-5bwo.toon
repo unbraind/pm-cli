@@ -1,0 +1,41 @@
+id: pm-5bwo
+title: Policy-driven option controls for create/update
+description: "Implement type-aware required, visible, and enabled option policies for create/update command UX with compatibility-safe defaults."
+type: Feature
+status: closed
+priority: 1
+tags[4]: agent-ux,"area:cli","area:schema",pm-cli
+created_at: "2026-04-01T01:39:25.869Z"
+updated_at: "2026-04-01T01:58:20.793Z"
+deadline: "2026-04-11T01:39:25.869Z"
+author: codex-agent
+estimated_minutes: 360
+acceptance_criteria: Create/update enforce configured option enabled/required policies; help/error output reflects active policies; no regressions for default users.
+definition_of_ready: Epic scope and compatibility constraints are approved.
+order: 2
+goal: Customizable workflows
+objective: Make option contracts configurable and discoverable
+value: Improves operator and agent success rates
+impact: Less friction across domain-specific workflows
+outcome: Reliable policy-aware option behavior
+why_now: Current static option surface cannot express per-domain policy controls
+parent: pm-00yy
+risk: medium
+confidence: high
+component: cli/create-update
+customer_impact: Reduces failed command retries caused by unclear option contracts.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-00yy,parent,"2026-04-01T01:39:25.869Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T01:39:25.869Z",codex-agent,Feature decomposes implementation into schema and enforcement and UX and regression tracks.
+  "2026-04-01T01:58:20.086Z",codex-agent,Completed schema/runtime/help/extension/docs tracks for command_option_policies across create/update with compatibility-safe defaults and regression coverage.
+notes[1]{created_at,author,text}:
+  "2026-04-01T01:39:25.869Z",codex-agent,Default behavior must remain unchanged unless explicit policy config exists.
+files[1]{path,scope,note}:
+  src/cli/main.ts,project,create/update command definition and usage errors
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,core command regression focus
+docs[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,policy resolution architecture
+close_reason: Feature delivered with policy-aware create/update behavior and docs
+body: Feature delivers option policy resolution enforcement and help/error surfacing for core create/update workflows.
