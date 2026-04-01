@@ -4,13 +4,20 @@ import {
   clearActiveExtensionHooks,
   runActiveCommandOverride,
   runActiveOnIndexHooks,
+  runActiveParserOverride,
+  runActivePreflightOverride,
   runActiveOnReadHooks,
+  runActiveServiceOverride,
+  runActiveServiceOverrideSync,
   runActiveOnWriteHooks,
   runActiveRendererOverride,
   setActiveCommandContext,
   setActiveExtensionCommands,
   setActiveExtensionHooks,
+  setActiveExtensionParsers,
+  setActiveExtensionPreflight,
   setActiveExtensionRenderers,
+  setActiveExtensionServices,
   type ExtensionHookRegistry,
 } from "../../src/core/extensions/index.js";
 
@@ -267,6 +274,111 @@ describe("core/extensions runtime wrappers", () => {
         ok: true,
         source: "beads import",
       },
+      warnings: [],
+    });
+  });
+
+  it("runs active parser, preflight, and service overrides", async () => {
+    setActiveExtensionParsers({
+      overrides: [
+        {
+          layer: "project",
+          name: "parser-ext",
+          command: "create",
+          run: (context) => ({
+            options: {
+              ...context.options,
+              estimate: 30,
+            },
+          }),
+        },
+      ],
+    });
+    const parserResult = await runActiveParserOverride({
+      command: "create",
+      args: [],
+      options: {},
+      global: {
+        json: false,
+        quiet: false,
+        noExtensions: false,
+        profile: false,
+      },
+      pm_root: "/tmp/project",
+    });
+    expect(parserResult.overridden).toBe(true);
+    expect(parserResult.context.options).toEqual({ estimate: 30 });
+
+    setActiveExtensionPreflight({
+      overrides: [
+        {
+          layer: "project",
+          name: "preflight-ext",
+          run: () => ({
+            run_extension_migrations: false,
+          }),
+        },
+      ],
+    });
+    const preflightResult = await runActivePreflightOverride({
+      command: "update",
+      args: [],
+      options: {},
+      global: {
+        json: false,
+        quiet: false,
+        noExtensions: false,
+        profile: false,
+      },
+      pm_root: "/tmp/project",
+      decision: {
+        enforce_item_format_gate: true,
+        run_preflight_item_format_sync: true,
+        run_extension_migrations: true,
+        enforce_mandatory_migration_gate: true,
+      },
+    });
+    expect(preflightResult.overridden).toBe(true);
+    expect(preflightResult.decision.run_extension_migrations).toBe(false);
+
+    setActiveCommandContext({
+      command: "list-open",
+      args: [],
+      options: {},
+      global: {
+        json: true,
+        quiet: false,
+        noExtensions: false,
+        profile: false,
+      },
+      pm_root: "/tmp/project",
+    });
+    setActiveExtensionServices({
+      overrides: [
+        {
+          layer: "project",
+          name: "service-ext",
+          service: "output_format",
+          run: (context) => JSON.stringify({ wrapped: (context.payload as { result: unknown }).result }),
+        },
+      ],
+    });
+    expect(
+      runActiveServiceOverrideSync("output_format", {
+        result: { ok: true },
+      }),
+    ).toEqual({
+      handled: true,
+      result: JSON.stringify({ wrapped: { ok: true } }),
+      warnings: [],
+    });
+    expect(
+      await runActiveServiceOverride("output_format", {
+        result: { ok: true },
+      }),
+    ).toEqual({
+      handled: true,
+      result: JSON.stringify({ wrapped: { ok: true } }),
       warnings: [],
     });
   });

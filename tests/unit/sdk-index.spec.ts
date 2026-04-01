@@ -3,7 +3,17 @@ import { EXTENSION_CAPABILITIES, defineExtension } from "../../src/sdk/index.js"
 
 describe("public sdk entrypoint", () => {
   it("exposes deterministic capability names", () => {
-    expect(EXTENSION_CAPABILITIES).toEqual(["commands", "renderers", "hooks", "schema", "importers", "search"]);
+    expect(EXTENSION_CAPABILITIES).toEqual([
+      "commands",
+      "renderers",
+      "hooks",
+      "schema",
+      "importers",
+      "search",
+      "parser",
+      "preflight",
+      "services",
+    ]);
   });
 
   it("returns extension modules unchanged", () => {

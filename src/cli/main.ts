@@ -51,17 +51,27 @@ import {
   getActiveExtensionRegistrations,
   loadExtensions,
   runActiveCommandHandler,
+  runActiveParserOverride,
+  runActivePreflightOverride,
+  runActiveServiceOverride,
   runAfterCommandHooks,
   runBeforeCommandHooks,
   setActiveCommandResult,
   setActiveCommandContext,
   setActiveExtensionCommands,
   setActiveExtensionHooks,
+  setActiveExtensionParsers,
+  setActiveExtensionPreflight,
   setActiveExtensionRegistrations,
   setActiveExtensionRenderers,
+  setActiveExtensionServices,
   type ExtensionCommandRegistry,
   type ExtensionHookRegistry,
+  type ExtensionParserRegistry,
+  type ExtensionPreflightRegistry,
+  type ExtensionServiceRegistry,
   type LoadedExtension,
+  type PreflightRuntimeDecision,
   type RegisteredExtensionFlagDefinitions,
   type RegisteredExtensionSchemaMigrationDefinition,
   type ExtensionRendererRegistry,
@@ -83,7 +93,7 @@ import { readSettings, readSettingsWithMetadata } from "../core/store/settings.j
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { getEnabledBuiltInExtensions } from "../core/extensions/builtins.js";
 import type { ItemStatus, PmSettings } from "../types/index.js";
-import { parseLooseCommandOptions } from "./extension-command-options.js";
+import { coerceLooseCommandOptionsWithFlagDefinitions, parseLooseCommandOptions } from "./extension-command-options.js";
 import { attachRichHelpText } from "./help-content.js";
 import { formatCommanderErrorForDisplay, formatPmCliErrorForDisplay } from "./error-guidance.js";
 import {
@@ -437,6 +447,9 @@ let activeExtensionHookContext: ActiveExtensionHookContext | null = null;
 interface RuntimeExtensionSnapshot {
   hooks: ExtensionHookRegistry;
   commands: ExtensionCommandRegistry;
+  parsers: ExtensionParserRegistry;
+  preflight: ExtensionPreflightRegistry;
+  services: ExtensionServiceRegistry;
   renderers: ExtensionRendererRegistry;
   registrations: ReturnType<typeof createEmptyExtensionRegistrationRegistry>;
   pmRoot: string;
@@ -615,30 +628,35 @@ function enforceMandatoryMigrationWriteGate(
 async function enforceItemFormatWriteGateAndPreflightMigration(
   commandPath: string,
   options: Record<string, unknown>,
-  globalOptions: GlobalOptions,
+  pmRoot: string,
+  decision: PreflightRuntimeDecision,
 ): Promise<void> {
-  const decision = decideWriteGate(commandPath, options);
-  if (!decision.isMutation) {
+  const writeGate = decideWriteGate(commandPath, options);
+  if (!writeGate.isMutation) {
     return;
   }
-  const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
+  if (!decision.enforce_item_format_gate && !decision.run_preflight_item_format_sync) {
+    return;
+  }
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     return;
   }
   const { settings, metadata } = await readSettingsWithMetadata(pmRoot);
-  if (!metadata.has_explicit_item_format) {
+  if (decision.enforce_item_format_gate && !metadata.has_explicit_item_format) {
     throw new PmCliError(
       `Write command "${commandPath}" requires explicit item format selection before mutations. Run "pm config project set item-format --format toon" or "pm config project set item-format --format json_markdown".`,
       EXIT_CODE.CONFLICT,
     );
   }
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  await migrateItemFilesToFormat(
-    pmRoot,
-    settings.item_format,
-    "item_format:pre_mutation_sync",
-    typeRegistry.type_to_folder,
-  );
+  if (decision.run_preflight_item_format_sync) {
+    const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+    await migrateItemFilesToFormat(
+      pmRoot,
+      settings.item_format,
+      "item_format:pre_mutation_sync",
+      typeRegistry.type_to_folder,
+    );
+  }
 }
 
 function describeUnknownError(error: unknown): string {
@@ -727,7 +745,11 @@ async function runAndClearAfterCommandHooks(outcome: { ok: boolean; error?: stri
   }
 }
 
-function extractCommandScopedOptions(command: Command, commandArgs: string[]): Record<string, unknown> {
+function extractCommandScopedOptions(
+  command: Command,
+  commandArgs: string[],
+  extensionFlagDefinitions: Array<Record<string, unknown>> = [],
+): Record<string, unknown> {
   const allOptions = command.optsWithGlobals() as Record<string, unknown>;
   const scoped: Record<string, unknown> = { ...allOptions };
   delete scoped.json;
@@ -743,7 +765,32 @@ function extractCommandScopedOptions(command: Command, commandArgs: string[]): R
       scoped[key] = value;
     }
   }
+  if (extensionFlagDefinitions.length > 0) {
+    return coerceLooseCommandOptionsWithFlagDefinitions(scoped, extensionFlagDefinitions);
+  }
   return scoped;
+}
+
+function collectExtensionFlagDefinitionsForCommand(
+  registrations: ReturnType<typeof createEmptyExtensionRegistrationRegistry>,
+  commandPath: string,
+): Array<Record<string, unknown>> {
+  const normalizedCommandPath = normalizeExtensionCommandPath(commandPath);
+  if (normalizedCommandPath.length === 0) {
+    return [];
+  }
+  return registrations.flags
+    .filter((entry) => normalizeExtensionCommandPath(entry.target_command) === normalizedCommandPath)
+    .flatMap((entry) => entry.flags);
+}
+
+function defaultPreflightDecision(): PreflightRuntimeDecision {
+  return {
+    enforce_item_format_gate: true,
+    run_preflight_item_format_sync: true,
+    run_extension_migrations: true,
+    enforce_mandatory_migration_gate: true,
+  };
 }
 
 function buildRuntimeExtensionSnapshotCacheKey(pmRoot: string): string {
@@ -755,7 +802,7 @@ function emitExtensionProfile(globalOptions: GlobalOptions, snapshot: RuntimeExt
     return;
   }
   printError(
-    `profile:extensions loaded=${snapshot.loadedCount} failed=${snapshot.loadFailedCount} warnings=${snapshot.loadWarnings.length} activation_failed=${snapshot.activationFailedCount} hook_counts=before:${snapshot.hooks.beforeCommand.length}|after:${snapshot.hooks.afterCommand.length}|write:${snapshot.hooks.onWrite.length}|read:${snapshot.hooks.onRead.length}|index:${snapshot.hooks.onIndex.length} command_overrides=${snapshot.commands.overrides.length} command_handlers=${snapshot.commands.handlers.length} renderer_overrides=${snapshot.renderers.overrides.length}`,
+    `profile:extensions loaded=${snapshot.loadedCount} failed=${snapshot.loadFailedCount} warnings=${snapshot.loadWarnings.length} activation_failed=${snapshot.activationFailedCount} hook_counts=before:${snapshot.hooks.beforeCommand.length}|after:${snapshot.hooks.afterCommand.length}|write:${snapshot.hooks.onWrite.length}|read:${snapshot.hooks.onRead.length}|index:${snapshot.hooks.onIndex.length} command_overrides=${snapshot.commands.overrides.length} command_handlers=${snapshot.commands.handlers.length} parser_overrides=${snapshot.parsers.overrides.length} preflight_overrides=${snapshot.preflight.overrides.length} service_overrides=${snapshot.services.overrides.length} renderer_overrides=${snapshot.renderers.overrides.length}`,
   );
   if (snapshot.activationWarnings.length > 0) {
     printError(`profile:extensions activation_warnings=${formatHookWarnings(snapshot.activationWarnings)}`);
@@ -797,6 +844,9 @@ async function loadRuntimeExtensionSnapshot(pmRoot: string): Promise<RuntimeExte
     const snapshot: RuntimeExtensionSnapshot = {
       hooks: activationResult.hooks,
       commands: activationResult.commands,
+      parsers: activationResult.parsers,
+      preflight: activationResult.preflight,
+      services: activationResult.services,
       renderers: activationResult.renderers,
       registrations: activationResult.registrations,
       pmRoot,
@@ -829,6 +879,9 @@ async function maybeLoadRuntimeExtensions(
   {
     hooks: ExtensionHookRegistry;
     commands: ExtensionCommandRegistry;
+    parsers: ExtensionParserRegistry;
+    preflight: ExtensionPreflightRegistry;
+    services: ExtensionServiceRegistry;
     renderers: ExtensionRendererRegistry;
     registrations: ReturnType<typeof createEmptyExtensionRegistrationRegistry>;
     pmRoot: string;
@@ -849,6 +902,9 @@ async function maybeLoadRuntimeExtensions(
   return {
     hooks: snapshot.hooks,
     commands: snapshot.commands,
+    parsers: snapshot.parsers,
+    preflight: snapshot.preflight,
+    services: snapshot.services,
     renderers: snapshot.renderers,
     registrations: snapshot.registrations,
     pmRoot,
@@ -904,24 +960,39 @@ async function runRequiredExtensionCommand(
   globalOptions: GlobalOptions,
 ): Promise<unknown> {
   const commandPath = getCommandPath(command);
-  const commandArgs = command.args.map(String);
+  let commandArgs = command.args.map(String);
+  let commandOptions = { ...options };
+  let resolvedGlobalOptions = { ...globalOptions };
   const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
+  const parserOverride = await runActiveParserOverride({
+    command: commandPath,
+    args: commandArgs,
+    options: commandOptions,
+    global: resolvedGlobalOptions,
+    pm_root: pmRoot,
+  });
+  if (globalOptions.profile && parserOverride.warnings.length > 0) {
+    printError(`profile:extensions parser_warnings=${formatHookWarnings(parserOverride.warnings)}`);
+  }
+  commandArgs = parserOverride.context.args;
+  commandOptions = parserOverride.context.options;
+  resolvedGlobalOptions = parserOverride.context.global;
   setActiveCommandResult(undefined);
   setActiveCommandContext({
     command: commandPath,
     args: commandArgs,
-    options: { ...options },
-    global: { ...globalOptions },
+    options: { ...commandOptions },
+    global: { ...resolvedGlobalOptions },
     pm_root: pmRoot,
   });
   const extensionCommandResult = await runActiveCommandHandler({
     command: commandPath,
     args: commandArgs,
-    options,
-    global: globalOptions,
+    options: commandOptions,
+    global: resolvedGlobalOptions,
     pm_root: pmRoot,
   });
-  if (globalOptions.profile && extensionCommandResult.warnings.length > 0) {
+  if (resolvedGlobalOptions.profile && extensionCommandResult.warnings.length > 0) {
     printError(`profile:extensions command_handler_warnings=${formatHookWarnings(extensionCommandResult.warnings)}`);
   }
   if (!extensionCommandResult.handled) {
@@ -953,11 +1024,33 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         const possibleCommand = actionArgs[actionArgs.length - 1];
         const actionCommand = possibleCommand instanceof Command ? possibleCommand : entry;
         const startedAt = Date.now();
-        const globalOptions = getGlobalOptions(actionCommand);
+        let globalOptions = getGlobalOptions(actionCommand);
         const commandPath = getCommandPath(actionCommand);
-        const commandArgs = actionCommand.args.map(String);
-        const commandOptions = extractCommandScopedOptions(actionCommand, commandArgs);
+        let commandArgs = actionCommand.args.map(String);
+        const activeRegistrations = getActiveExtensionRegistrations();
+        const extensionFlagDefinitions = activeRegistrations
+          ? collectExtensionFlagDefinitionsForCommand(activeRegistrations, commandPath)
+          : [];
+        let commandOptions = extractCommandScopedOptions(actionCommand, commandArgs, extensionFlagDefinitions);
         const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
+        const parserOverride = await runActiveParserOverride({
+          command: commandPath,
+          args: commandArgs,
+          options: commandOptions,
+          global: globalOptions,
+          pm_root: pmRoot,
+        });
+        if (globalOptions.profile && parserOverride.warnings.length > 0) {
+          printError(`profile:extensions parser_warnings=${formatHookWarnings(parserOverride.warnings)}`);
+        }
+        commandArgs = parserOverride.context.args;
+        commandOptions = parserOverride.context.options;
+        globalOptions = parserOverride.context.global;
+        actionCommand.args = [...commandArgs];
+        const optionsArgIndex = actionArgs.length - 2;
+        if (optionsArgIndex >= 0 && typeof actionArgs[optionsArgIndex] === "object" && actionArgs[optionsArgIndex] !== null) {
+          actionArgs[optionsArgIndex] = commandOptions;
+        }
         setActiveCommandResult(undefined);
         setActiveCommandContext({
           command: commandPath,
@@ -1039,7 +1132,11 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command): Promi
       .action(async (_options: Record<string, unknown>, command) => {
         const globalOptions = getGlobalOptions(command);
         const startedAt = Date.now();
-        const looseOptions = parseLooseCommandOptions(command.args.map(String));
+        const extensionFlagDefinitions = collectExtensionFlagDefinitionsForCommand(snapshot.registrations, commandPath);
+        const looseOptions = coerceLooseCommandOptionsWithFlagDefinitions(
+          parseLooseCommandOptions(command.args.map(String)),
+          extensionFlagDefinitions,
+        );
         const result = await runRequiredExtensionCommand(command, looseOptions, globalOptions);
         printResult(result, globalOptions);
         if (globalOptions.profile) {
@@ -1334,20 +1431,73 @@ program
 program.hook("preAction", async (_thisCommand, actionCommand) => {
   activeExtensionHookContext = null;
   clearActiveExtensionHooks();
-  const globalOptions = getGlobalOptions(actionCommand);
+  const bootstrapGlobalOptions = getGlobalOptions(actionCommand);
   const commandPath = getCommandPath(actionCommand);
-  const commandArgs = actionCommand.args.map(String);
-  const commandOptions = extractCommandScopedOptions(actionCommand, commandArgs);
-  await enforceItemFormatWriteGateAndPreflightMigration(commandPath, commandOptions, globalOptions);
+  let commandArgs = actionCommand.args.map(String);
+  let commandOptions = extractCommandScopedOptions(actionCommand, commandArgs);
+  let globalOptions = { ...bootstrapGlobalOptions };
+  const fallbackPmRoot = resolvePmRoot(process.cwd(), bootstrapGlobalOptions.path);
   const runtimeExtensions = await maybeLoadRuntimeExtensions(actionCommand);
   if (!runtimeExtensions) {
+    await enforceItemFormatWriteGateAndPreflightMigration(
+      commandPath,
+      commandOptions,
+      fallbackPmRoot,
+      defaultPreflightDecision(),
+    );
     return;
   }
 
-  const migrationWarnings = await executeRegisteredRuntimeMigrations(
-    runtimeExtensions.registrations.migrations,
+  setActiveExtensionHooks(runtimeExtensions.hooks);
+  setActiveExtensionCommands(runtimeExtensions.commands);
+  setActiveExtensionParsers(runtimeExtensions.parsers);
+  setActiveExtensionPreflight(runtimeExtensions.preflight);
+  setActiveExtensionServices(runtimeExtensions.services);
+  setActiveExtensionRenderers(runtimeExtensions.renderers);
+  setActiveExtensionRegistrations(runtimeExtensions.registrations);
+
+  const extensionFlagDefinitions = collectExtensionFlagDefinitionsForCommand(runtimeExtensions.registrations, commandPath);
+  commandOptions = extractCommandScopedOptions(actionCommand, commandArgs, extensionFlagDefinitions);
+  const parserOverride = await runActiveParserOverride({
+    command: commandPath,
+    args: commandArgs,
+    options: commandOptions,
+    global: globalOptions,
+    pm_root: runtimeExtensions.pmRoot,
+  });
+  if (globalOptions.profile && parserOverride.warnings.length > 0) {
+    printError(`profile:extensions parser_warnings=${formatHookWarnings(parserOverride.warnings)}`);
+  }
+  commandArgs = parserOverride.context.args;
+  commandOptions = parserOverride.context.options;
+  globalOptions = parserOverride.context.global;
+
+  const preflightOverride = await runActivePreflightOverride({
+    command: commandPath,
+    args: commandArgs,
+    options: commandOptions,
+    global: globalOptions,
+    pm_root: runtimeExtensions.pmRoot,
+    decision: defaultPreflightDecision(),
+  });
+  if (globalOptions.profile && preflightOverride.warnings.length > 0) {
+    printError(`profile:extensions preflight_warnings=${formatHookWarnings(preflightOverride.warnings)}`);
+  }
+  commandArgs = preflightOverride.context.args;
+  commandOptions = preflightOverride.context.options;
+  globalOptions = preflightOverride.context.global;
+  const preflightDecision = preflightOverride.decision;
+
+  await enforceItemFormatWriteGateAndPreflightMigration(
+    commandPath,
+    commandOptions,
     runtimeExtensions.pmRoot,
+    preflightDecision,
   );
+
+  const migrationWarnings = preflightDecision.run_extension_migrations
+    ? await executeRegisteredRuntimeMigrations(runtimeExtensions.registrations.migrations, runtimeExtensions.pmRoot)
+    : [];
   if (globalOptions.profile && migrationWarnings.length > 0) {
     printError(`profile:extensions migration_warnings=${formatHookWarnings(migrationWarnings)}`);
   }
@@ -1362,10 +1512,6 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
     profileEnabled: Boolean(globalOptions.profile),
     migrationBlockers,
   };
-  setActiveExtensionHooks(runtimeExtensions.hooks);
-  setActiveExtensionCommands(runtimeExtensions.commands);
-  setActiveExtensionRenderers(runtimeExtensions.renderers);
-  setActiveExtensionRegistrations(runtimeExtensions.registrations);
   setActiveCommandResult(undefined);
   setActiveCommandContext({
     command: commandPath,
@@ -1385,11 +1531,9 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
   if (globalOptions.profile && hookWarnings.length > 0) {
     printError(`profile:extensions hook_warnings=${formatHookWarnings(hookWarnings)}`);
   }
-  enforceMandatoryMigrationWriteGate(
-    commandPath,
-    commandOptions,
-    migrationBlockers,
-  );
+  if (preflightDecision.enforce_mandatory_migration_gate) {
+    enforceMandatoryMigrationWriteGate(commandPath, commandOptions, migrationBlockers);
+  }
 });
 
 program.hook("postAction", async () => {
@@ -2443,7 +2587,16 @@ async function formatCommanderUsageMessage(error: unknown): Promise<string> {
   } catch {
     // Fall back to built-in type guidance when settings cannot be read.
   }
-  return formatCommanderErrorForDisplay(message, commandName, allowedTypes);
+  const formatted = formatCommanderErrorForDisplay(message, commandName, allowedTypes);
+  const serviceOverride = await runActiveServiceOverride("help_format", {
+    message: formatted,
+    command: commandName,
+    allowed_types: allowedTypes,
+  });
+  if (serviceOverride.handled && typeof serviceOverride.result === "string") {
+    return serviceOverride.result;
+  }
+  return formatted;
 }
 
 async function main(): Promise<void> {

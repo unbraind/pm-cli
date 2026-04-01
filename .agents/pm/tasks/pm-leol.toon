@@ -1,0 +1,48 @@
+id: pm-leol
+title: "Phase 2: integrate service overrides into core modules"
+description: "Wire service override execution into item-store, history, lock, output, help, and error paths with fallback behavior tests."
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:extensions","area:services",phase2,pm-cli
+created_at: "2026-04-01T19:28:36.123Z"
+updated_at: "2026-04-01T19:57:43.985Z"
+deadline: "2026-04-09T19:28:36.123Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: Core services invoke extension handlers when registered; fallback to core behavior is deterministic and tested.
+definition_of_ready: Feature pm-qlo0 exists and service registry task is tracked.
+order: 2
+goal: Total customization platform
+objective: Core module service integration
+value: Makes full runtime customization practical.
+impact: Extends override power to internal service layer.
+outcome: Core modules are service-kernel aware.
+why_now: Needed to fulfill complete extension manipulation requirement.
+parent: pm-qlo0
+risk: high
+confidence: medium
+sprint: phase2-override
+release: vnext
+component: extensions-runtime
+regression: true
+customer_impact: Project teams can deeply tailor runtime behavior.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-qlo0,parent,"2026-04-01T19:28:36.123Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T19:28:36.123Z",codex-agent,Task wires service override execution into core modules and validates fallback semantics.
+  "2026-04-01T19:57:42.575Z",codex-agent,"Implemented in Phase 2 full-override rollout. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage passed (64 files/702 tests) with aligned coverage gates and release-readiness checks green."
+notes[1]{created_at,author,text}:
+  "2026-04-01T19:28:36.123Z",codex-agent,Must include lock/history/store/output/help/error paths.
+files[5]{path,scope,note}:
+  src/cli/main.ts,project,help/error override wiring
+  src/core/history/history.ts,project,history override wiring
+  src/core/lock/lock.ts,project,lock override wiring
+  src/core/output/output.ts,project,output override wiring
+  src/core/store/item-store.ts,project,item-store override wiring
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/unit/extension-loader.spec.ts,null,project,3600,service override end-to-end coverage
+docs[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,service override architecture
+close_reason: Phase 2 implementation and verification complete
+body: Integrate service override chain into core service modules and add end-to-end coverage.

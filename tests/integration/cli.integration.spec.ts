@@ -2467,6 +2467,98 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("allows preflight overrides to bypass legacy item-format mutation gate", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as Record<string, unknown>;
+      delete settings.item_format;
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const extensionDir = path.join(context.pmPath, "extensions", "preflight-bypass-ext");
+      await mkdir(extensionDir, { recursive: true });
+      await writeFile(
+        path.join(extensionDir, "manifest.json"),
+        `${JSON.stringify(
+          {
+            name: "preflight-bypass-ext",
+            version: "1.0.0",
+            entry: "./index.mjs",
+            capabilities: ["preflight"],
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(extensionDir, "index.mjs"),
+        [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerPreflight(() => ({",
+          "      enforce_item_format_gate: false,",
+          "      run_preflight_item_format_sync: false,",
+          "    }));",
+          "  }",
+          "};",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const createResult = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Bypassed legacy mutation gate",
+          "--description",
+          "Preflight extension disables legacy format gate for this test",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,preflight",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "20",
+          "--acceptance-criteria",
+          "Preflight override bypasses explicit format gate",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create with preflight override",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(createResult.code).toBe(0);
+      const created = createResult.json as { item: { id: string } };
+      expect(created.item.id.startsWith("pm-")).toBe(true);
+    });
+  });
+
   it("auto-migrates item files before mutation when settings item_format is manually changed", async () => {
     await withTempPmPath(async (context) => {
       const setMarkdown = context.runCli(
@@ -2953,6 +3045,274 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         dryRun: true,
         limit: "2",
       });
+    });
+  });
+
+  it("applies parser and service overrides for dynamic extension commands", async () => {
+    await withTempPmPath(async (context) => {
+      const extensionDir = path.join(context.pmPath, "extensions", "acme-parser-service-ext");
+      await mkdir(extensionDir, { recursive: true });
+
+      await writeFile(
+        path.join(extensionDir, "manifest.json"),
+        `${JSON.stringify(
+          {
+            name: "acme-parser-service-ext",
+            version: "1.0.0",
+            entry: "./index.mjs",
+            capabilities: ["commands", "parser", "services"],
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(extensionDir, "index.mjs"),
+        [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerParser('acme sync', (context) => ({",
+          "      options: {",
+          "        ...context.options,",
+          "        limit: Number(context.options.limit),",
+          "      },",
+          "    }));",
+          "    api.registerService('output_format', (context) => JSON.stringify({",
+          "      service: 'acme-parser-service-ext',",
+          "      payload: context.payload.result,",
+          "    }));",
+          "    api.registerCommand({",
+          "      name: 'acme sync',",
+          "      run: (context) => ({",
+          "        ok: true,",
+          "        command: context.command,",
+          "        options: context.options,",
+          "      }),",
+          "    });",
+          "  }",
+          "};",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const dispatched = context.runCli(["acme", "sync", "--json", "--limit", "7"], { expectJson: true });
+      expect(dispatched.code).toBe(0);
+      const payload = dispatched.json as {
+        service: string;
+        payload: {
+          ok: boolean;
+          command: string;
+          options: { limit: number };
+        };
+      };
+      expect(payload.service).toBe("acme-parser-service-ext");
+      expect(payload.payload.ok).toBe(true);
+      expect(payload.payload.command).toBe("acme sync");
+      expect(payload.payload.options.limit).toBe(7);
+    });
+  });
+
+  it("applies history append service overrides during item mutations", async () => {
+    await withTempPmPath(async (context) => {
+      const extensionDir = path.join(context.pmPath, "extensions", "history-service-ext");
+      await mkdir(extensionDir, { recursive: true });
+      await writeFile(
+        path.join(extensionDir, "manifest.json"),
+        `${JSON.stringify(
+          {
+            name: "history-service-ext",
+            version: "1.0.0",
+            entry: "./index.mjs",
+            capabilities: ["services"],
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(extensionDir, "index.mjs"),
+        [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerService('history_append', (context) => ({",
+          "      line: JSON.stringify({",
+          "        override: true,",
+          "        op: context.payload.entry.op,",
+          "      }),",
+          "    }));",
+          "  }",
+          "};",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const created = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "History service override",
+          "--description",
+          "Validate history append service hooks",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,services",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "20",
+          "--acceptance-criteria",
+          "History append override writes custom line",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create history service test item",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(created.code).toBe(0);
+      const createdId = (created.json as { item: { id: string } }).item.id;
+      const historyRaw = await readFile(path.join(context.pmPath, "history", `${createdId}.jsonl`), "utf8");
+      const parsed = JSON.parse(historyRaw.trim()) as { override: boolean; op: string };
+      expect(parsed).toEqual({
+        override: true,
+        op: "create",
+      });
+    });
+  });
+
+  it("applies lock acquire/release service overrides during updates", async () => {
+    await withTempPmPath(async (context) => {
+      const extensionDir = path.join(context.pmPath, "extensions", "lock-service-ext");
+      const lockLogPath = path.join(context.tempRoot, "lock-service.log");
+      await mkdir(extensionDir, { recursive: true });
+      await writeFile(
+        path.join(extensionDir, "manifest.json"),
+        `${JSON.stringify(
+          {
+            name: "lock-service-ext",
+            version: "1.0.0",
+            entry: "./index.mjs",
+            capabilities: ["services"],
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(extensionDir, "index.mjs"),
+        [
+          "import fs from 'node:fs';",
+          "export default {",
+          "  activate(api) {",
+          "    api.registerService('lock_acquire', () => ({",
+          String.raw`      release: () => { fs.appendFileSync(${JSON.stringify(lockLogPath)}, 'release-callback\n', 'utf8'); },`,
+          "    }));",
+          String.raw`    api.registerService('lock_release', () => { fs.appendFileSync(${JSON.stringify(lockLogPath)}, 'release-service\n', 'utf8'); });`,
+          "  }",
+          "};",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const created = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Lock service override seed item",
+          "--description",
+          "Create seed item for lock override update",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,services",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "20",
+          "--acceptance-criteria",
+          "Update runs through lock service override",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create lock service seed item",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(created.code).toBe(0);
+      const createdId = (created.json as { item: { id: string } }).item.id;
+
+      const updated = context.runCli(
+        [
+          "update",
+          createdId,
+          "--json",
+          "--status",
+          "in_progress",
+          "--author",
+          "integration-test",
+          "--message",
+          "Update through lock service override",
+        ],
+        { expectJson: true },
+      );
+      expect(updated.code).toBe(0);
+
+      const lockLog = await readFile(lockLogPath, "utf8");
+      expect(lockLog).toContain("release-callback");
+      expect(lockLog).toContain("release-service");
     });
   });
 

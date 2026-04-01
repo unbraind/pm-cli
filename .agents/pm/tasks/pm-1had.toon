@@ -1,0 +1,45 @@
+id: pm-1had
+title: "Phase 2: full verification matrix and closure evidence"
+description: "Run full build/test/coverage and extension-enabled vs --no-extensions verification, then log release-ready evidence."
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:release","area:verification",phase2,pm-cli
+created_at: "2026-04-01T19:29:36.722Z"
+updated_at: "2026-04-01T19:57:58.375Z"
+deadline: "2026-04-09T19:29:36.722Z"
+author: codex-agent
+estimated_minutes: 120
+acceptance_criteria: "Build, tests, and coverage pass; extension-enabled and --no-extensions parity checks pass; evidence comments added to linked items."
+definition_of_ready: Feature pm-r9nf exists and implementation changes are merged locally.
+order: 2
+goal: Total customization platform
+objective: Verification and closure evidence
+value: Demonstrates release safety and compatibility.
+impact: Unblocks epic closure and deployment confidence.
+outcome: Phase-2 rollout is evidence-backed.
+why_now: Coverage gate and compatibility proof are hard release requirements.
+parent: pm-r9nf
+risk: medium
+confidence: medium
+sprint: phase2-override
+release: vnext
+component: release
+regression: true
+customer_impact: Existing users retain stable behavior with verified parity.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-r9nf,parent,"2026-04-01T19:29:36.722Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T19:29:36.722Z",codex-agent,Task captures mandatory release verification and evidence logging.
+  "2026-04-01T19:57:56.808Z",codex-agent,"Implemented in Phase 2 full-override rollout. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage passed (64 files/702 tests) with aligned coverage gates and release-readiness checks green."
+notes[1]{created_at,author,text}:
+  "2026-04-01T19:29:36.722Z",codex-agent,Run both extension-enabled and --no-extensions checks before closure.
+files[1]{path,scope,note}:
+  vitest.config.ts,project,coverage gate
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,full coverage sweep
+  node scripts/run-tests.mjs test,null,project,7200,full test sweep
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,release evidence summary
+close_reason: Phase 2 implementation and verification complete
+body: Execute verification commands and record deterministic closure evidence on linked items.

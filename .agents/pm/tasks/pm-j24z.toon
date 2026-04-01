@@ -1,0 +1,45 @@
+id: pm-j24z
+title: "Phase 2: publish SDK contracts for parser/preflight/services"
+description: "Define and export new SDK TypeScript contracts and helper types for parser, preflight, and service override APIs."
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:extensions","area:sdk",phase2,pm-cli
+created_at: "2026-04-01T19:29:05.089Z"
+updated_at: "2026-04-01T19:57:51.164Z"
+deadline: "2026-04-08T19:29:05.089Z"
+author: codex-agent
+estimated_minutes: 120
+acceptance_criteria: SDK exports include parser/preflight/service contract types and compile cleanly.
+definition_of_ready: Feature pm-0u1y exists and runtime contract names are finalized.
+order: 1
+goal: Total customization platform
+objective: SDK v2 type contract publication
+value: Provides clear and stable APIs for extension authors.
+impact: Reduces implementation ambiguity and downstream friction.
+outcome: SDK v2 contracts are publicly consumable.
+why_now: Required to make runtime phase-2 surfaces usable externally.
+parent: pm-0u1y
+risk: medium
+confidence: medium
+sprint: phase2-override
+release: vnext
+component: sdk
+regression: true
+customer_impact: Extension authors get stable typings for advanced overrides.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-0u1y,parent,"2026-04-01T19:29:05.089Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T19:29:05.089Z",codex-agent,Task covers SDK export updates for new extension contracts.
+  "2026-04-01T19:57:49.710Z",codex-agent,"Implemented in Phase 2 full-override rollout. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage passed (64 files/702 tests) with aligned coverage gates and release-readiness checks green."
+notes[1]{created_at,author,text}:
+  "2026-04-01T19:29:05.089Z",codex-agent,Must keep existing exports intact for compatibility.
+files[2]{path,scope,note}:
+  src/sdk/cli-contracts.ts,project,contract schema updates
+  src/sdk/index.ts,project,SDK export barrel
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,3600,sdk typing and behavior coverage
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,sdk contract documentation
+close_reason: Phase 2 implementation and verification complete
+body: Update SDK exports and contract types to represent Extension Host V2 capabilities.

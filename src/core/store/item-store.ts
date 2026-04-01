@@ -1,6 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { getActiveExtensionRegistrations, runActiveOnReadHooks, runActiveOnWriteHooks } from "../extensions/index.js";
+import {
+  getActiveExtensionRegistrations,
+  runActiveOnReadHooks,
+  runActiveOnWriteHooks,
+  runActiveServiceOverride,
+} from "../extensions/index.js";
 import { EMPTY_CANONICAL_DOCUMENT, EXIT_CODE, TYPE_TO_FOLDER } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { appendHistoryEntry, createHistoryEntry } from "../history/history.js";
@@ -209,8 +214,43 @@ export async function mutateItem(params: {
       located.item_format,
       typeToFolder,
     );
-    await writeFileAtomic(targetItemPath, serializedAfter);
-    if (targetItemPath !== located.itemPath) {
+    const historyPath = getHistoryPath(params.pmRoot, located.id);
+    const serviceWriteOverride = await runActiveServiceOverride("item_store_write", {
+      op: params.op,
+      pm_root: params.pmRoot,
+      item_id: located.id,
+      source_item_path: located.itemPath,
+      target_item_path: targetItemPath,
+      history_path: historyPath,
+      item_format: located.item_format,
+      before: beforeDocument,
+      after: afterDocument,
+      contents: serializedAfter,
+    });
+    let effectiveTargetItemPath = targetItemPath;
+    let effectiveSerializedAfter = serializedAfter;
+    let skipItemWrite = false;
+    if (serviceWriteOverride.handled && typeof serviceWriteOverride.result === "object" && serviceWriteOverride.result !== null) {
+      const overrideRecord = serviceWriteOverride.result as {
+        target_item_path?: unknown;
+        contents?: unknown;
+        skip_write?: unknown;
+      };
+      if (typeof overrideRecord.target_item_path === "string" && overrideRecord.target_item_path.trim().length > 0) {
+        effectiveTargetItemPath = overrideRecord.target_item_path;
+      }
+      if (typeof overrideRecord.contents === "string") {
+        effectiveSerializedAfter = overrideRecord.contents;
+      }
+      if (overrideRecord.skip_write === true) {
+        skipItemWrite = true;
+      }
+    }
+
+    if (!skipItemWrite) {
+      await writeFileAtomic(effectiveTargetItemPath, effectiveSerializedAfter);
+    }
+    if (!skipItemWrite && effectiveTargetItemPath !== located.itemPath) {
       await fs.rm(located.itemPath);
     }
     const entry = createHistoryEntry({
@@ -223,24 +263,24 @@ export async function mutateItem(params: {
     });
 
     try {
-      await appendHistoryEntry(getHistoryPath(params.pmRoot, located.id), entry);
+      await appendHistoryEntry(historyPath, entry);
     } catch (error: unknown) {
-      if (targetItemPath !== located.itemPath) {
+      if (!skipItemWrite && effectiveTargetItemPath !== located.itemPath) {
         await writeFileAtomic(located.itemPath, originalRaw);
-        await fs.rm(targetItemPath, { force: true });
-      } else {
+        await fs.rm(effectiveTargetItemPath, { force: true });
+      } else if (!skipItemWrite) {
         await writeFileAtomic(located.itemPath, originalRaw);
       }
       throw error;
     }
     const hookWarnings = [
       ...(await runActiveOnWriteHooks({
-        path: targetItemPath,
+        path: effectiveTargetItemPath,
         scope: "project",
         op: params.op,
       })),
       ...(await runActiveOnWriteHooks({
-        path: getHistoryPath(params.pmRoot, located.id),
+        path: historyPath,
         scope: "project",
         op: `${params.op}:history`,
       })),
@@ -250,7 +290,7 @@ export async function mutateItem(params: {
       item: afterDocument.front_matter,
       body: afterDocument.body,
       changedFields: mutation.changedFields,
-      warnings: [...(mutation.warnings ?? []), ...historyPolicy.warnings, ...hookWarnings],
+      warnings: [...(mutation.warnings ?? []), ...historyPolicy.warnings, ...serviceWriteOverride.warnings, ...hookWarnings],
     };
   } finally {
     await releaseLock();
@@ -307,23 +347,54 @@ export async function deleteItem(params: {
       after: tombstoneDocument,
       message: params.message,
     });
+    const historyPath = getHistoryPath(params.pmRoot, located.id);
+    const serviceDeleteOverride = await runActiveServiceOverride("item_store_delete", {
+      op: "delete",
+      pm_root: params.pmRoot,
+      item_id: located.id,
+      item_path: located.itemPath,
+      history_path: historyPath,
+      before: beforeDocument,
+    });
+    let effectiveItemPath = located.itemPath;
+    let skipDelete = false;
+    if (
+      serviceDeleteOverride.handled &&
+      typeof serviceDeleteOverride.result === "object" &&
+      serviceDeleteOverride.result !== null
+    ) {
+      const overrideRecord = serviceDeleteOverride.result as {
+        item_path?: unknown;
+        skip_delete?: unknown;
+      };
+      if (typeof overrideRecord.item_path === "string" && overrideRecord.item_path.trim().length > 0) {
+        effectiveItemPath = overrideRecord.item_path;
+      }
+      if (overrideRecord.skip_delete === true) {
+        skipDelete = true;
+      }
+    }
 
-    await fs.rm(located.itemPath);
+    if (!skipDelete) {
+      await fs.rm(effectiveItemPath);
+    }
     try {
-      await appendHistoryEntry(getHistoryPath(params.pmRoot, located.id), historyEntry);
+      await appendHistoryEntry(historyPath, historyEntry);
     } catch (error: unknown) {
-      await writeFileAtomic(located.itemPath, originalRaw);
+      if (!skipDelete) {
+        await writeFileAtomic(effectiveItemPath, originalRaw);
+      }
       throw error;
     }
 
     const hookWarnings = [
       ...(await runActiveOnWriteHooks({
-        path: located.itemPath,
+        path: effectiveItemPath,
         scope: "project",
         op: "delete",
       })),
       ...(await runActiveOnWriteHooks({
-        path: getHistoryPath(params.pmRoot, located.id),
+        path: historyPath,
         scope: "project",
         op: "delete:history",
       })),
@@ -332,7 +403,7 @@ export async function deleteItem(params: {
     return {
       item: beforeDocument.front_matter,
       changedFields: ["deleted"],
-      warnings: [...historyPolicy.warnings, ...hookWarnings],
+      warnings: [...historyPolicy.warnings, ...serviceDeleteOverride.warnings, ...hookWarnings],
     };
   } finally {
     await releaseLock();

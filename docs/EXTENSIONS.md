@@ -1,6 +1,6 @@
 # pm-cli Extension Development Guide
 
-Extensions let you add commands, renderers, importers, exporters, schema fields, item-type definitions, search providers, and lifecycle hooks to `pm-cli` without modifying core.
+Extensions let you add commands, parser/preflight lifecycle control, core service overrides, renderers, importers, exporters, schema fields, item-type definitions, search providers, and lifecycle hooks to `pm-cli` without modifying core.
 
 ## Extension Locations
 
@@ -23,6 +23,9 @@ Every extension directory must contain a `manifest.json`:
   "priority": 100,
   "capabilities": [
     "commands",
+    "parser",
+    "preflight",
+    "services",
     "renderers",
     "hooks",
     "schema",
@@ -91,6 +94,84 @@ api.registerCommand("list", (context) => {
 
 Result override callbacks are synchronous. Returning a Promise is ignored and emits `extension_command_override_async_unsupported:<layer>:<name>:<command>`.
 
+### `api.registerParser(command, override)`
+
+Register command-scoped parser overrides for core or dynamic command paths. Parser overrides run before command handler dispatch and can rewrite `args`, `options`, and `global` values.
+
+```ts
+api.registerParser("acme sync", (context) => {
+  return {
+    options: {
+      ...context.options,
+      limit: Number(context.options.limit),
+    },
+  };
+});
+```
+
+Notes:
+
+- Requires `parser` capability.
+- Resolution is deterministic (last registered override for the command path wins).
+- Parser handlers can be async.
+- Failed parser overrides fall back to the original command context and emit deterministic warnings.
+
+### `api.registerPreflight(override)`
+
+Register a preflight override to control command mutation gates and migration execution.
+
+```ts
+api.registerPreflight((context) => ({
+  enforce_item_format_gate: false,
+  run_preflight_item_format_sync: false,
+  run_extension_migrations: false,
+  enforce_mandatory_migration_gate: false,
+}));
+```
+
+`context.decision` contains the default gate/migration plan:
+
+- `enforce_item_format_gate`
+- `run_preflight_item_format_sync`
+- `run_extension_migrations`
+- `enforce_mandatory_migration_gate`
+
+Notes:
+
+- Requires `preflight` capability.
+- Only the latest registered preflight override is active (deterministic last-wins behavior).
+- Use this API carefully: disabling gates/migrations can bypass core safety rails.
+
+### `api.registerService(service, override)`
+
+Register service-level overrides for deep runtime behavior.
+
+```ts
+api.registerService("output_format", (context) => {
+  return JSON.stringify({
+    rendered_by: "acme-service",
+    payload: context.payload.result,
+  });
+});
+```
+
+Supported service keys:
+
+- `output_format`
+- `error_format`
+- `help_format`
+- `lock_acquire`
+- `lock_release`
+- `history_append`
+- `item_store_write`
+- `item_store_delete`
+
+Notes:
+
+- Requires `services` capability.
+- Service resolution is deterministic (last registration for each service key wins).
+- `output_format` and `error_format` are synchronous call sites; async returns are ignored with deterministic warnings.
+
 ### `api.registerFlags(targetCommand, flags)`
 
 Declare flags for a command (displayed in `--help` for dynamic extension commands):
@@ -109,6 +190,7 @@ Supported metadata for dynamic extension help rendering:
 - `required: true` appends a `[required]` marker in help.
 - `enabled: false` appends a `[disabled]` marker in help.
 - `visible: false` hides the flag from dynamic help output.
+- `type` / `value_type` (`string` | `number` | `boolean`) enables runtime loose-option coercion for matching command flags.
 - Validation contract: each entry must provide at least one of `long` or `short`; optional metadata fields must match expected scalar types.
 
 Core help output now also appends command-level narrative sections (why/examples/tips). Dynamic extension commands still receive flag-level rendering from `registerFlags(...)`, so extension authors should provide explicit `description` text on each flag to keep help high-signal.
@@ -354,6 +436,7 @@ api.hooks.onIndex((ctx) => {
 - `extension_activate_failed:<layer>:<name>` — exception in `activate()`
 - `extension_entry_outside_extension:<layer>:<name>` — entry path escapes directory
 - `extension_capability_unknown:<layer>:<name>:<capability>` — unknown capability in manifest
+- collision warnings when multiple extensions target the same command/parser/preflight/service/renderer key (last registration wins)
 
 Use `pm health --json` to parse diagnostics programmatically.
 

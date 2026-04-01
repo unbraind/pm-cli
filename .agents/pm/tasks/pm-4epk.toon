@@ -1,0 +1,49 @@
+id: pm-4epk
+title: "Phase 2: update extension architecture and migration docs"
+description: "Revise docs to cover parser, preflight, and service override contracts with trusted-default operational guidance and migration notes."
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:docs","area:extensions",phase2,pm-cli
+created_at: "2026-04-01T19:29:36.404Z"
+updated_at: "2026-04-01T19:57:54.965Z"
+deadline: "2026-04-08T19:29:36.404Z"
+author: codex-agent
+estimated_minutes: 120
+acceptance_criteria: EXTENSIONS/ARCHITECTURE/README/AGENTS/SECURITY/CHANGELOG reflect phase-2 contracts and guidance; docs are internally consistent.
+definition_of_ready: Feature pm-r9nf exists and implementation scope is finalized.
+order: 1
+goal: Total customization platform
+objective: Documentation and migration guidance
+value: Improves discoverability and safe adoption.
+impact: Reduces ambiguity for extension maintainers and operators.
+outcome: Phase-2 docs are complete and coherent.
+why_now: Contract changes require immediate docs parity.
+parent: pm-r9nf
+risk: medium
+confidence: medium
+sprint: phase2-override
+release: vnext
+component: docs-runtime
+regression: true
+customer_impact: Users can evaluate trusted-default override model with clear operational guidance.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-r9nf,parent,"2026-04-01T19:29:36.404Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T19:29:36.404Z",codex-agent,Task updates docs and migration guidance for phase-2 surfaces.
+  "2026-04-01T19:57:53.441Z",codex-agent,"Implemented in Phase 2 full-override rollout. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage passed (64 files/702 tests) with aligned coverage gates and release-readiness checks green."
+notes[1]{created_at,author,text}:
+  "2026-04-01T19:29:36.404Z",codex-agent,Include explicit full-trusted-default model implications.
+files[6]{path,scope,note}:
+  AGENTS.md,project,agent operational rules alignment
+  CHANGELOG.md,project,release notes
+  docs/ARCHITECTURE.md,project,architecture docs
+  docs/EXTENSIONS.md,project,contract docs
+  README.md,project,capability summary
+  SECURITY.md,project,operational safety guidance
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,3600,docs-backed behavior verification
+docs[1]{path,scope,note}:
+  PRD.md,project,product contract alignment
+close_reason: Phase 2 implementation and verification complete
+body: Update docs and release notes for new Extension Host V2 surfaces and compatibility behavior.

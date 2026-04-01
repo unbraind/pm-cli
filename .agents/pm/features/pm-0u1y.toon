@@ -1,0 +1,46 @@
+id: pm-0u1y
+title: Phase 2 SDK v2 contracts with backward-compat adapters
+description: Expand public SDK contracts for parser/preflight/service overrides while retaining compatibility adapters for existing extension APIs.
+type: Feature
+status: closed
+priority: 1
+tags[4]: "area:extensions","area:sdk",phase2,pm-cli
+created_at: "2026-04-01T19:28:48.026Z"
+updated_at: "2026-04-01T19:58:16.086Z"
+deadline: "2026-04-11T19:28:48.026Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: SDK exposes parser/preflight/service contracts; legacy extension APIs remain functional via compatibility adapters and migration diagnostics.
+definition_of_ready: No duplicate active SDK-v2 feature exists and exported contract files are identified.
+order: 4
+goal: Total customization platform
+objective: Ship SDK v2 with strict compatibility
+value: Gives extension authors richer APIs without forced rewrites.
+impact: Accelerates adoption while avoiding breakage.
+outcome: SDK v2 contracts are stable and backward-safe.
+why_now: Runtime phase-2 surfaces require formal public contracts.
+parent: pm-x395
+risk: medium
+confidence: medium
+sprint: phase2-override
+release: vnext
+component: sdk
+regression: true
+customer_impact: Existing extensions keep working while new capabilities become available.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-bw3h,related,"2026-04-01T19:28:48.026Z",codex-agent,null
+  pm-x395,parent,"2026-04-01T19:28:48.026Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T19:28:48.026Z",codex-agent,Phase-2 SDK v2 extends current contracts while preserving compatibility shims.
+  "2026-04-01T19:58:14.645Z",codex-agent,"Feature delivered across runtime, SDK, docs, and tests. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage passed; release-readiness integration checks passing."
+notes[1]{created_at,author,text}:
+  "2026-04-01T19:28:48.026Z",codex-agent,No breaking changes to existing extension entrypoint behavior.
+files[2]{path,scope,note}:
+  src/sdk/cli-contracts.ts,project,contract schema updates
+  src/sdk/index.ts,project,SDK export surface
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,sdk compatibility coverage
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,sdk v2 contract docs
+close_reason: Phase 2 feature scope complete and verified
+body: "Phase-2 delta: publish SDK v2 contract surface without breaking existing registerCommand/registerRenderer/hook flows."

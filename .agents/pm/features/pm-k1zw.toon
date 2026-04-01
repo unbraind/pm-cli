@@ -1,0 +1,45 @@
+id: pm-k1zw
+title: Phase 2 parser and command-contract override engine
+description: Add extension-driven parser/contract overrides so core and dynamic command option interpretation can be replaced deterministically.
+type: Feature
+status: closed
+priority: 1
+tags[5]: "area:extensions","area:parser","area:runtime",phase2,pm-cli
+created_at: "2026-04-01T19:27:09.832Z"
+updated_at: "2026-04-01T19:58:05.359Z"
+deadline: "2026-04-11T19:27:09.832Z"
+author: codex-agent
+estimated_minutes: 300
+acceptance_criteria: Extensions can override command option parsing/normalization for core and dynamic commands; fallback behavior is deterministic and default-user behavior is unchanged.
+definition_of_ready: No duplicate active feature exists and parser touchpoints are identified in cli/main and extension runtime.
+order: 1
+goal: Total customization platform
+objective: Enable parser-level runtime contract overrides
+value: Allows full command surface customization for project-specific workflows.
+impact: Eliminates remaining parser rigidity for extension authors.
+outcome: Parser and command-contract interpretation become extension-overridable.
+why_now: Current parser model limits complete customization despite extension-first dispatch.
+parent: pm-x395
+risk: high
+confidence: medium
+sprint: phase2-override
+release: vnext
+component: extensions-runtime
+regression: true
+customer_impact: Enables complete command-contract customization without forking pm.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-al0h,related,"2026-04-01T19:27:09.832Z",codex-agent,null
+  pm-x395,parent,"2026-04-01T19:27:09.832Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T19:27:09.832Z",codex-agent,Phase-2 parser/contract layer extends prior router foundation without duplicating shipped scope.
+  "2026-04-01T19:58:03.952Z",codex-agent,"Feature delivered across runtime, SDK, docs, and tests. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage passed; release-readiness integration checks passing."
+notes[1]{created_at,author,text}:
+  "2026-04-01T19:27:09.832Z",codex-agent,Must preserve default behavior when no extension parser overrides are registered.
+files[1]{path,scope,note}:
+  src/cli/main.ts,project,parser and dispatch orchestration
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,parser override regression baseline
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,parser contract docs
+close_reason: Phase 2 feature scope complete and verified
+body: "Phase-2 delta: parser-level override contracts with deterministic fallback and parity tests."

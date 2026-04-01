@@ -1023,6 +1023,9 @@ Precedence:
   "priority": 100,
   "capabilities": [
     "commands",
+    "parser",
+    "preflight",
+    "services",
     "schema",
     "renderers",
     "importers",
@@ -1034,7 +1037,7 @@ Precedence:
 
 Capability declarations are enforced during extension activation. API registrations and
 hook registrations must match declared capabilities (`commands`, `renderers`, `hooks`,
-`schema`, `importers`, `search`) or activation fails with deterministic
+`schema`, `importers`, `search`, `parser`, `preflight`, `services`) or activation fails with deterministic
 `extension_activate_failed:<layer>:<name>` diagnostics.
 Unknown capability names are ignored for registration gating and produce deterministic
 discovery diagnostics `extension_capability_unknown:<layer>:<name>:<capability>`.
@@ -1048,6 +1051,9 @@ Current implementation (single-wave override model):
 - Hook registration APIs (`api.hooks.beforeCommand/afterCommand/onWrite/onRead/onIndex`) require function handlers; invalid payloads throw during extension activation and surface deterministic `extension_activate_failed:<layer>:<name>` warnings.
 - `api.registerCommand(name, override)` supports deterministic synchronous overrides for existing command results before output rendering; override execution receives cloned command `args`/`options`/`global` snapshots, `pm_root`, and a cloned prior result payload so extensions can apply contextual overrides without mutating caller fallback state.
 - `api.registerCommand({ name, run })` supports deterministic extension command handlers for declared command paths, including dynamically surfaced non-core extension command paths (for example `beads import` and `acme sync`) and extension-first replacement of core command handlers at dispatch time.
+- `api.registerParser(command, override)` supports command-scoped parser override contracts (sync/async) that can rewrite `args`, `options`, and `global` context before handler dispatch.
+- `api.registerPreflight(override)` supports command preflight interception (sync/async) to control item-format gate enforcement, preflight migration sync, extension migration execution, and mandatory-migration gate enforcement.
+- `api.registerService(service, override)` supports deterministic service-level override hooks (`output_format`, `error_format`, `help_format`, `lock_acquire`, `lock_release`, `history_append`, `item_store_write`, `item_store_delete`) with last-wins precedence per service key.
 - Extension command-handler execution receives cloned `args`/`options`/`global` snapshots so handler-side mutation cannot leak into caller runtime command state.
 - Registered extension command names are canonicalized with trim + lowercase + internal-whitespace collapse before storage and dispatch matching, ensuring equivalent command paths resolve deterministically.
 - Required extension-command dispatch semantics are deterministic: no matched handler returns command-not-found for extension-only paths, while a matched handler throw returns generic failure with warning code `extension_command_handler_failed:<layer>:<name>:<command>`.
@@ -1055,7 +1061,7 @@ Current implementation (single-wave override model):
 - Extension API registration baseline now includes deterministic registration-time validation and metadata capture for `api.registerFlags`, `api.registerItemFields`, `api.registerItemTypes`, `api.registerMigration`, `api.registerImporter`, `api.registerExporter`, `api.registerSearchProvider`, and `api.registerVectorStoreAdapter`.
 - `api.registerImporter(name, importer)` and `api.registerExporter(name, exporter)` now provide runtime command wiring in addition to metadata capture: each registration deterministically exposes extension command-handler paths `<name> import` and `<name> export` (canonicalized with trim + lowercase + internal-whitespace collapse) and executes through the same isolated command-handler context snapshots used by `api.registerCommand({ name, run })`.
 - Dynamically surfaced extension command paths now render deterministic help metadata derived from registered `api.registerFlags(...)` definitions while preserving loose option parsing behavior for runtime command dispatch.
-- Extension API and hook registration calls enforce manifest capability declarations (`commands`, `renderers`, `hooks`, `schema`, `importers`, `search`) and fail activation deterministically when an extension registers outside its declared capabilities.
+- Extension API and hook registration calls enforce manifest capability declarations (`commands`, `renderers`, `hooks`, `schema`, `importers`, `search`, `parser`, `preflight`, `services`) and fail activation deterministically when an extension registers outside its declared capabilities.
 - Extension activation diagnostics include deterministic registration counts and metadata summaries for the above registries (flags, item fields, item types, migrations, importers, exporters, search providers, and vector store adapters), `pm health` exposes deterministic migration status summaries from registered migration definitions (`status="failed"` -> failed, `status="applied"` -> applied, any other/missing status -> pending), and core write command paths enforce deterministic mandatory-migration gating (`mandatory=true` + status not `"applied"` -> unresolved blocker, with `--force` bypass on force-capable write commands). Mandatory extension migrations are executed in pre-action lifecycle before write-gate enforcement.
 - Registration runtime wiring is live for:
   - item-field defaults + validation on create/update (`registerItemFields`)
@@ -1073,6 +1079,9 @@ export interface PmExtension {
 
 export interface ExtensionApi {
   registerCommand(def: CommandDefinition): void;
+  registerParser(command: string, override: ParserOverride): void;
+  registerPreflight(override: PreflightOverride): void;
+  registerService(service: ExtensionServiceName, override: ServiceOverride): void;
   registerFlags(targetCommand: string, flags: FlagDefinition[]): void;
   registerItemFields(fields: SchemaFieldDefinition[]): void;
   registerItemTypes(types: ItemTypeDefinition[]): void;

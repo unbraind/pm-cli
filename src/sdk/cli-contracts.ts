@@ -17,6 +17,33 @@ export interface PiOptionFlagContract {
   booleanish?: boolean;
 }
 
+export const PM_EXTENSION_CAPABILITY_CONTRACTS = [
+  "commands",
+  "renderers",
+  "hooks",
+  "schema",
+  "importers",
+  "search",
+  "parser",
+  "preflight",
+  "services",
+] as const;
+
+export type PmExtensionCapabilityContract = (typeof PM_EXTENSION_CAPABILITY_CONTRACTS)[number];
+
+export const PM_EXTENSION_SERVICE_NAME_CONTRACTS = [
+  "output_format",
+  "error_format",
+  "help_format",
+  "lock_acquire",
+  "lock_release",
+  "history_append",
+  "item_store_write",
+  "item_store_delete",
+] as const;
+
+export type PmExtensionServiceNameContract = (typeof PM_EXTENSION_SERVICE_NAME_CONTRACTS)[number];
+
 function normalizeUniqueStringList(values: Iterable<string>): string[] {
   return [...new Set(Array.from(values).filter((value) => value.trim().length > 0))];
 }

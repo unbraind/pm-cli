@@ -7,7 +7,17 @@ import type { PmSettings } from "../../types/index.js";
 import type { GlobalOptions } from "../shared/command-types.js";
 
 const DEFAULT_EXTENSION_PRIORITY = 100;
-const KNOWN_EXTENSION_CAPABILITIES = ["commands", "renderers", "hooks", "schema", "importers", "search"] as const;
+const KNOWN_EXTENSION_CAPABILITIES = [
+  "commands",
+  "renderers",
+  "hooks",
+  "schema",
+  "importers",
+  "search",
+  "parser",
+  "preflight",
+  "services",
+] as const;
 type ExtensionCapability = (typeof KNOWN_EXTENSION_CAPABILITIES)[number];
 
 export type ExtensionLayer = "global" | "project";
@@ -114,6 +124,9 @@ export type OutputRendererFormat = "toon" | "json";
 export type CommandOverride = (context: CommandOverrideContext) => unknown;
 export type RendererOverride = (context: RendererOverrideContext) => string;
 export type CommandHandler = (context: CommandHandlerContext) => unknown;
+export type ParserOverride = (context: ParserOverrideContext) => ParserOverrideDelta | Promise<ParserOverrideDelta>;
+export type PreflightOverride = (context: PreflightOverrideContext) => PreflightOverrideDelta | Promise<PreflightOverrideDelta>;
+export type ServiceOverride = (context: ServiceOverrideContext) => unknown;
 
 export interface RegisteredExtensionHook<THook> {
   layer: ExtensionLayer;
@@ -156,6 +169,52 @@ export interface CommandHandlerContext {
   pm_root: string;
 }
 
+export interface ParserOverrideContext extends CommandHandlerContext {}
+
+export interface ParserOverrideDelta {
+  args?: string[];
+  options?: Record<string, unknown>;
+  global?: GlobalOptions;
+}
+
+export interface PreflightOverrideContext extends CommandHandlerContext {
+  decision: PreflightRuntimeDecision;
+}
+
+export interface PreflightRuntimeDecision {
+  enforce_item_format_gate: boolean;
+  run_preflight_item_format_sync: boolean;
+  run_extension_migrations: boolean;
+  enforce_mandatory_migration_gate: boolean;
+}
+
+export interface PreflightOverrideDelta extends ParserOverrideDelta {
+  enforce_item_format_gate?: boolean;
+  run_preflight_item_format_sync?: boolean;
+  run_extension_migrations?: boolean;
+  enforce_mandatory_migration_gate?: boolean;
+}
+
+export type ExtensionServiceName =
+  | "output_format"
+  | "error_format"
+  | "help_format"
+  | "lock_acquire"
+  | "lock_release"
+  | "history_append"
+  | "item_store_write"
+  | "item_store_delete";
+
+export interface ServiceOverrideContext {
+  service: ExtensionServiceName;
+  command?: string;
+  args?: string[];
+  options?: Record<string, unknown>;
+  global?: GlobalOptions;
+  pm_root?: string;
+  payload: unknown;
+}
+
 export interface CommandDefinition {
   name: string;
   run: CommandHandler;
@@ -184,6 +243,26 @@ export interface RegisteredExtensionCommandHandler {
   run: CommandHandler;
 }
 
+export interface RegisteredExtensionParserOverride {
+  layer: ExtensionLayer;
+  name: string;
+  command: string;
+  run: ParserOverride;
+}
+
+export interface RegisteredExtensionPreflightOverride {
+  layer: ExtensionLayer;
+  name: string;
+  run: PreflightOverride;
+}
+
+export interface RegisteredExtensionServiceOverride {
+  layer: ExtensionLayer;
+  name: string;
+  service: ExtensionServiceName;
+  run: ServiceOverride;
+}
+
 export interface RegisteredExtensionRendererOverride {
   layer: ExtensionLayer;
   name: string;
@@ -194,6 +273,18 @@ export interface RegisteredExtensionRendererOverride {
 export interface ExtensionCommandRegistry {
   overrides: RegisteredExtensionCommandOverride[];
   handlers: RegisteredExtensionCommandHandler[];
+}
+
+export interface ExtensionParserRegistry {
+  overrides: RegisteredExtensionParserOverride[];
+}
+
+export interface ExtensionPreflightRegistry {
+  overrides: RegisteredExtensionPreflightOverride[];
+}
+
+export interface ExtensionServiceRegistry {
+  overrides: RegisteredExtensionServiceOverride[];
 }
 
 export interface ExtensionRendererRegistry {
@@ -277,6 +368,9 @@ export interface ExtensionRegistrationCounts {
 export interface ExtensionApi {
   registerCommand(command: string, override: CommandOverride): void;
   registerCommand(definition: CommandDefinition): void;
+  registerParser(command: string, override: ParserOverride): void;
+  registerPreflight(override: PreflightOverride): void;
+  registerService(service: ExtensionServiceName, override: ServiceOverride): void;
   registerFlags(targetCommand: string, flags: FlagDefinition[]): void;
   registerItemFields(fields: SchemaFieldDefinition[]): void;
   registerItemTypes(types: SchemaItemTypeDefinition[]): void;
@@ -305,6 +399,9 @@ export interface FailedExtensionActivation {
 export interface ExtensionActivationResult {
   hooks: ExtensionHookRegistry;
   commands: ExtensionCommandRegistry;
+  parsers: ExtensionParserRegistry;
+  preflight: ExtensionPreflightRegistry;
+  services: ExtensionServiceRegistry;
   renderers: ExtensionRendererRegistry;
   registrations: ExtensionRegistrationRegistry;
   failed: FailedExtensionActivation[];
@@ -318,6 +415,9 @@ export interface ExtensionActivationResult {
   };
   command_override_count: number;
   command_handler_count: number;
+  parser_override_count: number;
+  preflight_override_count: number;
+  service_override_count: number;
   renderer_override_count: number;
   registration_counts: ExtensionRegistrationCounts;
 }
@@ -448,6 +548,24 @@ export function createEmptyExtensionCommandRegistry(): ExtensionCommandRegistry 
   return {
     overrides: [],
     handlers: [],
+  };
+}
+
+export function createEmptyExtensionParserRegistry(): ExtensionParserRegistry {
+  return {
+    overrides: [],
+  };
+}
+
+export function createEmptyExtensionPreflightRegistry(): ExtensionPreflightRegistry {
+  return {
+    overrides: [],
+  };
+}
+
+export function createEmptyExtensionServiceRegistry(): ExtensionServiceRegistry {
+  return {
+    overrides: [],
   };
 }
 
@@ -799,6 +917,21 @@ function isOutputRendererFormat(value: string): value is OutputRendererFormat {
   return value === "toon" || value === "json";
 }
 
+const EXTENSION_SERVICE_NAMES: readonly ExtensionServiceName[] = [
+  "output_format",
+  "error_format",
+  "help_format",
+  "lock_acquire",
+  "lock_release",
+  "history_append",
+  "item_store_write",
+  "item_store_delete",
+];
+
+function isExtensionServiceName(value: string): value is ExtensionServiceName {
+  return EXTENSION_SERVICE_NAMES.includes(value as ExtensionServiceName);
+}
+
 function assertHookHandler(hookName: string, hook: unknown): void {
   if (typeof hook !== "function") {
     throw new TypeError(`api.hooks.${hookName} requires a function handler`);
@@ -1097,6 +1230,9 @@ function createExtensionApi(
   extension: LoadedExtension,
   hooks: ExtensionHookRegistry,
   commands: ExtensionCommandRegistry,
+  parsers: ExtensionParserRegistry,
+  preflight: ExtensionPreflightRegistry,
+  services: ExtensionServiceRegistry,
   renderers: ExtensionRendererRegistry,
   registrations: ExtensionRegistrationRegistry,
 ): ExtensionApi {
@@ -1138,6 +1274,40 @@ function createExtensionApi(
       name: extension.name,
       command: normalizedCommand,
       run: commandOrDefinition.run,
+    });
+  };
+  const registerParser = (command: string, override: ParserOverride): void => {
+    assertExtensionCapability(extension, "parser", "registerParser");
+    const normalizedCommand = normalizeCommandName(assertNonEmptyString("registerParser command", command));
+    assertFunctionHandler("registerParser override", override);
+    parsers.overrides.push({
+      layer: extension.layer,
+      name: extension.name,
+      command: normalizedCommand,
+      run: override,
+    });
+  };
+  const registerPreflight = (override: PreflightOverride): void => {
+    assertExtensionCapability(extension, "preflight", "registerPreflight");
+    assertFunctionHandler("registerPreflight override", override);
+    preflight.overrides.push({
+      layer: extension.layer,
+      name: extension.name,
+      run: override,
+    });
+  };
+  const registerService = (service: ExtensionServiceName, override: ServiceOverride): void => {
+    assertExtensionCapability(extension, "services", "registerService");
+    const normalizedService = String(service).trim().toLowerCase();
+    if (!isExtensionServiceName(normalizedService)) {
+      throw new TypeError(`registerService service must be one of: ${EXTENSION_SERVICE_NAMES.join(", ")}`);
+    }
+    assertFunctionHandler("registerService override", override);
+    services.overrides.push({
+      layer: extension.layer,
+      name: extension.name,
+      service: normalizedService as ExtensionServiceName,
+      run: override,
     });
   };
   const registerRenderer = (format: OutputRendererFormat, renderer: RendererOverride): void => {
@@ -1340,6 +1510,9 @@ function createExtensionApi(
 
   return {
     registerCommand,
+    registerParser,
+    registerPreflight,
+    registerService,
     registerFlags,
     registerItemFields,
     registerItemTypes,
@@ -1454,9 +1627,69 @@ function collectRendererCollisionWarnings(renderers: ExtensionRendererRegistry):
   return warnings;
 }
 
+function collectParserCollisionWarnings(parsers: ExtensionParserRegistry): string[] {
+  const warnings: string[] = [];
+  const grouped = new Map<string, RegisteredExtensionParserOverride[]>();
+  for (const entry of parsers.overrides) {
+    const bucket = grouped.get(entry.command) ?? [];
+    bucket.push(entry);
+    grouped.set(entry.command, bucket);
+  }
+  for (const command of [...grouped.keys()].sort((left, right) => left.localeCompare(right))) {
+    const bucket = grouped.get(command) ?? [];
+    if (bucket.length <= 1) {
+      continue;
+    }
+    const winner = bucket[bucket.length - 1];
+    for (const displaced of bucket.slice(0, -1)) {
+      warnings.push(
+        `extension_parser_override_collision:${command}:${winner.layer}:${winner.name}:${displaced.layer}:${displaced.name}`,
+      );
+    }
+  }
+  return warnings;
+}
+
+function collectPreflightCollisionWarnings(preflight: ExtensionPreflightRegistry): string[] {
+  if (preflight.overrides.length <= 1) {
+    return [];
+  }
+  const winner = preflight.overrides[preflight.overrides.length - 1];
+  return preflight.overrides.slice(0, -1).map(
+    (displaced) =>
+      `extension_preflight_override_collision:${winner.layer}:${winner.name}:${displaced.layer}:${displaced.name}`,
+  );
+}
+
+function collectServiceCollisionWarnings(services: ExtensionServiceRegistry): string[] {
+  const warnings: string[] = [];
+  const grouped = new Map<ExtensionServiceName, RegisteredExtensionServiceOverride[]>();
+  for (const entry of services.overrides) {
+    const bucket = grouped.get(entry.service) ?? [];
+    bucket.push(entry);
+    grouped.set(entry.service, bucket);
+  }
+  for (const service of [...grouped.keys()].sort((left, right) => left.localeCompare(right))) {
+    const bucket = grouped.get(service) ?? [];
+    if (bucket.length <= 1) {
+      continue;
+    }
+    const winner = bucket[bucket.length - 1];
+    for (const displaced of bucket.slice(0, -1)) {
+      warnings.push(
+        `extension_service_override_collision:${service}:${winner.layer}:${winner.name}:${displaced.layer}:${displaced.name}`,
+      );
+    }
+  }
+  return warnings;
+}
+
 export async function activateExtensions(loadResult: ExtensionLoadResult): Promise<ExtensionActivationResult> {
   const hooks = createEmptyExtensionHookRegistry();
   const commands = createEmptyExtensionCommandRegistry();
+  const parsers = createEmptyExtensionParserRegistry();
+  const preflight = createEmptyExtensionPreflightRegistry();
+  const services = createEmptyExtensionServiceRegistry();
   const renderers = createEmptyExtensionRendererRegistry();
   const registrations = createEmptyExtensionRegistrationRegistry();
   const failed: FailedExtensionActivation[] = [];
@@ -1469,7 +1702,7 @@ export async function activateExtensions(loadResult: ExtensionLoadResult): Promi
     }
 
     try {
-      await activatable.activate(createExtensionApi(extension, hooks, commands, renderers, registrations));
+      await activatable.activate(createExtensionApi(extension, hooks, commands, parsers, preflight, services, renderers, registrations));
     } catch (error: unknown) {
       warnings.push(`extension_activate_failed:${extension.layer}:${extension.name}`);
       failed.push({
@@ -1483,6 +1716,9 @@ export async function activateExtensions(loadResult: ExtensionLoadResult): Promi
 
   const collisionWarnings = [
     ...collectCommandCollisionWarnings(commands),
+    ...collectParserCollisionWarnings(parsers),
+    ...collectPreflightCollisionWarnings(preflight),
+    ...collectServiceCollisionWarnings(services),
     ...collectRendererCollisionWarnings(renderers),
   ];
   const mergedWarnings = [...new Set([...warnings, ...collisionWarnings])];
@@ -1490,6 +1726,9 @@ export async function activateExtensions(loadResult: ExtensionLoadResult): Promi
   return {
     hooks,
     commands,
+    parsers,
+    preflight,
+    services,
     renderers,
     registrations,
     failed,
@@ -1503,6 +1742,9 @@ export async function activateExtensions(loadResult: ExtensionLoadResult): Promi
     },
     command_override_count: commands.overrides.length,
     command_handler_count: commands.handlers.length,
+    parser_override_count: parsers.overrides.length,
+    preflight_override_count: preflight.overrides.length,
+    service_override_count: services.overrides.length,
     renderer_override_count: renderers.overrides.length,
     registration_counts: getRegistrationCounts(registrations),
   };
@@ -1586,6 +1828,255 @@ export async function runCommandHandler(
       handled: false,
       result: null,
       warnings: [`extension_command_handler_failed:${matched.layer}:${matched.name}:${matched.command}`],
+    };
+  }
+}
+
+export interface ParserOverrideResult {
+  overridden: boolean;
+  context: CommandHandlerContext;
+  warnings: string[];
+}
+
+export async function runParserOverride(
+  parsers: ExtensionParserRegistry,
+  context: ParserOverrideContext,
+): Promise<ParserOverrideResult> {
+  const command = normalizeCommandName(context.command);
+  if (command.length === 0) {
+    return {
+      overridden: false,
+      context: {
+        command,
+        args: cloneContextSnapshot(context.args),
+        options: cloneCommandOptionsSnapshot(context.options),
+        global: cloneGlobalOptionsSnapshot(context.global),
+        pm_root: context.pm_root,
+      },
+      warnings: [],
+    };
+  }
+
+  const matched = [...parsers.overrides].reverse().find((entry) => entry.command === command);
+  if (!matched) {
+    return {
+      overridden: false,
+      context: {
+        command,
+        args: cloneContextSnapshot(context.args),
+        options: cloneCommandOptionsSnapshot(context.options),
+        global: cloneGlobalOptionsSnapshot(context.global),
+        pm_root: context.pm_root,
+      },
+      warnings: [],
+    };
+  }
+
+  try {
+    const delta = (await Promise.resolve(
+      matched.run({
+        command,
+        args: cloneContextSnapshot(context.args),
+        options: cloneCommandOptionsSnapshot(context.options),
+        global: cloneGlobalOptionsSnapshot(context.global),
+        pm_root: context.pm_root,
+      }),
+    )) ?? {};
+    const nextArgs = Array.isArray(delta.args) ? cloneContextSnapshot(delta.args) : cloneContextSnapshot(context.args);
+    const nextOptions = delta.options ? cloneCommandOptionsSnapshot(delta.options) : cloneCommandOptionsSnapshot(context.options);
+    const nextGlobal = delta.global ? cloneGlobalOptionsSnapshot(delta.global) : cloneGlobalOptionsSnapshot(context.global);
+    return {
+      overridden: true,
+      context: {
+        command,
+        args: nextArgs,
+        options: nextOptions,
+        global: nextGlobal,
+        pm_root: context.pm_root,
+      },
+      warnings: [],
+    };
+  } catch {
+    return {
+      overridden: false,
+      context: {
+        command,
+        args: cloneContextSnapshot(context.args),
+        options: cloneCommandOptionsSnapshot(context.options),
+        global: cloneGlobalOptionsSnapshot(context.global),
+        pm_root: context.pm_root,
+      },
+      warnings: [`extension_parser_override_failed:${matched.layer}:${matched.name}:${matched.command}`],
+    };
+  }
+}
+
+export interface PreflightOverrideResult {
+  overridden: boolean;
+  context: CommandHandlerContext;
+  decision: PreflightRuntimeDecision;
+  warnings: string[];
+}
+
+export async function runPreflightOverride(
+  preflight: ExtensionPreflightRegistry,
+  context: PreflightOverrideContext,
+): Promise<PreflightOverrideResult> {
+  const matched = [...preflight.overrides].reverse()[0];
+  const baseContext: CommandHandlerContext = {
+    command: normalizeCommandName(context.command),
+    args: cloneContextSnapshot(context.args),
+    options: cloneCommandOptionsSnapshot(context.options),
+    global: cloneGlobalOptionsSnapshot(context.global),
+    pm_root: context.pm_root,
+  };
+  const baseDecision: PreflightRuntimeDecision = cloneContextSnapshot(context.decision);
+  if (!matched) {
+    return {
+      overridden: false,
+      context: baseContext,
+      decision: baseDecision,
+      warnings: [],
+    };
+  }
+
+  try {
+    const delta = (await Promise.resolve(
+      matched.run({
+        command: baseContext.command,
+        args: cloneContextSnapshot(baseContext.args),
+        options: cloneCommandOptionsSnapshot(baseContext.options),
+        global: cloneGlobalOptionsSnapshot(baseContext.global),
+        pm_root: baseContext.pm_root,
+        decision: cloneContextSnapshot(baseDecision),
+      }),
+    )) ?? {};
+    const nextContext: CommandHandlerContext = {
+      command: baseContext.command,
+      args: Array.isArray(delta.args) ? cloneContextSnapshot(delta.args) : baseContext.args,
+      options: delta.options ? cloneCommandOptionsSnapshot(delta.options) : baseContext.options,
+      global: delta.global ? cloneGlobalOptionsSnapshot(delta.global) : baseContext.global,
+      pm_root: baseContext.pm_root,
+    };
+    const nextDecision: PreflightRuntimeDecision = {
+      enforce_item_format_gate:
+        typeof delta.enforce_item_format_gate === "boolean"
+          ? delta.enforce_item_format_gate
+          : baseDecision.enforce_item_format_gate,
+      run_preflight_item_format_sync:
+        typeof delta.run_preflight_item_format_sync === "boolean"
+          ? delta.run_preflight_item_format_sync
+          : baseDecision.run_preflight_item_format_sync,
+      run_extension_migrations:
+        typeof delta.run_extension_migrations === "boolean"
+          ? delta.run_extension_migrations
+          : baseDecision.run_extension_migrations,
+      enforce_mandatory_migration_gate:
+        typeof delta.enforce_mandatory_migration_gate === "boolean"
+          ? delta.enforce_mandatory_migration_gate
+          : baseDecision.enforce_mandatory_migration_gate,
+    };
+    return {
+      overridden: true,
+      context: nextContext,
+      decision: nextDecision,
+      warnings: [],
+    };
+  } catch {
+    return {
+      overridden: false,
+      context: baseContext,
+      decision: baseDecision,
+      warnings: [`extension_preflight_override_failed:${matched.layer}:${matched.name}`],
+    };
+  }
+}
+
+export interface ServiceOverrideResult {
+  handled: boolean;
+  result: unknown;
+  warnings: string[];
+}
+
+function resolveDefaultServiceResult(context: ServiceOverrideContext): ServiceOverrideResult {
+  return {
+    handled: false,
+    result: context.payload,
+    warnings: [],
+  };
+}
+
+export function runServiceOverrideSync(
+  services: ExtensionServiceRegistry,
+  context: ServiceOverrideContext,
+): ServiceOverrideResult {
+  const matched = [...services.overrides].reverse().find((entry) => entry.service === context.service);
+  if (!matched) {
+    return resolveDefaultServiceResult(context);
+  }
+
+  try {
+    const result = matched.run({
+      service: context.service,
+      command: context.command ? normalizeCommandName(context.command) : undefined,
+      args: context.args ? cloneContextSnapshot(context.args) : undefined,
+      options: context.options ? cloneCommandOptionsSnapshot(context.options) : undefined,
+      global: context.global ? cloneGlobalOptionsSnapshot(context.global) : undefined,
+      pm_root: context.pm_root,
+      payload: cloneContextSnapshot(context.payload),
+    });
+    if (result instanceof Promise) {
+      return {
+        handled: false,
+        result: context.payload,
+        warnings: [`extension_service_override_async_unsupported:${matched.layer}:${matched.name}:${matched.service}`],
+      };
+    }
+    return {
+      handled: true,
+      result,
+      warnings: [],
+    };
+  } catch {
+    return {
+      handled: false,
+      result: context.payload,
+      warnings: [`extension_service_override_failed:${matched.layer}:${matched.name}:${matched.service}`],
+    };
+  }
+}
+
+export async function runServiceOverride(
+  services: ExtensionServiceRegistry,
+  context: ServiceOverrideContext,
+): Promise<ServiceOverrideResult> {
+  const matched = [...services.overrides].reverse().find((entry) => entry.service === context.service);
+  if (!matched) {
+    return resolveDefaultServiceResult(context);
+  }
+
+  try {
+    const result = await Promise.resolve(
+      matched.run({
+        service: context.service,
+        command: context.command ? normalizeCommandName(context.command) : undefined,
+        args: context.args ? cloneContextSnapshot(context.args) : undefined,
+        options: context.options ? cloneCommandOptionsSnapshot(context.options) : undefined,
+        global: context.global ? cloneGlobalOptionsSnapshot(context.global) : undefined,
+        pm_root: context.pm_root,
+        payload: cloneContextSnapshot(context.payload),
+      }),
+    );
+    return {
+      handled: true,
+      result,
+      warnings: [],
+    };
+  } catch {
+    return {
+      handled: false,
+      result: context.payload,
+      warnings: [`extension_service_override_failed:${matched.layer}:${matched.name}:${matched.service}`],
     };
   }
 }

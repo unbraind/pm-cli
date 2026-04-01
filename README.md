@@ -404,6 +404,9 @@ export default defineExtension({
 Extension runtime behavior is extension-first by default:
 
 - Extension command handlers can replace core command execution at dispatch time.
+- Parser overrides (`registerParser`) can rewrite command args/options/global context before dispatch.
+- Preflight overrides (`registerPreflight`) can intercept mutation gate decisions and migration flow.
+- Service overrides (`registerService`) can replace output/error/help rendering and selected internal runtime services.
 - Command-result overrides and renderer overrides still run with deterministic precedence (last registration wins).
 - `beforeCommand` and `afterCommand` hooks receive command args/options/global snapshots and final command result/error state.
 - `registerItemFields(...)` definitions now participate in create/update defaulting and validation.

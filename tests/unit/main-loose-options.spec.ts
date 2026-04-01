@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { parseLooseCommandOptions } from "../../src/cli/extension-command-options.js";
+import {
+  coerceLooseCommandOptionsWithFlagDefinitions,
+  parseLooseCommandOptions,
+} from "../../src/cli/extension-command-options.js";
 
 describe("cli extension loose option parser", () => {
   it("parses deterministic loose options across supported token shapes", () => {
@@ -51,5 +54,19 @@ describe("cli extension loose option parser", () => {
     expect(Object.hasOwn(parsed, "__proto__")).toBe(false);
     expect(Object.hasOwn(parsed, "constructor")).toBe(false);
     expect(Object.hasOwn(parsed, "prototype")).toBe(false);
+  });
+
+  it("coerces loose options from extension flag definitions when types are declared", () => {
+    const parsed = parseLooseCommandOptions(["--limit", "5", "--strict", "true", "--title", "hello"]);
+    const coerced = coerceLooseCommandOptionsWithFlagDefinitions(parsed, [
+      { long: "--limit", type: "number" },
+      { long: "--strict", type: "boolean" },
+      { long: "--title", type: "string" },
+    ]);
+    expect(coerced).toEqual({
+      limit: 5,
+      strict: true,
+      title: "hello",
+    });
   });
 });

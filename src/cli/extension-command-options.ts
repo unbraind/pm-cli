@@ -68,6 +68,107 @@ function isUnsafeLooseOptionKey(key: string): boolean {
   return UNSAFE_LOOSE_OPTION_KEYS.has(key);
 }
 
+type LooseOptionCoercionKind = "string" | "number" | "boolean";
+
+function resolveLooseOptionCoercionKind(definition: Record<string, unknown>): LooseOptionCoercionKind | null {
+  const explicitType = typeof definition.type === "string" ? definition.type.trim().toLowerCase() : undefined;
+  const valueType = typeof definition.value_type === "string" ? definition.value_type.trim().toLowerCase() : undefined;
+  const kind = explicitType ?? valueType;
+  if (kind === "string") {
+    return "string";
+  }
+  if (kind === "number" || kind === "int" || kind === "integer" || kind === "float") {
+    return "number";
+  }
+  if (kind === "boolean" || kind === "bool") {
+    return "boolean";
+  }
+  return null;
+}
+
+function collectLooseOptionKeys(definition: Record<string, unknown>): string[] {
+  const keys: string[] = [];
+  const long = typeof definition.long === "string" ? definition.long.trim() : "";
+  const short = typeof definition.short === "string" ? definition.short.trim() : "";
+  if (long.startsWith("--")) {
+    const normalized = toLooseOptionKey(long.slice(2));
+    if (normalized.length > 0 && !isUnsafeLooseOptionKey(normalized)) {
+      keys.push(normalized);
+    }
+  }
+  if (short.startsWith("-") && !short.startsWith("--")) {
+    const normalized = toLooseOptionKey(short.slice(1));
+    if (normalized.length > 0 && !isUnsafeLooseOptionKey(normalized)) {
+      keys.push(normalized);
+    }
+  }
+  return [...new Set(keys)];
+}
+
+function coerceLooseOptionValue(value: unknown, kind: LooseOptionCoercionKind): unknown {
+  if (Array.isArray(value)) {
+    return value.map((entry) => coerceLooseOptionValue(entry, kind));
+  }
+  if (kind === "string") {
+    if (typeof value === "string") {
+      return value;
+    }
+    if (value === null || value === undefined) {
+      return value;
+    }
+    return String(value);
+  }
+  if (kind === "number") {
+    if (typeof value === "number") {
+      return Number.isFinite(value) ? value : value;
+    }
+    if (typeof value === "string" && value.trim().length > 0) {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : value;
+    }
+    return value;
+  }
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true" || normalized === "1") {
+      return true;
+    }
+    if (normalized === "false" || normalized === "0") {
+      return false;
+    }
+  }
+  return value;
+}
+
+export function coerceLooseCommandOptionsWithFlagDefinitions(
+  options: Record<string, unknown>,
+  definitions: Array<Record<string, unknown>>,
+): Record<string, unknown> {
+  if (definitions.length === 0) {
+    return options;
+  }
+  const coerced = Object.create(null) as Record<string, unknown>;
+  for (const [key, value] of Object.entries(options)) {
+    coerced[key] = value;
+  }
+  for (const definition of definitions) {
+    const kind = resolveLooseOptionCoercionKind(definition);
+    if (!kind) {
+      continue;
+    }
+    for (const key of collectLooseOptionKeys(definition)) {
+      if (!Object.hasOwn(coerced, key)) {
+        continue;
+      }
+      coerced[key] = coerceLooseOptionValue(coerced[key], kind);
+    }
+  }
+  return coerced;
+}
+
 export function parseLooseCommandOptions(args: string[]): Record<string, unknown> {
   const options = Object.create(null) as Record<string, unknown>;
   let index = 0;

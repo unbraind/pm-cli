@@ -1,0 +1,45 @@
+id: pm-977j
+title: Phase 2 preflight and lifecycle interception engine
+description: "Introduce extension-managed preflight interception and lifecycle mutation contracts, including gate control with deterministic fallback semantics."
+type: Feature
+status: closed
+priority: 1
+tags[5]: "area:extensions","area:lifecycle","area:runtime",phase2,pm-cli
+created_at: "2026-04-01T19:27:46.455Z"
+updated_at: "2026-04-01T19:58:08.677Z"
+deadline: "2026-04-11T19:27:46.455Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: Extensions can intercept and mutate preflight decisions before core gates execute; default behavior remains unchanged without overrides.
+definition_of_ready: No duplicate active preflight/lifecycle feature exists and gate touchpoints are identified.
+order: 2
+goal: Total customization platform
+objective: Enable preflight/lifecycle interception
+value: Allows advanced policy and workflow control before command execution.
+impact: Removes hardcoded preAction ownership boundaries.
+outcome: Preflight and lifecycle flow become extension-interceptable.
+why_now: Current mandatory gate path cannot be customized by extensions.
+parent: pm-x395
+risk: high
+confidence: medium
+sprint: phase2-override
+release: vnext
+component: extensions-runtime
+regression: true
+customer_impact: Enables project-specific execution policies without forking.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-2p5x,related,"2026-04-01T19:27:46.455Z",codex-agent,null
+  pm-x395,parent,"2026-04-01T19:27:46.455Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T19:27:46.455Z",codex-agent,Phase-2 preflight interception extends migration/write-gate hardening with extension control surfaces.
+  "2026-04-01T19:58:07.246Z",codex-agent,"Feature delivered across runtime, SDK, docs, and tests. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage passed; release-readiness integration checks passing."
+notes[1]{created_at,author,text}:
+  "2026-04-01T19:27:46.455Z",codex-agent,Default path must remain identical when no preflight override is registered.
+files[1]{path,scope,note}:
+  src/cli/main.ts,project,preflight gate orchestration
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,3600,preflight interception regressions
+docs[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,preflight pipeline docs
+close_reason: Phase 2 feature scope complete and verified
+body: "Phase-2 delta: make preAction/gate flow extension-interceptable while preserving default behavior."

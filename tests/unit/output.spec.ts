@@ -4,6 +4,7 @@ import {
   setActiveCommandContext,
   setActiveExtensionCommands,
   setActiveExtensionRenderers,
+  setActiveExtensionServices,
 } from "../../src/core/extensions/index.js";
 import { formatOutput, printError, printResult } from "../../src/core/output/output.js";
 
@@ -190,5 +191,29 @@ describe("core/output/output", () => {
     });
     const fallbackToToon = formatOutput({ ok: true }, {});
     expect(fallbackToToon).toContain("ok: true");
+  });
+
+  it("applies service overrides for output and errors", () => {
+    setActiveExtensionServices({
+      overrides: [
+        {
+          layer: "project",
+          name: "output-service-ext",
+          service: "output_format",
+          run: (context) => JSON.stringify({ wrapped: (context.payload as { result: unknown }).result }),
+        },
+        {
+          layer: "project",
+          name: "error-service-ext",
+          service: "error_format",
+          run: (context) => `ERR:${(context.payload as { message: string }).message}`,
+        },
+      ],
+    });
+    expect(formatOutput({ ok: true }, { json: true })).toBe(`${JSON.stringify({ wrapped: { ok: true } })}\n`);
+
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    printError("boom");
+    expect(stderrSpy).toHaveBeenCalledWith("ERR:boom\n");
   });
 });

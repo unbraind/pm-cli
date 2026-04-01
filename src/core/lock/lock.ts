@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import { runActiveOnReadHooks, runActiveOnWriteHooks } from "../extensions/index.js";
+import { runActiveOnReadHooks, runActiveOnWriteHooks, runActiveServiceOverride } from "../extensions/index.js";
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { getLockPath } from "../store/paths.js";
@@ -109,6 +109,35 @@ export async function acquireLock(
   owner: string,
   force = false,
 ): Promise<() => Promise<void>> {
+  const lockOverride = await runActiveServiceOverride("lock_acquire", {
+    pm_root: pmRoot,
+    id,
+    ttl_seconds: ttlSeconds,
+    owner,
+    force,
+  });
+  if (lockOverride.handled) {
+    const releaseFromFunction = typeof lockOverride.result === "function" ? lockOverride.result : null;
+    const releaseFromObject =
+      typeof lockOverride.result === "object" &&
+      lockOverride.result !== null &&
+      "release" in lockOverride.result &&
+      typeof (lockOverride.result as { release?: unknown }).release === "function"
+        ? ((lockOverride.result as { release: () => Promise<void> | void }).release as () => Promise<void> | void)
+        : null;
+    const release = releaseFromFunction ?? releaseFromObject;
+    if (release) {
+      return async () => {
+        await Promise.resolve(release());
+        await runActiveServiceOverride("lock_release", {
+          pm_root: pmRoot,
+          id,
+          owner,
+        });
+      };
+    }
+  }
+
   const lockPath = getLockPath(pmRoot, id);
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -116,6 +145,11 @@ export async function acquireLock(
       await createLockFile(lockPath, id, owner, ttlSeconds);
       return async () => {
         await unlinkLockWithHook(lockPath, "lock:release");
+        await runActiveServiceOverride("lock_release", {
+          pm_root: pmRoot,
+          id,
+          owner,
+        });
       };
     } catch (error: unknown) {
       if (!isErrno(error, "EEXIST")) {

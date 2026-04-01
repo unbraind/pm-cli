@@ -387,6 +387,8 @@ Extension issues:
 - run with `--no-extensions` to isolate core behavior
 - inspect `pm health` extension checks
 - verify active extension selectors in settings (`search.provider`, `vector_store.adapter`) when semantic search/reindex behavior differs from baseline
+- verify manifest capability declarations include any new API usage (`parser`, `preflight`, `services`) to avoid activation failures
+- when debugging runtime behavior changes, inspect parser/preflight/service override collisions in health/profile diagnostics (last registration wins)
 - use SDK contracts from `@unbrained/pm-cli/sdk` (not internal `src/core/...` imports) for extension authoring and examples
 
 ## 12) Dogfood Logging Protocol (Required)

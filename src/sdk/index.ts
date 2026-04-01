@@ -1,7 +1,17 @@
 import type { ExtensionApi, ExtensionManifest } from "../core/extensions/loader.js";
 export * from "./cli-contracts.js";
 
-export const EXTENSION_CAPABILITIES = ["commands", "renderers", "hooks", "schema", "importers", "search"] as const;
+export const EXTENSION_CAPABILITIES = [
+  "commands",
+  "renderers",
+  "hooks",
+  "schema",
+  "importers",
+  "search",
+  "parser",
+  "preflight",
+  "services",
+] as const;
 export type ExtensionCapability = (typeof EXTENSION_CAPABILITIES)[number];
 
 export interface ExtensionModule {
@@ -23,6 +33,7 @@ export type {
   CommandHandlerContext,
   CommandOverride,
   CommandOverrideContext,
+  ExtensionServiceName,
   Exporter,
   ExtensionActivationResult,
   ExtensionApi,
@@ -31,8 +42,11 @@ export type {
   ExtensionDiscoveryResult,
   ExtensionLoadResult,
   ExtensionManifest,
+  ExtensionParserRegistry,
+  ExtensionPreflightRegistry,
   ExtensionRegistrationRegistry,
   ExtensionRendererRegistry,
+  ExtensionServiceRegistry,
   FlagDefinition,
   Importer,
   OnIndexHook,
@@ -42,12 +56,21 @@ export type {
   OnWriteHook,
   OnWriteHookContext,
   OutputRendererFormat,
+  ParserOverride,
+  ParserOverrideContext,
+  ParserOverrideDelta,
+  PreflightOverride,
+  PreflightOverrideContext,
+  PreflightOverrideDelta,
+  PreflightRuntimeDecision,
   RendererOverride,
   RendererOverrideContext,
   SchemaFieldDefinition,
   SchemaItemTypeDefinition,
   SchemaMigrationDefinition,
   SearchProviderDefinition,
+  ServiceOverride,
+  ServiceOverrideContext,
   VectorStoreAdapterDefinition,
 } from "../core/extensions/loader.js";
 

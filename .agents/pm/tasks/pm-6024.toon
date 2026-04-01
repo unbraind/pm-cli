@@ -1,0 +1,44 @@
+id: pm-6024
+title: "Phase 2: parser override regression and docs coverage"
+description: Add integration tests and documentation examples for parser/contract overrides with extension-enabled and no-extension parity.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:extensions","area:parser",phase2,pm-cli
+created_at: "2026-04-01T19:27:28.540Z"
+updated_at: "2026-04-01T19:57:29.701Z"
+deadline: "2026-04-09T19:27:28.540Z"
+author: codex-agent
+estimated_minutes: 120
+acceptance_criteria: "Regression tests cover parser overrides, fallback chain, and --no-extensions parity; docs include migration guidance."
+definition_of_ready: Feature pm-k1zw exists and runtime plumbing task is tracked.
+order: 2
+goal: Total customization platform
+objective: Parser override validation
+value: Prevents regressions for default users.
+impact: Establishes confidence in extension-driven parser changes.
+outcome: Parser override matrix is documented and tested.
+why_now: Needed for safe rollout of full parser override power.
+parent: pm-k1zw
+risk: medium
+confidence: medium
+sprint: phase2-override
+release: vnext
+component: extensions-runtime
+regression: true
+customer_impact: Users keep stable defaults while extensions gain deeper control.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-k1zw,parent,"2026-04-01T19:27:28.540Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T19:27:28.540Z",codex-agent,Task captures regression matrix and docs parity for parser override changes.
+  "2026-04-01T19:57:28.285Z",codex-agent,"Implemented in Phase 2 full-override rollout. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage passed (64 files/702 tests) with aligned coverage gates and release-readiness checks green."
+notes[1]{created_at,author,text}:
+  "2026-04-01T19:27:28.540Z",codex-agent,Must include extension-enabled and --no-extensions test runs.
+files[1]{path,scope,note}:
+  tests/integration/cli.integration.spec.ts,project,parser override integration tests
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,3600,integration regression
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,parser override usage docs
+close_reason: Phase 2 implementation and verification complete
+body: "Validate parser override behavior, fallback, and compatibility guarantees."

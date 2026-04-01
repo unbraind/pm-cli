@@ -2,11 +2,11 @@ id: pm-x395
 title: Full Override SDK + Extensions Platform
 description: Single-wave initiative to enable extension-level override and manipulation across pm CLI runtime surfaces with compatibility safeguards.
 type: Epic
-status: blocked
+status: closed
 priority: 0
 tags[5]: "area:extensions","area:sdk",core,"milestone:override",pm-cli
 created_at: "2026-04-01T02:15:22.733Z"
-updated_at: "2026-04-01T03:05:18.195Z"
+updated_at: "2026-04-01T19:58:38.136Z"
 deadline: "2026-04-15T02:15:22.733Z"
 author: codex-agent
 estimated_minutes: 960
@@ -21,16 +21,18 @@ outcome: Extension SDK supports full command/runtime customization with stable d
 why_now: Current extension model is partial and blocks complete customization use cases
 risk: high
 confidence: medium
-blocked_reason: Epic closure blocked by unresolved coverage gate in regression hardening feature.
+unblock_note: Phase-2 full-override workstream started with no-dup deep audit and implementation execution.
 component: extensions-runtime
 customer_impact: enables project-specific full customization without forking pm
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-00yy,discovered_from,"2026-04-01T02:15:22.733Z",codex-agent,null
   pm-b1w,discovered_from,"2026-04-01T02:15:22.733Z",codex-agent,null
   pm-r15d,discovered_from,"2026-04-01T02:15:22.733Z",codex-agent,null
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-01T02:15:22.733Z",codex-agent,This epic extends and unifies prior extension and type-policy milestones without duplication.
   "2026-04-01T03:05:13.741Z",codex-agent,Epic implementation shipped in b21a27b (pushed to main); closure is blocked only by the coverage gate in feature pm-qwp7 / task pm-rl7j.
+  "2026-04-01T19:26:36.238Z",codex-agent,"Deep audit complete: reusing pm-x395 without duplicate epic creation; implementing parser/preflight/service-kernel/sdk-v2/docs deltas while preserving default-user compatibility."
+  "2026-04-01T19:58:36.576Z",codex-agent,"Phase-2 full-override rollout complete: parser/preflight/service override planes shipped, SDK contracts expanded, docs/security guidance updated, and full verification passed (pnpm build, node scripts/run-tests.mjs test, node scripts/run-tests.mjs coverage)."
 notes[1]{created_at,author,text}:
   "2026-04-01T02:15:22.733Z",codex-agent,Compatibility-first deterministic fallback behavior is mandatory for existing users.
 files[1]{path,scope,note}:
@@ -39,4 +41,5 @@ tests[1]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test,null,project,3600,full regression baseline
 docs[1]{path,scope,note}:
   PRD.md,project,authoritative extension and SDK contract
+close_reason: Full override platform delivered and verified
 body: "Implement extension-first runtime routing, full registration wiring, SDK exports, and comprehensive docs/tests updates."

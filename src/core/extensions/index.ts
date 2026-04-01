@@ -2,8 +2,12 @@ import {
   runCommandHandler,
   runCommandOverride,
   runOnIndexHooks,
+  runParserOverride,
+  runPreflightOverride,
   runOnReadHooks,
   runRendererOverride,
+  runServiceOverride,
+  runServiceOverrideSync,
   runOnWriteHooks,
   type CommandHandlerContext,
   type CommandHandlerResult,
@@ -11,17 +15,29 @@ import {
   type CommandOverrideResult,
   type ExtensionCommandRegistry,
   type ExtensionHookRegistry,
+  type ExtensionParserRegistry,
+  type ExtensionPreflightRegistry,
   type ExtensionRegistrationRegistry,
   type ExtensionRendererRegistry,
+  type ExtensionServiceName,
+  type ExtensionServiceRegistry,
   type OnIndexHookContext,
   type OnReadHookContext,
   type OnWriteHookContext,
   type OutputRendererFormat,
+  type ParserOverrideContext,
+  type ParserOverrideResult,
+  type PreflightOverrideContext,
+  type PreflightOverrideResult,
   type RendererOverrideResult,
+  type ServiceOverrideResult,
 } from "./loader.js";
 
 let activeExtensionHooks: ExtensionHookRegistry | null = null;
 let activeExtensionCommands: ExtensionCommandRegistry | null = null;
+let activeExtensionParsers: ExtensionParserRegistry | null = null;
+let activeExtensionPreflight: ExtensionPreflightRegistry | null = null;
+let activeExtensionServices: ExtensionServiceRegistry | null = null;
 let activeExtensionRenderers: ExtensionRendererRegistry | null = null;
 let activeExtensionRegistrations: ExtensionRegistrationRegistry | null = null;
 let activeCommandContext: Omit<CommandOverrideContext, "result"> | null = null;
@@ -33,6 +49,18 @@ export function setActiveExtensionHooks(hooks: ExtensionHookRegistry | null): vo
 
 export function setActiveExtensionCommands(commands: ExtensionCommandRegistry | null): void {
   activeExtensionCommands = commands;
+}
+
+export function setActiveExtensionParsers(parsers: ExtensionParserRegistry | null): void {
+  activeExtensionParsers = parsers;
+}
+
+export function setActiveExtensionPreflight(preflight: ExtensionPreflightRegistry | null): void {
+  activeExtensionPreflight = preflight;
+}
+
+export function setActiveExtensionServices(services: ExtensionServiceRegistry | null): void {
+  activeExtensionServices = services;
 }
 
 export function setActiveExtensionRenderers(renderers: ExtensionRendererRegistry | null): void {
@@ -75,6 +103,9 @@ export function getActiveCommandResult(): unknown {
 export function clearActiveExtensionHooks(): void {
   activeExtensionHooks = null;
   activeExtensionCommands = null;
+  activeExtensionParsers = null;
+  activeExtensionPreflight = null;
+  activeExtensionServices = null;
   activeExtensionRenderers = null;
   activeExtensionRegistrations = null;
   activeCommandContext = null;
@@ -131,6 +162,41 @@ export async function runActiveCommandHandler(context: CommandHandlerContext): P
   return runCommandHandler(activeExtensionCommands, context);
 }
 
+export async function runActiveParserOverride(context: ParserOverrideContext): Promise<ParserOverrideResult> {
+  if (!activeExtensionParsers) {
+    return {
+      overridden: false,
+      context: {
+        command: context.command,
+        args: [...context.args],
+        options: { ...context.options },
+        global: { ...context.global },
+        pm_root: context.pm_root,
+      },
+      warnings: [],
+    };
+  }
+  return runParserOverride(activeExtensionParsers, context);
+}
+
+export async function runActivePreflightOverride(context: PreflightOverrideContext): Promise<PreflightOverrideResult> {
+  if (!activeExtensionPreflight) {
+    return {
+      overridden: false,
+      context: {
+        command: context.command,
+        args: [...context.args],
+        options: { ...context.options },
+        global: { ...context.global },
+        pm_root: context.pm_root,
+      },
+      decision: { ...context.decision },
+      warnings: [],
+    };
+  }
+  return runPreflightOverride(activeExtensionPreflight, context);
+}
+
 export function runActiveRendererOverride(format: OutputRendererFormat, result: unknown): RendererOverrideResult {
   if (!activeExtensionRenderers) {
     return {
@@ -148,6 +214,43 @@ export function runActiveRendererOverride(format: OutputRendererFormat, result: 
     pm_root: activeCommandContext?.pm_root,
     result,
   });
+}
+
+function buildServiceContext(service: ExtensionServiceName, payload: unknown) {
+  return {
+    service,
+    command: activeCommandContext?.command,
+    args: activeCommandContext ? [...activeCommandContext.args] : [],
+    options: activeCommandContext?.options ? { ...activeCommandContext.options } : {},
+    global: activeCommandContext?.global ? { ...activeCommandContext.global } : undefined,
+    pm_root: activeCommandContext?.pm_root,
+    payload,
+  };
+}
+
+export async function runActiveServiceOverride(
+  service: ExtensionServiceName,
+  payload: unknown,
+): Promise<ServiceOverrideResult> {
+  if (!activeExtensionServices) {
+    return {
+      handled: false,
+      result: payload,
+      warnings: [],
+    };
+  }
+  return runServiceOverride(activeExtensionServices, buildServiceContext(service, payload));
+}
+
+export function runActiveServiceOverrideSync(service: ExtensionServiceName, payload: unknown): ServiceOverrideResult {
+  if (!activeExtensionServices) {
+    return {
+      handled: false,
+      result: payload,
+      warnings: [],
+    };
+  }
+  return runServiceOverrideSync(activeExtensionServices, buildServiceContext(service, payload));
 }
 
 export * from "./loader.js";

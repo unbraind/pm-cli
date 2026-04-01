@@ -317,6 +317,12 @@ Load order: **core built-ins → global (`~/.pm-cli/extensions/`) → project (`
 
 Project-local extensions override global by default. Runtime dispatch is extension-first: if an extension registers a command handler for an existing core command path, the extension handler executes instead of the core action. Command result overrides and renderer overrides are still evaluated after dispatch with deterministic "last registration wins" precedence.
 
+Extension Host V2 adds three additional override planes:
+
+1. **Parser overrides** (`registerParser`) run before command dispatch and can normalize/replace `args`, `options`, and `global` command context.
+2. **Preflight overrides** (`registerPreflight`) run before mutation gates and can control whether item-format write gates, pre-mutation format sync, extension migrations, and mandatory-migration write blocking are enforced.
+3. **Service overrides** (`registerService`) expose deterministic replacement points for output/error/help formatting plus internal lock/history/item-store operations.
+
 Runtime registration wiring now includes:
 
 - `registerFlags(...)` deterministic shape validation (`long`/`short` presence plus typed metadata) before dynamic help registration.
@@ -324,6 +330,9 @@ Runtime registration wiring now includes:
 - `registerItemTypes(...)` deterministic schema validation for required type/policy/option fields before type-registry merge.
 - `registerMigration(...)` mandatory migration execution + write gating in command preflight.
 - `registerMigration(...)` activation-time validation for typed migration metadata (`id`, `description`, `status`, `mandatory`, `run`) when provided.
+- `registerParser(...)` command-scoped parser override registry with deterministic last-wins behavior.
+- `registerPreflight(...)` preAction decision override registry for mutation gate and migration orchestration.
+- `registerService(...)` service override registry for output/error/help/lock/history/item-store runtime hooks.
 - `registerSearchProvider(...)` selected by `settings.search.provider` for live `pm search` execution.
 - `registerVectorStoreAdapter(...)` selected by `settings.vector_store.adapter` for live `pm search` query and `pm reindex` upsert execution.
 

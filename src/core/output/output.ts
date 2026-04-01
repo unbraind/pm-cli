@@ -1,6 +1,7 @@
 import {
   runActiveCommandOverride,
   runActiveRendererOverride,
+  runActiveServiceOverrideSync,
   setActiveCommandResult,
 } from "../extensions/index.js";
 
@@ -95,6 +96,14 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
   const effectiveResult = commandOverride.result;
   setActiveCommandResult(effectiveResult);
   const format = options.json ? "json" : "toon";
+  const serviceOverride = runActiveServiceOverrideSync("output_format", {
+    format,
+    options: { ...options },
+    result: effectiveResult,
+  });
+  if (serviceOverride.handled && typeof serviceOverride.result === "string") {
+    return serviceOverride.result.endsWith("\n") ? serviceOverride.result : `${serviceOverride.result}\n`;
+  }
   const rendererOverride = runActiveRendererOverride(format, effectiveResult);
   if (rendererOverride.rendered !== null) {
     return rendererOverride.rendered.endsWith("\n") ? rendererOverride.rendered : `${rendererOverride.rendered}\n`;
@@ -118,5 +127,9 @@ export function printResult(result: unknown, options: OutputOptions): void {
 }
 
 export function printError(message: string): void {
-  process.stderr.write(`${message}\n`);
+  const override = runActiveServiceOverrideSync("error_format", {
+    message,
+  });
+  const rendered = override.handled && typeof override.result === "string" ? override.result : message;
+  process.stderr.write(rendered.endsWith("\n") ? rendered : `${rendered}\n`);
 }

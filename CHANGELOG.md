@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added per-type `command_option_policies` support (settings + extension item-type registrations) for `create`/`update` option-level `required`, `enabled`, and `visible` behavior controls.
 - Added type-aware help policy sections for `pm create --help` / `pm update --help` when `--type <value>` is supplied, including required/disabled/hidden option summaries from active settings/extensions.
 - Added extension-first command routing for deterministic core-command replacement when extension handlers register matching command paths.
+- Added Extension Host V2 override planes: `registerParser` (command-context parsing), `registerPreflight` (mutation-gate/migration interception), and `registerService` (output/error/help plus lock/history/item-store service overrides) with deterministic last-wins precedence.
 - Added richer command lifecycle hook payload parity (`beforeCommand` / `afterCommand`) including command options, global options, and final command result context.
 - Added live runtime wiring for extension search/vector selectors (`settings.search.provider`, `settings.vector_store.adapter`) in `pm search` and `pm reindex`.
 - Added extension item-field default/validation wiring on create/update write paths from `registerItemFields(...)`.
@@ -52,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Type validation/filtering/completion now resolve from the runtime registry across create/update/list/search/calendar/completion/init/health/storage paths while preserving built-in defaults when no custom type config exists.
 - Commander required-option UX for missing `--type` now includes rationale, active allowed values, and concrete fix examples.
 - Dynamic extension command help now supports `registerFlags` policy metadata (`required`, `enabled`, `visible`) with additive markers and hidden-flag suppression.
+- Dynamic extension flags can now declare `type` / `value_type` metadata (`string`/`number`/`boolean`) for deterministic loose-option coercion on matching command paths.
 - Search and reindex semantic execution now supports extension provider/adapter primary paths with deterministic fallback to built-in provider/vector configuration when available.
 - `pm reindex --mode semantic|hybrid` now rewrites `search/vectorization-status.json` to keep health-time vector freshness checks synchronized with indexed corpus state.
 - Date/deadline parsing now accepts month-relative offsets (`+6m`) and normalized date-string variants (for example `2026-03-31T13-59` and `20260331T135900Z`) across deadline, reminder, event, list/search filter, and calendar date inputs while preserving canonical ISO persistence.

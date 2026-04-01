@@ -7,12 +7,16 @@ import {
   loadExtensions,
   runCommandHandler,
   runCommandOverride,
+  runParserOverride,
+  runPreflightOverride,
   resolveExtensionRoots,
   runAfterCommandHooks,
   runBeforeCommandHooks,
   runOnIndexHooks,
   runOnReadHooks,
   runRendererOverride,
+  runServiceOverride,
+  runServiceOverrideSync,
   runOnWriteHooks,
   type ExtensionManifest,
 } from "../../src/core/extensions/loader.js";
@@ -2364,6 +2368,140 @@ describe("extension loader", () => {
     expect(rendererFallbackResult).toEqual({
       ok: true,
       nested: { preserved: true },
+    });
+  });
+
+  it("runs parser and preflight overrides with deterministic fallback", async () => {
+    const parserResult = await runParserOverride(
+      {
+        overrides: [
+          {
+            layer: "project",
+            name: "parser-ext",
+            command: "create",
+            run: (context) => ({
+              args: [...context.args, "--synthetic"],
+              options: {
+                ...context.options,
+                estimate: typeof context.options.estimate === "number" ? context.options.estimate : 30,
+              },
+            }),
+          },
+        ],
+      },
+      {
+        command: "create",
+        args: ["--type", "Task"],
+        options: {},
+        global: {
+          json: false,
+          quiet: false,
+          noExtensions: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project",
+      },
+    );
+    expect(parserResult.overridden).toBe(true);
+    expect(parserResult.context.args).toEqual(["--type", "Task", "--synthetic"]);
+    expect(parserResult.context.options).toEqual({
+      estimate: 30,
+    });
+    expect(parserResult.warnings).toEqual([]);
+
+    const preflightResult = await runPreflightOverride(
+      {
+        overrides: [
+          {
+            layer: "project",
+            name: "preflight-ext",
+            run: (context) => ({
+              options: {
+                ...context.options,
+                force: true,
+              },
+              run_extension_migrations: false,
+              enforce_mandatory_migration_gate: false,
+            }),
+          },
+        ],
+      },
+      {
+        command: "update",
+        args: ["pm-a1b2"],
+        options: {},
+        global: {
+          json: false,
+          quiet: false,
+          noExtensions: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project",
+        decision: {
+          enforce_item_format_gate: true,
+          run_preflight_item_format_sync: true,
+          run_extension_migrations: true,
+          enforce_mandatory_migration_gate: true,
+        },
+      },
+    );
+    expect(preflightResult.overridden).toBe(true);
+    expect(preflightResult.context.options).toEqual({
+      force: true,
+    });
+    expect(preflightResult.decision).toEqual({
+      enforce_item_format_gate: true,
+      run_preflight_item_format_sync: true,
+      run_extension_migrations: false,
+      enforce_mandatory_migration_gate: false,
+    });
+    expect(preflightResult.warnings).toEqual([]);
+  });
+
+  it("runs service overrides in sync and async paths", async () => {
+    const serviceRegistry = {
+      overrides: [
+        {
+          layer: "project" as const,
+          name: "output-service-ext",
+          service: "output_format" as const,
+          run: (context: { payload: { result: unknown } }) => JSON.stringify({ wrapped: context.payload.result }),
+        },
+        {
+          layer: "project" as const,
+          name: "history-service-ext",
+          service: "history_append" as const,
+          run: async (context: { payload: { entry: { op: string } } }) => ({
+            line: JSON.stringify({ patched: context.payload.entry.op }),
+          }),
+        },
+      ],
+    };
+    expect(
+      runServiceOverrideSync(serviceRegistry, {
+        service: "output_format",
+        payload: {
+          result: { ok: true },
+        },
+      }),
+    ).toEqual({
+      handled: true,
+      result: JSON.stringify({ wrapped: { ok: true } }),
+      warnings: [],
+    });
+    expect(
+      await runServiceOverride(serviceRegistry, {
+        service: "history_append",
+        payload: {
+          entry: { op: "update" },
+        },
+      }),
+    ).toEqual({
+      handled: true,
+      result: {
+        line: JSON.stringify({ patched: "update" }),
+      },
+      warnings: [],
     });
   });
 });

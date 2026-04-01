@@ -28,9 +28,10 @@ Please avoid public disclosure before a fix or mitigation is available.
 
 ## Extension Runtime Trust Model
 
-`pm` extensions execute as local Node.js code and can intercept command execution, hooks, output rendering, and search/vector runtime paths.
+`pm` extensions execute as local Node.js code and can intercept command execution, parser/preflight lifecycle, output/error/help rendering, lock/history/item-store service paths, and search/vector runtime paths.
 
 - Treat third-party extensions as fully trusted code.
 - Prefer project-reviewed extensions committed to the repository.
 - For incident triage or hardening runs, disable extensions with `--no-extensions`.
+- In the full trusted-default model, `parser`, `preflight`, and `services` capabilities can bypass or replace core safety gates; only enable these capabilities for audited extensions.
 - Include extension manifest name/version, capability list, and active settings selectors (`search.provider`, `vector_store.adapter`) in security reports when relevant.

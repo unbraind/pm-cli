@@ -1,5 +1,6 @@
 import jsonPatch from "fast-json-patch";
 import { EMPTY_CANONICAL_DOCUMENT, FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
+import { runActiveServiceOverride } from "../extensions/index.js";
 import { appendLineAtomic } from "../fs/fs-utils.js";
 import { canonicalDocument } from "../item/item-format.js";
 import { orderObject, sha256Hex, stableStringify } from "../shared/serialization.js";
@@ -56,5 +57,37 @@ export function createHistoryEntry(params: {
 }
 
 export async function appendHistoryEntry(historyPath: string, entry: HistoryEntry): Promise<void> {
+  const override = await runActiveServiceOverride("history_append", {
+    history_path: historyPath,
+    entry,
+  });
+  if (override.handled) {
+    if (override.result === false) {
+      return;
+    }
+    if (typeof override.result === "string") {
+      await appendLineAtomic(historyPath, override.result);
+      return;
+    }
+    if (typeof override.result === "object" && override.result !== null) {
+      const record = override.result as {
+        history_path?: unknown;
+        entry?: unknown;
+        line?: unknown;
+        skip?: unknown;
+      };
+      if (record.skip === true) {
+        return;
+      }
+      const nextHistoryPath = typeof record.history_path === "string" ? record.history_path : historyPath;
+      if (typeof record.line === "string") {
+        await appendLineAtomic(nextHistoryPath, record.line);
+        return;
+      }
+      const nextEntry = (record.entry ?? entry) as HistoryEntry;
+      await appendLineAtomic(nextHistoryPath, JSON.stringify(nextEntry));
+      return;
+    }
+  }
   await appendLineAtomic(historyPath, JSON.stringify(entry));
 }
