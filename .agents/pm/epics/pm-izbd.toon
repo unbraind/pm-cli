@@ -1,16 +1,16 @@
 id: pm-izbd
 title: "CLI UX Overhaul: Help, Errors, and Output"
-description: "Drastically improve pm CLI help guidance, error diagnostics, and human-readable command output across all core surfaces while preserving exit-code safety and JSON automation compatibility."
+description: Optimize pm CLI output for agent token efficiency by making default TOON output sparse and high-signal while preserving JSON payload compatibility and deterministic behavior.
 type: Epic
 status: closed
 priority: 0
 tags[6]: "area:cli","area:error","area:help","area:output","area:ux",pm-cli
 created_at: "2026-04-01T12:38:01.326Z"
-updated_at: "2026-04-01T12:57:16.547Z"
+updated_at: "2026-04-01T13:51:35.307Z"
 deadline: "2026-04-15T12:38:01.326Z"
 author: codex-agent
 estimated_minutes: 960
-acceptance_criteria: Help includes clear why/how/examples across command surfaces; errors explain what happened plus exact remediation with examples; human-readable output is command-aware and actionable; docs/tests updated; no exit-code regressions.
+acceptance_criteria: Default TOON output omits null/undefined/empty containers and removes command-aware envelopes; JSON output remains backward-compatible; docs and regression tests updated; no exit-code regressions.
 definition_of_ready: "Code surfaces, docs, and regression tests are mapped and no active duplicate item exists."
 order: 1
 goal: CLI usability excellence
@@ -30,16 +30,18 @@ dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-b3id,discovered_from,"2026-04-01T12:38:01.326Z",codex-agent,null
   pm-r15d,discovered_from,"2026-04-01T12:38:01.326Z",codex-agent,null
   pm-vqam,discovered_from,"2026-04-01T12:38:01.326Z",codex-agent,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-01T12:38:01.326Z",codex-agent,Duplicate scan completed against open and in-progress plus targeted search before creation.
   "2026-04-01T12:40:29.287Z",codex-agent,"PM hierarchy created: epic pm-izbd; features pm-j162/pm-frk8/pm-t2hj/pm-i0iy; tasks pm-vf7n/pm-gggs/pm-eonv/pm-x3fh/pm-qhcw/pm-jfpf/pm-y76e."
+  "2026-04-01T13:51:13.221Z",codex-agent,"Epic regression evidence: pm test pm-izbd --run passed full sandboxed suite (62 files, 650 tests). Sparse TOON docs/contracts updated across README, docs/ARCHITECTURE.md, docs/EXTENSIONS.md, PRD.md, CHANGELOG.md."
 notes[1]{created_at,author,text}:
   "2026-04-01T12:38:01.326Z",codex-agent,Execution will prioritize compatibility and deterministic JSON contracts.
 files[1]{path,scope,note}:
   src/cli/main.ts,project,Primary command registration and help/error dispatch surface
 tests[1]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test,null,project,3600,Full regression baseline
-docs[1]{path,scope,note}:
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,release note for sparse TOON behavior update
   README.md,project,Primary user-facing command documentation
-close_reason: "Full CLI UX overhaul shipped: help, structured errors, command-aware output, docs updates, regression refresh, and push to origin/main."
+close_reason: "Epic complete for this follow-up: sparse TOON optimization shipped with docs and regression evidence"
 body: "Parent initiative for full-surface CLI user-experience improvements in help, error, and output channels."

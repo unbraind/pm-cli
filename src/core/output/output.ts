@@ -1,10 +1,8 @@
 import {
-  getActiveCommandContext,
   runActiveCommandOverride,
   runActiveRendererOverride,
   setActiveCommandResult,
 } from "../extensions/index.js";
-import { buildCommandAwareEnvelope } from "./command-aware.js";
 
 export interface OutputOptions {
   json?: boolean;
@@ -20,6 +18,32 @@ function renderScalar(value: unknown): string {
   if (typeof value === "number" || typeof value === "boolean") return String(value);
   if (value === null) return "null";
   return JSON.stringify(value);
+}
+
+function compactToonValue(value: unknown): unknown | undefined {
+  if (value === null || value === undefined) {
+    return undefined;
+  }
+
+  if (Array.isArray(value)) {
+    const compactedEntries = value
+      .map((entry) => compactToonValue(entry))
+      .filter((entry): entry is unknown => entry !== undefined);
+    return compactedEntries.length > 0 ? compactedEntries : undefined;
+  }
+
+  if (isPlainObject(value)) {
+    const compacted: Record<string, unknown> = {};
+    for (const [key, entry] of Object.entries(value)) {
+      const compactedEntry = compactToonValue(entry);
+      if (compactedEntry !== undefined) {
+        compacted[key] = compactedEntry;
+      }
+    }
+    return Object.keys(compacted).length > 0 ? compacted : undefined;
+  }
+
+  return value;
 }
 
 function renderToonValue(value: unknown, depth: number): string {
@@ -78,12 +102,11 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
   if (options.json) {
     return `${JSON.stringify(effectiveResult, null, 2)}\n`;
   }
-  const commandContext = getActiveCommandContext();
-  if (!commandContext) {
-    return `${renderToonValue(effectiveResult, 0)}\n`;
+  const compactedToon = compactToonValue(effectiveResult);
+  if (compactedToon === undefined) {
+    return "{}\n";
   }
-  const envelope = buildCommandAwareEnvelope(commandContext.command, effectiveResult);
-  return `${renderToonValue(envelope, 0)}\n`;
+  return `${renderToonValue(compactedToon, 0)}\n`;
 }
 
 export function printResult(result: unknown, options: OutputOptions): void {

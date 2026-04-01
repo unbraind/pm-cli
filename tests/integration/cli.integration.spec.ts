@@ -68,6 +68,72 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("renders sparse non-json list output without command-aware envelope", async () => {
+    await withTempPmPath(async (context) => {
+      const createResult = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Sparse toon output item",
+          "--description",
+          "Seed item for sparse TOON output assertions",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,output",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "10",
+          "--ac",
+          "Sparse TOON output is verified",
+          "--author",
+          "integration-test",
+          "--message",
+          "Seed for sparse TOON integration assertions",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(createResult.code).toBe(0);
+
+      const listResult = context.runCli(["list-open", "--limit", "10"]);
+      expect(listResult.code).toBe(0);
+      expect(listResult.stdout).toContain("items:");
+      expect(listResult.stdout).toContain("filters:");
+      expect(listResult.stdout).toContain('status: "open"');
+      expect(listResult.stdout).not.toContain("summary:");
+      expect(listResult.stdout).not.toContain("highlights:");
+      expect(listResult.stdout).not.toContain("next_steps:");
+      expect(listResult.stdout).not.toContain("result:");
+      expect(listResult.stdout).not.toContain("type: null");
+      expect(listResult.stdout).not.toContain("tag: null");
+      expect(listResult.stdout).not.toContain("include_body: null");
+    });
+  });
+
   it("installs Pi extension into project and global scopes", async () => {
     await withTempPmPath(async (context) => {
       const projectRoot = path.join(context.tempRoot, "workspace");

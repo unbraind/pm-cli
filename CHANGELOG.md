@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added centralized command help narratives across core command paths (`Why use this command`, practical examples, and targeted tips) through a shared help composer.
 - Added structured CLI error guidance rendering for commander usage failures and runtime `PmCliError` failures with deterministic sections (`What happened`, `What is required`, `Why`, `Examples`, optional `Next steps`).
-- Added command-aware non-JSON output envelopes with `summary`, `highlights`, `next_steps`, and raw `result` sections.
+- Added sparse default TOON rendering that emits command payloads directly and omits `null`/`undefined`/empty arrays/empty objects for token-efficient agent workflows while keeping `--json` payload compatibility.
 - `list*` commands now accept `--include-body` to project item `body` into each returned row when needed for metadata completeness analysis.
 - Added persistent item reminders via repeatable `--reminder at=<iso|relative>,text=<text>` support on `pm create` and `pm update` (including deterministic `none` clearing semantics).
 - Added `pm calendar` (alias: `pm cal`) with deterministic `agenda` (default), `day`, `week`, and `month` views across deadlines and reminders, plus `--past` and range/filter options.

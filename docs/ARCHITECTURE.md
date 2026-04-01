@@ -230,7 +230,7 @@ Output behavior is command-specific: `pm calendar` defaults to markdown for agen
 `pm-cli` keeps runtime behavior terminal-neutral so commands behave consistently across native shells, IDE-integrated terminals, and emulated PTY backends:
 
 1. **Plain deterministic output** — core output paths emit TOON/JSON/markdown text with stable key ordering and no required custom terminal control protocol.
-2. **Command-aware non-JSON envelopes** — default non-JSON output wraps results in deterministic `summary`, `highlights`, `next_steps`, and `result` sections for faster operator follow-up.
+2. **Sparse TOON fallback output** — default TOON output renders command payloads directly and recursively omits `null`/`undefined`/empty arrays/empty objects to reduce token overhead while preserving meaningful scalar values.
 3. **Fail-fast stdin semantics** — stdin token readers reject interactive TTY stdin for piped-only flows (`-`) and provide explicit EOF guidance instead of waiting indefinitely.
 4. **Graceful error exits** — CLI error handling preserves canonical exit codes using graceful `process.exitCode` semantics to reduce output truncation risk under buffered writes.
 5. **Non-interactive linked test runs** — linked test subprocess execution closes child stdin immediately, applies deterministic runtime environment defaults, and surfaces explicit timeout/maxBuffer diagnostics.

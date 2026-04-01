@@ -1,16 +1,16 @@
 id: pm-x3fh
 title: "Output1: Implement command-aware non-JSON result summaries"
-description: "Add command-aware human-readable rendering with concise summaries, key highlights, and next-step guidance for major command results."
+description: Refactor output renderer to compact TOON payloads by dropping null/undefined/empty object/empty array values and stop wrapping non-JSON output in command-aware envelopes.
 type: Task
 status: closed
 priority: 1
 tags[4]: "area:cli","area:output",code,pm-cli
 created_at: "2026-04-01T12:39:43.394Z"
-updated_at: "2026-04-01T12:56:17.268Z"
+updated_at: "2026-04-01T13:51:31.979Z"
 deadline: "2026-04-08T12:39:43.394Z"
 author: codex-agent
 estimated_minutes: 180
-acceptance_criteria: Default non-JSON output includes command-aware summary/highlights/next actions while remaining deterministic.
+acceptance_criteria: output.ts compacts TOON recursively while preserving 0/false/non-empty strings; command-aware envelope removed from default TOON path; unit/integration coverage verifies sparse TOON + JSON compatibility.
 goal: CLI usability excellence
 objective: Actionable output
 value: Faster follow-up actions
@@ -25,17 +25,25 @@ regression: true
 customer_impact: Results become easier to understand and act on
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-t2hj,parent,"2026-04-01T12:39:43.394Z",codex-agent,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-01T12:39:43.394Z",codex-agent,Task maps directly to plan todo output-redesign.
   "2026-04-01T12:44:59.854Z",codex-agent,Added command-aware non-JSON output envelopes in src/core/output/command-aware.ts and integrated in src/core/output/output.ts using active command context.
+  "2026-04-01T13:51:11.741Z",codex-agent,"Implemented sparse TOON rendering in src/core/output/output.ts (omit null/undefined/empty arrays/empty objects) and removed command-aware envelope usage in default TOON path. Verification: node scripts/run-tests.mjs test -- tests/unit/output.spec.ts tests/integration/cli.integration.spec.ts (pass), node scripts/run-tests.mjs test (pass), pm test pm-x3fh --run (linked tests pass except coverage entry). Coverage command node scripts/run-tests.mjs coverage fails global 100% thresholds at repo baseline (97.58/95.8/98.31/97.8)."
 notes[1]{created_at,author,text}:
   "2026-04-01T12:39:43.394Z",codex-agent,Will preserve JSON mode semantics while improving default non-JSON experience.
 files[2]{path,scope,note}:
   src/core/output/command-aware.ts,project,Command-aware output envelope builder
   src/core/output/output.ts,project,Primary output renderer
-tests[1]{command,path,scope,timeout_seconds,note}:
+tests[4]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,4800,coverage baseline after TOON refactor
+  node scripts/run-tests.mjs test,null,project,3600,full unit+integration regression sweep
+  node scripts/run-tests.mjs test -- tests/unit/output.spec.ts tests/integration/cli.integration.spec.ts,null,project,2400,targeted sparse TOON regression
   node scripts/run-tests.mjs test -- tests/unit/output.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,Output regressions
-docs[1]{path,scope,note}:
+docs[5]{path,scope,note}:
+  CHANGELOG.md,project,record sparse TOON behavior change
+  docs/ARCHITECTURE.md,project,update output pipeline architecture notes
+  docs/EXTENSIONS.md,project,renderer fallback behavior updates
+  PRD.md,project,refresh output contract language
   README.md,project,Output behavior docs
-close_reason: "Command-aware non-JSON output envelopes now provide summaries, highlights, and next steps."
+close_reason: Sparse TOON refactor delivered; envelope removed; output/docs/tests updated
 body: "Implements plan todo: output-redesign"

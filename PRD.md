@@ -77,7 +77,7 @@ From TOON guidance:
 
 - Show structure directly, keep deterministic layout, and preserve strict machine parseability.
 - Keep output schema stable and field ordering deterministic.
-- JSON fallback should be exact semantic equivalent of TOON output object.
+- JSON fallback should preserve the full command payload; TOON may be a sparse projection optimized for token efficiency.
 
 ## 5) Core Concepts
 
@@ -556,7 +556,7 @@ If any step fails, return non-zero exit code and preserve prior item bytes.
 Default output note:
 
 - Core default remains TOON.
-- Non-JSON command output is command-aware and includes deterministic envelope sections: `summary`, `highlights`, `next_steps`, and `result`.
+- Default TOON output renders command payloads directly and applies sparse compaction (omit `null`/`undefined`/empty arrays/empty objects).
 - `pm calendar` is a deliberate exception and defaults to markdown unless explicitly overridden by `--format` or `--json`.
 - Runtime output is terminal-neutral plain text (TOON/JSON/markdown) with no required terminal-specific OSC/ANSI control protocol.
 - Error handling should preserve exit-code mapping while preferring graceful process termination semantics (`process.exitCode`) over forced synchronous exits when feasible.
@@ -808,7 +808,7 @@ All commands return deterministic top-level objects (TOON by default, JSON with 
 List command row projection:
 
 - Default `list*` rows contain `ItemFrontMatter` fields only.
-- With `--include-body`, each row additionally includes `body` and `filters.include_body` is `true` (`null` when omitted).
+- With `--include-body`, each row additionally includes `body` and `filters.include_body` is `true` (`null` when omitted in JSON; omitted in sparse TOON).
 
 Roadmap output contracts remain defined in this PRD for extension areas and advanced search tuning that are still out of v0.1 release scope.
 
@@ -839,8 +839,8 @@ Determinism requirements:
 - Stable key order in every object.
 - Stable array order for `items` (default sort: non-terminal before terminal, then priority asc, then updated_at desc, then id asc).
 - `pm list` excludes terminal statuses (`closed`, `canceled`) by default; `pm list-all` includes all statuses.
-- `list*` reports `filters.include_body` as `null` unless `--include-body` is provided (`true` when provided).
-- TOON and JSON contain same logical content.
+- JSON output preserves full fields (including explicit `null` placeholders where applicable by command contract).
+- TOON output is a sparse projection that omits `null`/`undefined`/empty arrays/empty objects while preserving non-empty values.
 - `--quiet` prints nothing to stdout but still uses exit codes.
 - Stdin token paths requiring piped input fail fast on interactive TTY stdin with actionable guidance instead of waiting indefinitely for EOF.
 - Manual interactive EOF guidance remains explicit and cross-platform: `Ctrl+D` (Unix/macOS) and `Ctrl+Z` then `Enter` (Windows).
@@ -849,7 +849,7 @@ Determinism requirements:
 
 ### 13.0 Command contract (implemented baseline)
 
-`pm search <keywords>` is implemented across keyword, semantic, and hybrid modes with deterministic ordering. The baseline command searches core item corpus fields, supports vector-query execution when configured (or when local Ollama auto-defaults are resolved), and returns stable TOON/JSON output parity.
+`pm search <keywords>` is implemented across keyword, semantic, and hybrid modes with deterministic ordering. The baseline command searches core item corpus fields, supports vector-query execution when configured (or when local Ollama auto-defaults are resolved), and returns stable JSON payloads plus sparse TOON projections.
 
 Initial flags:
 

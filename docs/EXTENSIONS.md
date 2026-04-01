@@ -127,14 +127,13 @@ api.registerRenderer("toon", (context) => {
 
 Renderer overrides must return a string. Non-string return values are ignored and produce a deterministic `extension_renderer_invalid_result:<layer>:<name>:<format>` warning.
 
-Without a renderer override, non-JSON command output is wrapped by core in a command-aware envelope:
+Without a renderer override, core TOON fallback output renders the command payload directly and applies sparse compaction:
 
-- `summary`
-- `highlights`
-- `next_steps`
-- `result`
+- omits `null` and `undefined`
+- omits empty arrays and empty objects
+- preserves meaningful scalar values
 
-If your extension needs a different human-readable shape, register a TOON renderer override.
+If your extension needs a different shape (or must include fields omitted by sparse fallback), register a TOON renderer override.
 
 ### `api.registerImporter(name, importer)`
 
