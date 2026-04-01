@@ -5,6 +5,7 @@ import { getActiveExtensionRegistrations, runActiveOnReadHooks, runActiveOnWrite
 import { appendHistoryEntry, createHistoryEntry } from "../../core/history/history.js";
 import { generateItemId, normalizeItemId, normalizeRawItemId } from "../../core/item/id.js";
 import { canonicalDocument, normalizeFrontMatter, serializeItemDocument } from "../../core/item/item-format.js";
+import { normalizeStatusInput } from "../../core/item/status.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { parseTags } from "../../core/item/parse.js";
 import { acquireLock } from "../../core/lock/lock.js";
@@ -16,7 +17,7 @@ import { locateItem } from "../../core/store/item-store.js";
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { Dependency, ItemDocument, ItemFrontMatter, ItemStatus, ItemType, LogNote, LinkedFile, LinkedTest, LinkedDoc } from "../../types/index.js";
-import { DEPENDENCY_KIND_VALUES, STATUS_VALUES } from "../../types/index.js";
+import { DEPENDENCY_KIND_VALUES } from "../../types/index.js";
 
 const PRIMARY_AUTO_DISCOVERY_FILES = [
   ".beads/issues.jsonl",
@@ -162,9 +163,12 @@ function toItemType(value: unknown): { type: ItemType; sourceType?: string } {
 }
 
 function toStatus(value: unknown): ItemStatus {
-  const normalized = toNonEmptyString(value)?.toLowerCase();
-  if (normalized && STATUS_VALUES.includes(normalized as ItemStatus)) {
-    return normalized as ItemStatus;
+  const normalized = toNonEmptyString(value);
+  if (normalized) {
+    const canonical = normalizeStatusInput(normalized);
+    if (canonical) {
+      return canonical;
+    }
   }
   return "open";
 }

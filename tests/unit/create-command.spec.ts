@@ -307,6 +307,20 @@ describe("runCreate", () => {
     });
   });
 
+  it("accepts in-progress status alias and stores canonical status", async () => {
+    await withTempPmPath(async (context) => {
+      const aliasedStatus = await runCreate(
+        baseCreateOptions({
+          title: "create-status-alias",
+          status: "in-progress",
+          message: "create with status alias",
+        }),
+        { path: context.pmPath },
+      );
+      expect(aliasedStatus.item.status).toBe("in_progress");
+    });
+  });
+
   it("dispatches onWrite hooks for item and history writes", async () => {
     await withTempPmPath(async (context) => {
       const events: string[] = [];

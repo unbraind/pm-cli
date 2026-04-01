@@ -9,6 +9,7 @@ import {
   validateTypeOptions,
 } from "../../core/item/type-registry.js";
 import { createStdinTokenResolver, parseCsvKv, parseOptionalNumber, parseTags } from "../../core/item/parse.js";
+import { normalizeStatusInput } from "../../core/item/status.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -18,14 +19,13 @@ import { applyRegisteredItemFieldDefaultsAndValidation } from "../../core/extens
 import { mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import type { CalendarEvent, RecurrenceRule, Reminder } from "../../types/index.js";
+import type { CalendarEvent, ItemStatus, RecurrenceRule, Reminder } from "../../types/index.js";
 import {
   CONFIDENCE_TEXT_VALUES,
   ISSUE_SEVERITY_VALUES,
   RECURRENCE_FREQUENCY_VALUES,
   RECURRENCE_WEEKDAY_VALUES,
   RISK_VALUES,
-  STATUS_VALUES,
 } from "../../types/index.js";
 
 export interface UpdateCommandOptions {
@@ -94,6 +94,14 @@ function ensureEnum<T extends string>(value: string, allowed: readonly T[], labe
     throw new PmCliError(`Invalid ${label} value "${value}"`, EXIT_CODE.USAGE);
   }
   return value as T;
+}
+
+function parseStatus(value: string): ItemStatus {
+  const normalized = normalizeStatusInput(value);
+  if (!normalized) {
+    throw new PmCliError(`Invalid --status value "${value}"`, EXIT_CODE.USAGE);
+  }
+  return normalized;
 }
 
 function normalizeRiskInput(value: string): string {
@@ -588,7 +596,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         changedFields.push("description");
       }
       if (options.status !== undefined) {
-        const status = ensureEnum(options.status, STATUS_VALUES, "status");
+        const status = parseStatus(options.status);
         if (status === "closed") {
           throw new PmCliError(
             'Invalid --status value "closed". Use "pm close <ID> <TEXT>" to close an item.',

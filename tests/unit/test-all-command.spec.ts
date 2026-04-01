@@ -12,7 +12,7 @@ function createTaskWithTests(
   context: TempPmContext,
   params: {
     title: string;
-    status: "open" | "closed";
+    status: "open" | "in_progress" | "closed";
     testEntries: string[];
   },
 ): string {
@@ -106,6 +106,26 @@ describe("runTestAll", () => {
       await expect(runTestAll({ status: "invalid" }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
+    });
+  });
+
+  it("accepts in-progress status filter alias", async () => {
+    await withTempPmPath(async (context) => {
+      createTaskWithTests(context, {
+        title: "In Progress Alias Filter Task",
+        status: "in_progress",
+        testEntries: ["command=node --version,scope=project"],
+      });
+      createTaskWithTests(context, {
+        title: "Open Alias Filter Task",
+        status: "open",
+        testEntries: ["command=node --version,scope=project"],
+      });
+
+      const inProgressOnly = await runTestAll({ status: "in-progress" }, { path: context.pmPath });
+      expect(inProgressOnly.totals.items).toBe(1);
+      expect(inProgressOnly.results).toHaveLength(1);
+      expect(inProgressOnly.results[0]?.status).toBe("in_progress");
     });
   });
 

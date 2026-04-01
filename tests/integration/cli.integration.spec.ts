@@ -1381,7 +1381,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(createItem("List Open Priority One", "open", "1").code).toBe(0);
       expect(createItem("List Open Priority Zero", "open", "0").code).toBe(0);
       expect(createItem("List Draft", "draft", "4").code).toBe(0);
-      expect(createItem("List In Progress", "in_progress", "2").code).toBe(0);
+      expect(createItem("List In Progress", "in-progress", "2").code).toBe(0);
       expect(createItem("List Blocked", "blocked", "3").code).toBe(0);
       expect(createItem("List Closed", "closed", "1").code).toBe(0);
       expect(createItem("List Canceled", "canceled", "2").code).toBe(0);
@@ -1731,7 +1731,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           seededId,
           "--json",
           "--status",
-          "in_progress",
+          "in-progress",
           "--author",
           "integration-test",
           "--message",
@@ -2888,7 +2888,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       );
       expect(createPassing.code).toBe(0);
 
-      const testAll = context.runCli(["test-all", "--json", "--status", "in_progress", "--timeout", "30"], {
+      const testAll = context.runCli(["test-all", "--json", "--status", "in-progress", "--timeout", "30"], {
         expectJson: true,
       });
       expect(testAll.code).toBe(5);

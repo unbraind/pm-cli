@@ -274,6 +274,35 @@ describe("calendar command module", () => {
     });
   });
 
+  it("accepts in-progress status filter alias", async () => {
+    await withTempPmPath(async (context) => {
+      createCalendarItem(context, {
+        title: "Alias in-progress calendar seed",
+        status: "in_progress",
+        deadline: "2026-04-06T09:00:00.000Z",
+      });
+      createCalendarItem(context, {
+        title: "Alias non-match calendar seed",
+        status: "open",
+        deadline: "2026-04-06T10:00:00.000Z",
+      });
+
+      const filtered = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-04-06T00:00:00.000Z",
+          to: "2026-04-07T00:00:00.000Z",
+          status: "in-progress",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(filtered.summary.events).toBe(1);
+      expect(filtered.events[0]?.item_status).toBe("in_progress");
+      expect(filtered.events[0]?.item_title).toBe("Alias in-progress calendar seed");
+    });
+  });
+
   it("supports source include filters and recurrence bounding controls", async () => {
     await withTempPmPath(async (context) => {
       createCalendarItem(context, {

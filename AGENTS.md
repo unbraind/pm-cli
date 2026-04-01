@@ -179,6 +179,7 @@ Use release when:
 - `blocked`: waiting on dependency/input
 - `closed`: done and verified
 - `canceled`: intentionally discontinued
+- Input compatibility: `in-progress` is accepted for status flags and normalized to `in_progress`.
 
 Ownership:
 

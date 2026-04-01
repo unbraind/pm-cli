@@ -1,0 +1,41 @@
+id: pm-g6a2
+title: Status alias compatibility hardening
+description: Ensure status inputs accept both in-progress and in_progress without behavior regressions.
+type: Epic
+status: closed
+priority: 0
+tags[5]: "area:cli","area:compatibility","area:status","milestone:status-alias",pm-cli
+created_at: "2026-04-01T10:46:33.811Z"
+updated_at: "2026-04-01T10:58:56.010Z"
+deadline: "2026-04-08T10:46:33.811Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: All status-entry command surfaces accept in-progress and in_progress as equivalent inputs while persisting canonical in_progress; docs and tests are updated and pass.
+definition_of_ready: Status entry points and regression matrix are identified.
+order: 1
+goal: Compatibility hardening
+objective: Eliminate status alias friction for agents and users
+value: Prevents failed automations caused by status token formatting variance
+impact: Reduces command failures and preserves existing user workflows
+outcome: Status alias inputs are normalized consistently across CLI surfaces
+why_now: Agents frequently emit in-progress and currently hit usage errors
+risk: medium
+confidence: high
+component: status-parsing
+regression: true
+customer_impact: avoids agent failures from status format mismatch
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-mfza,discovered_from,"2026-04-01T10:46:33.811Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T10:46:33.811Z",codex-agent,Epic opened after deep search confirmed no active duplicate item for in-progress status alias compatibility.
+  "2026-04-01T10:58:47.505Z",codex-agent,"Epic completion evidence: feature pm-1r6p closed after implementation + regression + docs tasks completed; status alias errors for in-progress input are resolved with canonical persistence."
+notes[1]{created_at,author,text}:
+  "2026-04-01T10:46:33.811Z",codex-agent,Plan central status normalization and wire all status entry points before docs plus verification.
+files[1]{path,scope,note}:
+  src/cli/commands/create.ts,project,status input normalization entry point
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,3600,full regression baseline for compatibility hardening
+docs[1]{path,scope,note}:
+  PRD.md,project,status contract documentation update
+close_reason: "Epic completed: in-progress alias compatibility delivered end-to-end with tracked implementation, tests, and documentation updates."
+body: Deep research implementation track for status alias compatibility hardening across CLI surfaces.

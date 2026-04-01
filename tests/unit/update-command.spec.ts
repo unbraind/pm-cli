@@ -567,6 +567,23 @@ describe("runUpdate", () => {
     });
   });
 
+  it("accepts in-progress status alias and stores canonical status", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-status-alias");
+      const result = await runUpdate(
+        id,
+        {
+          status: "in-progress",
+          message: "set status using alias",
+        },
+        { path: context.pmPath },
+      );
+
+      const item = result.item as Record<string, unknown>;
+      expect(item.status).toBe("in_progress");
+    });
+  });
+
   it("validates enum and numeric inputs", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-invalid-values");

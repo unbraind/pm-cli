@@ -49,6 +49,11 @@ describe("item-format front-matter validation", () => {
     expect(() => parseItemDocument(buildSource({ priority: 7 }))).toThrow("priority must be an integer 0..4");
   });
 
+  it("accepts in-progress status alias and normalizes to canonical status", () => {
+    const parsed = parseItemDocument(buildSource({ status: "in-progress" }));
+    expect(parsed.front_matter.status).toBe("in_progress");
+  });
+
   it("throws when tags are not string arrays", () => {
     expect(() => parseItemDocument(buildSource({ tags: "core" }))).toThrow("tags must be an array");
     expect(() => parseItemDocument(buildSource({ tags: ["ok", 2] }))).toThrow("tags entries must be strings");

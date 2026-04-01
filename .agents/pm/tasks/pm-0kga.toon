@@ -1,0 +1,49 @@
+id: pm-0kga
+title: Add status alias regression tests
+description: Add and update unit/integration coverage to verify in-progress and in_progress behave identically across command workflows.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:status","area:tests",pm-cli,regression
+created_at: "2026-04-01T10:47:14.569Z"
+updated_at: "2026-04-01T10:58:53.597Z"
+deadline: "2026-04-03T10:47:14.569Z"
+author: codex-agent
+estimated_minutes: 70
+acceptance_criteria: "Tests cover create/update/calendar/test-all and integration command usage with in-progress alias, asserting canonical stored status remains in_progress and regressions are prevented."
+definition_of_ready: Implementation call sites are available for test coverage updates.
+order: 4
+goal: Compatibility hardening
+objective: Protect status alias behavior with regression tests
+value: Prevents future regressions in status parsing behavior
+impact: Increases confidence for existing users and agents
+outcome: Automated tests enforce alias parity guarantees
+why_now: Alias support must ship with durable coverage
+parent: pm-1r6p
+risk: low
+confidence: high
+component: tests
+regression: true
+customer_impact: future releases preserve status alias compatibility
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-1r6p,parent,"2026-04-01T10:47:14.569Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T10:47:14.569Z",codex-agent,Coverage includes command module tests and integration command path checks for alias parity.
+  "2026-04-01T10:58:29.153Z",codex-agent,"Added regression coverage for alias parity in create/update/calendar/test-all, item-format validation, integration lifecycle filtering, and direct helper branches. Verification: node scripts/run-tests.mjs test passed after updates."
+notes[1]{created_at,author,text}:
+  "2026-04-01T10:47:14.569Z",codex-agent,Favor deterministic assertions on canonical stored status values.
+files[8]{path,scope,note}:
+  tests/integration/cli.integration.spec.ts,project,integration alias lifecycle and filter coverage
+  tests/unit/calendar-command.spec.ts,project,calendar alias filter coverage
+  tests/unit/create-command.spec.ts,project,create alias acceptance coverage
+  tests/unit/item-format-validation.spec.ts,project,item format alias normalization validation
+  tests/unit/status-normalization.spec.ts,project,direct normalization helper branch coverage
+  tests/unit/test-all-command.spec.ts,project,test-all alias filter coverage
+  tests/unit/update-command.spec.ts,project,update alias acceptance coverage
+  vitest.config.ts,project,coverage include list updated for new status module
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/test-all-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,status alias unit and integration regression suite
+docs[1]{path,scope,note}:
+  PRD.md,project,status contract verification references
+close_reason: Alias regression coverage added for unit/integration paths and helper normalization branches; full sandbox test suite passed.
+body: Testing task for status alias normalization compatibility.

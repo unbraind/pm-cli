@@ -2,13 +2,13 @@ import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { parseOptionalNumber } from "../../core/item/parse.js";
+import { normalizeStatusInput } from "../../core/item/status.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { listAllFrontMatter } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import { STATUS_VALUES } from "../../types/index.js";
 import type { ItemStatus, LinkedTest } from "../../types/index.js";
 import { runLinkedTests, runTest, type TestRunResult } from "./test.js";
 
@@ -45,10 +45,11 @@ function parseStatus(raw: string | undefined): ItemStatus | undefined {
   if (raw === undefined) {
     return undefined;
   }
-  if (!STATUS_VALUES.includes(raw as ItemStatus)) {
+  const normalized = normalizeStatusInput(raw);
+  if (!normalized) {
     throw new PmCliError(`Invalid --status value "${raw}"`, EXIT_CODE.USAGE);
   }
-  return raw as ItemStatus;
+  return normalized;
 }
 
 function parseTimeout(raw: string | undefined): number | undefined {

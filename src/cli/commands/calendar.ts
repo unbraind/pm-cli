@@ -1,6 +1,7 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { resolveItemTypeRegistry, resolveTypeName, type ItemTypeRegistry } from "../../core/item/type-registry.js";
+import { normalizeStatusInput } from "../../core/item/status.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -214,11 +215,11 @@ function parseType(raw: string | undefined, typeRegistry: ItemTypeRegistry): Ite
 
 function parseStatus(raw: string | undefined): ItemStatus | undefined {
   if (raw === undefined) return undefined;
-  const normalized = raw.trim().toLowerCase();
-  if (!STATUS_VALUES.includes(normalized as ItemStatus)) {
+  const normalized = normalizeStatusInput(raw);
+  if (!normalized) {
     throw new PmCliError(`Calendar status filter must be one of ${STATUS_VALUES.join("|")}`, EXIT_CODE.USAGE);
   }
-  return normalized as ItemStatus;
+  return normalized;
 }
 
 function toUtcDayKey(timestamp: string): string {

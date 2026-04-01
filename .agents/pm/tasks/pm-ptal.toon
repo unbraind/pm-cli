@@ -1,0 +1,49 @@
+id: pm-ptal
+title: Implement centralized status alias normalization
+description: Add shared status normalization helpers and wire command/runtime parsing paths so hyphenated status aliases map to canonical stored values.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:cli","area:status",code,pm-cli
+created_at: "2026-04-01T10:47:04.830Z"
+updated_at: "2026-04-01T10:58:52.517Z"
+deadline: "2026-04-03T10:47:04.830Z"
+author: codex-agent
+estimated_minutes: 90
+acceptance_criteria: A shared status helper normalizes in-progress to in_progress and is used by create/update/calendar/test-all/import/document parsing paths without changing canonical persisted status values.
+definition_of_ready: Status parsing call sites are identified and mapped.
+order: 3
+goal: Compatibility hardening
+objective: Canonicalize status aliases in runtime
+value: Single-source status parsing reduces drift and command inconsistency
+impact: Prevents user-facing failures from alias mismatch
+outcome: All status entry points normalize aliases consistently
+why_now: Current strict checks reject common in-progress input
+parent: pm-1r6p
+risk: medium
+confidence: high
+component: status-normalization
+regression: true
+customer_impact: status updates and filters work with common agent output
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-1r6p,parent,"2026-04-01T10:47:04.830Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T10:47:04.830Z",codex-agent,Task targets core helper plus command integration points create/update/calendar/test-all and importers.
+  "2026-04-01T10:58:28.201Z",codex-agent,"Implemented centralized status normalization helper (src/core/item/status.ts) and wired create/update/calendar/test-all/import/front-matter parsing to accept in-progress while persisting canonical in_progress. Verification: node scripts/run-tests.mjs test passed (61 files, 636 tests)."
+notes[1]{created_at,author,text}:
+  "2026-04-01T10:47:04.830Z",codex-agent,Preserve canonical persisted status while accepting alias inputs.
+files[8]{path,scope,note}:
+  src/cli/commands/beads.ts,project,beads import status alias normalization
+  src/cli/commands/calendar.ts,project,calendar status filter alias support
+  src/cli/commands/create.ts,project,create status parsing uses normalizeStatusInput
+  src/cli/commands/test-all.ts,project,test-all status filter alias support
+  src/cli/commands/update.ts,project,update status parsing uses normalizeStatusInput
+  src/core/item/item-format.ts,project,item parse normalization to canonical status
+  src/core/item/status.ts,project,new shared status normalization utility
+  src/extensions/builtins/todos/import-export.ts,project,todos import status alias normalization
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,3600,status normalization unit regression
+docs[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,core parsing behavior reference
+close_reason: Centralized status alias normalization implemented across command and parsing surfaces; full sandbox test suite passed.
+body: Implementation task for status normalization utility and command integration.

@@ -20,6 +20,7 @@ import {
   RECURRENCE_WEEKDAY_VALUES,
   STATUS_VALUES,
 } from "../../types/index.js";
+import { normalizeStatusInput } from "./status.js";
 import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { orderObject } from "../shared/serialization.js";
@@ -141,8 +142,9 @@ function assertValidFrontMatter(frontMatter: unknown): asserts frontMatter is It
   assertFrontMatterCondition(typeof itemType === "string" && itemType.trim().length > 0, "type must be a non-empty string");
 
   const status = record.status;
+  const normalizedStatus = typeof status === "string" ? normalizeStatusInput(status) : undefined;
   assertFrontMatterCondition(
-    typeof status === "string" && STATUS_VALUES.includes(status as (typeof STATUS_VALUES)[number]),
+    normalizedStatus !== undefined,
     `status must be one of: ${STATUS_VALUES.join(", ")}`,
   );
 
@@ -540,6 +542,7 @@ function normalizeSeverityValue(value: ItemFrontMatter["severity"] | undefined):
 }
 
 export function normalizeFrontMatter(frontMatter: ItemFrontMatter): ItemFrontMatter {
+  const normalizedStatus = normalizeStatusInput(frontMatter.status) ?? frontMatter.status;
   const tags = Array.from(new Set(frontMatter.tags.map((tag) => tag.trim().toLowerCase()).filter(Boolean))).sort((a, b) =>
     a.localeCompare(b),
   );
@@ -550,7 +553,7 @@ export function normalizeFrontMatter(frontMatter: ItemFrontMatter): ItemFrontMat
     type: frontMatter.type,
     source_type: frontMatter.source_type?.trim() || undefined,
     type_options: normalizeTypeOptions(frontMatter.type_options),
-    status: frontMatter.status,
+    status: normalizedStatus,
     priority: frontMatter.priority,
     tags,
     created_at: frontMatter.created_at,

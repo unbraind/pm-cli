@@ -6,6 +6,7 @@ import { pathExists, removeFileIfExists, writeFileAtomic } from "../../../core/f
 import { appendHistoryEntry, createHistoryEntry } from "../../../core/history/history.js";
 import { generateItemId, normalizeItemId } from "../../../core/item/id.js";
 import { canonicalDocument, normalizeFrontMatter, serializeItemDocument, splitFrontMatter } from "../../../core/item/item-format.js";
+import { normalizeStatusInput } from "../../../core/item/status.js";
 import { resolveItemTypeRegistry } from "../../../core/item/type-registry.js";
 import { parseTags } from "../../../core/item/parse.js";
 import { acquireLock } from "../../../core/lock/lock.js";
@@ -16,7 +17,7 @@ import { nowIso } from "../../../core/shared/time.js";
 import { listAllFrontMatter, locateItem, readLocatedItem } from "../../../core/store/item-store.js";
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../../core/store/paths.js";
 import { readSettings } from "../../../core/store/settings.js";
-import { CONFIDENCE_TEXT_VALUES, ISSUE_SEVERITY_VALUES, RISK_VALUES, STATUS_VALUES } from "../../../types/index.js";
+import { CONFIDENCE_TEXT_VALUES, ISSUE_SEVERITY_VALUES, RISK_VALUES } from "../../../types/index.js";
 import type { ItemDocument, ItemFrontMatter, ItemStatus, ItemType, PmSettings } from "../../../types/index.js";
 
 const DEFAULT_TODOS_FOLDER = ".pi/todos";
@@ -227,9 +228,12 @@ function toItemType(value: unknown, typeNames: string[]): ItemType {
 }
 
 function toStatus(value: unknown): ItemStatus {
-  const normalized = toNonEmptyString(value)?.toLowerCase();
-  if (normalized && STATUS_VALUES.includes(normalized as ItemStatus)) {
-    return normalized as ItemStatus;
+  const normalized = toNonEmptyString(value);
+  if (normalized) {
+    const canonical = normalizeStatusInput(normalized);
+    if (canonical) {
+      return canonical;
+    }
   }
   return "open";
 }

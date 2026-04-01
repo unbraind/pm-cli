@@ -100,6 +100,10 @@ Allowed values:
 - `closed`
 - `canceled`
 
+Input compatibility:
+
+- Accept `in-progress` as an input alias and normalize to canonical `in_progress` for persisted item data and command output.
+
 Lifecycle rules:
 
 - Any non-terminal status may transition to `canceled` via `pm update <ID> --status canceled`.

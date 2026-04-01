@@ -1,0 +1,48 @@
+id: pm-posc
+title: Update docs and verify status alias release readiness
+description: Update AGENTS/README/PRD/changelog with status alias behavior and capture build + regression verification evidence before close.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:docs","area:release","area:status",pm-cli
+created_at: "2026-04-01T10:47:25.606Z"
+updated_at: "2026-04-01T10:58:54.329Z"
+deadline: "2026-04-03T10:47:25.606Z"
+author: codex-agent
+estimated_minutes: 60
+acceptance_criteria: Docs explicitly document in-progress alias support and canonical in_progress persistence; build and regression tests pass; verification evidence is logged on linked pm items.
+definition_of_ready: Implementation and test updates are completed and ready for documentation/verification pass.
+order: 5
+goal: Compatibility hardening
+objective: Ship status alias fix with complete documentation and evidence
+value: Users and agents receive clear contract guidance and validated behavior
+impact: Reduces confusion and rollout risk
+outcome: Release-ready status alias support with documented behavior
+why_now: Users are actively affected and need immediate docs clarity
+parent: pm-1r6p
+risk: low
+confidence: high
+component: documentation
+regression: true
+customer_impact: users can rely on both status spellings without workflow breaks
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-1r6p,parent,"2026-04-01T10:47:25.606Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T10:47:25.606Z",codex-agent,Task ensures contract docs and changelog capture alias behavior and verification evidence.
+  "2026-04-01T10:58:29.954Z",codex-agent,"Updated README/PRD/AGENTS/CHANGELOG with explicit in-progress alias compatibility and canonical storage wording. Verification: node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage currently reports pre-existing global threshold shortfall (98.14 lines / 96.57 branches) outside this change scope."
+notes[1]{created_at,author,text}:
+  "2026-04-01T10:47:25.606Z",codex-agent,Record command outputs and pass/fail summaries in pm comments prior to closure.
+files[4]{path,scope,note}:
+  AGENTS.md,project,agent workflow status alias normalization guidance
+  CHANGELOG.md,project,unreleased fix notes for status alias support
+  PRD.md,project,product lifecycle status alias compatibility note
+  README.md,project,document alias behavior for users and agents
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,3600,final regression confirmation
+docs[4]{path,scope,note}:
+  AGENTS.md,project,status norms include alias compatibility
+  CHANGELOG.md,project,unreleased status alias entry
+  PRD.md,project,status lifecycle input compatibility documented
+  README.md,project,status alias behavior documented
+close_reason: Status alias behavior documented in README/PRD/AGENTS/CHANGELOG and verification evidence logged.
+body: Documentation and verification task for status alias compatibility release readiness.

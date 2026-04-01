@@ -121,6 +121,12 @@ pm claim <item-id>
 
 From there, use `pm update`, `pm comments`, `pm files`, `pm test`, `pm search`, and `pm close` as work progresses.
 
+## Status Values
+
+- Canonical status values are: `draft`, `open`, `in_progress`, `blocked`, `closed`, `canceled`.
+- Status input flags also accept `in-progress` as an alias for `in_progress` (`pm create`, `pm update`, `pm calendar`, and `pm test-all`).
+- Persisted item data and command output remain canonical (`in_progress`) for deterministic storage and filtering.
+
 ## Resilient Entry Input Formats
 
 Entry-style flags (`--add`, `--remove`, and repeatable create/update seed flags like `--comment`, `--file`, `--test`, `--doc`, `--reminder`, `--event`, `--type-option`) now accept three deterministic forms:

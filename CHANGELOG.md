@@ -182,6 +182,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation contracts (`PRD.md`, `README.md`, `AGENTS.md`) fully updated to cover all implemented command surfaces, schema fields, extension API, safety guardrails, and contributor workflow.
 
 ### Fixed
+- Status parsing now accepts `in-progress` and normalizes to canonical `in_progress` across `pm create`, `pm update`, `pm calendar`, and `pm test-all` filters.
+- Item/front-matter and built-in import normalization now resolve `in-progress` to `in_progress` to avoid validation failures while preserving deterministic stored status values.
 - `pm todos import` correctly preserves hierarchical IDs (e.g. `pm-legacy.1.2`) from todos front-matter verbatim.
 - `pm todos import` correctly round-trips canonical optional metadata fields (planning/workflow and issue metadata).
 - Pi extension packaged CLI fallback path resolves correctly from the package root.

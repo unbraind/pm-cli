@@ -52,6 +52,7 @@ export default defineConfig({
         "src/core/item/id.ts",
         "src/core/item/item-format.ts",
         "src/core/item/parse.ts",
+        "src/core/item/status.ts",
         "src/core/item/index.ts",
         "src/core/lock/lock.ts",
         "src/core/lock/index.ts",

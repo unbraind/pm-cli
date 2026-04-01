@@ -1,0 +1,42 @@
+id: pm-1r6p
+title: Canonical status alias normalization across CLI surfaces
+description: Normalize status inputs so in-progress and in_progress are equivalent for command flags and imported payloads while persisting canonical values.
+type: Feature
+status: closed
+priority: 1
+tags[4]: "area:cli","area:compatibility","area:status",pm-cli
+created_at: "2026-04-01T10:46:49.502Z"
+updated_at: "2026-04-01T10:58:55.105Z"
+deadline: "2026-04-05T10:46:49.502Z"
+author: codex-agent
+estimated_minutes: 150
+acceptance_criteria: create/update/calendar/test-all and import/read surfaces accept in-progress and in_progress inputs equivalently; stored item status remains canonical in_progress; invalid statuses still fail deterministically.
+definition_of_ready: All command and parsing status entry points are enumerated with baseline tests.
+order: 2
+goal: Compatibility hardening
+objective: Status alias parity for automation clients
+value: Removes avoidable failures caused by hyphen-vs-underscore status tokens
+impact: Improves robustness for existing users and agent tools
+outcome: Status normalization is centralized and consistently applied
+why_now: Users are reporting repeated failures from in-progress status usage
+parent: pm-g6a2
+risk: medium
+confidence: high
+component: status-normalization
+regression: true
+customer_impact: agent and user status updates stop failing on alias formatting
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-g6a2,parent,"2026-04-01T10:46:49.502Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T10:46:49.502Z",codex-agent,Feature decomposes epic into implementation testing and docs verification workstreams.
+  "2026-04-01T10:58:45.997Z",codex-agent,"Child tasks pm-ptal, pm-0kga, and pm-posc are closed. Alias normalization now accepts in-progress and in_progress across write/filter/import/read surfaces; docs updated and full sandbox test suite passed (61 files, 636 tests)."
+notes[1]{created_at,author,text}:
+  "2026-04-01T10:46:49.502Z",codex-agent,Centralize normalization in shared core utility to avoid drift across commands.
+files[1]{path,scope,note}:
+  src/cli/commands/update.ts,project,primary user-facing status mutation path
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,3600,status alias regression target set
+docs[1]{path,scope,note}:
+  README.md,project,status alias behavior documentation
+close_reason: "Feature goals met: status alias normalization implemented, regressions covered, and docs updated."
+body: "Feature plan: add centralized status normalization utility, wire all status entry points, and preserve canonical in_progress persistence for backwards compatibility.\n\n## Detailed implementation plan\n1. Add a shared status normalization helper in core item utilities that:\n   - Accepts canonical statuses and alias spellings (`in-progress` -> `in_progress`).\n   - Normalizes case/whitespace and returns canonical enum values.\n   - Preserves deterministic validation errors for unsupported statuses.\n2. Wire the helper into every status input boundary:\n   - `pm create --status`\n   - `pm update --status`\n   - `pm calendar --status`\n   - `pm test-all --status`\n   - importer status adapters (`beads`, `todos`)\n   - item-document front-matter parsing/normalization for compatibility reads.\n3. Keep persisted status canonical:\n   - Storage and output remain `in_progress`.\n   - Alias support is input-compatible only to avoid schema churn.\n4. Extend regression coverage:\n   - Unit tests for create/update/calendar/test-all status alias behavior.\n   - Integration coverage validating CLI usage with `in-progress` and canonical readback.\n5. Update documentation and release notes:\n   - README, PRD, AGENTS usage notes, CHANGELOG `[Unreleased]`.\n6. Verify end-to-end safety:\n   - Build, targeted unit/integration runs, and full sandbox-safe regression run.\n   - Record evidence on tasks/features/epic before closure."

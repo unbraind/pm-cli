@@ -3,6 +3,7 @@ import { appendHistoryEntry, createHistoryEntry } from "../../core/history/histo
 import { generateItemId, normalizeItemId } from "../../core/item/id.js";
 import { canonicalDocument, normalizeFrontMatter, serializeItemDocument } from "../../core/item/item-format.js";
 import { createStdinTokenResolver, parseCsvKv, parseOptionalNumber, parseTags } from "../../core/item/parse.js";
+import { normalizeStatusInput } from "../../core/item/status.js";
 import {
   canonicalizeCommandOptionKey,
   commandOptionFlagLabel,
@@ -28,6 +29,7 @@ import type {
   Dependency,
   ItemDocument,
   ItemFrontMatter,
+  ItemStatus,
   LinkedDoc,
   LinkedFile,
   LinkedTest,
@@ -116,6 +118,14 @@ function ensureEnumValue<T extends string>(value: string, allowed: readonly T[],
     );
   }
   return value as T;
+}
+
+function parseStatusValue(value: string): ItemStatus {
+  const normalized = normalizeStatusInput(value);
+  if (!normalized) {
+    throw new PmCliError(`Invalid status value "${value}". Allowed: ${STATUS_VALUES.join(", ")}`, EXIT_CODE.USAGE);
+  }
+  return normalized;
 }
 
 function normalizeRiskInput(value: string): string {
@@ -844,7 +854,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
 
   const id = await generateItemId(pmRoot, settings.id_prefix);
   const type = typeDefinition.name;
-  const status = resolvedOptions.status !== undefined ? ensureEnumValue(resolvedOptions.status, STATUS_VALUES, "status") : "open";
+  const status = resolvedOptions.status !== undefined ? parseStatusValue(resolvedOptions.status) : "open";
   const priority = resolvedOptions.priority !== undefined ? ensurePriority(resolvedOptions.priority) : 2;
   const tags = resolvedOptions.tags !== undefined ? parseTags(resolvedOptions.tags) : [];
 
