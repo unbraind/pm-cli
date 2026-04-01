@@ -1,0 +1,47 @@
+id: pm-y76e
+title: "Ship1: Full verification, closure evidence, commit, and push"
+description: "Run complete build/test/coverage verification, record evidence across linked PM items, then finalize with commit and push."
+type: Task
+status: in_progress
+priority: 1
+tags[4]: "area:release","area:tests",evidence,pm-cli
+created_at: "2026-04-01T12:40:12.308Z"
+updated_at: "2026-04-01T12:55:44.641Z"
+deadline: "2026-04-08T12:40:12.308Z"
+assignee: codex-agent
+author: codex-agent
+estimated_minutes: 120
+acceptance_criteria: Build/tests/coverage are run and documented; linked PM items have closure evidence; final commit and push completed.
+goal: CLI usability excellence
+objective: Verified release
+value: Confidence before ship
+impact: Prevents regressions
+outcome: Validated deployment
+why_now: Large UX changes require explicit final validation.
+parent: pm-i0iy
+risk: medium
+confidence: high
+component: release
+regression: true
+customer_impact: Ensures safe rollout with complete validation evidence
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-i0iy,parent,"2026-04-01T12:40:12.308Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T12:40:12.308Z",codex-agent,Task maps directly to plan todo verify-ship.
+  "2026-04-01T12:55:44.641Z",codex-agent,"Verification evidence: pnpm build passed; node scripts/run-tests.mjs test passed (61 files, 642 tests); node scripts/run-tests.mjs coverage executed and failed global 100% thresholds at lines=97.99 branches=96.24 functions=98.38 statements=97.8 (existing broad-suite gate)."
+notes[1]{created_at,author,text}:
+  "2026-04-01T12:40:12.308Z",codex-agent,Must use sandbox-safe test commands and record pass/fail evidence before close.
+files[8]{path,scope,note}:
+  CHANGELOG.md,project,Release notes evidence
+  README.md,project,user-facing guidance contracts
+  src/cli/error-guidance.ts,project,structured error guidance renderer
+  src/cli/help-content.ts,project,centralized help bundles
+  src/cli/main.ts,project,help and error guidance wiring
+  src/core/output/command-aware.ts,project,command-aware summary/highlight/next-step builders
+  src/core/output/output.ts,project,command-aware envelope integration
+  tests/integration/help-runtime.spec.ts,project,help and usage guidance regression
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,Coverage gate
+docs[1]{path,scope,note}:
+  AGENTS.md,project,Closure protocol
+body: "Implements plan todo: verify-ship"

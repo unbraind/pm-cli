@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added centralized command help narratives across core command paths (`Why use this command`, practical examples, and targeted tips) through a shared help composer.
+- Added structured CLI error guidance rendering for commander usage failures and runtime `PmCliError` failures with deterministic sections (`What happened`, `What is required`, `Why`, `Examples`, optional `Next steps`).
+- Added command-aware non-JSON output envelopes with `summary`, `highlights`, `next_steps`, and raw `result` sections.
 - `list*` commands now accept `--include-body` to project item `body` into each returned row when needed for metadata completeness analysis.
 - Added persistent item reminders via repeatable `--reminder at=<iso|relative>,text=<text>` support on `pm create` and `pm update` (including deterministic `none` clearing semantics).
 - Added `pm calendar` (alias: `pm cal`) with deterministic `agenda` (default), `day`, `week`, and `month` views across deadlines and reminders, plus `--past` and range/filter options.
@@ -27,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added stable SDK package exports at `@unbrained/pm-cli/sdk` with public extension type contracts and `defineExtension(...)` helper.
 
 ### Changed
+- Commander error output now emits a single high-signal structured guidance payload (duplicate default commander stderr lines are suppressed).
 - `pm comments` now accepts optional positional text shorthand (`pm comments <ID> "<text>"`) as an intuitive alias for `--add <text>`, and tolerates bare `--author` by falling back to existing author resolution (`PM_AUTHOR` -> settings default -> `unknown`).
 - Default `list*` output remains front-matter-only; `body` projection is now explicit and opt-in via `--include-body` to preserve lightweight list payloads.
 - Calendar command output now defaults to markdown for agent/human readability while preserving explicit `--format toon|json|markdown` and global `--json` overrides; all other commands keep existing TOON-default behavior.

@@ -556,9 +556,15 @@ If any step fails, return non-zero exit code and preserve prior item bytes.
 Default output note:
 
 - Core default remains TOON.
+- Non-JSON command output is command-aware and includes deterministic envelope sections: `summary`, `highlights`, `next_steps`, and `result`.
 - `pm calendar` is a deliberate exception and defaults to markdown unless explicitly overridden by `--format` or `--json`.
 - Runtime output is terminal-neutral plain text (TOON/JSON/markdown) with no required terminal-specific OSC/ANSI control protocol.
 - Error handling should preserve exit-code mapping while preferring graceful process termination semantics (`process.exitCode`) over forced synchronous exits when feasible.
+
+Help and error UX note:
+
+- Command help should include deterministic narrative sections (why/examples/tips) for built-in command paths.
+- Usage and runtime errors should be rendered in a structured guidance format with sections for what happened, what is required, why, and examples (plus next steps when relevant).
 
 ### 11.2 Exit codes
 
@@ -685,6 +691,8 @@ Help and error guidance:
 
 - `pm create --help` / `pm update --help` accept `--type <value>` to render policy-aware required/disabled/hidden option summaries.
 - Missing `--type` usage errors include rationale, active allowed values, and custom-type examples.
+- Commander usage errors are normalized into a single structured guidance payload (duplicate default commander stderr messaging is not emitted).
+- Runtime `PmCliError` paths should surface structured guidance sections (`What happened`, `What is required`, `Why`, `Examples`, optional `Next steps`) while preserving canonical exit-code mapping.
 
 Mutating `update` (v0.1 baseline):
 

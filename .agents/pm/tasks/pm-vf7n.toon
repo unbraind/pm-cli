@@ -1,0 +1,41 @@
+id: pm-vf7n
+title: "Help1: Centralize help composer and command narratives"
+description: Build centralized help content/composer and wire rich purpose/why/examples sections into command help surfaces.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:cli","area:help",code,pm-cli
+created_at: "2026-04-01T12:39:11.462Z"
+updated_at: "2026-04-01T12:56:10.797Z"
+deadline: "2026-04-08T12:39:11.462Z"
+author: codex-agent
+estimated_minutes: 220
+acceptance_criteria: "Help output includes consistent purpose, option rationale, and examples for all core commands."
+goal: CLI usability excellence
+objective: Self-explanatory command help
+value: Fewer failed runs
+impact: Higher success rate
+outcome: Rich help across commands
+why_now: Help text is currently sparse.
+parent: pm-j162
+risk: medium
+confidence: high
+component: cli-help
+regression: true
+customer_impact: Users can understand command usage without external references
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-j162,parent,"2026-04-01T12:39:11.462Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T12:39:11.462Z",codex-agent,Task maps directly to plan todo help-system.
+  "2026-04-01T12:44:56.057Z",codex-agent,Implemented centralized help composer via src/cli/help-content.ts and wired attachRichHelpText(program) in src/cli/main.ts with rich purpose/examples/tips across command paths.
+notes[1]{created_at,author,text}:
+  "2026-04-01T12:39:11.462Z",codex-agent,Primary coding path is src/cli/main.ts plus shared helper module.
+files[2]{path,scope,note}:
+  src/cli/help-content.ts,project,Centralized help bundle composer
+  src/cli/main.ts,project,Help text integration target
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,Help behavior regression
+docs[1]{path,scope,note}:
+  README.md,project,Help examples documentation
+close_reason: Centralized help composer shipped with rich why/examples/tips sections across core command paths.
+body: "Implements plan todo: help-system"

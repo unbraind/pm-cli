@@ -9,6 +9,9 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(help.stdout.replaceAll(/\s+/g, " ").trim()).toContain(
         "Universal, flexible, extensible, agent-optimized project management CLI for any project or programming language.",
       );
+      expect(help.stdout).toContain("Why use this command:");
+      expect(help.stdout).toContain("Examples:");
+      expect(help.stdout).toContain("Tips:");
     });
   });
 
@@ -28,6 +31,18 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(help.stdout.replaceAll(/\s+/g, " ").trim()).toContain(
         "Include readable linked docs/files/tests content in keyword and hybrid lexical scoring",
       );
+    });
+  });
+
+  it("renders structured usage guidance for missing required options", async () => {
+    await withTempPmPath(async (context) => {
+      const usage = context.runCli(["create", "--title", "Only title", "--description", "Only description", "--json"]);
+      expect(usage.code).toBe(2);
+      expect(usage.stderr).toContain("Error: Missing required option --type <value>");
+      expect(usage.stderr).toContain("What happened:");
+      expect(usage.stderr).toContain("What is required:");
+      expect(usage.stderr).toContain("Examples:");
+      expect(usage.stderr).toContain("Next steps:");
     });
   });
 });

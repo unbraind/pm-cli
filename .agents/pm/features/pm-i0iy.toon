@@ -1,0 +1,41 @@
+id: pm-i0iy
+title: "Docs, Contracts, and Verification Hardening"
+description: Update all CLI docs/contracts and expand regression coverage to ensure the UX overhaul is release-safe for existing users.
+type: Feature
+status: open
+priority: 1
+tags[4]: "area:docs","area:release","area:tests",pm-cli
+created_at: "2026-04-01T12:38:52.243Z"
+updated_at: "2026-04-01T12:38:52.243Z"
+deadline: "2026-04-11T12:38:52.243Z"
+author: codex-agent
+estimated_minutes: 300
+acceptance_criteria: README/PRD/ARCHITECTURE/EXTENSIONS/CHANGELOG reflect new help-error-output behavior; tests validate contracts; full verification passes before ship.
+definition_of_ready: Doc targets and regression suites are identified.
+order: 4
+goal: CLI usability excellence
+objective: Ship safely with explicit contracts
+value: Prevents regressions and contract drift
+impact: Improves release confidence
+outcome: Verified and documented UX overhaul
+why_now: Large UX changes require explicit docs and full regression evidence.
+parent: pm-izbd
+risk: medium
+confidence: high
+component: cli-docs-tests
+regression: true
+customer_impact: Users retain trust through stable behavior and clear documentation
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-izbd,parent,"2026-04-01T12:38:52.243Z",codex-agent,null
+  pm-qwp7,related,"2026-04-01T12:38:52.243Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-01T12:38:52.243Z",codex-agent,Feature covers documentation parity and full release verification evidence.
+notes[1]{created_at,author,text}:
+  "2026-04-01T12:38:52.243Z",codex-agent,Will use sandbox-safe run-tests scripts for all verification commands.
+files[1]{path,scope,note}:
+  README.md,project,Primary docs surface for CLI behavior
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,Full coverage verification
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,Unreleased behavior notes
+body: "Feature D: docs/tests/release hardening"

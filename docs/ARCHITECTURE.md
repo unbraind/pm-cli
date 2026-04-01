@@ -230,9 +230,19 @@ Output behavior is command-specific: `pm calendar` defaults to markdown for agen
 `pm-cli` keeps runtime behavior terminal-neutral so commands behave consistently across native shells, IDE-integrated terminals, and emulated PTY backends:
 
 1. **Plain deterministic output** — core output paths emit TOON/JSON/markdown text with stable key ordering and no required custom terminal control protocol.
-2. **Fail-fast stdin semantics** — stdin token readers reject interactive TTY stdin for piped-only flows (`-`) and provide explicit EOF guidance instead of waiting indefinitely.
-3. **Graceful error exits** — CLI error handling preserves canonical exit codes using graceful `process.exitCode` semantics to reduce output truncation risk under buffered writes.
-4. **Non-interactive linked test runs** — linked test subprocess execution closes child stdin immediately, applies deterministic runtime environment defaults, and surfaces explicit timeout/maxBuffer diagnostics.
+2. **Command-aware non-JSON envelopes** — default non-JSON output wraps results in deterministic `summary`, `highlights`, `next_steps`, and `result` sections for faster operator follow-up.
+3. **Fail-fast stdin semantics** — stdin token readers reject interactive TTY stdin for piped-only flows (`-`) and provide explicit EOF guidance instead of waiting indefinitely.
+4. **Graceful error exits** — CLI error handling preserves canonical exit codes using graceful `process.exitCode` semantics to reduce output truncation risk under buffered writes.
+5. **Non-interactive linked test runs** — linked test subprocess execution closes child stdin immediately, applies deterministic runtime environment defaults, and surfaces explicit timeout/maxBuffer diagnostics.
+
+## Help and Error Guidance Pipeline
+
+Help and error UX is centralized to reduce per-command drift:
+
+1. `src/cli/help-content.ts` defines command-path help bundles (`why`, `examples`, optional `tips`) and attaches them to command help output via `attachRichHelpText(...)`.
+2. `src/cli/error-guidance.ts` defines structured error rendering with deterministic sections (`What happened`, `What is required`, `Why`, `Examples`, optional `Next steps`).
+3. `src/cli/main.ts` routes commander usage failures and `PmCliError` failures through these renderers.
+4. Commander native stderr writes are suppressed so the CLI emits a single high-signal guidance payload per failure path.
 
 ## History and Restore
 

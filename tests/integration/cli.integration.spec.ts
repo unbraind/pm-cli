@@ -1583,7 +1583,8 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const missingGet = context.runCli(["get", "pm-missing", "--json"]);
       expect(missingGet.code).toBe(3);
-      expect(missingGet.stderr).toContain("Item pm-missing not found");
+      expect(missingGet.stderr).toContain("Error: Item ID not found");
+      expect(missingGet.stderr).toContain("What happened:");
 
       const hookLog = await readFile(hookLogPath, "utf8");
       expect(hookLog.trim()).toContain("after:get:ok=false:error=Item pm-missing not found");

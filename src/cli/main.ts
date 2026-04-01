@@ -78,6 +78,8 @@ import type { GlobalOptions } from "../core/shared/command-types.js";
 import { getEnabledBuiltInExtensions } from "../core/extensions/builtins.js";
 import type { ItemStatus, PmSettings } from "../types/index.js";
 import { parseLooseCommandOptions } from "./extension-command-options.js";
+import { attachRichHelpText } from "./help-content.js";
+import { formatCommanderErrorForDisplay, formatPmCliErrorForDisplay } from "./error-guidance.js";
 
 function collect(value: string, previous: string[] | undefined): string[] {
   const next = previous ?? [];
@@ -1262,9 +1264,16 @@ program
   .name("pm")
   .description("Universal, flexible, extensible, agent-optimized project management CLI for any project or programming language.")
   .version(resolveCliVersion())
-  .showHelpAfterError()
+  .showHelpAfterError(false)
   .allowExcessArguments(false)
   .allowUnknownOption(false)
+  .configureOutput({
+    writeOut: (str) => {
+      process.stdout.write(str);
+    },
+    // Commander errors are rendered in our own catch path.
+    writeErr: () => {},
+  })
   .option("--json", "Output JSON instead of TOON")
   .option("--quiet", "Suppress stdout output")
   .option("--path <dir>", "Override PM path for this command")
@@ -2240,14 +2249,13 @@ program
     }
   });
 
+attachRichHelpText(program);
+
 async function formatCommanderUsageMessage(error: unknown): Promise<string> {
   const rawMessage = typeof error === "object" && error !== null ? (error as { message?: string }).message : undefined;
-  const message = (rawMessage ?? "Invalid command usage").replace(/\(outputHelp\)/g, "").trim();
-  if (!message.includes("required option '--type <value>'")) {
-    return message;
-  }
-
+  const message = rawMessage ?? "Invalid command usage";
   const bootstrapGlobal = parseBootstrapGlobalOptions(process.argv.slice(2));
+  const commandName = parseBootstrapCommandName(process.argv.slice(2));
   let allowedTypes = "Epic|Feature|Task|Chore|Issue";
   try {
     const pmRoot = resolvePmRoot(process.cwd(), bootstrapGlobal.path);
@@ -2261,16 +2269,7 @@ async function formatCommanderUsageMessage(error: unknown): Promise<string> {
   } catch {
     // Fall back to built-in type guidance when settings cannot be read.
   }
-
-  return [
-    message,
-    "Why this option is required: --type selects which item contract and folder routing rules are applied.",
-    "Type policy note: settings/extensions can further mark create/update options as required, disabled, or hidden per type.",
-    `Allowed values: ${allowedTypes}`,
-    'Example: pm create --title "Asset: Forest Map" --description "Track 3D map asset" --type Asset',
-    'Example: pm create --title "Hero character" --description "Track playable model asset" --type Asset --type-option category=Character',
-    'Example: pm create --title "Fix auth" --description "Resolve refresh bug" --type Task --status in_progress --priority 1',
-  ].join("\n");
+  return formatCommanderErrorForDisplay(message, commandName, allowedTypes);
 }
 
 async function main(): Promise<void> {
@@ -2284,7 +2283,7 @@ async function main(): Promise<void> {
       error: describeUnknownError(error),
     });
     if (error instanceof PmCliError) {
-      printError(error.message);
+      printError(formatPmCliErrorForDisplay(error.message));
       process.exitCode = error.exitCode;
       return;
     }

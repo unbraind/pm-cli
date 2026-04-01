@@ -1,0 +1,41 @@
+id: pm-j162
+title: Help System Redesign Across All Commands
+description: "Introduce centralized, narrative-rich help sections for every core command explaining purpose, option rationale, and concrete examples."
+type: Feature
+status: open
+priority: 1
+tags[4]: "area:cli","area:help","area:ux",pm-cli
+created_at: "2026-04-01T12:38:21.452Z"
+updated_at: "2026-04-01T12:38:21.452Z"
+deadline: "2026-04-11T12:38:21.452Z"
+author: codex-agent
+estimated_minutes: 320
+acceptance_criteria: "Every core command help includes clear command intent, critical option rationale, and practical examples, with deterministic ordering."
+definition_of_ready: Current command help surfaces and contract tests are identified.
+order: 1
+goal: CLI usability excellence
+objective: Self-explanatory command help
+value: Faster first-success runs for users and agents
+impact: Fewer incorrect command attempts
+outcome: "Comprehensive, practical command help"
+why_now: Current one-line descriptions are insufficient for complex command surfaces.
+parent: pm-izbd
+risk: medium
+confidence: high
+component: cli-help
+regression: true
+customer_impact: Users get clearer command understanding without external docs
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-30zl,discovered_from,"2026-04-01T12:38:21.452Z",codex-agent,null
+  pm-izbd,parent,"2026-04-01T12:38:21.452Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-01T12:38:21.452Z",codex-agent,Feature splits help concerns from error/output concerns for clearer rollout.
+notes[1]{created_at,author,text}:
+  "2026-04-01T12:38:21.452Z",codex-agent,Main integration point is command registration in src/cli/main.ts.
+files[1]{path,scope,note}:
+  src/cli/main.ts,project,Help text registration and command definitions
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,null,project,1800,Help runtime regression
+docs[1]{path,scope,note}:
+  README.md,project,Help guidance examples
+body: "Feature A: help UX redesign"

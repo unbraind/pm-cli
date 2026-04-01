@@ -1,0 +1,41 @@
+id: pm-x3fh
+title: "Output1: Implement command-aware non-JSON result summaries"
+description: "Add command-aware human-readable rendering with concise summaries, key highlights, and next-step guidance for major command results."
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:cli","area:output",code,pm-cli
+created_at: "2026-04-01T12:39:43.394Z"
+updated_at: "2026-04-01T12:56:17.268Z"
+deadline: "2026-04-08T12:39:43.394Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: Default non-JSON output includes command-aware summary/highlights/next actions while remaining deterministic.
+goal: CLI usability excellence
+objective: Actionable output
+value: Faster follow-up actions
+impact: Less interpretation overhead
+outcome: Readable default result output
+why_now: Current output is generic.
+parent: pm-t2hj
+risk: medium
+confidence: high
+component: cli-output
+regression: true
+customer_impact: Results become easier to understand and act on
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-t2hj,parent,"2026-04-01T12:39:43.394Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T12:39:43.394Z",codex-agent,Task maps directly to plan todo output-redesign.
+  "2026-04-01T12:44:59.854Z",codex-agent,Added command-aware non-JSON output envelopes in src/core/output/command-aware.ts and integrated in src/core/output/output.ts using active command context.
+notes[1]{created_at,author,text}:
+  "2026-04-01T12:39:43.394Z",codex-agent,Will preserve JSON mode semantics while improving default non-JSON experience.
+files[2]{path,scope,note}:
+  src/core/output/command-aware.ts,project,Command-aware output envelope builder
+  src/core/output/output.ts,project,Primary output renderer
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/output.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,Output regressions
+docs[1]{path,scope,note}:
+  README.md,project,Output behavior docs
+close_reason: "Command-aware non-JSON output envelopes now provide summaries, highlights, and next steps."
+body: "Implements plan todo: output-redesign"

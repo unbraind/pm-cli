@@ -12,6 +12,9 @@
 - Git-native items that stay reviewable in diffs
 - Safe multi-agent workflows with claims, locks, and restore
 - Deterministic output with TOON by default and `--json` when needed
+- Rich command help guidance with command purpose, practical examples, and usage tips
+- Structured error diagnostics that explain what happened, what is required, why it matters, and concrete fix examples
+- Command-aware default output envelopes (`summary`, `highlights`, `next_steps`, `result`) for faster follow-up actions
 - Agent-friendly calendar views (`pm calendar` / `pm cal`) with markdown default output
 - First-class dual item storage formats: TOON (`.toon`) and JSON-front-matter Markdown (`.md`)
 - Compact TOON documents that are easier to review in terminal and GitHub web UI
@@ -255,6 +258,42 @@ When `--type` is missing, usage output now includes:
 - concrete `pm create` examples (including custom-type usage)
 
 For `pm create --help` and `pm update --help`, add `--type <value>` to render type-aware policy details (required/disabled/hidden option lists) from active settings/extensions.
+
+## Help and Error Guidance
+
+`pm` now treats command guidance as a first-class UX surface:
+
+- Command help includes a deterministic "Why use this command" section.
+- Command help includes practical copy/paste examples and targeted tips.
+- Usage/runtime errors are rendered with structured sections:
+  - `What happened`
+  - `What is required`
+  - `Why`
+  - `Examples`
+  - optional `Next steps`
+
+Example:
+
+```text
+Error: Missing required option --type <value>
+
+What happened:
+  Commander rejected the command because --type <value> was not provided.
+
+What is required:
+  Pass --type <value> with a valid value before running the command.
+```
+
+## Command-Aware Default Output
+
+For non-JSON output, command results are wrapped in a consistent envelope:
+
+- `summary`: high-level command outcome
+- `highlights`: key facts from the result
+- `next_steps`: suggested follow-up commands
+- `result`: raw command payload
+
+This keeps default terminal output easier to act on while preserving strict machine-oriented payload compatibility through `--json`.
 
 ## SDK and Full Override Extensions
 

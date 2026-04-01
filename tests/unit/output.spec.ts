@@ -104,6 +104,30 @@ describe("core/output/output", () => {
     });
   });
 
+  it("wraps non-json command output in a command-aware envelope", () => {
+    setActiveCommandContext({
+      command: "create",
+      args: [],
+      pm_root: "/tmp/project",
+    });
+
+    const rendered = formatOutput(
+      {
+        item: { id: "pm-a1b2", status: "open" },
+        changed_fields: ["id", "status"],
+      },
+      {},
+    );
+
+    expect(rendered).toContain("summary:");
+    expect(rendered).toContain('  command: "create"');
+    expect(rendered).toContain('  message: "Created item pm-a1b2."');
+    expect(rendered).toContain("highlights:");
+    expect(rendered).toContain('- "item_id=pm-a1b2"');
+    expect(rendered).toContain("next_steps:");
+    expect(rendered).toContain("result:");
+  });
+
   it("applies active renderer overrides and falls back when they fail", () => {
     setActiveExtensionRenderers({
       overrides: [

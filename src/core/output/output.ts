@@ -1,4 +1,10 @@
-import { runActiveCommandOverride, runActiveRendererOverride, setActiveCommandResult } from "../extensions/index.js";
+import {
+  getActiveCommandContext,
+  runActiveCommandOverride,
+  runActiveRendererOverride,
+  setActiveCommandResult,
+} from "../extensions/index.js";
+import { buildCommandAwareEnvelope } from "./command-aware.js";
 
 export interface OutputOptions {
   json?: boolean;
@@ -72,7 +78,12 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
   if (options.json) {
     return `${JSON.stringify(effectiveResult, null, 2)}\n`;
   }
-  return `${renderToonValue(effectiveResult, 0)}\n`;
+  const commandContext = getActiveCommandContext();
+  if (!commandContext) {
+    return `${renderToonValue(effectiveResult, 0)}\n`;
+  }
+  const envelope = buildCommandAwareEnvelope(commandContext.command, effectiveResult);
+  return `${renderToonValue(envelope, 0)}\n`;
 }
 
 export function printResult(result: unknown, options: OutputOptions): void {

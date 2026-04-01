@@ -1,0 +1,42 @@
+id: pm-frk8
+title: Structured Error Guidance and Diagnostics
+description: "Standardize and enrich CLI error messages so every failure explains what happened, what is required, why it matters, and exact recovery examples."
+type: Feature
+status: open
+priority: 1
+tags[4]: "area:cli","area:error","area:ux",pm-cli
+created_at: "2026-04-01T12:38:31.565Z"
+updated_at: "2026-04-01T12:38:31.565Z"
+deadline: "2026-04-11T12:38:31.565Z"
+author: codex-agent
+estimated_minutes: 360
+acceptance_criteria: "Errors across core commands are consistently structured and actionable, commander usage failures include targeted remediation, and exit codes remain canonical."
+definition_of_ready: High-frequency error surfaces and existing test expectations are mapped.
+order: 2
+goal: CLI usability excellence
+objective: Actionable diagnostics on every failure
+value: Lower retry cycles and faster recovery
+impact: Reduced friction during command failures
+outcome: Consistent high-signal error UX
+why_now: Current errors are uneven and often omit rationale or examples.
+parent: pm-izbd
+risk: medium
+confidence: high
+component: cli-errors
+regression: true
+customer_impact: Users can quickly remediate failures without context switching
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-b3id,discovered_from,"2026-04-01T12:38:31.565Z",codex-agent,null
+  pm-co62,discovered_from,"2026-04-01T12:38:31.565Z",codex-agent,null
+  pm-izbd,parent,"2026-04-01T12:38:31.565Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-01T12:38:31.565Z",codex-agent,Feature separates generic error model from command-specific help updates.
+notes[1]{created_at,author,text}:
+  "2026-04-01T12:38:31.565Z",codex-agent,Primary touchpoints include main commander catch and shared error utilities.
+files[1]{path,scope,note}:
+  src/core/shared/errors.ts,project,Shared error primitives
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,Error and usage regressions
+docs[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,Error pipeline documentation
+body: "Feature B: structured error guidance"

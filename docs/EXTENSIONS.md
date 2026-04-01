@@ -110,6 +110,8 @@ Supported metadata for dynamic extension help rendering:
 - `enabled: false` appends a `[disabled]` marker in help.
 - `visible: false` hides the flag from dynamic help output.
 
+Core help output now also appends command-level narrative sections (why/examples/tips). Dynamic extension commands still receive flag-level rendering from `registerFlags(...)`, so extension authors should provide explicit `description` text on each flag to keep help high-signal.
+
 ### `api.registerRenderer(format, renderer)`
 
 Override TOON or JSON output for a command:
@@ -124,6 +126,15 @@ api.registerRenderer("toon", (context) => {
 ```
 
 Renderer overrides must return a string. Non-string return values are ignored and produce a deterministic `extension_renderer_invalid_result:<layer>:<name>:<format>` warning.
+
+Without a renderer override, non-JSON command output is wrapped by core in a command-aware envelope:
+
+- `summary`
+- `highlights`
+- `next_steps`
+- `result`
+
+If your extension needs a different human-readable shape, register a TOON renderer override.
 
 ### `api.registerImporter(name, importer)`
 

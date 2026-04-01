@@ -1,0 +1,42 @@
+id: pm-jfpf
+title: "Test1: Expand regression coverage for help/error/output UX"
+description: "Add and update unit/integration tests for new help sections, structured errors, commander mapping, and command-aware output behavior."
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:cli","area:tests",pm-cli,tests
+created_at: "2026-04-01T12:40:02.826Z"
+updated_at: "2026-04-01T12:56:22.116Z"
+deadline: "2026-04-08T12:40:02.826Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: "Regression tests cover help, error, commander, and output behavior changes with stable exit-code expectations."
+goal: CLI usability excellence
+objective: Reliable rollout
+value: Detect breakage early
+impact: Higher release confidence
+outcome: Comprehensive regression safety net
+why_now: Broad UX changes require broad tests.
+parent: pm-i0iy
+risk: medium
+confidence: high
+component: cli-tests
+regression: true
+customer_impact: Prevents regressions for existing users
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-i0iy,parent,"2026-04-01T12:40:02.826Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T12:40:02.826Z",codex-agent,Task maps directly to plan todo tests-regression.
+  "2026-04-01T12:49:13.309Z",codex-agent,Ran targeted suites via node scripts/run-tests.mjs test -- tests/unit/output.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts; all tests passed (32/32).
+notes[1]{created_at,author,text}:
+  "2026-04-01T12:40:02.826Z",codex-agent,"Primary suites include help-runtime,release-readiness-runtime,and output unit tests."
+files[3]{path,scope,note}:
+  tests/integration/help-runtime.spec.ts,project,Structured help and usage guidance coverage
+  tests/integration/release-readiness-runtime.spec.ts,project,Runtime contract coverage
+  tests/unit/output.spec.ts,project,Output envelope regression coverage
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,3600,Full test suite
+docs[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,Testing and contracts notes
+close_reason: "Regression suites expanded and updated for help, error guidance, output envelope behavior, and coverage include drift checks."
+body: "Implements plan todo: tests-regression"

@@ -837,9 +837,14 @@ describe("release readiness runtime coverage", () => {
 
       const usageResult = context.runCli(["create", "--json"]);
       expect(usageResult.code).toBe(2);
+      expect(usageResult.stderr).toContain("What happened:");
+      expect(usageResult.stderr).toContain("What is required:");
+      expect(usageResult.stderr).toContain("Examples:");
 
       const notFoundResult = context.runCli(["get", "pm-does-not-exist", "--json"]);
       expect(notFoundResult.code).toBe(3);
+      expect(notFoundResult.stderr).toContain("Error: Item ID not found");
+      expect(notFoundResult.stderr).toContain("Next steps:");
 
       const conflictSeed = createSeedItem({
         title: "Exit code conflict seed",
@@ -1002,8 +1007,11 @@ describe("release readiness runtime coverage", () => {
     const uncoveredFiles = sourceFiles.filter((filePath) => !matchesAnyPattern(filePath, includePatterns));
     expect(uncoveredFiles.sort((left, right) => left.localeCompare(right))).toEqual([
       "src/cli.ts",
+      "src/cli/error-guidance.ts",
+      "src/cli/help-content.ts",
       "src/cli/main.ts",
       "src/core/item/type-registry.ts",
+      "src/core/output/command-aware.ts",
     ]);
   });
 

@@ -51,6 +51,19 @@ export function setActiveCommandContext(context: Omit<CommandOverrideContext, "r
   activeCommandContext = context;
 }
 
+export function getActiveCommandContext(): Omit<CommandOverrideContext, "result"> | null {
+  if (!activeCommandContext) {
+    return null;
+  }
+  return {
+    command: activeCommandContext.command,
+    args: [...activeCommandContext.args],
+    options: activeCommandContext.options ? { ...activeCommandContext.options } : {},
+    global: activeCommandContext.global ? { ...activeCommandContext.global } : undefined,
+    pm_root: activeCommandContext.pm_root,
+  };
+}
+
 export function setActiveCommandResult(result: unknown): void {
   activeCommandResult = result;
 }
