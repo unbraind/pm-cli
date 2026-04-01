@@ -7,6 +7,7 @@ import {
 import { pathExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { executeEmbeddingBatchesWithRetry } from "../../core/search/embedding-batches.js";
+import { writeVectorizationStatusLedger } from "../../core/search/cache.js";
 import { resolveEmbeddingProviders } from "../../core/search/providers.js";
 import { resolveSettingsWithSemanticRuntimeDefaults } from "../../core/search/semantic-defaults.js";
 import { executeVectorUpsert, resolveVectorStores } from "../../core/search/vector-stores.js";
@@ -284,6 +285,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
 
   const embeddingsLines = documents.map((document) => JSON.stringify(buildKeywordRecord(document, mode))).join("\n");
   const semanticWarnings: string[] = [];
+  const vectorizationLedgerEntries: Record<string, string> = {};
   if (mode !== "keyword" && documents.length > 0) {
     const corpusInputs = documents.map((document) => buildSemanticCorpusInput(document));
     let vectors: number[][] = [];
@@ -358,9 +360,22 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
         EXIT_CODE.USAGE,
       );
     }
+    for (const document of documents) {
+      vectorizationLedgerEntries[document.front_matter.id] = document.front_matter.updated_at;
+    }
   }
   await writeFileAtomic(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   await writeFileAtomic(embeddingsPath, `${embeddingsLines}\n`);
+  const vectorizationWarnings: string[] = [];
+  if (mode !== "keyword") {
+    try {
+      await writeVectorizationStatusLedger(pmRoot, vectorizationLedgerEntries);
+    } catch (error: unknown) {
+      vectorizationWarnings.push(
+        `search_vectorization_status_ledger_write_failed:${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
   const hookWarnings = [
     ...(await runActiveOnWriteHooks({
       path: manifestPath,
@@ -386,7 +401,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
       manifest: MANIFEST_PATH,
       embeddings: EMBEDDINGS_PATH,
     },
-    warnings: [...semanticWarnings, ...hookWarnings],
+    warnings: [...semanticWarnings, ...vectorizationWarnings, ...hookWarnings],
     generated_at: generatedAt,
   };
 }

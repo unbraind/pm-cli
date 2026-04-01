@@ -1,0 +1,50 @@
+id: pm-yo5m
+title: Document and verify health drift/vectorization changes
+description: Update docs/changelog and run full verification for pm health drift and vectorization enhancements.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:docs","area:tests",pm-cli,verification
+created_at: "2026-04-01T14:42:52.196Z"
+updated_at: "2026-04-01T15:09:04.613Z"
+deadline: "2026-04-09T14:42:52.196Z"
+author: codex-agent
+estimated_minutes: 140
+acceptance_criteria: "Docs are updated for new health behavior, verification commands are executed, and closure evidence is logged before commit/push."
+definition_of_ready: Implementation feature tasks exist and verification matrix is defined.
+order: 6
+goal: Health hardening
+objective: Close with docs and verification evidence
+value: Ensures user-facing clarity and release confidence
+impact: Reduces onboarding confusion and regression risk
+outcome: Shipped behavior is documented and fully verified
+why_now: User requested complete docs and verified functional delivery before push.
+parent: pm-1hkq
+risk: medium
+confidence: high
+sprint: health-hardening
+release: vnext
+component: docs-verification
+regression: true
+customer_impact: Users see clear guidance and stable behavior after rollout
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-1hkq,parent,"2026-04-01T14:42:52.196Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T14:42:52.196Z",codex-agent,Task captures required docs updates and final verification evidence before release operations.
+  "2026-04-01T15:08:42.038Z",codex-agent,"Docs updated (README.md, docs/ARCHITECTURE.md, PRD.md, CHANGELOG.md). Verification evidence: pnpm build passed; node scripts/run-tests.mjs test passed (63 files / 665 tests); targeted suites passed; PM_DISABLE_OLLAMA_AUTO_DEFAULTS=1 pm health --json smoke passed with new checks. Coverage command still fails on existing repository-wide 100% global thresholds (statements 97.15, branches 95.18, functions 98.08, lines 97.45)."
+notes[1]{created_at,author,text}:
+  "2026-04-01T14:42:52.196Z",codex-agent,Run targeted and full regression checks plus health smoke scenarios before commit/push.
+files[4]{path,scope,note}:
+  CHANGELOG.md,project,unreleased health enhancements entries
+  docs/ARCHITECTURE.md,project,health drift and vectorization architecture updates
+  PRD.md,project,health contract and vectorization ledger requirements
+  README.md,project,user-facing health behavior updates
+tests[4]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,final coverage verification
+  node scripts/run-tests.mjs test,null,project,7200,full regression
+  PM_DISABLE_OLLAMA_AUTO_DEFAULTS=1 pm health --json,null,project,2400,health smoke with deterministic auto-default guard
+  pnpm build,null,project,1200,typecheck build
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,unreleased entries for health enhancements
+close_reason: "Docs and verification evidence captured; build/full tests/health smoke pass, and coverage gate remains below repository-wide 100% threshold baseline."
+body: Track README/ARCHITECTURE/PRD/CHANGELOG updates and final build/test/health validation with closure evidence.

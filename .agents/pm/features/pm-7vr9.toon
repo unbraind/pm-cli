@@ -1,0 +1,43 @@
+id: pm-7vr9
+title: Health history drift detection
+description: Add deterministic pm health checks that detect drift between current item state and append-only history streams.
+type: Feature
+status: closed
+priority: 1
+tags[4]: "area:health","area:history",integrity,pm-cli
+created_at: "2026-04-01T14:42:07.975Z"
+updated_at: "2026-04-01T15:09:12.918Z"
+deadline: "2026-04-10T14:42:07.975Z"
+author: codex-agent
+estimated_minutes: 220
+acceptance_criteria: pm health reports deterministic history drift diagnostics per item using latest history after_hash comparison with no false positives in normal flows.
+definition_of_ready: Epic exists and hash-based validation approach is defined.
+order: 2
+goal: Health hardening
+objective: Detect item-history drift
+value: Surfaces silent integrity gaps early
+impact: Improves auditability and restore trust
+outcome: Operators can identify and remediate drifted items quickly
+why_now: Current health output counts streams but does not validate item-to-history integrity.
+parent: pm-1hkq
+risk: medium
+confidence: high
+sprint: health-hardening
+release: vnext
+component: cli-health
+regression: true
+customer_impact: Users receive earlier warning before history inconsistencies affect restore/audits
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-1hkq,parent,"2026-04-01T14:42:07.975Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-01T14:42:07.975Z",codex-agent,Feature created from approved plan section for history drift detection.
+notes[1]{created_at,author,text}:
+  "2026-04-01T14:42:07.975Z",codex-agent,Use existing hashDocument and history entry after_hash to avoid introducing new hash semantics.
+files[1]{path,scope,note}:
+  src/cli/commands/health.ts,project,history drift check implementation
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts,null,project,2400,targeted health regression
+docs[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,history drift architecture notes
+close_reason: History drift diagnostics shipped in pm health with deterministic warnings and passing task-level verification (pm-x0vj).
+body: "Feature for detecting missing, unreadable, or hash-mismatched history coverage for current items."

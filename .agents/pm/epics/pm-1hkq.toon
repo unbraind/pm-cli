@@ -1,0 +1,44 @@
+id: pm-1hkq
+title: Health drift and vectorization integrity
+description: Track implementation of pm health history drift detection and targeted vectorization auto-refresh with compatibility safeguards.
+type: Epic
+status: closed
+priority: 0
+tags[5]: "area:health","area:history","area:search",compatibility,pm-cli
+created_at: "2026-04-01T14:41:57.443Z"
+updated_at: "2026-04-01T15:09:14.181Z"
+deadline: "2026-04-11T14:41:57.443Z"
+author: codex-agent
+estimated_minutes: 420
+acceptance_criteria: "pm health reports deterministic history drift and vectorization status diagnostics, performs targeted auto-refresh for stale vectors, updates docs/tests, and preserves existing user compatibility."
+definition_of_ready: Duplicate scan complete and implementation/test/doc scope identified.
+order: 1
+goal: Health hardening
+objective: Ship drift plus vector freshness checks
+value: Prevents silent integrity gaps and stale semantic vectors
+impact: Improves trust in tracker health and semantic search readiness
+outcome: pm health surfaces drift and self-heals stale vectors
+why_now: Users requested proactive health validation for history integrity and vector freshness.
+risk: medium
+confidence: high
+sprint: health-hardening
+release: vnext
+component: cli-health
+regression: false
+customer_impact: Current users get safer health diagnostics without workflow breakage
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-67uh,discovered_from,"2026-04-01T14:41:57.443Z",codex-agent,null
+  pm-c0r,discovered_from,"2026-04-01T14:41:57.443Z",codex-agent,null
+  pm-eg97,discovered_from,"2026-04-01T14:41:57.443Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-01T14:41:57.443Z",codex-agent,Created after duplicate checks showed no active item for this exact health drift plus auto-refresh scope.
+notes[1]{created_at,author,text}:
+  "2026-04-01T14:41:57.443Z",codex-agent,Prioritize compatibility and deterministic warning codes for operators and agents.
+files[1]{path,scope,note}:
+  src/cli/commands/health.ts,project,primary command surface
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,7200,full regression baseline
+docs[1]{path,scope,note}:
+  PRD.md,project,authoritative command contract
+close_reason: "Epic delivered: history drift and vectorization health checks implemented, docs updated, and verification evidence recorded across linked tasks/features."
+body: Epic for hardening pm health with item-history drift diagnostics and targeted semantic vector refresh when stale.

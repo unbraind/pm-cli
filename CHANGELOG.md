@@ -30,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added extension item-field default/validation wiring on create/update write paths from `registerItemFields(...)`.
 - Added stable SDK package exports at `@unbrained/pm-cli/sdk` with public extension type contracts and `defineExtension(...)` helper.
 - Added Ollama-aware semantic auto-default resolution for `pm search`/`pm reindex` when semantic settings are unset and local Ollama is installed, including compatibility-safe fallback to keyword mode for implicit default search when auto semantic execution fails.
+- Added `pm health` history drift diagnostics (`history_drift`) that detect missing/unreadable history streams and item/hash mismatches against latest history `after_hash`.
+- Added `pm health` vectorization diagnostics (`vectorization`) with targeted stale-ID semantic refresh and deterministic vectorization ledger tracking (`search/vectorization-status.json`).
 
 ### Changed
 - Commander error output now emits a single high-signal structured guidance payload (duplicate default commander stderr lines are suppressed).
@@ -42,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Commander required-option UX for missing `--type` now includes rationale, active allowed values, and concrete fix examples.
 - Dynamic extension command help now supports `registerFlags` policy metadata (`required`, `enabled`, `visible`) with additive markers and hidden-flag suppression.
 - Search and reindex semantic execution now supports extension provider/adapter primary paths with deterministic fallback to built-in provider/vector configuration when available.
+- `pm reindex --mode semantic|hybrid` now rewrites `search/vectorization-status.json` to keep health-time vector freshness checks synchronized with indexed corpus state.
 - Date/deadline parsing now accepts month-relative offsets (`+6m`) and normalized date-string variants (for example `2026-03-31T13-59` and `20260331T135900Z`) across deadline, reminder, event, list/search filter, and calendar date inputs while preserving canonical ISO persistence.
 - `pm beads import --file -` now fails fast when stdin is an interactive TTY and returns explicit piped-input/EOF guidance instead of waiting for manual stream termination.
 - CLI top-level error handling now preserves canonical exit-code mapping via graceful `process.exitCode` semantics to reduce buffered output truncation risk in emulated terminal environments.

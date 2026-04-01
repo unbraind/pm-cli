@@ -799,7 +799,7 @@ All commands return deterministic top-level objects (TOON by default, JSON with 
 | `pm test <ID> --add/--remove/--run` | id + test refs/options (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`; reject recursive `test-all` linked commands at add-time, including global-flag and package-spec launcher forms such as `pm --json test-all`, `npx @unbrained/pm-cli@latest --json test-all`, `pnpm dlx @unbrained/pm-cli@latest --json test-all`, and `npm exec -- @unbrained/pm-cli@latest --json test-all`; defensively skip legacy recursive entries at run-time; reject sandbox-unsafe test-runner commands including unsandboxed direct package-manager run-script forms such as `npm run test`/`pnpm run test` and chained direct runner segments evaluated independently; close child stdin for non-interactive runs and surface deterministic timeout/maxBuffer diagnostics) | `{ id, tests, run_results, changed, count }` |
 | `pm test-all --status --timeout` | optional status filter; duplicate linked command/path entries are deduped per invocation (keyed by scope+normalized command or scope+path) and reported as skipped; when duplicate keys carry different `timeout_seconds`, execution uses deterministic maximum timeout for that key | `{ totals, failed, passed, skipped, results }` |
 | `pm stats` | none | `{ totals, by_type, by_status, generated_at }` |
-| `pm health` | none | `{ ok, checks, warnings, generated_at }` |
+| `pm health` | none (runs settings/directories/extensions/storage plus history-drift and vectorization diagnostics) | `{ ok, checks, warnings, generated_at }` |
 | `pm gc` | none | `{ ok, removed, retained, warnings, generated_at }` |
 | `pm docs <ID> --add/--remove` | id + doc refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`) | `{ id, docs, changed, count }` |
 | `pm history <ID> --limit` | id + optional limit | `{ id, history, count, limit }` |
@@ -900,6 +900,7 @@ Keyword/hybrid lexical scoring baseline also applies a deterministic exact-title
   - `index/manifest.json` (indexed item metadata summary)
   - `search/embeddings.jsonl` (line-delimited keyword corpus records)
 - `pm reindex --mode semantic|hybrid` baseline generates deterministic provider embeddings for canonical item corpus records and upserts vector records to the active vector store.
+- `pm reindex --mode semantic|hybrid` also rewrites `search/vectorization-status.json` with deterministic `id -> updated_at` records for the indexed corpus so health-time vector freshness checks stay in sync.
 - Semantic embedding generation in `pm reindex --mode semantic|hybrid` and mutation-triggered refresh paths executes in deterministic batches sized by `search.embedding_batch_size`, and each batch retries failed embedding requests up to `search.scanner_max_batch_retries` before surfacing deterministic warnings/errors.
 - Successful item-mutation command paths invalidate stale keyword cache artifacts (`index/manifest.json` and `search/embeddings.jsonl`) as best-effort non-fatal cleanup before the next explicit `reindex`.
 - Successful item-mutation command paths also perform best-effort semantic embedding refresh for affected item IDs when embedding-provider and vector-store configuration are available; when an affected ID no longer exists (for example after delete), refresh attempts prune the stale vector entry from the active store. Refresh failures degrade to deterministic warnings.
@@ -951,6 +952,18 @@ Implemented baseline:
 - Qdrant/LanceDB settings blocks are normalized from `settings.json` and surfaced through a vector-store abstraction layer for command-time validation.
 - Request-target planning, request payload/response normalization, deterministic Qdrant request-execution helper behavior, deterministic LanceDB local query/upsert execution helper behavior, and deterministic query-hit ordering normalization (score desc, id asc tie-break) are available through this abstraction layer.
 - `pm search --mode semantic|hybrid` and `pm reindex --mode semantic|hybrid` use this abstraction for deterministic vector query/upsert execution after configuration validation.
+
+### 13.5 Health drift and vectorization diagnostics
+
+- `pm health` includes deterministic `history_drift` diagnostics:
+  - checks current item corpus against history stream availability/parsability
+  - compares current canonical item hash to latest history `after_hash`
+  - emits deterministic warning codes for missing streams, unreadable streams, and hash mismatches
+- `pm health` includes deterministic `vectorization` diagnostics:
+  - compares current item `updated_at` values to `search/vectorization-status.json`
+  - computes stale/missing vectorization entries deterministically (sorted by item ID)
+  - triggers targeted semantic refresh for stale IDs when semantic runtime is available (no forced full reindex)
+  - preserves compatibility under auto-resolved Ollama defaults by keeping auto-default refresh failures non-fatal in health status while still exposing refresh details in check output
 
 ## 14) Extension Architecture
 

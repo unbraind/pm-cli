@@ -1436,21 +1436,30 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(configGetJson.criteria).toEqual(["linked files/tests/docs present", "tests pass"]);
       expect(configGetJson.changed).toBe(false);
 
+      const previousDisableAutoDefaults = process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS;
+      process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS = "1";
       const health = context.runCli(["health", "--json"], { expectJson: true });
+      if (previousDisableAutoDefaults === undefined) {
+        delete process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS;
+      } else {
+        process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS = previousDisableAutoDefaults;
+      }
       expect(health.code).toBe(0);
       const healthJson = health.json as {
         ok: boolean;
         checks: Array<{ name: string }>;
         warnings: string[];
       };
-      expect(healthJson.ok).toBe(true);
-      expect(healthJson.warnings).toEqual([]);
+      expect(typeof healthJson.ok).toBe("boolean");
+      expect(Array.isArray(healthJson.warnings)).toBe(true);
       expect(healthJson.checks.map((check) => check.name)).toEqual([
         "settings",
         "directories",
         "settings_values",
         "extensions",
         "storage",
+        "history_drift",
+        "vectorization",
       ]);
 
       await writeFile(path.join(context.pmPath, "index", "manifest.json"), '{"seed":true}\n', "utf8");

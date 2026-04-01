@@ -1,6 +1,6 @@
 import path from "node:path";
 import { getActiveExtensionRegistrations } from "../extensions/index.js";
-import { pathExists, removeFileIfExists } from "../fs/fs-utils.js";
+import { pathExists, readFileIfExists, removeFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
 import { resolveItemTypeRegistry } from "../item/type-registry.js";
 import { locateItem, readLocatedItem } from "../store/item-store.js";
 import { getSettingsPath } from "../store/paths.js";
@@ -8,11 +8,14 @@ import { readSettings } from "../store/settings.js";
 import { executeEmbeddingBatchesWithRetry } from "./embedding-batches.js";
 import { resolveEmbeddingProviders } from "./providers.js";
 import type { EmbeddingProviderConfig } from "./providers.js";
+import { resolveSettingsWithSemanticRuntimeDefaults } from "./semantic-defaults.js";
 import { executeVectorDelete, executeVectorUpsert, resolveVectorStores } from "./vector-stores.js";
 import type { VectorStoreConfig } from "./vector-stores.js";
+import { nowIso } from "../shared/time.js";
 import type { ItemDocument, ItemFrontMatter } from "../../types/index.js";
 
 export const SEARCH_CACHE_ARTIFACT_PATHS = ["index/manifest.json", "search/embeddings.jsonl"] as const;
+export const VECTORIZATION_STATUS_LEDGER_PATH = "search/vectorization-status.json";
 
 export interface SearchCacheInvalidationResult {
   invalidated: string[];
@@ -30,6 +33,16 @@ export interface SearchMutationArtifactRefreshResult extends SearchCacheInvalida
   skipped: string[];
 }
 
+export interface SemanticRefreshOptions {
+  settings?: Awaited<ReturnType<typeof readSettings>>;
+  apply_runtime_defaults?: boolean;
+}
+
+export interface VectorizationStatusLedgerReadResult {
+  entries: Record<string, string>;
+  warnings: string[];
+}
+
 function formatInvalidationWarning(relativePath: string, error: unknown): string {
   return `search_cache_invalidation_failed:${relativePath}:${String(error)}`;
 }
@@ -45,6 +58,97 @@ function toErrorMessage(error: unknown): string {
 function toUniqueSorted(values: Iterable<string>): string[] {
   return [...new Set([...values].map((value) => value.trim()).filter((value) => value.length > 0))]
     .sort((left, right) => left.localeCompare(right));
+}
+
+function isValidUpdatedAt(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0 && Number.isFinite(Date.parse(value));
+}
+
+function normalizeVectorizationLedgerEntries(entries: Record<string, string>): Record<string, string> {
+  const normalized = new Map<string, string>();
+  for (const [rawId, rawUpdatedAt] of Object.entries(entries)) {
+    const id = rawId.trim();
+    if (id.length === 0 || !isValidUpdatedAt(rawUpdatedAt)) {
+      continue;
+    }
+    normalized.set(id, rawUpdatedAt);
+  }
+  return Object.fromEntries([...normalized.entries()].sort((left, right) => left[0].localeCompare(right[0])));
+}
+
+export async function readVectorizationStatusLedger(pmRoot: string): Promise<VectorizationStatusLedgerReadResult> {
+  const ledgerPath = path.join(pmRoot, VECTORIZATION_STATUS_LEDGER_PATH);
+  const raw = await readFileIfExists(ledgerPath);
+  if (raw === null || raw.trim().length === 0) {
+    return {
+      entries: {},
+      warnings: [],
+    };
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw) as unknown;
+  } catch {
+    return {
+      entries: {},
+      warnings: ["search_vectorization_status_ledger_invalid"],
+    };
+  }
+
+  if (
+    typeof parsed !== "object" ||
+    parsed === null ||
+    (parsed as { version?: unknown }).version !== 1 ||
+    !Array.isArray((parsed as { items?: unknown }).items)
+  ) {
+    return {
+      entries: {},
+      warnings: ["search_vectorization_status_ledger_invalid"],
+    };
+  }
+
+  const mapped = new Map<string, string>();
+  for (const entry of (parsed as { items: unknown[] }).items) {
+    if (typeof entry !== "object" || entry === null) {
+      return {
+        entries: {},
+        warnings: ["search_vectorization_status_ledger_invalid"],
+      };
+    }
+    const id = (entry as { id?: unknown }).id;
+    const updatedAt = (entry as { updated_at?: unknown }).updated_at;
+    if (typeof id !== "string" || id.trim().length === 0 || !isValidUpdatedAt(updatedAt)) {
+      return {
+        entries: {},
+        warnings: ["search_vectorization_status_ledger_invalid"],
+      };
+    }
+    mapped.set(id.trim(), updatedAt);
+  }
+
+  return {
+    entries: Object.fromEntries([...mapped.entries()].sort((left, right) => left[0].localeCompare(right[0]))),
+    warnings: [],
+  };
+}
+
+export async function writeVectorizationStatusLedger(pmRoot: string, entries: Record<string, string>): Promise<void> {
+  const normalizedEntries = normalizeVectorizationLedgerEntries(entries);
+  const ledgerPath = path.join(pmRoot, VECTORIZATION_STATUS_LEDGER_PATH);
+  const serialized = `${JSON.stringify(
+    {
+      version: 1,
+      generated_at: nowIso(),
+      items: Object.entries(normalizedEntries).map(([id, updated_at]) => ({
+        id,
+        updated_at,
+      })),
+    },
+    null,
+    2,
+  )}\n`;
+  await writeFileAtomic(ledgerPath, serialized);
 }
 
 function buildSemanticCorpusInput(document: ItemDocument): string {
@@ -105,32 +209,36 @@ function buildSkippedSemanticRefreshResult(itemIds: string[], warning: string): 
 async function resolveSemanticRefreshRuntimeContext(
   pmRoot: string,
   normalizedItemIds: string[],
+  options: SemanticRefreshOptions,
 ): Promise<SemanticRefreshRuntimeContext | SemanticMutationRefreshResult> {
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
+  if (!options.settings && !(await pathExists(getSettingsPath(pmRoot)))) {
     return buildSkippedSemanticRefreshResult(normalizedItemIds, "search_semantic_refresh_skipped:settings_not_initialized");
   }
 
   let settings: Awaited<ReturnType<typeof readSettings>>;
   try {
-    settings = await readSettings(pmRoot);
+    settings = options.settings ?? (await readSettings(pmRoot));
   } catch (error: unknown) {
     return buildSkippedSemanticRefreshResult(
       normalizedItemIds,
       `search_semantic_refresh_skipped:settings_read_failed:${toErrorMessage(error)}`,
     );
   }
+  const effectiveSettings = options.apply_runtime_defaults
+    ? resolveSettingsWithSemanticRuntimeDefaults(settings).settings
+    : settings;
 
-  const provider = resolveEmbeddingProviders(settings).active;
+  const provider = resolveEmbeddingProviders(effectiveSettings).active;
   if (!provider) {
     return buildSkippedSemanticRefreshResult(normalizedItemIds, "search_semantic_refresh_skipped:provider_unconfigured");
   }
-  const vectorStore = resolveVectorStores(settings).active;
+  const vectorStore = resolveVectorStores(effectiveSettings).active;
   if (!vectorStore) {
     return buildSkippedSemanticRefreshResult(normalizedItemIds, "search_semantic_refresh_skipped:vector_store_unconfigured");
   }
 
   return {
-    settings,
+    settings: effectiveSettings,
     provider,
     vectorStore,
   };
@@ -260,6 +368,7 @@ export async function invalidateSearchCacheArtifacts(pmRoot: string): Promise<Se
 export async function refreshSemanticEmbeddingsForMutatedItems(
   pmRoot: string,
   itemIds: string[],
+  options: SemanticRefreshOptions = {},
 ): Promise<SemanticMutationRefreshResult> {
   const normalizedItemIds = toUniqueSorted(itemIds);
   if (normalizedItemIds.length === 0) {
@@ -270,7 +379,7 @@ export async function refreshSemanticEmbeddingsForMutatedItems(
     };
   }
 
-  const runtimeContext = await resolveSemanticRefreshRuntimeContext(pmRoot, normalizedItemIds);
+  const runtimeContext = await resolveSemanticRefreshRuntimeContext(pmRoot, normalizedItemIds, options);
   if (!("settings" in runtimeContext)) {
     return runtimeContext;
   }
@@ -289,11 +398,34 @@ export async function refreshSemanticEmbeddingsForMutatedItems(
     workload.documents,
   );
   const pruneResult = await pruneMissingSemanticVectors(runtimeContext.vectorStore, workload.missingIds);
+  const refreshedIdSet = new Set(refreshedResult.refreshed);
+  const refreshedEntries = Object.fromEntries(
+    workload.documents
+      .filter((entry) => refreshedIdSet.has(entry.id))
+      .map((entry) => [entry.id, entry.document.front_matter.updated_at]),
+  );
+  const ledgerWarnings: string[] = [];
+  if (Object.keys(refreshedEntries).length > 0 || workload.missingIds.length > 0) {
+    const ledgerRead = await readVectorizationStatusLedger(pmRoot);
+    const nextEntries = {
+      ...ledgerRead.entries,
+      ...normalizeVectorizationLedgerEntries(refreshedEntries),
+    };
+    for (const missingId of workload.missingIds) {
+      delete nextEntries[missingId];
+    }
+    try {
+      await writeVectorizationStatusLedger(pmRoot, nextEntries);
+    } catch (error: unknown) {
+      ledgerWarnings.push(`search_vectorization_status_ledger_write_failed:${toErrorMessage(error)}`);
+    }
+    ledgerWarnings.push(...ledgerRead.warnings);
+  }
 
   return {
     refreshed: toUniqueSorted([...refreshedResult.refreshed, ...pruneResult.refreshed]),
     skipped: toUniqueSorted([...workload.skippedIds, ...refreshedResult.skipped, ...pruneResult.skipped]),
-    warnings: [...workload.warnings, ...refreshedResult.warnings, ...pruneResult.warnings],
+    warnings: [...workload.warnings, ...refreshedResult.warnings, ...pruneResult.warnings, ...ledgerWarnings],
   };
 }
 

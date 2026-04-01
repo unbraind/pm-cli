@@ -144,6 +144,20 @@ To (re)build semantic artifacts explicitly:
 pm reindex --mode hybrid
 ```
 
+## Health Drift and Vectorization Checks
+
+`pm health` now includes deterministic checks for both history integrity and semantic vector freshness:
+
+- `history_drift`
+  - scans current items and compares each canonical item hash against the latest history `after_hash`
+  - reports missing history streams, unreadable/corrupt history streams, and hash mismatches
+- `vectorization`
+  - compares current item `updated_at` values against a local vectorization ledger at `search/vectorization-status.json`
+  - identifies stale/missing vector entries and performs targeted semantic refresh for stale item IDs when semantic runtime is available
+  - avoids forcing a full rebuild (`pm reindex`) for routine health checks
+
+The vectorization ledger is also refreshed during `pm reindex --mode semantic|hybrid` to keep health diagnostics aligned with the latest indexed corpus.
+
 ## Deadline and Date Inputs
 
 - Date/time inputs used by `--deadline`, `--deadline-before`, `--deadline-after`, calendar `--date/--from/--to`, reminders, and events accept:

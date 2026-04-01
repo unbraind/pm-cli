@@ -1,11 +1,14 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { runHealth } from "../../src/cli/commands/health.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
 import { EXIT_CODE } from "../../src/constants.js";
+import { readSettings, writeSettings } from "../../src/settings.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
+
+const initialDisableAutoDefaults = process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS;
 
 function createSeedItem(context: TempPmContext): string {
   const create = context.runCli(
@@ -60,8 +63,17 @@ function createSeedItem(context: TempPmContext): string {
 }
 
 describe("runHealth", () => {
+  beforeEach(() => {
+    process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS = "1";
+  });
+
   afterEach(() => {
     clearActiveExtensionHooks();
+    if (initialDisableAutoDefaults === undefined) {
+      delete process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS;
+    } else {
+      process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS = initialDisableAutoDefaults;
+    }
   });
 
   it("fails when tracker is not initialized", async () => {
@@ -87,6 +99,8 @@ describe("runHealth", () => {
         "settings_values",
         "extensions",
         "storage",
+        "history_drift",
+        "vectorization",
       ]);
 
       const directoriesCheck = health.checks.find((check) => check.name === "directories");
@@ -128,7 +142,166 @@ describe("runHealth", () => {
         items: 1,
         history_streams: 1,
       });
+
+      const historyDriftCheck = health.checks.find((check) => check.name === "history_drift");
+      expect(historyDriftCheck?.status).toBe("ok");
+      expect(historyDriftCheck?.details).toMatchObject({
+        checked_items: 1,
+        drifted_items: [],
+        counts: {
+          drifted: 0,
+          missing_streams: 0,
+          unreadable_streams: 0,
+          hash_mismatches: 0,
+        },
+      });
+
+      const vectorizationCheck = health.checks.find((check) => check.name === "vectorization");
+      expect(vectorizationCheck?.status).toBe("ok");
+      expect(vectorizationCheck?.details).toMatchObject({
+        semantic_runtime_available: false,
+        stale_items_before: [],
+        stale_items_after: [],
+      });
       expect(health.generated_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    });
+  });
+
+  it("detects missing unreadable and hash-mismatched history drift", async () => {
+    await withTempPmPath(async (context) => {
+      const missingId = createSeedItem(context);
+      const unreadableId = createSeedItem(context);
+      const mismatchId = createSeedItem(context);
+
+      await rm(path.join(context.pmPath, "history", `${missingId}.jsonl`), { force: true });
+      await writeFile(path.join(context.pmPath, "history", `${unreadableId}.jsonl`), "not-json\n", "utf8");
+
+      const mismatchPath = path.join(context.pmPath, "history", `${mismatchId}.jsonl`);
+      const mismatchRaw = await readFile(mismatchPath, "utf8");
+      const mismatchLines = mismatchRaw.trim().split(/\r?\n/);
+      const lastEntry = JSON.parse(mismatchLines[mismatchLines.length - 1]) as { after_hash: string };
+      lastEntry.after_hash = "corrupted-after-hash";
+      mismatchLines[mismatchLines.length - 1] = JSON.stringify(lastEntry);
+      await writeFile(mismatchPath, `${mismatchLines.join("\n")}\n`, "utf8");
+
+      const health = await runHealth({ path: context.pmPath });
+      expect(health.ok).toBe(false);
+      expect(health.warnings).toEqual(
+        expect.arrayContaining([
+          `history_drift_missing_stream:${missingId}`,
+          `history_drift_unreadable_stream:${unreadableId}`,
+          `history_drift_hash_mismatch:${mismatchId}`,
+        ]),
+      );
+
+      const historyDriftCheck = health.checks.find((check) => check.name === "history_drift");
+      expect(historyDriftCheck?.status).toBe("warn");
+      expect(historyDriftCheck?.details).toMatchObject({
+        checked_items: 3,
+        drifted_items: [mismatchId, missingId, unreadableId].sort((left, right) => left.localeCompare(right)),
+        missing_streams: [missingId],
+        unreadable_streams: [unreadableId],
+        hash_mismatches: [mismatchId],
+      });
+    });
+  });
+
+  it("auto-refreshes stale vectorization entries through targeted semantic refresh", async () => {
+    await withTempPmPath(async (context) => {
+      const itemId = createSeedItem(context);
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
+      await writeSettings(context.pmPath, settings);
+
+      const originalFetch = globalThis.fetch;
+      const fetchCalls: string[] = [];
+      globalThis.fetch = (async (url: unknown) => {
+        const target = String(url);
+        fetchCalls.push(target);
+        if (target.endsWith("/v1/embeddings")) {
+          return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            json: async () => ({ data: [{ index: 0, embedding: [0.1, 0.2] }] }),
+            text: async () => "",
+          } as unknown as Response;
+        }
+        if (target.endsWith("/collections/pm_items/points?wait=true")) {
+          return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            json: async () => ({ result: { status: "acknowledged" } }),
+            text: async () => "",
+          } as unknown as Response;
+        }
+        throw new Error(`Unexpected fetch target: ${target}`);
+      }) as typeof globalThis.fetch;
+
+      try {
+        const health = await runHealth({ path: context.pmPath });
+        expect(health.ok).toBe(true);
+        expect(health.warnings).toEqual([]);
+
+        const vectorizationCheck = health.checks.find((check) => check.name === "vectorization");
+        expect(vectorizationCheck?.status).toBe("ok");
+        expect(vectorizationCheck?.details).toMatchObject({
+          semantic_runtime_available: true,
+          stale_items_before: [itemId],
+          refresh_attempted: true,
+          stale_items_after: [],
+          refresh_result: {
+            refreshed: [itemId],
+            skipped: [],
+            warnings: [],
+          },
+        });
+        expect(fetchCalls).toEqual([
+          "https://api.example.test/v1/embeddings",
+          "https://qdrant.example.test:6333/collections/pm_items/points?wait=true",
+        ]);
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+  });
+
+  it("warns when targeted vectorization refresh fails and stale items remain", async () => {
+    await withTempPmPath(async (context) => {
+      const itemId = createSeedItem(context);
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
+      await writeSettings(context.pmPath, settings);
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = (async () => ({
+        ok: false,
+        status: 500,
+        statusText: "Internal Server Error",
+        json: async () => ({}),
+        text: async () => "embedding unavailable",
+      })) as typeof globalThis.fetch;
+
+      try {
+        const health = await runHealth({ path: context.pmPath });
+        expect(health.ok).toBe(false);
+        expect(health.warnings).toEqual(expect.arrayContaining([`vectorization_stale_items_remaining:1`]));
+
+        const vectorizationCheck = health.checks.find((check) => check.name === "vectorization");
+        expect(vectorizationCheck?.status).toBe("warn");
+        expect(vectorizationCheck?.details).toMatchObject({
+          semantic_runtime_available: true,
+          stale_items_before: [itemId],
+          stale_items_after: [itemId],
+        });
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
     });
   });
 

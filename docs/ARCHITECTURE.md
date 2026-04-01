@@ -120,6 +120,7 @@ Each item is stored as a format-configured document file:
   settings.json             project configuration
   index/manifest.json       keyword index cache (optional, rebuildable)
   search/embeddings.jsonl   keyword corpus records (optional, rebuildable)
+  search/vectorization-status.json semantic vector freshness ledger (optional, rebuildable)
   extensions/               project-local extensions
 ```
 
@@ -322,6 +323,13 @@ Runtime semantic defaults:
 - Explicit semantic settings always win over auto-defaults (`settings.search.provider`, `settings.vector_store.adapter`, `providers.*`, `vector_store.*`).
 - For implicit default-mode search, auto-default semantic execution failures degrade to keyword mode to preserve compatibility for existing users.
 - Auto-defaults can be disabled with `PM_DISABLE_OLLAMA_AUTO_DEFAULTS=1`.
+
+Health-time semantic/vector integrity:
+
+- `pm health` now runs a `history_drift` check that compares each current item's canonical hash to the latest history `after_hash`.
+- `pm health` also runs a `vectorization` check that compares current item `updated_at` values to `search/vectorization-status.json`.
+- When stale IDs are detected and semantic runtime is available, `pm health` triggers targeted semantic refresh for stale IDs only (not a full reindex).
+- `pm reindex --mode semantic|hybrid` rewrites the vectorization-status ledger for the full indexed corpus, keeping health diagnostics and index state aligned.
 
 Extension runtime can supply equivalents for both sides of semantic execution:
 

@@ -1,0 +1,47 @@
+id: pm-x0vj
+title: Implement health history drift diagnostics
+description: "Code and test pm health history drift checks, including missing stream, unreadable history, and hash mismatch reporting."
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:health","area:history",implementation,pm-cli
+created_at: "2026-04-01T14:42:30.944Z"
+updated_at: "2026-04-01T15:08:50.750Z"
+deadline: "2026-04-09T14:42:30.944Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: History drift checks are emitted by pm health with deterministic output and unit/integration coverage.
+definition_of_ready: Parent feature exists with file/test/doc scope captured.
+order: 4
+goal: Health hardening
+objective: Ship history drift diagnostics
+value: Catches history inconsistencies early
+impact: Improves reliability of restore/audit assumptions
+outcome: health output includes actionable drift detail
+why_now: Requested behavior is currently missing from health command.
+parent: pm-7vr9
+risk: medium
+confidence: high
+sprint: health-hardening
+release: vnext
+component: cli-health
+regression: true
+customer_impact: Users are warned before history drift causes surprises
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-7vr9,parent,"2026-04-01T14:42:30.944Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T14:42:30.944Z",codex-agent,Implementation task created and ready for claim.
+  "2026-04-01T15:03:58.741Z",codex-agent,"Implemented health history drift diagnostics in src/cli/commands/health.ts with deterministic warning codes for missing stream, unreadable stream, and hash mismatch. Added unit/integration coverage and verified with node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/integration/cli.integration.spec.ts."
+notes[1]{created_at,author,text}:
+  "2026-04-01T14:42:30.944Z",codex-agent,Reuse readHistoryEntries/hashDocument paths for consistency with restore semantics.
+files[3]{path,scope,note}:
+  src/cli/commands/health.ts,project,add history drift check
+  tests/integration/cli.integration.spec.ts,project,health check name contract update
+  tests/unit/health-command.spec.ts,project,history drift and vectorization health assertions
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,7200,integration health contract coverage
+  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts,null,project,2400,history drift unit coverage
+docs[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,document health drift flow
+close_reason: Implemented history drift diagnostics with deterministic warnings and passing unit/integration coverage.
+body: Implement history drift check wiring in health command with deterministic warning details and stable ordering.

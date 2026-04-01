@@ -1,0 +1,43 @@
+id: pm-3ebr
+title: Health vectorization status and targeted refresh
+description: Add pm health vectorization status diagnostics and auto-refresh stale item vectors using targeted semantic refresh.
+type: Feature
+status: closed
+priority: 1
+tags[4]: "area:health","area:search",pm-cli,semantic
+created_at: "2026-04-01T14:42:18.406Z"
+updated_at: "2026-04-01T15:09:13.556Z"
+deadline: "2026-04-10T14:42:18.406Z"
+author: codex-agent
+estimated_minutes: 260
+acceptance_criteria: pm health reports vectorization status and attempts targeted refresh for stale/missing vectorized items without forcing full reindex or breaking non-semantic setups.
+definition_of_ready: Epic exists and targeted-refresh strategy is selected.
+order: 3
+goal: Health hardening
+objective: Keep semantic vectors fresh from health command
+value: Reduces stale semantic index risk without heavy full rebuilds
+impact: Improves semantic query reliability in active repos
+outcome: Stale vectors are detected and refreshed proactively
+why_now: Users requested automatic vectorization start when items are not vectorized.
+parent: pm-1hkq
+risk: medium
+confidence: high
+sprint: health-hardening
+release: vnext
+component: search-health
+regression: true
+customer_impact: Users get fresher semantic results with minimal manual maintenance
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-1hkq,parent,"2026-04-01T14:42:18.406Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-01T14:42:18.406Z",codex-agent,Feature created from approved targeted-refresh strategy for pm health.
+notes[1]{created_at,author,text}:
+  "2026-04-01T14:42:18.406Z",codex-agent,Auto-refresh must remain non-fatal and deterministic when semantic runtime is unavailable.
+files[1]{path,scope,note}:
+  src/core/search/cache.ts,project,targeted semantic refresh plumbing
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts,null,project,2400,targeted semantic refresh regression
+docs[1]{path,scope,note}:
+  PRD.md,project,health command and semantic behavior contract
+close_reason: Vectorization status + targeted refresh shipped with ledger synchronization and regression coverage (pm-v48k).
+body: Feature for health-time vector freshness checks and targeted stale-ID semantic refresh with deterministic warning output.

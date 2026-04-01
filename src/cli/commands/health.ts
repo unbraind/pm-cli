@@ -4,13 +4,21 @@ import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { getEnabledBuiltInExtensions } from "../../core/extensions/builtins.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { activateExtensions, getActiveExtensionRegistrations, loadExtensions, runActiveOnReadHooks } from "../../core/extensions/index.js";
+import { hashDocument } from "../../core/history/history.js";
+import {
+  readVectorizationStatusLedger,
+  refreshSemanticEmbeddingsForMutatedItems,
+} from "../../core/search/cache.js";
+import { resolveEmbeddingProviders } from "../../core/search/providers.js";
+import { resolveSettingsWithSemanticRuntimeDefaults } from "../../core/search/semantic-defaults.js";
+import { resolveVectorStores } from "../../core/search/vector-stores.js";
 import type { LoadedExtension } from "../../core/extensions/loader.js";
 import { EXIT_CODE, PM_REQUIRED_SUBDIRS } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
-import { listAllFrontMatter } from "../../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
+import { listAllFrontMatterWithBody } from "../../core/store/item-store.js";
+import { getHistoryPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { PmSettings } from "../../types/index.js";
 
@@ -18,7 +26,7 @@ type HealthStatus = "ok" | "warn";
 type MigrationRuntimeStatus = "pending" | "failed" | "applied";
 
 export interface HealthCheck {
-  name: "settings" | "directories" | "settings_values" | "extensions" | "storage";
+  name: "settings" | "directories" | "settings_values" | "extensions" | "storage" | "history_drift" | "vectorization";
   status: HealthStatus;
   details: Record<string, unknown>;
 }
@@ -46,6 +54,8 @@ interface MigrationStatusSummary {
   pending_count: number;
   failed_count: number;
 }
+
+type ItemWithBody = Awaited<ReturnType<typeof listAllFrontMatterWithBody>>[number];
 
 async function isDirectory(targetPath: string): Promise<boolean> {
   try {
@@ -268,6 +278,157 @@ async function buildExtensionCheck(
   };
 }
 
+function collectStaleVectorizationIds(items: ItemWithBody[], ledgerEntries: Record<string, string>): string[] {
+  return items
+    .filter((item) => {
+      const trackedUpdatedAt = ledgerEntries[item.id];
+      return trackedUpdatedAt !== item.updated_at;
+    })
+    .map((item) => item.id)
+    .sort((left, right) => left.localeCompare(right));
+}
+
+async function buildHistoryDriftCheck(
+  pmRoot: string,
+  items: ItemWithBody[],
+): Promise<{ check: HealthCheck; warnings: string[] }> {
+  const missingStreams: string[] = [];
+  const unreadableStreams: string[] = [];
+  const hashMismatches: string[] = [];
+
+  for (const item of items) {
+    const historyPath = getHistoryPath(pmRoot, item.id);
+    let latestAfterHash: string | null = null;
+    try {
+      const raw = await fs.readFile(historyPath, "utf8");
+      if (raw.trim().length === 0) {
+        missingStreams.push(item.id);
+        continue;
+      }
+      const lines = raw.split(/\r?\n/);
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.length === 0) {
+          continue;
+        }
+        const parsed = JSON.parse(trimmed) as { after_hash?: unknown };
+        if (typeof parsed.after_hash !== "string" || parsed.after_hash.trim().length === 0) {
+          throw new Error("missing after_hash");
+        }
+        latestAfterHash = parsed.after_hash;
+      }
+    } catch (error: unknown) {
+      if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "ENOENT") {
+        missingStreams.push(item.id);
+      } else {
+        unreadableStreams.push(item.id);
+      }
+      continue;
+    }
+    if (!latestAfterHash) {
+      missingStreams.push(item.id);
+      continue;
+    }
+    const { body, ...frontMatter } = item;
+    const currentHash = hashDocument({
+      front_matter: frontMatter,
+      body,
+    });
+    if (latestAfterHash !== currentHash) {
+      hashMismatches.push(item.id);
+    }
+  }
+
+  const driftedItems = [...new Set([...missingStreams, ...unreadableStreams, ...hashMismatches])].sort((a, b) =>
+    a.localeCompare(b),
+  );
+  const warnings = [
+    ...missingStreams.map((id) => `history_drift_missing_stream:${id}`),
+    ...unreadableStreams.map((id) => `history_drift_unreadable_stream:${id}`),
+    ...hashMismatches.map((id) => `history_drift_hash_mismatch:${id}`),
+  ];
+
+  return {
+    check: {
+      name: "history_drift",
+      status: warnings.length === 0 ? "ok" : "warn",
+      details: {
+        checked_items: items.length,
+        drifted_items: driftedItems,
+        counts: {
+          drifted: driftedItems.length,
+          missing_streams: missingStreams.length,
+          unreadable_streams: unreadableStreams.length,
+          hash_mismatches: hashMismatches.length,
+        },
+        missing_streams: missingStreams,
+        unreadable_streams: unreadableStreams,
+        hash_mismatches: hashMismatches,
+      },
+    },
+    warnings,
+  };
+}
+
+async function buildVectorizationCheck(
+  pmRoot: string,
+  settings: PmSettings,
+  items: ItemWithBody[],
+): Promise<{ check: HealthCheck; warnings: string[] }> {
+  const runtimeDefaults = resolveSettingsWithSemanticRuntimeDefaults(settings);
+  const providerResolution = resolveEmbeddingProviders(runtimeDefaults.settings);
+  const vectorStoreResolution = resolveVectorStores(runtimeDefaults.settings);
+  const semanticRuntimeAvailable = Boolean(providerResolution.active && vectorStoreResolution.active);
+  const ledgerBefore = await readVectorizationStatusLedger(pmRoot);
+  const staleBefore = semanticRuntimeAvailable ? collectStaleVectorizationIds(items, ledgerBefore.entries) : [];
+  let refreshResult: Awaited<ReturnType<typeof refreshSemanticEmbeddingsForMutatedItems>> = {
+    refreshed: [],
+    skipped: [],
+    warnings: [],
+  };
+  if (semanticRuntimeAvailable && staleBefore.length > 0) {
+    refreshResult = await refreshSemanticEmbeddingsForMutatedItems(pmRoot, staleBefore, {
+      settings: runtimeDefaults.settings,
+      apply_runtime_defaults: false,
+    });
+  }
+  const ledgerAfter = await readVectorizationStatusLedger(pmRoot);
+  const staleAfter = semanticRuntimeAvailable ? collectStaleVectorizationIds(items, ledgerAfter.entries) : [];
+  const strictVectorizationWarnings = !runtimeDefaults.auto_ollama_defaults_applied;
+  const warningSet = new Set<string>([...ledgerBefore.warnings, ...ledgerAfter.warnings]);
+  if (strictVectorizationWarnings) {
+    for (const warning of refreshResult.warnings) {
+      warningSet.add(warning);
+    }
+  }
+  if (strictVectorizationWarnings && semanticRuntimeAvailable && staleAfter.length > 0) {
+    warningSet.add(`vectorization_stale_items_remaining:${staleAfter.length}`);
+  }
+  const warnings = [...warningSet].sort((left, right) => left.localeCompare(right));
+
+  return {
+    check: {
+      name: "vectorization",
+      status: warnings.length === 0 ? "ok" : "warn",
+      details: {
+        semantic_runtime_available: semanticRuntimeAvailable,
+        compatibility_mode_auto_defaults: runtimeDefaults.auto_ollama_defaults_applied,
+        auto_ollama_defaults_applied: runtimeDefaults.auto_ollama_defaults_applied,
+        provider_active: providerResolution.active?.name ?? null,
+        vector_store_active: vectorStoreResolution.active?.name ?? null,
+        items: items.length,
+        ledger_entries_before: Object.keys(ledgerBefore.entries).length,
+        stale_items_before: staleBefore,
+        refresh_attempted: staleBefore.length > 0 && semanticRuntimeAvailable,
+        refresh_result: refreshResult,
+        ledger_entries_after: Object.keys(ledgerAfter.entries).length,
+        stale_items_after: staleAfter,
+      },
+    },
+    warnings,
+  };
+}
+
 function validateSettingsValues(settings: Awaited<ReturnType<typeof readSettings>>): string[] {
   const warnings: string[] = [];
   if (settings.id_prefix.trim().length === 0) {
@@ -306,8 +467,10 @@ export async function runHealth(global: GlobalOptions): Promise<HealthResult> {
 
   const settingWarnings = validateSettingsValues(settings);
   const extensionCheck = await buildExtensionCheck(pmRoot, settings, Boolean(global.noExtensions));
-  const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
+  const items = await listAllFrontMatterWithBody(pmRoot, settings.item_format, typeRegistry.type_to_folder);
   const historySummary = await countHistoryStreams(pmRoot);
+  const historyDriftCheck = await buildHistoryDriftCheck(pmRoot, items);
+  const vectorizationCheck = await buildVectorizationCheck(pmRoot, settings, items);
 
   const checks: HealthCheck[] = [
     {
@@ -344,6 +507,8 @@ export async function runHealth(global: GlobalOptions): Promise<HealthResult> {
         history_streams: historySummary.count,
       },
     },
+    historyDriftCheck.check,
+    vectorizationCheck.check,
   ];
 
   const warnings = [
@@ -351,6 +516,8 @@ export async function runHealth(global: GlobalOptions): Promise<HealthResult> {
     ...settingWarnings,
     ...extensionCheck.warnings,
     ...historySummary.warnings,
+    ...historyDriftCheck.warnings,
+    ...vectorizationCheck.warnings,
     ...hookWarnings,
   ];
   return {

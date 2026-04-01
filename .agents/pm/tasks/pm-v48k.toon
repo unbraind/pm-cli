@@ -1,0 +1,49 @@
+id: pm-v48k
+title: Implement health vectorization targeted refresh
+description: Implement vectorization status detection and targeted stale-item semantic refresh from pm health.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:health","area:search",implementation,pm-cli
+created_at: "2026-04-01T14:42:42.011Z"
+updated_at: "2026-04-01T15:08:55.264Z"
+deadline: "2026-04-09T14:42:42.011Z"
+author: codex-agent
+estimated_minutes: 220
+acceptance_criteria: "pm health detects stale vectorization state, refreshes only stale item IDs, and reports deterministic warnings/details for skipped or failed refreshes."
+definition_of_ready: Parent feature exists and targeted refresh strategy approved.
+order: 5
+goal: Health hardening
+objective: Ship targeted vector refresh in health
+value: Improves semantic freshness with bounded cost
+impact: Avoids expensive full reindex while keeping vectors up to date
+outcome: health auto-refreshes stale vectors with clear diagnostics
+why_now: Requested auto-start vectorization should be implemented without full rebuild overhead.
+parent: pm-3ebr
+risk: medium
+confidence: high
+sprint: health-hardening
+release: vnext
+component: search-health
+regression: true
+customer_impact: Users get automatic stale-vector remediation during health checks
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-3ebr,parent,"2026-04-01T14:42:42.011Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T14:42:42.011Z",codex-agent,Targeted refresh task created to implement stale-ID vector remediation in health command.
+  "2026-04-01T15:04:29.029Z",codex-agent,Implemented vectorization ledger plumbing in src/core/search/cache.ts and reindex synchronization in src/cli/commands/reindex.ts. pm health now computes stale IDs and runs targeted refresh with deterministic details; verified via targeted suites and full test sweep.
+notes[1]{created_at,author,text}:
+  "2026-04-01T14:42:42.011Z",codex-agent,Prefer non-fatal warning behavior when semantic runtime is unavailable or refresh fails.
+files[5]{path,scope,note}:
+  src/cli/commands/health.ts,project,vectorization health check and targeted refresh orchestration
+  src/cli/commands/reindex.ts,project,semantic reindex ledger sync
+  src/core/search/cache.ts,project,vectorization status ledger and targeted refresh helpers
+  tests/unit/health-command.spec.ts,project,vectorization health refresh coverage
+  tests/unit/reindex-command.spec.ts,project,reindex ledger assertions
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts,null,project,2400,targeted refresh helper coverage
+  node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts tests/unit/reindex-command.spec.ts tests/unit/health-command.spec.ts,null,project,7200,targeted vectorization and ledger regressions
+docs[1]{path,scope,note}:
+  PRD.md,project,document vectorization health behavior
+close_reason: Implemented targeted vectorization refresh with ledger synchronization across health and reindex; targeted regressions pass.
+body: Add vectorization status ledger and targeted refresh orchestration paths so health can self-heal stale vectors.

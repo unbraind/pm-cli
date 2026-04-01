@@ -260,6 +260,20 @@ describe("runReindex", () => {
           .map((line) => JSON.parse(line) as { mode: string });
         expect(hybridRecords.every((entry) => entry.mode === "hybrid")).toBe(true);
 
+        const vectorizationLedgerRaw = await readFile(
+          path.join(context.pmPath, "search", "vectorization-status.json"),
+          "utf8",
+        );
+        const vectorizationLedger = JSON.parse(vectorizationLedgerRaw) as {
+          version: number;
+          generated_at: string;
+          items: Array<{ id: string; updated_at: string }>;
+        };
+        expect(vectorizationLedger.version).toBe(1);
+        expect(vectorizationLedger.generated_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+        expect(vectorizationLedger.items.map((entry) => entry.id)).toEqual([idA, idB].sort((a, b) => a.localeCompare(b)));
+        expect(vectorizationLedger.items.every((entry) => /^\d{4}-\d{2}-\d{2}T/.test(entry.updated_at))).toBe(true);
+
         expect(fetchCalls).toEqual([
           "https://api.example.test/v1/embeddings",
           "https://qdrant.example.test:6333/collections/pm_items/points?wait=true",
@@ -311,6 +325,12 @@ describe("runReindex", () => {
       expect(result.warnings).toEqual([]);
       expect(capturedPointIds).toHaveLength(1);
       expect(capturedPointIds[0]).toMatch(/^pm-/);
+      const vectorizationLedgerRaw = await readFile(path.join(context.pmPath, "search", "vectorization-status.json"), "utf8");
+      const vectorizationLedger = JSON.parse(vectorizationLedgerRaw) as {
+        items: Array<{ id: string }>;
+      };
+      expect(vectorizationLedger.items).toHaveLength(1);
+      expect(vectorizationLedger.items[0]?.id).toMatch(/^pm-/);
     });
   });
 
