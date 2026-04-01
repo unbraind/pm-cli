@@ -8,7 +8,7 @@ import {
   resolveTypeName,
   validateTypeOptions,
 } from "../../core/item/type-registry.js";
-import { parseCsvKv, parseOptionalNumber, parseTags } from "../../core/item/parse.js";
+import { createStdinTokenResolver, parseCsvKv, parseOptionalNumber, parseTags } from "../../core/item/parse.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -323,12 +323,22 @@ function parseTypeOptionEntries(raw: string[]): Record<string, string> {
     }
     let key: string | undefined;
     let value: string | undefined;
-    if (trimmedEntry.includes(",")) {
+    const prefersStructuredKv =
+      trimmedEntry.includes(",") ||
+      trimmedEntry.includes("\n") ||
+      trimmedEntry.startsWith("```") ||
+      /^(?:[-*+]\s+)?(?:key|value)\s*[:=]/i.test(trimmedEntry);
+    if (prefersStructuredKv) {
       const kv = parseCsvKv(trimmedEntry, "--type-option");
       key = kv.key?.trim();
       value = kv.value?.trim();
     } else {
-      const separatorIndex = trimmedEntry.indexOf("=");
+      const equalsIndex = trimmedEntry.indexOf("=");
+      const colonIndex = trimmedEntry.indexOf(":");
+      let separatorIndex = equalsIndex;
+      if (equalsIndex <= 0 && colonIndex > 0) {
+        separatorIndex = colonIndex;
+      }
       if (separatorIndex <= 0 || separatorIndex === trimmedEntry.length - 1) {
         throw new PmCliError(
           "--type-option requires key=value or key=<name>,value=<value> entries",
@@ -487,6 +497,13 @@ function enforceUpdateOptionsByType(typeName: string, options: UpdateCommandOpti
 }
 
 export async function runUpdate(id: string, options: UpdateCommandOptions, global: GlobalOptions): Promise<UpdateResult> {
+  const stdinResolver = createStdinTokenResolver();
+  options = {
+    ...options,
+    reminder: await stdinResolver.resolveList(options.reminder, "--reminder"),
+    event: await stdinResolver.resolveList(options.event, "--event"),
+    typeOption: await stdinResolver.resolveList(options.typeOption, "--type-option"),
+  };
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);

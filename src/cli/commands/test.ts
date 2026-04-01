@@ -6,7 +6,7 @@ import { promisify } from "node:util";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { parseCsvKv, parseOptionalNumber } from "../../core/item/parse.js";
+import { createStdinTokenResolver, parseCsvKv, parseOptionalNumber } from "../../core/item/parse.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -429,7 +429,11 @@ function parseRemoveEntries(raw: string[] | undefined): string[] {
     if (!trimmed) {
       throw new PmCliError("--remove requires command or path value", EXIT_CODE.USAGE);
     }
-    if (trimmed.includes("=")) {
+    if (
+      trimmed.includes("=") ||
+      /^(?:[-*+]\s+)?(?:path|command)\s*[:=]/i.test(trimmed) ||
+      trimmed.startsWith("```")
+    ) {
       const kv = parseCsvKv(trimmed, "--remove");
       const value = kv.path ?? kv.command;
       if (!value?.trim()) {
@@ -512,14 +516,17 @@ export async function runLinkedTests(
 }
 
 export async function runTest(id: string, options: TestCommandOptions, global: GlobalOptions): Promise<TestResult> {
+  const stdinResolver = createStdinTokenResolver();
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const adds = parseAddEntries(options.add);
-  const removes = parseRemoveEntries(options.remove);
+  const resolvedAdds = await stdinResolver.resolveList(options.add, "--add");
+  const resolvedRemoves = await stdinResolver.resolveList(options.remove, "--remove");
+  const adds = parseAddEntries(resolvedAdds);
+  const removes = parseRemoveEntries(resolvedRemoves);
   const shouldMutate = adds.length > 0 || removes.length > 0;
 
   let tests: LinkedTest[] = [];

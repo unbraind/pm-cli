@@ -5,6 +5,7 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
+import { createStdinTokenResolver, parseCsvKv } from "../../core/item/parse.js";
 import { locateItem, mutateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -45,7 +46,26 @@ function limitComments(values: Comment[], limit: number | undefined): Comment[] 
   return values.slice(Math.max(0, values.length - limit));
 }
 
+function parseCommentTextInput(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return "";
+  }
+  const looksStructured = /^(?:[-*+]\s*)?text\s*[:=]/im.test(trimmed) || trimmed.startsWith("```");
+  if (!looksStructured) {
+    return trimmed;
+  }
+  try {
+    const kv = parseCsvKv(trimmed, "--add");
+    const text = kv.text?.trim();
+    return text || trimmed;
+  } catch {
+    return trimmed;
+  }
+}
+
 export async function runComments(id: string, options: CommentsCommandOptions, global: GlobalOptions): Promise<CommentsResult> {
+  const stdinResolver = createStdinTokenResolver();
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
@@ -69,7 +89,8 @@ export async function runComments(id: string, options: CommentsCommandOptions, g
   }
 
   const author = resolveAuthor(options.author, settings.author_default);
-  const text = options.add.trim();
+  const addInput = await stdinResolver.resolveValue(options.add, "--add");
+  const text = parseCommentTextInput(addInput ?? "");
   if (!text) {
     throw new PmCliError("--add text cannot be empty", EXIT_CODE.USAGE);
   }

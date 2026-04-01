@@ -84,6 +84,9 @@ Attach references to keep work reproducible:
   - `pm test <ID> --add path=tests/history.spec.ts,scope=project`
 - Docs:
   - `pm docs <ID> --add path=docs/ARCHITECTURE.md,scope=project`
+- Entry-format resilience:
+  - `--add`/repeatable seed flags accept CSV `key=value`, markdown `key: value`, or stdin token `-` with piped payload.
+  - Example: `printf '%s\n' 'path: src/app.ts' 'scope: project' | pm files <ID> --add -`
 
 ### Step E - Record progress
 

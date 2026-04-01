@@ -1,7 +1,8 @@
 import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { PassThrough } from "node:stream";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { runCreate, type CreateCommandOptions } from "../../src/cli/commands/create.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
 import type { ExtensionHookRegistry } from "../../src/core/extensions/loader.js";
@@ -47,6 +48,7 @@ function readCreateHistory(context: TempPmContext, id: string): Array<{ op: stri
 describe("runCreate", () => {
   afterEach(() => {
     clearActiveExtensionHooks();
+    vi.restoreAllMocks();
   });
 
   it("fails when tracker is not initialized", async () => {
@@ -1160,6 +1162,69 @@ describe("runCreate", () => {
 
       const afterFiles = await readdir(tasksDir);
       expect(afterFiles).toEqual(beforeFiles);
+    });
+  });
+
+  it("accepts colon and markdown formats for type-option entries", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        item_types?: { definitions?: Array<Record<string, unknown>> };
+      };
+      settings.item_types = {
+        definitions: [
+          {
+            name: "Asset",
+            folder: "assets",
+            required_create_fields: [],
+            required_create_repeatables: [],
+            options: [
+              { key: "category", values: ["feature", "maintenance"] },
+              { key: "workflow", values: ["seeded", "regression"] },
+            ],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const colonResult = await runCreate(
+        baseCreateOptions({
+          title: "create-type-option-colon",
+          type: "Asset",
+          typeOption: ["category:feature"],
+        }),
+        { path: context.pmPath },
+      );
+      expect(colonResult.item.type_options).toEqual({ category: "feature" });
+
+      const markdownResult = await runCreate(
+        baseCreateOptions({
+          title: "create-type-option-markdown",
+          type: "Asset",
+          typeOption: ["key: workflow\nvalue: seeded"],
+        }),
+        { path: context.pmPath },
+      );
+      expect(markdownResult.item.type_options).toEqual({ workflow: "seeded" });
+    });
+  });
+
+  it("accepts stdin token for create repeatable seed entries", async () => {
+    await withTempPmPath(async (context) => {
+      const stdin = new PassThrough();
+      stdin.end(["author: stdin-author", "text: stdin seeded comment"].join("\n"));
+      Object.defineProperty(stdin, "isTTY", { value: false, configurable: true });
+      vi.spyOn(process, "stdin", "get").mockReturnValue(stdin as unknown as NodeJS.ReadStream);
+
+      const result = await runCreate(
+        baseCreateOptions({
+          title: "create-repeatable-stdin",
+          comment: ["-"],
+        }),
+        { path: context.pmPath },
+      );
+      expect(result.item.comments?.at(0)?.author).toBe("stdin-author");
+      expect(result.item.comments?.at(0)?.text).toBe("stdin seeded comment");
     });
   });
 });

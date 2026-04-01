@@ -2,6 +2,7 @@ import { pathExists } from "../../core/fs/fs-utils.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { createStdinTokenResolver } from "../../core/item/parse.js";
 import { mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -29,13 +30,15 @@ export async function runAppend(id: string, options: AppendCommandOptions, globa
   if (options.body === undefined) {
     throw new PmCliError("Missing required --body text", EXIT_CODE.USAGE);
   }
+  const stdinResolver = createStdinTokenResolver();
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
   const settings = await readSettings(pmRoot);
   const author = resolveAuthor(options.author, settings.author_default);
-  const appended = options.body.trim();
+  const bodyInput = await stdinResolver.resolveValue(options.body, "--body");
+  const appended = (bodyInput ?? "").trim();
 
   const result = await mutateItem({
     pmRoot,

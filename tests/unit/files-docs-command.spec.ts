@@ -1,12 +1,17 @@
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { PassThrough } from "node:stream";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { runDocs } from "../../src/cli/commands/docs.js";
 import { runFiles } from "../../src/cli/commands/files.js";
 import { EXIT_CODE } from "../../src/constants.js";
 import { PmCliError } from "../../src/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 interface LinkOptions {
   add?: string[];
@@ -245,6 +250,33 @@ describe("runFiles", () => {
       await assertAuthorResolution(context, runFiles, "path=README.md,scope=project", "files");
     });
   });
+
+  it("accepts markdown entries and stdin token for add/remove", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "files-markdown-stdin");
+      const stdinSpy = vi.spyOn(process, "stdin", "get");
+      const addStdin = new PassThrough();
+      addStdin.end(["path: docs/pipe-file.md", "scope: project", "note: from stdin"].join("\n"));
+      Object.defineProperty(addStdin, "isTTY", { value: false, configurable: true });
+      stdinSpy.mockReturnValue(addStdin as unknown as NodeJS.ReadStream);
+
+      const addedFromStdin = await runFiles(id, { add: ["-"] }, { path: context.pmPath });
+      expect(addedFromStdin.count).toBe(1);
+
+      const addedMarkdown = await runFiles(id, { add: ["path:docs/inline-file.md,scope:project"] }, { path: context.pmPath });
+      expect(addedMarkdown.count).toBe(2);
+
+      const removedMarkdown = await runFiles(id, { remove: ["path: docs/pipe-file.md"] }, { path: context.pmPath });
+      expect(removedMarkdown.count).toBe(1);
+
+      const removeStdin = new PassThrough();
+      removeStdin.end("path: docs/inline-file.md\n");
+      Object.defineProperty(removeStdin, "isTTY", { value: false, configurable: true });
+      stdinSpy.mockReturnValue(removeStdin as unknown as NodeJS.ReadStream);
+      const removedFromStdin = await runFiles(id, { remove: ["-"] }, { path: context.pmPath });
+      expect(removedFromStdin.count).toBe(0);
+    });
+  });
 });
 
 describe("runDocs", () => {
@@ -345,6 +377,33 @@ describe("runDocs", () => {
   it("resolves mutation author from explicit/env/settings/unknown fallbacks", async () => {
     await withTempPmPath(async (context) => {
       await assertAuthorResolution(context, runDocs, "path=README.md,scope=project", "docs");
+    });
+  });
+
+  it("accepts markdown entries and stdin token for add/remove", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "docs-markdown-stdin");
+      const stdinSpy = vi.spyOn(process, "stdin", "get");
+      const addStdin = new PassThrough();
+      addStdin.end(["path: docs/pipe-doc.md", "scope: project", "note: from stdin"].join("\n"));
+      Object.defineProperty(addStdin, "isTTY", { value: false, configurable: true });
+      stdinSpy.mockReturnValue(addStdin as unknown as NodeJS.ReadStream);
+
+      const addedFromStdin = await runDocs(id, { add: ["-"] }, { path: context.pmPath });
+      expect(addedFromStdin.count).toBe(1);
+
+      const addedMarkdown = await runDocs(id, { add: ["path:docs/inline-doc.md,scope:project"] }, { path: context.pmPath });
+      expect(addedMarkdown.count).toBe(2);
+
+      const removedMarkdown = await runDocs(id, { remove: ["path: docs/pipe-doc.md"] }, { path: context.pmPath });
+      expect(removedMarkdown.count).toBe(1);
+
+      const removeStdin = new PassThrough();
+      removeStdin.end("path: docs/inline-doc.md\n");
+      Object.defineProperty(removeStdin, "isTTY", { value: false, configurable: true });
+      stdinSpy.mockReturnValue(removeStdin as unknown as NodeJS.ReadStream);
+      const removedFromStdin = await runDocs(id, { remove: ["-"] }, { path: context.pmPath });
+      expect(removedFromStdin.count).toBe(0);
     });
   });
 });

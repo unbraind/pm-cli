@@ -1,0 +1,36 @@
+id: pm-e7fd
+title: Flexible parser and stdin ingestion foundation
+description: Implement tolerant key value entry parsing and explicit stdin token support for add style mutation inputs.
+type: Feature
+status: closed
+priority: 1
+tags[4]: "area:cli","area:input","area:parser",pm-cli
+created_at: "2026-04-01T10:12:01.966Z"
+updated_at: "2026-04-01T10:37:20.215Z"
+deadline: "2026-04-08T10:12:01.966Z"
+author: codex-agent
+estimated_minutes: 300
+acceptance_criteria: Entry parsing accepts csv key value markdown style key value and forgiving comma continuations; stdin token paths are deterministic and safe.
+definition_of_ready: Parser extension scope and command call sites are identified.
+order: 1
+goal: Agent reliability
+objective: Harden parser behavior
+value: Fewer failed add mutations due to formatting
+impact: Improves automation success with minimal user friction
+outcome: Core parser and stdin ingest utilities support resilient entry input
+why_now: Current strict parsing causes avoidable failures for agent generated payloads
+parent: pm-nhgt
+risk: medium
+confidence: high
+component: cli-parser
+regression: true
+customer_impact: Users and agents can submit richer formatted entry payloads with fewer retries
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-nhgt,parent,"2026-04-01T10:12:01.966Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T10:12:01.966Z",codex-agent,Feature A covers shared parser and stdin foundations first.
+  "2026-04-01T10:37:18.467Z",codex-agent,"Feature complete: pm-luay and pm-0pvk are closed with parser foundation + command-surface ingestion wiring delivered and linked regression suites passing."
+notes[1]{created_at,author,text}:
+  "2026-04-01T10:12:01.966Z",codex-agent,Maintain backward compatible key value contracts while adding tolerant parsing.
+close_reason: Parser foundation and command wiring delivered for resilient add/entry ingestion.
+body: Feature A for parser and stdin ingestion behavior.

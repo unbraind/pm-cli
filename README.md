@@ -121,6 +121,33 @@ pm claim <item-id>
 
 From there, use `pm update`, `pm comments`, `pm files`, `pm test`, `pm search`, and `pm close` as work progresses.
 
+## Resilient Entry Input Formats
+
+Entry-style flags (`--add`, `--remove`, and repeatable create/update seed flags like `--comment`, `--file`, `--test`, `--doc`, `--reminder`, `--event`, `--type-option`) now accept three deterministic forms:
+
+- CSV key/value: `key=value,key2=value2`
+- Markdown-style key/value: `key: value` (single line, bullets, or multiline blocks)
+- Stdin token: pass `-` and pipe payload into the command
+
+Examples:
+
+```bash
+# Files/docs/tests add supports markdown-style key:value
+pm files pm-a1b2 --add "path: src/cli/main.ts,scope: project,note: cli wiring"
+pm docs pm-a1b2 --add $'- path: README.md\n- scope: project\n- note: docs sync'
+pm test pm-a1b2 --add $'command: node scripts/run-tests.mjs test\nscope: project\ntimeout_seconds: 240'
+
+# Comments can be plain text, text=<value>, or text: <value>
+pm comments pm-a1b2 --add "text: captured from markdown formatter"
+
+# Pipe markdown payload via stdin with "-"
+printf '%s\n' 'path: docs/ARCHITECTURE.md' 'scope: project' 'note: piped update' | pm files pm-a1b2 --add -
+printf '%s\n' 'text: evidence from piped stdin' | pm comments pm-a1b2 --add -
+printf '%s\n' 'at: +1d' 'text: reminder from piped stdin' | pm update pm-a1b2 --reminder -
+```
+
+`none` semantics are unchanged for explicit clears in repeatable fields (`--file none`, `--comment none`, etc.).
+
 ## Custom Item Types and Type Options
 
 `pm` supports project/global custom item types through `settings.json` and extension registrations. When no custom configuration exists, built-in types keep their default behavior.
@@ -178,7 +205,7 @@ pm create \
 pm update pm-a1b2 --type-option category=Character --type-option pipeline=Rigging
 ```
 
-`--type-option` accepts `key=value` and `key=<name>,value=<value>` formats, and can be cleared with `none`.
+`--type-option` accepts `key=value`, `key:value`, and `key=<name>,value=<value>` formats (including markdown-style lines), can read stdin via `-`, and can be cleared with `none`.
 
 `command_option_policies` lets each type mark create/update options as:
 

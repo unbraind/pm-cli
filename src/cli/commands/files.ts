@@ -1,6 +1,6 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
-import { parseCsvKv } from "../../core/item/parse.js";
+import { createStdinTokenResolver, parseCsvKv } from "../../core/item/parse.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -63,7 +63,7 @@ function parseRemoveEntries(raw: string[] | undefined): string[] {
     if (!trimmed) {
       throw new PmCliError("--remove requires a path value", EXIT_CODE.USAGE);
     }
-    if (trimmed.includes("=")) {
+    if (trimmed.includes("=") || /^(?:[-*+]\s+)?path\s*[:=]/i.test(trimmed) || trimmed.startsWith("```")) {
       const kv = parseCsvKv(trimmed, "--remove");
       if (!kv.path) {
         throw new PmCliError("--remove key/value form requires path=<value>", EXIT_CODE.USAGE);
@@ -75,14 +75,17 @@ function parseRemoveEntries(raw: string[] | undefined): string[] {
 }
 
 export async function runFiles(id: string, options: FilesCommandOptions, global: GlobalOptions): Promise<FilesResult> {
+  const stdinResolver = createStdinTokenResolver();
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const adds = parseAddEntries(options.add);
-  const removes = parseRemoveEntries(options.remove);
+  const resolvedAdds = await stdinResolver.resolveList(options.add, "--add");
+  const resolvedRemoves = await stdinResolver.resolveList(options.remove, "--remove");
+  const adds = parseAddEntries(resolvedAdds);
+  const removes = parseRemoveEntries(resolvedRemoves);
   const shouldMutate = adds.length > 0 || removes.length > 0;
 
   if (!shouldMutate) {

@@ -1,12 +1,17 @@
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { PassThrough } from "node:stream";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { runAppend } from "../../src/cli/commands/append.js";
 import { runGet } from "../../src/cli/commands/get.js";
 import { EXIT_CODE } from "../../src/constants.js";
 import { PmCliError } from "../../src/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 function createTask(
   context: TempPmContext,
@@ -261,6 +266,24 @@ describe("runGet and runAppend", () => {
           process.env.PM_AUTHOR = previousAuthor;
         }
       }
+    });
+  });
+
+  it("accepts stdin token payload for append body", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, {
+        title: "append-stdin-token",
+        body: "existing body",
+      });
+      const stdin = new PassThrough();
+      stdin.end("markdown from stdin");
+      Object.defineProperty(stdin, "isTTY", { value: false, configurable: true });
+      vi.spyOn(process, "stdin", "get").mockReturnValue(stdin as unknown as NodeJS.ReadStream);
+
+      const appendResult = await runAppend(id, { body: "-", message: "append stdin payload" }, { path: context.pmPath });
+      expect(appendResult.changed_fields).toContain("body");
+      const getResult = await runGet(id, { path: context.pmPath });
+      expect(getResult.body).toBe("existing body\n\nmarkdown from stdin");
     });
   });
 });

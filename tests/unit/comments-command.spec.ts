@@ -1,11 +1,16 @@
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { PassThrough } from "node:stream";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { runComments } from "../../src/cli/commands/comments.js";
 import { EXIT_CODE } from "../../src/constants.js";
 import { PmCliError } from "../../src/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 function createTask(context: TempPmContext, title: string): string {
   const created = context.runCli(
@@ -171,6 +176,35 @@ describe("runComments", () => {
           process.env.PM_AUTHOR = previousPmAuthor;
         }
       }
+    });
+  });
+
+  it("accepts text= and markdown comment payload forms", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-structured-input");
+      const structured = await runComments(id, { add: "text: markdown comment body" }, { path: context.pmPath });
+      expect(structured.comments.at(-1)?.text).toBe("markdown comment body");
+
+      const fenced = ["```", "text: fenced body", "```"].join("\n");
+      const fencedResult = await runComments(id, { add: fenced }, { path: context.pmPath });
+      expect(fencedResult.comments.at(-1)?.text).toBe("fenced body");
+
+      const malformed = ["```", "not structured", "```"].join("\n");
+      const malformedResult = await runComments(id, { add: malformed }, { path: context.pmPath });
+      expect(malformedResult.comments.at(-1)?.text).toBe(malformed);
+    });
+  });
+
+  it("accepts stdin token for comment add payload", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-stdin-token");
+      const stdin = new PassThrough();
+      stdin.end("text: from stdin\n");
+      Object.defineProperty(stdin, "isTTY", { value: false, configurable: true });
+      vi.spyOn(process, "stdin", "get").mockReturnValue(stdin as unknown as NodeJS.ReadStream);
+
+      const result = await runComments(id, { add: "-" }, { path: context.pmPath });
+      expect(result.comments.at(-1)?.text).toBe("from stdin");
     });
   });
 });

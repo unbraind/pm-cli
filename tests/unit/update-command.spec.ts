@@ -1,13 +1,19 @@
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { PassThrough } from "node:stream";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { runUpdate } from "../../src/cli/commands/update.js";
 import { EXIT_CODE } from "../../src/constants.js";
 import { PmCliError } from "../../src/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 interface CreateTaskOptions {
+  type?: string;
   assignee?: string;
   deadline?: string;
   estimate?: string;
@@ -24,7 +30,7 @@ function createTask(context: TempPmContext, title: string, options: CreateTaskOp
       "--description",
       `${title} description`,
       "--type",
-      "Task",
+      options.type ?? "Task",
       "--status",
       "open",
       "--priority",
@@ -855,6 +861,76 @@ describe("runUpdate", () => {
 
       const item = forced.item as Record<string, unknown>;
       expect(item.description).toBe("forced update");
+    });
+  });
+
+  it("accepts colon and markdown formats for update type-option entries", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        item_types?: { definitions?: Array<Record<string, unknown>> };
+      };
+      settings.item_types = {
+        definitions: [
+          {
+            name: "Asset",
+            folder: "assets",
+            required_create_fields: [],
+            required_create_repeatables: [],
+            options: [
+              { key: "category", values: ["feature", "maintenance"] },
+              { key: "workflow", values: ["seeded", "regression"] },
+            ],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const id = createTask(context, "update-type-option-colon", { type: "Asset" });
+      const colonResult = await runUpdate(
+        id,
+        {
+          typeOption: ["category:maintenance"],
+          message: "update type option colon",
+        },
+        { path: context.pmPath },
+      );
+      expect((colonResult.item as { type_options?: Record<string, string> }).type_options).toEqual({
+        category: "maintenance",
+      });
+
+      const markdownResult = await runUpdate(
+        id,
+        {
+          typeOption: ["key: workflow\nvalue: regression"],
+          message: "update type option markdown",
+        },
+        { path: context.pmPath },
+      );
+      expect((markdownResult.item as { type_options?: Record<string, string> }).type_options).toEqual({
+        workflow: "regression",
+      });
+    });
+  });
+
+  it("accepts stdin token for update repeatable entries", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-repeatable-stdin");
+      const stdin = new PassThrough();
+      stdin.end(["at: +1d", "text: reminder from stdin"].join("\n"));
+      Object.defineProperty(stdin, "isTTY", { value: false, configurable: true });
+      vi.spyOn(process, "stdin", "get").mockReturnValue(stdin as unknown as NodeJS.ReadStream);
+
+      const updated = await runUpdate(
+        id,
+        {
+          reminder: ["-"],
+          message: "update reminder from stdin",
+        },
+        { path: context.pmPath },
+      );
+
+      expect((updated.item as { reminders?: Array<{ text: string }> }).reminders?.at(0)?.text).toBe("reminder from stdin");
     });
   });
 });

@@ -1,0 +1,42 @@
+id: pm-luay
+title: Implement tolerant entry parser and stdin token utility
+description: Extend shared entry parser to accept csv key value markdown style key value and forgiving comma continuations and add deterministic stdin token resolution helpers.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:input","area:parser",code,pm-cli
+created_at: "2026-04-01T10:12:23.146Z"
+updated_at: "2026-04-01T10:37:05.170Z"
+deadline: "2026-04-06T10:12:23.146Z"
+author: codex-agent
+estimated_minutes: 150
+acceptance_criteria: Shared parser accepts supported resilient formats and stdin token utility reads piped content safely with clear usage errors.
+definition_of_ready: Parser edge cases and supported formats are explicitly listed.
+order: 1
+goal: Agent reliability
+objective: Build resilient shared parsing primitives
+value: Centralized tolerance and clearer errors
+impact: Downstream commands gain robustness with minimal duplication
+outcome: Core utilities handle common malformed and markdown style inputs
+why_now: Command specific fixes without shared primitives would be brittle
+parent: pm-e7fd
+risk: medium
+confidence: high
+component: core-item-parse
+regression: true
+customer_impact: Stronger parser resilience reduces failed command attempts for agent generated payloads
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-e7fd,parent,"2026-04-01T10:12:23.146Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-04-01T10:12:23.146Z",codex-agent,Task A1 starts with parser and stdin utility foundation.
+  "2026-04-01T10:34:15.282Z",codex-agent,"Implemented tolerant entry parsing with CSV + markdown key:value support, continuable value handling, and deterministic stdin token resolver for repeatable/scalar option ingestion."
+  "2026-04-01T10:36:51.773Z",codex-agent,"Evidence: node scripts/run-tests.mjs test -- tests/unit/parse-utils.spec.ts passed via pm test --run after parser/stdin resolver implementation."
+notes[1]{created_at,author,text}:
+  "2026-04-01T10:12:23.146Z",codex-agent,Keep behavior deterministic and backwards compatible for current key value input.
+files[2]{path,scope,note}:
+  src/core/item/parse.ts,project,tolerant parser and stdin token resolver
+  tests/unit/parse-utils.spec.ts,project,parser and stdin resolver regression coverage
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/parse-utils.spec.ts,null,project,240,parser utility regression suite
+close_reason: Parser foundation delivered with resilient CSV/markdown/stdin parsing and task-linked tests passing.
+body: Task A1 for core parser and stdin utility implementation.

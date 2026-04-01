@@ -1,11 +1,16 @@
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { PassThrough } from "node:stream";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { runTest } from "../../src/cli/commands/test.js";
 import { EXIT_CODE } from "../../src/constants.js";
 import { parseItemDocument, serializeItemDocument } from "../../src/item-format.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 function createTask(context: TempPmContext, title: string): string {
   const result = context.runCli(
@@ -443,6 +448,37 @@ describe("runTest", () => {
       );
       expect(removed.changed).toBe(true);
       expect(removed.count).toBe(0);
+    });
+  });
+
+  it("accepts markdown and stdin token payloads for add/remove entries", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "test-markdown-stdin");
+      const stdinSpy = vi.spyOn(process, "stdin", "get");
+
+      const addStdin = new PassThrough();
+      addStdin.end(["command: node --version", "scope: project", "note: from stdin"].join("\n"));
+      Object.defineProperty(addStdin, "isTTY", { value: false, configurable: true });
+      stdinSpy.mockReturnValue(addStdin as unknown as NodeJS.ReadStream);
+      const addedFromStdin = await runTest(id, { add: ["-"] }, { path: context.pmPath });
+      expect(addedFromStdin.count).toBe(1);
+
+      const addedMarkdown = await runTest(
+        id,
+        { add: ["path:tests/markdown-test.spec.ts,scope:project,timeout:5"] },
+        { path: context.pmPath },
+      );
+      expect(addedMarkdown.count).toBe(2);
+
+      const removedMarkdown = await runTest(id, { remove: ["path: tests/markdown-test.spec.ts"] }, { path: context.pmPath });
+      expect(removedMarkdown.count).toBe(1);
+
+      const removeStdin = new PassThrough();
+      removeStdin.end("command: node --version\n");
+      Object.defineProperty(removeStdin, "isTTY", { value: false, configurable: true });
+      stdinSpy.mockReturnValue(removeStdin as unknown as NodeJS.ReadStream);
+      const removedFromStdin = await runTest(id, { remove: ["-"] }, { path: context.pmPath });
+      expect(removedFromStdin.count).toBe(0);
     });
   });
 

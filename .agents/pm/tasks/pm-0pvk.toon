@@ -1,0 +1,54 @@
+id: pm-0pvk
+title: Wire resilient entry ingestion across mutation commands
+description: Apply stdin token and tolerant parser support to append comments files docs test create and update entry style mutation flags.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:cli","area:input",code,pm-cli
+created_at: "2026-04-01T10:12:32.697Z"
+updated_at: "2026-04-01T10:37:06.539Z"
+deadline: "2026-04-06T10:12:32.697Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: Target mutation commands accept resilient stdin and markdown style inputs and preserve existing deterministic outputs and validation semantics.
+definition_of_ready: Command call sites and option semantics are enumerated.
+order: 2
+goal: Agent reliability
+objective: Propagate resilient ingestion to user facing commands
+value: Usable resilient behavior where users actually invoke commands
+impact: Lower friction and fewer add command retries
+outcome: Mutation command set behaves consistently for resilient input formats
+why_now: Parser improvements must be consumed by command handlers to deliver value
+parent: pm-e7fd
+risk: medium
+confidence: high
+component: cli-commands
+regression: true
+customer_impact: Agents and users can pipe markdown style payloads directly into key mutation commands
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-e7fd,parent,"2026-04-01T10:12:32.697Z",codex-agent,null
+  pm-luay,blocks,"2026-04-01T10:12:32.697Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-04-01T10:12:32.697Z",codex-agent,Task A2 depends on Task A1 parser utilities.
+  "2026-04-01T10:34:29.356Z",codex-agent,"Wired stdin token resolution across mutation entry surfaces (append/comments/files/docs/test/create/update) and expanded unit coverage for markdown-style key:value ingestion and add/remove compatibility semantics."
+  "2026-04-01T10:36:52.498Z",codex-agent,"Evidence: command-surface regression suite (comments/files/docs/test/append/create/update) passed via pm test --run."
+notes[1]{created_at,author,text}:
+  "2026-04-01T10:12:32.697Z",codex-agent,Keep command specific error messages actionable and consistent.
+files[13]{path,scope,note}:
+  src/cli/commands/append.ts,project,append stdin token resolution
+  src/cli/commands/comments.ts,project,structured and stdin-aware comment add parsing
+  src/cli/commands/create.ts,project,"create repeatable seeds now resolve stdin token and markdown key:value"
+  src/cli/commands/docs.ts,project,stdin-aware linked doc add/remove parsing
+  src/cli/commands/files.ts,project,stdin-aware linked file add/remove parsing
+  src/cli/commands/test.ts,project,stdin-aware linked test add/remove parsing
+  src/cli/commands/update.ts,project,"update repeatable seeds now resolve stdin token and markdown key:value"
+  tests/unit/comments-command.spec.ts,project,comments markdown and stdin regression
+  tests/unit/create-command.spec.ts,project,create type-option and stdin repeatable regressions
+  tests/unit/files-docs-command.spec.ts,project,files/docs markdown and stdin regressions
+  tests/unit/get-append-command.spec.ts,project,append stdin regression
+  tests/unit/test-command.spec.ts,project,test command markdown and stdin regressions
+  tests/unit/update-command.spec.ts,project,update type-option and stdin repeatable regressions
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/files-docs-command.spec.ts tests/unit/test-command.spec.ts tests/unit/get-append-command.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,null,project,480,command-surface resilient parsing regression suite
+close_reason: Mutation command surfaces now consume resilient entry formats with regression suite passing.
+body: Task A2 for command wiring of resilient ingestion.

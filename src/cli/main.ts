@@ -1465,21 +1465,57 @@ program
   .option("--regression <value>", "Regression marker: true|false|1|0, or none")
   .option("--customer-impact <value>", "Customer impact summary, or none")
   .option("--customer_impact <value>", "Alias for --customer-impact")
-  .option("--dep <value>", "Seed dependency entry (repeatable; use none for explicit empty)", collect)
-  .option("--type-option <value>", "Type option key=value or key=<name>,value=<value> (repeatable; use none for explicit empty)", collect)
-  .option("--type_option <value>", "Alias for --type-option", collect)
-  .option("--reminder <value>", "Seed reminder entry at=<iso|relative>,text=<text> (repeatable; use none for empty)", collect)
   .option(
-    "--event <value>",
-    "Seed event entry start=<iso|relative>,end=<iso|relative>,title=<text>,all_day=<true|false>,recur_* fields (repeatable; use none for empty)",
+    "--dep <value>",
+    "Seed dependency entry (key=value CSV, markdown key:value lines, or - for stdin; repeatable; use none for explicit empty)",
     collect,
   )
-  .option("--comment <value>", "Seed comment entry (repeatable; use none for explicit empty)", collect)
-  .option("--note <value>", "Seed note entry (repeatable; use none for explicit empty)", collect)
-  .option("--learning <value>", "Seed learning entry (repeatable; use none for explicit empty)", collect)
-  .option("--file <value>", "Seed linked file entry (repeatable; use none for explicit empty)", collect)
-  .option("--test <value>", "Seed linked test entry (repeatable; use none for explicit empty)", collect)
-  .option("--doc <value>", "Seed linked doc entry (repeatable; use none for explicit empty)", collect)
+  .option(
+    "--type-option <value>",
+    "Type option key=value or key=<name>,value=<value> (also accepts key:value and markdown pairs; use - for stdin; repeatable; use none for explicit empty)",
+    collect,
+  )
+  .option("--type_option <value>", "Alias for --type-option", collect)
+  .option(
+    "--reminder <value>",
+    "Seed reminder entry at=<iso|relative>,text=<text> (also accepts markdown pairs and - for stdin; repeatable; use none for empty)",
+    collect,
+  )
+  .option(
+    "--event <value>",
+    "Seed event entry start=<iso|relative>,end=<iso|relative>,title=<text>,all_day=<true|false>,recur_* fields (also accepts markdown pairs and - for stdin; repeatable; use none for empty)",
+    collect,
+  )
+  .option(
+    "--comment <value>",
+    "Seed comment entry (text=<value> CSV/markdown pairs or - for stdin; repeatable; use none for explicit empty)",
+    collect,
+  )
+  .option(
+    "--note <value>",
+    "Seed note entry (text=<value> CSV/markdown pairs or - for stdin; repeatable; use none for explicit empty)",
+    collect,
+  )
+  .option(
+    "--learning <value>",
+    "Seed learning entry (text=<value> CSV/markdown pairs or - for stdin; repeatable; use none for explicit empty)",
+    collect,
+  )
+  .option(
+    "--file <value>",
+    "Seed linked file entry (CSV/markdown pairs or - for stdin; repeatable; use none for explicit empty)",
+    collect,
+  )
+  .option(
+    "--test <value>",
+    "Seed linked test entry (CSV/markdown pairs or - for stdin; repeatable; use none for explicit empty)",
+    collect,
+  )
+  .option(
+    "--doc <value>",
+    "Seed linked doc entry (CSV/markdown pairs or - for stdin; repeatable; use none for explicit empty)",
+    collect,
+  )
   .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -1817,15 +1853,19 @@ program
   .option("--regression <value>", "Set regression marker: true|false|1|0 (or none)")
   .option("--customer-impact <value>", "Set customer impact summary (or none)")
   .option("--customer_impact <value>", "Alias for --customer-impact")
-  .option("--reminder <value>", "Set reminders at=<iso|relative>,text=<text> (repeatable; use none to clear)", collect)
+  .option(
+    "--reminder <value>",
+    "Set reminders at=<iso|relative>,text=<text> (also accepts markdown pairs and - for stdin; repeatable; use none to clear)",
+    collect,
+  )
   .option(
     "--event <value>",
-    "Set events start=<iso|relative>,end=<iso|relative>,title=<text>,all_day=<true|false>,recur_* fields (repeatable; use none to clear)",
+    "Set events start=<iso|relative>,end=<iso|relative>,title=<text>,all_day=<true|false>,recur_* fields (also accepts markdown pairs and - for stdin; repeatable; use none to clear)",
     collect,
   )
   .option(
     "--type-option <value>",
-    "Set type options key=value or key=<name>,value=<value> (repeatable; use none to clear)",
+    "Set type options key=value or key=<name>,value=<value> (also accepts key:value and markdown pairs; use - for stdin; repeatable; use none to clear)",
     collect,
   )
   .option("--type_option <value>", "Alias for --type-option", collect)
@@ -1898,7 +1938,7 @@ program
 program
   .command("append")
   .argument("<id>", "Item id")
-  .requiredOption("--body <value>", "Text to append to body")
+  .requiredOption("--body <value>", "Text to append to body (or - for stdin)")
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "Mutation message")
   .option("--force", "Force ownership override")
@@ -1926,7 +1966,7 @@ program
 program
   .command("comments")
   .argument("<id>", "Item id")
-  .option("--add <text>", "Add one comment entry")
+  .option("--add <text>", "Add one comment entry (plain text, text=<value>, markdown pairs, or - for stdin)")
   .option("--limit <n>", "Return only latest n comments")
   .option("--author <value>", "Comment author")
   .option("--message <value>", "History message")
@@ -1958,8 +1998,8 @@ program
 program
   .command("files")
   .argument("<id>", "Item id")
-  .option("--add <value>", "Add linked file entry", collect)
-  .option("--remove <value>", "Remove linked file by path", collect)
+  .option("--add <value>", "Add linked file entry (CSV/markdown pairs or - for stdin)", collect)
+  .option("--remove <value>", "Remove linked file by path (path=<value>, path:<value>, plain path, or - for stdin)", collect)
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
   .option("--force", "Force ownership override")
@@ -1992,8 +2032,8 @@ program
 program
   .command("docs")
   .argument("<id>", "Item id")
-  .option("--add <value>", "Add linked doc entry", collect)
-  .option("--remove <value>", "Remove linked doc by path", collect)
+  .option("--add <value>", "Add linked doc entry (CSV/markdown pairs or - for stdin)", collect)
+  .option("--remove <value>", "Remove linked doc by path (path=<value>, path:<value>, plain path, or - for stdin)", collect)
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
   .option("--force", "Force ownership override")
@@ -2026,8 +2066,12 @@ program
 program
   .command("test")
   .argument("<id>", "Item id")
-  .option("--add <value>", "Add linked test entry", collect)
-  .option("--remove <value>", "Remove linked test entry by command/path", collect)
+  .option("--add <value>", "Add linked test entry (CSV/markdown pairs or - for stdin)", collect)
+  .option(
+    "--remove <value>",
+    "Remove linked test entry by command/path (command=<value>, path=<value>, markdown pairs, plain value, or - for stdin)",
+    collect,
+  )
   .option("--run", "Run linked test commands")
   .option("--timeout <seconds>", "Default run timeout in seconds")
   .option("--author <value>", "Mutation author")

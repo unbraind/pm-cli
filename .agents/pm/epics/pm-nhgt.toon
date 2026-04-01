@@ -1,0 +1,33 @@
+id: pm-nhgt
+title: Harden entry and add input resilience
+description: Make all entry and add mutation paths robust for stdin piped markdown style and forgiving key value parsing while preserving deterministic behavior.
+type: Epic
+status: closed
+priority: 0
+tags[5]: "area:cli","area:docs","area:input","area:ux",pm-cli
+created_at: "2026-04-01T10:11:50.649Z"
+updated_at: "2026-04-01T10:37:25.224Z"
+deadline: "2026-04-11T10:11:50.649Z"
+author: codex-agent
+estimated_minutes: 480
+acceptance_criteria: All entry and add command paths accept robust stdin and markdown style payloads with deterministic parsing clear error guidance and full regression safety.
+definition_of_ready: Current parser and command paths are mapped and no duplicate active pm item exists.
+order: 1
+goal: Agent reliability
+objective: Make entry ingestion resilient
+value: Reduces agent failures from input formatting mistakes
+impact: Higher mutation success rate and lower support burden
+outcome: Entry and add commands handle markdown style and stdin inputs reliably
+why_now: Agents currently fail on common piped markdown patterns and shell quoting edge cases
+risk: medium
+confidence: high
+component: cli-input
+regression: true
+customer_impact: Existing users get clearer failures and safer compatibility while agents gain resilient add flows
+comments[2]{created_at,author,text}:
+  "2026-04-01T10:11:50.649Z",codex-agent,Why this epic exists repeated agent markdown pipelines currently fail in entry add commands.
+  "2026-04-01T10:37:23.465Z",codex-agent,"Epic complete: resilient CSV/markdown/stdin entry ingestion shipped across parser + mutation commands with docs and regression coverage updates."
+notes[1]{created_at,author,text}:
+  "2026-04-01T10:11:50.649Z",codex-agent,Success means parser and stdin paths are robust and backward compatible.
+close_reason: Resilient entry/add input hardening delivered end-to-end.
+body: "Epic for robust entry ingestion and add command fault tolerance.\n\n## Detailed implementation plan\n\n1. Complete parser and stdin foundation (pm-luay)\n   - Add resilient entry parsing fallback layers in shared parser code: strict csv key=value, markdown-style key:value lines, and forgiving comma continuations.\n   - Add deterministic stdin token support for explicit pipe usage so commands can consume piped payloads safely.\n   - Keep canonical normalization and existing valid inputs fully backward-compatible.\n\n2. Wire command surfaces (pm-0pvk)\n   - Apply stdin token resolution and resilient parser usage to entry/add mutation commands: append body, comments add, files add/remove, docs add/remove, test add/remove, create repeatable entries, and update repeatable entries.\n   - Standardize actionable usage errors with examples for quoted commas, markdown-style pairs, and stdin token usage.\n   - Preserve command output contracts and deterministic mutation behavior.\n\n3. Verification and documentation rollout (pm-s9hl)\n   - Add focused unit tests for parser and command branches plus integration coverage for CLI stdin and markdown-style payload workflows.\n   - Update README, PRD, AGENTS, and CHANGELOG with resilient input guidance and compatibility notes.\n   - Run build plus targeted and broad test suites to verify no regressions for existing users before closure.\n\n4. Closure and evidence\n   - Attach changed files, linked tests, and docs to tasks/features/epic.\n   - Record validation evidence in comments, close tasks/features/epic, and release claims after completion."

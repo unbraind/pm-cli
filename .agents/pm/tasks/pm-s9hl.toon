@@ -1,0 +1,53 @@
+id: pm-s9hl
+title: Document resilient input formats and lock regression coverage
+description: Update README PRD AGENTS CHANGELOG and add focused plus integration regressions for stdin and markdown style entry ingestion.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:compat","area:docs","area:tests",pm-cli
+created_at: "2026-04-01T10:12:49.030Z"
+updated_at: "2026-04-01T10:37:08.242Z"
+deadline: "2026-04-06T10:12:49.030Z"
+author: codex-agent
+estimated_minutes: 160
+acceptance_criteria: Documentation clearly specifies resilient input formats and stdin usage while tests verify compatibility and new behavior across add and entry commands.
+definition_of_ready: Implementation behavior and examples to document are known.
+order: 1
+goal: Agent reliability
+objective: Ship safe and well documented rollout
+value: Users can adopt new resilient patterns confidently
+impact: Reduces support and regression risk
+outcome: Behavior is documented tested and release noted
+why_now: Behavior changes must be paired with docs and verification before release
+parent: pm-tob5
+risk: low
+confidence: high
+component: docs-tests
+regression: true
+customer_impact: Existing users are protected by explicit compatibility docs and regression coverage
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-0pvk,blocks,"2026-04-01T10:12:49.030Z",codex-agent,null
+  pm-luay,blocks,"2026-04-01T10:12:49.030Z",codex-agent,null
+  pm-tob5,parent,"2026-04-01T10:12:49.030Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-04-01T10:12:49.030Z",codex-agent,Task B1 closes rollout loop with docs and verification evidence.
+  "2026-04-01T10:34:40.889Z",codex-agent,Updated command help/docs/changelog for resilient CSV+markdown+stdin entry forms and verified runtime help contracts plus full sandboxed test suite execution.
+  "2026-04-01T10:36:53.346Z",codex-agent,"Evidence: full sandboxed suite (node scripts/run-tests.mjs test) and release-readiness runtime suite both passed via pm test --run; coverage command still reports repository-wide threshold gap outside this change set."
+notes[1]{created_at,author,text}:
+  "2026-04-01T10:12:49.030Z",codex-agent,Include no regression validation for existing key value invocations.
+files[5]{path,scope,note}:
+  AGENTS.md,project,agent workflow guidance for stdin token and markdown entry formats
+  CHANGELOG.md,project,unreleased notes for resilient parsing rollout
+  PRD.md,project,contract updates for entry formats and stdin token behavior
+  README.md,project,resilient entry input usage documentation
+  src/cli/main.ts,project,help text contracts updated for markdown and stdin token guidance
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,900,full sandboxed regression suite
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,480,runtime help contract regression
+docs[4]{path,scope,note}:
+  AGENTS.md,project,agent operating rules updated
+  CHANGELOG.md,project,release note entry for parser hardening
+  PRD.md,project,command contract updates
+  README.md,project,user-facing resilient entry format guide
+close_reason: Documentation and runtime verification updates completed for resilient entry input rollout.
+body: Task B1 for documentation and verification of resilient input behavior.

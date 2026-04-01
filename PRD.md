@@ -657,15 +657,15 @@ Mutating `create` (all schema fields MUST be passable explicitly):
 
 Mutating `create` flags (repeatable, each required at least once; use `none` for explicit empty intent):
 
-- `--dep` value format: `id=<id>,kind=<blocks|parent|child|related|discovered_from>,author=<a>,created_at=<iso|now>`
-- `--comment` value format: `author=<a>,created_at=<iso|now>,text=<t>`
-- `--note` value format: `author=<a>,created_at=<iso|now>,text=<t>`
-- `--learning` value format: `author=<a>,created_at=<iso|now>,text=<t>`
-- `--file` value format: `path=<p>,scope=<project|global>,note=<n?>`
-- `--test` value format: `command=<c?>,path=<p?>,scope=<project|global>,timeout_seconds=<n?>,note=<n?>`
-- `--doc` value format: `path=<p>,scope=<project|global>,note=<n?>`
-- `--reminder` value format: `at=<iso|relative>,text=<text>` (`none` for explicit clear)
-- `--type-option` / `--type_option` value format: `key=value` or `key=<name>,value=<value>` (`none` for explicit clear)
+- `--dep` value format: `id=<id>,kind=<blocks|parent|child|related|discovered_from>,author=<a>,created_at=<iso|now>` (also accepts markdown `key: value` lines and stdin token `-`)
+- `--comment` value format: `author=<a>,created_at=<iso|now>,text=<t>` (also accepts markdown `key: value` lines and stdin token `-`)
+- `--note` value format: `author=<a>,created_at=<iso|now>,text=<t>` (also accepts markdown `key: value` lines and stdin token `-`)
+- `--learning` value format: `author=<a>,created_at=<iso|now>,text=<t>` (also accepts markdown `key: value` lines and stdin token `-`)
+- `--file` value format: `path=<p>,scope=<project|global>,note=<n?>` (also accepts markdown `key: value` lines and stdin token `-`)
+- `--test` value format: `command=<c?>,path=<p?>,scope=<project|global>,timeout_seconds=<n?>,note=<n?>` (also accepts markdown `key: value` lines and stdin token `-`)
+- `--doc` value format: `path=<p>,scope=<project|global>,note=<n?>` (also accepts markdown `key: value` lines and stdin token `-`)
+- `--reminder` value format: `at=<iso|relative>,text=<text>` (also accepts markdown `key: value` lines and stdin token `-`; `none` for explicit clear)
+- `--type-option` / `--type_option` value format: `key=value`, `key:value`, or `key=<name>,value=<value>` (also accepts markdown `key: value` lines and stdin token `-`; `none` for explicit clear)
 
 Per-type option policy overrides (`settings.item_types.definitions[]` and extension `registerItemTypes(...)`):
 
@@ -775,17 +775,17 @@ All commands return deterministic top-level objects (TOON by default, JSON with 
 | `pm update <ID> ...` | id + patch-like flags (`--status closed` is rejected; use `pm close <ID> <TEXT>`) | `{ item, changed_fields, warnings }` |
 | `pm delete <ID>` | id + optional `--author`/`--message`/`--force` | `{ item, changed_fields, warnings }` |
 | `pm close <ID> <TEXT>` | id + close reason text + optional `--author/--message/--force` | `{ item, changed_fields, warnings }` |
-| `pm append <ID> --body` | id + appended markdown | `{ item, appended, changed_fields }` |
+| `pm append <ID> --body` | id + appended markdown (`--body -` reads piped stdin) | `{ item, appended, changed_fields }` |
 | `pm claim <ID>` | id, optional `--author`/`--message`/`--force` | `{ item, claimed_by, previous_assignee, forced }` |
 | `pm release <ID>` | id, optional `--author`/`--message`/`--force` | `{ item, released_by, previous_assignee, forced }` |
-| `pm comments <ID> --add/--limit` | id + comment text/limit | `{ id, comments, count }` |
-| `pm files <ID> --add/--remove` | id + file refs | `{ id, files, changed, count }` |
-| `pm test <ID> --add/--remove/--run` | id + test refs/options (reject recursive `test-all` linked commands at add-time, including global-flag and package-spec launcher forms such as `pm --json test-all`, `npx @unbrained/pm-cli@latest --json test-all`, `pnpm dlx @unbrained/pm-cli@latest --json test-all`, and `npm exec -- @unbrained/pm-cli@latest --json test-all`, defensively skip legacy recursive entries at run-time, and reject sandbox-unsafe test-runner commands including unsandboxed direct package-manager run-script forms such as `npm run test`/`pnpm run test` and chained direct runner segments evaluated independently) | `{ id, tests, run_results, changed, count }` |
+| `pm comments <ID> --add/--limit` | id + comment text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`) | `{ id, comments, count }` |
+| `pm files <ID> --add/--remove` | id + file refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`) | `{ id, files, changed, count }` |
+| `pm test <ID> --add/--remove/--run` | id + test refs/options (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`; reject recursive `test-all` linked commands at add-time, including global-flag and package-spec launcher forms such as `pm --json test-all`, `npx @unbrained/pm-cli@latest --json test-all`, `pnpm dlx @unbrained/pm-cli@latest --json test-all`, and `npm exec -- @unbrained/pm-cli@latest --json test-all`; defensively skip legacy recursive entries at run-time; reject sandbox-unsafe test-runner commands including unsandboxed direct package-manager run-script forms such as `npm run test`/`pnpm run test` and chained direct runner segments evaluated independently) | `{ id, tests, run_results, changed, count }` |
 | `pm test-all --status --timeout` | optional status filter; duplicate linked command/path entries are deduped per invocation (keyed by scope+normalized command or scope+path) and reported as skipped; when duplicate keys carry different `timeout_seconds`, execution uses deterministic maximum timeout for that key | `{ totals, failed, passed, skipped, results }` |
 | `pm stats` | none | `{ totals, by_type, by_status, generated_at }` |
 | `pm health` | none | `{ ok, checks, warnings, generated_at }` |
 | `pm gc` | none | `{ ok, removed, retained, warnings, generated_at }` |
-| `pm docs <ID> --add/--remove` | id + doc refs | `{ id, docs, changed, count }` |
+| `pm docs <ID> --add/--remove` | id + doc refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`) | `{ id, docs, changed, count }` |
 | `pm history <ID> --limit` | id + optional limit | `{ id, history, count, limit }` |
 | `pm activity --limit` | optional limit | `{ activity, count, limit }` |
 | `pm restore <ID> <TIMESTAMP\|VERSION>` | id + restore target + optional `--author/--message/--force` | `{ item, restored_from, changed_fields, warnings }` |

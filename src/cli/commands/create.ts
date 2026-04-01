@@ -2,7 +2,7 @@ import { pathExists, removeFileIfExists, writeFileAtomic } from "../../core/fs/f
 import { appendHistoryEntry, createHistoryEntry } from "../../core/history/history.js";
 import { generateItemId, normalizeItemId } from "../../core/item/id.js";
 import { canonicalDocument, normalizeFrontMatter, serializeItemDocument } from "../../core/item/item-format.js";
-import { parseCsvKv, parseOptionalNumber, parseTags } from "../../core/item/parse.js";
+import { createStdinTokenResolver, parseCsvKv, parseOptionalNumber, parseTags } from "../../core/item/parse.js";
 import {
   canonicalizeCommandOptionKey,
   commandOptionFlagLabel,
@@ -569,12 +569,22 @@ function parseTypeOptions(raw: string[] | undefined): { values: Record<string, s
     }
     let key: string | undefined;
     let value: string | undefined;
-    if (trimmedEntry.includes(",")) {
+    const prefersStructuredKv =
+      trimmedEntry.includes(",") ||
+      trimmedEntry.includes("\n") ||
+      trimmedEntry.startsWith("```") ||
+      /^(?:[-*+]\s+)?(?:key|value)\s*[:=]/i.test(trimmedEntry);
+    if (prefersStructuredKv) {
       const kv = parseCsvKv(trimmedEntry, "--type-option");
       key = parseOptionalString(kv.key)?.trim();
       value = parseOptionalString(kv.value)?.trim();
     } else {
-      const separatorIndex = trimmedEntry.indexOf("=");
+      const equalsIndex = trimmedEntry.indexOf("=");
+      const colonIndex = trimmedEntry.indexOf(":");
+      let separatorIndex = equalsIndex;
+      if (equalsIndex <= 0 && colonIndex > 0) {
+        separatorIndex = colonIndex;
+      }
       if (separatorIndex <= 0 || separatorIndex === trimmedEntry.length - 1) {
         throw new PmCliError(
           "--type-option requires key=value or key=<name>,value=<value> entries",
@@ -593,6 +603,24 @@ function parseTypeOptions(raw: string[] | undefined): { values: Record<string, s
   return {
     values: Object.fromEntries(sortedEntries),
     explicitEmpty: false,
+  };
+}
+
+async function resolveCreateStdinInputs(options: CreateCommandOptions): Promise<CreateCommandOptions> {
+  const stdinResolver = createStdinTokenResolver();
+  return {
+    ...options,
+    body: await stdinResolver.resolveValue(options.body, "--body"),
+    dep: await stdinResolver.resolveList(options.dep, "--dep"),
+    comment: await stdinResolver.resolveList(options.comment, "--comment"),
+    note: await stdinResolver.resolveList(options.note, "--note"),
+    learning: await stdinResolver.resolveList(options.learning, "--learning"),
+    file: await stdinResolver.resolveList(options.file, "--file"),
+    test: await stdinResolver.resolveList(options.test, "--test"),
+    doc: await stdinResolver.resolveList(options.doc, "--doc"),
+    reminder: await stdinResolver.resolveList(options.reminder, "--reminder"),
+    event: await stdinResolver.resolveList(options.event, "--event"),
+    typeOption: await stdinResolver.resolveList(options.typeOption, "--type-option"),
   };
 }
 
@@ -728,84 +756,85 @@ function ensureInitHasRun(pmRoot: string): Promise<void> {
 }
 
 export async function runCreate(options: CreateCommandOptions, global: GlobalOptions): Promise<CreateResult> {
+  const resolvedOptions = await resolveCreateStdinInputs(options);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await ensureInitHasRun(pmRoot);
 
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const resolvedTypeName = resolveTypeName(options.type, typeRegistry);
+  const resolvedTypeName = resolveTypeName(resolvedOptions.type, typeRegistry);
   if (!resolvedTypeName) {
     throw new PmCliError(
-      `Invalid type value "${options.type}". Allowed: ${typeRegistry.types.join(", ")}`,
+      `Invalid type value "${resolvedOptions.type}". Allowed: ${typeRegistry.types.join(", ")}`,
       EXIT_CODE.USAGE,
     );
   }
   const typeDefinition = resolveTypeDefinition(resolvedTypeName, typeRegistry);
   if (!typeDefinition) {
-    throw new PmCliError(`Invalid type value "${options.type}"`, EXIT_CODE.USAGE);
+    throw new PmCliError(`Invalid type value "${resolvedOptions.type}"`, EXIT_CODE.USAGE);
   }
-  requireCreateOptionByType(typeDefinition, options);
+  requireCreateOptionByType(typeDefinition, resolvedOptions);
   const nowValue = nowIso();
-  const author = selectAuthor(options.author, settings.author_default);
+  const author = selectAuthor(resolvedOptions.author, settings.author_default);
   const explicitUnsets: string[] = [];
 
-  const dependencies = parseDependencies(options.dep, nowValue, settings.id_prefix);
+  const dependencies = parseDependencies(resolvedOptions.dep, nowValue, settings.id_prefix);
   if (dependencies.explicitEmpty) explicitUnsets.push("dependencies");
-  const comments = parseLogSeed("--comment", options.comment, nowValue, author);
+  const comments = parseLogSeed("--comment", resolvedOptions.comment, nowValue, author);
   if (comments.explicitEmpty) explicitUnsets.push("comments");
-  const notes = parseLogSeed("--note", options.note, nowValue, author);
+  const notes = parseLogSeed("--note", resolvedOptions.note, nowValue, author);
   if (notes.explicitEmpty) explicitUnsets.push("notes");
-  const learnings = parseLogSeed("--learning", options.learning, nowValue, author);
+  const learnings = parseLogSeed("--learning", resolvedOptions.learning, nowValue, author);
   if (learnings.explicitEmpty) explicitUnsets.push("learnings");
-  const files = parseFiles(options.file);
+  const files = parseFiles(resolvedOptions.file);
   if (files.explicitEmpty) explicitUnsets.push("files");
-  const tests = parseTests(options.test);
+  const tests = parseTests(resolvedOptions.test);
   if (tests.explicitEmpty) explicitUnsets.push("tests");
-  const docs = parseDocs(options.doc);
+  const docs = parseDocs(resolvedOptions.doc);
   if (docs.explicitEmpty) explicitUnsets.push("docs");
-  const reminders = parseReminders(options.reminder, nowValue);
+  const reminders = parseReminders(resolvedOptions.reminder, nowValue);
   if (reminders.explicitEmpty) explicitUnsets.push("reminders");
-  const events = parseEvents(options.event, nowValue);
+  const events = parseEvents(resolvedOptions.event, nowValue);
   if (events.explicitEmpty) explicitUnsets.push("events");
-  const typeOptions = parseTypeOptions(options.typeOption);
+  const typeOptions = parseTypeOptions(resolvedOptions.typeOption);
   if (typeOptions.explicitEmpty) explicitUnsets.push("type_options");
 
   const scalarExplicitUnsetCandidates: ReadonlyArray<readonly [string | undefined, string]> = [
-    [options.deadline, "deadline"],
-    [options.estimatedMinutes, "estimated_minutes"],
-    [options.acceptanceCriteria, "acceptance_criteria"],
-    [options.definitionOfReady, "definition_of_ready"],
-    [options.order, "order"],
-    [options.rank, "order"],
-    [options.goal, "goal"],
-    [options.objective, "objective"],
-    [options.value, "value"],
-    [options.impact, "impact"],
-    [options.outcome, "outcome"],
-    [options.whyNow, "why_now"],
-    [options.assignee, "assignee"],
-    [options.author, "author"],
-    [options.parent, "parent"],
-    [options.reviewer, "reviewer"],
-    [options.risk, "risk"],
-    [options.confidence, "confidence"],
-    [options.sprint, "sprint"],
-    [options.release, "release"],
-    [options.blockedBy, "blocked_by"],
-    [options.blockedReason, "blocked_reason"],
-    [options.unblockNote, "unblock_note"],
-    [options.reporter, "reporter"],
-    [options.severity, "severity"],
-    [options.environment, "environment"],
-    [options.reproSteps, "repro_steps"],
-    [options.resolution, "resolution"],
-    [options.expectedResult, "expected_result"],
-    [options.actualResult, "actual_result"],
-    [options.affectedVersion, "affected_version"],
-    [options.fixedVersion, "fixed_version"],
-    [options.component, "component"],
-    [options.regression, "regression"],
-    [options.customerImpact, "customer_impact"],
+    [resolvedOptions.deadline, "deadline"],
+    [resolvedOptions.estimatedMinutes, "estimated_minutes"],
+    [resolvedOptions.acceptanceCriteria, "acceptance_criteria"],
+    [resolvedOptions.definitionOfReady, "definition_of_ready"],
+    [resolvedOptions.order, "order"],
+    [resolvedOptions.rank, "order"],
+    [resolvedOptions.goal, "goal"],
+    [resolvedOptions.objective, "objective"],
+    [resolvedOptions.value, "value"],
+    [resolvedOptions.impact, "impact"],
+    [resolvedOptions.outcome, "outcome"],
+    [resolvedOptions.whyNow, "why_now"],
+    [resolvedOptions.assignee, "assignee"],
+    [resolvedOptions.author, "author"],
+    [resolvedOptions.parent, "parent"],
+    [resolvedOptions.reviewer, "reviewer"],
+    [resolvedOptions.risk, "risk"],
+    [resolvedOptions.confidence, "confidence"],
+    [resolvedOptions.sprint, "sprint"],
+    [resolvedOptions.release, "release"],
+    [resolvedOptions.blockedBy, "blocked_by"],
+    [resolvedOptions.blockedReason, "blocked_reason"],
+    [resolvedOptions.unblockNote, "unblock_note"],
+    [resolvedOptions.reporter, "reporter"],
+    [resolvedOptions.severity, "severity"],
+    [resolvedOptions.environment, "environment"],
+    [resolvedOptions.reproSteps, "repro_steps"],
+    [resolvedOptions.resolution, "resolution"],
+    [resolvedOptions.expectedResult, "expected_result"],
+    [resolvedOptions.actualResult, "actual_result"],
+    [resolvedOptions.affectedVersion, "affected_version"],
+    [resolvedOptions.fixedVersion, "fixed_version"],
+    [resolvedOptions.component, "component"],
+    [resolvedOptions.regression, "regression"],
+    [resolvedOptions.customerImpact, "customer_impact"],
   ];
   for (const [value, key] of scalarExplicitUnsetCandidates) {
     if (isNoneToken(value)) {
@@ -815,72 +844,82 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
 
   const id = await generateItemId(pmRoot, settings.id_prefix);
   const type = typeDefinition.name;
-  const status = options.status !== undefined ? ensureEnumValue(options.status, STATUS_VALUES, "status") : "open";
-  const priority = options.priority !== undefined ? ensurePriority(options.priority) : 2;
-  const tags = options.tags !== undefined ? parseTags(options.tags) : [];
+  const status = resolvedOptions.status !== undefined ? ensureEnumValue(resolvedOptions.status, STATUS_VALUES, "status") : "open";
+  const priority = resolvedOptions.priority !== undefined ? ensurePriority(resolvedOptions.priority) : 2;
+  const tags = resolvedOptions.tags !== undefined ? parseTags(resolvedOptions.tags) : [];
 
   const deadline =
-    options.deadline === undefined || isNoneToken(options.deadline)
+    resolvedOptions.deadline === undefined || isNoneToken(resolvedOptions.deadline)
       ? undefined
-      : resolveIsoOrRelative(options.deadline, new Date(nowValue));
+      : resolveIsoOrRelative(resolvedOptions.deadline, new Date(nowValue));
   const estimatedMinutes =
-    options.estimatedMinutes === undefined || isNoneToken(options.estimatedMinutes)
+    resolvedOptions.estimatedMinutes === undefined || isNoneToken(resolvedOptions.estimatedMinutes)
       ? undefined
-      : parseOptionalNumber(options.estimatedMinutes, "estimated-minutes");
+      : parseOptionalNumber(resolvedOptions.estimatedMinutes, "estimated-minutes");
   const acceptanceCriteria =
-    options.acceptanceCriteria === undefined || isNoneToken(options.acceptanceCriteria)
+    resolvedOptions.acceptanceCriteria === undefined || isNoneToken(resolvedOptions.acceptanceCriteria)
       ? undefined
-      : options.acceptanceCriteria;
-  const definitionOfReady = options.definitionOfReady !== undefined ? parseOptionalString(options.definitionOfReady) : undefined;
-  if (options.order !== undefined && options.rank !== undefined && options.order !== options.rank) {
+      : resolvedOptions.acceptanceCriteria;
+  const definitionOfReady =
+    resolvedOptions.definitionOfReady !== undefined ? parseOptionalString(resolvedOptions.definitionOfReady) : undefined;
+  if (
+    resolvedOptions.order !== undefined &&
+    resolvedOptions.rank !== undefined &&
+    resolvedOptions.order !== resolvedOptions.rank
+  ) {
     throw new PmCliError("--order and --rank must match when both are provided", EXIT_CODE.USAGE);
   }
-  const orderRaw = options.order ?? options.rank;
+  const orderRaw = resolvedOptions.order ?? resolvedOptions.rank;
   const order = orderRaw === undefined || isNoneToken(orderRaw) ? undefined : parseOptionalNumber(orderRaw, "order");
   if (order !== undefined && !Number.isInteger(order)) {
     throw new PmCliError("Order must be an integer", EXIT_CODE.USAGE);
   }
-  const goal = options.goal !== undefined ? parseOptionalString(options.goal) : undefined;
-  const objective = options.objective !== undefined ? parseOptionalString(options.objective) : undefined;
-  const value = options.value !== undefined ? parseOptionalString(options.value) : undefined;
-  const impact = options.impact !== undefined ? parseOptionalString(options.impact) : undefined;
-  const outcome = options.outcome !== undefined ? parseOptionalString(options.outcome) : undefined;
-  const whyNow = options.whyNow !== undefined ? parseOptionalString(options.whyNow) : undefined;
-  const assignee = options.assignee !== undefined ? parseOptionalString(options.assignee) : undefined;
-  const authorValue = parseOptionalString(options.author) ?? author;
-  const parent = options.parent !== undefined ? parseOptionalString(options.parent) : undefined;
-  const reviewer = options.reviewer !== undefined ? parseOptionalString(options.reviewer) : undefined;
-  const riskRaw = options.risk !== undefined ? parseOptionalString(options.risk) : undefined;
+  const goal = resolvedOptions.goal !== undefined ? parseOptionalString(resolvedOptions.goal) : undefined;
+  const objective = resolvedOptions.objective !== undefined ? parseOptionalString(resolvedOptions.objective) : undefined;
+  const value = resolvedOptions.value !== undefined ? parseOptionalString(resolvedOptions.value) : undefined;
+  const impact = resolvedOptions.impact !== undefined ? parseOptionalString(resolvedOptions.impact) : undefined;
+  const outcome = resolvedOptions.outcome !== undefined ? parseOptionalString(resolvedOptions.outcome) : undefined;
+  const whyNow = resolvedOptions.whyNow !== undefined ? parseOptionalString(resolvedOptions.whyNow) : undefined;
+  const assignee = resolvedOptions.assignee !== undefined ? parseOptionalString(resolvedOptions.assignee) : undefined;
+  const authorValue = parseOptionalString(resolvedOptions.author) ?? author;
+  const parent = resolvedOptions.parent !== undefined ? parseOptionalString(resolvedOptions.parent) : undefined;
+  const reviewer = resolvedOptions.reviewer !== undefined ? parseOptionalString(resolvedOptions.reviewer) : undefined;
+  const riskRaw = resolvedOptions.risk !== undefined ? parseOptionalString(resolvedOptions.risk) : undefined;
   const risk = riskRaw !== undefined ? ensureEnumValue(normalizeRiskInput(riskRaw), RISK_VALUES, "risk") : undefined;
-  const confidenceRaw = options.confidence !== undefined ? parseOptionalString(options.confidence) : undefined;
+  const confidenceRaw = resolvedOptions.confidence !== undefined ? parseOptionalString(resolvedOptions.confidence) : undefined;
   const confidence = confidenceRaw !== undefined ? parseConfidenceInput(confidenceRaw) : undefined;
-  const sprint = options.sprint !== undefined ? parseOptionalString(options.sprint) : undefined;
-  const release = options.release !== undefined ? parseOptionalString(options.release) : undefined;
-  const blockedBy = options.blockedBy !== undefined ? parseOptionalString(options.blockedBy) : undefined;
-  const blockedReason = options.blockedReason !== undefined ? parseOptionalString(options.blockedReason) : undefined;
-  const unblockNote = options.unblockNote !== undefined ? parseOptionalString(options.unblockNote) : undefined;
-  const reporter = options.reporter !== undefined ? parseOptionalString(options.reporter) : undefined;
-  const severityRaw = options.severity !== undefined ? parseOptionalString(options.severity) : undefined;
+  const sprint = resolvedOptions.sprint !== undefined ? parseOptionalString(resolvedOptions.sprint) : undefined;
+  const release = resolvedOptions.release !== undefined ? parseOptionalString(resolvedOptions.release) : undefined;
+  const blockedBy = resolvedOptions.blockedBy !== undefined ? parseOptionalString(resolvedOptions.blockedBy) : undefined;
+  const blockedReason =
+    resolvedOptions.blockedReason !== undefined ? parseOptionalString(resolvedOptions.blockedReason) : undefined;
+  const unblockNote = resolvedOptions.unblockNote !== undefined ? parseOptionalString(resolvedOptions.unblockNote) : undefined;
+  const reporter = resolvedOptions.reporter !== undefined ? parseOptionalString(resolvedOptions.reporter) : undefined;
+  const severityRaw = resolvedOptions.severity !== undefined ? parseOptionalString(resolvedOptions.severity) : undefined;
   const severity =
     severityRaw !== undefined ? ensureEnumValue(normalizeSeverityInput(severityRaw), ISSUE_SEVERITY_VALUES, "severity") : undefined;
-  const environment = options.environment !== undefined ? parseOptionalString(options.environment) : undefined;
-  const reproSteps = options.reproSteps !== undefined ? parseOptionalString(options.reproSteps) : undefined;
-  const resolution = options.resolution !== undefined ? parseOptionalString(options.resolution) : undefined;
-  const expectedResult = options.expectedResult !== undefined ? parseOptionalString(options.expectedResult) : undefined;
-  const actualResult = options.actualResult !== undefined ? parseOptionalString(options.actualResult) : undefined;
-  const affectedVersion = options.affectedVersion !== undefined ? parseOptionalString(options.affectedVersion) : undefined;
-  const fixedVersion = options.fixedVersion !== undefined ? parseOptionalString(options.fixedVersion) : undefined;
-  const component = options.component !== undefined ? parseOptionalString(options.component) : undefined;
-  const regressionRaw = options.regression !== undefined ? parseOptionalString(options.regression) : undefined;
+  const environment = resolvedOptions.environment !== undefined ? parseOptionalString(resolvedOptions.environment) : undefined;
+  const reproSteps = resolvedOptions.reproSteps !== undefined ? parseOptionalString(resolvedOptions.reproSteps) : undefined;
+  const resolution = resolvedOptions.resolution !== undefined ? parseOptionalString(resolvedOptions.resolution) : undefined;
+  const expectedResult =
+    resolvedOptions.expectedResult !== undefined ? parseOptionalString(resolvedOptions.expectedResult) : undefined;
+  const actualResult = resolvedOptions.actualResult !== undefined ? parseOptionalString(resolvedOptions.actualResult) : undefined;
+  const affectedVersion =
+    resolvedOptions.affectedVersion !== undefined ? parseOptionalString(resolvedOptions.affectedVersion) : undefined;
+  const fixedVersion =
+    resolvedOptions.fixedVersion !== undefined ? parseOptionalString(resolvedOptions.fixedVersion) : undefined;
+  const component = resolvedOptions.component !== undefined ? parseOptionalString(resolvedOptions.component) : undefined;
+  const regressionRaw = resolvedOptions.regression !== undefined ? parseOptionalString(resolvedOptions.regression) : undefined;
   const regression = regressionRaw !== undefined ? parseRegressionInput(regressionRaw) : undefined;
-  const customerImpact = options.customerImpact !== undefined ? parseOptionalString(options.customerImpact) : undefined;
+  const customerImpact =
+    resolvedOptions.customerImpact !== undefined ? parseOptionalString(resolvedOptions.customerImpact) : undefined;
   const validatedTypeOptions = validateTypeOptions(type, typeOptions.values, typeRegistry);
   if (validatedTypeOptions.errors.length > 0) {
     throw new PmCliError(validatedTypeOptions.errors.join("; "), EXIT_CODE.USAGE);
   }
-  const title = requireStringOption(options.title, "--title");
-  const description = requireStringOption(options.description, "--description");
-  const body = options.body ?? "";
+  const title = requireStringOption(resolvedOptions.title, "--title");
+  const description = requireStringOption(resolvedOptions.description, "--description");
+  const body = resolvedOptions.body ?? "";
 
   const frontMatter: ItemFrontMatter = normalizeFrontMatter({
     id,
@@ -958,7 +997,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const itemPath = getItemPath(pmRoot, type, id, settings.item_format, typeRegistry.type_to_folder);
   const historyPath = getHistoryPath(pmRoot, id);
   const lockRelease = await acquireLock(pmRoot, id, settings.locks.ttl_seconds, author);
-  const historyMessage = buildHistoryMessage(options.message, explicitUnsets);
+  const historyMessage = buildHistoryMessage(resolvedOptions.message, explicitUnsets);
   let hookWarnings: string[] = [];
 
   try {
