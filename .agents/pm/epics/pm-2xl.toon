@@ -6,11 +6,41 @@ status: closed
 priority: 0
 tags[4]: "area:foundations",core,"milestone:0",pm-cli
 created_at: "2026-02-17T23:01:10.322Z"
-updated_at: "2026-02-22T18:34:23.791Z"
+updated_at: "2026-04-01T20:30:57.011Z"
 deadline: "2026-02-20T23:01:10.322Z"
+assignee: steve
 author: steve
 estimated_minutes: 360
 acceptance_criteria: Milestone 0 checklist items are implemented and verifiable.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 1
+goal: epic-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-epic-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-2xl
+reviewer: maintainer-review
+risk: high
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-j7a
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: steve
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: foundations-component
+regression: false
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-j7a,child,"2026-02-17T23:01:10.322Z",steve,null
 comments[3]{created_at,author,text}:
@@ -19,6 +49,8 @@ comments[3]{created_at,author,text}:
   "2026-02-22T18:34:23.058Z",maintainer-agent,"Evidence: verified Milestone 0 PRD checklist alignment with current CLI help/README/AGENTS contracts. Validation commands: node dist/cli.js test pm-2xl --run --timeout 3600 --json => passed 2/2 linked tests (coverage + release-readiness contract). node dist/cli.js test-all --status in_progress --timeout 3600 --json => totals items=9 linked_tests=30 passed=11 failed=0 skipped=19. node dist/cli.js test-all --status closed --timeout 3600 --json => totals items=26 linked_tests=99 passed=46 failed=0 skipped=53. Coverage statement: node scripts/run-tests.mjs coverage in this run remained 100% lines/branches/functions/statements (All files 100/100/100/100). Follow-up items: none created; remaining open work continues under milestone 4/5 in-progress tasks."
 notes[1]{created_at,author,text}:
   "2026-02-17T23:01:10.322Z",steve,Success is measured by help output config precedence and deterministic helpers.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:30:57.011Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow compliance
   PRD.md,project,milestone 0 completion source

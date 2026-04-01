@@ -6,12 +6,41 @@ status: closed
 priority: 1
 tags[5]: "area:calendar","area:recurrence","area:schema",core,pm-cli
 created_at: "2026-03-31T22:29:34.035Z"
-updated_at: "2026-03-31T23:27:09.624Z"
+updated_at: "2026-04-01T20:25:07.112Z"
 deadline: "2026-04-10T22:29:34.035Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 300
 acceptance_criteria: Items can persist event and recurrence metadata safely; create/update flows support deterministic set/unset semantics.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: feature-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-feature-record
+why_now: global-pm-audit-requires-complete-fields
 parent: pm-vdrn
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-c877
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: calendar-component
+regression: false
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-c877,related,"2026-03-31T22:29:34.035Z",codex-agent,null
 comments[2]{created_at,author,text}:
@@ -19,6 +48,8 @@ comments[2]{created_at,author,text}:
   "2026-03-31T23:27:08.601Z",codex-agent,Schema and mutation contracts for events/recurrence are implemented and validated with 100 percent coverage.
 notes[1]{created_at,author,text}:
   "2026-03-31T22:29:34.035Z",codex-agent,Keep event fields optional for backward compatibility.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:24:38.416Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/core/item/item-format.ts,project,event and recurrence normalization
 tests[1]{command,path,scope,timeout_seconds,note}:

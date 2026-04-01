@@ -6,26 +6,48 @@ status: closed
 priority: 1
 tags[7]: "area:ci","area:docs",code,doc,"milestone:6",pm-cli,tests
 created_at: "2026-03-08T21:32:45.349Z"
-updated_at: "2026-03-08T21:39:14.145Z"
+updated_at: "2026-04-01T20:34:55.822Z"
 deadline: "2026-03-09T21:32:45.349Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: Node 25 in nightly workflow YAML and contract test. docs/ with ARCHITECTURE.md and EXTENSIONS.md. 100% coverage maintained.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
 goal: Release readiness
 objective: Forward-compat CI and contributor docs
 value: Enables forward compatibility testing and lowers contributor onboarding friction
 impact: Prevents Node 25 regressions early; helps contributors understand codebase
 outcome: Node 25 in nightly; docs/ with architecture and extension guides
 why_now: Node 25 is current; docs/ is a standard production artifact missing from the repo
+parent: pm-aa6w
+reviewer: maintainer-review
 risk: low
 confidence: high
 sprint: maintainer-loop
 release: v0.1.0
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: v0.1.0
+fixed_version: v0.1.0
+component: ci-component
+regression: false
+customer_impact: improves-reliability-and-clarity-for-contributors
 comments[2]{created_at,author,text}:
   "2026-03-08T21:32:45.349Z",maintainer-agent,Node 25 tested locally and passes all 535 tests. Adding to nightly for forward-compat coverage.
   "2026-03-08T21:38:52.472Z",maintainer-agent,"Tests passed: 535/535. Coverage: 100% all metrics. Node 25 nightly added, docs/ created (ARCHITECTURE.md + EXTENSIONS.md), package.json files includes docs/**, contract tests updated."
 notes[1]{created_at,author,text}:
   "2026-03-08T21:32:45.349Z",maintainer-agent,"Plan: add Node 25 to nightly matrix and contract test + create docs/ARCHITECTURE.md and docs/EXTENSIONS.md."
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:34:55.822Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[8]{path,scope,note}:
   .github/workflows/nightly.yml,project,add Node 25 to matrix
   CHANGELOG.md,project,documented Node 25 and docs/ additions

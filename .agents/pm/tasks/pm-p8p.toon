@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[4]: "area:extensions-hooks",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:02:11.494Z"
-updated_at: "2026-03-04T12:45:59.569Z"
+updated_at: "2026-04-01T20:33:57.891Z"
 deadline: "2026-03-13T23:02:11.494Z"
+assignee: steve
 author: steve
 estimated_minutes: 150
 acceptance_criteria: Extensions can register before/after/read/write/index hooks deterministically; before/after command hooks execute in deterministic order without breaking core commands when hooks fail; coverage and regression sweeps remain green at 100%.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-p8p
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-b1w
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: steve
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: extensions-hooks-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-b1w,parent,"2026-02-17T23:02:11.494Z",steve,null
   pm-f45,blocks,"2026-02-17T23:02:11.494Z",steve,null
@@ -38,6 +68,10 @@ comments[23]{created_at,author,text}:
   "2026-03-04T02:42:42.192Z",cursor-maintainer,"Implemented docs-first hook call-site expansion for built-in import/export paths. Docs: updated PRD.md milestone hook-lifecycle checklist and README planned-search/extensions baseline to include built-in beads/todos import-export source/item/history file operations. Code: src/cli/commands/beads.ts now dispatches onRead for source JSONL and onWrite for imported item/history writes (import + import:history); src/extensions/builtins/todos/import-export.ts now dispatches onRead for source folder/markdown reads and onWrite for imported item/history writes and exported markdown writes (todos:export), with deterministic warning propagation. Tests: added hook-dispatch regressions in tests/unit/beads-command.spec.ts and tests/unit/todos-extension.spec.ts. Evidence: pnpm build passed; node scripts/run-tests.mjs test -- tests/unit/beads-command.spec.ts tests/unit/todos-extension.spec.ts passed (24/24). Mandatory item run passed: pm test pm-p8p --run --timeout 7200 --json with 8 passed, 0 failed, 0 skipped linked tests. Regression sweeps passed: pm test-all --status in_progress --timeout 7200 --json totals items=7 linked_tests=32 passed=16 failed=0 skipped=16; pm test-all --status closed --timeout 7200 --json totals items=37 linked_tests=128 passed=51 failed=0 skipped=77. Coverage proof: node scripts/run-tests.mjs coverage reports All files 100% statements/branches/functions/lines. Follow-up items created: none."
   "2026-03-04T12:20:40.317Z",cursor-maintainer,"Planned closure pass: run mandatory pm test pm-p8p --run, then pm test-all sweeps (in_progress + closed), log evidence, and close if all checks remain green with 100% coverage."
   "2026-03-04T12:45:58.910Z",cursor-maintainer,"Evidence: pm test pm-p8p --run --timeout 7200 --json passed all linked tests (8 passed, 0 failed, 0 skipped), including node scripts/run-tests.mjs coverage reporting All files 100% statements/branches/functions/lines. Regression sweeps passed: pm test-all --status in_progress --timeout 7200 --json totals items=5 linked_tests=25 passed=14 failed=0 skipped=11; pm test-all --status closed --timeout 7200 --json totals items=40 linked_tests=138 passed=52 failed=0 skipped=86. Acceptance criteria met: deterministic before/after/read/write/index hook lifecycle behavior validated with sandbox-safe regression coverage and no failures."
+notes[1]{created_at,author,text}:
+  "2026-04-01T20:33:56.484Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:33:57.891Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[27]{path,scope,note}:
   PRD.md,project,align hook lifecycle milestone wording with search onRead call-site expansion
   README.md,project,docs-first afterCommand failure-path contract clarification

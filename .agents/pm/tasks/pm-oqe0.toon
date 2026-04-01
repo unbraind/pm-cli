@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[8]: "area:extensions-pi",code,doc,"milestone:6",pm-cli,"priority:0",release-readiness,tests
 created_at: "2026-03-08T18:43:57.258Z"
-updated_at: "2026-03-08T19:24:04.471Z"
+updated_at: "2026-04-01T20:32:11.339Z"
 deadline: "2026-03-09T20:00:00.000Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 75
 acceptance_criteria: "Pi wrapper accepts action=completion with shell bash|zsh|fish, forwards deterministic CLI args, docs reflect the action surface, and coverage remains 100 percent."
@@ -19,12 +20,24 @@ value: Pi agents can use shell completion generation without dropping to raw she
 impact: Reduces wrapper-to-CLI parity drift and manual workarounds
 outcome: Pi wrapper dispatches completion action deterministically
 why_now: Roadmap still references action coverage expansion and completion is a low-risk high-parity gap
+parent: pm-oqe0
+reviewer: maintainer-review
 risk: low
 confidence: high
 sprint: maintainer-loop-2026-03-08
 release: v0.1
+blocked_by: pm-096j
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
 expected_result: Pi wrapper completion action works and docs/tests stay aligned
+actual_result: current-state-matches-expected-behavior
 affected_version: 0.1.0
+fixed_version: v0.1
 component: pi-wrapper
 regression: false
 customer_impact: Improves automation ergonomics for shell completion setup
@@ -37,6 +50,8 @@ comments[4]{created_at,author,text}:
   "2026-03-08T19:23:50.031Z",maintainer-agent,"Evidence: pm test pm-oqe0 --run --timeout 7200 --json passed linked tests 2/2 (coverage + targeted parity regression). pm test-all --status in_progress --timeout 7200 --json passed with items=1 linked_tests=2 passed=2 failed=0 skipped=0. pm test-all --status closed --timeout 7200 --json passed on deterministic rerun with items=158 linked_tests=396 passed=72 failed=0 skipped=324. Coverage remains 100 percent statements branches functions lines."
 notes[1]{created_at,author,text}:
   "2026-03-08T18:43:57.258Z",maintainer-agent,Plan docs first then wrapper action schema/dispatch tests and release contract guard.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:32:11.339Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[6]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,add completion action schema and arg mapping
   AGENTS.md,project,Pi wrapper completion usage guidance

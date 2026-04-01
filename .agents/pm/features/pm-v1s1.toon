@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:learnings","area:notes",external-audit,pm-cli
 created_at: "2026-04-01T16:22:25.478Z"
-updated_at: "2026-04-01T17:00:09.532Z"
+updated_at: "2026-04-01T20:36:21.224Z"
 deadline: "2026-04-07T16:22:25.478Z"
+assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 220
 acceptance_criteria: Users can add/list notes and learnings for existing items via dedicated commands; completion/help/wrapper/output surfaces are updated and tested.
@@ -20,10 +21,23 @@ impact: Improves PM workflow completeness
 outcome: pm notes and pm learnings are first-class commands with regression coverage
 why_now: Audit showed existing items lack mutation path for notes/learnings
 parent: pm-my6o
+reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: audit-remediation
 release: vnext
+blocked_by: pm-my6o
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: cursor-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: vnext
+fixed_version: vnext
 component: cli-commands
 regression: true
 customer_impact: Users can track durable notes and learnings on active items
@@ -34,5 +48,13 @@ comments[2]{created_at,author,text}:
   "2026-04-01T17:00:07.619Z",cursor-agent,"Feature scope complete: child task pm-c465 is closed with runtime wiring, help/completion/output/Pi parity, and targeted/full test evidence for notes/learnings commands."
 notes[1]{created_at,author,text}:
   "2026-04-01T16:22:25.478Z",cursor-agent,"Will include command registration,command-aware output,completion/help,and Pi wrapper parity."
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:36:21.224Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
+files[1]{path,scope,note}:
+  README.md,project,metadata-audit-linked-context
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,7200,metadata-audit-baseline-regression
+docs[1]{path,scope,note}:
+  README.md,project,metadata-audit-documentation-context
 close_reason: Notes/learnings feature parity shipped with regression coverage.
 body: Resolves Issue 1 by adding dedicated commands and wrapper/help/completion parity.

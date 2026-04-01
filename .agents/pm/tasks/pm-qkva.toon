@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:docs","area:terminal",compatibility,doc,pm-cli
 created_at: "2026-04-01T12:00:27.553Z"
-updated_at: "2026-04-01T19:12:50.974Z"
+updated_at: "2026-04-01T20:36:31.849Z"
 deadline: "2026-04-08T12:00:27.553Z"
+assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 90
 acceptance_criteria: All required docs include accurate terminal compatibility guidance and stdin/EOF usage notes aligned with implementation.
@@ -20,8 +21,23 @@ impact: Safer adoption across terminal environments
 outcome: Documentation accurately reflects runtime behavior
 why_now: Behavior hardening must ship with clear user and maintainer guidance.
 parent: pm-t6f7
+reviewer: maintainer-review
 risk: low
 confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-t6f7
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: cursor-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
 component: docs
 regression: true
 customer_impact: Users can self-serve terminal-safe usage patterns.
@@ -34,6 +50,8 @@ comments[4]{created_at,author,text}:
   "2026-04-01T19:10:49.683Z",cursor-agent,"Updated terminal compatibility docs in README.md, docs/ARCHITECTURE.md, PRD.md, and CHANGELOG.md to document spawn-based linked-test runtime behavior, default stderr heartbeat progress in interactive terminals, and timeout force-kill fallback expectations. Verification context: node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts remains passing as part of full regression."
 notes[1]{created_at,author,text}:
   "2026-04-01T12:00:27.553Z",cursor-agent,Add concise compatibility guarantees and limitations section plus stdin EOF guidance.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:36:31.849Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[6]{path,scope,note}:
   AGENTS.md,project,agent operating guidance
   CHANGELOG.md,project,release notes

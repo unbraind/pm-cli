@@ -6,15 +6,50 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","milestone:5",pm-cli,roadmap
 created_at: "2026-03-07T14:01:19.679Z"
-updated_at: "2026-03-07T14:45:41.464Z"
+updated_at: "2026-04-01T20:36:45.616Z"
+deadline: "2026-03-21T14:01:19.679Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: Pi wrapper invokes pm when available and otherwise falls back to the packaged dist/cli.js path; behavior is documented and covered by unit tests.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 3
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-bdz5
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: extensions-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 comments[4]{created_at,author,text}:
   "2026-03-07T14:13:48.475Z",maintainer-agent,Claimed task. Will review Pi extension packaging and distribution.
   "2026-03-07T14:23:51.706Z",maintainer-agent,"Planned changeset: document and harden Pi wrapper packaging fallback so missing global pm deterministically falls back to this package's dist/cli.js path; add regression assertions for fallback path correctness."
   "2026-03-07T14:45:40.940Z",maintainer-agent,"Implemented Pi wrapper fallback path hardening: corrected node fallback from .pi extension to packaged dist/cli.js and added regression assertions that fallback path is absolute, resolves under /pm-cli/dist/cli.js, and exists on disk."
   "2026-03-07T14:45:41.111Z",maintainer-agent,"Evidence: pm test pm-bdz5 --run passed (8/8); pm test-all --status in_progress passed (1 linked test); pm test-all --status closed passed (items=129 linked_tests=341 passed=62 failed=0 skipped=279); node scripts/run-tests.mjs coverage reports 100% statements/branches/functions/lines."
+notes[1]{created_at,author,text}:
+  "2026-04-01T20:36:44.392Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:36:45.616Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[4]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,Pi extension module
   PRD.md,project,Specify packaged dist fallback contract

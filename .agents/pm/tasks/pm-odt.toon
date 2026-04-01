@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[4]: "area:extensions-beads",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:02:11.883Z"
-updated_at: "2026-03-04T12:09:34.501Z"
+updated_at: "2026-04-01T20:33:55.416Z"
 deadline: "2026-03-13T23:02:11.883Z"
+assignee: steve
 author: steve
 estimated_minutes: 120
 acceptance_criteria: Beads import maps source records and writes create/import history.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-odt
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-b1w
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: steve
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: extensions-beads-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-b1w,parent,"2026-02-17T23:02:11.883Z",steve,null
   pm-f45,blocks,"2026-02-17T23:02:11.883Z",steve,null
@@ -29,6 +59,10 @@ comments[14]{created_at,author,text}:
   "2026-02-19T21:25:48.322Z",cursor-agent,Implemented extension-only beads dispatch in CLI runtime by removing the core fallback path and requiring active extension command handlers for beads import command execution.
   "2026-02-19T21:25:48.580Z",cursor-agent,"Evidence refresh on current code state: node dist/cli.js test pm-odt --run --timeout 2400 --json passed all linked tests; node dist/cli.js test-all --status in_progress --timeout 2400 --json totals items=7 linked_tests=33 passed=32 failed=0 skipped=1; node dist/cli.js test-all --status closed --timeout 2400 --json totals items=16 linked_tests=44 passed=41 failed=0 skipped=3; coverage gate remains 100% lines/branches/functions/statements via linked coverage runs."
   "2026-03-04T12:09:34.156Z",cursor-maintainer,"Evidence: ran pm test pm-odt --run --timeout 3600 (all linked tests passed, including node scripts/run-tests.mjs coverage with 100% lines/branches/functions/statements). Ran pm test-all --status in_progress --timeout 3600 (passed=15 failed=0 skipped=14) and pm test-all --status closed --timeout 3600 (passed=52 failed=0 skipped=82). Acceptance criteria validated: Beads import maps source records and writes import history entries; regression remains green."
+notes[1]{created_at,author,text}:
+  "2026-04-01T20:33:54.322Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:33:55.416Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[14]{path,scope,note}:
   PRD.md,project,milestone and command contract update
   README.md,project,docs-first command status update

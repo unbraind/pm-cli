@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:compat","area:docs","area:tests",pm-cli
 created_at: "2026-04-01T10:12:10.894Z"
-updated_at: "2026-04-01T10:37:22.696Z"
+updated_at: "2026-04-01T20:24:19.678Z"
 deadline: "2026-04-08T10:12:10.894Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 220
 acceptance_criteria: README PRD AGENTS and changelog describe resilient input paths and regression tests validate old and new input forms with no behavior regressions.
@@ -20,8 +21,23 @@ impact: Reduces regression risk while improving usability
 outcome: Users get clear docs and stable validated behavior
 why_now: Expanded parser tolerance must be accompanied by strong compatibility guardrails
 parent: pm-nhgt
+reviewer: maintainer-review
 risk: medium
 confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-nhgt
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
 component: docs-tests
 regression: true
 customer_impact: Current users keep stable command behavior while gaining clearer guidance for resilient input formats
@@ -32,5 +48,13 @@ comments[2]{created_at,author,text}:
   "2026-04-01T10:37:20.962Z",codex-agent,"Feature complete: pm-s9hl closed after docs/help/changelog updates and runtime/full-suite verification evidence."
 notes[1]{created_at,author,text}:
   "2026-04-01T10:12:10.894Z",codex-agent,Add focused and broad regression coverage before closing.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:23:00.635Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
+files[1]{path,scope,note}:
+  README.md,project,metadata-audit-linked-context
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,7200,metadata-audit-baseline-regression
+docs[1]{path,scope,note}:
+  README.md,project,metadata-audit-documentation-context
 close_reason: Compatibility documentation and verification hardening delivered.
 body: Feature B for docs and regression hardening.

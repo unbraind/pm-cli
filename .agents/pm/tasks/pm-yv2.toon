@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[4]: "area:search-semantic",core,"milestone:4",pm-cli
 created_at: "2026-02-17T23:02:10.253Z"
-updated_at: "2026-03-03T21:05:55.154Z"
+updated_at: "2026-04-01T20:33:52.833Z"
 deadline: "2026-03-07T23:02:10.253Z"
+assignee: steve
 author: steve
 estimated_minutes: 120
 acceptance_criteria: "Embedding providers can be swapped with deterministic configuration, request-target and payload/response normalization, execution-time cardinality validation, dynamic keyword/hybrid default mode selection, and mode-aware search.score_threshold filtering across keyword/semantic/hybrid scoring."
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-yv2
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-54d
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: steve
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: search-semantic-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-54d,blocks,"2026-02-17T23:02:10.253Z",steve,null
   pm-f45,parent,"2026-02-17T23:02:10.253Z",steve,null
@@ -46,6 +76,10 @@ comments[31]{created_at,author,text}:
   "2026-03-03T14:25:21.256Z",cursor-maintainer,"Evidence: 1) node dist/cli.js test pm-yv2 --run --timeout 3600 --json passed all 4 linked tests (coverage, embedding-provider, reindex-command, search-command). Coverage report shows All files 100% statements/branches/functions/lines. 2) node dist/cli.js test-all --status in_progress --timeout 3600 --json passed with totals items=8 linked_tests=30 passed=13 failed=0 skipped=17. 3) node dist/cli.js test-all --status closed --timeout 3600 --json passed with totals items=32 linked_tests=113 passed=48 failed=0 skipped=65. Note: an initial run failed due wrapper export parity; fixed by exporting resolveSearchScoreThreshold in src/commands/search.ts, then reran full mandatory sequence green."
   "2026-03-03T20:56:59.937Z",maintainer-agent,"Planned closure validation: re-run linked pm tests and full in_progress/closed regression sweeps to confirm acceptance criteria and 100% coverage gate remain green before closing this item."
   "2026-03-03T21:05:45.128Z",maintainer-agent,"Evidence (closure validation): 1) node dist/cli.js test pm-yv2 --run --timeout 3600 --json => linked tests=4, passed=4, failed=0, skipped=0. 2) node dist/cli.js test-all --status in_progress --timeout 3600 --json => items=8, linked_tests=31, passed=13, failed=0, skipped=18. 3) node dist/cli.js test-all --status closed --timeout 3600 --json => items=33, linked_tests=115, passed=48, failed=0, skipped=67. Coverage proof from linked coverage runs remains 100% lines/branches/functions/statements (All files 100/100/100/100). Acceptance criteria satisfied; no follow-up item required for this baseline scope."
+notes[1]{created_at,author,text}:
+  "2026-04-01T20:33:51.174Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:33:52.833Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[13]{path,scope,note}:
   PRD.md,project,docs-first provider abstraction milestone status update
   README.md,project,docs-first search roadmap status update

@@ -6,14 +6,52 @@ status: canceled
 priority: 0
 tags[4]: "area:program",core,"milestone:root",pm-cli
 created_at: "2026-02-17T22:58:48.411Z"
-updated_at: "2026-02-17T23:16:56.401Z"
+updated_at: "2026-04-01T20:32:55.867Z"
 deadline: "2026-03-19T22:58:48.411Z"
+assignee: steve
 author: steve
 estimated_minutes: 2400
 acceptance_criteria: All PRD milestones are completed and verified.
+definition_of_ready: canonical-root-context-identified
+order: 1
+goal: portfolio-governance
+objective: deterministic-top-level-planning
+value: reduce-duplicate-root-structures
+impact: cleaner-hierarchy-and-reporting
+outcome: single-canonical-root-model
+why_now: backlog-hygiene-needs-parent-mapping
+parent: pm-lty
+reviewer: maintainer-review
+risk: medium
+confidence: medium
+sprint: legacy-archive
+release: v1-archive
+blocked_by: backlog-sequencing
+blocked_reason: sequencing-dependency
+unblock_note: align-with-canonical-roadmap
+reporter: steve
+severity: low
+environment: linux-node25-local
+repro_steps: roadmap-decomposition-tracking
+resolution: duplicate-root-canceled-during-normalization
+expected_result: canonical-root-epic-remains-singular
+actual_result: duplicate-root-epic-intentionally-canceled
+affected_version: "2026.2"
+fixed_version: "2026.2"
+component: program-management
+regression: false
+customer_impact: prevents-duplicate-portfolio-records
 comments[2]{created_at,author,text}:
   "2026-02-17T22:58:48.411Z",steve,Root epic exists to coordinate milestone delivery.
   "2026-02-17T23:16:56.401Z",steve,Canceled as duplicate root epic created during an earlier create command failure before history rollback logic was completed.
 notes[1]{created_at,author,text}:
   "2026-02-17T22:58:48.411Z",steve,Success means milestones 0-6 are closed with evidence.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:32:55.867Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
+files[1]{path,scope,note}:
+  README.md,project,metadata-audit-linked-context
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,7200,metadata-audit-baseline-regression
+docs[1]{path,scope,note}:
+  README.md,project,metadata-audit-documentation-context
 body: Coordinate milestones 0..6 and enforce dogfooding.

@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[4]: "area:linked-ops",core,"milestone:3",pm-cli
 created_at: "2026-02-17T23:02:09.505Z"
-updated_at: "2026-02-18T02:01:02.528Z"
+updated_at: "2026-04-01T20:33:02.196Z"
 deadline: "2026-03-03T23:02:09.505Z"
+assignee: steve
 author: steve
 estimated_minutes: 150
 acceptance_criteria: comments/files/docs/test flows are deterministic and both timeout and timeout_seconds seed keys parse to timeout_seconds metadata.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-kwl
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-54d
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: steve
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: linked-ops-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-54d,parent,"2026-02-17T23:02:09.505Z",steve,null
   pm-c0r,blocks,"2026-02-17T23:02:09.505Z",steve,null
@@ -18,6 +48,10 @@ comments[3]{created_at,author,text}:
   "2026-02-18T01:57:47.015Z",cursor-maintainer,"Planned change-set: align linked test seed parsing with docs by accepting timeout alias and canonical timeout_seconds, update docs examples for deterministic guidance, and add integration coverage for alias behavior."
   "2026-02-18T02:01:01.979Z",cursor-maintainer,"Implemented timeout alias parity for linked test seeds: create/test command parsers now accept timeout (legacy) and timeout_seconds (canonical), rejecting mismatched dual values for deterministic behavior."
   "2026-02-18T02:01:02.140Z",cursor-maintainer,"Evidence: pnpm build passed. pm test pm-kwl --run --timeout 600 --json passed linked commands (sandboxed integration + sandboxed coverage) with coverage at 100% lines/branches/functions/statements. pm test-all --status in_progress --timeout 600 --json passed totals items=6 linked_tests=11 passed=11 failed=0 skipped=0."
+notes[1]{created_at,author,text}:
+  "2026-04-01T20:33:01.022Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:33:02.196Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[5]{path,scope,note}:
   AGENTS.md,project,align command recipe timeout key wording
   README.md,project,align linked test seed examples

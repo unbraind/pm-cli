@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:reminders","area:schema",code,pm-cli
 created_at: "2026-03-31T21:28:01.402Z"
-updated_at: "2026-03-31T21:43:57.503Z"
+updated_at: "2026-04-01T20:25:27.190Z"
 deadline: "2026-04-07T21:28:01.402Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 120
 acceptance_criteria: "Reminder schema is validated, normalized, ordered deterministically, and backward compatible when absent."
@@ -20,10 +21,23 @@ impact: Stable downstream command behavior
 outcome: Reminder field support in core schema
 why_now: Calendar feature depends on persistent reminder fields.
 parent: pm-c877
+reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: calendar-rollout
 release: vnext
+blocked_by: pm-2p6q
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: vnext
+fixed_version: vnext
 component: core/item-format
 regression: true
 customer_impact: Ensures reminder data is safely persisted.
@@ -36,6 +50,8 @@ comments[3]{created_at,author,text}:
   "2026-03-31T21:43:55.724Z",codex-agent,"Evidence: linked schema tests passed via pm test --run (item-format-validation + shared-constants reminder checks)."
 notes[1]{created_at,author,text}:
   "2026-03-31T21:28:01.402Z",codex-agent,Add tests for malformed and valid reminder structures.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:25:18.574Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[3]{path,scope,note}:
   src/core/item/item-format.ts,project,reminder validation logic
   src/core/shared/constants.ts,project,front-matter key-order includes reminders

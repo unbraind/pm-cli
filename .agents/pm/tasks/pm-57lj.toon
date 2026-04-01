@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[10]: "area:docs","area:extensions","area:tests",code,docs,"milestone:5",pm-cli,"priority:1",release-readiness,tests
 created_at: "2026-03-08T15:28:23.866Z"
-updated_at: "2026-03-08T15:57:38.460Z"
+updated_at: "2026-04-01T20:34:53.555Z"
 deadline: "2026-03-09T15:35:00.000Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 75
 acceptance_criteria: todos import preserves hierarchical IDs such as pm-foo.1.2 verbatim; docs mention the behavior explicitly; targeted and full regression sweeps pass with 100% coverage preserved.
@@ -20,10 +21,26 @@ impact: Reduces silent importer drift for users migrating nested and hierarchica
 outcome: todos import contract is explicit and regression-tested
 why_now: No open items remain and Milestone 5 built-in extensions still need incremental hardening
 parent: pm-b1w
+reviewer: maintainer-review
 risk: low
 confidence: high
 sprint: maintainer-loop-2026-03-08
 release: v0.1
+blocked_by: pm-b1w
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: v0.1
+fixed_version: v0.1
+component: docs-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-b1w,parent,"2026-03-08T15:28:23.866Z",maintainer-agent,null
 comments[4]{created_at,author,text}:
@@ -33,6 +50,8 @@ comments[4]{created_at,author,text}:
   "2026-03-08T15:57:38.092Z",maintainer-agent,"Evidence: pm test pm-57lj --run --timeout 2400 passed both linked commands. The linked coverage run kept statements, branches, functions, and lines at 100 percent. pm test-all --status in_progress --timeout 2400 passed with items=1 linked_tests=2 passed=2 failed=0 skipped=0. pm test-all --status closed --timeout 2400 passed on rerun with items=152 linked_tests=387 passed=70 failed=0 skipped=317 after one transient pm-06t coverage failure that cleared under direct rerun and clean closed-sweep rerun."
 notes[1]{created_at,author,text}:
   "2026-03-08T15:28:23.866Z",maintainer-agent,Plan update docs first then add targeted unit and integration assertions then run pm verification sweeps
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:34:53.555Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[4]{path,scope,note}:
   PRD.md,project,authoritative import contract clarification
   README.md,project,public import contract clarification

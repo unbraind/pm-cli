@@ -6,12 +6,41 @@ status: closed
 priority: 0
 tags[7]: "area:cli","area:docs",code,"milestone:7",pm-cli,"priority:0",tests
 created_at: "2026-03-08T01:20:46.592Z"
-updated_at: "2026-03-08T01:46:52.198Z"
+updated_at: "2026-04-01T20:32:00.384Z"
 deadline: "2026-03-10T23:59:00.000Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: Create and update accept risk value med and store medium while docs and tests remain aligned with 100 percent coverage.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 1
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
 why_now: Support common shorthand used by planning templates.
+parent: pm-7w60
+reviewer: maintainer-review
+risk: high
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: cli-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 comments[6]{created_at,author,text}:
   "2026-03-08T01:20:46.592Z",maintainer-agent,Need med alias parity with maintainer workflow templates
   "2026-03-08T01:20:51.816Z",maintainer-agent,"Planned change-set docs first: update PRD and README risk option contract to accept med alias and persist medium then implement create and update normalization plus targeted and full regression coverage."
@@ -21,6 +50,8 @@ comments[6]{created_at,author,text}:
   "2026-03-08T01:46:52.198Z",maintainer-agent,"Post-close verification after final README formatting touch: pm test pm-7w60 --run --timeout 7200 passed both linked commands and coverage remained 100 percent. pm test-all --status in_progress --timeout 7200 returned items=0 linked_tests=0 passed=0 failed=0 skipped=0. pm test-all --status closed --timeout 7200 passed with items=143 linked_tests=366 passed=65 failed=0 skipped=301."
 notes[1]{created_at,author,text}:
   "2026-03-08T01:20:46.592Z",maintainer-agent,Implement docs first then normalize med to medium then add unit and integration coverage
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:32:00.384Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[9]{path,scope,note}:
   PRD.md,project,authoritative risk contract update
   README.md,project,public risk flag contract update

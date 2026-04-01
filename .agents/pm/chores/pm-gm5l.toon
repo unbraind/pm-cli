@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[4]: "area:docs","area:tests",pm-cli,release-readiness
 created_at: "2026-03-06T14:49:38.366Z"
-updated_at: "2026-03-06T15:02:59.184Z"
+updated_at: "2026-04-01T20:34:35.797Z"
 deadline: "2026-03-07T14:49:38.366Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: settings-store coverage asserts exact top-level and nested settings key order from PRD defaults; targeted and full sandboxed regressions pass with coverage at 100%.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: chore-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-chore-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-gm5l
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-wo8
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: docs-component
+regression: false
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-wo8,related,"2026-03-06T14:49:38.366Z",maintainer-agent,null
 comments[3]{created_at,author,text}:
@@ -19,6 +49,8 @@ comments[3]{created_at,author,text}:
   "2026-03-06T15:02:55.141Z",maintainer-agent,"Implemented settings-store contract hardening: tests/unit/settings-store.spec.ts now asserts exact serialized settings key order for top-level and nested objects (locks, output, extensions, search, providers, vector_store). Evidence: pm test pm-gm5l --run --timeout 3600 --json passed 2/2 linked tests; pm test-all --status in_progress --timeout 3600 --json passed totals items=1 linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status closed --timeout 3600 --json passed totals items=91 linked_tests=267 passed=63 failed=0 skipped=204. Coverage remains 100% lines/branches/functions/statements."
 notes[1]{created_at,author,text}:
   "2026-03-06T14:49:38.366Z",maintainer-agent,"Plan: tighten settings-store assertions for exact key order and verify with sandboxed targeted plus coverage runs."
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:34:35.797Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   tests/unit/settings-store.spec.ts,project,add exact key-order contract assertions
 tests[2]{command,path,scope,timeout_seconds,note}:

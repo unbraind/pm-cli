@@ -6,11 +6,41 @@ status: closed
 priority: 0
 tags[9]: "area:cli","area:release-readiness","area:tests",code,doc,"milestone:6",pm-cli,"priority:0",tests
 created_at: "2026-03-07T07:48:09.695Z"
-updated_at: "2026-03-07T08:01:06.558Z"
+updated_at: "2026-04-01T20:31:33.614Z"
 deadline: "2026-03-08T23:59:00.000Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: 1) Resolve at least one docs/help/implementation contract mismatch. 2) Run pm test <item> --run plus pm test-all sweeps for in_progress and closed. 3) Keep coverage at 100 percent and log evidence.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 1
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-204c
+reviewer: maintainer-review
+risk: high
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-phpq
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: cli-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-phpq,related,"2026-03-07T07:48:09.695Z",maintainer-agent,null
 comments[5]{created_at,author,text}:
@@ -21,6 +51,8 @@ comments[5]{created_at,author,text}:
   "2026-03-07T08:00:56.041Z",maintainer-agent,"Evidence: pm test pm-204c --run --timeout 7200 --json passed all linked tests (3/3). pm test-all --status in_progress --timeout 7200 --json passed (items=1 linked_tests=3 passed=3 failed=0 skipped=0). pm test-all --status closed --timeout 7200 --json passed (items=116 linked_tests=312 passed=62 failed=0 skipped=250). Coverage remains 100% lines/branches/functions/statements in sandbox coverage runs."
 notes[1]{created_at,author,text}:
   "2026-03-07T07:48:09.695Z",maintainer-agent,Plan claim item then patch test help default array text parity and run regressions
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:31:33.614Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[2]{path,scope,note}:
   src/cli/main.ts,project,help option wiring parity target
   tests/integration/release-readiness-contract.spec.ts,project,help contract regression coverage

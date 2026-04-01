@@ -6,14 +6,53 @@ status: closed
 priority: 0
 tags[4]: migration,pm-cli,storage,toon
 created_at: "2026-03-31T20:13:02.029Z"
-updated_at: "2026-03-31T20:58:12.210Z"
+updated_at: "2026-04-01T20:15:55.016Z"
+deadline: "2026-04-14T20:13:02.029Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 480
 acceptance_criteria: TOON is default item format and json/markdown remains fully supported with automatic migration and explicit legacy format selection before mutations.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 1
+goal: epic-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-epic-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-bckz
+reviewer: maintainer-review
+risk: high
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: epic-component
+regression: false
+customer_impact: improves-reliability-and-clarity-for-contributors
 comments[2]{created_at,author,text}:
   "2026-03-31T20:13:02.029Z",codex-agent,Epic created for TOON migration tracking.
   "2026-03-31T20:14:00.978Z",codex-agent,"Created and claimed Epic Feature and Task hierarchy for TOON migration: pm-5cbm pm-z8bl pm-u919 pm-9689 pm-oex4 pm-s0ne pm-3aga pm-ybpq."
 notes[1]{created_at,author,text}:
   "2026-03-31T20:13:02.029Z",codex-agent,Execute codec migration integration and verification workstreams.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:15:48.814Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
+files[1]{path,scope,note}:
+  README.md,project,metadata-audit-linked-context
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,7200,metadata-audit-baseline-regression
+docs[1]{path,scope,note}:
+  README.md,project,metadata-audit-documentation-context
 close_reason: TOON item storage migration completed
 body: Coordinate rollout of dual-format item storage migration automation and compatibility gating for existing repositories.

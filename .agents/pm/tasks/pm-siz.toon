@@ -6,17 +6,51 @@ status: closed
 priority: 1
 tags[4]: "area:error-model",core,"milestone:0",pm-cli
 created_at: "2026-02-17T23:02:07.105Z"
-updated_at: "2026-02-19T21:58:55.319Z"
+updated_at: "2026-04-01T20:33:20.074Z"
 deadline: "2026-02-20T23:02:07.105Z"
+assignee: steve
 author: steve
 estimated_minutes: 120
 acceptance_criteria: "Error and command-failure paths deterministically map to exit codes 1/2/3/4/5 per PRD, with integration tests and regression sweeps passing at 100% coverage."
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-siz
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-2xl
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: steve
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: error-model-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-2xl,parent,"2026-02-17T23:02:07.105Z",steve,null
 comments[3]{created_at,author,text}:
   "2026-02-19T21:34:16.277Z",cursor-maintainer,"Planned change-set: add deterministic integration coverage for CLI exit-code mapping paths (usage, not-found, conflict, dependency-failed, generic failure), validate existing error model contracts in src/core/shared/errors.ts and src/cli/main.ts, then run pm test + test-all regression sweeps with 100% coverage evidence."
   "2026-02-19T21:58:54.806Z",cursor-maintainer,"Implemented exit-code hardening for generic-failure path by adding integration coverage in tests/integration/cli.integration.spec.ts (new test: returns generic-failure exit code for unexpected init filesystem errors), which validates top-level unknown-error mapping to exit code 1 while preserving existing checks for usage/not-found/conflict/dependency-failed. Evidence: pm test pm-siz --run --timeout 2400 --json passed all linked tests (3/3); pm test-all --status in_progress --timeout 2400 --json passed totals items=8 linked_tests=36 passed=35 failed=0 skipped=1; pm test-all --status closed --timeout 2400 --json passed totals items=16 linked_tests=44 passed=41 failed=0 skipped=3; coverage remains 100% statements/branches/functions/lines."
   "2026-02-19T21:58:54.970Z",cursor-maintainer,"Docs alignment check: PRD.md, README.md, and AGENTS.md remain accurate for this change-set; no contract text updates were required because behavior already specified exit code mapping and this iteration adds regression coverage."
+notes[1]{created_at,author,text}:
+  "2026-04-01T20:33:19.070Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:33:20.074Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[4]{path,scope,note}:
   src/cli/main.ts,project,top-level-error-to-exit-code-mapping
   src/core/shared/constants.ts,project,authoritative-exit-code-map

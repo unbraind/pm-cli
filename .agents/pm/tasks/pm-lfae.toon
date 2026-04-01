@@ -6,11 +6,41 @@ status: closed
 priority: 0
 tags[4]: core,maintainer,pm-cli,release-readiness
 created_at: "2026-03-06T20:33:04.098Z"
-updated_at: "2026-03-06T20:38:43.117Z"
+updated_at: "2026-04-01T20:31:17.883Z"
 deadline: "2026-03-07T20:33:04.098Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: At least one contract-aligned improvement is implemented and verified evidence comment includes test commands and coverage status item can be cleanly closed or left in-progress with blocker details.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 1
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-lfae
+reviewer: maintainer-review
+risk: high
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: task-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 comments[5]{created_at,author,text}:
   "2026-03-06T20:33:04.098Z",maintainer-agent,Run bootstrap and triage to choose the highest-value hardening task without duplicating existing work.
   "2026-03-06T20:33:26.489Z",maintainer-agent,Starting baseline verification run via linked tests plus test-all and coverage to identify the next highest-value hardening gap.
@@ -19,6 +49,8 @@ comments[5]{created_at,author,text}:
   "2026-03-06T20:38:29.860Z",maintainer-agent,"Evidence: node dist/cli.js test pm-lfae --run passed; node dist/cli.js test-all --status in_progress passed; node scripts/run-tests.mjs coverage passed with 100% lines branches functions statements. Updated CONTRIBUTING.md with maintainer bootstrap commands and sandbox guidance."
 notes[1]{created_at,author,text}:
   "2026-03-06T20:33:04.098Z",maintainer-agent,Start with baseline verification then implement minimal high-impact change.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:31:17.883Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   CONTRIBUTING.md,project,maintainer bootstrap documentation hardening
 tests[1]{command,path,scope,timeout_seconds,note}:

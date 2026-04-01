@@ -6,19 +6,41 @@ status: closed
 priority: 0
 tags[7]: "area:maintenance","area:tests",code,doc,"milestone:6",pm-cli,"priority:0"
 created_at: "2026-03-09T15:52:30.417Z"
-updated_at: "2026-03-09T16:29:47.648Z"
+updated_at: "2026-04-01T20:32:36.023Z"
 deadline: "2026-03-10T16:00:00.000Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 45
 acceptance_criteria: Legacy create_tasks.sh removed with no references and pm tracking evidence updated and regression plus coverage gates pass at 100 percent.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 1
 goal: Release-hardening
 objective: Keep repository release-ready post launch
 value: Reduce maintenance drift and prevent stale workflows
 impact: Lowers risk of invalid pm item seeding
 outcome: Repo stays green with simplified maintainer workflow
 why_now: Immediate cleanup after launch prevents stale script reuse
+parent: pm-6k5l
+reviewer: maintainer-review
+risk: high
+confidence: high
 sprint: maintainer-loop-2026-03-09-5
 release: v0.1
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: v0.1
+fixed_version: v0.1
+component: maintenance-component
+regression: false
+customer_impact: improves-reliability-and-clarity-for-contributors
 comments[6]{created_at,author,text}:
   "2026-03-09T15:52:30.417Z",maintainer-agent,Why this exists keep post release repo state clean and release ready while enforcing dogfood tracking
   "2026-03-09T15:52:46.132Z",maintainer-agent,Intended changeset remove obsolete create_tasks.sh and keep release evidence current with full regression verification
@@ -28,6 +50,8 @@ comments[6]{created_at,author,text}:
   "2026-03-09T16:29:38.719Z",maintainer-agent,Coverage evidence from pm-driven runs remains 100 percent for lines branches functions and statements
 notes[1]{created_at,author,text}:
   "2026-03-09T15:52:30.417Z",maintainer-agent,Plan claim item link touched files docs and tests run pm test and test all then record evidence with coverage confirmation
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:32:36.023Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[4]{path,scope,note}:
   create_tasks.sh,project,remove obsolete seed script
   scripts/install.ps1,project,keep PowerShell installer parity for idempotent updates

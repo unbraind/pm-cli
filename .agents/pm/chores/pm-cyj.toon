@@ -6,11 +6,41 @@ status: closed
 priority: 0
 tags[4]: npm,packaging,pm-cli,release-readiness
 created_at: "2026-02-17T23:37:47.025Z"
-updated_at: "2026-02-18T01:23:45.114Z"
+updated_at: "2026-04-01T20:30:54.108Z"
 deadline: "2026-02-21T23:37:47.025Z"
+assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 180
 acceptance_criteria: "npm pack includes only required files, bin maps to built CLI, and prepublish checks/build safeguards are in place."
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 1
+goal: chore-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-chore-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-cyj
+reviewer: maintainer-review
+risk: high
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-2c8
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: cursor-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: chore-component
+regression: false
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-2c8,related,"2026-02-17T23:37:47.025Z",cursor-agent,null
   pm-912,related,"2026-02-17T23:37:47.025Z",cursor-agent,null
@@ -21,6 +51,10 @@ comments[4]{created_at,author,text}:
   "2026-02-18T00:16:41.772Z",cursor-agent,Final npm pack smoke check passes with scripts/install.sh and scripts/install.ps1 included in package allowlist alongside dist and docs.
   "2026-02-18T01:22:33.253Z",steve,"Planned change-set: add npm pack --dry-run smoke gate to CI so package payload validation runs continuously in release-readiness workflows."
   "2026-02-18T01:23:27.006Z",steve,"Evidence: updated .github/workflows/ci.yml to add CI step 'Packaging smoke check' running npm pack --dry-run. Validation: pm test pm-cyj --run --timeout 180 passed (npm pack --dry-run, exit 0). Regression: pm test-all --status in_progress --timeout 300 passed with totals items=6 linked_tests=8 passed=8 failed=0 skipped=0. Coverage proof from linked sandbox command node scripts/run-tests.mjs coverage remained 100% statements/branches/functions/lines."
+notes[1]{created_at,author,text}:
+  "2026-04-01T20:30:53.109Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:30:54.108Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[3]{path,scope,note}:
   .github/workflows/ci.yml,project,add npm pack dry-run CI gate
   .gitignore,project,Ignore coverage artifacts from local verification runs

@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[4]: "area:test-orchestration",core,"milestone:3",pm-cli
 created_at: "2026-02-17T23:02:09.686Z"
-updated_at: "2026-02-22T17:15:27.349Z"
+updated_at: "2026-04-01T20:33:36.774Z"
 deadline: "2026-03-03T23:02:09.686Z"
+assignee: steve
 author: steve
 estimated_minutes: 120
 acceptance_criteria: test-all reports deterministic passed/failed/skipped totals and no linked regression command flakes due to default test timeouts.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-66o
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-54d
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: steve
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: test-orchestration-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-54d,parent,"2026-02-17T23:02:09.686Z",steve,null
   pm-c0r,blocks,"2026-02-17T23:02:09.686Z",steve,null
@@ -23,6 +53,10 @@ comments[8]{created_at,author,text}:
   "2026-02-22T17:00:33.262Z",maintainer-agent,"Failure evidence from pm test-all --status closed: linked command node scripts/run-tests.mjs test -- tests/unit/test-all-command.spec.ts tests/integration/cli.integration.spec.ts failed due vitest timeout (30000ms) in cli.integration restore-by-version test. Planned fix: remove flake by giving this long-running integration case an explicit higher timeout and rerun pm test + both test-all sweeps."
   "2026-02-22T17:01:13.929Z",maintainer-agent,"Implemented reliability fix in tests/integration/cli.integration.spec.ts: added explicit 120_000ms timeout to restore-by-version integration case so it no longer flakes at Vitest default 30s during test-all closed-sweep orchestration."
   "2026-02-22T17:15:26.517Z",maintainer-agent,"Evidence: pm test pm-66o --run --timeout 3600 --json passed (1 linked test, 0 failed). pm test-all --status in_progress --timeout 3600 --json passed totals items=10 linked_tests=35 passed=15 failed=0 skipped=20. pm test-all --status closed --timeout 3600 --json passed totals items=24 linked_tests=92 passed=43 failed=0 skipped=49. Coverage gate remains 100% lines/branches/functions/statements in sandboxed coverage runs. Follow-up items created: none."
+notes[1]{created_at,author,text}:
+  "2026-04-01T20:33:35.716Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:33:36.774Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[6]{path,scope,note}:
   PRD.md,project,security-contract-update
   README.md,project,documented-behavior

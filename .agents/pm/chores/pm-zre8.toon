@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[6]: "area:bootstrap",doc,"milestone:6",pm-cli,"priority:0",tests
 created_at: "2026-03-09T17:05:54.655Z"
-updated_at: "2026-03-09T17:26:39.703Z"
+updated_at: "2026-04-01T20:32:38.224Z"
 deadline: "2026-03-10T23:59:00.000Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 75
 acceptance_criteria: "AGENTS and README maintainer bootstrap sections explicitly include node -v, pnpm -v, and pnpm build checks; release-readiness contract test enforces all bootstrap sections include this sanity baseline; pm test and pm test-all sweeps pass with 100% coverage."
@@ -19,11 +20,27 @@ value: Reduces bootstrap drift and failed maintainer runs
 impact: Improves reliability of dogfooding sessions
 outcome: All maintainer bootstrap docs enforce the same sanity checklist
 why_now: Current docs are partially inconsistent on runtime/build preflight guidance
+parent: pm-zre8
+reviewer: maintainer-review
 risk: low
 confidence: high
 sprint: maintainer-loop-2026-03-09-7
 release: v0.1
+blocked_by: pm-j0o4
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: v0.1
+fixed_version: v0.1
+component: bootstrap-component
 regression: false
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-j0o4,related,"2026-03-09T17:05:54.655Z",maintainer-agent,null
 comments[5]{created_at,author,text}:
@@ -34,6 +51,8 @@ comments[5]{created_at,author,text}:
   "2026-03-09T17:26:39.703Z",maintainer-agent,"Delivery evidence: committed as 93c4065 and pushed to origin/main after passing pm test, pm test-all in_progress, and pm test-all closed sweeps with 100 percent coverage."
 notes[1]{created_at,author,text}:
   "2026-03-09T17:05:54.655Z",maintainer-agent,Plan update AGENTS and README bootstrap snippets first then extend release-readiness contract assertions and run pm test plus test-all sweeps.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:32:38.224Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[3]{path,scope,note}:
   AGENTS.md,project,bootstrap sanity checklist parity
   README.md,project,add runtime/build sanity checks to maintainer bootstrap

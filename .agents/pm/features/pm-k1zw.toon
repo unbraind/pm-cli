@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:extensions","area:parser","area:runtime",phase2,pm-cli
 created_at: "2026-04-01T19:27:09.832Z"
-updated_at: "2026-04-01T19:58:05.359Z"
+updated_at: "2026-04-01T20:20:56.751Z"
 deadline: "2026-04-11T19:27:09.832Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 300
 acceptance_criteria: Extensions can override command option parsing/normalization for core and dynamic commands; fallback behavior is deterministic and default-user behavior is unchanged.
@@ -20,10 +21,23 @@ impact: Eliminates remaining parser rigidity for extension authors.
 outcome: Parser and command-contract interpretation become extension-overridable.
 why_now: Current parser model limits complete customization despite extension-first dispatch.
 parent: pm-x395
+reviewer: maintainer-review
 risk: high
 confidence: medium
 sprint: phase2-override
 release: vnext
+blocked_by: pm-al0h
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: vnext
+fixed_version: vnext
 component: extensions-runtime
 regression: true
 customer_impact: Enables complete command-contract customization without forking pm.
@@ -35,6 +49,8 @@ comments[2]{created_at,author,text}:
   "2026-04-01T19:58:03.952Z",codex-agent,"Feature delivered across runtime, SDK, docs, and tests. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage passed; release-readiness integration checks passing."
 notes[1]{created_at,author,text}:
   "2026-04-01T19:27:09.832Z",codex-agent,Must preserve default behavior when no extension parser overrides are registered.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:20:56.751Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/main.ts,project,parser and dispatch orchestration
 tests[1]{command,path,scope,timeout_seconds,note}:

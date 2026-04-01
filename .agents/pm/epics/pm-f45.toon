@@ -6,11 +6,41 @@ status: closed
 priority: 0
 tags[4]: "area:search",core,"milestone:4",pm-cli
 created_at: "2026-02-17T23:01:11.736Z"
-updated_at: "2026-03-04T15:27:57.518Z"
+updated_at: "2026-04-01T20:31:03.874Z"
 deadline: "2026-03-07T23:01:11.736Z"
+assignee: steve
 author: steve
 estimated_minutes: 480
 acceptance_criteria: Milestone 4 checklist items are implemented with reindexing behavior.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 1
+goal: epic-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-epic-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-f45
+reviewer: maintainer-review
+risk: high
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-54d
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: steve
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: search-component
+regression: false
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-54d,blocks,"2026-02-17T23:01:11.736Z",steve,null
   pm-j7a,child,"2026-02-17T23:01:11.736Z",steve,null
@@ -21,6 +51,8 @@ comments[4]{created_at,author,text}:
   "2026-03-04T15:27:57.518Z",cursor-agent,"Session bootstrap evidence: detected PM_CMD=pm, enforced global installation from this repo via npm i -g ., verified command path and pm --version=0.1.0, and baseline pnpm build completed successfully before milestone validation."
 notes[1]{created_at,author,text}:
   "2026-02-17T23:01:11.736Z",steve,Success means keyword mode always works and semantic mode is optional.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:31:03.874Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[8]{path,scope,note}:
   src/cli/commands/reindex.ts,project,reindex command entrypoint
   src/cli/commands/search.ts,project,search command entrypoint

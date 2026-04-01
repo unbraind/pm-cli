@@ -6,11 +6,14 @@ status: closed
 priority: 1
 tags[4]: "area:schema","area:settings",code,pm-cli
 created_at: "2026-03-31T23:48:06.252Z"
-updated_at: "2026-04-01T00:26:59.391Z"
+updated_at: "2026-04-01T20:25:04.207Z"
 deadline: "2026-04-07T23:48:06.252Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: Settings accept custom type/option definitions and serialize deterministically with tests covering defaults and merge behavior.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
 goal: Customizable workflows
 objective: Support config-driven type model
 value: Project-level flexibility
@@ -18,8 +21,23 @@ impact: Removes hard-coded type constraints
 outcome: Settings-driven type schema
 why_now: Needed before runtime registry and command integration
 parent: pm-x2k0
+reviewer: maintainer-review
 risk: medium
 confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-x2k0
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
 component: core/store/settings
 regression: true
 customer_impact: Enables per-project custom workflow types
@@ -31,6 +49,8 @@ comments[3]{created_at,author,text}:
   "2026-04-01T00:26:58.508Z",codex-agent,"Evidence: node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/shared-constants-errors.spec.ts passed."
 notes[1]{created_at,author,text}:
   "2026-03-31T23:48:06.252Z",codex-agent,Keep defaults equivalent to current built-in behavior.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:24:29.944Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[3]{path,scope,note}:
   src/core/store/settings.ts,project,settings schema and merge
   src/types.ts,project,item type and front matter schema

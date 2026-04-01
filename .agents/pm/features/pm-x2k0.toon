@@ -6,11 +6,14 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:schema","area:settings",pm-cli
 created_at: "2026-03-31T23:47:37.031Z"
-updated_at: "2026-04-01T00:28:25.921Z"
+updated_at: "2026-04-01T20:24:58.931Z"
 deadline: "2026-04-10T23:47:37.031Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 300
 acceptance_criteria: "Registry resolves built-ins plus configured custom types/options, and all type consumers can read from one source of truth."
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
 goal: Customizable workflows
 objective: Decouple type model from hard-coded enums
 value: Project-specific planning model support
@@ -18,9 +21,25 @@ impact: Avoids ad hoc source_type hacks
 outcome: Central registry powers type-aware behavior
 why_now: Current type lists are duplicated and static
 parent: pm-r15d
+reviewer: maintainer-review
 risk: medium
 confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-r15d
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
 component: core/types
+regression: false
 customer_impact: Teams can add domain-specific types
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-r15d,parent,"2026-03-31T23:47:37.031Z",codex-agent,null
@@ -30,6 +49,8 @@ comments[3]{created_at,author,text}:
   "2026-04-01T00:28:24.764Z",codex-agent,"Evidence: node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/extension-loader.spec.ts tests/unit/search-command.spec.ts passed."
 notes[1]{created_at,author,text}:
   "2026-03-31T23:47:37.031Z",codex-agent,Registry must preserve existing built-in behavior by default.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:24:16.645Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[4]{path,scope,note}:
   src/core/extensions/loader.ts,project,extension type registration ingestion
   src/core/item/type-registry.ts,project,runtime type registry implementation

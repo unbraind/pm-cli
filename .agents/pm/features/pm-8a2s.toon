@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[9]: "area:extensions-pi","area:install",code,docs,"milestone:6",pm-cli,"priority:0",release-readiness,tests
 created_at: "2026-03-08T19:47:48.867Z"
-updated_at: "2026-03-08T20:20:53.762Z"
+updated_at: "2026-04-01T20:32:12.580Z"
 deadline: "2026-03-10T20:00:00.000Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "pm install pi supports --project and --global (default project), copies .pi/extensions/pm-cli/index.ts to the correct Pi extension path with deterministic JSON/TOON output, docs reflect usage, pm test and test-all sweeps pass, and a manual temp-folder pi run loads the installed extension successfully."
@@ -19,14 +20,24 @@ value: Reduces setup friction and prevents incorrect manual copy paths
 impact: Improves adoption and reliability of pm integration in Pi TUI
 outcome: Users can install and use pm Pi extension via pm command
 why_now: User workflow requires direct pm-driven extension installation with immediate usability in Pi TUI
+parent: pm-8a2s
+reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: maintainer-loop-2026-03-08
 release: v0.1
+blocked_by: pm-oqe0
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
 environment: linux
 repro_steps: run pm --help and observe no install command
+resolution: implemented-or-disposition-recorded
 expected_result: pm install pi installs extension into selected Pi scope
+actual_result: current-state-matches-expected-behavior
 affected_version: 0.1.0
+fixed_version: v0.1
 component: cli-installer
 regression: false
 customer_impact: Pi users can load pm tracking tools in TUI without manual file-copy steps
@@ -40,6 +51,8 @@ comments[5]{created_at,author,text}:
   "2026-03-08T20:20:53.762Z",maintainer-agent,"Post-fix smoke rerun in isolated temp environments passed for both scopes: project-only (PI_CODING_AGENT_DIR=<tmp> pi --no-session --print -e ./.pi/extensions/pm-cli/index.ts \"Use the pm tool to run action stats in this folder.\") and global-only (PI_CODING_AGENT_DIR=<tmp> pm install pi --global --json then PI_CODING_AGENT_DIR=<tmp> pi --no-session --print \"Use the pm tool to run action stats in this folder.\"). Both returned pm stats output successfully."
 notes[1]{created_at,author,text}:
   "2026-03-08T19:47:48.867Z",maintainer-agent,Plan update PRD README AGENTS first then implement command and tests plus temp-folder Pi smoke validation.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:32:12.580Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[9]{path,scope,note}:
   src/cli/commands/completion.ts,project,install command completion coverage
   src/cli/commands/index.ts,project,export install command

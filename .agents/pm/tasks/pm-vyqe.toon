@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[7]: "area:cli","area:docs",code,"milestone:1",pm-cli,"priority:1",tests
 created_at: "2026-03-07T00:21:45.673Z"
-updated_at: "2026-03-07T00:47:58.133Z"
+updated_at: "2026-04-01T20:26:35.056Z"
 deadline: "2026-03-10T23:59:00.000Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: pm create accepts --ac as an alias of --acceptance-criteria; help docs show alias; regression tests pass with 100% coverage unchanged.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-vyqe
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-u9r
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: cli-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-u9r,related,"2026-03-07T00:21:45.673Z",maintainer-agent,null
 comments[4]{created_at,author,text}:

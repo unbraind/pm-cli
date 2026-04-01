@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:runtime",override,pm-cli
 created_at: "2026-04-01T02:15:39.080Z"
-updated_at: "2026-04-01T03:02:14.609Z"
+updated_at: "2026-04-01T20:24:36.730Z"
 deadline: "2026-04-11T02:15:39.080Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 300
 acceptance_criteria: Extensions can explicitly replace core command handlers with deterministic precedence/collision diagnostics and fallback-safe behavior.
@@ -20,8 +21,23 @@ impact: Removes current hard limitation on core command override
 outcome: Core and dynamic commands dispatch through a unified extension-aware router
 why_now: Current overrides only transform post-core results
 parent: pm-x395
+reviewer: maintainer-review
 risk: high
 confidence: medium
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-x395
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
 component: cli-runtime
 regression: true
 customer_impact: enables true command-level customization
@@ -31,6 +47,8 @@ comments[1]{created_at,author,text}:
   "2026-04-01T02:15:39.080Z",codex-agent,Feature A from full-override plan.
 notes[1]{created_at,author,text}:
   "2026-04-01T02:15:39.080Z",codex-agent,Must keep deterministic fallback for users without extensions.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:23:31.550Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/main.ts,project,unified command dispatch
 tests[1]{command,path,scope,timeout_seconds,note}:

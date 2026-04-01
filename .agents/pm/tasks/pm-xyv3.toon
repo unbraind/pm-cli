@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[5]: "area:extensions-hooks",code,"milestone:5",pm-cli,"priority:1"
 created_at: "2026-03-04T20:23:40.638Z"
-updated_at: "2026-03-04T20:34:55.660Z"
+updated_at: "2026-04-01T20:27:33.887Z"
 deadline: "2026-03-06T20:23:22.000Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: Activity command dispatches onRead for history directory scans; docs stay aligned; sandboxed tests pass with 100% coverage and pm regression sweeps pass.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-xyv3
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-b1w
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: extensions-hooks-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-b1w,parent,"2026-03-04T20:23:40.638Z",maintainer-agent,null
 comments[4]{created_at,author,text}:

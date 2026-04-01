@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[9]: "area:create","area:extensions-hooks","area:restore",code,doc,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-05T15:33:46.422Z"
-updated_at: "2026-03-05T15:46:20.465Z"
+updated_at: "2026-04-01T20:34:21.839Z"
 deadline: "2026-03-06T23:59:00.000Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: Create and restore emit onWrite hook events for item and history writes; README and PRD reflect call-site coverage; tests cover hook dispatch and warnings; coverage remains 100%.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-f3q4
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-p8p
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: create-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-p8p,related,"2026-03-05T15:33:46.422Z",maintainer-agent,null
 comments[6]{created_at,author,text}:
@@ -22,6 +52,8 @@ comments[6]{created_at,author,text}:
   "2026-03-05T15:46:20.465Z",maintainer-agent,"Post-close release-readiness check: rebuilt project and refreshed global install from current repo state (pnpm build && npm install -g /home/steve/GITHUB_RELEASE/pm-cli), then verified pm --version=0.1.0."
 notes[1]{created_at,author,text}:
   "2026-03-05T15:33:46.422Z",maintainer-agent,Implement docs-first then update command code and targeted unit coverage.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:34:21.839Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[4]{path,scope,note}:
   src/cli/commands/create.ts,project,create onWrite dispatch
   src/cli/commands/restore.ts,project,restore onWrite dispatch

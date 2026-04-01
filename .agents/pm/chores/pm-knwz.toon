@@ -6,17 +6,53 @@ status: closed
 priority: 0
 tags[6]: "area:docs","area:tests","milestone:6",pm-cli,"priority:0",tests
 created_at: "2026-03-07T23:07:13.604Z"
-updated_at: "2026-03-07T23:59:05.327Z"
+updated_at: "2026-04-01T20:31:58.262Z"
 deadline: "2026-03-08T23:07:13.604Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 30
 acceptance_criteria: "All tests pass, coverage is 100%, and project builds successfully."
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 1
+goal: chore-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-chore-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-knwz
+reviewer: maintainer-review
+risk: high
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: docs-component
+regression: false
+customer_impact: improves-reliability-and-clarity-for-contributors
 comments[2]{created_at,author,text}:
   "2026-03-07T23:07:13.604Z",maintainer-agent,This run is to ensure project remains at 100% and release-ready.
   "2026-03-07T23:58:55.355Z",maintainer-agent,"Sweep complete: 51 test files, 443 tests passed, 100% coverage (lines/branches/functions/statements). Build succeeded. CLI help and PRD commands fully aligned."
 notes[1]{created_at,author,text}:
   "2026-03-07T23:07:13.604Z",maintainer-agent,Verify coverage and regression sweeps.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:31:58.262Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
+files[1]{path,scope,note}:
+  README.md,project,metadata-audit-linked-context
 tests[1]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs coverage,null,project,2400,coverage gate
+docs[1]{path,scope,note}:
+  README.md,project,metadata-audit-documentation-context
 close_reason: "Maintenance sweep verified: 443 tests passing, 100% coverage, build clean, docs aligned."
 body: "Verify that the repo builds, tests pass at 100% coverage, and everything remains release-ready."

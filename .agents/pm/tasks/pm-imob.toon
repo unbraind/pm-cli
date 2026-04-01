@@ -6,16 +6,51 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","milestone:5",pm-cli,roadmap
 created_at: "2026-03-07T14:01:19.318Z"
-updated_at: "2026-03-07T20:26:38.913Z"
+updated_at: "2026-04-01T20:36:55.331Z"
+deadline: "2026-03-21T14:01:19.318Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: Beads import is fully polished.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 3
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-imob
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: extensions-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 comments[5]{created_at,author,text}:
   "2026-03-07T20:00:20.675Z",maintainer-agent,Extended Beads import field mapping parity (labels/created_by/closed_at/design/external_ref plus linked files/tests/docs) and validated deterministic import behavior with expanded fixture coverage.
   "2026-03-07T20:00:20.847Z",maintainer-agent,Fixed a deterministic test expectation to assert dependency created_at fallback from imported item timestamp when source created_at is absent.
   "2026-03-07T20:11:43.504Z",maintainer-agent,"Addressing coverage gate failure from pm test-all --status closed: add deterministic fixture/assertion that exercises design/external_ref append branches when body is already non-empty."
   "2026-03-07T20:26:32.189Z",maintainer-agent,"Added Beads fixture branches for design/external_ref body composition, restoring 100% branch coverage for beads import paths."
   "2026-03-07T20:26:32.424Z",maintainer-agent,"Evidence: pm test pm-imob --run passed; pm test-all --status in_progress passed (failed=0); pm test-all --status closed passed (failed=0, passed=62, skipped=284); node scripts/run-tests.mjs coverage reports 100% statements/branches/functions/lines."
+notes[1]{created_at,author,text}:
+  "2026-04-01T20:36:53.881Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:36:55.331Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[4]{path,scope,note}:
   .gitignore,project,track beads default-path fixtures in repo
   src/cli/commands/beads.ts,project,null

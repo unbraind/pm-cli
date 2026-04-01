@@ -6,26 +6,48 @@ status: closed
 priority: 2
 tags[4]: "area:docs",doc,"milestone:6",pm-cli
 created_at: "2026-03-08T21:50:41.448Z"
-updated_at: "2026-03-08T21:52:05.162Z"
+updated_at: "2026-04-01T20:37:03.825Z"
 deadline: "2026-03-09T21:50:41.448Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 20
 acceptance_criteria: README has CI/npm/license/node badges. CONTRIBUTING.md links to docs/. Tests pass.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 3
 goal: Production readiness
 objective: Standard npm package badges and docs cross-linking
 value: "Users can see CI status, version, license at a glance"
 impact: Lowers trust barrier for new users and contributors
 outcome: README has badges; CONTRIBUTING.md links to docs/
 why_now: docs/ was just created; badges are a one-time easy add
+parent: pm-x4f9
+reviewer: maintainer-review
 risk: low
 confidence: high
 sprint: maintainer-loop
 release: v0.1.0
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: v0.1.0
+fixed_version: v0.1.0
+component: docs-component
+regression: false
+customer_impact: improves-reliability-and-clarity-for-contributors
 comments[2]{created_at,author,text}:
   "2026-03-08T21:50:41.448Z",maintainer-agent,"Badges: CI workflow status + npm version + license + node compat."
   "2026-03-08T21:52:00.579Z",maintainer-agent,"Implemented: README badges (CI/npm/license/node) added at top. CONTRIBUTING.md updated to reference docs/ARCHITECTURE.md and docs/EXTENSIONS.md. 535/535 tests pass."
 notes[1]{created_at,author,text}:
   "2026-03-08T21:50:41.448Z",maintainer-agent,Use GitHub Actions badge for CI and shields.io for npm/license/node.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:37:03.825Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[2]{path,scope,note}:
   CONTRIBUTING.md,project,add links to docs/
   README.md,project,add badges at top

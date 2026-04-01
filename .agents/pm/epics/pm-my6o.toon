@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[4]: "area:cli","area:compat",external-audit,pm-cli
 created_at: "2026-04-01T16:22:06.208Z"
-updated_at: "2026-04-01T17:02:46.499Z"
+updated_at: "2026-04-01T20:32:50.022Z"
 deadline: "2026-04-08T16:22:06.208Z"
+assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 300
 acceptance_criteria: All unresolved audit findings are implemented with tests/docs; issue2/3 are mapped to existing closed items; build/tests pass and release evidence is recorded.
@@ -19,10 +20,24 @@ value: Removes audit friction without regressing existing users
 impact: Improves CLI clarity and reliability
 outcome: Notes/learnings parity and files/docs/update UX hardening shipped with evidence
 why_now: Audit surfaced user pain and contract gaps that block confidence
+parent: pm-my6o
+reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: audit-remediation
 release: vnext
+blocked_by: pm-0lbm
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: cursor-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: vnext
+fixed_version: vnext
 component: cli-core
 regression: true
 customer_impact: Fixes missing command parity and reduces workflow confusion
@@ -41,5 +56,13 @@ comments[3]{created_at,author,text}:
   "2026-04-01T17:02:44.777Z",cursor-agent,"Epic complete: pm-v1s1, pm-ap8l, pm-c465, pm-e0ab, pm-c8dz, and pm-ac8x are closed with linked evidence. Runtime verification: build pass, targeted pass (141/141), full pass (690/690), coverage threshold mismatch confirmed pre-existing on origin/main baseline."
 notes[1]{created_at,author,text}:
   "2026-04-01T16:22:06.208Z",cursor-agent,Issue2 and Issue3 are reused from prior closed work; new work focuses on Issue1 and Issue4/5/6 hardening.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:32:50.022Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
+files[1]{path,scope,note}:
+  README.md,project,metadata-audit-linked-context
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,7200,metadata-audit-baseline-regression
+docs[1]{path,scope,note}:
+  README.md,project,metadata-audit-documentation-context
 close_reason: "External audit remediation delivered with implementation, docs, and verification evidence."
 body: Issue2/3 map to existing closed work; this epic tracks unresolved issue1 plus stability and UX guidance workstreams.

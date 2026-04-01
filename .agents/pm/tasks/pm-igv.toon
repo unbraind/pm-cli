@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[4]: "area:extensions-pi",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:02:12.269Z"
-updated_at: "2026-03-05T09:33:50.435Z"
+updated_at: "2026-04-01T20:34:14.348Z"
 deadline: "2026-03-13T23:02:12.269Z"
+assignee: steve
 author: steve
 estimated_minutes: 120
 acceptance_criteria: "Pi wrapper action mapping stays CLI-parity for supported actions, including search include-linked semantics, with deterministic args and structured result envelope."
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-igv
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-b1w
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: steve
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: extensions-pi-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-b1w,parent,"2026-02-17T23:02:12.269Z",steve,null
   pm-f45,blocks,"2026-02-17T23:02:12.269Z",steve,null
@@ -43,6 +73,10 @@ comments[28]{created_at,author,text}:
   "2026-03-04T10:11:45.508Z",cursor-maintainer,"Implemented docs-first claim/release metadata parity increment: PRD/README now explicitly require Pi-wrapper forwarding of author/message/force for claim and release actions, docs/pi/extensions/pm/index.ts now routes claim/release through shared author-message-force flag plumbing, and unit coverage now asserts deterministic claim/release argument mapping."
   "2026-03-04T10:24:15.536Z",cursor-maintainer,"Evidence: node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts passed (7/7); pnpm build passed; pm test pm-igv --run --timeout 7200 --json passed linked tests (4 passed, 0 failed, 0 skipped) including sandboxed coverage with 100% lines/branches/functions/statements; pm test-all --status in_progress --timeout 7200 --json passed totals items=7 linked_tests=33 passed=16 failed=0 skipped=17; pm test-all --status closed --timeout 7200 --json passed totals items=37 linked_tests=128 passed=51 failed=0 skipped=77; npm i -g . verified pm remains globally available at version 0.1.0. Follow-up items created: none."
   "2026-03-04T11:50:42.571Z",cursor-agent,"Iteration verification complete. Docs-to-implementation parity check: PRD.md + README.md + AGENTS.md reviewed against `pm --help` and current Pi wrapper action surface (`docs/pi/extensions/pm/index.ts`), with no new drift identified for this item scope.\nValidation run:\n1) pm test pm-igv --run --timeout 7200 --json => passed (4/4 linked tests, 0 failed, 0 skipped).\n2) pm test-all --status in_progress --timeout 7200 --json => totals items=7 linked_tests=33 passed=16 failed=0 skipped=17.\n3) pm test-all --status closed --timeout 7200 --json => totals items=38 linked_tests=130 passed=51 failed=0 skipped=79.\nCoverage proof: sandboxed coverage outputs in this run remained 100% lines/branches/functions/statements (All files 100/100/100/100).\nRelease-readiness check: `npm i -g .` then `pm --version` succeeded (0.1.0), confirming global availability of latest local build."
+notes[1]{created_at,author,text}:
+  "2026-04-01T20:34:12.922Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:34:14.348Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[8]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,Pi wrapper project-scoped module path
   package.json,project,publish allowlist includes Pi wrapper source module

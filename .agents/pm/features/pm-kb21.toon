@@ -6,8 +6,9 @@ status: open
 priority: 1
 tags[3]: "area:history","area:restore",pm-cli
 created_at: "2026-04-01T15:26:50.133Z"
-updated_at: "2026-04-01T15:59:04.817Z"
+updated_at: "2026-04-01T20:30:49.077Z"
 deadline: "2026-04-07T15:26:50.133Z"
+assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 240
 acceptance_criteria: "All history-touching commands honor configured missing-stream policy, restore can recover deleted/missing items from history-only state, and full verification succeeds."
@@ -20,10 +21,23 @@ impact: Reduces operational failures and recovery dead-ends
 outcome: Consistent command behavior in strict and default modes
 why_now: "Current flows are inconsistent between diagnostics, mutations, and restore"
 parent: pm-ofh9
+reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: history-hardening
 release: vnext
+blocked_by: pm-9lc
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: cursor-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: planned-or-active-implementation
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: work-tracked-as-active-or-open
+affected_version: vnext
+fixed_version: target-vnext
 component: history-policy
 regression: true
 customer_impact: Prevents surprising failures when history files are missing
@@ -36,6 +50,8 @@ comments[2]{created_at,author,text}:
   "2026-04-01T15:59:04.817Z",cursor-agent,"Feature implementation complete across settings/config, strict-vs-auto history policy enforcement, restore history-only recovery, regression tests, and docs/changelog updates. Verification: full build + full test suite pass; coverage gate remains below repository-wide 100% thresholds (pre-existing baseline)."
 notes[1]{created_at,author,text}:
   "2026-04-01T15:26:50.133Z",cursor-agent,Will execute settings/helper/command/recovery/test/docs workstreams as linked child tasks.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:30:49.077Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/core/store/settings.ts,project,settings surface
 tests[1]{command,path,scope,timeout_seconds,note}:

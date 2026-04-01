@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:docs","area:release","area:status",pm-cli
 created_at: "2026-04-01T10:47:25.606Z"
-updated_at: "2026-04-01T10:58:54.329Z"
+updated_at: "2026-04-01T20:24:12.172Z"
 deadline: "2026-04-03T10:47:25.606Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: Docs explicitly document in-progress alias support and canonical in_progress persistence; build and regression tests pass; verification evidence is logged on linked pm items.
@@ -20,8 +21,23 @@ impact: Reduces confusion and rollout risk
 outcome: Release-ready status alias support with documented behavior
 why_now: Users are actively affected and need immediate docs clarity
 parent: pm-1r6p
+reviewer: maintainer-review
 risk: low
 confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-1r6p
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
 component: documentation
 regression: true
 customer_impact: users can rely on both status spellings without workflow breaks
@@ -32,6 +48,8 @@ comments[2]{created_at,author,text}:
   "2026-04-01T10:58:29.954Z",codex-agent,"Updated README/PRD/AGENTS/CHANGELOG with explicit in-progress alias compatibility and canonical storage wording. Verification: node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage currently reports pre-existing global threshold shortfall (98.14 lines / 96.57 branches) outside this change scope."
 notes[1]{created_at,author,text}:
   "2026-04-01T10:47:25.606Z",codex-agent,Record command outputs and pass/fail summaries in pm comments prior to closure.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:22:53.459Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[4]{path,scope,note}:
   AGENTS.md,project,agent workflow status alias normalization guidance
   CHANGELOG.md,project,unreleased fix notes for status alias support

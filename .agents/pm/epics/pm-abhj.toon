@@ -6,8 +6,9 @@ status: blocked
 priority: 0
 tags[4]: agent-ux,"area:context",core,pm-cli
 created_at: "2026-04-01T14:09:44.275Z"
-updated_at: "2026-04-01T14:27:07.301Z"
+updated_at: "2026-04-01T20:14:33.550Z"
 deadline: "2026-04-08T14:09:44.275Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: "`pm context` and `pm ctx` provide deterministic, token-efficient high-level and low-level focus context plus agenda/reminder data with no regressions."
@@ -19,17 +20,33 @@ value: Faster and safer next-work selection for agents
 impact: Lower context gathering overhead in large repositories
 outcome: Reliable one-command project context for agents and humans
 why_now: Current workflows require multiple commands for context assembly.
+parent: pm-abhj
+reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: context-rollout
 release: vnext
+blocked_by: pending-upstream-dependency
 blocked_reason: Epic delivery is blocked only by repository-wide coverage thresholds currently below 100%.
+unblock_note: complete-linked-dependency-then-update-status
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: planned-or-active-implementation
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: work-tracked-as-active-or-open
+affected_version: vnext
+fixed_version: target-vnext
 component: cli-context
+regression: false
 customer_impact: Improves triage speed and consistency
 comments[1]{created_at,author,text}:
   "2026-04-01T14:09:44.275Z",codex-agent,Epic created after duplicate checks found no active context-command item.
 notes[1]{created_at,author,text}:
   "2026-04-01T14:09:44.275Z",codex-agent,Implementation composes list and calendar behavior with deterministic ranking.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:14:33.550Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/main.ts,project,command registration target
 tests[1]{command,path,scope,timeout_seconds,note}:

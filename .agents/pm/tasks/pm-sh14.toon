@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:lifecycle",phase2,pm-cli
 created_at: "2026-04-01T19:28:03.281Z"
-updated_at: "2026-04-01T19:57:33.052Z"
+updated_at: "2026-04-01T20:21:15.192Z"
 deadline: "2026-04-08T19:28:03.281Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 150
 acceptance_criteria: Preflight overrides run before item-format and migration gates; skip/enforce behavior is explicit and tested.
@@ -20,10 +21,23 @@ impact: Removes hard preflight boundary.
 outcome: Preflight decisions are extension-driven when configured.
 why_now: Needed for complete runtime override surface.
 parent: pm-977j
+reviewer: maintainer-review
 risk: high
 confidence: medium
 sprint: phase2-override
 release: vnext
+blocked_by: pm-977j
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: vnext
+fixed_version: vnext
 component: extensions-runtime
 regression: true
 customer_impact: Advanced teams can enforce custom command policy gates.
@@ -34,6 +48,8 @@ comments[2]{created_at,author,text}:
   "2026-04-01T19:57:31.580Z",codex-agent,"Implemented in Phase 2 full-override rollout. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage passed (64 files/702 tests) with aligned coverage gates and release-readiness checks green."
 notes[1]{created_at,author,text}:
   "2026-04-01T19:28:03.281Z",codex-agent,Fallback path must preserve current behavior.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:21:15.192Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[2]{path,scope,note}:
   src/cli/main.ts,project,preAction gate orchestration
   src/core/extensions/loader.ts,project,preflight contract registration

@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: bugfix,item-format,pm-cli,toon
 created_at: "2026-03-31T22:15:11.346Z"
-updated_at: "2026-03-31T22:24:27.876Z"
+updated_at: "2026-04-01T20:25:15.446Z"
 deadline: "2026-04-01T22:15:11.346Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 150
 acceptance_criteria: "TOON serialization writes front-matter fields at depth 0 with no top-level front_matter key, parser remains backward compatible with wrapped legacy files, and item-format tests plus regression suite pass."
@@ -19,8 +20,24 @@ value: Cleaner human-readable TOON and strict spec alignment
 impact: Prevents format drift and improves interoperability with TOON tooling
 outcome: All pm .toon item files no longer start with front_matter
 why_now: Recent changes introduced wrapper output across all item files and need immediate correction
+parent: pm-h3tp
+reviewer: maintainer-review
 risk: medium
 confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
 component: core/item-format
 regression: true
 customer_impact: Users and agents see cleaner TOON files and consistent format semantics.
@@ -31,6 +48,8 @@ comments[4]{created_at,author,text}:
   "2026-03-31T22:24:14.558Z",codex-agent,"pm test pm-h3tp --run --timeout 7200 passed all 3 linked commands: full coverage gate and both targeted TOON codec regressions."
 notes[1]{created_at,author,text}:
   "2026-03-31T22:15:11.346Z",codex-agent,Keep parse compatibility for legacy wrapped files while writing canonical unwrapped TOON.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:24:58.231Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[3]{path,scope,note}:
   docs/ARCHITECTURE.md,project,TOON item storage shape documentation
   src/core/item/item-format.ts,project,serializer and parser behavior

@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[6]: "area:extensions-pi",code,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-05T00:27:48.810Z"
-updated_at: "2026-03-05T09:33:50.129Z"
+updated_at: "2026-04-01T20:34:10.942Z"
 deadline: "2026-03-06T00:27:48.810Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 75
 acceptance_criteria: "Pi wrapper falls back to node with a deterministic CLI path that does not depend on cwd, and unit + regression runs pass with 100 percent coverage gate maintained."
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-e6qb
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-ni7x
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: extensions-pi-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-ni7x,related,"2026-03-05T00:27:48.810Z",maintainer-agent,null
 comments[5]{created_at,author,text}:
@@ -21,6 +51,8 @@ comments[5]{created_at,author,text}:
   "2026-03-05T00:42:34.255Z",maintainer-agent,"Post-close maintainer check: refreshed global install via npm install -g . and verified pm --version reports 0.1.0."
 notes[1]{created_at,author,text}:
   "2026-03-05T00:27:48.810Z",maintainer-agent,"Plan: update wrapper fallback path construction and extend pi-agent-extension unit assertions."
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:34:10.942Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[2]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,Pi wrapper project-scoped module path
   tests/unit/pi-agent-extension.spec.ts,project,fallback regression assertions

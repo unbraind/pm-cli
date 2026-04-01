@@ -6,11 +6,14 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:error",code,pm-cli
 created_at: "2026-04-01T12:39:34.369Z"
-updated_at: "2026-04-01T12:56:15.037Z"
+updated_at: "2026-04-01T20:23:51.759Z"
 deadline: "2026-04-08T12:39:34.369Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 160
 acceptance_criteria: Commander usage failures emit one high-signal guidance message path without duplicate lines and with actionable examples.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
 goal: CLI usability excellence
 objective: High-signal usage failures
 value: Less noisy stderr
@@ -18,8 +21,23 @@ impact: Reduced confusion
 outcome: Clean commander guidance
 why_now: Current behavior duplicates messages.
 parent: pm-frk8
+reviewer: maintainer-review
 risk: medium
 confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-frk8
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
 component: cli-commander
 regression: true
 customer_impact: Cleaner and clearer usage errors improve trust and speed
@@ -30,6 +48,8 @@ comments[2]{created_at,author,text}:
   "2026-04-01T12:44:58.576Z",codex-agent,"Commander usage handling now routes through structured guidance and suppresses default commander stderr noise via program.configureOutput(writeErr noop), removing duplicate message patterns."
 notes[1]{created_at,author,text}:
   "2026-04-01T12:39:34.369Z",codex-agent,Primary file is src/cli/main.ts commander catch and help-after-error behavior.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:22:19.056Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/main.ts,project,Commander usage handling
 tests[1]{command,path,scope,timeout_seconds,note}:

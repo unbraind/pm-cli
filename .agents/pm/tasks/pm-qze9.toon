@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:calendar","area:integration",code,pm-cli
 created_at: "2026-03-31T21:28:44.478Z"
-updated_at: "2026-03-31T21:45:53.975Z"
+updated_at: "2026-04-01T20:25:21.678Z"
 deadline: "2026-04-07T21:28:44.478Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 100
 acceptance_criteria: Completion scripts and Pi wrapper support calendar actions/flags with deterministic argument mapping.
@@ -20,10 +21,23 @@ impact: Improved discoverability and tool interoperability
 outcome: Completion and Pi wrapper are calendar-aware
 why_now: Integrations must ship with core feature for agent usability.
 parent: pm-122q
+reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: calendar-rollout
 release: vnext
+blocked_by: pm-122q
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: vnext
+fixed_version: vnext
 component: integration/pi-completion
 regression: true
 customer_impact: Calendar functionality becomes automatable via Pi and easier to discover via completion.
@@ -37,6 +51,8 @@ comments[3]{created_at,author,text}:
   "2026-03-31T21:45:52.145Z",codex-agent,"Evidence: completion and Pi wrapper unit tests passed via pm test --run."
 notes[1]{created_at,author,text}:
   "2026-03-31T21:28:44.478Z",codex-agent,Keep wrapper schema parity with CLI options to avoid drift.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:25:10.246Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[4]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,calendar wrapper action mapping
   src/cli/commands/completion.ts,project,calendar command and reminder flag completion surface

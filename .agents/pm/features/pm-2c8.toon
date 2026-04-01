@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[4]: architecture,pm-cli,refactor,release-readiness
 created_at: "2026-02-17T23:37:26.647Z"
-updated_at: "2026-03-07T00:36:48.513Z"
+updated_at: "2026-04-01T20:34:45.505Z"
 deadline: "2026-02-21T23:37:26.647Z"
+assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 360
 acceptance_criteria: Module boundaries keep src/cli and src/core as canonical implementation locations while legacy root exports remain deterministic and covered by tests/build.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: feature-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-feature-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-2c8
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-ote
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: cursor-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: feature-component
+regression: false
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-ote,parent,"2026-02-17T23:37:26.647Z",cursor-agent,null
   pm-pq8,related,"2026-02-17T23:37:26.647Z",cursor-agent,null
@@ -62,6 +92,10 @@ comments[47]{created_at,author,text}:
   "2026-02-18T21:40:42.201Z",maintainer-agent,"Planned changeset: add explicit compatibility-wrapper contract coverage that verifies src/commands modules remain strict re-exports of src/cli/commands modules, strengthening module-boundary acceptance criteria without behavior changes."
   "2026-02-18T21:55:12.360Z",maintainer-agent,"Implemented tests/unit/command-wrapper-exports.spec.ts to verify every src/commands/*.ts module is a strict runtime re-export of the matching src/cli/commands/*.ts module. Evidence: pm test pm-2c8 --run --timeout 1800 --json passed all linked tests (count=6); pm test-all --status in_progress --timeout 1800 --json totals items=4 linked_tests=20 passed=19 failed=0 skipped=1; pm test-all --status closed --timeout 1800 --json totals items=11 linked_tests=25 passed=22 failed=0 skipped=3; coverage from linked run-tests coverage output remains 100% statements/branches/functions/lines."
   "2026-03-07T00:36:48.513Z",maintainer-agent,"Maintenance fix: removed stale linked test command for deleted tests/unit/command-wrapper-exports.spec.ts after closed regression sweep surfaced deterministic missing-file failure in pm test-all."
+notes[1]{created_at,author,text}:
+  "2026-04-01T20:34:43.863Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:34:45.505Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[80]{path,scope,note}:
   src/cli.ts,project,Stable bin wrapper that delegates to src/cli/main.ts
   src/cli/commands/activity.ts,project,command implementation moved under cli boundary

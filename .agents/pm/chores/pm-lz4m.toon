@@ -6,21 +6,40 @@ status: closed
 priority: 0
 tags[3]: pm-cli,publish,release
 created_at: "2026-03-12T23:36:45.792Z"
-updated_at: "2026-03-12T23:45:20.632Z"
+updated_at: "2026-04-01T20:32:44.988Z"
 deadline: "2026-03-13T23:36:45.792Z"
+assignee: release-agent
 author: release-agent
 estimated_minutes: 120
 acceptance_criteria: "package.json and changelog are updated for the release version, release gates pass, release tag is pushed, GitHub Release is created, and npm publish succeeds without secret leaks."
 definition_of_ready: Release workflow is documented and repository has required publishing permissions/secrets.
+order: 1
 goal: Release
 objective: Publish a verified pm-cli release
 value: Delivers latest pm-cli improvements safely
 impact: Keeps GitHub and npm distribution synchronized
 outcome: A verified release is available on GitHub and npm
 why_now: User requested immediate release execution
+parent: pm-lz4m
+reviewer: maintainer-review
 risk: high
 confidence: high
+sprint: archive-2026w14
 release: v2026.3.12
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: release-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: v2026.3.12
+fixed_version: v2026.3.12
+component: chore-component
+regression: false
 customer_impact: Faster access to latest CLI fixes and features
 comments[4]{created_at,author,text}:
   "2026-03-12T23:36:45.792Z",release-agent,Starting release workflow for version 2026.3.12.
@@ -29,6 +48,8 @@ comments[4]{created_at,author,text}:
   "2026-03-12T23:45:19.737Z",release-agent,"Publish evidence: pushed commit b720af4 to main, pushed tag v2026.3.12, Release workflow run 23029146939 succeeded, GitHub Release URL https://github.com/unbraind/pm-cli/releases/tag/v2026.3.12, npm registry now reports @unbrained/pm-cli version 2026.3.12."
 notes[1]{created_at,author,text}:
   "2026-03-12T23:36:45.792Z",release-agent,Run full release gates and secret scan before tag push.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:32:44.988Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[2]{path,scope,note}:
   CHANGELOG.md,project,release notes source
   package.json,project,release version source of truth

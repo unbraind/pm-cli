@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:learnings","area:notes","area:tests",external-audit,pm-cli
 created_at: "2026-04-01T16:22:47.797Z"
-updated_at: "2026-04-01T16:59:59.531Z"
+updated_at: "2026-04-01T20:36:16.361Z"
 deadline: "2026-04-06T16:22:47.797Z"
+assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 180
 acceptance_criteria: pm notes and pm learnings support list/add and expected options; help/completion/wrapper/output and tests are updated.
@@ -20,10 +21,23 @@ impact: Closes a medium-severity workflow gap
 outcome: New command surfaces are stable and discoverable
 why_now: Users currently cannot add notes/learnings after create
 parent: pm-v1s1
+reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: audit-remediation
 release: vnext
+blocked_by: pm-v1s1
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: cursor-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: vnext
+fixed_version: vnext
 component: cli-commands
 regression: true
 customer_impact: Users can capture ongoing notes and learnings
@@ -35,6 +49,8 @@ comments[3]{created_at,author,text}:
   "2026-04-01T16:59:57.702Z",cursor-agent,Completed notes/learnings command parity across runtime surfaces (CLI/help/completion/output/Pi wrapper) with unit+integration coverage and green targeted/full test runs.
 notes[1]{created_at,author,text}:
   "2026-04-01T16:22:47.797Z",cursor-agent,Will mirror comments command ergonomics and validation patterns.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:36:16.361Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[10]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,Pi wrapper action parity for notes/learnings
   src/cli/commands/completion.ts,project,shell completion parity for notes/learnings
@@ -48,5 +64,7 @@ files[10]{path,scope,note}:
   tests/unit/notes-learnings-command.spec.ts,project,unit coverage for notes/learnings command behaviors
 tests[1]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/notes-learnings-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/cli.integration.spec.ts,null,project,900,targeted parity verification suite
+docs[1]{path,scope,note}:
+  README.md,project,metadata-audit-documentation-context
 close_reason: Notes/learnings command parity implemented and validated across runtime/test surfaces.
 body: Implements Issue1 functional parity for existing-item note/learning mutation flows.

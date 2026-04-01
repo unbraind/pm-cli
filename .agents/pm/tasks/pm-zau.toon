@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[4]: "area:operations",core,"milestone:3",pm-cli
 created_at: "2026-02-17T23:02:09.876Z"
-updated_at: "2026-02-18T14:34:05.944Z"
+updated_at: "2026-04-01T20:33:06.446Z"
 deadline: "2026-03-03T23:02:09.876Z"
+assignee: steve
 author: steve
 estimated_minutes: 140
 acceptance_criteria: "stats, health, and gc commands provide deterministic diagnostics outputs with unit/integration coverage and 100% gate preserved"
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-zau
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-54d
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: steve
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: operations-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-54d,parent,"2026-02-17T23:02:09.876Z",steve,null
   pm-c0r,blocks,"2026-02-17T23:02:09.876Z",steve,null
@@ -25,6 +55,10 @@ comments[10]{created_at,author,text}:
   "2026-02-18T14:28:53.451Z",maintainer-agent,"author=maintainer-agent,created_at=now,text=Planned changeset: update PRD and README first to include deterministic gc command contract, then implement pm gc wiring + command logic with unit/integration coverage and run pm test + pm test-all for evidence."
   "2026-02-18T14:29:26.051Z",maintainer-agent,"Docs-first update applied: PRD.md and README.md now list pm gc in implemented command surface and define gc output contract before code implementation."
   "2026-02-18T14:34:05.623Z",maintainer-agent,"Implemented pm gc command with deterministic cache cleanup summary and CLI wiring after docs-first PRD/README updates. Evidence: pm test pm-zau --run --timeout 1200 passed (linked coverage/test/build commands), pm test-all --status in_progress --timeout 1200 passed (totals items=5 linked_tests=14 passed=11 failed=0 skipped=3), and coverage remains 100% lines/branches/functions/statements including src/commands/gc.ts."
+notes[1]{created_at,author,text}:
+  "2026-04-01T20:33:05.357Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:33:06.446Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[12]{path,scope,note}:
   PRD.md,project,update milestone checklist and command matrix
   README.md,project,document implemented command surface

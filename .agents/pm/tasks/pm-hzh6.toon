@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[7]: "area:extensions",code,docs,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-06T09:42:43.394Z"
-updated_at: "2026-03-06T09:57:36.684Z"
+updated_at: "2026-04-01T20:34:31.764Z"
 deadline: "2026-03-08T09:42:43.394Z"
+assignee: cursor-maintainer
 author: cursor-maintainer
 estimated_minutes: 60
 acceptance_criteria: discover/load surfaces deterministic extension_capability_unknown diagnostics for unknown manifest capability names; known capability enforcement behavior remains intact; README/PRD are aligned; linked tests and regression suite pass with 100% coverage.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-hzh6
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-mwwp
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: cursor-maintainer
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: extensions-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-mwwp,related,"2026-03-06T09:42:43.394Z",cursor-maintainer,null
 comments[3]{created_at,author,text}:
@@ -19,6 +49,8 @@ comments[3]{created_at,author,text}:
   "2026-03-06T09:57:36.333Z",cursor-maintainer,"Implemented docs-first hardening for unknown manifest capability names: PRD.md + README.md now specify deterministic extension_capability_unknown diagnostics; loader discovery now emits extension_capability_unknown:<layer>:<name>:<capability> warnings while preserving load/activation isolation; tests/unit/extension-loader.spec.ts now asserts unknown-capability warnings and non-blocking load behavior. Verification: pm test pm-hzh6 --run --timeout 7200 --json => linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status in_progress --timeout 7200 --json => items=1 linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status closed --timeout 7200 --json => items=85 linked_tests=255 passed=62 failed=0 skipped=193. Coverage evidence remains 100% lines/branches/functions/statements from linked coverage run."
 notes[1]{created_at,author,text}:
   "2026-03-06T09:42:43.394Z",cursor-maintainer,Docs-first update then loader warning implementation then regression tests and coverage.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:34:31.764Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[4]{path,scope,note}:
   PRD.md,project,Specify unknown capability diagnostics
   README.md,project,Document unknown-capability diagnostics

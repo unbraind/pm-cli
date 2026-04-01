@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[4]: ci,github-actions,pm-cli,release-readiness
 created_at: "2026-02-17T23:37:41.134Z"
-updated_at: "2026-02-22T03:08:25.682Z"
+updated_at: "2026-04-01T20:33:29.668Z"
 deadline: "2026-02-22T23:37:41.134Z"
+assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 240
 acceptance_criteria: "CI workflows pass on push/PR with build, typecheck, coverage gate, and sandboxed pm regression via node scripts/run-tests.mjs coverage; no publish/release jobs included."
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: chore-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-chore-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-wo8
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-912
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: cursor-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: chore-component
+regression: false
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-912,related,"2026-02-17T23:37:41.134Z",cursor-agent,null
   pm-ote,parent,"2026-02-17T23:37:41.134Z",cursor-agent,null
@@ -186,6 +216,10 @@ comments[170]{created_at,author,text}:
   "2026-02-22T02:03:54.665Z",maintainer-agent,"Evidence: (1) pm test pm-wo8 --run --timeout 3600 --json => run_results passed=28 failed=0 skipped=1 (single skipped entry is path-only linked test without command). (2) pm test-all --status in_progress --timeout 3600 --json => totals items=11 linked_tests=63 passed=37 failed=0 skipped=26. (3) pm test-all --status closed --timeout 3600 --json => totals items=21 linked_tests=57 passed=20 failed=0 skipped=37. Coverage proof from linked node scripts/run-tests.mjs coverage entry reports All files 100% statements/branches/functions/lines after sandbox-safety validator hardening and new chained-command regression tests."
   "2026-02-22T02:45:16.297Z",cursor-maintainer,"Planned iteration: rerun linked pm-wo8 tests and in_progress/closed regression sweeps to refresh same-day release-readiness evidence before closure."
   "2026-02-22T03:08:25.220Z",cursor-maintainer,"Evidence refresh (2026-02-22): node dist/cli.js test pm-wo8 --run --timeout 3600 --json => passed=28 failed=0 skipped=1; node dist/cli.js test-all --status in_progress --timeout 3600 --json => totals items=11 linked_tests=64 passed=37 failed=0 skipped=27; node dist/cli.js test-all --status closed --timeout 3600 --json => totals items=21 linked_tests=57 passed=20 failed=0 skipped=37. Coverage proof from linked node scripts/run-tests.mjs coverage runs remains 100% statements/branches/functions/lines. Acceptance criteria check: CI contracts enforce build+typecheck+test+coverage+sandboxed regression and prohibit publish/release steps."
+notes[1]{created_at,author,text}:
+  "2026-04-01T20:33:27.803Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:33:29.668Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[62]{path,scope,note}:
   .github/workflows/ci.yml,project,PR/push CI with cross-platform coverage gate
   .github/workflows/nightly.yml,project,Scheduled validation workflow without publish actions

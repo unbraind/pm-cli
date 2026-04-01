@@ -6,17 +6,49 @@ status: closed
 priority: 0
 tags[5]: "area:cli",code,doc,pm-cli,tests
 created_at: "2026-03-07T13:10:28.926Z"
-updated_at: "2026-03-07T13:15:39.792Z"
+updated_at: "2026-04-01T20:31:49.908Z"
 deadline: "2026-03-09T13:10:28.926Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: pm update accepts --title and -t to modify item title; PRD/README reflect this.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 1
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-w1r6
+reviewer: maintainer-review
+risk: high
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: cli-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 comments[3]{created_at,author,text}:
   "2026-03-07T13:10:28.926Z",maintainer-agent,Users should be able to update item title without editing files manually
   "2026-03-07T13:15:39.434Z",unknown,"Implemented --title/-t support for pm update. Updated PRD and README command contract, added option parsing in src/cli/main.ts and src/cli/commands/update.ts, added Pi wrapper action mapping. Tests updated to assert the new flag and title modification behavior."
   "2026-03-07T13:15:39.592Z",unknown,"Evidence: pnpm test:coverage passed (100% lines/branches/functions/statements). PRD.md and README.md aligned. Contract tests and Pi agent wrapper tests passed."
 notes[1]{created_at,author,text}:
   "2026-03-07T13:10:28.926Z",maintainer-agent,Need to update PRD and README first then cli and tests
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:31:49.908Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[6]{path,scope,note}:
   PRD.md,project,null
   README.md,project,null
@@ -27,5 +59,7 @@ files[6]{path,scope,note}:
 tests[2]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs coverage,null,project,3600,null
   node scripts/run-tests.mjs test,null,project,240,null
+docs[1]{path,scope,note}:
+  README.md,project,metadata-audit-documentation-context
 close_reason: Added --title update parity across CLI docs and wrapper with 100% coverage and passing tests.
 body: Add --title and -t support for pm update. Update PRD.md README.md src/cli/main.ts and tests.

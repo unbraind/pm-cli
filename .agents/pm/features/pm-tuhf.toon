@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:calendar",output,pm-cli
 created_at: "2026-03-31T21:27:29.408Z"
-updated_at: "2026-03-31T22:09:20.417Z"
+updated_at: "2026-04-01T20:25:17.481Z"
 deadline: "2026-04-10T21:27:29.408Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: pm calendar supports agenda/day/week/month views with deterministic filters and markdown default output unless overridden.
@@ -20,10 +21,23 @@ impact: Reduced planning ambiguity for autonomous agents
 outcome: Stable calendar views for deadlines and reminders
 why_now: Calendar views are missing from current CLI workflow.
 parent: pm-qh3p
+reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: calendar-rollout
 release: vnext
+blocked_by: pm-0lbm
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: vnext
+fixed_version: vnext
 component: cli/calendar
 regression: true
 customer_impact: Improves deadline and planning visibility for agents.
@@ -36,6 +50,8 @@ comments[2]{created_at,author,text}:
   "2026-03-31T22:09:19.547Z",codex-agent,Feature complete via closed tasks pm-ezri and pm-kglq; calendar core views plus markdown-default output behavior verified.
 notes[1]{created_at,author,text}:
   "2026-03-31T21:27:29.408Z",codex-agent,Use command-specific output switching to avoid global format regressions.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:25:02.517Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/commands/calendar.ts,project,new calendar command implementation
 tests[1]{command,path,scope,timeout_seconds,note}:

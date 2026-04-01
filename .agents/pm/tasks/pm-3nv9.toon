@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[5]: "area:core","area:docs",close,pm-cli,workflow
 created_at: "2026-03-06T13:04:03.661Z"
-updated_at: "2026-03-06T13:23:20.847Z"
+updated_at: "2026-04-01T20:34:32.812Z"
 deadline: "2026-03-07T13:04:03.661Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: PRD README and AGENTS consistently document pm close for closed transitions; update command rejects --status closed with clear guidance; tests cover new guard; sandboxed regression and coverage remain 100%.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-3nv9
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: core-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 comments[8]{created_at,author,text}:
   "2026-03-06T13:04:03.661Z",maintainer-agent,Detected close workflow drift and opening alignment task
   "2026-03-06T13:04:19.260Z",maintainer-agent,"Planned changeset: update docs to use pm close for closed transitions, then enforce update --status closed guard and add test coverage."
@@ -22,6 +52,8 @@ comments[8]{created_at,author,text}:
   "2026-03-06T13:23:12.675Z",maintainer-agent,"Post-lint-cleanup verification: node dist/cli.js test pm-3nv9 --run --timeout 7200 --json passed all 3 linked tests; node dist/cli.js test-all --status in_progress --timeout 7200 --json passed totals items=1 linked_tests=3 passed=3 failed=0 skipped=0; coverage remains 100% statements branches functions and lines."
 notes[1]{created_at,author,text}:
   "2026-03-06T13:04:03.661Z",maintainer-agent,Plan docs first then update guard then tests and regression
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:34:32.812Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[7]{path,scope,note}:
   AGENTS.md,project,canonical close workflow sync
   PRD.md,project,close workflow contract clarification

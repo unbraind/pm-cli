@@ -6,21 +6,40 @@ status: closed
 priority: 1
 tags[5]: agents,cli,docs,help,pm-cli
 created_at: "2026-03-12T22:38:16.043Z"
-updated_at: "2026-03-12T22:49:46.907Z"
+updated_at: "2026-04-01T20:35:02.787Z"
 deadline: "2026-03-13T22:38:16.043Z"
+assignee: codex-maintainer
 author: codex-maintainer
 estimated_minutes: 60
 acceptance_criteria: "1) Top-level and command help descriptions describe pm as general, flexible, extensible, and agent-optimized for any project/language. 2) Help contract tests are updated and passing. 3) Diff is reviewed for private-data leakage before push."
 definition_of_ready: Help text sources and affected help-contract tests are identified.
+order: 2
 goal: Public CLI positioning
 objective: Make help output universal and project-agnostic
 value: Clearer public-facing product positioning for humans and agents
 impact: Reduces overly narrow wording in command help output
 outcome: Help text consistently presents pm as a universal extensible CLI
 why_now: The help surface is user-visible and should match the intended public positioning before release.
+parent: pm-30zl
+reviewer: maintainer-review
 risk: low
 confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-maintainer
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
 component: cli-help
+regression: true
 customer_impact: Public help text should accurately describe the CLI without leaking internal/private context.
 comments[3]{created_at,author,text}:
   "2026-03-12T22:38:16.043Z",codex-maintainer,Track public help-text wording refresh and leak review for the CLI surface.
@@ -28,6 +47,8 @@ comments[3]{created_at,author,text}:
   "2026-03-12T22:49:46.882Z",codex-maintainer,"Evidence: pm test pm-30zl --run passed the scoped help/completion regression command (8 tests passed). node scripts/check-secrets.mjs reported no credential-like secrets in tracked files. A full node scripts/run-tests.mjs coverage sweep still fails on pre-existing README/contract drift outside this change."
 notes[1]{created_at,author,text}:
   "2026-03-12T22:38:16.043Z",codex-maintainer,Primary edits expected in src/cli/main.ts with help-contract regression coverage updates.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:35:02.787Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[5]{path,scope,note}:
   src/cli/commands/completion.ts,project,shell completion help descriptions
   src/cli/main.ts,project,primary help text source

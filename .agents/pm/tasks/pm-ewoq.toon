@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[8]: "area:extensions","area:pi",code,doc,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-09T11:39:51.674Z"
-updated_at: "2026-03-09T12:13:11.129Z"
+updated_at: "2026-04-01T20:35:01.472Z"
 deadline: "2026-03-10T11:39:51.000Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: Pi action close-task is accepted in schema and action enum and executes close then release with deterministic author message and force forwarding and is covered by unit tests with docs parity updates.
@@ -19,10 +20,27 @@ value: Reduce repetitive two-step close and release command emission
 impact: Lower operator error and speed up task lifecycle workflows
 outcome: close-task preset safely closes and releases items
 why_now: Maintainer loops repeatedly perform close and release and can benefit from deterministic preset automation.
+parent: pm-ewoq
+reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: maintainer-loop
 release: v0.1
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: v0.1
+fixed_version: v0.1
+component: extensions-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 comments[5]{created_at,author,text}:
   "2026-03-09T11:39:51.674Z",maintainer-agent,Why this exists current workflow presets cover start and pause while close and release remains manual.
   "2026-03-09T11:40:08.178Z",maintainer-agent,Planned changeset before edits docs first update PRD and README for close-task preset then implement Pi wrapper close-task sequence and add unit tests.
@@ -31,6 +49,8 @@ comments[5]{created_at,author,text}:
   "2026-03-09T12:13:10.103Z",maintainer-agent,"Evidence commands passed: pm test pm-ewoq --run --timeout 7200 --json; pm test-all --status in_progress --timeout 7200 --json totals items=1 linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status closed --timeout 7200 --json totals items=174 linked_tests=414 passed=75 failed=0 skipped=339. Coverage remains 100 percent lines branches functions statements."
 notes[1]{created_at,author,text}:
   "2026-03-09T11:39:51.674Z",maintainer-agent,Plan docs first update then implement close-task sequence and add unit tests.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:35:01.472Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[4]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,workflow preset implementation target
   PRD.md,project,docs-first Pi workflow preset coverage update

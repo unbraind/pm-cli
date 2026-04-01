@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: agent-experience,"area:cli","area:comments",compatibility,pm-cli
 created_at: "2026-04-01T11:06:08.121Z"
-updated_at: "2026-04-01T11:19:12.505Z"
+updated_at: "2026-04-01T20:24:06.672Z"
 deadline: "2026-04-03T11:06:08.121Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 70
 acceptance_criteria: comments command accepts optional positional text and still supports --add; explicit --add plus positional text conflict is rejected with usage guidance; --author optional-value path falls back without crash.
@@ -20,8 +21,23 @@ impact: Higher automation success rate
 outcome: comments invocation is intuitive and robust
 why_now: Reported error pattern is frequent and costly
 parent: pm-cvwi
+reviewer: maintainer-review
 risk: low
 confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-cvwi
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
 component: cli-comments
 regression: true
 customer_impact: Agents can reliably add progress comments during implementation loops
@@ -35,6 +51,8 @@ comments[5]{created_at,author,text}:
   "2026-04-01T11:19:12.505Z",codex-agent,"Emote system shipped: wave/dance/sit/clap/laugh/cheer with hotkeys 1-6."
 notes[1]{created_at,author,text}:
   "2026-04-01T11:06:08.121Z",codex-agent,Keep existing --add syntax fully compatible for current users and scripts.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:22:44.387Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/main.ts,project,comments command argument/options wiring
 tests[1]{command,path,scope,timeout_seconds,note}:

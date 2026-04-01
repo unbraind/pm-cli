@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[4]: "area:extensions-renderers",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:02:11.686Z"
-updated_at: "2026-03-04T13:26:04.822Z"
+updated_at: "2026-04-01T20:34:03.411Z"
 deadline: "2026-03-13T23:02:11.686Z"
+assignee: steve
 author: steve
 estimated_minutes: 180
 acceptance_criteria: Extensions can register deterministic renderer overrides used by output formatting and command override handlers for core commands with safe failure containment; tests and sandboxed regressions remain 100% coverage.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-geq
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-b1w
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: steve
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: extensions-renderers-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-b1w,parent,"2026-02-17T23:02:11.686Z",steve,null
   pm-f45,blocks,"2026-02-17T23:02:11.686Z",steve,null
@@ -28,6 +58,10 @@ comments[13]{created_at,author,text}:
   "2026-03-03T22:14:12.219Z",maintainer-agent,"Evidence: pnpm build passed; targeted integration passed via node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts (19/19). Mandatory item run passed: node dist/cli.js test pm-geq --run --timeout 7200 --json with linked results 3 passed / 0 failed / 0 skipped. Regression sweeps passed: node dist/cli.js test-all --status in_progress --timeout 7200 --json => totals items=7 linked_tests=28 passed=13 failed=0 skipped=15; node dist/cli.js test-all --status closed --timeout 7200 --json => totals items=34 linked_tests=119 passed=49 failed=0 skipped=70. Coverage proof remains 100% statements/branches/functions/lines from linked sandboxed coverage run."
   "2026-03-04T13:15:59.338Z",cursor-maintainer,"Verification pass for closure: re-run linked sandbox-safe tests and both test-all sweeps, then close/release if acceptance criteria and 100% coverage remain satisfied."
   "2026-03-04T13:25:54.711Z",cursor-maintainer,"Evidence: pm test pm-geq --run --timeout 7200 --json => passed=3 failed=0 skipped=0 (includes node scripts/run-tests.mjs coverage with 100% statements/branches/functions/lines). Regression sweeps: pm test-all --status in_progress --timeout 7200 --json => items=3 linked_tests=12 passed=8 failed=0 skipped=4; pm test-all --status closed --timeout 7200 --json => items=42 linked_tests=151 passed=54 failed=0 skipped=97. Acceptance criteria status: met; extension command/renderer baseline remains deterministic with safe failure containment."
+notes[1]{created_at,author,text}:
+  "2026-04-01T20:34:01.831Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:34:03.410Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[10]{path,scope,note}:
   PRD.md,project,milestone and API status update before implementation
   README.md,project,docs-first update for extension point baseline

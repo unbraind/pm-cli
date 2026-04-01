@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:sdk",phase2,pm-cli
 created_at: "2026-04-01T19:29:05.089Z"
-updated_at: "2026-04-01T19:57:51.164Z"
+updated_at: "2026-04-01T20:21:03.134Z"
 deadline: "2026-04-08T19:29:05.089Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 120
 acceptance_criteria: SDK exports include parser/preflight/service contract types and compile cleanly.
@@ -20,10 +21,23 @@ impact: Reduces implementation ambiguity and downstream friction.
 outcome: SDK v2 contracts are publicly consumable.
 why_now: Required to make runtime phase-2 surfaces usable externally.
 parent: pm-0u1y
+reviewer: maintainer-review
 risk: medium
 confidence: medium
 sprint: phase2-override
 release: vnext
+blocked_by: pm-0u1y
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: vnext
+fixed_version: vnext
 component: sdk
 regression: true
 customer_impact: Extension authors get stable typings for advanced overrides.
@@ -34,6 +48,8 @@ comments[2]{created_at,author,text}:
   "2026-04-01T19:57:49.710Z",codex-agent,"Implemented in Phase 2 full-override rollout. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage passed (64 files/702 tests) with aligned coverage gates and release-readiness checks green."
 notes[1]{created_at,author,text}:
   "2026-04-01T19:29:05.089Z",codex-agent,Must keep existing exports intact for compatibility.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:21:03.134Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[2]{path,scope,note}:
   src/sdk/cli-contracts.ts,project,contract schema updates
   src/sdk/index.ts,project,SDK export barrel

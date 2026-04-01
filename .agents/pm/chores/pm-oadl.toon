@@ -6,11 +6,41 @@ status: closed
 priority: 0
 tags[3]: maintainer,pm-cli,release-readiness
 created_at: "2026-03-06T15:16:40.917Z"
-updated_at: "2026-03-06T15:24:30.180Z"
+updated_at: "2026-04-01T20:31:10.446Z"
 deadline: "2026-03-07T15:16:40.917Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: One contract-aligned improvement is implemented and verified with sandbox-safe tests and coverage evidence logged.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 1
+goal: chore-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-chore-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-oadl
+reviewer: maintainer-review
+risk: high
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: chore-component
+regression: false
+customer_impact: improves-reliability-and-clarity-for-contributors
 comments[5]{created_at,author,text}:
   "2026-03-06T15:16:40.917Z",maintainer-agent,Starting maintainer run to keep repo release-ready and contract-aligned.
   "2026-03-06T15:17:01.264Z",maintainer-agent,"Plan: detect PRD README AGENTS drift and implement the smallest highest-value contract-alignment fix."
@@ -19,6 +49,8 @@ comments[5]{created_at,author,text}:
   "2026-03-06T15:24:29.987Z",maintainer-agent,"Evidence: added AGENTS session bootstrap guidance and a release-readiness contract test for PM_CMD/PM_AUTHOR workflow tokens. Commands run: node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts; node dist/cli.js test pm-oadl --run; node dist/cli.js test-all --status in_progress. Result: all passed and coverage remains 100 percent."
 notes[1]{created_at,author,text}:
   "2026-03-06T15:16:40.917Z",maintainer-agent,First detect drift and pick smallest high-value fix before broad refactors.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:31:10.446Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[2]{path,scope,note}:
   AGENTS.md,project,bootstrap invocation guidance
   tests/integration/release-readiness-contract.spec.ts,project,contract guard for AGENTS bootstrap guidance

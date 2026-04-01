@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[8]: "area:extensions","area:health",code,doc,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-06T08:22:27.153Z"
-updated_at: "2026-03-06T08:39:37.414Z"
+updated_at: "2026-04-01T20:34:27.551Z"
 deadline: "2026-03-08T23:59:00.000Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: pm health activation.migration_status reports applied/pending/failed deterministically; applied migrations are excluded from pending warnings; docs reflect the contract; regression and coverage stay 100%.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-cw6c
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-42oa
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: extensions-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-42oa,related,"2026-03-06T08:22:27.153Z",maintainer-agent,null
 comments[5]{created_at,author,text}:
@@ -21,6 +51,8 @@ comments[5]{created_at,author,text}:
   "2026-03-06T08:39:37.065Z",maintainer-agent,"Evidence: pm test pm-cw6c --run --timeout 7200 --json passed all 3 linked tests; coverage output remains 100% statements/branches/functions/lines. pm test-all --status in_progress --timeout 7200 --json passed totals items=1 linked_tests=3 passed=3 failed=0 skipped=0 (after rerun sequentially to avoid coverage temp-file contention). pm test-all --status closed --timeout 7200 --json passed totals items=82 linked_tests=248 passed=62 failed=0 skipped=186."
 notes[1]{created_at,author,text}:
   "2026-03-06T08:22:27.153Z",maintainer-agent,Plan docs first then implement health classification then run targeted and full regression.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:34:27.551Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[4]{path,scope,note}:
   PRD.md,project,docs-first contract update
   README.md,project,docs-first contract update

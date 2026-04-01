@@ -6,8 +6,9 @@ status: blocked
 priority: 1
 tags[3]: "area:context",implementation,pm-cli
 created_at: "2026-04-01T14:10:51.504Z"
-updated_at: "2026-04-01T14:27:12.221Z"
+updated_at: "2026-04-01T20:14:49.670Z"
 deadline: "2026-04-05T14:10:51.504Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 360
 acceptance_criteria: "All implementation, test, and documentation updates for pm context are complete and verified with build/test/coverage."
@@ -20,11 +21,23 @@ impact: Improves decision speed for next work
 outcome: pm context available and stable for users
 why_now: Requested feature requires coordinated changes across runtime and contracts.
 parent: pm-iyqf
+reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: context-rollout
 release: vnext
+blocked_by: pm-iyqf
 blocked_reason: Global coverage threshold baseline remains below 100% (97.64/95.34/98.24/97.32) despite passing feature-specific suites.
+unblock_note: complete-linked-dependency-then-update-status
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: planned-or-active-implementation
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: work-tracked-as-active-or-open
+affected_version: vnext
+fixed_version: target-vnext
 component: cli-context
 regression: true
 customer_impact: Users and agents get faster context snapshots
@@ -35,6 +48,8 @@ comments[2]{created_at,author,text}:
   "2026-04-01T14:26:43.067Z",codex-agent,"Implemented pm context/ctx end-to-end: new command module, CLI wiring/help, completion parity, Pi wrapper action mapping, unit/integration/release-readiness tests, and docs (README/PRD/ARCHITECTURE/AGENTS/CHANGELOG). Verification: pnpm build passed; node scripts/run-tests.mjs test passed (63 files / 661 tests); targeted changed-suite regression passed (5 files / 131 tests). Coverage command still fails on existing global 100% thresholds across broader repo (lines 97.64, branches 95.34, functions 98.24, statements 97.32), but context command behavior and all related suites are passing."
 notes[1]{created_at,author,text}:
   "2026-04-01T14:10:51.504Z",codex-agent,Will track files tests docs and verification evidence before close.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:14:49.670Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[12]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,pi wrapper context action
   src/cli/commands/completion.ts,project,shell completion parity

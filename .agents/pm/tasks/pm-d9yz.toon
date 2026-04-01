@@ -6,11 +6,41 @@ status: closed
 priority: 0
 tags[7]: "area:planning","area:tracking",docs,"milestone:6",pm-cli,"priority:0",tests
 created_at: "2026-03-06T23:17:23.778Z"
-updated_at: "2026-03-06T23:33:08.205Z"
+updated_at: "2026-04-01T20:31:30.623Z"
 deadline: "2026-03-09T23:59:00.000Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 75
 acceptance_criteria: All duplicate open milestone epics are either canceled with rationale or linked to canonical items; list-open no longer contains duplicate milestone epics; mandatory pm test and pm test-all sweeps pass with 100% coverage evidence logged.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 1
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-d9yz
+reviewer: maintainer-review
+risk: high
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-ep96
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: planning-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-ep96,discovered_from,"2026-03-06T23:17:23.778Z",maintainer-agent,null
 comments[3]{created_at,author,text}:
@@ -19,6 +49,8 @@ comments[3]{created_at,author,text}:
   "2026-03-06T23:33:07.790Z",maintainer-agent,"Implemented tracker normalization by canceling duplicate seeded milestone epics and mapping each to canonical milestones: pm-6hhn->pm-2xl, pm-zetb->pm-u9r, pm-murz->pm-c0r, pm-met4->pm-54d, pm-xtfo->pm-f45, pm-gyfn->pm-b1w, pm-defw->pm-jiw. Verification: pm test pm-d9yz --run --timeout 7200 --json passed (2/2 linked tests); pm test-all --status in_progress --timeout 7200 --json passed (items=1 linked_tests=2 passed=2 failed=0 skipped=0); pm test-all --status closed --timeout 7200 --json passed (items=112 linked_tests=305 passed=63 failed=0 skipped=242). Coverage remains 100% lines/branches/functions/statements in linked sandbox coverage runs."
 notes[1]{created_at,author,text}:
   "2026-03-06T23:17:23.778Z",maintainer-agent,Perform docs-aligned tracker cleanup first then run full required verification commands.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:31:30.623Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[2]{path,scope,note}:
   AGENTS.md,project,duplicate-prevention workflow policy
   PRD.md,project,milestone and duplicate-prevention policy source

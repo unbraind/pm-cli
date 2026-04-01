@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[5]: "area:cli","area:docs","area:time",compatibility,pm-cli
 created_at: "2026-04-01T11:26:14.996Z"
-updated_at: "2026-04-01T11:41:53.421Z"
+updated_at: "2026-04-01T20:15:22.729Z"
 deadline: "2026-04-15T11:26:14.996Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 360
 acceptance_criteria: "CLI accepts +6m and flexible date strings (including forms like 2026-03-31T13-59) across create/update/list/search/calendar/reminder/event paths, persists normalized ISO timestamps, preserves existing accepted inputs, and ships with updated docs plus full regression evidence."
@@ -19,8 +20,24 @@ value: Reduces friction from strict date-format assumptions
 impact: Fewer usage failures in date-driven workflows
 outcome: Deterministic flexible date parsing across CLI surfaces
 why_now: Users are hitting Invalid deadline value errors for practical inputs like +6m and 2026-03-31T13-59.
+parent: pm-va6e
+reviewer: maintainer-review
 risk: medium
 confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
 component: core/shared/time
 regression: true
 customer_impact: Existing users keep current behavior while additional date inputs are accepted.
@@ -31,6 +48,8 @@ comments[4]{created_at,author,text}:
   "2026-04-01T11:41:53.421Z",codex-agent,"Final delivery commit ef161fc pushed to origin/main. Evidence: targeted parser tests passed (78/78), full suite passed (638/638), and coverage run reported only the existing global 100% threshold shortfall (97.98/96.29/98.38/97.79)."
 notes[1]{created_at,author,text}:
   "2026-04-01T11:26:14.996Z",codex-agent,"Implementation strategy: parser normalization first,then cross-command regression tests and docs/help/completion updates."
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:15:22.729Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/core/shared/time.ts,project,primary date parsing logic
 tests[1]{command,path,scope,timeout_seconds,note}:

@@ -6,14 +6,49 @@ status: closed
 priority: 2
 tags[4]: "area:search","milestone:4",pm-cli,roadmap
 created_at: "2026-03-07T14:01:18.657Z"
-updated_at: "2026-03-07T20:26:38.737Z"
+updated_at: "2026-04-01T20:36:52.771Z"
+deadline: "2026-03-21T14:01:18.657Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: Multi-factor tuning configurable and applied.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 3
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-qyyv
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: search-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 comments[3]{created_at,author,text}:
   "2026-03-07T20:00:20.030Z",maintainer-agent,Implemented configurable keyword scoring tuning (weights + title exact bonus) and added deterministic unit coverage for tuning resolution and ranking influence.
   "2026-03-07T20:26:31.777Z",maintainer-agent,"Aligned PRD/README with implemented search tuning: optional settings.search.tuning now documented with deterministic defaults and milestone wording updated to reflect implemented multi-factor lexical tuning."
   "2026-03-07T20:26:31.965Z",maintainer-agent,"Evidence: pm test pm-qyyv --run passed; pm test-all --status in_progress passed with deterministic duplicate skip; pm test-all --status closed passed (failed=0)."
+notes[1]{created_at,author,text}:
+  "2026-04-01T20:36:51.592Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:36:52.771Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[3]{path,scope,note}:
   src/cli/commands/search.ts,project,planned change
   src/types.ts,project,search tuning settings contract

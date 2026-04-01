@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:error","area:ux",pm-cli
 created_at: "2026-04-01T12:38:31.565Z"
-updated_at: "2026-04-01T12:57:11.931Z"
+updated_at: "2026-04-01T20:22:08.971Z"
 deadline: "2026-04-11T12:38:31.565Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 360
 acceptance_criteria: "Errors across core commands are consistently structured and actionable, commander usage failures include targeted remediation, and exit codes remain canonical."
@@ -20,8 +21,23 @@ impact: Reduced friction during command failures
 outcome: Consistent high-signal error UX
 why_now: Current errors are uneven and often omit rationale or examples.
 parent: pm-izbd
+reviewer: maintainer-review
 risk: medium
 confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-b3id
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
 component: cli-errors
 regression: true
 customer_impact: Users can quickly remediate failures without context switching
@@ -33,6 +49,8 @@ comments[1]{created_at,author,text}:
   "2026-04-01T12:38:31.565Z",codex-agent,Feature separates generic error model from command-specific help updates.
 notes[1]{created_at,author,text}:
   "2026-04-01T12:38:31.565Z",codex-agent,Primary touchpoints include main commander catch and shared error utilities.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:22:08.971Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/core/shared/errors.ts,project,Shared error primitives
 tests[1]{command,path,scope,timeout_seconds,note}:

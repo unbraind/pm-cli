@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[7]: "area:core","area:tests",code,"milestone:next",pm-cli,"priority:1",tests
 created_at: "2026-03-05T10:25:48.247Z"
-updated_at: "2026-03-05T10:46:26.545Z"
+updated_at: "2026-04-01T20:34:19.799Z"
 deadline: "2026-03-06T23:59:00.000Z"
+assignee: cursor-maintainer
 author: cursor-maintainer
 estimated_minutes: 45
 acceptance_criteria: "When create receives --acceptance-criteria none, changed_fields includes unset:acceptance_criteria and history message includes explicit_unset=acceptance_criteria; focused and regression tests pass with 100% coverage."
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-7pp6
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-06t
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: cursor-maintainer
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: core-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-06t,related,"2026-03-05T10:25:48.247Z",cursor-maintainer,null
 comments[5]{created_at,author,text}:
@@ -21,6 +51,8 @@ comments[5]{created_at,author,text}:
   "2026-03-05T10:46:26.231Z",cursor-maintainer,"Evidence: pm test pm-7pp6 --run --timeout 7200 --json passed all 3 linked tests (coverage, full sandbox test suite, targeted create unit test). Coverage output remained 100% for statements/branches/functions/lines with 49/49 test files and 371/371 tests passing. Regression sweeps passed: pm test-all --status in_progress --timeout 7200 --json => items=1 linked_tests=3 passed=3 failed=0 skipped=0; pm test-all --status closed --timeout 7200 --json => items=67 linked_tests=209 passed=59 failed=0 skipped=150."
 notes[1]{created_at,author,text}:
   "2026-03-05T10:25:48.247Z",cursor-maintainer,Plan patch runCreate explicitUnsets then add focused tests and run full regression.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:34:19.799Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[2]{path,scope,note}:
   src/cli/commands/create.ts,project,explicit unset tracking fix
   tests/unit/create-command.spec.ts,project,coverage for explicit unset metadata

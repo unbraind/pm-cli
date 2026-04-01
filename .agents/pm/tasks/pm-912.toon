@@ -6,11 +6,41 @@ status: closed
 priority: 0
 tags[4]: coverage,pm-cli,release-readiness,testing
 created_at: "2026-02-17T23:37:35.015Z"
-updated_at: "2026-02-18T02:53:01.817Z"
+updated_at: "2026-04-01T20:30:56.015Z"
 deadline: "2026-02-22T23:37:35.015Z"
+assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 420
 acceptance_criteria: Vitest unit+integration suites run in temp PM_PATH sandboxes and coverage thresholds are enforced at 100% for all metrics.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 1
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-912
+reviewer: maintainer-review
+risk: high
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-2c8
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: cursor-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: task-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-2c8,related,"2026-02-17T23:37:35.015Z",cursor-agent,null
   pm-ote,parent,"2026-02-17T23:37:35.015Z",cursor-agent,null
@@ -27,6 +57,10 @@ comments[11]{created_at,author,text}:
   "2026-02-18T02:43:05.005Z",steve,"Evidence: node dist/cli.js test pm-912 --run --timeout 900 --json passed all 3 linked commands (coverage + integration + unit). Coverage remained 100% statements/branches/functions/lines (43/43 tests). Regression sweep node dist/cli.js test-all --status in_progress --timeout 900 --json passed totals items=5 linked_tests=10 passed=10 failed=0 skipped=0 after sandbox-init compatibility fix for CLI-linked tests."
   "2026-02-18T02:49:51.727Z",maintainer-agent,"Planned change-set: align README testing policy with implemented integration sandbox env requirements by documenting PM_SESSION alongside PM_PATH and PM_AUTHOR, and enforce this contract in help-readme integration tests."
   "2026-02-18T02:53:01.442Z",maintainer-agent,"Implemented change-set: README testing policy now documents PM_SESSION for integration subprocesses, and tests/integration/help-readme-contract.spec.ts now enforces that contract section. Evidence: node dist/cli.js test pm-912 --run --timeout 900 --json passed all linked tests; node dist/cli.js test-all --status in_progress --timeout 900 --json passed totals items=5 linked_tests=10 passed=10 failed=0 skipped=0; coverage remained 100 percent statements/branches/functions/lines; pnpm build passed."
+notes[1]{created_at,author,text}:
+  "2026-04-01T20:30:55.043Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:30:56.015Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[14]{path,scope,note}:
   AGENTS.md,project,align workflow examples with sandbox-safe test commands
   package.json,project,Test scripts and prepublish guard updates

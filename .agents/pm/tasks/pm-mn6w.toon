@@ -6,11 +6,41 @@ status: closed
 priority: 0
 tags[9]: "area:cli","area:docs","area:tests",code,doc,"milestone:6",pm-cli,"priority:0",tests
 created_at: "2026-03-07T09:31:15.557Z"
-updated_at: "2026-03-07T09:42:49.794Z"
+updated_at: "2026-04-01T20:31:37.127Z"
 deadline: "2026-03-08T23:59:00.000Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "1) release-readiness contract suite asserts pm close --help flag presence and required argument/help text semantics. 2) pm test <item> --run, pm test-all --status in_progress, and pm test-all --status closed pass. 3) coverage remains 100%."
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 1
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-mn6w
+reviewer: maintainer-review
+risk: high
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-f0e9
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: cli-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-f0e9,related,"2026-03-07T09:31:15.557Z",maintainer-agent,null
 comments[4]{created_at,author,text}:
@@ -20,6 +50,8 @@ comments[4]{created_at,author,text}:
   "2026-03-07T09:42:36.105Z",maintainer-agent,"Evidence: pm test pm-mn6w --run --timeout 7200 --json passed all linked tests (3/3). pm test-all --status in_progress --timeout 7200 --json passed (items=1 linked_tests=3 passed=3 failed=0 skipped=0). pm test-all --status closed --timeout 7200 --json passed (items=119 linked_tests=321 passed=62 failed=0 skipped=259). Coverage remains 100% lines/branches/functions/statements in sandbox coverage runs."
 notes[1]{created_at,author,text}:
   "2026-03-07T09:31:15.557Z",maintainer-agent,Plan docs parity check then targeted release-readiness test update and mandatory verification sweeps.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:31:37.127Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   tests/integration/release-readiness-contract.spec.ts,project,add close help contract assertion
 tests[3]{command,path,scope,timeout_seconds,note}:

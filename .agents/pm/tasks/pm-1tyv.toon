@@ -6,8 +6,9 @@ status: in_progress
 priority: 1
 tags[3]: "area:commands","area:history",pm-cli
 created_at: "2026-04-01T15:27:15.596Z"
-updated_at: "2026-04-01T15:39:33.263Z"
+updated_at: "2026-04-01T20:30:46.901Z"
 deadline: "2026-04-06T15:27:15.596Z"
+assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 180
 acceptance_criteria: History policy helper is reusable; history/activity/stats/health and existing-item mutation flows enforce strict mode and auto-create defaults consistently with deterministic errors.
@@ -20,11 +21,23 @@ impact: Improves reliability and operator trust
 outcome: All history-touching flows follow one policy model
 why_now: Current behavior differs by command and failure mode
 parent: pm-kb21
+reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: history-hardening
 release: vnext
+blocked_by: pm-8wnm
+blocked_reason: no-current-blocker
 unblock_note: Settings policy surface implemented; begin helper and enforcement wiring
+reporter: cursor-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: planned-or-active-implementation
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: work-tracked-as-active-or-open
+affected_version: vnext
+fixed_version: target-vnext
 component: history-runtime
 regression: true
 customer_impact: Consistent behavior across history diagnostics and mutations
@@ -36,6 +49,8 @@ comments[2]{created_at,author,text}:
   "2026-04-01T15:39:32.464Z",cursor-agent,"Implemented shared history-stream policy helper and command enforcement. Added src/core/history/history-stream-policy.ts and wired policy checks into history/activity/stats/health plus item-store mutate/delete flows. Added strict-mode regressions in unit suites. Verification: pnpm build passed; node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts tests/unit/stats-command.spec.ts tests/unit/health-command.spec.ts tests/unit/item-store.spec.ts passed."
 notes[1]{created_at,author,text}:
   "2026-04-01T15:27:15.596Z",cursor-agent,"Primary command targets: history,activity,stats,health,item-store mutate/delete and restore prechecks."
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:30:46.901Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[11]{path,scope,note}:
   src/cli/commands/activity.ts,project,enforce policy across existing item streams
   src/cli/commands/health.ts,project,enforce policy prior to drift checks

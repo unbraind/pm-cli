@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[4]: "area:search-ranking",core,"milestone:4",pm-cli
 created_at: "2026-02-17T23:02:10.662Z"
-updated_at: "2026-03-04T13:04:33.498Z"
+updated_at: "2026-04-01T20:34:00.659Z"
 deadline: "2026-03-07T23:02:10.662Z"
+assignee: steve
 author: steve
 estimated_minutes: 120
 acceptance_criteria: "Hybrid ranking baseline includes deterministic lexical+semantic blending with --include-linked lexical enrichment in keyword and hybrid modes, plus settings-backed hybrid semantic weighting, docs/help parity, and 100% coverage-gate compliance."
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-cwp
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-54d
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: steve
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: search-ranking-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-54d,blocks,"2026-02-17T23:02:10.662Z",steve,null
   pm-f45,parent,"2026-02-17T23:02:10.662Z",steve,null
@@ -27,6 +57,10 @@ comments[12]{created_at,author,text}:
   "2026-03-03T22:33:17.226Z",maintainer-agent,"Implemented docs-first hybrid weighting increment and verification. Changes: PRD/README now document settings.search.hybrid_semantic_weight (0..1, default 0.7); search runtime now resolves settings-backed hybrid semantic weight and applies it to normalized hybrid blending; settings defaults/schema/serialization/type contracts include hybrid_semantic_weight; unit tests updated for resolver fallback/weight effect/settings ordering/default contracts; legacy src/commands/search.ts wrapper now re-exports resolveHybridSemanticWeight for command-wrapper parity. Commands run: pnpm build (pass); node dist/cli.js test pm-cwp --run --timeout 7200 --json initially failed due wrapper export parity in tests/unit/command-wrapper-exports.spec.ts, then passed after fix; node dist/cli.js test-all --status in_progress --timeout 7200 --json passed totals items=7 linked_tests=30 passed=14 failed=0 skipped=16; node dist/cli.js test-all --status closed --timeout 7200 --json passed totals items=34 linked_tests=119 passed=49 failed=0 skipped=70. Coverage statement: linked coverage runs remained 100% lines/branches/functions/statements (All files 100/100/100/100). Follow-up items created: none."
   "2026-03-04T12:50:20.807Z",cursor-maintainer,"Planned changeset: run full docs/implementation parity verification for include-linked + hybrid weighting baseline, execute mandatory pm test and regression sweeps, then close if acceptance criteria and 100% coverage evidence are satisfied."
   "2026-03-04T13:04:33.097Z",cursor-maintainer,"Evidence: (1) node dist/cli.js test pm-cwp --run --timeout 7200 --json passed with run_results passed=5 failed=0 skipped=0. (2) node dist/cli.js test-all --status in_progress --timeout 7200 --json passed totals items=4 linked_tests=17 passed=11 failed=0 skipped=6. (3) node dist/cli.js test-all --status closed --timeout 7200 --json passed totals items=41 linked_tests=146 passed=54 failed=0 skipped=92. Coverage statement: sandboxed coverage outputs in these runs remained 100% lines/branches/functions/statements (All files 100/100/100/100). Follow-up items created: none."
+notes[1]{created_at,author,text}:
+  "2026-04-01T20:33:59.444Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:34:00.659Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[12]{path,scope,note}:
   PRD.md,project,milestone status update
   README.md,project,command docs update

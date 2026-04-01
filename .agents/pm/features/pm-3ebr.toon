@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:health","area:search",pm-cli,semantic
 created_at: "2026-04-01T14:42:18.406Z"
-updated_at: "2026-04-01T15:09:13.556Z"
+updated_at: "2026-04-01T20:21:48.583Z"
 deadline: "2026-04-10T14:42:18.406Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 260
 acceptance_criteria: pm health reports vectorization status and attempts targeted refresh for stale/missing vectorized items without forcing full reindex or breaking non-semantic setups.
@@ -20,10 +21,23 @@ impact: Improves semantic query reliability in active repos
 outcome: Stale vectors are detected and refreshed proactively
 why_now: Users requested automatic vectorization start when items are not vectorized.
 parent: pm-1hkq
+reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: health-hardening
 release: vnext
+blocked_by: pm-1hkq
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: vnext
+fixed_version: vnext
 component: search-health
 regression: true
 customer_impact: Users get fresher semantic results with minimal manual maintenance
@@ -33,6 +47,8 @@ comments[1]{created_at,author,text}:
   "2026-04-01T14:42:18.406Z",codex-agent,Feature created from approved targeted-refresh strategy for pm health.
 notes[1]{created_at,author,text}:
   "2026-04-01T14:42:18.406Z",codex-agent,Auto-refresh must remain non-fatal and deterministic when semantic runtime is unavailable.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:21:48.583Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/core/search/cache.ts,project,targeted semantic refresh plumbing
 tests[1]{command,path,scope,timeout_seconds,note}:

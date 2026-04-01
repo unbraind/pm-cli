@@ -6,20 +6,40 @@ status: closed
 priority: 0
 tags[4]: agent-ux,"area:cli","area:schema",pm-cli
 created_at: "2026-03-31T23:47:27.635Z"
-updated_at: "2026-04-01T00:29:15.930Z"
+updated_at: "2026-04-01T20:15:38.673Z"
 deadline: "2026-04-14T23:47:27.635Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 480
 acceptance_criteria: Users can define custom item types/options via settings/extensions and CLI guidance for missing required options is actionable with examples; all docs and tests pass without regressions.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 1
 goal: Customizable workflows
 objective: Enable project-specific item modeling
 value: Supports domain-specific planning like assets tracking
 impact: Improves adoption without breaking defaults
 outcome: Custom types and clearer required-option guidance
 why_now: Current hard-coded types and terse required-option errors block agent workflows
+parent: pm-r15d
+reviewer: maintainer-review
 risk: medium
 confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
 component: core/cli
+regression: false
 customer_impact: Teams can model work domains without hacks
 comments[3]{created_at,author,text}:
   "2026-03-31T23:47:27.635Z",codex-agent,Epic created from approved implementation plan.
@@ -27,6 +47,8 @@ comments[3]{created_at,author,text}:
   "2026-04-01T00:29:15.182Z",codex-agent,"Evidence: node scripts/run-tests.mjs test passed (57 files, 588 tests). node scripts/run-tests.mjs coverage executed; thresholds currently report 97.45 lines / 97.03 branches / 97.14 funcs / 97.29 stmts."
 notes[1]{created_at,author,text}:
   "2026-03-31T23:47:27.635Z",codex-agent,Default behavior must remain unchanged when no custom type settings exist.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:15:38.673Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[6]{path,scope,note}:
   CHANGELOG.md,project,unreleased summary for configurable types and UX
   docs/ARCHITECTURE.md,project,runtime type registry/storage architecture

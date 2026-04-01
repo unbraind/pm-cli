@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[8]: "area:ci","area:release",code,docs,"milestone:6",pm-cli,"priority:0",release-readiness
 created_at: "2026-03-08T21:16:00.083Z"
-updated_at: "2026-03-08T21:18:27.151Z"
+updated_at: "2026-04-01T20:32:15.576Z"
 deadline: "2026-03-09T21:16:00.083Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 45
 acceptance_criteria: package.json has repository/bugs/homepage/author fields; .github/ISSUE_TEMPLATE/ has bug-report and feature-request templates; .github/PULL_REQUEST_TEMPLATE.md exists; .github/dependabot.yml exists; release-readiness tests updated; 100% coverage maintained
@@ -19,14 +20,34 @@ value: "Improves npm discoverability, enables automated dependency updates, and 
 impact: Polished npm page; automated security patches via Dependabot; structured issue reporting
 outcome: Package appears professional on npm; community can contribute with clear templates
 why_now: These are standard requirements before v0.1 public release
+parent: pm-ixbk
+reviewer: maintainer-review
 risk: low
 confidence: high
+sprint: archive-2026w14
 release: v0.1
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: v0.1
+fixed_version: v0.1
+component: ci-component
+regression: false
+customer_impact: improves-reliability-and-clarity-for-contributors
 comments[2]{created_at,author,text}:
   "2026-03-08T21:16:00.083Z",maintainer-agent,Missing npm metadata fields (repository/bugs/homepage/author) affect how npm displays the package. Dependabot and GitHub templates are standard for production open-source.
   "2026-03-08T21:18:21.635Z",maintainer-agent,"Implementation complete. Changes: (1) package.json - added repository/bugs/homepage/author fields and expanded keywords with ai/git-native/task-tracker/coding-agents. (2) .github/ISSUE_TEMPLATE/bug-report.yml - structured bug report template with version/OS/repro fields. (3) .github/ISSUE_TEMPLATE/feature-request.yml - feature request template with problem/solution/area fields. (4) .github/PULL_REQUEST_TEMPLATE.md - PR checklist including pm item links and test evidence. (5) .github/dependabot.yml - weekly npm+GitHub Actions updates. (6) CHANGELOG.md updated. Tests: 535 passing, 100% coverage maintained."
 notes[1]{created_at,author,text}:
   "2026-03-08T21:16:00.083Z",maintainer-agent,"Add to package.json: repository bugs homepage author. Create .github/ISSUE_TEMPLATE/ bug-report.yml + feature-request.yml. Create .github/PULL_REQUEST_TEMPLATE.md. Create .github/dependabot.yml for pnpm and GitHub Actions updates."
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:32:15.576Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[5]{path,scope,note}:
   .github/dependabot.yml,project,new file
   .github/ISSUE_TEMPLATE/bug-report.yml,project,new file

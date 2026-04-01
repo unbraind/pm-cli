@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[8]: "area:search","area:security",code,docs,"milestone:4",pm-cli,"priority:1",tests
 created_at: "2026-03-04T20:55:49.857Z"
-updated_at: "2026-03-04T21:08:06.352Z"
+updated_at: "2026-04-01T20:34:08.932Z"
 deadline: "2026-03-05T20:55:49.000Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: search --include-linked ignores linked file/doc/test paths that resolve outside their allowed project/global roots; traversal-style paths do not influence scoring; docs and tests are updated; coverage remains 100%.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-q35x
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-cwp
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: search-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-cwp,related,"2026-03-04T20:55:49.857Z",maintainer-agent,null
   pm-j7a,parent,"2026-03-04T20:55:49.857Z",maintainer-agent,null
@@ -23,6 +53,8 @@ comments[6]{created_at,author,text}:
   "2026-03-04T21:08:06.352Z",maintainer-agent,"Post-close environment check: refreshed global install from current repo state with npm install -g . and verified pm --version outputs 0.1.0."
 notes[1]{created_at,author,text}:
   "2026-03-04T20:55:49.857Z",maintainer-agent,Docs first update PRD and README then enforce containment in search linked corpus loader
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:34:08.932Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[4]{path,scope,note}:
   PRD.md,project,docs-first security behavior update
   README.md,project,docs-first include-linked hardening note

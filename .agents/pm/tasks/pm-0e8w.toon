@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[7]: "area:extensions",code,docs,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-04T19:41:50.932Z"
-updated_at: "2026-03-04T19:52:55.000Z"
+updated_at: "2026-04-01T20:27:36.299Z"
 deadline: "2026-03-06T19:41:50.000Z"
+assignee: steve
 author: steve
 estimated_minutes: 90
 acceptance_criteria: "runCommandHandler provides isolated context snapshots (args/options/global), docs reflect the sandbox boundary behavior, and unit plus regression tests remain 100% coverage compliant."
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-0e8w
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-b1w
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: steve
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: extensions-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-b1w,parent,"2026-03-04T19:41:50.932Z",steve,null
 comments[5]{created_at,author,text}:

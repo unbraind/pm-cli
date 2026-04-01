@@ -6,11 +6,13 @@ status: closed
 priority: 0
 tags[7]: "area:cli","area:ux",code,"milestone:6",pm-cli,"priority:0",tests
 created_at: "2026-03-08T22:07:09.126Z"
-updated_at: "2026-03-08T22:12:59.805Z"
+updated_at: "2026-04-01T20:32:17.541Z"
 deadline: "2026-03-09T22:07:09.126Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: pm list excludes closed and canceled items by default; pm list-all shows all items; tests verify the distinction
+definition_of_ready: scope-links-and-verification-evidence-identified
 order: 1
 goal: Production-ready UX consistency
 objective: Make pm list intuitive for daily use
@@ -18,15 +20,34 @@ value: "Users get expected behavior: pm list shows working set not historical da
 impact: Reduces confusion; aligns with CLI conventions
 outcome: pm list shows active items; pm list-all shows full inventory
 why_now: All features complete; polishing UX is the last mile
+parent: pm-zzt1
+reviewer: maintainer-review
 risk: low
 confidence: high
 sprint: release-polish
 release: v0.1
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: v0.1
+fixed_version: v0.1
+component: cli-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 comments[2]{created_at,author,text}:
   "2026-03-08T22:07:09.126Z",maintainer-agent,"pm list and pm list-all are currently identical. Fix: pm list should exclude terminal statuses by default."
   "2026-03-08T22:12:48.671Z",maintainer-agent,"Implementation complete. Changed: list.ts (excludeTerminal option in ListOptions + applyFilters), main.ts (normalizeListOptions returns ListOptions, registerListCommand adds excludeTerminal param, pm list wired with excludeTerminal=true). Updated: PRD.md, README.md (new pm list vs pm list-all section), CHANGELOG.md. Tests: added excludes-terminal-statuses test case in list-command.spec.ts. Result: 536/536 tests pass, 100% coverage maintained."
 notes[1]{created_at,author,text}:
   "2026-03-08T22:07:09.126Z",maintainer-agent,Update runList() to accept excludeTerminal option and wire pm list in main.ts with that flag set.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:32:17.541Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[2]{path,scope,note}:
   src/cli/commands/list.ts,project,runList function needs excludeTerminal option
   src/cli/main.ts,project,wire pm list with excludeTerminal=true

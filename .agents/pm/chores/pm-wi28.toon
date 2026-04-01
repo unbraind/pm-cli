@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[4]: "area:docs",pm-cli,prompts,release-readiness
 created_at: "2026-03-06T16:23:11.472Z"
-updated_at: "2026-03-06T16:36:48.412Z"
+updated_at: "2026-04-01T20:34:39.423Z"
 deadline: "2026-03-07T16:23:11.472Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: Prompt-03 active create template uses only current canonical create flags; planned flags remain clearly marked as planned-only; release-readiness contract tests pass.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: chore-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-chore-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-wi28
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: docs-component
+regression: false
+customer_impact: improves-reliability-and-clarity-for-contributors
 comments[4]{created_at,author,text}:
   "2026-03-06T16:23:11.472Z",maintainer-agent,Discovered prompt-03 drift with unsupported planned flags shown as active create usage.
   "2026-03-06T16:23:19.666Z",maintainer-agent,Implementing docs-first prompt-03 template sync so active examples only use current canonical create flags.
@@ -18,6 +48,8 @@ comments[4]{created_at,author,text}:
   "2026-03-06T16:36:43.514Z",maintainer-agent,"Evidence: node dist/cli.js test pm-wi28 --run passed; node dist/cli.js test-all --status in_progress --timeout 1200 passed (items=1 passed=1 failed=0 skipped=0); node dist/cli.js test-all --status closed --timeout 1200 --json passed (items=96 linked_tests=276 passed=63 failed=0 skipped=213); node scripts/run-tests.mjs coverage passed with 50/50 files and 402/402 tests; coverage remains 100%."
 notes[1]{created_at,author,text}:
   "2026-03-06T16:23:11.472Z",maintainer-agent,Plan claim item link docs patch template run targeted release contract tests and pm-linked checks.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:34:39.423Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[2]{path,scope,note}:
   docs/prompts/prompt-03.md,project,primary drift location
   tests/integration/release-readiness-contract.spec.ts,project,contract guard coverage update

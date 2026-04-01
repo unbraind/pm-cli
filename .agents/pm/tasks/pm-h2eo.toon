@@ -6,8 +6,9 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","area:ux",code,pm-cli
 created_at: "2026-04-01T01:40:02.062Z"
-updated_at: "2026-04-01T01:52:45.184Z"
+updated_at: "2026-04-01T20:37:14.378Z"
 deadline: "2026-04-09T01:40:02.062Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 160
 acceptance_criteria: Extension metadata paths support policy-aware help semantics and completion/Pi wrapper remain consistent with command behavior.
@@ -20,9 +21,25 @@ impact: Improves trust in command guidance
 outcome: Consistent policy-aware tooling experience
 why_now: New policy metadata must be reflected across extension and automation surfaces
 parent: pm-5bwo
+reviewer: maintainer-review
 risk: medium
 confidence: medium
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-5bwo
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
 component: extensions/tooling
+regression: true
 customer_impact: Improves discoverability and consistency across extension and tooling paths.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-5bwo,parent,"2026-04-01T01:40:02.062Z",codex-agent,null
@@ -31,6 +48,8 @@ comments[2]{created_at,author,text}:
   "2026-04-01T01:52:43.746Z",codex-agent,Extended dynamic extension flag help metadata to support required/disabled markers and hidden visibility behavior; verified with integration coverage.
 notes[1]{created_at,author,text}:
   "2026-04-01T01:40:02.062Z",codex-agent,Prefer additive behavior to avoid breaking existing extension contracts.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:37:14.378Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/core/extensions/loader.ts,project,extension registration metadata
 tests[1]{command,path,scope,timeout_seconds,note}:

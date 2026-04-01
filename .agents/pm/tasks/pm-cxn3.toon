@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[8]: "area:install",code,docs,"milestone:6",pm-cli,"priority:0",release-readiness,tests
 created_at: "2026-03-08T22:50:29.347Z"
-updated_at: "2026-03-08T23:14:49.023Z"
+updated_at: "2026-04-01T20:32:19.615Z"
 deadline: "2026-03-09T22:50:29.347Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: pm install pi --project writes to <project-root>/.pi/extensions/pm-cli/index.ts where project-root derives from resolved PM root when --path or PM_PATH is set; docs and tests updated; regression suite remains green with 100% coverage.
@@ -20,14 +21,23 @@ impact: Prevents extension installation into unintended projects
 outcome: Install destination is deterministic with --path overrides
 why_now: Recent install rollout needs parity with documented global-flag contract before release
 parent: pm-8a2s
+reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: maintainer-loop
 release: v0.1
+blocked_by: pm-8a2s
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
 repro_steps: From temp cwd run pm --path <other-project>/.agents/pm install pi --project --json and observe destination currently points to cwd/.pi.
+resolution: implemented-or-disposition-recorded
 expected_result: Project-scope install destination follows resolved PM root project.
 actual_result: Current destination follows cwd regardless of --path.
 affected_version: 0.1.0
+fixed_version: v0.1
 component: cli/install
 regression: true
 customer_impact: Automation scripts may install integration files into wrong repository when using --path.
@@ -42,6 +52,8 @@ comments[6]{created_at,author,text}:
   "2026-03-08T23:14:40.851Z",maintainer-agent,"Evidence: pm test pm-cxn3 --run --timeout 7200 --json passed both linked commands; coverage command reported All files 100/100/100/100. Regression sweeps passed: pm test-all --status in_progress --timeout 7200 --json totals items=1 linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status closed --timeout 7200 --json totals items=167 linked_tests=407 passed=74 failed=0 skipped=333."
 notes[1]{created_at,author,text}:
   "2026-03-08T22:50:29.347Z",maintainer-agent,Plan docs-first update PRD and README then implement project-root derivation and add unit integration tests and run pm test plus test-all.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:32:19.615Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[7]{path,scope,note}:
   PRD.md,project,install contract update for --path semantics
   README.md,project,public command contract update for install destination semantics

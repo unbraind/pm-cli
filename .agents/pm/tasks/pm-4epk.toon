@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:docs","area:extensions",phase2,pm-cli
 created_at: "2026-04-01T19:29:36.404Z"
-updated_at: "2026-04-01T19:57:54.965Z"
+updated_at: "2026-04-01T20:21:00.708Z"
 deadline: "2026-04-08T19:29:36.404Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 120
 acceptance_criteria: EXTENSIONS/ARCHITECTURE/README/AGENTS/SECURITY/CHANGELOG reflect phase-2 contracts and guidance; docs are internally consistent.
@@ -20,10 +21,23 @@ impact: Reduces ambiguity for extension maintainers and operators.
 outcome: Phase-2 docs are complete and coherent.
 why_now: Contract changes require immediate docs parity.
 parent: pm-r9nf
+reviewer: maintainer-review
 risk: medium
 confidence: medium
 sprint: phase2-override
 release: vnext
+blocked_by: pm-r9nf
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: vnext
+fixed_version: vnext
 component: docs-runtime
 regression: true
 customer_impact: Users can evaluate trusted-default override model with clear operational guidance.
@@ -34,6 +48,8 @@ comments[2]{created_at,author,text}:
   "2026-04-01T19:57:53.441Z",codex-agent,"Implemented in Phase 2 full-override rollout. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage passed (64 files/702 tests) with aligned coverage gates and release-readiness checks green."
 notes[1]{created_at,author,text}:
   "2026-04-01T19:29:36.404Z",codex-agent,Include explicit full-trusted-default model implications.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:21:00.708Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[6]{path,scope,note}:
   AGENTS.md,project,agent operational rules alignment
   CHANGELOG.md,project,release notes

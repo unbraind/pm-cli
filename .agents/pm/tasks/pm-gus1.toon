@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[5]: "area:tests",code,"milestone:6",pm-cli,tests
 created_at: "2026-03-08T22:29:52.874Z"
-updated_at: "2026-03-08T22:33:58.030Z"
+updated_at: "2026-04-01T20:32:18.563Z"
 deadline: "2026-03-09T22:29:52.874Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 30
 acceptance_criteria: "pm list integration test verifies active-only behavior: terminal statuses excluded, non-terminal included. Tests pass at 100% coverage."
@@ -19,13 +20,34 @@ value: Prevents regression of pm list active-only behavior
 impact: Ensures pm list excludeTerminal wiring is always tested at CLI level
 outcome: Integration test suite covers pm list bare command
 why_now: pm list behavior was changed in session 6 but no integration test was added for the CLI wiring
+parent: pm-gus1
+reviewer: maintainer-review
 risk: low
 confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: tests-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 comments[2]{created_at,author,text}:
   "2026-03-08T22:29:52.874Z",maintainer-agent,"Gap found: integration test suite tests list-draft/list-open/list-in-progress/list-blocked/list-closed/list-canceled/list-all but not bare pm list. The excludeTerminal unit test in list-command.spec.ts covers the function but not CLI wiring."
   "2026-03-08T22:32:17.926Z",maintainer-agent,"Implementation: added pm list active-only assertions to 'filters list/list-* status commands across lifecycle states' integration test. The test creates 7 items (draft/open/open/in_progress/blocked/closed/canceled), runs pm list, and asserts count=5 (non-terminal), no closed/canceled, all of draft/open/in_progress/blocked present. Full suite: 536/536 tests pass, 100% coverage maintained."
 notes[1]{created_at,author,text}:
   "2026-03-08T22:29:52.874Z",maintainer-agent,Add to the existing filters list/list-* integration test or create new test. Should use existing createItem helper pattern. Assert count=4 for non-terminal items only.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:32:18.563Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,add pm list integration test
 tests[1]{command,path,scope,timeout_seconds,note}:

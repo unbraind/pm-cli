@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[4]: "area:schema",core,"milestone:1",pm-cli
 created_at: "2026-02-17T23:02:07.402Z"
-updated_at: "2026-02-22T22:37:32.592Z"
+updated_at: "2026-04-01T20:33:41.230Z"
 deadline: "2026-02-23T23:02:07.402Z"
+assignee: steve
 author: steve
 estimated_minutes: 120
 acceptance_criteria: Item schema enforces PRD fields and allowed enums.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-3gi
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-2xl
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: steve
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: schema-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-2xl,blocks,"2026-02-17T23:02:07.402Z",steve,null
   pm-u9r,parent,"2026-02-17T23:02:07.402Z",steve,null
@@ -19,6 +49,10 @@ comments[4]{created_at,author,text}:
   "2026-02-22T22:20:57.528Z",maintainer-agent,"Implemented parser-level front-matter validation for required PRD fields (id/title/description/type/status/priority/tags/timestamps), with deterministic PmCliError messages for missing/malformed JSON and invalid enum/range/timestamp values. Added unit coverage in tests/unit/item-format-validation.spec.ts."
   "2026-02-22T22:22:58.993Z",maintainer-agent,"pm test --run failed coverage gate at 99.95% lines/99.96% statements due uncovered item-format parse catch branch (line 267). Next change: add a malformed-balanced JSON front-matter test that reaches JSON.parse catch path."
   "2026-02-22T22:37:25.610Z",maintainer-agent,"Evidence: (1) pm test pm-3gi --run --timeout 1200 first surfaced coverage regression at 99.95% lines/99.96% statements (uncovered parse catch branch), then passed after adding malformed-balanced JSON test with full 100/100/100/100 coverage. (2) pm test-all --status in_progress --timeout 1200 => items=9 linked_tests=30 passed=11 failed=0 skipped=19. (3) pm test-all --status closed --timeout 1200 => items=28 linked_tests=103 passed=46 failed=0 skipped=57. Follow-up items: none needed for this change-set."
+notes[1]{created_at,author,text}:
+  "2026-04-01T20:33:40.215Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:33:41.230Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[2]{path,scope,note}:
   src/core/item/item-format.ts,project,front-matter validation implementation
   tests/unit/item-format-validation.spec.ts,project,schema validation coverage

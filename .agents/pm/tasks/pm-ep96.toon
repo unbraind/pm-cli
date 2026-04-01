@@ -6,17 +6,49 @@ status: closed
 priority: 0
 tags[7]: "area:planning",code,docs,"milestone:0",pm-cli,"priority:0",tests
 created_at: "2026-03-06T22:54:37.955Z"
-updated_at: "2026-03-06T23:07:44.457Z"
+updated_at: "2026-04-01T20:31:22.569Z"
 deadline: "2026-03-07T22:54:37.955Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: PRD milestone areas are represented by pm items and evidence shows sandbox-safe regression plus coverage pass.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 1
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-ep96
+reviewer: maintainer-review
+risk: high
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: planning-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 comments[3]{created_at,author,text}:
   "2026-03-06T22:54:37.955Z",maintainer-agent,This item exists to start dogfooded execution from an empty tracker and keep every mutation auditable.
   "2026-03-06T22:55:30.053Z",maintainer-agent,"Planned change: seed missing PRD milestone epics M0 through M6 with full metadata so backlog coverage exists before further code edits."
   "2026-03-06T23:07:44.097Z",maintainer-agent,"Implemented backlog coverage gap fix by creating PRD milestone epics: pm-6hhn pm-zetb pm-murz pm-met4 pm-xtfo pm-gyfn pm-defw. Evidence: pm test pm-ep96 --run --timeout 1200 passed 2/2 linked tests; pm test-all --status in_progress --timeout 1200 passed items=1 linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status closed --timeout 1200 passed items=111 linked_tests=303 passed=63 failed=0 skipped=240. Coverage remains 100% lines branches functions statements."
 notes[1]{created_at,author,text}:
   "2026-03-06T22:54:37.955Z",maintainer-agent,Validation plan select highest priority unblocked gap patch run tests and close with evidence.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:31:22.569Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   PRD.md,project,authoritative requirements
 tests[2]{command,path,scope,timeout_seconds,note}:

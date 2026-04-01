@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[6]: "area:cli","area:contracts",body,json,list,pm-cli
 created_at: "2026-03-31T19:36:37.724Z"
-updated_at: "2026-03-31T19:45:53.284Z"
+updated_at: "2026-04-01T20:26:03.336Z"
 deadline: "2026-04-03T19:36:37.724Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: "All list variants accept include-body as opt-in, default list payload remains unchanged, and tests plus docs reflect the contract."
@@ -19,10 +20,24 @@ value: Prevents false metadata-completeness conclusions while preserving lightwe
 impact: Improves reliability for automation consuming list JSON
 outcome: Consumers can opt into body on list results
 why_now: External issue report shows current behavior appears misleading without explicit opt-in.
+parent: pm-0lbm
+reviewer: maintainer-review
 risk: low
 confidence: high
 sprint: maintainer-loop-2026-03-31
 release: v0.1
+blocked_by: pm-54d
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: v0.1
+fixed_version: v0.1
 component: cli/list
 regression: true
 customer_impact: Users and agents can accurately analyze item completeness from list JSON when needed.
@@ -37,6 +52,8 @@ comments[2]{created_at,author,text}:
   "2026-03-31T19:45:51.565Z",codex-agent,"Feature pm-ykib and child tasks are closed with evidence: include-body is now opt-in for list variants, docs/changelog are updated, and sandbox test plus coverage runs remain green at 100%."
 notes[1]{created_at,author,text}:
   "2026-03-31T19:36:37.724Z",codex-agent,Implement opt-in include-body without changing default list performance profile.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:26:03.336Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/commands/list.ts,project,primary list payload command
 tests[1]{command,path,scope,timeout_seconds,note}:

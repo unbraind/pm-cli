@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[5]: "area:ollama","area:search","area:semantic",compatibility,pm-cli
 created_at: "2026-04-01T13:06:03.573Z"
-updated_at: "2026-04-01T13:25:10.797Z"
+updated_at: "2026-04-01T20:15:19.953Z"
 deadline: "2026-04-15T13:06:03.573Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 360
 acceptance_criteria: "When Ollama is available locally, default pm search mode resolves to semantic-capable hybrid behavior with no manual setup; explicit user settings still take precedence; docs and regression verification are complete."
@@ -19,9 +20,24 @@ value: Users get immediate semantic search value with zero manual configuration 
 impact: Higher search quality and easier onboarding without breaking existing workflows
 outcome: "Deterministic, non-breaking semantic defaults tied to Ollama availability"
 why_now: Users on Ollama-capable hosts currently need manual setup and can miss semantic capabilities.
+parent: pm-67uh
+reviewer: maintainer-review
 risk: medium
 confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-b4pb
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
 environment: linux
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
 component: search/runtime
 regression: true
 customer_impact: Improves default semantic search experience while preserving compatibility for existing users.
@@ -33,6 +49,8 @@ comments[2]{created_at,author,text}:
   "2026-04-01T13:25:09.931Z",codex-agent,"Epic scope completed through feature pm-zvn2 with runtime auto-default implementation, compatibility fallbacks, regression coverage, and documentation updates. Verification evidence includes full test pass (648 tests), targeted semantic suites, and successful host sandbox semantic default validation with local Ollama."
 notes[1]{created_at,author,text}:
   "2026-04-01T13:06:03.573Z",codex-agent,Implement with compatibility-first fallback behavior so current users are not broken.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:15:19.953Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/commands/search.ts,project,default mode resolution path
 tests[1]{command,path,scope,timeout_seconds,note}:

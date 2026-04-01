@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[4]: "area:ci",core,"milestone:6",pm-cli
 created_at: "2026-02-17T23:02:12.452Z"
-updated_at: "2026-02-20T02:42:43.177Z"
+updated_at: "2026-04-01T20:33:22.043Z"
 deadline: "2026-03-19T23:02:12.452Z"
+assignee: steve
 author: steve
 estimated_minutes: 120
 acceptance_criteria: CI matrix runs lint typecheck and tests across target platforms.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-8z7
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-b1w
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: steve
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: ci-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-b1w,blocks,"2026-02-17T23:02:12.452Z",steve,null
   pm-jiw,parent,"2026-02-17T23:02:12.452Z",steve,null
@@ -19,6 +49,10 @@ comments[4]{created_at,author,text}:
   "2026-02-20T02:07:17.254Z",cursor-maintainer,"Implemented CI matrix finalization: added workflow-level read-only permissions and concurrency cancellation; expanded CI to include Node 22 on ubuntu while keeping cross-platform Node 20 lanes; constrained coverage/sandbox/packaging gates to canonical ubuntu-node20 lane; expanded nightly to Node 20+22 with conditional coverage/full-test split; updated ci-workflow-contract integration test expectations accordingly."
   "2026-02-20T02:25:18.587Z",cursor-maintainer,"Updated PRD milestone checklist to mark CI matrix finalized as complete, keeping docs authoritative and aligned with implemented workflows."
   "2026-02-20T02:42:42.852Z",cursor-maintainer,"Evidence: pm test pm-8z7 --run --timeout 1200 --json passed both linked tests (sandbox coverage + CLI integration). Coverage remained 100% statements/branches/functions/lines. Regression sweeps passed: pm test-all --status in_progress --timeout 1200 --json => items=9 linked_tests=40 passed=39 failed=0 skipped=1; pm test-all --status closed --timeout 1200 --json => items=17 linked_tests=47 passed=44 failed=0 skipped=3. Follow-up items created: none required."
+notes[1]{created_at,author,text}:
+  "2026-04-01T20:33:21.064Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:33:22.043Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[4]{path,scope,note}:
   .github/workflows/ci.yml,project,primary CI matrix
   .github/workflows/nightly.yml,project,nightly matrix coverage

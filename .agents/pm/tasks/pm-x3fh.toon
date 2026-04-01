@@ -6,11 +6,14 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:output",code,pm-cli
 created_at: "2026-04-01T12:39:43.394Z"
-updated_at: "2026-04-01T13:51:31.979Z"
+updated_at: "2026-04-01T20:21:57.693Z"
 deadline: "2026-04-08T12:39:43.394Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: output.ts compacts TOON recursively while preserving 0/false/non-empty strings; command-aware envelope removed from default TOON path; unit/integration coverage verifies sparse TOON + JSON compatibility.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
 goal: CLI usability excellence
 objective: Actionable output
 value: Faster follow-up actions
@@ -18,8 +21,23 @@ impact: Less interpretation overhead
 outcome: Readable default result output
 why_now: Current output is generic.
 parent: pm-t2hj
+reviewer: maintainer-review
 risk: medium
 confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-t2hj
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
 component: cli-output
 regression: true
 customer_impact: Results become easier to understand and act on
@@ -31,6 +49,8 @@ comments[3]{created_at,author,text}:
   "2026-04-01T13:51:11.741Z",codex-agent,"Implemented sparse TOON rendering in src/core/output/output.ts (omit null/undefined/empty arrays/empty objects) and removed command-aware envelope usage in default TOON path. Verification: node scripts/run-tests.mjs test -- tests/unit/output.spec.ts tests/integration/cli.integration.spec.ts (pass), node scripts/run-tests.mjs test (pass), pm test pm-x3fh --run (linked tests pass except coverage entry). Coverage command node scripts/run-tests.mjs coverage fails global 100% thresholds at repo baseline (97.58/95.8/98.31/97.8)."
 notes[1]{created_at,author,text}:
   "2026-04-01T12:39:43.394Z",codex-agent,Will preserve JSON mode semantics while improving default non-JSON experience.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:21:57.693Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[2]{path,scope,note}:
   src/core/output/command-aware.ts,project,Command-aware output envelope builder
   src/core/output/output.ts,project,Primary output renderer

@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:services",phase2,pm-cli
 created_at: "2026-04-01T19:28:36.123Z"
-updated_at: "2026-04-01T19:57:43.985Z"
+updated_at: "2026-04-01T20:21:07.337Z"
 deadline: "2026-04-09T19:28:36.123Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: Core services invoke extension handlers when registered; fallback to core behavior is deterministic and tested.
@@ -20,10 +21,23 @@ impact: Extends override power to internal service layer.
 outcome: Core modules are service-kernel aware.
 why_now: Needed to fulfill complete extension manipulation requirement.
 parent: pm-qlo0
+reviewer: maintainer-review
 risk: high
 confidence: medium
 sprint: phase2-override
 release: vnext
+blocked_by: pm-qlo0
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: vnext
+fixed_version: vnext
 component: extensions-runtime
 regression: true
 customer_impact: Project teams can deeply tailor runtime behavior.
@@ -34,6 +48,8 @@ comments[2]{created_at,author,text}:
   "2026-04-01T19:57:42.575Z",codex-agent,"Implemented in Phase 2 full-override rollout. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage passed (64 files/702 tests) with aligned coverage gates and release-readiness checks green."
 notes[1]{created_at,author,text}:
   "2026-04-01T19:28:36.123Z",codex-agent,Must include lock/history/store/output/help/error paths.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:21:07.337Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[5]{path,scope,note}:
   src/cli/main.ts,project,help/error override wiring
   src/core/history/history.ts,project,history override wiring

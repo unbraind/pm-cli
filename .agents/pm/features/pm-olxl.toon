@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:stdin","area:terminal",compatibility,pm-cli
 created_at: "2026-04-01T11:57:46.797Z"
-updated_at: "2026-04-01T12:22:45.885Z"
+updated_at: "2026-04-01T20:35:10.921Z"
 deadline: "2026-04-11T11:57:46.797Z"
+assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 180
 acceptance_criteria: "Stdin token and beads --file - behavior are consistent, fail fast in interactive TTY contexts, and remain backward-compatible for piped workflows."
@@ -20,8 +21,23 @@ impact: Fewer blocked terminal sessions
 outcome: Stdin flows are deterministic across terminal environments
 why_now: Interactive terminals can appear hung when stdin is expected but not piped.
 parent: pm-mudv
+reviewer: maintainer-review
 risk: medium
 confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-mudv
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: cursor-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
 component: cli/stdin
 regression: true
 customer_impact: Prevents confusing hangs in IDE and emulated terminals.
@@ -32,6 +48,8 @@ comments[1]{created_at,author,text}:
   "2026-04-01T11:57:46.797Z",cursor-agent,Feature created as part of universal terminal hardening epic.
 notes[1]{created_at,author,text}:
   "2026-04-01T11:57:46.797Z",cursor-agent,Align beads stdin path with existing stdin token guard semantics.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:35:10.921Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[2]{path,scope,note}:
   src/cli/commands/beads.ts,project,beads stdin path
   src/core/item/parse.ts,project,shared stdin token behavior

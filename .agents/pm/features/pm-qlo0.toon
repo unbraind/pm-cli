@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:extensions","area:runtime","area:services",phase2,pm-cli
 created_at: "2026-04-01T19:28:18.025Z"
-updated_at: "2026-04-01T19:58:12.286Z"
+updated_at: "2026-04-01T20:20:52.152Z"
 deadline: "2026-04-11T19:28:18.025Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 360
 acceptance_criteria: Extensions can override service operations for item-store/history/lock/output/help/error; deterministic fallback chain is enforced when overrides are absent.
@@ -20,10 +21,23 @@ impact: Removes remaining internal service boundaries.
 outcome: Core service operations become extension-overridable.
 why_now: Current system still hardcodes key service layers.
 parent: pm-x395
+reviewer: maintainer-review
 risk: high
 confidence: medium
 sprint: phase2-override
 release: vnext
+blocked_by: pm-bfd9
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: vnext
+fixed_version: vnext
 component: extensions-runtime
 regression: true
 customer_impact: Enables full project-specific runtime behavior without forks.
@@ -35,6 +49,8 @@ comments[2]{created_at,author,text}:
   "2026-04-01T19:58:10.731Z",codex-agent,"Feature delivered across runtime, SDK, docs, and tests. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage passed; release-readiness integration checks passing."
 notes[1]{created_at,author,text}:
   "2026-04-01T19:28:18.025Z",codex-agent,Must retain deterministic default service fallback with no override registered.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:20:52.152Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[4]{path,scope,note}:
   src/core/history/history.ts,project,history service integration
   src/core/lock/lock.ts,project,lock service integration

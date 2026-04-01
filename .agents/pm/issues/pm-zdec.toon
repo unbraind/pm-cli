@@ -1,0 +1,59 @@
+id: pm-zdec
+title: Add dependency mutation command for existing items
+description: Metadata audit found 102 items with empty dependencies and no supported CLI mutation path to add dependency links after item creation.
+type: Issue
+status: open
+priority: 1
+tags[5]: "area:dependencies","area:metadata",core,pm-cli,release-readiness
+created_at: "2026-04-01T20:43:14.612Z"
+updated_at: "2026-04-01T20:46:32.692Z"
+deadline: "2026-04-06T20:43:14.612Z"
+assignee: codex-agent
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: "A supported CLI path can add and remove dependency entries on existing items with history tracking, ownership semantics, and regression tests, enabling closure of dependency metadata gaps across all items."
+definition_of_ready: Dependency schema and ownership semantics are validated against current item format and history rules.
+order: 1
+goal: metadata-completeness
+objective: enable-post-create-dependency-mutations
+value: unblocks-full-item-completeness-audits
+impact: removes-manual-gaps-in-dependency-linking
+outcome: existing-items-can-be-dependency-linked-deterministically
+why_now: current-audit-cannot-fill-dependencies-with-existing-cli-surfaces
+parent: pm-ofh9
+reviewer: maintainer-review
+risk: high
+confidence: medium
+sprint: 2026-w14
+release: vnext
+blocked_by: design-review
+blocked_reason: need-command-shape-confirmation-for-dependency-mutations
+unblock_note: implement-command-after-contract-review-and-test-plan-signoff
+reporter: codex-agent
+severity: medium
+environment: linux-node25-local
+repro_steps: 1) Run pm list-all --json and identify items with empty dependencies 2) Attempt pm update --dep ... 3) Observe unknown option and no alternative dependency mutation command
+resolution: implement a dedicated dependency mutation surface for existing items
+expected_result: Agents can add dependency entries to existing items via a supported command and history records capture each mutation.
+actual_result: Dependency links can be seeded at create-time but cannot be mutated on existing items through current CLI commands.
+affected_version: 2026.3.12
+fixed_version: 2026.3.13-target
+component: dependency-metadata
+regression: false
+customer_impact: "Maintainers cannot fully normalize planning graphs, reducing traceability and automation reliability."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ofh9,related,"2026-04-01T20:43:14.612Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T20:43:14.612Z",codex-agent,Issue discovered during end-to-end metadata normalization sweep when dependency fields remained the only unfillable gap.
+  "2026-04-01T20:46:32.692Z",codex-agent,"Audit evidence: after full metadata normalization, scalar metadata and linked notes/files/tests/docs/learnings are complete across 369 items. Remaining gap is dependencies on 102 legacy items because current CLI lacks a dependency mutation command for existing items."
+notes[1]{created_at,author,text}:
+  "2026-04-01T20:43:14.612Z",codex-agent,Implement command-level dependency add/remove operations with ownership and history parity.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:43:14.612Z",codex-agent,Create-only dependency seeding is insufficient for long-lived trackers that require retrospective graph hygiene.
+files[1]{path,scope,note}:
+  src/cli/commands/update.ts,project,current-update-surface-lacks-dependency-mutation
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,null,project,7200,dependency-mutation-regression-surface
+docs[1]{path,scope,note}:
+  AGENTS.md,project,workflow-contract-for-metadata-completeness
+body: "During full-project pm normalization, dependency metadata remains incomplete because update/comments/notes/files/docs/test/learnings do not support dependency mutation. Add a first-class dependency mutation command for existing items and document deterministic usage in CLI help and AGENTS/README workflows."

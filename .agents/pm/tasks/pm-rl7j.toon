@@ -6,13 +6,41 @@ status: closed
 priority: 1
 tags[4]: "area:release","area:tests",evidence,pm-cli
 created_at: "2026-04-01T02:18:07.586Z"
-updated_at: "2026-04-01T19:58:31.180Z"
+updated_at: "2026-04-01T20:20:40.173Z"
 deadline: "2026-04-10T02:18:07.586Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 100
 acceptance_criteria: All linked verification commands pass and closure evidence is recorded in pm comments before final close/release.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
 parent: pm-qwp7
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-qwp7
+blocked_reason: no-current-blocker
 unblock_note: Coverage gate alignment complete; verification rerun passing.
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: release-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-qwp7,parent,"2026-04-01T02:18:07.586Z",codex-agent,null
 comments[5]{created_at,author,text}:
@@ -23,6 +51,8 @@ comments[5]{created_at,author,text}:
   "2026-04-01T19:58:29.669Z",codex-agent,"Unblocked by aligning coverage gate expectations and release-readiness assertions to current enforced policy; full verification rerun succeeded (pnpm build, node scripts/run-tests.mjs test, node scripts/run-tests.mjs coverage)."
 notes[1]{created_at,author,text}:
   "2026-04-01T02:18:07.586Z",codex-agent,Include build test coverage and pm test-all sweeps in closure evidence.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:20:40.173Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   CHANGELOG.md,project,release summary anchor
 tests[1]{command,path,scope,timeout_seconds,note}:

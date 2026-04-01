@@ -6,11 +6,41 @@ status: closed
 priority: 2
 tags[6]: "area:extensions",code,"milestone:5",pm-cli,roadmap,tests
 created_at: "2026-03-07T21:52:34.802Z"
-updated_at: "2026-03-07T22:35:00.808Z"
+updated_at: "2026-04-01T20:37:02.804Z"
 deadline: "2026-03-14T21:52:34.802Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: "Runtime wiring is implemented for at least one additional extension registration family beyond registerFlags help metadata, docs reflect scope accurately, and sandbox-safe regression + coverage remain 100 percent."
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 3
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-jvfw
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-b1w
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: extensions-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-b1w,parent,"2026-03-07T21:52:34.802Z",maintainer-agent,null
 comments[4]{created_at,author,text}:
@@ -20,6 +50,8 @@ comments[4]{created_at,author,text}:
   "2026-03-07T22:35:00.481Z",maintainer-agent,"Evidence: pm test pm-jvfw --run --timeout 7200 --json passed (2/2 linked tests, including node scripts/run-tests.mjs coverage with 100% lines/branches/functions/statements). Regression sweeps passed sequentially: pm test-all --status in_progress --timeout 7200 --json => failed=0, passed=2, skipped=0; pm test-all --status closed --timeout 7200 --json => items=137, failed=0, passed=64, skipped=290 deterministic dedupe."
 notes[1]{created_at,author,text}:
   "2026-03-07T21:52:34.802Z",maintainer-agent,Start by mapping current registration metadata-only paths then implement deterministic runtime wiring with tests.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:37:02.804Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[4]{path,scope,note}:
   PRD.md,project,authoritative extension runtime contract
   README.md,project,public extension runtime baseline

@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[9]: "area:cli","area:core","area:docs","area:schema",code,"milestone:7",pm-cli,"priority:1",tests
 created_at: "2026-03-07T23:59:27.285Z"
-updated_at: "2026-03-08T00:31:15.656Z"
+updated_at: "2026-04-01T20:34:48.084Z"
 deadline: "2026-03-10T23:59:27.285Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: PRD updated with new optional fields; create/update help shows new flags; new fields serialize in canonical key order; 100% test coverage maintained; release-readiness contract tests updated.
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: feature-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-feature-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-2p6q
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: cli-component
+regression: false
+customer_impact: improves-reliability-and-clarity-for-contributors
 comments[4]{created_at,author,text}:
   "2026-03-07T23:59:27.285Z",maintainer-agent,These fields are commonly needed for real-world project management across teams and tools. Docs-first approach per R1.
   "2026-03-08T00:00:38.074Z",maintainer-agent,"Starting docs-first implementation. Adding parent, reviewer, risk, sprint, release, blocked_by, blocked_reason as optional front-matter fields to PRD schema section 7.1, then updating canonical key order in 7.2."
@@ -18,6 +48,8 @@ comments[4]{created_at,author,text}:
   "2026-03-08T00:31:15.305Z",maintainer-agent,"Evidence: pm test pm-2p6q --run passed (linked coverage + test); pm test-all --status in_progress passed (2/2); pm test-all --status closed passed (64 passed, 0 failed, 296 skipped duplicates/no-command); coverage remained 100% lines/branches/functions/statements."
 notes[1]{created_at,author,text}:
   "2026-03-07T23:59:27.285Z",maintainer-agent,"Plan: 1) Update PRD schema section 2) Update README 3) Add types 4) Wire create/update flags 5) Update serialization key order 6) Add tests 7) Verify coverage"
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:34:48.084Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[13]{path,scope,note}:
   PRD.md,project,schema definition update
   README.md,project,docs update

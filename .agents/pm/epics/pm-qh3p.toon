@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[5]: agent-ux,"area:calendar","area:reminders",core,pm-cli
 created_at: "2026-03-31T21:27:17.807Z"
-updated_at: "2026-03-31T22:09:23.574Z"
+updated_at: "2026-04-01T20:15:45.676Z"
 deadline: "2026-04-14T21:27:17.807Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 480
 acceptance_criteria: "Calendar and reminder capabilities are implemented, tested, documented, and backward compatible."
@@ -19,10 +20,24 @@ value: Enables deadline-centric autonomous execution
 impact: Faster and safer date-driven task management
 outcome: Agents can schedule and track work in-calendar
 why_now: Agents need better native date orchestration to reduce deadline misses.
+parent: pm-qh3p
+reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: calendar-rollout
 release: vnext
+blocked_by: pm-2fj
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: vnext
+fixed_version: vnext
 component: cli/calendar
 regression: false
 customer_impact: Improves agent deadline and reminder planning workflows.
@@ -36,6 +51,8 @@ comments[3]{created_at,author,text}:
   "2026-03-31T22:09:22.767Z",codex-agent,"Epic complete: features pm-c877 pm-tuhf pm-122q are closed; full regression and 100% coverage passed with documented release-ready calendar/reminder support."
 notes[1]{created_at,author,text}:
   "2026-03-31T21:27:17.807Z",codex-agent,Keep TOON default globally and scope markdown default to calendar command.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:15:45.676Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/main.ts,project,calendar command wiring
 tests[1]{command,path,scope,timeout_seconds,note}:

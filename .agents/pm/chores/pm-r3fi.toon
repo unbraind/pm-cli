@@ -6,30 +6,51 @@ status: closed
 priority: 0
 tags[5]: "area:ci",maintenance,pm-cli,release-readiness,security
 created_at: "2026-03-08T17:13:28.000Z"
-updated_at: "2026-03-08T17:13:28.000Z"
+updated_at: "2026-04-01T20:32:09.295Z"
 deadline: "2026-03-09T17:13:28.000Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 30
 acceptance_criteria: "{\"id\":\"AC-1\",\"text\":\"pnpm audit reports no known vulnerabilities\",\"type\":\"security\",\"verification\":\"automated\"}"
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 1
+goal: chore-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-chore-record
 why_now: Dependabot alerts found after push to main
+parent: pm-r3fi
+reviewer: maintainer-review
 risk: low
 confidence: high
 sprint: maintenance-loop
 release: v0.1
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
 severity: high
 environment: devDependencies only
+repro_steps: run-linked-flow-and-compare-to-ac
 resolution: c8 updated to v11; rollup pinned to >=4.59.0 via pnpm.overrides
 expected_result: pnpm audit clean
 actual_result: pnpm audit reports No known vulnerabilities found
 affected_version: 0.1.0
 fixed_version: 0.1.0
 component: package.json devDependencies
+regression: false
+customer_impact: improves-reliability-and-clarity-for-contributors
 comments[1]{created_at,author,text}:
   "2026-03-08T17:13:28.000Z",maintainer-agent,"pnpm audit confirmed: No known vulnerabilities found. All 473 tests pass at 100% coverage after updates."
 notes[1]{created_at,author,text}:
   "2026-03-08T17:13:28.000Z",maintainer-agent,c8 10->11 update fixes 4x minimatch vulnerabilities. pnpm.overrides rollup>=4.59.0 fixes rollup path traversal. Both are devDependencies only.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:32:09.295Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   package.json,project,c8 and rollup override updated
 tests[1]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs coverage,null,project,600,full coverage gate
+docs[1]{path,scope,note}:
+  README.md,project,metadata-audit-documentation-context
 body: "Dependency path for minimatch: c8 -> test-exclude -> minimatch (9.x had ReDoS in pattern matching). Fixed by updating to c8 v11 which uses test-exclude v8 which depends on minimatch v10.\\n\\nDependency path for rollup: vitest -> @vitest/mocker -> vite -> rollup (4.57.1 had arbitrary file write via path traversal). Fixed by adding pnpm.overrides rollup >= 4.59.0.\\n\\nBoth are devDependencies and do not affect the published npm package or end users."

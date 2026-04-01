@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[5]: "area:ollama","area:search","area:semantic",compatibility,pm-cli
 created_at: "2026-04-01T13:06:19.646Z"
-updated_at: "2026-04-01T13:25:06.066Z"
+updated_at: "2026-04-01T20:21:59.490Z"
 deadline: "2026-04-11T13:06:19.646Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: Search defaults to hybrid semantic behavior when local Ollama is available without requiring manual provider/vector config; explicit config precedence and non-regression behavior are verified.
@@ -20,9 +21,23 @@ impact: Faster adoption of semantic search with minimal setup
 outcome: Runtime auto-enables semantic defaults when safe
 why_now: Current manual setup requirement prevents default semantic behavior on systems that already have Ollama.
 parent: pm-67uh
+reviewer: maintainer-review
 risk: medium
 confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-67uh
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
 environment: linux
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
 component: search/runtime
 regression: true
 customer_impact: Enables semantic defaults where available while preserving stable behavior for existing users.
@@ -34,6 +49,8 @@ comments[2]{created_at,author,text}:
   "2026-04-01T13:25:05.107Z",codex-agent,"Feature delivered via closed child tasks pm-wn3r (runtime), pm-9k33 (tests), and pm-ptu0 (docs). Evidence: linked task test runs passed including full node scripts/run-tests.mjs test (62 files, 648 tests), host sandbox validation confirmed automatic hybrid default and successful semantic reindex/search with local Ollama, and coverage run was executed with only the existing global threshold shortfall."
 notes[1]{created_at,author,text}:
   "2026-04-01T13:06:19.646Z",codex-agent,Prefer deterministic fallback to keyword behavior when auto semantic dependencies are unavailable at runtime.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:21:59.490Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[2]{path,scope,note}:
   src/cli/commands/search.ts,project,default mode and fallback orchestration
   src/core/search/providers.ts,project,provider-resolution and ollama behavior

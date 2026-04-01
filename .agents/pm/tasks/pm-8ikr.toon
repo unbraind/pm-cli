@@ -6,15 +6,49 @@ status: closed
 priority: 2
 tags[4]: "area:search","milestone:4",pm-cli,roadmap
 created_at: "2026-03-07T14:01:18.499Z"
-updated_at: "2026-03-07T15:57:26.604Z"
+updated_at: "2026-04-01T20:36:48.045Z"
 deadline: "2026-03-08T15:21:13.718Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "Local LanceDB adapter persists deterministic table snapshots to disk, reloads across process boundaries, and remains covered by sandbox-safe unit tests."
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 3
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-8ikr
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: search-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 comments[3]{created_at,author,text}:
   "2026-03-07T15:21:15.377Z",maintainer-agent,"Plan: implement deterministic on-disk persistence for local LanceDB adapter tables, including stable serialization and reload-on-query behavior; then extend unit tests and docs to capture refined behavior before running pm test + pm test-all."
   "2026-03-07T15:57:26.122Z",maintainer-agent,"Implemented deterministic local LanceDB snapshot persistence in src/core/search/vector-stores.ts (disk-backed load/write/delete, snapshot schema validation, atomic snapshot writes) and expanded tests/docs in tests/unit/vector-store-adapter.spec.ts, PRD.md, and README.md."
   "2026-03-07T15:57:26.278Z",maintainer-agent,"Evidence: pm test pm-8ikr --run --timeout 1200 passed (coverage + focused unit tests), pm test-all --status in_progress --timeout 1200 passed (items=1 passed=2 failed=0 skipped=0), pm test-all --status closed --timeout 1200 passed (items=130 passed=62 failed=0 skipped=280), and node scripts/run-tests.mjs coverage reports 100% for statements/branches/functions/lines."
+notes[1]{created_at,author,text}:
+  "2026-04-01T20:36:46.846Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:36:48.045Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[4]{path,scope,note}:
   PRD.md,project,behavior doc alignment
   README.md,project,public docs alignment

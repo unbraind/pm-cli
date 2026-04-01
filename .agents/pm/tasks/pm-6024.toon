@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:parser",phase2,pm-cli
 created_at: "2026-04-01T19:27:28.540Z"
-updated_at: "2026-04-01T19:57:29.701Z"
+updated_at: "2026-04-01T20:21:17.236Z"
 deadline: "2026-04-09T19:27:28.540Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 120
 acceptance_criteria: "Regression tests cover parser overrides, fallback chain, and --no-extensions parity; docs include migration guidance."
@@ -20,10 +21,23 @@ impact: Establishes confidence in extension-driven parser changes.
 outcome: Parser override matrix is documented and tested.
 why_now: Needed for safe rollout of full parser override power.
 parent: pm-k1zw
+reviewer: maintainer-review
 risk: medium
 confidence: medium
 sprint: phase2-override
 release: vnext
+blocked_by: pm-k1zw
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: vnext
+fixed_version: vnext
 component: extensions-runtime
 regression: true
 customer_impact: Users keep stable defaults while extensions gain deeper control.
@@ -34,6 +48,8 @@ comments[2]{created_at,author,text}:
   "2026-04-01T19:57:28.285Z",codex-agent,"Implemented in Phase 2 full-override rollout. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed; node scripts/run-tests.mjs coverage passed (64 files/702 tests) with aligned coverage gates and release-readiness checks green."
 notes[1]{created_at,author,text}:
   "2026-04-01T19:27:28.540Z",codex-agent,Must include extension-enabled and --no-extensions test runs.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:21:17.236Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,parser override integration tests
 tests[1]{command,path,scope,timeout_seconds,note}:

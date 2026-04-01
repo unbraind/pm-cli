@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[4]: "area:commands",core,"milestone:1",pm-cli
 created_at: "2026-02-17T23:02:08.240Z"
-updated_at: "2026-03-05T09:34:42.762Z"
+updated_at: "2026-04-01T20:34:18.607Z"
 deadline: "2026-02-23T23:02:08.240Z"
+assignee: steve
 author: steve
 estimated_minutes: 180
 acceptance_criteria: "create command requires all explicit scalar and repeatable seed flags (use none for explicit empty), docs/help/tests remain aligned, and sandboxed pm test + test-all sweeps pass with coverage still 100%."
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: task-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-task-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-06t
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-2xl
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: steve
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: commands-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-2xl,blocks,"2026-02-17T23:02:08.240Z",steve,null
   pm-u9r,parent,"2026-02-17T23:02:08.240Z",steve,null
@@ -33,6 +63,10 @@ comments[18]{created_at,author,text}:
   "2026-02-22T16:32:21.287Z",maintainer-agent,"Planned change-set: run release-readiness contract checks to detect any remaining docs/help/implementation drift in create command surface, then apply docs-first fixes and tests if required."
   "2026-02-22T17:00:17.473Z",maintainer-agent,"Blocked from closure this run: pm test-all --status closed failed (exit 5) due timeout in tests/integration/cli.integration.spec.ts > restores an item by version through CLI during pm-66o linked regression command. Pausing pm-06t closure while fixing reliability in pm-66o."
   "2026-02-22T17:15:46.593Z",maintainer-agent,"Unblock note: pm-66o reliability fix removed closed-sweep timeout flake; latest validation is green: pm test pm-06t --run passed (6/6), pm test-all --status in_progress passed (items=10 linked_tests=35 passed=15 failed=0 skipped=20), and pm test-all --status closed passed (items=24 linked_tests=92 passed=43 failed=0 skipped=49) with coverage gate still 100%."
+notes[1]{created_at,author,text}:
+  "2026-04-01T20:34:17.459Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:34:18.607Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[25]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,Pi wrapper project-scoped module path
   AGENTS.md,project,create repeatable seed requirement note

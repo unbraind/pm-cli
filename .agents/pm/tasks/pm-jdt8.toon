@@ -6,8 +6,9 @@ status: closed
 priority: 0
 tags[9]: "area:config","area:workflow",code,docs,"milestone:7",pm-cli,"priority:0",release-readiness,tests
 created_at: "2026-03-08T14:33:25.586Z"
-updated_at: "2026-03-08T15:05:51.939Z"
+updated_at: "2026-04-01T20:32:05.404Z"
 deadline: "2026-03-09T14:33:25.586Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 150
 acceptance_criteria: pm config supports project/global Definition of Done criteria persistence with deterministic TOON/JSON output; PRD README and AGENTS document the baseline; unit/integration coverage keeps the repository at 100 percent.
@@ -19,10 +20,27 @@ value: Enables deterministic team-level quality policy storage in pm itself
 impact: Reduces release-readiness drift between maintainer instructions and CLI behavior
 outcome: Maintainers can persist and inspect Definition of Done criteria through the CLI
 why_now: Current maintainer protocol references pm config for Definition of Done but implementation has no command support yet
+parent: pm-jdt8
+reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: maintainer-loop-2026-03-08
 release: v0.1
+blocked_by: pm-ote
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: v0.1
+fixed_version: v0.1
+component: config-component
+regression: true
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-ote,related,"2026-03-08T14:33:25.586Z",maintainer-agent,null
 comments[4]{created_at,author,text}:
@@ -32,6 +50,8 @@ comments[4]{created_at,author,text}:
   "2026-03-08T15:05:51.939Z",maintainer-agent,"Evidence: pm test pm-jdt8 --run passed all 3 linked tests; pm test-all --status in_progress rerun passed 3 of 3 linked tests after one transient todos-import false negative on the first sweep; pm test-all --status closed passed 68 linked tests with 316 deterministic duplicate or path skips across 151 closed items; node scripts/run-tests.mjs coverage remained at 100 percent statements, branches, functions, and lines."
 notes[1]{created_at,author,text}:
   "2026-03-08T14:33:25.586Z",maintainer-agent,Plan update docs first then add settings storage and config command wiring then run focused and full regression checks.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:32:05.404Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[15]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,Pi wrapper config action parity
   AGENTS.md,project,maintainer workflow contract

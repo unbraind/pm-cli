@@ -6,11 +6,41 @@ status: closed
 priority: 1
 tags[4]: install,pm-cli,release-readiness,windows
 created_at: "2026-02-17T23:37:53.836Z"
-updated_at: "2026-02-22T16:01:10.867Z"
+updated_at: "2026-04-01T20:33:34.600Z"
 deadline: "2026-02-22T23:37:53.836Z"
+assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 180
 acceptance_criteria: "Install scripts work on Linux/macOS and PowerShell, support update flow, and usage is documented with safe execution guidance."
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 2
+goal: chore-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-chore-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-tq1
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-cyj
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: cursor-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: chore-component
+regression: false
+customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-cyj,related,"2026-02-17T23:37:53.836Z",cursor-agent,null
   pm-ote,parent,"2026-02-17T23:37:53.836Z",cursor-agent,null
@@ -27,6 +57,10 @@ comments[11]{created_at,author,text}:
   "2026-02-22T13:42:39.865Z",cursor-maintainer,"Implemented docs-first installer parity hardening for scoped package overrides: README.md now states that scoped package names (e.g. @scope/pkg) honor --version while literal specs remain unchanged; scripts/install.sh and scripts/install.ps1 now detect literal install specs (file/url/path/tarball/already-versioned) so only package names receive @<version>; tests/integration/help-readme-contract.spec.ts now asserts this contract and both installer detection helpers. Evidence: node scripts/run-tests.mjs test -- tests/integration/help-readme-contract.spec.ts passed 5/5; node dist/cli.js test pm-tq1 --run --timeout 3600 --json passed all 3 linked tests (coverage + installer contract + install.sh smoke); node dist/cli.js test-all --status in_progress --timeout 3600 --json totals items=10 linked_tests=35 passed=15 failed=0 skipped=20; node dist/cli.js test-all --status closed --timeout 3600 --json totals items=22 linked_tests=86 passed=42 failed=0 skipped=44. Coverage statement: 100% lines/branches/functions/statements preserved in coverage runs. Follow-up items created: none."
   "2026-02-22T15:46:55.100Z",maintainer-agent@cursor,"Planned change-set: run linked installer/coverage validations and full pm test-all sweeps, then close this chore if acceptance criteria remain fully satisfied on current main."
   "2026-02-22T16:01:10.441Z",maintainer-agent@cursor,"Evidence: node dist/cli.js test pm-tq1 --run --timeout 3600 --json passed 3/3 linked tests (coverage + README installer contract + install.sh smoke). Coverage proof: node scripts/run-tests.mjs coverage reported 100% lines/branches/functions/statements. Regression sweeps passed: node dist/cli.js test-all --status in_progress --timeout 3600 --json => items=10 linked_tests=37 passed=16 failed=0 skipped=21; node dist/cli.js test-all --status closed --timeout 3600 --json => items=24 linked_tests=90 passed=43 failed=0 skipped=47. Follow-up items created: none."
+notes[1]{created_at,author,text}:
+  "2026-04-01T20:33:33.448Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:33:34.599Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[4]{path,scope,note}:
   README.md,project,replace installer placeholder URLs with concrete upstream links
   scripts/install.ps1,project,PowerShell installer with prefix and version options

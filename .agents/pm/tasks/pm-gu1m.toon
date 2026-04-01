@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: "area:schema","area:types",code,pm-cli
 created_at: "2026-04-01T01:39:35.712Z"
-updated_at: "2026-04-01T01:52:33.761Z"
+updated_at: "2026-04-01T20:24:56.053Z"
 deadline: "2026-04-08T01:39:35.712Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: Schema supports option policy metadata and registry resolves deterministic policy definitions with backward-safe defaults.
@@ -20,9 +21,25 @@ impact: Enables policy-aware command UX
 outcome: Deterministic policy model resolution
 why_now: Current schema cannot represent option visibility and enablement controls
 parent: pm-5bwo
+reviewer: maintainer-review
 risk: medium
 confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: pm-5bwo
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
 component: core/schema
+regression: true
 customer_impact: Allows teams to configure command option policies per type.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-5bwo,parent,"2026-04-01T01:39:35.712Z",codex-agent,null
@@ -31,6 +48,8 @@ comments[2]{created_at,author,text}:
   "2026-04-01T01:52:30.480Z",codex-agent,Implemented command_option_policies schema in settings/types/type-registry and deterministic normalization.
 notes[1]{created_at,author,text}:
   "2026-04-01T01:39:35.712Z",codex-agent,Defaults must preserve current behavior for existing repositories.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:24:08.790Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/core/store/settings.ts,project,settings schema and normalization
 tests[1]{command,path,scope,timeout_seconds,note}:

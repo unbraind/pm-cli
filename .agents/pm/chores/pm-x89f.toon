@@ -6,11 +6,41 @@ status: closed
 priority: 0
 tags[4]: contract-sync,maintenance,pm-cli,release-readiness
 created_at: "2026-03-06T19:26:24.210Z"
-updated_at: "2026-03-06T19:39:02.287Z"
+updated_at: "2026-04-01T20:31:16.008Z"
 deadline: "2026-03-07T19:26:24.210Z"
+assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "Release-readiness tests enforce that planned/not-yet-canonical flags are absent from active create/help contracts, and sandbox-safe verification passes with 100% coverage preserved."
+definition_of_ready: scope-links-and-verification-evidence-identified
+order: 1
+goal: chore-delivery-governance
+objective: complete-metadata-and-verification-traceability
+value: improve-planning-traceability
+impact: improve-auditability-and-team-handoffs
+outcome: fully-specified-chore-record
+why_now: global-pm-audit-requires-complete-fields
+parent: pm-x89f
+reviewer: maintainer-review
+risk: high
+confidence: high
+sprint: archive-2026w14
+release: archive-2026q2
+blocked_by: no-active-blocker
+blocked_reason: no-current-blocker
+unblock_note: continue-normal-execution-flow
+reporter: maintainer-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+resolution: implemented-or-disposition-recorded
+expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: current-state-matches-expected-behavior
+affected_version: archive-2026q2
+fixed_version: archive-2026q2
+component: chore-component
+regression: false
+customer_impact: improves-reliability-and-clarity-for-contributors
 comments[4]{created_at,author,text}:
   "2026-03-06T19:26:24.210Z",maintainer-agent,Bootstrap run 5 from empty active queue and choose smallest high-value non-duplicate contract guard.
   "2026-03-06T19:26:33.676Z",maintainer-agent,"Planned changeset: extend release-readiness integration contracts to assert planned/not-yet-canonical create flags remain absent from active CLI help and docs-backed create contract sections."
@@ -18,6 +48,8 @@ comments[4]{created_at,author,text}:
   "2026-03-06T19:39:01.951Z",maintainer-agent,"Evidence: node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts passed (25/25). pm test pm-x89f --run --timeout 3600 passed linked tests (2 passed, 0 failed), including node scripts/run-tests.mjs coverage with 100% lines/branches/functions/statements. pm test-all --status in_progress --timeout 3600 passed (items=1 linked_tests=2 passed=2 failed=0 skipped=0). pm test-all --status closed --timeout 3600 passed (items=101 linked_tests=285 passed=63 failed=0 skipped=222). Follow-up items: none."
 notes[1]{created_at,author,text}:
   "2026-03-06T19:26:24.210Z",maintainer-agent,Add integration guard for planned flag absence in CLI help and docs-backed create contract.
+learnings[1]{created_at,author,text}:
+  "2026-04-01T20:31:16.008Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   tests/integration/release-readiness-contract.spec.ts,project,add planned-flag absence contract test
 tests[2]{command,path,scope,timeout_seconds,note}:
