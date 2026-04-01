@@ -21,6 +21,8 @@ export default defineConfig({
         "src/cli/commands/completion.ts",
         "src/cli/commands/claim.ts",
         "src/cli/commands/comments.ts",
+        "src/cli/commands/notes.ts",
+        "src/cli/commands/learnings.ts",
         "src/cli/commands/config.ts",
         "src/cli/commands/context.ts",
         "src/cli/commands/docs.ts",

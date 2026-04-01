@@ -22,7 +22,9 @@ import {
   runHistory,
   runInit,
   runInstall,
+  runLearnings,
   runList,
+  runNotes,
   runSearch,
   runReindex,
   runRestore,
@@ -547,6 +549,8 @@ function decideWriteGate(commandPath: string, options: Record<string, unknown>):
         forceRequested,
       };
     case "comments":
+    case "notes":
+    case "learnings":
       return {
         isMutation: typeof options.add === "string",
         forceCapable: true,
@@ -2075,6 +2079,84 @@ program
     printResult(result, globalOptions);
     if (globalOptions.profile) {
       printError(`profile:command=comments took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+program
+  .command("notes")
+  .argument("<id>", "Item id")
+  .argument("[text]", "Optional note text shorthand (equivalent to --add; use - for stdin)")
+  .option("--add <text>", "Add one note entry (plain text, text=<value>, markdown pairs, or - for stdin)")
+  .option("--limit <n>", "Return only latest n notes")
+  .option("--author [value]", "Note author (optional; falls back to PM_AUTHOR/settings)")
+  .option("--message <value>", "History message")
+  .option("--force", "Force ownership override")
+  .description("List or add notes for an item.")
+  .action(async (id: string, text: string | undefined, options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const addFromOption = typeof options.add === "string" ? options.add : undefined;
+    const addFromPositional = typeof text === "string" ? text : undefined;
+    if (addFromOption !== undefined && addFromPositional !== undefined) {
+      throw new PmCliError("Specify note text either as positional [text] or with --add, not both", EXIT_CODE.USAGE);
+    }
+    const add = addFromOption ?? addFromPositional;
+    const result = await runNotes(
+      id,
+      {
+        add,
+        limit: typeof options.limit === "string" ? options.limit : undefined,
+        author: typeof options.author === "string" ? options.author : undefined,
+        message: typeof options.message === "string" ? options.message : undefined,
+        force: Boolean(options.force),
+      },
+      globalOptions,
+    );
+    if (typeof add === "string") {
+      await invalidateSearchCachesForMutation(globalOptions, result);
+    }
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=notes took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+program
+  .command("learnings")
+  .argument("<id>", "Item id")
+  .argument("[text]", "Optional learning text shorthand (equivalent to --add; use - for stdin)")
+  .option("--add <text>", "Add one learning entry (plain text, text=<value>, markdown pairs, or - for stdin)")
+  .option("--limit <n>", "Return only latest n learnings")
+  .option("--author [value]", "Learning author (optional; falls back to PM_AUTHOR/settings)")
+  .option("--message <value>", "History message")
+  .option("--force", "Force ownership override")
+  .description("List or add learnings for an item.")
+  .action(async (id: string, text: string | undefined, options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const addFromOption = typeof options.add === "string" ? options.add : undefined;
+    const addFromPositional = typeof text === "string" ? text : undefined;
+    if (addFromOption !== undefined && addFromPositional !== undefined) {
+      throw new PmCliError("Specify learning text either as positional [text] or with --add, not both", EXIT_CODE.USAGE);
+    }
+    const add = addFromOption ?? addFromPositional;
+    const result = await runLearnings(
+      id,
+      {
+        add,
+        limit: typeof options.limit === "string" ? options.limit : undefined,
+        author: typeof options.author === "string" ? options.author : undefined,
+        message: typeof options.message === "string" ? options.message : undefined,
+        force: Boolean(options.force),
+      },
+      globalOptions,
+    );
+    if (typeof add === "string") {
+      await invalidateSearchCachesForMutation(globalOptions, result);
+    }
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=learnings took_ms=${Date.now() - startedAt}`);
     }
   });
 

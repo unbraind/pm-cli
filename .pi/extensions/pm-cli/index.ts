@@ -25,6 +25,8 @@ export const PM_TOOL_ACTIONS = [
   "delete",
   "append",
   "comments",
+  "notes",
+  "learnings",
   "files",
   "docs",
   "test",
@@ -617,6 +619,18 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       return args;
     case "comments":
       args.push("comments", requireString(params.id, "id", action));
+      pushOption(args, "--add", params.text ?? params.add?.[0]);
+      pushOption(args, "--limit", params.limit);
+      addAuthorMessageForceFlags(args, params);
+      return args;
+    case "notes":
+      args.push("notes", requireString(params.id, "id", action));
+      pushOption(args, "--add", params.text ?? params.add?.[0]);
+      pushOption(args, "--limit", params.limit);
+      addAuthorMessageForceFlags(args, params);
+      return args;
+    case "learnings":
+      args.push("learnings", requireString(params.id, "id", action));
       pushOption(args, "--add", params.text ?? params.add?.[0]);
       pushOption(args, "--limit", params.limit);
       addAuthorMessageForceFlags(args, params);

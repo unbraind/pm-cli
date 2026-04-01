@@ -188,6 +188,19 @@ export function formatCommanderErrorForDisplay(
   const unknownOption = message.match(/unknown option '([^']+)'/);
   if (unknownOption) {
     const optionName = unknownOption[1];
+    if (commandName === "update" && (optionName === "--file" || optionName === "--doc")) {
+      return renderGuidanceMessage({
+        title: `Unsupported option ${optionName} for update`,
+        happened: `pm update does not accept ${optionName} for linked artifact mutations.`,
+        required: "Use dedicated linked-artifact commands instead of pm update for files/docs changes.",
+        why: "pm update manages scalar item metadata, while linked files/docs are managed by pm files and pm docs.",
+        examples: [
+          'pm files pm-a1b2 --add "path=src/cli/main.ts,scope=project,note=implementation surface"',
+          'pm docs pm-a1b2 --add "path=README.md,scope=project,note=user-facing contract"',
+        ],
+        nextSteps: ['Run "pm files --help" and "pm docs --help" for add/remove payload formats.'],
+      });
+    }
     return renderGuidanceMessage({
       title: `Unknown option ${optionName}`,
       happened: `Commander does not recognize option ${optionName} for this command path.`,

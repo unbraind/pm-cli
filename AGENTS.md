@@ -85,6 +85,8 @@ Attach references to keep work reproducible:
   - `pm test <ID> --add path=tests/history.spec.ts,scope=project`
 - Docs:
   - `pm docs <ID> --add path=docs/ARCHITECTURE.md,scope=project`
+- Command boundaries:
+  - `pm update` intentionally does not mutate linked files/docs; use `pm files` / `pm docs`.
 - Entry-format resilience:
   - `--add`/repeatable seed flags accept CSV `key=value`, markdown `key: value`, or stdin token `-` with piped payload.
   - Example: `printf '%s\n' 'path: src/app.ts' 'scope: project' | pm files <ID> --add -`
@@ -99,8 +101,8 @@ Use append-style updates:
 
 Capture durable notes:
 
-- `pm update <ID> --message "Add design rationale"` with note additions
-- Add learnings at the end of significant discoveries.
+- `pm notes <ID> --add "Design rationale and implementation context"`
+- `pm learnings <ID> --add "Durable lesson for future work"`
 
 ### Step F - Validate and close
 
@@ -234,6 +236,8 @@ pm update pm-a1b2 --reminder "at=+1d,text=Follow up on restore replay tests"
 pm files pm-a1b2 --add path=src/history.ts,scope=project,note="restore implementation"
 pm test pm-a1b2 --add command="node scripts/run-tests.mjs test",scope=project,timeout_seconds=240
 pm comments pm-a1b2 "Restore replay implemented with hash checks"
+pm notes pm-a1b2 --add "Replay path now guards missing history streams before write"
+pm learnings pm-a1b2 --add "Use sandbox runner for linked test commands to preserve PM_PATH safety"
 pm calendar --view agenda --assignee codex-agent --format markdown
 pm test pm-a1b2 --run
 node scripts/run-tests.mjs coverage
@@ -401,6 +405,8 @@ Rules:
 - Until full command coverage exists, prioritize implementing the minimal missing subset needed for logging:
   - `append`
   - `comments`
+  - `notes`
+  - `learnings`
   - `files`
   - `test`
   - `test-all`

@@ -123,7 +123,7 @@ pm list-open --limit 10
 pm claim <item-id>
 ```
 
-From there, use `pm update`, `pm comments`, `pm files`, `pm test`, `pm search`, and `pm close` as work progresses.
+From there, use `pm update`, `pm comments`, `pm notes`, `pm learnings`, `pm files`, `pm docs`, `pm test`, `pm search`, and `pm close` as work progresses.
 
 ## Semantic Search Defaults (Ollama)
 
@@ -213,13 +213,29 @@ pm test pm-a1b2 --add $'command: node scripts/run-tests.mjs test\nscope: project
 pm comments pm-a1b2 "captured from shorthand positional text"
 pm comments pm-a1b2 --add "text: captured from markdown formatter"
 
+# Notes and learnings support the same positional/--add shorthand
+pm notes pm-a1b2 "implementation context captured from shorthand positional text"
+pm notes pm-a1b2 --add "text: parser fallback rationale"
+pm learnings pm-a1b2 --add "text: always run linked tests through the sandbox runner"
+
 # Pipe markdown payload via stdin with "-"
 printf '%s\n' 'path: docs/ARCHITECTURE.md' 'scope: project' 'note: piped update' | pm files pm-a1b2 --add -
 printf '%s\n' 'text: evidence from piped stdin' | pm comments pm-a1b2 --add -
+printf '%s\n' 'text: implementation note from piped stdin' | pm notes pm-a1b2 --add -
+printf '%s\n' 'text: learning captured from piped stdin' | pm learnings pm-a1b2 --add -
 printf '%s\n' 'at: +1d' 'text: reminder from piped stdin' | pm update pm-a1b2 --reminder -
 ```
 
 `none` semantics are unchanged for explicit clears in repeatable fields (`--file none`, `--comment none`, etc.).
+
+## Linked Artifact and Test Policy
+
+- Use dedicated linked-artifact commands for file/doc mutations:
+  - `pm files <ID> --add/--remove`
+  - `pm docs <ID> --add/--remove`
+- `pm update` intentionally does not accept `--file` or `--doc`; command guidance points to `pm files` / `pm docs`.
+- `pm test <ID> --add` intentionally enforces sandbox-safe command entries. Use `node scripts/run-tests.mjs ...` for linked commands, or link specific specs with `--add "path=tests/..."`
+- `pm list` / `pm list-*` return front-matter rows by default; pass `--include-body` when body projection is needed.
 
 ## Terminal Compatibility
 

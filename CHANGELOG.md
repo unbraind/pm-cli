@@ -34,6 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `pm health` vectorization diagnostics (`vectorization`) with targeted stale-ID semantic refresh and deterministic vectorization ledger tracking (`search/vectorization-status.json`).
 - Added configurable missing history-stream policy at `settings.history.missing_stream` with `pm config <project|global> get|set history-missing-stream-policy --policy auto_create|strict_error`.
 - Added history-only restore recovery so `pm restore` can recreate missing/deleted item files when the corresponding history stream exists.
+- Added first-class `pm notes` and `pm learnings` commands with parity to `pm comments` (`<id> [text]`, `--add`, `--limit`, `--author`, `--message`, `--force`) including structured/stdin payload parsing.
+- Added command-surface parity updates for `notes`/`learnings` across help narratives, shell completion scripts, command-aware output summaries, and Pi wrapper action routing.
+- Added integration regressions for repeated `pm files --add` / `pm docs --add` mutation flows to keep linked-artifact add workflows stable across subsequent command invocations.
+- Added targeted guidance for unsupported `pm update --file` / `pm update --doc` usage, with actionable examples that route users to `pm files` / `pm docs`.
 
 ### Changed
 - Commander error output now emits a single high-signal structured guidance payload (duplicate default commander stderr lines are suppressed).
@@ -52,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI top-level error handling now preserves canonical exit-code mapping via graceful `process.exitCode` semantics to reduce buffered output truncation risk in emulated terminal environments.
 - Linked test runtime execution now closes child stdin for non-interactive runs and appends deterministic timeout/maxBuffer diagnostics when subprocess execution fails.
 - History-touching commands now enforce `settings.history.missing_stream` consistently across read/diagnostic paths (`history`, `activity`, `stats`, `health`) and existing-item mutation/restore flows.
+- Linked test command validation now explicitly documents sandbox-safe `pm test --add` policy expectations in command contracts (use `node scripts/run-tests.mjs ...` or `path=...` linked entries for targeted scope).
 
 ## [2026.3.12] - 2026-03-12
 

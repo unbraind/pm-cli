@@ -842,6 +842,56 @@ describe("Pi agent extension wrapper for pm", () => {
 
     expect(
       buildPmCliArgs({
+        action: "notes",
+        id: "pm-a1b2",
+        text: "capture implementation note",
+        limit: "5",
+        author: "pi-bot",
+        message: "note",
+        force: true,
+      }),
+    ).toEqual([
+      "--json",
+      "notes",
+      "pm-a1b2",
+      "--add",
+      "capture implementation note",
+      "--limit",
+      "5",
+      "--author",
+      "pi-bot",
+      "--message",
+      "note",
+      "--force",
+    ]);
+
+    expect(
+      buildPmCliArgs({
+        action: "learnings",
+        id: "pm-a1b2",
+        text: "capture learning",
+        limit: "5",
+        author: "pi-bot",
+        message: "learning",
+        force: true,
+      }),
+    ).toEqual([
+      "--json",
+      "learnings",
+      "pm-a1b2",
+      "--add",
+      "capture learning",
+      "--limit",
+      "5",
+      "--author",
+      "pi-bot",
+      "--message",
+      "learning",
+      "--force",
+    ]);
+
+    expect(
+      buildPmCliArgs({
         action: "files",
         id: "pm-a1b2",
         add: ["path=src/a.ts,scope=project"],

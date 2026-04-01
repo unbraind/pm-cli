@@ -47,6 +47,8 @@ describe("generateBashScript", () => {
       "delete",
       "append",
       "comments",
+      "notes",
+      "learnings",
       "files",
       "docs",
       "test",
@@ -174,6 +176,8 @@ describe("generateZshScript", () => {
     expect(script).toContain("cal:Alias for calendar");
     expect(script).toContain("context:Show a token-efficient project context snapshot");
     expect(script).toContain("ctx:Alias for context");
+    expect(script).toContain("notes:List or add notes for an item");
+    expect(script).toContain("learnings:List or add learnings for an item");
     expect(script).toContain("beads:Built-in Beads extension commands");
     expect(script).toContain("todos:Built-in todos extension commands");
   });
@@ -274,6 +278,8 @@ describe("generateFishScript", () => {
       ["create", "Create"],
       ["calendar", "deadline/reminder calendar views"],
       ["context", "project context snapshot"],
+      ["notes", "List or add notes for an item"],
+      ["learnings", "List or add learnings for an item"],
       ["get", "Show item details"],
       ["search", "Search items"],
       ["completion", "Generate shell completion"],

@@ -1,0 +1,45 @@
+id: pm-my6o
+title: External audit issue remediation and compatibility hardening
+description: "Triages six external audit findings, implements unresolved gaps, and verifies backward-compatible behavior with docs/test parity."
+type: Epic
+status: closed
+priority: 0
+tags[4]: "area:cli","area:compat",external-audit,pm-cli
+created_at: "2026-04-01T16:22:06.208Z"
+updated_at: "2026-04-01T17:02:46.499Z"
+deadline: "2026-04-08T16:22:06.208Z"
+author: cursor-agent
+estimated_minutes: 300
+acceptance_criteria: All unresolved audit findings are implemented with tests/docs; issue2/3 are mapped to existing closed items; build/tests pass and release evidence is recorded.
+definition_of_ready: De-dup mapping and scope boundaries are validated against existing PM items.
+order: 1
+goal: External audit remediation
+objective: Resolve outstanding audit gaps safely
+value: Removes audit friction without regressing existing users
+impact: Improves CLI clarity and reliability
+outcome: Notes/learnings parity and files/docs/update UX hardening shipped with evidence
+why_now: Audit surfaced user pain and contract gaps that block confidence
+risk: medium
+confidence: high
+sprint: audit-remediation
+release: vnext
+component: cli-core
+regression: true
+customer_impact: Fixes missing command parity and reduces workflow confusion
+dependencies[8]{id,kind,created_at,author,source_kind}:
+  pm-0lbm,related,"2026-04-01T16:22:06.208Z",cursor-agent,null
+  pm-6e0p,related,"2026-04-01T16:22:06.208Z",cursor-agent,null
+  pm-gudp,related,"2026-04-01T16:22:06.208Z",cursor-agent,null
+  pm-mlc3,related,"2026-04-01T16:22:06.208Z",cursor-agent,null
+  pm-q813,related,"2026-04-01T16:22:06.208Z",cursor-agent,null
+  pm-vsux,related,"2026-04-01T16:22:06.208Z",cursor-agent,null
+  pm-wdgn,related,"2026-04-01T16:22:06.208Z",cursor-agent,null
+  pm-ykib,related,"2026-04-01T16:22:06.208Z",cursor-agent,null
+comments[3]{created_at,author,text}:
+  "2026-04-01T16:22:06.208Z",cursor-agent,Created after de-dup mapping showed no active external-audit remediation hierarchy.
+  "2026-04-01T16:23:32.588Z",cursor-agent,"De-dup mapping complete: Issue2 references pm-mlc3/pm-q813/pm-wdgn (already closed), Issue3 references pm-0lbm/pm-ykib/pm-vsux/pm-6e0p/pm-gudp (already closed), new implementation tracked in pm-v1s1 + pm-ap8l with child tasks pm-c465/pm-e0ab/pm-c8dz/pm-ac8x."
+  "2026-04-01T17:02:44.777Z",cursor-agent,"Epic complete: pm-v1s1, pm-ap8l, pm-c465, pm-e0ab, pm-c8dz, and pm-ac8x are closed with linked evidence. Runtime verification: build pass, targeted pass (141/141), full pass (690/690), coverage threshold mismatch confirmed pre-existing on origin/main baseline."
+notes[1]{created_at,author,text}:
+  "2026-04-01T16:22:06.208Z",cursor-agent,Issue2 and Issue3 are reused from prior closed work; new work focuses on Issue1 and Issue4/5/6 hardening.
+close_reason: "External audit remediation delivered with implementation, docs, and verification evidence."
+body: Issue2/3 map to existing closed work; this epic tracks unresolved issue1 plus stability and UX guidance workstreams.

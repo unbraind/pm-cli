@@ -1,0 +1,38 @@
+id: pm-v1s1
+title: Add notes and learnings command parity
+description: Introduce first-class pm notes and pm learnings command surfaces with parity to comments flows and command discoverability.
+type: Feature
+status: closed
+priority: 1
+tags[4]: "area:learnings","area:notes",external-audit,pm-cli
+created_at: "2026-04-01T16:22:25.478Z"
+updated_at: "2026-04-01T17:00:09.532Z"
+deadline: "2026-04-07T16:22:25.478Z"
+author: cursor-agent
+estimated_minutes: 220
+acceptance_criteria: Users can add/list notes and learnings for existing items via dedicated commands; completion/help/wrapper/output surfaces are updated and tested.
+definition_of_ready: Epic is active and no duplicate active notes/learnings parity item exists.
+order: 1
+goal: External audit remediation
+objective: Close notes/learnings parity gap
+value: Enables ongoing item knowledge capture without recreation
+impact: Improves PM workflow completeness
+outcome: pm notes and pm learnings are first-class commands with regression coverage
+why_now: Audit showed existing items lack mutation path for notes/learnings
+parent: pm-my6o
+risk: medium
+confidence: high
+sprint: audit-remediation
+release: vnext
+component: cli-commands
+regression: true
+customer_impact: Users can track durable notes and learnings on active items
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-my6o,parent,"2026-04-01T16:22:25.478Z",cursor-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T16:22:25.478Z",cursor-agent,Feature created after de-dup checks for Issue1 parity gap.
+  "2026-04-01T17:00:07.619Z",cursor-agent,"Feature scope complete: child task pm-c465 is closed with runtime wiring, help/completion/output/Pi parity, and targeted/full test evidence for notes/learnings commands."
+notes[1]{created_at,author,text}:
+  "2026-04-01T16:22:25.478Z",cursor-agent,"Will include command registration,command-aware output,completion/help,and Pi wrapper parity."
+close_reason: Notes/learnings feature parity shipped with regression coverage.
+body: Resolves Issue 1 by adding dedicated commands and wrapper/help/completion parity.

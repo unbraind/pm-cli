@@ -40,6 +40,8 @@ const ALL_COMMANDS = [
   "delete",
   "append",
   "comments",
+  "notes",
+  "learnings",
   "files",
   "docs",
   "test",
@@ -135,7 +137,7 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES): st
     "    install)",
     `      COMPREPLY=(${compgen("pi --project --global --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
-    "    comments)",
+    "    comments|notes|learnings)",
     `      COMPREPLY=(${compgen("--add --limit --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    files|docs)",
@@ -210,6 +212,8 @@ _pm_commands() {
     'delete:Delete an item and record the change'
     'append:Append text to an item body'
     'comments:List or add comments for an item'
+    'notes:List or add notes for an item'
+    'learnings:List or add learnings for an item'
     'files:Manage linked files'
     'docs:Manage linked docs'
     'test:Manage linked tests and optionally run them'
@@ -360,6 +364,16 @@ _pm() {
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
+        comments|notes|learnings)
+          _arguments \\
+            '--add[Add one entry (plain text, text=<value>, markdown pairs, or - for stdin)]:text' \\
+            '--limit[Return only latest n entries]:number' \\
+            '--author[Entry author (falls back to PM_AUTHOR/settings)]:author' \\
+            '--message[History message]:message' \\
+            '--force[Force override]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
         test-all)
           _arguments \\
             '--status[Filter by status]:(open in_progress)' \\
@@ -426,7 +440,7 @@ complete -c pm -s h -l help -d 'Display help'
 
 # Helper: true when no subcommand has been given yet
 function __pm_no_subcommand
-  not __fish_seen_subcommand_from init config install create list list-all list-draft list-open list-in-progress list-blocked list-closed list-canceled calendar cal context ctx get search reindex history activity restore update close delete append comments files docs test test-all stats health gc claim release beads todos completion help
+  not __fish_seen_subcommand_from init config install create list list-all list-draft list-open list-in-progress list-blocked list-closed list-canceled calendar cal context ctx get search reindex history activity restore update close delete append comments notes learnings files docs test test-all stats health gc claim release beads todos completion help
 end
 
 # Subcommands
@@ -457,6 +471,8 @@ complete -c pm -n __pm_no_subcommand -a close         -d 'Close an item with a r
 complete -c pm -n __pm_no_subcommand -a delete        -d 'Delete an item and record the change'
 complete -c pm -n __pm_no_subcommand -a append        -d 'Append text to an item body'
 complete -c pm -n __pm_no_subcommand -a comments      -d 'List or add comments for an item'
+complete -c pm -n __pm_no_subcommand -a notes         -d 'List or add notes for an item'
+complete -c pm -n __pm_no_subcommand -a learnings     -d 'List or add learnings for an item'
 complete -c pm -n __pm_no_subcommand -a files         -d 'Manage linked files'
 complete -c pm -n __pm_no_subcommand -a docs          -d 'Manage linked docs'
 complete -c pm -n __pm_no_subcommand -a test          -d 'Manage linked tests and optionally run them'
@@ -563,6 +579,13 @@ complete -c pm -n '__fish_seen_subcommand_from reindex' -l mode -d 'Reindex mode
 # history / activity flags
 complete -c pm -n '__fish_seen_subcommand_from history'  -l limit -d 'Max history entries' -r
 complete -c pm -n '__fish_seen_subcommand_from activity' -l limit -d 'Max activity entries' -r
+
+# comments / notes / learnings flags
+complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l add -d 'Add one entry (text=<value> or plain text)' -r
+complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l limit -d 'Return only latest n entries' -r
+complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l author -d 'Entry author' -r
+complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l message -d 'History message' -r
+complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l force -d 'Force override'
 
 # test-all flags
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l status  -d 'Filter by status' -r -a 'open in_progress'

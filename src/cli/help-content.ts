@@ -176,6 +176,14 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Adds or reviews lightweight status updates linked to an item.",
     examples: ['pm comments pm-a1b2 --add "Verified fix on Linux and macOS"', "pm comments pm-a1b2 --limit 10"],
   },
+  notes: {
+    why: "Adds or reviews durable implementation notes linked to an item.",
+    examples: ['pm notes pm-a1b2 --add "Investigated parser edge case and documented fallback logic."', "pm notes pm-a1b2 --limit 10"],
+  },
+  learnings: {
+    why: "Adds or reviews post-implementation learnings for future work.",
+    examples: ['pm learnings pm-a1b2 --add "Avoid direct test-runner commands in linked tests; use sandbox runner."', "pm learnings pm-a1b2 --limit 10"],
+  },
   files: {
     why: "Associates changed source files with tracker items for reproducibility.",
     examples: ['pm files pm-a1b2 --add "path=src/cli/main.ts,scope=project,note=help orchestration"'],

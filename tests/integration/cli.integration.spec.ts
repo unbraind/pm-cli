@@ -1337,6 +1337,39 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const listComments = context.runCli(["comments", id, "--json", "--limit", "1"], { expectJson: true });
       expect(listComments.code).toBe(0);
 
+      const addNote = context.runCli(
+        ["notes", id, "--json", "--add", "Integration note", "--author", "integration-test", "--message", "Add note"],
+        { expectJson: true },
+      );
+      expect(addNote.code).toBe(0);
+      const addNotePositional = context.runCli(["notes", id, "Integration shorthand note", "--json", "--author", "integration-test"], {
+        expectJson: true,
+      });
+      expect(addNotePositional.code).toBe(0);
+      const addNotePositionalJson = addNotePositional.json as { notes: Array<{ text: string; author: string }> };
+      expect(addNotePositionalJson.notes.at(-1)?.text).toBe("Integration shorthand note");
+      expect(addNotePositionalJson.notes.at(-1)?.author).toBe("integration-test");
+      const conflictingNoteArgs = context.runCli(["notes", id, "positional note", "--add", "flag note"]);
+      expect(conflictingNoteArgs.code).toBe(2);
+      expect(conflictingNoteArgs.stderr).toContain("Specify note text either as positional [text] or with --add, not both");
+
+      const addLearning = context.runCli(
+        ["learnings", id, "--json", "--add", "Integration learning", "--author", "integration-test", "--message", "Add learning"],
+        { expectJson: true },
+      );
+      expect(addLearning.code).toBe(0);
+      const addLearningPositional = context.runCli(
+        ["learnings", id, "Integration shorthand learning", "--json", "--author", "integration-test"],
+        { expectJson: true },
+      );
+      expect(addLearningPositional.code).toBe(0);
+      const addLearningPositionalJson = addLearningPositional.json as { learnings: Array<{ text: string; author: string }> };
+      expect(addLearningPositionalJson.learnings.at(-1)?.text).toBe("Integration shorthand learning");
+      expect(addLearningPositionalJson.learnings.at(-1)?.author).toBe("integration-test");
+      const conflictingLearningArgs = context.runCli(["learnings", id, "positional learning", "--add", "flag learning"]);
+      expect(conflictingLearningArgs.code).toBe(2);
+      expect(conflictingLearningArgs.stderr).toContain("Specify learning text either as positional [text] or with --add, not both");
+
       const addFile = context.runCli(
         ["files", id, "--json", "--add", "path=src/cli/main.ts,scope=project,note=integration", "--author", "integration-test", "--message", "Add file link"],
         { expectJson: true },
@@ -1572,6 +1605,243 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(history.code).toBe(0);
       const historyJson = history.json as { history: Array<{ op: string }> };
       expect(historyJson.history.at(-1)?.op).toBe("delete");
+    });
+  });
+
+  it("keeps repeated files/docs add flows stable across subsequent commands", async () => {
+    await withTempPmPath(async (context) => {
+      const createResult = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Repeated linked artifact stability item",
+          "--description",
+          "Regression seed for repeated files/docs add flows",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,files-docs,stability",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "20",
+          "--acceptance-criteria",
+          "Repeated add flows remain stable",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create repeated add stability seed",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(createResult.code).toBe(0);
+      const id = (createResult.json as { item: { id: string } }).item.id;
+
+      const addFileFirst = context.runCli(
+        [
+          "files",
+          id,
+          "--json",
+          "--add",
+          "path=src/cli/main.ts,scope=project,note=first add",
+          "--author",
+          "integration-test",
+          "--message",
+          "Add file first",
+          "--force",
+        ],
+        { expectJson: true },
+      );
+      expect(addFileFirst.code).toBe(0);
+      const afterFileFirst = context.runCli(["list-open", "--json", "--limit", "5"], { expectJson: true });
+      expect(afterFileFirst.code).toBe(0);
+
+      const addFileSecond = context.runCli(
+        [
+          "files",
+          id,
+          "--json",
+          "--add",
+          "path=src/cli/help-content.ts,scope=project,note=second add",
+          "--author",
+          "integration-test",
+          "--message",
+          "Add file second",
+          "--force",
+        ],
+        { expectJson: true },
+      );
+      expect(addFileSecond.code).toBe(0);
+      const addFileDuplicate = context.runCli(
+        [
+          "files",
+          id,
+          "--json",
+          "--add",
+          "path=src/cli/main.ts,scope=project,note=duplicate add",
+          "--author",
+          "integration-test",
+          "--message",
+          "Add file duplicate",
+          "--force",
+        ],
+        { expectJson: true },
+      );
+      expect(addFileDuplicate.code).toBe(0);
+      const filesList = context.runCli(["files", id, "--json"], { expectJson: true });
+      expect(filesList.code).toBe(0);
+      const filesListJson = filesList.json as { files: Array<{ path: string }> };
+      expect(filesListJson.files.map((entry) => entry.path).sort()).toEqual(["src/cli/help-content.ts", "src/cli/main.ts"]);
+      const afterFilesSequence = context.runCli(["history", id, "--json", "--limit", "1"], { expectJson: true });
+      expect(afterFilesSequence.code).toBe(0);
+
+      const addDocFirst = context.runCli(
+        [
+          "docs",
+          id,
+          "--json",
+          "--add",
+          "path=README.md,scope=project,note=first add",
+          "--author",
+          "integration-test",
+          "--message",
+          "Add doc first",
+          "--force",
+        ],
+        { expectJson: true },
+      );
+      expect(addDocFirst.code).toBe(0);
+      const afterDocFirst = context.runCli(["stats", "--json"], { expectJson: true });
+      expect(afterDocFirst.code).toBe(0);
+
+      const addDocSecond = context.runCli(
+        [
+          "docs",
+          id,
+          "--json",
+          "--add",
+          "path=docs/ARCHITECTURE.md,scope=project,note=second add",
+          "--author",
+          "integration-test",
+          "--message",
+          "Add doc second",
+          "--force",
+        ],
+        { expectJson: true },
+      );
+      expect(addDocSecond.code).toBe(0);
+      const addDocDuplicate = context.runCli(
+        [
+          "docs",
+          id,
+          "--json",
+          "--add",
+          "path=README.md,scope=project,note=duplicate add",
+          "--author",
+          "integration-test",
+          "--message",
+          "Add doc duplicate",
+          "--force",
+        ],
+        { expectJson: true },
+      );
+      expect(addDocDuplicate.code).toBe(0);
+      const docsList = context.runCli(["docs", id, "--json"], { expectJson: true });
+      expect(docsList.code).toBe(0);
+      const docsListJson = docsList.json as { docs: Array<{ path: string }> };
+      expect(docsListJson.docs.map((entry) => entry.path).sort()).toEqual(["README.md", "docs/ARCHITECTURE.md"]);
+
+      const postDocsCommand = context.runCli(["comments", id, "--json", "--add", "post-docs stability check"], { expectJson: true });
+      expect(postDocsCommand.code).toBe(0);
+    });
+  });
+
+  it("guides users to files/docs commands for update --file/--doc usage", async () => {
+    await withTempPmPath(async (context) => {
+      const createResult = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Update linked artifact guidance seed",
+          "--description",
+          "Seed item for update unknown-option guidance",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,update,guidance",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "10",
+          "--acceptance-criteria",
+          "Unknown option guidance is actionable",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create update guidance seed",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(createResult.code).toBe(0);
+      const id = (createResult.json as { item: { id: string } }).item.id;
+
+      const updateWithFile = context.runCli(["update", id, "--file", "path=src/cli/main.ts"]);
+      expect(updateWithFile.code).toBe(2);
+      expect(updateWithFile.stderr).toContain("Unsupported option --file for update");
+      expect(updateWithFile.stderr).toContain("pm files");
+      expect(updateWithFile.stderr).toContain("pm docs");
+
+      const updateWithDoc = context.runCli(["update", id, "--doc", "path=README.md"]);
+      expect(updateWithDoc.code).toBe(2);
+      expect(updateWithDoc.stderr).toContain("Unsupported option --doc for update");
+      expect(updateWithDoc.stderr).toContain("pm files");
+      expect(updateWithDoc.stderr).toContain("pm docs");
     });
   });
 

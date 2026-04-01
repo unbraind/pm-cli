@@ -98,6 +98,8 @@ const CORE_COMMANDS = [
   "delete",
   "append",
   "comments",
+  "notes",
+  "learnings",
   "files",
   "docs",
   "test",
@@ -177,6 +179,8 @@ const ISSUE_METADATA_CREATE_FLAG_TOKENS = [
 const ISSUE_METADATA_UPDATE_FLAG_TOKENS = [...ISSUE_METADATA_CREATE_FLAG_TOKENS];
 const REQUIRED_TEST_FLAGS = ["--add", "--remove", "--run", "--timeout", "--author", "--message", "--force"];
 const REQUIRED_COMMENTS_FLAGS = ["--add", "--limit", "--author", "--message", "--force"];
+const REQUIRED_NOTES_FLAGS = ["--add", "--limit", "--author", "--message", "--force"];
+const REQUIRED_LEARNINGS_FLAGS = ["--add", "--limit", "--author", "--message", "--force"];
 const REQUIRED_CLAIM_RELEASE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_RESTORE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_CLOSE_FLAGS = ["--author", "--message", "--force"];
@@ -431,6 +435,22 @@ describe("release readiness runtime coverage", () => {
       }
       expect(commentsHelp.stdout).toContain("Usage: pm comments [options] <id> [text]");
       expect(commentsHelp.stdout).not.toContain("Add one comment entry (default: [])");
+
+      const notesHelp = context.runCli(["notes", "--help"]);
+      expect(notesHelp.code).toBe(0);
+      for (const flag of REQUIRED_NOTES_FLAGS) {
+        expect(notesHelp.stdout).toContain(flag);
+      }
+      expect(notesHelp.stdout).toContain("Usage: pm notes [options] <id> [text]");
+      expect(notesHelp.stdout).not.toContain("Add one note entry (default: [])");
+
+      const learningsHelp = context.runCli(["learnings", "--help"]);
+      expect(learningsHelp.code).toBe(0);
+      for (const flag of REQUIRED_LEARNINGS_FLAGS) {
+        expect(learningsHelp.stdout).toContain(flag);
+      }
+      expect(learningsHelp.stdout).toContain("Usage: pm learnings [options] <id> [text]");
+      expect(learningsHelp.stdout).not.toContain("Add one learning entry (default: [])");
     });
   });
 
@@ -607,6 +627,38 @@ describe("release readiness runtime coverage", () => {
       );
       expect(commentResult.code).toBe(0);
 
+      const noteResult = context.runCli(
+        [
+          "notes",
+          id,
+          "--json",
+          "--add",
+          "runtime lifecycle note",
+          "--author",
+          "runtime-test",
+          "--message",
+          "Add runtime lifecycle note",
+        ],
+        { expectJson: true },
+      );
+      expect(noteResult.code).toBe(0);
+
+      const learningResult = context.runCli(
+        [
+          "learnings",
+          id,
+          "--json",
+          "--add",
+          "runtime lifecycle learning",
+          "--author",
+          "runtime-test",
+          "--message",
+          "Add runtime lifecycle learning",
+        ],
+        { expectJson: true },
+      );
+      expect(learningResult.code).toBe(0);
+
       const closeResult = context.runCli(
         ["close", id, "runtime lifecycle completed", "--json", "--author", "runtime-test", "--message", "Close seed"],
         { expectJson: true },
@@ -705,6 +757,18 @@ describe("release readiness runtime coverage", () => {
       });
       expect(commentsResult.code).toBe(0);
       expectTopLevelKeyOrder(commentsResult.json, ["id", "comments", "count"]);
+
+      const notesResult = context.runCli(["notes", createdId, "--add", "runtime note", "--json"], {
+        expectJson: true,
+      });
+      expect(notesResult.code).toBe(0);
+      expectTopLevelKeyOrder(notesResult.json, ["id", "notes", "count"]);
+
+      const learningsResult = context.runCli(["learnings", createdId, "--add", "runtime learning", "--json"], {
+        expectJson: true,
+      });
+      expect(learningsResult.code).toBe(0);
+      expectTopLevelKeyOrder(learningsResult.json, ["id", "learnings", "count"]);
 
       const commentsPositionalResult = context.runCli(["comments", createdId, "runtime comment positional", "--json", "--author"], {
         expectJson: true,

@@ -55,6 +55,10 @@ function resolveSummary(command: string, result: unknown): string {
       return itemId ? `Loaded history for ${itemId}.` : "Loaded item history.";
     case "comments":
       return itemId ? `Loaded comments for ${itemId}.` : "Loaded comments.";
+    case "notes":
+      return itemId ? `Loaded notes for ${itemId}.` : "Loaded notes.";
+    case "learnings":
+      return itemId ? `Loaded learnings for ${itemId}.` : "Loaded learnings.";
     case "files":
       return itemId ? `Updated linked files for ${itemId}.` : "Updated linked files.";
     case "docs":
@@ -204,7 +208,11 @@ function resolveNextSteps(command: string, result: unknown): string[] {
         `pm update ${itemId} --status in_progress --message "Start implementation"`,
       ];
     case "update":
-      return [`pm get ${itemId}`, `pm comments ${itemId} --add "Progress update"`];
+      return [
+        `pm get ${itemId}`,
+        `pm comments ${itemId} --add "Progress update"`,
+        `pm notes ${itemId} --add "Implementation note"`,
+      ];
     case "close":
       return [`pm release ${itemId}`, `pm history ${itemId} --limit 10`];
     case "delete":
@@ -236,7 +244,12 @@ function resolveNextSteps(command: string, result: unknown): string[] {
     case "config":
       return ["pm config project get definition-of-done", "pm config project get item-format"];
     case "get":
-      return [`pm history ${itemId} --limit 20`, `pm comments ${itemId} --limit 10`];
+      return [
+        `pm history ${itemId} --limit 20`,
+        `pm comments ${itemId} --limit 10`,
+        `pm notes ${itemId} --limit 10`,
+        `pm learnings ${itemId} --limit 10`,
+      ];
     case "history":
       return ["pm restore <id> <timestamp|version>", "pm activity --limit 20"];
     case "activity":

@@ -143,6 +143,7 @@ These are append-friendly audit fields:
 - `comments`: user-visible conversational updates.
 - `notes`: implementation observations.
 - `learnings`: post-task durable findings.
+- Existing items are extended through `pm comments`, `pm notes`, and `pm learnings` add flows; create-time seed flags only bootstrap initial values.
 
 All append operations produce history entries.
 
@@ -608,6 +609,8 @@ Help and error UX note:
 - `pm release <ID>`
 - `pm delete <ID>`
 - `pm comments <ID> [TEXT]`
+- `pm notes <ID> [TEXT]`
+- `pm learnings <ID> [TEXT]`
 - `pm files <ID>`
 - `pm docs <ID>`
 - `pm test <ID>`
@@ -801,15 +804,17 @@ All commands return deterministic top-level objects (TOON by default, JSON with 
 | `pm todos import --folder <path?>` | optional todos markdown source folder (defaults to `.pi/todos`); preserves canonical optional `ItemFrontMatter` metadata when present and applies deterministic defaults for missing PM fields | `{ ok, folder, imported, skipped, ids, warnings }` |
 | `pm todos export --folder <path?>` | optional todos markdown destination folder (defaults to `.pi/todos`) | `{ ok, folder, exported, ids, warnings }` |
 | `pm create ...` | required title + schema flags | `{ item, changed_fields, warnings }` |
-| `pm update <ID> ...` | id + patch-like flags (`--status closed` is rejected; use `pm close <ID> <TEXT>`) | `{ item, changed_fields, warnings }` |
+| `pm update <ID> ...` | id + patch-like flags (`--status closed` is rejected; use `pm close <ID> <TEXT>`; linked artifact flags like `--file`/`--doc` are intentionally unsupported on update and routed to dedicated commands) | `{ item, changed_fields, warnings }` |
 | `pm delete <ID>` | id + optional `--author`/`--message`/`--force` | `{ item, changed_fields, warnings }` |
 | `pm close <ID> <TEXT>` | id + close reason text + optional `--author/--message/--force` | `{ item, changed_fields, warnings }` |
 | `pm append <ID> --body` | id + appended markdown (`--body -` reads piped stdin) | `{ item, appended, changed_fields }` |
 | `pm claim <ID>` | id, optional `--author`/`--message`/`--force` | `{ item, claimed_by, previous_assignee, forced }` |
 | `pm release <ID>` | id, optional `--author`/`--message`/`--force` | `{ item, released_by, previous_assignee, forced }` |
 | `pm comments <ID> [TEXT] --add/--limit` | id + optional positional comment text shorthand + comment text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`) | `{ id, comments, count }` |
+| `pm notes <ID> [TEXT] --add/--limit` | id + optional positional note text shorthand + note text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`) | `{ id, notes, count }` |
+| `pm learnings <ID> [TEXT] --add/--limit` | id + optional positional learning text shorthand + learning text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`) | `{ id, learnings, count }` |
 | `pm files <ID> --add/--remove` | id + file refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`) | `{ id, files, changed, count }` |
-| `pm test <ID> --add/--remove/--run` | id + test refs/options (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`; reject recursive `test-all` linked commands at add-time, including global-flag and package-spec launcher forms such as `pm --json test-all`, `npx @unbrained/pm-cli@latest --json test-all`, `pnpm dlx @unbrained/pm-cli@latest --json test-all`, and `npm exec -- @unbrained/pm-cli@latest --json test-all`; defensively skip legacy recursive entries at run-time; reject sandbox-unsafe test-runner commands including unsandboxed direct package-manager run-script forms such as `npm run test`/`pnpm run test` and chained direct runner segments evaluated independently; close child stdin for non-interactive runs and surface deterministic timeout/maxBuffer diagnostics) | `{ id, tests, run_results, changed, count }` |
+| `pm test <ID> --add/--remove/--run` | id + test refs/options (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`; reject recursive `test-all` linked commands at add-time, including global-flag and package-spec launcher forms such as `pm --json test-all`, `npx @unbrained/pm-cli@latest --json test-all`, `pnpm dlx @unbrained/pm-cli@latest --json test-all`, and `npm exec -- @unbrained/pm-cli@latest --json test-all`; defensively skip legacy recursive entries at run-time; reject sandbox-unsafe test-runner commands including unsandboxed direct package-manager run-script forms such as `npm run test`/`pnpm run test` and chained direct runner segments evaluated independently; this sandbox policy is intentional, and targeted scopes should be linked via `node scripts/run-tests.mjs ...` commands or `path=...` entries; close child stdin for non-interactive runs and surface deterministic timeout/maxBuffer diagnostics) | `{ id, tests, run_results, changed, count }` |
 | `pm test-all --status --timeout` | optional status filter; duplicate linked command/path entries are deduped per invocation (keyed by scope+normalized command or scope+path) and reported as skipped; when duplicate keys carry different `timeout_seconds`, execution uses deterministic maximum timeout for that key | `{ totals, failed, passed, skipped, results }` |
 | `pm stats` | none | `{ totals, by_type, by_status, generated_at }` |
 | `pm health` | none (runs settings/directories/extensions/storage plus history-drift and vectorization diagnostics) | `{ ok, checks, warnings, generated_at }` |
@@ -824,6 +829,7 @@ List command row projection:
 
 - Default `list*` rows contain `ItemFrontMatter` fields only.
 - With `--include-body`, each row additionally includes `body` and `filters.include_body` is `true` (`null` when omitted in JSON; omitted in sparse TOON).
+- Without `--include-body`, omission of `body` is intentional for lightweight list payloads; use `pm get <ID>` when full body content is required.
 
 Roadmap output contracts remain defined in this PRD for extension areas and advanced search tuning that are still out of v0.1 release scope.
 

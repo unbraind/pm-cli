@@ -1,0 +1,38 @@
+id: pm-ap8l
+title: Stability regressions and update/file UX guidance hardening
+description: Add regressions for repeated files/docs add flows and improve update unknown-option guidance for --file/--doc.
+type: Feature
+status: closed
+priority: 1
+tags[5]: "area:docs","area:files","area:ux",external-audit,pm-cli
+created_at: "2026-04-01T16:22:26.127Z"
+updated_at: "2026-04-01T17:00:11.955Z"
+deadline: "2026-04-07T16:22:26.127Z"
+author: cursor-agent
+estimated_minutes: 200
+acceptance_criteria: Repeated pm files/docs add operations are covered by regression tests with no runtime crash; pm update --file/--doc guidance points users to pm files/pm docs.
+definition_of_ready: Epic is active and no active duplicate item exists for files/docs stability and update guidance hardening.
+order: 2
+goal: External audit remediation
+objective: Harden files/docs reliability and update guidance
+value: Reduces confusion and protects command reliability
+impact: Improves user trust in linked file/doc workflows
+outcome: Regression coverage plus actionable error guidance for unsupported update flags
+why_now: Audit reported critical crash and unsupported flag confusion
+parent: pm-my6o
+risk: medium
+confidence: high
+sprint: audit-remediation
+release: vnext
+component: cli-runtime
+regression: true
+customer_impact: Users get safer file/doc flows and clearer update guidance
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-my6o,parent,"2026-04-01T16:22:26.127Z",cursor-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T16:22:26.127Z",cursor-agent,Feature created for unresolved Issue4/5/6 hardening after de-dup audit.
+  "2026-04-01T17:00:10.411Z",cursor-agent,"Feature scope complete: child task pm-e0ab closed with repeated files/docs add regression protection and explicit update --file/--doc guidance."
+notes[1]{created_at,author,text}:
+  "2026-04-01T16:22:26.127Z",cursor-agent,Scope includes integration tests and unknown-option guidance improvements.
+close_reason: Files/docs stability hardening and update guidance delivered.
+body: Covers Issue4/5 stability hardening and Issue6 guidance clarity while preserving existing command boundaries.

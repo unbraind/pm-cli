@@ -35,6 +35,8 @@ src/
       calendar.ts                pm calendar / pm cal (agenda/day/week/month views)
       context.ts                 pm context / pm ctx (critical work + agenda snapshot)
       comments.ts                pm comments
+      notes.ts                   pm notes
+      learnings.ts               pm learnings
       files.ts                   pm files
       docs.ts                    pm docs
       test.ts                    pm test (add/remove/run linked tests)
@@ -200,6 +202,7 @@ Every item mutation follows this sequence:
 If step 7 or 8 fails, the item file is rolled back (if write succeeded) before returning failure.
 
 When `update --type` changes an item's resolved type folder, mutation logic performs a safe file move to the target folder and rolls back on failure.
+Linked arrays (`comments`, `notes`, `learnings`, `files`, `tests`, `docs`) are intentionally mutated through dedicated command paths (`pm comments`, `pm notes`, `pm learnings`, `pm files`, `pm test`, `pm docs`) rather than generic `pm update` flags.
 
 ## Calendar Pipeline
 
