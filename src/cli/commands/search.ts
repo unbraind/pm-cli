@@ -1,6 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getActiveExtensionRegistrations, runActiveOnReadHooks } from "../../core/extensions/index.js";
+import {
+  resolveRegisteredSearchProvider,
+  resolveRegisteredVectorStoreAdapter,
+} from "../../core/extensions/runtime-registrations.js";
 import { resolveItemTypeRegistry, resolveTypeName, type ItemTypeRegistry } from "../../core/item/type-registry.js";
 import {
   executeEmbeddingRequest,
@@ -24,7 +28,7 @@ import { compareTimestampStrings, nowIso, resolveIsoOrRelative } from "../../cor
 import { listAllFrontMatter } from "../../core/store/item-store.js";
 import { getSettingsPath, resolveGlobalPmRoot, resolvePmRoot, getItemPath } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import type { ItemDocument, ItemFormat, ItemFrontMatter, ItemStatus, ItemType } from "../../types/index.js";
+import type { ItemDocument, ItemFormat, ItemFrontMatter, ItemStatus, ItemType, PmSettings } from "../../types/index.js";
 
 export interface SearchOptions {
   mode?: string;
@@ -53,6 +57,37 @@ export interface SearchResult {
   filters: Record<string, unknown>;
   now: string;
 }
+
+interface ExtensionSearchProviderContext {
+  query: string;
+  mode: SearchMode;
+  tokens: string[];
+  options: SearchOptions;
+  settings: PmSettings;
+  documents: ItemDocument[];
+}
+
+interface ExtensionSearchProviderHit {
+  id: string;
+  score: number;
+  matched_fields?: string[];
+}
+
+type ExtensionSearchProviderQuery = (
+  context: ExtensionSearchProviderContext,
+) => Promise<ExtensionSearchProviderHit[] | { hits?: ExtensionSearchProviderHit[] }> | ExtensionSearchProviderHit[] | { hits?: ExtensionSearchProviderHit[] };
+
+type ExtensionVectorQuery = (
+  context: {
+    vector: number[];
+    limit: number;
+    settings: PmSettings;
+  },
+) => Promise<VectorQueryHit[]> | VectorQueryHit[];
+
+type ExtensionVectorAdapter = {
+  query?: ExtensionVectorQuery;
+};
 
 
 
@@ -460,23 +495,121 @@ function requireSemanticDependencies(
   requestedMode: Exclude<SearchMode, "keyword">,
   providerResolution: EmbeddingProviderResolution,
   vectorResolution: VectorStoreResolution,
-): { provider: EmbeddingProviderConfig; vectorStore: VectorStoreConfig } {
+  hasExtensionVectorQuery: boolean,
+): { provider: EmbeddingProviderConfig; vectorStore: VectorStoreConfig | null } {
   if (!providerResolution.active) {
     throw new PmCliError(
       `Search mode '${requestedMode}' requires a configured embedding provider in settings.providers.openai or settings.providers.ollama`,
       EXIT_CODE.USAGE,
     );
   }
-  if (!vectorResolution.active) {
+  if (!vectorResolution.active && !hasExtensionVectorQuery) {
     throw new PmCliError(
-      `Search mode '${requestedMode}' requires a configured vector store in settings.vector_store.qdrant or settings.vector_store.lancedb`,
+      `Search mode '${requestedMode}' requires a configured vector store in settings.vector_store.qdrant/settings.vector_store.lancedb or an extension adapter selected by settings.vector_store.adapter`,
       EXIT_CODE.USAGE,
     );
   }
   return {
     provider: providerResolution.active,
-    vectorStore: vectorResolution.active,
+    vectorStore: vectorResolution.active ?? null,
   };
+}
+
+function toOptionalNonEmptyString(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function resolveExtensionSearchProvider(settings: PmSettings): { providerName: string; query: ExtensionSearchProviderQuery } | null {
+  const registrations = getActiveExtensionRegistrations();
+  const providerName = toOptionalNonEmptyString((settings.search as { provider?: unknown } | undefined)?.provider);
+  const resolved = resolveRegisteredSearchProvider(registrations, providerName);
+  if (!resolved) {
+    return null;
+  }
+  const runtimeDefinition = resolved.runtime_definition ?? resolved.definition;
+  const query = (runtimeDefinition as { query?: unknown }).query;
+  if (typeof query !== "function") {
+    return null;
+  }
+  const registeredName =
+    toOptionalNonEmptyString((runtimeDefinition as { name?: unknown }).name) ??
+    toOptionalNonEmptyString((resolved.definition as { name?: unknown }).name) ??
+    providerName;
+  if (!registeredName) {
+    return null;
+  }
+  return {
+    providerName: registeredName,
+    query: query as ExtensionSearchProviderQuery,
+  };
+}
+
+function resolveExtensionVectorAdapter(settings: PmSettings): ExtensionVectorAdapter | null {
+  const registrations = getActiveExtensionRegistrations();
+  const adapterName = toOptionalNonEmptyString((settings.vector_store as { adapter?: unknown } | undefined)?.adapter);
+  const resolved = resolveRegisteredVectorStoreAdapter(registrations, adapterName);
+  if (!resolved) {
+    return null;
+  }
+  const runtimeDefinition = resolved.runtime_definition ?? resolved.definition;
+  const query = (runtimeDefinition as { query?: unknown }).query;
+  if (typeof query !== "function") {
+    return null;
+  }
+  return {
+    query: query as ExtensionVectorQuery,
+  };
+}
+
+function normalizeExtensionProviderHits(
+  providerName: string,
+  raw: unknown,
+  filteredById: Map<string, ItemDocument>,
+): SearchHit[] {
+  const rawHits = Array.isArray(raw)
+    ? raw
+    : (raw as { hits?: unknown } | null | undefined)?.hits;
+  if (!Array.isArray(rawHits)) {
+    throw new PmCliError(
+      `Extension search provider "${providerName}" must return an array of hits or { hits: [...] }`,
+      EXIT_CODE.GENERIC_FAILURE,
+    );
+  }
+
+  const seen = new Set<string>();
+  const hits: SearchHit[] = [];
+  for (const rawHit of rawHits) {
+    if (typeof rawHit !== "object" || rawHit === null) {
+      continue;
+    }
+    const id = toOptionalNonEmptyString((rawHit as { id?: unknown }).id);
+    const score = (rawHit as { score?: unknown }).score;
+    if (!id || typeof score !== "number" || !Number.isFinite(score) || seen.has(id)) {
+      continue;
+    }
+    const document = filteredById.get(id);
+    if (!document) {
+      continue;
+    }
+    const matchedFieldsRaw = (rawHit as { matched_fields?: unknown }).matched_fields;
+    const matchedFields =
+      Array.isArray(matchedFieldsRaw) && matchedFieldsRaw.every((entry) => typeof entry === "string")
+        ? [...new Set((matchedFieldsRaw as string[]).map((entry) => entry.trim()).filter((entry) => entry.length > 0))].sort((a, b) =>
+            a.localeCompare(b),
+          )
+        : [`provider:${providerName}`];
+    seen.add(id);
+    hits.push({
+      item: document.front_matter,
+      score,
+      matched_fields: matchedFields,
+    });
+  }
+  return hits;
 }
 
 function buildSemanticHits(
@@ -552,14 +685,42 @@ interface SemanticQueryContext {
   limit: number | undefined;
   maxResults: number;
   provider: EmbeddingProviderConfig;
-  vectorStore: VectorStoreConfig;
+  vectorStore: VectorStoreConfig | null;
+  extensionVectorAdapter: ExtensionVectorAdapter | null;
+  settings: PmSettings;
 }
 
 async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promise<SearchHit[]> {
   const semanticLimit = context.limit ?? context.maxResults;
   const queryVectors = await executeEmbeddingRequest(context.provider, context.query.trim());
   const semanticVector = queryVectors[0];
-  const vectorHits = await executeVectorQuery(context.vectorStore, semanticVector, semanticLimit);
+  let vectorHits: VectorQueryHit[];
+  if (context.extensionVectorAdapter?.query) {
+    try {
+      vectorHits = await Promise.resolve(
+        context.extensionVectorAdapter.query({
+          vector: semanticVector,
+          limit: semanticLimit,
+          settings: context.settings,
+        }),
+      );
+    } catch (error: unknown) {
+      if (!context.vectorStore) {
+        throw new PmCliError(
+          `Extension vector adapter query failed and no built-in fallback store is configured (${error instanceof Error ? error.message : String(error)})`,
+          EXIT_CODE.GENERIC_FAILURE,
+        );
+      }
+      vectorHits = await executeVectorQuery(context.vectorStore, semanticVector, semanticLimit);
+    }
+  } else if (context.vectorStore) {
+    vectorHits = await executeVectorQuery(context.vectorStore, semanticVector, semanticLimit);
+  } else {
+    throw new PmCliError(
+      "Semantic search requires either a configured vector store or an extension vector adapter query handler",
+      EXIT_CODE.USAGE,
+    );
+  }
   const filteredById = new Map(context.filteredDocuments.map((document) => [document.front_matter.id, document]));
   const { semanticHits, semanticScores } = buildSemanticHits(vectorHits, filteredById);
   if (context.requestedMode === "semantic") {
@@ -620,9 +781,11 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   const tuning = resolveSearchTuning(settings);
   const providerResolution = resolveEmbeddingProviders(settings);
   const vectorResolution = resolveVectorStores(settings);
+  const extensionSearchProvider = resolveExtensionSearchProvider(settings);
+  const extensionVectorAdapter = resolveExtensionVectorAdapter(settings);
   const requestedMode = parseMode(options.mode, {
-    hasProvider: providerResolution.active !== null,
-    hasVectorStore: vectorResolution.active !== null,
+    hasProvider: providerResolution.active !== null || extensionSearchProvider !== null,
+    hasVectorStore: vectorResolution.active !== null || extensionVectorAdapter !== null,
   });
   const allDocuments = await loadDocuments(pmRoot, settings.item_format ?? "json_markdown", typeRegistry.type_to_folder);
   const filteredDocuments = applyFilters(allDocuments, options, typeRegistry);
@@ -645,21 +808,58 @@ export async function runSearch(query: string, options: SearchOptions, global: G
 
   let hits = keywordHits;
   if (requestedMode !== "keyword") {
-    const { provider, vectorStore } = requireSemanticDependencies(requestedMode, providerResolution, vectorResolution);
+    if (!extensionSearchProvider) {
+      requireSemanticDependencies(requestedMode, providerResolution, vectorResolution, extensionVectorAdapter !== null);
+    }
     if (filteredDocuments.length === 0 || limit === 0) {
       return emptySearchResult(query, requestedMode, options, includeLinked, scoreThreshold, hybridSemanticWeight);
     }
-    hits = await computeSemanticOrHybridHits({
-      requestedMode,
-      query,
-      filteredDocuments,
-      keywordHits,
-      hybridSemanticWeight,
-      limit,
-      maxResults,
-      provider,
-      vectorStore,
-    });
+    const filteredById = new Map(filteredDocuments.map((document) => [document.front_matter.id, document]));
+    const canUseBuiltInSemantic =
+      providerResolution.active !== null && (vectorResolution.active !== null || extensionVectorAdapter !== null);
+    if (extensionSearchProvider) {
+      try {
+        const providerResponse = await Promise.resolve(
+          extensionSearchProvider.query({
+            query,
+            mode: requestedMode,
+            tokens,
+            options,
+            settings,
+            documents: filteredDocuments,
+          }),
+        );
+        hits = normalizeExtensionProviderHits(extensionSearchProvider.providerName, providerResponse, filteredById);
+      } catch (error: unknown) {
+        if (!canUseBuiltInSemantic) {
+          throw new PmCliError(
+            `Extension search provider "${extensionSearchProvider.providerName}" failed: ${error instanceof Error ? error.message : String(error)}`,
+            EXIT_CODE.GENERIC_FAILURE,
+          );
+        }
+      }
+    }
+    if (hits === keywordHits) {
+      const { provider, vectorStore } = requireSemanticDependencies(
+        requestedMode,
+        providerResolution,
+        vectorResolution,
+        extensionVectorAdapter !== null,
+      );
+      hits = await computeSemanticOrHybridHits({
+        requestedMode,
+        query,
+        filteredDocuments,
+        keywordHits,
+        hybridSemanticWeight,
+        limit,
+        maxResults,
+        provider,
+        vectorStore,
+        extensionVectorAdapter,
+        settings,
+      });
+    }
   }
 
   const thresholded = hits.filter((entry) => entry.score >= scoreThreshold);

@@ -1,0 +1,41 @@
+id: pm-qwp7
+title: Regression and release hardening
+description: Expand regression coverage and complete full verification sweeps for the full-override runtime changes before release.
+type: Feature
+status: blocked
+priority: 1
+tags[4]: "area:extensions","area:release","area:tests",pm-cli
+created_at: "2026-04-01T02:16:16.834Z"
+updated_at: "2026-04-01T03:02:45.421Z"
+deadline: "2026-04-11T02:16:16.834Z"
+author: codex-agent
+estimated_minutes: 220
+acceptance_criteria: Full sandbox-safe test and coverage sweeps pass with extension and no-extension parity validated; closure evidence is recorded on all linked items.
+definition_of_ready: Test matrix for changed runtime surfaces is defined.
+order: 5
+goal: Total customization platform
+objective: Guarantee no regressions for current users
+value: Protects reliability while shipping powerful new features
+impact: Prevents behavioral breakage across command surfaces
+outcome: Override enhancements are shipped with high confidence
+why_now: A broad runtime change requires stronger regression guardrails
+parent: pm-x395
+risk: medium
+confidence: high
+blocked_reason: Final feature closure blocked by coverage threshold gate in E2.
+component: testing
+regression: true
+customer_impact: existing users keep stable behavior after override expansion
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-x395,parent,"2026-04-01T02:16:16.834Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-01T02:16:16.834Z",codex-agent,Feature E from full-override plan.
+notes[1]{created_at,author,text}:
+  "2026-04-01T02:16:16.834Z",codex-agent,Validation must cover extension-enabled and --no-extensions paths.
+files[1]{path,scope,note}:
+  tests/integration/cli.integration.spec.ts,project,core integration coverage surface
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,coverage gate for release
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,release evidence and migration notes
+body: Add targeted unit/integration tests and complete pm-linked verification evidence for all related items.

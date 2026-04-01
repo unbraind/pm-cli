@@ -11,6 +11,20 @@ const listAllFrontMatterMock = vi.fn<() => Promise<ItemFrontMatter[]>>();
 const readFileMock = vi.fn<(targetPath: string, encoding: string) => Promise<string>>();
 const realpathMock = vi.fn<(targetPath: string) => Promise<string>>();
 const runActiveOnReadHooksMock = vi.fn<() => Promise<string[]>>();
+let activeExtensionRegistrations: Record<string, unknown> | null = null;
+
+function createExtensionRegistrations(): Record<string, unknown> {
+  return {
+    flags: [],
+    item_fields: [],
+    item_types: [],
+    migrations: [],
+    importers: [],
+    exporters: [],
+    search_providers: [],
+    vector_store_adapters: [],
+  };
+}
 
 vi.mock("../../src/core/fs/fs-utils.js", () => ({
   pathExists: pathExistsMock,
@@ -26,7 +40,7 @@ vi.mock("../../src/core/store/item-store.js", () => ({
 
 vi.mock("../../src/core/extensions/index.js", () => ({
   runActiveOnReadHooks: runActiveOnReadHooksMock,
-  getActiveExtensionRegistrations: () => null,
+  getActiveExtensionRegistrations: () => activeExtensionRegistrations,
 }));
 
 vi.mock("node:fs/promises", () => ({
@@ -108,6 +122,7 @@ describe("runSearch", () => {
     readFileMock.mockReset();
     realpathMock.mockReset();
     runActiveOnReadHooksMock.mockReset();
+    activeExtensionRegistrations = null;
 
     pathExistsMock.mockResolvedValue(true);
     readSettingsMock.mockResolvedValue({ id_prefix: "pm-" });
@@ -287,6 +302,201 @@ describe("runSearch", () => {
       expect(hybridResult.items).toEqual([]);
       expect(hybridResult.filters).toMatchObject({ limit: "0" });
       expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("executes a configured extension search provider for semantic mode", async () => {
+    const extensionItem = makeFrontMatter({
+      id: "pm-ext-provider",
+      title: "extension provider item",
+    });
+    listAllFrontMatterMock.mockResolvedValue([extensionItem]);
+    readFileMock.mockResolvedValue(serializeDocument(extensionItem, "extension body"));
+    readSettingsMock.mockResolvedValue({
+      search: {
+        provider: "ext-provider",
+      },
+    } as unknown as { id_prefix: string });
+    activeExtensionRegistrations = createExtensionRegistrations();
+    (activeExtensionRegistrations.search_providers as Array<Record<string, unknown>>).push({
+      layer: "project",
+      name: "provider-ext",
+      definition: {
+        name: "ext-provider",
+        query: () => [{ id: "pm-ext-provider", score: 0.91 }],
+      },
+      runtime_definition: {
+        name: "ext-provider",
+        query: () => [{ id: "pm-ext-provider", score: 0.91 }],
+      },
+    });
+
+    const fetchMock = vi.fn(async () => {
+      throw new Error("fetch should not be called when extension provider handles semantic search");
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../src/cli/commands/search.js");
+      const result = await runSearch("extension", { mode: "semantic" }, { path: "/tmp/pm-search" });
+      expect(result.mode).toBe("semantic");
+      expect(result.count).toBe(1);
+      expect(result.items[0].item.id).toBe("pm-ext-provider");
+      expect(result.items[0].matched_fields).toEqual(["provider:ext-provider"]);
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("fails semantic mode when an extension provider throws and built-in fallback is unavailable", async () => {
+    const extensionItem = makeFrontMatter({
+      id: "pm-ext-provider-error",
+      title: "extension provider item",
+    });
+    listAllFrontMatterMock.mockResolvedValue([extensionItem]);
+    readFileMock.mockResolvedValue(serializeDocument(extensionItem, "extension body"));
+    readSettingsMock.mockResolvedValue({
+      search: {
+        provider: "ext-provider",
+      },
+    } as unknown as { id_prefix: string });
+    activeExtensionRegistrations = createExtensionRegistrations();
+    (activeExtensionRegistrations.search_providers as Array<Record<string, unknown>>).push({
+      layer: "project",
+      name: "provider-ext",
+      definition: {
+        name: "ext-provider",
+      },
+      runtime_definition: {
+        name: "ext-provider",
+        query: () => {
+          throw new Error("provider failed");
+        },
+      },
+    });
+
+    const { runSearch } = await import("../../src/cli/commands/search.js");
+    await expect(runSearch("extension", { mode: "semantic" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
+      exitCode: EXIT_CODE.GENERIC_FAILURE,
+      message: expect.stringContaining('Extension search provider "ext-provider" failed'),
+    });
+  });
+
+  it("supports extension vector adapter queries for semantic mode", async () => {
+    const semanticItem = makeFrontMatter({
+      id: "pm-vector-adapter",
+      title: "vector extension",
+    });
+    listAllFrontMatterMock.mockResolvedValue([semanticItem]);
+    readFileMock.mockResolvedValue(serializeDocument(semanticItem, "semantic body"));
+    readSettingsMock.mockResolvedValue({
+      providers: {
+        openai: {
+          base_url: "https://api.example.test/v1",
+          model: "text-embedding-3-small",
+          api_key: "",
+        },
+      },
+      vector_store: {
+        adapter: "ext-vector",
+      },
+    } as unknown as { id_prefix: string });
+    activeExtensionRegistrations = createExtensionRegistrations();
+    (activeExtensionRegistrations.vector_store_adapters as Array<Record<string, unknown>>).push({
+      layer: "project",
+      name: "vector-ext",
+      definition: {
+        name: "ext-vector",
+      },
+      runtime_definition: {
+        name: "ext-vector",
+        query: () => [{ id: "pm-vector-adapter", score: 0.87 }],
+      },
+    });
+
+    const fetchMock = vi.fn(async (url: unknown) => {
+      if (!String(url).includes("/v1/embeddings")) {
+        throw new Error(`Unexpected fetch target: ${String(url)}`);
+      }
+      return {
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: async () => ({
+          data: [{ index: 0, embedding: [0.1, 0.2] }],
+        }),
+        text: async () => "",
+      } as unknown as Response;
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../src/cli/commands/search.js");
+      const result = await runSearch("vector", { mode: "semantic" }, { path: "/tmp/pm-search" });
+      expect(result.mode).toBe("semantic");
+      expect(result.count).toBe(1);
+      expect(result.items[0].item.id).toBe("pm-vector-adapter");
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("fails semantic mode when extension vector adapter query fails without built-in fallback", async () => {
+    const semanticItem = makeFrontMatter({
+      id: "pm-vector-adapter-fail",
+      title: "vector extension fail",
+    });
+    listAllFrontMatterMock.mockResolvedValue([semanticItem]);
+    readFileMock.mockResolvedValue(serializeDocument(semanticItem, "semantic body"));
+    readSettingsMock.mockResolvedValue({
+      providers: {
+        openai: {
+          base_url: "https://api.example.test/v1",
+          model: "text-embedding-3-small",
+          api_key: "",
+        },
+      },
+      vector_store: {
+        adapter: "ext-vector",
+      },
+    } as unknown as { id_prefix: string });
+    activeExtensionRegistrations = createExtensionRegistrations();
+    (activeExtensionRegistrations.vector_store_adapters as Array<Record<string, unknown>>).push({
+      layer: "project",
+      name: "vector-ext",
+      definition: { name: "ext-vector" },
+      runtime_definition: {
+        name: "ext-vector",
+        query: () => {
+          throw new Error("vector adapter failed");
+        },
+      },
+    });
+
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      json: async () => ({
+        data: [{ index: 0, embedding: [0.1, 0.2] }],
+      }),
+      text: async () => "",
+    }));
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../src/cli/commands/search.js");
+      await expect(runSearch("vector", { mode: "semantic" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.GENERIC_FAILURE,
+        message: expect.stringContaining("Extension vector adapter query failed"),
+      });
     } finally {
       globalThis.fetch = originalFetch;
     }

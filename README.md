@@ -196,6 +196,33 @@ When `--type` is missing, usage output now includes:
 
 For `pm create --help` and `pm update --help`, add `--type <value>` to render type-aware policy details (required/disabled/hidden option lists) from active settings/extensions.
 
+## SDK and Full Override Extensions
+
+`pm` now ships a stable SDK entrypoint at `@unbrained/pm-cli/sdk` for extension authors.
+
+```ts
+import { defineExtension, type ExtensionApi } from "@unbrained/pm-cli/sdk";
+
+export default defineExtension({
+  activate(api: ExtensionApi) {
+    api.registerCommand({
+      name: "list-open",
+      run: async (context) => ({ overridden: true, command: context.command }),
+    });
+  },
+});
+```
+
+Extension runtime behavior is extension-first by default:
+
+- Extension command handlers can replace core command execution at dispatch time.
+- Command-result overrides and renderer overrides still run with deterministic precedence (last registration wins).
+- `beforeCommand` and `afterCommand` hooks receive command args/options/global snapshots and final command result/error state.
+- `registerItemFields(...)` definitions now participate in create/update defaulting and validation.
+- `registerSearchProvider(...)` + `settings.search.provider` and `registerVectorStoreAdapter(...)` + `settings.vector_store.adapter` are now live runtime selectors for `pm search` / `pm reindex`.
+
+Use `--no-extensions` to force core-only behavior for a single invocation.
+
 ## Calendar, Reminders, and Events
 
 `pm` supports persistent reminder metadata, one-off and recurring scheduled events, and a dedicated calendar surface for deadline/reminder/event planning.

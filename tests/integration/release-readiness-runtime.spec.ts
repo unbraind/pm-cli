@@ -923,6 +923,8 @@ describe("release readiness runtime coverage", () => {
     const packageJson = JSON.parse(await readRepoText("package.json")) as {
       name?: string;
       files?: string[];
+      types?: string;
+      exports?: Record<string, unknown>;
       scripts?: Record<string, string | undefined>;
       repository?: { type?: string; url?: string };
       bugs?: { url?: string };
@@ -951,6 +953,20 @@ describe("release readiness runtime coverage", () => {
     expect(packageJson.scripts?.["version:next"]).toBe("node scripts/release-version.mjs next");
     expect(packageJson.scripts?.["security:scan"]).toBe("node scripts/check-secrets.mjs");
     expect(packageJson.scripts?.["smoke:npx"]).toBe("node scripts/smoke-npx-from-pack.mjs");
+    expect(packageJson.types).toBe("dist/sdk/index.d.ts");
+    expect(packageJson.exports).toBeDefined();
+    const packageExports = packageJson.exports as Record<string, unknown>;
+    expect(Object.keys(packageExports)).toEqual(expect.arrayContaining([".", "./sdk", "./cli", "./package.json"]));
+    const rootExport = packageExports["."] as Record<string, unknown>;
+    const sdkExport = packageExports["./sdk"] as Record<string, unknown>;
+    const cliExport = packageExports["./cli"] as Record<string, unknown>;
+    expect(rootExport.types).toBe("./dist/sdk/index.d.ts");
+    expect(rootExport.import).toBe("./dist/sdk/index.js");
+    expect(sdkExport.types).toBe("./dist/sdk/index.d.ts");
+    expect(sdkExport.import).toBe("./dist/sdk/index.js");
+    expect(cliExport.types).toBe("./dist/cli/main.d.ts");
+    expect(cliExport.import).toBe("./dist/cli/main.js");
+    expect(packageExports["./package.json"]).toBe("./package.json");
     expect(packageJson.name).toBe("@unbrained/pm-cli");
     expect(packageJson.publishConfig?.access).toBe("public");
     expect(packageJson.repository?.type).toBe("git");

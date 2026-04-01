@@ -41,11 +41,13 @@ Every extension directory must contain a `manifest.json`:
 The entry module must export an `activate` function:
 
 ```ts
-import type { ExtensionApi } from "pm-cli";
+import { defineExtension, type ExtensionApi } from "@unbrained/pm-cli/sdk";
 
-export function activate(api: ExtensionApi): void {
-  // register commands, hooks, renderers, etc.
-}
+export default defineExtension({
+  activate(api: ExtensionApi): void {
+    // register commands, hooks, renderers, etc.
+  },
+});
 ```
 
 `activate` may be synchronous or return `Promise<void>`.
@@ -54,33 +56,40 @@ export function activate(api: ExtensionApi): void {
 
 ### `api.registerCommand(def)`
 
-Register a new command or override an existing core command's result.
+Register a new command handler path or replace an existing core command at dispatch time.
 
 **New command path:**
 
 ```ts
 api.registerCommand({
   name: "acme sync",
-  run: async (args, options, global) => {
-    // args: string[] — positional CLI arguments
-    // options: Record<string,unknown> — parsed flags
-    // global: GlobalOptions — --json, --quiet, --path, etc.
+  run: async (context) => {
+    // context.command: normalized command path
+    // context.args: string[] positional args
+    // context.options: Record<string, unknown> command-scoped flags
+    // context.global: GlobalOptions (--json/--quiet/--path/--no-extensions/--profile)
+    // context.pm_root: resolved PM root
     return { ok: true, synced: 42 };
   },
 });
 ```
 
-The command name is canonicalized (trimmed, lowercased, repeated whitespace collapsed). The handler receives cloned snapshots so mutation cannot leak into caller state.
+If the command path matches a core command (for example `list-open`), the extension handler runs first and the core action is skipped. Command names are canonicalized (trimmed, lowercased, repeated whitespace collapsed). Handlers receive cloned snapshots so mutation cannot leak into caller state.
 
 **Override existing core command result:**
 
 ```ts
-api.registerCommand("list", (priorResult, args, options, global, pmRoot) => {
-  // priorResult: the core command's output object (cloned)
-  // return a modified result object, or undefined to use priorResult as-is
-  return { ...priorResult, _ext: "annotated" };
+api.registerCommand("list", (context) => {
+  return {
+    ...(context.result as Record<string, unknown>),
+    _ext: "annotated",
+    command: context.command,
+    pm_root: context.pm_root,
+  };
 });
 ```
+
+Result override callbacks are synchronous. Returning a Promise is ignored and emits `extension_command_override_async_unsupported:<layer>:<name>:<command>`.
 
 ### `api.registerFlags(targetCommand, flags)`
 
@@ -106,21 +115,28 @@ Supported metadata for dynamic extension help rendering:
 Override TOON or JSON output for a command:
 
 ```ts
-api.registerRenderer("toon", (command, result, args, options, global, pmRoot) => {
-  if (command !== "stats") return undefined; // pass through
-  return customToonFormat(result);
+api.registerRenderer("toon", (context) => {
+  if (context.command !== "stats") {
+    return `noop: ${JSON.stringify(context.result)}`;
+  }
+  return customToonFormat(context.result);
 });
 ```
 
-Return `undefined` to fall back to the built-in renderer.
+Renderer overrides must return a string. Non-string return values are ignored and produce a deterministic `extension_renderer_invalid_result:<layer>:<name>:<format>` warning.
 
 ### `api.registerImporter(name, importer)`
 
 Register an importer (also wires `<name> import` command path):
 
 ```ts
-api.registerImporter("jira", async (options, global) => {
-  // options: parsed flags from `pm jira import ...`
+api.registerImporter("jira", async (context) => {
+  // context.registration: normalized importer name
+  // context.action: "import"
+  // context.command: command path
+  // context.options: parsed command flags
+  // context.global: GlobalOptions
+  // context.pm_root: resolved PM root
   return { ok: true, imported: 5, skipped: 0, ids: ["pm-xxxx"], warnings: [] };
 });
 ```
@@ -130,7 +146,8 @@ api.registerImporter("jira", async (options, global) => {
 Register an exporter (also wires `<name> export` command path):
 
 ```ts
-api.registerExporter("jira", async (options, global) => {
+api.registerExporter("jira", async (context) => {
+  // context.action: "export"
   return { ok: true, exported: 5, ids: ["pm-xxxx"], warnings: [] };
 });
 ```
@@ -211,11 +228,15 @@ Register a custom search provider:
 ```ts
 api.registerSearchProvider({
   name: "elastic",
-  query: async (query, options, settings) => {
-    return [{ id: "pm-xxxx", score: 0.95 }];
+  query: async (context) => {
+    // context.query, context.mode, context.tokens
+    // context.options, context.settings, context.documents
+    return [{ id: "pm-xxxx", score: 0.95, matched_fields: ["provider:elastic"] }];
   },
 });
 ```
+
+Use `settings.search.provider` to select the active extension provider for live `pm search` execution.
 
 ### `api.registerVectorStoreAdapter(adapter)`
 
@@ -224,11 +245,17 @@ Register a custom vector store:
 ```ts
 api.registerVectorStoreAdapter({
   name: "pinecone",
-  upsert: async (records, settings) => { ... },
-  query: async (vector, topK, settings) => { ... },
-  delete: async (ids, settings) => { ... },
+  upsert: async (context) => {
+    // context.points, context.settings
+  },
+  query: async (context) => {
+    // context.vector, context.limit, context.settings
+    return [{ id: "pm-xxxx", score: 0.87 }];
+  },
 });
 ```
+
+Use `settings.vector_store.adapter` to select the active extension adapter for `pm search` query and `pm reindex` upsert.
 
 ## Lifecycle Hooks
 
@@ -257,7 +284,7 @@ Runs after a command completes (even on failure):
 api.hooks.afterCommand((ctx) => {
   // ctx.ok: boolean
   // ctx.result?: unknown
-  // ctx.error?: unknown
+  // ctx.error?: string
   // same fields as beforeCommand
 });
 ```
@@ -343,7 +370,7 @@ Or configure per-project in `.agents/pm/settings.json`:
 export function activate(api) {
   api.registerCommand({
     name: "hello",
-    run: async (_args, _options, _global) => {
+    run: async (_context) => {
       return { message: "Hello from extension!" };
     },
   });

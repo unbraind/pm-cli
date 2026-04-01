@@ -1,6 +1,6 @@
 import { runBeadsImport } from "../../../cli/commands/beads.js";
 import type { BeadsImportOptions } from "../../../cli/commands/beads.js";
-import type { ExtensionApi, ExtensionManifest } from "../../../core/extensions/loader.js";
+import type { ExtensionApi, ExtensionManifest } from "../../../sdk/index.js";
 
 export const manifest: ExtensionManifest = {
   name: "builtin-beads-import",

@@ -1,0 +1,42 @@
+id: pm-x395
+title: Full Override SDK + Extensions Platform
+description: Single-wave initiative to enable extension-level override and manipulation across pm CLI runtime surfaces with compatibility safeguards.
+type: Epic
+status: blocked
+priority: 0
+tags[5]: "area:extensions","area:sdk",core,"milestone:override",pm-cli
+created_at: "2026-04-01T02:15:22.733Z"
+updated_at: "2026-04-01T03:02:46.058Z"
+deadline: "2026-04-15T02:15:22.733Z"
+assignee: codex-agent
+author: codex-agent
+estimated_minutes: 960
+acceptance_criteria: Extensions can deterministically override/manipulate full runtime command surfaces; docs/tests and migration guidance are complete; no regression for default users.
+definition_of_ready: Architecture and compatibility guardrails are documented and approved.
+order: 1
+goal: Total customization platform
+objective: Enable full runtime override capability
+value: Allows pm to be fully customized for any project workflow
+impact: Unlocks broad ecosystem integrations while retaining deterministic safety
+outcome: Extension SDK supports full command/runtime customization with stable defaults
+why_now: Current extension model is partial and blocks complete customization use cases
+risk: high
+confidence: medium
+blocked_reason: Epic closure blocked by unresolved coverage gate in regression hardening feature.
+component: extensions-runtime
+customer_impact: enables project-specific full customization without forking pm
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-00yy,discovered_from,"2026-04-01T02:15:22.733Z",codex-agent,null
+  pm-b1w,discovered_from,"2026-04-01T02:15:22.733Z",codex-agent,null
+  pm-r15d,discovered_from,"2026-04-01T02:15:22.733Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-01T02:15:22.733Z",codex-agent,This epic extends and unifies prior extension and type-policy milestones without duplication.
+notes[1]{created_at,author,text}:
+  "2026-04-01T02:15:22.733Z",codex-agent,Compatibility-first deterministic fallback behavior is mandatory for existing users.
+files[1]{path,scope,note}:
+  src/cli/main.ts,project,primary runtime router target
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,3600,full regression baseline
+docs[1]{path,scope,note}:
+  PRD.md,project,authoritative extension and SDK contract
+body: "Implement extension-first runtime routing, full registration wiring, SDK exports, and comprehensive docs/tests updates."

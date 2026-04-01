@@ -1,0 +1,30 @@
+id: pm-14qs
+title: "B2: Wire search providers and vector adapters"
+description: Allow extension-registered search providers and vector adapters to participate in search/reindex runtime resolution.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:extensions","area:search",pm-cli,runtime
+created_at: "2026-04-01T02:17:16.030Z"
+updated_at: "2026-04-01T03:02:00.801Z"
+deadline: "2026-04-10T02:17:16.030Z"
+author: codex-agent
+estimated_minutes: 150
+acceptance_criteria: registerSearchProvider and registerVectorStoreAdapter can be selected at runtime for search/reindex with deterministic fallback and diagnostics.
+parent: pm-zd6y
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-zd6y,parent,"2026-04-01T02:17:16.030Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T02:17:16.030Z",codex-agent,B2 task created from full-override feature B.
+  "2026-04-01T03:01:09.128Z",codex-agent,Wired registerSearchProvider/registerVectorStoreAdapter to live search/reindex runtime selection via settings.search.provider and settings.vector_store.adapter in src/cli/commands/search.ts + reindex.ts with deterministic fallback behavior.
+notes[1]{created_at,author,text}:
+  "2026-04-01T02:17:16.030Z",codex-agent,Provider failures must not corrupt search command stability.
+files[2]{path,scope,note}:
+  src/cli/commands/search.ts,project,provider and adapter runtime selection
+  src/core/extensions/runtime-registrations.ts,project,runtime search/vector registration resolvers
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/reindex-command.spec.ts,null,project,2400,search provider runtime regression
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,search/vector extension runtime contract
+close_reason: Extension search providers/vector adapters are selectable at runtime with deterministic fallback behavior.
+body: Integrate registry-backed provider/adapter resolution with deterministic fallback to built-in providers when needed.

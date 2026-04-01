@@ -15,6 +15,25 @@
   "bin": {
     "pm": "dist/cli.js"
   },
+  "types": "dist/sdk/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/sdk/index.d.ts",
+      "import": "./dist/sdk/index.js",
+      "default": "./dist/sdk/index.js"
+    },
+    "./sdk": {
+      "types": "./dist/sdk/index.d.ts",
+      "import": "./dist/sdk/index.js",
+      "default": "./dist/sdk/index.js"
+    },
+    "./cli": {
+      "types": "./dist/cli/main.d.ts",
+      "import": "./dist/cli/main.js",
+      "default": "./dist/cli/main.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "dist/**",
     "README.md",

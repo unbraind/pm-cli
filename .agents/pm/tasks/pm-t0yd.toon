@@ -1,0 +1,31 @@
+id: pm-t0yd
+title: "B1: Wire registerItemFields into runtime validation"
+description: "Integrate extension-defined item fields into item validation, parsing, and mutation workflows."
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:extensions","area:schema",pm-cli,runtime
+created_at: "2026-04-01T02:17:09.670Z"
+updated_at: "2026-04-01T03:02:00.002Z"
+deadline: "2026-04-10T02:17:09.670Z"
+author: codex-agent
+estimated_minutes: 150
+acceptance_criteria: registerItemFields definitions are enforced/recognized in runtime item operations with backward-safe defaults and tests.
+parent: pm-zd6y
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-zd6y,parent,"2026-04-01T02:17:09.670Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T02:17:09.670Z",codex-agent,B1 task created from full-override feature B.
+  "2026-04-01T03:01:08.113Z",codex-agent,Wired registerItemFields into create/update runtime through src/core/extensions/item-fields.ts and applied validation/defaulting in src/cli/commands/create.ts + update.ts; preserved extension front-matter fields during normalization in src/core/item/item-format.ts.
+notes[1]{created_at,author,text}:
+  "2026-04-01T02:17:09.670Z",codex-agent,Avoid breaking existing item parsing and serialization contracts.
+files[3]{path,scope,note}:
+  src/core/extensions/item-fields.ts,project,runtime item-field defaults and validation
+  src/core/item/item-format.ts,project,preserve extension front-matter keys
+  src/core/store/item-store.ts,project,item field validation and persistence
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/item-store.spec.ts,null,project,2400,item field runtime regression
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,item field runtime behavior
+close_reason: registerItemFields runtime defaulting/validation wired into create/update flows with tests passing.
+body: Apply extension item field definitions in create/update/store validation while preserving current defaults.

@@ -78,12 +78,15 @@ export interface ExtensionLoadResult extends ExtensionDiscoveryResult {
 export interface BeforeCommandHookContext {
   command: string;
   args: string[];
+  options?: Record<string, unknown>;
+  global?: GlobalOptions;
   pm_root: string;
 }
 
 export interface AfterCommandHookContext extends BeforeCommandHookContext {
   ok: boolean;
   error?: string;
+  result?: unknown;
 }
 
 export interface OnWriteHookContext {
@@ -220,6 +223,7 @@ export interface RegisteredExtensionSchemaMigrationDefinition {
   layer: ExtensionLayer;
   name: string;
   definition: SchemaMigrationDefinition;
+  runtime_definition: SchemaMigrationDefinition;
 }
 
 export interface RegisteredExtensionImporter {
@@ -238,12 +242,14 @@ export interface RegisteredExtensionSearchProvider {
   layer: ExtensionLayer;
   name: string;
   definition: SearchProviderDefinition;
+  runtime_definition: SearchProviderDefinition;
 }
 
 export interface RegisteredExtensionVectorStoreAdapter {
   layer: ExtensionLayer;
   name: string;
   definition: VectorStoreAdapterDefinition;
+  runtime_definition: VectorStoreAdapterDefinition;
 }
 
 export interface ExtensionRegistrationRegistry {
@@ -853,6 +859,21 @@ function sanitizeRegistrationValue(value: unknown): unknown {
   return value;
 }
 
+function cloneRuntimeRegistrationValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((entry) => cloneRuntimeRegistrationValue(entry));
+  }
+  if (typeof value === "object" && value !== null) {
+    const record = value as Record<string, unknown>;
+    const cloned: Record<string, unknown> = {};
+    for (const key of Object.keys(record).sort((left, right) => left.localeCompare(right))) {
+      cloned[key] = cloneRuntimeRegistrationValue(record[key]);
+    }
+    return cloned;
+  }
+  return value;
+}
+
 function normalizeRegistrationRecord(name: string, value: unknown): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new TypeError(`${name} requires an object definition`);
@@ -860,11 +881,31 @@ function normalizeRegistrationRecord(name: string, value: unknown): Record<strin
   return sanitizeRegistrationValue(value) as Record<string, unknown>;
 }
 
+function normalizeRuntimeRegistrationRecord(name: string, value: unknown): Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new TypeError(`${name} requires an object definition`);
+  }
+  return cloneRuntimeRegistrationValue(value) as Record<string, unknown>;
+}
+
 function normalizeRegistrationRecordList(name: string, value: unknown): Array<Record<string, unknown>> {
   if (!Array.isArray(value)) {
     throw new TypeError(`${name} requires an array of object definitions`);
   }
   return value.map((entry) => normalizeRegistrationRecord(name, entry));
+}
+
+function attachRuntimeDefinition<TEntry extends { definition: Record<string, unknown> }>(
+  entry: TEntry,
+  runtimeDefinition: Record<string, unknown>,
+): TEntry {
+  Object.defineProperty(entry, "runtime_definition", {
+    value: runtimeDefinition,
+    enumerable: false,
+    writable: false,
+    configurable: false,
+  });
+  return entry;
 }
 
 function getDeclaredExtensionCapabilities(extension: LoadedExtension): Set<ExtensionCapability> | null {
@@ -999,11 +1040,17 @@ function createExtensionApi(
   };
   const registerMigration = (definition: SchemaMigrationDefinition): void => {
     assertExtensionCapability(extension, "schema", "registerMigration");
-    registrations.migrations.push({
-      layer: extension.layer,
-      name: extension.name,
-      definition: normalizeRegistrationRecord("registerMigration definition", definition),
-    });
+    const runtimeDefinition = normalizeRuntimeRegistrationRecord("registerMigration definition", definition);
+    registrations.migrations.push(
+      attachRuntimeDefinition(
+        {
+          layer: extension.layer,
+          name: extension.name,
+          definition: normalizeRegistrationRecord("registerMigration definition", definition),
+        },
+        runtimeDefinition,
+      ) as RegisteredExtensionSchemaMigrationDefinition,
+    );
   };
   const registerImporter = (name: string, importer: Importer): void => {
     assertExtensionCapability(extension, "importers", "registerImporter");
@@ -1059,19 +1106,31 @@ function createExtensionApi(
   };
   const registerSearchProvider = (provider: SearchProviderDefinition): void => {
     assertExtensionCapability(extension, "search", "registerSearchProvider");
-    registrations.search_providers.push({
-      layer: extension.layer,
-      name: extension.name,
-      definition: normalizeRegistrationRecord("registerSearchProvider provider", provider),
-    });
+    const runtimeDefinition = normalizeRuntimeRegistrationRecord("registerSearchProvider provider", provider);
+    registrations.search_providers.push(
+      attachRuntimeDefinition(
+        {
+          layer: extension.layer,
+          name: extension.name,
+          definition: normalizeRegistrationRecord("registerSearchProvider provider", provider),
+        },
+        runtimeDefinition,
+      ) as RegisteredExtensionSearchProvider,
+    );
   };
   const registerVectorStoreAdapter = (adapter: VectorStoreAdapterDefinition): void => {
     assertExtensionCapability(extension, "search", "registerVectorStoreAdapter");
-    registrations.vector_store_adapters.push({
-      layer: extension.layer,
-      name: extension.name,
-      definition: normalizeRegistrationRecord("registerVectorStoreAdapter adapter", adapter),
-    });
+    const runtimeDefinition = normalizeRuntimeRegistrationRecord("registerVectorStoreAdapter adapter", adapter);
+    registrations.vector_store_adapters.push(
+      attachRuntimeDefinition(
+        {
+          layer: extension.layer,
+          name: extension.name,
+          definition: normalizeRegistrationRecord("registerVectorStoreAdapter adapter", adapter),
+        },
+        runtimeDefinition,
+      ) as RegisteredExtensionVectorStoreAdapter,
+    );
   };
   const registerBeforeCommand = (hook: BeforeCommandHook): void => {
     assertExtensionCapability(extension, "hooks", "api.hooks.beforeCommand");
@@ -1172,6 +1231,69 @@ function getRegistrationCounts(registrations: ExtensionRegistrationRegistry): Ex
   };
 }
 
+function collectCommandCollisionWarnings(commands: ExtensionCommandRegistry): string[] {
+  const warnings: string[] = [];
+  const collectByCommand = <TEntry extends { layer: ExtensionLayer; name: string; command: string }>(
+    entries: TEntry[],
+    codePrefix: string,
+  ): void => {
+    const grouped = new Map<string, TEntry[]>();
+    for (const entry of entries) {
+      const bucket = grouped.get(entry.command) ?? [];
+      bucket.push(entry);
+      grouped.set(entry.command, bucket);
+    }
+    for (const command of [...grouped.keys()].sort((left, right) => left.localeCompare(right))) {
+      const bucket = grouped.get(command) ?? [];
+      if (bucket.length <= 1) {
+        continue;
+      }
+      const winner = bucket[bucket.length - 1];
+      for (const displaced of bucket.slice(0, -1)) {
+        warnings.push(
+          `${codePrefix}:${command}:${winner.layer}:${winner.name}:${displaced.layer}:${displaced.name}`,
+        );
+      }
+    }
+  };
+
+  collectByCommand(commands.handlers, "extension_command_handler_collision");
+  collectByCommand(commands.overrides, "extension_command_override_collision");
+
+  const handlerCommands = new Set(commands.handlers.map((entry) => entry.command));
+  const overlapCommands = [...new Set(commands.overrides.map((entry) => entry.command))]
+    .filter((command) => handlerCommands.has(command))
+    .sort((left, right) => left.localeCompare(right));
+  for (const command of overlapCommands) {
+    warnings.push(`extension_command_override_handler_overlap:${command}`);
+  }
+
+  return warnings;
+}
+
+function collectRendererCollisionWarnings(renderers: ExtensionRendererRegistry): string[] {
+  const grouped = new Map<OutputRendererFormat, RegisteredExtensionRendererOverride[]>();
+  for (const entry of renderers.overrides) {
+    const bucket = grouped.get(entry.format) ?? [];
+    bucket.push(entry);
+    grouped.set(entry.format, bucket);
+  }
+  const warnings: string[] = [];
+  for (const format of [...grouped.keys()].sort((left, right) => left.localeCompare(right))) {
+    const bucket = grouped.get(format) ?? [];
+    if (bucket.length <= 1) {
+      continue;
+    }
+    const winner = bucket[bucket.length - 1];
+    for (const displaced of bucket.slice(0, -1)) {
+      warnings.push(
+        `extension_renderer_collision:${format}:${winner.layer}:${winner.name}:${displaced.layer}:${displaced.name}`,
+      );
+    }
+  }
+  return warnings;
+}
+
 export async function activateExtensions(loadResult: ExtensionLoadResult): Promise<ExtensionActivationResult> {
   const hooks = createEmptyExtensionHookRegistry();
   const commands = createEmptyExtensionCommandRegistry();
@@ -1199,13 +1321,19 @@ export async function activateExtensions(loadResult: ExtensionLoadResult): Promi
     }
   }
 
+  const collisionWarnings = [
+    ...collectCommandCollisionWarnings(commands),
+    ...collectRendererCollisionWarnings(renderers),
+  ];
+  const mergedWarnings = [...new Set([...warnings, ...collisionWarnings])];
+
   return {
     hooks,
     commands,
     renderers,
     registrations,
     failed,
-    warnings,
+    warnings: mergedWarnings,
     hook_counts: {
       before_command: hooks.beforeCommand.length,
       after_command: hooks.afterCommand.length,

@@ -118,6 +118,7 @@ describe("shared constants and errors contracts", () => {
       embedding_model: "",
       embedding_batch_size: 32,
       scanner_max_batch_retries: 3,
+      provider: "",
     });
     expect(SETTINGS_DEFAULTS.providers).toEqual({
       openai: {
@@ -131,6 +132,7 @@ describe("shared constants and errors contracts", () => {
       },
     });
     expect(SETTINGS_DEFAULTS.vector_store).toEqual({
+      adapter: "",
       qdrant: {
         url: "",
         api_key: "",

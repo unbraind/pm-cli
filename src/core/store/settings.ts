@@ -69,6 +69,7 @@ const settingsSchema = z.object({
     embedding_model: z.string(),
     embedding_batch_size: z.number().int(),
     scanner_max_batch_retries: z.number().int(),
+    provider: z.string().optional(),
   }),
   providers: z.object({
     openai: z.object({
@@ -82,6 +83,7 @@ const settingsSchema = z.object({
     }),
   }),
   vector_store: z.object({
+    adapter: z.string().optional(),
     qdrant: z.object({
       url: z.string(),
       api_key: z.string(),
@@ -237,6 +239,7 @@ function mergeSettings(raw: unknown): PmSettings {
       ollama: { ...defaults.providers.ollama, ...settings.providers.ollama },
     },
     vector_store: {
+      adapter: settings.vector_store.adapter ?? defaults.vector_store.adapter,
       qdrant: { ...defaults.vector_store.qdrant, ...settings.vector_store.qdrant },
       lancedb: { ...defaults.vector_store.lancedb, ...settings.vector_store.lancedb },
     },
@@ -271,6 +274,7 @@ export function serializeSettings(settings: PmSettings): string {
     "embedding_model",
     "embedding_batch_size",
     "scanner_max_batch_retries",
+    "provider",
   ]);
   ordered.providers = orderObject(ordered.providers as Record<string, unknown>, ["openai", "ollama"]);
   (ordered.providers as Record<string, unknown>).openai = orderObject(
@@ -281,7 +285,7 @@ export function serializeSettings(settings: PmSettings): string {
     ((ordered.providers as Record<string, unknown>).ollama ?? {}) as Record<string, unknown>,
     ["base_url", "model"],
   );
-  ordered.vector_store = orderObject(ordered.vector_store as Record<string, unknown>, ["qdrant", "lancedb"]);
+  ordered.vector_store = orderObject(ordered.vector_store as Record<string, unknown>, ["adapter", "qdrant", "lancedb"]);
   (ordered.vector_store as Record<string, unknown>).qdrant = orderObject(
     ((ordered.vector_store as Record<string, unknown>).qdrant ?? {}) as Record<string, unknown>,
     ["url", "api_key"],

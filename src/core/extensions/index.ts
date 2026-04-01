@@ -25,6 +25,7 @@ let activeExtensionCommands: ExtensionCommandRegistry | null = null;
 let activeExtensionRenderers: ExtensionRendererRegistry | null = null;
 let activeExtensionRegistrations: ExtensionRegistrationRegistry | null = null;
 let activeCommandContext: Omit<CommandOverrideContext, "result"> | null = null;
+let activeCommandResult: unknown = undefined;
 
 export function setActiveExtensionHooks(hooks: ExtensionHookRegistry | null): void {
   activeExtensionHooks = hooks;
@@ -50,12 +51,21 @@ export function setActiveCommandContext(context: Omit<CommandOverrideContext, "r
   activeCommandContext = context;
 }
 
+export function setActiveCommandResult(result: unknown): void {
+  activeCommandResult = result;
+}
+
+export function getActiveCommandResult(): unknown {
+  return activeCommandResult;
+}
+
 export function clearActiveExtensionHooks(): void {
   activeExtensionHooks = null;
   activeExtensionCommands = null;
   activeExtensionRenderers = null;
   activeExtensionRegistrations = null;
   activeCommandContext = null;
+  activeCommandResult = undefined;
 }
 
 export async function runActiveOnWriteHooks(context: OnWriteHookContext): Promise<string[]> {

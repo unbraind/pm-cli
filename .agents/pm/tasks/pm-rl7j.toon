@@ -1,0 +1,31 @@
+id: pm-rl7j
+title: "E2: Final verification and closure evidence"
+description: "Run full sandbox-safe verification sweeps, log evidence across epic/features/tasks, and close/release claims."
+type: Task
+status: blocked
+priority: 1
+tags[4]: "area:release","area:tests",evidence,pm-cli
+created_at: "2026-04-01T02:18:07.586Z"
+updated_at: "2026-04-01T03:02:44.745Z"
+deadline: "2026-04-10T02:18:07.586Z"
+assignee: codex-agent
+author: codex-agent
+estimated_minutes: 100
+acceptance_criteria: All linked verification commands pass and closure evidence is recorded in pm comments before final close/release.
+parent: pm-qwp7
+blocked_reason: Coverage gate remains below configured 100% thresholds (97.14/95.91/97.09/96.96).
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-qwp7,parent,"2026-04-01T02:18:07.586Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-04-01T02:18:07.586Z",codex-agent,E2 task created from full-override feature E.
+  "2026-04-01T03:01:16.337Z",codex-agent,"Verification evidence: pnpm build (pass), node scripts/run-tests.mjs test (pass, 60 files/613 tests), pm test-all --status in_progress (11/12 linked checks pass or dedupe-skip; remaining failure is coverage threshold gate at 97.14/95.91/97.09/96.96)."
+  "2026-04-01T03:02:36.889Z",codex-agent,"Re-ran pm test-all --status in_progress after fixing stale linked test paths: totals items=12, linked_tests=12, passed=7, failed=1, skipped=4; only remaining failure is node scripts/run-tests.mjs coverage due global threshold shortfall (lines 97.14, branches 95.91, functions 97.09, statements 96.96)."
+notes[1]{created_at,author,text}:
+  "2026-04-01T02:18:07.586Z",codex-agent,Include build test coverage and pm test-all sweeps in closure evidence.
+files[1]{path,scope,note}:
+  CHANGELOG.md,project,release summary anchor
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,final coverage verification
+docs[1]{path,scope,note}:
+  AGENTS.md,project,tracking and closure protocol reference
+body: "Execute full build/test/coverage and pm-linked test sweeps, then append closure evidence to all work items."

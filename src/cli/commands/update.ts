@@ -14,6 +14,7 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { isNoneToken, resolveIsoOrRelative } from "../../core/shared/time.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import { applyRegisteredItemFieldDefaultsAndValidation } from "../../core/extensions/item-fields.js";
 import { mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -925,6 +926,15 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
           document.front_matter.events = parseEventEntries(options.event, nowValue);
         }
         changedFields.push("events");
+      }
+
+      try {
+        applyRegisteredItemFieldDefaultsAndValidation(
+          document.front_matter as unknown as Record<string, unknown>,
+          getActiveExtensionRegistrations(),
+        );
+      } catch (error: unknown) {
+        throw new PmCliError(error instanceof Error ? error.message : "Invalid extension item field values", EXIT_CODE.USAGE);
       }
 
       return { changedFields };

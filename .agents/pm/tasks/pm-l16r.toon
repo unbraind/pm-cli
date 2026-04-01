@@ -1,0 +1,30 @@
+id: pm-l16r
+title: "C1: Publish explicit extension SDK exports"
+description: Add package exports and type entrypoints for extension SDK consumption under scoped package naming.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:packaging","area:sdk","area:types",pm-cli
+created_at: "2026-04-01T02:17:28.241Z"
+updated_at: "2026-04-01T03:02:02.530Z"
+deadline: "2026-04-10T02:17:28.241Z"
+author: codex-agent
+estimated_minutes: 90
+acceptance_criteria: package.json exports provide stable extension SDK entrypoints and docs/examples reference the correct scoped imports.
+parent: pm-oga6
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-oga6,parent,"2026-04-01T02:17:28.241Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T02:17:28.241Z",codex-agent,C1 task created from full-override feature C.
+  "2026-04-01T03:01:11.228Z",codex-agent,Published explicit SDK surface with package exports/types and new src/sdk/index.ts entrypoint; added packaging contract assertions in tests/integration/release-readiness-runtime.spec.ts.
+notes[1]{created_at,author,text}:
+  "2026-04-01T02:17:28.241Z",codex-agent,Ensure npm publish surface and docs stay aligned.
+files[2]{path,scope,note}:
+  package.json,project,exports and types entrypoints
+  src/sdk/index.ts,project,public SDK entrypoint
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,1800,packaging export contract regression
+docs[1]{path,scope,note}:
+  README.md,project,scoped SDK import examples
+close_reason: Stable SDK package exports and scoped entrypoint are published with runtime/readiness checks.
+body: Expose stable extension SDK import paths and ensure distribution packaging includes required type artifacts.

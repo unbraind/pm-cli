@@ -604,6 +604,13 @@ export function normalizeFrontMatter(frontMatter: ItemFrontMatter): ItemFrontMat
     customer_impact: frontMatter.customer_impact?.trim() || undefined,
     close_reason: frontMatter.close_reason || undefined,
   };
+  const sourceRecord = frontMatter as unknown as Record<string, unknown>;
+  for (const [key, value] of Object.entries(sourceRecord)) {
+    if (Object.prototype.hasOwnProperty.call(normalized, key) || value === undefined) {
+      continue;
+    }
+    (normalized as unknown as Record<string, unknown>)[key] = value;
+  }
   for (const [key, value] of Object.entries(normalized)) {
     if (value === undefined) {
       delete (normalized as unknown as Record<string, unknown>)[key];

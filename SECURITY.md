@@ -25,3 +25,12 @@ Please include:
 - Fix and coordinated disclosure timeline: based on severity and impact
 
 Please avoid public disclosure before a fix or mitigation is available.
+
+## Extension Runtime Trust Model
+
+`pm` extensions execute as local Node.js code and can intercept command execution, hooks, output rendering, and search/vector runtime paths.
+
+- Treat third-party extensions as fully trusted code.
+- Prefer project-reviewed extensions committed to the repository.
+- For incident triage or hardening runs, disable extensions with `--no-extensions`.
+- Include extension manifest name/version, capability list, and active settings selectors (`search.provider`, `vector_store.adapter`) in security reports when relevant.

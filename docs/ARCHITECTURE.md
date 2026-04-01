@@ -245,27 +245,46 @@ Each history entry is a JSONL line:
 
 ## Extension System
 
-Extensions are Node.js modules with an `activate(api)` export:
+Extensions are Node.js modules with an `activate(api)` export. For package consumers, extension types and helpers are exported through `@unbrained/pm-cli/sdk`.
 
 ```ts
 export function activate(api: ExtensionApi): void {
-  api.registerCommand({ name: "my command", run: async (args, opts, global) => { ... } });
-  api.hooks.beforeCommand((ctx) => { ... });
+  api.registerCommand({
+    name: "my command",
+    run: async (context) => ({ ok: true, command: context.command }),
+  });
+  api.hooks.beforeCommand((ctx) => { /* ... */ });
 }
 ```
 
 Load order: **core built-ins → global (`~/.pm-cli/extensions/`) → project (`.agents/pm/extensions/`)**.
 
-Project-local extensions override global by default. See [EXTENSIONS.md](./EXTENSIONS.md) for the full API reference.
+Project-local extensions override global by default. Runtime dispatch is extension-first: if an extension registers a command handler for an existing core command path, the extension handler executes instead of the core action. Command result overrides and renderer overrides are still evaluated after dispatch with deterministic "last registration wins" precedence.
+
+Runtime registration wiring now includes:
+
+- `registerItemFields(...)` defaults/validation on create and update write paths.
+- `registerMigration(...)` mandatory migration execution + write gating in command preflight.
+- `registerSearchProvider(...)` selected by `settings.search.provider` for live `pm search` execution.
+- `registerVectorStoreAdapter(...)` selected by `settings.vector_store.adapter` for live `pm search` query and `pm reindex` upsert execution.
+
+See [EXTENSIONS.md](./EXTENSIONS.md) for the full API reference.
 
 ## Search Architecture
 
 - **Keyword mode** (always available): multi-factor lexical scoring with configurable field weights
-- **Semantic mode** (requires provider + vector store config): embedding-based vector similarity
-- **Hybrid mode** (default when semantic available): blended lexical + semantic ranking
+- **Semantic mode** (requires embedding + vector query capability): embedding-based vector similarity
+- **Hybrid mode** (default when semantic capability is available): blended lexical + semantic ranking
 
 Providers: OpenAI-compatible, Ollama
 Vector stores: Qdrant, LanceDB
+
+Extension runtime can supply equivalents for both sides of semantic execution:
+
+- Search provider selection: `settings.search.provider` -> `registerSearchProvider(...)`.
+- Vector adapter selection: `settings.vector_store.adapter` -> `registerVectorStoreAdapter(...)`.
+
+If an extension provider/adapter fails and built-in provider/vector settings are configured, runtime falls back to built-in semantic components and records deterministic warnings.
 
 ### Keyword Scoring
 

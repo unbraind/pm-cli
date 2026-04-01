@@ -42,7 +42,9 @@ export default defineConfig({
         "src/cli/extension-command-options.ts",
         "src/core/extensions/builtins.ts",
         "src/core/extensions/index.ts",
+        "src/core/extensions/item-fields.ts",
         "src/core/extensions/loader.ts",
+        "src/core/extensions/runtime-registrations.ts",
         "src/core/fs/fs-utils.ts",
         "src/core/fs/index.ts",
         "src/core/history/history.ts",
@@ -86,6 +88,7 @@ export default defineConfig({
         "src/extensions/builtins/beads/index.ts",
         "src/extensions/builtins/todos/index.ts",
         "src/extensions/builtins/todos/import-export.ts",
+        "src/sdk/index.ts",
         "src/types/index.ts",
       ],
       thresholds: {

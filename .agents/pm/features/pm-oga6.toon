@@ -1,0 +1,41 @@
+id: pm-oga6
+title: SDK publishing and stability contract
+description: Publish stable extension SDK exports/types and provide backward-safe compatibility shims for existing extension modules.
+type: Feature
+status: closed
+priority: 1
+tags[4]: "area:compat","area:packaging","area:sdk",pm-cli
+created_at: "2026-04-01T02:15:56.839Z"
+updated_at: "2026-04-01T03:02:16.065Z"
+deadline: "2026-04-11T02:15:56.839Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: Package exports/types provide stable extension SDK entrypoints and existing extension modules keep working through compatibility shims or migration guidance.
+definition_of_ready: SDK entrypoint contract and backward-compat policy are documented.
+order: 3
+goal: Total customization platform
+objective: Ship formal extension SDK surface
+value: Improves extension author DX and reliability
+impact: Reduces undocumented import path drift
+outcome: Extension API has a documented and stable consumable package surface
+why_now: SDK docs currently reference ambiguous import paths
+parent: pm-x395
+risk: medium
+confidence: medium
+component: package-contract
+regression: true
+customer_impact: extension developers get stable import contracts
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-x395,parent,"2026-04-01T02:15:56.839Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-01T02:15:56.839Z",codex-agent,Feature C from full-override plan.
+notes[1]{created_at,author,text}:
+  "2026-04-01T02:15:56.839Z",codex-agent,Scoped package import paths must be explicit and tested.
+files[1]{path,scope,note}:
+  package.json,project,exports and published SDK surface
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,packaging contract regression
+docs[1]{path,scope,note}:
+  README.md,project,SDK usage and import path docs
+close_reason: All feature C tasks (C1-C2) are complete with stable SDK exports and compatibility updates.
+body: Add explicit package exports for extension APIs and align import paths with scoped package naming.

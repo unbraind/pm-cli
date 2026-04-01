@@ -1,0 +1,29 @@
+id: pm-osk5
+title: "A3: Hook context parity and lifecycle symmetry"
+description: Expand before/after command hook contexts to include options/global/result/error consistently for success and failure paths.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:hooks","area:runtime",extensions,pm-cli
+created_at: "2026-04-01T02:17:03.345Z"
+updated_at: "2026-04-01T03:01:59.013Z"
+deadline: "2026-04-10T02:17:03.345Z"
+author: codex-agent
+estimated_minutes: 120
+acceptance_criteria: "beforeCommand and afterCommand contexts are richer, type-safe, and consistent across runtime paths with passing regression tests."
+parent: pm-al0h
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-al0h,parent,"2026-04-01T02:17:03.345Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T02:17:03.345Z",codex-agent,A3 task created from full-override feature A.
+  "2026-04-01T03:01:06.821Z",codex-agent,Expanded before/after hook context payloads (options/global/result) and ensured extension-handled command results are propagated into afterCommand context via setActiveCommandResult in src/cli/main.ts + src/core/output/output.ts.
+notes[1]{created_at,author,text}:
+  "2026-04-01T02:17:03.345Z",codex-agent,Hook context contract must align code and docs exactly.
+files[1]{path,scope,note}:
+  src/core/extensions/loader.ts,project,hook context types and execution
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/integration/cli.integration.spec.ts,null,project,2400,hook lifecycle regression
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,hook context API docs
+close_reason: Hook context parity is implemented for options/global/result across lifecycle paths.
+body: Standardize hook payload shape and ensure deterministic invocation for both successful and failed command execution paths.

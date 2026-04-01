@@ -142,6 +142,7 @@ describe("core/store/settings", () => {
         "embedding_model",
         "embedding_batch_size",
         "scanner_max_batch_retries",
+        "provider",
       ]);
 
       const providers = parsed.providers as Record<string, unknown>;
@@ -150,7 +151,7 @@ describe("core/store/settings", () => {
       expectOrderedObjectKeys(providers.ollama, ["base_url", "model"]);
 
       const vectorStore = parsed.vector_store as Record<string, unknown>;
-      expectOrderedObjectKeys(vectorStore, ["qdrant", "lancedb"]);
+      expectOrderedObjectKeys(vectorStore, ["adapter", "qdrant", "lancedb"]);
       expectOrderedObjectKeys(vectorStore.qdrant, ["url", "api_key"]);
       expectOrderedObjectKeys(vectorStore.lancedb, ["path"]);
 

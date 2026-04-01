@@ -94,6 +94,14 @@ The `api` object provides:
 - `api.registerVectorStoreAdapter(adapter)` — add custom vector store adapters.
 - `api.hooks.beforeCommand/afterCommand/onWrite/onRead/onIndex` — lifecycle hooks.
 
+Use the published SDK import path for extension type contracts:
+
+```ts
+import { defineExtension, type ExtensionApi } from "@unbrained/pm-cli/sdk";
+```
+
+Dispatch behavior is extension-first for registered command handlers: matching extension command paths can replace core command execution at runtime. Keep compatibility in mind and provide explicit rollback instructions (`--no-extensions`) in docs/tests when introducing new override behavior.
+
 Only register capabilities that are listed in your manifest's `capabilities` array. Registration outside declared capabilities fails extension activation deterministically.
 
 Run `pm health` to inspect extension load/activation status and migration summaries.

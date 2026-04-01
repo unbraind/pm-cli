@@ -115,6 +115,7 @@ export const SETTINGS_DEFAULTS: PmSettings = {
     embedding_model: "",
     embedding_batch_size: 32,
     scanner_max_batch_retries: 3,
+    provider: "",
   },
   providers: {
     openai: {
@@ -128,6 +129,7 @@ export const SETTINGS_DEFAULTS: PmSettings = {
     },
   },
   vector_store: {
+    adapter: "",
     qdrant: {
       url: "",
       api_key: "",

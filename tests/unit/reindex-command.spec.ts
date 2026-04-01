@@ -3,7 +3,12 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { runReindex } from "../../src/cli/commands/reindex.js";
-import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
+import {
+  clearActiveExtensionHooks,
+  setActiveExtensionHooks,
+  setActiveExtensionRegistrations,
+} from "../../src/core/extensions/index.js";
+import { createEmptyExtensionRegistrationRegistry } from "../../src/core/extensions/loader.js";
 import { EXIT_CODE } from "../../src/constants.js";
 import { readSettings, writeSettings } from "../../src/settings.js";
 import type { TempPmContext } from "../helpers/withTempPmPath.js";
@@ -69,6 +74,7 @@ function createSeedItem(context: TempPmContext, title: string, body: string, wit
 describe("runReindex", () => {
   afterEach(() => {
     clearActiveExtensionHooks();
+    setActiveExtensionRegistrations(null);
   });
 
   it("fails when tracker is not initialized", async () => {
@@ -257,6 +263,132 @@ describe("runReindex", () => {
         expect(fetchCalls).toEqual([
           "https://api.example.test/v1/embeddings",
           "https://qdrant.example.test:6333/collections/pm_items/points?wait=true",
+          "https://api.example.test/v1/embeddings",
+          "https://qdrant.example.test:6333/collections/pm_items/points?wait=true",
+        ]);
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+  });
+
+  it("supports semantic reindex through extension embedding and vector adapter registrations", async () => {
+    await withTempPmPath(async (context) => {
+      createSeedItem(context, "Extension Semantic", "extension semantic body", false);
+      const settings = await readSettings(context.pmPath);
+      settings.search.provider = "ext-provider";
+      settings.vector_store.adapter = "ext-vector";
+      await writeSettings(context.pmPath, settings);
+
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.search_providers.push({
+        layer: "project",
+        name: "ext-provider-reg",
+        definition: { name: "ext-provider" },
+        runtime_definition: {
+          name: "ext-provider",
+          embedBatch: ({ inputs }: { inputs: string[] }) => inputs.map((_value, index) => [index + 0.1, index + 0.2]),
+        },
+      });
+      const capturedPointIds: string[] = [];
+      registrations.vector_store_adapters.push({
+        layer: "project",
+        name: "ext-vector-reg",
+        definition: { name: "ext-vector" },
+        runtime_definition: {
+          name: "ext-vector",
+          upsert: ({ points }: { points: Array<{ id: string }> }) => {
+            capturedPointIds.push(...points.map((point) => point.id));
+          },
+        },
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const result = await runReindex({ mode: "semantic" }, { path: context.pmPath });
+      expect(result.ok).toBe(true);
+      expect(result.mode).toBe("semantic");
+      expect(result.total_items).toBe(1);
+      expect(result.warnings).toEqual([]);
+      expect(capturedPointIds).toHaveLength(1);
+      expect(capturedPointIds[0]).toMatch(/^pm-/);
+    });
+  });
+
+  it("falls back to built-in semantic providers when extension embedding/upsert handlers fail", async () => {
+    await withTempPmPath(async (context) => {
+      createSeedItem(context, "Fallback Semantic", "fallback body", false);
+      const settings = await readSettings(context.pmPath);
+      settings.search.provider = "ext-provider";
+      settings.vector_store.adapter = "ext-vector";
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
+      await writeSettings(context.pmPath, settings);
+
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.search_providers.push({
+        layer: "project",
+        name: "ext-provider-reg",
+        definition: { name: "ext-provider" },
+        runtime_definition: {
+          name: "ext-provider",
+          embedBatch: () => {
+            throw new Error("extension embed failed");
+          },
+        },
+      });
+      registrations.vector_store_adapters.push({
+        layer: "project",
+        name: "ext-vector-reg",
+        definition: { name: "ext-vector" },
+        runtime_definition: {
+          name: "ext-vector",
+          upsert: () => {
+            throw new Error("extension upsert failed");
+          },
+        },
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const originalFetch = globalThis.fetch;
+      const fetchCalls: string[] = [];
+      globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
+        const target = String(url);
+        fetchCalls.push(target);
+        if (target.endsWith("/v1/embeddings")) {
+          const body = JSON.parse(String(init?.body ?? "{}")) as { input?: string[] };
+          const count = Array.isArray(body.input) ? body.input.length : 1;
+          return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            json: async () => ({
+              data: Array.from({ length: count }, (_value, index) => ({
+                index,
+                embedding: [index + 0.1, index + 0.2],
+              })),
+            }),
+            text: async () => "",
+          } as unknown as Response;
+        }
+        if (target.endsWith("/collections/pm_items/points?wait=true")) {
+          return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            json: async () => ({ result: { status: "acknowledged" } }),
+            text: async () => "",
+          } as unknown as Response;
+        }
+        throw new Error(`Unexpected fetch target: ${target}`);
+      }) as typeof globalThis.fetch;
+
+      try {
+        const result = await runReindex({ mode: "semantic" }, { path: context.pmPath });
+        expect(result.ok).toBe(true);
+        expect(result.warnings.some((warning) => warning.includes('Extension search provider "ext-provider" failed'))).toBe(true);
+        expect(result.warnings.some((warning) => warning.includes('Extension vector adapter "ext-vector" failed'))).toBe(true);
+        expect(fetchCalls).toEqual([
           "https://api.example.test/v1/embeddings",
           "https://qdrant.example.test:6333/collections/pm_items/points?wait=true",
         ]);

@@ -1,0 +1,29 @@
+id: pm-bw3h
+title: "C2: Backward-safe extension SDK compatibility shims"
+description: Provide compatibility adapters and migration guidance so existing extensions continue to work under the formal SDK surface.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:compat","area:sdk",extensions,pm-cli
+created_at: "2026-04-01T02:17:35.097Z"
+updated_at: "2026-04-01T03:02:03.542Z"
+deadline: "2026-04-10T02:17:35.097Z"
+author: codex-agent
+estimated_minutes: 90
+acceptance_criteria: Existing extensions remain operational (or receive deterministic migration path) after SDK export formalization.
+parent: pm-oga6
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-oga6,parent,"2026-04-01T02:17:35.097Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T02:17:35.097Z",codex-agent,C2 task created from full-override feature C.
+  "2026-04-01T03:01:12.243Z",codex-agent,Aligned built-in extension type imports to stable SDK contract (src/extensions/builtins/beads/index.ts and todos/index.ts -> ../../../sdk/index.js) and documented migration-safe import guidance.
+notes[1]{created_at,author,text}:
+  "2026-04-01T02:17:35.097Z",codex-agent,Compatibility behavior must be covered by tests and docs.
+files[1]{path,scope,note}:
+  src/core/extensions/loader.ts,project,compatibility mapping and aliases
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/integration/cli.integration.spec.ts,null,project,2400,extension compatibility regression
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,compatibility and migration guidance
+close_reason: Built-in extension imports aligned to SDK contract and compatibility guidance documented.
+body: Retain behavior for existing extension contracts while introducing stable SDK export paths and updated signatures.

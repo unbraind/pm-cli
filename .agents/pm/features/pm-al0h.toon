@@ -1,0 +1,41 @@
+id: pm-al0h
+title: Core command-dispatch override engine
+description: Implement extension-first command routing that can deterministically replace core command handlers while preserving fallback behavior.
+type: Feature
+status: closed
+priority: 1
+tags[4]: "area:extensions","area:runtime",override,pm-cli
+created_at: "2026-04-01T02:15:39.080Z"
+updated_at: "2026-04-01T03:02:14.609Z"
+deadline: "2026-04-11T02:15:39.080Z"
+author: codex-agent
+estimated_minutes: 300
+acceptance_criteria: Extensions can explicitly replace core command handlers with deterministic precedence/collision diagnostics and fallback-safe behavior.
+definition_of_ready: Router precedence and compatibility rules are documented.
+order: 1
+goal: Total customization platform
+objective: Enable core command replacement
+value: Allows deep runtime customization
+impact: Removes current hard limitation on core command override
+outcome: Core and dynamic commands dispatch through a unified extension-aware router
+why_now: Current overrides only transform post-core results
+parent: pm-x395
+risk: high
+confidence: medium
+component: cli-runtime
+regression: true
+customer_impact: enables true command-level customization
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-x395,parent,"2026-04-01T02:15:39.080Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-01T02:15:39.080Z",codex-agent,Feature A from full-override plan.
+notes[1]{created_at,author,text}:
+  "2026-04-01T02:15:39.080Z",codex-agent,Must keep deterministic fallback for users without extensions.
+files[1]{path,scope,note}:
+  src/cli/main.ts,project,unified command dispatch
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,2400,command dispatch integration coverage
+docs[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,runtime router architecture
+close_reason: All feature A tasks (A1-A3) are complete with passing linked regression tests.
+body: Replace parse-time skip logic with deterministic extension-aware command router for core and dynamic commands.

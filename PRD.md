@@ -978,13 +978,13 @@ discovery diagnostics `extension_capability_unknown:<layer>:<name>:<capability>`
 
 ### 14.4 Extension API contracts (v1 draft)
 
-v0.1 implemented baseline (release-hardening in progress):
+Current implementation (single-wave override model):
 
 - `activate(api)` hook registration surface is available.
 - `api.hooks.beforeCommand/afterCommand/onWrite/onRead/onIndex` dispatch is deterministic with failure containment and per-hook context snapshot isolation.
 - Hook registration APIs (`api.hooks.beforeCommand/afterCommand/onWrite/onRead/onIndex`) require function handlers; invalid payloads throw during extension activation and surface deterministic `extension_activate_failed:<layer>:<name>` warnings.
-- `api.registerCommand(name, override)` supports deterministic overrides for existing core command results before output rendering; override execution receives cloned command `args`/`options`/`global` snapshots, `pm_root`, and a cloned prior result payload so extensions can apply contextual overrides without mutating caller fallback state.
-- `api.registerCommand({ name, run })` supports deterministic extension command handlers for declared command paths, including dynamically surfaced non-core extension command paths (for example `beads import` and `acme sync`) with precedence-safe dispatch.
+- `api.registerCommand(name, override)` supports deterministic synchronous overrides for existing command results before output rendering; override execution receives cloned command `args`/`options`/`global` snapshots, `pm_root`, and a cloned prior result payload so extensions can apply contextual overrides without mutating caller fallback state.
+- `api.registerCommand({ name, run })` supports deterministic extension command handlers for declared command paths, including dynamically surfaced non-core extension command paths (for example `beads import` and `acme sync`) and extension-first replacement of core command handlers at dispatch time.
 - Extension command-handler execution receives cloned `args`/`options`/`global` snapshots so handler-side mutation cannot leak into caller runtime command state.
 - Registered extension command names are canonicalized with trim + lowercase + internal-whitespace collapse before storage and dispatch matching, ensuring equivalent command paths resolve deterministically.
 - Required extension-command dispatch semantics are deterministic: no matched handler returns command-not-found for extension-only paths, while a matched handler throw returns generic failure with warning code `extension_command_handler_failed:<layer>:<name>:<command>`.
@@ -993,9 +993,14 @@ v0.1 implemented baseline (release-hardening in progress):
 - `api.registerImporter(name, importer)` and `api.registerExporter(name, exporter)` now provide runtime command wiring in addition to metadata capture: each registration deterministically exposes extension command-handler paths `<name> import` and `<name> export` (canonicalized with trim + lowercase + internal-whitespace collapse) and executes through the same isolated command-handler context snapshots used by `api.registerCommand({ name, run })`.
 - Dynamically surfaced extension command paths now render deterministic help metadata derived from registered `api.registerFlags(...)` definitions while preserving loose option parsing behavior for runtime command dispatch.
 - Extension API and hook registration calls enforce manifest capability declarations (`commands`, `renderers`, `hooks`, `schema`, `importers`, `search`) and fail activation deterministically when an extension registers outside its declared capabilities.
-- Extension activation diagnostics include deterministic registration counts and metadata summaries for the above registries (flags, item fields, item types, migrations, importers, exporters, search providers, and vector store adapters), `pm health` exposes deterministic migration status summaries from registered migration definitions (`status="failed"` -> failed, `status="applied"` -> applied, any other/missing status -> pending), and core write command paths enforce deterministic mandatory-migration gating (`mandatory=true` + status not `"applied"` -> unresolved blocker, with `--force` bypass on force-capable write commands).
+- Extension activation diagnostics include deterministic registration counts and metadata summaries for the above registries (flags, item fields, item types, migrations, importers, exporters, search providers, and vector store adapters), `pm health` exposes deterministic migration status summaries from registered migration definitions (`status="failed"` -> failed, `status="applied"` -> applied, any other/missing status -> pending), and core write command paths enforce deterministic mandatory-migration gating (`mandatory=true` + status not `"applied"` -> unresolved blocker, with `--force` bypass on force-capable write commands). Mandatory extension migrations are executed in pre-action lifecycle before write-gate enforcement.
+- Registration runtime wiring is live for:
+  - item-field defaults + validation on create/update (`registerItemFields`)
+  - search provider selection via `settings.search.provider` (`registerSearchProvider`)
+  - vector adapter query/upsert selection via `settings.vector_store.adapter` (`registerVectorStoreAdapter`)
+  - migration runtime execution and mandatory gate evaluation (`registerMigration`)
 
-Full v1 draft surface (broader runtime wiring for remaining newly registered definitions beyond dynamic command help and importer/exporter command-path mapping remains roadmap):
+Full v1 draft surface:
 
 ```ts
 export interface PmExtension {

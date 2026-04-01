@@ -1,0 +1,102 @@
+import { describe, expect, it } from "vitest";
+import { applyRegisteredItemFieldDefaultsAndValidation } from "../../src/core/extensions/item-fields.js";
+import { createEmptyExtensionRegistrationRegistry, type ExtensionRegistrationRegistry } from "../../src/core/extensions/loader.js";
+
+function withFields(fields: Array<Record<string, unknown>>): ExtensionRegistrationRegistry {
+  const registrations = createEmptyExtensionRegistrationRegistry();
+  registrations.item_fields.push({
+    layer: "project",
+    name: "test-extension",
+    fields,
+  });
+  return registrations;
+}
+
+describe("extensions item field runtime wiring", () => {
+  it("applies defaults and validates values when registrations are present", () => {
+    const frontMatter: Record<string, unknown> = {};
+    applyRegisteredItemFieldDefaultsAndValidation(
+      frontMatter,
+      withFields([
+        { name: "team", type: "string", default: "platform" },
+        { name: "size", type: "number", default: 3 },
+      ]),
+    );
+    expect(frontMatter).toEqual({
+      team: "platform",
+      size: 3,
+    });
+  });
+
+  it("does nothing when registrations are absent", () => {
+    const frontMatter: Record<string, unknown> = {};
+    applyRegisteredItemFieldDefaultsAndValidation(frontMatter, null);
+    expect(frontMatter).toEqual({});
+  });
+
+  it("accepts supported field types", () => {
+    const frontMatter: Record<string, unknown> = {
+      text_value: "ok",
+      number_value: 1,
+      boolean_value: true,
+      array_value: ["a"],
+      object_value: { key: "value" },
+    };
+    applyRegisteredItemFieldDefaultsAndValidation(
+      frontMatter,
+      withFields([
+        { name: "text_value", type: "string" },
+        { name: "number_value", type: "number" },
+        { name: "boolean_value", type: "boolean" },
+        { name: "array_value", type: "array" },
+        { name: "object_value", type: "object" },
+      ]),
+    );
+    expect(frontMatter.object_value).toEqual({ key: "value" });
+  });
+
+  it("throws for type mismatch and allowed value mismatch", () => {
+    expect(() =>
+      applyRegisteredItemFieldDefaultsAndValidation(
+        { severity: "high" },
+        withFields([{ name: "severity", type: "number" }]),
+      ),
+    ).toThrow('Item field "severity" must be of type number');
+
+    expect(() =>
+      applyRegisteredItemFieldDefaultsAndValidation(
+        { status: "blocked" },
+        withFields([{ name: "status", type: "string", values: ["open", "closed"] }]),
+      ),
+    ).toThrow('Item field "status" must match one of the configured allowed values');
+  });
+
+  it("skips invalid field names and unknown field types", () => {
+    const frontMatter: Record<string, unknown> = { tracked: 42 };
+    applyRegisteredItemFieldDefaultsAndValidation(
+      frontMatter,
+      withFields([
+        { name: "   ", default: "ignored" },
+        { name: "tracked", type: "nonsense-type" },
+      ]),
+    );
+    expect(frontMatter).toEqual({ tracked: 42 });
+  });
+
+  it("clones cloneable defaults and preserves non-cloneable defaults", () => {
+    const objectDefault = { nested: { value: 1 } };
+    const functionDefault = () => "fallback";
+    const frontMatter: Record<string, unknown> = {};
+    applyRegisteredItemFieldDefaultsAndValidation(
+      frontMatter,
+      withFields([
+        { name: "object_default", default: objectDefault },
+        { name: "function_default", default: functionDefault },
+      ]),
+    );
+
+    expect(frontMatter.object_default).toEqual({ nested: { value: 1 } });
+    expect(frontMatter.object_default).not.toBe(objectDefault);
+    expect(frontMatter.function_default).toBe(functionDefault);
+  });
+});

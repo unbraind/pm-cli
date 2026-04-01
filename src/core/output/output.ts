@@ -1,4 +1,4 @@
-import { runActiveCommandOverride, runActiveRendererOverride } from "../extensions/index.js";
+import { runActiveCommandOverride, runActiveRendererOverride, setActiveCommandResult } from "../extensions/index.js";
 
 export interface OutputOptions {
   json?: boolean;
@@ -63,6 +63,7 @@ function renderToonValue(value: unknown, depth: number): string {
 export function formatOutput(result: unknown, options: OutputOptions): string {
   const commandOverride = runActiveCommandOverride(result);
   const effectiveResult = commandOverride.result;
+  setActiveCommandResult(effectiveResult);
   const format = options.json ? "json" : "toon";
   const rendererOverride = runActiveRendererOverride(format, effectiveResult);
   if (rendererOverride.rendered !== null) {

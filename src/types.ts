@@ -256,6 +256,7 @@ export interface PmSettings {
     embedding_model: string;
     embedding_batch_size: number;
     scanner_max_batch_retries: number;
+    provider?: string;
     tuning?: {
       title_exact_bonus?: number;
       title_weight?: number;
@@ -282,6 +283,7 @@ export interface PmSettings {
     };
   };
   vector_store: {
+    adapter?: string;
     qdrant: {
       url: string;
       api_key: string;

@@ -1,0 +1,29 @@
+id: pm-twpm
+title: "B3: Executable extension migration lifecycle"
+description: Implement execution and status lifecycle handling for extension migrations including pending/applied/failed transitions.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:extensions","area:migrations",pm-cli,runtime
+created_at: "2026-04-01T02:17:22.189Z"
+updated_at: "2026-04-01T03:02:01.622Z"
+deadline: "2026-04-10T02:17:22.189Z"
+author: codex-agent
+estimated_minutes: 160
+acceptance_criteria: Extension migrations can be executed and lifecycle status is reflected consistently in runtime gating and health diagnostics.
+parent: pm-zd6y
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-zd6y,parent,"2026-04-01T02:17:22.189Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T02:17:22.189Z",codex-agent,B3 task created from full-override feature B.
+  "2026-04-01T03:01:10.207Z",codex-agent,Integrated executable extension migration lifecycle in preAction flow (executeRegisteredRuntimeMigrations + mandatory gate checks) in src/cli/main.ts.
+notes[1]{created_at,author,text}:
+  "2026-04-01T02:17:22.189Z",codex-agent,Keep mandatory gating deterministic and force-bypass semantics unchanged.
+files[1]{path,scope,note}:
+  src/cli/main.ts,project,migration execution and gating flow
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/unit/health-command.spec.ts,null,project,2400,migration lifecycle regression
+docs[1]{path,scope,note}:
+  PRD.md,project,migration lifecycle contract
+close_reason: Extension migration execution lifecycle and mandatory gate enforcement are integrated in pre-action flow.
+body: Support deterministic migration execution hooks and state reporting while preserving mandatory write gating behavior.

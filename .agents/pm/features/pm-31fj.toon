@@ -1,0 +1,40 @@
+id: pm-31fj
+title: "Documentation, migration, and safety posture"
+description: Update all user/developer/security/agent docs for the full-override extension model and migration guidance.
+type: Feature
+status: closed
+priority: 1
+tags[4]: "area:docs","area:extensions","area:security",pm-cli
+created_at: "2026-04-01T02:16:05.793Z"
+updated_at: "2026-04-01T03:02:16.843Z"
+deadline: "2026-04-11T02:16:05.793Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: README/PRD/EXTENSIONS/ARCHITECTURE/CHANGELOG/CONTRIBUTING/SECURITY/AGENTS are updated and internally consistent with new runtime behavior.
+definition_of_ready: Doc inventory and required behavior deltas are identified.
+order: 4
+goal: Total customization platform
+objective: Deliver complete docs and migration coverage
+value: Reduces confusion and upgrade risk
+impact: Keeps extension behavior discoverable and safe
+outcome: All extension and SDK behavior is documented with migration guidance
+why_now: Current docs contain signature and behavior drift
+parent: pm-x395
+risk: medium
+confidence: high
+component: documentation
+customer_impact: users can adopt override features safely with clear guidance
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-x395,parent,"2026-04-01T02:16:05.793Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-01T02:16:05.793Z",codex-agent,Feature D from full-override plan.
+notes[1]{created_at,author,text}:
+  "2026-04-01T02:16:05.793Z",codex-agent,Docs must prioritize compatibility and safety defaults.
+files[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,primary extension author contract
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,release docs contract checks
+docs[1]{path,scope,note}:
+  SECURITY.md,project,extension trust and disclosure posture
+close_reason: All feature D documentation/security tasks are complete and linked docs/tests pass.
+body: Align docs with runtime behavior and document compatibility/trust-model controls for stronger extension powers.

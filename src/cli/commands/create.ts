@@ -19,6 +19,7 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { isNoneToken, nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
 import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../core/extensions/index.js";
+import { applyRegisteredItemFieldDefaultsAndValidation } from "../../core/extensions/item-fields.js";
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type {
@@ -936,6 +937,14 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     reminders: reminders.values,
     events: events.values,
   });
+  try {
+    applyRegisteredItemFieldDefaultsAndValidation(
+      frontMatter as unknown as Record<string, unknown>,
+      getActiveExtensionRegistrations(),
+    );
+  } catch (error: unknown) {
+    throw new PmCliError(error instanceof Error ? error.message : "Invalid extension item field values", EXIT_CODE.USAGE);
+  }
 
   const afterDocument: ItemDocument = canonicalDocument({
     front_matter: frontMatter,
