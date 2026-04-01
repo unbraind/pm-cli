@@ -2,11 +2,11 @@ id: pm-t2hj
 title: Command-Aware Human Output Redesign
 description: "Redesign non-JSON CLI output into command-aware, actionable summaries while keeping deterministic behavior and JSON compatibility for automation."
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[4]: "area:cli","area:output","area:ux",pm-cli
 created_at: "2026-04-01T12:38:42.224Z"
-updated_at: "2026-04-01T12:38:42.224Z"
+updated_at: "2026-04-01T12:57:13.220Z"
 deadline: "2026-04-11T12:38:42.224Z"
 author: codex-agent
 estimated_minutes: 260
@@ -38,4 +38,5 @@ tests[1]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/output.spec.ts,null,project,1800,Output renderer regressions
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,Output pipeline documentation
+close_reason: Command-aware non-JSON output redesign delivered.
 body: "Feature C: command-aware output"
