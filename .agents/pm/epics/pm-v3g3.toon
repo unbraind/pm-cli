@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: agent-experience,"area:cli","area:comments","area:docs",pm-cli,ux
 created_at: "2026-04-01T11:05:40.951Z"
-updated_at: "2026-04-01T11:19:03.541Z"
+updated_at: "2026-04-01T11:20:09.088Z"
 deadline: "2026-04-08T11:05:40.951Z"
 author: codex-agent
 estimated_minutes: 240
@@ -24,9 +24,10 @@ confidence: high
 component: cli-comments
 regression: true
 customer_impact: Agents and users can add comments reliably without syntax friction
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-01T11:05:40.951Z",codex-agent,User-reported recurring too-many-arguments failure when passing comment text positionally.
   "2026-04-01T11:18:50.471Z",codex-agent,"Epic evidence: shipped intuitive comments UX fix without breaking existing syntax; tests pass across linked suites and docs are updated. Residual known blocker is repository-wide 100% global coverage threshold shortfall, unchanged by this feature."
+  "2026-04-01T11:20:09.088Z",codex-agent,"Pushed implementation commit 765a7de to origin/main with comments shorthand fix, tests, and docs updates."
 notes[1]{created_at,author,text}:
   "2026-04-01T11:05:40.951Z",codex-agent,Preserve existing --add behavior and avoid regressions for current users.
 files[1]{path,scope,note}:
