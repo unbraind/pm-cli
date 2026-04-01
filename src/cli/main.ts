@@ -1966,19 +1966,26 @@ program
 program
   .command("comments")
   .argument("<id>", "Item id")
+  .argument("[text]", "Optional comment text shorthand (equivalent to --add; use - for stdin)")
   .option("--add <text>", "Add one comment entry (plain text, text=<value>, markdown pairs, or - for stdin)")
   .option("--limit <n>", "Return only latest n comments")
-  .option("--author <value>", "Comment author")
+  .option("--author [value]", "Comment author (optional; falls back to PM_AUTHOR/settings)")
   .option("--message <value>", "History message")
   .option("--force", "Force ownership override")
   .description("List or add comments for an item.")
-  .action(async (id: string, options: Record<string, unknown>, command) => {
+  .action(async (id: string, text: string | undefined, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
+    const addFromOption = typeof options.add === "string" ? options.add : undefined;
+    const addFromPositional = typeof text === "string" ? text : undefined;
+    if (addFromOption !== undefined && addFromPositional !== undefined) {
+      throw new PmCliError("Specify comment text either as positional [text] or with --add, not both", EXIT_CODE.USAGE);
+    }
+    const add = addFromOption ?? addFromPositional;
     const result = await runComments(
       id,
       {
-        add: typeof options.add === "string" ? options.add : undefined,
+        add,
         limit: typeof options.limit === "string" ? options.limit : undefined,
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
@@ -1986,7 +1993,7 @@ program
       },
       globalOptions,
     );
-    if (typeof options.add === "string") {
+    if (typeof add === "string") {
       await invalidateSearchCachesForMutation(globalOptions, result);
     }
     printResult(result, globalOptions);

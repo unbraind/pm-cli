@@ -589,7 +589,7 @@ Default output note:
 - `pm claim <ID>`
 - `pm release <ID>`
 - `pm delete <ID>`
-- `pm comments <ID>`
+- `pm comments <ID> [TEXT]`
 - `pm files <ID>`
 - `pm docs <ID>`
 - `pm test <ID>`
@@ -782,7 +782,7 @@ All commands return deterministic top-level objects (TOON by default, JSON with 
 | `pm append <ID> --body` | id + appended markdown (`--body -` reads piped stdin) | `{ item, appended, changed_fields }` |
 | `pm claim <ID>` | id, optional `--author`/`--message`/`--force` | `{ item, claimed_by, previous_assignee, forced }` |
 | `pm release <ID>` | id, optional `--author`/`--message`/`--force` | `{ item, released_by, previous_assignee, forced }` |
-| `pm comments <ID> --add/--limit` | id + comment text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`) | `{ id, comments, count }` |
+| `pm comments <ID> [TEXT] --add/--limit` | id + optional positional comment text shorthand + comment text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`) | `{ id, comments, count }` |
 | `pm files <ID> --add/--remove` | id + file refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`) | `{ id, files, changed, count }` |
 | `pm test <ID> --add/--remove/--run` | id + test refs/options (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`; reject recursive `test-all` linked commands at add-time, including global-flag and package-spec launcher forms such as `pm --json test-all`, `npx @unbrained/pm-cli@latest --json test-all`, `pnpm dlx @unbrained/pm-cli@latest --json test-all`, and `npm exec -- @unbrained/pm-cli@latest --json test-all`; defensively skip legacy recursive entries at run-time; reject sandbox-unsafe test-runner commands including unsandboxed direct package-manager run-script forms such as `npm run test`/`pnpm run test` and chained direct runner segments evaluated independently) | `{ id, tests, run_results, changed, count }` |
 | `pm test-all --status --timeout` | optional status filter; duplicate linked command/path entries are deduped per invocation (keyed by scope+normalized command or scope+path) and reported as skipped; when duplicate keys carry different `timeout_seconds`, execution uses deterministic maximum timeout for that key | `{ totals, failed, passed, skipped, results }` |

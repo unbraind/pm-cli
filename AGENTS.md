@@ -92,7 +92,7 @@ Attach references to keep work reproducible:
 
 Use append-style updates:
 
-- `pm comments <ID> --add "Implemented lock retry path"`
+- `pm comments <ID> "Implemented lock retry path"` (or `--add "..."` for structured/stdin forms)
 - `pm update <ID> --status in_progress`
 - `pm append <ID> --body "Detailed implementation notes..."`
 
@@ -114,7 +114,7 @@ Before close:
    - `pm test-all --status closed` (when running a broader release-readiness regression sweep)
    - Avoid linking `pm test-all` itself as an item-level linked test command, since that creates recursive orchestration.
 4. Add closure evidence:
-   - `pm comments <ID> --add "Evidence: tests X, Y passed; coverage remains 100%."`
+   - `pm comments <ID> "Evidence: tests X, Y passed; coverage remains 100%."` (or `--add "..."`)
 
 Close (current v0.1 workflow):
 
@@ -221,7 +221,7 @@ pm update pm-a1b2 --status in_progress --description "Implement restore replay"
 pm update pm-a1b2 --reminder "at=+1d,text=Follow up on restore replay tests"
 pm files pm-a1b2 --add path=src/history.ts,scope=project,note="restore implementation"
 pm test pm-a1b2 --add command="node scripts/run-tests.mjs test",scope=project,timeout_seconds=240
-pm comments pm-a1b2 --add "Restore replay implemented with hash checks"
+pm comments pm-a1b2 "Restore replay implemented with hash checks"
 pm calendar --view agenda --assignee codex-agent --format markdown
 pm test pm-a1b2 --run
 node scripts/run-tests.mjs coverage

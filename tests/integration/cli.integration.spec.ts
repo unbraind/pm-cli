@@ -1095,6 +1095,21 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         { expectJson: true },
       );
       expect(addComment.code).toBe(0);
+      const addCommentPositional = context.runCli(
+        ["comments", id, "Integration shorthand comment", "--json", "--author", "integration-test"],
+        {
+        expectJson: true,
+        },
+      );
+      expect(addCommentPositional.code).toBe(0);
+      const addCommentPositionalJson = addCommentPositional.json as { comments: Array<{ text: string; author: string }> };
+      expect(addCommentPositionalJson.comments.at(-1)?.text).toBe("Integration shorthand comment");
+      expect(addCommentPositionalJson.comments.at(-1)?.author).toBe("integration-test");
+
+      const conflictingCommentArgs = context.runCli(["comments", id, "positional comment", "--add", "flag comment"]);
+      expect(conflictingCommentArgs.code).toBe(2);
+      expect(conflictingCommentArgs.stderr).toContain("Specify comment text either as positional [text] or with --add, not both");
+
       const listComments = context.runCli(["comments", id, "--json", "--limit", "1"], { expectJson: true });
       expect(listComments.code).toBe(0);
 

@@ -1,0 +1,39 @@
+id: pm-v3g3
+title: Agent-friendly comments command UX hardening
+description: Eliminate common agent failures when adding comments by supporting intuitive positional text while preserving backward compatibility.
+type: Epic
+status: closed
+priority: 1
+tags[6]: agent-experience,"area:cli","area:comments","area:docs",pm-cli,ux
+created_at: "2026-04-01T11:05:40.951Z"
+updated_at: "2026-04-01T11:19:03.541Z"
+deadline: "2026-04-08T11:05:40.951Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: Agents can add comments with positional text or --add; docs are updated; tests confirm no regressions for current users.
+definition_of_ready: Deep research confirms no active duplicate item for this exact comments positional-argument failure.
+order: 1
+goal: Agent-first CLI ergonomics
+objective: Make comment addition intuitive and resilient
+value: Reduces frequent agent command failures and retry loops
+impact: Improves reliability of scripted and autonomous pm workflows
+outcome: Comments command supports intuitive shorthand with deterministic behavior
+why_now: Frequent argument errors are disrupting agent productivity
+risk: medium
+confidence: high
+component: cli-comments
+regression: true
+customer_impact: Agents and users can add comments reliably without syntax friction
+comments[2]{created_at,author,text}:
+  "2026-04-01T11:05:40.951Z",codex-agent,User-reported recurring too-many-arguments failure when passing comment text positionally.
+  "2026-04-01T11:18:50.471Z",codex-agent,"Epic evidence: shipped intuitive comments UX fix without breaking existing syntax; tests pass across linked suites and docs are updated. Residual known blocker is repository-wide 100% global coverage threshold shortfall, unchanged by this feature."
+notes[1]{created_at,author,text}:
+  "2026-04-01T11:05:40.951Z",codex-agent,Preserve existing --add behavior and avoid regressions for current users.
+files[1]{path,scope,note}:
+  src/cli/main.ts,project,comments command argument parsing
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,3600,targeted comments regression suite
+docs[1]{path,scope,note}:
+  README.md,project,user-facing comments usage guidance
+close_reason: "Epic completed: agent-friendly comments UX hardening delivered with implementation, tests, and docs updates."
+body: "Scope: comments command ergonomics, compatibility behavior, docs parity, and regression coverage."

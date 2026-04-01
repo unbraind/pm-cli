@@ -401,6 +401,7 @@ describe("release readiness runtime coverage", () => {
       for (const flag of REQUIRED_COMMENTS_FLAGS) {
         expect(commentsHelp.stdout).toContain(flag);
       }
+      expect(commentsHelp.stdout).toContain("Usage: pm comments [options] <id> [text]");
       expect(commentsHelp.stdout).not.toContain("Add one comment entry (default: [])");
     });
   });
@@ -676,6 +677,12 @@ describe("release readiness runtime coverage", () => {
       });
       expect(commentsResult.code).toBe(0);
       expectTopLevelKeyOrder(commentsResult.json, ["id", "comments", "count"]);
+
+      const commentsPositionalResult = context.runCli(["comments", createdId, "runtime comment positional", "--json", "--author"], {
+        expectJson: true,
+      });
+      expect(commentsPositionalResult.code).toBe(0);
+      expectTopLevelKeyOrder(commentsPositionalResult.json, ["id", "comments", "count"]);
 
       const filesResult = context.runCli(
         ["files", createdId, "--add", "path=src/cli.ts,scope=project,note=runtime file", "--json"],

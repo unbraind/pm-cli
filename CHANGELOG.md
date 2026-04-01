@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added stable SDK package exports at `@unbrained/pm-cli/sdk` with public extension type contracts and `defineExtension(...)` helper.
 
 ### Changed
+- `pm comments` now accepts optional positional text shorthand (`pm comments <ID> "<text>"`) as an intuitive alias for `--add <text>`, and tolerates bare `--author` by falling back to existing author resolution (`PM_AUTHOR` -> settings default -> `unknown`).
 - Default `list*` output remains front-matter-only; `body` projection is now explicit and opt-in via `--include-body` to preserve lightweight list payloads.
 - Calendar command output now defaults to markdown for agent/human readability while preserving explicit `--format toon|json|markdown` and global `--json` overrides; all other commands keep existing TOON-default behavior.
 - Calendar markdown summaries now include scheduled-event counts and event rendering includes recurring/location metadata where present.

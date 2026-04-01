@@ -1,0 +1,43 @@
+id: pm-k0mr
+title: "C2: Add comments shorthand regression coverage"
+description: Extend integration/runtime coverage to lock in positional comments shorthand behavior and prevent regressions.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:comments","area:tests",compatibility,pm-cli
+created_at: "2026-04-01T11:06:17.554Z"
+updated_at: "2026-04-01T11:19:01.550Z"
+deadline: "2026-04-03T11:06:17.554Z"
+author: codex-agent
+estimated_minutes: 50
+acceptance_criteria: Integration tests verify positional comments shorthand succeeds; conflict behavior is deterministic; help contract remains stable.
+definition_of_ready: Command parsing design is identified and implementation task exists.
+order: 2
+goal: Agent-first CLI ergonomics
+objective: Prevent behavioral regressions
+value: Protects existing users and scripts
+impact: Confidence for release and automation
+outcome: Regression suite catches comments invocation regressions
+why_now: Parser change needs explicit contract tests
+parent: pm-cvwi
+risk: low
+confidence: high
+component: cli-comments
+regression: true
+customer_impact: Users receive a safe fix with verified compatibility
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-cvwi,parent,"2026-04-01T11:06:17.554Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T11:06:17.554Z",codex-agent,Task captures targeted tests for shorthand compatibility and no-regression behavior.
+  "2026-04-01T11:18:49.095Z",codex-agent,"Regression coverage added and passing: integration lifecycle tests plus release-readiness runtime help/key-order contracts now validate comments shorthand usage and command help usage line."
+notes[1]{created_at,author,text}:
+  "2026-04-01T11:06:17.554Z",codex-agent,Cover both direct runComments behavior and command-line invocation behavior.
+files[2]{path,scope,note}:
+  tests/integration/cli.integration.spec.ts,project,comments shorthand invocation test
+  tests/integration/release-readiness-runtime.spec.ts,project,help usage and positional shorthand runtime contract
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/comments-command.spec.ts,null,project,3600,targeted comments + help contract suite
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,record behavior change in unreleased notes
+close_reason: Regression coverage added for shorthand and help/runtime contract; linked test suite passes.
+body: Testing task for comments shorthand and help/runtime contract parity.

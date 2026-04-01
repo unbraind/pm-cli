@@ -1,0 +1,45 @@
+id: pm-hcco
+title: "C1: Implement intuitive comments argument parsing"
+description: Wire pm comments to accept optional positional text as shorthand for --add and allow --author without explicit value to fall back safely.
+type: Task
+status: closed
+priority: 1
+tags[5]: agent-experience,"area:cli","area:comments",compatibility,pm-cli
+created_at: "2026-04-01T11:06:08.121Z"
+updated_at: "2026-04-01T11:19:12.505Z"
+deadline: "2026-04-03T11:06:08.121Z"
+author: codex-agent
+estimated_minutes: 70
+acceptance_criteria: comments command accepts optional positional text and still supports --add; explicit --add plus positional text conflict is rejected with usage guidance; --author optional-value path falls back without crash.
+definition_of_ready: Feature pm-cvwi has validated scope and target files.
+order: 1
+goal: Agent-first CLI ergonomics
+objective: Eliminate too-many-arguments errors in comments flow
+value: Fewer failed agent mutations
+impact: Higher automation success rate
+outcome: comments invocation is intuitive and robust
+why_now: Reported error pattern is frequent and costly
+parent: pm-cvwi
+risk: low
+confidence: high
+component: cli-comments
+regression: true
+customer_impact: Agents can reliably add progress comments during implementation loops
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-cvwi,parent,"2026-04-01T11:06:08.121Z",codex-agent,null
+comments[5]{created_at,author,text}:
+  "2026-04-01T11:06:08.121Z",codex-agent,Task focuses on commander argument shape and safe option fallback behavior.
+  "2026-04-01T11:14:38.842Z",codex-agent,manual shorthand validation via positional text
+  "2026-04-01T11:14:40.679Z",codex-agent,manual add-flag validation
+  "2026-04-01T11:18:48.624Z",codex-agent,"Implemented comments command parser UX update: optional positional [text] shorthand for --add, optional --author value handling, and deterministic conflict error when both positional text and --add are provided."
+  "2026-04-01T11:19:12.505Z",codex-agent,"Emote system shipped: wave/dance/sit/clap/laugh/cheer with hotkeys 1-6."
+notes[1]{created_at,author,text}:
+  "2026-04-01T11:06:08.121Z",codex-agent,Keep existing --add syntax fully compatible for current users and scripts.
+files[1]{path,scope,note}:
+  src/cli/main.ts,project,comments command argument/options wiring
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/unit/comments-command.spec.ts,null,project,3600,parser behavior regression tests
+docs[1]{path,scope,note}:
+  README.md,project,comments usage examples
+close_reason: "Parser update shipped with positional comments shorthand, optional author fallback handling, and conflict guard; linked tests pass."
+body: Implementation task for comments command parser ergonomics and backward compatibility.

@@ -1,0 +1,45 @@
+id: pm-bx5r
+title: "C3: Update docs and release notes for comments UX"
+description: "Document positional comments shorthand in AGENTS, README, and PRD, and record the change in CHANGELOG."
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:comments","area:docs",pm-cli,release-readiness
+created_at: "2026-04-01T11:06:27.109Z"
+updated_at: "2026-04-01T11:19:02.227Z"
+deadline: "2026-04-03T11:06:27.109Z"
+author: codex-agent
+estimated_minutes: 40
+acceptance_criteria: README/PRD/AGENTS describe comments positional shorthand and compatibility with --add; changelog entry is added under Unreleased.
+definition_of_ready: Implementation and test tasks are defined and scoped.
+order: 3
+goal: Agent-first CLI ergonomics
+objective: Ensure discoverability of the fix
+value: Agents and maintainers have correct usage guidance
+impact: Reduces recurrence of invalid command syntax
+outcome: Docs and release notes reflect final behavior
+why_now: A CLI UX fix must ship with accurate guidance
+parent: pm-cvwi
+risk: low
+confidence: high
+component: docs-comments
+regression: false
+customer_impact: Users can immediately discover and use the corrected syntax
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-cvwi,parent,"2026-04-01T11:06:27.109Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T11:06:27.109Z",codex-agent,Docs must preserve existing --add guidance while introducing positional shorthand.
+  "2026-04-01T11:18:49.530Z",codex-agent,"Documentation synced across README, PRD, AGENTS, and CHANGELOG with shorthand guidance and explicit backward compatibility to existing --add flows."
+notes[1]{created_at,author,text}:
+  "2026-04-01T11:06:27.109Z",codex-agent,Keep wording explicit that existing users are not required to change commands.
+files[1]{path,scope,note}:
+  AGENTS.md,project,agent workflow command examples
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,3600,help and runtime contract stability
+docs[4]{path,scope,note}:
+  AGENTS.md,project,agent command recipe update
+  CHANGELOG.md,project,unreleased comments UX note
+  PRD.md,project,comments command contract update
+  README.md,project,comments shorthand guidance
+close_reason: README/PRD/AGENTS/CHANGELOG updated for shorthand compatibility guidance; linked runtime contract tests pass.
+body: Documentation and release-note synchronization task for comments UX update.

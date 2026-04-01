@@ -143,7 +143,8 @@ pm files pm-a1b2 --add "path: src/cli/main.ts,scope: project,note: cli wiring"
 pm docs pm-a1b2 --add $'- path: README.md\n- scope: project\n- note: docs sync'
 pm test pm-a1b2 --add $'command: node scripts/run-tests.mjs test\nscope: project\ntimeout_seconds: 240'
 
-# Comments can be plain text, text=<value>, or text: <value>
+# Comments can be added positionally or with --add
+pm comments pm-a1b2 "captured from shorthand positional text"
 pm comments pm-a1b2 --add "text: captured from markdown formatter"
 
 # Pipe markdown payload via stdin with "-"
