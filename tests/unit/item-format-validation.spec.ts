@@ -44,7 +44,7 @@ describe("item-format front-matter validation", () => {
   });
 
   it("throws on invalid type, status, and priority", () => {
-    expect(() => parseItemDocument(buildSource({ type: "Bug" }))).toThrow("type must be one of");
+    expect(() => parseItemDocument(buildSource({ type: "   " }))).toThrow("type must be a non-empty string");
     expect(() => parseItemDocument(buildSource({ status: "doing" }))).toThrow("status must be one of");
     expect(() => parseItemDocument(buildSource({ priority: 7 }))).toThrow("priority must be an integer 0..4");
   });

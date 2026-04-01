@@ -41,6 +41,7 @@ describe("shared constants and errors contracts", () => {
       "description",
       "type",
       "source_type",
+      "type_options",
       "status",
       "priority",
       "tags",
@@ -107,6 +108,7 @@ describe("shared constants and errors contracts", () => {
     expect(SETTINGS_DEFAULTS.author_default).toBe("");
     expect(SETTINGS_DEFAULTS.locks.ttl_seconds).toBe(1800);
     expect(SETTINGS_DEFAULTS.output.default_format).toBe("toon");
+    expect(SETTINGS_DEFAULTS.item_types.definitions).toEqual([]);
     expect(SETTINGS_DEFAULTS.extensions.enabled).toEqual([]);
     expect(SETTINGS_DEFAULTS.extensions.disabled).toEqual([]);
     expect(SETTINGS_DEFAULTS.search).toEqual({

@@ -1,9 +1,15 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
+import {
+  resolveItemTypeRegistry,
+  resolveTypeName,
+  validateTypeOptions,
+} from "../../core/item/type-registry.js";
 import { parseCsvKv, parseOptionalNumber, parseTags } from "../../core/item/parse.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { isNoneToken, resolveIsoOrRelative } from "../../core/shared/time.js";
+import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -11,7 +17,6 @@ import type { CalendarEvent, RecurrenceRule, Reminder } from "../../types/index.
 import {
   CONFIDENCE_TEXT_VALUES,
   ISSUE_SEVERITY_VALUES,
-  ITEM_TYPE_VALUES,
   RECURRENCE_FREQUENCY_VALUES,
   RECURRENCE_WEEKDAY_VALUES,
   RISK_VALUES,
@@ -64,6 +69,7 @@ export interface UpdateCommandOptions {
   customerImpact?: string;
   reminder?: string[];
   event?: string[];
+  typeOption?: string[];
 }
 
 export interface UpdateResult {
@@ -303,6 +309,38 @@ function parseEventEntries(raw: string[], nowValue: Date): CalendarEvent[] {
   });
 }
 
+function parseTypeOptionEntries(raw: string[]): Record<string, string> {
+  const values: Record<string, string> = {};
+  for (const entry of raw) {
+    const trimmedEntry = entry.trim();
+    if (trimmedEntry.length === 0) {
+      throw new PmCliError("--type-option values must not be empty", EXIT_CODE.USAGE);
+    }
+    let key: string | undefined;
+    let value: string | undefined;
+    if (trimmedEntry.includes(",")) {
+      const kv = parseCsvKv(trimmedEntry, "--type-option");
+      key = kv.key?.trim();
+      value = kv.value?.trim();
+    } else {
+      const separatorIndex = trimmedEntry.indexOf("=");
+      if (separatorIndex <= 0 || separatorIndex === trimmedEntry.length - 1) {
+        throw new PmCliError(
+          "--type-option requires key=value or key=<name>,value=<value> entries",
+          EXIT_CODE.USAGE,
+        );
+      }
+      key = trimmedEntry.slice(0, separatorIndex).trim();
+      value = trimmedEntry.slice(separatorIndex + 1).trim();
+    }
+    if (!key || !value) {
+      throw new PmCliError("--type-option requires key and value", EXIT_CODE.USAGE);
+    }
+    values[key] = value;
+  }
+  return Object.fromEntries(Object.entries(values).sort((left, right) => left[0].localeCompare(right[0])));
+}
+
 function ensurePriority(raw: string): 0 | 1 | 2 | 3 | 4 {
   const parsed = parseOptionalNumber(raw, "priority");
   if (![0, 1, 2, 3, 4].includes(parsed)) {
@@ -317,6 +355,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
   const settings = await readSettings(pmRoot);
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const author = toAuthor(options.author, settings.author_default);
   const nowValue = new Date();
 
@@ -363,6 +402,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     options.customerImpact !== undefined,
     options.reminder !== undefined,
     options.event !== undefined,
+    options.typeOption !== undefined,
   ].some(Boolean);
 
   if (!changedFlags) {
@@ -375,6 +415,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   const result = await mutateItem({
     pmRoot,
     settings,
+    typeToFolder: typeRegistry.type_to_folder,
     id,
     op: "update",
     author,
@@ -382,6 +423,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     force: options.force,
     mutate(document) {
       const changedFields: string[] = [];
+      let activeTypeName = resolveTypeName(document.front_matter.type, typeRegistry) ?? document.front_matter.type;
 
       if (options.title !== undefined) {
         document.front_matter.title = options.title;
@@ -410,8 +452,44 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         changedFields.push("priority");
       }
       if (options.type !== undefined) {
-        document.front_matter.type = ensureEnum(options.type, ITEM_TYPE_VALUES, "type");
+        if (isNoneToken(options.type)) {
+          throw new PmCliError("--type cannot be none", EXIT_CODE.USAGE);
+        }
+        const resolvedTypeName = resolveTypeName(options.type, typeRegistry);
+        if (!resolvedTypeName) {
+          throw new PmCliError(
+            `Invalid type value "${options.type}". Allowed: ${typeRegistry.types.join(", ")}`,
+            EXIT_CODE.USAGE,
+          );
+        }
+        document.front_matter.type = resolvedTypeName;
+        activeTypeName = resolvedTypeName;
         changedFields.push("type");
+      }
+      if (options.typeOption !== undefined) {
+        if (options.typeOption.some((entry) => isNoneToken(entry))) {
+          if (options.typeOption.length > 1) {
+            throw new PmCliError("--type-option cannot mix 'none' with type option values", EXIT_CODE.USAGE);
+          }
+          delete document.front_matter.type_options;
+        } else {
+          const parsedTypeOptions = parseTypeOptionEntries(options.typeOption);
+          const validation = validateTypeOptions(activeTypeName, parsedTypeOptions, typeRegistry);
+          if (validation.errors.length > 0) {
+            throw new PmCliError(validation.errors.join("; "), EXIT_CODE.USAGE);
+          }
+          document.front_matter.type_options = validation.normalized;
+        }
+        changedFields.push("type_options");
+      } else if (options.type !== undefined && document.front_matter.type_options !== undefined) {
+        const validation = validateTypeOptions(activeTypeName, document.front_matter.type_options, typeRegistry);
+        if (validation.errors.length > 0) {
+          throw new PmCliError(
+            `Current type options are incompatible with type "${activeTypeName}". ${validation.errors.join("; ")}. Provide --type-option none to clear them.`,
+            EXIT_CODE.USAGE,
+          );
+        }
+        document.front_matter.type_options = validation.normalized;
       }
       if (options.tags !== undefined) {
         document.front_matter.tags = parseTags(options.tags);

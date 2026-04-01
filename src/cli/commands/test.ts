@@ -3,7 +3,9 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
+import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
+import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { parseCsvKv, parseOptionalNumber } from "../../core/item/parse.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -515,6 +517,7 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
   const settings = await readSettings(pmRoot);
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const adds = parseAddEntries(options.add);
   const removes = parseRemoveEntries(options.remove);
   const shouldMutate = adds.length > 0 || removes.length > 0;
@@ -557,7 +560,7 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
     tests = result.item.tests ?? [];
     itemId = result.item.id;
   } else {
-    const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format);
+    const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
     if (!located) {
       throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
     }

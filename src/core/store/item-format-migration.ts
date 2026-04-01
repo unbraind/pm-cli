@@ -32,13 +32,14 @@ export async function migrateItemFilesToFormat(
   pmRoot: string,
   targetFormat: ItemFormat,
   op = "item_format:migrate",
+  typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
 ): Promise<ItemFormatMigrationResult> {
   const migratedIds = new Set<string>();
   const removedPaths = new Set<string>();
   const warnings: string[] = [];
   let scanned = 0;
   const alternateFormat = alternateItemFormat(targetFormat);
-  const typeEntries = Object.entries(TYPE_TO_FOLDER) as Array<[ItemType, string]>;
+  const typeEntries = Object.entries(typeToFolder) as Array<[ItemType, string]>;
 
   for (const [itemType, folder] of typeEntries) {
     const directoryPath = path.join(pmRoot, folder);
@@ -74,7 +75,7 @@ export async function migrateItemFilesToFormat(
       const sourceFormat = sourcePath === variants[targetFormat] ? targetFormat : alternateFormat;
       const sourceRaw = await fs.readFile(sourcePath, "utf8");
       const parsedDocument = parseItemDocument(sourceRaw, { format: sourceFormat });
-      const targetPath = getItemPath(pmRoot, itemType, itemId, targetFormat);
+      const targetPath = getItemPath(pmRoot, itemType, itemId, targetFormat, typeToFolder);
       const serializedTarget = serializeItemDocument(parsedDocument, { format: targetFormat });
       const existingTargetRaw = await readFileIfExists(targetPath);
       if (existingTargetRaw !== serializedTarget) {

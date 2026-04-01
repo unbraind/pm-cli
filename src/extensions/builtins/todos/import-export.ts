@@ -1,11 +1,12 @@
 import fs from "node:fs/promises";
 import type { Dirent } from "node:fs";
 import path from "node:path";
-import { runActiveOnReadHooks, runActiveOnWriteHooks } from "../../../core/extensions/index.js";
+import { getActiveExtensionRegistrations, runActiveOnReadHooks, runActiveOnWriteHooks } from "../../../core/extensions/index.js";
 import { pathExists, removeFileIfExists, writeFileAtomic } from "../../../core/fs/fs-utils.js";
 import { appendHistoryEntry, createHistoryEntry } from "../../../core/history/history.js";
 import { generateItemId, normalizeItemId } from "../../../core/item/id.js";
 import { canonicalDocument, normalizeFrontMatter, serializeItemDocument, splitFrontMatter } from "../../../core/item/item-format.js";
+import { resolveItemTypeRegistry } from "../../../core/item/type-registry.js";
 import { parseTags } from "../../../core/item/parse.js";
 import { acquireLock } from "../../../core/lock/lock.js";
 import { EXIT_CODE } from "../../../core/shared/constants.js";
@@ -15,7 +16,7 @@ import { nowIso } from "../../../core/shared/time.js";
 import { listAllFrontMatter, locateItem, readLocatedItem } from "../../../core/store/item-store.js";
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../../core/store/paths.js";
 import { readSettings } from "../../../core/store/settings.js";
-import { CONFIDENCE_TEXT_VALUES, ISSUE_SEVERITY_VALUES, ITEM_TYPE_VALUES, RISK_VALUES, STATUS_VALUES } from "../../../types/index.js";
+import { CONFIDENCE_TEXT_VALUES, ISSUE_SEVERITY_VALUES, RISK_VALUES, STATUS_VALUES } from "../../../types/index.js";
 import type { ItemDocument, ItemFrontMatter, ItemStatus, ItemType, PmSettings } from "../../../types/index.js";
 
 const DEFAULT_TODOS_FOLDER = ".pi/todos";
@@ -60,6 +61,8 @@ interface TodosImportRuntime {
   pmRoot: string;
   sourceFolder: string;
   settings: PmSettings;
+  typeNames: string[];
+  typeToFolder: Record<string, string>;
   author: string;
   message: string;
 }
@@ -209,17 +212,18 @@ function toTags(value: unknown): string[] {
   return [];
 }
 
-function toItemType(value: unknown): ItemType {
+function toItemType(value: unknown, typeNames: string[]): ItemType {
   const normalized = toNonEmptyString(value)?.toLowerCase();
+  const fallbackType = typeNames.find((entry) => entry.toLowerCase() === "task") ?? typeNames[0] ?? "Task";
   if (!normalized) {
-    return "Task";
+    return fallbackType;
   }
-  for (const candidate of ITEM_TYPE_VALUES) {
+  for (const candidate of typeNames) {
     if (candidate.toLowerCase() === normalized) {
       return candidate;
     }
   }
-  return "Task";
+  return fallbackType;
 }
 
 function toStatus(value: unknown): ItemStatus {
@@ -317,12 +321,18 @@ async function importTodoCandidate(candidate: ParsedTodoCandidate, runtime: Todo
     : await generateItemId(runtime.pmRoot, runtime.settings.id_prefix);
   const createdAt = toIsoString(candidate.frontMatter.created_at) ?? nowIso();
   const updatedAt = toIsoString(candidate.frontMatter.updated_at) ?? createdAt;
-  const type = toItemType(candidate.frontMatter.type);
-  const located = await locateItem(runtime.pmRoot, id, runtime.settings.id_prefix, runtime.settings.item_format);
+  const type = toItemType(candidate.frontMatter.type, runtime.typeNames);
+  const located = await locateItem(
+    runtime.pmRoot,
+    id,
+    runtime.settings.id_prefix,
+    runtime.settings.item_format,
+    runtime.typeToFolder,
+  );
   if (located) {
     return { warning: `todos_import_item_exists:${id}` };
   }
-  const itemPath = getItemPath(runtime.pmRoot, type, id, runtime.settings.item_format);
+  const itemPath = getItemPath(runtime.pmRoot, type, id, runtime.settings.item_format, runtime.typeToFolder);
 
   const afterDocument = canonicalDocument({
     front_matter: normalizeFrontMatter({
@@ -431,6 +441,7 @@ export async function runTodosImport(options: TodosImportOptions, global: Global
   await ensureInitHasRun(pmRoot);
 
   const settings = await readSettings(pmRoot);
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const folder = toNonEmptyString(options.folder) ?? DEFAULT_TODOS_FOLDER;
   const sourceFolder = resolveFolderPath(folder);
 
@@ -461,6 +472,8 @@ export async function runTodosImport(options: TodosImportOptions, global: Global
     pmRoot,
     sourceFolder,
     settings,
+    typeNames: typeRegistry.types,
+    typeToFolder: typeRegistry.type_to_folder,
     author,
     message,
   };
@@ -501,6 +514,7 @@ export async function runTodosExport(options: TodosExportOptions, global: Global
   await ensureInitHasRun(pmRoot);
 
   const settings = await readSettings(pmRoot);
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const folder = toNonEmptyString(options.folder) ?? DEFAULT_TODOS_FOLDER;
   const destinationFolder = resolveFolderPath(folder);
   await fs.mkdir(destinationFolder, { recursive: true });
@@ -508,11 +522,11 @@ export async function runTodosExport(options: TodosExportOptions, global: Global
   const warnings: string[] = [];
   const ids: string[] = [];
   let exported = 0;
-  const items = await listAllFrontMatter(pmRoot, settings.item_format);
+  const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
   const sorted = [...items].sort((left, right) => left.id.localeCompare(right.id));
 
   for (const item of sorted) {
-    const located = await locateItem(pmRoot, item.id, settings.id_prefix, settings.item_format);
+    const located = await locateItem(pmRoot, item.id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
     if (!located) {
       warnings.push(`todos_export_missing_item:${item.id}`);
       continue;

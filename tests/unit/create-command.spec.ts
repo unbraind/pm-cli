@@ -548,7 +548,7 @@ describe("runCreate", () => {
     });
   });
 
-  it("supports omitted optional seed lists and undefined history message input", async () => {
+  it("requires message for built-in type defaults even when optional seed lists are omitted", async () => {
     await withTempPmPath(async (context) => {
       const options = baseCreateOptions({
         title: "create-optional-seeds-omitted",
@@ -562,18 +562,10 @@ describe("runCreate", () => {
       });
       delete (options as Partial<CreateCommandOptions>).message;
 
-      const result = await runCreate(options, { path: context.pmPath });
-      expect(result.item.dependencies).toBeUndefined();
-      expect(result.item.comments).toBeUndefined();
-      expect(result.item.notes).toBeUndefined();
-      expect(result.item.learnings).toBeUndefined();
-      expect(result.item.files).toBeUndefined();
-      expect(result.item.tests).toBeUndefined();
-      expect(result.item.docs).toBeUndefined();
-
-      const history = readCreateHistory(context, result.item.id);
-      const createEntry = [...history].reverse().find((entry) => entry.op === "create");
-      expect(createEntry?.message).toBe("");
+      await expect(runCreate(options, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--message"),
+      });
     });
   });
 

@@ -11,6 +11,7 @@ import {
   type CommandOverrideResult,
   type ExtensionCommandRegistry,
   type ExtensionHookRegistry,
+  type ExtensionRegistrationRegistry,
   type ExtensionRendererRegistry,
   type OnIndexHookContext,
   type OnReadHookContext,
@@ -22,6 +23,7 @@ import {
 let activeExtensionHooks: ExtensionHookRegistry | null = null;
 let activeExtensionCommands: ExtensionCommandRegistry | null = null;
 let activeExtensionRenderers: ExtensionRendererRegistry | null = null;
+let activeExtensionRegistrations: ExtensionRegistrationRegistry | null = null;
 let activeCommandContext: Omit<CommandOverrideContext, "result"> | null = null;
 
 export function setActiveExtensionHooks(hooks: ExtensionHookRegistry | null): void {
@@ -36,6 +38,14 @@ export function setActiveExtensionRenderers(renderers: ExtensionRendererRegistry
   activeExtensionRenderers = renderers;
 }
 
+export function setActiveExtensionRegistrations(registrations: ExtensionRegistrationRegistry | null): void {
+  activeExtensionRegistrations = registrations;
+}
+
+export function getActiveExtensionRegistrations(): ExtensionRegistrationRegistry | null {
+  return activeExtensionRegistrations;
+}
+
 export function setActiveCommandContext(context: Omit<CommandOverrideContext, "result"> | null): void {
   activeCommandContext = context;
 }
@@ -44,6 +54,7 @@ export function clearActiveExtensionHooks(): void {
   activeExtensionHooks = null;
   activeExtensionCommands = null;
   activeExtensionRenderers = null;
+  activeExtensionRegistrations = null;
   activeCommandContext = null;
 }
 

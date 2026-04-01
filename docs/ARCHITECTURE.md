@@ -67,6 +67,7 @@ src/
       id.ts                      ID generation (cryptographic random base36) and normalization
       item-format.ts             Item front-matter serializer (canonical key order, determinism)
       parse.ts                   Markdown item file parser (JSON front-matter + body)
+      type-registry.ts           Runtime item-type registry (built-ins + settings + extensions)
       index.ts                   barrel
     lock/
       lock.ts                    Exclusive lock acquire/release with TTL and stale detection
@@ -111,8 +112,8 @@ Each item is stored as a format-configured document file:
 
 ```
 .agents/pm/
-  <type-plural>/<id>.toon   default item storage (TOON root-object fields)
-  <type-plural>/<id>.md     fully supported JSON front matter + markdown body
+  <type-folder>/<id>.toon   default item storage (TOON root-object fields)
+  <type-folder>/<id>.md     fully supported JSON front matter + markdown body
   history/<id>.jsonl        append-only RFC6902 patch log
   locks/<id>.lock           exclusive lock metadata (JSON)
   settings.json             project configuration
@@ -147,6 +148,14 @@ Optional markdown body here.
 ```
 
 Fields are normalized and serialized in canonical key order (defined in `item-format.ts`) before hashing/history patch generation, regardless of on-disk item format.
+
+Type resolution is centralized in the runtime type registry:
+
+- built-in types (`Epic`, `Feature`, `Task`, `Chore`, `Issue`)
+- `settings.item_types.definitions`
+- extension `registerItemTypes(...)` registrations
+
+The registry is used by create/update validation, list/search/calendar type filters, completion scripts, and store path routing.
 
 Scheduling metadata is persisted directly in item front matter:
 
@@ -184,6 +193,8 @@ Every item mutation follows this sequence:
 9. **Release lock** — unlink lock file
 
 If step 7 or 8 fails, the item file is rolled back (if write succeeded) before returning failure.
+
+When `update --type` changes an item's resolved type folder, mutation logic performs a safe file move to the target folder and rolls back on failure.
 
 ## Calendar Pipeline
 
@@ -271,6 +282,7 @@ Weights are configurable via `settings.json` under `search.tuning`.
 | `item_format` | Item storage format: `toon` (default) or `json_markdown` |
 | `locks.ttl_seconds` | Lock TTL (default 1800) |
 | `output.default_format` | `toon` or `json` |
+| `item_types.definitions[]` | Custom type names, aliases, folders, required fields/repeatables, and `--type-option` definitions |
 | `search.*` | Search provider and tuning settings |
 | `providers.openai` / `providers.ollama` | Embedding provider config |
 | `vector_store.qdrant` / `vector_store.lancedb` | Vector store config |

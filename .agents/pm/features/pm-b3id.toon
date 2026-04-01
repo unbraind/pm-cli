@@ -1,0 +1,43 @@
+id: pm-b3id
+title: Required-option guidance and docs parity
+description: "Improve required option errors/help text with rationale, allowed values, and examples while keeping exit codes stable and docs aligned."
+type: Feature
+status: closed
+priority: 1
+tags[4]: agent-ux,"area:cli","area:docs",pm-cli
+created_at: "2026-03-31T23:47:54.230Z"
+updated_at: "2026-04-01T00:28:56.017Z"
+deadline: "2026-04-10T23:47:54.230Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: "Missing required option errors explain why and how to fix with examples, and docs/tests are aligned."
+goal: Customizable workflows
+objective: Reduce agent error loops
+value: Faster correction for required option failures
+impact: Fewer failed automation runs
+outcome: Actionable error/help text
+why_now: Agents frequently hit --type required option errors
+parent: pm-r15d
+risk: low
+confidence: high
+component: cli/docs
+customer_impact: Improves usability for human and agent users
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-r15d,parent,"2026-03-31T23:47:54.230Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-03-31T23:47:54.230Z",codex-agent,Feature tracks required option UX and docs parity.
+  "2026-04-01T00:28:53.993Z",codex-agent,Completed required-option UX improvements and documentation parity for dynamic/custom type workflows.
+  "2026-04-01T00:28:54.949Z",codex-agent,"Evidence: node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/unit/create-command.spec.ts and full suite run-tests.mjs test passed."
+notes[1]{created_at,author,text}:
+  "2026-03-31T23:47:54.230Z",codex-agent,Do not alter exit code contracts while improving guidance.
+files[4]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,runtime type registry architecture docs
+  docs/EXTENSIONS.md,project,extension registerItemTypes docs
+  README.md,project,custom type and usage examples
+  src/cli/main.ts,project,error/help surface
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,2400,help/runtime contract
+docs[1]{path,scope,note}:
+  README.md,project,user-facing command examples
+close_reason: required-option messaging and docs parity delivered for configurable type workflows
+body: Covers commander/PmCliError usage guidance improvements plus README/PRD/changelog/docs updates and contract tests.

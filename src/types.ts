@@ -1,5 +1,7 @@
-export const ITEM_TYPE_VALUES = ["Epic", "Feature", "Task", "Chore", "Issue"] as const;
-export type ItemType = (typeof ITEM_TYPE_VALUES)[number];
+export const BUILTIN_ITEM_TYPE_VALUES = ["Epic", "Feature", "Task", "Chore", "Issue"] as const;
+export const ITEM_TYPE_VALUES = BUILTIN_ITEM_TYPE_VALUES;
+export type BuiltinItemType = (typeof BUILTIN_ITEM_TYPE_VALUES)[number];
+export type ItemType = string;
 
 export const STATUS_VALUES = [
   "draft",
@@ -116,12 +118,30 @@ export interface CalendarEvent {
   recurrence?: RecurrenceRule;
 }
 
+export interface ItemTypeOptionDefinition {
+  key: string;
+  values: string[];
+  required?: boolean;
+  aliases?: string[];
+  description?: string;
+}
+
+export interface ItemTypeDefinition {
+  name: string;
+  folder?: string;
+  aliases?: string[];
+  required_create_fields?: string[];
+  required_create_repeatables?: string[];
+  options?: ItemTypeOptionDefinition[];
+}
+
 export interface ItemFrontMatter {
   id: string;
   title: string;
   description: string;
   type: ItemType;
   source_type?: string;
+  type_options?: Record<string, string>;
   status: ItemStatus;
   priority: 0 | 1 | 2 | 3 | 4;
   tags: string[];
@@ -212,6 +232,9 @@ export interface PmSettings {
   };
   workflow: {
     definition_of_done: string[];
+  };
+  item_types: {
+    definitions: ItemTypeDefinition[];
   };
   extensions: {
     enabled: string[];

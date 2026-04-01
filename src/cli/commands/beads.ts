@@ -1,10 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pathExists, removeFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
-import { runActiveOnReadHooks, runActiveOnWriteHooks } from "../../core/extensions/index.js";
+import { getActiveExtensionRegistrations, runActiveOnReadHooks, runActiveOnWriteHooks } from "../../core/extensions/index.js";
 import { appendHistoryEntry, createHistoryEntry } from "../../core/history/history.js";
 import { generateItemId, normalizeItemId, normalizeRawItemId } from "../../core/item/id.js";
 import { canonicalDocument, normalizeFrontMatter, serializeItemDocument } from "../../core/item/item-format.js";
+import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { parseTags } from "../../core/item/parse.js";
 import { acquireLock } from "../../core/lock/lock.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
@@ -522,6 +523,7 @@ export async function runBeadsImport(options: BeadsImportOptions, global: Global
   await ensureInitHasRun(pmRoot);
 
   const settings = await readSettings(pmRoot);
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const preserveSourceIds = options.preserveSourceIds === true;
   const { source, sourcePath, raw, warnings: sourceWarnings } = await resolveBeadsSource(options.file);
   const warnings: string[] = [
@@ -624,13 +626,13 @@ export async function runBeadsImport(options: BeadsImportOptions, global: Global
       front_matter: frontMatter,
       body: finalBody,
     });
-    const existing = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format);
+    const existing = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
     if (existing) {
       warnings.push(`beads_import_item_exists:${id}`);
       skipped += 1;
       continue;
     }
-    const itemPath = getItemPath(pmRoot, type, id, settings.item_format);
+    const itemPath = getItemPath(pmRoot, type, id, settings.item_format, typeRegistry.type_to_folder);
 
     const historyPath = getHistoryPath(pmRoot, id);
     try {

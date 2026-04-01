@@ -1,0 +1,43 @@
+id: pm-37pj
+title: Add extension registration support for custom item types/options
+description: Extend extension schema registration API to declare additional item type and option metadata and feed runtime registry.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:extensions","area:schema",code,pm-cli
+created_at: "2026-03-31T23:48:31.346Z"
+updated_at: "2026-04-01T00:27:48.262Z"
+deadline: "2026-04-07T23:48:31.346Z"
+author: codex-agent
+estimated_minutes: 160
+acceptance_criteria: Extensions can register item type/option metadata under schema capability and health/activation metadata reflects registrations deterministically.
+goal: Customizable workflows
+objective: Allow extension-provided type models
+value: Extensible domain modeling
+impact: Lets integrations define types without core edits
+outcome: Extension-fed type registry
+why_now: Requested support via settings and extensions
+parent: pm-x2k0
+risk: medium
+confidence: medium
+component: core/extensions
+regression: true
+customer_impact: Integrations can model external domains directly
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-x2k0,parent,"2026-03-31T23:48:31.346Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-03-31T23:48:31.346Z",codex-agent,Task tracks extension registration additions for type metadata.
+  "2026-04-01T00:27:45.859Z",codex-agent,"Added extension item-type registration API, metadata capture, capability enforcement, and runtime registration plumbing."
+  "2026-04-01T00:27:47.221Z",codex-agent,"Evidence: node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts passed."
+notes[1]{created_at,author,text}:
+  "2026-03-31T23:48:31.346Z",codex-agent,Maintain capability gating and deterministic failure semantics.
+files[3]{path,scope,note}:
+  src/core/extensions/index.ts,project,active registration state plumbing
+  src/core/extensions/loader.ts,project,registration API surface
+  tests/unit/extension-loader.spec.ts,project,registration metadata/count coverage
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,2400,extension registration regression
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,new extension API docs
+close_reason: extension API now supports registering item type definitions/options with deterministic validation
+body: Adds new extension registration hooks and activation metadata/tests for custom type definitions.

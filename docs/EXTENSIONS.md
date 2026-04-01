@@ -1,6 +1,6 @@
 # pm-cli Extension Development Guide
 
-Extensions let you add commands, renderers, importers, exporters, schema fields, search providers, and lifecycle hooks to `pm-cli` without modifying core.
+Extensions let you add commands, renderers, importers, exporters, schema fields, item-type definitions, search providers, and lifecycle hooks to `pm-cli` without modifying core.
 
 ## Extension Locations
 
@@ -136,6 +136,40 @@ api.registerItemFields([
   { name: "acme_epic_id", type: "string", optional: true },
 ]);
 ```
+
+### `api.registerItemTypes(types)`
+
+Register custom item types and per-type create/type-option rules:
+
+```ts
+api.registerItemTypes([
+  {
+    name: "Asset",
+    folder: "assets",
+    aliases: ["assets", "3d-asset"],
+    required_create_fields: ["title", "description", "status", "priority", "message"],
+    required_create_repeatables: [],
+    options: [
+      {
+        key: "category",
+        values: ["Map", "Character", "Prop", "VFX"],
+        required: true,
+        aliases: ["asset_category"],
+      },
+      {
+        key: "pipeline",
+        values: ["Blockout", "Modeling", "Rigging", "Texturing", "Done"],
+      },
+    ],
+  },
+]);
+```
+
+Notes:
+
+- Requires `schema` capability in the extension manifest.
+- Type names and aliases are resolved by the runtime type registry and become available to `--type` filters and completion.
+- Option definitions are validated by `pm create` / `pm update` through `--type-option` flags.
 
 ### `api.registerMigration(def)`
 
@@ -330,5 +364,6 @@ Current wrapper parity includes:
 
 - `action: "calendar"` for `pm calendar` / `pm cal` (`view`, `date`, `from`, `to`, `past`, `type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`, `format`)
 - `create`/`update` reminder forwarding via repeatable `reminder` values (`at=<iso|relative>,text=<text>`)
+- `create`/`update` custom type-option forwarding via repeatable `typeOption` values
 
 See [AGENTS.md](../AGENTS.md) section 9 for full usage details.

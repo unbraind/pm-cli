@@ -1,4 +1,6 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
+import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -141,7 +143,13 @@ export async function runConfig(
     settings.item_format = nextFormat;
     if (changed) {
       await writeSettings(target.pmRoot, settings, "config:set:item_format");
-      const migrated = await migrateItemFilesToFormat(target.pmRoot, nextFormat, "config:set:item_format:migrate");
+      const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+      const migrated = await migrateItemFilesToFormat(
+        target.pmRoot,
+        nextFormat,
+        "config:set:item_format:migrate",
+        typeRegistry.type_to_folder,
+      );
       migration = {
         target_format: migrated.target_format,
         scanned: migrated.scanned,

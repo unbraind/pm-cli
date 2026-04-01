@@ -1307,6 +1307,7 @@ describe("extension loader", () => {
       migrations: 1,
       importers: 1,
       exporters: 1,
+      item_types: 0,
       search_providers: 1,
       vector_store_adapters: 1,
     });

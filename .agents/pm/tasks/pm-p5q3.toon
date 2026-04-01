@@ -1,0 +1,43 @@
+id: pm-p5q3
+title: Implement settings schema for configurable item types/options
+description: "Extend settings model and deterministic serialization to support custom item types, per-type required flags, and option definitions."
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:schema","area:settings",code,pm-cli
+created_at: "2026-03-31T23:48:06.252Z"
+updated_at: "2026-04-01T00:26:59.391Z"
+deadline: "2026-04-07T23:48:06.252Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: Settings accept custom type/option definitions and serialize deterministically with tests covering defaults and merge behavior.
+goal: Customizable workflows
+objective: Support config-driven type model
+value: Project-level flexibility
+impact: Removes hard-coded type constraints
+outcome: Settings-driven type schema
+why_now: Needed before runtime registry and command integration
+parent: pm-x2k0
+risk: medium
+confidence: high
+component: core/store/settings
+regression: true
+customer_impact: Enables per-project custom workflow types
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-x2k0,parent,"2026-03-31T23:48:06.252Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-03-31T23:48:06.252Z",codex-agent,Task created for settings schema extension.
+  "2026-04-01T00:26:57.578Z",codex-agent,Implemented configurable item type schemas in settings/types plus deterministic normalization and test updates.
+  "2026-04-01T00:26:58.508Z",codex-agent,"Evidence: node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/shared-constants-errors.spec.ts passed."
+notes[1]{created_at,author,text}:
+  "2026-03-31T23:48:06.252Z",codex-agent,Keep defaults equivalent to current built-in behavior.
+files[3]{path,scope,note}:
+  src/core/store/settings.ts,project,settings schema and merge
+  src/types.ts,project,item type and front matter schema
+  tests/unit/settings-store.spec.ts,project,deterministic settings serialization coverage
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/shared-constants-errors.spec.ts,null,project,2400,settings contract regression
+docs[1]{path,scope,note}:
+  PRD.md,project,settings contract documentation
+close_reason: settings schema for custom item types/options implemented with deterministic serialization and passing tests
+body: Adds settings structure for custom type definitions and per-type option/requirement rules with backward-safe defaults.

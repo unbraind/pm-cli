@@ -10,6 +10,7 @@ export interface CompletionResult {
 }
 
 const VALID_SHELLS: CompletionShell[] = ["bash", "zsh", "fish"];
+const DEFAULT_ITEM_TYPES = ["Epic", "Feature", "Task", "Chore", "Issue"];
 
 const ALL_COMMANDS = [
   "init",
@@ -56,10 +57,10 @@ const LIST_FLAGS =
   "--type --tag --priority --deadline-before --deadline-after --assignee --sprint --release --limit --include-body --json --quiet --path --no-extensions --profile --help";
 
 const CREATE_FLAGS =
-  "-t --title -d --description --type -s --status -p --priority --tags -b --body --deadline --estimate --estimated-minutes --acceptance-criteria --ac --author --message --assignee --parent --reviewer --risk --confidence --sprint --release --blocked-by --blocked-reason --unblock-note --reporter --severity --environment --repro-steps --resolution --expected-result --actual-result --affected-version --fixed-version --component --regression --customer-impact --definition-of-ready --order --rank --goal --objective --value --impact --outcome --why-now --dep --reminder --event --comment --note --learning --file --test --doc --json --quiet --path --no-extensions --profile --help";
+  "-t --title -d --description --type -s --status -p --priority --tags -b --body --deadline --estimate --estimated-minutes --acceptance-criteria --ac --author --message --assignee --parent --reviewer --risk --confidence --sprint --release --blocked-by --blocked-reason --unblock-note --reporter --severity --environment --repro-steps --resolution --expected-result --actual-result --affected-version --fixed-version --component --regression --customer-impact --definition-of-ready --order --rank --goal --objective --value --impact --outcome --why-now --dep --type-option --type_option --reminder --event --comment --note --learning --file --test --doc --json --quiet --path --no-extensions --profile --help";
 
 const UPDATE_FLAGS =
-  "-t --title -d --description -s --status -p --priority --type --tags --deadline --estimate --estimated-minutes --acceptance-criteria --ac --assignee --parent --reviewer --risk --confidence --sprint --release --blocked-by --blocked-reason --unblock-note --reporter --severity --environment --repro-steps --resolution --expected-result --actual-result --affected-version --fixed-version --component --regression --customer-impact --definition-of-ready --order --rank --goal --objective --value --impact --outcome --why-now --author --message --reminder --event --force --json --quiet --path --no-extensions --profile --help";
+  "-t --title -d --description -s --status -p --priority --type --tags --deadline --estimate --estimated-minutes --acceptance-criteria --ac --assignee --parent --reviewer --risk --confidence --sprint --release --blocked-by --blocked-reason --unblock-note --reporter --severity --environment --repro-steps --resolution --expected-result --actual-result --affected-version --fixed-version --component --regression --customer-impact --definition-of-ready --order --rank --goal --objective --value --impact --outcome --why-now --author --message --reminder --event --type-option --type_option --force --json --quiet --path --no-extensions --profile --help";
 
 const CALENDAR_FLAGS =
   "--view --date --from --to --past --type --tag --priority --status --assignee --sprint --release --include --recurrence-lookahead-days --recurrence-lookback-days --occurrence-limit --limit --format --json --quiet --path --no-extensions --profile --help";
@@ -71,8 +72,9 @@ const MUTATION_FLAGS = "--author --message --force --json --quiet --path --no-ex
 
 const GLOBAL_FLAGS = "--json --quiet --path --no-extensions --profile --version --help";
 
-export function generateBashScript(): string {
+export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES): string {
   const cmds = ALL_COMMANDS.join(" ");
+  const typeValues = itemTypes.join(" ");
   // Note: "${...}" inside regular (non-template) strings are literal characters,
   // not JS interpolation. Only backtick template literals interpolate ${...}.
   const compgen = (flags: string): string => `$(compgen -W "${flags}" -- "$cur")`;
@@ -90,6 +92,11 @@ export function generateBashScript(): string {
     "",
     "  if [[ $cword -eq 1 ]]; then",
     `    COMPREPLY=(${compgen(cmds)})`,
+    "    return 0",
+    "  fi",
+    "",
+    '  if [[ "$prev" == "--type" ]]; then',
+    `    COMPREPLY=(${compgen(typeValues)})`,
     "    return 0",
     "  fi",
     "",
@@ -158,8 +165,9 @@ export function generateBashScript(): string {
   ].join("\n");
 }
 
-export function generateZshScript(): string {
+export function generateZshScript(itemTypes: string[] = DEFAULT_ITEM_TYPES): string {
   const cmds = ALL_COMMANDS.map((c) => `'${c}'`).join(" ");
+  const typeChoices = itemTypes.join(" ");
   return `#compdef pm
 # zsh completion for pm
 # Source this file or add 'eval "$(pm completion zsh)"' to ~/.zshrc
@@ -227,7 +235,7 @@ _pm() {
       case $line[1] in
         list|list-all|list-draft|list-open|list-in-progress|list-blocked|list-closed|list-canceled)
           _arguments \\
-            '--type[Filter by item type]:(Epic Feature Task Chore Issue)' \\
+            '--type[Filter by item type]:(${typeChoices})' \\
             '--tag[Filter by tag]:tag' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
             '--deadline-before[Filter by deadline upper bound]:date' \\
@@ -245,7 +253,7 @@ _pm() {
           _arguments \\
             '(-t --title)'{-t,--title}'[Item title]:title' \\
             '(-d --description)'{-d,--description}'[Item description]:description' \\
-            '--type[Item type]:(Epic Feature Task Chore Issue)' \\
+            '--type[Item type]:(${typeChoices})' \\
             '(-s --status)'{-s,--status}'[Item status]:(draft open in_progress blocked)' \\
             '(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)' \\
             '--tags[Comma-separated tags]:tags' \\
@@ -255,6 +263,7 @@ _pm() {
             '--acceptance-criteria[Acceptance criteria]:criteria' \\
             '--reminder[Reminder entry at=<iso|relative>,text=<text>]:reminder' \\
             '--event[Event entry start=<iso|relative>,end=<iso|relative>,recur_*]:event' \\
+            '--type-option[Type option key=value or key=<name>,value=<value>]:type_option' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--assignee[Assignee (none to unset)]:assignee' \\
@@ -267,10 +276,11 @@ _pm() {
             '(-d --description)'{-d,--description}'[Item description]:description' \\
             '(-s --status)'{-s,--status}'[Item status]:(draft open in_progress blocked canceled)' \\
             '(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)' \\
-            '--type[Item type]:(Epic Feature Task Chore Issue)' \\
+            '--type[Item type]:(${typeChoices})' \\
             '--tags[Comma-separated tags]:tags' \\
             '--reminder[Reminder entry at=<iso|relative>,text=<text> (none to clear)]:reminder' \\
             '--event[Event entry start=<iso|relative>,end=<iso|relative>,recur_* (none to clear)]:event' \\
+            '--type-option[Type option key=value or key=<name>,value=<value> (none to clear)]:type_option' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
@@ -284,7 +294,7 @@ _pm() {
             '--from[Agenda lower bound]:date' \\
             '--to[Agenda upper bound]:date' \\
             '--past[Include past entries]' \\
-            '--type[Filter by type]:(Epic Feature Task Chore Issue)' \\
+            '--type[Filter by type]:(${typeChoices})' \\
             '--tag[Filter by tag]:tag' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
             '--status[Filter by status]:(draft open in_progress blocked closed canceled)' \\
@@ -305,7 +315,7 @@ _pm() {
             '--mode[Search mode]:(keyword semantic hybrid)' \\
             '--include-linked[Include linked content in scoring]' \\
             '--limit[Max results]:number' \\
-            '--type[Filter by type]:(Epic Feature Task Chore Issue)' \\
+            '--type[Filter by type]:(${typeChoices})' \\
             '--tag[Filter by tag]:tag' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
             '--json[Output JSON]' \\
@@ -359,7 +369,7 @@ _pm() {
 compdef _pm pm`;
 }
 
-export function generateFishScript(): string {
+export function generateFishScript(itemTypes: string[] = DEFAULT_ITEM_TYPES): string {
   const listCmds = [
     "list",
     "list-all",
@@ -370,6 +380,7 @@ export function generateFishScript(): string {
     "list-closed",
     "list-canceled",
   ].join(" ");
+  const typeChoices = itemTypes.join(" ");
   return `# Fish shell completion for pm
 # Save to ~/.config/fish/completions/pm.fish
 # or run: pm completion fish > ~/.config/fish/completions/pm.fish
@@ -432,7 +443,7 @@ complete -c pm -n __pm_no_subcommand -a completion    -d 'Generate shell complet
 
 # list* flags
 for list_cmd in ${listCmds}
-  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l type     -d 'Filter by item type' -r -a 'Epic Feature Task Chore Issue'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l type     -d 'Filter by item type' -r -a '${typeChoices}'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l tag      -d 'Filter by tag' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l priority -d 'Filter by priority' -r -a '0 1 2 3 4'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l assignee -d 'Filter by assignee (none for unassigned)' -r
@@ -447,7 +458,7 @@ end
 # create flags
 complete -c pm -n '__fish_seen_subcommand_from create' -s t -l title              -d 'Item title' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -s d -l description        -d 'Item description' -r
-complete -c pm -n '__fish_seen_subcommand_from create' -l type                    -d 'Item type' -r -a 'Epic Feature Task Chore Issue'
+complete -c pm -n '__fish_seen_subcommand_from create' -l type                    -d 'Item type' -r -a '${typeChoices}'
 complete -c pm -n '__fish_seen_subcommand_from create' -s s -l status             -d 'Item status' -r -a 'draft open in_progress blocked'
 complete -c pm -n '__fish_seen_subcommand_from create' -s p -l priority           -d 'Priority (0-4)' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from create' -l tags                    -d 'Comma-separated tags' -r
@@ -457,6 +468,7 @@ complete -c pm -n '__fish_seen_subcommand_from create' -l estimate              
 complete -c pm -n '__fish_seen_subcommand_from create' -l acceptance-criteria     -d 'Acceptance criteria' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l reminder                -d 'Reminder entry at=<iso|relative>,text=<text>' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l event                   -d 'Event entry start=<iso|relative>,end=<iso|relative>,recur_*' -r
+complete -c pm -n '__fish_seen_subcommand_from create' -l type-option             -d 'Type option key=value or key=<name>,value=<value>' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l author                  -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l message                 -d 'History message' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l assignee                -d 'Assignee (none to unset)' -r
@@ -466,9 +478,10 @@ complete -c pm -n '__fish_seen_subcommand_from update' -s t -l title            
 complete -c pm -n '__fish_seen_subcommand_from update' -s d -l description        -d 'Item description' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -s s -l status             -d 'Item status' -r -a 'draft open in_progress blocked canceled'
 complete -c pm -n '__fish_seen_subcommand_from update' -s p -l priority           -d 'Priority (0-4)' -r -a '0 1 2 3 4'
-complete -c pm -n '__fish_seen_subcommand_from update' -l type                    -d 'Item type' -r -a 'Epic Feature Task Chore Issue'
+complete -c pm -n '__fish_seen_subcommand_from update' -l type                    -d 'Item type' -r -a '${typeChoices}'
 complete -c pm -n '__fish_seen_subcommand_from update' -l reminder                -d 'Reminder entry at=<iso|relative>,text=<text> (none to clear)' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l event                   -d 'Event entry start=<iso|relative>,end=<iso|relative>,recur_* (none to clear)' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l type-option             -d 'Type option key=value or key=<name>,value=<value> (none to clear)' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l author                  -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l message                 -d 'History message' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l force                   -d 'Force override'
@@ -477,7 +490,7 @@ complete -c pm -n '__fish_seen_subcommand_from update' -l force                 
 complete -c pm -n '__fish_seen_subcommand_from search' -l mode          -d 'Search mode' -r -a 'keyword semantic hybrid'
 complete -c pm -n '__fish_seen_subcommand_from search' -l include-linked -d 'Include linked content in scoring'
 complete -c pm -n '__fish_seen_subcommand_from search' -l limit          -d 'Max results' -r
-complete -c pm -n '__fish_seen_subcommand_from search' -l type           -d 'Filter by type' -r -a 'Epic Feature Task Chore Issue'
+complete -c pm -n '__fish_seen_subcommand_from search' -l type           -d 'Filter by type' -r -a '${typeChoices}'
 complete -c pm -n '__fish_seen_subcommand_from search' -l tag            -d 'Filter by tag' -r
 complete -c pm -n '__fish_seen_subcommand_from search' -l priority       -d 'Filter by priority' -r -a '0 1 2 3 4'
 
@@ -487,7 +500,7 @@ complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l date      -d 'An
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l from      -d 'Agenda lower bound (ISO or relative)' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l to        -d 'Agenda upper bound (ISO or relative)' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l past      -d 'Include past entries'
-complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l type      -d 'Filter by type' -r -a 'Epic Feature Task Chore Issue'
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l type      -d 'Filter by type' -r -a '${typeChoices}'
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l tag       -d 'Filter by tag' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l priority  -d 'Filter by priority' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l status    -d 'Filter by status' -r -a 'draft open in_progress blocked closed canceled'
@@ -534,7 +547,7 @@ const SETUP_HINTS: Record<CompletionShell, string> = {
   fish: "Run: pm completion fish > ~/.config/fish/completions/pm.fish",
 };
 
-export function runCompletion(shell: string): CompletionResult {
+export function runCompletion(shell: string, itemTypes: string[] = DEFAULT_ITEM_TYPES): CompletionResult {
   const normalized = shell.trim().toLowerCase();
   if (!VALID_SHELLS.includes(normalized as CompletionShell)) {
     throw new PmCliError(
@@ -545,11 +558,11 @@ export function runCompletion(shell: string): CompletionResult {
   const validShell = normalized as CompletionShell;
   let script: string;
   if (validShell === "bash") {
-    script = generateBashScript();
+    script = generateBashScript(itemTypes);
   } else if (validShell === "zsh") {
-    script = generateZshScript();
+    script = generateZshScript(itemTypes);
   } else {
-    script = generateFishScript();
+    script = generateFishScript(itemTypes);
   }
   return {
     shell: validShell,

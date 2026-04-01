@@ -121,6 +121,67 @@ pm claim <item-id>
 
 From there, use `pm update`, `pm comments`, `pm files`, `pm test`, `pm search`, and `pm close` as work progresses.
 
+## Custom Item Types and Type Options
+
+`pm` supports project/global custom item types through `settings.json` and extension registrations. When no custom configuration exists, built-in types keep their default behavior.
+
+### Configure custom types in `settings.json`
+
+```json
+{
+  "item_types": {
+    "definitions": [
+      {
+        "name": "Asset",
+        "folder": "assets",
+        "aliases": ["assets", "3d-asset"],
+        "required_create_fields": ["title", "description", "status", "priority", "message"],
+        "required_create_repeatables": [],
+        "options": [
+          {
+            "key": "category",
+            "values": ["Map", "Character", "Prop", "VFX"],
+            "required": true,
+            "aliases": ["asset_category"],
+            "description": "High-level asset classification"
+          },
+          {
+            "key": "pipeline",
+            "values": ["Blockout", "Modeling", "Rigging", "Texturing", "Done"]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Use custom types on create/update
+
+```bash
+pm create \
+  --title "Forest world map" \
+  --description "Primary world navigation mesh and terrain art" \
+  --type Asset \
+  --status open \
+  --priority 1 \
+  --message "Track world map asset" \
+  --type-option category=Map \
+  --type-option pipeline=Modeling
+
+pm update pm-a1b2 --type-option category=Character --type-option pipeline=Rigging
+```
+
+`--type-option` accepts `key=value` and `key=<name>,value=<value>` formats, and can be cleared with `none`.
+
+### Improved required `--type` guidance
+
+When `--type` is missing, usage output now includes:
+
+- why `--type` is required
+- allowed values from the active runtime type registry
+- concrete `pm create` examples (including custom-type usage)
+
 ## Calendar, Reminders, and Events
 
 `pm` supports persistent reminder metadata, one-off and recurring scheduled events, and a dedicated calendar surface for deadline/reminder/event planning.

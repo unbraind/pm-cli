@@ -124,6 +124,7 @@ describe("core/store/settings", () => {
         "locks",
         "output",
         "workflow",
+        "item_types",
         "extensions",
         "search",
         "providers",
@@ -132,6 +133,7 @@ describe("core/store/settings", () => {
       expectOrderedObjectKeys(parsed.locks, ["ttl_seconds"]);
       expectOrderedObjectKeys(parsed.output, ["default_format"]);
       expectOrderedObjectKeys(parsed.workflow, ["definition_of_done"]);
+      expectOrderedObjectKeys(parsed.item_types, ["definitions"]);
       expectOrderedObjectKeys(parsed.extensions, ["enabled", "disabled"]);
       expectOrderedObjectKeys(parsed.search, [
         "score_threshold",

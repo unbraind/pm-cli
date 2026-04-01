@@ -1,10 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { runActiveOnReadHooks, runActiveOnWriteHooks } from "../extensions/index.js";
+import { getActiveExtensionRegistrations, runActiveOnReadHooks, runActiveOnWriteHooks } from "../extensions/index.js";
 import { EMPTY_CANONICAL_DOCUMENT, EXIT_CODE, TYPE_TO_FOLDER } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { appendHistoryEntry, createHistoryEntry } from "../history/history.js";
 import { canonicalDocument, parseItemDocument, serializeItemDocument } from "../item/item-format.js";
+import { resolveItemTypeRegistry } from "../item/type-registry.js";
 import { acquireLock } from "../lock/lock.js";
 import { writeFileAtomic } from "../fs/fs-utils.js";
 import { normalizeItemId, normalizeRawItemId } from "../item/id.js";
@@ -43,16 +44,17 @@ export async function locateItem(
   rawId: string,
   idPrefix: string,
   preferredFormat?: ItemFormat,
+  typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
 ): Promise<LocatedItem | null> {
   const normalizedId = normalizeItemId(rawId, idPrefix);
   const rawNormalizedId = normalizeRawItemId(rawId);
   const candidateIds = normalizedId === rawNormalizedId ? [normalizedId] : [normalizedId, rawNormalizedId];
-  const entries = Object.entries(TYPE_TO_FOLDER) as Array<[ItemType, string]>;
+  const entries = Object.entries(typeToFolder) as Array<[ItemType, string]>;
   const searchOrder = resolveItemFormatSearchOrder(preferredFormat);
   for (const candidateId of candidateIds) {
     for (const [type] of entries) {
       for (const itemFormat of searchOrder) {
-        const itemPath = getItemPath(pmRoot, type, candidateId, itemFormat);
+        const itemPath = getItemPath(pmRoot, type, candidateId, itemFormat, typeToFolder);
         if (await fileExists(itemPath)) {
           return {
             id: candidateId,
@@ -77,24 +79,33 @@ export async function readLocatedItem(item: LocatedItem): Promise<{ raw: string;
   return { raw, document };
 }
 
-export async function listAllFrontMatter(pmRoot: string, preferredFormat?: ItemFormat): Promise<ItemFrontMatter[]> {
-  const documents = await listAllDocuments(pmRoot, preferredFormat);
+export async function listAllFrontMatter(
+  pmRoot: string,
+  preferredFormat?: ItemFormat,
+  typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
+): Promise<ItemFrontMatter[]> {
+  const documents = await listAllDocuments(pmRoot, preferredFormat, typeToFolder);
   return documents.map((document) => document.front_matter);
 }
 
 export async function listAllFrontMatterWithBody(
   pmRoot: string,
   preferredFormat?: ItemFormat,
+  typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
 ): Promise<Array<ItemFrontMatter & { body: string }>> {
-  const documents = await listAllDocuments(pmRoot, preferredFormat);
+  const documents = await listAllDocuments(pmRoot, preferredFormat, typeToFolder);
   return documents.map((document) => ({
     ...document.front_matter,
     body: document.body,
   }));
 }
 
-async function listAllDocuments(pmRoot: string, preferredFormat?: ItemFormat): Promise<ItemDocument[]> {
-  const entries = Object.entries(TYPE_TO_FOLDER) as Array<[ItemType, string]>;
+async function listAllDocuments(
+  pmRoot: string,
+  preferredFormat?: ItemFormat,
+  typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
+): Promise<ItemDocument[]> {
+  const entries = Object.entries(typeToFolder) as Array<[ItemType, string]>;
   const documentsById = new Map<string, { document: ItemDocument; itemFormat: ItemFormat }>();
   for (const [, folder] of entries) {
     const dirPath = path.join(pmRoot, folder);
@@ -149,9 +160,12 @@ export async function mutateItem(params: {
   author: string;
   message?: string;
   force?: boolean;
+  typeToFolder?: Record<string, string>;
   mutate: (document: ItemDocument) => { changedFields: string[]; warnings?: string[] };
 }): Promise<{ item: ItemFrontMatter; body: string; changedFields: string[]; warnings: string[] }> {
-  const located = await locateItem(params.pmRoot, params.id, params.settings.id_prefix, params.settings.item_format);
+  const typeToFolder =
+    params.typeToFolder ?? resolveItemTypeRegistry(params.settings, getActiveExtensionRegistrations()).type_to_folder;
+  const located = await locateItem(params.pmRoot, params.id, params.settings.id_prefix, params.settings.item_format, typeToFolder);
   if (!located) {
     throw new PmCliError(`Item ${params.id} not found`, EXIT_CODE.NOT_FOUND);
   }
@@ -181,8 +195,17 @@ export async function mutateItem(params: {
     mutableDocument.front_matter.updated_at = nowIso();
     const afterDocument = canonicalDocument(mutableDocument);
     const serializedAfter = serializeItemDocument(afterDocument, { format: located.item_format });
-
-    await writeFileAtomic(located.itemPath, serializedAfter);
+    const targetItemPath = getItemPath(
+      params.pmRoot,
+      afterDocument.front_matter.type,
+      located.id,
+      located.item_format,
+      typeToFolder,
+    );
+    await writeFileAtomic(targetItemPath, serializedAfter);
+    if (targetItemPath !== located.itemPath) {
+      await fs.rm(located.itemPath);
+    }
     const entry = createHistoryEntry({
       nowIso: afterDocument.front_matter.updated_at,
       author: params.author,
@@ -195,12 +218,17 @@ export async function mutateItem(params: {
     try {
       await appendHistoryEntry(getHistoryPath(params.pmRoot, located.id), entry);
     } catch (error: unknown) {
-      await writeFileAtomic(located.itemPath, originalRaw);
+      if (targetItemPath !== located.itemPath) {
+        await writeFileAtomic(located.itemPath, originalRaw);
+        await fs.rm(targetItemPath, { force: true });
+      } else {
+        await writeFileAtomic(located.itemPath, originalRaw);
+      }
       throw error;
     }
     const hookWarnings = [
       ...(await runActiveOnWriteHooks({
-        path: located.itemPath,
+        path: targetItemPath,
         scope: "project",
         op: params.op,
       })),
@@ -230,7 +258,8 @@ export async function deleteItem(params: {
   message?: string;
   force?: boolean;
 }): Promise<{ item: ItemFrontMatter; changedFields: string[]; warnings: string[] }> {
-  const located = await locateItem(params.pmRoot, params.id, params.settings.id_prefix, params.settings.item_format);
+  const typeToFolder = resolveItemTypeRegistry(params.settings, getActiveExtensionRegistrations()).type_to_folder;
+  const located = await locateItem(params.pmRoot, params.id, params.settings.id_prefix, params.settings.item_format, typeToFolder);
   if (!located) {
     throw new PmCliError(`Item ${params.id} not found`, EXIT_CODE.NOT_FOUND);
   }

@@ -1,0 +1,45 @@
+id: pm-rv63
+title: Support type-aware storage routing and safe type moves
+description: "Update item path resolution, scanning, init directories, and update --type behavior to handle dynamic folders and safe file moves."
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:migrations","area:store",code,pm-cli
+created_at: "2026-03-31T23:48:22.551Z"
+updated_at: "2026-04-01T00:27:34.211Z"
+deadline: "2026-04-07T23:48:22.551Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: Storage APIs support dynamic type folders and update --type relocates item files safely with history/locks preserved.
+goal: Customizable workflows
+objective: Guarantee storage correctness for custom types
+value: Reliable persistence across type changes
+impact: Avoids hidden path/type drift bugs
+outcome: Dynamic type-safe storage
+why_now: Current mutate path writes in-place regardless of new type
+parent: pm-277p
+risk: medium
+confidence: medium
+component: core/store
+regression: true
+customer_impact: Prevents data placement inconsistencies
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-277p,parent,"2026-03-31T23:48:22.551Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-03-31T23:48:22.551Z",codex-agent,Task tracks storage routing and update type relocation behavior.
+  "2026-04-01T00:27:31.779Z",codex-agent,Implemented dynamic storage routing and safe type-change relocation for configured item type folders.
+  "2026-04-01T00:27:32.821Z",codex-agent,"Evidence: node scripts/run-tests.mjs test -- tests/unit/item-store.spec.ts tests/unit/store-paths.spec.ts tests/unit/health-command.spec.ts tests/unit/init-command.spec.ts passed."
+notes[1]{created_at,author,text}:
+  "2026-03-31T23:48:22.551Z",codex-agent,Migration and locate/list behavior must remain deterministic.
+files[5]{path,scope,note}:
+  src/cli/commands/health.ts,project,health validates configured type folders
+  src/cli/commands/init.ts,project,init creates configured type folders
+  src/core/store/item-format-migration.ts,project,migration respects dynamic type folders
+  src/core/store/item-store.ts,project,mutateItem relocation logic
+  src/core/store/paths.ts,project,dynamic type folder resolution
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/item-store.spec.ts tests/unit/config-command.spec.ts tests/unit/store-paths.spec.ts,null,project,2400,storage path regression
+docs[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,storage model updates
+close_reason: dynamic type-folder storage routing and safe moves implemented with passing regressions
+body: Ensures item storage paths and migrations handle configurable type folders and prevent folder/type drift.

@@ -1,8 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { runActiveOnWriteHooks } from "../../core/extensions/index.js";
+import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { normalizePrefix } from "../../core/item/id.js";
+import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { PM_REQUIRED_SUBDIRS, SETTINGS_DEFAULTS } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
@@ -62,6 +63,28 @@ export async function runInit(prefixArg: string | undefined, global: GlobalOptio
     settings = cloneDefaults();
     settings.id_prefix = normalizedPrefix;
     await writeSettings(pmRoot, settings);
+  }
+
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  for (const typeFolder of typeRegistry.folders) {
+    if ((PM_REQUIRED_SUBDIRS as readonly string[]).includes(typeFolder)) {
+      continue;
+    }
+    const target = path.join(pmRoot, typeFolder);
+    const existed = await pathExists(target);
+    await fs.mkdir(target, { recursive: true });
+    if (existed) {
+      warnings.push(`already_exists:${target}`);
+    } else {
+      createdDirs.push(target);
+    }
+    warnings.push(
+      ...(await runActiveOnWriteHooks({
+        path: target,
+        scope: "project",
+        op: "init:ensure_dir",
+      })),
+    );
   }
 
   return {

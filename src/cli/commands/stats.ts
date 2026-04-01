@@ -1,7 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { runActiveOnReadHooks } from "../../core/extensions/index.js";
+import { getActiveExtensionRegistrations, runActiveOnReadHooks } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
+import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -9,7 +10,7 @@ import { nowIso } from "../../core/shared/time.js";
 import { listAllFrontMatter } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import { ITEM_TYPE_VALUES, STATUS_VALUES } from "../../types/index.js";
+import { STATUS_VALUES } from "../../types/index.js";
 import type { ItemStatus, ItemType } from "../../types/index.js";
 
 export interface StatsResult {
@@ -23,8 +24,8 @@ export interface StatsResult {
   generated_at: string;
 }
 
-function zeroByType(): Record<ItemType, number> {
-  return ITEM_TYPE_VALUES.reduce(
+function zeroByType(itemTypes: string[]): Record<ItemType, number> {
+  return itemTypes.reduce(
     (acc, value) => {
       acc[value] = 0;
       return acc;
@@ -94,11 +95,15 @@ export async function runStats(global: GlobalOptions): Promise<StatsResult> {
   }
 
   const settings = await readSettings(pmRoot);
-  const items = await listAllFrontMatter(pmRoot, settings.item_format);
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
 
-  const byType = zeroByType();
+  const byType = zeroByType(typeRegistry.types);
   const byStatus = zeroByStatus();
   for (const item of items) {
+    if (byType[item.type] === undefined) {
+      byType[item.type] = 0;
+    }
     byType[item.type] += 1;
     byStatus[item.status] += 1;
   }

@@ -31,12 +31,31 @@ export function getSettingsPath(pmRoot: string): string {
   return path.join(pmRoot, SETTINGS_FILENAME);
 }
 
-export function getTypeDirPath(pmRoot: string, type: ItemType): string {
-  return path.join(pmRoot, TYPE_TO_FOLDER[type]);
+function deriveDefaultTypeFolder(type: string): string {
+  const normalized = type
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  if (normalized.length === 0) {
+    return "items";
+  }
+  return normalized.endsWith("s") ? normalized : `${normalized}s`;
 }
 
-export function getItemPath(pmRoot: string, type: ItemType, id: string, itemFormat: ItemFormat = "json_markdown"): string {
-  return path.join(getTypeDirPath(pmRoot, type), `${id}${ITEM_FILE_EXTENSION_BY_FORMAT[itemFormat]}`);
+export function getTypeDirPath(pmRoot: string, type: ItemType, typeToFolder: Record<string, string> = TYPE_TO_FOLDER): string {
+  const folder = typeToFolder[type] ?? deriveDefaultTypeFolder(type);
+  return path.join(pmRoot, folder);
+}
+
+export function getItemPath(
+  pmRoot: string,
+  type: ItemType,
+  id: string,
+  itemFormat: ItemFormat = "json_markdown",
+  typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
+): string {
+  return path.join(getTypeDirPath(pmRoot, type, typeToFolder), `${id}${ITEM_FILE_EXTENSION_BY_FORMAT[itemFormat]}`);
 }
 
 export function getItemFormatFromPath(itemPath: string): ItemFormat | null {

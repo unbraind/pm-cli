@@ -1,0 +1,45 @@
+id: pm-h1no
+title: Build and wire runtime item type registry
+description: Create centralized runtime registry for item types/options and use it across list/search/calendar/completion validation.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:cli","area:schema",code,pm-cli
+created_at: "2026-03-31T23:48:14.730Z"
+updated_at: "2026-04-01T00:27:17.721Z"
+deadline: "2026-04-07T23:48:14.730Z"
+author: codex-agent
+estimated_minutes: 200
+acceptance_criteria: "Type-related command validation and completion derive from runtime registry, supporting built-ins and custom types."
+goal: Customizable workflows
+objective: Single source of truth for type values
+value: Consistency across commands
+impact: Eliminates duplicated hard-coded type maps
+outcome: Registry-backed CLI validation
+why_now: Needed to support settings/extensions custom types safely
+parent: pm-277p
+risk: medium
+confidence: medium
+component: cli/commands
+regression: true
+customer_impact: Custom types behave consistently across commands
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-277p,parent,"2026-03-31T23:48:14.730Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-03-31T23:48:14.730Z",codex-agent,Task tracks registry integration in command paths.
+  "2026-04-01T00:27:15.812Z",codex-agent,Implemented centralized type-registry wiring across list/search/calendar/completion and command validation paths.
+  "2026-04-01T00:27:16.780Z",codex-agent,"Evidence: node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/search-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/completion-command.spec.ts passed."
+notes[1]{created_at,author,text}:
+  "2026-03-31T23:48:14.730Z",codex-agent,Preserve existing defaults when no custom settings are present.
+files[5]{path,scope,note}:
+  src/cli/commands/calendar.ts,project,calendar type filtering via registry
+  src/cli/commands/completion.ts,project,dynamic type completion generation
+  src/cli/commands/list.ts,project,type filter validator
+  src/cli/commands/search.ts,project,registry-backed search type validation
+  src/core/item/type-registry.ts,project,central runtime type registry
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/search-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/completion-command.spec.ts,null,project,2400,dynamic type validation coverage
+docs[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,registry flow documentation
+close_reason: runtime registry integrated across type-aware command surfaces with passing regression tests
+body: Adds type registry module and integrates command validators/completion with dynamic allowed types.

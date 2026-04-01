@@ -140,6 +140,7 @@ export interface PmToolParameters {
   doc?: string[];
   reminder?: string[];
   event?: string[];
+  typeOption?: string[];
   criterion?: string[];
   format?: string;
 }
@@ -271,6 +272,7 @@ export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = {
     doc: { type: "array", items: { type: "string" } },
     reminder: { type: "array", items: { type: "string" } },
     event: { type: "array", items: { type: "string" } },
+    typeOption: { type: "array", items: { type: "string" } },
     criterion: { type: "array", items: { type: "string" } },
     format: { type: "string" },
   },
@@ -364,6 +366,7 @@ function addCreateFlags(args: string[], params: PmToolParameters): void {
   addSharedCreateUpdateFlags(args, params);
   pushRepeatable(args, "--reminder", params.reminder);
   pushRepeatable(args, "--event", params.event);
+  pushRepeatable(args, "--type-option", params.typeOption);
   pushRepeatableOrNone(args, "--dep", params.dep);
   pushRepeatableOrNone(args, "--comment", params.comment);
   pushRepeatableOrNone(args, "--note", params.note);
@@ -389,6 +392,7 @@ function addUpdateFlags(args: string[], params: PmToolParameters): void {
   addSharedCreateUpdateFlags(args, params);
   pushRepeatable(args, "--reminder", params.reminder);
   pushRepeatable(args, "--event", params.event);
+  pushRepeatable(args, "--type-option", params.typeOption);
   if (params.force) {
     args.push("--force");
   }

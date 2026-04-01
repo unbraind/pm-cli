@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { runActiveOnReadHooks } from "../../core/extensions/index.js";
+import { getActiveExtensionRegistrations, runActiveOnReadHooks } from "../../core/extensions/index.js";
+import { resolveItemTypeRegistry, resolveTypeName, type ItemTypeRegistry } from "../../core/item/type-registry.js";
 import {
   executeEmbeddingRequest,
   resolveEmbeddingProviders,
@@ -55,14 +56,6 @@ export interface SearchResult {
 
 
 
-const ITEM_TYPES_BY_LOWER = new Map<string, ItemType>([
-  ["epic", "Epic"],
-  ["feature", "Feature"],
-  ["task", "Task"],
-  ["chore", "Chore"],
-  ["issue", "Issue"],
-]);
-
 function isTerminal(status: ItemStatus): boolean {
   return status === "closed" || status === "canceled";
 }
@@ -96,11 +89,11 @@ function parsePriority(raw: string | undefined): number | undefined {
   return parsed;
 }
 
-function parseType(raw: string | undefined): ItemType | undefined {
+function parseType(raw: string | undefined, typeRegistry: ItemTypeRegistry): ItemType | undefined {
   if (raw === undefined) return undefined;
-  const parsed = ITEM_TYPES_BY_LOWER.get(raw.trim().toLowerCase());
+  const parsed = resolveTypeName(raw, typeRegistry);
   if (!parsed) {
-    throw new PmCliError("Type filter must be one of Epic|Feature|Task|Chore|Issue", EXIT_CODE.USAGE);
+    throw new PmCliError(`Type filter must be one of ${typeRegistry.types.join("|")}`, EXIT_CODE.USAGE);
   }
   return parsed;
 }
@@ -127,8 +120,8 @@ function parseTokens(query: string): string[] {
   return normalized.split(/\s+/).filter(Boolean);
 }
 
-function applyFilters(items: ItemDocument[], options: SearchOptions): ItemDocument[] {
-  const typeFilter = parseType(options.type);
+function applyFilters(items: ItemDocument[], options: SearchOptions, typeRegistry: ItemTypeRegistry): ItemDocument[] {
+  const typeFilter = parseType(options.type, typeRegistry);
   const tagFilter = options.tag?.trim().toLowerCase();
   const priorityFilter = parsePriority(options.priority);
   const deadlineBefore = parseDeadline(options.deadlineBefore);
@@ -579,11 +572,15 @@ function alternateFormat(itemFormat: ItemFormat): ItemFormat {
   return itemFormat === "toon" ? "json_markdown" : "toon";
 }
 
-async function loadDocuments(pmRoot: string, itemFormat: ItemFormat): Promise<ItemDocument[]> {
-  const items = await listAllFrontMatter(pmRoot, itemFormat);
+async function loadDocuments(
+  pmRoot: string,
+  itemFormat: ItemFormat,
+  typeToFolder: Record<string, string>,
+): Promise<ItemDocument[]> {
+  const items = await listAllFrontMatter(pmRoot, itemFormat, typeToFolder);
   const documents: ItemDocument[] = [];
   for (const item of items) {
-    const preferredPath = getItemPath(pmRoot, item.type, item.id, itemFormat);
+    const preferredPath = getItemPath(pmRoot, item.type, item.id, itemFormat, typeToFolder);
     try {
       const raw = await fs.readFile(preferredPath, "utf8");
       await runActiveOnReadHooks({
@@ -596,7 +593,7 @@ async function loadDocuments(pmRoot: string, itemFormat: ItemFormat): Promise<It
       // Fallback to the alternate format when preferred format path is absent.
     }
     const fallbackFormat = alternateFormat(itemFormat);
-    const fallbackPath = getItemPath(pmRoot, item.type, item.id, fallbackFormat);
+    const fallbackPath = getItemPath(pmRoot, item.type, item.id, fallbackFormat, typeToFolder);
     const raw = await fs.readFile(fallbackPath, "utf8");
     await runActiveOnReadHooks({
       path: fallbackPath,
@@ -616,6 +613,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
   const settings = await readSettings(pmRoot);
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const maxResults = resolveSearchMaxResults(settings);
   const scoreThreshold = resolveSearchScoreThreshold(settings);
   const hybridSemanticWeight = resolveHybridSemanticWeight(settings);
@@ -626,8 +624,8 @@ export async function runSearch(query: string, options: SearchOptions, global: G
     hasProvider: providerResolution.active !== null,
     hasVectorStore: vectorResolution.active !== null,
   });
-  const allDocuments = await loadDocuments(pmRoot, settings.item_format ?? "json_markdown");
-  const filteredDocuments = applyFilters(allDocuments, options);
+  const allDocuments = await loadDocuments(pmRoot, settings.item_format ?? "json_markdown", typeRegistry.type_to_folder);
+  const filteredDocuments = applyFilters(allDocuments, options, typeRegistry);
   if (requestedMode === "keyword" && (filteredDocuments.length === 0 || limit === 0)) {
     return emptySearchResult(query, requestedMode, options, includeLinked, scoreThreshold, hybridSemanticWeight);
   }

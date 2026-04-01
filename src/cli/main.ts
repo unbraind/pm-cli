@@ -42,7 +42,9 @@ import {
   clearActiveExtensionHooks,
   createEmptyExtensionCommandRegistry,
   createEmptyExtensionHookRegistry,
+  createEmptyExtensionRegistrationRegistry,
   createEmptyExtensionRendererRegistry,
+  getActiveExtensionRegistrations,
   loadExtensions,
   runActiveCommandHandler,
   runAfterCommandHooks,
@@ -50,6 +52,7 @@ import {
   setActiveCommandContext,
   setActiveExtensionCommands,
   setActiveExtensionHooks,
+  setActiveExtensionRegistrations,
   setActiveExtensionRenderers,
   type ExtensionCommandRegistry,
   type ExtensionHookRegistry,
@@ -58,6 +61,7 @@ import {
   type ExtensionRendererRegistry,
 } from "../core/extensions/index.js";
 import { pathExists } from "../core/fs/fs-utils.js";
+import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { refreshSearchArtifactsForMutation } from "../core/search/cache.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -461,7 +465,13 @@ async function enforceItemFormatWriteGateAndPreflightMigration(
       EXIT_CODE.CONFLICT,
     );
   }
-  await migrateItemFilesToFormat(pmRoot, settings.item_format, "item_format:pre_mutation_sync");
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  await migrateItemFilesToFormat(
+    pmRoot,
+    settings.item_format,
+    "item_format:pre_mutation_sync",
+    typeRegistry.type_to_folder,
+  );
 }
 
 function describeUnknownError(error: unknown): string {
@@ -553,6 +563,7 @@ async function maybeLoadRuntimeExtensions(
     hooks: ExtensionHookRegistry;
     commands: ExtensionCommandRegistry;
     renderers: ExtensionRendererRegistry;
+    registrations: ReturnType<typeof createEmptyExtensionRegistrationRegistry>;
     pmRoot: string;
     migrationBlockers: MandatoryMigrationBlocker[];
   } | null
@@ -594,6 +605,7 @@ async function maybeLoadRuntimeExtensions(
       hooks: activationResult.hooks,
       commands: activationResult.commands,
       renderers: activationResult.renderers,
+      registrations: activationResult.registrations,
       pmRoot,
       migrationBlockers,
     };
@@ -606,6 +618,7 @@ async function maybeLoadRuntimeExtensions(
       hooks: createEmptyExtensionHookRegistry(),
       commands: createEmptyExtensionCommandRegistry(),
       renderers: createEmptyExtensionRendererRegistry(),
+      registrations: createEmptyExtensionRegistrationRegistry(),
       pmRoot,
       migrationBlockers: [],
     };
@@ -726,108 +739,79 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command): Promi
 }
 
 function normalizeCreateOptions(commandOptions: Record<string, unknown>): CreateCommandOptions {
+  const readStringOption = (...keys: string[]): string | undefined => {
+    for (const key of keys) {
+      if (typeof commandOptions[key] === "string") {
+        return commandOptions[key] as string;
+      }
+    }
+    return undefined;
+  };
   const estimatedMinutes =
-    (typeof commandOptions.estimate === "string" ? commandOptions.estimate : undefined) ??
-    (typeof commandOptions.estimatedMinutes === "string" ? commandOptions.estimatedMinutes : undefined) ??
-    (typeof commandOptions.estimated_minutes === "string" ? commandOptions.estimated_minutes : undefined);
-  if (estimatedMinutes === undefined) {
-    throw new PmCliError("Missing required option --estimate/--estimated-minutes/--estimated_minutes", EXIT_CODE.USAGE);
+    readStringOption("estimate", "estimatedMinutes", "estimated_minutes");
+  const type = readStringOption("type");
+  if (type === undefined) {
+    throw new PmCliError("Missing required option --type", EXIT_CODE.USAGE);
   }
 
-  const requiredString = (key: string, display: string): string => {
-    const value = commandOptions[key];
-    if (typeof value !== "string") {
-      throw new PmCliError(`Missing required option ${display}`, EXIT_CODE.USAGE);
-    }
-    return value;
-  };
-
-  const requiredRepeatable = (key: string, display: string): string[] => {
-    const value = commandOptions[key];
-    if (!Array.isArray(value) || value.length === 0) {
-      throw new PmCliError(`Missing required option ${display} (use 'none' for explicit empty)`, EXIT_CODE.USAGE);
-    }
-    return value as string[];
-  };
-
   return {
-    title: requiredString("title", "--title"),
-    description: requiredString("description", "--description"),
-    type: requiredString("type", "--type"),
-    status: requiredString("status", "--status"),
-    priority: requiredString("priority", "--priority"),
-    tags: requiredString("tags", "--tags"),
-    body: requiredString("body", "--body"),
-    deadline: requiredString("deadline", "--deadline"),
+    title: readStringOption("title"),
+    description: readStringOption("description"),
+    type,
+    status: readStringOption("status"),
+    priority: readStringOption("priority"),
+    tags: readStringOption("tags"),
+    body: readStringOption("body"),
+    deadline: readStringOption("deadline"),
     estimatedMinutes,
-    acceptanceCriteria:
-      (typeof commandOptions.acceptanceCriteria === "string" ? commandOptions.acceptanceCriteria : undefined) ??
-      (typeof commandOptions.acceptance_criteria === "string" ? commandOptions.acceptance_criteria : undefined) ??
-      requiredString("ac", "--acceptance-criteria/--ac"),
-    definitionOfReady:
-      (typeof commandOptions.definitionOfReady === "string" ? commandOptions.definitionOfReady : undefined) ??
-      (typeof commandOptions.definition_of_ready === "string" ? commandOptions.definition_of_ready : undefined),
-    order: typeof commandOptions.order === "string" ? commandOptions.order : undefined,
-    rank: typeof commandOptions.rank === "string" ? commandOptions.rank : undefined,
-    goal: typeof commandOptions.goal === "string" ? commandOptions.goal : undefined,
-    objective: typeof commandOptions.objective === "string" ? commandOptions.objective : undefined,
-    value: typeof commandOptions.value === "string" ? commandOptions.value : undefined,
-    impact: typeof commandOptions.impact === "string" ? commandOptions.impact : undefined,
-    outcome: typeof commandOptions.outcome === "string" ? commandOptions.outcome : undefined,
-    whyNow:
-      (typeof commandOptions.whyNow === "string" ? commandOptions.whyNow : undefined) ??
-      (typeof commandOptions.why_now === "string" ? commandOptions.why_now : undefined),
-    author: requiredString("author", "--author"),
-    message: requiredString("message", "--message"),
-    assignee: requiredString("assignee", "--assignee"),
-    parent: typeof commandOptions.parent === "string" ? commandOptions.parent : undefined,
-    reviewer: typeof commandOptions.reviewer === "string" ? commandOptions.reviewer : undefined,
-    risk: typeof commandOptions.risk === "string" ? commandOptions.risk : undefined,
-    confidence: typeof commandOptions.confidence === "string" ? commandOptions.confidence : undefined,
-    sprint: typeof commandOptions.sprint === "string" ? commandOptions.sprint : undefined,
-    release: typeof commandOptions.release === "string" ? commandOptions.release : undefined,
-    blockedBy:
-      (typeof commandOptions.blockedBy === "string" ? commandOptions.blockedBy : undefined) ??
-      (typeof commandOptions.blocked_by === "string" ? commandOptions.blocked_by : undefined),
-    blockedReason:
-      (typeof commandOptions.blockedReason === "string" ? commandOptions.blockedReason : undefined) ??
-      (typeof commandOptions.blocked_reason === "string" ? commandOptions.blocked_reason : undefined),
-    unblockNote:
-      (typeof commandOptions.unblockNote === "string" ? commandOptions.unblockNote : undefined) ??
-      (typeof commandOptions.unblock_note === "string" ? commandOptions.unblock_note : undefined),
-    reporter: typeof commandOptions.reporter === "string" ? commandOptions.reporter : undefined,
-    severity: typeof commandOptions.severity === "string" ? commandOptions.severity : undefined,
-    environment: typeof commandOptions.environment === "string" ? commandOptions.environment : undefined,
-    reproSteps:
-      (typeof commandOptions.reproSteps === "string" ? commandOptions.reproSteps : undefined) ??
-      (typeof commandOptions.repro_steps === "string" ? commandOptions.repro_steps : undefined),
-    resolution: typeof commandOptions.resolution === "string" ? commandOptions.resolution : undefined,
-    expectedResult:
-      (typeof commandOptions.expectedResult === "string" ? commandOptions.expectedResult : undefined) ??
-      (typeof commandOptions.expected_result === "string" ? commandOptions.expected_result : undefined),
-    actualResult:
-      (typeof commandOptions.actualResult === "string" ? commandOptions.actualResult : undefined) ??
-      (typeof commandOptions.actual_result === "string" ? commandOptions.actual_result : undefined),
-    affectedVersion:
-      (typeof commandOptions.affectedVersion === "string" ? commandOptions.affectedVersion : undefined) ??
-      (typeof commandOptions.affected_version === "string" ? commandOptions.affected_version : undefined),
-    fixedVersion:
-      (typeof commandOptions.fixedVersion === "string" ? commandOptions.fixedVersion : undefined) ??
-      (typeof commandOptions.fixed_version === "string" ? commandOptions.fixed_version : undefined),
-    component: typeof commandOptions.component === "string" ? commandOptions.component : undefined,
-    regression: typeof commandOptions.regression === "string" ? commandOptions.regression : undefined,
-    customerImpact:
-      (typeof commandOptions.customerImpact === "string" ? commandOptions.customerImpact : undefined) ??
-      (typeof commandOptions.customer_impact === "string" ? commandOptions.customer_impact : undefined),
-    dep: requiredRepeatable("dep", "--dep"),
-    comment: requiredRepeatable("comment", "--comment"),
-    note: requiredRepeatable("note", "--note"),
-    learning: requiredRepeatable("learning", "--learning"),
-    file: requiredRepeatable("file", "--file"),
-    test: requiredRepeatable("test", "--test"),
-    doc: requiredRepeatable("doc", "--doc"),
+    acceptanceCriteria: readStringOption("acceptanceCriteria", "acceptance_criteria", "ac"),
+    definitionOfReady: readStringOption("definitionOfReady", "definition_of_ready"),
+    order: readStringOption("order"),
+    rank: readStringOption("rank"),
+    goal: readStringOption("goal"),
+    objective: readStringOption("objective"),
+    value: readStringOption("value"),
+    impact: readStringOption("impact"),
+    outcome: readStringOption("outcome"),
+    whyNow: readStringOption("whyNow", "why_now"),
+    author: readStringOption("author"),
+    message: readStringOption("message"),
+    assignee: readStringOption("assignee"),
+    parent: readStringOption("parent"),
+    reviewer: readStringOption("reviewer"),
+    risk: readStringOption("risk"),
+    confidence: readStringOption("confidence"),
+    sprint: readStringOption("sprint"),
+    release: readStringOption("release"),
+    blockedBy: readStringOption("blockedBy", "blocked_by"),
+    blockedReason: readStringOption("blockedReason", "blocked_reason"),
+    unblockNote: readStringOption("unblockNote", "unblock_note"),
+    reporter: readStringOption("reporter"),
+    severity: readStringOption("severity"),
+    environment: readStringOption("environment"),
+    reproSteps: readStringOption("reproSteps", "repro_steps"),
+    resolution: readStringOption("resolution"),
+    expectedResult: readStringOption("expectedResult", "expected_result"),
+    actualResult: readStringOption("actualResult", "actual_result"),
+    affectedVersion: readStringOption("affectedVersion", "affected_version"),
+    fixedVersion: readStringOption("fixedVersion", "fixed_version"),
+    component: readStringOption("component"),
+    regression: readStringOption("regression"),
+    customerImpact: readStringOption("customerImpact", "customer_impact"),
+    dep: Array.isArray(commandOptions.dep) ? (commandOptions.dep as string[]) : undefined,
+    comment: Array.isArray(commandOptions.comment) ? (commandOptions.comment as string[]) : undefined,
+    note: Array.isArray(commandOptions.note) ? (commandOptions.note as string[]) : undefined,
+    learning: Array.isArray(commandOptions.learning) ? (commandOptions.learning as string[]) : undefined,
+    file: Array.isArray(commandOptions.file) ? (commandOptions.file as string[]) : undefined,
+    test: Array.isArray(commandOptions.test) ? (commandOptions.test as string[]) : undefined,
+    doc: Array.isArray(commandOptions.doc) ? (commandOptions.doc as string[]) : undefined,
     reminder: Array.isArray(commandOptions.reminder) ? (commandOptions.reminder as string[]) : undefined,
     event: Array.isArray(commandOptions.event) ? (commandOptions.event as string[]) : undefined,
+    typeOption: Array.isArray(commandOptions.typeOption)
+      ? (commandOptions.typeOption as string[])
+      : Array.isArray(commandOptions.type_option)
+        ? (commandOptions.type_option as string[])
+        : undefined,
   };
 }
 
@@ -907,6 +891,11 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
       (typeof commandOptions.customer_impact === "string" ? commandOptions.customer_impact : undefined),
     reminder: Array.isArray(commandOptions.reminder) ? (commandOptions.reminder as string[]) : undefined,
     event: Array.isArray(commandOptions.event) ? (commandOptions.event as string[]) : undefined,
+    typeOption: Array.isArray(commandOptions.typeOption)
+      ? (commandOptions.typeOption as string[])
+      : Array.isArray(commandOptions.type_option)
+        ? (commandOptions.type_option as string[])
+        : undefined,
   };
 }
 
@@ -1018,6 +1007,7 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
   setActiveExtensionHooks(runtimeExtensions.hooks);
   setActiveExtensionCommands(runtimeExtensions.commands);
   setActiveExtensionRenderers(runtimeExtensions.renderers);
+  setActiveExtensionRegistrations(runtimeExtensions.registrations);
   setActiveCommandContext({
     command: commandPath,
     args: commandArgs,
@@ -1118,12 +1108,12 @@ program
   .description("Create a new project management item.")
   .requiredOption("--title, -t <value>", "Item title")
   .requiredOption("--description, -d <value>", "Item description (allow empty string)")
-  .requiredOption("--type <value>", "Item type: Epic|Feature|Task|Chore|Issue")
-  .requiredOption("--status, -s <value>", "Item status")
-  .requiredOption("--priority, -p <value>", "Priority 0..4")
-  .requiredOption("--tags <value>", "Comma-separated tags, or 'none'")
-  .requiredOption("--body, -b <value>", "Item markdown body (allow empty string)")
-  .requiredOption("--deadline <value>", "ISO deadline, relative +6h/+1d/+2w, or none")
+  .requiredOption("--type <value>", "Item type (built-ins plus any configured custom types)")
+  .option("--status, -s <value>", "Item status")
+  .option("--priority, -p <value>", "Priority 0..4")
+  .option("--tags <value>", "Comma-separated tags, or 'none'")
+  .option("--body, -b <value>", "Item markdown body (allow empty string)")
+  .option("--deadline <value>", "ISO deadline, relative +6h/+1d/+2w, or none")
   .option("--estimate, --estimated-minutes <value>", "Estimated minutes, or none")
   .option("--estimated_minutes <value>", "Alias for --estimated-minutes")
   .option("--acceptance-criteria <value>", "Acceptance criteria (allow empty string)")
@@ -1140,9 +1130,9 @@ program
   .option("--outcome <value>", "Expected outcome summary, or none")
   .option("--why-now <value>", "Why-now rationale, or none")
   .option("--why_now <value>", "Alias for --why-now")
-  .requiredOption("--author <value>", "Mutation author, or none")
-  .requiredOption("--message <value>", "History message (allow empty string)")
-  .requiredOption("--assignee <value>", "Item assignee, or none")
+  .option("--author <value>", "Mutation author, or none")
+  .option("--message <value>", "History message (allow empty string)")
+  .option("--assignee <value>", "Item assignee, or none")
   .option("--parent <value>", "Parent item ID, or none")
   .option("--reviewer <value>", "Reviewer, or none")
   .option("--risk <value>", "Risk level: low|med|medium|high|critical, or none (med persists as medium)")
@@ -1173,19 +1163,21 @@ program
   .option("--regression <value>", "Regression marker: true|false|1|0, or none")
   .option("--customer-impact <value>", "Customer impact summary, or none")
   .option("--customer_impact <value>", "Alias for --customer-impact")
-  .option("--dep <value>", "Seed dependency entry (required; use none for empty)", collect)
+  .option("--dep <value>", "Seed dependency entry (repeatable; use none for explicit empty)", collect)
+  .option("--type-option <value>", "Type option key=value or key=<name>,value=<value> (repeatable; use none for explicit empty)", collect)
+  .option("--type_option <value>", "Alias for --type-option", collect)
   .option("--reminder <value>", "Seed reminder entry at=<iso|relative>,text=<text> (repeatable; use none for empty)", collect)
   .option(
     "--event <value>",
     "Seed event entry start=<iso|relative>,end=<iso|relative>,title=<text>,all_day=<true|false>,recur_* fields (repeatable; use none for empty)",
     collect,
   )
-  .option("--comment <value>", "Seed comment entry (required; use none for empty)", collect)
-  .option("--note <value>", "Seed note entry (required; use none for empty)", collect)
-  .option("--learning <value>", "Seed learning entry (required; use none for empty)", collect)
-  .option("--file <value>", "Seed linked file entry (required; use none for empty)", collect)
-  .option("--test <value>", "Seed linked test entry (required; use none for empty)", collect)
-  .option("--doc <value>", "Seed linked doc entry (required; use none for empty)", collect)
+  .option("--comment <value>", "Seed comment entry (repeatable; use none for explicit empty)", collect)
+  .option("--note <value>", "Seed note entry (repeatable; use none for explicit empty)", collect)
+  .option("--learning <value>", "Seed learning entry (repeatable; use none for explicit empty)", collect)
+  .option("--file <value>", "Seed linked file entry (repeatable; use none for explicit empty)", collect)
+  .option("--test <value>", "Seed linked test entry (repeatable; use none for explicit empty)", collect)
+  .option("--doc <value>", "Seed linked doc entry (repeatable; use none for explicit empty)", collect)
   .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -1529,6 +1521,12 @@ program
     "Set events start=<iso|relative>,end=<iso|relative>,title=<text>,all_day=<true|false>,recur_* fields (repeatable; use none to clear)",
     collect,
   )
+  .option(
+    "--type-option <value>",
+    "Set type options key=value or key=<name>,value=<value> (repeatable; use none to clear)",
+    collect,
+  )
+  .option("--type_option <value>", "Alias for --type-option", collect)
   .option("--force", "Force ownership override")
   .action(async (id: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
@@ -1870,9 +1868,15 @@ program
   .command("completion")
   .argument("<shell>", "Shell type: bash, zsh, or fish")
   .description("Generate shell completion for pm.")
-  .action((shell: string, _options: Record<string, unknown>, command) => {
+  .action(async (shell: string, _options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
-    const result = runCompletion(shell);
+    const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
+    let completionTypes: string[] | undefined;
+    if (await pathExists(getSettingsPath(pmRoot))) {
+      const settings = await readSettings(pmRoot);
+      completionTypes = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations()).types;
+    }
+    const result = runCompletion(shell, completionTypes);
     if (globalOptions.json) {
       printResult(result, globalOptions);
     } else if (!globalOptions.quiet) {
@@ -1882,6 +1886,37 @@ program
       printError(`profile:command=completion took_ms=0`);
     }
   });
+
+async function formatCommanderUsageMessage(error: unknown): Promise<string> {
+  const rawMessage = typeof error === "object" && error !== null ? (error as { message?: string }).message : undefined;
+  const message = (rawMessage ?? "Invalid command usage").replace(/\(outputHelp\)/g, "").trim();
+  if (!message.includes("required option '--type <value>'")) {
+    return message;
+  }
+
+  const bootstrapGlobal = parseBootstrapGlobalOptions(process.argv.slice(2));
+  let allowedTypes = "Epic|Feature|Task|Chore|Issue";
+  try {
+    const pmRoot = resolvePmRoot(process.cwd(), bootstrapGlobal.path);
+    if (await pathExists(getSettingsPath(pmRoot))) {
+      const settings = await readSettings(pmRoot);
+      const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+      if (typeRegistry.types.length > 0) {
+        allowedTypes = typeRegistry.types.join("|");
+      }
+    }
+  } catch {
+    // Fall back to built-in type guidance when settings cannot be read.
+  }
+
+  return [
+    message,
+    "Why this option is required: --type selects which item contract and folder routing rules are applied.",
+    `Allowed values: ${allowedTypes}`,
+    'Example: pm create --title "Asset: Forest Map" --description "Track 3D map asset" --type Asset',
+    'Example: pm create --title "Fix auth" --description "Resolve refresh bug" --type Task --status in_progress --priority 1',
+  ].join("\n");
+}
 
 async function main(): Promise<void> {
   try {
@@ -1906,8 +1941,7 @@ async function main(): Promise<void> {
         process.exit(EXIT_CODE.SUCCESS);
       }
       if (code?.startsWith("commander.")) {
-        const message = (error as { message?: string }).message ?? "Invalid command usage";
-        printError(message.replace(/\(outputHelp\)/g, "").trim());
+        printError(await formatCommanderUsageMessage(error));
         process.exit(EXIT_CODE.USAGE);
       }
     }

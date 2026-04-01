@@ -1,4 +1,6 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
+import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import { resolveItemTypeRegistry, resolveTypeName, type ItemTypeRegistry } from "../../core/item/type-registry.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -31,14 +33,6 @@ export interface ListResult {
   now: string;
 }
 
-const ITEM_TYPES_BY_LOWER = new Map<string, ItemType>([
-  ["epic", "Epic"],
-  ["feature", "Feature"],
-  ["task", "Task"],
-  ["chore", "Chore"],
-  ["issue", "Issue"],
-]);
-
 function isTerminal(status: ItemStatus): boolean {
   return status === "closed" || status === "canceled";
 }
@@ -67,11 +61,11 @@ function parsePriority(raw: string | undefined): number | undefined {
   return parsed;
 }
 
-function parseType(raw: string | undefined): ItemType | undefined {
+function parseType(raw: string | undefined, typeRegistry: ItemTypeRegistry): ItemType | undefined {
   if (raw === undefined) return undefined;
-  const parsed = ITEM_TYPES_BY_LOWER.get(raw.trim().toLowerCase());
+  const parsed = resolveTypeName(raw, typeRegistry);
   if (!parsed) {
-    throw new PmCliError("Type filter must be one of Epic|Feature|Task|Chore|Issue", EXIT_CODE.USAGE);
+    throw new PmCliError(`Type filter must be one of ${typeRegistry.types.join("|")}`, EXIT_CODE.USAGE);
   }
   return parsed;
 }
@@ -90,8 +84,13 @@ function parseLimit(raw: string | undefined): number | undefined {
   return parsed;
 }
 
-function applyFilters(items: ListedItem[], status: ItemStatus | undefined, options: ListOptions): ListedItem[] {
-  const typeFilter = parseType(options.type);
+function applyFilters(
+  items: ListedItem[],
+  status: ItemStatus | undefined,
+  options: ListOptions,
+  typeRegistry: ItemTypeRegistry,
+): ListedItem[] {
+  const typeFilter = parseType(options.type, typeRegistry);
   const tagFilter = options.tag?.trim().toLowerCase();
   const priorityFilter = parsePriority(options.priority);
   const deadlineBefore = parseDeadline(options.deadlineBefore);
@@ -127,10 +126,11 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
   const settings = await readSettings(pmRoot);
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const items = options.includeBody
-    ? await listAllFrontMatterWithBody(pmRoot, settings.item_format)
-    : await listAllFrontMatter(pmRoot, settings.item_format);
-  const filtered = applyFilters(items, status, options);
+    ? await listAllFrontMatterWithBody(pmRoot, settings.item_format, typeRegistry.type_to_folder)
+    : await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
+  const filtered = applyFilters(items, status, options, typeRegistry);
   const sorted = sortItems(filtered);
   const limit = parseLimit(options.limit);
   const limited = limit === undefined ? sorted : sorted.slice(0, limit);

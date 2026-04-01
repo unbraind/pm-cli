@@ -3,12 +3,18 @@ import { appendHistoryEntry, createHistoryEntry } from "../../core/history/histo
 import { generateItemId, normalizeItemId } from "../../core/item/id.js";
 import { canonicalDocument, normalizeFrontMatter, serializeItemDocument } from "../../core/item/item-format.js";
 import { parseCsvKv, parseOptionalNumber, parseTags } from "../../core/item/parse.js";
+import {
+  resolveItemTypeRegistry,
+  resolveTypeDefinition,
+  resolveTypeName,
+  validateTypeOptions,
+} from "../../core/item/type-registry.js";
 import { acquireLock } from "../../core/lock/lock.js";
 import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { isNoneToken, nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
-import { runActiveOnWriteHooks } from "../../core/extensions/index.js";
+import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../core/extensions/index.js";
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type {
@@ -28,7 +34,6 @@ import {
   CONFIDENCE_TEXT_VALUES,
   DEPENDENCY_KIND_VALUES,
   ISSUE_SEVERITY_VALUES,
-  ITEM_TYPE_VALUES,
   RECURRENCE_FREQUENCY_VALUES,
   RECURRENCE_WEEKDAY_VALUES,
   RISK_VALUES,
@@ -37,16 +42,16 @@ import {
 } from "../../types/index.js";
 
 export interface CreateCommandOptions {
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   type: string;
-  status: string;
-  priority: string;
-  tags: string;
-  body: string;
-  deadline: string;
-  estimatedMinutes: string;
-  acceptanceCriteria: string;
+  status?: string;
+  priority?: string;
+  tags?: string;
+  body?: string;
+  deadline?: string;
+  estimatedMinutes?: string;
+  acceptanceCriteria?: string;
   definitionOfReady?: string;
   order?: string;
   rank?: string;
@@ -56,9 +61,9 @@ export interface CreateCommandOptions {
   impact?: string;
   outcome?: string;
   whyNow?: string;
-  author: string;
-  message: string;
-  assignee: string;
+  author?: string;
+  message?: string;
+  assignee?: string;
   parent?: string;
   reviewer?: string;
   risk?: string;
@@ -89,6 +94,7 @@ export interface CreateCommandOptions {
   doc?: string[];
   reminder?: string[];
   event?: string[];
+  typeOption?: string[];
 }
 
 export interface CreateResult {
@@ -493,6 +499,159 @@ function buildHistoryMessage(baseMessage: string | undefined, explicitUnsets: st
   return trimmed ? `${trimmed} | ${suffix}` : suffix;
 }
 
+const CREATE_FIELD_FLAG_BY_KEY: Record<string, string> = {
+  title: "--title",
+  description: "--description",
+  type: "--type",
+  status: "--status",
+  priority: "--priority",
+  tags: "--tags",
+  body: "--body",
+  deadline: "--deadline",
+  estimatedMinutes: "--estimate/--estimated-minutes",
+  acceptanceCriteria: "--acceptance-criteria/--ac",
+  author: "--author",
+  message: "--message",
+  assignee: "--assignee",
+};
+
+const CREATE_REPEATABLE_FLAG_BY_KEY: Record<string, string> = {
+  dep: "--dep",
+  comment: "--comment",
+  note: "--note",
+  learning: "--learning",
+  file: "--file",
+  test: "--test",
+  doc: "--doc",
+  reminder: "--reminder",
+  event: "--event",
+  typeOption: "--type-option",
+};
+
+const CREATE_FIELD_KEY_ALIASES: Record<string, string> = {
+  estimated_minutes: "estimatedMinutes",
+  acceptance_criteria: "acceptanceCriteria",
+};
+
+const CREATE_REPEATABLE_KEY_ALIASES: Record<string, string> = {
+  type_options: "typeOption",
+};
+
+function parseTypeOptions(raw: string[] | undefined): { values: Record<string, string> | undefined; explicitEmpty: boolean } {
+  if (!raw || raw.length === 0) {
+    return { values: undefined, explicitEmpty: false };
+  }
+  if (raw.some((entry) => isNoneToken(entry))) {
+    if (raw.length > 1) {
+      throw new PmCliError("--type-option cannot mix 'none' with option values", EXIT_CODE.USAGE);
+    }
+    return { values: undefined, explicitEmpty: true };
+  }
+  const values: Record<string, string> = {};
+  for (const entry of raw) {
+    const trimmedEntry = entry.trim();
+    if (trimmedEntry.length === 0) {
+      throw new PmCliError("--type-option values must not be empty", EXIT_CODE.USAGE);
+    }
+    let key: string | undefined;
+    let value: string | undefined;
+    if (trimmedEntry.includes(",")) {
+      const kv = parseCsvKv(trimmedEntry, "--type-option");
+      key = parseOptionalString(kv.key)?.trim();
+      value = parseOptionalString(kv.value)?.trim();
+    } else {
+      const separatorIndex = trimmedEntry.indexOf("=");
+      if (separatorIndex <= 0 || separatorIndex === trimmedEntry.length - 1) {
+        throw new PmCliError(
+          "--type-option requires key=value or key=<name>,value=<value> entries",
+          EXIT_CODE.USAGE,
+        );
+      }
+      key = trimmedEntry.slice(0, separatorIndex).trim();
+      value = trimmedEntry.slice(separatorIndex + 1).trim();
+    }
+    if (!key || !value) {
+      throw new PmCliError("--type-option requires key and value", EXIT_CODE.USAGE);
+    }
+    values[key] = value;
+  }
+  const sortedEntries = Object.entries(values).sort((left, right) => left[0].localeCompare(right[0]));
+  return {
+    values: Object.fromEntries(sortedEntries),
+    explicitEmpty: false,
+  };
+}
+
+function requireCreateOptionByType(
+  typeName: string,
+  options: CreateCommandOptions,
+  requiredFields: string[],
+  requiredRepeatables: string[],
+): void {
+  const scalarValues: Record<string, unknown> = {
+    title: options.title,
+    description: options.description,
+    type: options.type,
+    status: options.status,
+    priority: options.priority,
+    tags: options.tags,
+    body: options.body,
+    deadline: options.deadline,
+    estimatedMinutes: options.estimatedMinutes,
+    acceptanceCriteria: options.acceptanceCriteria,
+    author: options.author,
+    message: options.message,
+    assignee: options.assignee,
+  };
+  const repeatableValues: Record<string, unknown> = {
+    dep: options.dep,
+    comment: options.comment,
+    note: options.note,
+    learning: options.learning,
+    file: options.file,
+    test: options.test,
+    doc: options.doc,
+    reminder: options.reminder,
+    event: options.event,
+    typeOption: options.typeOption,
+  };
+
+  for (const field of requiredFields) {
+    const normalizedField = CREATE_FIELD_KEY_ALIASES[field] ?? field;
+    const flag = CREATE_FIELD_FLAG_BY_KEY[normalizedField];
+    if (!flag) {
+      throw new PmCliError(
+        `Unsupported required_create_fields entry "${field}" for type "${typeName}"`,
+        EXIT_CODE.CONFLICT,
+      );
+    }
+    if (scalarValues[normalizedField] === undefined) {
+      throw new PmCliError(`Missing required option ${flag} for type "${typeName}"`, EXIT_CODE.USAGE);
+    }
+  }
+  for (const field of requiredRepeatables) {
+    const normalizedField = CREATE_REPEATABLE_KEY_ALIASES[field] ?? field;
+    const flag = CREATE_REPEATABLE_FLAG_BY_KEY[normalizedField];
+    if (!flag) {
+      throw new PmCliError(
+        `Unsupported required_create_repeatables entry "${field}" for type "${typeName}"`,
+        EXIT_CODE.CONFLICT,
+      );
+    }
+    const value = repeatableValues[normalizedField];
+    if (!Array.isArray(value) || value.length === 0) {
+      throw new PmCliError(`Missing required repeatable option ${flag} for type "${typeName}"`, EXIT_CODE.USAGE);
+    }
+  }
+}
+
+function requireStringOption(value: string | undefined, flag: string): string {
+  if (value === undefined) {
+    throw new PmCliError(`Missing required option ${flag}`, EXIT_CODE.USAGE);
+  }
+  return value;
+}
+
 function selectAuthor(explicitAuthor: string | undefined, settingsAuthor: string): string {
   const candidate = parseOptionalString(explicitAuthor) ?? process.env.PM_AUTHOR ?? settingsAuthor;
   const trimmed = candidate.trim();
@@ -520,6 +679,24 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   await ensureInitHasRun(pmRoot);
 
   const settings = await readSettings(pmRoot);
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const resolvedTypeName = resolveTypeName(options.type, typeRegistry);
+  if (!resolvedTypeName) {
+    throw new PmCliError(
+      `Invalid type value "${options.type}". Allowed: ${typeRegistry.types.join(", ")}`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  const typeDefinition = resolveTypeDefinition(resolvedTypeName, typeRegistry);
+  if (!typeDefinition) {
+    throw new PmCliError(`Invalid type value "${options.type}"`, EXIT_CODE.USAGE);
+  }
+  requireCreateOptionByType(
+    typeDefinition.name,
+    options,
+    typeDefinition.required_create_fields,
+    typeDefinition.required_create_repeatables,
+  );
   const nowValue = nowIso();
   const author = selectAuthor(options.author, settings.author_default);
   const explicitUnsets: string[] = [];
@@ -542,6 +719,8 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   if (reminders.explicitEmpty) explicitUnsets.push("reminders");
   const events = parseEvents(options.event, nowValue);
   if (events.explicitEmpty) explicitUnsets.push("events");
+  const typeOptions = parseTypeOptions(options.typeOption);
+  if (typeOptions.explicitEmpty) explicitUnsets.push("type_options");
 
   const scalarExplicitUnsetCandidates: ReadonlyArray<readonly [string | undefined, string]> = [
     [options.deadline, "deadline"],
@@ -587,16 +766,23 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   }
 
   const id = await generateItemId(pmRoot, settings.id_prefix);
-  const type = ensureEnumValue(options.type, ITEM_TYPE_VALUES, "type");
-  const status = ensureEnumValue(options.status, STATUS_VALUES, "status");
-  const priority = ensurePriority(options.priority);
-  const tags = parseTags(options.tags);
+  const type = typeDefinition.name;
+  const status = options.status !== undefined ? ensureEnumValue(options.status, STATUS_VALUES, "status") : "open";
+  const priority = options.priority !== undefined ? ensurePriority(options.priority) : 2;
+  const tags = options.tags !== undefined ? parseTags(options.tags) : [];
 
-  const deadline = isNoneToken(options.deadline) ? undefined : resolveIsoOrRelative(options.deadline, new Date(nowValue));
-  const estimatedMinutes = isNoneToken(options.estimatedMinutes)
-    ? undefined
-    : parseOptionalNumber(options.estimatedMinutes, "estimated-minutes");
-  const acceptanceCriteria = isNoneToken(options.acceptanceCriteria) ? undefined : options.acceptanceCriteria;
+  const deadline =
+    options.deadline === undefined || isNoneToken(options.deadline)
+      ? undefined
+      : resolveIsoOrRelative(options.deadline, new Date(nowValue));
+  const estimatedMinutes =
+    options.estimatedMinutes === undefined || isNoneToken(options.estimatedMinutes)
+      ? undefined
+      : parseOptionalNumber(options.estimatedMinutes, "estimated-minutes");
+  const acceptanceCriteria =
+    options.acceptanceCriteria === undefined || isNoneToken(options.acceptanceCriteria)
+      ? undefined
+      : options.acceptanceCriteria;
   const definitionOfReady = options.definitionOfReady !== undefined ? parseOptionalString(options.definitionOfReady) : undefined;
   if (options.order !== undefined && options.rank !== undefined && options.order !== options.rank) {
     throw new PmCliError("--order and --rank must match when both are provided", EXIT_CODE.USAGE);
@@ -612,7 +798,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const impact = options.impact !== undefined ? parseOptionalString(options.impact) : undefined;
   const outcome = options.outcome !== undefined ? parseOptionalString(options.outcome) : undefined;
   const whyNow = options.whyNow !== undefined ? parseOptionalString(options.whyNow) : undefined;
-  const assignee = parseOptionalString(options.assignee);
+  const assignee = options.assignee !== undefined ? parseOptionalString(options.assignee) : undefined;
   const authorValue = parseOptionalString(options.author) ?? author;
   const parent = options.parent !== undefined ? parseOptionalString(options.parent) : undefined;
   const reviewer = options.reviewer !== undefined ? parseOptionalString(options.reviewer) : undefined;
@@ -640,12 +826,20 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const regressionRaw = options.regression !== undefined ? parseOptionalString(options.regression) : undefined;
   const regression = regressionRaw !== undefined ? parseRegressionInput(regressionRaw) : undefined;
   const customerImpact = options.customerImpact !== undefined ? parseOptionalString(options.customerImpact) : undefined;
+  const validatedTypeOptions = validateTypeOptions(type, typeOptions.values, typeRegistry);
+  if (validatedTypeOptions.errors.length > 0) {
+    throw new PmCliError(validatedTypeOptions.errors.join("; "), EXIT_CODE.USAGE);
+  }
+  const title = requireStringOption(options.title, "--title");
+  const description = requireStringOption(options.description, "--description");
+  const body = options.body ?? "";
 
   const frontMatter: ItemFrontMatter = normalizeFrontMatter({
     id,
-    title: options.title,
-    description: options.description,
+    title,
+    description,
     type,
+    type_options: validatedTypeOptions.normalized,
     status,
     priority,
     tags,
@@ -698,14 +892,14 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
 
   const afterDocument: ItemDocument = canonicalDocument({
     front_matter: frontMatter,
-    body: options.body,
+    body,
   });
   const beforeDocument: ItemDocument = {
     front_matter: {} as ItemFrontMatter,
     body: "",
   };
 
-  const itemPath = getItemPath(pmRoot, type, id, settings.item_format);
+  const itemPath = getItemPath(pmRoot, type, id, settings.item_format, typeRegistry.type_to_folder);
   const historyPath = getHistoryPath(pmRoot, id);
   const lockRelease = await acquireLock(pmRoot, id, settings.locks.ttl_seconds, author);
   const historyMessage = buildHistoryMessage(options.message, explicitUnsets);

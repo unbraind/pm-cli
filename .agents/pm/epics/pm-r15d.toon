@@ -1,0 +1,42 @@
+id: pm-r15d
+title: Configurable item types and required-option UX
+description: Add settings and extension driven custom item types and improve required option error/help guidance without breaking defaults.
+type: Epic
+status: closed
+priority: 0
+tags[4]: agent-ux,"area:cli","area:schema",pm-cli
+created_at: "2026-03-31T23:47:27.635Z"
+updated_at: "2026-04-01T00:29:15.930Z"
+deadline: "2026-04-14T23:47:27.635Z"
+author: codex-agent
+estimated_minutes: 480
+acceptance_criteria: Users can define custom item types/options via settings/extensions and CLI guidance for missing required options is actionable with examples; all docs and tests pass without regressions.
+goal: Customizable workflows
+objective: Enable project-specific item modeling
+value: Supports domain-specific planning like assets tracking
+impact: Improves adoption without breaking defaults
+outcome: Custom types and clearer required-option guidance
+why_now: Current hard-coded types and terse required-option errors block agent workflows
+risk: medium
+confidence: high
+component: core/cli
+customer_impact: Teams can model work domains without hacks
+comments[3]{created_at,author,text}:
+  "2026-03-31T23:47:27.635Z",codex-agent,Epic created from approved implementation plan.
+  "2026-04-01T00:29:14.263Z",codex-agent,Completed configurable item-type delivery across settings/extensions/CLI/storage/help output with docs updates and compatibility defaults.
+  "2026-04-01T00:29:15.182Z",codex-agent,"Evidence: node scripts/run-tests.mjs test passed (57 files, 588 tests). node scripts/run-tests.mjs coverage executed; thresholds currently report 97.45 lines / 97.03 branches / 97.14 funcs / 97.29 stmts."
+notes[1]{created_at,author,text}:
+  "2026-03-31T23:47:27.635Z",codex-agent,Default behavior must remain unchanged when no custom type settings exist.
+files[6]{path,scope,note}:
+  CHANGELOG.md,project,unreleased summary for configurable types and UX
+  docs/ARCHITECTURE.md,project,runtime type registry/storage architecture
+  docs/EXTENSIONS.md,project,registerItemTypes extension API docs
+  PRD.md,project,dynamic type requirements and config contracts
+  README.md,project,custom type/options usage documentation
+  src/types.ts,project,type model anchor
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,2400,full regression baseline
+docs[1]{path,scope,note}:
+  PRD.md,project,command and schema contract
+close_reason: configurable item types/options and required-option UX delivered with full regression validation and updated docs
+body: "Track implementation of customizable item types, per-type options/requirements, and actionable required-option guidance."

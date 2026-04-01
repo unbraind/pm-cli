@@ -160,6 +160,7 @@ export interface CommandDefinition {
 
 export type FlagDefinition = Record<string, unknown>;
 export type SchemaFieldDefinition = Record<string, unknown>;
+export type SchemaItemTypeDefinition = Record<string, unknown>;
 export type SchemaMigrationDefinition = Record<string, unknown>;
 export type SearchProviderDefinition = Record<string, unknown>;
 export type VectorStoreAdapterDefinition = Record<string, unknown>;
@@ -209,6 +210,12 @@ export interface RegisteredExtensionSchemaFieldDefinitions {
   fields: SchemaFieldDefinition[];
 }
 
+export interface RegisteredExtensionSchemaItemTypeDefinitions {
+  layer: ExtensionLayer;
+  name: string;
+  types: SchemaItemTypeDefinition[];
+}
+
 export interface RegisteredExtensionSchemaMigrationDefinition {
   layer: ExtensionLayer;
   name: string;
@@ -242,6 +249,7 @@ export interface RegisteredExtensionVectorStoreAdapter {
 export interface ExtensionRegistrationRegistry {
   flags: RegisteredExtensionFlagDefinitions[];
   item_fields: RegisteredExtensionSchemaFieldDefinitions[];
+  item_types: RegisteredExtensionSchemaItemTypeDefinitions[];
   migrations: RegisteredExtensionSchemaMigrationDefinition[];
   importers: RegisteredExtensionImporter[];
   exporters: RegisteredExtensionExporter[];
@@ -252,6 +260,7 @@ export interface ExtensionRegistrationRegistry {
 export interface ExtensionRegistrationCounts {
   flags: number;
   item_fields: number;
+  item_types: number;
   migrations: number;
   importers: number;
   exporters: number;
@@ -264,6 +273,7 @@ export interface ExtensionApi {
   registerCommand(definition: CommandDefinition): void;
   registerFlags(targetCommand: string, flags: FlagDefinition[]): void;
   registerItemFields(fields: SchemaFieldDefinition[]): void;
+  registerItemTypes(types: SchemaItemTypeDefinition[]): void;
   registerMigration(definition: SchemaMigrationDefinition): void;
   registerRenderer(format: OutputRendererFormat, renderer: RendererOverride): void;
   registerImporter(name: string, importer: Importer): void;
@@ -445,6 +455,7 @@ export function createEmptyExtensionRegistrationRegistry(): ExtensionRegistratio
   return {
     flags: [],
     item_fields: [],
+    item_types: [],
     migrations: [],
     importers: [],
     exporters: [],
@@ -974,6 +985,18 @@ function createExtensionApi(
       fields: normalizedFields,
     });
   };
+  const registerItemTypes = (types: SchemaItemTypeDefinition[]): void => {
+    assertExtensionCapability(extension, "schema", "registerItemTypes");
+    const normalizedTypes = normalizeRegistrationRecordList("registerItemTypes types", types);
+    if (normalizedTypes.length === 0) {
+      throw new TypeError("registerItemTypes requires at least one type definition");
+    }
+    registrations.item_types.push({
+      layer: extension.layer,
+      name: extension.name,
+      types: normalizedTypes,
+    });
+  };
   const registerMigration = (definition: SchemaMigrationDefinition): void => {
     assertExtensionCapability(extension, "schema", "registerMigration");
     registrations.migrations.push({
@@ -1100,6 +1123,7 @@ function createExtensionApi(
     registerCommand,
     registerFlags,
     registerItemFields,
+    registerItemTypes,
     registerMigration,
     registerRenderer,
     registerImporter,
@@ -1135,9 +1159,11 @@ async function executeRegisteredHooks<TContext>(
 function getRegistrationCounts(registrations: ExtensionRegistrationRegistry): ExtensionRegistrationCounts {
   const flagCount = registrations.flags.reduce((total, entry) => total + entry.flags.length, 0);
   const itemFieldCount = registrations.item_fields.reduce((total, entry) => total + entry.fields.length, 0);
+  const itemTypeCount = registrations.item_types.reduce((total, entry) => total + entry.types.length, 0);
   return {
     flags: flagCount,
     item_fields: itemFieldCount,
+    item_types: itemTypeCount,
     migrations: registrations.migrations.length,
     importers: registrations.importers.length,
     exporters: registrations.exporters.length,

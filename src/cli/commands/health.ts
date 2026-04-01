@@ -1,8 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { getEnabledBuiltInExtensions } from "../../core/extensions/builtins.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
-import { activateExtensions, loadExtensions, runActiveOnReadHooks } from "../../core/extensions/index.js";
+import { activateExtensions, getActiveExtensionRegistrations, loadExtensions, runActiveOnReadHooks } from "../../core/extensions/index.js";
 import type { LoadedExtension } from "../../core/extensions/loader.js";
 import { EXIT_CODE, PM_REQUIRED_SUBDIRS } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -286,7 +287,8 @@ export async function runHealth(global: GlobalOptions): Promise<HealthResult> {
   }
 
   const settings = await readSettings(pmRoot);
-  const requiredDirs = PM_REQUIRED_SUBDIRS.filter((entry) => entry.length > 0);
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const requiredDirs = [...new Set([...PM_REQUIRED_SUBDIRS.filter((entry) => entry.length > 0), ...typeRegistry.folders])];
   const missingDirs: string[] = [];
   const hookWarnings: string[] = [];
   for (const relativeDir of requiredDirs) {
@@ -304,7 +306,7 @@ export async function runHealth(global: GlobalOptions): Promise<HealthResult> {
 
   const settingWarnings = validateSettingsValues(settings);
   const extensionCheck = await buildExtensionCheck(pmRoot, settings, Boolean(global.noExtensions));
-  const items = await listAllFrontMatter(pmRoot, settings.item_format);
+  const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
   const historySummary = await countHistoryStreams(pmRoot);
 
   const checks: HealthCheck[] = [

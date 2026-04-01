@@ -48,7 +48,7 @@ Use one of:
 
 Then filter:
 
-- by type: `--type Task|Feature|Issue|Chore|Epic`
+- by type: `--type <value>` (resolved by runtime type registry: built-ins plus configured custom types)
 - by priority: `--priority 0..4`
 - by tag: `--tag <name>`
 
@@ -246,7 +246,7 @@ Install the bundled Pi extension with `pm install pi --project` (default) or `pm
 Load it in Pi with `pi -e ./.pi/extensions/pm-cli/index.ts` (or copy to `.pi/extensions/`).
 Use `action: "completion"` with `shell: "bash"|"zsh"|"fish"` to forward to `pm completion <shell>`.
 Use `action: "calendar"` for date-centric event views (`view`, `date`, `from`, `to`, `past`, `type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`, `format`).
-For `create` and `update`, use camelCase wrapper parameters for the canonical CLI scalar fields such as `parent`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blockedBy`, `blockedReason`, `unblockNote`, `definitionOfReady`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `whyNow`, `reporter`, `severity`, `environment`, `reproSteps`, `resolution`, `expectedResult`, `actualResult`, `affectedVersion`, `fixedVersion`, `component`, `regression`, and `customerImpact`; use repeatable `reminder` values for persistent reminders (`at=<iso|relative>,text=<text>`).
+For `create` and `update`, use camelCase wrapper parameters for the canonical CLI scalar fields such as `parent`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blockedBy`, `blockedReason`, `unblockNote`, `definitionOfReady`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `whyNow`, `reporter`, `severity`, `environment`, `reproSteps`, `resolution`, `expectedResult`, `actualResult`, `affectedVersion`, `fixedVersion`, `component`, `regression`, and `customerImpact`; use repeatable `reminder` values for persistent reminders (`at=<iso|relative>,text=<text>`) and repeatable `typeOption` values for custom type metadata.
 
 ### Example: list open tasks
 
@@ -447,6 +447,11 @@ pm create \
   --test <TESTS> \
   --doc <DOCS>
 ```
+
+Notes:
+
+- `--type` values come from the runtime type registry (built-ins plus `settings.item_types.definitions` and extension registrations).
+- Custom type metadata can be passed with repeatable `--type-option key=value` flags (or `none` to explicitly clear).
 
 ### Epic Template With Comment + Note
 

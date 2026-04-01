@@ -1,5 +1,7 @@
 import path from "node:path";
+import { getActiveExtensionRegistrations } from "../extensions/index.js";
 import { pathExists, removeFileIfExists } from "../fs/fs-utils.js";
+import { resolveItemTypeRegistry } from "../item/type-registry.js";
 import { locateItem, readLocatedItem } from "../store/item-store.js";
 import { getSettingsPath } from "../store/paths.js";
 import { readSettings } from "../store/settings.js";
@@ -139,6 +141,7 @@ async function collectSemanticRefreshWorkload(
   idPrefix: string,
   preferredFormat: "toon" | "json_markdown",
   normalizedItemIds: string[],
+  typeToFolder: Record<string, string>,
 ): Promise<SemanticRefreshWorkload> {
   const warnings: string[] = [];
   const skipped = new Set<string>();
@@ -146,7 +149,7 @@ async function collectSemanticRefreshWorkload(
   const documents: Array<{ id: string; document: ItemDocument }> = [];
 
   for (const itemId of normalizedItemIds) {
-    const located = await locateItem(pmRoot, itemId, idPrefix, preferredFormat);
+    const located = await locateItem(pmRoot, itemId, idPrefix, preferredFormat, typeToFolder);
     if (!located) {
       missing.add(itemId);
       continue;
@@ -271,11 +274,13 @@ export async function refreshSemanticEmbeddingsForMutatedItems(
   if (!("settings" in runtimeContext)) {
     return runtimeContext;
   }
+  const typeRegistry = resolveItemTypeRegistry(runtimeContext.settings, getActiveExtensionRegistrations());
   const workload = await collectSemanticRefreshWorkload(
     pmRoot,
     runtimeContext.settings.id_prefix,
     runtimeContext.settings.item_format,
     normalizedItemIds,
+    typeRegistry.type_to_folder,
   );
   const refreshedResult = await refreshLocatedSemanticVectors(
     runtimeContext.settings,

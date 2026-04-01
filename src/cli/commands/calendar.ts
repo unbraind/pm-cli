@@ -1,4 +1,6 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
+import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import { resolveItemTypeRegistry, resolveTypeName, type ItemTypeRegistry } from "../../core/item/type-registry.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -7,7 +9,7 @@ import { listAllFrontMatter } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter, ItemStatus, ItemType, RecurrenceRule } from "../../types/index.js";
-import { ITEM_TYPE_VALUES, RECURRENCE_WEEKDAY_VALUES, STATUS_VALUES } from "../../types/index.js";
+import { RECURRENCE_WEEKDAY_VALUES, STATUS_VALUES } from "../../types/index.js";
 
 export const CALENDAR_VIEW_VALUES = ["agenda", "day", "week", "month"] as const;
 export type CalendarView = (typeof CALENDAR_VIEW_VALUES)[number];
@@ -100,7 +102,6 @@ export interface CalendarResult {
   days: CalendarDayBucket[];
 }
 
-const ITEM_TYPES_BY_LOWER = new Map<string, ItemType>(ITEM_TYPE_VALUES.map((value) => [value.toLowerCase(), value]));
 const UTC_DAY_TO_WEEKDAY = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 const DEFAULT_RECURRENCE_LOOKAHEAD_DAYS = 365;
 const DEFAULT_RECURRENCE_LOOKBACK_DAYS = 365;
@@ -202,11 +203,11 @@ function parsePriority(raw: string | undefined): number | undefined {
   return parsed;
 }
 
-function parseType(raw: string | undefined): ItemType | undefined {
+function parseType(raw: string | undefined, typeRegistry: ItemTypeRegistry): ItemType | undefined {
   if (raw === undefined) return undefined;
-  const parsed = ITEM_TYPES_BY_LOWER.get(raw.trim().toLowerCase());
+  const parsed = resolveTypeName(raw, typeRegistry);
   if (!parsed) {
-    throw new PmCliError("Calendar type filter must be one of Epic|Feature|Task|Chore|Issue", EXIT_CODE.USAGE);
+    throw new PmCliError(`Calendar type filter must be one of ${typeRegistry.types.join("|")}`, EXIT_CODE.USAGE);
   }
   return parsed;
 }
@@ -536,8 +537,8 @@ function buildEventSeed(
   return sortEvents(events);
 }
 
-function filterItems(items: ItemFrontMatter[], options: CalendarOptions): ItemFrontMatter[] {
-  const typeFilter = parseType(options.type);
+function filterItems(items: ItemFrontMatter[], options: CalendarOptions, typeRegistry: ItemTypeRegistry): ItemFrontMatter[] {
+  const typeFilter = parseType(options.type, typeRegistry);
   const tagFilter = options.tag?.trim().toLowerCase();
   const priorityFilter = parsePriority(options.priority);
   const statusFilter = parseStatus(options.status);
@@ -735,8 +736,9 @@ export async function runCalendar(options: CalendarOptions, global: GlobalOption
   }
 
   const settings = await readSettings(pmRoot);
-  const items = await listAllFrontMatter(pmRoot, settings.item_format);
-  const filteredItems = filterItems(items, options);
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
+  const filteredItems = filterItems(items, options, typeRegistry);
   const recurringWindow = buildRecurringEventWindow(
     rangeBounds.start,
     rangeBounds.end,

@@ -1,6 +1,7 @@
 import path from "node:path";
-import { runActiveOnIndexHooks, runActiveOnWriteHooks } from "../../core/extensions/index.js";
+import { getActiveExtensionRegistrations, runActiveOnIndexHooks, runActiveOnWriteHooks } from "../../core/extensions/index.js";
 import { pathExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
+import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { executeEmbeddingBatchesWithRetry } from "../../core/search/embedding-batches.js";
 import { resolveEmbeddingProviders } from "../../core/search/providers.js";
 import { executeVectorUpsert, resolveVectorStores } from "../../core/search/vector-stores.js";
@@ -43,8 +44,12 @@ function parseMode(raw: string | undefined): "keyword" | "semantic" | "hybrid" {
   throw new PmCliError("Reindex mode must be one of keyword|semantic|hybrid", EXIT_CODE.USAGE);
 }
 
-async function loadDocuments(pmRoot: string, itemFormat: "toon" | "json_markdown"): Promise<ItemDocument[]> {
-  const items = await listAllFrontMatterWithBody(pmRoot, itemFormat);
+async function loadDocuments(
+  pmRoot: string,
+  itemFormat: "toon" | "json_markdown",
+  typeToFolder: Record<string, string>,
+): Promise<ItemDocument[]> {
+  const items = await listAllFrontMatterWithBody(pmRoot, itemFormat, typeToFolder);
   return items.map((item) => {
     const { body, ...frontMatter } = item;
     return {
@@ -89,6 +94,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
   }
 
   const settings = await readSettings(pmRoot);
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   let activeEmbeddingProvider: ReturnType<typeof resolveEmbeddingProviders>["active"] = null;
   let activeVectorStore: ReturnType<typeof resolveVectorStores>["active"] = null;
   if (requestedMode !== "keyword") {
@@ -110,7 +116,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
     activeVectorStore = vectorResolution.active;
   }
   const mode = requestedMode;
-  const documents = await loadDocuments(pmRoot, settings.item_format);
+  const documents = await loadDocuments(pmRoot, settings.item_format, typeRegistry.type_to_folder);
   const generatedAt = nowIso();
 
   const manifest = {

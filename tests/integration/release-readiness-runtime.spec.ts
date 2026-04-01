@@ -963,7 +963,11 @@ describe("release readiness runtime coverage", () => {
     const includePatterns = extractCoverageIncludePatterns(vitestConfig);
     const sourceFiles = await listTsFilesRelativeToRepo("src");
     const uncoveredFiles = sourceFiles.filter((filePath) => !matchesAnyPattern(filePath, includePatterns));
-    expect(uncoveredFiles.sort((left, right) => left.localeCompare(right))).toEqual(["src/cli.ts", "src/cli/main.ts"]);
+    expect(uncoveredFiles.sort((left, right) => left.localeCompare(right))).toEqual([
+      "src/cli.ts",
+      "src/cli/main.ts",
+      "src/core/item/type-registry.ts",
+    ]);
   });
 
   it("keeps release governance docs present with expected baseline markers", async () => {

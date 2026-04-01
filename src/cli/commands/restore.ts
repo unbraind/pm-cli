@@ -1,16 +1,18 @@
 import jsonPatch from "fast-json-patch";
+import fs from "node:fs/promises";
 import { pathExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { appendHistoryEntry, createHistoryEntry } from "../../core/history/history.js";
 import { canonicalDocument, serializeItemDocument } from "../../core/item/item-format.js";
+import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { acquireLock } from "../../core/lock/lock.js";
 import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
 import { orderObject, sha256Hex, stableStringify } from "../../core/shared/serialization.js";
-import { runActiveOnWriteHooks } from "../../core/extensions/index.js";
+import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../core/extensions/index.js";
 import { locateItem, readLocatedItem } from "../../core/store/item-store.js";
-import { getHistoryPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
+import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { HistoryEntry, HistoryPatchOp, ItemDocument, ItemFrontMatter } from "../../types/index.js";
 import { readHistoryEntries } from "./history.js";
@@ -224,7 +226,8 @@ export async function runRestore(
   }
 
   const settings = await readSettings(pmRoot);
-  const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format);
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
   if (!located) {
     throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
   }
@@ -269,7 +272,17 @@ export async function runRestore(
     }
 
     const serializedRestore = serializeItemDocument(restoredDocument, { format: located.item_format });
-    await writeFileAtomic(located.itemPath, serializedRestore);
+    const restoredItemPath = getItemPath(
+      pmRoot,
+      restoredDocument.front_matter.type,
+      located.id,
+      located.item_format,
+      typeRegistry.type_to_folder,
+    );
+    await writeFileAtomic(restoredItemPath, serializedRestore);
+    if (restoredItemPath !== located.itemPath) {
+      await fs.rm(located.itemPath);
+    }
 
     const historyEntry = createHistoryEntry({
       nowIso: nowIso(),
@@ -283,12 +296,17 @@ export async function runRestore(
     try {
       await appendHistoryEntry(historyPath, historyEntry);
     } catch (error: unknown) {
-      await writeFileAtomic(located.itemPath, originalRaw);
+      if (restoredItemPath !== located.itemPath) {
+        await writeFileAtomic(located.itemPath, originalRaw);
+        await fs.rm(restoredItemPath, { force: true });
+      } else {
+        await writeFileAtomic(located.itemPath, originalRaw);
+      }
       throw error;
     }
     const hookWarnings = [
       ...(await runActiveOnWriteHooks({
-        path: located.itemPath,
+        path: restoredItemPath,
         scope: "project",
         op: "restore",
       })),

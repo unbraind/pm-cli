@@ -2,8 +2,9 @@ import { pathExists, readFileIfExists } from "../../core/fs/fs-utils.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { runActiveOnReadHooks } from "../../core/extensions/index.js";
+import { getActiveExtensionRegistrations, runActiveOnReadHooks } from "../../core/extensions/index.js";
 import { normalizeItemId } from "../../core/item/id.js";
+import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { locateItem } from "../../core/store/item-store.js";
 import { getHistoryPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -72,8 +73,15 @@ export async function runHistory(id: string, options: HistoryCommandOptions, glo
 
   const limit = parseLimit(options.limit);
   const settings = await readSettings(pmRoot);
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const normalizedId = normalizeItemId(id, settings.id_prefix);
-  const located = await locateItem(pmRoot, normalizedId, settings.id_prefix, settings.item_format);
+  const located = await locateItem(
+    pmRoot,
+    normalizedId,
+    settings.id_prefix,
+    settings.item_format,
+    typeRegistry.type_to_folder,
+  );
   const resolvedId = located?.id ?? normalizedId;
   const historyPath = getHistoryPath(pmRoot, resolvedId);
   if (!located && !(await pathExists(historyPath))) {

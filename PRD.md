@@ -614,7 +614,7 @@ Mutating `create` (all schema fields MUST be passable explicitly):
 
 - `--title`, `-t` (required)
 - `--description`, `-d` (required; empty string allowed when explicitly passed)
-- `--type` (required: `Epic|Feature|Task|Chore|Issue`)
+- `--type` (required; allowed values are resolved from the runtime item-type registry: built-ins + `settings.item_types.definitions` + extension registrations)
 - `--status`, `-s` (required)
 - `--priority`, `-p` (required: `0..4`)
 - `--tags` (required; explicit empty allowed)
@@ -665,6 +665,7 @@ Mutating `create` flags (repeatable, each required at least once; use `none` for
 - `--test` value format: `command=<c?>,path=<p?>,scope=<project|global>,timeout_seconds=<n?>,note=<n?>`
 - `--doc` value format: `path=<p>,scope=<project|global>,note=<n?>`
 - `--reminder` value format: `at=<iso|relative>,text=<text>` (`none` for explicit clear)
+- `--type-option` / `--type_option` value format: `key=value` or `key=<name>,value=<value>` (`none` for explicit clear)
 
 Mutating `update` (v0.1 baseline):
 
@@ -828,7 +829,7 @@ Initial flags:
 - `--limit <n>`
 - `--limit 0` is valid and returns a deterministic empty result set (after mode/config validation) without executing embedding/vector query requests
 - shared list-like filters where applicable (`--type`, `--tag`, `--priority`, `--deadline-before`, `--deadline-after`)
-- shared `--type` and `--priority` filters follow canonical validation (`--type` in `Epic|Feature|Task|Chore|Issue`, `--priority` integer `0..4`)
+- shared `--type` and `--priority` filters follow canonical validation (`--type` resolved by runtime item-type registry aliases, `--priority` integer `0..4`)
 
 ### 13.1 Modes
 
@@ -975,11 +976,11 @@ v0.1 implemented baseline (release-hardening in progress):
 - Registered extension command names are canonicalized with trim + lowercase + internal-whitespace collapse before storage and dispatch matching, ensuring equivalent command paths resolve deterministically.
 - Required extension-command dispatch semantics are deterministic: no matched handler returns command-not-found for extension-only paths, while a matched handler throw returns generic failure with warning code `extension_command_handler_failed:<layer>:<name>:<command>`.
 - `api.registerRenderer(format, renderer)` supports deterministic `toon`/`json` output overrides; renderer execution receives isolated command context snapshots (`command`, `args`, `options`, `global`, `pm_root`) plus an isolated result snapshot so failed renderer-side mutation cannot alter core fallback output.
-- Extension API registration baseline now includes deterministic registration-time validation and metadata capture for `api.registerFlags`, `api.registerItemFields`, `api.registerMigration`, `api.registerImporter`, `api.registerExporter`, `api.registerSearchProvider`, and `api.registerVectorStoreAdapter`.
+- Extension API registration baseline now includes deterministic registration-time validation and metadata capture for `api.registerFlags`, `api.registerItemFields`, `api.registerItemTypes`, `api.registerMigration`, `api.registerImporter`, `api.registerExporter`, `api.registerSearchProvider`, and `api.registerVectorStoreAdapter`.
 - `api.registerImporter(name, importer)` and `api.registerExporter(name, exporter)` now provide runtime command wiring in addition to metadata capture: each registration deterministically exposes extension command-handler paths `<name> import` and `<name> export` (canonicalized with trim + lowercase + internal-whitespace collapse) and executes through the same isolated command-handler context snapshots used by `api.registerCommand({ name, run })`.
 - Dynamically surfaced extension command paths now render deterministic help metadata derived from registered `api.registerFlags(...)` definitions while preserving loose option parsing behavior for runtime command dispatch.
 - Extension API and hook registration calls enforce manifest capability declarations (`commands`, `renderers`, `hooks`, `schema`, `importers`, `search`) and fail activation deterministically when an extension registers outside its declared capabilities.
-- Extension activation diagnostics include deterministic registration counts and metadata summaries for the above registries (flags, item fields, migrations, importers, exporters, search providers, and vector store adapters), `pm health` exposes deterministic migration status summaries from registered migration definitions (`status="failed"` -> failed, `status="applied"` -> applied, any other/missing status -> pending), and core write command paths enforce deterministic mandatory-migration gating (`mandatory=true` + status not `"applied"` -> unresolved blocker, with `--force` bypass on force-capable write commands).
+- Extension activation diagnostics include deterministic registration counts and metadata summaries for the above registries (flags, item fields, item types, migrations, importers, exporters, search providers, and vector store adapters), `pm health` exposes deterministic migration status summaries from registered migration definitions (`status="failed"` -> failed, `status="applied"` -> applied, any other/missing status -> pending), and core write command paths enforce deterministic mandatory-migration gating (`mandatory=true` + status not `"applied"` -> unresolved blocker, with `--force` bypass on force-capable write commands).
 
 Full v1 draft surface (broader runtime wiring for remaining newly registered definitions beyond dynamic command help and importer/exporter command-path mapping remains roadmap):
 
@@ -993,6 +994,7 @@ export interface ExtensionApi {
   registerCommand(def: CommandDefinition): void;
   registerFlags(targetCommand: string, flags: FlagDefinition[]): void;
   registerItemFields(fields: SchemaFieldDefinition[]): void;
+  registerItemTypes(types: ItemTypeDefinition[]): void;
   registerMigration(def: SchemaMigrationDefinition): void;
   registerRenderer(format: "toon" | "json", renderer: Renderer): void;
   registerImporter(name: string, importer: Importer): void;
@@ -1129,6 +1131,7 @@ Wrapper behavior must remain aligned with CLI semantics and exit conditions.
 - `locks.ttl_seconds`
 - `output.default_format`
 - `workflow.definition_of_done[]`
+- `item_types.definitions[]`
 - `extensions.enabled[]`
 - `extensions.disabled[]`
 - `search.score_threshold`
@@ -1162,6 +1165,9 @@ Default `settings.json` object written by `pm init`:
   },
   "workflow": {
     "definition_of_done": []
+  },
+  "item_types": {
+    "definitions": []
   },
   "extensions": {
     "enabled": [],

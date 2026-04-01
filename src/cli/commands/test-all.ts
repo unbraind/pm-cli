@@ -1,4 +1,6 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
+import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { parseOptionalNumber } from "../../core/item/parse.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -105,8 +107,9 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
   }
 
   const settings = await readSettings(pmRoot);
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const statusFilter = parseStatus(options.status);
-  const allItems = await listAllFrontMatter(pmRoot, settings.item_format);
+  const allItems = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
   const filteredItems = allItems
     .filter((item) => (statusFilter ? item.status === statusFilter : true))
     .sort((a, b) => a.id.localeCompare(b.id));

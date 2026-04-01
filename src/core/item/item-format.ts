@@ -16,7 +16,6 @@ import type { ItemFormat } from "../../types/index.js";
 import {
   CONFIDENCE_TEXT_VALUES,
   ISSUE_SEVERITY_VALUES,
-  ITEM_TYPE_VALUES,
   RECURRENCE_FREQUENCY_VALUES,
   RECURRENCE_WEEKDAY_VALUES,
   STATUS_VALUES,
@@ -139,10 +138,7 @@ function assertValidFrontMatter(frontMatter: unknown): asserts frontMatter is It
   }
 
   const itemType = record.type;
-  assertFrontMatterCondition(
-    typeof itemType === "string" && ITEM_TYPE_VALUES.includes(itemType as (typeof ITEM_TYPE_VALUES)[number]),
-    `type must be one of: ${ITEM_TYPE_VALUES.join(", ")}`,
-  );
+  assertFrontMatterCondition(typeof itemType === "string" && itemType.trim().length > 0, "type must be a non-empty string");
 
   const status = record.status;
   assertFrontMatterCondition(
@@ -275,6 +271,19 @@ function assertValidFrontMatter(frontMatter: unknown): asserts frontMatter is It
     const value = record[fieldName];
     if (value !== undefined) {
       assertFrontMatterCondition(typeof value === "string", `${fieldName} must be a string`);
+    }
+  }
+  const typeOptions = record.type_options;
+  if (typeOptions !== undefined) {
+    assertFrontMatterCondition(
+      typeof typeOptions === "object" && typeOptions !== null && !Array.isArray(typeOptions),
+      "type_options must be an object",
+    );
+    for (const [optionKey, optionValue] of Object.entries(typeOptions as Record<string, unknown>)) {
+      assertFrontMatterCondition(optionKey.trim().length > 0, "type_options keys must be non-empty");
+      assertFrontMatterCondition(typeof optionValue === "string", "type_options values must be strings");
+      const optionText = optionValue as string;
+      assertFrontMatterCondition(optionText.trim().length > 0, "type_options values must be non-empty strings");
     }
   }
 }
@@ -481,6 +490,20 @@ function sortDocs(values: LinkedDoc[] | undefined): LinkedDoc[] | undefined {
     });
 }
 
+function normalizeTypeOptions(values: Record<string, string> | undefined): Record<string, string> | undefined {
+  if (!values) {
+    return undefined;
+  }
+  const normalizedEntries = Object.entries(values)
+    .map(([key, value]) => [key.trim(), value.trim()] as const)
+    .filter(([key, value]) => key.length > 0 && value.length > 0)
+    .sort((left, right) => left[0].localeCompare(right[0]));
+  if (normalizedEntries.length === 0) {
+    return undefined;
+  }
+  return Object.fromEntries(normalizedEntries);
+}
+
 function normalizeBody(body: string): string {
   return body.replace(/^\n+/, "").replace(/\s+$/, "");
 }
@@ -526,6 +549,7 @@ export function normalizeFrontMatter(frontMatter: ItemFrontMatter): ItemFrontMat
     description: frontMatter.description,
     type: frontMatter.type,
     source_type: frontMatter.source_type?.trim() || undefined,
+    type_options: normalizeTypeOptions(frontMatter.type_options),
     status: frontMatter.status,
     priority: frontMatter.priority,
     tags,

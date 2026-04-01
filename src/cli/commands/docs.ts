@@ -1,5 +1,7 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
+import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { parseCsvKv } from "../../core/item/parse.js";
+import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -77,12 +79,13 @@ export async function runDocs(id: string, options: DocsCommandOptions, global: G
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
   const settings = await readSettings(pmRoot);
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const adds = parseAddEntries(options.add);
   const removes = parseRemoveEntries(options.remove);
   const shouldMutate = adds.length > 0 || removes.length > 0;
 
   if (!shouldMutate) {
-    const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format);
+    const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
     if (!located) {
       throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
     }

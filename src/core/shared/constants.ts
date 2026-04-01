@@ -1,4 +1,4 @@
-import type { ItemFrontMatter, ItemType, PmSettings } from "../../types/index.js";
+import type { BuiltinItemType, ItemFrontMatter, PmSettings } from "../../types/index.js";
 
 export const PM_DIRNAME = ".agents/pm";
 export const SETTINGS_FILENAME = "settings.json";
@@ -17,7 +17,7 @@ export const PM_REQUIRED_SUBDIRS = [
   "locks",
 ] as const;
 
-export const TYPE_TO_FOLDER: Record<ItemType, string> = {
+export const TYPE_TO_FOLDER: Record<BuiltinItemType, string> = {
   Epic: "epics",
   Feature: "features",
   Task: "tasks",
@@ -31,6 +31,7 @@ export const FRONT_MATTER_KEY_ORDER: ReadonlyArray<keyof ItemFrontMatter> = [
   "description",
   "type",
   "source_type",
+  "type_options",
   "status",
   "priority",
   "tags",
@@ -99,6 +100,9 @@ export const SETTINGS_DEFAULTS: PmSettings = {
   },
   workflow: {
     definition_of_done: [],
+  },
+  item_types: {
+    definitions: [],
   },
   extensions: {
     enabled: [],

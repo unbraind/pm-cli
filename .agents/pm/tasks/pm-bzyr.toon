@@ -1,0 +1,43 @@
+id: pm-bzyr
+title: Improve required option error/help guidance with examples
+description: "Enhance missing required option and invalid type guidance, especially --type, with actionable hints and sample commands."
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:cli","area:docs",code,pm-cli
+created_at: "2026-03-31T23:48:39.334Z"
+updated_at: "2026-04-01T00:28:03.436Z"
+deadline: "2026-04-07T23:48:39.334Z"
+author: codex-agent
+estimated_minutes: 140
+acceptance_criteria: Usage errors include rationale and examples for required fields (notably --type) and tests/docs stay aligned.
+goal: Customizable workflows
+objective: Reduce CLI misuse loops
+value: Faster user and agent remediation
+impact: Lower friction from required option errors
+outcome: Actionable usage guidance
+why_now: Frequent --type missing option errors in agent workflows
+parent: pm-b3id
+risk: low
+confidence: high
+component: cli/main
+customer_impact: Clearer help and fewer failed command retries
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-b3id,parent,"2026-03-31T23:48:39.334Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-03-31T23:48:39.334Z",codex-agent,Task created for required option UX improvements.
+  "2026-04-01T00:28:01.016Z",codex-agent,"Improved missing --type usage guidance with rationale, active allowed values, and examples; updated user-facing docs for custom types/options."
+  "2026-04-01T00:28:02.169Z",codex-agent,"Evidence: node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/unit/create-command.spec.ts passed."
+notes[1]{created_at,author,text}:
+  "2026-03-31T23:48:39.334Z",codex-agent,Maintain exit code compatibility while adding guidance.
+files[4]{path,scope,note}:
+  CHANGELOG.md,project,unreleased notes for configurable type UX
+  PRD.md,project,dynamic type contracts and config docs
+  README.md,project,custom type and type-option usage docs
+  src/cli/main.ts,project,usage error handling
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/unit/create-command.spec.ts,null,project,2400,required option guidance regression
+docs[1]{path,scope,note}:
+  README.md,project,usage examples and guidance
+close_reason: required-option UX improved and docs updated for configurable type workflows
+body: Improves user-facing guidance for required options while preserving current exit-code behavior and contract tests.

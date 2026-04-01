@@ -26,6 +26,7 @@ vi.mock("../../src/core/store/item-store.js", () => ({
 
 vi.mock("../../src/core/extensions/index.js", () => ({
   runActiveOnReadHooks: runActiveOnReadHooksMock,
+  getActiveExtensionRegistrations: () => null,
 }));
 
 vi.mock("node:fs/promises", () => ({
