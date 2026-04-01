@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import path from "node:path";
 import type { ItemFrontMatter } from "../../src/types.js";
-import { EXIT_CODE } from "../../src/constants.js";
+import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../src/constants.js";
 import { serializeItemDocument } from "../../src/item-format.js";
 import { readJsonFixture } from "../helpers/fixtures.js";
 
@@ -11,6 +11,7 @@ const listAllFrontMatterMock = vi.fn<() => Promise<ItemFrontMatter[]>>();
 const readFileMock = vi.fn<(targetPath: string, encoding: string) => Promise<string>>();
 const realpathMock = vi.fn<(targetPath: string) => Promise<string>>();
 const runActiveOnReadHooksMock = vi.fn<() => Promise<string[]>>();
+const spawnSyncMock = vi.fn();
 let activeExtensionRegistrations: Record<string, unknown> | null = null;
 
 function createExtensionRegistrations(): Record<string, unknown> {
@@ -48,6 +49,10 @@ vi.mock("node:fs/promises", () => ({
     readFile: readFileMock,
     realpath: realpathMock,
   },
+}));
+
+vi.mock("node:child_process", () => ({
+  spawnSync: spawnSyncMock,
 }));
 
 interface KeywordCorpusFixture {
@@ -91,6 +96,10 @@ function serializeDocument(frontMatter: ItemFrontMatter, body: string): string {
   return `${JSON.stringify(frontMatter, null, 2)}\n\n${body}`;
 }
 
+function makeDefaultSettings() {
+  return structuredClone(SETTINGS_DEFAULTS);
+}
+
 function resolveFetchTarget(url: unknown): string {
   if (typeof url === "string") {
     return url;
@@ -122,6 +131,7 @@ describe("runSearch", () => {
     readFileMock.mockReset();
     realpathMock.mockReset();
     runActiveOnReadHooksMock.mockReset();
+    spawnSyncMock.mockReset();
     activeExtensionRegistrations = null;
 
     pathExistsMock.mockResolvedValue(true);
@@ -129,6 +139,11 @@ describe("runSearch", () => {
     listAllFrontMatterMock.mockResolvedValue([]);
     realpathMock.mockImplementation(async (targetPath) => targetPath);
     runActiveOnReadHooksMock.mockResolvedValue([]);
+    spawnSyncMock.mockReturnValue({
+      status: 1,
+      stdout: "",
+      stderr: "",
+    });
   });
 
   it("fails when tracker is not initialized", async () => {
@@ -266,6 +281,87 @@ describe("runSearch", () => {
     await expect(runSearch("token", { limit: "-1" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
       exitCode: EXIT_CODE.USAGE,
     });
+  });
+
+  it("defaults to hybrid mode when Ollama auto-defaults are available", async () => {
+    readSettingsMock.mockResolvedValue(makeDefaultSettings() as unknown as { id_prefix: string });
+    spawnSyncMock.mockImplementation((_command: string, args: string[]) => {
+      if (args[0] === "--version") {
+        return {
+          status: 0,
+          stdout: "ollama version is 0.0.0",
+          stderr: "",
+        };
+      }
+      if (args[0] === "list") {
+        return {
+          status: 0,
+          stdout: "NAME ID SIZE MODIFIED\nqwen3-embedding:0.6b abc 380 MB now\n",
+          stderr: "",
+        };
+      }
+      return {
+        status: 1,
+        stdout: "",
+        stderr: "",
+      };
+    });
+
+    const { runSearch } = await import("../../src/cli/commands/search.js");
+    const result = await runSearch("token", {}, { path: "/tmp/pm-search" });
+    expect(result.mode).toBe("hybrid");
+    expect(result.count).toBe(0);
+  });
+
+  it("falls back to keyword mode when implicit Ollama semantic execution fails", async () => {
+    readSettingsMock.mockResolvedValue(makeDefaultSettings() as unknown as { id_prefix: string });
+    spawnSyncMock.mockImplementation((_command: string, args: string[]) => {
+      if (args[0] === "--version") {
+        return {
+          status: 0,
+          stdout: "ollama version is 0.0.0",
+          stderr: "",
+        };
+      }
+      if (args[0] === "list") {
+        return {
+          status: 0,
+          stdout: "NAME ID SIZE MODIFIED\nqwen3-embedding:0.6b abc 380 MB now\n",
+          stderr: "",
+        };
+      }
+      return {
+        status: 1,
+        stdout: "",
+        stderr: "",
+      };
+    });
+    const autoItem = makeFrontMatter({
+      id: "pm-ollama-auto-fallback",
+      title: "token title",
+      description: "token description",
+      tags: ["token"],
+    });
+    listAllFrontMatterMock.mockResolvedValue([autoItem]);
+    readFileMock.mockResolvedValue(serializeDocument(autoItem, "token body"));
+
+    const fetchMock = vi.fn(async () => {
+      throw new Error("connect ECONNREFUSED 127.0.0.1:11434");
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+    try {
+      const { runSearch } = await import("../../src/cli/commands/search.js");
+      const implicitResult = await runSearch("token", {}, { path: "/tmp/pm-search" });
+      expect(implicitResult.mode).toBe("keyword");
+      expect(implicitResult.count).toBe(1);
+      expect(implicitResult.items[0].item.id).toBe("pm-ollama-auto-fallback");
+      await expect(runSearch("token", { mode: "hybrid" }, { path: "/tmp/pm-search" })).rejects.toThrow(
+        "Embedding request execution failed",
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 
   it("returns deterministic empty semantic and hybrid results for limit=0 without embedding/vector requests", async () => {

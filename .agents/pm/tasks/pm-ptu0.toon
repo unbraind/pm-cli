@@ -1,0 +1,50 @@
+id: pm-ptu0
+title: Update docs and release evidence for default Ollama semantic behavior
+description: "Refresh user and architecture docs for Ollama-backed semantic defaults and record end-to-end verification evidence, including host-level functionality checks."
+type: Task
+status: closed
+priority: 1
+tags[5]: "area:docs","area:search","area:semantic",compatibility,pm-cli
+created_at: "2026-04-01T13:07:03.217Z"
+updated_at: "2026-04-01T13:24:44.385Z"
+deadline: "2026-04-08T13:07:03.217Z"
+author: codex-agent
+estimated_minutes: 90
+acceptance_criteria: README/ARCHITECTURE/CHANGELOG accurately describe default semantic behavior and guardrails; verification evidence includes host functionality checks and regression test results.
+definition_of_ready: Runtime and test tasks define final behavior and validation expectations.
+order: 3
+goal: Default semantic search experience
+objective: Document behavior and publish evidence
+value: Users and maintainers can trust and understand the new default behavior
+impact: Lower support burden and safer upgrades
+outcome: Docs and release evidence stay aligned with runtime behavior
+why_now: Behavior changes require explicit documentation and recorded verification before close.
+parent: pm-zvn2
+risk: low
+confidence: high
+environment: linux
+component: docs/search
+regression: true
+customer_impact: Provides clear guidance and confidence for users adopting default semantic behavior.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-9k33,related,"2026-04-01T13:07:03.217Z",codex-agent,null
+  pm-zvn2,parent,"2026-04-01T13:07:03.217Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T13:07:03.217Z",codex-agent,Task ensures docs and changelog remain contract-accurate for the semantic default rollout.
+  "2026-04-01T13:24:31.920Z",codex-agent,"Updated documentation contracts in README.md, docs/ARCHITECTURE.md, PRD.md, and CHANGELOG.md to describe Ollama-backed semantic auto defaults, precedence rules, fallback behavior, and control environment variables. Evidence: pm test pm-ptu0 --run passed linked full regression verification (62 files, 648 tests); host-level sandbox checks confirmed default hybrid mode and successful semantic reindex/search execution with local Ollama."
+notes[1]{created_at,author,text}:
+  "2026-04-01T13:07:03.217Z",codex-agent,Include explicit no-regression and host functionality evidence before closure.
+files[4]{path,scope,note}:
+  CHANGELOG.md,project,unreleased semantic default release notes
+  docs/ARCHITECTURE.md,project,runtime detection and fallback design
+  PRD.md,project,search contract updates for Ollama auto defaults
+  README.md,project,user-facing semantic default behavior
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,3600,final regression verification
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,release-note entry for default semantic behavior
+  docs/ARCHITECTURE.md,project,architecture contract updates
+  PRD.md,project,product contract updates
+  README.md,project,semantic default user documentation
+close_reason: docs updated with verified behavior and evidence
+body: Documentation and closure-evidence task for semantic default rollout.

@@ -1,0 +1,45 @@
+id: pm-zvn2
+title: Activate semantic defaults via local Ollama runtime detection
+description: Add compatibility-safe runtime detection and default resolution so search uses semantic-capable hybrid mode automatically when local Ollama support is available.
+type: Feature
+status: closed
+priority: 1
+tags[5]: "area:ollama","area:search","area:semantic",compatibility,pm-cli
+created_at: "2026-04-01T13:06:19.646Z"
+updated_at: "2026-04-01T13:25:06.066Z"
+deadline: "2026-04-11T13:06:19.646Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: Search defaults to hybrid semantic behavior when local Ollama is available without requiring manual provider/vector config; explicit config precedence and non-regression behavior are verified.
+definition_of_ready: "Epic scope and compatibility guardrails are recorded with implementation tasks split by code, docs, and verification."
+order: 1
+goal: Default semantic search experience
+objective: Turn on semantic defaults safely
+value: Better out-of-box search relevance on Ollama-capable systems
+impact: Faster adoption of semantic search with minimal setup
+outcome: Runtime auto-enables semantic defaults when safe
+why_now: Current manual setup requirement prevents default semantic behavior on systems that already have Ollama.
+parent: pm-67uh
+risk: medium
+confidence: high
+environment: linux
+component: search/runtime
+regression: true
+customer_impact: Enables semantic defaults where available while preserving stable behavior for existing users.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-67uh,parent,"2026-04-01T13:06:19.646Z",codex-agent,null
+  pm-yv2,discovered_from,"2026-04-01T13:06:19.646Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T13:06:19.646Z",codex-agent,Feature created from audited semantic search roadmap and Ollama fixes to add default-on behavior safely.
+  "2026-04-01T13:25:05.107Z",codex-agent,"Feature delivered via closed child tasks pm-wn3r (runtime), pm-9k33 (tests), and pm-ptu0 (docs). Evidence: linked task test runs passed including full node scripts/run-tests.mjs test (62 files, 648 tests), host sandbox validation confirmed automatic hybrid default and successful semantic reindex/search with local Ollama, and coverage run was executed with only the existing global threshold shortfall."
+notes[1]{created_at,author,text}:
+  "2026-04-01T13:06:19.646Z",codex-agent,Prefer deterministic fallback to keyword behavior when auto semantic dependencies are unavailable at runtime.
+files[2]{path,scope,note}:
+  src/cli/commands/search.ts,project,default mode and fallback orchestration
+  src/core/search/providers.ts,project,provider-resolution and ollama behavior
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/embedding-provider.spec.ts tests/unit/reindex-command.spec.ts,null,project,3600,targeted semantic runtime regressions
+docs[1]{path,scope,note}:
+  README.md,project,document default semantic behavior
+close_reason: runtime defaults tests docs and host validation complete
+body: "Feature spans runtime detection, fallback behavior, tests, and docs updates for Ollama-backed semantic defaults.\n\n## Detailed implementation plan\n\n1) Runtime semantic-default resolution (`pm-wn3r`)\n- Add deterministic auto-default resolution used by search runtime when explicit provider/vector settings are absent.\n- Prefer explicit user configuration first; only apply auto defaults when unset to avoid breaking existing setups.\n- Resolve an Ollama-backed provider/vector pair suitable for local execution, then keep default search mode behavior aligned (hybrid when semantic capability is present).\n- Add safe fallback so default-mode search does not hard-fail for users when auto semantic dependencies are unavailable at runtime.\n\n2) Regression coverage (`pm-9k33`)\n- Extend `tests/unit/search-command.spec.ts` to validate mode selection and fallback semantics with and without explicit config.\n- Extend provider tests to cover auto-default resolution and precedence rules.\n- Run targeted and full sandbox-safe suites to ensure no regressions for current users.\n\n3) Docs and release evidence (`pm-ptu0`)\n- Update README + ARCHITECTURE contracts to explain default behavior and precedence/fallback guardrails.\n- Add CHANGELOG entry with user impact and compatibility notes.\n- Record host-level verification evidence (Ollama available + semantic search execution checks) before close.\n\n4) Verification and closure\n- Run `pnpm build`, targeted unit suites, and full `node scripts/run-tests.mjs test`.\n- Validate semantic functionality on this Linux host with Ollama installed via reindex/search command checks.\n- Record evidence comments and close/release task -> feature -> epic once acceptance criteria are met."

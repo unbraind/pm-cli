@@ -849,7 +849,7 @@ Determinism requirements:
 
 ### 13.0 Command contract (implemented baseline)
 
-`pm search <keywords>` is implemented across keyword, semantic, and hybrid modes with deterministic ordering. The baseline command searches core item corpus fields, supports vector-query execution when configured, and returns stable TOON/JSON output parity.
+`pm search <keywords>` is implemented across keyword, semantic, and hybrid modes with deterministic ordering. The baseline command searches core item corpus fields, supports vector-query execution when configured (or when local Ollama auto-defaults are resolved), and returns stable TOON/JSON output parity.
 
 Initial flags:
 
@@ -864,7 +864,8 @@ Initial flags:
 
 - `keyword` (always available)
 - `semantic` (when embedding provider + vector store configured)
-- `hybrid` (default if semantic available)
+- `hybrid` (default if semantic capability is available through explicit settings or local Ollama auto-default resolution)
+- for implicit default mode, if auto-defaulted semantic execution fails at runtime, search degrades to keyword mode for compatibility
 
 ### 13.2 Keyword corpus fields
 
@@ -933,6 +934,8 @@ Implemented baseline:
 
 - Deterministic provider-configuration resolution exists in core search runtime plumbing.
 - OpenAI/Ollama provider blocks are normalized from settings and surfaced through a provider abstraction layer for command-time validation, request-target resolution (including OpenAI-compatible `base_url` normalization for root, `/v1`, and explicit `/embeddings` forms), request payload/response normalization (including deterministic OpenAI data-entry index ordering), deterministic request-execution helper behavior, deterministic per-request normalized-input deduplication with output fan-out back to original input cardinality/order, and deterministic embedding cardinality validation (normalized input count must match returned vector count after dedupe expansion).
+- When semantic settings are otherwise unset and local Ollama is installed, runtime auto-resolves built-in semantic defaults (`providers.ollama`, local `vector_store.lancedb.path`, and `search.embedding_model`) for `search`/`reindex`; auto model selection prefers `PM_OLLAMA_MODEL`, then `ollama list` embedding-like model names, then deterministic fallback `qwen3-embedding:0.6b`.
+- Auto-default behavior is compatibility-guarded: explicit semantic settings always take precedence, and auto-defaults can be disabled via `PM_DISABLE_OLLAMA_AUTO_DEFAULTS=1`.
 - `pm search --mode semantic|hybrid` and `pm reindex --mode semantic|hybrid` use this abstraction for deterministic semantic/hybrid execution (embedding generation/request handling) after configuration validation.
 
 Vector stores:

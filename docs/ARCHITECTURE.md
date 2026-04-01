@@ -298,6 +298,14 @@ See [EXTENSIONS.md](./EXTENSIONS.md) for the full API reference.
 Providers: OpenAI-compatible, Ollama
 Vector stores: Qdrant, LanceDB
 
+Runtime semantic defaults:
+
+- When semantic settings are otherwise unset and local Ollama is installed, search/reindex runtime resolves built-in semantic defaults (Ollama provider + local LanceDB path) so semantic-capable behavior is available out of the box.
+- Auto-default model resolution order: `PM_OLLAMA_MODEL` env override, then `ollama list` discovery (prefers embedding-like model names), then deterministic fallback `qwen3-embedding:0.6b`.
+- Explicit semantic settings always win over auto-defaults (`settings.search.provider`, `settings.vector_store.adapter`, `providers.*`, `vector_store.*`).
+- For implicit default-mode search, auto-default semantic execution failures degrade to keyword mode to preserve compatibility for existing users.
+- Auto-defaults can be disabled with `PM_DISABLE_OLLAMA_AUTO_DEFAULTS=1`.
+
 Extension runtime can supply equivalents for both sides of semantic execution:
 
 - Search provider selection: `settings.search.provider` -> `registerSearchProvider(...)`.

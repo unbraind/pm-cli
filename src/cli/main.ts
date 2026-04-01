@@ -1682,7 +1682,7 @@ program
   .description("Search items with keyword, semantic, or hybrid modes.")
   .option(
     "--mode <value>",
-    "Search mode: keyword|semantic|hybrid (default: hybrid when semantic config is available, else keyword)",
+    "Search mode: keyword|semantic|hybrid (default: hybrid when semantic config or local Ollama auto-defaults are available, else keyword)",
   )
   .option("--include-linked", "Include readable linked docs/files/tests content in keyword and hybrid lexical scoring")
   .option("--type <value>", "Filter by item type")

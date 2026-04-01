@@ -1,0 +1,49 @@
+id: pm-wn3r
+title: Implement Ollama-aware semantic default resolution in runtime
+description: "Add runtime detection/resolution so search defaults to hybrid semantic mode when local Ollama support is available, while preserving explicit configuration precedence and compatibility fallbacks."
+type: Task
+status: closed
+priority: 1
+tags[5]: "area:ollama","area:search","area:semantic",compatibility,pm-cli
+created_at: "2026-04-01T13:06:35.523Z"
+updated_at: "2026-04-01T13:24:41.867Z"
+deadline: "2026-04-08T13:06:35.523Z"
+author: codex-agent
+estimated_minutes: 160
+acceptance_criteria: "Without explicit provider/vector config, runtime resolves Ollama-backed semantic defaults when available; search default mode becomes hybrid in that case; failures degrade safely without breaking current users."
+definition_of_ready: Feature plan identifies target modules and fallback behavior expectations.
+order: 1
+goal: Default semantic search experience
+objective: Ship safe runtime default logic
+value: Out-of-box semantic behavior on compatible hosts
+impact: Reduced setup friction and retained compatibility
+outcome: Automatic semantic defaults with deterministic fallback
+why_now: Core logic is required before tests and docs can be finalized.
+parent: pm-zvn2
+risk: medium
+confidence: medium
+environment: linux
+component: search/runtime
+regression: true
+customer_impact: Users on Ollama-capable systems receive semantic defaults without manual setup.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-b4pb,discovered_from,"2026-04-01T13:06:35.523Z",codex-agent,null
+  pm-zvn2,parent,"2026-04-01T13:06:35.523Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T13:06:35.523Z",codex-agent,Task isolates runtime behavior to keep compatibility analysis and rollback scope clear.
+  "2026-04-01T13:24:18.306Z",codex-agent,"Implemented runtime Ollama semantic defaults via src/core/search/semantic-defaults.ts and wired search/reindex integration in src/cli/commands/search.ts and src/cli/commands/reindex.ts with compatibility-safe fallback in implicit default search mode. Evidence: pm test pm-wn3r --run passed both linked targeted suites; host validation in a clean PM_PATH sandbox with empty semantic settings showed pm search default mode=hybrid, pm reindex --mode semantic succeeded, and subsequent search results included matched_fields=semantic."
+notes[1]{created_at,author,text}:
+  "2026-04-01T13:06:35.523Z",codex-agent,Keep explicit settings authoritative; auto defaults must only apply when user has not configured semantic providers/stores.
+files[5]{path,scope,note}:
+  src/cli/commands/reindex.ts,project,reindex runtime defaults integration
+  src/cli/commands/search.ts,project,default mode resolution and fallback
+  src/cli/main.ts,project,search help text contract
+  src/core/search/providers.ts,project,provider auto-detection helpers
+  src/core/search/semantic-defaults.ts,project,auto Ollama semantic defaults resolver
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/embedding-provider.spec.ts,null,project,3600,runtime behavior tests
+  node scripts/run-tests.mjs test -- tests/unit/semantic-defaults.spec.ts tests/unit/search-command.spec.ts tests/unit/reindex-command.spec.ts,null,project,3600,runtime semantic defaults targeted suite
+docs[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,runtime semantic dependency resolution docs
+close_reason: runtime defaults shipped with host semantic validation
+body: Code task for runtime default-resolution logic and search execution fallback behavior.

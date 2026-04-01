@@ -12,6 +12,7 @@ import {
   type EmbeddingProviderConfig,
   type EmbeddingProviderResolution,
 } from "../../core/search/providers.js";
+import { resolveSettingsWithSemanticRuntimeDefaults } from "../../core/search/semantic-defaults.js";
 import {
   executeVectorQuery,
   resolveVectorStores,
@@ -769,11 +770,14 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   const includeLinked = parseIncludeLinked(options.includeLinked);
   const tokens = parseTokens(query);
   const limit = parseLimit(options.limit);
+  const modeWasExplicit = typeof options.mode === "string" && options.mode.trim().length > 0;
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
-  const settings = await readSettings(pmRoot);
+  const storedSettings = await readSettings(pmRoot);
+  const runtimeDefaultsResolution = resolveSettingsWithSemanticRuntimeDefaults(storedSettings);
+  const settings = runtimeDefaultsResolution.settings;
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const maxResults = resolveSearchMaxResults(settings);
   const scoreThreshold = resolveSearchScoreThreshold(settings);
@@ -783,97 +787,107 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   const vectorResolution = resolveVectorStores(settings);
   const extensionSearchProvider = resolveExtensionSearchProvider(settings);
   const extensionVectorAdapter = resolveExtensionVectorAdapter(settings);
-  const requestedMode = parseMode(options.mode, {
+  let effectiveMode = parseMode(options.mode, {
     hasProvider: providerResolution.active !== null || extensionSearchProvider !== null,
     hasVectorStore: vectorResolution.active !== null || extensionVectorAdapter !== null,
   });
   const allDocuments = await loadDocuments(pmRoot, settings.item_format ?? "json_markdown", typeRegistry.type_to_folder);
   const filteredDocuments = applyFilters(allDocuments, options, typeRegistry);
-  if (requestedMode === "keyword" && (filteredDocuments.length === 0 || limit === 0)) {
-    return emptySearchResult(query, requestedMode, options, includeLinked, scoreThreshold, hybridSemanticWeight);
+  if (effectiveMode === "keyword" && (filteredDocuments.length === 0 || limit === 0)) {
+    return emptySearchResult(query, effectiveMode, options, includeLinked, scoreThreshold, hybridSemanticWeight);
   }
 
   const projectRoot = process.cwd();
   const globalRoot = resolveGlobalPmRoot(projectRoot);
   const linkedCorpusById = new Map<string, string>();
-  if (includeLinked && (requestedMode === "keyword" || requestedMode === "hybrid")) {
+  if (includeLinked && (effectiveMode === "keyword" || effectiveMode === "hybrid")) {
     for (const document of filteredDocuments) {
       linkedCorpusById.set(document.front_matter.id, await loadLinkedCorpus(document, projectRoot, globalRoot));
     }
   }
 
   const keywordHits = filteredDocuments
-    .map((document) => buildHybridLexicalScore(document, tokens, requestedMode !== "semantic", linkedCorpusById, tuning))
+    .map((document) => buildHybridLexicalScore(document, tokens, effectiveMode !== "semantic", linkedCorpusById, tuning))
     .filter((entry): entry is SearchHit => entry !== null);
 
   let hits = keywordHits;
-  if (requestedMode !== "keyword") {
-    if (!extensionSearchProvider) {
-      requireSemanticDependencies(requestedMode, providerResolution, vectorResolution, extensionVectorAdapter !== null);
-    }
-    if (filteredDocuments.length === 0 || limit === 0) {
-      return emptySearchResult(query, requestedMode, options, includeLinked, scoreThreshold, hybridSemanticWeight);
-    }
-    const filteredById = new Map(filteredDocuments.map((document) => [document.front_matter.id, document]));
-    const canUseBuiltInSemantic =
-      providerResolution.active !== null && (vectorResolution.active !== null || extensionVectorAdapter !== null);
-    if (extensionSearchProvider) {
-      try {
-        const providerResponse = await Promise.resolve(
-          extensionSearchProvider.query({
-            query,
-            mode: requestedMode,
-            tokens,
-            options,
-            settings,
-            documents: filteredDocuments,
-          }),
-        );
-        hits = normalizeExtensionProviderHits(extensionSearchProvider.providerName, providerResponse, filteredById);
-      } catch (error: unknown) {
-        if (!canUseBuiltInSemantic) {
-          throw new PmCliError(
-            `Extension search provider "${extensionSearchProvider.providerName}" failed: ${error instanceof Error ? error.message : String(error)}`,
-            EXIT_CODE.GENERIC_FAILURE,
+  if (effectiveMode !== "keyword") {
+    try {
+      if (!extensionSearchProvider) {
+        requireSemanticDependencies(effectiveMode, providerResolution, vectorResolution, extensionVectorAdapter !== null);
+      }
+      if (filteredDocuments.length === 0 || limit === 0) {
+        return emptySearchResult(query, effectiveMode, options, includeLinked, scoreThreshold, hybridSemanticWeight);
+      }
+      const filteredById = new Map(filteredDocuments.map((document) => [document.front_matter.id, document]));
+      const canUseBuiltInSemantic =
+        providerResolution.active !== null && (vectorResolution.active !== null || extensionVectorAdapter !== null);
+      if (extensionSearchProvider) {
+        try {
+          const providerResponse = await Promise.resolve(
+            extensionSearchProvider.query({
+              query,
+              mode: effectiveMode,
+              tokens,
+              options,
+              settings,
+              documents: filteredDocuments,
+            }),
           );
+          hits = normalizeExtensionProviderHits(extensionSearchProvider.providerName, providerResponse, filteredById);
+        } catch (error: unknown) {
+          if (!canUseBuiltInSemantic) {
+            throw new PmCliError(
+              `Extension search provider "${extensionSearchProvider.providerName}" failed: ${error instanceof Error ? error.message : String(error)}`,
+              EXIT_CODE.GENERIC_FAILURE,
+            );
+          }
         }
       }
-    }
-    if (hits === keywordHits) {
-      const { provider, vectorStore } = requireSemanticDependencies(
-        requestedMode,
-        providerResolution,
-        vectorResolution,
-        extensionVectorAdapter !== null,
-      );
-      hits = await computeSemanticOrHybridHits({
-        requestedMode,
-        query,
-        filteredDocuments,
-        keywordHits,
-        hybridSemanticWeight,
-        limit,
-        maxResults,
-        provider,
-        vectorStore,
-        extensionVectorAdapter,
-        settings,
-      });
+      if (hits === keywordHits) {
+        const { provider, vectorStore } = requireSemanticDependencies(
+          effectiveMode,
+          providerResolution,
+          vectorResolution,
+          extensionVectorAdapter !== null,
+        );
+        hits = await computeSemanticOrHybridHits({
+          requestedMode: effectiveMode,
+          query,
+          filteredDocuments,
+          keywordHits,
+          hybridSemanticWeight,
+          limit,
+          maxResults,
+          provider,
+          vectorStore,
+          extensionVectorAdapter,
+          settings,
+        });
+      }
+    } catch (error: unknown) {
+      const canFallbackToKeyword =
+        runtimeDefaultsResolution.auto_ollama_defaults_applied && !modeWasExplicit && effectiveMode === "hybrid";
+      if (!canFallbackToKeyword) {
+        throw error;
+      }
+      effectiveMode = "keyword";
+      hits = keywordHits;
     }
   }
 
   const thresholded = hits.filter((entry) => entry.score >= scoreThreshold);
   const sorted = sortHits(thresholded);
-  const effectiveLimit = requestedMode === "keyword" ? limit : (limit ?? maxResults);
-  const limited = effectiveLimit === undefined ? sorted : sorted.slice(0, effectiveLimit);
+  const resolvedLimit = effectiveMode === "keyword" ? limit : (limit ?? maxResults);
+  const limited = resolvedLimit === undefined ? sorted : sorted.slice(0, resolvedLimit);
 
   return {
     query: query.trim(),
-    mode: requestedMode,
+    mode: effectiveMode,
     items: limited,
     count: limited.length,
     filters: {
-      mode: requestedMode,
+      mode: effectiveMode,
       type: options.type ?? null,
       tag: options.tag ?? null,
       priority: options.priority ?? null,
@@ -881,7 +895,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
       deadline_after: options.deadlineAfter ?? null,
       include_linked: includeLinked,
       score_threshold: scoreThreshold,
-      hybrid_semantic_weight: requestedMode === "hybrid" ? hybridSemanticWeight : null,
+      hybrid_semantic_weight: effectiveMode === "hybrid" ? hybridSemanticWeight : null,
       limit: options.limit ?? null,
     },
     now: nowIso(),

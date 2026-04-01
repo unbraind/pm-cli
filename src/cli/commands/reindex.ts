@@ -8,6 +8,7 @@ import { pathExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { executeEmbeddingBatchesWithRetry } from "../../core/search/embedding-batches.js";
 import { resolveEmbeddingProviders } from "../../core/search/providers.js";
+import { resolveSettingsWithSemanticRuntimeDefaults } from "../../core/search/semantic-defaults.js";
 import { executeVectorUpsert, resolveVectorStores } from "../../core/search/vector-stores.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -236,7 +237,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
 
-  const settings = await readSettings(pmRoot);
+  const settings = resolveSettingsWithSemanticRuntimeDefaults(await readSettings(pmRoot)).settings;
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const extensionEmbedding = resolveExtensionSearchEmbedding(settings);
   const extensionVectorUpsert = resolveExtensionVectorUpsert(settings);

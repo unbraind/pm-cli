@@ -53,6 +53,7 @@ export async function withTempPmPath<T>(callback: (context: TempPmContext) => Pr
     PM_PATH: pmPath,
     PM_GLOBAL_PATH: path.join(tempRoot, ".pm-cli-global"),
     PM_AUTHOR: "test-author",
+    PM_DISABLE_OLLAMA_AUTO_DEFAULTS: "1",
     FORCE_COLOR: "0",
   };
 
@@ -63,10 +64,12 @@ export async function withTempPmPath<T>(callback: (context: TempPmContext) => Pr
     PM_PATH: process.env.PM_PATH,
     PM_GLOBAL_PATH: process.env.PM_GLOBAL_PATH,
     PM_AUTHOR: process.env.PM_AUTHOR,
+    PM_DISABLE_OLLAMA_AUTO_DEFAULTS: process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS,
   };
   process.env.PM_PATH = env.PM_PATH;
   process.env.PM_GLOBAL_PATH = env.PM_GLOBAL_PATH;
   process.env.PM_AUTHOR = env.PM_AUTHOR;
+  process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS = env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS;
 
   try {
     const initResult = runCli(["init", "--json"], { expectJson: true });
@@ -95,6 +98,11 @@ export async function withTempPmPath<T>(callback: (context: TempPmContext) => Pr
       delete process.env.PM_AUTHOR;
     } else {
       process.env.PM_AUTHOR = previousEnv.PM_AUTHOR;
+    }
+    if (previousEnv.PM_DISABLE_OLLAMA_AUTO_DEFAULTS === undefined) {
+      delete process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS;
+    } else {
+      process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS = previousEnv.PM_DISABLE_OLLAMA_AUTO_DEFAULTS;
     }
     await rm(tempRoot, { recursive: true, force: true });
   }

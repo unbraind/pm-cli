@@ -124,6 +124,25 @@ pm claim <item-id>
 
 From there, use `pm update`, `pm comments`, `pm files`, `pm test`, `pm search`, and `pm close` as work progresses.
 
+## Semantic Search Defaults (Ollama)
+
+`pm search` now auto-enables semantic-capable defaults on hosts where local Ollama is installed, without requiring manual semantic provider/vector configuration in `settings.json`.
+
+- Auto-defaults only apply when semantic settings are otherwise unset (no explicit `settings.search.provider`, `settings.vector_store.adapter`, `providers.*`, or `vector_store.*` semantic config).
+- Resolved defaults are:
+  - embedding provider: Ollama (`http://localhost:11434`)
+  - embedding model: `PM_OLLAMA_MODEL` (if set), otherwise first model from `ollama list` (preferring names containing `embed`/`embedding`), otherwise `qwen3-embedding:0.6b`
+  - vector store: local LanceDB path `.agents/pm/search/lancedb/`
+- Explicit user/project configuration always takes precedence over auto-defaults.
+- If implicit auto-defaulted semantic execution fails at runtime, `pm search` falls back to keyword mode to avoid breaking existing users.
+- Disable this behavior with `PM_DISABLE_OLLAMA_AUTO_DEFAULTS=1`.
+
+To (re)build semantic artifacts explicitly:
+
+```bash
+pm reindex --mode hybrid
+```
+
 ## Deadline and Date Inputs
 
 - Date/time inputs used by `--deadline`, `--deadline-before`, `--deadline-after`, calendar `--date/--from/--to`, reminders, and events accept:

@@ -1,0 +1,43 @@
+id: pm-67uh
+title: Auto-enable semantic search when local Ollama is available
+description: Enable semantic/hybrid search by default on hosts with local Ollama so users get semantic behavior out-of-the-box without manual provider/vector setup.
+type: Epic
+status: closed
+priority: 0
+tags[5]: "area:ollama","area:search","area:semantic",compatibility,pm-cli
+created_at: "2026-04-01T13:06:03.573Z"
+updated_at: "2026-04-01T13:25:10.797Z"
+deadline: "2026-04-15T13:06:03.573Z"
+author: codex-agent
+estimated_minutes: 360
+acceptance_criteria: "When Ollama is available locally, default pm search mode resolves to semantic-capable hybrid behavior with no manual setup; explicit user settings still take precedence; docs and regression verification are complete."
+definition_of_ready: Duplicate scan across all pm items and semantic/Ollama code paths is complete with scoped non-breaking implementation approach.
+order: 1
+goal: Default semantic search experience
+objective: Enable safe Ollama-backed semantic defaults
+value: Users get immediate semantic search value with zero manual configuration on Ollama-ready systems
+impact: Higher search quality and easier onboarding without breaking existing workflows
+outcome: "Deterministic, non-breaking semantic defaults tied to Ollama availability"
+why_now: Users on Ollama-capable hosts currently need manual setup and can miss semantic capabilities.
+risk: medium
+confidence: high
+environment: linux
+component: search/runtime
+regression: true
+customer_impact: Improves default semantic search experience while preserving compatibility for existing users.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-b4pb,discovered_from,"2026-04-01T13:06:03.573Z",codex-agent,null
+  pm-f45,discovered_from,"2026-04-01T13:06:03.573Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T13:06:03.573Z",codex-agent,Created after exhaustive duplicate scan showed no active item covering default semantic enablement from local Ollama availability.
+  "2026-04-01T13:25:09.931Z",codex-agent,"Epic scope completed through feature pm-zvn2 with runtime auto-default implementation, compatibility fallbacks, regression coverage, and documentation updates. Verification evidence includes full test pass (648 tests), targeted semantic suites, and successful host sandbox semantic default validation with local Ollama."
+notes[1]{created_at,author,text}:
+  "2026-04-01T13:06:03.573Z",codex-agent,Implement with compatibility-first fallback behavior so current users are not broken.
+files[1]{path,scope,note}:
+  src/cli/commands/search.ts,project,default mode resolution path
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,3600,full regression baseline
+docs[1]{path,scope,note}:
+  README.md,project,document default semantic behavior
+close_reason: ollama semantic default epic delivered and verified
+body: Track end-to-end default semantic enablement on Ollama-capable hosts with compatibility guardrails and verification evidence.
