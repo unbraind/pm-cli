@@ -6,7 +6,7 @@ status: blocked
 priority: 1
 tags[4]: "area:extensions","area:release","area:tests",pm-cli
 created_at: "2026-04-01T02:16:16.834Z"
-updated_at: "2026-04-01T03:02:45.421Z"
+updated_at: "2026-04-01T03:05:17.374Z"
 deadline: "2026-04-11T02:16:16.834Z"
 author: codex-agent
 estimated_minutes: 220
@@ -28,8 +28,9 @@ regression: true
 customer_impact: existing users keep stable behavior after override expansion
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-x395,parent,"2026-04-01T02:16:16.834Z",codex-agent,null
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-04-01T02:16:16.834Z",codex-agent,Feature E from full-override plan.
+  "2026-04-01T03:05:12.720Z",codex-agent,Feature remains blocked solely by the unresolved global coverage-threshold gate tracked in pm-rl7j after push of b21a27b.
 notes[1]{created_at,author,text}:
   "2026-04-01T02:16:16.834Z",codex-agent,Validation must cover extension-enabled and --no-extensions paths.
 files[1]{path,scope,note}:
