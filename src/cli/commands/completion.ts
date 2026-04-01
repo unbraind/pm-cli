@@ -238,8 +238,8 @@ _pm() {
             '--type[Filter by item type]:(${typeChoices})' \\
             '--tag[Filter by tag]:tag' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
-            '--deadline-before[Filter by deadline upper bound]:date' \\
-            '--deadline-after[Filter by deadline lower bound]:date' \\
+            '--deadline-before[Filter by deadline upper bound (ISO/date string or relative)]:date' \\
+            '--deadline-after[Filter by deadline lower bound (ISO/date string or relative)]:date' \\
             '--assignee[Filter by assignee (use none for unassigned)]:assignee' \\
             '--sprint[Filter by sprint]:sprint' \\
             '--release[Filter by release]:release' \\
@@ -258,7 +258,7 @@ _pm() {
             '(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)' \\
             '--tags[Comma-separated tags]:tags' \\
             '(-b --body)'{-b,--body}'[Item body]:body' \\
-            '--deadline[Deadline (ISO or relative +1d/+2w)]:deadline' \\
+            '--deadline[Deadline (ISO/date string or relative +6h/+1d/+2w/+6m)]:deadline' \\
             '--estimate[Estimated minutes]:minutes' \\
             '--acceptance-criteria[Acceptance criteria]:criteria' \\
             '--reminder[Reminder entry at=<iso|relative>,text=<text>]:reminder' \\
@@ -290,9 +290,9 @@ _pm() {
         calendar|cal)
           _arguments \\
             '--view[Calendar view]:(agenda day week month)' \\
-            '--date[Anchor date/time (ISO or relative)]:date' \\
-            '--from[Agenda lower bound]:date' \\
-            '--to[Agenda upper bound]:date' \\
+            '--date[Anchor date/time (ISO/date string or relative)]:date' \\
+            '--from[Agenda lower bound (ISO/date string or relative)]:date' \\
+            '--to[Agenda upper bound (ISO/date string or relative)]:date' \\
             '--past[Include past entries]' \\
             '--type[Filter by type]:(${typeChoices})' \\
             '--tag[Filter by tag]:tag' \\
@@ -451,8 +451,8 @@ for list_cmd in ${listCmds}
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l release  -d 'Filter by release' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l limit    -d 'Limit returned item count' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l include-body -d 'Include item body in each returned list row'
-  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l deadline-before -d 'Filter by deadline upper bound' -r
-  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l deadline-after  -d 'Filter by deadline lower bound' -r
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l deadline-before -d 'Filter by deadline upper bound (ISO/date string or relative)' -r
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l deadline-after  -d 'Filter by deadline lower bound (ISO/date string or relative)' -r
 end
 
 # create flags
@@ -463,7 +463,7 @@ complete -c pm -n '__fish_seen_subcommand_from create' -s s -l status           
 complete -c pm -n '__fish_seen_subcommand_from create' -s p -l priority           -d 'Priority (0-4)' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from create' -l tags                    -d 'Comma-separated tags' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -s b -l body               -d 'Item body' -r
-complete -c pm -n '__fish_seen_subcommand_from create' -l deadline                -d 'Deadline (ISO or relative +1d/+2w)' -r
+complete -c pm -n '__fish_seen_subcommand_from create' -l deadline                -d 'Deadline (ISO/date string or relative +6h/+1d/+2w/+6m)' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l estimate                -d 'Estimated minutes' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l acceptance-criteria     -d 'Acceptance criteria' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l reminder                -d 'Reminder entry at=<iso|relative>,text=<text>' -r
@@ -496,9 +496,9 @@ complete -c pm -n '__fish_seen_subcommand_from search' -l priority       -d 'Fil
 
 # calendar flags
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l view      -d 'Calendar view' -r -a 'agenda day week month'
-complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l date      -d 'Anchor date/time (ISO or relative)' -r
-complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l from      -d 'Agenda lower bound (ISO or relative)' -r
-complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l to        -d 'Agenda upper bound (ISO or relative)' -r
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l date      -d 'Anchor date/time (ISO/date string or relative)' -r
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l from      -d 'Agenda lower bound (ISO/date string or relative)' -r
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l to        -d 'Agenda upper bound (ISO/date string or relative)' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l past      -d 'Include past entries'
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l type      -d 'Filter by type' -r -a '${typeChoices}'
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l tag       -d 'Filter by tag' -r

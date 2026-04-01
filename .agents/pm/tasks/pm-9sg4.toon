@@ -1,0 +1,47 @@
+id: pm-9sg4
+title: Docs/help refresh for expanded deadline/date inputs
+description: Update user and maintainer docs plus CLI/help/completion text to reflect newly supported deadline/date formats.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:cli","area:docs",compatibility,pm-cli
+created_at: "2026-04-01T11:26:51.855Z"
+updated_at: "2026-04-01T11:40:52.550Z"
+deadline: "2026-04-08T11:26:51.855Z"
+author: codex-agent
+estimated_minutes: 90
+acceptance_criteria: "README PRD CHANGELOG and command help/completion all describe new accepted formats consistently, including +m and flexible date strings."
+definition_of_ready: Parser behavior is finalized and test coverage exists.
+order: 2
+goal: Input ergonomics without regressions
+objective: Keep docs/help contracts accurate
+value: Users discover and trust supported date formats
+impact: Fewer support requests and usage errors
+outcome: Docs and help reflect real parser behavior
+why_now: Expanding parser support requires synchronized documentation to prevent confusion.
+parent: pm-lau3
+risk: low
+confidence: high
+component: docs/cli
+regression: true
+customer_impact: Users can self-serve correct date input formats from docs/help.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-lau3,parent,"2026-04-01T11:26:51.855Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T11:26:51.855Z",codex-agent,Task tracks all documentation and help text updates needed for rollout safety.
+  "2026-04-01T11:39:02.411Z",codex-agent,"Updated docs/help/completions for expanded date/deadline support across README.md, PRD.md, CHANGELOG.md, AGENTS.md, src/cli/main.ts, and src/cli/commands/completion.ts with ISO/date-string/relative guidance (+6m included)."
+notes[1]{created_at,author,text}:
+  "2026-04-01T11:26:51.855Z",codex-agent,Include shell completion descriptions so CLI discoverability matches runtime behavior.
+files[3]{path,scope,note}:
+  README.md,project,primary user docs update
+  src/cli/commands/completion.ts,project,shell completion description updates
+  src/cli/main.ts,project,help text contract updates
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,2400,docs/help contract regression
+docs[4]{path,scope,note}:
+  AGENTS.md,project,agent workflow deadline format note
+  CHANGELOG.md,project,release note entry for input support expansion
+  PRD.md,project,deadline/date contract update
+  README.md,project,user-facing deadline/date format docs
+close_reason: Docs and help/completion contracts updated across README PRD CHANGELOG AGENTS and CLI descriptions for ISO/date/relative +6m support.
+body: Synchronize README PRD CHANGELOG AGENTS and command/help completion text with parser behavior.

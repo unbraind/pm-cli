@@ -1,0 +1,40 @@
+id: pm-va6e
+title: Deadline/date parsing compatibility hardening
+description: Expand deadline/date parsing to accept month-relative values and flexible date strings while preserving deterministic behavior and backward compatibility.
+type: Epic
+status: closed
+priority: 0
+tags[5]: "area:cli","area:docs","area:time",compatibility,pm-cli
+created_at: "2026-04-01T11:26:14.996Z"
+updated_at: "2026-04-01T11:41:10.493Z"
+deadline: "2026-04-15T11:26:14.996Z"
+author: codex-agent
+estimated_minutes: 360
+acceptance_criteria: "CLI accepts +6m and flexible date strings (including forms like 2026-03-31T13-59) across create/update/list/search/calendar/reminder/event paths, persists normalized ISO timestamps, preserves existing accepted inputs, and ships with updated docs plus full regression evidence."
+definition_of_ready: Parser behavior and call-sites are mapped with explicit no-regression guardrails.
+order: 1
+goal: Input ergonomics without regressions
+objective: Accept practical deadline/date strings safely
+value: Reduces friction from strict date-format assumptions
+impact: Fewer usage failures in date-driven workflows
+outcome: Deterministic flexible date parsing across CLI surfaces
+why_now: Users are hitting Invalid deadline value errors for practical inputs like +6m and 2026-03-31T13-59.
+risk: medium
+confidence: high
+component: core/shared/time
+regression: true
+customer_impact: Existing users keep current behavior while additional date inputs are accepted.
+comments[3]{created_at,author,text}:
+  "2026-04-01T11:26:14.996Z",codex-agent,Created after duplicate scan across list-open/list-in-progress/list-blocked plus focused searches for +6m and deadline parsing; no equivalent item found.
+  "2026-04-01T11:27:43.942Z",codex-agent,"Execution hierarchy created: feature pm-lau3 with tasks pm-y8a8 (parser), pm-9sg4 (docs/help), and pm-x6l7 (verification). Detailed implementation plan is documented in pm-lau3 body before code edits."
+  "2026-04-01T11:41:09.535Z",codex-agent,"Epic delivered via feature pm-lau3 and tasks pm-y8a8 pm-9sg4 pm-x6l7. Implementation includes parser expansion, docs alignment, and full test verification with no functional regressions observed."
+notes[1]{created_at,author,text}:
+  "2026-04-01T11:26:14.996Z",codex-agent,"Implementation strategy: parser normalization first,then cross-command regression tests and docs/help/completion updates."
+files[1]{path,scope,note}:
+  src/core/shared/time.ts,project,primary date parsing logic
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,2400,full regression baseline
+docs[1]{path,scope,note}:
+  PRD.md,project,deadline/date contract documentation
+close_reason: "Deadline/date parsing hardening is complete: practical date strings and +6m are supported across command surfaces with deterministic ISO persistence and updated documentation."
+body: Cross-command hardening for deadline and date parsing inputs.

@@ -1,0 +1,42 @@
+id: pm-lau3
+title: Implement flexible deadline/date parser behavior
+description: Deliver parser and command-surface changes so deadline/date inputs accept month-relative values and practical timestamp variants while remaining deterministic.
+type: Feature
+status: closed
+priority: 1
+tags[5]: "area:cli","area:tests","area:time",compatibility,pm-cli
+created_at: "2026-04-01T11:26:29.661Z"
+updated_at: "2026-04-01T11:41:08.894Z"
+deadline: "2026-04-11T11:26:29.661Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: "resolveIsoOrRelative accepts +<n>m month-relative values and normalized date-string variants (including T13-59 style), all date-driven commands continue working, and tests cover both new and legacy inputs."
+definition_of_ready: Epic plan approved with explicit parser and docs/test workstreams.
+order: 1
+goal: Input ergonomics without regressions
+objective: Expand accepted deadline/date formats
+value: Allows users and agents to pass practical date values without manual reformatting
+impact: Reduces command failures and retry churn
+outcome: Robust parsing accepted across CLI
+why_now: Current strictness causes avoidable user-facing usage errors.
+parent: pm-va6e
+risk: medium
+confidence: high
+component: cli/shared-time
+regression: true
+customer_impact: Date input workflows become more forgiving while preserving existing behavior.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-va6e,parent,"2026-04-01T11:26:29.661Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T11:26:29.661Z",codex-agent,Feature created from epic plan with explicit compatibility/no-regression requirement.
+  "2026-04-01T11:41:07.673Z",codex-agent,"Child tasks completed: pm-y8a8 (parser), pm-9sg4 (docs/help), pm-x6l7 (verification). Full sandbox test suite passed (638/638) after parser and docs updates; coverage command executed with known global-threshold shortfall only."
+notes[1]{created_at,author,text}:
+  "2026-04-01T11:26:29.661Z",codex-agent,Primary risk is widening parser acceptance without changing persisted ISO output semantics.
+files[1]{path,scope,note}:
+  src/core/shared/time.ts,project,parser enhancement surface
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,2400,feature regression suite
+docs[1]{path,scope,note}:
+  README.md,project,user-facing deadline format docs
+close_reason: "Flexible deadline/date parser behavior shipped with +m and date-string support, docs/help parity updates, and full regression verification for existing users."
+body: "Feature scope: parser update, command/help/docs alignment, and no-regression validation.\n\n## Detailed implementation plan\n\n1) Parser expansion and normalization in `src/core/shared/time.ts`\n   - Extend relative unit handling to support `+<n>m` month-relative deadlines using calendar-safe month math (Date#setUTCMonth).\n   - Add tolerant normalization for timestamp-like strings (e.g. `2026-03-31T13-59`, compact dates, and space-separated date/time) before Date.parse fallback.\n   - Keep canonical persistence behavior unchanged: all accepted values are written as ISO strings.\n\n2) Command-surface compatibility checks\n   - Ensure behavior is inherited automatically via existing `resolveIsoOrRelative` call sites in create/update/list/search/calendar/reminder/event parsing paths.\n   - Refresh usage/help strings where they currently imply a narrower contract than runtime behavior.\n\n3) Regression tests (new + existing invariants)\n   - Extend `tests/unit/determinism.spec.ts` with +m and flexible-date acceptance assertions.\n   - Add focused unit checks in list/search/create/update suites to validate new inputs and preserve prior behavior.\n   - Verify invalid junk still throws deterministic usage errors.\n\n4) Docs and contract alignment\n   - Update `README.md`, `PRD.md`, and `CHANGELOG.md` to document supported deadline/date formats and examples.\n   - Update CLI option descriptions and completion text so discoverability matches runtime behavior.\n\n5) Verification and closure evidence\n   - Run targeted unit tests for modified areas, then full `node scripts/run-tests.mjs test` and build validation.\n   - Record evidence in pm comments, close child tasks/feature/epic, and release claim."

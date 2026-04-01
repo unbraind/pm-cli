@@ -121,6 +121,14 @@ pm claim <item-id>
 
 From there, use `pm update`, `pm comments`, `pm files`, `pm test`, `pm search`, and `pm close` as work progresses.
 
+## Deadline and Date Inputs
+
+- Date/time inputs used by `--deadline`, `--deadline-before`, `--deadline-after`, calendar `--date/--from/--to`, reminders, and events accept:
+  - ISO timestamps
+  - Flexible date strings (for example `2026-03-31T13-59`, `20260331`, `20260331T135900Z`)
+  - Relative offsets (`+6h`, `+1d`, `+2w`, `+6m`)
+- Accepted values are normalized to canonical ISO timestamps for deterministic storage and filtering.
+
 ## Status Values
 
 - Canonical status values are: `draft`, `open`, `in_progress`, `blocked`, `closed`, `canceled`.
@@ -264,7 +272,7 @@ Use `--no-extensions` to force core-only behavior for a single invocation.
 ### Reminder fields on items
 
 - `pm create` and `pm update` accept repeatable `--reminder` flags.
-- Reminder value format: `at=<iso|relative>,text=<text>`.
+- Reminder value format: `at=<iso|date|relative>,text=<text>`.
 - Use `none` to explicitly clear reminders in create/update flows.
 
 Examples:
@@ -296,17 +304,17 @@ pm update pm-a1b2 --reminder none
 
 - `pm create` and `pm update` accept repeatable `--event` flags.
 - Event value format supports:
-  - `start=<iso|relative>` (required)
-  - `end=<iso|relative>` (optional, must be after `start`)
+  - `start=<iso|date|relative>` (required)
+  - `end=<iso|date|relative>` (optional, must be after `start`)
   - `title=<text>`, `description=<text>`, `location=<text>`, `timezone=<iana-or-label>`, `all_day=<true|false|1|0|yes|no>`
 - Recurrence metadata (optional, RFC-lite):
   - `recur_freq=<daily|weekly|monthly|yearly>`
   - `recur_interval=<int>=1+`
   - `recur_count=<int>=1+`
-  - `recur_until=<iso|relative>`
+  - `recur_until=<iso|date|relative>`
   - `recur_by_weekday=<mon|tue|wed|thu|fri|sat|sun>` (pipe-delimited)
   - `recur_by_month_day=<1..31>` (pipe-delimited)
-  - `recur_exdates=<iso|relative>` (pipe-delimited)
+  - `recur_exdates=<iso|date|relative>` (pipe-delimited)
 - Use `none` to explicitly clear all events in create/update flows.
 
 Examples:

@@ -584,6 +584,34 @@ describe("runUpdate", () => {
     });
   });
 
+  it("accepts month-relative and normalized date-string deadline updates", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-deadline-format-expansion");
+
+      const monthRelative = await runUpdate(
+        id,
+        {
+          deadline: "+6m",
+          author: "update-deadline-owner",
+          message: "set month-relative deadline",
+        },
+        { path: context.pmPath },
+      );
+      expect(Number.isNaN(Date.parse(String((monthRelative.item as Record<string, unknown>).deadline)))).toBe(false);
+
+      const normalizedDateString = await runUpdate(
+        id,
+        {
+          deadline: "2026-03-31T13-59Z",
+          author: "update-deadline-owner",
+          message: "set normalized date-string deadline",
+        },
+        { path: context.pmPath },
+      );
+      expect((normalizedDateString.item as Record<string, unknown>).deadline).toBe("2026-03-31T13:59:00.000Z");
+    });
+  });
+
   it("validates enum and numeric inputs", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-invalid-values");

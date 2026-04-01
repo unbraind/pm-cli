@@ -362,6 +362,30 @@ describe("runCreate", () => {
     });
   });
 
+  it("accepts month-relative and normalized date-string deadline inputs", async () => {
+    await withTempPmPath(async (context) => {
+      const monthRelative = await runCreate(
+        baseCreateOptions({
+          title: "create-month-relative-deadline",
+          deadline: "+6m",
+          message: "create month-relative deadline",
+        }),
+        { path: context.pmPath },
+      );
+      expect(Number.isNaN(Date.parse(String(monthRelative.item.deadline)))).toBe(false);
+
+      const normalizedDateString = await runCreate(
+        baseCreateOptions({
+          title: "create-normalized-date-string-deadline",
+          deadline: "2026-03-31T13-59Z",
+          message: "create normalized date-string deadline",
+        }),
+        { path: context.pmPath },
+      );
+      expect(normalizedDateString.item.deadline).toBe("2026-03-31T13:59:00.000Z");
+    });
+  });
+
   it("supports explicit none semantics and records unset intent in history message", async () => {
     await withTempPmPath(async (context) => {
       const previousPmAuthor = process.env.PM_AUTHOR;

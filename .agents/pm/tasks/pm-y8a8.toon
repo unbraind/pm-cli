@@ -1,0 +1,47 @@
+id: pm-y8a8
+title: "Parser update: support +m and flexible date strings"
+description: Enhance shared time parsing to accept month-relative deadlines and normalize practical timestamp variants before ISO persistence.
+type: Task
+status: closed
+priority: 1
+tags[5]: "area:cli","area:tests","area:time",compatibility,pm-cli
+created_at: "2026-04-01T11:26:42.395Z"
+updated_at: "2026-04-01T11:40:48.454Z"
+deadline: "2026-04-08T11:26:42.395Z"
+author: codex-agent
+estimated_minutes: 140
+acceptance_criteria: "Parser accepts +6m and T13-59 style timestamps, rejects invalid garbage deterministically, and existing +h/+d/+w/ISO behavior remains stable."
+definition_of_ready: Feature acceptance criteria and risks are documented.
+order: 1
+goal: Input ergonomics without regressions
+objective: Expand parser acceptance safely
+value: Users can pass common date inputs successfully
+impact: Fewer Invalid deadline errors
+outcome: Reliable parsing across commands
+why_now: This is the direct root-cause fix for the reported issue.
+parent: pm-lau3
+risk: medium
+confidence: high
+component: core/shared/time
+regression: true
+customer_impact: Date-heavy workflows stop failing on practical values.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-lau3,parent,"2026-04-01T11:26:42.395Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T11:26:42.395Z",codex-agent,Task carved from feature plan to isolate parser and test logic changes.
+  "2026-04-01T11:39:01.722Z",codex-agent,"Implemented parser expansion in src/core/shared/time.ts: added +m month-relative support, tolerant date-string normalization (including T13-59 and compact forms), and updated usage error guidance while preserving ISO persistence. Validation evidence: node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts tests/unit/list-command.spec.ts tests/unit/search-command.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts passed (78/78)."
+notes[1]{created_at,author,text}:
+  "2026-04-01T11:26:42.395Z",codex-agent,"Guardrails: always persist canonical ISO and keep deterministic behavior with timezone offsets."
+files[6]{path,scope,note}:
+  src/core/shared/time.ts,project,deadline/date parser
+  tests/unit/create-command.spec.ts,project,create deadline input acceptance coverage
+  tests/unit/determinism.spec.ts,project,core parser determinism coverage
+  tests/unit/list-command.spec.ts,project,deadline filter acceptance coverage
+  tests/unit/search-command.spec.ts,project,search deadline filter acceptance coverage
+  tests/unit/update-command.spec.ts,project,update deadline input acceptance coverage
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,2400,parser regression
+docs[1]{path,scope,note}:
+  PRD.md,project,parser contract references
+close_reason: Parser now accepts +m and flexible date strings while preserving deterministic ISO persistence; targeted parser/list/search/create/update tests passed.
+body: Implement and test parser behavior in src/core/shared/time.ts and impacted command paths.

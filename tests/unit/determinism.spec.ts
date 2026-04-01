@@ -35,9 +35,18 @@ describe("deterministic primitives", () => {
     const plusOneHour = resolveIsoOrRelative("+1h", now);
     const plusOneDay = resolveIsoOrRelative("+1d", now);
     const plusOneWeek = resolveIsoOrRelative("+1w", now);
+    const plusOneMonth = resolveIsoOrRelative("+1m", now);
     expect(plusOneHour).toBe("2026-02-18T01:00:00.000Z");
     expect(plusOneDay).toBe("2026-02-19T00:00:00.000Z");
     expect(plusOneWeek).toBe("2026-02-25T00:00:00.000Z");
+    expect(plusOneMonth).toBe("2026-03-18T00:00:00.000Z");
+
+    const monthEdge = new Date("2026-01-31T00:00:00.000Z");
+    expect(resolveIsoOrRelative("+1m", monthEdge)).toBe("2026-02-28T00:00:00.000Z");
+
+    expect(resolveIsoOrRelative("2026-03-31T13-59Z", now)).toBe("2026-03-31T13:59:00.000Z");
+    expect(resolveIsoOrRelative("20260331", now)).toBe("2026-03-31T00:00:00.000Z");
+    expect(resolveIsoOrRelative("20260331T135900Z", now)).toBe("2026-03-31T13:59:00.000Z");
   });
 
   it("maintains stable ordering and document serialization", () => {

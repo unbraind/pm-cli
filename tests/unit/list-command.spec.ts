@@ -126,6 +126,16 @@ describe("runList", () => {
         { path: context.pmPath },
       );
       expect(deadlineFiltered.count).toBeGreaterThanOrEqual(1);
+
+      const flexibleDateString = await runList(
+        undefined,
+        { deadlineBefore: "2030-01-01T00-00Z" },
+        { path: context.pmPath },
+      );
+      expect(flexibleDateString.count).toBe(3);
+
+      const monthRelativeFilter = await runList(undefined, { deadlineAfter: "+1m" }, { path: context.pmPath });
+      expect(monthRelativeFilter.count).toBe(0);
     });
   });
 

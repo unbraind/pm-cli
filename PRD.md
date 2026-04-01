@@ -245,7 +245,7 @@ Required fields:
 Optional fields:
 
 - `assignee?: string`
-- `deadline?: ISO string` (relative input resolved to ISO at write time)
+- `deadline?: ISO string` (ISO/date-string/relative input resolved to ISO at write time)
 - `reminders?: Reminder[]` where `Reminder = { at: ISO string; text: string }`
 - `dependencies?: Dependency[]`
 - `comments?: Comment[]`
@@ -361,7 +361,7 @@ Unset optional fields are omitted.
 ### 7.3 Determinism rules
 
 - `updated_at` MUST change for every mutation.
-- Relative deadlines (`+6h`, `+1d`, `+2w`) resolve on write and persist as absolute ISO.
+- Relative deadlines (`+6h`, `+1d`, `+2w`, `+6m`) and accepted date-string forms resolve on write and persist as absolute ISO.
 - `tags` sorted lexicographically, deduplicated.
 - `risk` CLI input alias `med` normalizes to canonical stored value `medium`.
 - `confidence` CLI input accepts integers `0..100` or `low|med|medium|high`; `med` persists as `medium`.
@@ -623,7 +623,7 @@ Mutating `create` (all schema fields MUST be passable explicitly):
 - `--priority`, `-p` (required: `0..4`)
 - `--tags` (required; explicit empty allowed)
 - `--body`, `-b` (required; explicit empty allowed)
-- `--deadline` (explicit; accepts ISO, relative `+6h/+1d/+2w`, or none)
+- `--deadline` (explicit; accepts ISO/date strings, relative `+6h/+1d/+2w/+6m`, or none)
 - `--estimate`, `--estimated-minutes`, `--estimated_minutes` (explicit; accepts `0`)
 - `--acceptance-criteria`, `--acceptance_criteria`, `--ac` (explicit; empty allowed)
 - `--author` (explicit; fallback `PM_AUTHOR`/settings allowed)
@@ -668,7 +668,7 @@ Mutating `create` flags (repeatable, each required at least once; use `none` for
 - `--file` value format: `path=<p>,scope=<project|global>,note=<n?>` (also accepts markdown `key: value` lines and stdin token `-`)
 - `--test` value format: `command=<c?>,path=<p?>,scope=<project|global>,timeout_seconds=<n?>,note=<n?>` (also accepts markdown `key: value` lines and stdin token `-`)
 - `--doc` value format: `path=<p>,scope=<project|global>,note=<n?>` (also accepts markdown `key: value` lines and stdin token `-`)
-- `--reminder` value format: `at=<iso|relative>,text=<text>` (also accepts markdown `key: value` lines and stdin token `-`; `none` for explicit clear)
+- `--reminder` value format: `at=<iso|date|relative>,text=<text>` (also accepts markdown `key: value` lines and stdin token `-`; `none` for explicit clear)
 - `--type-option` / `--type_option` value format: `key=value`, `key:value`, or `key=<name>,value=<value>` (also accepts markdown `key: value` lines and stdin token `-`; `none` for explicit clear)
 
 Per-type option policy overrides (`settings.item_types.definitions[]` and extension `registerItemTypes(...)`):
@@ -727,7 +727,7 @@ Mutating `update` (v0.1 baseline):
 - `--why-now`, `--why_now`
 - `--author`
 - `--message`
-- `--reminder` (repeatable `at=<iso|relative>,text=<text>`; `none` clears)
+- `--reminder` (repeatable `at=<iso|date|relative>,text=<text>`; `none` clears)
 
 `pm update` status semantics:
 

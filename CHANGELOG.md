@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Commander required-option UX for missing `--type` now includes rationale, active allowed values, and concrete fix examples.
 - Dynamic extension command help now supports `registerFlags` policy metadata (`required`, `enabled`, `visible`) with additive markers and hidden-flag suppression.
 - Search and reindex semantic execution now supports extension provider/adapter primary paths with deterministic fallback to built-in provider/vector configuration when available.
+- Date/deadline parsing now accepts month-relative offsets (`+6m`) and normalized date-string variants (for example `2026-03-31T13-59` and `20260331T135900Z`) across deadline, reminder, event, list/search filter, and calendar date inputs while preserving canonical ISO persistence.
 
 ## [2026.3.12] - 2026-03-12
 

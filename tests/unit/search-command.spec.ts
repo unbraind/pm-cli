@@ -228,6 +228,24 @@ describe("runSearch", () => {
     const hybridNoItems = await runSearch("token", { mode: "hybrid" }, { path: "/tmp/pm-search" });
     expect(hybridNoItems.mode).toBe("hybrid");
     expect(hybridNoItems.count).toBe(0);
+    readSettingsMock.mockResolvedValueOnce(openAiSemanticSettings);
+    const flexibleDateFilter = await runSearch(
+      "token",
+      { mode: "keyword", deadlineBefore: "2026-02-21T00-00Z" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(flexibleDateFilter.count).toBe(0);
+    expect(flexibleDateFilter.filters).toMatchObject({
+      deadline_before: "2026-02-21T00-00Z",
+    });
+    readSettingsMock.mockResolvedValueOnce(openAiSemanticSettings);
+    const monthRelativeFilter = await runSearch(
+      "token",
+      { mode: "keyword", deadlineBefore: "+1m" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(monthRelativeFilter.count).toBe(0);
+    expect(typeof monthRelativeFilter.filters.deadline_before).toBe("string");
     await expect(runSearch("token", { mode: "bad-mode" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
       exitCode: EXIT_CODE.USAGE,
     });
