@@ -16,6 +16,7 @@
 - Structured error diagnostics that explain what happened, what is required, why it matters, and concrete fix examples
 - Sparse TOON default output that omits null/undefined/empty fields for token-efficient agent workflows
 - Agent-friendly calendar views (`pm calendar` / `pm cal`) with markdown default output
+- Agent-first context snapshot command (`pm context` / `pm ctx`) for critical work + agenda triage
 - First-class dual item storage formats: TOON (`.toon`) and JSON-front-matter Markdown (`.md`)
 - Compact TOON documents that are easier to review in terminal and GitHub web UI
 - Automatic item format migration when `item-format` config changes
@@ -443,6 +444,35 @@ pm cal --view week --date +2d --past
 pm calendar --view agenda --from 2026-04-01T00:00:00.000Z --to 2026-04-08T00:00:00.000Z --assignee alex
 pm calendar --view agenda --include events --recurrence-lookahead-days 30 --occurrence-limit 50
 pm calendar --view month --tag release --format json
+```
+
+## Context Snapshot (`pm context` / `pm ctx`)
+
+`pm context` provides a token-efficient project-state snapshot optimized for quickly deciding the next work item.
+
+- Default output is TOON (sparse and agent-friendly), with explicit `--format markdown|toon|json` and global `--json`.
+- Focus sections prioritize active work (`in_progress`, then `open`) using deterministic ranking:
+  - status
+  - priority (`0..4`, lower is higher priority)
+  - explicit `order` (when present)
+  - deadline proximity
+  - recency/id tie-breakers
+- Output is split into:
+  - high-level focus (`Epic`, `Feature`)
+  - low-level focus (`Task`, `Issue`, `Chore`, etc.)
+- Agenda context is included from deadlines, reminders, and scheduled events in an agenda window.
+- If there are no open or in-progress items, `pm context` automatically includes a blocked-work fallback section.
+- Shared filters: `--type`, `--tag`, `--priority`, `--assignee`, `--sprint`, `--release`, `--limit`.
+- Agenda window controls: `--date`, `--from`, `--to`, `--past`.
+
+Examples:
+
+```bash
+pm context
+pm ctx --limit 5
+pm context --assignee alex --priority 1 --limit 10
+pm context --from +0d --to +7d --format markdown
+pm context --date 2026-04-01T00:00:00.000Z --past --json
 ```
 
 ## Documentation

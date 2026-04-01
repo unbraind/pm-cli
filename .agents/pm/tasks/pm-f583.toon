@@ -1,0 +1,62 @@
+id: pm-f583
+title: Implement and verify pm context command
+description: "Code the context command module and all wiring/tests/docs, then verify with build, tests, coverage, and command smoke checks."
+type: Task
+status: blocked
+priority: 1
+tags[3]: "area:context",implementation,pm-cli
+created_at: "2026-04-01T14:10:51.504Z"
+updated_at: "2026-04-01T14:27:12.221Z"
+deadline: "2026-04-05T14:10:51.504Z"
+author: codex-agent
+estimated_minutes: 360
+acceptance_criteria: "All implementation, test, and documentation updates for pm context are complete and verified with build/test/coverage."
+definition_of_ready: Feature pm-iyqf is active and implementation scope is confirmed.
+order: 3
+goal: Agent context ergonomics
+objective: Ship pm context end-to-end
+value: Single source of truth command for active work and agenda context
+impact: Improves decision speed for next work
+outcome: pm context available and stable for users
+why_now: Requested feature requires coordinated changes across runtime and contracts.
+parent: pm-iyqf
+risk: medium
+confidence: high
+sprint: context-rollout
+release: vnext
+blocked_reason: Global coverage threshold baseline remains below 100% (97.64/95.34/98.24/97.32) despite passing feature-specific suites.
+component: cli-context
+regression: true
+customer_impact: Users and agents get faster context snapshots
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-iyqf,parent,"2026-04-01T14:10:51.504Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T14:10:51.504Z",codex-agent,Implementation task created and ready for claim.
+  "2026-04-01T14:26:43.067Z",codex-agent,"Implemented pm context/ctx end-to-end: new command module, CLI wiring/help, completion parity, Pi wrapper action mapping, unit/integration/release-readiness tests, and docs (README/PRD/ARCHITECTURE/AGENTS/CHANGELOG). Verification: pnpm build passed; node scripts/run-tests.mjs test passed (63 files / 661 tests); targeted changed-suite regression passed (5 files / 131 tests). Coverage command still fails on existing global 100% thresholds across broader repo (lines 97.64, branches 95.34, functions 98.24, statements 97.32), but context command behavior and all related suites are passing."
+notes[1]{created_at,author,text}:
+  "2026-04-01T14:10:51.504Z",codex-agent,Will track files tests docs and verification evidence before close.
+files[12]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,pi wrapper context action
+  src/cli/commands/completion.ts,project,shell completion parity
+  src/cli/commands/context.ts,project,core command implementation
+  src/cli/commands/index.ts,project,command exports
+  src/cli/help-content.ts,project,context help bundle
+  src/cli/main.ts,project,command registration and format handling
+  tests/integration/cli.integration.spec.ts,project,context integration behavior
+  tests/integration/release-readiness-runtime.spec.ts,project,runtime contract coverage
+  tests/unit/completion-command.spec.ts,project,completion context assertions
+  tests/unit/context-command.spec.ts,project,context unit coverage
+  tests/unit/pi-agent-extension.spec.ts,project,wrapper context mapping assertions
+  vitest.config.ts,project,coverage include update
+tests[4]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,coverage gate (known global baseline shortfall)
+  node scripts/run-tests.mjs test,null,project,7200,full regression
+  node scripts/run-tests.mjs test -- tests/unit/context-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,targeted regression suite
+  pnpm build,null,project,1200,typescript build verification
+docs[5]{path,scope,note}:
+  AGENTS.md,project,workflow recommendation update
+  CHANGELOG.md,project,unreleased feature note
+  docs/ARCHITECTURE.md,project,context pipeline architecture
+  PRD.md,project,command and wrapper contract updates
+  README.md,project,user-facing command docs
+body: Execution task for pm context delivery.

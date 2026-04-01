@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `list*` commands now accept `--include-body` to project item `body` into each returned row when needed for metadata completeness analysis.
 - Added persistent item reminders via repeatable `--reminder at=<iso|relative>,text=<text>` support on `pm create` and `pm update` (including deterministic `none` clearing semantics).
 - Added `pm calendar` (alias: `pm cal`) with deterministic `agenda` (default), `day`, `week`, and `month` views across deadlines and reminders, plus `--past` and range/filter options.
+- Added `pm context` (alias: `pm ctx`) as an agent-first project snapshot command that combines deterministic high-level/low-level active work focus with agenda/reminder context, including blocked fallback when active work is empty.
 - Added persistent item scheduled events via repeatable `--event` support on `pm create` and `pm update`, including one-off entries plus recurrence fields (`recur_freq`, `recur_interval`, `recur_count`, `recur_until`, `recur_by_weekday`, `recur_by_month_day`, `recur_exdates`) and deterministic `none` clearing semantics.
 - Added bounded recurring occurrence expansion to `pm calendar` so recurring item events are materialized into agenda/day/week/month windows.
 - Added calendar source and recurrence controls: `--include`, `--recurrence-lookahead-days`, `--recurrence-lookback-days`, and `--occurrence-limit`.

@@ -27,6 +27,8 @@ const ALL_COMMANDS = [
   "list-canceled",
   "calendar",
   "cal",
+  "context",
+  "ctx",
   "get",
   "search",
   "reindex",
@@ -64,6 +66,9 @@ const UPDATE_FLAGS =
 
 const CALENDAR_FLAGS =
   "--view --date --from --to --past --type --tag --priority --status --assignee --sprint --release --include --recurrence-lookahead-days --recurrence-lookback-days --occurrence-limit --limit --format --json --quiet --path --no-extensions --profile --help";
+
+const CONTEXT_FLAGS =
+  "--date --from --to --past --type --tag --priority --assignee --sprint --release --limit --format --json --quiet --path --no-extensions --profile --help";
 
 const SEARCH_FLAGS =
   "--mode --include-linked --limit --type --tag --priority --deadline-before --deadline-after --json --quiet --path --no-extensions --profile --help";
@@ -115,6 +120,9 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES): st
     "    calendar|cal)",
       `      COMPREPLY=(${compgen(CALENDAR_FLAGS)})`,
       "      ;;",
+    "    context|ctx)",
+    `      COMPREPLY=(${compgen(CONTEXT_FLAGS)})`,
+    "      ;;",
     "    search)",
     `      COMPREPLY=(${compgen(SEARCH_FLAGS)})`,
     "      ;;",
@@ -189,6 +197,8 @@ _pm_commands() {
     'list-canceled:List canceled items with optional filters'
     'calendar:Show calendar views for deadlines and reminders'
     'cal:Alias for calendar'
+    'context:Show a token-efficient project context snapshot'
+    'ctx:Alias for context'
     'get:Show item details by ID'
     'search:Search items with keyword, semantic, or hybrid modes'
     'reindex:Rebuild search artifacts'
@@ -310,6 +320,23 @@ _pm() {
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
+        context|ctx)
+          _arguments \\
+            '--date[Anchor date/time (ISO/date string or relative)]:date' \\
+            '--from[Agenda lower bound (ISO/date string or relative)]:date' \\
+            '--to[Agenda upper bound (ISO/date string or relative)]:date' \\
+            '--past[Include past entries in bounded windows]' \\
+            '--type[Filter by type]:(${typeChoices})' \\
+            '--tag[Filter by tag]:tag' \\
+            '--priority[Filter by priority]:(0 1 2 3 4)' \\
+            '--assignee[Filter by assignee]:assignee' \\
+            '--sprint[Filter by sprint]:sprint' \\
+            '--release[Filter by release]:release' \\
+            '--limit[Limit focus and agenda rows per section]:number' \\
+            '--format[Output override]:(markdown toon json)' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
         search)
           _arguments \\
             '--mode[Search mode]:(keyword semantic hybrid)' \\
@@ -399,7 +426,7 @@ complete -c pm -s h -l help -d 'Display help'
 
 # Helper: true when no subcommand has been given yet
 function __pm_no_subcommand
-  not __fish_seen_subcommand_from init config install create list list-all list-draft list-open list-in-progress list-blocked list-closed list-canceled calendar cal get search reindex history activity restore update close delete append comments files docs test test-all stats health gc claim release beads todos completion help
+  not __fish_seen_subcommand_from init config install create list list-all list-draft list-open list-in-progress list-blocked list-closed list-canceled calendar cal context ctx get search reindex history activity restore update close delete append comments files docs test test-all stats health gc claim release beads todos completion help
 end
 
 # Subcommands
@@ -417,6 +444,8 @@ complete -c pm -n __pm_no_subcommand -a list-closed   -d 'List closed items with
 complete -c pm -n __pm_no_subcommand -a list-canceled -d 'List canceled items with optional filters'
 complete -c pm -n __pm_no_subcommand -a calendar      -d 'Show deadline/reminder calendar views'
 complete -c pm -n __pm_no_subcommand -a cal           -d 'Alias for calendar'
+complete -c pm -n __pm_no_subcommand -a context       -d 'Show a token-efficient project context snapshot'
+complete -c pm -n __pm_no_subcommand -a ctx           -d 'Alias for context'
 complete -c pm -n __pm_no_subcommand -a get           -d 'Show item details by ID'
 complete -c pm -n __pm_no_subcommand -a search        -d 'Search items with keyword, semantic, or hybrid modes'
 complete -c pm -n __pm_no_subcommand -a reindex       -d 'Rebuild search artifacts'
@@ -513,6 +542,20 @@ complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l recurrence-lookb
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l occurrence-limit -d 'Cap occurrences per recurring event' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l limit     -d 'Limit returned events' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l format    -d 'Output override' -r -a 'markdown toon json'
+
+# context flags
+complete -c pm -n '__fish_seen_subcommand_from context ctx' -l date      -d 'Anchor date/time (ISO/date string or relative)' -r
+complete -c pm -n '__fish_seen_subcommand_from context ctx' -l from      -d 'Agenda lower bound (ISO/date string or relative)' -r
+complete -c pm -n '__fish_seen_subcommand_from context ctx' -l to        -d 'Agenda upper bound (ISO/date string or relative)' -r
+complete -c pm -n '__fish_seen_subcommand_from context ctx' -l past      -d 'Include past entries in bounded windows'
+complete -c pm -n '__fish_seen_subcommand_from context ctx' -l type      -d 'Filter by type' -r -a '${typeChoices}'
+complete -c pm -n '__fish_seen_subcommand_from context ctx' -l tag       -d 'Filter by tag' -r
+complete -c pm -n '__fish_seen_subcommand_from context ctx' -l priority  -d 'Filter by priority' -r -a '0 1 2 3 4'
+complete -c pm -n '__fish_seen_subcommand_from context ctx' -l assignee  -d 'Filter by assignee (none for unassigned)' -r
+complete -c pm -n '__fish_seen_subcommand_from context ctx' -l sprint    -d 'Filter by sprint' -r
+complete -c pm -n '__fish_seen_subcommand_from context ctx' -l release   -d 'Filter by release' -r
+complete -c pm -n '__fish_seen_subcommand_from context ctx' -l limit     -d 'Limit focus and agenda rows per section' -r
+complete -c pm -n '__fish_seen_subcommand_from context ctx' -l format    -d 'Output override' -r -a 'markdown toon json'
 
 # reindex flags
 complete -c pm -n '__fish_seen_subcommand_from reindex' -l mode -d 'Reindex mode' -r -a 'keyword semantic hybrid'

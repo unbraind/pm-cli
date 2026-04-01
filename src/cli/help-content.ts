@@ -120,6 +120,18 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm calendar --view month --tag release --format json",
     ],
   },
+  context: {
+    why: "Builds an agent-optimized snapshot of critical active work plus near-term agenda context.",
+    examples: [
+      "pm context",
+      "pm ctx --limit 5 --assignee codex-agent",
+      "pm context --from +0d --to +7d --format markdown",
+    ],
+    tips: [
+      "High-level focus contains Epics/Features and low-level focus contains Tasks/Issues/Chores.",
+      "When no open or in-progress work exists, blocked items are shown as fallback context.",
+    ],
+  },
   search: {
     why: "Finds relevant items by keyword, semantic, or hybrid retrieval modes.",
     examples: [

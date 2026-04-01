@@ -36,6 +36,8 @@ describe("generateBashScript", () => {
       "list-draft",
       "calendar",
       "cal",
+      "context",
+      "ctx",
       "search",
       "reindex",
       "history",
@@ -117,6 +119,15 @@ describe("generateBashScript", () => {
     expect(script).toContain("--include-linked");
   });
 
+  it("includes context-specific flags", () => {
+    const script = generateBashScript();
+    expect(script).toContain("context|ctx");
+    expect(script).toContain("--from");
+    expect(script).toContain("--to");
+    expect(script).toContain("--past");
+    expect(script).toContain("--format");
+  });
+
   it("includes shell names for completion sub-completion", () => {
     const script = generateBashScript();
     expect(script).toContain('"bash zsh fish"');
@@ -161,6 +172,8 @@ describe("generateZshScript", () => {
     expect(script).toContain("completion:Generate shell completion");
     expect(script).toContain("calendar:Show calendar views for deadlines and reminders");
     expect(script).toContain("cal:Alias for calendar");
+    expect(script).toContain("context:Show a token-efficient project context snapshot");
+    expect(script).toContain("ctx:Alias for context");
     expect(script).toContain("beads:Built-in Beads extension commands");
     expect(script).toContain("todos:Built-in todos extension commands");
   });
@@ -218,6 +231,15 @@ describe("generateZshScript", () => {
     expect(script).toContain("--include");
     expect(script).toContain("--recurrence-lookahead-days");
   });
+
+  it("includes zsh context flags", () => {
+    const script = generateZshScript();
+    expect(script).toContain("context|ctx");
+    expect(script).toContain("--from");
+    expect(script).toContain("--to");
+    expect(script).toContain("--past");
+    expect(script).toContain("markdown toon json");
+  });
 });
 
 describe("generateFishScript", () => {
@@ -251,6 +273,7 @@ describe("generateFishScript", () => {
       ["install", "Install supported integrations and extensions"],
       ["create", "Create"],
       ["calendar", "deadline/reminder calendar views"],
+      ["context", "project context snapshot"],
       ["get", "Show item details"],
       ["search", "Search items"],
       ["completion", "Generate shell completion"],
@@ -336,6 +359,15 @@ describe("generateFishScript", () => {
     expect(script).toContain("-l past");
     expect(script).toContain("-l include");
     expect(script).toContain("-l occurrence-limit");
+    expect(script).toContain("-l format");
+  });
+
+  it("includes fish context completions", () => {
+    const script = generateFishScript();
+    expect(script).toContain("__fish_seen_subcommand_from context ctx");
+    expect(script).toContain("-l from");
+    expect(script).toContain("-l to");
+    expect(script).toContain("-l past");
     expect(script).toContain("-l format");
   });
 });

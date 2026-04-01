@@ -27,15 +27,19 @@ import {
   runReindex,
   runRestore,
   renderCalendarMarkdown,
+  renderContextMarkdown,
   runRelease,
   resolveCalendarOutputFormat,
+  resolveContextOutputFormat,
   runStats,
   runTest,
   runTestAll,
   runUpdate,
   type CalendarOptions,
+  type ContextOptions,
   type CreateCommandOptions,
   type ListOptions,
+  runContext,
 } from "./commands/index.js";
 import {
   activateExtensions,
@@ -1247,6 +1251,23 @@ function normalizeCalendarOptions(options: Record<string, unknown>): CalendarOpt
   };
 }
 
+function normalizeContextOptions(options: Record<string, unknown>): ContextOptions {
+  return {
+    date: typeof options.date === "string" ? options.date : undefined,
+    from: typeof options.from === "string" ? options.from : undefined,
+    to: typeof options.to === "string" ? options.to : undefined,
+    past: options.past === true ? true : undefined,
+    type: typeof options.type === "string" ? options.type : undefined,
+    tag: typeof options.tag === "string" ? options.tag : undefined,
+    priority: typeof options.priority === "string" ? options.priority : undefined,
+    assignee: typeof options.assignee === "string" ? options.assignee : undefined,
+    sprint: typeof options.sprint === "string" ? options.sprint : undefined,
+    release: typeof options.release === "string" ? options.release : undefined,
+    limit: typeof options.limit === "string" ? options.limit : undefined,
+    format: typeof options.format === "string" ? options.format : undefined,
+  };
+}
+
 function resolveCliVersion(): string {
   try {
     const currentFilePath = fileURLToPath(import.meta.url);
@@ -1622,6 +1643,47 @@ function registerCalendarCommand(): void {
 }
 
 registerCalendarCommand();
+
+function registerContextCommand(): void {
+  program
+    .command("context")
+    .alias("ctx")
+    .description("Show a token-efficient project context snapshot for next-work decisions.")
+    .option("--date <value>", "Anchor date/time for agenda window calculations (ISO/date string or relative)")
+    .option("--from <value>", "Agenda lower bound (ISO/date string or relative)")
+    .option("--to <value>", "Agenda upper bound (ISO/date string or relative)")
+    .option("--past", "Include past agenda entries in bounded windows")
+    .option("--type <value>", "Filter by item type")
+    .option("--tag <value>", "Filter by tag")
+    .option("--priority <value>", "Filter by priority")
+    .option("--assignee <value>", "Filter by assignee (use 'none' for unassigned)")
+    .option("--sprint <value>", "Filter by sprint")
+    .option("--release <value>", "Filter by release")
+    .option("--limit <n>", "Limit focus and agenda rows per section")
+    .option("--format <value>", "Context output format override: markdown|toon|json")
+    .action(async (options: Record<string, unknown>, actionCommand) => {
+      const globalOptions = getGlobalOptions(actionCommand);
+      const startedAt = Date.now();
+      const normalized = normalizeContextOptions(options);
+      const result = await runContext(normalized, globalOptions);
+      const outputFormat = resolveContextOutputFormat(normalized, globalOptions);
+      if (outputFormat === "markdown") {
+        if (!globalOptions.quiet) {
+          process.stdout.write(`${renderContextMarkdown(result)}\n`);
+        }
+      } else {
+        printResult(result, {
+          ...globalOptions,
+          json: outputFormat === "json",
+        });
+      }
+      if (globalOptions.profile) {
+        printError(`profile:command=context took_ms=${Date.now() - startedAt}`);
+      }
+    });
+}
+
+registerContextCommand();
 
 program
   .command("beads")

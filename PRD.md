@@ -591,6 +591,7 @@ Help and error UX note:
 - `pm search <keywords>`
 - `pm reindex`
 - `pm calendar` (alias: `pm cal`)
+- `pm context` (alias: `pm ctx`)
 - `pm create`
 - `pm update <ID>`
 - `pm append <ID>`
@@ -782,6 +783,7 @@ All commands return deterministic top-level objects (TOON by default, JSON with 
 | `pm search <keywords>` | keyword query + optional mode/include-linked/limit filters | `{ query, mode, items, count, filters, now }` |
 | `pm reindex` | optional `--mode` (`keyword|semantic|hybrid` baseline) | `{ ok, mode, total_items, artifacts, warnings, generated_at }` |
 | `pm calendar` / `pm cal` | `--view agenda|day|week|month`, `--date`, `--from`/`--to` (agenda), `--past`, and list-like filters (`type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`) | `{ view, output_default, now, anchor, range, filters, summary, events, days }` (defaults to markdown unless `--format` or `--json` override) |
+| `pm context` / `pm ctx` | `--date`, `--from`/`--to`, `--past`, list-like filters (`type`, `tag`, `priority`, `assignee`, `sprint`, `release`, `limit`), `--format` | `{ output_default, now, window, filters, summary, high_level, low_level, blocked_fallback, agenda }` (defaults to TOON unless `--format` or `--json` override) |
 | `pm beads import [--file <path\|->] [--preserve-source-ids]` | optional Beads JSONL source path (`.beads/issues.jsonl` auto-discovered first, then `issues.jsonl`; implicit `sync_base.jsonl` fallback is refused as unsafe; `--file -` requires piped stdin and fails fast on interactive TTY stdin) | `{ ok, source, imported, skipped, ids, warnings }` |
 | `pm todos import --folder <path?>` | optional todos markdown source folder (defaults to `.pi/todos`); preserves canonical optional `ItemFrontMatter` metadata when present and applies deterministic defaults for missing PM fields | `{ ok, folder, imported, skipped, ids, warnings }` |
 | `pm todos export --folder <path?>` | optional todos markdown destination folder (defaults to `.pi/todos`) | `{ ok, folder, exported, ids, warnings }` |
@@ -1123,7 +1125,7 @@ Current baseline status (release-hardening):
 
 - Implemented as a Pi agent extension source module at `.pi/extensions/pm-cli/index.ts` (outside the `pm` CLI command surface).
 - Registers one Pi tool named `pm` via Pi's extension API (`registerTool`) and maps `action` + command-shaped fields to `pm` CLI invocations.
-- Action dispatch currently covers the full v0.1 command-aligned set (`init`, `config`, `create`, `list`, `list-all`, `list-draft`, `list-open`, `list-in-progress`, `list-blocked`, `list-closed`, `list-canceled`, `get`, `search`, `reindex`, `history`, `activity`, `restore`, `update`, `close`, `delete`, `append`, `comments`, `files`, `docs`, `test`, `test-all`, `stats`, `health`, `gc`, `completion`, `claim`, `release`) plus extension action aliases (`beads-import`, `todos-import`, `todos-export`) and workflow presets (`start-task`, `pause-task`, `close-task`).
+- Action dispatch currently covers the full v0.1 command-aligned set (`init`, `config`, `create`, `list`, `list-all`, `list-draft`, `list-open`, `list-in-progress`, `list-blocked`, `list-closed`, `list-canceled`, `calendar`, `context`, `get`, `search`, `reindex`, `history`, `activity`, `restore`, `update`, `close`, `delete`, `append`, `comments`, `files`, `docs`, `test`, `test-all`, `stats`, `health`, `gc`, `completion`, `claim`, `release`) plus extension action aliases (`beads-import`, `todos-import`, `todos-export`) and workflow presets (`start-task`, `pause-task`, `close-task`).
 - Invocation fallback order is deterministic for distribution resilience: attempt `pm` first, then fallback to packaged `node <package-root>/dist/cli.js` when `pm` is unavailable.
 
 - Expose one tool `pm`.

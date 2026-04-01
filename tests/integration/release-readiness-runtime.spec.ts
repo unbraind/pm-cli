@@ -86,6 +86,7 @@ const CORE_COMMANDS = [
   "list-closed",
   "list-canceled",
   "calendar",
+  "context",
   "search",
   "reindex",
   "get",
@@ -191,6 +192,21 @@ const REQUIRED_CALENDAR_FLAGS = [
   "--tag",
   "--priority",
   "--status",
+  "--assignee",
+  "--sprint",
+  "--release",
+  "--limit",
+  "--format",
+];
+
+const REQUIRED_CONTEXT_FLAGS = [
+  "--date",
+  "--from",
+  "--to",
+  "--past",
+  "--type",
+  "--tag",
+  "--priority",
   "--assignee",
   "--sprint",
   "--release",
@@ -373,6 +389,18 @@ describe("release readiness runtime coverage", () => {
       }
       expect(help.stdout).toContain("agenda|day|week|month");
       expect(help.stdout).toContain("markdown|toon|json");
+    });
+  });
+
+  it("keeps context help aligned with focus/filter/output flags", async () => {
+    await withTempPmPath(async (context) => {
+      const help = context.runCli(["context", "--help"]);
+      expect(help.code).toBe(0);
+      for (const flag of REQUIRED_CONTEXT_FLAGS) {
+        expect(help.stdout).toContain(flag);
+      }
+      expect(help.stdout).toContain("markdown|toon|json");
+      expect(help.stdout).toContain("token-efficient project context snapshot");
     });
   });
 
@@ -709,6 +737,23 @@ describe("release readiness runtime coverage", () => {
       const calendarResult = context.runCli(["calendar", "--json", "--view", "agenda", "--limit", "20"], { expectJson: true });
       expect(calendarResult.code).toBe(0);
       expectTopLevelKeyOrder(calendarResult.json, ["view", "output_default", "now", "anchor", "range", "filters", "summary", "events", "days"]);
+
+      const contextResult = context.runCli(
+        ["context", "--json", "--from", "2026-04-01T00:00:00.000Z", "--to", "2026-04-30T00:00:00.000Z", "--limit", "20"],
+        { expectJson: true },
+      );
+      expect(contextResult.code).toBe(0);
+      expectTopLevelKeyOrder(contextResult.json, [
+        "output_default",
+        "now",
+        "window",
+        "filters",
+        "summary",
+        "high_level",
+        "low_level",
+        "blocked_fallback",
+        "agenda",
+      ]);
 
       const searchResult = context.runCli(["search", "--mode", "keyword", "--limit", "20", "runtime", "--json"], {
         expectJson: true,

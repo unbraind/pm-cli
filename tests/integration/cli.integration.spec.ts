@@ -490,6 +490,164 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("supports context command and ctx alias with active focus projection", async () => {
+    await withTempPmPath(async (context) => {
+      const createBaseArgs = (title: string, type: string, status: string, priority: string, deadline: string) => [
+        "create",
+        "--json",
+        "--title",
+        title,
+        "--description",
+        `${title} description`,
+        "--type",
+        type,
+        "--status",
+        status,
+        "--priority",
+        priority,
+        "--tags",
+        "integration,context",
+        "--body",
+        "",
+        "--deadline",
+        deadline,
+        "--estimate",
+        "20",
+        "--acceptance-criteria",
+        `${title} acceptance`,
+        "--author",
+        "integration-test",
+        "--message",
+        `Create ${title}`,
+        "--assignee",
+        "none",
+        "--dep",
+        "none",
+        "--comment",
+        "none",
+        "--note",
+        "none",
+        "--learning",
+        "none",
+        "--file",
+        "none",
+        "--test",
+        "none",
+        "--doc",
+        "none",
+      ];
+
+      expect(
+        context.runCli(createBaseArgs("Context Feature Open", "Feature", "open", "1", "2026-04-03T12:00:00.000Z"), {
+          expectJson: true,
+        }).code,
+      ).toBe(0);
+
+      const createTask = context.runCli(
+        [
+          ...createBaseArgs("Context Task In Progress", "Task", "in-progress", "0", "2026-04-03T10:00:00.000Z"),
+          "--reminder",
+          "at=2026-04-03T09:00:00.000Z,text=context reminder",
+        ],
+        { expectJson: true },
+      );
+      expect(createTask.code).toBe(0);
+
+      const contextJson = context.runCli(
+        ["context", "--json", "--from", "2026-04-03T00:00:00.000Z", "--to", "2026-04-04T00:00:00.000Z", "--limit", "10"],
+        { expectJson: true },
+      );
+      expect(contextJson.code).toBe(0);
+      const payload = contextJson.json as {
+        output_default: string;
+        summary: { active_items: number; blocked_fallback_used: boolean };
+        high_level: Array<{ type: string }>;
+        low_level: Array<{ type: string }>;
+        agenda: { summary: { reminders: number } };
+      };
+      expect(payload.output_default).toBe("toon");
+      expect(payload.summary.active_items).toBe(2);
+      expect(payload.summary.blocked_fallback_used).toBe(false);
+      expect(payload.high_level.map((entry) => entry.type)).toEqual(["Feature"]);
+      expect(payload.low_level.map((entry) => entry.type)).toEqual(["Task"]);
+      expect(payload.agenda.summary.reminders).toBe(1);
+
+      const contextAlias = context.runCli(
+        ["ctx", "--json", "--from", "2026-04-03T00:00:00.000Z", "--to", "2026-04-04T00:00:00.000Z", "--limit", "10"],
+        { expectJson: true },
+      );
+      expect(contextAlias.code).toBe(0);
+      const aliasPayload = contextAlias.json as { summary: { active_items: number } };
+      expect(aliasPayload.summary.active_items).toBe(2);
+    });
+  });
+
+  it("uses blocked fallback in context command when no open or in-progress items exist", async () => {
+    await withTempPmPath(async (context) => {
+      const createBlocked = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Context Blocked Item",
+          "--description",
+          "Context blocked fallback seed",
+          "--type",
+          "Task",
+          "--status",
+          "blocked",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,context",
+          "--body",
+          "",
+          "--deadline",
+          "2026-04-06T10:00:00.000Z",
+          "--estimate",
+          "15",
+          "--acceptance-criteria",
+          "Blocked fallback is shown",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create blocked context seed",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(createBlocked.code).toBe(0);
+
+      const contextJson = context.runCli(
+        ["context", "--json", "--from", "2026-04-06T00:00:00.000Z", "--to", "2026-04-07T00:00:00.000Z", "--limit", "10"],
+        { expectJson: true },
+      );
+      expect(contextJson.code).toBe(0);
+      const payload = contextJson.json as {
+        summary: { active_items: number; blocked_fallback_used: boolean };
+        blocked_fallback: Array<{ status: string }>;
+      };
+      expect(payload.summary.active_items).toBe(0);
+      expect(payload.summary.blocked_fallback_used).toBe(true);
+      expect(payload.blocked_fallback.map((entry) => entry.status)).toEqual(["blocked"]);
+    });
+  });
+
   it("accepts extended optional field flags for create/update including blocked aliases", async () => {
     await withTempPmPath(async (context) => {
       const createResult = context.runCli(

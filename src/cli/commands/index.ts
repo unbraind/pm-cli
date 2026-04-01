@@ -17,6 +17,15 @@ export {
   type CalendarResult,
   type CalendarView,
 } from "./calendar.js";
+export {
+  CONTEXT_OUTPUT_VALUES,
+  renderContextMarkdown,
+  resolveContextOutputFormat,
+  runContext,
+  type ContextOptions,
+  type ContextOutputFormat,
+  type ContextResult,
+} from "./context.js";
 export { runCreate, type CreateCommandOptions } from "./create.js";
 export { runDelete, type DeleteCommandOptions, type DeleteResult } from "./delete.js";
 export { runDocs } from "./docs.js";

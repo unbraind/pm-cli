@@ -1,0 +1,39 @@
+id: pm-abhj
+title: Agent context command ( / )
+description: Implement a dedicated context snapshot command optimized for agent next-work decisions by combining critical active items with agenda/reminder context.
+type: Epic
+status: blocked
+priority: 0
+tags[4]: agent-ux,"area:context",core,pm-cli
+created_at: "2026-04-01T14:09:44.275Z"
+updated_at: "2026-04-01T14:27:07.301Z"
+deadline: "2026-04-08T14:09:44.275Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: "`pm context` and `pm ctx` provide deterministic, token-efficient high-level and low-level focus context plus agenda/reminder data with no regressions."
+definition_of_ready: No duplicate active item exists and implementation/test/doc scope is identified.
+order: 1
+goal: Agent context ergonomics
+objective: Ship context snapshot command
+value: Faster and safer next-work selection for agents
+impact: Lower context gathering overhead in large repositories
+outcome: Reliable one-command project context for agents and humans
+why_now: Current workflows require multiple commands for context assembly.
+risk: medium
+confidence: high
+sprint: context-rollout
+release: vnext
+blocked_reason: Epic delivery is blocked only by repository-wide coverage thresholds currently below 100%.
+component: cli-context
+customer_impact: Improves triage speed and consistency
+comments[1]{created_at,author,text}:
+  "2026-04-01T14:09:44.275Z",codex-agent,Epic created after duplicate checks found no active context-command item.
+notes[1]{created_at,author,text}:
+  "2026-04-01T14:09:44.275Z",codex-agent,Implementation composes list and calendar behavior with deterministic ranking.
+files[1]{path,scope,note}:
+  src/cli/main.ts,project,command registration target
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,3600,full regression baseline
+docs[1]{path,scope,note}:
+  PRD.md,project,command contract source
+body: "Track end-to-end delivery of the new context command across runtime, tests, docs, and integrations."

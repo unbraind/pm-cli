@@ -33,6 +33,7 @@ src/
       release.ts                 (re-exports from claim.ts)
       list.ts                    pm list (active-only: excludes closed/canceled) / list-all / list-* commands
       calendar.ts                pm calendar / pm cal (agenda/day/week/month views)
+      context.ts                 pm context / pm ctx (critical work + agenda snapshot)
       comments.ts                pm comments
       files.ts                   pm files
       docs.ts                    pm docs
@@ -224,6 +225,22 @@ Pipeline:
 8. Bucket events by UTC date and compute summary counts (`deadlines`, `reminders`, `scheduled`).
 
 Output behavior is command-specific: `pm calendar` defaults to markdown for agent/human readability while keeping explicit `--format`/`--json` overrides. Global TOON defaults for other commands are unchanged.
+
+## Context Pipeline
+
+`pm context` (`pm ctx`) is a read-only context-assembly command that combines prioritized active work with agenda/reminder visibility.
+
+Pipeline:
+
+1. Run `list` logic with non-terminal filtering and optional shared filters (`type`, `tag`, `priority`, `assignee`, `sprint`, `release`).
+2. Rank candidate items deterministically by status (`in_progress` before `open`), then priority, explicit `order`, deadline proximity, recency, and id tie-break.
+3. Split ranked active items into:
+   - high-level focus (`Epic`, `Feature`)
+   - low-level focus (all other item types)
+4. If active focus is empty, project top blocked items into a blocked fallback section.
+5. Run `calendar` logic in agenda mode with shared filters and context window controls (`--date`, `--from`, `--to`, `--past`).
+6. Filter agenda projection to non-terminal items and summarize deadlines/reminders/events counts.
+7. Return deterministic context payload (`output_default`, `window`, `filters`, `summary`, focus sections, and agenda section) with TOON default output and optional `--format`/`--json` overrides.
 
 ## Terminal and Process I/O Compatibility
 

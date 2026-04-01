@@ -13,6 +13,7 @@ export const PM_TOOL_ACTIONS = [
   "list-closed",
   "list-canceled",
   "calendar",
+  "context",
   "get",
   "search",
   "reindex",
@@ -550,6 +551,23 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       pushOption(args, "--recurrence-lookahead-days", params.recurrenceLookaheadDays);
       pushOption(args, "--recurrence-lookback-days", params.recurrenceLookbackDays);
       pushOption(args, "--occurrence-limit", params.occurrenceLimit);
+      pushOption(args, "--limit", params.limit);
+      pushOption(args, "--format", params.format);
+      return args;
+    case "context":
+      args.push("context");
+      pushOption(args, "--date", params.date);
+      pushOption(args, "--from", params.from);
+      pushOption(args, "--to", params.to);
+      if (params.past) {
+        args.push("--past");
+      }
+      pushOption(args, "--type", params.type);
+      pushOption(args, "--tag", params.tag);
+      pushOption(args, "--priority", params.priority);
+      pushOption(args, "--assignee", params.assignee);
+      pushOption(args, "--sprint", params.sprint);
+      pushOption(args, "--release", params.release);
       pushOption(args, "--limit", params.limit);
       pushOption(args, "--format", params.format);
       return args;

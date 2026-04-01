@@ -34,6 +34,7 @@ This document defines how coding agents must use `pm` for planning, execution, a
 Before creating any new `pm` item, always check for an existing relevant item first.
 
 - Search and list existing items before `pm create`:
+  - `pm context --limit 10`
   - `pm search "<keywords>" --limit 10`
   - `pm list-open --limit 20`
   - `pm list-in-progress --limit 20`
@@ -173,6 +174,7 @@ Use release when:
 ## 4) Token Minimization Rules (TOON-first)
 
 - Prefer default TOON output for list/search/get in agent loops.
+- Prefer `pm context --limit <n>` as the first triage snapshot when selecting next work.
 - Use `--json` only when strict machine parsing is required.
 - Request narrow outputs:
   - `--limit`
