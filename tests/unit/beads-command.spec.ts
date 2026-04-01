@@ -1,6 +1,7 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runBeadsImport } from "../../src/cli/commands/beads.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
@@ -110,24 +111,34 @@ describe("runBeadsImport", () => {
 
   it("reads Beads JSONL from stdin when --file - is requested", async () => {
     await withTempPmPath(async (context) => {
-      const setEncodingSpy = vi.spyOn(process.stdin, "setEncoding").mockImplementation(() => process.stdin);
-      const onSpy = vi.spyOn(process.stdin, "on").mockImplementation(((event: string, handler: (...args: any[]) => void) => {
-        if (event === "data") {
-          handler(`${JSON.stringify({ id: "stdin-item", title: "STDIN import" })}\n`);
-        }
-        if (event === "end") {
-          handler();
-        }
-        return process.stdin;
-      }) as typeof process.stdin.on);
+      const stdinStream = new PassThrough();
+      stdinStream.end(`${JSON.stringify({ id: "stdin-item", title: "STDIN import" })}\n`);
+      Object.defineProperty(stdinStream, "isTTY", { value: false, configurable: true });
+      const stdinSpy = vi.spyOn(process, "stdin", "get").mockReturnValue(stdinStream as unknown as NodeJS.ReadStream);
 
       try {
         const result = await runBeadsImport({ file: "-" }, { path: context.pmPath });
         expect(result.source).toBe("-");
         expect(result.ids).toEqual(["pm-stdin-item"]);
       } finally {
-        setEncodingSpy.mockRestore();
-        onSpy.mockRestore();
+        stdinSpy.mockRestore();
+      }
+    });
+  });
+
+  it("fails fast for --file - when stdin is an interactive TTY", async () => {
+    await withTempPmPath(async (context) => {
+      const stdinStream = new PassThrough();
+      Object.defineProperty(stdinStream, "isTTY", { value: true, configurable: true });
+      const stdinSpy = vi.spyOn(process, "stdin", "get").mockReturnValue(stdinStream as unknown as NodeJS.ReadStream);
+
+      try {
+        await expect(runBeadsImport({ file: "-" }, { path: context.pmPath })).rejects.toMatchObject({
+          exitCode: EXIT_CODE.USAGE,
+          message: expect.stringContaining("requires piped stdin input"),
+        });
+      } finally {
+        stdinSpy.mockRestore();
       }
     });
   });

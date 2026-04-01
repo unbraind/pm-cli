@@ -1,0 +1,42 @@
+id: pm-1119
+title: "T2: Refactor CLI error exits to graceful exitCode flow"
+description: Replace forced process.exit paths in CLI error handling with graceful exitCode semantics while preserving exit codes and help/version behavior.
+type: Task
+status: closed
+priority: 1
+tags[5]: "area:output","area:terminal",code,compatibility,pm-cli
+created_at: "2026-04-01T11:59:56.319Z"
+updated_at: "2026-04-01T12:22:30.495Z"
+deadline: "2026-04-08T11:59:56.319Z"
+author: cursor-agent
+estimated_minutes: 110
+acceptance_criteria: main.ts preserves existing exit-code mapping but avoids forced process.exit in normal error/help/version handling paths.
+definition_of_ready: Feature pm-axlr accepted with output contract guardrails.
+order: 1
+goal: Universal terminal reliability
+objective: Make exit behavior flush-safe
+value: More reliable command completion semantics
+impact: Lower risk of truncated stderr/stdout
+outcome: Graceful process termination with deterministic codes
+why_now: Forced exits can lose buffered output in some terminal/backpressure contexts.
+parent: pm-axlr
+risk: medium
+confidence: high
+component: cli/runtime
+regression: true
+customer_impact: Improves reliability of CLI feedback and status reporting.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-axlr,parent,"2026-04-01T11:59:56.319Z",cursor-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T11:59:56.319Z",cursor-agent,Task corresponds to plan workstream B exit policy update.
+  "2026-04-01T12:03:33.389Z",cursor-agent,"Implemented graceful exit handling in src/cli/main.ts catch path: replaced forced process.exit(...) calls with process.exitCode assignment plus early return to preserve existing exit-code mapping while allowing buffered output to flush naturally. Validation evidence: node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/integration/cli.integration.spec.ts passed (56/56)."
+notes[1]{created_at,author,text}:
+  "2026-04-01T11:59:56.319Z",cursor-agent,Preserve commander-specific usage/help/version behavior while removing forced exits.
+files[1]{path,scope,note}:
+  src/cli/main.ts,project,main error and exit flow
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/integration/cli.integration.spec.ts,null,project,2400,exit and contract regressions
+docs[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,runtime exit behavior
+close_reason: graceful exitCode handling shipped with stable runtime exit-code mapping
+body: Implement safe exit behavior to avoid output truncation risk in emulated terminals.

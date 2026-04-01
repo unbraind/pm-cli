@@ -455,6 +455,12 @@ function resolveInputPath(rawPath: string): string {
 }
 
 async function readStdin(): Promise<string> {
+  if (process.stdin.isTTY === true) {
+    throw new PmCliError(
+      '--file value "-" requires piped stdin input. Pipe JSONL content into the command, or end manual stdin with Ctrl+D (Unix/macOS) or Ctrl+Z then Enter (Windows).',
+      EXIT_CODE.USAGE,
+    );
+  }
   return await new Promise<string>((resolve, reject) => {
     let raw = "";
     process.stdin.setEncoding("utf8");

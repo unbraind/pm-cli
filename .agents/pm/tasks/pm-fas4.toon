@@ -1,0 +1,45 @@
+id: pm-fas4
+title: "T1: Implement stdin and PTY fail-safe behavior"
+description: Apply consistent interactive-stdin safeguards and actionable guidance for stdin token and beads --file - paths.
+type: Task
+status: closed
+priority: 1
+tags[5]: "area:stdin","area:terminal",code,compatibility,pm-cli
+created_at: "2026-04-01T11:59:45.450Z"
+updated_at: "2026-04-01T12:22:29.581Z"
+deadline: "2026-04-08T11:59:45.450Z"
+author: cursor-agent
+estimated_minutes: 120
+acceptance_criteria: beads --file - and stdin-token paths consistently fail fast in interactive TTY mode with clear guidance and no regression for piped stdin.
+definition_of_ready: Feature pm-olxl accepted and file surfaces identified.
+order: 1
+goal: Universal terminal reliability
+objective: Prevent stdin-related hangs
+value: Predictable command behavior
+impact: Less confusion in IDE terminals
+outcome: No indefinite waits for interactive stdin misuse
+why_now: Current beads stdin path can appear hung in interactive terminals.
+parent: pm-olxl
+risk: medium
+confidence: high
+component: cli/stdin
+regression: true
+customer_impact: Users receive immediate guidance instead of apparent hangs.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-olxl,parent,"2026-04-01T11:59:45.450Z",cursor-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T11:59:45.450Z",cursor-agent,Task corresponds to plan workstream A.
+  "2026-04-01T12:02:23.059Z",cursor-agent,"Implemented stdin fail-safe behavior: src/core/item/parse.ts now provides actionable Ctrl+D/Ctrl+Z guidance for stdin token errors, and src/cli/commands/beads.ts now fails fast for --file - when stdin is interactive TTY instead of waiting for EOF. Added regressions in tests/unit/parse-utils.spec.ts and tests/unit/beads-command.spec.ts. Evidence: node scripts/run-tests.mjs test -- tests/unit/parse-utils.spec.ts tests/unit/beads-command.spec.ts passed (30/30)."
+notes[1]{created_at,author,text}:
+  "2026-04-01T11:59:45.450Z",cursor-agent,Mirror shared stdin token semantics in beads import stdin handling.
+files[4]{path,scope,note}:
+  src/cli/commands/beads.ts,project,beads stdin guard
+  src/core/item/parse.ts,project,shared stdin token utility
+  tests/unit/beads-command.spec.ts,project,TTY fail-fast stdin regression
+  tests/unit/parse-utils.spec.ts,project,stdin token guidance assertion
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/parse-utils.spec.ts tests/unit/beads-command.spec.ts,null,project,2400,stdin guard regressions
+docs[1]{path,scope,note}:
+  README.md,project,stdin usage guidance
+close_reason: stdin fail-fast behavior shipped and validated with targeted unit tests
+body: Implement stdin behavior hardening for interactive terminal scenarios.

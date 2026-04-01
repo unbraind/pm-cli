@@ -1,0 +1,42 @@
+id: pm-t6f7
+title: Terminal compatibility regression suite and docs parity
+description: Add dedicated regression coverage and synchronize docs/contracts for terminal compatibility guarantees and limitations.
+type: Feature
+status: closed
+priority: 1
+tags[5]: "area:docs","area:terminal","area:tests",compatibility,pm-cli
+created_at: "2026-04-01T11:59:30.058Z"
+updated_at: "2026-04-01T12:22:47.283Z"
+deadline: "2026-04-11T11:59:30.058Z"
+author: cursor-agent
+estimated_minutes: 180
+acceptance_criteria: "Terminal-focused regressions pass, docs/help/architecture are aligned, and release evidence is captured with no output contract drift."
+definition_of_ready: Implementation streams and file surfaces are identified.
+order: 3
+goal: Universal terminal reliability
+objective: Ship safely with full regression and docs coverage
+value: Prevents regressions and documentation drift
+impact: Safer rollout for existing users
+outcome: Verified and documented terminal compatibility behavior
+why_now: This change touches runtime behavior and requires explicit guardrails for existing users.
+parent: pm-mudv
+risk: low
+confidence: high
+component: docs-and-tests
+regression: true
+customer_impact: Ensures current users retain stable behavior while compatibility improves.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-mudv,parent,"2026-04-01T11:59:30.058Z",cursor-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-01T11:59:30.058Z",cursor-agent,Feature created to gate rollout with test and docs evidence.
+notes[1]{created_at,author,text}:
+  "2026-04-01T11:59:30.058Z",cursor-agent,Update README AGENTS PRD ARCHITECTURE CONTRIBUTING and CHANGELOG with terminal compatibility guidance.
+files[2]{path,scope,note}:
+  README.md,project,user guidance
+  tests/integration/release-readiness-runtime.spec.ts,project,runtime behavior contracts
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,full coverage and regression gate
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,unreleased terminal compatibility notes
+close_reason: terminal compatibility regressions and docs parity delivered with recorded verification evidence
+body: Feature for verification and documentation parity before release.

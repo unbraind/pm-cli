@@ -557,6 +557,8 @@ Default output note:
 
 - Core default remains TOON.
 - `pm calendar` is a deliberate exception and defaults to markdown unless explicitly overridden by `--format` or `--json`.
+- Runtime output is terminal-neutral plain text (TOON/JSON/markdown) with no required terminal-specific OSC/ANSI control protocol.
+- Error handling should preserve exit-code mapping while preferring graceful process termination semantics (`process.exitCode`) over forced synchronous exits when feasible.
 
 ### 11.2 Exit codes
 
@@ -772,7 +774,7 @@ All commands return deterministic top-level objects (TOON by default, JSON with 
 | `pm search <keywords>` | keyword query + optional mode/include-linked/limit filters | `{ query, mode, items, count, filters, now }` |
 | `pm reindex` | optional `--mode` (`keyword|semantic|hybrid` baseline) | `{ ok, mode, total_items, artifacts, warnings, generated_at }` |
 | `pm calendar` / `pm cal` | `--view agenda|day|week|month`, `--date`, `--from`/`--to` (agenda), `--past`, and list-like filters (`type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`) | `{ view, output_default, now, anchor, range, filters, summary, events, days }` (defaults to markdown unless `--format` or `--json` override) |
-| `pm beads import [--file <path\|->] [--preserve-source-ids]` | optional Beads JSONL source path (`.beads/issues.jsonl` auto-discovered first, then `issues.jsonl`; implicit `sync_base.jsonl` fallback is refused as unsafe) | `{ ok, source, imported, skipped, ids, warnings }` |
+| `pm beads import [--file <path\|->] [--preserve-source-ids]` | optional Beads JSONL source path (`.beads/issues.jsonl` auto-discovered first, then `issues.jsonl`; implicit `sync_base.jsonl` fallback is refused as unsafe; `--file -` requires piped stdin and fails fast on interactive TTY stdin) | `{ ok, source, imported, skipped, ids, warnings }` |
 | `pm todos import --folder <path?>` | optional todos markdown source folder (defaults to `.pi/todos`); preserves canonical optional `ItemFrontMatter` metadata when present and applies deterministic defaults for missing PM fields | `{ ok, folder, imported, skipped, ids, warnings }` |
 | `pm todos export --folder <path?>` | optional todos markdown destination folder (defaults to `.pi/todos`) | `{ ok, folder, exported, ids, warnings }` |
 | `pm create ...` | required title + schema flags | `{ item, changed_fields, warnings }` |
@@ -784,7 +786,7 @@ All commands return deterministic top-level objects (TOON by default, JSON with 
 | `pm release <ID>` | id, optional `--author`/`--message`/`--force` | `{ item, released_by, previous_assignee, forced }` |
 | `pm comments <ID> [TEXT] --add/--limit` | id + optional positional comment text shorthand + comment text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`) | `{ id, comments, count }` |
 | `pm files <ID> --add/--remove` | id + file refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`) | `{ id, files, changed, count }` |
-| `pm test <ID> --add/--remove/--run` | id + test refs/options (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`; reject recursive `test-all` linked commands at add-time, including global-flag and package-spec launcher forms such as `pm --json test-all`, `npx @unbrained/pm-cli@latest --json test-all`, `pnpm dlx @unbrained/pm-cli@latest --json test-all`, and `npm exec -- @unbrained/pm-cli@latest --json test-all`; defensively skip legacy recursive entries at run-time; reject sandbox-unsafe test-runner commands including unsandboxed direct package-manager run-script forms such as `npm run test`/`pnpm run test` and chained direct runner segments evaluated independently) | `{ id, tests, run_results, changed, count }` |
+| `pm test <ID> --add/--remove/--run` | id + test refs/options (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`; reject recursive `test-all` linked commands at add-time, including global-flag and package-spec launcher forms such as `pm --json test-all`, `npx @unbrained/pm-cli@latest --json test-all`, `pnpm dlx @unbrained/pm-cli@latest --json test-all`, and `npm exec -- @unbrained/pm-cli@latest --json test-all`; defensively skip legacy recursive entries at run-time; reject sandbox-unsafe test-runner commands including unsandboxed direct package-manager run-script forms such as `npm run test`/`pnpm run test` and chained direct runner segments evaluated independently; close child stdin for non-interactive runs and surface deterministic timeout/maxBuffer diagnostics) | `{ id, tests, run_results, changed, count }` |
 | `pm test-all --status --timeout` | optional status filter; duplicate linked command/path entries are deduped per invocation (keyed by scope+normalized command or scope+path) and reported as skipped; when duplicate keys carry different `timeout_seconds`, execution uses deterministic maximum timeout for that key | `{ totals, failed, passed, skipped, results }` |
 | `pm stats` | none | `{ totals, by_type, by_status, generated_at }` |
 | `pm health` | none | `{ ok, checks, warnings, generated_at }` |
@@ -832,6 +834,8 @@ Determinism requirements:
 - `list*` reports `filters.include_body` as `null` unless `--include-body` is provided (`true` when provided).
 - TOON and JSON contain same logical content.
 - `--quiet` prints nothing to stdout but still uses exit codes.
+- Stdin token paths requiring piped input fail fast on interactive TTY stdin with actionable guidance instead of waiting indefinitely for EOF.
+- Manual interactive EOF guidance remains explicit and cross-platform: `Ctrl+D` (Unix/macOS) and `Ctrl+Z` then `Enter` (Windows).
 
 ## 13) Search Architecture
 

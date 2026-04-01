@@ -20,6 +20,28 @@ import type { LinkedTest, LinkScope } from "../../types/index.js";
 const exec = promisify(execCb);
 const TEST_OUTPUT_MAX_BUFFER_BYTES = 20 * 1024 * 1024;
 
+interface ExecRunResult {
+  stdout: string;
+  stderr: string;
+}
+
+interface ExecRunError {
+  code?: number | string | null;
+  stdout?: string;
+  stderr?: string;
+  message?: string;
+  killed?: boolean;
+  signal?: NodeJS.Signals | null;
+}
+
+interface ExecRunPromise extends Promise<ExecRunResult> {
+  child?: {
+    stdin?: {
+      end: () => void;
+    } | null;
+  };
+}
+
 export interface TestCommandOptions {
   add?: string[];
   remove?: string[];
@@ -445,6 +467,32 @@ function parseRemoveEntries(raw: string[] | undefined): string[] {
   });
 }
 
+function closeLinkedTestStdin(execution: ExecRunPromise): void {
+  // Force EOF on child stdin so non-interactive runs do not wait on input.
+  try {
+    execution.child?.stdin?.end();
+  } catch {
+    // Child stdin can already be closed depending on command startup timing.
+  }
+}
+
+function formatLinkedTestExecutionError(error: ExecRunError, timeoutMs: number): string {
+  const details: string[] = [];
+  if (error.code === "ERR_CHILD_PROCESS_STDIO_MAXBUFFER") {
+    details.push(
+      `Linked test output exceeded maxBuffer=${TEST_OUTPUT_MAX_BUFFER_BYTES} bytes. Reduce output volume or split the command.`,
+    );
+  }
+  if (error.killed && error.signal === "SIGTERM" && timeoutMs > 0) {
+    details.push(`Linked test timed out after ${timeoutMs}ms.`);
+  }
+  const baseMessage = error.message?.trim() || "Linked test command failed.";
+  if (details.length === 0) {
+    return baseMessage;
+  }
+  return `${baseMessage} ${details.join(" ")}`;
+}
+
 export async function runLinkedTests(
   tests: LinkedTest[],
   defaultTimeoutSeconds: number | undefined,
@@ -478,16 +526,20 @@ export async function runLinkedTests(
       }
       const timeoutMs = ((linkedTest.timeout_seconds ?? defaultTimeoutSeconds ?? 120) * 1000);
       try {
-        const executed = await exec(linkedTest.command, {
+        const execution = exec(linkedTest.command, {
           timeout: timeoutMs,
           cwd: process.cwd(),
           maxBuffer: TEST_OUTPUT_MAX_BUFFER_BYTES,
+          windowsHide: true,
           env: {
             ...process.env,
+            FORCE_COLOR: "0",
             PM_PATH: sandboxPmPath,
             PM_GLOBAL_PATH: sandboxGlobalPath,
           },
-        });
+        }) as ExecRunPromise;
+        closeLinkedTestStdin(execution);
+        const executed = await execution;
         results.push({
           command: linkedTest.command,
           path: linkedTest.path,
@@ -497,7 +549,7 @@ export async function runLinkedTests(
           stderr: executed.stderr,
         });
       } catch (error: unknown) {
-        const err = error as { code?: number; stdout?: string; stderr?: string; message?: string };
+        const err = error as ExecRunError;
         results.push({
           command: linkedTest.command,
           path: linkedTest.path,
@@ -505,7 +557,7 @@ export async function runLinkedTests(
           exit_code: typeof err.code === "number" ? err.code : 1,
           stdout: err.stdout,
           stderr: err.stderr,
-          error: err.message,
+          error: formatLinkedTestExecutionError(err, timeoutMs),
         });
       }
     }

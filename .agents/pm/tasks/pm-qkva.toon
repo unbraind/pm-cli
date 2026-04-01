@@ -1,0 +1,47 @@
+id: pm-qkva
+title: "T5: Update docs for terminal compatibility guarantees"
+description: "Synchronize README, AGENTS, PRD, ARCHITECTURE, CONTRIBUTING, and CHANGELOG with terminal compatibility behavior, limitations, and stdin guidance."
+type: Task
+status: closed
+priority: 1
+tags[5]: "area:docs","area:terminal",compatibility,doc,pm-cli
+created_at: "2026-04-01T12:00:27.553Z"
+updated_at: "2026-04-01T12:22:32.603Z"
+deadline: "2026-04-08T12:00:27.553Z"
+author: cursor-agent
+estimated_minutes: 90
+acceptance_criteria: All required docs include accurate terminal compatibility guidance and stdin/EOF usage notes aligned with implementation.
+definition_of_ready: Feature pm-t6f7 accepted with documentation scope defined.
+order: 2
+goal: Universal terminal reliability
+objective: Ensure discoverable and accurate guidance
+value: Fewer support loops and misuse
+impact: Safer adoption across terminal environments
+outcome: Documentation accurately reflects runtime behavior
+why_now: Behavior hardening must ship with clear user and maintainer guidance.
+parent: pm-t6f7
+risk: low
+confidence: high
+component: docs
+regression: true
+customer_impact: Users can self-serve terminal-safe usage patterns.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-t6f7,parent,"2026-04-01T12:00:27.553Z",cursor-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T12:00:27.553Z",cursor-agent,Task corresponds to plan workstream E docs parity update.
+  "2026-04-01T12:12:02.132Z",cursor-agent,"Updated docs for terminal compatibility across README.md, AGENTS.md, PRD.md, docs/ARCHITECTURE.md, CONTRIBUTING.md, and CHANGELOG.md. Also refreshed linked docs-contract test command to current integration suites. Evidence: node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts passed (24/24)."
+notes[1]{created_at,author,text}:
+  "2026-04-01T12:00:27.553Z",cursor-agent,Add concise compatibility guarantees and limitations section plus stdin EOF guidance.
+files[6]{path,scope,note}:
+  AGENTS.md,project,agent operating guidance
+  CHANGELOG.md,project,release notes
+  CONTRIBUTING.md,project,test and validation guidance
+  docs/ARCHITECTURE.md,project,runtime behavior notes
+  PRD.md,project,product contract update
+  README.md,project,terminal compatibility section
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,docs/runtime contract checks
+docs[1]{path,scope,note}:
+  README.md,project,primary user docs
+close_reason: terminal compatibility docs updated across required repository docs
+body: Docs parity task for terminal compatibility hardening rollout.

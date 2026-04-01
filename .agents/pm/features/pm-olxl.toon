@@ -1,0 +1,43 @@
+id: pm-olxl
+title: Stdin and PTY fail-safe behavior
+description: Unify stdin token and beads stdin handling to avoid hangs and provide deterministic guidance across interactive and non-interactive terminals.
+type: Feature
+status: closed
+priority: 1
+tags[5]: "area:cli","area:stdin","area:terminal",compatibility,pm-cli
+created_at: "2026-04-01T11:57:46.797Z"
+updated_at: "2026-04-01T12:22:45.885Z"
+deadline: "2026-04-11T11:57:46.797Z"
+author: cursor-agent
+estimated_minutes: 180
+acceptance_criteria: "Stdin token and beads --file - behavior are consistent, fail fast in interactive TTY contexts, and remain backward-compatible for piped workflows."
+definition_of_ready: Epic scope approved and related stdin work referenced.
+order: 1
+goal: Universal terminal reliability
+objective: Prevent stdin-induced hangs
+value: Predictable stdin behavior for agents and users
+impact: Fewer blocked terminal sessions
+outcome: Stdin flows are deterministic across terminal environments
+why_now: Interactive terminals can appear hung when stdin is expected but not piped.
+parent: pm-mudv
+risk: medium
+confidence: high
+component: cli/stdin
+regression: true
+customer_impact: Prevents confusing hangs in IDE and emulated terminals.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-mudv,parent,"2026-04-01T11:57:46.797Z",cursor-agent,null
+  pm-nhgt,related,"2026-04-01T11:57:46.797Z",cursor-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-01T11:57:46.797Z",cursor-agent,Feature created as part of universal terminal hardening epic.
+notes[1]{created_at,author,text}:
+  "2026-04-01T11:57:46.797Z",cursor-agent,Align beads stdin path with existing stdin token guard semantics.
+files[2]{path,scope,note}:
+  src/cli/commands/beads.ts,project,beads stdin path
+  src/core/item/parse.ts,project,shared stdin token behavior
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/parse-utils.spec.ts tests/unit/beads-command.spec.ts,null,project,2400,stdin behavior regressions
+docs[1]{path,scope,note}:
+  README.md,project,stdin usage guidance
+close_reason: stdin and PTY fail-safe feature delivered with tests and docs updates
+body: Feature for stdin/PTY safeguards and user guidance.

@@ -160,6 +160,16 @@ Use release when:
   - `SECURITY.md` with vulnerability reporting instructions
   - `CODE_OF_CONDUCT.md` contributor behavior policy
 
+## 3.3 Terminal Compatibility Guardrails
+
+- Keep CLI output terminal-neutral by default: deterministic TOON/JSON/markdown text, no required custom OSC/ANSI protocol.
+- Preserve canonical exit-code mapping while preferring graceful exit handling (`process.exitCode`) over forced `process.exit(...)` when feasible.
+- For stdin token paths (`-`) and `pm beads import --file -`, treat interactive TTY stdin as usage error and provide explicit piped-input guidance.
+- Document and test manual EOF guidance for interactive sessions:
+  - Unix/macOS: `Ctrl+D`
+  - Windows: `Ctrl+Z` then `Enter`
+- For linked test orchestration (`pm test --run` / `pm test-all`), maintain sandbox safety and non-interactive child process behavior, including deterministic timeout/maxBuffer diagnostics.
+
 ## 4) Token Minimization Rules (TOON-first)
 
 - Prefer default TOON output for list/search/get in agent loops.

@@ -225,6 +225,15 @@ Pipeline:
 
 Output behavior is command-specific: `pm calendar` defaults to markdown for agent/human readability while keeping explicit `--format`/`--json` overrides. Global TOON defaults for other commands are unchanged.
 
+## Terminal and Process I/O Compatibility
+
+`pm-cli` keeps runtime behavior terminal-neutral so commands behave consistently across native shells, IDE-integrated terminals, and emulated PTY backends:
+
+1. **Plain deterministic output** — core output paths emit TOON/JSON/markdown text with stable key ordering and no required custom terminal control protocol.
+2. **Fail-fast stdin semantics** — stdin token readers reject interactive TTY stdin for piped-only flows (`-`) and provide explicit EOF guidance instead of waiting indefinitely.
+3. **Graceful error exits** — CLI error handling preserves canonical exit codes using graceful `process.exitCode` semantics to reduce output truncation risk under buffered writes.
+4. **Non-interactive linked test runs** — linked test subprocess execution closes child stdin immediately, applies deterministic runtime environment defaults, and surfaces explicit timeout/maxBuffer diagnostics.
+
 ## History and Restore
 
 Each history entry is a JSONL line:

@@ -1,0 +1,43 @@
+id: pm-axlr
+title: Exit/output and subprocess runtime hardening
+description: Improve CLI exit-path reliability and linked-test subprocess robustness across emulated terminal backends while preserving output contracts.
+type: Feature
+status: closed
+priority: 1
+tags[5]: "area:output","area:terminal","area:tests",compatibility,pm-cli
+created_at: "2026-04-01T11:57:58.237Z"
+updated_at: "2026-04-01T12:22:46.589Z"
+deadline: "2026-04-11T11:57:58.237Z"
+author: cursor-agent
+estimated_minutes: 220
+acceptance_criteria: "CLI error exits avoid truncation risk, linked-test execution handles stdin and timeout diagnostics robustly, and existing exit-code/output contracts remain stable."
+definition_of_ready: Epic scope approved with implementation files and tests mapped.
+order: 2
+goal: Universal terminal reliability
+objective: Stabilize runtime behavior across terminal hosts
+value: Reliable output and command completion semantics
+impact: Fewer false hangs and more consistent agent interpretation
+outcome: Robust exit/output/subprocess behavior
+why_now: Emulated terminals can expose edge cases in process exit and subprocess execution semantics.
+parent: pm-mudv
+risk: medium
+confidence: high
+component: cli/runtime
+regression: true
+customer_impact: Improves trust in command completion and result interpretation.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-mudv,parent,"2026-04-01T11:57:58.237Z",cursor-agent,null
+  pm-wo8,related,"2026-04-01T11:57:58.237Z",cursor-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-01T11:57:58.237Z",cursor-agent,Feature created for exit and subprocess reliability in terminal-emulated environments.
+notes[1]{created_at,author,text}:
+  "2026-04-01T11:57:58.237Z",cursor-agent,Refactor main error exits to process.exitCode and harden runLinkedTests subprocess options/diagnostics.
+files[2]{path,scope,note}:
+  src/cli/commands/test.ts,project,linked-test subprocess behavior
+  src/cli/main.ts,project,graceful exit semantics
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,runtime contract regressions
+docs[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,runtime behavior notes
+close_reason: exit/output and linked-test runtime hardening delivered and validated
+body: Feature for exit/output reliability and linked-test anti-hang behavior.

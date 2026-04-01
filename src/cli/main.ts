@@ -2285,26 +2285,30 @@ async function main(): Promise<void> {
     });
     if (error instanceof PmCliError) {
       printError(error.message);
-      process.exit(error.exitCode);
+      process.exitCode = error.exitCode;
+      return;
     }
 
     if (typeof error === "object" && error !== null && "code" in error) {
       const code = (error as { code?: string }).code;
       if (code === "commander.helpDisplayed") {
-        process.exit(EXIT_CODE.SUCCESS);
+        process.exitCode = EXIT_CODE.SUCCESS;
+        return;
       }
       if (code === "commander.version") {
-        process.exit(EXIT_CODE.SUCCESS);
+        process.exitCode = EXIT_CODE.SUCCESS;
+        return;
       }
       if (code?.startsWith("commander.")) {
         printError(await formatCommanderUsageMessage(error));
-        process.exit(EXIT_CODE.USAGE);
+        process.exitCode = EXIT_CODE.USAGE;
+        return;
       }
     }
 
     const message = describeUnknownError(error);
     printError(message);
-    process.exit(EXIT_CODE.GENERIC_FAILURE);
+    process.exitCode = EXIT_CODE.GENERIC_FAILURE;
   }
 }
 

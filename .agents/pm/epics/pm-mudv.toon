@@ -1,0 +1,41 @@
+id: pm-mudv
+title: Universal terminal compatibility hardening
+description: "Harden pm CLI stdin, exit, and subprocess behavior for reliability across IDE-integrated and emulated terminals (VS Code forks, ConPTY, PTY shells) without regressions."
+type: Epic
+status: closed
+priority: 0
+tags[5]: "area:cli","area:docs","area:terminal",compatibility,pm-cli
+created_at: "2026-04-01T11:57:17.043Z"
+updated_at: "2026-04-01T12:22:47.971Z"
+deadline: "2026-04-15T11:57:17.043Z"
+author: cursor-agent
+estimated_minutes: 420
+acceptance_criteria: "pm CLI behaves deterministically across terminal types, avoids stdin hang footguns, preserves exit-code/output contracts, and ships with comprehensive regression tests and docs."
+definition_of_ready: Research and duplicate scan are complete with implementation scope mapped.
+order: 1
+goal: Universal terminal reliability
+objective: Make pm robust across emulated terminals
+value: Fewer hangs and misdetected outcomes for agents and users
+impact: Higher command reliability across VS Code-like environments
+outcome: Stable stdin/output/exit behavior with no regressions
+why_now: Terminal emulation differences currently cause hangs and unreliable command interpretation.
+risk: medium
+confidence: high
+component: cli/runtime
+regression: true
+customer_impact: Improves reliability for all users running pm in IDE or emulated terminals.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-nhgt,related,"2026-04-01T11:57:17.043Z",cursor-agent,null
+  pm-wo8,related,"2026-04-01T11:57:17.043Z",cursor-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-01T11:57:17.043Z",cursor-agent,Created after list-open/list-in-progress/list-blocked plus terminal-focused search showed no duplicate item for this scope.
+notes[1]{created_at,author,text}:
+  "2026-04-01T11:57:17.043Z",cursor-agent,"Implement in phased streams: stdin fail-safe,graceful exits,subprocess anti-hang,regression tests,docs parity."
+files[1]{path,scope,note}:
+  src/cli/main.ts,project,global exit path hardening
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,3600,full regression baseline
+docs[1]{path,scope,note}:
+  PRD.md,project,terminal compatibility contract
+close_reason: universal terminal compatibility hardening delivered across stdin exit subprocess tests and docs
+body: Track universal terminal compatibility improvements and rollout evidence.

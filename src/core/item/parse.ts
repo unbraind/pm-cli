@@ -206,7 +206,10 @@ export function parseCsvKv(raw: string, optionName: string): Record<string, stri
 
 async function readStdinText(optionName: string): Promise<string> {
   if (process.stdin.isTTY === true) {
-    throw new PmCliError(`${optionName} value "${STDIN_TOKEN}" requires piped stdin input`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `${optionName} value "${STDIN_TOKEN}" requires piped stdin input. Pipe content into the command, or end manual stdin with Ctrl+D (Unix/macOS) or Ctrl+Z then Enter (Windows).`,
+      EXIT_CODE.USAGE,
+    );
   }
   process.stdin.setEncoding("utf8");
   return await new Promise<string>((resolve, reject) => {

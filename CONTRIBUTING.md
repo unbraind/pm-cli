@@ -66,6 +66,25 @@ node scripts/run-tests.mjs coverage
 
 The runner creates a temporary sandbox and sets `PM_PATH` and `PM_GLOBAL_PATH` so tests never touch repository planning data.
 
+## Terminal Compatibility Checks
+
+When changing stdin, output, exit handling, or linked test execution, run targeted terminal-compatibility regressions before full-suite validation:
+
+```bash
+node scripts/run-tests.mjs test -- \
+  tests/unit/parse-utils.spec.ts \
+  tests/unit/beads-command.spec.ts \
+  tests/unit/test-command.spec.ts \
+  tests/integration/cli.integration.spec.ts \
+  tests/integration/release-readiness-runtime.spec.ts
+```
+
+Behavior expectations to preserve:
+
+- Interactive TTY stdin is rejected for piped-only `-` inputs with actionable guidance.
+- Exit-code mappings stay stable (`0..5`) while CLI failures remain deterministic.
+- Linked test orchestration remains non-interactive and reports timeout/maxBuffer failures clearly.
+
 ## Developer Documentation
 
 For deeper context on implementation and extension development:

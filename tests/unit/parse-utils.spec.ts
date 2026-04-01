@@ -111,5 +111,6 @@ describe("core/item/parse", () => {
 
     const resolver = createStdinTokenResolver();
     await expect(resolver.resolveValue("-", "--body")).rejects.toThrow('requires piped stdin input');
+    await expect(resolver.resolveValue("-", "--body")).rejects.toThrow("Ctrl+D");
   });
 });

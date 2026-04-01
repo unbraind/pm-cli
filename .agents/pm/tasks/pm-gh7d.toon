@@ -1,0 +1,45 @@
+id: pm-gh7d
+title: "T4: Add terminal compatibility regression coverage"
+description: "Extend unit and integration tests for stdin fail-fast behavior, exit-code stability, and terminal-neutral output/runtime contracts."
+type: Task
+status: closed
+priority: 1
+tags[5]: "area:terminal","area:tests",code,compatibility,pm-cli
+created_at: "2026-04-01T12:00:15.766Z"
+updated_at: "2026-04-01T12:22:31.909Z"
+deadline: "2026-04-08T12:00:15.766Z"
+author: cursor-agent
+estimated_minutes: 110
+acceptance_criteria: "New unit/integration tests cover interactive stdin misuse handling, exit-code behavior, and linked-test runtime diagnostics without breaking existing suites."
+definition_of_ready: Feature pm-t6f7 accepted and target test files identified.
+order: 1
+goal: Universal terminal reliability
+objective: Protect behavior with explicit regressions
+value: Lower rollout risk
+impact: Early detection of compatibility regressions
+outcome: Terminal hardening guarded by tests
+why_now: Behavior changes in stdin/exit/subprocess paths need direct regression protection.
+parent: pm-t6f7
+risk: low
+confidence: high
+component: tests/runtime
+regression: true
+customer_impact: Ensures current workflows remain stable.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-t6f7,parent,"2026-04-01T12:00:15.766Z",cursor-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-01T12:00:15.766Z",cursor-agent,Task corresponds to plan workstream D.
+  "2026-04-01T12:06:56.221Z",cursor-agent,"Expanded terminal compatibility regressions: tests/unit/test-command.spec.ts now asserts timeout diagnostic messaging and adds a deterministic maxBuffer overflow case; tests/unit/beads-command.spec.ts covers interactive TTY fail-fast for --file -. Validation evidence: node scripts/run-tests.mjs test -- tests/unit/parse-utils.spec.ts tests/unit/beads-command.spec.ts tests/unit/test-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts passed (97/97)."
+notes[1]{created_at,author,text}:
+  "2026-04-01T12:00:15.766Z",cursor-agent,"Cover parse-utils,beads,test-command,cli integration,and release-readiness runtime contracts."
+files[4]{path,scope,note}:
+  tests/integration/release-readiness-runtime.spec.ts,project,runtime contract
+  tests/unit/beads-command.spec.ts,project,stdin behavior
+  tests/unit/parse-utils.spec.ts,project,stdin token guidance regression
+  tests/unit/test-command.spec.ts,project,subprocess runtime behavior
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/parse-utils.spec.ts tests/unit/beads-command.spec.ts tests/unit/test-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,3000,terminal compatibility regression suite
+docs[1]{path,scope,note}:
+  CONTRIBUTING.md,project,test guidance
+close_reason: terminal compatibility regressions added and passing across unit and integration suites
+body: Implement regression tests that protect existing users during terminal hardening rollout.

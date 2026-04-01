@@ -163,6 +163,24 @@ printf '%s\n' 'at: +1d' 'text: reminder from piped stdin' | pm update pm-a1b2 --
 
 `none` semantics are unchanged for explicit clears in repeatable fields (`--file none`, `--comment none`, etc.).
 
+## Terminal Compatibility
+
+`pm` is intentionally terminal-neutral so it works in native shells, IDE-integrated terminals, and emulated PTY backends:
+
+- Output is plain deterministic TOON/JSON/markdown text (no required terminal-specific OSC/ANSI control protocol).
+- Error exits preserve deterministic exit-code mapping while using graceful `process.exitCode` behavior.
+- Stdin token entry (`-`) requires piped stdin when invoked from an interactive TTY.
+- `pm beads import --file -` follows the same stdin guard: if stdin is interactive TTY, `pm` returns usage guidance instead of waiting for EOF.
+- For manual EOF in interactive sessions:
+  - Unix/macOS terminals: `Ctrl+D`
+  - Windows terminals: `Ctrl+Z` then `Enter`
+
+Example piped Beads import:
+
+```bash
+cat issues.jsonl | pm beads import --file -
+```
+
 ## Custom Item Types and Type Options
 
 `pm` supports project/global custom item types through `settings.json` and extension registrations. When no custom configuration exists, built-in types keep their default behavior.

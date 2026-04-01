@@ -580,10 +580,39 @@ describe("runTest", () => {
       const timeoutFailure = run.run_results.find((entry) => entry.command?.includes("setTimeout(() => {}, 2000)"));
       expect(timeoutFailure?.status).toBe("failed");
       expect(timeoutFailure?.exit_code).toBe(1);
+      expect(timeoutFailure?.error ?? "").toContain("timed out after");
 
       const skipped = run.run_results.find((entry) => entry.status === "skipped");
       expect(skipped?.path).toBe("tests/no-command.spec.ts");
       expect(skipped?.error ?? "").toContain("No command configured");
+    });
+  });
+
+  it("reports deterministic maxBuffer diagnostics for noisy linked commands", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "linked-test-max-buffer");
+      await runTest(
+        id,
+        {
+          add: ['command=node -e "process.stdout.write(\'x\'.repeat(22 * 1024 * 1024))",scope=project,timeout_seconds=20'],
+          message: "seed maxBuffer test",
+        },
+        { path: context.pmPath },
+      );
+
+      const run = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "20",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(run.run_results).toHaveLength(1);
+      expect(run.run_results[0]?.status).toBe("failed");
+      expect(run.run_results[0]?.exit_code).toBe(1);
+      expect(run.run_results[0]?.error ?? "").toContain("maxBuffer=20971520");
     });
   });
 });
