@@ -334,6 +334,8 @@ describe("Pi agent extension wrapper for pm", () => {
       expectedResult: "fixed",
       actualResult: "broken",
       whyNow: "still urgent",
+      dep: ["id=pm-a1b3,kind=related"],
+      depRemove: ["id=pm-a1b4,kind=blocks"],
     });
 
     expect(updateArgs).toEqual(
@@ -358,6 +360,10 @@ describe("Pi agent extension wrapper for pm", () => {
         "broken",
         "--why-now",
         "still urgent",
+        "--dep",
+        "id=pm-a1b3,kind=related",
+        "--dep-remove",
+        "id=pm-a1b4,kind=blocks",
       ]),
     );
   });
@@ -437,6 +443,18 @@ describe("Pi agent extension wrapper for pm", () => {
           };
         }
       ).properties.event,
+    ).toEqual({
+      type: "array",
+      items: { type: "string" },
+    });
+    expect(
+      (
+        tool.parameters as {
+          properties: {
+            depRemove: { type: string; items: { type: string } };
+          };
+        }
+      ).properties.depRemove,
     ).toEqual({
       type: "array",
       items: { type: "string" },

@@ -104,6 +104,7 @@ export interface PmToolParameters {
   add?: string[];
   remove?: string[];
   dep?: string[];
+  depRemove?: string[];
   comment?: string[];
   note?: string[];
   learning?: string[];

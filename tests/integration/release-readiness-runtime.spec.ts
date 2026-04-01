@@ -149,6 +149,8 @@ const REQUIRED_UPDATE_FLAGS = [
   "--acceptance-criteria",
   "--ac",
   "--assignee",
+  "--dep",
+  "--dep-remove",
   "--reminder",
   "--author",
   "--message",
@@ -376,6 +378,7 @@ describe("release readiness runtime coverage", () => {
       expect(help.stdout).toContain("--why_now");
       expect(help.stdout).toContain("--unblock-note");
       expect(help.stdout).toContain("--unblock_note");
+      expect(help.stdout).toContain("--dep_remove");
       expect(help.stdout).toContain("low|med|medium|high|critical");
       expect(help.stdout).toContain("--confidence");
       for (const flag of ISSUE_METADATA_UPDATE_FLAG_TOKENS) {

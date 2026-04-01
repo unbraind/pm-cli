@@ -656,6 +656,140 @@ describe("runUpdate", () => {
     });
   });
 
+  it("adds and removes dependencies for existing items", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-dependency-mutations");
+      const added = await runUpdate(
+        id,
+        {
+          dep: [
+            "id=dep-alpha,kind=blocks,author=dep-owner,created_at=2026-03-01T00:00:00.000Z",
+            "id=dep-alpha,kind=blocks,author=duplicate-owner,created_at=2026-03-03T00:00:00.000Z",
+            "id=dep-beta,kind=related,author=dep-owner,source_kind=imported,created_at=2026-03-02T00:00:00.000Z",
+          ],
+          message: "add dependencies through update command",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(added.changed_fields).toContain("dependencies");
+      expect((added.item as { dependencies?: Array<Record<string, unknown>> }).dependencies).toEqual([
+        {
+          id: "pm-dep-alpha",
+          kind: "blocks",
+          created_at: "2026-03-01T00:00:00.000Z",
+          author: "dep-owner",
+        },
+        {
+          id: "pm-dep-beta",
+          kind: "related",
+          created_at: "2026-03-02T00:00:00.000Z",
+          author: "dep-owner",
+          source_kind: "imported",
+        },
+      ]);
+
+      const removedById = await runUpdate(
+        id,
+        {
+          depRemove: ["dep-alpha"],
+          message: "remove dependency by id",
+        },
+        { path: context.pmPath },
+      );
+      expect((removedById.item as { dependencies?: Array<Record<string, unknown>> }).dependencies).toEqual([
+        {
+          id: "pm-dep-beta",
+          kind: "related",
+          created_at: "2026-03-02T00:00:00.000Z",
+          author: "dep-owner",
+          source_kind: "imported",
+        },
+      ]);
+
+      const removedBySelector = await runUpdate(
+        id,
+        {
+          depRemove: ["id=dep-beta,kind=related,source_kind=imported"],
+          message: "remove dependency by selector",
+        },
+        { path: context.pmPath },
+      );
+      expect((removedBySelector.item as { dependencies?: Array<Record<string, unknown>> }).dependencies).toBeUndefined();
+    });
+  });
+
+  it("supports clearing dependencies with dep none", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-clear-dependencies");
+      await runUpdate(
+        id,
+        {
+          dep: ["id=dep-clear,kind=blocks,created_at=2026-03-01T00:00:00.000Z"],
+          message: "seed one dependency before clear",
+        },
+        { path: context.pmPath },
+      );
+
+      const cleared = await runUpdate(
+        id,
+        {
+          dep: ["none"],
+          message: "clear dependency list",
+        },
+        { path: context.pmPath },
+      );
+      expect(cleared.changed_fields).toContain("dependencies");
+      expect((cleared.item as { dependencies?: Array<Record<string, unknown>> }).dependencies).toBeUndefined();
+    });
+  });
+
+  it("validates dependency mutation payloads", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-invalid-dependencies");
+
+      await expect(
+        runUpdate(
+          id,
+          {
+            dep: ["none", "id=dep-one,kind=blocks"],
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          {
+            dep: ["id=dep-one"],
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          {
+            depRemove: ["none"],
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          {
+            depRemove: ["kind=blocks"],
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+    });
+  });
+
   it("validates reminder update inputs", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-invalid-reminders");

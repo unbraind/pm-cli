@@ -2,13 +2,12 @@ id: pm-0vnr
 title: Finalize tests docs verification and release evidence for history hardening
 description: "Add regression coverage, update docs/changelog, run full validation, and record closure evidence for the history hardening feature."
 type: Task
-status: in_progress
+status: closed
 priority: 1
 tags[4]: "area:docs","area:release","area:tests",pm-cli
 created_at: "2026-04-01T15:27:36.473Z"
-updated_at: "2026-04-01T20:30:50.010Z"
+updated_at: "2026-04-01T21:19:29.978Z"
 deadline: "2026-04-07T15:27:36.473Z"
-assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 180
 acceptance_criteria: "Unit/integration tests cover strict and default behaviors, README/PRD/ARCHITECTURE/CHANGELOG are updated, build+test+coverage pass, and pm evidence is logged."
@@ -44,10 +43,11 @@ customer_impact: Users receive documented and validated resilient behavior
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-g6qd,blocks,"2026-04-01T15:27:36.473Z",cursor-agent,null
   pm-kb21,parent,"2026-04-01T15:27:36.473Z",cursor-agent,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-01T15:27:36.473Z",cursor-agent,Task tracks final test/doc/verification gate and closure evidence.
   "2026-04-01T15:43:03.149Z",cursor-agent,"Documentation updates completed for missing history-stream policy and history-only restore recovery in README, PRD, ARCHITECTURE, and CHANGELOG. Verification after docs/runtime updates: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts passed (40/40); node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts passed (22/22)."
   "2026-04-01T15:59:02.993Z",cursor-agent,"Final verification sweep complete for this change-set: pnpm build passed; node scripts/run-tests.mjs test passed (63 files, 676 tests); node scripts/run-tests.mjs coverage executed and failed only on existing global 100% threshold baseline (lines 97.32, branches 95.02, functions 98.10, statements 97.02). pm test-all --status in_progress --json reported totals items=4 linked_tests=4 passed=3 failed=1, with the only failure being the linked coverage gate on pm-0vnr."
+  "2026-04-01T21:17:58.648Z",codex-agent,"Closeout verification evidence: pm test-all --status in_progress --json passed all linked tests (totals items=4 linked_tests=4 passed=4 failed=0 skipped=0), including this task's coverage gate command."
 notes[1]{created_at,author,text}:
   "2026-04-01T15:27:36.473Z",cursor-agent,Includes targeted plus full sweeps and pm test/test-all evidence logging prior to commit and push.
 learnings[1]{created_at,author,text}:
@@ -64,4 +64,5 @@ tests[1]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs coverage,null,project,7200,final coverage gate
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,unreleased entry updates
+close_reason: Final verification and docs gate completed with passing linked checks
 body: "Coordinate remaining tests/docs and final verification commands, then prepare commit/push evidence."

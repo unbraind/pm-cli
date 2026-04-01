@@ -99,6 +99,8 @@ describe("generateBashScript", () => {
     expect(script).toContain("--force");
     expect(script).toContain("--message");
     expect(script).toContain("--author");
+    expect(script).toContain("--dep");
+    expect(script).toContain("--dep-remove");
     expect(script).toContain("--reminder");
     expect(script).toContain("--event");
   });

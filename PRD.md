@@ -688,7 +688,7 @@ Mutating `create` (all schema fields MUST be passable explicitly):
 
 Mutating `create` flags (repeatable, each required at least once; use `none` for explicit empty intent):
 
-- `--dep` value format: `id=<id>,kind=<blocks|parent|child|related|discovered_from>,author=<a>,created_at=<iso|now>` (also accepts markdown `key: value` lines and stdin token `-`)
+- `--dep` value format: `id=<id>,kind=<blocks|parent|child|parent_child|child_of|related|related_to|discovered_from|blocked_by|incident_from|epic|supersedes|task>,author=<a>,created_at=<iso|now>,source_kind=<value?>` (also accepts markdown `key: value` lines and stdin token `-`)
 - `--comment` value format: `author=<a>,created_at=<iso|now>,text=<t>` (also accepts markdown `key: value` lines and stdin token `-`)
 - `--note` value format: `author=<a>,created_at=<iso|now>,text=<t>` (also accepts markdown `key: value` lines and stdin token `-`)
 - `--learning` value format: `author=<a>,created_at=<iso|now>,text=<t>` (also accepts markdown `key: value` lines and stdin token `-`)
@@ -756,7 +756,11 @@ Mutating `update` (v0.1 baseline):
 - `--why-now`, `--why_now`
 - `--author`
 - `--message`
+- `--dep` (repeatable add format `id=<id>,kind=<...>,author=<a?>,created_at=<iso|now>,source_kind=<value?>`; `none` clears all dependencies)
+- `--dep-remove`, `--dep_remove` (repeatable selector remove by `id` or `id=<id>,kind=<kind?>,source_kind=<value?>`)
 - `--reminder` (repeatable `at=<iso|date|relative>,text=<text>`; `none` clears)
+- `--event` (repeatable event metadata format; `none` clears)
+- `--type-option`, `--type_option` (repeatable type option metadata; `none` clears)
 
 `pm update` status semantics:
 
@@ -814,7 +818,7 @@ Contract compatibility policy is additive-first: existing command names/flags/al
 | `pm todos import --folder <path?>` | optional todos markdown source folder (defaults to `.pi/todos`); preserves canonical optional `ItemFrontMatter` metadata when present and applies deterministic defaults for missing PM fields | `{ ok, folder, imported, skipped, ids, warnings }` |
 | `pm todos export --folder <path?>` | optional todos markdown destination folder (defaults to `.pi/todos`) | `{ ok, folder, exported, ids, warnings }` |
 | `pm create ...` | required title + schema flags | `{ item, changed_fields, warnings }` |
-| `pm update <ID> ...` | id + patch-like flags (`--status closed` is rejected; use `pm close <ID> <TEXT>`; linked artifact flags like `--file`/`--doc` are intentionally unsupported on update and routed to dedicated commands) | `{ item, changed_fields, warnings }` |
+| `pm update <ID> ...` | id + patch-like flags (`--status closed` is rejected; use `pm close <ID> <TEXT>`; dependencies are mutable via `--dep` / `--dep-remove`; linked artifact flags like `--file`/`--doc` are intentionally unsupported on update and routed to dedicated commands) | `{ item, changed_fields, warnings }` |
 | `pm delete <ID>` | id + optional `--author`/`--message`/`--force` | `{ item, changed_fields, warnings }` |
 | `pm close <ID> <TEXT>` | id + close reason text + optional `--author/--message/--force` | `{ item, changed_fields, warnings }` |
 | `pm append <ID> --body` | id + appended markdown (`--body -` reads piped stdin) | `{ item, appended, changed_fields }` |

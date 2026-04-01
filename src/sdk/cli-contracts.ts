@@ -231,6 +231,8 @@ export const PI_UPDATE_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "author", flag: "--author" },
   { param: "message", flag: "--message", allowEmpty: true },
   { param: "assignee", flag: "--assignee" },
+  { param: "dep", flag: "--dep", repeatableOrNone: true },
+  { param: "depRemove", flag: "--dep-remove", repeatable: true },
   { param: "reminder", flag: "--reminder", repeatable: true },
   { param: "event", flag: "--event", repeatable: true },
   { param: "typeOption", flag: "--type-option", repeatable: true },
@@ -401,6 +403,9 @@ export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--why-now" },
   { flag: "--author" },
   { flag: "--message" },
+  { flag: "--dep" },
+  { flag: "--dep-remove" },
+  { flag: "--dep_remove" },
   { flag: "--reminder" },
   { flag: "--event" },
   { flag: "--type-option" },
@@ -571,6 +576,8 @@ export const UPDATE_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContr
 ];
 
 export const UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
+  { target: "dep", keys: ["dep"] },
+  { target: "depRemove", keys: ["depRemove", "dep_remove"] },
   { target: "reminder", keys: ["reminder"] },
   { target: "event", keys: ["event"] },
   { target: "typeOption", keys: ["typeOption", "type_option"] },
@@ -747,6 +754,7 @@ export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = {
     add: { type: "array", items: { type: "string" } },
     remove: { type: "array", items: { type: "string" } },
     dep: { type: "array", items: { type: "string" } },
+    depRemove: { type: "array", items: { type: "string" } },
     comment: { type: "array", items: { type: "string" } },
     note: { type: "array", items: { type: "string" } },
     learning: { type: "array", items: { type: "string" } },

@@ -2,13 +2,12 @@ id: pm-8wnm
 title: Add history missing-stream policy setting and config support
 description: Introduce history policy in settings defaults/schema/serialization and expose config get/set surface.
 type: Task
-status: in_progress
+status: closed
 priority: 1
 tags[3]: "area:config","area:history",pm-cli
 created_at: "2026-04-01T15:27:04.794Z"
-updated_at: "2026-04-01T20:30:45.883Z"
+updated_at: "2026-04-01T21:14:18.925Z"
 deadline: "2026-04-06T15:27:04.794Z"
-assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 120
 acceptance_criteria: Settings include history policy defaults and validation; config command can get/set policy deterministically; CLI help/docs parity is maintained.
@@ -43,9 +42,10 @@ regression: true
 customer_impact: Users can opt into strict enforcement when required
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-kb21,parent,"2026-04-01T15:27:04.794Z",cursor-agent,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-01T15:27:04.794Z",cursor-agent,Task seeds settings/config model changes for missing history stream policy.
   "2026-04-01T15:30:17.724Z",cursor-agent,"Implemented settings/config policy surface: added history.missing_stream enum default (auto_create), settings schema/merge/serialize support, config get/set key and --policy CLI wiring. Verification: pnpm build passed; node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/shared-constants-errors.spec.ts passed (26/26)."
+  "2026-04-01T21:14:11.486Z",codex-agent,"Closeout verification evidence: pm test-all --status in_progress --json passed all linked tests (totals items=4 linked_tests=4 passed=4 failed=0 skipped=0), including this item's linked settings/config suite."
 notes[1]{created_at,author,text}:
   "2026-04-01T15:27:04.794Z",cursor-agent,"Includes settings type updates,constants defaults,settings schema merge serialize,config command routes,and CLI option help."
 learnings[1]{created_at,author,text}:
@@ -63,4 +63,5 @@ tests[1]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts,null,project,3600,targeted settings/config coverage
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,settings key documentation
+close_reason: Settings policy surface shipped and linked verification passed
 body: Implement PmSettings history policy model with non-breaking default and CLI config support.

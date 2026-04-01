@@ -238,6 +238,9 @@ printf '%s\n' 'text: evidence from piped stdin' | pm comments pm-a1b2 --add -
 printf '%s\n' 'text: implementation note from piped stdin' | pm notes pm-a1b2 --add -
 printf '%s\n' 'text: learning captured from piped stdin' | pm learnings pm-a1b2 --add -
 printf '%s\n' 'at: +1d' 'text: reminder from piped stdin' | pm update pm-a1b2 --reminder -
+pm update pm-a1b2 --dep "id=pm-b3c4,kind=blocks,author=alex-maintainer,created_at=now"
+pm update pm-a1b2 --dep-remove "pm-b3c4"
+pm update pm-a1b2 --dep none
 ```
 
 `none` semantics are unchanged for explicit clears in repeatable fields (`--file none`, `--comment none`, etc.).
@@ -247,6 +250,7 @@ printf '%s\n' 'at: +1d' 'text: reminder from piped stdin' | pm update pm-a1b2 --
 - Use dedicated linked-artifact commands for file/doc mutations:
   - `pm files <ID> --add/--remove`
   - `pm docs <ID> --add/--remove`
+- Dependency links on existing items are now mutated through `pm update` (`--dep` to add entries or clear with `none`, `--dep-remove`/`--dep_remove` to remove selectors).
 - `pm update` intentionally does not accept `--file` or `--doc`; command guidance points to `pm files` / `pm docs`.
 - `pm test <ID> --add` intentionally enforces sandbox-safe command entries. Use `node scripts/run-tests.mjs ...` for linked commands, or link specific specs with `--add "path=tests/..."`
 - `pm test <ID> --run` and `pm test-all` now emit heartbeat/progress lines to stderr in interactive terminals during long-running linked commands so active runs are visible instead of appearing stalled.

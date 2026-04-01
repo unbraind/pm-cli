@@ -1128,6 +1128,136 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("supports dependency add/remove mutations through update flags", async () => {
+    await withTempPmPath(async (context) => {
+      const createResult = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Dependency mutation item",
+          "--description",
+          "Validate update dependency add/remove flows",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,dependencies",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "20",
+          "--acceptance-criteria",
+          "Dependency update flags mutate existing items",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create dependency mutation seed",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(createResult.code).toBe(0);
+      const createdId = (createResult.json as { item: { id: string } }).item.id;
+
+      const addResult = context.runCli(
+        [
+          "update",
+          createdId,
+          "--json",
+          "--dep",
+          "id=dep-alpha,kind=blocks,created_at=2026-03-01T00:00:00.000Z",
+          "--dep",
+          "id=dep-beta,kind=related,source_kind=imported,created_at=2026-03-02T00:00:00.000Z",
+          "--author",
+          "integration-test",
+          "--message",
+          "Add dependencies",
+        ],
+        { expectJson: true },
+      );
+      expect(addResult.code).toBe(0);
+      const addedDependencies = (addResult.json as { item: { dependencies?: Array<Record<string, unknown>> } }).item
+        .dependencies;
+      expect(addedDependencies).toEqual([
+        {
+          id: "pm-dep-alpha",
+          kind: "blocks",
+          created_at: "2026-03-01T00:00:00.000Z",
+        },
+        {
+          id: "pm-dep-beta",
+          kind: "related",
+          created_at: "2026-03-02T00:00:00.000Z",
+          source_kind: "imported",
+        },
+      ]);
+
+      const removeResult = context.runCli(
+        [
+          "update",
+          createdId,
+          "--json",
+          "--dep-remove",
+          "dep-alpha",
+          "--author",
+          "integration-test",
+          "--message",
+          "Remove one dependency",
+        ],
+        { expectJson: true },
+      );
+      expect(removeResult.code).toBe(0);
+      const remainingDependencies = (removeResult.json as { item: { dependencies?: Array<Record<string, unknown>> } }).item
+        .dependencies;
+      expect(remainingDependencies).toEqual([
+        {
+          id: "pm-dep-beta",
+          kind: "related",
+          created_at: "2026-03-02T00:00:00.000Z",
+          source_kind: "imported",
+        },
+      ]);
+
+      const clearResult = context.runCli(
+        [
+          "update",
+          createdId,
+          "--json",
+          "--dep",
+          "none",
+          "--author",
+          "integration-test",
+          "--message",
+          "Clear dependencies",
+        ],
+        { expectJson: true },
+      );
+      expect(clearResult.code).toBe(0);
+      expect((clearResult.json as { item: { dependencies?: Array<Record<string, unknown>> } }).item.dependencies).toBeUndefined();
+    });
+  });
+
   it("requires explicit --assignee for create contract parity", async () => {
     await withTempPmPath(async (context) => {
       const createWithoutAssignee = context.runCli([

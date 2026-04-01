@@ -2,13 +2,12 @@ id: pm-ofh9
 title: History stream resilience and restore recovery hardening
 description: Implement settings-driven missing-history stream policy and restore recovery for missing/deleted item files while preserving default compatibility.
 type: Epic
-status: open
+status: closed
 priority: 0
 tags[4]: "area:history","area:restore",core,pm-cli
 created_at: "2026-04-01T15:26:39.295Z"
-updated_at: "2026-04-01T20:30:44.929Z"
+updated_at: "2026-04-01T21:22:59.318Z"
 deadline: "2026-04-08T15:26:39.295Z"
-assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 300
 acceptance_criteria: "Default mode auto-creates missing history streams safely, strict mode fails deterministically across history-touching commands, restore can recover missing/deleted item files from history, and full verification/docs updates pass."
@@ -47,9 +46,10 @@ dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-9lc,related,"2026-04-01T15:26:39.295Z",cursor-agent,null
   pm-c0r,related,"2026-04-01T15:26:39.295Z",cursor-agent,null
   pm-er7n,related,"2026-04-01T15:26:39.295Z",cursor-agent,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-01T15:26:39.295Z",cursor-agent,Created after de-dup checks found no active item for strict missing-history policy plus restore missing-item recovery scope.
   "2026-04-01T15:59:05.275Z",cursor-agent,"Epic delivery evidence: implemented missing-stream policy configuration and enforcement across history-touching paths, added restore recovery for missing/deleted item files from history-only state, updated docs/changelog, and verified with full build/test sweeps. Known residual: global coverage gate remains below strict 100% thresholds (97.32/95.02/98.10/97.02)."
+  "2026-04-01T21:21:29.418Z",codex-agent,"Epic closeout evidence: child feature pm-kb21 and child tasks pm-8wnm, pm-1tyv, pm-g6qd, pm-0vnr are closed with linked verification logs, and pm test pm-kb21 --run passed prior to epic closure."
 notes[1]{created_at,author,text}:
   "2026-04-01T15:26:39.295Z",cursor-agent,Implementation follows docs-first updates plus command/test hardening with compatibility-safe defaults.
 learnings[1]{created_at,author,text}:
@@ -60,4 +60,5 @@ tests[1]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test,null,project,7200,full sandbox-safe regression baseline
 docs[1]{path,scope,note}:
   PRD.md,project,normative behavior contract updates
+close_reason: History resilience and restore hardening delivered with verified evidence
 body: "Coordinate strict-vs-auto history-stream handling and restore recovery hardening across commands, tests, and docs."

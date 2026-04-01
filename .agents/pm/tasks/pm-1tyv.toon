@@ -2,13 +2,12 @@ id: pm-1tyv
 title: Implement shared history-stream policy helper and command enforcement
 description: Add reusable strict-vs-auto stream handling and apply it to history/activity/stats/health plus existing-item mutation paths.
 type: Task
-status: in_progress
+status: closed
 priority: 1
 tags[3]: "area:commands","area:history",pm-cli
 created_at: "2026-04-01T15:27:15.596Z"
-updated_at: "2026-04-01T20:30:46.901Z"
+updated_at: "2026-04-01T21:14:41.086Z"
 deadline: "2026-04-06T15:27:15.596Z"
-assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 180
 acceptance_criteria: History policy helper is reusable; history/activity/stats/health and existing-item mutation flows enforce strict mode and auto-create defaults consistently with deterministic errors.
@@ -44,9 +43,10 @@ customer_impact: Consistent behavior across history diagnostics and mutations
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-8wnm,blocks,"2026-04-01T15:27:15.596Z",cursor-agent,null
   pm-kb21,parent,"2026-04-01T15:27:15.596Z",cursor-agent,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-01T15:27:15.596Z",cursor-agent,Task focuses on reusable helper plus read/diagnostic/mutation enforcement wiring.
   "2026-04-01T15:39:32.464Z",cursor-agent,"Implemented shared history-stream policy helper and command enforcement. Added src/core/history/history-stream-policy.ts and wired policy checks into history/activity/stats/health plus item-store mutate/delete flows. Added strict-mode regressions in unit suites. Verification: pnpm build passed; node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts tests/unit/stats-command.spec.ts tests/unit/health-command.spec.ts tests/unit/item-store.spec.ts passed."
+  "2026-04-01T21:14:26.251Z",codex-agent,"Closeout verification evidence: pm test-all --status in_progress --json passed all linked tests (totals items=4 linked_tests=4 passed=4 failed=0 skipped=0), including this task's strict-mode enforcement suite."
 notes[1]{created_at,author,text}:
   "2026-04-01T15:27:15.596Z",cursor-agent,"Primary command targets: history,activity,stats,health,item-store mutate/delete and restore prechecks."
 learnings[1]{created_at,author,text}:
@@ -67,4 +67,5 @@ tests[1]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts tests/unit/stats-command.spec.ts tests/unit/health-command.spec.ts tests/unit/item-store.spec.ts,null,project,5400,targeted runtime enforcement coverage
 docs[1]{path,scope,note}:
   PRD.md,project,history-touching command requirements
+close_reason: Shared policy helper and command enforcement shipped with passing linked tests
 body: "Centralize missing-history stream policy checks/creation and wire into all required read, diagnostic, and mutation entry points."

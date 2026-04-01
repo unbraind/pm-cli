@@ -2,13 +2,12 @@ id: pm-zdec
 title: Add dependency mutation command for existing items
 description: Metadata audit found 102 items with empty dependencies and no supported CLI mutation path to add dependency links after item creation.
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: "area:dependencies","area:metadata",core,pm-cli,release-readiness
 created_at: "2026-04-01T20:43:14.612Z"
-updated_at: "2026-04-01T20:46:32.692Z"
+updated_at: "2026-04-01T21:33:41.360Z"
 deadline: "2026-04-06T20:43:14.612Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: "A supported CLI path can add and remove dependency entries on existing items with history tracking, ownership semantics, and regression tests, enabling closure of dependency metadata gaps across all items."
@@ -43,17 +42,36 @@ regression: false
 customer_impact: "Maintainers cannot fully normalize planning graphs, reducing traceability and automation reliability."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-ofh9,related,"2026-04-01T20:43:14.612Z",codex-agent,null
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-01T20:43:14.612Z",codex-agent,Issue discovered during end-to-end metadata normalization sweep when dependency fields remained the only unfillable gap.
   "2026-04-01T20:46:32.692Z",codex-agent,"Audit evidence: after full metadata normalization, scalar metadata and linked notes/files/tests/docs/learnings are complete across 369 items. Remaining gap is dependencies on 102 legacy items because current CLI lacks a dependency mutation command for existing items."
+  "2026-04-01T21:23:14.248Z",codex-agent,"Implementation started: adding dependency mutation support for existing items through update command and contract surfaces."
+  "2026-04-01T21:33:34.304Z",codex-agent,"Implemented dependency mutation for existing items through update surfaces: added --dep add/clear semantics and --dep-remove selector removals with contract parity in CLI normalization, shared SDK contracts, completion/help, and Pi wrapper mapping. Verification: pnpm build passed; node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts passed (5 files, 153 tests); pm test pm-zdec --run --json passed all linked commands."
 notes[1]{created_at,author,text}:
   "2026-04-01T20:43:14.612Z",codex-agent,Implement command-level dependency add/remove operations with ownership and history parity.
-learnings[1]{created_at,author,text}:
+learnings[2]{created_at,author,text}:
   "2026-04-01T20:43:14.612Z",codex-agent,Create-only dependency seeding is insufficient for long-lived trackers that require retrospective graph hygiene.
-files[1]{path,scope,note}:
-  src/cli/commands/update.ts,project,current-update-surface-lacks-dependency-mutation
-tests[1]{command,path,scope,timeout_seconds,note}:
+  "2026-04-01T21:33:35.271Z",codex-agent,Dependency metadata hygiene requires post-create mutation pathways; supporting additive and selector-based removal semantics in update keeps legacy graphs maintainable without manual item rewrites.
+files[12]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,pi wrapper parameter parity for depRemove
+  CHANGELOG.md,project,unreleased entry for dependency mutation support
+  PRD.md,project,normative update contract changes for dependency mutation
+  README.md,project,user docs for dependency mutation flags
+  src/cli/commands/update.ts,project,add dependency add/remove parsing and mutation semantics
+  src/cli/main.ts,project,wire update --dep and --dep-remove flags
+  src/sdk/cli-contracts.ts,project,extend update option contracts and schema for dependency mutation
+  tests/integration/cli.integration.spec.ts,project,integration coverage for update dependency mutation flow
+  tests/integration/release-readiness-runtime.spec.ts,project,runtime help contract coverage for new flags
+  tests/unit/completion-command.spec.ts,project,completion coverage for new update flags
+  tests/unit/pi-agent-extension.spec.ts,project,wrapper arg and schema coverage for depRemove
+  tests/unit/update-command.spec.ts,project,unit coverage for dependency add/remove/clear validation
+tests[2]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,null,project,7200,dependency-mutation-regression-surface
-docs[1]{path,scope,note}:
+  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,targeted regression for dependency mutation runtime and contract parity
+docs[4]{path,scope,note}:
   AGENTS.md,project,workflow-contract-for-metadata-completeness
+  CHANGELOG.md,project,unreleased release note for dependency mutation support
+  PRD.md,project,update command contract and flag matrix for dependency mutation
+  README.md,project,document update dependency mutation add/remove usage
+close_reason: Dependency mutation support for existing items is implemented and verified
 body: "During full-project pm normalization, dependency metadata remains incomplete because update/comments/notes/files/docs/test/learnings do not support dependency mutation. Add a first-class dependency mutation command for existing items and document deterministic usage in CLI help and AGENTS/README workflows."

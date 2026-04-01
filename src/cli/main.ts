@@ -1288,6 +1288,8 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
     component: readUpdateString("component"),
     regression: readUpdateString("regression"),
     customerImpact: readUpdateString("customerImpact"),
+    dep: readUpdateList("dep"),
+    depRemove: readUpdateList("depRemove"),
     reminder: readUpdateList("reminder"),
     event: readUpdateList("event"),
     typeOption: readUpdateList("typeOption"),
@@ -2102,6 +2104,17 @@ program
   .option("--regression <value>", "Set regression marker: true|false|1|0 (or none)")
   .option("--customer-impact <value>", "Set customer impact summary (or none)")
   .option("--customer_impact <value>", "Alias for --customer-impact")
+  .option(
+    "--dep <value>",
+    "Add dependency entries id=<id>,kind=<value>,author=<value>,created_at=<iso|now>,source_kind=<value> (repeatable; use none to clear all)",
+    collect,
+  )
+  .option(
+    "--dep-remove <value>",
+    "Remove dependencies by id or id=<id>,kind=<value>,source_kind=<value> selectors (repeatable)",
+    collect,
+  )
+  .option("--dep_remove <value>", "Alias for --dep-remove", collect)
   .option(
     "--reminder <value>",
     "Set reminders at=<iso|relative>,text=<text> (also accepts markdown pairs and - for stdin; repeatable; use none to clear)",

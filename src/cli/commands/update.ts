@@ -8,6 +8,7 @@ import {
   resolveTypeName,
   validateTypeOptions,
 } from "../../core/item/type-registry.js";
+import { normalizeItemId } from "../../core/item/id.js";
 import { createStdinTokenResolver, parseCsvKv, parseOptionalNumber, parseTags } from "../../core/item/parse.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
@@ -19,9 +20,10 @@ import { applyRegisteredItemFieldDefaultsAndValidation } from "../../core/extens
 import { mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import type { CalendarEvent, ItemStatus, RecurrenceRule, Reminder } from "../../types/index.js";
+import type { CalendarEvent, Dependency, ItemStatus, RecurrenceRule, Reminder } from "../../types/index.js";
 import {
   CONFIDENCE_TEXT_VALUES,
+  DEPENDENCY_KIND_VALUES,
   ISSUE_SEVERITY_VALUES,
   RECURRENCE_FREQUENCY_VALUES,
   RECURRENCE_WEEKDAY_VALUES,
@@ -72,6 +74,8 @@ export interface UpdateCommandOptions {
   component?: string;
   regression?: string;
   customerImpact?: string;
+  dep?: string[];
+  depRemove?: string[];
   reminder?: string[];
   event?: string[];
   typeOption?: string[];
@@ -364,6 +368,113 @@ function parseTypeOptionEntries(raw: string[]): Record<string, string> {
   return Object.fromEntries(Object.entries(values).sort((left, right) => left[0].localeCompare(right[0])));
 }
 
+interface ParsedDependencyUpdates {
+  clear: boolean;
+  additions: Dependency[];
+}
+
+interface DependencyRemovalSelector {
+  id: string;
+  kind?: (typeof DEPENDENCY_KIND_VALUES)[number];
+  source_kind?: string;
+}
+
+function parseDependencyCreatedAt(value: string | undefined, currentIso: string): string {
+  if (!value || value.trim() === "" || value.trim().toLowerCase() === "now") {
+    return currentIso;
+  }
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed)) {
+    throw new PmCliError(`Invalid dependency created_at timestamp "${value}"`, EXIT_CODE.USAGE);
+  }
+  return new Date(parsed).toISOString();
+}
+
+function parseOptionalDependencyString(value: string | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  if (isNoneToken(value)) return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function parseDependencyAdditions(raw: string[] | undefined, prefix: string, nowIso: string): ParsedDependencyUpdates {
+  if (!raw) {
+    return { clear: false, additions: [] };
+  }
+  if (raw.some((entry) => isNoneToken(entry))) {
+    if (raw.length > 1) {
+      throw new PmCliError("--dep cannot mix 'none' with dependency values", EXIT_CODE.USAGE);
+    }
+    return { clear: true, additions: [] };
+  }
+  const additions: Dependency[] = raw.map((entry) => {
+    const kv = parseCsvKv(entry, "--dep");
+    const id = kv.id?.trim();
+    const kind = kv.kind?.trim();
+    if (!id || !kind) {
+      throw new PmCliError("--dep requires id and kind", EXIT_CODE.USAGE);
+    }
+    const sourceKind = parseOptionalDependencyString(kv.source_kind);
+    return {
+      id: normalizeItemId(id, prefix),
+      kind: ensureEnum(kind, DEPENDENCY_KIND_VALUES, "dependency kind"),
+      created_at: parseDependencyCreatedAt(kv.created_at, nowIso),
+      author: parseOptionalDependencyString(kv.author),
+      source_kind: sourceKind,
+    };
+  });
+  return { clear: false, additions };
+}
+
+function parseDependencyRemovals(raw: string[] | undefined, prefix: string): DependencyRemovalSelector[] {
+  if (!raw) {
+    return [];
+  }
+  if (raw.some((entry) => isNoneToken(entry))) {
+    throw new PmCliError("--dep-remove does not accept 'none'. Omit the flag when no removals are needed.", EXIT_CODE.USAGE);
+  }
+  return raw.map((entry) => {
+    const trimmed = entry.trim();
+    if (!trimmed) {
+      throw new PmCliError("--dep-remove requires id or key/value selectors", EXIT_CODE.USAGE);
+    }
+    if (trimmed.includes("=") || /^(?:[-*+]\s+)?(?:id|kind|source_kind)\s*[:=]/i.test(trimmed) || trimmed.startsWith("```")) {
+      const kv = parseCsvKv(trimmed, "--dep-remove");
+      const idRaw = kv.id?.trim();
+      if (!idRaw) {
+        throw new PmCliError("--dep-remove key/value form requires id=<value>", EXIT_CODE.USAGE);
+      }
+      const kindRaw = parseOptionalDependencyString(kv.kind);
+      const sourceKind = parseOptionalDependencyString(kv.source_kind);
+      return {
+        id: normalizeItemId(idRaw, prefix),
+        kind: kindRaw ? ensureEnum(kindRaw, DEPENDENCY_KIND_VALUES, "dependency kind") : undefined,
+        source_kind: sourceKind,
+      };
+    }
+    return {
+      id: normalizeItemId(trimmed, prefix),
+    };
+  });
+}
+
+function dependencyKey(value: Pick<Dependency, "id" | "kind" | "source_kind">): string {
+  return `${value.id}::${value.kind}::${value.source_kind ?? ""}`;
+}
+
+function matchesDependencySelector(value: Dependency, selector: DependencyRemovalSelector): boolean {
+  if (value.id !== selector.id) {
+    return false;
+  }
+  if (selector.kind && value.kind !== selector.kind) {
+    return false;
+  }
+  if (selector.source_kind !== undefined && (value.source_kind ?? undefined) !== selector.source_kind) {
+    return false;
+  }
+  return true;
+}
+
 function ensurePriority(raw: string): 0 | 1 | 2 | 3 | 4 {
   const parsed = parseOptionalNumber(raw, "priority");
   if (![0, 1, 2, 3, 4].includes(parsed)) {
@@ -431,6 +542,8 @@ function collectProvidedUpdatePolicyOptions(options: UpdateCommandOptions): Set<
   mark("component", options.component !== undefined);
   mark("regression", options.regression !== undefined);
   mark("customerImpact", options.customerImpact !== undefined);
+  mark("dep", options.dep !== undefined);
+  mark("depRemove", options.depRemove !== undefined);
   mark("reminder", options.reminder !== undefined);
   mark("event", options.event !== undefined);
   mark("typeOption", options.typeOption !== undefined);
@@ -472,6 +585,8 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   const stdinResolver = createStdinTokenResolver();
   options = {
     ...options,
+    dep: await stdinResolver.resolveList(options.dep, "--dep"),
+    depRemove: await stdinResolver.resolveList(options.depRemove, "--dep-remove"),
     reminder: await stdinResolver.resolveList(options.reminder, "--reminder"),
     event: await stdinResolver.resolveList(options.event, "--event"),
     typeOption: await stdinResolver.resolveList(options.typeOption, "--type-option"),
@@ -484,6 +599,8 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const author = toAuthor(options.author, settings.author_default);
   const nowValue = new Date();
+  const dependencyUpdates = parseDependencyAdditions(options.dep, settings.id_prefix, nowValue.toISOString());
+  const dependencyRemovals = parseDependencyRemovals(options.depRemove, settings.id_prefix);
 
   const changedFlags = [
     options.title !== undefined,
@@ -526,6 +643,8 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     options.component !== undefined,
     options.regression !== undefined,
     options.customerImpact !== undefined,
+    options.dep !== undefined,
+    options.depRemove !== undefined,
     options.reminder !== undefined,
     options.event !== undefined,
     options.typeOption !== undefined,
@@ -617,6 +736,33 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
           );
         }
         document.front_matter.type_options = validation.normalized;
+      }
+      if (options.dep !== undefined || options.depRemove !== undefined) {
+        let nextDependencies = [...(document.front_matter.dependencies ?? [])];
+        if (dependencyUpdates.clear) {
+          nextDependencies = [];
+        } else if (dependencyUpdates.additions.length > 0) {
+          const seen = new Set(nextDependencies.map((entry) => dependencyKey(entry)));
+          for (const addition of dependencyUpdates.additions) {
+            const key = dependencyKey(addition);
+            if (seen.has(key)) {
+              continue;
+            }
+            nextDependencies.push(addition);
+            seen.add(key);
+          }
+        }
+        if (dependencyRemovals.length > 0) {
+          nextDependencies = nextDependencies.filter(
+            (entry) => !dependencyRemovals.some((selector) => matchesDependencySelector(entry, selector)),
+          );
+        }
+        if (nextDependencies.length === 0) {
+          delete document.front_matter.dependencies;
+        } else {
+          document.front_matter.dependencies = nextDependencies;
+        }
+        changedFields.push("dependencies");
       }
       if (options.tags !== undefined) {
         document.front_matter.tags = parseTags(options.tags);

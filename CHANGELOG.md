@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added command-surface parity updates for `notes`/`learnings` across help narratives, shell completion scripts, command-aware output summaries, and Pi wrapper action routing.
 - Added integration regressions for repeated `pm files --add` / `pm docs --add` mutation flows to keep linked-artifact add workflows stable across subsequent command invocations.
 - Added targeted guidance for unsupported `pm update --file` / `pm update --doc` usage, with actionable examples that route users to `pm files` / `pm docs`.
+- Added dependency mutation support on existing items through `pm update`: repeatable `--dep` add/clear (`none`) semantics plus repeatable `--dep-remove`/`--dep_remove` selector removals, with parity across help/completion/contracts/Pi wrapper surfaces.
 
 ### Changed
 - Commander option normalization, shell completion flag generation, and Pi wrapper action/schema/arg mapping now consume the shared command contract registry to reduce cross-surface drift.
