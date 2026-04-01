@@ -1098,7 +1098,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const addCommentPositional = context.runCli(
         ["comments", id, "Integration shorthand comment", "--json", "--author", "integration-test"],
         {
-        expectJson: true,
+          expectJson: true,
         },
       );
       expect(addCommentPositional.code).toBe(0);
