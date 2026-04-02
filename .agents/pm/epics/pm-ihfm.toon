@@ -1,0 +1,43 @@
+id: pm-ihfm
+title: Update body backfill normalization parity
+description: Coordinate end-to-end support for pm update body mutation so legacy items with blank body can be normalized via CLI.
+type: Epic
+status: closed
+priority: 0
+tags[4]: "area:body","area:update",normalization,pm-cli
+created_at: "2026-04-02T11:44:45.857Z"
+updated_at: "2026-04-02T11:59:17.760Z"
+deadline: "2026-04-09T11:44:45.857Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: "pm update accepts body updates with history and lock safety, contracts and docs remain aligned, and regression tests pass without breaking current users."
+definition_of_ready: Duplicate check is complete and impacted surfaces are identified.
+order: 1
+goal: Update body parity
+objective: Enable body backfill through update CLI
+value: Removes manual item edits for legacy records
+impact: Safer normalization for users and agents
+outcome: pm update can backfill missing body
+why_now: External issue report confirms a current blocker.
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: body-backfill-2026w14
+release: vnext
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run pm update ID --body text and observe unknown option
+expected_result: update accepts body edits
+actual_result: update rejects body option
+affected_version: 2026.3.12
+component: cli-update
+regression: true
+customer_impact: Maintainers cannot normalize legacy empty-body items through CLI.
+comments[2]{created_at,author,text}:
+  "2026-04-02T11:44:45.857Z",codex-agent,Track end-to-end update body parity rollout.
+  "2026-04-02T11:59:17.052Z",codex-agent,"Epic complete with end-to-end update-body backfill support shipped through closed feature pm-ghha, including runtime behavior, contracts, tests, and documentation."
+notes[1]{created_at,author,text}:
+  "2026-04-02T11:44:45.857Z",codex-agent,Create feature and task decomposition before implementation.
+close_reason: Epic scope complete and validated through linked feature/task evidence.
+body: "Track runtime, contract, test, and documentation work for pm update body support."

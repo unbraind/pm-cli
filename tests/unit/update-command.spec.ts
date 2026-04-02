@@ -211,6 +211,7 @@ describe("runUpdate", () => {
         {
           title: "updated title",
           description: "updated description",
+          body: "updated body content",
           status: "blocked",
           priority: "4",
           type: "Issue",
@@ -268,6 +269,7 @@ describe("runUpdate", () => {
         expect.arrayContaining([
           "title",
           "description",
+          "body",
           "status",
           "priority",
           "type",
@@ -351,6 +353,9 @@ describe("runUpdate", () => {
       expect(item.component).toBe("cli/update");
       expect(item.regression).toBe(true);
       expect(item.customer_impact).toBe("triage reports missing details");
+      const loaded = context.runCli(["get", id, "--json"], { expectJson: true });
+      expect(loaded.code).toBe(0);
+      expect((loaded.json as { body: string }).body).toBe("updated body content");
       expect(item.reminders).toEqual([
         { at: "2026-03-03T12:00:00.000Z", text: "reminder alpha" },
         { at: "2026-03-03T12:00:00.000Z", text: "reminder beta" },
@@ -1110,6 +1115,29 @@ describe("runUpdate", () => {
       );
 
       expect((updated.item as { reminders?: Array<{ text: string }> }).reminders?.at(0)?.text).toBe("reminder from stdin");
+    });
+  });
+
+  it("accepts stdin token for update body value", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-body-stdin");
+      const stdin = new PassThrough();
+      stdin.end("body from stdin token");
+      Object.defineProperty(stdin, "isTTY", { value: false, configurable: true });
+      vi.spyOn(process, "stdin", "get").mockReturnValue(stdin as unknown as NodeJS.ReadStream);
+
+      const updated = await runUpdate(
+        id,
+        {
+          body: "-",
+          message: "update body from stdin",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(updated.changed_fields).toContain("body");
+      const loaded = context.runCli(["get", id, "--json"], { expectJson: true });
+      expect((loaded.json as { body: string }).body).toBe("body from stdin token");
     });
   });
 });

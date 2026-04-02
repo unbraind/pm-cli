@@ -272,6 +272,101 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("supports update body replacement via --body and -b", async () => {
+    await withTempPmPath(async (context) => {
+      const createResult = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Update body contract item",
+          "--description",
+          "Validate update body option behavior",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,body",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "20",
+          "--ac",
+          "Update body support is available",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create update body seed",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(createResult.code).toBe(0);
+      const id = (createResult.json as { item: { id: string } }).item.id;
+
+      const setBodyResult = context.runCli(
+        [
+          "update",
+          id,
+          "--json",
+          "--body",
+          "Backfilled body content",
+          "--author",
+          "integration-test",
+          "--message",
+          "Set body through update",
+        ],
+        { expectJson: true },
+      );
+      expect(setBodyResult.code).toBe(0);
+      expect((setBodyResult.json as { changed_fields: string[] }).changed_fields).toContain("body");
+
+      const getAfterSet = context.runCli(["get", id, "--json"], { expectJson: true });
+      expect(getAfterSet.code).toBe(0);
+      expect((getAfterSet.json as { body: string }).body).toBe("Backfilled body content");
+
+      const clearBodyResult = context.runCli(
+        [
+          "update",
+          id,
+          "--json",
+          "-b",
+          "",
+          "--author",
+          "integration-test",
+          "--message",
+          "Clear body through short alias",
+        ],
+        { expectJson: true },
+      );
+      expect(clearBodyResult.code).toBe(0);
+
+      const getAfterClear = context.runCli(["get", id, "--json"], { expectJson: true });
+      expect(getAfterClear.code).toBe(0);
+      expect((getAfterClear.json as { body: string }).body).toBe("");
+    });
+  });
+
   it("accepts snake_case create aliases for estimate and acceptance criteria", async () => {
     await withTempPmPath(async (context) => {
       const createResult = context.runCli(

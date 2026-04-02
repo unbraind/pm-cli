@@ -85,6 +85,7 @@ const CREATE_COMMAND_OPTION_KEYS = [
 const UPDATE_COMMAND_OPTION_KEYS = [
   "title",
   "description",
+  "body",
   "status",
   "priority",
   "type",
@@ -231,6 +232,7 @@ const CREATE_COMMAND_OPTION_FLAG_LABELS: Record<string, string> = {
 const UPDATE_COMMAND_OPTION_FLAG_LABELS: Record<string, string> = {
   title: "--title",
   description: "--description",
+  body: "--body",
   status: "--status",
   priority: "--priority",
   type: "--type",

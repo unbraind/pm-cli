@@ -140,6 +140,7 @@ const REQUIRED_CREATE_FLAGS = [
 const REQUIRED_UPDATE_FLAGS = [
   "--title",
   "--description",
+  "--body",
   "--status",
   "--priority",
   "--type",

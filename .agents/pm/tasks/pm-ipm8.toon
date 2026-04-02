@@ -1,0 +1,53 @@
+id: pm-ipm8
+title: Document update body support and ship verification evidence
+description: "Update README PRD AGENTS and CHANGELOG for update body support, run full verification, and record closure evidence with commit/push."
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:docs","area:release","area:update",pm-cli
+created_at: "2026-04-02T11:45:37.141Z"
+updated_at: "2026-04-02T11:59:15.458Z"
+deadline: "2026-04-06T11:45:37.141Z"
+author: codex-agent
+estimated_minutes: 120
+acceptance_criteria: README PRD AGENTS CHANGELOG document update body support; build plus test plus coverage pass; PM evidence is recorded before close.
+definition_of_ready: Implementation and contract tasks are defined and docs/test commands are identified.
+order: 3
+goal: Update body parity
+objective: Ship docs and release confidence
+value: Users understand the new behavior
+impact: Reduces adoption and regression risk
+outcome: Release artifacts match implementation
+why_now: Docs and evidence are required for safe rollout.
+parent: pm-ghha
+reviewer: maintainer-review
+risk: low
+confidence: high
+sprint: body-backfill-2026w14
+release: vnext
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: review docs and run verification commands
+expected_result: docs and verification align with runtime
+actual_result: update body support undocumented
+affected_version: 2026.3.12
+component: docs-release
+regression: false
+customer_impact: Users need clear guidance and proof of safety.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ghha,parent,"2026-04-02T11:45:37.141Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-02T11:45:37.141Z",codex-agent,Docs/release task created under feature pm-ghha.
+  "2026-04-02T11:59:14.691Z",codex-agent,"Updated README PRD AGENTS CHANGELOG for update body support and ran full verification. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed (64 files, 710 tests); pm test pm-ipm8 --run passed (coverage command)."
+notes[1]{created_at,author,text}:
+  "2026-04-02T11:45:37.141Z",codex-agent,Update README PRD AGENTS CHANGELOG and capture test evidence.
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,10800,release verification coverage run
+docs[4]{path,scope,note}:
+  AGENTS.md,project,agent workflow update body guidance
+  CHANGELOG.md,project,unreleased entry for update body
+  PRD.md,project,update command contract baseline
+  README.md,project,update body usage and policy docs
+close_reason: Docs updated and full release verification passed with linked coverage run.
+body: "Finalize user-facing docs, run build and test verification, and log release evidence for update body support."

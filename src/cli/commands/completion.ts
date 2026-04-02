@@ -246,6 +246,7 @@ _pm() {
           _arguments \\
             '(-t --title)'{-t,--title}'[Item title]:title' \\
             '(-d --description)'{-d,--description}'[Item description]:description' \\
+            '(-b --body)'{-b,--body}'[Item body]:body' \\
             '(-s --status)'{-s,--status}'[Item status]:(draft open in_progress blocked canceled)' \\
             '(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)' \\
             '--type[Item type]:(${typeChoices})' \\
@@ -471,6 +472,7 @@ complete -c pm -n '__fish_seen_subcommand_from create' -l assignee              
 # update flags
 complete -c pm -n '__fish_seen_subcommand_from update' -s t -l title              -d 'Item title' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -s d -l description        -d 'Item description' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -s b -l body               -d 'Item body' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -s s -l status             -d 'Item status' -r -a 'draft open in_progress blocked canceled'
 complete -c pm -n '__fish_seen_subcommand_from update' -s p -l priority           -d 'Priority (0-4)' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from update' -l type                    -d 'Item type' -r -a '${typeChoices}'

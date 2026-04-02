@@ -221,6 +221,7 @@ export const PI_CREATE_OPTION_CONTRACTS: PiOptionFlagContract[] = [
 export const PI_UPDATE_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "title", flag: "--title" },
   { param: "description", flag: "--description", allowEmpty: true },
+  { param: "body", flag: "--body", allowEmpty: true },
   { param: "status", flag: "--status" },
   { param: "priority", flag: "--priority" },
   { param: "type", flag: "--type" },
@@ -361,6 +362,7 @@ export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
 export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { short: "-t", flag: "--title" },
   { short: "-d", flag: "--description" },
+  { short: "-b", flag: "--body" },
   { short: "-s", flag: "--status" },
   { short: "-p", flag: "--priority" },
   { flag: "--type" },
@@ -533,6 +535,7 @@ export const CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS: CommanderOptionAliasC
 export const UPDATE_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
   { target: "title", keys: ["title"] },
   { target: "description", keys: ["description"] },
+  { target: "body", keys: ["body"] },
   { target: "status", keys: ["status"] },
   { target: "priority", keys: ["priority"] },
   { target: "type", keys: ["type"] },

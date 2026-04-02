@@ -113,6 +113,7 @@ describe("Pi agent extension wrapper for pm", () => {
       id: "pm-a1b2",
       title: "new title",
       description: "",
+      body: "",
       tags: "",
       acceptanceCriteria: "",
       message: "",
@@ -122,6 +123,8 @@ describe("Pi agent extension wrapper for pm", () => {
         "--title",
         "new title",
         "--description",
+        "",
+        "--body",
         "",
         "--tags",
         "",
@@ -324,6 +327,7 @@ describe("Pi agent extension wrapper for pm", () => {
     const updateArgs = buildPmCliArgs({
       action: "update",
       id: "pm-a1b2",
+      body: "replacement body",
       blockedBy: "pm-z9y8",
       blockedReason: "",
       unblockNote: "waiting on merge",
@@ -342,6 +346,8 @@ describe("Pi agent extension wrapper for pm", () => {
       expect.arrayContaining([
         "update",
         "pm-a1b2",
+        "--body",
+        "replacement body",
         "--blocked-by",
         "pm-z9y8",
         "--unblock-note",

@@ -69,6 +69,7 @@ Populate metadata early:
 
 - `pm update <ID> --description "..."`
 - `pm update <ID> --acceptance-criteria/--ac "..."`
+- `pm update <ID> --body "..."` (replace body content for normalization/backfill; use `pm append --body` for additive notes)
 - `pm update <ID> --estimate <minutes>`
 - `pm update <ID> --deadline +1d` (accepts ISO/date strings or relative `+6h/+1d/+2w/+6m`; resolved to ISO at write)
 - when team-level close-readiness policy changes, update Definition of Done criteria via:
@@ -232,6 +233,7 @@ pm config project set definition-of-done --criterion "tests pass" --criterion "l
 pm list-open --type Task --priority 0 --limit 5
 pm claim pm-a1b2
 pm update pm-a1b2 --status in_progress --description "Implement restore replay"
+pm update pm-a1b2 --body "Restore replay scope and acceptance details."
 pm update pm-a1b2 --reminder "at=+1d,text=Follow up on restore replay tests"
 pm files pm-a1b2 --add path=src/history.ts,scope=project,note="restore implementation"
 pm test pm-a1b2 --add command="node scripts/run-tests.mjs test",scope=project,timeout_seconds=240

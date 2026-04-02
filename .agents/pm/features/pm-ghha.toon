@@ -1,0 +1,46 @@
+id: pm-ghha
+title: Support pm update body end-to-end
+description: "Implement pm update body mutation support across runtime wiring, contracts, tests, and docs without regressions."
+type: Feature
+status: closed
+priority: 1
+tags[4]: "area:body","area:update",feature,pm-cli
+created_at: "2026-04-02T11:44:56.845Z"
+updated_at: "2026-04-02T11:59:16.627Z"
+deadline: "2026-04-07T11:44:56.845Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: pm update supports --body with deterministic changed_fields/history behavior; policy and wrapper contracts are aligned; tests and docs pass.
+definition_of_ready: Epic exists and update command surfaces are scoped.
+order: 1
+goal: Update body parity
+objective: Deliver update body support
+value: Enables full CLI-only normalization
+impact: Prevents manual storage edits
+outcome: Legacy items can be backfilled safely
+why_now: Current unknown option behavior blocks compliance work.
+parent: pm-ihfm
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: body-backfill-2026w14
+release: vnext
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run pm update ID --body text and observe failure
+expected_result: update accepts and persists body
+actual_result: update has no body option
+affected_version: 2026.3.12
+component: cli-update
+regression: true
+customer_impact: Users cannot complete all-field normalization via CLI today.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ihfm,parent,"2026-04-02T11:44:56.845Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-02T11:44:56.845Z",codex-agent,Feature created under epic pm-ihfm.
+  "2026-04-02T11:59:15.902Z",codex-agent,"Feature complete: runtime update-body support, contracts/completion parity, regression coverage, and docs updates are all implemented via closed child tasks pm-eszd, pm-ha5a, and pm-ipm8."
+notes[1]{created_at,author,text}:
+  "2026-04-02T11:44:56.845Z",codex-agent,"Tasks split runtime,contracts/tests,and docs/release evidence."
+close_reason: All feature tasks are closed and verification suites passed.
+body: "Feature includes CLI flag plumbing, update mutation handling, contracts/completion parity, and release-readiness docs/tests updates."

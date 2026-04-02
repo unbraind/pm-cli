@@ -96,6 +96,7 @@ describe("generateBashScript", () => {
 
   it("includes update flags", () => {
     const script = generateBashScript();
+    expect(script).toContain("--body");
     expect(script).toContain("--force");
     expect(script).toContain("--message");
     expect(script).toContain("--author");
@@ -355,6 +356,7 @@ describe("generateFishScript", () => {
   it("includes update-specific flag completions", () => {
     const script = generateFishScript();
     expect(script).toContain("__fish_seen_subcommand_from update");
+    expect(script).toContain("-l body");
     expect(script).toContain("-l force");
     expect(script).toContain("-l reminder");
     expect(script).toContain("-l event");

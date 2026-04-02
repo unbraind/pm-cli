@@ -77,8 +77,12 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     examples: [
       'pm update pm-a1b2 --status in_progress --message "Start implementation"',
       'pm update pm-a1b2 --assignee none --deadline +2d --message "Replan ownership and deadline"',
+      'pm update pm-a1b2 --body "Backfilled body text for legacy item" --message "Normalize missing body"',
     ],
-    tips: ['Use "pm close <ID> <TEXT>" to close items instead of --status closed.'],
+    tips: [
+      'Use "pm close <ID> <TEXT>" to close items instead of --status closed.',
+      'Use "pm append <ID> --body <text>" for additive notes; use update --body to replace body content.',
+    ],
   },
   list: {
     why: "Lists active items with deterministic filtering and ordering.",

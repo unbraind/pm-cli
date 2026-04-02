@@ -1,0 +1,57 @@
+id: pm-ha5a
+title: Align update body contracts completion and regressions
+description: "Update shared CLI contracts, type policy maps, Pi wrapper mapping, completion surfaces, and regression coverage for update body support."
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:contracts","area:tests","area:update",pm-cli
+created_at: "2026-04-02T11:45:22.901Z"
+updated_at: "2026-04-02T11:59:14.248Z"
+deadline: "2026-04-06T11:45:22.901Z"
+author: codex-agent
+estimated_minutes: 150
+acceptance_criteria: type-registry and sdk contracts include update body; completion surfaces expose update body; unit and integration tests cover behavior and help contracts.
+definition_of_ready: Runtime task exists and contract/test files are identified.
+order: 2
+goal: Update body parity
+objective: Ensure contract and regression coverage
+value: Prevents drift across surfaces
+impact: Protects users from partial support regressions
+outcome: Runtime and contracts remain aligned
+why_now: Support must be discoverable and stable across interfaces.
+parent: pm-ghha
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: body-backfill-2026w14
+release: vnext
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: compare update command and sdk/help contracts
+expected_result: contracts and tests match runtime
+actual_result: update body missing from contract surfaces
+affected_version: 2026.3.12
+component: cli-contracts
+regression: true
+customer_impact: Wrapper and completion users cannot discover or use body update.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ghha,parent,"2026-04-02T11:45:22.901Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-02T11:45:22.901Z",codex-agent,Contracts/tests task created under feature pm-ghha.
+  "2026-04-02T11:59:13.479Z",codex-agent,"Completed contract and discoverability parity: type-registry update policy keys, shared cli-contracts, completion/help surfaces, and regression tests for wrapper/completion/integration/runtime help flags. Evidence: pm test pm-ha5a --run passed (4 files, 135 tests)."
+notes[1]{created_at,author,text}:
+  "2026-04-02T11:45:22.901Z",codex-agent,"Touch sdk contracts,type registry,completion,and test suites."
+files[8]{path,scope,note}:
+  src/cli/commands/completion.ts,project,zsh fish completion parity
+  src/cli/help-content.ts,project,help examples and tips include update body
+  src/core/item/type-registry.ts,project,update policy option parity for body
+  src/sdk/cli-contracts.ts,project,update contracts include body
+  tests/integration/cli.integration.spec.ts,project,integration behavior for update body
+  tests/integration/release-readiness-runtime.spec.ts,project,help contract flag coverage
+  tests/unit/completion-command.spec.ts,project,completion token regression
+  tests/unit/pi-agent-extension.spec.ts,project,wrapper mapping regression
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,10800,contracts and completion parity regressions
+close_reason: Contracts/completion parity delivered and linked regression suite passed.
+body: "Bring policy, SDK contracts, wrapper mapping, completion, and test suites into parity for update body."

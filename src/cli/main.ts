@@ -1250,6 +1250,7 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
   return {
     title: readUpdateString("title"),
     description: readUpdateString("description"),
+    body: readUpdateString("body"),
     status: readUpdateString("status"),
     priority: readUpdateString("priority"),
     type: readUpdateString("type"),
@@ -2053,6 +2054,7 @@ program
   .description("Update item fields and metadata.")
   .option("--title, -t <value>", "Set title")
   .option("--description, -d <value>", "Set description")
+  .option("--body, -b <value>", "Set body (allow empty string)")
   .option("--status, -s <value>", "Set status (use close command for closed)")
   .option("--priority, -p <value>", "Set priority")
   .option("--type <value>", "Set type")

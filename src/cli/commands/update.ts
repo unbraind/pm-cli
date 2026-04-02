@@ -33,6 +33,7 @@ import {
 export interface UpdateCommandOptions {
   title?: string;
   description?: string;
+  body?: string;
   status?: string;
   priority?: string;
   type?: string;
@@ -503,6 +504,7 @@ function collectProvidedUpdatePolicyOptions(options: UpdateCommandOptions): Set<
   };
   mark("title", options.title !== undefined);
   mark("description", options.description !== undefined);
+  mark("body", options.body !== undefined);
   mark("status", options.status !== undefined);
   mark("priority", options.priority !== undefined);
   mark("type", options.type !== undefined);
@@ -585,6 +587,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   const stdinResolver = createStdinTokenResolver();
   options = {
     ...options,
+    body: await stdinResolver.resolveValue(options.body, "--body"),
     dep: await stdinResolver.resolveList(options.dep, "--dep"),
     depRemove: await stdinResolver.resolveList(options.depRemove, "--dep-remove"),
     reminder: await stdinResolver.resolveList(options.reminder, "--reminder"),
@@ -605,6 +608,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   const changedFlags = [
     options.title !== undefined,
     options.description !== undefined,
+    options.body !== undefined,
     options.status !== undefined,
     options.priority !== undefined,
     options.type !== undefined,
@@ -677,6 +681,10 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
       if (options.description !== undefined) {
         document.front_matter.description = options.description;
         changedFields.push("description");
+      }
+      if (options.body !== undefined) {
+        document.body = options.body;
+        changedFields.push("body");
       }
       if (options.status !== undefined) {
         const status = parseStatus(options.status);
