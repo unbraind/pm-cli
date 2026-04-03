@@ -1,4 +1,4 @@
-import { appendFile, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { appendFile, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -117,6 +117,54 @@ describe("runHistory and runActivity", () => {
       await rm(historyPath, { force: true });
       const missingHistory = await runHistory(id, {}, { path: context.pmPath });
       expect(missingHistory.count).toBe(0);
+    });
+  });
+
+  it("supports additive diff output for history entries", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "History Diff");
+      context.runCli(["append", id, "--json", "--body", "diff body", "--author", "test-author", "--message", "Append for diff"], {
+        expectJson: true,
+      });
+
+      const all = await runHistory(id, { diff: true }, { path: context.pmPath });
+      expect(all.diff).toBeDefined();
+      expect(all.diff?.length).toBe(all.count);
+      expect(all.diff?.some((entry) => entry.changed_fields.includes("body"))).toBe(true);
+
+      const limited = await runHistory(id, { limit: "1", diff: true }, { path: context.pmPath });
+      expect(limited.diff).toHaveLength(1);
+      expect(limited.diff?.[0].index).toBe(all.count);
+    });
+  });
+
+  it("supports additive verification output for history hash chains", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "History Verify");
+      context.runCli(
+        ["update", id, "--json", "--status", "in_progress", "--author", "test-author", "--message", "Update for verify"],
+        { expectJson: true },
+      );
+
+      const verified = await runHistory(id, { verify: true }, { path: context.pmPath });
+      expect(verified.verification).toBeDefined();
+      expect(verified.verification?.ok).toBe(true);
+      expect(verified.verification?.errors).toEqual([]);
+      expect(verified.verification?.current_matches_latest).toBe(true);
+
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const rawLines = (await readFile(historyPath, "utf8"))
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
+      const firstEntry = JSON.parse(rawLines[0]) as Record<string, unknown>;
+      firstEntry.after_hash = "tampered-after-hash";
+      rawLines[0] = JSON.stringify(firstEntry);
+      await writeFile(historyPath, `${rawLines.join("\n")}\n`, "utf8");
+
+      const tampered = await runHistory(id, { verify: true }, { path: context.pmPath });
+      expect(tampered.verification?.ok).toBe(false);
+      expect((tampered.verification?.errors ?? []).length).toBeGreaterThan(0);
     });
   });
 

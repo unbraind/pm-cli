@@ -1,8 +1,7 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
-import {
-  normalizeSprintReleaseFormatPolicy,
-} from "../../core/item/sprint-release-format.js";
+import { normalizeParentReferencePolicy } from "../../core/item/parent-reference-policy.js";
+import { normalizeSprintReleaseFormatPolicy } from "../../core/item/sprint-release-format.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -14,7 +13,7 @@ import {
   resolvePmRoot,
 } from "../../core/store/paths.js";
 import { readSettingsWithMetadata, writeSettings } from "../../core/store/settings.js";
-import type { ItemFormat, SprintReleaseFormatPolicy } from "../../types/index.js";
+import type { ItemFormat, ParentReferencePolicy, SprintReleaseFormatPolicy } from "../../types/index.js";
 
 const CONFIG_SCOPE_VALUES = ["project", "global"] as const;
 type ConfigScope = (typeof CONFIG_SCOPE_VALUES)[number];
@@ -28,13 +27,16 @@ const CONFIG_KEY_VALUES = [
   "history_missing_stream_policy",
   "sprint-release-format-policy",
   "sprint_release_format_policy",
+  "parent-reference-policy",
+  "parent_reference_policy",
 ] as const;
 type ConfigAction = "get" | "set";
 type ConfigKey =
   | "definition_of_done"
   | "item_format"
   | "history_missing_stream_policy"
-  | "sprint_release_format_policy";
+  | "sprint_release_format_policy"
+  | "parent_reference_policy";
 type HistoryMissingStreamPolicy = "auto_create" | "strict_error";
 
 export interface ConfigCommandOptions {
@@ -48,7 +50,7 @@ export interface ConfigResult {
   key: ConfigKey;
   criteria?: string[];
   format?: ItemFormat;
-  policy?: HistoryMissingStreamPolicy | SprintReleaseFormatPolicy;
+  policy?: HistoryMissingStreamPolicy | SprintReleaseFormatPolicy | ParentReferencePolicy;
   has_explicit_item_format?: boolean;
   migration?: {
     target_format: ItemFormat;
@@ -89,6 +91,9 @@ function normalizeKey(value: string): ConfigKey {
     }
     if (value === "sprint-release-format-policy" || value === "sprint_release_format_policy") {
       return "sprint_release_format_policy";
+    }
+    if (value === "parent-reference-policy" || value === "parent_reference_policy") {
+      return "parent_reference_policy";
     }
     return "definition_of_done";
   }
@@ -197,6 +202,15 @@ export async function runConfig(
         changed: false,
       }, warnings);
     }
+    if (key === "parent_reference_policy") {
+      return withWarnings({
+        scope,
+        key,
+        policy: settings.validation.parent_reference,
+        settings_path: target.settingsPath,
+        changed: false,
+      }, warnings);
+    }
     return withWarnings({
       scope,
       key,
@@ -266,6 +280,22 @@ export async function runConfig(
       scope,
       key,
       policy: settings.validation.sprint_release_format,
+      settings_path: target.settingsPath,
+      changed,
+    }, warnings);
+  }
+
+  if (key === "parent_reference_policy") {
+    const nextPolicy = normalizeParentReferencePolicy(options.policy);
+    const changed = settings.validation.parent_reference !== nextPolicy;
+    settings.validation.parent_reference = nextPolicy;
+    if (changed) {
+      await writeSettings(target.pmRoot, settings, "config:set:parent_reference_policy");
+    }
+    return withWarnings({
+      scope,
+      key,
+      policy: settings.validation.parent_reference,
       settings_path: target.settingsPath,
       changed,
     }, warnings);

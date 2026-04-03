@@ -64,9 +64,17 @@ describe("runCreate", () => {
 
   it("creates an item with normalized fields and deterministic history metadata", async () => {
     await withTempPmPath(async (context) => {
+      const parentSeed = await runCreate(
+        baseCreateOptions({
+          title: "create-parent-seed",
+          description: "parent seed",
+          message: "create parent seed",
+        }),
+        { path: context.pmPath },
+      );
       const result = await runCreate(
         baseCreateOptions({
-          parent: "pm-parent-seed",
+          parent: parentSeed.item.id,
           reviewer: "reviewer-seed",
           risk: "med",
           confidence: "med",
@@ -173,7 +181,7 @@ describe("runCreate", () => {
       expect(result.item.priority).toBe(1);
       expect(result.item.tags).toEqual(["alpha", "gamma"]);
       expect(result.item.author).toBe("seed-author");
-      expect(result.item.parent).toBe("pm-parent-seed");
+      expect(result.item.parent).toBe(parentSeed.item.id);
       expect(result.item.reviewer).toBe("reviewer-seed");
       expect(result.item.risk).toBe("medium");
       expect(result.item.confidence).toBe("medium");
@@ -797,6 +805,47 @@ describe("runCreate", () => {
         runCreate(
           baseCreateOptions({
             sprint: "Sprint 2026 W14",
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
+  it("warns for missing parent references under default policy", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runCreate(
+        baseCreateOptions({
+          parent: "pm-parent-missing-default",
+        }),
+        { path: context.pmPath },
+      );
+
+      expect(result.item.parent).toBe("pm-parent-missing-default");
+      expect(result.warnings).toEqual(
+        expect.arrayContaining(["validation_warning:parent_reference_missing:pm-parent-missing-default"]),
+      );
+    });
+  });
+
+  it("rejects missing parent references under strict policy", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const parsed = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        validation?: { parent_reference?: string };
+      };
+      parsed.validation = {
+        ...(parsed.validation ?? {}),
+        parent_reference: "strict_error",
+      };
+      await writeFile(settingsPath, `${JSON.stringify(parsed, null, 2)}\n`, "utf8");
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            parent: "pm-parent-missing-strict",
           }),
           { path: context.pmPath },
         ),

@@ -45,4 +45,13 @@ export { runRestore } from "./restore.js";
 export { runStats } from "./stats.js";
 export { runTest } from "./test.js";
 export { runTestAll } from "./test-all.js";
+export {
+  loadCreateTemplateOptions,
+  runTemplatesList,
+  runTemplatesSave,
+  runTemplatesShow,
+  type TemplatesListResult,
+  type TemplatesSaveResult,
+  type TemplatesShowResult,
+} from "./templates.js";
 export { runUpdate } from "./update.js";

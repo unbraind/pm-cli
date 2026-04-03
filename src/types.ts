@@ -48,6 +48,8 @@ export type ItemFormat = (typeof ITEM_FORMAT_VALUES)[number];
 
 export const SPRINT_RELEASE_FORMAT_POLICY_VALUES = ["warn", "strict_error"] as const;
 export type SprintReleaseFormatPolicy = (typeof SPRINT_RELEASE_FORMAT_POLICY_VALUES)[number];
+export const PARENT_REFERENCE_POLICY_VALUES = ["warn", "strict_error"] as const;
+export type ParentReferencePolicy = (typeof PARENT_REFERENCE_POLICY_VALUES)[number];
 
 export const RECURRENCE_FREQUENCY_VALUES = ["daily", "weekly", "monthly", "yearly"] as const;
 export type RecurrenceFrequency = (typeof RECURRENCE_FREQUENCY_VALUES)[number];
@@ -247,6 +249,7 @@ export interface PmSettings {
   };
   validation: {
     sprint_release_format: SprintReleaseFormatPolicy;
+    parent_reference: ParentReferencePolicy;
   };
   workflow: {
     definition_of_done: string[];

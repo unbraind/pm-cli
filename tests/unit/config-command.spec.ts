@@ -385,6 +385,75 @@ describe("runConfig", () => {
     });
   });
 
+  it("gets and sets parent-reference policy", async () => {
+    await withTempRoot(async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      const getDefault = await runConfig(
+        "project",
+        "get",
+        "parent-reference-policy",
+        {},
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(getDefault.key).toBe("parent_reference_policy");
+      expect(getDefault.policy).toBe("warn");
+      expect(getDefault.changed).toBe(false);
+
+      const setStrict = await runConfig(
+        "project",
+        "set",
+        "parent_reference_policy",
+        { policy: "strict-error" },
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(setStrict.policy).toBe("strict_error");
+      expect(setStrict.changed).toBe(true);
+
+      const setStrictAgain = await runConfig(
+        "project",
+        "set",
+        "parent-reference-policy",
+        { policy: "strict_error" },
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(setStrictAgain.policy).toBe("strict_error");
+      expect(setStrictAgain.changed).toBe(false);
+    });
+  });
+
+  it("requires --policy when setting parent-reference policy and validates values", async () => {
+    await withTempRoot(async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      await expect(
+        runConfig(
+          "project",
+          "set",
+          "parent-reference-policy",
+          {},
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+
+      await expect(
+        runConfig(
+          "project",
+          "set",
+          "parent_reference_policy",
+          { policy: "auto_create" },
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
   it("treats legacy settings without item_format as changed when explicitly setting default format", async () => {
     await withTempRoot(async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");

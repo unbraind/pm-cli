@@ -36,6 +36,9 @@ import {
   runStats,
   runTest,
   runTestAll,
+  runTemplatesList,
+  runTemplatesSave,
+  runTemplatesShow,
   runUpdate,
   type CalendarOptions,
   type ContextOptions,
@@ -88,6 +91,7 @@ import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { printError, printResult } from "../core/output/output.js";
 import { migrateItemFilesToFormat } from "../core/store/item-format-migration.js";
+import { listAllFrontMatter } from "../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings, readSettingsWithMetadata } from "../core/store/settings.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
@@ -1184,7 +1188,10 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command): Promi
   }
 }
 
-function normalizeCreateOptions(commandOptions: Record<string, unknown>): CreateCommandOptions {
+function normalizeCreateOptions(
+  commandOptions: Record<string, unknown>,
+  options: { requireType?: boolean } = {},
+): CreateCommandOptions {
   const readCreateString = (target: string): string | undefined =>
     readFirstStringFromCommanderOptions(
       commandOptions,
@@ -1203,7 +1210,7 @@ function normalizeCreateOptions(commandOptions: Record<string, unknown>): Create
     );
 
   const type = readCreateString("type");
-  if (type === undefined) {
+  if (options.requireType !== false && type === undefined) {
     throw new PmCliError("Missing required option --type", EXIT_CODE.USAGE);
   }
 
@@ -1211,6 +1218,7 @@ function normalizeCreateOptions(commandOptions: Record<string, unknown>): Create
     title: readCreateString("title"),
     description: readCreateString("description"),
     type,
+    template: readCreateString("template"),
     status: readCreateString("status"),
     priority: readCreateString("priority"),
     tags: readCreateString("tags"),
@@ -1601,12 +1609,15 @@ program
   .command("config")
   .argument("<scope>", "Config scope: project|global")
   .argument("<action>", "Config action: get|set")
-  .argument("<key>", "Config key: definition-of-done|item-format|history-missing-stream-policy|sprint-release-format-policy")
+  .argument(
+    "<key>",
+    "Config key: definition-of-done|item-format|history-missing-stream-policy|sprint-release-format-policy|parent-reference-policy",
+  )
   .option("--criterion <text>", "Definition-of-Done criterion (repeatable for set)", collect)
   .option("--format <value>", "Item format for item-format key: toon|json_markdown")
   .option(
     "--policy <value>",
-    "Policy key values: history-missing-stream-policy=auto_create|strict_error; sprint-release-format-policy=warn|strict_error",
+    "Policy key values: history-missing-stream-policy=auto_create|strict_error; sprint-release-format-policy=warn|strict_error; parent-reference-policy=warn|strict_error",
   )
   .description("Read or update pm settings for the current workspace or global profile.")
   .action(async (scope: string, action: string, key: string, options: Record<string, unknown>, command) => {
@@ -1656,12 +1667,165 @@ program
     }
   });
 
+const templatesCommand = program.command("templates").description("Manage reusable create templates.");
+
+templatesCommand
+  .command("save")
+  .argument("<name>", "Template name")
+  .option("--title, -t <value>", "Template default item title")
+  .option("--description, -d <value>", "Template default item description")
+  .option("--type <value>", "Template default item type")
+  .option("--status, -s <value>", "Template default item status")
+  .option("--priority, -p <value>", "Template default priority 0..4")
+  .option("--tags <value>", "Template default comma-separated tags, or 'none'")
+  .option("--body, -b <value>", "Template default item markdown body")
+  .option("--deadline <value>", "Template default deadline")
+  .option("--estimate, --estimated-minutes <value>", "Template default estimated minutes")
+  .option("--estimated_minutes <value>", "Alias for --estimated-minutes")
+  .option("--acceptance-criteria <value>", "Template default acceptance criteria")
+  .option("--acceptance_criteria <value>", "Alias for --acceptance-criteria")
+  .option("--ac <value>", "Alias for --acceptance-criteria")
+  .option("--definition-of-ready <value>", "Template default definition of ready")
+  .option("--definition_of_ready <value>", "Alias for --definition-of-ready")
+  .option("--order <value>", "Template default planning order/rank integer")
+  .option("--rank <value>", "Alias for --order")
+  .option("--goal <value>", "Template default goal identifier")
+  .option("--objective <value>", "Template default objective identifier")
+  .option("--value <value>", "Template default business value summary")
+  .option("--impact <value>", "Template default business impact summary")
+  .option("--outcome <value>", "Template default expected outcome summary")
+  .option("--why-now <value>", "Template default why-now rationale")
+  .option("--why_now <value>", "Alias for --why-now")
+  .option("--author <value>", "Template default mutation author")
+  .option("--message <value>", "Template default history message")
+  .option("--assignee <value>", "Template default assignee")
+  .option("--parent <value>", "Template default parent item ID")
+  .option("--reviewer <value>", "Template default reviewer")
+  .option("--risk <value>", "Template default risk level")
+  .option("--confidence <value>", "Template default confidence")
+  .option("--sprint <value>", "Template default sprint identifier")
+  .option("--release <value>", "Template default release identifier")
+  .option("--blocked-by <value>", "Template default blocked-by item ID or reason")
+  .option("--blocked_by <value>", "Alias for --blocked-by")
+  .option("--blocked-reason <value>", "Template default blocked reason")
+  .option("--blocked_reason <value>", "Alias for --blocked-reason")
+  .option("--unblock-note <value>", "Template default unblock rationale note")
+  .option("--unblock_note <value>", "Alias for --unblock-note")
+  .option("--reporter <value>", "Template default issue reporter")
+  .option("--severity <value>", "Template default issue severity")
+  .option("--environment <value>", "Template default issue environment context")
+  .option("--repro-steps <value>", "Template default issue reproduction steps")
+  .option("--repro_steps <value>", "Alias for --repro-steps")
+  .option("--resolution <value>", "Template default issue resolution summary")
+  .option("--expected-result <value>", "Template default issue expected behavior")
+  .option("--expected_result <value>", "Alias for --expected-result")
+  .option("--actual-result <value>", "Template default issue observed behavior")
+  .option("--actual_result <value>", "Alias for --actual-result")
+  .option("--affected-version <value>", "Template default affected version identifier")
+  .option("--affected_version <value>", "Alias for --affected-version")
+  .option("--fixed-version <value>", "Template default fixed version identifier")
+  .option("--fixed_version <value>", "Alias for --fixed-version")
+  .option("--component <value>", "Template default issue component ownership")
+  .option("--regression <value>", "Template default regression marker")
+  .option("--customer-impact <value>", "Template default customer impact summary")
+  .option("--customer_impact <value>", "Alias for --customer-impact")
+  .option(
+    "--dep <value>",
+    "Template default dependency entry (repeatable; CSV/markdown pairs or - for stdin)",
+    collect,
+  )
+  .option(
+    "--type-option <value>",
+    "Template default type option entry (repeatable; key=value or markdown pairs; use - for stdin)",
+    collect,
+  )
+  .option("--type_option <value>", "Alias for --type-option", collect)
+  .option(
+    "--reminder <value>",
+    "Template default reminder entry (repeatable; at=<iso|relative>,text=<text>)",
+    collect,
+  )
+  .option(
+    "--event <value>",
+    "Template default event entry (repeatable; start/end/title/recur_* fields)",
+    collect,
+  )
+  .option(
+    "--comment <value>",
+    "Template default comment seed entry (repeatable; text=<value> CSV/markdown pairs or - for stdin)",
+    collect,
+  )
+  .option(
+    "--note <value>",
+    "Template default note seed entry (repeatable; text=<value> CSV/markdown pairs or - for stdin)",
+    collect,
+  )
+  .option(
+    "--learning <value>",
+    "Template default learning seed entry (repeatable; text=<value> CSV/markdown pairs or - for stdin)",
+    collect,
+  )
+  .option(
+    "--file <value>",
+    "Template default linked file entry (repeatable; CSV/markdown pairs or - for stdin)",
+    collect,
+  )
+  .option(
+    "--test <value>",
+    "Template default linked test entry (repeatable; CSV/markdown pairs or - for stdin)",
+    collect,
+  )
+  .option(
+    "--doc <value>",
+    "Template default linked doc entry (repeatable; CSV/markdown pairs or - for stdin)",
+    collect,
+  )
+  .description("Save or update a named create template.")
+  .action(async (name: string, options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const normalized = normalizeCreateOptions(options, { requireType: false }) as unknown as Record<string, unknown>;
+    const result = await runTemplatesSave(name, normalized, globalOptions);
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=templates save took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+templatesCommand
+  .command("list")
+  .description("List saved create templates.")
+  .action(async (_options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const result = await runTemplatesList(globalOptions);
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=templates list took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+templatesCommand
+  .command("show")
+  .argument("<name>", "Template name")
+  .description("Show saved create template details.")
+  .action(async (name: string, _options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const result = await runTemplatesShow(name, globalOptions);
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=templates show took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
 program
   .command("create")
   .description("Create a new project management item.")
   .requiredOption("--title, -t <value>", "Item title")
   .requiredOption("--description, -d <value>", "Item description (allow empty string)")
   .requiredOption("--type <value>", "Item type (built-ins plus any configured custom types)")
+  .option("--template <value>", "Apply named create template defaults before explicit flags")
   .option("--status, -s <value>", "Item status")
   .option("--priority, -p <value>", "Priority 0..4")
   .option("--tags <value>", "Comma-separated tags, or 'none'")
@@ -2021,6 +2185,8 @@ program
   .command("history")
   .argument("<id>", "Item id")
   .option("--limit <n>", "Return only the latest n history entries")
+  .option("--diff", "Include per-entry changed field summaries from history patches")
+  .option("--verify", "Verify hash chain and replay integrity for the full history stream")
   .description("Show item history entries.")
   .action(async (id: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
@@ -2029,6 +2195,8 @@ program
       id,
       {
         limit: typeof options.limit === "string" ? options.limit : undefined,
+        diff: Boolean(options.diff),
+        verify: Boolean(options.verify),
       },
       globalOptions,
     );
@@ -2391,6 +2559,9 @@ program
   .argument("<id>", "Item id")
   .option("--add <value>", "Add linked file entry (CSV/markdown pairs or - for stdin)", collect)
   .option("--remove <value>", "Remove linked file by path (path=<value>, path:<value>, plain path, or - for stdin)", collect)
+  .option("--migrate <value>", "Migrate linked file paths in-place (from=<prefix>,to=<prefix>; repeatable)", collect)
+  .option("--validate-paths", "Validate linked file paths for existence and file shape")
+  .option("--audit", "Audit linked file usage across all items for this item's linked paths")
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
   .option("--force", "Force ownership override")
@@ -2400,18 +2571,22 @@ program
     const startedAt = Date.now();
     const addValues = Array.isArray(options.add) ? (options.add as string[]) : [];
     const removeValues = Array.isArray(options.remove) ? (options.remove as string[]) : [];
+    const migrateValues = Array.isArray(options.migrate) ? (options.migrate as string[]) : [];
     const result = await runFiles(
       id,
       {
         add: addValues,
         remove: removeValues,
+        migrate: migrateValues,
+        validatePaths: Boolean(options.validatePaths),
+        audit: Boolean(options.audit),
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
         force: Boolean(options.force),
       },
       globalOptions,
     );
-    if (addValues.length > 0 || removeValues.length > 0) {
+    if (addValues.length > 0 || removeValues.length > 0 || migrateValues.length > 0) {
       await invalidateSearchCachesForMutation(globalOptions, result);
     }
     printResult(result, globalOptions);
@@ -2425,6 +2600,9 @@ program
   .argument("<id>", "Item id")
   .option("--add <value>", "Add linked doc entry (CSV/markdown pairs or - for stdin)", collect)
   .option("--remove <value>", "Remove linked doc by path (path=<value>, path:<value>, plain path, or - for stdin)", collect)
+  .option("--migrate <value>", "Migrate linked doc paths in-place (from=<prefix>,to=<prefix>; repeatable)", collect)
+  .option("--validate-paths", "Validate linked doc paths for existence and file shape")
+  .option("--audit", "Audit linked doc usage across all items for this item's linked paths")
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
   .option("--force", "Force ownership override")
@@ -2434,18 +2612,22 @@ program
     const startedAt = Date.now();
     const addValues = Array.isArray(options.add) ? (options.add as string[]) : [];
     const removeValues = Array.isArray(options.remove) ? (options.remove as string[]) : [];
+    const migrateValues = Array.isArray(options.migrate) ? (options.migrate as string[]) : [];
     const result = await runDocs(
       id,
       {
         add: addValues,
         remove: removeValues,
+        migrate: migrateValues,
+        validatePaths: Boolean(options.validatePaths),
+        audit: Boolean(options.audit),
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
         force: Boolean(options.force),
       },
       globalOptions,
     );
-    if (addValues.length > 0 || removeValues.length > 0) {
+    if (addValues.length > 0 || removeValues.length > 0 || migrateValues.length > 0) {
       await invalidateSearchCachesForMutation(globalOptions, result);
     }
     printResult(result, globalOptions);
@@ -2609,11 +2791,16 @@ program
     const globalOptions = getGlobalOptions(command);
     const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
     let completionTypes: string[] | undefined;
+    let completionTags: string[] | undefined;
     if (await pathExists(getSettingsPath(pmRoot))) {
       const settings = await readSettings(pmRoot);
-      completionTypes = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations()).types;
+      const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+      completionTypes = typeRegistry.types;
+      const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
+      completionTags = [...new Set(items.flatMap((item) => item.tags ?? []).map((tag) => tag.trim()).filter((tag) => tag.length > 0))]
+        .sort((left, right) => left.localeCompare(right));
     }
-    const result = runCompletion(shell, completionTypes);
+    const result = runCompletion(shell, completionTypes, completionTags);
     if (globalOptions.json) {
       printResult(result, globalOptions);
     } else if (!globalOptions.quiet) {

@@ -1,0 +1,37 @@
+import type { ParentReferencePolicy } from "../../types/index.js";
+import { EXIT_CODE } from "../shared/constants.js";
+import { PmCliError } from "../shared/errors.js";
+
+export function normalizeParentReferencePolicy(value: string | undefined): ParentReferencePolicy {
+  const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
+  if (normalized === "warn" || normalized === "strict_error") {
+    return normalized;
+  }
+  throw new PmCliError(
+    "Config set parent-reference-policy requires --policy with one of: warn, strict_error",
+    EXIT_CODE.USAGE,
+  );
+}
+
+export function normalizeParentReferenceValue(rawValue: string): string {
+  const value = rawValue.trim();
+  if (value.length === 0) {
+    throw new PmCliError("--parent must not be empty. Use --parent none to unset.", EXIT_CODE.USAGE);
+  }
+  return value;
+}
+
+export function validateMissingParentReference(
+  parentId: string,
+  policy: ParentReferencePolicy,
+): { warnings: string[] } {
+  if (policy === "strict_error") {
+    throw new PmCliError(
+      `Parent item "${parentId}" was not found. Create it first or use --parent none.`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  return {
+    warnings: [`validation_warning:parent_reference_missing:${parentId}`],
+  };
+}

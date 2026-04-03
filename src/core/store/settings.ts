@@ -56,6 +56,7 @@ const settingsSchema = z.object({
   validation: z
     .object({
       sprint_release_format: z.union([z.literal("warn"), z.literal("strict_error")]),
+      parent_reference: z.union([z.literal("warn"), z.literal("strict_error")]).optional(),
     })
     .optional(),
   workflow: z
@@ -290,7 +291,10 @@ export function serializeSettings(settings: PmSettings): string {
   ordered.locks = orderObject(ordered.locks as Record<string, unknown>, ["ttl_seconds"]);
   ordered.output = orderObject(ordered.output as Record<string, unknown>, ["default_format"]);
   ordered.history = orderObject(ordered.history as Record<string, unknown>, ["missing_stream"]);
-  ordered.validation = orderObject(ordered.validation as Record<string, unknown>, ["sprint_release_format"]);
+  ordered.validation = orderObject(ordered.validation as Record<string, unknown>, [
+    "sprint_release_format",
+    "parent_reference",
+  ]);
   ordered.workflow = orderObject(ordered.workflow as Record<string, unknown>, ["definition_of_done"]);
   ordered.item_types = orderObject(ordered.item_types as Record<string, unknown>, ["definitions"]);
   ordered.extensions = orderObject(ordered.extensions as Record<string, unknown>, ["enabled", "disabled"]);

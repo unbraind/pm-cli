@@ -2,6 +2,10 @@ import { pathExists, removeFileIfExists, writeFileAtomic } from "../../core/fs/f
 import { appendHistoryEntry, createHistoryEntry } from "../../core/history/history.js";
 import { generateItemId, normalizeItemId } from "../../core/item/id.js";
 import { canonicalDocument, normalizeFrontMatter, serializeItemDocument } from "../../core/item/item-format.js";
+import {
+  normalizeParentReferenceValue,
+  validateMissingParentReference,
+} from "../../core/item/parent-reference-policy.js";
 import { validateSprintOrReleaseValue } from "../../core/item/sprint-release-format.js";
 import { createStdinTokenResolver, parseCsvKv, parseOptionalNumber, parseTags } from "../../core/item/parse.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
@@ -22,8 +26,10 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { isNoneToken, nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
 import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../core/extensions/index.js";
 import { applyRegisteredItemFieldDefaultsAndValidation } from "../../core/extensions/item-fields.js";
+import { locateItem } from "../../core/store/item-store.js";
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
+import { loadCreateTemplateOptions } from "./templates.js";
 import type {
   CalendarEvent,
   Comment,
@@ -52,7 +58,7 @@ import {
 export interface CreateCommandOptions {
   title?: string;
   description?: string;
-  type: string;
+  type?: string;
   status?: string;
   priority?: string;
   tags?: string;
@@ -103,6 +109,7 @@ export interface CreateCommandOptions {
   reminder?: string[];
   event?: string[];
   typeOption?: string[];
+  template?: string;
 }
 
 export interface CreateResult {
@@ -723,6 +730,22 @@ function ensurePriority(rawPriority: string): 0 | 1 | 2 | 3 | 4 {
   return parsed as 0 | 1 | 2 | 3 | 4;
 }
 
+function mergeCreateOptionsWithTemplate(
+  templateOptions: Record<string, string | string[]>,
+  explicitOptions: CreateCommandOptions,
+): CreateCommandOptions {
+  const merged: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(templateOptions)) {
+    merged[key] = Array.isArray(value) ? [...value] : value;
+  }
+  for (const [key, value] of Object.entries(explicitOptions)) {
+    if (value !== undefined) {
+      merged[key] = Array.isArray(value) ? [...value] : value;
+    }
+  }
+  return merged as CreateCommandOptions;
+}
+
 function ensureInitHasRun(pmRoot: string): Promise<void> {
   return pathExists(getSettingsPath(pmRoot)).then((exists) => {
     if (!exists) {
@@ -732,12 +755,23 @@ function ensureInitHasRun(pmRoot: string): Promise<void> {
 }
 
 export async function runCreate(options: CreateCommandOptions, global: GlobalOptions): Promise<CreateResult> {
-  const resolvedOptions = await resolveCreateStdinInputs(options);
+  let resolvedOptions = await resolveCreateStdinInputs(options);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await ensureInitHasRun(pmRoot);
 
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  if (resolvedOptions.template !== undefined && !isNoneToken(resolvedOptions.template)) {
+    const templateName = resolvedOptions.template.trim();
+    if (templateName.length === 0) {
+      throw new PmCliError("--template must not be empty. Use --template none to disable template usage.", EXIT_CODE.USAGE);
+    }
+    const templateOptions = await loadCreateTemplateOptions(pmRoot, templateName);
+    resolvedOptions = mergeCreateOptionsWithTemplate(templateOptions, resolvedOptions);
+  }
+  if (resolvedOptions.type === undefined) {
+    throw new PmCliError("Missing required option --type", EXIT_CODE.USAGE);
+  }
   const resolvedTypeName = resolveTypeName(resolvedOptions.type, typeRegistry);
   if (!resolvedTypeName) {
     throw new PmCliError(
@@ -858,14 +892,23 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const whyNow = resolvedOptions.whyNow !== undefined ? parseOptionalString(resolvedOptions.whyNow) : undefined;
   const assignee = resolvedOptions.assignee !== undefined ? parseOptionalString(resolvedOptions.assignee) : undefined;
   const authorValue = parseOptionalString(resolvedOptions.author) ?? author;
-  const parent = resolvedOptions.parent !== undefined ? parseOptionalString(resolvedOptions.parent) : undefined;
+  let parent = resolvedOptions.parent !== undefined ? parseOptionalString(resolvedOptions.parent) : undefined;
   const reviewer = resolvedOptions.reviewer !== undefined ? parseOptionalString(resolvedOptions.reviewer) : undefined;
   const riskRaw = resolvedOptions.risk !== undefined ? parseOptionalString(resolvedOptions.risk) : undefined;
   const risk = riskRaw !== undefined ? ensureEnumValue(normalizeRiskInput(riskRaw), RISK_VALUES, "risk") : undefined;
   const confidenceRaw = resolvedOptions.confidence !== undefined ? parseOptionalString(resolvedOptions.confidence) : undefined;
   const confidence = confidenceRaw !== undefined ? parseConfidenceInput(confidenceRaw) : undefined;
+  const parentReferencePolicy = settings.validation.parent_reference;
   const sprintReleasePolicy = settings.validation.sprint_release_format;
   const validationWarnings: string[] = [];
+  if (parent !== undefined) {
+    parent = normalizeParentReferenceValue(parent);
+    const parentLocated = await locateItem(pmRoot, parent, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
+    if (!parentLocated) {
+      const normalizedParentId = normalizeItemId(parent, settings.id_prefix);
+      validationWarnings.push(...validateMissingParentReference(normalizedParentId, parentReferencePolicy).warnings);
+    }
+  }
   let sprint = resolvedOptions.sprint !== undefined ? parseOptionalString(resolvedOptions.sprint) : undefined;
   if (sprint !== undefined) {
     const sprintValidation = validateSprintOrReleaseValue("sprint", sprint, sprintReleasePolicy);

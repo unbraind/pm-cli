@@ -2,13 +2,12 @@ id: pm-p9z
 title: "M2: RFC6902 patch generation per mutation"
 description: "External audit Issue 8 follow-up: provide user-facing diff/verify flows for item evolution using deterministic history data."
 type: Task
-status: in_progress
+status: closed
 priority: 1
 tags[4]: "area:history",core,"milestone:2",pm-cli
 created_at: "2026-02-17T23:02:08.449Z"
-updated_at: "2026-04-03T11:59:52.384Z"
+updated_at: "2026-04-03T14:12:49.043Z"
 deadline: "2026-04-17T11:57:39.988Z"
-assignee: codex-agent
 author: steve
 estimated_minutes: 120
 acceptance_criteria: Users can view meaningful item-level diffs/verification output tied to history without breaking existing history/activity behavior.
@@ -44,22 +43,27 @@ customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-c0r,parent,"2026-02-17T23:02:08.449Z",steve,null
   pm-u9r,blocks,"2026-02-17T23:02:08.449Z",steve,null
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-02-23T18:06:11.005Z",cursor-maintainer,"Planned change-set: audit RFC6902 patch generation determinism and strengthen unit coverage for canonical before/after patch output; update tracking links and close this task with evidence if criteria are met."
   "2026-02-23T18:07:11.136Z",cursor-maintainer,"Implemented deterministic patch-assertion coverage in tests/unit/determinism.spec.ts: asserts exact RFC6902 operations and verifies identical patch/hash output when front-matter keys are reordered."
   "2026-02-23T18:19:37.923Z",cursor-maintainer,"Evidence: updated tests/unit/determinism.spec.ts to assert exact RFC6902 replace operations and key-order invariant patch/hash output. Verification passed via pm test pm-p9z --run --timeout 2400 --json (2/2 linked tests passed, including node scripts/run-tests.mjs coverage and targeted determinism spec). Regression sweeps passed: pm test-all --status in_progress --timeout 2400 --json -> items=9 linked_tests=32 passed=14 failed=0 skipped=18; pm test-all --status closed --timeout 2400 --json -> items=31 linked_tests=111 passed=48 failed=0 skipped=63. Coverage remained 100% lines/branches/functions/statements."
   "2026-04-03T11:55:43.049Z",codex-agent,"Mapped external-audit Issue 8: add user-facing item diff/verify capability leveraging deterministic history patch data."
   "2026-04-03T11:59:28.390Z",codex-agent,"Wave3 scope: diff/verify surfaces are additive and must not alter existing history/activity payload contracts."
+  "2026-04-03T13:25:06.010Z",codex-agent,"Implementation pass started: delivering additive scope from approved plan, with targeted tests and full verification before close."
+  "2026-04-03T14:12:28.677Z",codex-agent,"Delivered additive history diagnostics with pm history --diff and --verify, including main wiring, contract metadata, Pi mapping, and targeted history command tests. Evidence: pm test pm-p9z --run --json passed all three linked commands including coverage and determinism plus integration regression."
 notes[2]{created_at,author,text}:
   "2026-04-01T20:33:47.128Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
   "2026-04-03T11:59:52.384Z",codex-agent,"Mandatory closure checklist: (1) run linked targeted tests via pm test <id> --run; (2) run pnpm build; (3) run node scripts/run-tests.mjs test; (4) run node scripts/run-tests.mjs coverage; (5) update touched docs (README/PRD/AGENTS/CHANGELOG/ARCHITECTURE as applicable); (6) add pm comment with concrete evidence/results; (7) close + release item before commit/push."
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:33:48.103Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[4]{path,scope,note}:
+files[7]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,history diff/verify pi arg mapping
   src/cli/commands/history.ts,project,diff/verify history data source
   src/cli/main.ts,project,future diff/verify command wiring
   src/core/history/history.ts,project,RFC6902 patch creation and hash computation
+  src/sdk/cli-contracts.ts,project,history diff/verify contract parameters
   tests/unit/determinism.spec.ts,project,deterministic patch and hash assertions
+  tests/unit/history-activity-command.spec.ts,project,diff/verify regression coverage
 tests[3]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs coverage,null,project,2400,full coverage gate
   node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts,null,project,900,targeted patch determinism coverage
@@ -68,4 +72,5 @@ docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow and test safety rules
   PRD.md,project,authoritative history patch requirements
   README.md,project,public command and history behavior contract
+close_reason: History diff/verify additive diagnostics shipped with deterministic contract wiring and passing regression evidence.
 body: Add diff generation for canonical before and after documents.

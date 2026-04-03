@@ -1,4 +1,6 @@
+import jsonPatch from "fast-json-patch";
 import { pathExists, readFileIfExists } from "../../core/fs/fs-utils.js";
+import { hashDocument, hashEmptyDocument } from "../../core/history/history.js";
 import { enforceHistoryStreamPolicyForItem } from "../../core/history/history-stream-policy.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers.js";
@@ -7,13 +9,33 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { getActiveExtensionRegistrations, runActiveOnReadHooks } from "../../core/extensions/index.js";
 import { normalizeItemId } from "../../core/item/id.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { locateItem } from "../../core/store/item-store.js";
+import { locateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getHistoryPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import type { HistoryEntry } from "../../types/index.js";
+import type { HistoryEntry, HistoryPatchOp, ItemDocument } from "../../types/index.js";
 
 export interface HistoryCommandOptions {
   limit?: string;
+  diff?: boolean;
+  verify?: boolean;
+}
+
+export interface HistoryDiffEntry {
+  index: number;
+  ts: string;
+  op: string;
+  author: string;
+  patch_ops: number;
+  changed_fields: string[];
+}
+
+export interface HistoryVerificationResult {
+  ok: boolean;
+  entries: number;
+  errors: string[];
+  latest_after_hash?: string;
+  current_item_hash?: string;
+  current_matches_latest?: boolean;
 }
 
 export interface HistoryResult {
@@ -21,7 +43,19 @@ export interface HistoryResult {
   history: HistoryEntry[];
   count: number;
   limit: number | null;
+  diff?: HistoryDiffEntry[];
+  verification?: HistoryVerificationResult;
 }
+
+interface ReplayDocument {
+  front_matter: Record<string, unknown>;
+  body: string;
+}
+
+const EMPTY_REPLAY_DOCUMENT: ReplayDocument = {
+  front_matter: {},
+  body: "",
+};
 
 function parseLimit(raw: string | undefined): number | undefined {
   if (raw === undefined) return undefined;
@@ -35,6 +69,106 @@ function parseLimit(raw: string | undefined): number | undefined {
 function limitEntries<T>(values: T[], limit: number | undefined): T[] {
   if (limit === undefined) return values;
   return values.slice(Math.max(0, values.length - limit));
+}
+
+function decodeJsonPointerSegment(segment: string): string {
+  return segment.replaceAll("~1", "/").replaceAll("~0", "~");
+}
+
+function patchPathToChangedField(path: string): string {
+  if (path === "/body" || path.startsWith("/body/")) {
+    return "body";
+  }
+  if (path === "/front_matter" || path.startsWith("/front_matter/")) {
+    const segment = path.replace(/^\/front_matter\/?/, "").split("/")[0];
+    if (!segment) {
+      return "front_matter";
+    }
+    return decodeJsonPointerSegment(segment);
+  }
+  const segment = path.replace(/^\//, "").split("/")[0];
+  return segment ? decodeJsonPointerSegment(segment) : "root";
+}
+
+function buildDiffEntries(entries: HistoryEntry[], startIndex: number): HistoryDiffEntry[] {
+  return entries.map((entry, index) => {
+    const changedFields = new Set<string>();
+    for (const op of entry.patch) {
+      changedFields.add(patchPathToChangedField(op.path));
+      if (op.from) {
+        changedFields.add(patchPathToChangedField(op.from));
+      }
+    }
+    return {
+      index: startIndex + index + 1,
+      ts: entry.ts,
+      op: entry.op,
+      author: entry.author,
+      patch_ops: entry.patch.length,
+      changed_fields: [...changedFields].sort((left, right) => left.localeCompare(right)),
+    };
+  });
+}
+
+function replayHash(document: ReplayDocument): string {
+  const itemDocument: ItemDocument = {
+    front_matter: document.front_matter as unknown as ItemDocument["front_matter"],
+    body: document.body,
+  };
+  return hashDocument(itemDocument);
+}
+
+function applyHistoryPatch(current: ReplayDocument, patch: HistoryPatchOp[], entryNumber: number): ReplayDocument {
+  try {
+    const applied = jsonPatch.applyPatch(structuredClone(current), patch as jsonPatch.Operation[], true, false).newDocument as unknown;
+    if (
+      typeof applied !== "object" ||
+      applied === null ||
+      !("front_matter" in applied) ||
+      !("body" in applied) ||
+      typeof (applied as { body: unknown }).body !== "string" ||
+      typeof (applied as { front_matter: unknown }).front_matter !== "object" ||
+      (applied as { front_matter: unknown }).front_matter === null
+    ) {
+      throw new PmCliError(
+        `History replay produced an invalid document shape at entry ${entryNumber}.`,
+        EXIT_CODE.GENERIC_FAILURE,
+      );
+    }
+    const replay = applied as { front_matter: Record<string, unknown>; body: string };
+    return {
+      front_matter: replay.front_matter,
+      body: replay.body,
+    };
+  } catch {
+    throw new PmCliError(`Failed to apply history patch at entry ${entryNumber}.`, EXIT_CODE.GENERIC_FAILURE);
+  }
+}
+
+function verifyHistoryChain(entries: HistoryEntry[]): { ok: boolean; errors: string[] } {
+  let replay: ReplayDocument = structuredClone(EMPTY_REPLAY_DOCUMENT);
+  for (let index = 0; index < entries.length; index += 1) {
+    const entry = entries[index];
+    const beforeHash = replayHash(replay);
+    if (beforeHash !== entry.before_hash) {
+      return {
+        ok: false,
+        errors: [`verify_failed:before_hash_mismatch:entry_${index + 1}`],
+      };
+    }
+    replay = applyHistoryPatch(replay, entry.patch, index + 1);
+    const afterHash = replayHash(replay);
+    if (afterHash !== entry.after_hash) {
+      return {
+        ok: false,
+        errors: [`verify_failed:after_hash_mismatch:entry_${index + 1}`],
+      };
+    }
+  }
+  return {
+    ok: true,
+    errors: [],
+  };
 }
 
 export async function readHistoryEntries(historyPath: string, itemId: string): Promise<HistoryEntry[]> {
@@ -112,11 +246,44 @@ export async function runHistory(id: string, options: HistoryCommandOptions, glo
     });
   }
 
-  const history = limitEntries(await readHistoryEntries(historyPath, resolvedId), limit);
-  return {
+  const fullHistory = await readHistoryEntries(historyPath, resolvedId);
+  const history = limitEntries(fullHistory, limit);
+  const result: HistoryResult = {
     id: resolvedId,
     history,
     count: history.length,
     limit: limit ?? null,
   };
+
+  if (options.diff) {
+    result.diff = buildDiffEntries(history, Math.max(0, fullHistory.length - history.length));
+  }
+
+  if (options.verify) {
+    const verification = verifyHistoryChain(fullHistory);
+    const latestAfterHash = fullHistory.length > 0 ? fullHistory[fullHistory.length - 1].after_hash : hashEmptyDocument();
+    let currentItemHash: string | undefined;
+    let currentMatchesLatest: boolean | undefined;
+    const errors = [...verification.errors];
+
+    if (located) {
+      const loaded = await readLocatedItem(located);
+      currentItemHash = hashDocument(loaded.document);
+      currentMatchesLatest = currentItemHash === latestAfterHash;
+      if (!currentMatchesLatest) {
+        errors.push("verify_failed:current_item_hash_mismatch");
+      }
+    }
+
+    result.verification = {
+      ok: errors.length === 0,
+      entries: fullHistory.length,
+      errors,
+      latest_after_hash: fullHistory.length > 0 ? fullHistory[fullHistory.length - 1].after_hash : undefined,
+      current_item_hash: currentItemHash,
+      current_matches_latest: currentMatchesLatest,
+    };
+  }
+
+  return result;
 }

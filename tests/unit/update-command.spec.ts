@@ -206,6 +206,7 @@ describe("runUpdate", () => {
   it("updates scalar fields with valid values", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-explicit-values");
+      const parentId = createTask(context, "update-parent-existing");
       const result = await runUpdate(
         id,
         {
@@ -228,7 +229,7 @@ describe("runUpdate", () => {
           impact: " impact-next ",
           outcome: " outcome-next ",
           whyNow: " why-now-next ",
-          parent: " pm-parent-next ",
+          parent: ` ${parentId} `,
           reviewer: " reviewer-next ",
           risk: "med",
           confidence: "88",
@@ -332,7 +333,7 @@ describe("runUpdate", () => {
       expect(item.impact).toBe("impact-next");
       expect(item.outcome).toBe("outcome-next");
       expect(item.why_now).toBe("why-now-next");
-      expect(item.parent).toBe("pm-parent-next");
+      expect(item.parent).toBe(parentId);
       expect(item.reviewer).toBe("reviewer-next");
       expect(item.risk).toBe("medium");
       expect(item.confidence).toBe(88);
@@ -765,6 +766,53 @@ describe("runUpdate", () => {
           {
             release: "Release Candidate 1",
             message: "attempt invalid release in strict mode",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
+  it("warns for missing parent references under default policy", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-parent-warn");
+      const result = await runUpdate(
+        id,
+        {
+          parent: "pm-parent-missing-default",
+          message: "set missing parent reference under warn policy",
+        },
+        { path: context.pmPath },
+      );
+
+      expect((result.item as Record<string, unknown>).parent).toBe("pm-parent-missing-default");
+      expect(result.warnings).toEqual(
+        expect.arrayContaining(["validation_warning:parent_reference_missing:pm-parent-missing-default"]),
+      );
+    });
+  });
+
+  it("rejects missing parent references under strict policy", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-parent-strict");
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const parsed = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        validation?: { parent_reference?: string };
+      };
+      parsed.validation = {
+        ...(parsed.validation ?? {}),
+        parent_reference: "strict_error",
+      };
+      await writeFile(settingsPath, `${JSON.stringify(parsed, null, 2)}\n`, "utf8");
+
+      await expect(
+        runUpdate(
+          id,
+          {
+            parent: "pm-parent-missing-strict",
+            message: "attempt missing parent in strict mode",
           },
           { path: context.pmPath },
         ),

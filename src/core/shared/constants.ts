@@ -103,6 +103,7 @@ export const SETTINGS_DEFAULTS: PmSettings = {
   },
   validation: {
     sprint_release_format: "warn",
+    parent_reference: "warn",
   },
   workflow: {
     definition_of_done: [],

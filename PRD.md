@@ -620,6 +620,9 @@ Help and error UX note:
 - `pm calendar` (alias: `pm cal`)
 - `pm context` (alias: `pm ctx`)
 - `pm create`
+- `pm templates save <NAME>`
+- `pm templates list`
+- `pm templates show <NAME>`
 - `pm update <ID>`
 - `pm append <ID>`
 - `pm claim <ID>`
@@ -646,6 +649,8 @@ Help and error UX note:
 - `pm config <project|global> get history-missing-stream-policy`
 - `pm config <project|global> set sprint-release-format-policy --policy warn|strict_error`
 - `pm config <project|global> get sprint-release-format-policy`
+- `pm config <project|global> set parent-reference-policy --policy warn|strict_error`
+- `pm config <project|global> get parent-reference-policy`
 - `pm close <ID> <TEXT>`
 - `pm beads import [--file <path>]`
 - `pm todos import [--folder <path>]`
@@ -672,8 +677,9 @@ Mutating `create` (all schema fields MUST be passable explicitly):
 - `--acceptance-criteria`, `--acceptance_criteria`, `--ac` (explicit; empty allowed)
 - `--author` (explicit; fallback `PM_AUTHOR`/settings allowed)
 - `--message` (explicit history message; empty allowed)
+- `--template` (optional; reusable defaults loaded from `pm templates save <NAME>`)
 - `--assignee` (explicit; use `none` to unset)
-- `--parent` (optional; item ID reference or `none`)
+- `--parent` (optional; item ID reference or `none`; missing-parent behavior controlled by `settings.validation.parent_reference`)
 - `--reviewer` (optional; or `none`)
 - `--risk` (optional; `low|med|medium|high|critical` or `none`; `med` persists as `medium`)
 - `--confidence` (optional; `0..100|low|med|medium|high` or `none`; `med` persists as `medium`)
@@ -744,7 +750,7 @@ Mutating `update` (v0.1 baseline):
 - `--estimate`, `--estimated-minutes`, `--estimated_minutes`
 - `--acceptance-criteria`, `--acceptance_criteria`, `--ac`
 - `--assignee`
-- `--parent`
+- `--parent` (missing-parent behavior controlled by `settings.validation.parent_reference`)
 - `--reviewer`
 - `--risk` (`low|med|medium|high|critical`; `med` persists as `medium`)
 - `--confidence` (`0..100|low|med|medium|high`; `med` persists as `medium`)
@@ -842,7 +848,10 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | `pm beads import [--file <path\|->] [--preserve-source-ids]` | optional Beads JSONL source path (`.beads/issues.jsonl` auto-discovered first, then `issues.jsonl`; implicit `sync_base.jsonl` fallback is refused as unsafe; `--file -` requires piped stdin and fails fast on interactive TTY stdin) | `{ ok, source, imported, skipped, ids, warnings }` |
 | `pm todos import --folder <path?>` | optional todos markdown source folder (defaults to `.pi/todos`); preserves canonical optional `ItemFrontMatter` metadata when present and applies deterministic defaults for missing PM fields | `{ ok, folder, imported, skipped, ids, warnings }` |
 | `pm todos export --folder <path?>` | optional todos markdown destination folder (defaults to `.pi/todos`) | `{ ok, folder, exported, ids, warnings }` |
-| `pm create ...` | required title + schema flags (type-governed missing required options are aggregated into one deterministic usage error payload) | `{ item, changed_fields, warnings }` |
+| `pm create ...` | required title + schema flags (type-governed missing required options are aggregated into one deterministic usage error payload) + optional `--template` reusable defaults | `{ item, changed_fields, warnings }` |
+| `pm templates save <NAME> ...` | template name + create-compatible option payload (subset of create flags, including repeatable entries) | `{ name, path, template, saved_at }` |
+| `pm templates list` | optional output controls (`--json`/TOON) | `{ templates, count }` |
+| `pm templates show <NAME>` | template name | `{ name, template }` |
 | `pm update <ID> ...` | id + patch-like flags (`--status closed` is rejected; use `pm close <ID> <TEXT>`; `--close-reason`/`--close_reason` explicitly set/clear `close_reason`; reopening from `closed` to a non-terminal status auto-clears stale `close_reason` unless explicit `--close-reason` is provided; body replacement is supported via `--body`/`-b`; dependencies are mutable via `--dep` / `--dep-remove`; linked artifact flags like `--file`/`--doc` are intentionally unsupported on update and routed to dedicated commands) | `{ item, changed_fields, warnings }` |
 | `pm delete <ID>` | id + optional `--author`/`--message`/`--force` | `{ item, changed_fields, warnings }` |
 | `pm close <ID> <TEXT>` | id + close reason text + optional `--author/--message/--force` | `{ item, changed_fields, warnings }` |
@@ -852,17 +861,17 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | `pm comments <ID> [TEXT] --add/--limit` | id + optional positional comment text shorthand + comment text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`); optional mutation metadata flags `--author`/`--message`/`--force` | `{ id, comments, count }` |
 | `pm notes <ID> [TEXT] --add/--limit` | id + optional positional note text shorthand + note text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`) | `{ id, notes, count }` |
 | `pm learnings <ID> [TEXT] --add/--limit` | id + optional positional learning text shorthand + learning text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`) | `{ id, learnings, count }` |
-| `pm files <ID> --add/--remove` | id + file refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`) | `{ id, files, changed, count }` |
+| `pm files <ID> --add/--remove/--migrate/--validate-paths/--audit/--list` | id + file refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`); optional additive linked-path hygiene (`--migrate from=<old>,to=<new>`, path existence validation, cross-item audit, non-mutating list) | `{ id, files, changed, count, migrations_applied, validation, audit }` |
 | `pm test <ID> --add/--remove/--run` | id + test refs/options (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`; reject recursive `test-all` linked commands at add-time, including global-flag and package-spec launcher forms such as `pm --json test-all`, `npx @unbrained/pm-cli@latest --json test-all`, `pnpm dlx @unbrained/pm-cli@latest --json test-all`, and `npm exec -- @unbrained/pm-cli@latest --json test-all`; defensively skip legacy recursive entries at run-time; reject sandbox-unsafe test-runner commands including unsandboxed direct package-manager run-script forms such as `npm run test`/`pnpm run test` and chained direct runner segments evaluated independently; this sandbox policy is intentional, and targeted scopes should be linked via `node scripts/run-tests.mjs ...` commands or `path=...` entries; run linked commands via shell-compatible spawn orchestration, close child stdin for non-interactive runs, emit stderr heartbeat progress in interactive terminals, and surface deterministic timeout/maxBuffer diagnostics with force-kill fallback) | `{ id, tests, run_results, changed, count }` |
 | `pm test-all --status --timeout` | optional status filter; duplicate linked command/path entries are deduped per invocation (keyed by scope+normalized command or scope+path) and reported as skipped; when duplicate keys carry different `timeout_seconds`, execution uses deterministic maximum timeout for that key | `{ totals, failed, passed, skipped, results }` |
 | `pm stats` | none | `{ totals, by_type, by_status, generated_at }` |
 | `pm health` | none (runs settings/directories/extensions/storage plus integrity, history-drift, and vectorization diagnostics) | `{ ok, checks, warnings, generated_at }` |
 | `pm gc` | none | `{ ok, removed, retained, warnings, generated_at }` |
-| `pm docs <ID> --add/--remove` | id + doc refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`) | `{ id, docs, changed, count }` |
-| `pm history <ID> --limit` | id + optional limit | `{ id, history, count, limit }` |
+| `pm docs <ID> --add/--remove/--migrate/--validate-paths/--audit` | id + doc refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`); optional additive linked-path hygiene (`--migrate from=<old>,to=<new>`, path existence validation, cross-item audit) | `{ id, docs, changed, count, migrations_applied, validation, audit }` |
+| `pm history <ID> --limit/--diff/--verify` | id + optional limit + additive diagnostics (`--diff` changed-field patch summaries, `--verify` hash-chain/current-hash verification) | `{ id, history, count, limit, diff, verify }` |
 | `pm activity --limit` | optional limit | `{ activity, count, limit }` |
 | `pm restore <ID> <TIMESTAMP\|VERSION>` | id + restore target + optional `--author/--message/--force` | `{ item, restored_from, changed_fields, warnings }` |
-| `pm completion <shell>` | `bash`, `zsh`, or `fish`; non-JSON output is the raw script suitable for eval or pipe; JSON output is `{ shell, script, setup_hint }` | `{ shell, script, setup_hint }` |
+| `pm completion <shell>` | `bash`, `zsh`, or `fish`; non-JSON output is the raw script suitable for eval or pipe; JSON output is `{ shell, script, setup_hint }`; generated scripts include deterministic `--tag` suggestions derived from tracked item metadata | `{ shell, script, setup_hint }` |
 
 List command row projection:
 

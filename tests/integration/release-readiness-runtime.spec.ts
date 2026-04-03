@@ -1159,9 +1159,11 @@ describe("release readiness runtime coverage", () => {
     const uncoveredFiles = sourceFiles.filter((filePath) => !matchesAnyPattern(filePath, includePatterns));
     expect(uncoveredFiles.sort((left, right) => left.localeCompare(right))).toEqual([
       "src/cli.ts",
+      "src/cli/commands/templates.ts",
       "src/cli/error-guidance.ts",
       "src/cli/help-content.ts",
       "src/cli/main.ts",
+      "src/core/item/parent-reference-policy.ts",
       "src/core/item/type-registry.ts",
       "src/core/output/command-aware.ts",
       "src/sdk/cli-contracts.ts",

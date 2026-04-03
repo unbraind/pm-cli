@@ -37,9 +37,16 @@ const GLOBAL_FLAGS = GLOBAL_FLAG_CONTRACTS.flatMap((entry) => [entry.short, entr
   .filter((value): value is string => Boolean(value))
   .join(" ");
 
-export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES): string {
+function joinCompletionValues(values: string[]): string {
+  return [...new Set(values.map((value) => value.trim()).filter((value) => value.length > 0))]
+    .sort((left, right) => left.localeCompare(right))
+    .join(" ");
+}
+
+export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tags: string[] = []): string {
   const cmds = ALL_COMMANDS.join(" ");
   const typeValues = itemTypes.join(" ");
+  const tagValues = joinCompletionValues(tags);
   // Note: "${...}" inside regular (non-template) strings are literal characters,
   // not JS interpolation. Only backtick template literals interpolate ${...}.
   const compgen = (flags: string): string => `$(compgen -W "${flags}" -- "$cur")`;
@@ -62,6 +69,11 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES): st
     "",
     '  if [[ "$prev" == "--type" ]]; then',
     `    COMPREPLY=(${compgen(typeValues)})`,
+    "    return 0",
+    "  fi",
+    "",
+    '  if [[ "$prev" == "--tag" ]]; then',
+    `    COMPREPLY=(${compgen(tagValues)})`,
     "    return 0",
     "  fi",
     "",
@@ -99,7 +111,7 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES): st
     `      COMPREPLY=(${compgen("--add --limit --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    files|docs)",
-    `      COMPREPLY=(${compgen("--add --remove --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --remove --migrate --validate-paths --audit --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    test)",
     `      COMPREPLY=(${compgen("--add --remove --run --timeout --json --quiet --path --no-extensions --profile --help")})`,
@@ -107,7 +119,10 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES): st
     "    test-all)",
     `      COMPREPLY=(${compgen("--status --timeout --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
-    "    history|activity)",
+    "    history)",
+    `      COMPREPLY=(${compgen("--limit --diff --verify --json --quiet --path --no-extensions --profile --help")})`,
+    "      ;;",
+    "    activity)",
     `      COMPREPLY=(${compgen("--limit --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    claim|release|close|delete|append|restore)",
@@ -122,6 +137,9 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES): st
     "    completion)",
     `      COMPREPLY=(${compgen("bash zsh fish")})`,
     "      ;;",
+    "    templates)",
+    `      COMPREPLY=(${compgen("save list show")})`,
+    "      ;;",
     "    *)",
     `      COMPREPLY=(${compgen(GLOBAL_FLAGS)})`,
     "      ;;",
@@ -133,9 +151,10 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES): st
   ].join("\n");
 }
 
-export function generateZshScript(itemTypes: string[] = DEFAULT_ITEM_TYPES): string {
+export function generateZshScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tags: string[] = []): string {
   const cmds = ALL_COMMANDS.map((c) => `'${c}'`).join(" ");
   const typeChoices = itemTypes.join(" ");
+  const tagChoices = joinCompletionValues(tags);
   return `#compdef pm
 # zsh completion for pm
 # Source this file or add 'eval "$(pm completion zsh)"' to ~/.zshrc
@@ -183,6 +202,7 @@ _pm_commands() {
     'release:Release the active claim for an item'
     'beads:Built-in Beads extension commands'
     'todos:Built-in todos extension commands'
+    'templates:Manage reusable create templates'
     'completion:Generate shell completion'
     'help:Display help for a command'
   )
@@ -208,7 +228,7 @@ _pm() {
         list|list-all|list-draft|list-open|list-in-progress|list-blocked|list-closed|list-canceled)
           _arguments \\
             '--type[Filter by item type]:(${typeChoices})' \\
-            '--tag[Filter by tag]:tag' \\
+            '--tag[Filter by tag]:(${tagChoices})' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
             '--deadline-before[Filter by deadline upper bound (ISO/date string or relative)]:date' \\
             '--deadline-after[Filter by deadline lower bound (ISO/date string or relative)]:date' \\
@@ -269,7 +289,7 @@ _pm() {
             '--to[Agenda upper bound (ISO/date string or relative)]:date' \\
             '--past[Include past entries]' \\
             '--type[Filter by type]:(${typeChoices})' \\
-            '--tag[Filter by tag]:tag' \\
+            '--tag[Filter by tag]:(${tagChoices})' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
             '--status[Filter by status]:(draft open in_progress blocked closed canceled)' \\
             '--assignee[Filter by assignee]:assignee' \\
@@ -291,7 +311,7 @@ _pm() {
             '--to[Agenda upper bound (ISO/date string or relative)]:date' \\
             '--past[Include past entries in bounded windows]' \\
             '--type[Filter by type]:(${typeChoices})' \\
-            '--tag[Filter by tag]:tag' \\
+            '--tag[Filter by tag]:(${tagChoices})' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
             '--assignee[Filter by assignee]:assignee' \\
             '--sprint[Filter by sprint]:sprint' \\
@@ -307,7 +327,7 @@ _pm() {
             '--include-linked[Include linked content in scoring]' \\
             '--limit[Max results]:number' \\
             '--type[Filter by type]:(${typeChoices})' \\
-            '--tag[Filter by tag]:tag' \\
+            '--tag[Filter by tag]:(${tagChoices})' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -318,7 +338,15 @@ _pm() {
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
-        history|activity)
+        history)
+          _arguments \\
+            '--limit[Max entries]:number' \\
+            '--diff[Include changed-field patch summary]' \\
+            '--verify[Verify history hash chain and replay integrity]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        activity)
           _arguments \\
             '--limit[Max entries]:number' \\
             '--json[Output JSON]' \\
@@ -352,6 +380,11 @@ _pm() {
         completion)
           _arguments '1:shell:(bash zsh fish)'
           ;;
+        templates)
+          local -a templates_cmds
+          templates_cmds=('save:Save or update a create template' 'list:List saved create templates' 'show:Show saved template details')
+          _describe 'templates command' templates_cmds
+          ;;
         beads)
           local -a beads_cmds
           beads_cmds=('import:Import Beads JSONL records')
@@ -370,10 +403,11 @@ _pm() {
 compdef _pm pm`;
 }
 
-export function generateFishScript(itemTypes: string[] = DEFAULT_ITEM_TYPES): string {
+export function generateFishScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tags: string[] = []): string {
   const listCmds = ALL_COMMANDS.filter((command) => command === "list" || command.startsWith("list-")).join(" ");
   const noSubcommandList = ALL_COMMANDS.join(" ");
   const typeChoices = itemTypes.join(" ");
+  const tagChoices = joinCompletionValues(tags);
   return `# Fish shell completion for pm
 # Save to ~/.config/fish/completions/pm.fish
 # or run: pm completion fish > ~/.config/fish/completions/pm.fish
@@ -436,12 +470,13 @@ complete -c pm -n __pm_no_subcommand -a claim         -d 'Claim an item for acti
 complete -c pm -n __pm_no_subcommand -a release       -d 'Release the active claim for an item'
 complete -c pm -n __pm_no_subcommand -a beads         -d 'Built-in Beads extension commands'
 complete -c pm -n __pm_no_subcommand -a todos         -d 'Built-in todos extension commands'
+complete -c pm -n __pm_no_subcommand -a templates     -d 'Manage reusable create templates'
 complete -c pm -n __pm_no_subcommand -a completion    -d 'Generate shell completion'
 
 # list* flags
 for list_cmd in ${listCmds}
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l type     -d 'Filter by item type' -r -a '${typeChoices}'
-  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l tag      -d 'Filter by tag' -r
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l tag      -d 'Filter by tag' -r -a '${tagChoices}'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l priority -d 'Filter by priority' -r -a '0 1 2 3 4'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l assignee -d 'Filter by assignee (none for unassigned)' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l sprint   -d 'Filter by sprint' -r
@@ -490,7 +525,7 @@ complete -c pm -n '__fish_seen_subcommand_from search' -l mode          -d 'Sear
 complete -c pm -n '__fish_seen_subcommand_from search' -l include-linked -d 'Include linked content in scoring'
 complete -c pm -n '__fish_seen_subcommand_from search' -l limit          -d 'Max results' -r
 complete -c pm -n '__fish_seen_subcommand_from search' -l type           -d 'Filter by type' -r -a '${typeChoices}'
-complete -c pm -n '__fish_seen_subcommand_from search' -l tag            -d 'Filter by tag' -r
+complete -c pm -n '__fish_seen_subcommand_from search' -l tag            -d 'Filter by tag' -r -a '${tagChoices}'
 complete -c pm -n '__fish_seen_subcommand_from search' -l priority       -d 'Filter by priority' -r -a '0 1 2 3 4'
 
 # calendar flags
@@ -500,7 +535,7 @@ complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l from      -d 'Ag
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l to        -d 'Agenda upper bound (ISO/date string or relative)' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l past      -d 'Include past entries'
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l type      -d 'Filter by type' -r -a '${typeChoices}'
-complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l tag       -d 'Filter by tag' -r
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l tag       -d 'Filter by tag' -r -a '${tagChoices}'
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l priority  -d 'Filter by priority' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l status    -d 'Filter by status' -r -a 'draft open in_progress blocked closed canceled'
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l assignee  -d 'Filter by assignee (none for unassigned)' -r
@@ -519,7 +554,7 @@ complete -c pm -n '__fish_seen_subcommand_from context ctx' -l from      -d 'Age
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l to        -d 'Agenda upper bound (ISO/date string or relative)' -r
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l past      -d 'Include past entries in bounded windows'
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l type      -d 'Filter by type' -r -a '${typeChoices}'
-complete -c pm -n '__fish_seen_subcommand_from context ctx' -l tag       -d 'Filter by tag' -r
+complete -c pm -n '__fish_seen_subcommand_from context ctx' -l tag       -d 'Filter by tag' -r -a '${tagChoices}'
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l priority  -d 'Filter by priority' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l assignee  -d 'Filter by assignee (none for unassigned)' -r
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l sprint    -d 'Filter by sprint' -r
@@ -532,6 +567,8 @@ complete -c pm -n '__fish_seen_subcommand_from reindex' -l mode -d 'Reindex mode
 
 # history / activity flags
 complete -c pm -n '__fish_seen_subcommand_from history'  -l limit -d 'Max history entries' -r
+complete -c pm -n '__fish_seen_subcommand_from history'  -l diff -d 'Include changed-field patch summary'
+complete -c pm -n '__fish_seen_subcommand_from history'  -l verify -d 'Verify history hash chain and replay integrity'
 complete -c pm -n '__fish_seen_subcommand_from activity' -l limit -d 'Max activity entries' -r
 
 # comments / notes / learnings flags
@@ -547,6 +584,9 @@ complete -c pm -n '__fish_seen_subcommand_from test-all' -l timeout -d 'Default 
 
 # completion shell argument
 complete -c pm -n '__fish_seen_subcommand_from completion' -a 'bash zsh fish' -d 'Shell type'
+
+# templates subcommands
+complete -c pm -n '__fish_seen_subcommand_from templates' -a 'save list show' -d 'Templates command'
 
 # install target and flags
 complete -c pm -n '__fish_seen_subcommand_from install' -a 'pi' -d 'Install pm Pi extension'
@@ -567,7 +607,7 @@ const SETUP_HINTS: Record<CompletionShell, string> = {
   fish: "Run: pm completion fish > ~/.config/fish/completions/pm.fish",
 };
 
-export function runCompletion(shell: string, itemTypes: string[] = DEFAULT_ITEM_TYPES): CompletionResult {
+export function runCompletion(shell: string, itemTypes: string[] = DEFAULT_ITEM_TYPES, tags: string[] = []): CompletionResult {
   const normalized = shell.trim().toLowerCase();
   if (!VALID_SHELLS.includes(normalized as CompletionShell)) {
     throw new PmCliError(
@@ -578,11 +618,11 @@ export function runCompletion(shell: string, itemTypes: string[] = DEFAULT_ITEM_
   const validShell = normalized as CompletionShell;
   let script: string;
   if (validShell === "bash") {
-    script = generateBashScript(itemTypes);
+    script = generateBashScript(itemTypes, tags);
   } else if (validShell === "zsh") {
-    script = generateZshScript(itemTypes);
+    script = generateZshScript(itemTypes, tags);
   } else {
-    script = generateFishScript(itemTypes);
+    script = generateFishScript(itemTypes, tags);
   }
   return {
     shell: validShell,

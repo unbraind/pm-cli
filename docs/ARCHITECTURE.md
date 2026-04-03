@@ -24,6 +24,7 @@ src/
     commands/
       init.ts                    pm init
       create.ts                  pm create (full schema flag surface)
+      templates.ts               pm templates save/list/show
       get.ts                     pm get
       update.ts                  pm update
       append.ts                  pm append
@@ -70,6 +71,7 @@ src/
       id.ts                      ID generation (cryptographic random base36) and normalization
       item-format.ts             Item front-matter serializer (canonical key order, determinism)
       parse.ts                   Markdown item file parser (JSON front-matter + body)
+      parent-reference-policy.ts Parent-reference policy normalization + warning/strict validation helpers
       type-registry.ts           Runtime item-type registry (built-ins + settings + extensions)
       index.ts                   barrel
     lock/
@@ -122,6 +124,7 @@ The same registry drives:
 - commander option normalization in `src/cli/main.ts`
 - shell completion flag/command surfaces in `src/cli/commands/completion.ts`
 - Pi wrapper action enum, tool `inputSchema`, and CLI arg mapping in `.pi/extensions/pm-cli/index.ts`
+- additive command surfaces such as `templates-*` actions, `history --diff/--verify`, and files/docs path hygiene flags
 
 This keeps human CLI UX and machine-facing contracts aligned while preserving additive/backward-compatible evolution.
 
@@ -219,6 +222,16 @@ If step 7 or 8 fails, the item file is rolled back (if write succeeded) before r
 
 When `update --type` changes an item's resolved type folder, mutation logic performs a safe file move to the target folder and rolls back on failure.
 Linked arrays (`comments`, `notes`, `learnings`, `files`, `tests`, `docs`) are intentionally mutated through dedicated command paths (`pm comments`, `pm notes`, `pm learnings`, `pm files`, `pm test`, `pm docs`) rather than generic `pm update` flags.
+
+### Additive Diagnostics and Path Hygiene
+
+- `pm history --diff` adds field-level patch summaries without changing base history output.
+- `pm history --verify` validates stream hash-chain replay and current-item hash alignment.
+- `pm files` and `pm docs` support additive linked-path hygiene options:
+  - `--migrate from=<old>,to=<new>` for bulk prefix migration
+  - `--validate-paths` for resolved path-existence checks
+  - `--audit` for cross-item linked-path usage inspection
+  - `pm files --list` for explicit non-mutating linked-file listing
 
 ## Calendar Pipeline
 
@@ -389,6 +402,8 @@ Weights are configurable via `settings.json` under `search.tuning`.
 | `locks.ttl_seconds` | Lock TTL (default 1800) |
 | `output.default_format` | `toon` or `json` |
 | `history.missing_stream` | Missing history-stream policy: `auto_create` (default) or `strict_error` |
+| `validation.sprint_release_format` | Sprint/release format policy: `warn` (default) or `strict_error` |
+| `validation.parent_reference` | Parent-reference policy for create/update: `warn` (default) or `strict_error` |
 | `item_types.definitions[]` | Custom type names, aliases, folders, required fields/repeatables, `--type-option` definitions, and `command_option_policies` (`required`/`enabled`/`visible`) |
 | `search.*` | Search provider and tuning settings |
 | `providers.openai` / `providers.ollama` | Embedding provider config |
@@ -399,6 +414,13 @@ Precedence: CLI flags > env vars (`PM_PATH`, `PM_AUTHOR`, etc.) > `settings.json
 For repositories created before `item_format` existed, mutating item commands are blocked until an explicit format is selected through `pm config ... item-format --format ...`. Once selected (or changed), item files are automatically migrated to the configured format, and when both `.md` and `.toon` exist for an item, the configured format is the source of truth.
 
 History stream policy can be configured via `pm config ... history-missing-stream-policy --policy ...`. In `auto_create`, required missing streams for existing item IDs are created before history-touching command paths continue; in `strict_error`, those command paths fail fast. Restore also supports history-only recovery when an item file is missing/deleted but the stream exists.
+
+Validation policies can be configured via:
+
+- `pm config ... sprint-release-format-policy --policy warn|strict_error`
+- `pm config ... parent-reference-policy --policy warn|strict_error`
+
+Under `warn`, create/update continue and return deterministic validation warnings; under `strict_error`, invalid values are rejected with usage errors.
 
 ## Exit Codes
 

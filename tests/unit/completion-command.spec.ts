@@ -130,6 +130,12 @@ describe("generateBashScript", () => {
     expect(script).toContain("--include-linked");
   });
 
+  it("includes deterministic tag suggestions for --tag completion", () => {
+    const script = generateBashScript(["Task"], ["beta", "alpha", "alpha"]);
+    expect(script).toContain('"$prev" == "--tag"');
+    expect(script).toContain('"alpha beta"');
+  });
+
   it("includes context-specific flags", () => {
     const script = generateBashScript();
     expect(script).toContain("context|ctx");
@@ -252,6 +258,11 @@ describe("generateZshScript", () => {
     expect(script).toContain("--to");
     expect(script).toContain("--past");
     expect(script).toContain("markdown toon json");
+  });
+
+  it("includes deterministic tag choices for zsh --tag flags", () => {
+    const script = generateZshScript(["Task"], ["beta", "alpha", "alpha"]);
+    expect(script).toContain("--tag[Filter by tag]:(alpha beta)");
   });
 
   it("includes zsh update close-reason completion", () => {
@@ -391,6 +402,11 @@ describe("generateFishScript", () => {
     expect(script).toContain("-l to");
     expect(script).toContain("-l past");
     expect(script).toContain("-l format");
+  });
+
+  it("includes deterministic tag choices for fish --tag flags", () => {
+    const script = generateFishScript(["Task"], ["beta", "alpha", "alpha"]);
+    expect(script).toContain("-l tag      -d 'Filter by tag' -r -a 'alpha beta'");
   });
 });
 

@@ -40,6 +40,7 @@ export interface PmToolParameters {
   title?: string;
   description?: string;
   type?: string;
+  template?: string;
   status?: string;
   closeReason?: string;
   priority?: NumericFlagInput;
@@ -95,6 +96,8 @@ export interface PmToolParameters {
   deadlineBefore?: string;
   deadlineAfter?: string;
   limit?: NumericFlagInput;
+  diff?: boolean;
+  verify?: boolean;
   timeout?: NumericFlagInput;
   force?: boolean;
   run?: boolean;
@@ -104,6 +107,9 @@ export interface PmToolParameters {
   text?: string;
   add?: string[];
   remove?: string[];
+  migrate?: string[];
+  validatePaths?: boolean;
+  audit?: boolean;
   dep?: string[];
   depRemove?: string[];
   comment?: string[];
@@ -405,6 +411,12 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
     case "history":
       args.push("history", requireString(params.id, "id", action));
       pushOption(args, "--limit", params.limit);
+      if (params.diff) {
+        args.push("--diff");
+      }
+      if (params.verify) {
+        args.push("--verify");
+      }
       return args;
     case "activity":
       args.push("activity");
@@ -453,12 +465,26 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       args.push("files", requireString(params.id, "id", action));
       pushRepeatable(args, "--add", params.add);
       pushRepeatable(args, "--remove", params.remove);
+      pushRepeatable(args, "--migrate", params.migrate);
+      if (params.validatePaths) {
+        args.push("--validate-paths");
+      }
+      if (params.audit) {
+        args.push("--audit");
+      }
       addAuthorMessageForceFlags(args, params);
       return args;
     case "docs":
       args.push("docs", requireString(params.id, "id", action));
       pushRepeatable(args, "--add", params.add);
       pushRepeatable(args, "--remove", params.remove);
+      pushRepeatable(args, "--migrate", params.migrate);
+      if (params.validatePaths) {
+        args.push("--validate-paths");
+      }
+      if (params.audit) {
+        args.push("--audit");
+      }
       addAuthorMessageForceFlags(args, params);
       return args;
     case "test":
@@ -483,6 +509,18 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       return args;
     case "completion":
       args.push("completion", requireString(params.shell, "shell", action));
+      return args;
+    case "templates-save": {
+      args.push("templates", "save", requireString(params.template, "template", action));
+      const templateSaveParams: PmToolParameters = { ...params, template: undefined };
+      addCreateFlags(args, templateSaveParams);
+      return args;
+    }
+    case "templates-list":
+      args.push("templates", "list");
+      return args;
+    case "templates-show":
+      args.push("templates", "show", requireString(params.template, "template", action));
       return args;
     case "claim":
     case "release":

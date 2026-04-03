@@ -186,6 +186,9 @@ describe("runFiles", () => {
       >({
         exitCode: EXIT_CODE.USAGE,
       });
+      await expect(runFiles(id, { migrate: ["from=docs/old/"] }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 
@@ -277,6 +280,80 @@ describe("runFiles", () => {
       expect(removedFromStdin.count).toBe(0);
     });
   });
+
+  it("supports linked-file path migration, validation, audit, and idempotent re-run", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceId = createTask(context, "files-hygiene-source");
+      const peerId = createTask(context, "files-hygiene-peer");
+
+      await runFiles(
+        sourceId,
+        {
+          add: ["path=docs/old/file-one.md,scope=project", "path=README.md,scope=project"],
+          message: "seed source linked files",
+        },
+        { path: context.pmPath },
+      );
+      await runFiles(
+        peerId,
+        {
+          add: ["path=docs/new/file-one.md,scope=project"],
+          message: "seed peer linked file for audit",
+        },
+        { path: context.pmPath },
+      );
+
+      const migrated = await runFiles(
+        sourceId,
+        {
+          migrate: ["from=docs/old/,to=docs/new/"],
+          validatePaths: true,
+          audit: true,
+          message: "migrate and audit linked files",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(migrated.files.some((entry) => entry.path === "docs/new/file-one.md")).toBe(true);
+      expect(migrated.migrations_applied).toBeGreaterThan(0);
+      expect(migrated.validation?.checked).toBeGreaterThan(0);
+      expect(migrated.audit?.find((entry) => entry.path === "docs/new/file-one.md")).toEqual(
+        expect.objectContaining({
+          linked_by_count: 2,
+          linked_item_ids: expect.arrayContaining([sourceId, peerId]),
+        }),
+      );
+
+      const readOnlyInspection = await runFiles(
+        sourceId,
+        {
+          list: true,
+          validatePaths: true,
+          audit: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(readOnlyInspection.changed).toBe(false);
+      expect(readOnlyInspection.validation?.checked).toBeGreaterThan(0);
+      expect(readOnlyInspection.audit?.find((entry) => entry.path === "docs/new/file-one.md")).toEqual(
+        expect.objectContaining({
+          linked_by_count: 2,
+          linked_item_ids: expect.arrayContaining([sourceId, peerId]),
+        }),
+      );
+
+      const rerun = await runFiles(
+        sourceId,
+        {
+          migrate: ["from=docs/old/,to=docs/new/"],
+          message: "repeat migration to prove idempotence",
+        },
+        { path: context.pmPath },
+      );
+      expect(rerun.files.some((entry) => entry.path === "docs/new/file-one.md")).toBe(true);
+      expect(rerun.migrations_applied ?? 0).toBe(0);
+    });
+  });
 });
 
 describe("runDocs", () => {
@@ -313,6 +390,9 @@ describe("runDocs", () => {
       await expect(runDocs(id, { remove: ["scope=project"] }, { path: context.pmPath })).rejects.toMatchObject<
         PmCliError
       >({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runDocs(id, { migrate: ["from=docs/old/"] }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
     });
@@ -404,6 +484,79 @@ describe("runDocs", () => {
       stdinSpy.mockReturnValue(removeStdin as unknown as NodeJS.ReadStream);
       const removedFromStdin = await runDocs(id, { remove: ["-"] }, { path: context.pmPath });
       expect(removedFromStdin.count).toBe(0);
+    });
+  });
+
+  it("supports linked-doc path migration, validation, audit, and idempotent re-run", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceId = createTask(context, "docs-hygiene-source");
+      const peerId = createTask(context, "docs-hygiene-peer");
+
+      await runDocs(
+        sourceId,
+        {
+          add: ["path=docs/old/doc-one.md,scope=project", "path=README.md,scope=project"],
+          message: "seed source linked docs",
+        },
+        { path: context.pmPath },
+      );
+      await runDocs(
+        peerId,
+        {
+          add: ["path=docs/new/doc-one.md,scope=project"],
+          message: "seed peer linked doc for audit",
+        },
+        { path: context.pmPath },
+      );
+
+      const migrated = await runDocs(
+        sourceId,
+        {
+          migrate: ["from=docs/old/,to=docs/new/"],
+          validatePaths: true,
+          audit: true,
+          message: "migrate and audit linked docs",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(migrated.docs.some((entry) => entry.path === "docs/new/doc-one.md")).toBe(true);
+      expect(migrated.migrations_applied).toBeGreaterThan(0);
+      expect(migrated.validation?.checked).toBeGreaterThan(0);
+      expect(migrated.audit?.find((entry) => entry.path === "docs/new/doc-one.md")).toEqual(
+        expect.objectContaining({
+          linked_by_count: 2,
+          linked_item_ids: expect.arrayContaining([sourceId, peerId]),
+        }),
+      );
+
+      const readOnlyInspection = await runDocs(
+        sourceId,
+        {
+          validatePaths: true,
+          audit: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(readOnlyInspection.changed).toBe(false);
+      expect(readOnlyInspection.validation?.checked).toBeGreaterThan(0);
+      expect(readOnlyInspection.audit?.find((entry) => entry.path === "docs/new/doc-one.md")).toEqual(
+        expect.objectContaining({
+          linked_by_count: 2,
+          linked_item_ids: expect.arrayContaining([sourceId, peerId]),
+        }),
+      );
+
+      const rerun = await runDocs(
+        sourceId,
+        {
+          migrate: ["from=docs/old/,to=docs/new/"],
+          message: "repeat migration to prove idempotence",
+        },
+        { path: context.pmPath },
+      );
+      expect(rerun.docs.some((entry) => entry.path === "docs/new/doc-one.md")).toBe(true);
+      expect(rerun.migrations_applied ?? 0).toBe(0);
     });
   });
 });

@@ -43,6 +43,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `pm health` vectorization diagnostics (`vectorization`) with targeted stale-ID semantic refresh and deterministic vectorization ledger tracking (`search/vectorization-status.json`).
 - Added configurable missing history-stream policy at `settings.history.missing_stream` with `pm config <project|global> get|set history-missing-stream-policy --policy auto_create|strict_error`.
 - Added configurable sprint/release format policy at `settings.validation.sprint_release_format` with `pm config <project|global> get|set sprint-release-format-policy --policy warn|strict_error`.
+- Added configurable parent-reference policy at `settings.validation.parent_reference` with `pm config <project|global> get|set parent-reference-policy --policy warn|strict_error`.
+- Added reusable create templates via `pm templates save/list/show` and additive `pm create --template` support with deterministic explicit-flag override precedence.
+- Added additive history diagnostics: `pm history --diff` (changed-field summaries) and `pm history --verify` (hash-chain/current-hash validation output).
+- Added linked artifact path hygiene features for `pm files` and `pm docs`: `--migrate`, `--validate-paths`, and `--audit` (plus `pm files --list` for explicit listing).
+- Added deterministic `--tag` completion suggestions in bash/zsh/fish scripts derived from tracked item metadata.
 - Added history-only restore recovery so `pm restore` can recreate missing/deleted item files when the corresponding history stream exists.
 - Added first-class `pm notes` and `pm learnings` commands with parity to `pm comments` (`<id> [text]`, `--add`, `--limit`, `--author`, `--message`, `--force`) including structured/stdin payload parsing.
 - Added command-surface parity updates for `notes`/`learnings` across help narratives, shell completion scripts, command-aware output summaries, and Pi wrapper action routing.
@@ -79,6 +84,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pm claim` now allows takeover of already-assigned non-terminal items without `--force`; force remains required for terminal-status or lock-override claim paths.
 - `pm comments` guidance is now explicit about `--force` usage across rich help, shell completion, and docs parity surfaces.
 - `pm create`/`pm update` now validate `--sprint` and `--release` using a warning-first default (`warn`) with deterministic `validation_warning:*` signals, and optional strict rejection mode (`strict_error`) for enforcement.
+- `pm create`/`pm update` now validate missing `--parent` references using warning-first defaults (`validation_warning:parent_reference_missing:<id>`) with optional strict rejection mode (`strict_error`).
+- CLI contracts and Pi wrapper action/schema mapping now include additive `templates-*` actions, `create --template`, `history --diff/--verify`, and files/docs linked-path hygiene flags.
 
 ## [2026.3.12] - 2026-03-12
 

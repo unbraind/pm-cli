@@ -17,10 +17,15 @@
 - Sparse TOON default output that omits null/undefined/empty fields for token-efficient agent workflows
 - Agent-friendly calendar views (`pm calendar` / `pm cal`) with markdown default output
 - Agent-first context snapshot command (`pm context` / `pm ctx`) for critical work + agenda triage
+- Reusable create templates (`pm templates save/list/show` + `pm create --template`)
 - First-class dual item storage formats: TOON (`.toon`) and JSON-front-matter Markdown (`.md`)
 - Compact TOON documents that are easier to review in terminal and GitHub web UI
 - Automatic item format migration when `item-format` config changes
 - Deterministic canonical normalization and atomic writes for parallel git/worktree workflows
+- Warning-first/strict validation policies for sprint/release and parent references
+- Additive history diff/verify diagnostics (`pm history --diff --verify`)
+- Linked path hygiene for files/docs (`--migrate`, `--validate-paths`, `--audit`)
+- Deterministic `--tag` completion suggestions from tracked item metadata
 - Optional search and extension support for more advanced setups
 
 ## Unified Command Contracts
@@ -144,6 +149,31 @@ Claim behavior note:
 - `pm claim <ID>` can take over non-terminal items even when currently assigned to someone else.
 - Use `--force` for claim/release only when overriding terminal-state or lock conflicts.
 
+## Reusable Create Templates
+
+Use templates to save recurring create metadata (including repeatable seeds) and apply them with explicit override precedence:
+
+```bash
+pm templates save release-issue \
+  --type Issue \
+  --status open \
+  --priority 1 \
+  --tags "release,incident" \
+  --dep "id=pm-release,kind=related,created_at=now" \
+  --file "path=src/cli/main.ts,scope=project"
+
+pm templates list
+pm templates show release-issue --json
+
+# Explicit flags override template defaults deterministically.
+pm create \
+  --title "Follow-up issue" \
+  --description "Investigate release incident follow-up." \
+  --type Issue \
+  --template release-issue \
+  --status blocked
+```
+
 ## Semantic Search Defaults (Ollama)
 
 `pm search` now auto-enables semantic-capable defaults on hosts where local Ollama is installed, without requiring manual semantic provider/vector configuration in `settings.json`.
@@ -218,6 +248,35 @@ pm config project set sprint-release-format-policy --policy strict_error
 pm config project get sprint-release-format-policy --json
 ```
 
+## Parent Reference Validation Policy
+
+`settings.validation.parent_reference` controls how `--parent` behaves during `pm create` and `pm update` when the referenced parent item does not exist:
+
+- `warn` (default)
+  - keeps backward-compatible behavior and emits `validation_warning:parent_reference_missing:<id>`
+- `strict_error`
+  - rejects missing parent references with a deterministic usage error
+
+Configure policy with:
+
+```bash
+pm config project set parent-reference-policy --policy warn
+pm config project set parent-reference-policy --policy strict_error
+pm config project get parent-reference-policy --json
+```
+
+## History Diff and Verify
+
+`pm history` now supports additive diagnostics:
+
+```bash
+# Include changed-field summaries derived from RFC6902 patches
+pm history pm-a1b2 --diff
+
+# Verify before/after hash replay chain and current item hash alignment
+pm history pm-a1b2 --verify --json
+```
+
 `pm restore` also supports history-only recovery when an item file is missing or deleted but its history stream still exists.
 
 ## Deadline and Date Inputs
@@ -251,6 +310,10 @@ Examples:
 pm files pm-a1b2 --add "path: src/cli/main.ts,scope: project,note: cli wiring"
 pm docs pm-a1b2 --add $'- path: README.md\n- scope: project\n- note: docs sync'
 pm test pm-a1b2 --add $'command: node scripts/run-tests.mjs test\nscope: project\ntimeout_seconds: 240'
+
+# Linked-path hygiene for files/docs (bulk migrate + optional validation/audit)
+pm files pm-a1b2 --migrate "from=src/old/,to=src/new/" --validate-paths --audit
+pm docs pm-a1b2 --migrate "from=docs/legacy/,to=docs/current/" --validate-paths --audit
 
 # Comments can be added positionally or with --add
 pm comments pm-a1b2 "captured from shorthand positional text"

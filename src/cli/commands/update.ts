@@ -9,6 +9,10 @@ import {
   validateTypeOptions,
 } from "../../core/item/type-registry.js";
 import { normalizeItemId } from "../../core/item/id.js";
+import {
+  normalizeParentReferenceValue,
+  validateMissingParentReference,
+} from "../../core/item/parent-reference-policy.js";
 import { validateSprintOrReleaseValue } from "../../core/item/sprint-release-format.js";
 import { createStdinTokenResolver, parseCsvKv, parseOptionalNumber, parseTags } from "../../core/item/parse.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
@@ -18,7 +22,7 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { isNoneToken, resolveIsoOrRelative } from "../../core/shared/time.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { applyRegisteredItemFieldDefaultsAndValidation } from "../../core/extensions/item-fields.js";
-import { mutateItem } from "../../core/store/item-store.js";
+import { locateItem, mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { CalendarEvent, Dependency, ItemStatus, RecurrenceRule, Reminder } from "../../types/index.js";
@@ -603,11 +607,28 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   }
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const parentReferencePolicy = settings.validation.parent_reference;
   const sprintReleasePolicy = settings.validation.sprint_release_format;
   const author = toAuthor(options.author, settings.author_default);
   const nowValue = new Date();
   const dependencyUpdates = parseDependencyAdditions(options.dep, settings.id_prefix, nowValue.toISOString());
   const dependencyRemovals = parseDependencyRemovals(options.depRemove, settings.id_prefix);
+  const parentReferenceWarnings: string[] = [];
+  let resolvedParentValue: string | undefined;
+  if (options.parent !== undefined && !isNoneToken(options.parent)) {
+    resolvedParentValue = normalizeParentReferenceValue(options.parent);
+    const parentLocated = await locateItem(
+      pmRoot,
+      resolvedParentValue,
+      settings.id_prefix,
+      settings.item_format,
+      typeRegistry.type_to_folder,
+    );
+    if (!parentLocated) {
+      const normalizedParentId = normalizeItemId(resolvedParentValue, settings.id_prefix);
+      parentReferenceWarnings.push(...validateMissingParentReference(normalizedParentId, parentReferencePolicy).warnings);
+    }
+  }
 
   const changedFlags = [
     options.title !== undefined,
@@ -911,7 +932,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         if (isNoneToken(options.parent)) {
           delete document.front_matter.parent;
         } else {
-          document.front_matter.parent = options.parent.trim();
+          document.front_matter.parent = resolvedParentValue as string;
         }
         changedFields.push("parent");
       }
@@ -1118,6 +1139,6 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   return {
     item: result.item as unknown as Record<string, unknown>,
     changed_fields: result.changedFields,
-    warnings: result.warnings,
+    warnings: [...parentReferenceWarnings, ...result.warnings],
   };
 }
