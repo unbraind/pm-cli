@@ -1,0 +1,39 @@
+id: pm-a228
+title: "External follow-up: reduce tracked-all orphaned noise from PM internals"
+description: Improve validate tracked-all signal by excluding PM storage internals by default and offering explicit opt-in inclusion when needed.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:files","area:validation",follow-up,pm-cli
+created_at: "2026-04-03T21:59:58.425Z"
+updated_at: "2026-04-03T22:17:21.817Z"
+deadline: "2026-04-10T21:59:58.425Z"
+author: codex-agent
+estimated_minutes: 220
+acceptance_criteria: pm validate --check-files --scan-mode tracked-all prioritizes actionable repository files by default; users can explicitly include PM internals when desired; completion/contracts/wrapper/tests are aligned.
+parent: pm-j371
+comments[3]{created_at,author,text}:
+  "2026-04-03T21:59:58.425Z",codex-agent,Child task created from tracked-all orphaned-path signal-quality report.
+  "2026-04-03T22:03:12.315Z",codex-agent,"Implementation started: add default tracked-all exclusion for PM internals plus explicit opt-in include flag with contracts/completion/Pi parity."
+  "2026-04-03T22:17:03.821Z",codex-agent,"Implemented tracked-all PM-internal filtering: default scans exclude PM internals for higher-signal orphaned results; --include-pm-internals restores full internal audit coverage. Added completion/contracts/Pi parity and regressions. Evidence: pm test pm-a228 --run passed; full build/test/coverage passed; smoke check shows include_pm_internals=false with .agents paths excluded by default and include=true reintroduces them."
+notes[1]{created_at,author,text}:
+  "2026-04-03T21:59:58.425Z",codex-agent,Implement as additive behavior to avoid breaking existing users.
+files[9]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,Pi validate arg mapping parity
+  src/cli/commands/completion.ts,project,validate completion parity
+  src/cli/commands/validate.ts,project,tracked-all candidate filtering
+  src/cli/main.ts,project,validate include-pm-internals option wiring
+  src/sdk/cli-contracts.ts,project,validate contract/schema parity
+  tests/integration/release-readiness-runtime.spec.ts,project,runtime help/contract + pipeline regressions
+  tests/unit/completion-command.spec.ts,project,validate completion flag test
+  tests/unit/pi-agent-extension.spec.ts,project,Pi schema/mapping include flag tests
+  tests/unit/validate-command.spec.ts,project,tracked-all internal exclusion tests
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,tracked-all option and contract regressions
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,tracked-all internal exclusion changelog
+  docs/ARCHITECTURE.md,project,validate filtered/raw candidate metrics docs
+  PRD.md,project,validate scan-mode and option contract docs
+  README.md,project,validate scan-mode and internal include docs
+close_reason: tracked-all validation now excludes PM internals by default with explicit include option and parity coverage.
+body: External report reproduction in this repo shows orphaned_paths_count dominated by .agents/pm/** entries under tracked-all mode. Implement additive filtering that preserves existing behavior for explicit internal-audit use cases.

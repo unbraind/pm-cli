@@ -497,6 +497,12 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(extensionActivateSchema.required).toEqual(expect.arrayContaining(["action", "target"]));
     expect(schemaProperty(extensionActivateSchema, "scope").enum).toEqual(["project", "global"]);
 
+    const validateSchema = schemaForAction(tool.parameters as Record<string, unknown>, "validate");
+    expect(validateSchema.required).toEqual(["action"]);
+    expect(schemaProperty(validateSchema, "checkFiles").type).toBe("boolean");
+    expect(schemaProperty(validateSchema, "scanMode").enum).toEqual(["default", "tracked-all"]);
+    expect(schemaProperty(validateSchema, "includePmInternals").type).toBe("boolean");
+
     const calendarSchema = schemaForAction(tool.parameters as Record<string, unknown>, "calendar");
     expect(schemaProperty(calendarSchema, "view").type).toBe("string");
     expect(schemaProperty(calendarSchema, "past").type).toBe("boolean");
@@ -684,6 +690,24 @@ describe("Pi agent extension wrapper for pm", () => {
         scope: "global",
       }),
     ).toEqual(["--json", "extension", "--deactivate", "sample-ext", "--global"]);
+
+    expect(
+      buildPmCliArgs({
+        action: "validate",
+        checkFiles: true,
+        scanMode: "tracked-all",
+        includePmInternals: true,
+        checkHistoryDrift: true,
+      }),
+    ).toEqual([
+      "--json",
+      "validate",
+      "--check-files",
+      "--scan-mode",
+      "tracked-all",
+      "--include-pm-internals",
+      "--check-history-drift",
+    ]);
 
     expect(
       buildPmCliArgs({

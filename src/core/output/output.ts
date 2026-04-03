@@ -4,14 +4,50 @@ import {
   runActiveServiceOverrideSync,
   setActiveCommandResult,
 } from "../extensions/index.js";
+import { EXIT_CODE } from "../shared/constants.js";
 
 export interface OutputOptions {
   json?: boolean;
   quiet?: boolean;
 }
 
+interface NodeLikeError {
+  code?: string;
+}
+
+let streamErrorHandlersInstalled = false;
+
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isBrokenPipeError(error: unknown): boolean {
+  return typeof error === "object" && error !== null && (error as NodeLikeError).code === "EPIPE";
+}
+
+function markBrokenPipeExitCode(): void {
+  if (process.exitCode === undefined || process.exitCode === EXIT_CODE.SUCCESS) {
+    process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+  }
+}
+
+function installStreamErrorHandlers(): void {
+  if (streamErrorHandlersInstalled) {
+    return;
+  }
+  streamErrorHandlersInstalled = true;
+  const handleStreamError = (error: unknown): void => {
+    if (isBrokenPipeError(error)) {
+      markBrokenPipeExitCode();
+      return;
+    }
+    const unhandled = error instanceof Error ? error : new Error(String(error));
+    setImmediate(() => {
+      throw unhandled;
+    });
+  };
+  process.stdout.on("error", handleStreamError);
+  process.stderr.on("error", handleStreamError);
 }
 
 function renderScalar(value: unknown): string {
@@ -123,7 +159,16 @@ export function printResult(result: unknown, options: OutputOptions): void {
   if (options.quiet) {
     return;
   }
-  process.stdout.write(rendered);
+  installStreamErrorHandlers();
+  try {
+    process.stdout.write(rendered);
+  } catch (error: unknown) {
+    if (isBrokenPipeError(error)) {
+      markBrokenPipeExitCode();
+      return;
+    }
+    throw error;
+  }
 }
 
 export function printError(message: string): void {
@@ -131,5 +176,14 @@ export function printError(message: string): void {
     message,
   });
   const rendered = override.handled && typeof override.result === "string" ? override.result : message;
-  process.stderr.write(rendered.endsWith("\n") ? rendered : `${rendered}\n`);
+  installStreamErrorHandlers();
+  try {
+    process.stderr.write(rendered.endsWith("\n") ? rendered : `${rendered}\n`);
+  } catch (error: unknown) {
+    if (isBrokenPipeError(error)) {
+      markBrokenPipeExitCode();
+      return;
+    }
+    throw error;
+  }
 }

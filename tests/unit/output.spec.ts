@@ -7,6 +7,7 @@ import {
   setActiveExtensionServices,
 } from "../../src/core/extensions/index.js";
 import { formatOutput, printError, printResult } from "../../src/core/output/output.js";
+import { EXIT_CODE } from "../../src/constants.js";
 
 describe("core/output/output", () => {
   afterEach(() => {
@@ -91,6 +92,38 @@ describe("core/output/output", () => {
 
     printError("boom");
     expect(stderrSpy).toHaveBeenCalledWith("boom\n");
+  });
+
+  it("suppresses synchronous stdout EPIPE and sets a non-zero exit code", () => {
+    const previousExitCode = process.exitCode;
+    process.exitCode = undefined;
+    const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => {
+      const error = new Error("write EPIPE") as Error & { code?: string };
+      error.code = "EPIPE";
+      throw error;
+    });
+
+    expect(() => printResult({ ok: true }, { json: true })).not.toThrow();
+    expect(stdoutSpy).toHaveBeenCalled();
+    expect(process.exitCode).toBe(EXIT_CODE.GENERIC_FAILURE);
+
+    process.exitCode = previousExitCode;
+  });
+
+  it("suppresses synchronous stderr EPIPE and sets a non-zero exit code", () => {
+    const previousExitCode = process.exitCode;
+    process.exitCode = undefined;
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => {
+      const error = new Error("write EPIPE") as Error & { code?: string };
+      error.code = "EPIPE";
+      throw error;
+    });
+
+    expect(() => printError("boom")).not.toThrow();
+    expect(stderrSpy).toHaveBeenCalled();
+    expect(process.exitCode).toBe(EXIT_CODE.GENERIC_FAILURE);
+
+    process.exitCode = previousExitCode;
   });
 
   it("applies active command overrides before rendering", () => {

@@ -6,9 +6,8 @@ status: closed
 priority: 1
 tags[5]: "area:output","area:terminal","area:tests",compatibility,pm-cli
 created_at: "2026-04-01T11:57:58.237Z"
-updated_at: "2026-04-01T20:36:32.791Z"
+updated_at: "2026-04-03T22:17:36.449Z"
 deadline: "2026-04-11T11:57:58.237Z"
-assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 220
 acceptance_criteria: "CLI error exits avoid truncation risk, linked-test execution handles stdin and timeout diagnostics robustly, and existing exit-code/output contracts remain stable."
@@ -44,10 +43,12 @@ customer_impact: Improves trust in command completion and result interpretation.
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-mudv,parent,"2026-04-01T11:57:58.237Z",cursor-agent,null
   pm-wo8,related,"2026-04-01T11:57:58.237Z",cursor-agent,null
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-04-01T11:57:58.237Z",cursor-agent,Feature created for exit and subprocess reliability in terminal-emulated environments.
   "2026-04-01T18:53:11.471Z",cursor-agent,"Runtime follow-up scope for reopened feature: replace buffered exec-linked-test path with robust spawn orchestration while preserving output and exit-code contracts. Includes default progress heartbeat on stderr for long runs and cross-platform timeout termination hardening."
   "2026-04-01T19:10:50.007Z",cursor-agent,"Runtime feature follow-up delivered: linked tests now stream via spawn orchestration with deterministic completion semantics in PTY environments while preserving output/exit contracts. Evidence: targeted runtime suites pass and pty reproduction shows periodic linked-test progress lines before final JSON completion."
+  "2026-04-03T21:59:33.030Z",codex-agent,"External issue report reproduced in current repo: piped JSON workflows can emit unhandled write EPIPE stack traces. Tracking remediation in new child task under this feature."
+  "2026-04-03T22:17:33.948Z",codex-agent,"Follow-up child task pm-4emi is complete: broken-pipe output handling now suppresses unhandled EPIPE stacks, with unit/runtime regressions plus full build/test/coverage verification."
 notes[1]{created_at,author,text}:
   "2026-04-01T11:57:58.237Z",cursor-agent,Refactor main error exits to process.exitCode and harden runLinkedTests subprocess options/diagnostics.
 learnings[1]{created_at,author,text}:
@@ -60,5 +61,5 @@ tests[2]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,spawn-heartbeat-runtime-validation
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,runtime behavior notes
-close_reason: runtime follow-up hardening delivered and validated
+close_reason: Follow-up child task pm-4emi closed with validated broken-pipe runtime hardening.
 body: Feature for exit/output reliability and linked-test anti-hang behavior.

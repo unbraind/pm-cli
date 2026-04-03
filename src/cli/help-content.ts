@@ -133,6 +133,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "Action flags are mutually exclusive; pass exactly one lifecycle action per invocation.",
       "Use --gh/--github shorthand for GitHub sources and --ref to pin a branch, tag, or ref.",
       "Install updates settings activation state automatically unless extension allowlist mode is unchanged.",
+      "Use --manage for concise triage summaries and remediation-oriented diagnostics alongside full extension details.",
     ],
   },
   create: {
@@ -297,12 +298,17 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     examples: ["pm stats", "pm stats --json"],
   },
   health: {
-    why: "Validates tracker/runtime health including extension and migration diagnostics.",
+    why: "Validates tracker/runtime health including extension triage, migration, and integrity diagnostics.",
     examples: ["pm health", "pm health --json"],
   },
   validate: {
     why: "Runs standalone metadata, resolution, linked-file, and history drift checks.",
-    examples: ["pm validate", "pm validate --check-resolution --json", "pm validate --check-files --check-history-drift"],
+    examples: [
+      "pm validate",
+      "pm validate --check-resolution --json",
+      "pm validate --check-files --scan-mode tracked-all",
+      "pm validate --check-files --scan-mode tracked-all --include-pm-internals",
+    ],
   },
   gc: {
     why: "Cleans optional cache artifacts to keep local tracker state tidy.",

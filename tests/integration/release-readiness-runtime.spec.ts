@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { access, readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -209,7 +210,14 @@ const REQUIRED_LEARNINGS_FLAGS = ["--add", "--limit", "--author", "--message", "
 const REQUIRED_CLAIM_RELEASE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_RESTORE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_CLOSE_FLAGS = ["--author", "--message", "--validate-close", "--force"];
-const REQUIRED_VALIDATE_FLAGS = ["--check-metadata", "--check-resolution", "--check-files", "--scan-mode", "--check-history-drift"];
+const REQUIRED_VALIDATE_FLAGS = [
+  "--check-metadata",
+  "--check-resolution",
+  "--check-files",
+  "--scan-mode",
+  "--include-pm-internals",
+  "--check-history-drift",
+];
 const REQUIRED_DELETE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_APPEND_FLAGS = ["--body", "--author", "--message", "--force"];
 const REQUIRED_DEPS_FLAGS = ["--format"];
@@ -322,6 +330,76 @@ describe("release readiness runtime coverage", () => {
         code: "item_not_found",
         exit_code: 3,
       });
+    });
+  });
+
+  it("suppresses unhandled EPIPE stack traces in piped JSON workflows", async () => {
+    await withTempPmPath(async (context) => {
+      const createResult = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Pipe EPIPE seed",
+          "--description",
+          "Seed item for broken-pipe runtime validation.",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "runtime,pipe",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "15",
+          "--acceptance-criteria",
+          "Seed item exists for runtime EPIPE test.",
+          "--author",
+          "test-author",
+          "--message",
+          "Create pipe EPIPE seed",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(createResult.code).toBe(0);
+      const id = (createResult.json as { item: { id: string } }).item.id;
+      const distCliPath = path.resolve(repoRoot, "dist/cli.js");
+      const pipedResult = spawnSync(
+        "bash",
+        [
+          "-lc",
+          `set -o pipefail; "${process.execPath}" "${distCliPath}" get "${id}" --json | "${process.execPath}" -e "process.exit(0)"`,
+        ],
+        {
+          cwd: repoRoot,
+          env: context.env,
+          encoding: "utf8",
+        },
+      );
+      expect(pipedResult.status).toBe(1);
+      expect(pipedResult.stderr).not.toContain("Unhandled 'error' event");
+      expect(pipedResult.stderr).not.toContain("Error: write EPIPE");
     });
   });
 

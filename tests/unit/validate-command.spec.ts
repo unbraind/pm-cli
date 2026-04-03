@@ -357,6 +357,61 @@ describe("runValidate", () => {
     });
   });
 
+  it("excludes PM internals from tracked-all by default and supports explicit inclusion", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "validate-files-tracked-all-pm-internals");
+      const workspaceRoot = path.dirname(path.dirname(context.pmPath));
+      const srcDir = path.join(workspaceRoot, "src");
+      await mkdir(srcDir, { recursive: true });
+      await writeFile(path.join(srcDir, "tracked.ts"), "export const tracked = true;\n", "utf8");
+
+      const linked = context.runCli(["files", id, "--json", "--add", "path=src/tracked.ts,scope=project,note=tracked"], { expectJson: true });
+      expect(linked.code).toBe(0);
+
+      const gitInit = spawnSync("git", ["init"], { cwd: workspaceRoot, encoding: "utf8" });
+      expect(gitInit.status).toBe(0);
+      const internalTaskPath = path.relative(workspaceRoot, path.join(context.pmPath, "tasks", `${id}.toon`)).replaceAll("\\", "/");
+      const gitAdd = spawnSync("git", ["add", "src/tracked.ts", internalTaskPath], { cwd: workspaceRoot, encoding: "utf8" });
+      expect(gitAdd.status).toBe(0);
+
+      const defaultResult = await runValidate({ checkFiles: true, scanMode: "tracked-all" }, { path: context.pmPath });
+      const defaultDetails = checkByName(defaultResult, "files").details as {
+        include_pm_internals: boolean;
+        candidate_total_raw: number;
+        candidate_total: number;
+        pm_internal_excluded_count: number;
+        orphaned_paths_count: number;
+      };
+      expect(defaultDetails.include_pm_internals).toBe(false);
+      expect(defaultDetails.candidate_total_raw).toBe(2);
+      expect(defaultDetails.candidate_total).toBe(1);
+      expect(defaultDetails.pm_internal_excluded_count).toBe(1);
+      expect(defaultDetails.orphaned_paths_count).toBe(0);
+
+      const includeResult = await runValidate(
+        {
+          checkFiles: true,
+          scanMode: "tracked-all",
+          includePmInternals: true,
+        },
+        { path: context.pmPath },
+      );
+      const includeDetails = checkByName(includeResult, "files").details as {
+        include_pm_internals: boolean;
+        candidate_total_raw: number;
+        candidate_total: number;
+        pm_internal_excluded_count: number;
+        orphaned_paths_count: number;
+      };
+      expect(includeDetails.include_pm_internals).toBe(true);
+      expect(includeDetails.candidate_total_raw).toBe(2);
+      expect(includeDetails.candidate_total).toBe(2);
+      expect(includeDetails.pm_internal_excluded_count).toBe(0);
+      expect(includeDetails.orphaned_paths_count).toBe(1);
+      expect(includeResult.warnings).toContain("validate_files_orphaned_paths:1");
+    });
+  });
+
   it("rejects unknown scan-mode values", async () => {
     await withTempPmPath(async (context) => {
       createTask(context, "validate-files-invalid-scan-mode");

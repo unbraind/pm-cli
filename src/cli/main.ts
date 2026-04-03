@@ -3227,6 +3227,7 @@ program
   .option("--check-resolution", "Run closed-item resolution metadata checks")
   .option("--check-files", "Run linked-file and orphaned-file checks")
   .option("--scan-mode <value>", "Select file candidate scan mode for --check-files (default|tracked-all)")
+  .option("--include-pm-internals", "Include PM storage internals in tracked-all candidate scans")
   .option("--check-history-drift", "Run item/history hash drift checks")
   .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
@@ -3237,6 +3238,7 @@ program
         checkResolution: Boolean(options.checkResolution),
         checkFiles: Boolean(options.checkFiles),
         scanMode: typeof options.scanMode === "string" ? options.scanMode : undefined,
+        includePmInternals: Boolean(options.includePmInternals),
         checkHistoryDrift: Boolean(options.checkHistoryDrift),
       },
       globalOptions,

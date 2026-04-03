@@ -97,6 +97,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Date/deadline parsing now accepts month-relative offsets (`+6m`) and normalized date-string variants (for example `2026-03-31T13-59` and `20260331T135900Z`) across deadline, reminder, event, list/search filter, and calendar date inputs while preserving canonical ISO persistence.
 - `pm beads import --file -` now fails fast when stdin is an interactive TTY and returns explicit piped-input/EOF guidance instead of waiting for manual stream termination.
 - CLI top-level error handling now preserves canonical exit-code mapping via graceful `process.exitCode` semantics to reduce buffered output truncation risk in emulated terminal environments.
+- Output rendering now treats stdout/stderr broken-pipe writes (`EPIPE`) as expected pipeline behavior, suppressing unhandled Node stack traces while preserving non-EPIPE failure semantics.
 - Linked test runtime execution now uses shell-compatible spawn orchestration, closes child stdin for non-interactive runs, emits interactive stderr heartbeat progress for long-running commands, and applies deterministic timeout/maxBuffer diagnostics with force-kill fallback for stubborn subprocess trees.
 - History-touching commands now enforce `settings.history.missing_stream` consistently across read/diagnostic paths (`history`, `activity`, `stats`, `health`) and existing-item mutation/restore flows.
 - Linked test command validation now explicitly documents sandbox-safe `pm test --add` policy expectations in command contracts (use `node scripts/run-tests.mjs ...` or `path=...` linked entries for targeted scope).
@@ -108,6 +109,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pm create`/`pm update` now validate missing `--parent` references using warning-first defaults (`validation_warning:parent_reference_missing:<id>`) with optional strict rejection mode (`strict_error`).
 - CLI contracts and Pi wrapper action/schema mapping now include additive `templates-*` actions, `create --template`, `history --diff/--verify`, and files/docs linked-path hygiene flags.
 - CLI contracts, shell completion, and Pi wrapper action/parameter mappings now include additive parity for `validate`, `close --validate-close`, list `--offset/--stream`, and long-run `--progress` controls.
+- `pm validate --check-files --scan-mode tracked-all` now excludes PM-internal storage files by default, adds `--include-pm-internals` for explicit internal-audit scans, and reports filtered/raw candidate counts (`candidate_total*`, `candidate_scanned*`, `pm_internal_excluded_count`).
+- `pm extension --manage` and `pm health` extension diagnostics now include condensed `details.triage` summaries with prioritized counts and remediation-oriented next steps alongside full detailed payloads.
 
 ## [2026.3.12] - 2026-03-12
 

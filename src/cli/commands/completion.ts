@@ -132,7 +132,7 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen("--status --timeout --progress --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    validate)",
-    `      COMPREPLY=(${compgen("--check-metadata --check-resolution --check-files --scan-mode --check-history-drift --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--check-metadata --check-resolution --check-files --scan-mode --include-pm-internals --check-history-drift --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    history)",
     `      COMPREPLY=(${compgen("--limit --diff --verify --json --quiet --path --no-extensions --profile --help")})`,
@@ -439,6 +439,7 @@ _pm() {
             '--check-resolution[Run closed-item resolution metadata checks]' \\
             '--check-files[Run linked-file and orphaned-file checks]' \\
             '--scan-mode[Select file candidate scan mode for --check-files]:(default tracked-all)' \\
+            '--include-pm-internals[Include PM storage internals in tracked-all candidate scans]' \\
             '--check-history-drift[Run item/history hash drift checks]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -699,6 +700,7 @@ complete -c pm -n '__fish_seen_subcommand_from validate' -l check-metadata -d 'R
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-resolution -d 'Run closed-item resolution metadata checks'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-files -d 'Run linked-file and orphaned-file checks'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l scan-mode -d 'Select file candidate scan mode for --check-files' -r -a 'default tracked-all'
+complete -c pm -n '__fish_seen_subcommand_from validate' -l include-pm-internals -d 'Include PM storage internals in tracked-all candidate scans'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-history-drift -d 'Run item/history hash drift checks'
 
 # completion shell argument

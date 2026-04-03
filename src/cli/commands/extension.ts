@@ -139,6 +139,18 @@ export interface ExtensionCommandResult {
   details: Record<string, unknown>;
 }
 
+interface ExtensionTriageSummary {
+  status: "ok" | "warn";
+  warning_count: number;
+  total_extensions: number;
+  managed_total: number;
+  active_total: number;
+  update_available_total: number;
+  update_check_failed_total: number;
+  top_warnings: string[];
+  remediation: string[];
+}
+
 function normalizeStringList(values: readonly string[]): string[] {
   return [...new Set(values.map((value) => value.trim()).filter((value) => value.length > 0))].sort((left, right) =>
     left.localeCompare(right),
@@ -920,6 +932,50 @@ function requireTarget(target: string | undefined, action: ExtensionCommandActio
   return normalized;
 }
 
+function buildExtensionTriageSummary(
+  scope: ExtensionScope,
+  warnings: string[],
+  extensions: ManagedExtensionSummary[],
+): ExtensionTriageSummary {
+  const normalizedWarnings = [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
+  const managedTotal = extensions.filter((entry) => entry.managed).length;
+  const activeTotal = extensions.filter((entry) => entry.active).length;
+  const updateAvailableTotal = extensions.filter((entry) => entry.update_available === true).length;
+  const updateCheckFailedTotal = extensions.filter(
+    (entry) => typeof entry.update_error === "string" && entry.update_error.trim().length > 0,
+  ).length;
+  const scopeFlag = scope === "global" ? "--global" : "--project";
+  const remediation: string[] = [];
+  if (normalizedWarnings.length > 0) {
+    if (normalizedWarnings.some((warning) => warning.startsWith("extension_manifest_"))) {
+      remediation.push(`Run pm extension --explore ${scopeFlag} to inspect discovered manifests and directories.`);
+    }
+    if (updateCheckFailedTotal > 0) {
+      remediation.push(`Run pm extension --manage ${scopeFlag} after validating network and repository access.`);
+    }
+    if (normalizedWarnings.some((warning) => warning.startsWith("extension_manager_state_"))) {
+      remediation.push(`Review and repair ${scope} managed extension state file if schema/read warnings persist.`);
+    }
+  }
+  if (updateAvailableTotal > 0) {
+    remediation.push(`Update available managed extensions via pm extension --install ${scopeFlag} <source>.`);
+  }
+  if (remediation.length === 0) {
+    remediation.push(`No immediate action required. Re-run pm extension --manage ${scopeFlag} after extension changes.`);
+  }
+  return {
+    status: normalizedWarnings.length === 0 ? "ok" : "warn",
+    warning_count: normalizedWarnings.length,
+    total_extensions: extensions.length,
+    managed_total: managedTotal,
+    active_total: activeTotal,
+    update_available_total: updateAvailableTotal,
+    update_check_failed_total: updateCheckFailedTotal,
+    top_warnings: normalizedWarnings.slice(0, 8),
+    remediation,
+  };
+}
+
 export async function runExtension(
   target: string | undefined,
   options: ExtensionCommandOptions,
@@ -1149,11 +1205,13 @@ export async function runExtension(
 
     const refreshedInstalled = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedState);
     warnings.push(...refreshedInstalled.warnings);
+    const triage = buildExtensionTriageSummary(scope, warnings, refreshedInstalled.extensions);
     return withResult({
       total: refreshedInstalled.extensions.length,
       managed_total: refreshedInstalled.extensions.filter((entry) => entry.managed).length,
       active_total: refreshedInstalled.extensions.filter((entry) => entry.active).length,
       extensions: refreshedInstalled.extensions,
+      triage,
     });
   }
 

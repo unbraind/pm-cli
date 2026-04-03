@@ -1,0 +1,34 @@
+id: pm-4emi
+title: "External follow-up: suppress EPIPE stack traces in piped output"
+description: Handle stdout/stderr broken-pipe writes as expected shell behavior so pm does not emit unhandled runtime stacks in piped workflows.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:output","area:terminal",follow-up,pm-cli
+created_at: "2026-04-03T21:59:51.456Z"
+updated_at: "2026-04-03T22:17:19.667Z"
+deadline: "2026-04-10T21:59:51.456Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: Broken-pipe writes in standard piped workflows are handled without Node stack traces; behavior remains stable for non-EPIPE failures and is covered by unit/runtime tests.
+parent: pm-axlr
+comments[3]{created_at,author,text}:
+  "2026-04-03T21:59:51.456Z",codex-agent,Child task created from external issue report reproduction in this repository.
+  "2026-04-03T22:00:17.085Z",codex-agent,"Implementation started: will add safe broken-pipe handling for stdout/stderr writes and regression tests for piped JSON workflows."
+  "2026-04-03T22:16:51.293Z",codex-agent,"Implemented output-layer broken-pipe handling: stdout/stderr EPIPE now sets deterministic non-zero exit code and suppresses unhandled stack traces. Evidence: pm test pm-4emi --run passed; full build/test/coverage passed; reproduction 'pm get --json | jq -r \"invalid(\"' now reports jq compile error only (no Node stack trace)."
+notes[1]{created_at,author,text}:
+  "2026-04-03T21:59:51.456Z",codex-agent,"Primary surfaces: core output write path and CLI error/exit behavior."
+files[4]{path,scope,note}:
+  src/cli/main.ts,project,validate option + runtime output path
+  src/core/output/output.ts,project,stdout/stderr write behavior
+  tests/integration/release-readiness-runtime.spec.ts,project,piped EPIPE runtime regression
+  tests/unit/output.spec.ts,project,EPIPE sync write regression tests
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/output.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,3600,broken-pipe regression coverage
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,runtime EPIPE hardening notes
+  docs/ARCHITECTURE.md,project,terminal IO broken-pipe behavior
+  PRD.md,project,runtime broken-pipe contract
+  README.md,project,document output/pipe behavior
+close_reason: Broken-pipe output handling validated; piped workflows no longer emit unhandled EPIPE stack traces.
+body: "External report reproduction: node dist/cli.js get <id> --json | jq -r 'invalid(' emits unhandled write EPIPE stack traces. Implement additive handling with deterministic exit semantics and no runtime crash output."

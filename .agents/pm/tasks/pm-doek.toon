@@ -1,0 +1,35 @@
+id: pm-doek
+title: "External follow-up: add focused extension diagnostics triage summaries"
+description: "Improve extension triage by enhancing existing extension manage and health diagnostics with concise, remediation-oriented summaries."
+type: Task
+status: closed
+priority: 2
+tags[4]: "area:extensions","area:health",follow-up,pm-cli
+created_at: "2026-04-03T22:00:05.513Z"
+updated_at: "2026-04-03T22:17:24.065Z"
+deadline: "2026-04-10T22:00:05.513Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: "extension --manage and health extension diagnostics expose concise triage summary fields and actionable remediation hints in deterministic output, with backward-compatible detail payloads and test coverage."
+parent: pm-grst
+comments[3]{created_at,author,text}:
+  "2026-04-03T22:00:05.513Z",codex-agent,Child task created from external extension diagnostics triage request.
+  "2026-04-03T22:06:22.186Z",codex-agent,"Implementation started: add concise triage summary and remediation hints to extension --manage and health extension diagnostics while preserving full detail payloads."
+  "2026-04-03T22:17:11.560Z",codex-agent,"Implemented focused extension triage without adding new commands: extension --manage now returns concise triage summary/remediation hints, and health extensions check includes condensed triage counts + next steps. Evidence: pm test pm-doek --run passed; full build/test/coverage passed; smoke checks confirm details.triage in both manage and health JSON outputs."
+notes[1]{created_at,author,text}:
+  "2026-04-03T22:00:05.513Z",codex-agent,No new command surface; improve manage and health diagnostics only.
+files[5]{path,scope,note}:
+  src/cli/commands/extension.ts,project,manage diagnostics summary
+  src/cli/commands/health.ts,project,extension health triage summary
+  src/cli/help-content.ts,project,help alignment for triage and validate examples
+  tests/unit/extension-command.spec.ts,project,manage/explore triage regression tests
+  tests/unit/health-command.spec.ts,project,health extension triage regression tests
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/health-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,extension triage diagnostics regressions
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,extension triage changelog
+  docs/ARCHITECTURE.md,project,extension diagnostics architecture notes
+  PRD.md,project,extension triage output contract docs
+  README.md,project,extension manage/health triage docs
+close_reason: Extension manage/health diagnostics now include concise triage summaries and remediation hints with tests/docs parity.
+body: External report requests a fast triage surface. Chosen direction avoids new command; enhance existing extension --manage and health extension diagnostics with compact summaries and next-step hints while preserving full JSON detail.

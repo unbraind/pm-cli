@@ -7,7 +7,7 @@ import { getActiveExtensionRegistrations } from "../../core/extensions/index.js"
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { hashDocument } from "../../core/history/history.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
+import { EXIT_CODE, PM_DIRNAME } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
@@ -43,6 +43,7 @@ export interface ValidateCommandOptions {
   checkMetadata?: boolean;
   checkResolution?: boolean;
   checkFiles?: boolean;
+  includePmInternals?: boolean;
   checkHistoryDrift?: boolean;
   scanMode?: string;
 }
@@ -62,6 +63,11 @@ export interface ValidateResult {
 
 function normalizeRelativePath(value: string): string {
   return value.replaceAll("\\", "/").replace(/^\.\/+/, "").replace(/^\/+/, "");
+}
+
+function normalizeRelativeDirectoryPath(value: string): string {
+  const normalized = normalizeRelativePath(value);
+  return normalized.replace(/\/+$/, "");
 }
 
 function toNonEmptyString(value: unknown): string | undefined {
@@ -175,6 +181,28 @@ interface FileCandidateCollection {
   candidateFiles: string[];
   candidateTotal: number;
   candidateScanned: number;
+}
+
+function resolvePmInternalCandidatePrefixes(pmRoot: string, workspaceRoot: string): string[] {
+  const prefixes = new Set<string>();
+  const configuredDefault = normalizeRelativeDirectoryPath(PM_DIRNAME);
+  if (configuredDefault.length > 0) {
+    prefixes.add(configuredDefault);
+  }
+  const relativePmRoot = normalizeRelativeDirectoryPath(path.relative(workspaceRoot, pmRoot));
+  if (relativePmRoot.length > 0 && !relativePmRoot.startsWith("..")) {
+    prefixes.add(relativePmRoot);
+  }
+  return [...prefixes].sort((left, right) => left.localeCompare(right));
+}
+
+function hasPathPrefix(candidate: string, prefixes: string[]): boolean {
+  for (const prefix of prefixes) {
+    if (candidate === prefix || candidate.startsWith(`${prefix}/`)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 async function collectProjectFileCandidates(
@@ -350,7 +378,9 @@ function buildResolutionCheck(items: ItemWithBody[]): { check: ValidateCheck; wa
 async function buildFilesCheck(
   items: ItemWithBody[],
   workspaceRoot: string,
+  pmRoot: string,
   fileScanMode: ValidateFileScanMode,
+  includePmInternals: boolean,
 ): Promise<{ check: ValidateCheck; warnings: string[] }> {
   const linkedProjectPaths = new Set<string>();
   const missingLinkedPaths: string[] = [];
@@ -380,7 +410,13 @@ async function buildFilesCheck(
 
   const uniqueMissingLinkedPaths = [...new Set(missingLinkedPaths)].sort((left, right) => left.localeCompare(right));
   const fileCandidates = await collectProjectFileCandidates(workspaceRoot, fileScanMode);
-  const orphanedFiles = fileCandidates.candidateFiles.filter((candidate) => !linkedProjectPaths.has(candidate));
+  const pmInternalCandidatePrefixes = includePmInternals ? [] : resolvePmInternalCandidatePrefixes(pmRoot, workspaceRoot);
+  const candidateFiles =
+    pmInternalCandidatePrefixes.length === 0
+      ? fileCandidates.candidateFiles
+      : fileCandidates.candidateFiles.filter((candidate) => !hasPathPrefix(candidate, pmInternalCandidatePrefixes));
+  const excludedPmInternalCount = fileCandidates.candidateFiles.length - candidateFiles.length;
+  const orphanedFiles = candidateFiles.filter((candidate) => !linkedProjectPaths.has(candidate));
   const warnings: string[] = [];
   if (uniqueMissingLinkedPaths.length > 0) {
     warnings.push(`validate_files_missing_linked_paths:${uniqueMissingLinkedPaths.length}`);
@@ -400,10 +436,15 @@ async function buildFilesCheck(
         scan_mode_requested: fileCandidates.requestedMode,
         scan_mode_applied: fileCandidates.appliedMode,
         candidate_scan_source: fileCandidates.source,
+        include_pm_internals: includePmInternals,
+        pm_internal_candidate_prefixes: pmInternalCandidatePrefixes,
+        pm_internal_excluded_count: excludedPmInternalCount,
         linked_project_paths: linkedProjectPaths.size,
-        candidate_total: fileCandidates.candidateTotal,
-        candidate_scanned: fileCandidates.candidateScanned,
-        scanned_candidate_files: fileCandidates.candidateScanned,
+        candidate_total_raw: fileCandidates.candidateTotal,
+        candidate_scanned_raw: fileCandidates.candidateScanned,
+        candidate_total: candidateFiles.length,
+        candidate_scanned: candidateFiles.length,
+        scanned_candidate_files: candidateFiles.length,
         missing_linked_paths_count: uniqueMissingLinkedPaths.length,
         missing_linked_paths: summarizedMissing.values,
         missing_linked_paths_truncated: summarizedMissing.truncated,
@@ -525,7 +566,7 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
     warnings.push(...resolutionCheck.warnings);
   }
   if (requestedChecks.has("files")) {
-    const filesCheck = await buildFilesCheck(items, workspaceRoot, fileScanMode);
+    const filesCheck = await buildFilesCheck(items, workspaceRoot, pmRoot, fileScanMode, Boolean(options.includePmInternals));
     checks.push(filesCheck.check);
     warnings.push(...filesCheck.warnings);
   }

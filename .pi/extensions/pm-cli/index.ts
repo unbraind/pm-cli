@@ -109,6 +109,7 @@ export interface PmToolParameters {
   checkResolution?: boolean;
   checkFiles?: boolean;
   scanMode?: string;
+  includePmInternals?: boolean;
   checkHistoryDrift?: boolean;
   diff?: boolean;
   verify?: boolean;
@@ -606,6 +607,9 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
         args.push("--check-files");
       }
       pushOption(args, "--scan-mode", params.scanMode);
+      if (params.includePmInternals) {
+        args.push("--include-pm-internals");
+      }
       if (params.checkHistoryDrift) {
         args.push("--check-history-drift");
       }

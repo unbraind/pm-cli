@@ -129,7 +129,7 @@ The same registry drives:
 - shell completion flag/command surfaces in `src/cli/commands/completion.ts`
 - Pi wrapper action enum, tool `inputSchema`, and CLI arg mapping in `.pi/extensions/pm-cli/index.ts`
 - runtime `pm contracts` payload generation for action/command/schema introspection
-- additive command surfaces such as `templates-*` actions, extension lifecycle actions (`extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-activate`, `extension-deactivate`), `history --diff/--verify`, files/docs path hygiene flags (`--add-glob`, `--migrate`, `--append-stable`, `--validate-paths`, `--audit`), `validate --scan-mode`, `create --create-mode`, `comments --allow-audit-comment`, and `deps --format`
+- additive command surfaces such as `templates-*` actions, extension lifecycle actions (`extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-activate`, `extension-deactivate`), `history --diff/--verify`, files/docs path hygiene flags (`--add-glob`, `--migrate`, `--append-stable`, `--validate-paths`, `--audit`), `validate --scan-mode/--include-pm-internals`, `create --create-mode`, `comments --allow-audit-comment`, and `deps --format`
 
 This keeps human CLI UX and machine-facing contracts aligned while preserving additive/backward-compatible evolution.
 
@@ -245,7 +245,7 @@ Linked arrays (`comments`, `notes`, `learnings`, `files`, `tests`, `docs`) are i
 - `pm create --create-mode strict|progressive` keeps strict mode as default while enabling staged progressive creation for governance triage workflows.
 - `pm deps --format tree|graph` provides read-only dependency traversal from stored front matter, with deterministic ordering, cycle markers, and missing-node reporting.
 - `pm list` / `pm list-*` support additive `--offset` pagination and JSON-only `--stream` line-delimited output for large datasets.
-- `pm validate` runs standalone repository checks (`metadata`, `resolution`, `files`, `history_drift`), supports file candidate selection via `--scan-mode default|tracked-all`, and returns deterministic check payloads with file scan metrics.
+- `pm validate` runs standalone repository checks (`metadata`, `resolution`, `files`, `history_drift`), supports file candidate selection via `--scan-mode default|tracked-all`, supports additive internal-audit coverage with `--include-pm-internals`, and returns deterministic filtered + raw file scan metrics.
 
 ## Calendar Pipeline
 
@@ -298,7 +298,8 @@ Pipeline:
 2. **Sparse TOON fallback output** — default TOON output renders command payloads directly and recursively omits `null`/`undefined`/empty arrays/empty objects to reduce token overhead while preserving meaningful scalar values.
 3. **Fail-fast stdin semantics** — stdin token readers reject interactive TTY stdin for piped-only flows (`-`) and provide explicit EOF guidance instead of waiting indefinitely.
 4. **Graceful error exits** — CLI error handling preserves canonical exit codes using graceful `process.exitCode` semantics to reduce output truncation risk under buffered writes.
-5. **Linked test runtime hardening** — linked test subprocess execution uses shell-compatible spawn orchestration, closes child stdin immediately, applies deterministic runtime environment defaults, emits interactive stderr heartbeat progress for long runs, supports explicit non-interactive progress output via `--progress`, and enforces timeout/maxBuffer diagnostics with force-kill fallback for stubborn process trees.
+5. **Broken-pipe-safe output writes** — stdout/stderr stream error handlers treat `EPIPE` as expected pipeline behavior (set non-zero exit code, suppress unhandled stack traces) while preserving existing non-EPIPE error handling.
+6. **Linked test runtime hardening** — linked test subprocess execution uses shell-compatible spawn orchestration, closes child stdin immediately, applies deterministic runtime environment defaults, emits interactive stderr heartbeat progress for long runs, supports explicit non-interactive progress output via `--progress`, and enforces timeout/maxBuffer diagnostics with force-kill fallback for stubborn process trees.
 
 ## Help and Error Guidance Pipeline
 
@@ -351,8 +352,8 @@ Lifecycle manager command architecture:
 - `src/cli/commands/extension.ts` implements `pm extension` actions (`install`, `uninstall`, `explore`, `manage`, `activate`, `deactivate`) with deterministic validation and mutually-exclusive action routing.
 - Install sources support local directories, GitHub HTTPS URLs, `github.com/<owner>/<repo>[/path]`, and forced shorthand via `--gh/--github`.
 - Scope-local managed state is persisted at `<extensions-root>/.managed-extensions.json` for deterministic source metadata, install/update timestamps, and update-check status.
-- `--manage` executes GitHub remote checks (`git ls-remote`) for managed GitHub entries and updates managed-state metadata.
-- Health diagnostics include managed extension summaries/warnings for both project and global extension roots.
+- `--manage` executes GitHub remote checks (`git ls-remote`) for managed GitHub entries, updates managed-state metadata, and emits deterministic `details.triage` summary/remediation hints.
+- Health diagnostics include managed extension summaries/warnings for both project and global extension roots and a condensed `details.triage` surface for load/activation/migration triage.
 
 Extension Host V2 adds three additional override planes:
 

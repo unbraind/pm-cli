@@ -233,8 +233,11 @@ The vectorization ledger is also refreshed during `pm reindex --mode semantic|hy
 
 - Runs all validation checks by default (`metadata`, `resolution`, `files`, `history_drift`).
 - Supports scoped checks with `--check-metadata`, `--check-resolution`, `--check-files`, and `--check-history-drift`.
-- `--check-files` supports `--scan-mode default|tracked-all`; `tracked-all` uses git-tracked candidates when available and always reports `candidate_total` + `candidate_scanned` (while retaining `scanned_candidate_files` for compatibility).
+- `--check-files` supports `--scan-mode default|tracked-all`; `tracked-all` uses git-tracked candidates when available.
+- `tracked-all` excludes PM internals by default for higher-signal orphaned results; pass `--include-pm-internals` for full internal-audit scans.
+- File-check details report filtered candidate counts (`candidate_total`, `candidate_scanned`) plus raw pre-filter counts (`candidate_total_raw`, `candidate_scanned_raw`) and `pm_internal_excluded_count`.
 - Returns deterministic TOON/JSON output suitable for review or automation pipelines.
+- Output writers treat broken pipes (`EPIPE`) as expected shell behavior, so early-terminating pipelines do not emit unhandled Node stack traces.
 
 ## Missing History Stream Policy
 
@@ -613,8 +616,8 @@ Activation and health behavior:
 - Install auto-activates the extension in selected scope settings.
 - Deactivate/activate toggle `extensions.disabled[]`/`extensions.enabled[]` in settings.
 - `pm extension --explore` lists discovered extensions and active status.
-- `pm extension --manage` refreshes GitHub-managed update metadata and persists it to scope-local `.managed-extensions.json`.
-- `pm health` includes managed extension state diagnostics for both project and global roots.
+- `pm extension --manage` refreshes GitHub-managed update metadata, persists it to scope-local `.managed-extensions.json`, and includes a concise triage summary with remediation hints.
+- `pm health` includes managed extension state diagnostics plus a condensed extension triage block for quick load/activation/migration issue triage across project and global roots.
 
 Use `pm extension --help` for compact guidance or `pm extension --help --explain` for expanded examples/tips.
 

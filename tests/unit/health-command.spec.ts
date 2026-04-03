@@ -122,6 +122,12 @@ describe("runHealth", () => {
         configured_disabled: [],
         discovered: [],
         warnings: [],
+        triage: {
+          status: "ok",
+          warning_count: 0,
+          load_failure_count: 0,
+          activation_failure_count: 0,
+        },
       });
       expect(extensionCheck?.details).toMatchObject({
         activation: {
@@ -536,6 +542,12 @@ describe("runHealth", () => {
             name: "boom-ext",
           }),
         ],
+        triage: {
+          status: "warn",
+          warning_count: 1,
+          load_failure_count: 1,
+          activation_failure_count: 0,
+        },
       });
 
       const loaded = (
@@ -617,6 +629,12 @@ describe("runHealth", () => {
         disabled_by_flag: false,
         failed: [],
         warnings: ["extension_activate_failed:project:activate-boom-ext"],
+        triage: {
+          status: "warn",
+          warning_count: 1,
+          load_failure_count: 0,
+          activation_failure_count: 1,
+        },
         activation: {
           warnings: ["extension_activate_failed:project:activate-boom-ext"],
           failed: [

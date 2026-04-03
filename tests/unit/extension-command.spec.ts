@@ -131,6 +131,15 @@ describe("extension command runtime", () => {
       expect(exploreExtensions).toEqual(
         expect.arrayContaining([expect.objectContaining({ name: "sample-ext", active: true, managed: true })]),
       );
+      expect(explore.details).toMatchObject({
+        triage: {
+          status: "ok",
+          warning_count: 0,
+          total_extensions: 1,
+          managed_total: 1,
+          active_total: 1,
+        },
+      });
 
       const deactivate = await runExtension("sample-ext", { deactivate: true, project: true }, { path: context.pmPath });
       expect(deactivate.details).toMatchObject({
@@ -151,6 +160,10 @@ describe("extension command runtime", () => {
         total: 1,
         managed_total: 1,
         active_total: 1,
+        triage: {
+          status: "ok",
+          warning_count: 0,
+        },
       });
 
       const uninstall = await runExtension("sample-ext", { uninstall: true, project: true }, { path: context.pmPath });
@@ -378,6 +391,12 @@ describe("extension command runtime", () => {
           "extension_manifest_invalid:project:invalid-schema",
         ]),
       );
+      expect(result.details).toMatchObject({
+        triage: {
+          status: "warn",
+          warning_count: 3,
+        },
+      });
     });
   });
 
@@ -609,6 +628,12 @@ describe("extension command runtime", () => {
 
       const manage = await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath });
       expect(manage.warnings).toEqual(expect.arrayContaining(["extension_update_check_failed:alpha-ext"]));
+      expect(manage.details).toMatchObject({
+        triage: {
+          status: "warn",
+          update_check_failed_total: 1,
+        },
+      });
     });
   });
 
@@ -653,6 +678,12 @@ describe("extension command runtime", () => {
 
       const manage = await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath });
       expect(manage.warnings).toEqual(expect.arrayContaining(["extension_update_check_failed:missing-repo-ext"]));
+      expect(manage.details).toMatchObject({
+        triage: {
+          status: "warn",
+          update_check_failed_total: 1,
+        },
+      });
     });
   });
 });

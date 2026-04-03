@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:files","area:validation",audit,governance,pm-cli
 created_at: "2026-04-03T20:57:28.175Z"
-updated_at: "2026-04-03T21:27:25.445Z"
+updated_at: "2026-04-03T22:17:40.155Z"
 deadline: "2026-04-12T20:57:28.175Z"
 author: codex-agent
 estimated_minutes: 240
@@ -14,8 +14,10 @@ acceptance_criteria: pm validate supports additive full tracked-file scan mode a
 parent: pm-r7t2
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-r7t2,parent,"2026-04-03T20:57:28.175Z",codex-agent,null
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-03T20:57:28.175Z",codex-agent,"Net-new scope after dedupe: validate check-files needs full tracked scan mode and explicit totals."
+  "2026-04-03T21:59:36.647Z",codex-agent,"External issue report reproduced in current repo: validate --check-files --scan-mode tracked-all orphaned output is dominated by .agents/pm internals. Tracking additive remediation in new child task."
+  "2026-04-03T22:17:38.022Z",codex-agent,"Follow-up child task pm-a228 is complete: tracked-all now excludes PM internals by default, adds include opt-in flag, and keeps completion/contracts/Pi parity."
 notes[1]{created_at,author,text}:
   "2026-04-03T20:57:28.175Z",codex-agent,Keep current check-files behavior as default and add opt-in tracked-all mode.
 learnings[1]{created_at,author,text}:
@@ -26,5 +28,5 @@ tests[1]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,null,project,3600,validate scan regression
 docs[1]{path,scope,note}:
   README.md,project,validate command behavior docs
-close_reason: "Child task pm-kshe completed: validate file scan-mode tracked-all + candidate metrics implemented with docs/contracts/tests parity and full verification pass."
+close_reason: Follow-up child task pm-a228 closed with validated tracked-all PM-internal filtering improvements.
 body: Implements net-new governance Issue #1 with compatibility-safe defaults and explicit candidate counting metrics.

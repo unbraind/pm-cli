@@ -132,7 +132,9 @@ describe("generateBashScript", () => {
 
   it("includes validate scan-mode flag in bash completion", () => {
     const script = generateBashScript();
-    expect(script).toContain("--check-metadata --check-resolution --check-files --scan-mode --check-history-drift");
+    expect(script).toContain(
+      "--check-metadata --check-resolution --check-files --scan-mode --include-pm-internals --check-history-drift",
+    );
   });
 
   it("includes calendar-specific flags", () => {

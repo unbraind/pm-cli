@@ -844,7 +844,7 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | --- | --- | --- |
 | `pm init [PREFIX]` | optional prefix, `--path` | `{ ok, path, settings, created_dirs, warnings }` |
 | `pm install pi [--project\|--global]` | install target (`pi`) + optional scope flags (`--project` default writes to `<project-root>/.pi/extensions/pm-cli/index.ts` where `project-root` is derived from `--path` when provided, otherwise current working directory; `--global` uses `PI_CODING_AGENT_DIR` or `~/.pi/agent`) | `{ ok, target, scope, source_path, destination_path, overwritten, warnings }` |
-| `pm extension [target] --install\|--uninstall\|--explore\|--manage\|--activate\|--deactivate` | exactly one lifecycle action, optional `target` (required for install/uninstall/activate/deactivate), scope flags (`--project` default, `--local` alias, `--global`), install source selectors (`target`, `--gh`, `--github`, optional `--ref`) | `{ ok, action, scope, roots, warnings, details }` where `details` shape is action-specific |
+| `pm extension [target] --install\|--uninstall\|--explore\|--manage\|--activate\|--deactivate` | exactly one lifecycle action, optional `target` (required for install/uninstall/activate/deactivate), scope flags (`--project` default, `--local` alias, `--global`), install source selectors (`target`, `--gh`, `--github`, optional `--ref`) | `{ ok, action, scope, roots, warnings, details }` where `details` is action-specific and `explore/manage` include `triage` summary + remediation hints |
 | `pm list` | optional filter flags (including `--include-body`, `--offset`, and JSON-only `--stream`); excludes terminal statuses (`closed`, `canceled`) by default | `{ items, count, filters, now }` (or streamed newline-delimited rows when `--json --stream`) |
 | `pm list-all` | optional filter flags (including `--include-body`, `--offset`, and JSON-only `--stream`); includes all statuses including terminal | `{ items, count, filters, now }` (or streamed newline-delimited rows when `--json --stream`) |
 | `pm list-draft` | optional type/tag/priority/deadline/assignee/sprint/release/include-body/offset filters plus JSON-only stream mode | `{ items, count, filters, now }` (or streamed newline-delimited rows when `--json --stream`) |
@@ -878,8 +878,8 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | `pm test <ID> --add/--remove/--run` | id + test refs/options (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`; reject recursive `test-all` linked commands at add-time, including global-flag and package-spec launcher forms such as `pm --json test-all`, `npx @unbrained/pm-cli@latest --json test-all`, `pnpm dlx @unbrained/pm-cli@latest --json test-all`, and `npm exec -- @unbrained/pm-cli@latest --json test-all`; defensively skip legacy recursive entries at run-time; reject sandbox-unsafe test-runner commands including unsandboxed direct package-manager run-script forms such as `npm run test`/`pnpm run test` and chained direct runner segments evaluated independently; this sandbox policy is intentional, and targeted scopes should be linked via `node scripts/run-tests.mjs ...` commands or `path=...` entries; run linked commands via shell-compatible spawn orchestration, close child stdin for non-interactive runs, emit stderr heartbeat progress in interactive terminals, and surface deterministic timeout/maxBuffer diagnostics with force-kill fallback) | `{ id, tests, run_results, changed, count }` |
 | `pm test-all --status --timeout` | optional status filter plus additive `--progress` stderr visibility; duplicate linked command/path entries are deduped per invocation (keyed by scope+normalized command or scope+path) and reported as skipped; when duplicate keys carry different `timeout_seconds`, execution uses deterministic maximum timeout for that key | `{ totals, failed, passed, skipped, results }` |
 | `pm stats` | none | `{ totals, by_type, by_status, generated_at }` |
-| `pm health` | none (runs settings/directories/extensions/storage plus integrity, history-drift, and vectorization diagnostics) | `{ ok, checks, warnings, generated_at }` |
-| `pm validate` | optional scoped checks (`--check-metadata`, `--check-resolution`, `--check-files`, `--check-history-drift`; default all checks); file checks also accept `--scan-mode default|tracked-all` and report `candidate_total` / `candidate_scanned` detail counts | `{ ok, checks, warnings, generated_at }` |
+| `pm health` | none (runs settings/directories/extensions/storage plus integrity, history-drift, and vectorization diagnostics) | `{ ok, checks, warnings, generated_at }` with extension diagnostics including condensed `details.triage` |
+| `pm validate` | optional scoped checks (`--check-metadata`, `--check-resolution`, `--check-files`, `--check-history-drift`; default all checks); file checks accept `--scan-mode default|tracked-all` plus `--include-pm-internals` opt-in and report filtered + raw candidate metrics (`candidate_total`, `candidate_scanned`, `candidate_total_raw`, `candidate_scanned_raw`) | `{ ok, checks, warnings, generated_at }` |
 | `pm gc` | none | `{ ok, removed, retained, warnings, generated_at }` |
 | `pm contracts [--action <value>] [--command <value>] [--schema-only]` | optional action/command filters and schema-only mode for machine contract introspection | `{ schema_version, schema_id, selected, actions, commands, schema, command_flags?, commander_aliases? }` |
 | `pm docs <ID> --add/--add-glob/--remove/--migrate/--validate-paths/--audit` | id + doc refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`); optional glob expansion via repeatable `--add-glob` (plain glob or `pattern=<glob>,scope=<scope>,note=<text>`); optional additive linked-path hygiene (`--migrate from=<old>,to=<new>`, path existence validation, cross-item audit) | `{ id, docs, changed, count, migrations_applied, validation, audit }` |
@@ -929,6 +929,7 @@ Determinism requirements:
 - `--quiet` prints nothing to stdout but still uses exit codes.
 - Stdin token paths requiring piped input fail fast on interactive TTY stdin with actionable guidance instead of waiting indefinitely for EOF.
 - Manual interactive EOF guidance remains explicit and cross-platform: `Ctrl+D` (Unix/macOS) and `Ctrl+Z` then `Enter` (Windows).
+- Output writes handle broken pipes (`EPIPE`) as expected shell behavior so early-closing pipeline consumers do not emit unhandled runtime stack traces.
 
 ## 13) Search Architecture
 
@@ -1065,8 +1066,8 @@ Lifecycle manager command:
 - Install sources: local directory, GitHub HTTPS URL, `github.com/<owner>/<repo>[/path]`, or `--gh/--github <owner>/<repo>[/path]` with optional `--ref`.
 - GitHub subpath resolution probes deterministic default extension roots (`.agents/pm/extensions`, `.custom/pm-extensions`, `.custom/pm-extension`) when shorthand inputs do not include full paths.
 - Scope-local managed state is persisted in `<extension-root>/.managed-extensions.json` and includes source metadata plus update-check status.
-- `pm extension --manage` performs GitHub remote update checks for managed GitHub entries and persists latest check metadata.
-- `pm health` extension diagnostics include managed-state summaries/warnings for both project and global scope.
+- `pm extension --manage` performs GitHub remote update checks for managed GitHub entries, persists latest check metadata, and returns deterministic `details.triage` summaries with remediation hints.
+- `pm health` extension diagnostics include managed-state summaries/warnings for both project and global scope plus condensed `details.triage` counts/remediation for load, activation, and migration issues.
 
 ### 14.2 Load order and precedence
 
@@ -1254,7 +1255,7 @@ Current baseline status (release-hardening):
   - completion parity field `shell` (`action=completion` -> `pm completion <shell>`)
   - search-specific parity fields including `mode` and `includeLinked` (`--include-linked`)
   - list/runtime parity fields including `offset` and `progress` where command surfaces support those flags
-  - close/validate parity fields including `validateClose`, `checkMetadata`, `checkResolution`, `checkFiles`, and `checkHistoryDrift`
+  - close/validate parity fields including `validateClose`, `checkMetadata`, `checkResolution`, `checkFiles`, `scanMode`, `includePmInternals`, and `checkHistoryDrift`
   - claim/release metadata parity fields including `author`, `message`, and `force` (`--author`, `--message`, `--force`)
   - create/update scalar parity fields using camelCase wrapper parameters that forward to the canonical CLI flags for planning/workflow metadata (`parent`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blockedBy`, `blockedReason`, `unblockNote`, `definitionOfReady`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `whyNow`, `closeReason`) and issue metadata (`reporter`, `severity`, `environment`, `reproSteps`, `resolution`, `expectedResult`, `actualResult`, `affectedVersion`, `fixedVersion`, `component`, `regression`, `customerImpact`)
   - explicit empty-string passthrough for empty-allowed CLI flags (for example `--description ""` and `--body ""`)

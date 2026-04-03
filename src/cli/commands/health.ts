@@ -59,6 +59,19 @@ interface MigrationStatusSummary {
   failed_count: number;
 }
 
+interface ExtensionHealthTriageSummary {
+  status: "ok" | "warn";
+  warning_count: number;
+  load_failure_count: number;
+  activation_failure_count: number;
+  migration_failed_count: number;
+  migration_pending_count: number;
+  managed_state_warning_count: number;
+  managed_extension_entries_count: number;
+  top_warnings: string[];
+  remediation: string[];
+}
+
 type ItemWithBody = Awaited<ReturnType<typeof listAllFrontMatterWithBody>>[number];
 
 async function isDirectory(targetPath: string): Promise<boolean> {
@@ -382,6 +395,45 @@ function summarizeMigrationStatuses(
   };
 }
 
+function buildExtensionHealthTriageSummary(
+  warnings: string[],
+  loadFailureCount: number,
+  activationFailureCount: number,
+  migrationStatus: MigrationStatusSummary,
+  managedStateWarningCount: number,
+  managedExtensionEntriesCount: number,
+): ExtensionHealthTriageSummary {
+  const normalizedWarnings = [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
+  const remediation: string[] = [];
+  if (loadFailureCount > 0) {
+    remediation.push("Run pm extension --explore --project and pm extension --explore --global to inspect load failures.");
+  }
+  if (activationFailureCount > 0) {
+    remediation.push("Review checks[name=extensions].details.activation.failed in pm health --json for activation error details.");
+  }
+  if (migrationStatus.failed_count > 0 || migrationStatus.pending_count > 0) {
+    remediation.push("Resolve pending/failed extension migrations before write commands; use --force only when policy allows.");
+  }
+  if (managedStateWarningCount > 0) {
+    remediation.push("Run pm extension --manage --project and pm extension --manage --global to refresh managed-state diagnostics.");
+  }
+  if (remediation.length === 0) {
+    remediation.push("No immediate action required. Re-run pm health after extension configuration changes.");
+  }
+  return {
+    status: normalizedWarnings.length === 0 ? "ok" : "warn",
+    warning_count: normalizedWarnings.length,
+    load_failure_count: loadFailureCount,
+    activation_failure_count: activationFailureCount,
+    migration_failed_count: migrationStatus.failed_count,
+    migration_pending_count: migrationStatus.pending_count,
+    managed_state_warning_count: managedStateWarningCount,
+    managed_extension_entries_count: managedExtensionEntriesCount,
+    top_warnings: normalizedWarnings.slice(0, 8),
+    remediation,
+  };
+}
+
 async function buildExtensionCheck(
   pmRoot: string,
   settings: PmSettings,
@@ -439,6 +491,14 @@ async function buildExtensionCheck(
     ...projectManagedState.warnings,
     ...globalManagedState.warnings,
   ];
+  const extensionTriage = buildExtensionHealthTriageSummary(
+    extensionWarnings,
+    loadResult.failed.length,
+    activationResult.failed.length,
+    migrationStatus.summary,
+    projectManagedState.warnings.length + globalManagedState.warnings.length,
+    projectManagedState.state.entries.length + globalManagedState.state.entries.length,
+  );
 
   return {
     check: {
@@ -449,6 +509,7 @@ async function buildExtensionCheck(
         loaded: loadedSummaries,
         warnings: extensionWarnings,
         activation: activationDetails,
+        triage: extensionTriage,
       } as Record<string, unknown>,
     },
     warnings: extensionWarnings,

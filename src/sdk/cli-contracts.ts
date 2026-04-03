@@ -357,6 +357,7 @@ export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--check-resolution" },
   { flag: "--check-files" },
   { flag: "--scan-mode" },
+  { flag: "--include-pm-internals" },
   { flag: "--check-history-drift" },
 ];
 
@@ -834,6 +835,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   checkResolution: { type: "boolean" },
   checkFiles: { type: "boolean" },
   scanMode: { type: "string", enum: ["default", "tracked-all"] },
+  includePmInternals: { type: "boolean" },
   checkHistoryDrift: { type: "boolean" },
   allowAuditComment: { type: "boolean" },
   force: { type: "boolean" },
@@ -968,7 +970,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   "test-all": { optional: ["status", "timeout", "progress"] },
   stats: {},
   health: {},
-  validate: { optional: ["checkMetadata", "checkResolution", "checkFiles", "scanMode", "checkHistoryDrift"] },
+  validate: { optional: ["checkMetadata", "checkResolution", "checkFiles", "scanMode", "includePmInternals", "checkHistoryDrift"] },
   gc: {},
   contracts: { optional: ["contractAction", "command", "schemaOnly"] },
   completion: { required: ["shell"] },
@@ -1107,6 +1109,9 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   scanMode: {
     description: "Select file candidate scan mode for --check-files.",
     examples: ["default", "tracked-all"],
+  },
+  includePmInternals: {
+    description: "Include PM storage internals in tracked-all candidate scans.",
   },
   checkHistoryDrift: {
     description: "Run item/history hash drift checks.",

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:extensions","area:health","area:state","milestone:extension-manager",pm-cli
 created_at: "2026-04-03T16:16:38.574Z"
-updated_at: "2026-04-03T17:09:37.174Z"
+updated_at: "2026-04-03T22:17:43.213Z"
 deadline: "2026-04-13T16:16:38.574Z"
 author: codex-agent
 estimated_minutes: 300
@@ -35,9 +35,11 @@ fixed_version: target-vnext
 component: extension-state
 regression: false
 customer_impact: Users gain predictable extension state and diagnostics
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-03T16:16:38.574Z",codex-agent,Created after de-dup scan for extension state and lifecycle diagnostics scope.
   "2026-04-03T17:09:35.633Z",codex-agent,"Implemented managed extension state persistence, activate/deactivate lifecycle toggles, explore/manage views, and health diagnostics integration for project/global managed states."
+  "2026-04-03T21:59:39.866Z",codex-agent,"External issue report requests a focused triage surface. Selected direction: enhance existing extension --manage and health diagnostics without adding a new command."
+  "2026-04-03T22:17:41.165Z",codex-agent,"Follow-up child task pm-doek is complete: extension --manage and health now expose concise triage summaries/remediation hints with regression coverage and docs parity."
 notes[1]{created_at,author,text}:
   "2026-04-03T16:16:38.574Z",codex-agent,"Will include settings state updates,metadata persistence,and manage/explore/health output details."
 files[1]{path,scope,note}:
@@ -46,5 +48,5 @@ tests[1]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,state and diagnostics regression
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,state and lifecycle architecture documentation
-close_reason: Managed extension state and health lifecycle surfaces implemented and validated by unit/integration coverage.
+close_reason: Follow-up child task pm-doek closed with validated extension triage diagnostics enhancements.
 body: "Feature C from extension manager rollout: managed state model and lifecycle inspection surfaces."
