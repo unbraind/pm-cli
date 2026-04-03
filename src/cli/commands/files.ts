@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import fg from "fast-glob";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { createStdinTokenResolver, parseCsvKv } from "../../core/item/parse.js";
@@ -15,6 +16,7 @@ import type { LinkedFile, LinkScope } from "../../types/index.js";
 
 export interface FilesCommandOptions {
   add?: string[];
+  addGlob?: string[];
   remove?: string[];
   migrate?: string[];
   list?: boolean;
@@ -28,6 +30,12 @@ export interface FilesCommandOptions {
 interface PathMigration {
   from: string;
   to: string;
+}
+
+interface AddGlobEntry {
+  pattern: string;
+  scope: LinkScope;
+  note?: string;
 }
 
 interface LinkedPathValidation {
@@ -82,6 +90,32 @@ function parseAddEntries(raw: string[] | undefined): LinkedFile[] {
   });
 }
 
+function parseAddGlobEntries(raw: string[] | undefined): AddGlobEntry[] {
+  if (!raw) return [];
+  return raw.map((entry) => {
+    const trimmed = entry.trim();
+    if (!trimmed) {
+      throw new PmCliError("--add-glob requires a glob pattern value", EXIT_CODE.USAGE);
+    }
+    if (trimmed.includes("=") || /^(?:[-*+]\s+)?(?:pattern|glob|path)\s*[:=]/i.test(trimmed) || trimmed.startsWith("```")) {
+      const kv = parseCsvKv(trimmed, "--add-glob");
+      const pattern = kv.pattern?.trim() || kv.glob?.trim() || kv.path?.trim();
+      if (!pattern) {
+        throw new PmCliError("--add-glob key/value form requires pattern=<glob>", EXIT_CODE.USAGE);
+      }
+      return {
+        pattern,
+        scope: ensureScope(kv.scope),
+        note: kv.note?.trim() || undefined,
+      };
+    }
+    return {
+      pattern: trimmed,
+      scope: "project",
+    };
+  });
+}
+
 function parseRemoveEntries(raw: string[] | undefined): string[] {
   if (!raw) return [];
   return raw.map((entry) => {
@@ -121,6 +155,36 @@ function applyPathMigrations(filePath: string, migrations: PathMigration[]): str
     }
   }
   return next;
+}
+
+function normalizeLinkedPath(value: string): string {
+  return value.split(path.sep).join("/");
+}
+
+async function expandAddGlobEntries(entries: AddGlobEntry[]): Promise<LinkedFile[]> {
+  const expanded: LinkedFile[] = [];
+  for (const entry of entries) {
+    const absolutePattern = path.isAbsolute(entry.pattern);
+    const matches = await fg(entry.pattern, {
+      cwd: process.cwd(),
+      absolute: absolutePattern,
+      onlyFiles: true,
+      dot: true,
+      unique: true,
+      followSymbolicLinks: true,
+    });
+    const sortedMatches = [...new Set(matches.map((match) => normalizeLinkedPath(path.normalize(match))))].sort((left, right) =>
+      left.localeCompare(right),
+    );
+    for (const matchedPath of sortedMatches) {
+      expanded.push({
+        path: matchedPath,
+        scope: entry.scope,
+        note: entry.note,
+      });
+    }
+  }
+  return expanded;
 }
 
 function fileKey(value: Pick<LinkedFile, "path" | "scope">): string {
@@ -195,9 +259,13 @@ export async function runFiles(id: string, options: FilesCommandOptions, global:
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const resolvedAdds = await stdinResolver.resolveList(options.add, "--add");
+  const resolvedAddGlobs = await stdinResolver.resolveList(options.addGlob, "--add-glob");
   const resolvedRemoves = await stdinResolver.resolveList(options.remove, "--remove");
   const resolvedMigrations = await stdinResolver.resolveList(options.migrate, "--migrate");
-  const adds = parseAddEntries(resolvedAdds);
+  const parsedAdds = parseAddEntries(resolvedAdds);
+  const addGlobs = parseAddGlobEntries(resolvedAddGlobs);
+  const expandedGlobAdds = await expandAddGlobEntries(addGlobs);
+  const adds = [...parsedAdds, ...expandedGlobAdds];
   const removes = parseRemoveEntries(resolvedRemoves);
   const migrations = parseMigrateEntries(resolvedMigrations);
   const shouldMutate = adds.length > 0 || removes.length > 0 || migrations.length > 0;

@@ -82,6 +82,7 @@
   "dependencies": {
     "@toon-format/toon": "latest",
     "commander": "latest",
+    "fast-glob": "^3.3.3",
     "fast-json-patch": "latest",
     "undici": "latest",
     "zod": "latest"

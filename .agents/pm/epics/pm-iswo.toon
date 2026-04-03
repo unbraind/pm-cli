@@ -1,0 +1,21 @@
+id: pm-iswo
+title: "External audit follow-up: unresolved UX and dependency visualization gaps"
+description: "Implement net-new scope from the external report: ownership conflict force guidance clarity, glob-based linked artifact adds, and dependency visualization command with docs/test parity."
+type: Epic
+status: closed
+priority: 0
+tags[5]: "area:dependencies","area:files","area:ux",external-audit,pm-cli
+created_at: "2026-04-03T14:47:48.291Z"
+updated_at: "2026-04-03T15:22:51.092Z"
+deadline: "2026-04-17T14:47:48.291Z"
+author: codex-agent
+estimated_minutes: 360
+acceptance_criteria: "Unresolved gaps ship with backward-compatible behavior, docs/contracts parity, and full verification evidence."
+comments[3]{created_at,author,text}:
+  "2026-04-03T14:47:48.291Z",codex-agent,Created after de-dup mapping confirmed closed items already cover the remaining report scope.
+  "2026-04-03T14:48:57.089Z",codex-agent,"Created and claimed child hierarchy for unresolved scope: pm-8sgf (ownership guidance), pm-3eu2 (files/docs add-glob), pm-x85o (deps visualization), pm-tcx8 (docs/contracts parity)."
+  "2026-04-03T15:22:30.017Z",codex-agent,"Epic-level verification complete: all child items implemented and validated with linked suites, full repo build/test/coverage gates green, and command smoke checks for files/docs/deps help + JSON outputs succeeded."
+notes[1]{created_at,author,text}:
+  "2026-04-03T14:47:48.291Z",codex-agent,"Epic scope is limited to ownership message clarity,add-glob linked artifacts,and deps visualization."
+close_reason: "Unresolved external-audit follow-up scope completed without duplication: ownership guidance clarity, add-glob linking, deps visualization, and docs/contract verification all shipped."
+body: Tracks only unresolved audit follow-up scope after strict de-dup mapping against existing closed items.

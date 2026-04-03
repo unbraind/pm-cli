@@ -24,7 +24,8 @@
 - Deterministic canonical normalization and atomic writes for parallel git/worktree workflows
 - Warning-first/strict validation policies for sprint/release and parent references
 - Additive history diff/verify diagnostics (`pm history --diff --verify`)
-- Linked path hygiene for files/docs (`--migrate`, `--validate-paths`, `--audit`)
+- Linked path hygiene for files/docs (`--add-glob`, `--migrate`, `--validate-paths`, `--audit`)
+- Dependency topology inspection via `pm deps --format tree|graph`
 - Deterministic `--tag` completion suggestions from tracked item metadata
 - Optional search and extension support for more advanced setups
 
@@ -148,6 +149,7 @@ Claim behavior note:
 
 - `pm claim <ID>` can take over non-terminal items even when currently assigned to someone else.
 - Use `--force` for claim/release only when overriding terminal-state or lock conflicts.
+- For ownership-conflict mutations, `--force` is intended for coordinated PM audits, lead-maintainer metadata corrections, or explicit ownership handoff cleanup.
 
 ## Reusable Create Templates
 
@@ -312,6 +314,8 @@ pm docs pm-a1b2 --add $'- path: README.md\n- scope: project\n- note: docs sync'
 pm test pm-a1b2 --add $'command: node scripts/run-tests.mjs test\nscope: project\ntimeout_seconds: 240'
 
 # Linked-path hygiene for files/docs (bulk migrate + optional validation/audit)
+pm files pm-a1b2 --add-glob "src/**/*.ts"
+pm docs pm-a1b2 --add-glob "pattern=docs/**/*.md,scope=project,note=docs sweep"
 pm files pm-a1b2 --migrate "from=src/old/,to=src/new/" --validate-paths --audit
 pm docs pm-a1b2 --migrate "from=docs/legacy/,to=docs/current/" --validate-paths --audit
 
@@ -335,6 +339,8 @@ printf '%s\n' 'Backfilled body from stdin token' | pm update pm-a1b2 --body -
 pm update pm-a1b2 --dep "id=pm-b3c4,kind=blocks,author=alex-maintainer,created_at=now"
 pm update pm-a1b2 --dep-remove "pm-b3c4"
 pm update pm-a1b2 --dep none
+pm deps pm-a1b2 --format tree
+pm deps pm-a1b2 --format graph --json
 ```
 
 `none` semantics are unchanged for explicit clears in repeatable fields (`--file none`, `--comment none`, etc.).
@@ -342,10 +348,11 @@ pm update pm-a1b2 --dep none
 ## Linked Artifact and Test Policy
 
 - Use dedicated linked-artifact commands for file/doc mutations:
-  - `pm files <ID> --add/--remove`
-  - `pm docs <ID> --add/--remove`
+  - `pm files <ID> --add/--add-glob/--remove`
+  - `pm docs <ID> --add/--add-glob/--remove`
 - Use `pm update <ID> --body <value>` to replace an item's body content (including empty-string backfills); use `pm append <ID> --body <value>` for additive narrative updates.
 - Dependency links on existing items are now mutated through `pm update` (`--dep` to add entries or clear with `none`, `--dep-remove`/`--dep_remove` to remove selectors).
+- Use `pm deps <ID> --format tree|graph` for deterministic read-only dependency visualization.
 - `pm update` intentionally does not accept `--file` or `--doc`; command guidance points to `pm files` / `pm docs`.
 - `pm test <ID> --add` intentionally enforces sandbox-safe command entries. Use `node scripts/run-tests.mjs ...` for linked commands, or link specific specs with `--add "path=tests/..."`
 - `pm test <ID> --run` and `pm test-all` now emit heartbeat/progress lines to stderr in interactive terminals during long-running linked commands so active runs are visible instead of appearing stalled.

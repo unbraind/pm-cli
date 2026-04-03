@@ -1,0 +1,39 @@
+id: pm-3eu2
+title: Add glob-based linked artifact additions for files/docs
+description: Support repeatable --add-glob for pm files and pm docs to batch-link paths deterministically without changing existing add/remove/migrate semantics.
+type: Feature
+status: closed
+priority: 1
+tags[5]: "area:docs","area:files","area:ux",external-audit,pm-cli
+created_at: "2026-04-03T14:48:12.160Z"
+updated_at: "2026-04-03T15:22:43.842Z"
+deadline: "2026-04-13T14:48:12.160Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: "files/docs support repeatable --add-glob with deterministic dedup and parity across CLI contracts, wrapper mapping, docs, and tests."
+parent: pm-iswo
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-ap8l,related,"2026-04-03T14:48:12.160Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-04-03T14:48:12.160Z",codex-agent,Feature is additive and must preserve existing linked artifact mutation behavior.
+  "2026-04-03T14:58:41.031Z",codex-agent,"Implemented repeatable files/docs --add-glob with deterministic expansion and dedup, wired CLI/help/completion + Pi schema/mapping parity, and added unit/integration regressions. Evidence: node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts passed (135/135)."
+  "2026-04-03T15:22:26.212Z",codex-agent,"Final verification complete: linked suite passed and full gates passed (build + full test + coverage). Additional sandbox smoke checks confirm files/docs --add-glob help and JSON mutation surfaces behave as documented."
+notes[1]{created_at,author,text}:
+  "2026-04-03T14:48:12.160Z",codex-agent,"Implementation includes command wiring,parser logic,and regression coverage for glob expansion."
+files[12]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,Pi wrapper argument mapping for addGlob
+  package.json,project,fast-glob dependency for deterministic pattern expansion
+  pnpm-lock.yaml,project,lockfile update for fast-glob dependency
+  src/cli/commands/completion.ts,project,bash completion includes add-glob for files/docs
+  src/cli/commands/docs.ts,project,add-glob expansion and parsing for linked docs
+  src/cli/commands/files.ts,project,add-glob expansion and parsing for linked files
+  src/cli/main.ts,project,CLI flags and mutation invalidation wiring for add-glob
+  src/sdk/cli-contracts.ts,project,Pi schema/action contracts include addGlob for files/docs
+  tests/integration/cli.integration.spec.ts,project,CLI integration regression for files/docs add-glob
+  tests/unit/completion-command.spec.ts,project,completion regression for add-glob flag
+  tests/unit/files-docs-command.spec.ts,project,unit coverage for add-glob parsing/expansion/dedup
+  tests/unit/pi-agent-extension.spec.ts,project,Pi argument mapping regression for addGlob
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,add-glob + wrapper + completion regression suite
+close_reason: files/docs now support repeatable --add-glob with deterministic dedup and parity surfaces verified by linked + full test gates.
+body: Net-new additive behavior for efficient linking of many paths while preserving current command boundaries.

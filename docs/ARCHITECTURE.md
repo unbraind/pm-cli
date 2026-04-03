@@ -40,6 +40,7 @@ src/
       learnings.ts               pm learnings
       files.ts                   pm files
       docs.ts                    pm docs
+      deps.ts                    pm deps (dependency tree/graph projection)
       test.ts                    pm test (add/remove/run linked tests)
       test-all.ts                pm test-all (orchestration)
       search.ts                  pm search (keyword / semantic / hybrid)
@@ -124,7 +125,7 @@ The same registry drives:
 - commander option normalization in `src/cli/main.ts`
 - shell completion flag/command surfaces in `src/cli/commands/completion.ts`
 - Pi wrapper action enum, tool `inputSchema`, and CLI arg mapping in `.pi/extensions/pm-cli/index.ts`
-- additive command surfaces such as `templates-*` actions, `history --diff/--verify`, and files/docs path hygiene flags
+- additive command surfaces such as `templates-*` actions, `history --diff/--verify`, files/docs path hygiene flags (`--add-glob`, `--migrate`, `--validate-paths`, `--audit`), and `deps --format`
 
 This keeps human CLI UX and machine-facing contracts aligned while preserving additive/backward-compatible evolution.
 
@@ -228,10 +229,12 @@ Linked arrays (`comments`, `notes`, `learnings`, `files`, `tests`, `docs`) are i
 - `pm history --diff` adds field-level patch summaries without changing base history output.
 - `pm history --verify` validates stream hash-chain replay and current-item hash alignment.
 - `pm files` and `pm docs` support additive linked-path hygiene options:
+  - `--add-glob <pattern>` for deterministic batch expansion into linked entries
   - `--migrate from=<old>,to=<new>` for bulk prefix migration
   - `--validate-paths` for resolved path-existence checks
   - `--audit` for cross-item linked-path usage inspection
   - `pm files --list` for explicit non-mutating linked-file listing
+- `pm deps --format tree|graph` provides read-only dependency traversal from stored front matter, with deterministic ordering, cycle markers, and missing-node reporting.
 
 ## Calendar Pipeline
 

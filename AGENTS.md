@@ -83,6 +83,7 @@ Attach references to keep work reproducible:
 
 - Files:
   - `pm files <ID> --add path=src/app.ts,scope=project,note="entrypoint"`
+  - `pm files <ID> --add-glob "src/**/*.ts"` for deterministic batch linking
 - Tests:
   - `pm test <ID> --add command="node scripts/run-tests.mjs test",scope=project,timeout_seconds=240`
   - `pm test <ID> --add path=tests/history.spec.ts,scope=project`
@@ -90,6 +91,7 @@ Attach references to keep work reproducible:
   - `pm docs <ID> --add path=docs/ARCHITECTURE.md,scope=project`
 - Command boundaries:
   - `pm update` intentionally does not mutate linked files/docs; use `pm files` / `pm docs`.
+  - `pm deps` is read-only and intended for dependency tree/graph inspection (`--format tree|graph`).
 - Entry-format resilience:
   - `--add`/repeatable seed flags accept CSV `key=value`, markdown `key: value`, or stdin token `-` with piped payload.
   - Example: `printf '%s\n' 'path: src/app.ts' 'scope: project' | pm files <ID> --add -`
@@ -239,10 +241,12 @@ pm update pm-a1b2 --status in_progress --description "Implement restore replay"
 pm update pm-a1b2 --body "Restore replay scope and acceptance details."
 pm update pm-a1b2 --reminder "at=+1d,text=Follow up on restore replay tests"
 pm files pm-a1b2 --add path=src/history.ts,scope=project,note="restore implementation"
+pm files pm-a1b2 --add-glob "src/**/*.ts"
 pm test pm-a1b2 --add command="node scripts/run-tests.mjs test",scope=project,timeout_seconds=240
 pm comments pm-a1b2 "Restore replay implemented with hash checks"
 pm notes pm-a1b2 --add "Replay path now guards missing history streams before write"
 pm learnings pm-a1b2 --add "Use sandbox runner for linked test commands to preserve PM_PATH safety"
+pm deps pm-a1b2 --format tree
 pm calendar --view agenda --assignee codex-agent --format markdown
 pm test pm-a1b2 --run
 node scripts/run-tests.mjs coverage

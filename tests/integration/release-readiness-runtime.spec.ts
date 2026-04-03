@@ -118,6 +118,7 @@ const CORE_COMMANDS = [
   "learnings",
   "files",
   "docs",
+  "deps",
   "test",
   "test-all",
   "stats",
@@ -206,6 +207,7 @@ const REQUIRED_RESTORE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_CLOSE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_DELETE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_APPEND_FLAGS = ["--body", "--author", "--message", "--force"];
+const REQUIRED_DEPS_FLAGS = ["--format"];
 const REQUIRED_CALENDAR_FLAGS = [
   "--view",
   "--date",
@@ -451,11 +453,19 @@ describe("release readiness runtime coverage", () => {
       expect(filesHelp.code).toBe(0);
       expect(filesHelp.stdout).not.toContain("Add linked file entry (default: [])");
       expect(filesHelp.stdout).not.toContain("Remove linked file by path (default: [])");
+      expect(filesHelp.stdout).toContain("--add-glob");
 
       const docsHelp = context.runCli(["docs", "--help"]);
       expect(docsHelp.code).toBe(0);
       expect(docsHelp.stdout).not.toContain("Add linked doc entry (default: [])");
       expect(docsHelp.stdout).not.toContain("Remove linked doc by path (default: [])");
+      expect(docsHelp.stdout).toContain("--add-glob");
+
+      const depsHelp = context.runCli(["deps", "--help"]);
+      expect(depsHelp.code).toBe(0);
+      for (const flag of REQUIRED_DEPS_FLAGS) {
+        expect(depsHelp.stdout).toContain(flag);
+      }
 
       const commentsHelp = context.runCli(["comments", "--help"]);
       expect(commentsHelp.code).toBe(0);
@@ -818,6 +828,14 @@ describe("release readiness runtime coverage", () => {
       );
       expect(docsResult.code).toBe(0);
       expectTopLevelKeyOrder(docsResult.json, ["id", "docs", "changed", "count"]);
+
+      const depsTreeResult = context.runCli(["deps", createdId, "--json"], { expectJson: true });
+      expect(depsTreeResult.code).toBe(0);
+      expectTopLevelKeyOrder(depsTreeResult.json, ["id", "format", "node_count", "edge_count", "missing_count", "tree"]);
+
+      const depsGraphResult = context.runCli(["deps", createdId, "--format", "graph", "--json"], { expectJson: true });
+      expect(depsGraphResult.code).toBe(0);
+      expectTopLevelKeyOrder(depsGraphResult.json, ["id", "format", "node_count", "edge_count", "missing_count", "graph"]);
 
       const testResult = context.runCli(["test", createdId, "--json"], { expectJson: true });
       expect(testResult.code).toBe(0);

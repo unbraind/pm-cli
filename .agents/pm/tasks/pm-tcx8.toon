@@ -1,0 +1,37 @@
+id: pm-tcx8
+title: Sync docs/contracts/wrapper parity for unresolved external audit additions
+description: "Update README/PRD/ARCHITECTURE/CHANGELOG and Pi-wrapper contracts so net-new ownership guidance, add-glob, and deps command behavior stay aligned."
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:contracts","area:docs",external-audit,pm-cli
+created_at: "2026-04-03T14:48:29.306Z"
+updated_at: "2026-04-03T15:22:48.946Z"
+deadline: "2026-04-13T14:48:29.306Z"
+author: codex-agent
+estimated_minutes: 120
+acceptance_criteria: "All touched command surfaces are documented and contract-tested with no drift across CLI, SDK contracts, and Pi wrapper mappings."
+parent: pm-iswo
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-3eu2,blocks,"2026-04-03T14:48:29.306Z",codex-agent,null
+  pm-8sgf,blocks,"2026-04-03T14:48:29.306Z",codex-agent,null
+  pm-x85o,blocks,"2026-04-03T14:48:29.306Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-04-03T14:48:29.306Z",codex-agent,Task will be completed after implementation features land to keep docs/contracts in lockstep.
+  "2026-04-03T15:10:54.314Z",codex-agent,"Updated README/PRD/ARCHITECTURE/CHANGELOG/AGENTS for ownership-force guidance detail, files/docs add-glob usage, and pm deps contract surfaces; synced release-readiness assertions and vitest coverage include list for deps.ts. Evidence: node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts passed (93/93)."
+  "2026-04-03T15:22:28.802Z",codex-agent,"Final verification complete: release-readiness runtime + completion + Pi parity suites passed, and full repo build/test/coverage gates passed after docs and contract sync."
+notes[1]{created_at,author,text}:
+  "2026-04-03T14:48:29.306Z",codex-agent,Include release-readiness tests plus README/PRD/ARCHITECTURE/CHANGELOG updates.
+files[2]{path,scope,note}:
+  tests/integration/release-readiness-runtime.spec.ts,project,release-readiness help and output contract parity checks
+  vitest.config.ts,project,coverage include sync for deps command module
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,3600,docs and contract parity regression suite
+docs[5]{path,scope,note}:
+  AGENTS.md,project,agent workflow examples include add-glob and deps
+  CHANGELOG.md,project,unreleased notes for ownership guidance add-glob and deps
+  docs/ARCHITECTURE.md,project,command map and diagnostics/path hygiene updates
+  PRD.md,project,command matrix and wrapper action parity updates
+  README.md,project,"document add-glob,deps,and ownership force guidance"
+close_reason: "README/PRD/ARCHITECTURE/CHANGELOG/AGENTS and runtime contracts were synced for ownership guidance, add-glob, and deps surfaces with release-readiness verification."
+body: Tracks docs and contract sync for the net-new unresolved scope only.

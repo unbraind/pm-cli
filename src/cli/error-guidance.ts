@@ -123,9 +123,14 @@ function buildPmCliErrorGuidance(rawMessage: string): GuidanceMessage {
       code: "ownership_conflict",
       title: "Ownership conflict",
       happened: message,
-      required: "Run as assigned owner or explicitly bypass with --force when appropriate.",
-      why: "Ownership checks prevent accidental concurrent mutations on claimed items.",
+      required: "Run as assigned owner, claim the item when appropriate, or use --force only for approved override scenarios.",
+      why: "Ownership checks prevent accidental concurrent mutations on claimed items and protect against conflicting writes.",
       examples: ['pm claim pm-a1b2 --author "codex-agent"', 'pm update pm-a1b2 --status in_progress --force'],
+      nextSteps: [
+        "Use --force for PM audits and systematic metadata updates performed by leads/maintainers.",
+        "Use --force when correcting known stale metadata after coordinating ownership changes.",
+        'For non-terminal reassignment, prefer "pm claim <ID> --author <you>" before running other mutations.',
+      ],
     });
   }
 

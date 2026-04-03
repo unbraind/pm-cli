@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:create","area:templates",external-audit,pm-cli
 created_at: "2026-04-03T11:56:47.754Z"
-updated_at: "2026-04-03T14:12:47.206Z"
+updated_at: "2026-04-03T14:47:16.848Z"
 deadline: "2026-04-17T11:57:45.116Z"
 author: codex-agent
 estimated_minutes: 240
@@ -16,11 +16,12 @@ sprint: audit-followup
 release: vnext
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-bzyr,related,"2026-04-03T11:56:47.754Z",codex-agent,null
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-04-03T11:56:47.754Z",codex-agent,Created after dedup search confirmed no existing runtime template-system feature.
   "2026-04-03T11:59:31.079Z",codex-agent,"Wave3 scope: templates are optional and additive; explicit create flags continue to work and should override template defaults deterministically."
   "2026-04-03T13:25:03.376Z",codex-agent,"Implementation pass started: delivering additive scope from approved plan, with targeted tests and full verification before close."
   "2026-04-03T14:12:27.751Z",codex-agent,"Implemented reusable templates surface with pm templates save/list/show and additive pm create --template merge behavior, then synced CLI contracts and Pi mapping. Evidence: pm test pm-780f --run --json passed both linked template regressions, and full repo coverage verification is green."
+  "2026-04-03T14:47:16.848Z",codex-agent,"External audit follow-up dedup mapping: this closed feature already delivers create templates (templates save/list/show and create --template). No duplicate template feature will be created."
 notes[2]{created_at,author,text}:
   "2026-04-03T11:56:47.754Z",codex-agent,Must preserve current create behavior and remain optional for existing users.
   "2026-04-03T11:59:56.638Z",codex-agent,"Mandatory closure checklist: (1) run linked targeted tests via pm test <id> --run; (2) run pnpm build; (3) run node scripts/run-tests.mjs test; (4) run node scripts/run-tests.mjs coverage; (5) update touched docs (README/PRD/AGENTS/CHANGELOG/ARCHITECTURE as applicable); (6) add pm comment with concrete evidence/results; (7) close + release item before commit/push."

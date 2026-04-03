@@ -51,6 +51,7 @@ describe("generateBashScript", () => {
       "learnings",
       "files",
       "docs",
+      "deps",
       "test",
       "test-all",
       "stats",
@@ -110,6 +111,11 @@ describe("generateBashScript", () => {
   it("includes comments mutation metadata flags in bash completion", () => {
     const script = generateBashScript();
     expect(script).toContain("--add --limit --author --message --force");
+  });
+
+  it("includes files/docs add-glob flag in bash completion", () => {
+    const script = generateBashScript();
+    expect(script).toContain("--add --add-glob --remove --migrate --validate-paths --audit");
   });
 
   it("includes calendar-specific flags", () => {
@@ -193,6 +199,7 @@ describe("generateZshScript", () => {
     expect(script).toContain("ctx:Alias for context");
     expect(script).toContain("notes:List or add notes for an item");
     expect(script).toContain("learnings:List or add learnings for an item");
+    expect(script).toContain("deps:Show dependency relationships for an item");
     expect(script).toContain("beads:Built-in Beads extension commands");
     expect(script).toContain("todos:Built-in todos extension commands");
   });

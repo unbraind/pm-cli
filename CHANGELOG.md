@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added reusable create templates via `pm templates save/list/show` and additive `pm create --template` support with deterministic explicit-flag override precedence.
 - Added additive history diagnostics: `pm history --diff` (changed-field summaries) and `pm history --verify` (hash-chain/current-hash validation output).
 - Added linked artifact path hygiene features for `pm files` and `pm docs`: `--migrate`, `--validate-paths`, and `--audit` (plus `pm files --list` for explicit listing).
+- Added repeatable `--add-glob` support for `pm files` and `pm docs` to expand deterministic file/doc matches (plain glob or `pattern=<glob>,scope=<scope>,note=<text>` entries).
 - Added deterministic `--tag` completion suggestions in bash/zsh/fish scripts derived from tracked item metadata.
 - Added history-only restore recovery so `pm restore` can recreate missing/deleted item files when the corresponding history stream exists.
 - Added first-class `pm notes` and `pm learnings` commands with parity to `pm comments` (`<id> [text]`, `--add`, `--limit`, `--author`, `--message`, `--force`) including structured/stdin payload parsing.
@@ -54,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added integration regressions for repeated `pm files --add` / `pm docs --add` mutation flows to keep linked-artifact add workflows stable across subsequent command invocations.
 - Added targeted guidance for unsupported `pm update --file` / `pm update --doc` usage, with actionable examples that route users to `pm files` / `pm docs`.
 - Added dependency mutation support on existing items through `pm update`: repeatable `--dep` add/clear (`none`) semantics plus repeatable `--dep-remove`/`--dep_remove` selector removals, with parity across help/completion/contracts/Pi wrapper surfaces.
+- Added read-only dependency visualization command `pm deps` with deterministic `tree` (default) and `graph` projections, including cycle-safe traversal and missing-node reporting.
 - Added `pm update --close-reason` / `--close_reason` support so callers can explicitly set or clear `close_reason` (`none` clears) without using `pm close`.
 
 ### Changed
@@ -83,6 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pm update` now auto-clears stale `close_reason` when reopening items from `closed` to non-terminal statuses unless an explicit `--close-reason` value is provided in the same mutation.
 - `pm claim` now allows takeover of already-assigned non-terminal items without `--force`; force remains required for terminal-status or lock-override claim paths.
 - `pm comments` guidance is now explicit about `--force` usage across rich help, shell completion, and docs parity surfaces.
+- Ownership-conflict guidance now includes explicit approved `--force` scenarios (PM audits, coordinated metadata correction, and ownership handoff cleanup) while preserving ownership enforcement semantics.
 - `pm create`/`pm update` now validate `--sprint` and `--release` using a warning-first default (`warn`) with deterministic `validation_warning:*` signals, and optional strict rejection mode (`strict_error`) for enforcement.
 - `pm create`/`pm update` now validate missing `--parent` references using warning-first defaults (`validation_warning:parent_reference_missing:<id>`) with optional strict rejection mode (`strict_error`).
 - CLI contracts and Pi wrapper action/schema mapping now include additive `templates-*` actions, `create --template`, `history --diff/--verify`, and files/docs linked-path hygiene flags.

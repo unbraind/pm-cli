@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:docs","area:files","area:ux",external-audit,pm-cli
 created_at: "2026-04-01T16:22:26.127Z"
-updated_at: "2026-04-03T14:12:50.899Z"
+updated_at: "2026-04-03T14:47:12.736Z"
 deadline: "2026-04-17T11:57:38.765Z"
 author: cursor-agent
 estimated_minutes: 200
@@ -42,7 +42,7 @@ regression: true
 customer_impact: Users get safer file/doc flows and clearer update guidance
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-my6o,parent,"2026-04-01T16:22:26.127Z",cursor-agent,null
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-04-01T16:22:26.127Z",cursor-agent,Feature created for unresolved Issue4/5/6 hardening after de-dup audit.
   "2026-04-01T17:00:10.411Z",cursor-agent,"Feature scope complete: child task pm-e0ab closed with repeated files/docs add regression protection and explicit update --file/--doc guidance."
   "2026-04-03T11:55:42.157Z",codex-agent,"Mapped external-audit Issues 3, 4, and 6: bulk linked-path migration, optional linked-path validation, and cross-item linked-file auditing/listing."
@@ -50,6 +50,7 @@ comments[7]{created_at,author,text}:
   "2026-04-03T11:59:27.515Z",codex-agent,"Wave2 scope: linked-file hygiene features ship as additive commands/options; existing files/docs add/remove behavior remains unchanged by default."
   "2026-04-03T13:25:07.128Z",codex-agent,"Implementation pass started: delivering additive scope from approved plan, with targeted tests and full verification before close."
   "2026-04-03T14:12:29.268Z",codex-agent,"Delivered linked-path hygiene for files/docs with bulk --migrate, optional --validate-paths, optional --audit, and read-only inspection coverage updates. Evidence: pm test pm-ap8l --run --json passed linked baseline and targeted files/docs plus integration regressions, and full repo coverage verification is green."
+  "2026-04-03T14:47:12.736Z",codex-agent,"External audit follow-up dedup mapping: reusing this closed feature for linked-artifact UX hardening and update --file/--doc guidance. No duplicate item will be created for this scope."
 notes[2]{created_at,author,text}:
   "2026-04-01T16:22:26.127Z",cursor-agent,Scope includes integration tests and unknown-option guidance improvements.
   "2026-04-03T11:59:51.587Z",codex-agent,"Mandatory closure checklist: (1) run linked targeted tests via pm test <id> --run; (2) run pnpm build; (3) run node scripts/run-tests.mjs test; (4) run node scripts/run-tests.mjs coverage; (5) update touched docs (README/PRD/AGENTS/CHANGELOG/ARCHITECTURE as applicable); (6) add pm comment with concrete evidence/results; (7) close + release item before commit/push."

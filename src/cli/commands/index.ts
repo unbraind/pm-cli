@@ -28,6 +28,7 @@ export {
 } from "./context.js";
 export { runCreate, type CreateCommandOptions } from "./create.js";
 export { runDelete, type DeleteCommandOptions, type DeleteResult } from "./delete.js";
+export { runDeps, DEPS_FORMAT_VALUES, type DepsCommandOptions, type DepsFormat, type DepsResult } from "./deps.js";
 export { runDocs } from "./docs.js";
 export { runFiles } from "./files.js";
 export { runGc } from "./gc.js";

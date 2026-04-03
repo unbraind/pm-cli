@@ -111,7 +111,10 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen("--add --limit --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    files|docs)",
-    `      COMPREPLY=(${compgen("--add --remove --migrate --validate-paths --audit --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --add-glob --remove --migrate --validate-paths --audit --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
+    "      ;;",
+    "    deps)",
+    `      COMPREPLY=(${compgen("--format --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    test)",
     `      COMPREPLY=(${compgen("--add --remove --run --timeout --json --quiet --path --no-extensions --profile --help")})`,
@@ -193,6 +196,7 @@ _pm_commands() {
     'learnings:List or add learnings for an item'
     'files:Manage linked files'
     'docs:Manage linked docs'
+    'deps:Show dependency relationships for an item'
     'test:Manage linked tests and optionally run them'
     'test-all:Run linked tests across matching items'
     'stats:Show project tracker statistics'
@@ -362,6 +366,12 @@ _pm() {
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
+        deps)
+          _arguments \\
+            '--format[Output format]:(tree graph)' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
         test-all)
           _arguments \\
             '--status[Filter by status]:(open in_progress)' \\
@@ -461,6 +471,7 @@ complete -c pm -n __pm_no_subcommand -a notes         -d 'List or add notes for 
 complete -c pm -n __pm_no_subcommand -a learnings     -d 'List or add learnings for an item'
 complete -c pm -n __pm_no_subcommand -a files         -d 'Manage linked files'
 complete -c pm -n __pm_no_subcommand -a docs          -d 'Manage linked docs'
+complete -c pm -n __pm_no_subcommand -a deps          -d 'Show dependency relationships for an item'
 complete -c pm -n __pm_no_subcommand -a test          -d 'Manage linked tests and optionally run them'
 complete -c pm -n __pm_no_subcommand -a test-all      -d 'Run linked tests across matching items'
 complete -c pm -n __pm_no_subcommand -a stats         -d 'Show project tracker statistics'
@@ -570,6 +581,7 @@ complete -c pm -n '__fish_seen_subcommand_from history'  -l limit -d 'Max histor
 complete -c pm -n '__fish_seen_subcommand_from history'  -l diff -d 'Include changed-field patch summary'
 complete -c pm -n '__fish_seen_subcommand_from history'  -l verify -d 'Verify history hash chain and replay integrity'
 complete -c pm -n '__fish_seen_subcommand_from activity' -l limit -d 'Max activity entries' -r
+complete -c pm -n '__fish_seen_subcommand_from deps' -l format -d 'Output format' -r -a 'tree graph'
 
 # comments / notes / learnings flags
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l add -d 'Add one entry (text=<value> or plain text)' -r

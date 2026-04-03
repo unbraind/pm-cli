@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
@@ -99,6 +99,10 @@ async function setSettingsAuthorDefault(pmPath: string, authorDefault: string): 
   await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
 }
 
+function normalizeLinkedPath(value: string): string {
+  return value.split(path.sep).join("/");
+}
+
 async function assertAuthorResolution(
   context: TempPmContext,
   runLink: RunLinkCommand,
@@ -184,6 +188,12 @@ describe("runFiles", () => {
       await expect(runFiles(id, { remove: ["scope=project"] }, { path: context.pmPath })).rejects.toMatchObject<
         PmCliError
       >({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runFiles(id, { addGlob: ["   "] }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runFiles(id, { addGlob: ["scope=project"] }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(runFiles(id, { migrate: ["from=docs/old/"] }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
@@ -354,6 +364,51 @@ describe("runFiles", () => {
       expect(rerun.migrations_applied ?? 0).toBe(0);
     });
   });
+
+  it("expands add-glob file entries with deterministic dedup behavior", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "files-add-glob");
+      const fixtureRoot = path.join(context.tempRoot, "files-glob-fixtures");
+      await mkdir(path.join(fixtureRoot, "src", "routes"), { recursive: true });
+      await mkdir(path.join(fixtureRoot, "src", "lib"), { recursive: true });
+
+      const routeAlpha = path.join(fixtureRoot, "src", "routes", "alpha.ts");
+      const routeBeta = path.join(fixtureRoot, "src", "routes", "beta.ts");
+      const libGamma = path.join(fixtureRoot, "src", "lib", "gamma.ts");
+      await writeFile(routeAlpha, "export const alpha = 1;\n", "utf8");
+      await writeFile(routeBeta, "export const beta = 2;\n", "utf8");
+      await writeFile(libGamma, "export const gamma = 3;\n", "utf8");
+      await writeFile(path.join(fixtureRoot, "src", "routes", "ignore.md"), "# ignore\n", "utf8");
+
+      const tsGlob = normalizeLinkedPath(path.join(fixtureRoot, "src", "**", "*.ts"));
+      const fromGlob = await runFiles(
+        id,
+        {
+          addGlob: [tsGlob, tsGlob],
+          message: "add linked files from repeated glob",
+        },
+        { path: context.pmPath },
+      );
+
+      const expectedProjectPaths = [routeAlpha, routeBeta, libGamma]
+        .map((entry) => normalizeLinkedPath(entry))
+        .sort((left, right) => left.localeCompare(right));
+      expect(fromGlob.files.map((entry) => entry.path)).toEqual(expectedProjectPaths);
+      expect(fromGlob.files.every((entry) => entry.scope === "project")).toBe(true);
+      expect(fromGlob.count).toBe(3);
+
+      const asGlobal = await runFiles(
+        id,
+        {
+          addGlob: [`pattern=${tsGlob},scope=global,note=from glob`],
+          message: "add same linked files with global scope",
+        },
+        { path: context.pmPath },
+      );
+      expect(asGlobal.count).toBe(6);
+      expect(asGlobal.files.filter((entry) => entry.scope === "global")).toHaveLength(3);
+    });
+  });
 });
 
 describe("runDocs", () => {
@@ -390,6 +445,12 @@ describe("runDocs", () => {
       await expect(runDocs(id, { remove: ["scope=project"] }, { path: context.pmPath })).rejects.toMatchObject<
         PmCliError
       >({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runDocs(id, { addGlob: ["   "] }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runDocs(id, { addGlob: ["scope=project"] }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(runDocs(id, { migrate: ["from=docs/old/"] }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
@@ -557,6 +618,51 @@ describe("runDocs", () => {
       );
       expect(rerun.docs.some((entry) => entry.path === "docs/new/doc-one.md")).toBe(true);
       expect(rerun.migrations_applied ?? 0).toBe(0);
+    });
+  });
+
+  it("expands add-glob doc entries with deterministic dedup behavior", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "docs-add-glob");
+      const fixtureRoot = path.join(context.tempRoot, "docs-glob-fixtures");
+      await mkdir(path.join(fixtureRoot, "docs", "guides"), { recursive: true });
+      await mkdir(path.join(fixtureRoot, "docs", "reference"), { recursive: true });
+
+      const guideAlpha = path.join(fixtureRoot, "docs", "guides", "alpha.md");
+      const guideBeta = path.join(fixtureRoot, "docs", "guides", "beta.md");
+      const refGamma = path.join(fixtureRoot, "docs", "reference", "gamma.md");
+      await writeFile(guideAlpha, "# alpha\n", "utf8");
+      await writeFile(guideBeta, "# beta\n", "utf8");
+      await writeFile(refGamma, "# gamma\n", "utf8");
+      await writeFile(path.join(fixtureRoot, "docs", "guides", "ignore.txt"), "ignore\n", "utf8");
+
+      const mdGlob = normalizeLinkedPath(path.join(fixtureRoot, "docs", "**", "*.md"));
+      const fromGlob = await runDocs(
+        id,
+        {
+          addGlob: [mdGlob, mdGlob],
+          message: "add linked docs from repeated glob",
+        },
+        { path: context.pmPath },
+      );
+
+      const expectedProjectPaths = [guideAlpha, guideBeta, refGamma]
+        .map((entry) => normalizeLinkedPath(entry))
+        .sort((left, right) => left.localeCompare(right));
+      expect(fromGlob.docs.map((entry) => entry.path)).toEqual(expectedProjectPaths);
+      expect(fromGlob.docs.every((entry) => entry.scope === "project")).toBe(true);
+      expect(fromGlob.count).toBe(3);
+
+      const asGlobal = await runDocs(
+        id,
+        {
+          addGlob: [`pattern=${mdGlob},scope=global,note=from glob`],
+          message: "add same linked docs with global scope",
+        },
+        { path: context.pmPath },
+      );
+      expect(asGlobal.count).toBe(6);
+      expect(asGlobal.docs.filter((entry) => entry.scope === "global")).toHaveLength(3);
     });
   });
 });

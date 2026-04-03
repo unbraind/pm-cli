@@ -4464,6 +4464,222 @@ it("restores a deleted item from history-only state through CLI", async () => {
   });
 }, 120_000);
 
+it("supports files/docs add-glob mutations through CLI", async () => {
+  await withTempPmPath(async (context) => {
+    const create = context.runCli(
+      [
+        "create",
+        "--json",
+        "--title",
+        "Glob linking fixture",
+        "--description",
+        "Verify files/docs add-glob integration behavior",
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--priority",
+        "1",
+        "--tags",
+        "integration,files,docs,glob",
+        "--body",
+        "",
+        "--deadline",
+        "none",
+        "--estimate",
+        "10",
+        "--acceptance-criteria",
+        "files/docs add-glob works with deterministic dedup.",
+        "--author",
+        "integration-test",
+        "--message",
+        "Create add-glob fixture item",
+        "--assignee",
+        "none",
+        "--dep",
+        "none",
+        "--comment",
+        "none",
+        "--note",
+        "none",
+        "--learning",
+        "none",
+        "--file",
+        "none",
+        "--test",
+        "none",
+        "--doc",
+        "none",
+      ],
+      { expectJson: true },
+    );
+    expect(create.code).toBe(0);
+    const id = (create.json as { item: { id: string } }).item.id;
+
+    const fixtureRoot = path.join(context.tempRoot, "glob-workspace");
+    await mkdir(path.join(fixtureRoot, "src", "routes"), { recursive: true });
+    await mkdir(path.join(fixtureRoot, "docs", "guides"), { recursive: true });
+    await writeFile(path.join(fixtureRoot, "src", "routes", "alpha.ts"), "export const alpha = 1;\n", "utf8");
+    await writeFile(path.join(fixtureRoot, "src", "routes", "beta.ts"), "export const beta = 2;\n", "utf8");
+    await writeFile(path.join(fixtureRoot, "src", "routes", "ignore.md"), "# ignore\n", "utf8");
+    await writeFile(path.join(fixtureRoot, "docs", "guides", "alpha.md"), "# alpha\n", "utf8");
+    await writeFile(path.join(fixtureRoot, "docs", "guides", "beta.md"), "# beta\n", "utf8");
+    await writeFile(path.join(fixtureRoot, "docs", "guides", "ignore.txt"), "ignore\n", "utf8");
+
+    const filesResult = context.runCli(
+      ["files", id, "--add-glob", "src/**/*.ts", "--add-glob", "src/routes/*.ts", "--json"],
+      { expectJson: true, cwd: fixtureRoot },
+    );
+    expect(filesResult.code).toBe(0);
+    const filesJson = filesResult.json as { files: Array<{ path: string; scope: string }>; count: number };
+    expect(filesJson.count).toBe(2);
+    expect(filesJson.files.map((entry) => entry.path)).toEqual(["src/routes/alpha.ts", "src/routes/beta.ts"]);
+    expect(filesJson.files.every((entry) => entry.scope === "project")).toBe(true);
+
+    const docsResult = context.runCli(
+      ["docs", id, "--add-glob", "pattern=docs/**/*.md,scope=global,note=from glob", "--json"],
+      { expectJson: true, cwd: fixtureRoot },
+    );
+    expect(docsResult.code).toBe(0);
+    const docsJson = docsResult.json as { docs: Array<{ path: string; scope: string; note?: string }>; count: number };
+    expect(docsJson.count).toBe(2);
+    expect(docsJson.docs.map((entry) => entry.path)).toEqual(["docs/guides/alpha.md", "docs/guides/beta.md"]);
+    expect(docsJson.docs.every((entry) => entry.scope === "global")).toBe(true);
+    expect(docsJson.docs.every((entry) => entry.note === "from glob")).toBe(true);
+  });
+}, 120_000);
+
+it("supports deps command tree and graph formats through CLI", async () => {
+  await withTempPmPath(async (context) => {
+    const leaf = context.runCli(
+      [
+        "create",
+        "--json",
+        "--title",
+        "Deps leaf item",
+        "--description",
+        "Leaf for deps integration",
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--priority",
+        "1",
+        "--tags",
+        "integration,deps",
+        "--body",
+        "",
+        "--deadline",
+        "none",
+        "--estimate",
+        "10",
+        "--acceptance-criteria",
+        "Leaf exists for dependency traversal.",
+        "--author",
+        "integration-test",
+        "--message",
+        "Create deps leaf",
+        "--assignee",
+        "none",
+        "--dep",
+        "none",
+        "--comment",
+        "none",
+        "--note",
+        "none",
+        "--learning",
+        "none",
+        "--file",
+        "none",
+        "--test",
+        "none",
+        "--doc",
+        "none",
+      ],
+      { expectJson: true },
+    );
+    expect(leaf.code).toBe(0);
+    const leafId = (leaf.json as { item: { id: string } }).item.id;
+
+    const root = context.runCli(
+      [
+        "create",
+        "--json",
+        "--title",
+        "Deps root item",
+        "--description",
+        "Root for deps integration",
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--priority",
+        "1",
+        "--tags",
+        "integration,deps",
+        "--body",
+        "",
+        "--deadline",
+        "none",
+        "--estimate",
+        "10",
+        "--acceptance-criteria",
+        "Root dependency tree renders deterministically.",
+        "--author",
+        "integration-test",
+        "--message",
+        "Create deps root",
+        "--assignee",
+        "none",
+        "--dep",
+        `id=${leafId},kind=blocks,author=integration-test,created_at=now`,
+        "--comment",
+        "none",
+        "--note",
+        "none",
+        "--learning",
+        "none",
+        "--file",
+        "none",
+        "--test",
+        "none",
+        "--doc",
+        "none",
+      ],
+      { expectJson: true },
+    );
+    expect(root.code).toBe(0);
+    const rootId = (root.json as { item: { id: string } }).item.id;
+
+    const treeResult = context.runCli(["deps", rootId, "--json"], { expectJson: true });
+    expect(treeResult.code).toBe(0);
+    const treeJson = treeResult.json as {
+      id: string;
+      format: string;
+      tree?: { id: string; dependencies: Array<{ id: string; via?: string }> };
+      edge_count: number;
+    };
+    expect(treeJson.id).toBe(rootId);
+    expect(treeJson.format).toBe("tree");
+    expect(treeJson.edge_count).toBe(1);
+    expect(treeJson.tree?.dependencies).toEqual([expect.objectContaining({ id: leafId, via: "blocks" })]);
+
+    const graphResult = context.runCli(["deps", rootId, "--format", "graph", "--json"], { expectJson: true });
+    expect(graphResult.code).toBe(0);
+    const graphJson = graphResult.json as {
+      format: string;
+      graph?: { nodes: Array<{ id: string }>; edges: Array<{ from: string; to: string; kind: string }> };
+    };
+    expect(graphJson.format).toBe("graph");
+    expect(graphJson.graph?.nodes.map((node) => node.id)).toEqual([leafId, rootId].sort((left, right) => left.localeCompare(right)));
+    expect(graphJson.graph?.edges).toEqual([{ from: rootId, to: leafId, kind: "blocks" }]);
+
+    const invalid = context.runCli(["deps", rootId, "--format", "diagram"]);
+    expect(invalid.code).toBe(2);
+    expect(invalid.stderr).toContain("Invalid --format value");
+  });
+}, 120_000);
+
 it("restores an item by version through CLI", async () => {
     await withTempPmPath(async (context) => {
       const create = context.runCli(

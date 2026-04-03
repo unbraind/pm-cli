@@ -106,6 +106,7 @@ export interface PmToolParameters {
   folder?: string;
   text?: string;
   add?: string[];
+  addGlob?: string[];
   remove?: string[];
   migrate?: string[];
   validatePaths?: boolean;
@@ -464,6 +465,7 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
     case "files":
       args.push("files", requireString(params.id, "id", action));
       pushRepeatable(args, "--add", params.add);
+      pushRepeatable(args, "--add-glob", params.addGlob);
       pushRepeatable(args, "--remove", params.remove);
       pushRepeatable(args, "--migrate", params.migrate);
       if (params.validatePaths) {
@@ -477,6 +479,7 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
     case "docs":
       args.push("docs", requireString(params.id, "id", action));
       pushRepeatable(args, "--add", params.add);
+      pushRepeatable(args, "--add-glob", params.addGlob);
       pushRepeatable(args, "--remove", params.remove);
       pushRepeatable(args, "--migrate", params.migrate);
       if (params.validatePaths) {
@@ -486,6 +489,10 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
         args.push("--audit");
       }
       addAuthorMessageForceFlags(args, params);
+      return args;
+    case "deps":
+      args.push("deps", requireString(params.id, "id", action));
+      pushOption(args, "--format", params.format);
       return args;
     case "test":
       args.push("test", requireString(params.id, "id", action));

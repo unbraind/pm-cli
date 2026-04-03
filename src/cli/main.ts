@@ -14,6 +14,7 @@ import {
   runConfig,
   runCreate,
   runDelete,
+  runDeps,
   runDocs,
   runFiles,
   runGet,
@@ -2558,6 +2559,11 @@ program
   .command("files")
   .argument("<id>", "Item id")
   .option("--add <value>", "Add linked file entry (CSV/markdown pairs or - for stdin)", collect)
+  .option(
+    "--add-glob <value>",
+    "Add linked file entries from a glob (plain glob or pattern=<glob>,scope=<scope>,note=<text>; repeatable)",
+    collect,
+  )
   .option("--remove <value>", "Remove linked file by path (path=<value>, path:<value>, plain path, or - for stdin)", collect)
   .option("--migrate <value>", "Migrate linked file paths in-place (from=<prefix>,to=<prefix>; repeatable)", collect)
   .option("--validate-paths", "Validate linked file paths for existence and file shape")
@@ -2570,12 +2576,14 @@ program
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
     const addValues = Array.isArray(options.add) ? (options.add as string[]) : [];
+    const addGlobValues = Array.isArray(options.addGlob) ? (options.addGlob as string[]) : [];
     const removeValues = Array.isArray(options.remove) ? (options.remove as string[]) : [];
     const migrateValues = Array.isArray(options.migrate) ? (options.migrate as string[]) : [];
     const result = await runFiles(
       id,
       {
         add: addValues,
+        addGlob: addGlobValues,
         remove: removeValues,
         migrate: migrateValues,
         validatePaths: Boolean(options.validatePaths),
@@ -2586,7 +2594,7 @@ program
       },
       globalOptions,
     );
-    if (addValues.length > 0 || removeValues.length > 0 || migrateValues.length > 0) {
+    if (addValues.length > 0 || addGlobValues.length > 0 || removeValues.length > 0 || migrateValues.length > 0) {
       await invalidateSearchCachesForMutation(globalOptions, result);
     }
     printResult(result, globalOptions);
@@ -2599,6 +2607,11 @@ program
   .command("docs")
   .argument("<id>", "Item id")
   .option("--add <value>", "Add linked doc entry (CSV/markdown pairs or - for stdin)", collect)
+  .option(
+    "--add-glob <value>",
+    "Add linked doc entries from a glob (plain glob or pattern=<glob>,scope=<scope>,note=<text>; repeatable)",
+    collect,
+  )
   .option("--remove <value>", "Remove linked doc by path (path=<value>, path:<value>, plain path, or - for stdin)", collect)
   .option("--migrate <value>", "Migrate linked doc paths in-place (from=<prefix>,to=<prefix>; repeatable)", collect)
   .option("--validate-paths", "Validate linked doc paths for existence and file shape")
@@ -2611,12 +2624,14 @@ program
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
     const addValues = Array.isArray(options.add) ? (options.add as string[]) : [];
+    const addGlobValues = Array.isArray(options.addGlob) ? (options.addGlob as string[]) : [];
     const removeValues = Array.isArray(options.remove) ? (options.remove as string[]) : [];
     const migrateValues = Array.isArray(options.migrate) ? (options.migrate as string[]) : [];
     const result = await runDocs(
       id,
       {
         add: addValues,
+        addGlob: addGlobValues,
         remove: removeValues,
         migrate: migrateValues,
         validatePaths: Boolean(options.validatePaths),
@@ -2627,12 +2642,33 @@ program
       },
       globalOptions,
     );
-    if (addValues.length > 0 || removeValues.length > 0 || migrateValues.length > 0) {
+    if (addValues.length > 0 || addGlobValues.length > 0 || removeValues.length > 0 || migrateValues.length > 0) {
       await invalidateSearchCachesForMutation(globalOptions, result);
     }
     printResult(result, globalOptions);
     if (globalOptions.profile) {
       printError(`profile:command=docs took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+program
+  .command("deps")
+  .argument("<id>", "Item id")
+  .option("--format <value>", "Output format (tree or graph)", "tree")
+  .description("Show dependency relationships for an item.")
+  .action(async (id: string, options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const result = await runDeps(
+      id,
+      {
+        format: typeof options.format === "string" ? options.format : undefined,
+      },
+      globalOptions,
+    );
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=deps took_ms=${Date.now() - startedAt}`);
     }
   });
 

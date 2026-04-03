@@ -122,6 +122,7 @@ Lifecycle rules:
 - `pm release <id>` clears ownership.
 - `pm claim <id>` may take over non-terminal items assigned to another assignee without `--force`.
 - Mutations other than `claim` against items assigned to another assignee return conflict unless `--force`.
+- Ownership-conflict guidance should call out approved `--force` scenarios (for example PM audits, coordinated lead-maintainer metadata correction, or explicit ownership handoff cleanup).
 
 ### 5.4 Dependencies model
 
@@ -633,6 +634,7 @@ Help and error UX note:
 - `pm learnings <ID> [TEXT]`
 - `pm files <ID>`
 - `pm docs <ID>`
+- `pm deps <ID>`
 - `pm test <ID>`
 - `pm test-all`
 - `pm stats`
@@ -861,13 +863,14 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | `pm comments <ID> [TEXT] --add/--limit` | id + optional positional comment text shorthand + comment text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`); optional mutation metadata flags `--author`/`--message`/`--force` | `{ id, comments, count }` |
 | `pm notes <ID> [TEXT] --add/--limit` | id + optional positional note text shorthand + note text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`) | `{ id, notes, count }` |
 | `pm learnings <ID> [TEXT] --add/--limit` | id + optional positional learning text shorthand + learning text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`) | `{ id, learnings, count }` |
-| `pm files <ID> --add/--remove/--migrate/--validate-paths/--audit/--list` | id + file refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`); optional additive linked-path hygiene (`--migrate from=<old>,to=<new>`, path existence validation, cross-item audit, non-mutating list) | `{ id, files, changed, count, migrations_applied, validation, audit }` |
+| `pm files <ID> --add/--add-glob/--remove/--migrate/--validate-paths/--audit/--list` | id + file refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`); optional glob expansion via repeatable `--add-glob` (plain glob or `pattern=<glob>,scope=<scope>,note=<text>`); optional additive linked-path hygiene (`--migrate from=<old>,to=<new>`, path existence validation, cross-item audit, non-mutating list) | `{ id, files, changed, count, migrations_applied, validation, audit }` |
 | `pm test <ID> --add/--remove/--run` | id + test refs/options (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`; reject recursive `test-all` linked commands at add-time, including global-flag and package-spec launcher forms such as `pm --json test-all`, `npx @unbrained/pm-cli@latest --json test-all`, `pnpm dlx @unbrained/pm-cli@latest --json test-all`, and `npm exec -- @unbrained/pm-cli@latest --json test-all`; defensively skip legacy recursive entries at run-time; reject sandbox-unsafe test-runner commands including unsandboxed direct package-manager run-script forms such as `npm run test`/`pnpm run test` and chained direct runner segments evaluated independently; this sandbox policy is intentional, and targeted scopes should be linked via `node scripts/run-tests.mjs ...` commands or `path=...` entries; run linked commands via shell-compatible spawn orchestration, close child stdin for non-interactive runs, emit stderr heartbeat progress in interactive terminals, and surface deterministic timeout/maxBuffer diagnostics with force-kill fallback) | `{ id, tests, run_results, changed, count }` |
 | `pm test-all --status --timeout` | optional status filter; duplicate linked command/path entries are deduped per invocation (keyed by scope+normalized command or scope+path) and reported as skipped; when duplicate keys carry different `timeout_seconds`, execution uses deterministic maximum timeout for that key | `{ totals, failed, passed, skipped, results }` |
 | `pm stats` | none | `{ totals, by_type, by_status, generated_at }` |
 | `pm health` | none (runs settings/directories/extensions/storage plus integrity, history-drift, and vectorization diagnostics) | `{ ok, checks, warnings, generated_at }` |
 | `pm gc` | none | `{ ok, removed, retained, warnings, generated_at }` |
-| `pm docs <ID> --add/--remove/--migrate/--validate-paths/--audit` | id + doc refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`); optional additive linked-path hygiene (`--migrate from=<old>,to=<new>`, path existence validation, cross-item audit) | `{ id, docs, changed, count, migrations_applied, validation, audit }` |
+| `pm docs <ID> --add/--add-glob/--remove/--migrate/--validate-paths/--audit` | id + doc refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`); optional glob expansion via repeatable `--add-glob` (plain glob or `pattern=<glob>,scope=<scope>,note=<text>`); optional additive linked-path hygiene (`--migrate from=<old>,to=<new>`, path existence validation, cross-item audit) | `{ id, docs, changed, count, migrations_applied, validation, audit }` |
+| `pm deps <ID> --format tree|graph` | id + optional output selector (`tree` default, `graph` for node/edge projection) | `{ id, format, node_count, edge_count, missing_count, tree? graph? }` |
 | `pm history <ID> --limit/--diff/--verify` | id + optional limit + additive diagnostics (`--diff` changed-field patch summaries, `--verify` hash-chain/current-hash verification) | `{ id, history, count, limit, diff, verify }` |
 | `pm activity --limit` | optional limit | `{ activity, count, limit }` |
 | `pm restore <ID> <TIMESTAMP\|VERSION>` | id + restore target + optional `--author/--message/--force` | `{ item, restored_from, changed_fields, warnings }` |
@@ -1218,7 +1221,7 @@ Current baseline status (release-hardening):
 - Implemented as a Pi agent extension source module at `.pi/extensions/pm-cli/index.ts` (outside the `pm` CLI command surface).
 - Registers one Pi tool named `pm` via Pi's extension API (`registerTool`) and maps `action` + command-shaped fields to `pm` CLI invocations.
 - Tool action enums and parameter JSON Schema are sourced from the shared command contract registry (`src/sdk/cli-contracts.ts`) to avoid drift with core CLI/completion surfaces.
-- Action dispatch currently covers the full v0.1 command-aligned set (`init`, `config`, `create`, `list`, `list-all`, `list-draft`, `list-open`, `list-in-progress`, `list-blocked`, `list-closed`, `list-canceled`, `calendar`, `context`, `get`, `search`, `reindex`, `history`, `activity`, `restore`, `update`, `close`, `delete`, `append`, `comments`, `files`, `docs`, `test`, `test-all`, `stats`, `health`, `gc`, `completion`, `claim`, `release`) plus extension action aliases (`beads-import`, `todos-import`, `todos-export`) and workflow presets (`start-task`, `pause-task`, `close-task`).
+- Action dispatch currently covers the full v0.1 command-aligned set (`init`, `config`, `create`, `list`, `list-all`, `list-draft`, `list-open`, `list-in-progress`, `list-blocked`, `list-closed`, `list-canceled`, `calendar`, `context`, `get`, `search`, `reindex`, `history`, `activity`, `restore`, `update`, `close`, `delete`, `append`, `comments`, `notes`, `learnings`, `files`, `docs`, `deps`, `test`, `test-all`, `stats`, `health`, `gc`, `completion`, `templates-save`, `templates-list`, `templates-show`, `claim`, `release`) plus extension action aliases (`beads-import`, `todos-import`, `todos-export`) and workflow presets (`start-task`, `pause-task`, `close-task`).
 - Invocation fallback order is deterministic for distribution resilience: attempt `pm` first, then fallback to packaged `node <package-root>/dist/cli.js` when `pm` is unavailable.
 
 - Expose one tool `pm`.

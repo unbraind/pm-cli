@@ -1,0 +1,37 @@
+id: pm-x85o
+title: Add dependency visualization command (pm deps)
+description: Introduce a read-only dependency traversal command with deterministic tree/graph output modes to inspect item relationships.
+type: Feature
+status: closed
+priority: 1
+tags[5]: "area:cli","area:dependencies","area:visualization",external-audit,pm-cli
+created_at: "2026-04-03T14:48:19.923Z"
+updated_at: "2026-04-03T15:22:46.114Z"
+deadline: "2026-04-13T14:48:19.923Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: "pm deps returns deterministic dependency views (tree and graph), has help/contract parity, and includes regression coverage."
+parent: pm-iswo
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-zdec,related,"2026-04-03T14:48:19.923Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-04-03T14:48:19.923Z",codex-agent,Feature builds on existing dependency mutation support by adding deterministic read-only visualization.
+  "2026-04-03T15:05:28.830Z",codex-agent,"Implemented pm deps command with deterministic tree/graph traversal, cycle-safe recursion, and missing-node reporting; wired CLI/completion/sdk/Pi surfaces and added unit+integration regressions. Evidence: node scripts/run-tests.mjs test -- tests/unit/deps-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/cli.integration.spec.ts passed (126/126)."
+  "2026-04-03T15:22:27.350Z",codex-agent,"Final verification complete: unit/integration deps suites passed plus full repo gates (build/test/coverage). Sandbox smoke checks confirmed pm deps --help plus tree/graph JSON output surfaces."
+notes[1]{created_at,author,text}:
+  "2026-04-03T14:48:19.923Z",codex-agent,"Will add new command module,CLI wiring,wrapper/schema parity,and tests."
+files[10]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,Pi wrapper action mapping for deps
+  src/cli/commands/completion.ts,project,shell completion includes deps command and flags
+  src/cli/commands/deps.ts,project,new dependency traversal command implementation
+  src/cli/commands/index.ts,project,deps command export wiring
+  src/cli/main.ts,project,deps command registration and runtime invocation
+  src/sdk/cli-contracts.ts,project,deps action and schema contracts
+  tests/integration/cli.integration.spec.ts,project,CLI integration coverage for deps command
+  tests/unit/completion-command.spec.ts,project,deps command completion regression assertions
+  tests/unit/deps-command.spec.ts,project,unit coverage for tree graph and cycle behavior
+  tests/unit/pi-agent-extension.spec.ts,project,deps action argument mapping regression
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/deps-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,deps runtime + wrapper + completion regression suite
+close_reason: "pm deps tree/graph visualization is implemented with cycle-safe traversal and validated through linked tests, full suite, and smoke checks."
+body: Net-new read-only command to visualize dependency topology from existing item metadata.

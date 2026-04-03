@@ -112,6 +112,87 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
+  it("renders ownership conflict guidance with explicit force-usage scenarios", async () => {
+    await withTempPmPath(async (context) => {
+      const createResult = context.runCli(
+        [
+          "create",
+          "--title",
+          "Ownership conflict guidance seed",
+          "--description",
+          "Seed item for ownership conflict guidance runtime checks.",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "help-runtime,ownership",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "5",
+          "--acceptance-criteria",
+          "Ownership conflict guidance remains actionable and deterministic.",
+          "--author",
+          "owner-a",
+          "--message",
+          "Seed ownership guidance test",
+          "--assignee",
+          "owner-a",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(createResult.code).toBe(0);
+      const id = (createResult.json as { item: { id: string } }).item.id;
+
+      const jsonConflict = context.runCli(["update", id, "--status", "in_progress", "--author", "owner-b", "--json"]);
+      expect(jsonConflict.code).toBe(4);
+      const envelope = JSON.parse(jsonConflict.stderr) as {
+        type: string;
+        code: string;
+        title: string;
+        detail: string;
+        required: string;
+        exit_code: number;
+        next_steps?: string[];
+      };
+      expect(envelope).toMatchObject({
+        type: "urn:pm-cli:error:ownership_conflict",
+        code: "ownership_conflict",
+        title: "Ownership conflict",
+        exit_code: 4,
+      });
+      expect(envelope.required).toContain("--force");
+      expect(envelope.next_steps?.some((step) => step.includes("PM audits"))).toBe(true);
+      expect(envelope.next_steps?.some((step) => step.includes("stale metadata"))).toBe(true);
+      expect(envelope.next_steps?.some((step) => step.includes("pm claim <ID>"))).toBe(true);
+
+      const textConflict = context.runCli(["update", id, "--status", "in_progress", "--author", "owner-b"]);
+      expect(textConflict.code).toBe(4);
+      expect(textConflict.stderr).toContain("Next steps:");
+      expect(textConflict.stderr).toContain("PM audits");
+    });
+  });
+
   it("surfaces type-option schema details in create/update type-aware help", async () => {
     await withTempPmPath(async (context) => {
       const settingsPath = path.join(context.pmPath, "settings.json");

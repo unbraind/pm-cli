@@ -878,6 +878,7 @@ describe("Pi agent extension wrapper for pm", () => {
         action: "files",
         id: "pm-a1b2",
         add: ["path=src/a.ts,scope=project"],
+        addGlob: ["src/**/*.ts"],
         remove: ["path=src/b.ts,scope=project"],
       }),
     ).toEqual([
@@ -886,9 +887,19 @@ describe("Pi agent extension wrapper for pm", () => {
       "pm-a1b2",
       "--add",
       "path=src/a.ts,scope=project",
+      "--add-glob",
+      "src/**/*.ts",
       "--remove",
       "path=src/b.ts,scope=project",
     ]);
+
+    expect(
+      buildPmCliArgs({
+        action: "deps",
+        id: "pm-a1b2",
+        format: "graph",
+      }),
+    ).toEqual(["--json", "deps", "pm-a1b2", "--format", "graph"]);
 
     expect(
       buildPmCliArgs({

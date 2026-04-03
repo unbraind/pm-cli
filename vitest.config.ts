@@ -25,6 +25,7 @@ export default defineConfig({
         "src/cli/commands/learnings.ts",
         "src/cli/commands/config.ts",
         "src/cli/commands/context.ts",
+        "src/cli/commands/deps.ts",
         "src/cli/commands/docs.ts",
         "src/cli/commands/files.ts",
         "src/cli/commands/gc.ts",
