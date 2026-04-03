@@ -129,7 +129,7 @@ The same registry drives:
 - shell completion flag/command surfaces in `src/cli/commands/completion.ts`
 - Pi wrapper action enum, tool `inputSchema`, and CLI arg mapping in `.pi/extensions/pm-cli/index.ts`
 - runtime `pm contracts` payload generation for action/command/schema introspection
-- additive command surfaces such as `templates-*` actions, extension lifecycle actions (`extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-activate`, `extension-deactivate`), `history --diff/--verify`, files/docs path hygiene flags (`--add-glob`, `--migrate`, `--validate-paths`, `--audit`), and `deps --format`
+- additive command surfaces such as `templates-*` actions, extension lifecycle actions (`extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-activate`, `extension-deactivate`), `history --diff/--verify`, files/docs path hygiene flags (`--add-glob`, `--migrate`, `--append-stable`, `--validate-paths`, `--audit`), `validate --scan-mode`, `create --create-mode`, `comments --allow-audit-comment`, and `deps --format`
 
 This keeps human CLI UX and machine-facing contracts aligned while preserving additive/backward-compatible evolution.
 
@@ -237,12 +237,15 @@ Linked arrays (`comments`, `notes`, `learnings`, `files`, `tests`, `docs`) are i
 - `pm files` and `pm docs` support additive linked-path hygiene options:
   - `--add-glob <pattern>` for deterministic batch expansion into linked entries
   - `--migrate from=<old>,to=<new>` for bulk prefix migration
+  - `--append-stable` on `pm files` to append/dedupe without full-array resorting
   - `--validate-paths` for resolved path-existence checks
   - `--audit` for cross-item linked-path usage inspection
   - `pm files --list` for explicit non-mutating linked-file listing
+- `pm comments --allow-audit-comment` enables append-only audit comments on items assigned to other owners without broad ownership override semantics.
+- `pm create --create-mode strict|progressive` keeps strict mode as default while enabling staged progressive creation for governance triage workflows.
 - `pm deps --format tree|graph` provides read-only dependency traversal from stored front matter, with deterministic ordering, cycle markers, and missing-node reporting.
 - `pm list` / `pm list-*` support additive `--offset` pagination and JSON-only `--stream` line-delimited output for large datasets.
-- `pm validate` runs standalone repository checks (`metadata`, `resolution`, `files`, `history_drift`) and returns deterministic check payloads.
+- `pm validate` runs standalone repository checks (`metadata`, `resolution`, `files`, `history_drift`), supports file candidate selection via `--scan-mode default|tracked-all`, and returns deterministic check payloads with file scan metrics.
 
 ## Calendar Pipeline
 

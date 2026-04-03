@@ -185,6 +185,7 @@ export async function mutateItem(params: {
   author: string;
   message?: string;
   force?: boolean;
+  bypassAssigneeConflict?: boolean;
   typeToFolder?: Record<string, string>;
   mutate: (document: ItemDocument) => { changedFields: string[]; warnings?: string[] };
 }): Promise<{ item: ItemFrontMatter; body: string; changedFields: string[]; warnings: string[] }> {
@@ -207,7 +208,8 @@ export async function mutateItem(params: {
     const { raw: originalRaw, document } = await readLocatedItem(located);
 
     const assigned = document.front_matter.assignee?.trim();
-    const bypassAssigneeConflict = params.op === "claim";
+    const bypassAssigneeConflict =
+      params.op === "claim" || (params.op === "comment_add" && params.bypassAssigneeConflict === true);
     if (assigned && assigned !== params.author && !params.force && !bypassAssigneeConflict) {
       throw new PmCliError(
         `Item ${located.id} is assigned to ${assigned}. Use --force to override.`,

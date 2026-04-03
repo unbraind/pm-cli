@@ -1,0 +1,44 @@
+id: pm-v7aw
+title: Implement Issue4 create progressive policy mode
+description: Add additive strict/progressive create mode selection with non-conflicting flags and staged-creation support.
+type: Task
+status: closed
+priority: 1
+tags[5]: "area:create",audit,governance,implementation,pm-cli
+created_at: "2026-04-03T20:58:19.715Z"
+updated_at: "2026-04-03T21:27:31.302Z"
+deadline: "2026-04-11T20:58:19.715Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: create supports strict/progressive mode selection with strict default preserved and tests/docs/contracts updated.
+parent: pm-431e
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-431e,parent,"2026-04-03T20:58:19.715Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-04-03T20:58:19.715Z",codex-agent,Task created for direct implementation of Issue #4 workstream.
+  "2026-04-03T21:13:12.815Z",codex-agent,"Implemented additive --create-mode strict|progressive with strict as default, progressive staged creation that relaxes type-level required create fields/repeatables, and preserved command-option policy enforcement. Updated CLI/contracts/completion/Pi/error-guidance surfaces and passed targeted suite: node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts."
+  "2026-04-03T21:26:53.061Z",codex-agent,"Final verification complete for create progressive-mode work: docs/contracts parity updated and full project verification passed (build + full tests + coverage + smoke)."
+notes[1]{created_at,author,text}:
+  "2026-04-03T20:58:19.715Z",codex-agent,Avoid global flag collisions and preserve current default strict behavior.
+learnings[1]{created_at,author,text}:
+  "2026-04-03T20:58:19.715Z",codex-agent,Progressive creation must pair with explicit validation pathways to preserve governance quality.
+files[12]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,pi create-mode passthrough typing
+  src/cli/commands/completion.ts,project,create-mode completion support
+  src/cli/commands/create.ts,project,create strict/progressive mode enforcement
+  src/cli/error-guidance.ts,project,missing-required guidance for progressive mode
+  src/cli/main.ts,project,create-mode CLI flag wiring
+  src/core/item/type-registry.ts,project,create default policy baseline
+  src/sdk/cli-contracts.ts,project,create-mode flag and schema contracts
+  tests/integration/help-runtime.spec.ts,project,progressive create integration coverage
+  tests/integration/release-readiness-runtime.spec.ts,project,create help flag parity for create-mode
+  tests/unit/completion-command.spec.ts,project,create-mode completion test coverage
+  tests/unit/create-command.spec.ts,project,create-mode strict/progressive unit coverage
+  tests/unit/pi-agent-extension.spec.ts,project,pi create-mode flag mapping coverage
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,5400,issue4 targeted suite
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,Issue4 targeted regression suite
+docs[1]{path,scope,note}:
+  PRD.md,project,create policy mode contract docs
+close_reason: "Implemented additive create-mode strict|progressive path, documented behavior, and verified via full build/test/coverage/smoke."
+body: Execution task for Issue #4 implementation and verification.

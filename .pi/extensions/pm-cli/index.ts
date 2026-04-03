@@ -46,6 +46,7 @@ export interface PmToolParameters {
   description?: string;
   type?: string;
   template?: string;
+  createMode?: string;
   status?: string;
   closeReason?: string;
   priority?: NumericFlagInput;
@@ -107,10 +108,12 @@ export interface PmToolParameters {
   checkMetadata?: boolean;
   checkResolution?: boolean;
   checkFiles?: boolean;
+  scanMode?: string;
   checkHistoryDrift?: boolean;
   diff?: boolean;
   verify?: boolean;
   timeout?: NumericFlagInput;
+  allowAuditComment?: boolean;
   force?: boolean;
   run?: boolean;
   shell?: string;
@@ -121,6 +124,7 @@ export interface PmToolParameters {
   addGlob?: string[];
   remove?: string[];
   migrate?: string[];
+  appendStable?: boolean;
   validatePaths?: boolean;
   audit?: boolean;
   dep?: string[];
@@ -512,6 +516,9 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       args.push("comments", requireString(params.id, "id", action));
       pushOption(args, "--add", params.text ?? params.add?.[0]);
       pushOption(args, "--limit", params.limit);
+      if (params.allowAuditComment) {
+        args.push("--allow-audit-comment");
+      }
       addAuthorMessageForceFlags(args, params);
       return args;
     case "notes":
@@ -532,6 +539,9 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       pushRepeatable(args, "--add-glob", params.addGlob);
       pushRepeatable(args, "--remove", params.remove);
       pushRepeatable(args, "--migrate", params.migrate);
+      if (params.appendStable) {
+        args.push("--append-stable");
+      }
       if (params.validatePaths) {
         args.push("--validate-paths");
       }
@@ -595,6 +605,7 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       if (params.checkFiles) {
         args.push("--check-files");
       }
+      pushOption(args, "--scan-mode", params.scanMode);
       if (params.checkHistoryDrift) {
         args.push("--check-history-drift");
       }

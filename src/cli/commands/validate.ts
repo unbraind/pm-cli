@@ -1,6 +1,8 @@
 import fs from "node:fs/promises";
 import type { Dirent } from "node:fs";
+import { execFile } from "node:child_process";
 import path from "node:path";
+import { promisify } from "node:util";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { hashDocument } from "../../core/history/history.js";
@@ -16,7 +18,9 @@ import type { ItemFrontMatter } from "../../types/index.js";
 
 type ValidateCheckName = "metadata" | "resolution" | "files" | "history_drift";
 type ValidateStatus = "ok" | "warn";
+type ValidateFileScanMode = "default" | "tracked-all";
 type ItemWithBody = Awaited<ReturnType<typeof listAllFrontMatterWithBody>>[number];
+type FileCandidateSource = "default-curated" | "tracked-git" | "tracked-all-fallback-default";
 
 const FILE_SCAN_DIRECTORIES = ["src", "tests", "docs"] as const;
 const FILE_SCAN_ROOT_FILES = [
@@ -31,12 +35,16 @@ const FILE_SCAN_ROOT_FILES = [
 ] as const;
 const DIRECTORY_IGNORE_SET = new Set(["node_modules", ".git", ".cursor", ".agents", "dist", "coverage"]);
 const RESOLUTION_FIELD_KEYS = ["resolution", "expected_result", "actual_result"] as const;
+const VALIDATE_FILE_SCAN_MODES = ["default", "tracked-all"] as const;
+const GIT_LS_FILES_MAX_BUFFER = 32 * 1024 * 1024;
+const execFileAsync = promisify(execFile);
 
 export interface ValidateCommandOptions {
   checkMetadata?: boolean;
   checkResolution?: boolean;
   checkFiles?: boolean;
   checkHistoryDrift?: boolean;
+  scanMode?: string;
 }
 
 export interface ValidateCheck {
@@ -62,6 +70,26 @@ function toNonEmptyString(value: unknown): string | undefined {
   }
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function resolveFileScanMode(scanMode: string | undefined): ValidateFileScanMode {
+  if (scanMode === undefined) {
+    return "default";
+  }
+  const normalized = scanMode.trim().toLowerCase();
+  if (normalized.length === 0) {
+    return "default";
+  }
+  if (normalized === "default") {
+    return "default";
+  }
+  if (normalized === "tracked-all" || normalized === "tracked_all") {
+    return "tracked-all";
+  }
+  throw new PmCliError(
+    `Unknown --scan-mode value "${scanMode}". Supported values: ${VALIDATE_FILE_SCAN_MODES.join(", ")}.`,
+    EXIT_CODE.USAGE,
+  );
 }
 
 function resolveWorkspaceRoot(pmRoot: string): string {
@@ -103,7 +131,7 @@ async function listFilesRecursive(basePath: string, relativePath: string, output
   }
 }
 
-async function collectProjectFileCandidates(workspaceRoot: string): Promise<string[]> {
+async function collectDefaultProjectFileCandidates(workspaceRoot: string): Promise<string[]> {
   const discovered: string[] = [];
   for (const directory of FILE_SCAN_DIRECTORIES) {
     await listFilesRecursive(workspaceRoot, directory, discovered);
@@ -120,6 +148,71 @@ async function collectProjectFileCandidates(workspaceRoot: string): Promise<stri
     }
   }
   return [...new Set(discovered)].sort((left, right) => left.localeCompare(right));
+}
+
+async function collectTrackedGitFileCandidates(workspaceRoot: string): Promise<string[] | null> {
+  try {
+    const { stdout } = await execFileAsync("git", ["ls-files", "-z"], {
+      cwd: workspaceRoot,
+      encoding: "utf8",
+      maxBuffer: GIT_LS_FILES_MAX_BUFFER,
+      windowsHide: true,
+    });
+    const discovered = stdout
+      .split("\0")
+      .map((value) => normalizeRelativePath(value))
+      .filter((value) => value.length > 0);
+    return [...new Set(discovered)].sort((left, right) => left.localeCompare(right));
+  } catch {
+    return null;
+  }
+}
+
+interface FileCandidateCollection {
+  requestedMode: ValidateFileScanMode;
+  appliedMode: ValidateFileScanMode;
+  source: FileCandidateSource;
+  candidateFiles: string[];
+  candidateTotal: number;
+  candidateScanned: number;
+}
+
+async function collectProjectFileCandidates(
+  workspaceRoot: string,
+  scanMode: ValidateFileScanMode,
+): Promise<FileCandidateCollection> {
+  if (scanMode === "tracked-all") {
+    const trackedCandidates = await collectTrackedGitFileCandidates(workspaceRoot);
+    if (trackedCandidates) {
+      return {
+        requestedMode: scanMode,
+        appliedMode: scanMode,
+        source: "tracked-git",
+        candidateFiles: trackedCandidates,
+        candidateTotal: trackedCandidates.length,
+        candidateScanned: trackedCandidates.length,
+      };
+    }
+    const fallbackCandidates = await collectDefaultProjectFileCandidates(workspaceRoot);
+    return {
+      requestedMode: scanMode,
+      appliedMode: "default",
+      source: "tracked-all-fallback-default",
+      candidateFiles: fallbackCandidates,
+      candidateTotal: fallbackCandidates.length,
+      candidateScanned: fallbackCandidates.length,
+    };
+  }
+
+  const defaultCandidates = await collectDefaultProjectFileCandidates(workspaceRoot);
+  return {
+    requestedMode: scanMode,
+    appliedMode: "default",
+    source: "default-curated",
+    candidateFiles: defaultCandidates,
+    candidateTotal: defaultCandidates.length,
+    candidateScanned: defaultCandidates.length,
+  };
 }
 
 function summarizeList(values: string[], limit = 200): { values: string[]; truncated: boolean } {
@@ -257,6 +350,7 @@ function buildResolutionCheck(items: ItemWithBody[]): { check: ValidateCheck; wa
 async function buildFilesCheck(
   items: ItemWithBody[],
   workspaceRoot: string,
+  fileScanMode: ValidateFileScanMode,
 ): Promise<{ check: ValidateCheck; warnings: string[] }> {
   const linkedProjectPaths = new Set<string>();
   const missingLinkedPaths: string[] = [];
@@ -285,8 +379,8 @@ async function buildFilesCheck(
   }
 
   const uniqueMissingLinkedPaths = [...new Set(missingLinkedPaths)].sort((left, right) => left.localeCompare(right));
-  const candidateFiles = await collectProjectFileCandidates(workspaceRoot);
-  const orphanedFiles = candidateFiles.filter((candidate) => !linkedProjectPaths.has(candidate));
+  const fileCandidates = await collectProjectFileCandidates(workspaceRoot, fileScanMode);
+  const orphanedFiles = fileCandidates.candidateFiles.filter((candidate) => !linkedProjectPaths.has(candidate));
   const warnings: string[] = [];
   if (uniqueMissingLinkedPaths.length > 0) {
     warnings.push(`validate_files_missing_linked_paths:${uniqueMissingLinkedPaths.length}`);
@@ -303,8 +397,13 @@ async function buildFilesCheck(
       status: warnings.length === 0 ? "ok" : "warn",
       details: {
         workspace_root: workspaceRoot,
+        scan_mode_requested: fileCandidates.requestedMode,
+        scan_mode_applied: fileCandidates.appliedMode,
+        candidate_scan_source: fileCandidates.source,
         linked_project_paths: linkedProjectPaths.size,
-        scanned_candidate_files: candidateFiles.length,
+        candidate_total: fileCandidates.candidateTotal,
+        candidate_scanned: fileCandidates.candidateScanned,
+        scanned_candidate_files: fileCandidates.candidateScanned,
         missing_linked_paths_count: uniqueMissingLinkedPaths.length,
         missing_linked_paths: summarizedMissing.values,
         missing_linked_paths_truncated: summarizedMissing.truncated,
@@ -410,6 +509,7 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
   const itemReadWarnings: string[] = [];
   const items = await listAllFrontMatterWithBody(pmRoot, settings.item_format, typeRegistry.type_to_folder, itemReadWarnings);
   const requestedChecks = resolveRequestedChecks(options);
+  const fileScanMode = resolveFileScanMode(options.scanMode);
   const workspaceRoot = resolveWorkspaceRoot(pmRoot);
   const checks: ValidateCheck[] = [];
   const warnings = [...new Set(itemReadWarnings)];
@@ -425,7 +525,7 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
     warnings.push(...resolutionCheck.warnings);
   }
   if (requestedChecks.has("files")) {
-    const filesCheck = await buildFilesCheck(items, workspaceRoot);
+    const filesCheck = await buildFilesCheck(items, workspaceRoot, fileScanMode);
     checks.push(filesCheck.check);
     warnings.push(...filesCheck.warnings);
   }

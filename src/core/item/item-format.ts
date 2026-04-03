@@ -436,21 +436,14 @@ function sortEvents(values: CalendarEvent[] | undefined): CalendarEvent[] | unde
   return normalized;
 }
 
-function sortFiles(values: LinkedFile[] | undefined): LinkedFile[] | undefined {
+function normalizeFiles(values: LinkedFile[] | undefined): LinkedFile[] | undefined {
   if (!values || values.length === 0) return undefined;
-  return [...values]
+  return values
     .map((value) => ({
       path: normalizePathValue(value.path),
       scope: value.scope,
       note: value.note?.trim() || undefined,
-    }))
-    .sort((a, b) => {
-      const byScope = a.scope.localeCompare(b.scope);
-      if (byScope !== 0) return byScope;
-      const byPath = a.path.localeCompare(b.path);
-      if (byPath !== 0) return byPath;
-      return (a.note ?? "").localeCompare(b.note ?? "");
-    });
+    }));
 }
 
 function sortTests(values: LinkedTest[] | undefined): LinkedTest[] | undefined {
@@ -563,7 +556,7 @@ export function normalizeFrontMatter(frontMatter: ItemFrontMatter): ItemFrontMat
     comments: sortLogValues(frontMatter.comments),
     notes: sortLogValues(frontMatter.notes),
     learnings: sortLogValues(frontMatter.learnings),
-    files: sortFiles(frontMatter.files),
+    files: normalizeFiles(frontMatter.files),
     tests: sortTests(frontMatter.tests),
     docs: sortDocs(frontMatter.docs),
     deadline: frontMatter.deadline || undefined,

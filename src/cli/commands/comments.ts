@@ -17,6 +17,7 @@ export interface CommentsCommandOptions {
   author?: string;
   message?: string;
   force?: boolean;
+  allowAuditComment?: boolean;
 }
 
 export interface CommentsResult {
@@ -103,6 +104,7 @@ export async function runComments(id: string, options: CommentsCommandOptions, g
     author,
     message: options.message,
     force: options.force,
+    bypassAssigneeConflict: Boolean(options.allowAuditComment),
     mutate(document) {
       const comments = document.front_matter.comments ?? [];
       comments.push({

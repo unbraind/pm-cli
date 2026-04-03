@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:cli","area:contracts",body,json,list,pm-cli
 created_at: "2026-03-31T19:36:37.724Z"
-updated_at: "2026-04-03T18:06:21.975Z"
+updated_at: "2026-04-03T20:56:11.060Z"
 deadline: "2026-04-03T19:36:37.724Z"
 assignee: codex-agent
 author: codex-agent
@@ -47,10 +47,11 @@ dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-ote,related,"2026-03-31T19:36:37.724Z",codex-agent,null
   pm-r0m,related,"2026-03-31T19:36:37.724Z",codex-agent,null
   pm-zzt1,related,"2026-03-31T19:36:37.724Z",codex-agent,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-03-31T19:36:37.724Z",codex-agent,Epic created after duplicate-guard sweep and external issue report.
   "2026-03-31T19:45:51.565Z",codex-agent,"Feature pm-ykib and child tasks are closed with evidence: include-body is now opt-in for list variants, docs/changelog are updated, and sandbox test plus coverage runs remain green at 100%."
   "2026-04-03T18:06:21.975Z",codex-agent,"External audit 2026-04-03 dedup mapping: list JSON body contract is already covered here; no duplicate item created."
+  "2026-04-03T20:56:11.060Z",codex-agent,"Governance sweep 2026-04-03 dedupe confirmation: incoming Issue #2 (list-all --json close lifecycle metadata) is already covered by this epic lineage and current runtime output; no duplicate item required."
 notes[1]{created_at,author,text}:
   "2026-03-31T19:36:37.724Z",codex-agent,Implement opt-in include-body without changing default list performance profile.
 learnings[1]{created_at,author,text}:

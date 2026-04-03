@@ -157,6 +157,15 @@ Claim behavior note:
 - Use `--force` for claim/release only when overriding terminal-state or lock conflicts.
 - For ownership-conflict mutations, `--force` is intended for coordinated PM audits, lead-maintainer metadata corrections, or explicit ownership handoff cleanup.
 
+Create policy mode note:
+
+- `pm create` defaults to strict required-option enforcement.
+- Use `--create-mode progressive` for staged governance triage when you need to defer non-critical metadata/linkage fields without placeholder `none` entries.
+
+```bash
+pm create --title "Triage seed" --description "Capture scope first, enrich later" --type Task --create-mode progressive
+```
+
 ## Reusable Create Templates
 
 Use templates to save recurring create metadata (including repeatable seeds) and apply them with explicit override precedence:
@@ -224,6 +233,7 @@ The vectorization ledger is also refreshed during `pm reindex --mode semantic|hy
 
 - Runs all validation checks by default (`metadata`, `resolution`, `files`, `history_drift`).
 - Supports scoped checks with `--check-metadata`, `--check-resolution`, `--check-files`, and `--check-history-drift`.
+- `--check-files` supports `--scan-mode default|tracked-all`; `tracked-all` uses git-tracked candidates when available and always reports `candidate_total` + `candidate_scanned` (while retaining `scanned_candidate_files` for compatibility).
 - Returns deterministic TOON/JSON output suitable for review or automation pipelines.
 
 ## Missing History Stream Policy
@@ -332,11 +342,13 @@ pm files pm-a1b2 --add-glob "src/**/*.ts"
 pm docs pm-a1b2 --add-glob "pattern=docs/**/*.md,scope=project,note=docs sweep"
 pm files pm-a1b2 --migrate "from=src/old/,to=src/new/" --validate-paths --audit
 pm docs pm-a1b2 --migrate "from=docs/legacy/,to=docs/current/" --validate-paths --audit
+pm files pm-a1b2 --add "path=src/new/entry.ts,scope=project" --append-stable
 
 # Comments can be added positionally or with --add
 pm comments pm-a1b2 "captured from shorthand positional text"
 pm comments pm-a1b2 --add "text: captured from markdown formatter"
 pm comments pm-a1b2 --add "handoff note from alternate author" --author "alex-maintainer" --force
+pm comments pm-a1b2 --add "audit note from governance review" --author "audit-maintainer" --allow-audit-comment
 
 # Notes and learnings support the same positional/--add shorthand
 pm notes pm-a1b2 "implementation context captured from shorthand positional text"

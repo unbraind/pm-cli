@@ -1,0 +1,30 @@
+id: pm-431e
+title: "Issue4: create strict vs progressive policy mode"
+description: Add additive create-policy mode selection so governance triage can stage item creation without forced placeholder linkage metadata.
+type: Feature
+status: closed
+priority: 1
+tags[5]: "area:create","area:validation",audit,governance,pm-cli
+created_at: "2026-04-03T20:57:44.679Z"
+updated_at: "2026-04-03T21:27:27.381Z"
+deadline: "2026-04-12T20:57:44.679Z"
+author: codex-agent
+estimated_minutes: 300
+acceptance_criteria: pm create supports additive strict/progressive policy selection with strict default preserved and progressive mode enabling staged creation workflows.
+parent: pm-r7t2
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-r7t2,parent,"2026-04-03T20:57:44.679Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-03T20:57:44.679Z",codex-agent,"Net-new scope after dedupe: runtime still enforces strict required create fields/repeatables for all built-in types."
+notes[1]{created_at,author,text}:
+  "2026-04-03T20:57:44.679Z",codex-agent,Use non-conflicting flag naming because global profile flag already exists.
+learnings[1]{created_at,author,text}:
+  "2026-04-03T20:57:44.679Z",codex-agent,Governance triage benefits from staged creation plus explicit post-create validation gates.
+files[1]{path,scope,note}:
+  src/cli/commands/create.ts,project,create option policy enforcement
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,5400,create policy regression
+docs[1]{path,scope,note}:
+  AGENTS.md,project,governance workflow and create policy guidance
+close_reason: "Child task pm-v7aw completed: create-mode strict|progressive implemented with strict-default compatibility and full verification pass."
+body: Implements net-new governance Issue #4 with compatibility-safe strict default and explicit progressive create mode.

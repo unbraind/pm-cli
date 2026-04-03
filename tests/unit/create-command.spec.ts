@@ -62,6 +62,64 @@ describe("runCreate", () => {
     }
   });
 
+  it("keeps strict mode as default for required create options", async () => {
+    await withTempPmPath(async (context) => {
+      const minimal: CreateCommandOptions = {
+        title: "strict-default-minimal",
+        description: "strict default mode should still require governance fields",
+        type: "Task",
+      };
+      await expect(runCreate(minimal, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runCreate(minimal, { path: context.pmPath })).rejects.toThrow("Missing required options");
+    });
+  });
+
+  it("supports progressive create mode for staged minimal creation", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runCreate(
+        {
+          title: "progressive-minimal",
+          description: "progressive mode staged create",
+          type: "Task",
+          createMode: "progressive",
+        },
+        { path: context.pmPath },
+      );
+      expect(result.warnings).toEqual([]);
+      expect(result.item.title).toBe("progressive-minimal");
+      expect(result.item.type).toBe("Task");
+      expect(result.item.status).toBe("open");
+      expect(result.item.priority).toBe(2);
+      expect(result.item.tags).toEqual([]);
+      expect(result.item.acceptance_criteria).toBeUndefined();
+      expect(result.item.assignee).toBeUndefined();
+      expect(result.item.dependencies).toBeUndefined();
+      expect(result.item.files).toBeUndefined();
+      expect(result.item.docs).toBeUndefined();
+      expect(result.item.tests).toBeUndefined();
+    });
+  });
+
+  it("rejects unsupported create mode values", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runCreate(
+          {
+            title: "invalid-create-mode",
+            description: "invalid create mode should fail",
+            type: "Task",
+            createMode: "adaptive",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
   it("creates an item with normalized fields and deterministic history metadata", async () => {
     await withTempPmPath(async (context) => {
       const parentSeed = await runCreate(

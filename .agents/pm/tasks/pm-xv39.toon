@@ -1,0 +1,42 @@
+id: pm-xv39
+title: Implement Issue3 files stable-append mutation mode
+description: Add opt-in stable append mode for pm files mutations and cover history-patch churn regressions.
+type: Task
+status: closed
+priority: 1
+tags[5]: "area:files",audit,governance,implementation,pm-cli
+created_at: "2026-04-03T20:58:12.553Z"
+updated_at: "2026-04-03T21:27:30.325Z"
+deadline: "2026-04-11T20:58:12.553Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: files command supports stable append mode with reduced patch churn and passing tests/contracts.
+parent: pm-6jps
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-6jps,parent,"2026-04-03T20:58:12.553Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-04-03T20:58:12.553Z",codex-agent,Task created for direct implementation of Issue #3 workstream.
+  "2026-04-03T21:08:31.321Z",codex-agent,"Implemented opt-in --append-stable mode for files mutations, preserving existing linked-file order and appending new entries without full-array resorting. Kept default sorting behavior unchanged, updated CLI/completion/contracts/Pi mappings, and passed targeted suite: node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts."
+  "2026-04-03T21:26:52.098Z",codex-agent,"Final verification complete for files append-stable work: docs/contracts parity updated and full project verification passed (build + full tests + coverage + smoke)."
+notes[1]{created_at,author,text}:
+  "2026-04-03T20:58:12.553Z",codex-agent,Preserve default files mutation behavior while adding opt-in stable append.
+learnings[1]{created_at,author,text}:
+  "2026-04-03T20:58:12.553Z",codex-agent,Stable append semantics improve governance readability in high-churn link arrays.
+files[10]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,pi files action append-stable passthrough
+  src/cli/commands/completion.ts,project,bash completion files/docs split with append-stable
+  src/cli/commands/files.ts,project,files mutation implementation
+  src/cli/main.ts,project,files append-stable CLI option wiring
+  src/core/item/item-format.ts,project,preserve linked-file ordering normalization
+  src/sdk/cli-contracts.ts,project,append-stable schema contract
+  tests/integration/release-readiness-runtime.spec.ts,project,files help includes append-stable
+  tests/unit/completion-command.spec.ts,project,completion append-stable coverage
+  tests/unit/files-docs-command.spec.ts,project,append-stable ordering regression coverage
+  tests/unit/pi-agent-extension.spec.ts,project,pi append-stable arg mapping coverage
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts,null,project,3600,issue3 targeted suite
+  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,Issue3 targeted regression suite
+docs[1]{path,scope,note}:
+  README.md,project,files stable append option docs
+close_reason: Implemented opt-in append-stable files mutation mode with parity updates and verified via full build/test/coverage/smoke.
+body: Execution task for Issue #3 implementation and verification.

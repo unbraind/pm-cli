@@ -195,6 +195,38 @@ describe("runComments", () => {
     });
   });
 
+  it("allows audit comment appends without force while preserving non-comment ownership checks", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-audit-append-policy");
+      const assigned = context.runCli(
+        ["update", id, "--assignee", "owner-a", "--author", "owner-a", "--message", "assign owner for audit test", "--json"],
+        { expectJson: true },
+      );
+      expect(assigned.code).toBe(0);
+
+      await expect(runComments(id, { add: "blocked audit comment", author: "owner-b" }, { path: context.pmPath })).rejects.toMatchObject<
+        PmCliError
+      >({
+        exitCode: EXIT_CODE.CONFLICT,
+      });
+
+      const allowed = await runComments(
+        id,
+        {
+          add: "allowed audit comment",
+          author: "owner-b",
+          allowAuditComment: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(allowed.comments.at(-1)?.text).toBe("allowed audit comment");
+      expect(allowed.comments.at(-1)?.author).toBe("owner-b");
+
+      const blockedUpdate = context.runCli(["update", id, "--status", "in_progress", "--author", "owner-b", "--json"]);
+      expect(blockedUpdate.code).toBe(EXIT_CODE.CONFLICT);
+    });
+  });
+
   it("accepts stdin token for comment add payload", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "comments-stdin-token");

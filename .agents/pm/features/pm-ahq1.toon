@@ -1,0 +1,30 @@
+id: pm-ahq1
+title: "Issue5: comments audit append policy path"
+description: Add additive comment-only audit append pathway that avoids force for low-risk comment entries while preserving ownership guards for structural mutations.
+type: Feature
+status: closed
+priority: 1
+tags[5]: "area:comments","area:ownership",audit,governance,pm-cli
+created_at: "2026-04-03T20:57:52.280Z"
+updated_at: "2026-04-03T21:27:28.349Z"
+deadline: "2026-04-12T20:57:52.280Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: pm comments supports additive audit-comment pathway without force while non-comment ownership protections remain unchanged.
+parent: pm-r7t2
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-r7t2,parent,"2026-04-03T20:57:52.280Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-03T20:57:52.280Z",codex-agent,"Net-new scope after dedupe: runtime still requires force for non-owner comment_add operations."
+notes[1]{created_at,author,text}:
+  "2026-04-03T20:57:52.280Z",codex-agent,Keep ownership protections intact for update/files/docs/test and other structural mutations.
+learnings[1]{created_at,author,text}:
+  "2026-04-03T20:57:52.280Z",codex-agent,Low-risk append-only governance operations can have narrower ownership exceptions than field mutations.
+files[1]{path,scope,note}:
+  src/core/store/item-store.ts,project,ownership conflict enforcement entrypoint
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,3600,comments ownership regression
+docs[1]{path,scope,note}:
+  README.md,project,comments ownership behavior docs
+close_reason: "Child task pm-8k10 completed: comments allow-audit-comment append-only path implemented with ownership guard safety and full verification pass."
+body: Implements net-new governance Issue #5 by allowing safe comment append flows without broad ownership bypass.

@@ -1,0 +1,30 @@
+id: pm-6jps
+title: "Issue3: files add stable append diff mode"
+description: Add additive files-link mutation mode to minimize history patch churn for single-link additions on large arrays.
+type: Feature
+status: closed
+priority: 1
+tags[5]: "area:files","area:history",audit,governance,pm-cli
+created_at: "2026-04-03T20:57:36.551Z"
+updated_at: "2026-04-03T21:27:26.413Z"
+deadline: "2026-04-12T20:57:36.551Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: pm files supports additive stable-append mode that avoids broad array reorder patches while preserving current default semantics.
+parent: pm-r7t2
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-r7t2,parent,"2026-04-03T20:57:36.551Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-03T20:57:36.551Z",codex-agent,"Net-new scope after dedupe: files add currently sorts arrays and can produce noisy history patches."
+notes[1]{created_at,author,text}:
+  "2026-04-03T20:57:36.551Z",codex-agent,Add opt-in stable append path and keep existing behavior default for compatibility.
+learnings[1]{created_at,author,text}:
+  "2026-04-03T20:57:36.551Z",codex-agent,History readability matters for governance and concurrent maintainer workflows.
+files[1]{path,scope,note}:
+  src/cli/commands/files.ts,project,primary files mutation logic
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts,null,project,3600,files stable append regression
+docs[1]{path,scope,note}:
+  PRD.md,project,files command contract update
+close_reason: "Child task pm-xv39 completed: files append-stable mode implemented with deterministic compatibility defaults and full verification pass."
+body: Implements net-new governance Issue #3 by introducing stable append semantics without changing default behavior.

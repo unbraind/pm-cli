@@ -1,0 +1,30 @@
+id: pm-j371
+title: "Issue1: validate check-files full tracked scan mode"
+description: Add additive validate scan mode options so governance audits can scan all tracked files and report explicit candidate totals.
+type: Feature
+status: closed
+priority: 1
+tags[5]: "area:files","area:validation",audit,governance,pm-cli
+created_at: "2026-04-03T20:57:28.175Z"
+updated_at: "2026-04-03T21:27:25.445Z"
+deadline: "2026-04-12T20:57:28.175Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: pm validate supports additive full tracked-file scan mode and reports candidate_total and candidate_scanned without breaking default behavior.
+parent: pm-r7t2
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-r7t2,parent,"2026-04-03T20:57:28.175Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-03T20:57:28.175Z",codex-agent,"Net-new scope after dedupe: validate check-files needs full tracked scan mode and explicit totals."
+notes[1]{created_at,author,text}:
+  "2026-04-03T20:57:28.175Z",codex-agent,Keep current check-files behavior as default and add opt-in tracked-all mode.
+learnings[1]{created_at,author,text}:
+  "2026-04-03T20:57:28.175Z",codex-agent,Governance checks need transparent candidate accounting to avoid false confidence.
+files[1]{path,scope,note}:
+  src/cli/commands/validate.ts,project,primary implementation surface
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,null,project,3600,validate scan regression
+docs[1]{path,scope,note}:
+  README.md,project,validate command behavior docs
+close_reason: "Child task pm-kshe completed: validate file scan-mode tracked-all + candidate metrics implemented with docs/contracts/tests parity and full verification pass."
+body: Implements net-new governance Issue #1 with compatibility-safe defaults and explicit candidate counting metrics.

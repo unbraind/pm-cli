@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -288,11 +289,82 @@ describe("runValidate", () => {
       const details = filesCheck.details as {
         missing_linked_paths_count: number;
         orphaned_paths_count: number;
+        candidate_total: number;
+        candidate_scanned: number;
         scanned_candidate_files: number;
       };
       expect(details.missing_linked_paths_count).toBe(0);
       expect(details.orphaned_paths_count).toBe(0);
+      expect(details.candidate_total).toBe(0);
+      expect(details.candidate_scanned).toBe(0);
       expect(details.scanned_candidate_files).toBe(0);
+    });
+  });
+
+  it("supports tracked-all scan mode and explicit candidate totals", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "validate-files-tracked-all");
+      const workspaceRoot = path.dirname(path.dirname(context.pmPath));
+      const srcDir = path.join(workspaceRoot, "src");
+      const miscDir = path.join(workspaceRoot, "misc");
+      await Promise.all([mkdir(srcDir, { recursive: true }), mkdir(miscDir, { recursive: true })]);
+      await Promise.all([
+        writeFile(path.join(srcDir, "tracked.ts"), "export const tracked = true;\n", "utf8"),
+        writeFile(path.join(miscDir, "audit.txt"), "audit\n", "utf8"),
+      ]);
+
+      const linked = context.runCli(
+        [
+          "files",
+          id,
+          "--json",
+          "--add",
+          "path=src/tracked.ts,scope=project,note=tracked",
+          "--add",
+          "path=misc/audit.txt,scope=project,note=audit",
+        ],
+        { expectJson: true },
+      );
+      expect(linked.code).toBe(0);
+
+      const gitInit = spawnSync("git", ["init"], { cwd: workspaceRoot, encoding: "utf8" });
+      expect(gitInit.status).toBe(0);
+      const gitAdd = spawnSync("git", ["add", "src/tracked.ts", "misc/audit.txt"], { cwd: workspaceRoot, encoding: "utf8" });
+      expect(gitAdd.status).toBe(0);
+
+      const result = await runValidate({ checkFiles: true, scanMode: "tracked-all" }, { path: context.pmPath });
+      expect(result.ok).toBe(true);
+      const filesCheck = checkByName(result, "files");
+      expect(filesCheck.status).toBe("ok");
+      const details = filesCheck.details as {
+        scan_mode_requested: string;
+        scan_mode_applied: string;
+        candidate_scan_source: string;
+        linked_project_paths: number;
+        candidate_total: number;
+        candidate_scanned: number;
+        scanned_candidate_files: number;
+        orphaned_paths_count: number;
+      };
+      expect(details.scan_mode_requested).toBe("tracked-all");
+      expect(details.scan_mode_applied).toBe("tracked-all");
+      expect(details.candidate_scan_source).toBe("tracked-git");
+      expect(details.linked_project_paths).toBe(2);
+      expect(details.candidate_total).toBe(2);
+      expect(details.candidate_scanned).toBe(2);
+      expect(details.scanned_candidate_files).toBe(2);
+      expect(details.orphaned_paths_count).toBe(0);
+    });
+  });
+
+  it("rejects unknown scan-mode values", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, "validate-files-invalid-scan-mode");
+      await expect(runValidate({ checkFiles: true, scanMode: "unknown-mode" }, { path: context.pmPath })).rejects.toMatchObject<
+        PmCliError
+      >({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 

@@ -91,6 +91,7 @@ describe("generateBashScript", () => {
     const script = generateBashScript();
     expect(script).toContain("--title");
     expect(script).toContain("--description");
+    expect(script).toContain("--create-mode");
     expect(script).toContain("--acceptance-criteria");
     expect(script).toContain("--dep");
     expect(script).toContain("--reminder");
@@ -116,11 +117,22 @@ describe("generateBashScript", () => {
   it("includes comments mutation metadata flags in bash completion", () => {
     const script = generateBashScript();
     expect(script).toContain("--add --limit --author --message --force");
+    expect(script).toContain("--allow-audit-comment");
   });
 
   it("includes files/docs add-glob flag in bash completion", () => {
     const script = generateBashScript();
     expect(script).toContain("--add --add-glob --remove --migrate --validate-paths --audit");
+  });
+
+  it("includes files append-stable flag in bash completion", () => {
+    const script = generateBashScript();
+    expect(script).toContain("--append-stable");
+  });
+
+  it("includes validate scan-mode flag in bash completion", () => {
+    const script = generateBashScript();
+    expect(script).toContain("--check-metadata --check-resolution --check-files --scan-mode --check-history-drift");
   });
 
   it("includes calendar-specific flags", () => {

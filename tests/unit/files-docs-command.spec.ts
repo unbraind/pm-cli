@@ -365,6 +365,43 @@ describe("runFiles", () => {
     });
   });
 
+  it("supports append-stable mode to preserve order and append new entries", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "files-append-stable");
+      const seeded = await runFiles(
+        id,
+        {
+          add: ["path=docs/c.md,scope=project", "path=docs/a.md,scope=project"],
+          appendStable: true,
+          message: "seed append-stable ordering",
+        },
+        { path: context.pmPath },
+      );
+      expect(seeded.files.map((entry) => entry.path)).toEqual(["docs/c.md", "docs/a.md"]);
+
+      const appended = await runFiles(
+        id,
+        {
+          add: ["path=docs/b.md,scope=project"],
+          appendStable: true,
+          message: "append with stable ordering",
+        },
+        { path: context.pmPath },
+      );
+      expect(appended.files.map((entry) => entry.path)).toEqual(["docs/c.md", "docs/a.md", "docs/b.md"]);
+
+      const defaultSorted = await runFiles(
+        id,
+        {
+          add: ["path=docs/d.md,scope=project"],
+          message: "default ordering remains sorted",
+        },
+        { path: context.pmPath },
+      );
+      expect(defaultSorted.files.map((entry) => entry.path)).toEqual(["docs/a.md", "docs/b.md", "docs/c.md", "docs/d.md"]);
+    });
+  });
+
   it("expands add-glob file entries with deterministic dedup behavior", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "files-add-glob");

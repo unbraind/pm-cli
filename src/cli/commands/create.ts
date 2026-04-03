@@ -110,6 +110,7 @@ export interface CreateCommandOptions {
   event?: string[];
   typeOption?: string[];
   template?: string;
+  createMode?: string;
 }
 
 export interface CreateResult {
@@ -117,6 +118,9 @@ export interface CreateResult {
   changed_fields: string[];
   warnings: string[];
 }
+
+type CreateMode = "strict" | "progressive";
+const CREATE_MODE_VALUES = ["strict", "progressive"] as const;
 
 function ensureEnumValue<T extends string>(value: string, allowed: readonly T[], label: string): T {
   if (!allowed.includes(value as T)) {
@@ -606,7 +610,28 @@ async function resolveCreateStdinInputs(options: CreateCommandOptions): Promise<
   };
 }
 
-function requireCreateOptionByType(typeDefinition: ResolvedItemTypeDefinition, options: CreateCommandOptions): void {
+function resolveCreateMode(createMode: string | undefined): CreateMode {
+  if (createMode === undefined) {
+    return "strict";
+  }
+  const normalized = createMode.trim().toLowerCase();
+  if (normalized.length === 0) {
+    return "strict";
+  }
+  if (normalized === "strict" || normalized === "progressive") {
+    return normalized;
+  }
+  throw new PmCliError(
+    `Invalid --create-mode value "${createMode}". Allowed: ${CREATE_MODE_VALUES.join(", ")}`,
+    EXIT_CODE.USAGE,
+  );
+}
+
+function requireCreateOptionByType(
+  typeDefinition: ResolvedItemTypeDefinition,
+  options: CreateCommandOptions,
+  createMode: CreateMode,
+): void {
   const typeName = typeDefinition.name;
   const scalarValues: Record<string, unknown> = {
     title: options.title,
@@ -677,11 +702,13 @@ function requireCreateOptionByType(typeDefinition: ResolvedItemTypeDefinition, o
   };
 
   const baseRequiredOptions = new Set<string>(["title", "description", "type"]);
-  for (const field of typeDefinition.required_create_fields) {
-    baseRequiredOptions.add(normalizeCreatePolicyOptionKey(field, typeName, "required_create_fields"));
-  }
-  for (const field of typeDefinition.required_create_repeatables) {
-    baseRequiredOptions.add(normalizeCreatePolicyOptionKey(field, typeName, "required_create_repeatables"));
+  if (createMode === "strict") {
+    for (const field of typeDefinition.required_create_fields) {
+      baseRequiredOptions.add(normalizeCreatePolicyOptionKey(field, typeName, "required_create_fields"));
+    }
+    for (const field of typeDefinition.required_create_repeatables) {
+      baseRequiredOptions.add(normalizeCreatePolicyOptionKey(field, typeName, "required_create_repeatables"));
+    }
   }
 
   const policyState = resolveCommandOptionPolicyState(typeDefinition, "create", baseRequiredOptions);
@@ -783,7 +810,8 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   if (!typeDefinition) {
     throw new PmCliError(`Invalid type value "${resolvedOptions.type}"`, EXIT_CODE.USAGE);
   }
-  requireCreateOptionByType(typeDefinition, resolvedOptions);
+  const createMode = resolveCreateMode(resolvedOptions.createMode);
+  requireCreateOptionByType(typeDefinition, resolvedOptions, createMode);
   const nowValue = nowIso();
   const author = selectAuthor(resolvedOptions.author, settings.author_default);
   const explicitUnsets: string[] = [];

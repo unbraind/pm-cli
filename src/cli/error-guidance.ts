@@ -224,8 +224,12 @@ function buildPmCliErrorGuidance(rawMessage: string, context?: PmCliErrorContext
         why: "Required options define command intent and enforce deterministic write contracts.",
         examples: [
           'pm create --title "Task title" --description "Task details" --type Task --status open --priority 1 --message "Create task" --dep none --comment none --note none --learning none --file none --test none --doc none',
+          'pm create --title "Task title" --description "Task details" --type Task --create-mode progressive',
         ],
-        nextSteps: ['Run "pm <command> --help" to view required and recommended flags.'],
+        nextSteps: [
+          'Run "pm <command> --help" to view required and recommended flags.',
+          "For staged triage without placeholder linkage values, use --create-mode progressive.",
+        ],
       }),
       rawMessage,
       context,

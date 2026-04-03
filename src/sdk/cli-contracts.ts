@@ -216,6 +216,7 @@ export const PI_CREATE_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "description", flag: "--description", allowEmpty: true },
   { param: "type", flag: "--type" },
   { param: "template", flag: "--template" },
+  { param: "createMode", flag: "--create-mode" },
   { param: "status", flag: "--status" },
   { param: "priority", flag: "--priority" },
   { param: "tags", flag: "--tags", allowEmpty: true },
@@ -355,6 +356,7 @@ export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--check-metadata" },
   { flag: "--check-resolution" },
   { flag: "--check-files" },
+  { flag: "--scan-mode" },
   { flag: "--check-history-drift" },
 ];
 
@@ -363,6 +365,8 @@ export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { short: "-d", flag: "--description" },
   { flag: "--type" },
   { flag: "--template" },
+  { flag: "--create-mode" },
+  { flag: "--create_mode" },
   { short: "-s", flag: "--status" },
   { short: "-p", flag: "--priority" },
   { flag: "--tags" },
@@ -545,6 +549,7 @@ export const CREATE_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContr
   { target: "description", keys: ["description"] },
   { target: "type", keys: ["type"] },
   { target: "template", keys: ["template"] },
+  { target: "createMode", keys: ["createMode", "create_mode"] },
   { target: "status", keys: ["status"] },
   { target: "priority", keys: ["priority"] },
   { target: "tags", keys: ["tags"] },
@@ -763,6 +768,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   description: { type: "string" },
   type: { type: "string" },
   template: { type: "string" },
+  createMode: { type: "string", enum: ["strict", "progressive"] },
   status: { type: "string", enum: ["draft", "open", "in_progress", "blocked", "closed", "canceled", "in-progress"] },
   closeReason: { type: "string" },
   priority: { anyOf: [{ type: "string" }, { type: "number" }] },
@@ -827,7 +833,9 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   checkMetadata: { type: "boolean" },
   checkResolution: { type: "boolean" },
   checkFiles: { type: "boolean" },
+  scanMode: { type: "string", enum: ["default", "tracked-all"] },
   checkHistoryDrift: { type: "boolean" },
+  allowAuditComment: { type: "boolean" },
   force: { type: "boolean" },
   run: { type: "boolean" },
   shell: { type: "string", enum: ["bash", "zsh", "fish"] },
@@ -838,6 +846,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   addGlob: { type: "array", items: { type: "string" } },
   remove: { type: "array", items: { type: "string" } },
   migrate: { type: "array", items: { type: "string" } },
+  appendStable: { type: "boolean" },
   validatePaths: { type: "boolean" },
   audit: { type: "boolean" },
   dep: { type: "array", items: { type: "string" } },
@@ -943,12 +952,12 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   close: { required: ["id", "text"], optional: ["validateClose", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   delete: { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   append: { required: ["id", "body"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
-  comments: { required: ["id"], optional: ["text", "add", "limit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
+  comments: { required: ["id"], optional: ["text", "add", "limit", "allowAuditComment", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   notes: { required: ["id"], optional: ["text", "add", "limit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   learnings: { required: ["id"], optional: ["text", "add", "limit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   files: {
     required: ["id"],
-    optional: ["add", "addGlob", "remove", "migrate", "validatePaths", "audit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
+    optional: ["add", "addGlob", "remove", "migrate", "appendStable", "validatePaths", "audit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
   },
   docs: {
     required: ["id"],
@@ -959,7 +968,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   "test-all": { optional: ["status", "timeout", "progress"] },
   stats: {},
   health: {},
-  validate: { optional: ["checkMetadata", "checkResolution", "checkFiles", "checkHistoryDrift"] },
+  validate: { optional: ["checkMetadata", "checkResolution", "checkFiles", "scanMode", "checkHistoryDrift"] },
   gc: {},
   contracts: { optional: ["contractAction", "command", "schemaOnly"] },
   completion: { required: ["shell"] },
@@ -1033,6 +1042,10 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     description: "Item type name from the active runtime type registry.",
     examples: ["Task", "Feature"],
   },
+  createMode: {
+    description: "Create required-option policy mode.",
+    examples: ["strict", "progressive"],
+  },
   status: {
     description: "Item status value.",
     examples: ["open", "in_progress"],
@@ -1091,8 +1104,18 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   checkFiles: {
     description: "Run linked-file and orphaned-file checks.",
   },
+  scanMode: {
+    description: "Select file candidate scan mode for --check-files.",
+    examples: ["default", "tracked-all"],
+  },
   checkHistoryDrift: {
     description: "Run item/history hash drift checks.",
+  },
+  allowAuditComment: {
+    description: "Allow non-owner append-only comment audits without requiring --force.",
+  },
+  appendStable: {
+    description: "When true for files action, preserve existing linked-file order and append new links without full-array resorting.",
   },
   query: {
     description: "Search query text for search action.",

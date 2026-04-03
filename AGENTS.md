@@ -84,6 +84,7 @@ Attach references to keep work reproducible:
 - Files:
   - `pm files <ID> --add path=src/app.ts,scope=project,note="entrypoint"`
   - `pm files <ID> --add-glob "src/**/*.ts"` for deterministic batch linking
+  - `pm files <ID> --add path=src/new.ts,scope=project --append-stable` when preserving existing link order and minimizing history patch churn
 - Tests:
   - `pm test <ID> --add command="node scripts/run-tests.mjs test",scope=project,timeout_seconds=240`
   - `pm test <ID> --add path=tests/history.spec.ts,scope=project`
@@ -101,7 +102,8 @@ Attach references to keep work reproducible:
 Use append-style updates:
 
 - `pm comments <ID> "Implemented lock retry path"` (or `--add "..."` for structured/stdin forms)
-- use `pm comments <ID> ... --force` when adding an entry to items currently assigned to another owner
+- use `pm comments <ID> ... --allow-audit-comment` for append-only audit notes on items assigned to another owner
+- reserve `pm comments <ID> ... --force` for coordinated ownership-override paths beyond append-only audit comments
 - `pm update <ID> --status in_progress`
 - `pm append <ID> --body "Detailed implementation notes..."`
 
@@ -124,6 +126,7 @@ Before close:
    - Avoid linking `pm test-all` itself as an item-level linked test command, since that creates recursive orchestration.
 4. Run targeted close-readiness validation when relevant:
    - `pm validate --check-resolution --check-history-drift`
+   - for linked-file coverage audits, use `pm validate --check-files --scan-mode tracked-all`
 5. Add closure evidence:
    - `pm comments <ID> "Evidence: tests X, Y passed; coverage remains 100%."` (or `--add "..."`)
 
@@ -279,8 +282,8 @@ Install the bundled Pi extension with `pm install pi --project` (default) or `pm
 Load it in Pi with `pi -e ./.pi/extensions/pm-cli/index.ts` (or copy to `.pi/extensions/`).
 Use `action: "completion"` with `shell: "bash"|"zsh"|"fish"` to forward to `pm completion <shell>`.
 Use `action: "calendar"` for date-centric event views (`view`, `date`, `from`, `to`, `past`, `type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`, `format`).
-Use `action: "validate"` with optional check toggles (`checkMetadata`, `checkResolution`, `checkFiles`, `checkHistoryDrift`) for standalone audit workflows.
-For `create` and `update`, use camelCase wrapper parameters for the canonical CLI scalar fields such as `parent`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blockedBy`, `blockedReason`, `unblockNote`, `definitionOfReady`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `whyNow`, `reporter`, `severity`, `environment`, `reproSteps`, `resolution`, `expectedResult`, `actualResult`, `affectedVersion`, `fixedVersion`, `component`, `regression`, and `customerImpact`; use repeatable `reminder` values for persistent reminders (`at=<iso|relative>,text=<text>`) and repeatable `typeOption` values for custom type metadata.
+Use `action: "validate"` with optional check toggles (`checkMetadata`, `checkResolution`, `checkFiles`, `checkHistoryDrift`) and optional `scanMode` (`default|tracked-all`) for standalone audit workflows.
+For `create` and `update`, use camelCase wrapper parameters for the canonical CLI scalar fields such as `parent`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blockedBy`, `blockedReason`, `unblockNote`, `definitionOfReady`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `whyNow`, `reporter`, `severity`, `environment`, `reproSteps`, `resolution`, `expectedResult`, `actualResult`, `affectedVersion`, `fixedVersion`, `component`, `regression`, and `customerImpact`; use `createMode` (`strict|progressive`) when staged creation is needed, `appendStable` for minimal-diff file-link appends, `allowAuditComment` for additive non-owner comment writes, repeatable `reminder` values for persistent reminders (`at=<iso|relative>,text=<text>`), and repeatable `typeOption` values for custom type metadata.
 
 ### Example: list open tasks
 
@@ -433,7 +436,7 @@ Rules:
 
 ### All-Flags Create Template (copy/paste)
 
-`pm create` now enforces every repeatable seed flag as explicit input; pass a concrete value or `none` for each of `--dep`, `--comment`, `--note`, `--learning`, `--file`, `--test`, and `--doc`.
+`pm create` strict mode (default / `--create-mode strict`) enforces every repeatable seed flag as explicit input; pass a concrete value or `none` for each of `--dep`, `--comment`, `--note`, `--learning`, `--file`, `--test`, and `--doc`.
 
 ```bash
 pm create \
@@ -492,6 +495,7 @@ Notes:
 
 - `--type` values come from the runtime type registry (built-ins plus `settings.item_types.definitions` and extension registrations).
 - Custom type metadata can be passed with repeatable `--type-option key=value` flags (or `none` to explicitly clear).
+- For staged governance capture without placeholder repeatables, use `--create-mode progressive` and backfill required metadata before close.
 
 ### Epic Template With Comment + Note
 

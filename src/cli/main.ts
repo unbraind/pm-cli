@@ -1577,6 +1577,7 @@ function normalizeCreateOptions(
     description: readCreateString("description"),
     type,
     template: readCreateString("template"),
+    createMode: readCreateString("createMode"),
     status: readCreateString("status"),
     priority: readCreateString("priority"),
     tags: readCreateString("tags"),
@@ -2253,6 +2254,8 @@ program
   .requiredOption("--description, -d <value>", "Item description (allow empty string)")
   .requiredOption("--type <value>", "Item type (built-ins plus any configured custom types)")
   .option("--template <value>", "Apply named create template defaults before explicit flags")
+  .option("--create-mode <value>", "Create required-option policy mode: strict|progressive")
+  .option("--create_mode <value>", "Alias for --create-mode")
   .option("--status, -s <value>", "Item status")
   .option("--priority, -p <value>", "Priority 0..4")
   .option("--tags <value>", "Comma-separated tags, or 'none'")
@@ -2891,6 +2894,7 @@ program
   .option("--limit <n>", "Return only latest n comments")
   .option("--author [value]", "Comment author (optional; falls back to PM_AUTHOR/settings)")
   .option("--message <value>", "History message")
+  .option("--allow-audit-comment", "Allow non-owner append-only comment audits without requiring --force")
   .option("--force", "Force ownership override")
   .description("List or add comments for an item.")
   .action(async (id: string, text: string | undefined, options: Record<string, unknown>, command) => {
@@ -2909,6 +2913,7 @@ program
         limit: typeof options.limit === "string" ? options.limit : undefined,
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
+        allowAuditComment: Boolean(options.allowAuditComment),
         force: Boolean(options.force),
       },
       globalOptions,
@@ -3011,6 +3016,7 @@ program
   )
   .option("--remove <value>", "Remove linked file by path (path=<value>, path:<value>, plain path, or - for stdin)", collect)
   .option("--migrate <value>", "Migrate linked file paths in-place (from=<prefix>,to=<prefix>; repeatable)", collect)
+  .option("--append-stable", "Preserve existing linked-file order and append new links without full-array resorting")
   .option("--validate-paths", "Validate linked file paths for existence and file shape")
   .option("--audit", "Audit linked file usage across all items for this item's linked paths")
   .option("--author <value>", "Mutation author")
@@ -3031,6 +3037,7 @@ program
         addGlob: addGlobValues,
         remove: removeValues,
         migrate: migrateValues,
+        appendStable: Boolean(options.appendStable),
         validatePaths: Boolean(options.validatePaths),
         audit: Boolean(options.audit),
         author: typeof options.author === "string" ? options.author : undefined,
@@ -3219,6 +3226,7 @@ program
   .option("--check-metadata", "Run metadata completeness checks")
   .option("--check-resolution", "Run closed-item resolution metadata checks")
   .option("--check-files", "Run linked-file and orphaned-file checks")
+  .option("--scan-mode <value>", "Select file candidate scan mode for --check-files (default|tracked-all)")
   .option("--check-history-drift", "Run item/history hash drift checks")
   .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
@@ -3228,6 +3236,7 @@ program
         checkMetadata: Boolean(options.checkMetadata),
         checkResolution: Boolean(options.checkResolution),
         checkFiles: Boolean(options.checkFiles),
+        scanMode: typeof options.scanMode === "string" ? options.scanMode : undefined,
         checkHistoryDrift: Boolean(options.checkHistoryDrift),
       },
       globalOptions,

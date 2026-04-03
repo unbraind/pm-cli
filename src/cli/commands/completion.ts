@@ -110,10 +110,16 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     "    extension)",
     `      COMPREPLY=(${compgen("--install --uninstall --explore --manage --activate --deactivate --project --local --global --gh --github --ref --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
-    "    comments|notes|learnings)",
+    "    comments)",
+    `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-comment --force --json --quiet --path --no-extensions --profile --help")})`,
+    "      ;;",
+    "    notes|learnings)",
     `      COMPREPLY=(${compgen("--add --limit --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
-    "    files|docs)",
+    "    files)",
+    `      COMPREPLY=(${compgen("--add --add-glob --remove --migrate --append-stable --validate-paths --audit --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
+    "      ;;",
+    "    docs)",
     `      COMPREPLY=(${compgen("--add --add-glob --remove --migrate --validate-paths --audit --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    deps)",
@@ -126,7 +132,7 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen("--status --timeout --progress --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    validate)",
-    `      COMPREPLY=(${compgen("--check-metadata --check-resolution --check-files --check-history-drift --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--check-metadata --check-resolution --check-files --scan-mode --check-history-drift --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    history)",
     `      COMPREPLY=(${compgen("--limit --diff --verify --json --quiet --path --no-extensions --profile --help")})`,
@@ -267,6 +273,7 @@ _pm() {
             '(-t --title)'{-t,--title}'[Item title]:title' \\
             '(-d --description)'{-d,--description}'[Item description]:description' \\
             '--type[Item type]:(${typeChoices})' \\
+            '--create-mode[Create required-option policy mode]:(strict progressive)' \\
             '(-s --status)'{-s,--status}'[Item status]:(draft open in_progress blocked)' \\
             '(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)' \\
             '--tags[Comma-separated tags]:tags' \\
@@ -382,7 +389,18 @@ _pm() {
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
-        comments|notes|learnings)
+        comments)
+          _arguments \\
+            '--add[Add one entry (plain text, text=<value>, markdown pairs, or - for stdin)]:text' \\
+            '--limit[Return only latest n entries]:number' \\
+            '--author[Entry author (falls back to PM_AUTHOR/settings)]:author' \\
+            '--message[History message]:message' \\
+            '--allow-audit-comment[Allow non-owner append-only comment audits without requiring --force]' \\
+            '--force[Force override]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        notes|learnings)
           _arguments \\
             '--add[Add one entry (plain text, text=<value>, markdown pairs, or - for stdin)]:text' \\
             '--limit[Return only latest n entries]:number' \\
@@ -420,6 +438,7 @@ _pm() {
             '--check-metadata[Run metadata completeness checks]' \\
             '--check-resolution[Run closed-item resolution metadata checks]' \\
             '--check-files[Run linked-file and orphaned-file checks]' \\
+            '--scan-mode[Select file candidate scan mode for --check-files]:(default tracked-all)' \\
             '--check-history-drift[Run item/history hash drift checks]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -570,6 +589,7 @@ end
 complete -c pm -n '__fish_seen_subcommand_from create' -s t -l title              -d 'Item title' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -s d -l description        -d 'Item description' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l type                    -d 'Item type' -r -a '${typeChoices}'
+complete -c pm -n '__fish_seen_subcommand_from create' -l create-mode             -d 'Create required-option policy mode' -r -a 'strict progressive'
 complete -c pm -n '__fish_seen_subcommand_from create' -s s -l status             -d 'Item status' -r -a 'draft open in_progress blocked'
 complete -c pm -n '__fish_seen_subcommand_from create' -s p -l priority           -d 'Priority (0-4)' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from create' -l tags                    -d 'Comma-separated tags' -r
@@ -661,6 +681,7 @@ complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l limi
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l author -d 'Entry author' -r
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l message -d 'History message' -r
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l force -d 'Force override'
+complete -c pm -n '__fish_seen_subcommand_from comments' -l allow-audit-comment -d 'Allow non-owner append-only comment audits without requiring --force'
 
 # test-all flags
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l status  -d 'Filter by status' -r -a 'open in_progress'
@@ -677,6 +698,7 @@ complete -c pm -n '__fish_seen_subcommand_from close' -l force -d 'Force overrid
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-metadata -d 'Run metadata completeness checks'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-resolution -d 'Run closed-item resolution metadata checks'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-files -d 'Run linked-file and orphaned-file checks'
+complete -c pm -n '__fish_seen_subcommand_from validate' -l scan-mode -d 'Select file candidate scan mode for --check-files' -r -a 'default tracked-all'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-history-drift -d 'Run item/history hash drift checks'
 
 # completion shell argument

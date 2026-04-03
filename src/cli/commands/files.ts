@@ -20,6 +20,7 @@ export interface FilesCommandOptions {
   remove?: string[];
   migrate?: string[];
   list?: boolean;
+  appendStable?: boolean;
   validatePaths?: boolean;
   audit?: boolean;
   author?: string;
@@ -199,6 +200,13 @@ function sortLinkedFiles(files: LinkedFile[]): LinkedFile[] {
   });
 }
 
+function dedupeLinkedFiles(files: LinkedFile[]): LinkedFile[] {
+  return [...new Map(files.map((entry) => [fileKey(entry), entry])).values()].map((entry) => ({
+    ...entry,
+    note: entry.note?.trim() || undefined,
+  }));
+}
+
 async function validateLinkedFilePaths(paths: string[]): Promise<LinkedPathValidation> {
   const uniquePaths = [...new Set(paths)].sort((left, right) => left.localeCompare(right));
   const existingFiles: string[] = [];
@@ -340,14 +348,10 @@ export async function runFiles(id: string, options: FilesCommandOptions, global:
           }
         }
       }
-      const deduped = sortLinkedFiles(
-        [...new Map(next.map((entry) => [fileKey(entry), entry])).values()].map((entry) => ({
-          ...entry,
-          note: entry.note?.trim() || undefined,
-        })),
-      );
-      if (deduped.length > 0) {
-        document.front_matter.files = deduped;
+      const deduped = dedupeLinkedFiles(next);
+      const normalized = options.appendStable ? deduped : sortLinkedFiles(deduped);
+      if (normalized.length > 0) {
+        document.front_matter.files = normalized;
       } else {
         delete document.front_matter.files;
       }

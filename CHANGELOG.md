@@ -64,7 +64,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added read-only dependency visualization command `pm deps` with deterministic `tree` (default) and `graph` projections, including cycle-safe traversal and missing-node reporting.
 - Added `pm update --close-reason` / `--close_reason` support so callers can explicitly set or clear `close_reason` (`none` clears) without using `pm close`.
 - Added standalone `pm validate` command with deterministic check payloads for metadata completeness, closed-item resolution fields, linked-file/orphaned-file hygiene, and item/history drift.
+- Added `pm validate --scan-mode default|tracked-all` for file-check candidate selection, including explicit `candidate_total`/`candidate_scanned` reporting while preserving compatibility fields.
 - Added `pm close --validate-close [warn|strict]` for additive close-time resolution-field validation (`resolution`, `expected_result`, `actual_result`) with warning-first default behavior.
+- Added `pm files --append-stable` for minimal-diff file-link appends that preserve existing link order and reduce history patch churn during large audits.
+- Added `pm create --create-mode strict|progressive` so strict remains default while governance workflows can use staged progressive creation.
+- Added `pm comments --allow-audit-comment` to permit append-only audit comments on items owned by other assignees without broad ownership override semantics.
 - Added `--offset` pagination and JSON-only `--stream` output mode for `pm list` and all `pm list-*` command families to improve large-result processing ergonomics.
 - Added explicit `--progress` flag support to `pm test`, `pm test-all`, and `pm reindex` so non-interactive runs can opt into deterministic stderr progress visibility.
 

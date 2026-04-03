@@ -122,7 +122,7 @@ Lifecycle rules:
 - `pm claim <id>` sets ownership to current mutation author identity.
 - `pm release <id>` clears ownership.
 - `pm claim <id>` may take over non-terminal items assigned to another assignee without `--force`.
-- Mutations other than `claim` against items assigned to another assignee return conflict unless `--force`.
+- Mutations other than `claim` against items assigned to another assignee return conflict unless `--force` (comments can use additive `--allow-audit-comment` for append-only audit entries).
 - Ownership-conflict guidance should call out approved `--force` scenarios (for example PM audits, coordinated lead-maintainer metadata correction, or explicit ownership handoff cleanup).
 
 ### 5.4 Dependencies model
@@ -374,7 +374,7 @@ Unset optional fields are omitted.
 - `severity` CLI input alias `med` normalizes to canonical stored value `medium`.
 - `dependencies`, `comments`, `notes`, `learnings` sorted by `created_at` ascending; stable tie-break by text/id.
 - `reminders` sorted by `at` ascending, then `text` ascending.
-- `files` sorted by `scope` asc, then `path` asc, then `note` asc.
+- `files` preserve provided order in canonical storage; `pm files` default mutation mode writes deterministic sorted order unless `--append-stable` is explicitly selected.
 - `tests` sorted by `scope` asc, then `path` asc, then `command` asc, then `timeout_seconds` asc, then `note` asc.
 - `docs` sorted by `scope` asc, then `path` asc, then `note` asc.
 - Paths normalized to forward-slash logical form for storage while preserving OS-correct access at runtime.
@@ -675,10 +675,11 @@ Mutating `create` (all schema fields MUST be passable explicitly):
 - `--title`, `-t` (required)
 - `--description`, `-d` (required; empty string allowed when explicitly passed)
 - `--type` (required; allowed values are resolved from the runtime item-type registry: built-ins + `settings.item_types.definitions` + extension registrations)
-- `--status`, `-s` (required)
-- `--priority`, `-p` (required: `0..4`)
-- `--tags` (required; explicit empty allowed)
-- `--body`, `-b` (required; explicit empty allowed)
+- `--create-mode`, `--create_mode` (optional; `strict` default, or `progressive` for staged creation that relaxes type-level required create fields/repeatables)
+- `--status`, `-s` (required in strict mode; defaults to `open` in progressive mode when omitted)
+- `--priority`, `-p` (required in strict mode; defaults to `2` in progressive mode when omitted)
+- `--tags` (required in strict mode; defaults to empty list in progressive mode when omitted)
+- `--body`, `-b` (required in strict mode; defaults to empty body in progressive mode when omitted)
 - `--deadline` (explicit; accepts ISO/date strings, relative `+6h/+1d/+2w/+6m`, or none)
 - `--estimate`, `--estimated-minutes`, `--estimated_minutes` (explicit; accepts `0`)
 - `--acceptance-criteria`, `--acceptance_criteria`, `--ac` (explicit; empty allowed)
@@ -716,7 +717,7 @@ Mutating `create` (all schema fields MUST be passable explicitly):
 - `--outcome` (optional; or `none`)
 - `--why-now`, `--why_now` (optional; or `none`)
 
-Mutating `create` flags (repeatable, each required at least once; use `none` for explicit empty intent):
+Mutating `create` flags (repeatable; strict mode may require each at least once depending on type policy, while progressive mode allows staged omission; use `none` for explicit empty intent):
 
 - `--dep` value format: `id=<id>,kind=<blocks|parent|child|parent_child|child_of|related|related_to|discovered_from|blocked_by|incident_from|epic|supersedes|task>,author=<a>,created_at=<iso|now>,source_kind=<value?>` (also accepts markdown `key: value` lines and stdin token `-`)
 - `--comment` value format: `author=<a>,created_at=<iso|now>,text=<t>` (also accepts markdown `key: value` lines and stdin token `-`)
@@ -860,7 +861,7 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | `pm beads import [--file <path\|->] [--preserve-source-ids]` | optional Beads JSONL source path (`.beads/issues.jsonl` auto-discovered first, then `issues.jsonl`; implicit `sync_base.jsonl` fallback is refused as unsafe; `--file -` requires piped stdin and fails fast on interactive TTY stdin) | `{ ok, source, imported, skipped, ids, warnings }` |
 | `pm todos import --folder <path?>` | optional todos markdown source folder (defaults to `.pi/todos`); preserves canonical optional `ItemFrontMatter` metadata when present and applies deterministic defaults for missing PM fields | `{ ok, folder, imported, skipped, ids, warnings }` |
 | `pm todos export --folder <path?>` | optional todos markdown destination folder (defaults to `.pi/todos`) | `{ ok, folder, exported, ids, warnings }` |
-| `pm create ...` | required title + schema flags (type-governed missing required options are aggregated into one deterministic usage error payload) + optional `--template` reusable defaults | `{ item, changed_fields, warnings }` |
+| `pm create ...` | required `--title` + `--description` + `--type`; strict mode is default (`--create-mode strict`) and enforces type-governed required options; progressive mode (`--create-mode progressive`) supports staged omission of type-level required create fields/repeatables; optional `--template` reusable defaults | `{ item, changed_fields, warnings }` |
 | `pm templates save <NAME> ...` | template name + create-compatible option payload (subset of create flags, including repeatable entries) | `{ name, path, template, saved_at }` |
 | `pm templates list` | optional output controls (`--json`/TOON) | `{ templates, count }` |
 | `pm templates show <NAME>` | template name | `{ name, template }` |
@@ -870,15 +871,15 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | `pm append <ID> --body` | id + appended markdown (`--body -` reads piped stdin) | `{ item, appended, changed_fields }` |
 | `pm claim <ID>` | id, optional `--author`/`--message`/`--force` (`--force` required for terminal/lock override paths; non-terminal assignee takeover does not require force) | `{ item, claimed_by, previous_assignee, forced }` |
 | `pm release <ID>` | id, optional `--author`/`--message`/`--force` | `{ item, released_by, previous_assignee, forced }` |
-| `pm comments <ID> [TEXT] --add/--limit` | id + optional positional comment text shorthand + comment text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`); optional mutation metadata flags `--author`/`--message`/`--force` | `{ id, comments, count }` |
+| `pm comments <ID> [TEXT] --add/--limit` | id + optional positional comment text shorthand + comment text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`); optional mutation metadata flags `--author`/`--message`/`--force`; additive ownership-safe audit path `--allow-audit-comment` for non-owner append-only comments | `{ id, comments, count }` |
 | `pm notes <ID> [TEXT] --add/--limit` | id + optional positional note text shorthand + note text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`) | `{ id, notes, count }` |
 | `pm learnings <ID> [TEXT] --add/--limit` | id + optional positional learning text shorthand + learning text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`) | `{ id, learnings, count }` |
-| `pm files <ID> --add/--add-glob/--remove/--migrate/--validate-paths/--audit/--list` | id + file refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`); optional glob expansion via repeatable `--add-glob` (plain glob or `pattern=<glob>,scope=<scope>,note=<text>`); optional additive linked-path hygiene (`--migrate from=<old>,to=<new>`, path existence validation, cross-item audit, non-mutating list) | `{ id, files, changed, count, migrations_applied, validation, audit }` |
+| `pm files <ID> --add/--add-glob/--remove/--migrate/--append-stable/--validate-paths/--audit/--list` | id + file refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`); optional glob expansion via repeatable `--add-glob` (plain glob or `pattern=<glob>,scope=<scope>,note=<text>`); optional additive linked-path hygiene (`--migrate from=<old>,to=<new>`, path existence validation, cross-item audit, non-mutating list); optional `--append-stable` avoids full-array resorting and appends new links while preserving current order | `{ id, files, changed, count, migrations_applied, validation, audit }` |
 | `pm test <ID> --add/--remove/--run` | id + test refs/options (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`; reject recursive `test-all` linked commands at add-time, including global-flag and package-spec launcher forms such as `pm --json test-all`, `npx @unbrained/pm-cli@latest --json test-all`, `pnpm dlx @unbrained/pm-cli@latest --json test-all`, and `npm exec -- @unbrained/pm-cli@latest --json test-all`; defensively skip legacy recursive entries at run-time; reject sandbox-unsafe test-runner commands including unsandboxed direct package-manager run-script forms such as `npm run test`/`pnpm run test` and chained direct runner segments evaluated independently; this sandbox policy is intentional, and targeted scopes should be linked via `node scripts/run-tests.mjs ...` commands or `path=...` entries; run linked commands via shell-compatible spawn orchestration, close child stdin for non-interactive runs, emit stderr heartbeat progress in interactive terminals, and surface deterministic timeout/maxBuffer diagnostics with force-kill fallback) | `{ id, tests, run_results, changed, count }` |
 | `pm test-all --status --timeout` | optional status filter plus additive `--progress` stderr visibility; duplicate linked command/path entries are deduped per invocation (keyed by scope+normalized command or scope+path) and reported as skipped; when duplicate keys carry different `timeout_seconds`, execution uses deterministic maximum timeout for that key | `{ totals, failed, passed, skipped, results }` |
 | `pm stats` | none | `{ totals, by_type, by_status, generated_at }` |
 | `pm health` | none (runs settings/directories/extensions/storage plus integrity, history-drift, and vectorization diagnostics) | `{ ok, checks, warnings, generated_at }` |
-| `pm validate` | optional scoped checks (`--check-metadata`, `--check-resolution`, `--check-files`, `--check-history-drift`; default all checks) | `{ ok, checks, warnings, generated_at }` |
+| `pm validate` | optional scoped checks (`--check-metadata`, `--check-resolution`, `--check-files`, `--check-history-drift`; default all checks); file checks also accept `--scan-mode default|tracked-all` and report `candidate_total` / `candidate_scanned` detail counts | `{ ok, checks, warnings, generated_at }` |
 | `pm gc` | none | `{ ok, removed, retained, warnings, generated_at }` |
 | `pm contracts [--action <value>] [--command <value>] [--schema-only]` | optional action/command filters and schema-only mode for machine contract introspection | `{ schema_version, schema_id, selected, actions, commands, schema, command_flags?, commander_aliases? }` |
 | `pm docs <ID> --add/--add-glob/--remove/--migrate/--validate-paths/--audit` | id + doc refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`); optional glob expansion via repeatable `--add-glob` (plain glob or `pattern=<glob>,scope=<scope>,note=<text>`); optional additive linked-path hygiene (`--migrate from=<old>,to=<new>`, path existence validation, cross-item audit) | `{ id, docs, changed, count, migrations_applied, validation, audit }` |

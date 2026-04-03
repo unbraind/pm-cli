@@ -136,6 +136,7 @@ const REQUIRED_CREATE_FLAGS = [
   "--title",
   "--description",
   "--type",
+  "--create-mode",
   "--status",
   "--priority",
   "--tags",
@@ -202,13 +203,13 @@ const ISSUE_METADATA_CREATE_FLAG_TOKENS = [
 
 const ISSUE_METADATA_UPDATE_FLAG_TOKENS = [...ISSUE_METADATA_CREATE_FLAG_TOKENS];
 const REQUIRED_TEST_FLAGS = ["--add", "--remove", "--run", "--timeout", "--progress", "--author", "--message", "--force"];
-const REQUIRED_COMMENTS_FLAGS = ["--add", "--limit", "--author", "--message", "--force"];
+const REQUIRED_COMMENTS_FLAGS = ["--add", "--limit", "--author", "--message", "--allow-audit-comment", "--force"];
 const REQUIRED_NOTES_FLAGS = ["--add", "--limit", "--author", "--message", "--force"];
 const REQUIRED_LEARNINGS_FLAGS = ["--add", "--limit", "--author", "--message", "--force"];
 const REQUIRED_CLAIM_RELEASE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_RESTORE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_CLOSE_FLAGS = ["--author", "--message", "--validate-close", "--force"];
-const REQUIRED_VALIDATE_FLAGS = ["--check-metadata", "--check-resolution", "--check-files", "--check-history-drift"];
+const REQUIRED_VALIDATE_FLAGS = ["--check-metadata", "--check-resolution", "--check-files", "--scan-mode", "--check-history-drift"];
 const REQUIRED_DELETE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_APPEND_FLAGS = ["--body", "--author", "--message", "--force"];
 const REQUIRED_DEPS_FLAGS = ["--format"];
@@ -477,6 +478,7 @@ describe("release readiness runtime coverage", () => {
       expect(filesHelp.stdout).not.toContain("Add linked file entry (default: [])");
       expect(filesHelp.stdout).not.toContain("Remove linked file by path (default: [])");
       expect(filesHelp.stdout).toContain("--add-glob");
+      expect(filesHelp.stdout).toContain("--append-stable");
 
       const docsHelp = context.runCli(["docs", "--help"]);
       expect(docsHelp.code).toBe(0);

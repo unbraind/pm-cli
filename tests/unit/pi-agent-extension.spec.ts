@@ -37,6 +37,7 @@ describe("Pi agent extension wrapper for pm", () => {
       title: "Pi task",
       description: "created via pi tool",
       type: "Task",
+      createMode: "progressive",
       status: "open",
       priority: "1",
       tags: "pi,wrapper",
@@ -70,6 +71,8 @@ describe("Pi agent extension wrapper for pm", () => {
         "created via pi tool",
         "--type",
         "Task",
+        "--create-mode",
+        "progressive",
         "--status",
         "open",
         "--priority",
@@ -890,6 +893,7 @@ describe("Pi agent extension wrapper for pm", () => {
         id: "pm-a1b2",
         text: "investigating parity",
         limit: "10",
+        allowAuditComment: true,
         author: "pi-bot",
         message: "comment",
         force: true,
@@ -902,6 +906,7 @@ describe("Pi agent extension wrapper for pm", () => {
       "investigating parity",
       "--limit",
       "10",
+      "--allow-audit-comment",
       "--author",
       "pi-bot",
       "--message",
@@ -966,6 +971,7 @@ describe("Pi agent extension wrapper for pm", () => {
         add: ["path=src/a.ts,scope=project"],
         addGlob: ["src/**/*.ts"],
         remove: ["path=src/b.ts,scope=project"],
+        appendStable: true,
       }),
     ).toEqual([
       "--json",
@@ -977,6 +983,7 @@ describe("Pi agent extension wrapper for pm", () => {
       "src/**/*.ts",
       "--remove",
       "path=src/b.ts,scope=project",
+      "--append-stable",
     ]);
 
     expect(

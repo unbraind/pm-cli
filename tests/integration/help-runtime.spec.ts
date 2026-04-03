@@ -168,6 +168,74 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
+  it("allows staged minimal create flows with --create-mode progressive", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(
+        [
+          "create",
+          "--title",
+          "Progressive create seed",
+          "--description",
+          "Staged governance triage item",
+          "--type",
+          "Task",
+          "--create-mode",
+          "progressive",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(created.code).toBe(0);
+      const payload = created.json as {
+        item: {
+          status: string;
+          priority: number;
+          tags: string[];
+        };
+      };
+      expect(payload.item.status).toBe("open");
+      expect(payload.item.priority).toBe(2);
+      expect(payload.item.tags).toEqual([]);
+    });
+  });
+
+  it("supports --allow-audit-comment for non-owner append-only comment audits", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(
+        [
+          "create",
+          "--title",
+          "Audit comment seed",
+          "--description",
+          "Seed item for audit comment policy checks",
+          "--type",
+          "Task",
+          "--create-mode",
+          "progressive",
+          "--assignee",
+          "owner-a",
+          "--author",
+          "owner-a",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(created.code).toBe(0);
+      const id = (created.json as { item: { id: string } }).item.id;
+
+      const blocked = context.runCli(["comments", id, "--add", "audit note", "--author", "owner-b", "--json"]);
+      expect(blocked.code).toBe(4);
+
+      const allowed = context.runCli(
+        ["comments", id, "--add", "audit note", "--author", "owner-b", "--allow-audit-comment", "--json"],
+        { expectJson: true },
+      );
+      expect(allowed.code).toBe(0);
+      const payload = allowed.json as { comments: Array<{ text: string; author: string }> };
+      expect(payload.comments.at(-1)).toMatchObject({ text: "audit note", author: "owner-b" });
+    });
+  });
+
   it("renders ownership conflict guidance with explicit force-usage scenarios", async () => {
     await withTempPmPath(async (context) => {
       const createResult = context.runCli(
