@@ -2,13 +2,12 @@ id: pm-m9jc
 title: Extension lifecycle manager and SDK parity rollout
 description: "Deliver lifecycle extension management commands, source installation workflows, managed state, and docs/contracts parity for pm extensions without duplicating prior full-override work."
 type: Epic
-status: in_progress
+status: closed
 priority: 0
 tags[5]: "area:docs","area:extensions","area:sdk","milestone:extension-manager",pm-cli
 created_at: "2026-04-03T16:15:57.991Z"
-updated_at: "2026-04-03T16:17:21.732Z"
+updated_at: "2026-04-03T17:10:58.356Z"
 deadline: "2026-04-17T16:15:57.991Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 900
 acceptance_criteria: pm extension lifecycle commands and source installers are implemented with tests/docs/contracts parity and verified via full build/test/coverage without regressing current users.
@@ -40,8 +39,9 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-cxn3,discovered_from,"2026-04-03T16:15:57.991Z",codex-agent,null
   pm-igv,discovered_from,"2026-04-03T16:15:57.991Z",codex-agent,null
   pm-x395,discovered_from,"2026-04-03T16:15:57.991Z",codex-agent,null
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-04-03T16:15:57.991Z",codex-agent,Created after context and search dedupe checks showed no active extension-manager lifecycle epic.
+  "2026-04-03T17:10:57.450Z",codex-agent,All extension-manager child features/tasks are now closed with implementation + docs + verification evidence; rollout commit 0c49b5d is pushed to origin/main.
 notes[1]{created_at,author,text}:
   "2026-04-03T16:15:57.991Z",codex-agent,Implementation will remain additive-first for compatibility and link all changed files/tests/docs.
 files[1]{path,scope,note}:
@@ -50,4 +50,5 @@ tests[1]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test,null,project,7200,full regression baseline
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,primary extension manager user and developer contract
+close_reason: Extension lifecycle manager and SDK/docs parity rollout completed with verified tests and pushed commit evidence.
 body: Tracks implementation of pm extension lifecycle manager and parity surfaces requested after prior full-override baseline.
