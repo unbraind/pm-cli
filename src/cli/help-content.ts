@@ -117,6 +117,24 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Installs supported integrations (currently Pi extension support).",
     examples: ["pm install pi --project", "pm install pi --global"],
   },
+  extension: {
+    why: "Installs, explores, manages, and activates/deactivates custom extensions across project or global scope.",
+    examples: [
+      "pm extension --install .agents/pm/extensions/sample --project",
+      "pm extension --install https://github.com/unbraind/pm-cli/tree/main/.agents/pm/extensions/pi --global",
+      "pm extension --install --gh unbraind/pm-cli/pi --project",
+      "pm extension --explore --project",
+      "pm extension --manage --global",
+      "pm extension --activate sample-ext --project",
+      "pm extension --deactivate sample-ext --project",
+      "pm extension --uninstall sample-ext --global",
+    ],
+    tips: [
+      "Action flags are mutually exclusive; pass exactly one lifecycle action per invocation.",
+      "Use --gh/--github shorthand for GitHub sources and --ref to pin a branch, tag, or ref.",
+      "Install updates settings activation state automatically unless extension allowlist mode is unchanged.",
+    ],
+  },
   create: {
     why: "Creates a new planning item with deterministic metadata and history.",
     examples: [

@@ -31,6 +31,8 @@ export interface PmToolParameters {
   timeoutMs?: number;
   id?: string;
   target?: string;
+  github?: string;
+  ref?: string;
   query?: string;
   keywords?: string;
   prefix?: string;
@@ -294,6 +296,21 @@ function addGlobalFlags(args: string[], params: PmToolParameters): void {
   pushOption(args, "--path", params.path);
 }
 
+function addExtensionScopeFlag(args: string[], params: PmToolParameters): void {
+  if (typeof params.scope !== "string" || params.scope.trim().length === 0) {
+    return;
+  }
+  if (params.scope === "project") {
+    args.push("--project");
+    return;
+  }
+  if (params.scope === "global") {
+    args.push("--global");
+    return;
+  }
+  throw new Error(`Unsupported extension scope "${params.scope}". Expected "project" or "global".`);
+}
+
 export function buildPmCliSequences(params: PmToolParameters): string[][] {
   const action = params.action.trim().toLowerCase();
   if (action === "start-task") {
@@ -355,6 +372,39 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       pushRepeatable(args, "--criterion", params.criterion);
       pushOption(args, "--format", params.format);
       pushOption(args, "--policy", params.policy);
+      return args;
+    case "extension-install": {
+      args.push("extension", "--install");
+      addExtensionScopeFlag(args, params);
+      pushOption(args, "--github", params.github);
+      pushOption(args, "--ref", params.ref);
+      const target = params.target;
+      if (typeof target === "string" && target.trim().length > 0) {
+        args.push(target);
+      } else if (typeof params.github !== "string" || params.github.trim().length === 0) {
+        throw new Error(`Action "${action}" requires "target" or "github".`);
+      }
+      return args;
+    }
+    case "extension-uninstall":
+      args.push("extension", "--uninstall", requireString(params.target, "target", action));
+      addExtensionScopeFlag(args, params);
+      return args;
+    case "extension-explore":
+      args.push("extension", "--explore");
+      addExtensionScopeFlag(args, params);
+      return args;
+    case "extension-manage":
+      args.push("extension", "--manage");
+      addExtensionScopeFlag(args, params);
+      return args;
+    case "extension-activate":
+      args.push("extension", "--activate", requireString(params.target, "target", action));
+      addExtensionScopeFlag(args, params);
+      return args;
+    case "extension-deactivate":
+      args.push("extension", "--deactivate", requireString(params.target, "target", action));
+      addExtensionScopeFlag(args, params);
       return args;
     case "create":
       args.push("create");

@@ -23,6 +23,7 @@ describe("generateBashScript", () => {
     for (const cmd of [
       "init",
       "install",
+      "extension",
       "create",
       "get",
       "update",
@@ -192,6 +193,7 @@ describe("generateZshScript", () => {
     const script = generateZshScript();
     expect(script).toContain("init:Initialize");
     expect(script).toContain("install:Install supported integrations and extensions");
+    expect(script).toContain("extension:Manage extension lifecycle operations");
     expect(script).toContain("create:Create a new project management item");
     expect(script).toContain("completion:Generate shell completion");
     expect(script).toContain("contracts:Show machine-readable command and schema contracts");
@@ -309,6 +311,7 @@ describe("generateFishScript", () => {
     for (const [cmd, desc] of [
       ["init", "Initialize"],
       ["install", "Install supported integrations and extensions"],
+      ["extension", "Manage extension lifecycle operations"],
       ["create", "Create"],
       ["calendar", "deadline/reminder calendar views"],
       ["context", "project context snapshot"],
@@ -370,6 +373,20 @@ describe("generateFishScript", () => {
     expect(script).toContain("Install pm Pi extension");
     expect(script).toContain("-l project");
     expect(script).toContain("-l global");
+  });
+
+  it("includes extension lifecycle completions", () => {
+    const script = generateFishScript();
+    expect(script).toContain("__fish_seen_subcommand_from extension");
+    expect(script).toContain("-l install");
+    expect(script).toContain("-l uninstall");
+    expect(script).toContain("-l explore");
+    expect(script).toContain("-l manage");
+    expect(script).toContain("-l activate");
+    expect(script).toContain("-l deactivate");
+    expect(script).toContain("-l gh");
+    expect(script).toContain("-l github");
+    expect(script).toContain("-l ref");
   });
 
   it("includes beads and todos subcommand completions", () => {

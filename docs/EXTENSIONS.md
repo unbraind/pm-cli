@@ -11,6 +11,100 @@ Extensions let you add commands, parser/preflight lifecycle control, core servic
 
 **Load order:** core built-ins → global → project. Project-local extensions take precedence over global when they declare the same command name or renderer key.
 
+## Lifecycle Manager CLI
+
+`pm extension` is the canonical lifecycle manager for custom extensions.
+
+### Actions
+
+Pass exactly one action flag:
+
+- `--install`
+- `--uninstall`
+- `--explore`
+- `--manage`
+- `--activate`
+- `--deactivate`
+
+### Scope selection
+
+- `--project` (default)
+- `--local` (alias for `--project`)
+- `--global`
+
+Project scope resolves against `.agents/pm/extensions`. Global scope resolves against `~/.pm-cli/extensions` (or `PM_GLOBAL_PATH/extensions`).
+
+### Install source normalization
+
+`pm extension --install` accepts:
+
+- local directory paths
+- GitHub HTTPS URLs
+- `github.com/<owner>/<repo>[/path]` shorthand
+- `--gh <owner>/<repo>[/path]` (alias: `--github`)
+- optional `--ref <branch|tag|sha>` for GitHub sources
+
+When the source path is shorthand (for example `owner/repo/pi`), install resolution probes in this order:
+
+1. `<clone>/<subpath>`
+2. `<clone>/.agents/pm/extensions/<subpath>`
+3. `<clone>/.custom/pm-extensions/<subpath>`
+4. `<clone>/.custom/pm-extension/<subpath>`
+
+If no subpath is supplied, the resolver accepts either:
+
+- repo root containing one extension (`manifest.json` at root), or
+- exactly one extension under default roots (`.agents/pm/extensions`, `.custom/pm-extensions`, `.custom/pm-extension`)
+
+If multiple extension manifests are discovered, install fails with deterministic guidance to provide an explicit path.
+
+### Requested equivalence examples
+
+```bash
+# Multiple extensions in one repo (default roots)
+pm extension --install --project https://github.com/unbraind/pm-cli/tree/main/.agents/pm/extensions/pi
+pm extension --install --project github.com/unbraind/pm-cli/pi
+pm extension --install --project --gh unbraind/pm-cli/pi
+
+# Custom roots
+pm extension --install --project https://github.com/unbraind/pm-cli/tree/main/.custom/pm-extensions/pi
+pm extension --install --project github.com/unbraind/pm-cli/.custom/pm-extension/pi
+pm extension --install --project --gh unbraind/pm-cli/pi
+
+# Single-extension repo or extension rooted at repository top-level
+pm extension --install --project https://github.com/unbraind/pm-cli
+pm extension --install --project github.com/unbraind/pm-cli
+pm extension --install --project --gh unbraind/pm-cli
+
+# Local extension source
+pm extension --install --project .agents/pm/extensions/pi
+```
+
+### Managed extension state
+
+Each scope maintains a lifecycle state file:
+
+- `<scope-extension-root>/.managed-extensions.json`
+
+State records include deterministic source metadata (`local` or `github`), install timestamps, manifest summary, and update-check metadata.
+
+Lifecycle semantics:
+
+- Install copies/clones into the selected extension root, validates `manifest.json` and `entry`, updates managed state, and activates the extension in settings.
+- Uninstall removes extension files, removes managed-state entry, and clears settings references.
+- Activate/deactivate updates `settings.extensions.enabled[]` / `settings.extensions.disabled[]`.
+- Explore returns discovered extensions + active/managed status.
+- Manage performs GitHub update checks (`git ls-remote`) for managed GitHub entries and persists update metadata (`last_update_check_at`, `last_update_remote_commit`, `update_available`, `update_error`).
+
+### Health integration
+
+`pm health` includes managed extension diagnostics for project and global scope:
+
+- managed-state file path
+- managed entry count
+- managed entry summaries
+- managed-state read/schema warnings
+
 ## Manifest
 
 Every extension directory must contain a `manifest.json`:
@@ -515,5 +609,6 @@ Current wrapper parity includes:
 - `action: "calendar"` for `pm calendar` / `pm cal` (`view`, `date`, `from`, `to`, `past`, `type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`, `format`)
 - `create`/`update` reminder forwarding via repeatable `reminder` values (`at=<iso|relative>,text=<text>`)
 - `create`/`update` custom type-option forwarding via repeatable `typeOption` values
+- extension lifecycle forwarding via `extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-activate`, and `extension-deactivate` actions (`target`, `scope`, `github`, `ref`)
 
 See [AGENTS.md](../AGENTS.md) section 9 for full usage details.

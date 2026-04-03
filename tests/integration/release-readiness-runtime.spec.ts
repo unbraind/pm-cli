@@ -92,6 +92,7 @@ const CORE_COMMANDS = [
   "init",
   "config",
   "install",
+  "extension",
   "create",
   "list",
   "list-all",
@@ -329,6 +330,25 @@ describe("release readiness runtime coverage", () => {
       expect(help.stdout).toContain("--project");
       expect(help.stdout).toContain("derived from --path");
       expect(help.stdout).toContain("--global");
+    });
+  });
+
+  it("keeps extension help aligned with lifecycle action and scope flags", async () => {
+    await withTempPmPath(async (context) => {
+      const help = context.runCli(["extension", "--help"]);
+      expect(help.code).toBe(0);
+      expect(help.stdout).toContain("--install");
+      expect(help.stdout).toContain("--uninstall");
+      expect(help.stdout).toContain("--explore");
+      expect(help.stdout).toContain("--manage");
+      expect(help.stdout).toContain("--activate");
+      expect(help.stdout).toContain("--deactivate");
+      expect(help.stdout).toContain("--project");
+      expect(help.stdout).toContain("--local");
+      expect(help.stdout).toContain("--global");
+      expect(help.stdout).toContain("--gh");
+      expect(help.stdout).toContain("--github");
+      expect(help.stdout).toContain("--ref");
     });
   });
 

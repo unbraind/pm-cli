@@ -107,6 +107,9 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     "    install)",
     `      COMPREPLY=(${compgen("pi --project --global --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
+    "    extension)",
+    `      COMPREPLY=(${compgen("--install --uninstall --explore --manage --activate --deactivate --project --local --global --gh --github --ref --json --quiet --path --no-extensions --profile --help")})`,
+    "      ;;",
     "    comments|notes|learnings)",
     `      COMPREPLY=(${compgen("--add --limit --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
@@ -171,6 +174,7 @@ _pm_commands() {
     'init:Initialize pm storage for the current workspace'
     'config:Read or update pm settings'
     'install:Install supported integrations and extensions'
+    'extension:Manage extension lifecycle operations'
     'create:Create a new project management item'
     'list:List active items with optional filters'
     'list-all:List all items with optional filters'
@@ -399,6 +403,24 @@ _pm() {
             '--quiet[Suppress stdout]' \\
             '1:target:(pi)'
           ;;
+        extension)
+          _arguments \\
+            '--install[Install extension from local path or GitHub source]' \\
+            '--uninstall[Uninstall extension by name]' \\
+            '--explore[List discovered extensions for selected scope]' \\
+            '--manage[List managed extensions with update metadata]' \\
+            '--activate[Activate extension in selected scope settings]' \\
+            '--deactivate[Deactivate extension in selected scope settings]' \\
+            '--project[Use project extension scope (default)]' \\
+            '--local[Alias for --project]' \\
+            '--global[Use global extension scope]' \\
+            '--gh[Install from GitHub shorthand owner/repo/path]:github_spec' \\
+            '--github[Alias for --gh]:github_spec' \\
+            '--ref[Git ref/branch/tag for GitHub source]:git_ref' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]' \\
+            '*:target_or_name:_files -/'
+          ;;
         completion)
           _arguments '1:shell:(bash zsh fish)'
           ;;
@@ -455,6 +477,7 @@ end
 complete -c pm -n __pm_no_subcommand -a init          -d 'Initialize pm storage for the current workspace'
 complete -c pm -n __pm_no_subcommand -a config        -d 'Read or update pm settings'
 complete -c pm -n __pm_no_subcommand -a install       -d 'Install supported integrations and extensions'
+complete -c pm -n __pm_no_subcommand -a extension     -d 'Manage extension lifecycle operations'
 complete -c pm -n __pm_no_subcommand -a create        -d 'Create a new project management item'
 complete -c pm -n __pm_no_subcommand -a list          -d 'List active items with optional filters'
 complete -c pm -n __pm_no_subcommand -a list-all      -d 'List all items with optional filters'
@@ -620,6 +643,20 @@ complete -c pm -n '__fish_seen_subcommand_from templates' -a 'save list show' -d
 complete -c pm -n '__fish_seen_subcommand_from install' -a 'pi' -d 'Install pm Pi extension'
 complete -c pm -n '__fish_seen_subcommand_from install' -l project -d 'Install into current project .pi/extensions'
 complete -c pm -n '__fish_seen_subcommand_from install' -l global -d 'Install into PI_CODING_AGENT_DIR or ~/.pi/agent'
+
+# extension lifecycle flags
+complete -c pm -n '__fish_seen_subcommand_from extension' -l install -d 'Install extension from local path or GitHub source'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l uninstall -d 'Uninstall extension by name'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l explore -d 'List discovered extensions for selected scope'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l manage -d 'List managed extensions with update metadata'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l activate -d 'Activate extension in selected scope settings'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l deactivate -d 'Deactivate extension in selected scope settings'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l project -d 'Use project extension scope'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l local -d 'Alias for --project'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l global -d 'Use global extension scope'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l gh -d 'GitHub shorthand owner/repo/path' -r
+complete -c pm -n '__fish_seen_subcommand_from extension' -l github -d 'Alias for --gh' -r
+complete -c pm -n '__fish_seen_subcommand_from extension' -l ref -d 'Git ref/branch/tag for GitHub source' -r
 
 # beads subcommands
 complete -c pm -n '__fish_seen_subcommand_from beads' -a import -d 'Import Beads JSONL records'

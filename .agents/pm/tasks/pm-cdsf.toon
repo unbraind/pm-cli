@@ -1,0 +1,59 @@
+id: pm-cdsf
+title: Overhaul extension and SDK documentation with install equivalence examples
+description: "Update README, EXTENSIONS, ARCHITECTURE, PRD, and CHANGELOG with comprehensive lifecycle manager docs and parity examples."
+type: Task
+status: closed
+priority: 1
+tags[5]: "area:docs","area:extensions","area:sdk","milestone:extension-manager",pm-cli
+created_at: "2026-04-03T16:16:59.302Z"
+updated_at: "2026-04-03T17:09:40.894Z"
+deadline: "2026-04-13T16:16:59.302Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: "Documentation clearly explains extension lifecycle commands, source equivalence forms, SDK patterns, and compatibility expectations with actionable examples."
+definition_of_ready: Epic pm-m9jc exists and no duplicate active docs-overhaul task exists.
+order: 5
+goal: Extension platform parity
+objective: Ship complete docs and examples
+value: Users and developers can adopt extension SDK workflows quickly
+impact: Reduces onboarding and support friction
+outcome: Docs are authoritative for lifecycle extension management
+why_now: New command surface and installer forms require explicit guidance
+parent: pm-m9jc
+reviewer: maintainer-review
+risk: medium
+confidence: medium
+sprint: extension-manager-rollout
+release: vnext
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+expected_result: behavior-aligns-with-acceptance-criteria
+affected_version: vnext
+fixed_version: target-vnext
+component: docs-extensions
+regression: false
+customer_impact: Users can self-serve extension setup and management
+comments[3]{created_at,author,text}:
+  "2026-04-03T16:16:59.302Z",codex-agent,Created after de-dup scan for extension-manager docs parity work.
+  "2026-04-03T16:36:47.818Z",codex-agent,"Documentation overhaul now includes full pm extension lifecycle guidance, source-equivalence install examples, managed-state behavior, and Pi contract parity references across README/EXTENSIONS/ARCHITECTURE/PRD/CHANGELOG."
+  "2026-04-03T17:09:39.810Z",codex-agent,"Completed README/EXTENSIONS/ARCHITECTURE/PRD/CHANGELOG documentation overhaul with full install-equivalence examples, managed-state behavior, and lifecycle workflow guidance."
+notes[1]{created_at,author,text}:
+  "2026-04-03T16:16:59.302Z",codex-agent,Will include all requested GitHub/local install equivalence examples and state-management guidance.
+files[5]{path,scope,note}:
+  CHANGELOG.md,project,unreleased lifecycle manager notes
+  docs/ARCHITECTURE.md,project,internal lifecycle manager and managed state architecture
+  docs/EXTENSIONS.md,project,comprehensive extension manager docs
+  PRD.md,project,command contracts and extension architecture requirements
+  README.md,project,extension lifecycle manager usage and equivalence examples
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,release docs contract regression
+docs[5]{path,scope,note}:
+  CHANGELOG.md,project,unreleased notes for extension manager parity
+  docs/ARCHITECTURE.md,project,internal extension manager architecture
+  docs/EXTENSIONS.md,project,authoritative extension manager and SDK guide
+  PRD.md,project,normative command and extension requirements
+  README.md,project,user-facing extension lifecycle docs
+close_reason: Extension lifecycle and SDK docs now comprehensively cover requested install forms and operational guidance.
+body: Docs and examples task from extension manager rollout.

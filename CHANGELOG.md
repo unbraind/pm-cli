@@ -35,6 +35,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added type-aware help policy sections for `pm create --help` / `pm update --help` when `--type <value>` is supplied, including required/disabled/hidden option summaries from active settings/extensions.
 - Added type-option schema surfacing in type-aware help (`pm create --help --type <value>` / `pm update --help --type <value>`) including required markers, allowed values, aliases, and option descriptions.
 - Added extension-first command routing for deterministic core-command replacement when extension handlers register matching command paths.
+- Added `pm extension` lifecycle management command with mutually-exclusive actions: `--install`, `--uninstall`, `--explore`, `--manage`, `--activate`, and `--deactivate`.
+- Added extension install source normalization for local paths plus GitHub URL/shorthand forms (`https://github.com/...`, `github.com/...`, `--gh/--github owner/repo[/path]`) with optional `--ref` support.
+- Added scope-local managed extension state (`<extensions-root>/.managed-extensions.json`) with deterministic metadata for source, install/update timestamps, and GitHub update checks.
 - Added Extension Host V2 override planes: `registerParser` (command-context parsing), `registerPreflight` (mutation-gate/migration interception), and `registerService` (output/error/help plus lock/history/item-store service overrides) with deterministic last-wins precedence.
 - Added richer command lifecycle hook payload parity (`beforeCommand` / `afterCommand`) including command options, global options, and final command result context.
 - Added live runtime wiring for extension search/vector selectors (`settings.search.provider`, `settings.vector_store.adapter`) in `pm search` and `pm reindex`.
@@ -54,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added history-only restore recovery so `pm restore` can recreate missing/deleted item files when the corresponding history stream exists.
 - Added first-class `pm notes` and `pm learnings` commands with parity to `pm comments` (`<id> [text]`, `--add`, `--limit`, `--author`, `--message`, `--force`) including structured/stdin payload parsing.
 - Added command-surface parity updates for `notes`/`learnings` across help narratives, shell completion scripts, command-aware output summaries, and Pi wrapper action routing.
+- Added CLI/Pi shared contract parity for extension lifecycle actions (`extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-activate`, `extension-deactivate`) and their schema parameters (`target`, `scope`, `github`, `ref`).
 - Added integration regressions for repeated `pm files --add` / `pm docs --add` mutation flows to keep linked-artifact add workflows stable across subsequent command invocations.
 - Added targeted guidance for unsupported `pm update --file` / `pm update --doc` usage, with actionable examples that route users to `pm files` / `pm docs`.
 - Added dependency mutation support on existing items through `pm update`: repeatable `--dep` add/clear (`none`) semantics plus repeatable `--dep-remove`/`--dep_remove` selector removals, with parity across help/completion/contracts/Pi wrapper surfaces.
@@ -80,6 +84,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dynamic extension flags can now declare `type` / `value_type` metadata (`string`/`number`/`boolean`) for deterministic loose-option coercion on matching command paths.
 - Search and reindex semantic execution now supports extension provider/adapter primary paths with deterministic fallback to built-in provider/vector configuration when available.
 - `pm reindex --mode semantic|hybrid` now rewrites `search/vectorization-status.json` to keep health-time vector freshness checks synchronized with indexed corpus state.
+- `pm health` now includes managed extension-state diagnostics and warnings for project/global extension roots.
+- Documentation surfaces (`README.md`, `docs/EXTENSIONS.md`, `docs/ARCHITECTURE.md`, `PRD.md`) now include extension lifecycle-manager workflows and install-source equivalence guidance.
 - Date/deadline parsing now accepts month-relative offsets (`+6m`) and normalized date-string variants (for example `2026-03-31T13-59` and `20260331T135900Z`) across deadline, reminder, event, list/search filter, and calendar date inputs while preserving canonical ISO persistence.
 - `pm beads import --file -` now fails fast when stdin is an interactive TTY and returns explicit piped-input/EOF guidance instead of waiting for manual stream termination.
 - CLI top-level error handling now preserves canonical exit-code mapping via graceful `process.exitCode` semantics to reduce buffered output truncation risk in emulated terminal environments.

@@ -417,6 +417,18 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(() => buildPmCliArgs({ action: "restore", id: "pm-a1b2" })).toThrow(
       'Action "restore" requires "target".',
     );
+    expect(() => buildPmCliArgs({ action: "extension-install" })).toThrow(
+      'Action "extension-install" requires "target" or "github".',
+    );
+    expect(() => buildPmCliArgs({ action: "extension-uninstall" })).toThrow(
+      'Action "extension-uninstall" requires "target".',
+    );
+    expect(() => buildPmCliArgs({ action: "extension-activate" })).toThrow(
+      'Action "extension-activate" requires "target".',
+    );
+    expect(() => buildPmCliArgs({ action: "extension-deactivate" })).toThrow(
+      'Action "extension-deactivate" requires "target".',
+    );
     expect(() => buildPmCliArgs({ action: "close", id: "pm-a1b2" })).toThrow('Action "close" requires "text".');
     expect(() => buildPmCliArgs({ action: "delete" })).toThrow('Action "delete" requires "id".');
     expect(() => buildPmCliArgs({ action: "search" })).toThrow('Action "search" requires "query".');
@@ -468,6 +480,19 @@ describe("Pi agent extension wrapper for pm", () => {
       expect.arrayContaining([expect.objectContaining({ required: ["query"] }), expect.objectContaining({ required: ["keywords"] })]),
     );
     expect(schemaProperty(searchSchema, "includeLinked").type).toBe("boolean");
+
+    const extensionInstallSchema = schemaForAction(tool.parameters as Record<string, unknown>, "extension-install");
+    expect(extensionInstallSchema.required).toEqual(["action"]);
+    expect(extensionInstallSchema.anyOf).toEqual(
+      expect.arrayContaining([expect.objectContaining({ required: ["target"] }), expect.objectContaining({ required: ["github"] })]),
+    );
+    expect(schemaProperty(extensionInstallSchema, "scope").enum).toEqual(["project", "global"]);
+    expect(schemaProperty(extensionInstallSchema, "github").type).toBe("string");
+    expect(schemaProperty(extensionInstallSchema, "ref").type).toBe("string");
+
+    const extensionActivateSchema = schemaForAction(tool.parameters as Record<string, unknown>, "extension-activate");
+    expect(extensionActivateSchema.required).toEqual(expect.arrayContaining(["action", "target"]));
+    expect(schemaProperty(extensionActivateSchema, "scope").enum).toEqual(["project", "global"]);
 
     const calendarSchema = schemaForAction(tool.parameters as Record<string, unknown>, "calendar");
     expect(schemaProperty(calendarSchema, "view").type).toBe("string");
@@ -601,6 +626,61 @@ describe("Pi agent extension wrapper for pm", () => {
       "--limit",
       "20",
     ]);
+
+    expect(
+      buildPmCliArgs({
+        action: "extension-install",
+        target: "github.com/unbraind/pm-cli/pi",
+        scope: "project",
+      }),
+    ).toEqual(["--json", "extension", "--install", "--project", "github.com/unbraind/pm-cli/pi"]);
+
+    expect(
+      buildPmCliArgs({
+        action: "extension-install",
+        github: "unbraind/pm-cli/pi",
+        scope: "global",
+        ref: "main",
+      }),
+    ).toEqual(["--json", "extension", "--install", "--global", "--github", "unbraind/pm-cli/pi", "--ref", "main"]);
+
+    expect(
+      buildPmCliArgs({
+        action: "extension-uninstall",
+        target: "sample-ext",
+        scope: "project",
+      }),
+    ).toEqual(["--json", "extension", "--uninstall", "sample-ext", "--project"]);
+
+    expect(
+      buildPmCliArgs({
+        action: "extension-explore",
+        scope: "project",
+      }),
+    ).toEqual(["--json", "extension", "--explore", "--project"]);
+
+    expect(
+      buildPmCliArgs({
+        action: "extension-manage",
+        scope: "global",
+      }),
+    ).toEqual(["--json", "extension", "--manage", "--global"]);
+
+    expect(
+      buildPmCliArgs({
+        action: "extension-activate",
+        target: "sample-ext",
+        scope: "project",
+      }),
+    ).toEqual(["--json", "extension", "--activate", "sample-ext", "--project"]);
+
+    expect(
+      buildPmCliArgs({
+        action: "extension-deactivate",
+        target: "sample-ext",
+        scope: "global",
+      }),
+    ).toEqual(["--json", "extension", "--deactivate", "sample-ext", "--global"]);
 
     expect(
       buildPmCliArgs({

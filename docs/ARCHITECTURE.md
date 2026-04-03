@@ -54,6 +54,7 @@ src/
       contracts.ts               pm contracts (machine-readable contracts/schema surface)
       config.ts                  pm config
       install.ts                 pm install pi
+      extension.ts               pm extension lifecycle manager (install/uninstall/explore/manage/activate/deactivate)
       completion.ts              pm completion
       beads.ts                   pm beads (subcommand router to built-in extension)
       index.ts                   barrel re-export
@@ -127,7 +128,7 @@ The same registry drives:
 - shell completion flag/command surfaces in `src/cli/commands/completion.ts`
 - Pi wrapper action enum, tool `inputSchema`, and CLI arg mapping in `.pi/extensions/pm-cli/index.ts`
 - runtime `pm contracts` payload generation for action/command/schema introspection
-- additive command surfaces such as `templates-*` actions, `history --diff/--verify`, files/docs path hygiene flags (`--add-glob`, `--migrate`, `--validate-paths`, `--audit`), and `deps --format`
+- additive command surfaces such as `templates-*` actions, extension lifecycle actions (`extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-activate`, `extension-deactivate`), `history --diff/--verify`, files/docs path hygiene flags (`--add-glob`, `--migrate`, `--validate-paths`, `--audit`), and `deps --format`
 
 This keeps human CLI UX and machine-facing contracts aligned while preserving additive/backward-compatible evolution.
 
@@ -146,6 +147,7 @@ Each item is stored as a format-configured document file:
   search/embeddings.jsonl   keyword corpus records (optional, rebuildable)
   search/vectorization-status.json semantic vector freshness ledger (optional, rebuildable)
   extensions/               project-local extensions
+  extensions/.managed-extensions.json scope-local extension manager state (optional, lifecycle-managed)
 ```
 
 ### Item File Format
@@ -336,6 +338,14 @@ export function activate(api: ExtensionApi): void {
 Load order: **core built-ins → global (`~/.pm-cli/extensions/`) → project (`.agents/pm/extensions/`)**.
 
 Project-local extensions override global by default. Runtime dispatch is extension-first: if an extension registers a command handler for an existing core command path, the extension handler executes instead of the core action. Command result overrides and renderer overrides are still evaluated after dispatch with deterministic "last registration wins" precedence.
+
+Lifecycle manager command architecture:
+
+- `src/cli/commands/extension.ts` implements `pm extension` actions (`install`, `uninstall`, `explore`, `manage`, `activate`, `deactivate`) with deterministic validation and mutually-exclusive action routing.
+- Install sources support local directories, GitHub HTTPS URLs, `github.com/<owner>/<repo>[/path]`, and forced shorthand via `--gh/--github`.
+- Scope-local managed state is persisted at `<extensions-root>/.managed-extensions.json` for deterministic source metadata, install/update timestamps, and update-check status.
+- `--manage` executes GitHub remote checks (`git ls-remote`) for managed GitHub entries and updates managed-state metadata.
+- Health diagnostics include managed extension summaries/warnings for both project and global extension roots.
 
 Extension Host V2 adds three additional override planes:
 

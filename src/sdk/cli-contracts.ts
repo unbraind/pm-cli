@@ -52,6 +52,7 @@ export const PM_CORE_COMMAND_NAMES = [
   "init",
   "config",
   "install",
+  "extension",
   "create",
   "list",
   "list-all",
@@ -99,6 +100,12 @@ export const PM_CORE_COMMAND_NAMES = [
 export const PM_TOOL_ACTIONS = [
   "init",
   "config",
+  "extension-install",
+  "extension-uninstall",
+  "extension-explore",
+  "extension-manage",
+  "extension-activate",
+  "extension-deactivate",
   "create",
   "list",
   "list-all",
@@ -699,6 +706,8 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   timeoutMs: { type: "number" },
   id: { type: "string" },
   target: { type: "string" },
+  github: { type: "string" },
+  ref: { type: "string" },
   query: { type: "string" },
   keywords: { type: "string" },
   prefix: { type: "string" },
@@ -849,6 +858,15 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
     required: ["scope", "configAction", "key"],
     optional: ["criterion", "format", "policy"],
   },
+  "extension-install": {
+    optional: ["target", "github", "scope", "ref"],
+    anyOfRequired: [["target"], ["github"]],
+  },
+  "extension-uninstall": { required: ["target"], optional: ["scope"] },
+  "extension-explore": { optional: ["scope"] },
+  "extension-manage": { optional: ["scope"] },
+  "extension-activate": { required: ["target"], optional: ["scope"] },
+  "extension-deactivate": { required: ["target"], optional: ["scope"] },
   create: {
     required: ["title", "description", "type", "status", "priority", "message"],
     optional: CREATE_CONTRACT_PARAMETER_KEYS,
@@ -918,6 +936,22 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   path: {
     description: "Optional PM data root override for this invocation.",
     examples: [".agents/pm"],
+  },
+  scope: {
+    description: "Scope selector for commands that operate on project or global state.",
+    examples: ["project", "global"],
+  },
+  target: {
+    description: "Positional target argument for the selected action (ID, source, or extension name).",
+    examples: ["pm-a1b2", ".agents/pm/extensions/sample", "sample-extension"],
+  },
+  github: {
+    description: "GitHub shorthand owner/repo[/path] source for extension install actions.",
+    examples: ["unbraind/pm-cli/pi"],
+  },
+  ref: {
+    description: "Git ref/branch/tag used when installing from GitHub shorthand/URL sources.",
+    examples: ["main", "v1.0.0"],
   },
   json: {
     description: "Emit machine-readable JSON output.",

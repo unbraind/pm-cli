@@ -608,6 +608,7 @@ Help and error UX note:
 
 - `pm init [<PREFIX>]`
 - `pm install pi [--project|--global]`
+- `pm extension [target] --install|--uninstall|--explore|--manage|--activate|--deactivate [--project|--local|--global] [--gh|--github <owner/repo[/path]>] [--ref <ref>]`
 - `pm list`
 - `pm list-all`
 - `pm list-draft`
@@ -836,6 +837,7 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | --- | --- | --- |
 | `pm init [PREFIX]` | optional prefix, `--path` | `{ ok, path, settings, created_dirs, warnings }` |
 | `pm install pi [--project\|--global]` | install target (`pi`) + optional scope flags (`--project` default writes to `<project-root>/.pi/extensions/pm-cli/index.ts` where `project-root` is derived from `--path` when provided, otherwise current working directory; `--global` uses `PI_CODING_AGENT_DIR` or `~/.pi/agent`) | `{ ok, target, scope, source_path, destination_path, overwritten, warnings }` |
+| `pm extension [target] --install\|--uninstall\|--explore\|--manage\|--activate\|--deactivate` | exactly one lifecycle action, optional `target` (required for install/uninstall/activate/deactivate), scope flags (`--project` default, `--local` alias, `--global`), install source selectors (`target`, `--gh`, `--github`, optional `--ref`) | `{ ok, action, scope, roots, warnings, details }` where `details` shape is action-specific |
 | `pm list` | optional filter flags (including `--include-body`); excludes terminal statuses (`closed`, `canceled`) by default | `{ items, count, filters, now }` |
 | `pm list-all` | optional filter flags (including `--include-body`); includes all statuses including terminal | `{ items, count, filters, now }` |
 | `pm list-draft` | optional type/tag/priority/deadline/assignee/sprint/release/include-body filters | `{ items, count, filters, now }` |
@@ -1048,6 +1050,16 @@ Implemented baseline:
 - Global: `~/.pm-cli/extensions` (or `PM_GLOBAL_PATH/extensions`)
 - Project: `.agents/pm/extensions` (or `PM_PATH/extensions`)
 
+Lifecycle manager command:
+
+- `pm extension` is the canonical extension lifecycle command surface for install/uninstall/explore/manage/activate/deactivate.
+- Scope selection: `--project` (default), `--local` (alias of project), `--global`.
+- Install sources: local directory, GitHub HTTPS URL, `github.com/<owner>/<repo>[/path]`, or `--gh/--github <owner>/<repo>[/path]` with optional `--ref`.
+- GitHub subpath resolution probes deterministic default extension roots (`.agents/pm/extensions`, `.custom/pm-extensions`, `.custom/pm-extension`) when shorthand inputs do not include full paths.
+- Scope-local managed state is persisted in `<extension-root>/.managed-extensions.json` and includes source metadata plus update-check status.
+- `pm extension --manage` performs GitHub remote update checks for managed GitHub entries and persists latest check metadata.
+- `pm health` extension diagnostics include managed-state summaries/warnings for both project and global scope.
+
 ### 14.2 Load order and precedence
 
 1. Core built-ins
@@ -1224,7 +1236,7 @@ Current baseline status (release-hardening):
 - Implemented as a Pi agent extension source module at `.pi/extensions/pm-cli/index.ts` (outside the `pm` CLI command surface).
 - Registers one Pi tool named `pm` via Pi's extension API (`registerTool`) and maps `action` + command-shaped fields to `pm` CLI invocations.
 - Tool action enums and parameter JSON Schema are sourced from the shared command contract registry (`src/sdk/cli-contracts.ts`) to avoid drift with core CLI/completion surfaces.
-- Action dispatch currently covers the full v0.1 command-aligned set (`init`, `config`, `create`, `list`, `list-all`, `list-draft`, `list-open`, `list-in-progress`, `list-blocked`, `list-closed`, `list-canceled`, `calendar`, `context`, `get`, `search`, `reindex`, `history`, `activity`, `restore`, `update`, `close`, `delete`, `append`, `comments`, `notes`, `learnings`, `files`, `docs`, `deps`, `test`, `test-all`, `stats`, `health`, `gc`, `completion`, `templates-save`, `templates-list`, `templates-show`, `claim`, `release`) plus extension action aliases (`beads-import`, `todos-import`, `todos-export`) and workflow presets (`start-task`, `pause-task`, `close-task`).
+- Action dispatch currently covers the full v0.1 command-aligned set (`init`, `config`, `create`, `list`, `list-all`, `list-draft`, `list-open`, `list-in-progress`, `list-blocked`, `list-closed`, `list-canceled`, `calendar`, `context`, `get`, `search`, `reindex`, `history`, `activity`, `restore`, `update`, `close`, `delete`, `append`, `comments`, `notes`, `learnings`, `files`, `docs`, `deps`, `test`, `test-all`, `stats`, `health`, `gc`, `completion`, `templates-save`, `templates-list`, `templates-show`, `claim`, `release`) plus extension lifecycle actions (`extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-activate`, `extension-deactivate`), extension action aliases (`beads-import`, `todos-import`, `todos-export`), and workflow presets (`start-task`, `pause-task`, `close-task`).
 - Invocation fallback order is deterministic for distribution resilience: attempt `pm` first, then fallback to packaged `node <package-root>/dist/cli.js` when `pm` is unavailable.
 
 - Expose one tool `pm`.

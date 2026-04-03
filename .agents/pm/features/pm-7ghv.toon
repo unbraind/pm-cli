@@ -1,0 +1,50 @@
+id: pm-7ghv
+title: Implement pm extension lifecycle command surface
+description: Add pm extension action flags for install/uninstall/explore/manage/activate/deactivate with scope and source selectors.
+type: Feature
+status: closed
+priority: 1
+tags[5]: "area:cli","area:extensions","area:ux","milestone:extension-manager",pm-cli
+created_at: "2026-04-03T16:16:17.605Z"
+updated_at: "2026-04-03T17:09:33.353Z"
+deadline: "2026-04-13T16:16:17.605Z"
+author: codex-agent
+estimated_minutes: 360
+acceptance_criteria: pm extension exposes lifecycle actions with deterministic validation/help/completion and no regressions to existing commands.
+definition_of_ready: Epic pm-m9jc exists and no duplicate active feature for lifecycle command surface exists.
+order: 1
+goal: Extension platform parity
+objective: Ship extension lifecycle CLI
+value: Users can manage extensions directly from pm CLI
+impact: Removes manual file and settings edits
+outcome: Lifecycle extension actions are first-class commands
+why_now: Current CLI lacks dedicated extension lifecycle command group
+parent: pm-m9jc
+reviewer: maintainer-review
+risk: medium
+confidence: medium
+sprint: extension-manager-rollout
+release: vnext
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+expected_result: behavior-aligns-with-acceptance-criteria
+affected_version: vnext
+fixed_version: target-vnext
+component: cli-extensions
+regression: false
+customer_impact: Users get predictable extension lifecycle UX
+comments[2]{created_at,author,text}:
+  "2026-04-03T16:16:17.605Z",codex-agent,Created after de-dup scan for extension lifecycle command coverage.
+  "2026-04-03T17:09:31.169Z",codex-agent,"Implemented pm extension lifecycle command surface in CLI wiring, help narratives, and completion with deterministic action/scope/source flag validation."
+notes[1]{created_at,author,text}:
+  "2026-04-03T16:16:17.605Z",codex-agent,Will wire main/help/completion and tests first.
+files[1]{path,scope,note}:
+  src/cli/main.ts,project,extension command registration
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,3600,command integration regression
+docs[1]{path,scope,note}:
+  README.md,project,user-facing extension command usage
+close_reason: pm extension command surface implemented with integration/unit coverage passing.
+body: "Feature A from extension manager rollout: command UX and wiring."

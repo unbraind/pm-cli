@@ -215,6 +215,104 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("manages local extensions through install explore manage activate deactivate and uninstall actions", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceDir = path.join(context.tempRoot, "local-extension-source");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(
+        path.join(sourceDir, "manifest.json"),
+        JSON.stringify(
+          {
+            name: "integration-local-ext",
+            version: "1.0.0",
+            entry: "index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(path.join(sourceDir, "index.js"), "export default { activate() {} };", "utf8");
+
+      const install = context.runCli(["extension", "--install", sourceDir, "--project", "--json"], { expectJson: true });
+      expect(install.code).toBe(0);
+      expect(install.json).toMatchObject({
+        action: "install",
+        scope: "project",
+        details: {
+          extension: {
+            name: "integration-local-ext",
+            version: "1.0.0",
+          },
+          activated: true,
+        },
+      });
+
+      const explore = context.runCli(["extension", "--explore", "--project", "--json"], { expectJson: true });
+      expect(explore.code).toBe(0);
+      expect(explore.json).toMatchObject({
+        action: "explore",
+        details: {
+          total: 1,
+          managed_total: 1,
+          active_total: 1,
+          extensions: [expect.objectContaining({ name: "integration-local-ext", managed: true, active: true })],
+        },
+      });
+
+      const deactivate = context.runCli(["extension", "--deactivate", "integration-local-ext", "--project", "--json"], {
+        expectJson: true,
+      });
+      expect(deactivate.code).toBe(0);
+      const settingsAfterDeactivate = JSON.parse(await readFile(path.join(context.pmPath, "settings.json"), "utf8")) as {
+        extensions: { disabled: string[] };
+      };
+      expect(settingsAfterDeactivate.extensions.disabled).toContain("integration-local-ext");
+
+      const activate = context.runCli(["extension", "--activate", "integration-local-ext", "--project", "--json"], {
+        expectJson: true,
+      });
+      expect(activate.code).toBe(0);
+      const settingsAfterActivate = JSON.parse(await readFile(path.join(context.pmPath, "settings.json"), "utf8")) as {
+        extensions: { disabled: string[] };
+      };
+      expect(settingsAfterActivate.extensions.disabled).not.toContain("integration-local-ext");
+
+      const manage = context.runCli(["extension", "--manage", "--project", "--json"], { expectJson: true });
+      expect(manage.code).toBe(0);
+      expect(manage.json).toMatchObject({
+        action: "manage",
+        details: {
+          total: 1,
+          managed_total: 1,
+          extensions: [expect.objectContaining({ name: "integration-local-ext", managed: true })],
+        },
+      });
+
+      const uninstall = context.runCli(["extension", "--uninstall", "integration-local-ext", "--project", "--json"], {
+        expectJson: true,
+      });
+      expect(uninstall.code).toBe(0);
+      expect(uninstall.json).toMatchObject({
+        action: "uninstall",
+        details: {
+          removed: true,
+        },
+      });
+
+      const exploreAfterUninstall = context.runCli(["extension", "--explore", "--project", "--json"], { expectJson: true });
+      expect(exploreAfterUninstall.code).toBe(0);
+      expect(exploreAfterUninstall.json).toMatchObject({
+        action: "explore",
+        details: {
+          total: 0,
+          managed_total: 0,
+        },
+      });
+    });
+  });
+
   it("accepts --ac as update alias for acceptance criteria", async () => {
     await withTempPmPath(async (context) => {
       const createResult = context.runCli(

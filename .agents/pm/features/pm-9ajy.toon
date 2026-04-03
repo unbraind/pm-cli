@@ -1,0 +1,50 @@
+id: pm-9ajy
+title: Extend SDK contracts and Pi wrapper for extension lifecycle actions
+description: Add extension lifecycle action contracts in SDK and mirror mappings in Pi wrapper tool integration.
+type: Feature
+status: closed
+priority: 1
+tags[5]: "area:extensions","area:pi","area:sdk","milestone:extension-manager",pm-cli
+created_at: "2026-04-03T16:16:50.033Z"
+updated_at: "2026-04-03T17:09:39.253Z"
+deadline: "2026-04-13T16:16:50.033Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: SDK contracts and Pi wrapper expose deterministic extension lifecycle actions aligned with CLI behavior.
+definition_of_ready: Epic pm-m9jc exists and no duplicate active feature for extension contract parity exists.
+order: 4
+goal: Extension platform parity
+objective: Ship SDK lifecycle action parity
+value: Agents and wrappers can call extension lifecycle workflows consistently
+impact: Prevents CLI and wrapper drift
+outcome: Shared contracts describe new lifecycle actions accurately
+why_now: New lifecycle command surface requires synchronized SDK wrapper contracts
+parent: pm-m9jc
+reviewer: maintainer-review
+risk: medium
+confidence: medium
+sprint: extension-manager-rollout
+release: vnext
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+expected_result: behavior-aligns-with-acceptance-criteria
+affected_version: vnext
+fixed_version: target-vnext
+component: sdk-contracts
+regression: false
+customer_impact: Wrapper users can automate extension lifecycle operations
+comments[2]{created_at,author,text}:
+  "2026-04-03T16:16:50.033Z",codex-agent,Created after de-dup scan for SDK and Pi wrapper lifecycle parity scope.
+  "2026-04-03T17:09:38.168Z",codex-agent,Extended shared SDK command contracts and Pi wrapper action/argument mapping for extension lifecycle actions including scope/github/ref parity.
+notes[1]{created_at,author,text}:
+  "2026-04-03T16:16:50.033Z",codex-agent,Will update cli-contracts constants/schemas and wrapper action mapping with tests.
+files[1]{path,scope,note}:
+  src/sdk/cli-contracts.ts,project,shared command and action contracts
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts,null,project,1800,Pi wrapper action mapping regression
+docs[1]{path,scope,note}:
+  README.md,project,SDK and wrapper action documentation
+close_reason: SDK contracts and Pi wrapper now expose deterministic extension lifecycle action parity.
+body: "Feature D from extension manager rollout: SDK contract parity and Pi wrapper action support."

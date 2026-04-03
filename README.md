@@ -536,6 +536,65 @@ Extension runtime behavior is extension-first by default:
 
 Use `--no-extensions` to force core-only behavior for a single invocation.
 
+## Extension Lifecycle Manager (`pm extension`)
+
+Use `pm extension` to install, inspect, activate, deactivate, and remove custom extensions in project or global scope.
+
+Lifecycle actions (exactly one per call):
+
+- `--install`
+- `--uninstall`
+- `--explore`
+- `--manage`
+- `--activate`
+- `--deactivate`
+
+Scope selectors:
+
+- `--project` (default)
+- `--local` (alias of `--project`)
+- `--global`
+
+Install source selectors:
+
+- local extension directory path (for example `.agents/pm/extensions/my-ext`)
+- GitHub URL (for example `https://github.com/owner/repo/tree/main/path/to/ext`)
+- GitHub shorthand URL form (for example `github.com/owner/repo/path`)
+- explicit GitHub shorthand flag form `--gh owner/repo/path` (alias: `--github`)
+- optional Git ref override with `--ref <branch|tag|sha>`
+
+Requested source equivalence examples:
+
+```bash
+# Multiple extensions in one repo (default extension roots)
+pm extension --install --project https://github.com/unbraind/pm-cli/tree/main/.agents/pm/extensions/pi
+pm extension --install --project github.com/unbraind/pm-cli/pi
+pm extension --install --project --gh unbraind/pm-cli/pi
+
+# Custom extension roots in repo
+pm extension --install --project https://github.com/unbraind/pm-cli/tree/main/.custom/pm-extensions/pi
+pm extension --install --project github.com/unbraind/pm-cli/.custom/pm-extension/pi
+pm extension --install --project --gh unbraind/pm-cli/pi
+
+# Single-extension repo or extension at repository root
+pm extension --install --project https://github.com/unbraind/pm-cli
+pm extension --install --project github.com/unbraind/pm-cli
+pm extension --install --project --gh unbraind/pm-cli
+
+# Local extension directory
+pm extension --install --project .agents/pm/extensions/pi
+```
+
+Activation and health behavior:
+
+- Install auto-activates the extension in selected scope settings.
+- Deactivate/activate toggle `extensions.disabled[]`/`extensions.enabled[]` in settings.
+- `pm extension --explore` lists discovered extensions and active status.
+- `pm extension --manage` refreshes GitHub-managed update metadata and persists it to scope-local `.managed-extensions.json`.
+- `pm health` includes managed extension state diagnostics for both project and global roots.
+
+Use `pm extension --help` for compact guidance or `pm extension --help --explain` for expanded examples/tips.
+
 ## Calendar, Reminders, and Events
 
 `pm` supports persistent reminder metadata, one-off and recurring scheduled events, and a dedicated calendar surface for deadline/reminder/event planning.

@@ -123,6 +123,20 @@ describe("runHealth", () => {
         discovered: [],
         warnings: [],
       });
+      expect(extensionCheck?.details).toMatchObject({
+        activation: {
+          managed_extensions: {
+            project: {
+              count: 0,
+              entries: [],
+            },
+            global: {
+              count: 0,
+              entries: [],
+            },
+          },
+        },
+      });
       const defaultLoaded = (
         extensionCheck?.details as { loaded?: Array<{ name: string; has_activate: boolean; module?: unknown }> }
       ).loaded ?? [];

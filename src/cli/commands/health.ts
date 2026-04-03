@@ -24,6 +24,7 @@ import { listAllFrontMatterWithBody } from "../../core/store/item-store.js";
 import { getHistoryPath, getItemFormatFromPath, getSettingsPath, ITEM_FILE_EXTENSIONS, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettingsWithMetadata } from "../../core/store/settings.js";
 import type { ItemFormat, PmSettings } from "../../types/index.js";
+import { readManagedExtensionState } from "./extension.js";
 
 type HealthStatus = "ok" | "warn";
 type MigrationRuntimeStatus = "pending" | "failed" | "applied";
@@ -400,6 +401,10 @@ async function buildExtensionCheck(
     ...loadResult,
     loaded: loadedWithBuiltIns,
   });
+  const [projectManagedState, globalManagedState] = await Promise.all([
+    readManagedExtensionState(loadResult.roots.project),
+    readManagedExtensionState(loadResult.roots.global),
+  ]);
   const migrationStatus = summarizeMigrationStatuses(activationResult.registrations.migrations);
   const activationDetails = {
     failed: activationResult.failed,
@@ -414,8 +419,26 @@ async function buildExtensionCheck(
     registration_counts: activationResult.registration_counts,
     registrations: activationResult.registrations,
     migration_status: migrationStatus.summary,
+    managed_extensions: {
+      project: {
+        path: projectManagedState.path,
+        count: projectManagedState.state.entries.length,
+        entries: projectManagedState.state.entries,
+      },
+      global: {
+        path: globalManagedState.path,
+        count: globalManagedState.state.entries.length,
+        entries: globalManagedState.state.entries,
+      },
+    },
   };
-  const extensionWarnings = [...loadResult.warnings, ...activationDetails.warnings, ...migrationStatus.warnings];
+  const extensionWarnings = [
+    ...loadResult.warnings,
+    ...activationDetails.warnings,
+    ...migrationStatus.warnings,
+    ...projectManagedState.warnings,
+    ...globalManagedState.warnings,
+  ];
 
   return {
     check: {

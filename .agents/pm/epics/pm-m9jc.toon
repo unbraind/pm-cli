@@ -1,0 +1,53 @@
+id: pm-m9jc
+title: Extension lifecycle manager and SDK parity rollout
+description: "Deliver lifecycle extension management commands, source installation workflows, managed state, and docs/contracts parity for pm extensions without duplicating prior full-override work."
+type: Epic
+status: in_progress
+priority: 0
+tags[5]: "area:docs","area:extensions","area:sdk","milestone:extension-manager",pm-cli
+created_at: "2026-04-03T16:15:57.991Z"
+updated_at: "2026-04-03T16:17:21.732Z"
+deadline: "2026-04-17T16:15:57.991Z"
+assignee: codex-agent
+author: codex-agent
+estimated_minutes: 900
+acceptance_criteria: pm extension lifecycle commands and source installers are implemented with tests/docs/contracts parity and verified via full build/test/coverage without regressing current users.
+definition_of_ready: No duplicate active extension-manager epic exists and prior closed extension-platform lineage is linked.
+order: 1
+goal: Extension platform parity
+objective: Ship lifecycle extension management
+value: Enables full extension install/manage workflows for users and agents
+impact: Improves customization and ecosystem adoption without forks
+outcome: "Users can install, manage, activate, deactivate, and inspect custom extensions deterministically"
+why_now: Current runtime override platform lacks full lifecycle extension management UX
+reviewer: maintainer-review
+risk: high
+confidence: medium
+sprint: extension-manager-rollout
+release: vnext
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run-linked-flow-and-compare-to-ac
+expected_result: behavior-aligns-with-acceptance-criteria
+affected_version: vnext
+fixed_version: target-vnext
+component: extensions-runtime
+regression: false
+customer_impact: Users can safely adopt extension lifecycle workflows
+dependencies[4]{id,kind,created_at,author,source_kind}:
+  pm-8a2s,discovered_from,"2026-04-03T16:15:57.991Z",codex-agent,null
+  pm-cxn3,discovered_from,"2026-04-03T16:15:57.991Z",codex-agent,null
+  pm-igv,discovered_from,"2026-04-03T16:15:57.991Z",codex-agent,null
+  pm-x395,discovered_from,"2026-04-03T16:15:57.991Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-03T16:15:57.991Z",codex-agent,Created after context and search dedupe checks showed no active extension-manager lifecycle epic.
+notes[1]{created_at,author,text}:
+  "2026-04-03T16:15:57.991Z",codex-agent,Implementation will remain additive-first for compatibility and link all changed files/tests/docs.
+files[1]{path,scope,note}:
+  src/cli/main.ts,project,extension lifecycle command wiring
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,7200,full regression baseline
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,primary extension manager user and developer contract
+body: Tracks implementation of pm extension lifecycle manager and parity surfaces requested after prior full-override baseline.

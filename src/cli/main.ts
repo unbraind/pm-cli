@@ -17,6 +17,7 @@ import {
   runDelete,
   runDeps,
   runDocs,
+  runExtension,
   runFiles,
   runGet,
   runGc,
@@ -2020,6 +2021,49 @@ program
     printResult(result, globalOptions);
     if (globalOptions.profile) {
       printError(`profile:command=install took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+program
+  .command("extension")
+  .argument("[target]", "Extension source (install) or extension name (activate/deactivate/uninstall)")
+  .option("--install", "Install extension from local path or GitHub source")
+  .option("--uninstall", "Uninstall an installed extension")
+  .option("--explore", "List discovered extensions in selected scope")
+  .option("--manage", "List managed extensions with update-check metadata")
+  .option("--activate", "Activate an extension in selected scope settings")
+  .option("--deactivate", "Deactivate an extension in selected scope settings")
+  .option("--project", "Use project extension scope (default)")
+  .option("--local", "Alias for --project")
+  .option("--global", "Use global extension scope")
+  .option("--gh <owner/repo[/path]>", "Install from GitHub shorthand source")
+  .option("--github <owner/repo[/path]>", "Alias for --gh")
+  .option("--ref <ref>", "Git ref/branch/tag for GitHub install sources")
+  .description("Manage extension lifecycle operations for project or global scope.")
+  .action(async (target: string | undefined, options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const result = await runExtension(
+      target,
+      {
+        install: options.install === true,
+        uninstall: options.uninstall === true,
+        explore: options.explore === true,
+        manage: options.manage === true,
+        activate: options.activate === true,
+        deactivate: options.deactivate === true,
+        project: options.project === true,
+        local: options.local === true,
+        global: options.global === true,
+        gh: typeof options.gh === "string" ? options.gh : undefined,
+        github: typeof options.github === "string" ? options.github : undefined,
+        ref: typeof options.ref === "string" ? options.ref : undefined,
+      },
+      globalOptions,
+    );
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=extension took_ms=${Date.now() - startedAt}`);
     }
   });
 
