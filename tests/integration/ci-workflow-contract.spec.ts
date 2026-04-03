@@ -61,7 +61,7 @@ describe("GitHub workflow contract", () => {
       "run: node scripts/run-tests.mjs coverage",
       "run: npm pack --dry-run",
       "run: pnpm smoke:npx",
-      "uses: actions/upload-artifact@v4",
+      "uses: actions/upload-artifact@v7",
       "if: always() && matrix.os == 'ubuntu-latest' && matrix.node == 20",
       "name: coverage-node${{ matrix.node }}-${{ matrix.os }}",
       "path: coverage",
@@ -126,7 +126,7 @@ describe("GitHub workflow contract", () => {
       "run: npm publish",
       "NPM_TOKEN",
       "uses: softprops/action-gh-release@v2",
-      "uses: actions/upload-artifact@v4",
+      "uses: actions/upload-artifact@v7",
       "path: coverage",
       "if-no-files-found: ignore",
     ]);

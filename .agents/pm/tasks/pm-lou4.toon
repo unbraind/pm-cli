@@ -1,0 +1,58 @@
+id: pm-lou4
+title: Run weekly GitHub findings review
+description: "Recurring weekly task to review new GitHub findings (Dependabot alerts, dependency update PRs, and CI regressions) and create/update pm tracking accordingly."
+type: Task
+status: open
+priority: 1
+tags[5]: calendar,dependabot,github,operations,recurring
+created_at: "2026-04-03T17:33:17.602Z"
+updated_at: "2026-04-03T17:46:47.576Z"
+events[1]:
+  - start_at: "2026-04-10T09:00:00.000Z"
+    end_at: "2026-04-10T09:30:00.000Z"
+    title: Weekly GitHub findings review
+    all_day: false
+    recurrence:
+      freq: weekly
+      by_weekday[1]: fri
+author: codex-agent
+estimated_minutes: 20
+acceptance_criteria: "A recurring weekly calendar event is active and visible in pm calendar outputs, and the task contains reproducible review instructions."
+definition_of_ready: GitHub CLI access is available and pm tracker is initialized.
+order: 2
+goal: Operational hygiene
+objective: Prevent backlog drift of GH-reported findings
+value: Creates a proactive maintenance loop
+impact: Reduces delayed security and dependency remediation
+outcome: Weekly checks keep findings inventory current
+why_now: User requested a fully functional recurring review workflow
+parent: pm-i7w2
+reviewer: maintainer-review
+risk: low
+confidence: high
+sprint: 2026-w14
+release: vnext
+reporter: codex-agent
+severity: medium
+environment: github-cli + pm-cli
+repro_steps: "Run gh dependabot alerts and gh pr list, then sync pm items"
+resolution: recurring-event-scheduled
+expected_result: Weekly recurring review event appears in calendar agenda/week views
+actual_result: Event created and pending verification
+affected_version: 2026.3.12
+fixed_version: vnext
+component: calendar-recurring-review
+regression: false
+customer_impact: Maintainers can catch and remediate findings quickly
+comments[2]{created_at,author,text}:
+  "2026-04-03T17:33:17.602Z",codex-agent,Created recurring operational task for weekly GitHub findings review.
+  "2026-04-03T17:45:39.395Z",codex-agent,"Verified recurring event persistence and expansion: pm calendar agenda/week show weekly Friday occurrences starting 2026-04-10 at 09:00Z."
+notes[1]{created_at,author,text}:
+  "2026-04-03T17:33:17.602Z",codex-agent,Each run should dedupe against existing pm items before creating new ones.
+files[1]{path,scope,note}:
+  .github/dependabot.yml,project,source of scheduled dependency updates
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts,null,project,240,calendar recurrence regression
+docs[1]{path,scope,note}:
+  AGENTS.md,project,required pm workflow and dedupe protocol
+body: "Operational cadence task: run weekly GH findings triage, deduplicate against existing pm items, and open/update remediation items as needed."

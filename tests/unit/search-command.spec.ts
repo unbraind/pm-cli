@@ -1287,7 +1287,7 @@ describe("runSearch", () => {
       expect(result.count).toBe(1);
 
       expect(runActiveOnReadHooksMock).toHaveBeenCalledWith({
-        path: path.join("/tmp/pm-search-hooks", "tasks", "pm-hooked.md"),
+        path: path.resolve("/tmp/pm-search-hooks", "tasks", "pm-hooked.md"),
         scope: "project",
       });
       expect(runActiveOnReadHooksMock).toHaveBeenCalledWith({

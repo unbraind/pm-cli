@@ -1,0 +1,59 @@
+id: pm-i7w2
+title: Remediate open GitHub findings and recurring checks
+description: "Track and resolve all currently open GitHub-reported findings (Dependabot alerts, dependency update PRs, CI regressions) and establish a weekly recurring report-check event."
+type: Epic
+status: closed
+priority: 0
+tags[6]: calendar,dependabot,github,pm-cli,recurrence,security
+created_at: "2026-04-03T17:22:39.406Z"
+updated_at: "2026-04-03T17:46:38.448Z"
+deadline: "2026-04-13T17:22:39.406Z"
+author: codex-agent
+estimated_minutes: 360
+acceptance_criteria: "All open GH findings are tracked in pm, remediated or dispositioned with evidence, weekly recurring check is active, and regression suite passes."
+definition_of_ready: GH findings inventory completed and duplicate scan done.
+order: 1
+goal: Security and release hygiene
+objective: Resolve GH findings and prevent recurrence drift
+value: Improves repository security posture and maintenance reliability
+impact: Reduces alert backlog and recurring regressions
+outcome: All active findings are triaged and addressed with recurring review cadence
+why_now: User-requested end-to-end remediation and prevention loop
+reviewer: maintainer-review
+risk: high
+confidence: high
+sprint: 2026-w14
+release: vnext
+reporter: codex-agent
+severity: high
+environment: github-default-branch
+repro_steps: run gh dependabot alerts/pr list and CI run checks
+resolution: planned-or-active-implementation
+expected_result: all open GH findings tracked and remediated
+actual_result: remediation work started
+affected_version: 2026.3.12
+fixed_version: target-vnext
+component: github-findings
+regression: true
+customer_impact: users and maintainers benefit from safer dependency and CI health
+comments[1]{created_at,author,text}:
+  "2026-04-03T17:45:22.794Z",codex-agent,"Implemented dependency/workflow remediations, cross-platform CI fixes, and weekly recurring findings-review event. Verification evidence: pnpm audit --prod and pnpm audit report 0 vulnerabilities; node scripts/run-tests.mjs test passed (70 files/789 tests); node scripts/run-tests.mjs coverage passed with global branch coverage 91.00%."
+files[12]{path,scope,note}:
+  .github/workflows/ci.yml,project,gh-findings-remediation-change
+  .github/workflows/nightly.yml,project,gh-findings-remediation-change
+  .github/workflows/release.yml,project,gh-findings-remediation-change
+  package.json,project,gh-findings-remediation-change
+  pnpm-lock.yaml,project,gh-findings-remediation-change
+  src/cli/commands/test.ts,project,gh-findings-remediation-change
+  tests/integration/ci-workflow-contract.spec.ts,project,gh-findings-remediation-change
+  tests/integration/cli.integration.spec.ts,project,gh-findings-remediation-change
+  tests/integration/run-tests-script.integration.spec.ts,project,gh-findings-remediation-change
+  tests/unit/install-command.spec.ts,project,gh-findings-remediation-change
+  tests/unit/search-command.spec.ts,project,gh-findings-remediation-change
+  tests/unit/test-command.spec.ts,project,gh-findings-remediation-change
+tests[3]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,coverage-gate
+  node scripts/run-tests.mjs test,null,project,7200,full-regression
+  pnpm exec vitest run tests/unit/install-command.spec.ts tests/integration/cli.integration.spec.ts tests/unit/search-command.spec.ts tests/unit/test-command.spec.ts tests/integration/run-tests-script.integration.spec.ts,null,project,2400,targeted-cross-platform
+close_reason: Planned remediation completed and verified; recurring weekly review task remains open for ongoing monitoring.
+body: Umbrella remediation item for current GitHub findings plus recurring weekly review workflow.

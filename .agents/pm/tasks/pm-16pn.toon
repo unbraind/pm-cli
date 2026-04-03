@@ -1,0 +1,52 @@
+id: pm-16pn
+title: Track open Dependabot PR #12
+description: "chore(deps-dev): bump the dev-dependencies group across 1 directory with 4 updates"
+type: Task
+status: closed
+priority: 1
+tags[4]: dependabot,dependencies,github-pr,pm-cli
+created_at: "2026-04-03T17:25:04.546Z"
+updated_at: "2026-04-03T17:46:29.060Z"
+deadline: "2026-04-17T17:25:04.546Z"
+author: codex-agent
+estimated_minutes: 30
+acceptance_criteria: PR #12 is merged/superseded/closed with rationale and linked verification evidence.
+definition_of_ready: PR metadata and current check status are captured.
+order: 1
+goal: Dependency hygiene
+objective: Track and resolve open dependency update PR findings
+value: Maintains dependency freshness and security posture
+impact: Prevents stale update backlog and release risk
+outcome: Each open dependency PR has explicit owner and disposition
+why_now: Open Dependabot PR is currently pending in repository
+parent: pm-i7w2
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: 2026-w14
+release: vnext
+reporter: github-dependabot
+severity: medium
+environment: github pull request
+repro_steps: "Open https://github.com/unbraind/pm-cli/pull/12"
+resolution: planned-or-active-implementation
+expected_result: Dependabot PR #12 is dispositioned with passing checks.
+actual_result: Dependabot PR #12 remains open.
+affected_version: 2026.3.12
+fixed_version: target-vnext
+component: dependabot-pr
+regression: true
+customer_impact: Delayed updates can keep vulnerabilities or compatibility gaps open
+comments[2]{created_at,author,text}:
+  "2026-04-03T17:25:04.546Z",codex-agent,Imported open Dependabot PR #12 for tracking and remediation.
+  "2026-04-03T17:46:28.077Z",codex-agent,Superseded by direct dependency/workflow upgrades on main branch and validated by full regression and coverage runs.
+notes[1]{created_at,author,text}:
+  "2026-04-03T17:25:04.546Z",codex-agent,Resolve CI or compatibility blockers and disposition this PR.
+files[1]{path,scope,note}:
+  package.json,project,likely dependency touchpoint
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,7200,baseline regression verification
+docs[1]{path,scope,note}:
+  README.md,project,public contract context
+close_reason: Dependabot PR finding superseded by equivalent direct updates and verification evidence.
+body: "Open Dependabot PR finding #12\\nTitle: chore(deps-dev): bump the dev-dependencies group across 1 directory with 4 updates\\nURL: https://github.com/unbraind/pm-cli/pull/12\\nHead: dependabot/npm_and_yarn/dev-dependencies-2e745a6a44\\nLabels: dependencies,javascript\\nCreated: 2026-03-30T04:34:45Z"

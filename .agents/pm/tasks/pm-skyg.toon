@@ -1,0 +1,52 @@
+id: pm-skyg
+title: Fix cross-platform CI regressions surfaced by GitHub checks
+description: Address current macOS and Windows CI test failures (path canonicalization and platform-specific test/runtime assumptions) blocking dependency PR disposition.
+type: Task
+status: closed
+priority: 0
+tags[5]: ci,cross-platform,github-actions,pm-cli,tests
+created_at: "2026-04-03T17:25:23.654Z"
+updated_at: "2026-04-03T17:46:32.431Z"
+deadline: "2026-04-10T17:25:23.654Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: macOS and Windows CI lanes pass consistently for current test suite and open dependency PR workflows.
+definition_of_ready: Failing jobs and error signatures are captured from gh run logs.
+order: 1
+goal: CI reliability
+objective: Restore cross-platform parity in CI
+value: Prevents false-negative CI failures and unblocks safe dependency updates
+impact: Improves contributor confidence and release velocity
+outcome: Deterministic pass/fail behavior across Linux macOS and Windows
+why_now: Current open finding set includes persistent non-Linux CI failures
+parent: pm-i7w2
+reviewer: maintainer-review
+risk: high
+confidence: high
+sprint: 2026-w14
+release: vnext
+reporter: codex-agent
+severity: high
+environment: github-actions-macos-windows
+repro_steps: Inspect failing Test step logs in gh run view output for latest CI runs
+resolution: planned-or-active-implementation
+expected_result: All CI matrix lanes pass for equivalent changes
+actual_result: macOS and Windows lanes fail while Ubuntu passes
+affected_version: 2026.3.12
+fixed_version: target-vnext
+component: ci-cross-platform
+regression: true
+customer_impact: Users and contributors are blocked by inconsistent CI failures
+comments[2]{created_at,author,text}:
+  "2026-04-03T17:25:23.654Z",codex-agent,Created from gh run evidence showing platform-specific failures in Test step.
+  "2026-04-03T17:46:31.228Z",codex-agent,"Implemented cross-platform fixes (macOS path canonicalization assertions, Windows-safe hook path expectation, linked-test exit-code normalization) and verified with targeted + full suites."
+notes[1]{created_at,author,text}:
+  "2026-04-03T17:25:23.654Z",codex-agent,Prioritize deterministic path normalization and platform-safe assertions.
+files[1]{path,scope,note}:
+  .github/workflows/ci.yml,project,matrix and failing lane context
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,7200,full suite baseline
+docs[1]{path,scope,note}:
+  README.md,project,testing and CI contract context
+close_reason: Cross-platform CI regressions fixed and verified across targeted and full test suites.
+body: "Finding source: recent GitHub Actions CI runs for open Dependabot PRs and main branch show macOS and Windows failures while Ubuntu lanes pass."

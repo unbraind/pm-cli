@@ -6,9 +6,8 @@ status: closed
 priority: 1
 tags[4]: dependabot,github-alert,security,undici
 created_at: "2026-03-12T22:34:30.344Z"
-updated_at: "2026-04-01T20:26:28.674Z"
+updated_at: "2026-04-03T17:46:01.223Z"
 deadline: "2026-03-26T22:34:30.344Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 30
 acceptance_criteria: Alert is resolved by an upgrade or explicitly dismissed with recorded rationale and verification.
@@ -20,7 +19,7 @@ value: Makes dependency risk visible in the project tracker
 impact: Enables explicit prioritization and remediation of open security alerts
 outcome: Each GitHub vulnerability alert has a tracked pm issue
 why_now: GitHub currently reports this alert as open on the default branch
-parent: pm-51y8
+parent: pm-i7w2
 reviewer: maintainer-review
 risk: medium
 confidence: high
@@ -41,9 +40,11 @@ fixed_version: 6.23.0
 component: "dependency:undici"
 regression: true
 customer_impact: Runtime dependency vulnerabilities may affect CLI users and maintainers until remediated.
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-03-12T22:34:30.344Z",codex-agent,Imported GitHub Dependabot alert GHSA-g9mf-h72j-4rw9.
   "2026-03-12T23:19:23.573Z",cursor-agent,"Verification: pnpm audit --prod reports 'No known vulnerabilities found' on 2026-03-12. Current lockfile resolves undici@7.22.0, fast-json-patch@3.1.1, and zod@4.3.6, meeting or exceeding fixed versions recorded in this alert."
+  "2026-04-03T17:23:35.483Z",codex-agent,Reopened on 2026-04-03 after gh reported Dependabot alert #13 still open on default branch; remediation is now tracked under epic pm-i7w2.
+  "2026-04-03T17:46:00.278Z",codex-agent,"Remediated in GH findings sweep: upgraded undici to 8.0.1, updated dependency stack to patched versions, added brace-expansion override >=5.0.5, and verified pnpm audit --prod/--all report zero vulnerabilities."
 notes[1]{created_at,author,text}:
   "2026-03-12T22:34:30.344Z",codex-agent,Remediate or dismiss this alert with verification evidence.
 learnings[1]{created_at,author,text}:

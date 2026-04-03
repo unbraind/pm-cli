@@ -1,0 +1,52 @@
+id: pm-5e88
+title: Track GitHub Dependabot alert #29 for picomatch (GHSA-3v7f-55p6-f55p)
+description: "Picomatch: Method Injection in POSIX Character Classes causes incorrect Glob Matching"
+type: Issue
+status: closed
+priority: 1
+tags[4]: dependabot,github-alert,picomatch,security
+created_at: "2026-04-03T17:24:33.313Z"
+updated_at: "2026-04-03T17:46:19.593Z"
+deadline: "2026-04-17T17:24:33.313Z"
+author: codex-agent
+estimated_minutes: 45
+acceptance_criteria: Alert is resolved by an upgrade or explicitly dismissed with recorded rationale and verification.
+definition_of_ready: GitHub alert details are captured and remediation path is understood.
+order: 1
+goal: Security hygiene
+objective: Track runtime dependency vulnerabilities reported by GitHub
+value: Makes dependency risk visible in the project tracker
+impact: Enables explicit prioritization and remediation of open security alerts
+outcome: Each GitHub vulnerability alert has a tracked pm issue
+why_now: GitHub currently reports this alert as open on the default branch
+parent: pm-i7w2
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: 2026-w14
+release: vnext
+reporter: github-dependabot
+severity: medium
+environment: development transitive dependency in pnpm-lock.yaml
+repro_steps: "Open https://github.com/unbraind/pm-cli/security/dependabot/29"
+resolution: planned-or-active-implementation
+expected_result: No open GitHub Dependabot alert remains for GHSA-3v7f-55p6-f55p.
+actual_result: "GitHub reports open alert #29 for picomatch affecting >= 4.0.0, < 4.0.4."
+affected_version: ">= 4.0.0, < 4.0.4"
+fixed_version: 4.0.4
+component: "dependency:picomatch"
+regression: true
+customer_impact: Runtime dependency vulnerabilities may affect CLI users and maintainers until remediated.
+comments[2]{created_at,author,text}:
+  "2026-04-03T17:24:33.313Z",codex-agent,Imported open GitHub Dependabot alert GHSA-3v7f-55p6-f55p.
+  "2026-04-03T17:46:18.393Z",codex-agent,"Remediated in GH findings sweep: upgraded undici to 8.0.1, updated dependency stack to patched versions, added brace-expansion override >=5.0.5, and verified pnpm audit --prod/--all report zero vulnerabilities."
+notes[1]{created_at,author,text}:
+  "2026-04-03T17:24:33.313Z",codex-agent,Remediate or dismiss this alert with verification evidence.
+files[1]{path,scope,note}:
+  pnpm-lock.yaml,project,affected dependency manifest
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,7200,metadata-audit-baseline-regression
+docs[1]{path,scope,note}:
+  SECURITY.md,project,security reporting and handling policy
+close_reason: Dependency remediation verified locally; no remaining known vulnerabilities in current dependency graph.
+body: "GitHub Dependabot alert #29\\nPackage: picomatch\\nGHSA: GHSA-3v7f-55p6-f55p\\nCVE: CVE-2026-33672\\nSeverity: medium\\nManifest: pnpm-lock.yaml\\nScope: development\\nRelationship: transitive\\nVulnerable range: >= 4.0.0, < 4.0.4\\nFirst patched version: 4.0.4\\nAlert URL: https://github.com/unbraind/pm-cli/security/dependabot/29"

@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { runTest } from "../../src/cli/commands/test.js";
+import { resolveLinkedTestFailureExitCode, runTest } from "../../src/cli/commands/test.js";
 import { EXIT_CODE } from "../../src/constants.js";
 import { parseItemDocument, serializeItemDocument } from "../../src/item-format.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
@@ -104,6 +104,44 @@ async function overwriteTaskTests(
 }
 
 describe("runTest", () => {
+  it("normalizes failure exit codes for timeout/maxBuffer edge cases", () => {
+    expect(
+      resolveLinkedTestFailureExitCode({
+        exitCode: null,
+        timedOut: false,
+        maxBufferExceeded: false,
+      }),
+    ).toBe(1);
+    expect(
+      resolveLinkedTestFailureExitCode({
+        exitCode: 0,
+        timedOut: false,
+        maxBufferExceeded: false,
+      }),
+    ).toBe(0);
+    expect(
+      resolveLinkedTestFailureExitCode({
+        exitCode: 0,
+        timedOut: true,
+        maxBufferExceeded: false,
+      }),
+    ).toBe(1);
+    expect(
+      resolveLinkedTestFailureExitCode({
+        exitCode: 0,
+        timedOut: false,
+        maxBufferExceeded: true,
+      }),
+    ).toBe(1);
+    expect(
+      resolveLinkedTestFailureExitCode({
+        exitCode: 2,
+        timedOut: true,
+        maxBufferExceeded: false,
+      }),
+    ).toBe(2);
+  });
+
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-test-not-init-"));
     try {

@@ -9,9 +9,10 @@ describe("scripts/run-tests.mjs", () => {
   it(
     "forwards targeted Vitest file filters in sandbox mode",
     () => {
+      const targetSpec = path.join("tests", "unit", "status-normalization.spec.ts");
       const result = spawnSync(
         process.execPath,
-        ["scripts/run-tests.mjs", "test", "--", "tests/unit/list-sort-branches.spec.ts"],
+        ["scripts/run-tests.mjs", "test", "--", "--reporter=verbose", targetSpec],
         {
           cwd: repoRoot,
           encoding: "utf8",
@@ -25,8 +26,9 @@ describe("scripts/run-tests.mjs", () => {
       const combinedOutput = `${result.stdout}\n${result.stderr}`;
       expect(result.status).toBe(0);
       const cleanOutput = combinedOutput.replace(/\x1b\[[0-9;]*m/g, "");
-      expect(cleanOutput).toContain("tests/unit/list-sort-branches.spec.ts");
-      expect(cleanOutput).not.toContain("tests/unit/health-command.spec.ts");
+      const normalizedOutput = cleanOutput.replace(/\\/g, "/");
+      expect(normalizedOutput).toContain("tests/unit/status-normalization.spec.ts");
+      expect(normalizedOutput).not.toContain("tests/unit/health-command.spec.ts");
       expect(cleanOutput).toMatch(/Test Files\s+1 passed/);
     },
     120_000,

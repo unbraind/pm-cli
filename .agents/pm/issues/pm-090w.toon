@@ -1,0 +1,52 @@
+id: pm-090w
+title: Track GitHub Dependabot alert #20 for undici (GHSA-phc3-fgpg-7m6h)
+description: Undici has Unbounded Memory Consumption in its DeduplicationHandler via Response Buffering that leads to DoS
+type: Issue
+status: closed
+priority: 1
+tags[4]: dependabot,github-alert,security,undici
+created_at: "2026-04-03T17:24:42.620Z"
+updated_at: "2026-04-03T17:46:05.843Z"
+deadline: "2026-04-17T17:24:42.620Z"
+author: codex-agent
+estimated_minutes: 45
+acceptance_criteria: Alert is resolved by an upgrade or explicitly dismissed with recorded rationale and verification.
+definition_of_ready: GitHub alert details are captured and remediation path is understood.
+order: 1
+goal: Security hygiene
+objective: Track runtime dependency vulnerabilities reported by GitHub
+value: Makes dependency risk visible in the project tracker
+impact: Enables explicit prioritization and remediation of open security alerts
+outcome: Each GitHub vulnerability alert has a tracked pm issue
+why_now: GitHub currently reports this alert as open on the default branch
+parent: pm-i7w2
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: 2026-w14
+release: vnext
+reporter: github-dependabot
+severity: medium
+environment: runtime direct dependency in pnpm-lock.yaml
+repro_steps: "Open https://github.com/unbraind/pm-cli/security/dependabot/20"
+resolution: planned-or-active-implementation
+expected_result: No open GitHub Dependabot alert remains for GHSA-phc3-fgpg-7m6h.
+actual_result: "GitHub reports open alert #20 for undici affecting >= 7.17.0, < 7.24.0."
+affected_version: ">= 7.17.0, < 7.24.0"
+fixed_version: 7.24.0
+component: "dependency:undici"
+regression: true
+customer_impact: Runtime dependency vulnerabilities may affect CLI users and maintainers until remediated.
+comments[2]{created_at,author,text}:
+  "2026-04-03T17:24:42.620Z",codex-agent,Imported open GitHub Dependabot alert GHSA-phc3-fgpg-7m6h.
+  "2026-04-03T17:46:04.880Z",codex-agent,"Remediated in GH findings sweep: upgraded undici to 8.0.1, updated dependency stack to patched versions, added brace-expansion override >=5.0.5, and verified pnpm audit --prod/--all report zero vulnerabilities."
+notes[1]{created_at,author,text}:
+  "2026-04-03T17:24:42.620Z",codex-agent,Remediate or dismiss this alert with verification evidence.
+files[1]{path,scope,note}:
+  pnpm-lock.yaml,project,affected dependency manifest
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,7200,metadata-audit-baseline-regression
+docs[1]{path,scope,note}:
+  SECURITY.md,project,security reporting and handling policy
+close_reason: Dependency remediation verified locally; no remaining known vulnerabilities in current dependency graph.
+body: "GitHub Dependabot alert #20\\nPackage: undici\\nGHSA: GHSA-phc3-fgpg-7m6h\\nCVE: CVE-2026-2581\\nSeverity: medium\\nManifest: pnpm-lock.yaml\\nScope: runtime\\nRelationship: direct\\nVulnerable range: >= 7.17.0, < 7.24.0\\nFirst patched version: 7.24.0\\nAlert URL: https://github.com/unbraind/pm-cli/security/dependabot/20"

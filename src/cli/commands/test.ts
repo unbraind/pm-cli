@@ -736,6 +736,16 @@ function formatLinkedTestExecutionError(result: LinkedTestExecutionResult, timeo
   return `${baseMessage} ${details.join(" ")}`;
 }
 
+export function resolveLinkedTestFailureExitCode(
+  execution: Pick<LinkedTestExecutionResult, "exitCode" | "timedOut" | "maxBufferExceeded">,
+): number {
+  const rawExitCode = typeof execution.exitCode === "number" ? execution.exitCode : 1;
+  if ((execution.timedOut || execution.maxBufferExceeded) && rawExitCode === 0) {
+    return 1;
+  }
+  return rawExitCode;
+}
+
 export async function runLinkedTests(
   tests: LinkedTest[],
   defaultTimeoutSeconds: number | undefined,
@@ -801,7 +811,7 @@ export async function runLinkedTests(
         command: linkedTest.command,
         path: linkedTest.path,
         status: "failed",
-        exit_code: typeof execution.exitCode === "number" ? execution.exitCode : 1,
+        exit_code: resolveLinkedTestFailureExitCode(execution),
         stdout: execution.stdout,
         stderr: execution.stderr,
         error: formatLinkedTestExecutionError(execution, timeoutMs),

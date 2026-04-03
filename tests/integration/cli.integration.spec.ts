@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { describe, expect, it } from "vitest";
@@ -24,6 +24,14 @@ interface JsonErrorEnvelope {
 
 function parseJsonErrorEnvelope(stderr: string): JsonErrorEnvelope {
   return JSON.parse(stderr) as JsonErrorEnvelope;
+}
+
+async function canonicalizePathForAssertion(targetPath: string): Promise<string> {
+  try {
+    return await realpath(targetPath);
+  } catch {
+    return path.resolve(targetPath);
+  }
 }
 
 describe("CLI integration (sandboxed PM_PATH)", () => {
@@ -162,7 +170,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         destination_path: string;
       };
       expect(projectPayload.scope).toBe("project");
-      expect(projectPayload.destination_path).toBe(path.join(projectRoot, ".pi", "extensions", "pm-cli", "index.ts"));
+      expect(await canonicalizePathForAssertion(projectPayload.destination_path)).toBe(
+        await canonicalizePathForAssertion(path.join(projectRoot, ".pi", "extensions", "pm-cli", "index.ts")),
+      );
 
       const pathDerivedRoot = path.join(context.tempRoot, "path-derived-workspace");
       const pathDerivedPmRoot = path.join(pathDerivedRoot, ".agents", "pm");
@@ -181,8 +191,8 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         destination_path: string;
       };
       expect(projectPathPayload.scope).toBe("project");
-      expect(projectPathPayload.destination_path).toBe(
-        path.join(pathDerivedRoot, ".pi", "extensions", "pm-cli", "index.ts"),
+      expect(await canonicalizePathForAssertion(projectPathPayload.destination_path)).toBe(
+        await canonicalizePathForAssertion(path.join(pathDerivedRoot, ".pi", "extensions", "pm-cli", "index.ts")),
       );
 
       const globalRoot = path.join(context.tempRoot, "pi-agent-global", os.platform());
@@ -196,7 +206,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           destination_path: string;
         };
         expect(globalPayload.scope).toBe("global");
-        expect(globalPayload.destination_path).toBe(path.join(globalRoot, "extensions", "pm-cli", "index.ts"));
+        expect(await canonicalizePathForAssertion(globalPayload.destination_path)).toBe(
+          await canonicalizePathForAssertion(path.join(globalRoot, "extensions", "pm-cli", "index.ts")),
+        );
       } finally {
         if (previousAgentDir === undefined) {
           delete context.env.PI_CODING_AGENT_DIR;

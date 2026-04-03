@@ -1,10 +1,18 @@
-import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, realpath, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runInstall } from "../../src/cli/commands/install.js";
 import { EXIT_CODE } from "../../src/constants.js";
 import { PmCliError } from "../../src/errors.js";
+
+async function canonicalizePathForAssertion(targetPath: string): Promise<string> {
+  try {
+    return await realpath(targetPath);
+  } catch {
+    return path.resolve(targetPath);
+  }
+}
 
 describe("runInstall", () => {
   it("installs pi extension into current project by default and reports overwrite deterministically", async () => {
@@ -16,7 +24,9 @@ describe("runInstall", () => {
       expect(first.ok).toBe(true);
       expect(first.target).toBe("pi");
       expect(first.scope).toBe("project");
-      expect(first.destination_path).toBe(path.join(tempProject, ".pi", "extensions", "pm-cli", "index.ts"));
+      expect(await canonicalizePathForAssertion(first.destination_path)).toBe(
+        await canonicalizePathForAssertion(path.join(tempProject, ".pi", "extensions", "pm-cli", "index.ts")),
+      );
       expect(first.overwritten).toBe(false);
       expect(first.warnings).toEqual([]);
 
@@ -48,7 +58,9 @@ describe("runInstall", () => {
       const result = await runInstall("pi", { project: true }, { path: pmPath });
 
       expect(result.scope).toBe("project");
-      expect(result.destination_path).toBe(path.join(tempProject, ".pi", "extensions", "pm-cli", "index.ts"));
+      expect(await canonicalizePathForAssertion(result.destination_path)).toBe(
+        await canonicalizePathForAssertion(path.join(tempProject, ".pi", "extensions", "pm-cli", "index.ts")),
+      );
       const destinationContent = await readFile(result.destination_path, "utf8");
       expect(destinationContent.length).toBeGreaterThan(0);
     } finally {
@@ -70,7 +82,9 @@ describe("runInstall", () => {
       const result = await runInstall("pi", { project: true }, { path: customPmRoot });
 
       expect(result.scope).toBe("project");
-      expect(result.destination_path).toBe(path.join(tempBase, ".pi", "extensions", "pm-cli", "index.ts"));
+      expect(await canonicalizePathForAssertion(result.destination_path)).toBe(
+        await canonicalizePathForAssertion(path.join(tempBase, ".pi", "extensions", "pm-cli", "index.ts")),
+      );
       const destinationContent = await readFile(result.destination_path, "utf8");
       expect(destinationContent.length).toBeGreaterThan(0);
     } finally {
@@ -94,7 +108,9 @@ describe("runInstall", () => {
       const result = await runInstall("pi", { project: true }, {});
 
       expect(result.scope).toBe("project");
-      expect(result.destination_path).toBe(path.join(tempCaller, ".pi", "extensions", "pm-cli", "index.ts"));
+      expect(await canonicalizePathForAssertion(result.destination_path)).toBe(
+        await canonicalizePathForAssertion(path.join(tempCaller, ".pi", "extensions", "pm-cli", "index.ts")),
+      );
       const destinationContent = await readFile(result.destination_path, "utf8");
       expect(destinationContent.length).toBeGreaterThan(0);
     } finally {
@@ -115,7 +131,9 @@ describe("runInstall", () => {
       process.env.PI_CODING_AGENT_DIR = tempGlobal;
       const result = await runInstall("pi", { global: true }, {});
       expect(result.scope).toBe("global");
-      expect(result.destination_path).toBe(path.join(tempGlobal, "extensions", "pm-cli", "index.ts"));
+      expect(await canonicalizePathForAssertion(result.destination_path)).toBe(
+        await canonicalizePathForAssertion(path.join(tempGlobal, "extensions", "pm-cli", "index.ts")),
+      );
       expect(result.overwritten).toBe(false);
       const destinationContent = await readFile(result.destination_path, "utf8");
       expect(destinationContent.length).toBeGreaterThan(0);
@@ -146,7 +164,9 @@ describe("runInstall", () => {
       const result = await runInstall("pi", { global: true }, {});
       const expectedDestination = path.join(os.homedir(), ".pi", "agent", "extensions", "pm-cli", "index.ts");
       expect(result.scope).toBe("global");
-      expect(result.destination_path).toBe(expectedDestination);
+      expect(await canonicalizePathForAssertion(result.destination_path)).toBe(
+        await canonicalizePathForAssertion(expectedDestination),
+      );
       const destinationContent = await readFile(result.destination_path, "utf8");
       expect(destinationContent.length).toBeGreaterThan(0);
     } finally {
