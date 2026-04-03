@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `pm health` history drift diagnostics (`history_drift`) that detect missing/unreadable history streams and item/hash mismatches against latest history `after_hash`.
 - Added `pm health` vectorization diagnostics (`vectorization`) with targeted stale-ID semantic refresh and deterministic vectorization ledger tracking (`search/vectorization-status.json`).
 - Added configurable missing history-stream policy at `settings.history.missing_stream` with `pm config <project|global> get|set history-missing-stream-policy --policy auto_create|strict_error`.
+- Added configurable sprint/release format policy at `settings.validation.sprint_release_format` with `pm config <project|global> get|set sprint-release-format-policy --policy warn|strict_error`.
 - Added history-only restore recovery so `pm restore` can recreate missing/deleted item files when the corresponding history stream exists.
 - Added first-class `pm notes` and `pm learnings` commands with parity to `pm comments` (`<id> [text]`, `--add`, `--limit`, `--author`, `--message`, `--force`) including structured/stdin payload parsing.
 - Added command-surface parity updates for `notes`/`learnings` across help narratives, shell completion scripts, command-aware output summaries, and Pi wrapper action routing.
@@ -77,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pm update` now auto-clears stale `close_reason` when reopening items from `closed` to non-terminal statuses unless an explicit `--close-reason` value is provided in the same mutation.
 - `pm claim` now allows takeover of already-assigned non-terminal items without `--force`; force remains required for terminal-status or lock-override claim paths.
 - `pm comments` guidance is now explicit about `--force` usage across rich help, shell completion, and docs parity surfaces.
+- `pm create`/`pm update` now validate `--sprint` and `--release` using a warning-first default (`warn`) with deterministic `validation_warning:*` signals, and optional strict rejection mode (`strict_error`) for enforcement.
 
 ## [2026.3.12] - 2026-03-12
 

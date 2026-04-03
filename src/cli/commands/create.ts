@@ -2,6 +2,7 @@ import { pathExists, removeFileIfExists, writeFileAtomic } from "../../core/fs/f
 import { appendHistoryEntry, createHistoryEntry } from "../../core/history/history.js";
 import { generateItemId, normalizeItemId } from "../../core/item/id.js";
 import { canonicalDocument, normalizeFrontMatter, serializeItemDocument } from "../../core/item/item-format.js";
+import { validateSprintOrReleaseValue } from "../../core/item/sprint-release-format.js";
 import { createStdinTokenResolver, parseCsvKv, parseOptionalNumber, parseTags } from "../../core/item/parse.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
 import {
@@ -863,8 +864,20 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const risk = riskRaw !== undefined ? ensureEnumValue(normalizeRiskInput(riskRaw), RISK_VALUES, "risk") : undefined;
   const confidenceRaw = resolvedOptions.confidence !== undefined ? parseOptionalString(resolvedOptions.confidence) : undefined;
   const confidence = confidenceRaw !== undefined ? parseConfidenceInput(confidenceRaw) : undefined;
-  const sprint = resolvedOptions.sprint !== undefined ? parseOptionalString(resolvedOptions.sprint) : undefined;
-  const release = resolvedOptions.release !== undefined ? parseOptionalString(resolvedOptions.release) : undefined;
+  const sprintReleasePolicy = settings.validation.sprint_release_format;
+  const validationWarnings: string[] = [];
+  let sprint = resolvedOptions.sprint !== undefined ? parseOptionalString(resolvedOptions.sprint) : undefined;
+  if (sprint !== undefined) {
+    const sprintValidation = validateSprintOrReleaseValue("sprint", sprint, sprintReleasePolicy);
+    sprint = sprintValidation.value;
+    validationWarnings.push(...sprintValidation.warnings);
+  }
+  let release = resolvedOptions.release !== undefined ? parseOptionalString(resolvedOptions.release) : undefined;
+  if (release !== undefined) {
+    const releaseValidation = validateSprintOrReleaseValue("release", release, sprintReleasePolicy);
+    release = releaseValidation.value;
+    validationWarnings.push(...releaseValidation.warnings);
+  }
   const blockedBy = resolvedOptions.blockedBy !== undefined ? parseOptionalString(resolvedOptions.blockedBy) : undefined;
   const blockedReason =
     resolvedOptions.blockedReason !== undefined ? parseOptionalString(resolvedOptions.blockedReason) : undefined;
@@ -1012,6 +1025,6 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   return {
     item: outputItem,
     changed_fields: changedFields,
-    warnings: hookWarnings,
+    warnings: [...validationWarnings, ...hookWarnings],
   };
 }

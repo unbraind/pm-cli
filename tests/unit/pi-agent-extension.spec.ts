@@ -176,6 +176,7 @@ describe("Pi agent extension wrapper for pm", () => {
       configAction: "set",
       key: "definition-of-done",
       criterion: ["tests pass", "linked files/tests/docs present"],
+      policy: "strict_error",
     });
     expect(configArgs).toEqual([
       "--json",
@@ -187,6 +188,8 @@ describe("Pi agent extension wrapper for pm", () => {
       "tests pass",
       "--criterion",
       "linked files/tests/docs present",
+      "--policy",
+      "strict_error",
     ]);
 
     const createArgs = buildPmCliArgs({

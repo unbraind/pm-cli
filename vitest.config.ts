@@ -55,6 +55,7 @@ export default defineConfig({
         "src/core/history/index.ts",
         "src/core/item/id.ts",
         "src/core/item/item-format.ts",
+        "src/core/item/sprint-release-format.ts",
         "src/core/item/parse.ts",
         "src/core/item/status.ts",
         "src/core/item/index.ts",

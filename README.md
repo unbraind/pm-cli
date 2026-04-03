@@ -199,6 +199,25 @@ pm config project get history-missing-stream-policy --json
 
 Policy enforcement applies to `pm history`, `pm activity`, `pm stats`, `pm health`, restore, and existing-item mutation paths.
 
+## Sprint/Release Format Policy
+
+`settings.validation.sprint_release_format` controls `--sprint` and `--release` validation behavior during `pm create` and `pm update`:
+
+- `warn` (default)
+  - accepts non-conforming values and emits deterministic warnings (`validation_warning:sprint_format:<value>` / `validation_warning:release_format:<value>`)
+- `strict_error`
+  - rejects non-conforming values with a deterministic usage error
+
+Accepted format for conforming values: 1-64 characters matching `[A-Za-z0-9][A-Za-z0-9._/-]*` (no spaces).
+
+Configure policy with:
+
+```bash
+pm config project set sprint-release-format-policy --policy warn
+pm config project set sprint-release-format-policy --policy strict_error
+pm config project get sprint-release-format-policy --json
+```
+
 `pm restore` also supports history-only recovery when an item file is missing or deleted but its history stream still exists.
 
 ## Deadline and Date Inputs

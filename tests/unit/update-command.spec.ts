@@ -721,6 +721,59 @@ describe("runUpdate", () => {
     });
   });
 
+  it("warns for non-conforming sprint and release values under default policy", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-sprint-release-warn");
+
+      const result = await runUpdate(
+        id,
+        {
+          sprint: "Sprint 2026 W14",
+          release: "Release Candidate 1",
+          message: "set non-conforming sprint/release metadata",
+        },
+        { path: context.pmPath },
+      );
+
+      expect((result.item as Record<string, unknown>).sprint).toBe("Sprint 2026 W14");
+      expect((result.item as Record<string, unknown>).release).toBe("Release Candidate 1");
+      expect(result.warnings).toEqual(
+        expect.arrayContaining([
+          "validation_warning:sprint_format:Sprint 2026 W14",
+          "validation_warning:release_format:Release Candidate 1",
+        ]),
+      );
+    });
+  });
+
+  it("rejects non-conforming sprint and release values under strict policy", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-sprint-release-strict");
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const parsed = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        validation?: { sprint_release_format?: string };
+      };
+      parsed.validation = {
+        ...(parsed.validation ?? {}),
+        sprint_release_format: "strict_error",
+      };
+      await writeFile(settingsPath, `${JSON.stringify(parsed, null, 2)}\n`, "utf8");
+
+      await expect(
+        runUpdate(
+          id,
+          {
+            release: "Release Candidate 1",
+            message: "attempt invalid release in strict mode",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
   it("adds and removes dependencies for existing items", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-dependency-mutations");

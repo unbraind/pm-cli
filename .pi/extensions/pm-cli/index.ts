@@ -117,6 +117,7 @@ export interface PmToolParameters {
   typeOption?: string[];
   criterion?: string[];
   format?: string;
+  policy?: string;
 }
 
 export interface PiExecResult {
@@ -343,6 +344,7 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       );
       pushRepeatable(args, "--criterion", params.criterion);
       pushOption(args, "--format", params.format);
+      pushOption(args, "--policy", params.policy);
       return args;
     case "create":
       args.push("create");

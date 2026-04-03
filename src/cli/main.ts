@@ -1601,12 +1601,12 @@ program
   .command("config")
   .argument("<scope>", "Config scope: project|global")
   .argument("<action>", "Config action: get|set")
-  .argument("<key>", "Config key: definition-of-done|item-format|history-missing-stream-policy")
+  .argument("<key>", "Config key: definition-of-done|item-format|history-missing-stream-policy|sprint-release-format-policy")
   .option("--criterion <text>", "Definition-of-Done criterion (repeatable for set)", collect)
   .option("--format <value>", "Item format for item-format key: toon|json_markdown")
   .option(
     "--policy <value>",
-    "History missing-stream policy for history-missing-stream-policy key: auto_create|strict_error",
+    "Policy key values: history-missing-stream-policy=auto_create|strict_error; sprint-release-format-policy=warn|strict_error",
   )
   .description("Read or update pm settings for the current workspace or global profile.")
   .action(async (scope: string, action: string, key: string, options: Record<string, unknown>, command) => {

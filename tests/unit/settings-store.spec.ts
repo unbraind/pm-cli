@@ -132,6 +132,7 @@ describe("core/store/settings", () => {
         "locks",
         "output",
         "history",
+        "validation",
         "workflow",
         "item_types",
         "extensions",
@@ -142,6 +143,7 @@ describe("core/store/settings", () => {
       expectOrderedObjectKeys(parsed.locks, ["ttl_seconds"]);
       expectOrderedObjectKeys(parsed.output, ["default_format"]);
       expectOrderedObjectKeys(parsed.history, ["missing_stream"]);
+      expectOrderedObjectKeys(parsed.validation, ["sprint_release_format"]);
       expectOrderedObjectKeys(parsed.workflow, ["definition_of_done"]);
       expectOrderedObjectKeys(parsed.item_types, ["definitions"]);
       expectOrderedObjectKeys(parsed.extensions, ["enabled", "disabled"]);

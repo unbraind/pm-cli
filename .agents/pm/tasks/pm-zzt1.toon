@@ -2,13 +2,12 @@ id: pm-zzt1
 title: Differentiate pm list (active-only) from pm list-all (all items)
 description: "External audit Issue 9 follow-up: resolve status-filter confusion for list commands via command surface and explicit help guidance."
 type: Task
-status: in_progress
+status: closed
 priority: 0
 tags[7]: "area:cli","area:ux",code,"milestone:6",pm-cli,"priority:0",tests
 created_at: "2026-03-08T22:07:09.126Z"
-updated_at: "2026-04-03T11:59:53.219Z"
+updated_at: "2026-04-03T12:41:45.827Z"
 deadline: "2026-04-10T11:57:41.055Z"
-assignee: codex-agent
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: Either pm list supports status filtering or help output clearly routes users to correct list-* commands; behavior is tested and documented.
@@ -41,11 +40,12 @@ fixed_version: v0.1
 component: cli-component
 regression: true
 customer_impact: improves-reliability-and-clarity-for-contributors
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-03-08T22:07:09.126Z",maintainer-agent,"pm list and pm list-all are currently identical. Fix: pm list should exclude terminal statuses by default."
   "2026-03-08T22:12:48.671Z",maintainer-agent,"Implementation complete. Changed: list.ts (excludeTerminal option in ListOptions + applyFilters), main.ts (normalizeListOptions returns ListOptions, registerListCommand adds excludeTerminal param, pm list wired with excludeTerminal=true). Updated: PRD.md, README.md (new pm list vs pm list-all section), CHANGELOG.md. Tests: added excludes-terminal-statuses test case in list-command.spec.ts. Result: 536/536 tests pass, 100% coverage maintained."
   "2026-04-03T11:55:43.941Z",codex-agent,"Mapped external-audit Issue 9: resolve list status-filter UX confusion via command surface and/or explicit help guidance updates."
   "2026-04-03T11:59:29.272Z",codex-agent,"Wave3 scope: list status-filter UX fix must preserve current list/list-all semantics for existing scripts unless explicitly opting into new flags."
+  "2026-04-03T12:41:42.094Z",codex-agent,"Re-verified pm list active-only semantics and pm list-all full inventory behavior. Evidence: pm test pm-zzt1 --run --json passed both linked commands (coverage + targeted list/help suites), and no additional code changes were required for this item."
 notes[2]{created_at,author,text}:
   "2026-03-08T22:07:09.126Z",maintainer-agent,Update runList() to accept excludeTerminal option and wire pm list in main.ts with that flag set.
   "2026-04-03T11:59:53.219Z",codex-agent,"Mandatory closure checklist: (1) run linked targeted tests via pm test <id> --run; (2) run pnpm build; (3) run node scripts/run-tests.mjs test; (4) run node scripts/run-tests.mjs coverage; (5) update touched docs (README/PRD/AGENTS/CHANGELOG/ARCHITECTURE as applicable); (6) add pm comment with concrete evidence/results; (7) close + release item before commit/push."
@@ -62,4 +62,5 @@ tests[2]{command,path,scope,timeout_seconds,note}:
 docs[2]{path,scope,note}:
   PRD.md,project,update pm list vs pm list-all distinction
   README.md,project,update commands section
+close_reason: Re-verified list/list-all behavior; linked regressions pass with no further code changes.
 body: "Implementation: update runList() with excludeTerminal option, wire pm list in main.ts, update PRD+README, update tests"

@@ -1,5 +1,8 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import {
+  normalizeSprintReleaseFormatPolicy,
+} from "../../core/item/sprint-release-format.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -11,7 +14,7 @@ import {
   resolvePmRoot,
 } from "../../core/store/paths.js";
 import { readSettingsWithMetadata, writeSettings } from "../../core/store/settings.js";
-import type { ItemFormat } from "../../types/index.js";
+import type { ItemFormat, SprintReleaseFormatPolicy } from "../../types/index.js";
 
 const CONFIG_SCOPE_VALUES = ["project", "global"] as const;
 type ConfigScope = (typeof CONFIG_SCOPE_VALUES)[number];
@@ -23,9 +26,15 @@ const CONFIG_KEY_VALUES = [
   "item_format",
   "history-missing-stream-policy",
   "history_missing_stream_policy",
+  "sprint-release-format-policy",
+  "sprint_release_format_policy",
 ] as const;
 type ConfigAction = "get" | "set";
-type ConfigKey = "definition_of_done" | "item_format" | "history_missing_stream_policy";
+type ConfigKey =
+  | "definition_of_done"
+  | "item_format"
+  | "history_missing_stream_policy"
+  | "sprint_release_format_policy";
 type HistoryMissingStreamPolicy = "auto_create" | "strict_error";
 
 export interface ConfigCommandOptions {
@@ -39,7 +48,7 @@ export interface ConfigResult {
   key: ConfigKey;
   criteria?: string[];
   format?: ItemFormat;
-  policy?: HistoryMissingStreamPolicy;
+  policy?: HistoryMissingStreamPolicy | SprintReleaseFormatPolicy;
   has_explicit_item_format?: boolean;
   migration?: {
     target_format: ItemFormat;
@@ -77,6 +86,9 @@ function normalizeKey(value: string): ConfigKey {
     }
     if (value === "history-missing-stream-policy" || value === "history_missing_stream_policy") {
       return "history_missing_stream_policy";
+    }
+    if (value === "sprint-release-format-policy" || value === "sprint_release_format_policy") {
+      return "sprint_release_format_policy";
     }
     return "definition_of_done";
   }
@@ -176,6 +188,15 @@ export async function runConfig(
         changed: false,
       }, warnings);
     }
+    if (key === "sprint_release_format_policy") {
+      return withWarnings({
+        scope,
+        key,
+        policy: settings.validation.sprint_release_format,
+        settings_path: target.settingsPath,
+        changed: false,
+      }, warnings);
+    }
     return withWarnings({
       scope,
       key,
@@ -229,6 +250,22 @@ export async function runConfig(
       scope,
       key,
       policy: settings.history.missing_stream,
+      settings_path: target.settingsPath,
+      changed,
+    }, warnings);
+  }
+
+  if (key === "sprint_release_format_policy") {
+    const nextPolicy = normalizeSprintReleaseFormatPolicy(options.policy);
+    const changed = settings.validation.sprint_release_format !== nextPolicy;
+    settings.validation.sprint_release_format = nextPolicy;
+    if (changed) {
+      await writeSettings(target.pmRoot, settings, "config:set:sprint_release_format_policy");
+    }
+    return withWarnings({
+      scope,
+      key,
+      policy: settings.validation.sprint_release_format,
       settings_path: target.settingsPath,
       changed,
     }, warnings);

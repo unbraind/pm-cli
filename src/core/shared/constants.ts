@@ -101,6 +101,9 @@ export const SETTINGS_DEFAULTS: PmSettings = {
   history: {
     missing_stream: "auto_create",
   },
+  validation: {
+    sprint_release_format: "warn",
+  },
   workflow: {
     definition_of_done: [],
   },

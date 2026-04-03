@@ -507,6 +507,15 @@ Guarantees:
 
 Scope: this policy applies to read/diagnostic paths (`history`, `activity`, `stats`, `health`) and existing-item mutation/restore flows.
 
+### 9.5 Sprint/release format policy
+
+`settings.validation.sprint_release_format` controls `--sprint` and `--release` behavior for `create`/`update`:
+
+- `warn` (default): accept non-conforming values and emit deterministic warnings.
+- `strict_error`: reject non-conforming values with deterministic usage errors.
+
+Conforming value pattern: `^[A-Za-z0-9][A-Za-z0-9._/-]*$` (max 64 characters, no spaces).
+
 ## 10) Concurrency, Claiming, Locking, Safe Writes
 
 ### 10.1 Assignee identity
@@ -635,6 +644,8 @@ Help and error UX note:
 - `pm config <project|global> get item-format`
 - `pm config <project|global> set history-missing-stream-policy --policy auto_create|strict_error`
 - `pm config <project|global> get history-missing-stream-policy`
+- `pm config <project|global> set sprint-release-format-policy --policy warn|strict_error`
+- `pm config <project|global> get sprint-release-format-policy`
 - `pm close <ID> <TEXT>`
 - `pm beads import [--file <path>]`
 - `pm todos import [--folder <path>]`
@@ -666,8 +677,8 @@ Mutating `create` (all schema fields MUST be passable explicitly):
 - `--reviewer` (optional; or `none`)
 - `--risk` (optional; `low|med|medium|high|critical` or `none`; `med` persists as `medium`)
 - `--confidence` (optional; `0..100|low|med|medium|high` or `none`; `med` persists as `medium`)
-- `--sprint` (optional; or `none`)
-- `--release` (optional; or `none`)
+- `--sprint` (optional; or `none`; format policy controlled by `settings.validation.sprint_release_format`)
+- `--release` (optional; or `none`; format policy controlled by `settings.validation.sprint_release_format`)
 - `--blocked-by`, `--blocked_by` (optional; item ID or free-text, or `none`)
 - `--blocked-reason`, `--blocked_reason` (optional; or `none`)
 - `--unblock-note`, `--unblock_note` (optional; unblock rationale note, or `none`)
@@ -737,8 +748,8 @@ Mutating `update` (v0.1 baseline):
 - `--reviewer`
 - `--risk` (`low|med|medium|high|critical`; `med` persists as `medium`)
 - `--confidence` (`0..100|low|med|medium|high`; `med` persists as `medium`)
-- `--sprint`
-- `--release`
+- `--sprint` (format policy controlled by `settings.validation.sprint_release_format`)
+- `--release` (format policy controlled by `settings.validation.sprint_release_format`)
 - `--blocked-by`, `--blocked_by`
 - `--blocked-reason`, `--blocked_reason`
 - `--unblock-note`, `--unblock_note`
@@ -1252,6 +1263,7 @@ Schema-capability registrations are also validated deterministically at activati
 - `locks.ttl_seconds`
 - `output.default_format`
 - `history.missing_stream`
+- `validation.sprint_release_format`
 - `workflow.definition_of_done[]`
 - `item_types.definitions[]` (custom type aliases/folders, required create fields/repeatables, `options[]`, and optional `command_option_policies[]`)
 - `extensions.enabled[]`
@@ -1287,6 +1299,9 @@ Default `settings.json` object written by `pm init`:
   },
   "history": {
     "missing_stream": "auto_create"
+  },
+  "validation": {
+    "sprint_release_format": "warn"
   },
   "workflow": {
     "definition_of_done": []
@@ -1340,6 +1355,11 @@ History missing-stream policy config baseline:
 
 - `pm config <project|global> set history-missing-stream-policy --policy auto_create|strict_error` updates `settings.history.missing_stream`.
 - `pm config <project|global> get history-missing-stream-policy` returns the active policy.
+
+Sprint/release format policy config baseline:
+
+- `pm config <project|global> set sprint-release-format-policy --policy warn|strict_error` updates `settings.validation.sprint_release_format`.
+- `pm config <project|global> get sprint-release-format-policy` returns the active policy.
 
 Notes:
 

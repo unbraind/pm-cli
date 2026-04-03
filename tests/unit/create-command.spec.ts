@@ -760,6 +760,52 @@ describe("runCreate", () => {
     });
   });
 
+  it("warns for non-conforming sprint and release values under default policy", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runCreate(
+        baseCreateOptions({
+          sprint: "Sprint 2026 W14",
+          release: "Release Candidate 1",
+        }),
+        { path: context.pmPath },
+      );
+
+      expect(result.item.sprint).toBe("Sprint 2026 W14");
+      expect(result.item.release).toBe("Release Candidate 1");
+      expect(result.warnings).toEqual(
+        expect.arrayContaining([
+          "validation_warning:sprint_format:Sprint 2026 W14",
+          "validation_warning:release_format:Release Candidate 1",
+        ]),
+      );
+    });
+  });
+
+  it("rejects non-conforming sprint and release values under strict policy", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const parsed = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        validation?: { sprint_release_format?: string };
+      };
+      parsed.validation = {
+        ...(parsed.validation ?? {}),
+        sprint_release_format: "strict_error",
+      };
+      await writeFile(settingsPath, `${JSON.stringify(parsed, null, 2)}\n`, "utf8");
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            sprint: "Sprint 2026 W14",
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
   it("validates dependency seed input", async () => {
     await withTempPmPath(async (context) => {
       await expect(

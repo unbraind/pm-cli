@@ -1710,6 +1710,29 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(configGetJson.criteria).toEqual(["linked files/tests/docs present", "tests pass"]);
       expect(configGetJson.changed).toBe(false);
 
+      const sprintReleasePolicySet = context.runCli(
+        ["config", "project", "set", "sprint-release-format-policy", "--policy", "strict_error", "--json"],
+        { expectJson: true },
+      );
+      expect(sprintReleasePolicySet.code).toBe(0);
+      const sprintReleasePolicySetJson = sprintReleasePolicySet.json as {
+        key: string;
+        policy: string;
+        changed: boolean;
+      };
+      expect(sprintReleasePolicySetJson.key).toBe("sprint_release_format_policy");
+      expect(sprintReleasePolicySetJson.policy).toBe("strict_error");
+      expect(sprintReleasePolicySetJson.changed).toBe(true);
+
+      const sprintReleasePolicyGet = context.runCli(
+        ["config", "project", "get", "sprint-release-format-policy", "--json"],
+        { expectJson: true },
+      );
+      expect(sprintReleasePolicyGet.code).toBe(0);
+      const sprintReleasePolicyGetJson = sprintReleasePolicyGet.json as { policy: string; changed: boolean };
+      expect(sprintReleasePolicyGetJson.policy).toBe("strict_error");
+      expect(sprintReleasePolicyGetJson.changed).toBe(false);
+
       const previousDisableAutoDefaults = process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS;
       process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS = "1";
       const health = context.runCli(["health", "--json"], { expectJson: true });

@@ -9,6 +9,7 @@ import {
   validateTypeOptions,
 } from "../../core/item/type-registry.js";
 import { normalizeItemId } from "../../core/item/id.js";
+import { validateSprintOrReleaseValue } from "../../core/item/sprint-release-format.js";
 import { createStdinTokenResolver, parseCsvKv, parseOptionalNumber, parseTags } from "../../core/item/parse.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
@@ -602,6 +603,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   }
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const sprintReleasePolicy = settings.validation.sprint_release_format;
   const author = toAuthor(options.author, settings.author_default);
   const nowValue = new Date();
   const dependencyUpdates = parseDependencyAdditions(options.dep, settings.id_prefix, nowValue.toISOString());
@@ -675,6 +677,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     force: options.force,
     mutate(document) {
       const changedFields: string[] = [];
+      const warnings: string[] = [];
       let activeTypeName = resolveTypeName(document.front_matter.type, typeRegistry) ?? document.front_matter.type;
 
       if (options.title !== undefined) {
@@ -940,7 +943,9 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         if (isNoneToken(options.sprint)) {
           delete document.front_matter.sprint;
         } else {
-          document.front_matter.sprint = options.sprint.trim();
+          const sprintValidation = validateSprintOrReleaseValue("sprint", options.sprint, sprintReleasePolicy);
+          document.front_matter.sprint = sprintValidation.value;
+          warnings.push(...sprintValidation.warnings);
         }
         changedFields.push("sprint");
       }
@@ -948,7 +953,9 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         if (isNoneToken(options.release)) {
           delete document.front_matter.release;
         } else {
-          document.front_matter.release = options.release.trim();
+          const releaseValidation = validateSprintOrReleaseValue("release", options.release, sprintReleasePolicy);
+          document.front_matter.release = releaseValidation.value;
+          warnings.push(...releaseValidation.warnings);
         }
         changedFields.push("release");
       }
@@ -1104,7 +1111,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         throw new PmCliError(error instanceof Error ? error.message : "Invalid extension item field values", EXIT_CODE.USAGE);
       }
 
-      return { changedFields };
+      return { changedFields, warnings };
     },
   });
 

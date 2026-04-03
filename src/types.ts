@@ -46,6 +46,9 @@ export type ConfidenceValue = number | ConfidenceTextLevel;
 export const ITEM_FORMAT_VALUES = ["toon", "json_markdown"] as const;
 export type ItemFormat = (typeof ITEM_FORMAT_VALUES)[number];
 
+export const SPRINT_RELEASE_FORMAT_POLICY_VALUES = ["warn", "strict_error"] as const;
+export type SprintReleaseFormatPolicy = (typeof SPRINT_RELEASE_FORMAT_POLICY_VALUES)[number];
+
 export const RECURRENCE_FREQUENCY_VALUES = ["daily", "weekly", "monthly", "yearly"] as const;
 export type RecurrenceFrequency = (typeof RECURRENCE_FREQUENCY_VALUES)[number];
 
@@ -241,6 +244,9 @@ export interface PmSettings {
   };
   history: {
     missing_stream: "auto_create" | "strict_error";
+  };
+  validation: {
+    sprint_release_format: SprintReleaseFormatPolicy;
   };
   workflow: {
     definition_of_done: string[];

@@ -768,6 +768,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   typeOption: { type: "array", items: { type: "string" } },
   criterion: { type: "array", items: { type: "string" } },
   format: { type: "string" },
+  policy: { type: "string" },
 };
 
 const PM_TOOL_GLOBAL_PARAMETER_KEYS = ["json", "quiet", "profile", "noExtensions", "path", "pmExecutable", "timeoutMs"] as const;
@@ -819,7 +820,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   init: { optional: ["prefix"] },
   config: {
     required: ["scope", "configAction", "key"],
-    optional: ["criterion", "format"],
+    optional: ["criterion", "format", "policy"],
   },
   create: {
     required: ["title", "description", "type", "status", "priority", "message"],

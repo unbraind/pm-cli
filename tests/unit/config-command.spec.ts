@@ -316,6 +316,75 @@ describe("runConfig", () => {
     });
   });
 
+  it("gets and sets sprint-release format policy", async () => {
+    await withTempRoot(async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      const getDefault = await runConfig(
+        "project",
+        "get",
+        "sprint-release-format-policy",
+        {},
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(getDefault.key).toBe("sprint_release_format_policy");
+      expect(getDefault.policy).toBe("warn");
+      expect(getDefault.changed).toBe(false);
+
+      const setStrict = await runConfig(
+        "project",
+        "set",
+        "sprint_release_format_policy",
+        { policy: "strict-error" },
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(setStrict.policy).toBe("strict_error");
+      expect(setStrict.changed).toBe(true);
+
+      const setStrictAgain = await runConfig(
+        "project",
+        "set",
+        "sprint-release-format-policy",
+        { policy: "strict_error" },
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(setStrictAgain.policy).toBe("strict_error");
+      expect(setStrictAgain.changed).toBe(false);
+    });
+  });
+
+  it("requires --policy when setting sprint-release format policy and validates values", async () => {
+    await withTempRoot(async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      await expect(
+        runConfig(
+          "project",
+          "set",
+          "sprint-release-format-policy",
+          {},
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+
+      await expect(
+        runConfig(
+          "project",
+          "set",
+          "sprint_release_format_policy",
+          { policy: "auto_create" },
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
   it("treats legacy settings without item_format as changed when explicitly setting default format", async () => {
     await withTempRoot(async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
