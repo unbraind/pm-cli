@@ -1,12 +1,16 @@
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { runTestAll } from "../../src/cli/commands/test-all.js";
 import { EXIT_CODE } from "../../src/constants.js";
 import { PmCliError } from "../../src/errors.js";
 import { parseItemDocument, serializeItemDocument } from "../../src/item-format.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 function createTaskWithTests(
   context: TempPmContext,
@@ -450,6 +454,47 @@ describe("runTestAll", () => {
         } else {
           process.env.PM_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS = previousForceKillDelay;
         }
+      }
+    });
+  });
+
+  it("emits linked-test progress when progress mode is forced in non-interactive runs", async () => {
+    await withTempPmPath(async (context) => {
+      createTaskWithTests(context, {
+        title: "Forced Progress Test-All Source",
+        status: "open",
+        testEntries: ['command=node -e "setTimeout(() => {}, 60)",scope=project,timeout_seconds=5'],
+      });
+
+      const previousHeartbeatInterval = process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS;
+      process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS = "10";
+      const originalIsTTY = process.stderr.isTTY;
+      Object.defineProperty(process.stderr, "isTTY", {
+        value: false,
+        configurable: true,
+      });
+      const stderrWriteSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+      try {
+        const result = await runTestAll({ status: "open", timeout: "5", progress: true }, { path: context.pmPath });
+        expect(result.totals.items).toBe(1);
+        expect(result.passed).toBe(1);
+        expect(result.failed).toBe(0);
+        expect(result.skipped).toBe(0);
+
+        const stderrOutput = stderrWriteSpy.mock.calls.map((entry) => String(entry[0])).join("");
+        expect(stderrOutput).toContain("[pm test] linked-test 1/1 start");
+        expect(stderrOutput).toContain("[pm test] linked-test 1/1 running");
+        expect(stderrOutput).toContain("[pm test] linked-test 1/1 end status=passed");
+      } finally {
+        if (previousHeartbeatInterval === undefined) {
+          delete process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS;
+        } else {
+          process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS = previousHeartbeatInterval;
+        }
+        Object.defineProperty(process.stderr, "isTTY", {
+          value: originalIsTTY,
+          configurable: true,
+        });
       }
     });
   });

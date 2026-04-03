@@ -120,6 +120,12 @@ describe("runList", () => {
       expect(blockedResult.count).toBe(1);
       expect(blockedResult.items[0].status).toBe("blocked");
 
+      const offsetResult = await runList(undefined, { offset: "1", limit: "1" }, { path: context.pmPath });
+      expect(offsetResult.count).toBe(1);
+      expect(offsetResult.items[0].title).toBe("Blocked Beta");
+      expect(offsetResult.filters.offset).toBe("1");
+      expect(offsetResult.filters.limit).toBe("1");
+
       const deadlineFiltered = await runList(
         undefined,
         { deadlineBefore: "+2d", deadlineAfter: "+1d" },
@@ -226,6 +232,14 @@ describe("runList", () => {
       });
       await expect(
         runList(undefined, { limit: "1.25" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runList(undefined, { offset: "-1" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runList(undefined, { offset: "1.5" }, { path: context.pmPath }),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });

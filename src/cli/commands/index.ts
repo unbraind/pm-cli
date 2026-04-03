@@ -58,3 +58,4 @@ export {
   type TemplatesShowResult,
 } from "./templates.js";
 export { runUpdate } from "./update.js";
+export { runValidate, type ValidateCheck, type ValidateCommandOptions, type ValidateResult } from "./validate.js";

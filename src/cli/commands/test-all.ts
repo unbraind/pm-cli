@@ -15,6 +15,7 @@ import { runLinkedTests, runTest, type TestRunResult } from "./test.js";
 export interface TestAllCommandOptions {
   status?: string;
   timeout?: string;
+  progress?: boolean;
 }
 
 export interface TestAllItemResult {
@@ -167,7 +168,8 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
       return { test, key, duplicate };
     });
 
-    const executedResults = testsToRun.length > 0 ? await runLinkedTests(testsToRun, defaultTimeoutSeconds) : [];
+    const executedResults =
+      testsToRun.length > 0 ? await runLinkedTests(testsToRun, defaultTimeoutSeconds, { progress: options.progress }) : [];
     let executedIndex = 0;
     const runResults = keyedTests.map(({ test, key, duplicate }) => {
       if (!duplicate) {

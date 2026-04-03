@@ -86,6 +86,7 @@ export const PM_CORE_COMMAND_NAMES = [
   "test-all",
   "stats",
   "health",
+  "validate",
   "gc",
   "contracts",
   "claim",
@@ -137,6 +138,7 @@ export const PM_TOOL_ACTIONS = [
   "test-all",
   "stats",
   "health",
+  "validate",
   "gc",
   "contracts",
   "completion",
@@ -165,6 +167,7 @@ export const PI_LIST_FILTER_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "sprint", flag: "--sprint" },
   { param: "release", flag: "--release" },
   { param: "limit", flag: "--limit" },
+  { param: "offset", flag: "--offset" },
 ];
 
 export const PI_SEARCH_FILTER_OPTION_CONTRACTS: PiOptionFlagContract[] = [
@@ -314,7 +317,45 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--sprint" },
   { flag: "--release" },
   { flag: "--limit" },
+  { flag: "--offset" },
   { flag: "--include-body" },
+  { flag: "--stream" },
+];
+
+export const REINDEX_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--mode" },
+  { flag: "--progress" },
+];
+
+export const CLOSE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--author" },
+  { flag: "--message" },
+  { flag: "--validate-close" },
+  { flag: "--force" },
+];
+
+export const TEST_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--add" },
+  { flag: "--remove" },
+  { flag: "--run" },
+  { flag: "--timeout" },
+  { flag: "--progress" },
+  { flag: "--author" },
+  { flag: "--message" },
+  { flag: "--force" },
+];
+
+export const TEST_ALL_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--status" },
+  { flag: "--timeout" },
+  { flag: "--progress" },
+];
+
+export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--check-metadata" },
+  { flag: "--check-resolution" },
+  { flag: "--check-files" },
+  { flag: "--check-history-drift" },
 ];
 
 export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -624,6 +665,7 @@ export const LIST_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContrac
   { target: "sprint", keys: ["sprint"] },
   { target: "release", keys: ["release"] },
   { target: "limit", keys: ["limit"] },
+  { target: "offset", keys: ["offset"] },
 ];
 
 export const SEARCH_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
@@ -776,9 +818,16 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   deadlineBefore: { type: "string" },
   deadlineAfter: { type: "string" },
   limit: { anyOf: [{ type: "string" }, { type: "number" }] },
+  offset: { anyOf: [{ type: "string" }, { type: "number" }] },
+  progress: { type: "boolean" },
   diff: { type: "boolean" },
   verify: { type: "boolean" },
   timeout: { anyOf: [{ type: "string" }, { type: "number" }] },
+  validateClose: { type: "string", enum: ["warn", "strict"] },
+  checkMetadata: { type: "boolean" },
+  checkResolution: { type: "boolean" },
+  checkFiles: { type: "boolean" },
+  checkHistoryDrift: { type: "boolean" },
   force: { type: "boolean" },
   run: { type: "boolean" },
   shell: { type: "string", enum: ["bash", "zsh", "fish"] },
@@ -886,12 +935,12 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
     optional: SEARCH_CONTRACT_PARAMETER_KEYS,
     anyOfRequired: [["query"], ["keywords"]],
   },
-  reindex: { optional: ["mode"] },
+  reindex: { optional: ["mode", "progress"] },
   history: { required: ["id"], optional: ["limit", "diff", "verify"] },
   activity: { optional: ["limit"] },
   restore: { required: ["id", "target"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   update: { required: ["id"], optional: UPDATE_CONTRACT_PARAMETER_KEYS },
-  close: { required: ["id", "text"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
+  close: { required: ["id", "text"], optional: ["validateClose", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   delete: { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   append: { required: ["id", "body"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   comments: { required: ["id"], optional: ["text", "add", "limit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
@@ -906,10 +955,11 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
     optional: ["add", "addGlob", "remove", "migrate", "validatePaths", "audit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
   },
   deps: { required: ["id"], optional: ["format"] },
-  test: { required: ["id"], optional: ["add", "remove", "run", "timeout", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
-  "test-all": { optional: ["status", "timeout"] },
+  test: { required: ["id"], optional: ["add", "remove", "run", "timeout", "progress", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
+  "test-all": { optional: ["status", "timeout", "progress"] },
   stats: {},
   health: {},
+  validate: { optional: ["checkMetadata", "checkResolution", "checkFiles", "checkHistoryDrift"] },
   gc: {},
   contracts: { optional: ["contractAction", "command", "schemaOnly"] },
   completion: { required: ["shell"] },
@@ -1020,6 +1070,29 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   mode: {
     description: "Search/reindex mode selector.",
     examples: ["keyword", "hybrid"],
+  },
+  progress: {
+    description: "Emit progress diagnostics to stderr for long-running operations.",
+  },
+  offset: {
+    description: "Number of matching rows to skip before limit is applied.",
+    examples: [0, 50, "100"],
+  },
+  validateClose: {
+    description: 'Close-time metadata validation mode ("warn" or "strict").',
+    examples: ["warn", "strict"],
+  },
+  checkMetadata: {
+    description: "Run metadata completeness checks.",
+  },
+  checkResolution: {
+    description: "Run closed-item resolution metadata checks.",
+  },
+  checkFiles: {
+    description: "Run linked-file and orphaned-file checks.",
+  },
+  checkHistoryDrift: {
+    description: "Run item/history hash drift checks.",
   },
   query: {
     description: "Search query text for search action.",

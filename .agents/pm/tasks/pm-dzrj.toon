@@ -6,9 +6,8 @@ status: closed
 priority: 1
 tags[5]: "area:terminal","area:tests",code,compatibility,pm-cli
 created_at: "2026-04-01T12:00:06.349Z"
-updated_at: "2026-04-01T20:36:29.413Z"
+updated_at: "2026-04-03T18:14:22.236Z"
 deadline: "2026-04-08T12:00:06.349Z"
-assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 130
 acceptance_criteria: "Linked test execution remains sandbox-safe, provides deterministic timeout/buffer diagnostics, and avoids avoidable stdin-related hangs."
@@ -43,20 +42,30 @@ regression: true
 customer_impact: More reliable test-run behavior for users and agents.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-axlr,parent,"2026-04-01T12:00:06.349Z",cursor-agent,null
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-04-01T12:00:06.349Z",cursor-agent,Task corresponds to plan workstream C.
   "2026-04-01T12:05:24.487Z",cursor-agent,"Implemented linked-test subprocess hardening in src/cli/commands/test.ts: execution now closes child stdin immediately to force EOF in non-interactive runs, sets FORCE_COLOR=0 and windowsHide=true for stable cross-terminal behavior, and enriches failure diagnostics for timeout and maxBuffer cases. Evidence: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts passed (22/22)."
   "2026-04-01T18:53:11.431Z",cursor-agent,"Task reopened as continuation (no duplicate): implement spawn-based linked-test execution core, add periodic stderr heartbeat during long-running test commands, and ensure deterministic timeout failure with robust child-process termination."
   "2026-04-01T19:10:49.222Z",cursor-agent,"Implemented second-pass linked-test runtime hardening in src/cli/commands/test.ts: moved from buffered exec to shell-compatible spawn orchestration, added interactive stderr heartbeat progress, and enforced timeout maxBuffer deterministic termination with force-kill fallback for stubborn process trees. Verification: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts (26/26)."
+  "2026-04-03T18:06:10.269Z",codex-agent,"Reproduced audit gap on current build: pm test-all --status closed --json produced no incremental progress output in non-interactive run for ~38s and required manual termination. Reopening this item to implement explicit opt-in progress output for non-interactive contexts while preserving default behavior."
+  "2026-04-03T18:13:34.619Z",codex-agent,"Implemented opt-in non-interactive progress controls for pm test/pm test-all and phase progress output for pm reindex while preserving default behavior. Added --progress flags in CLI wiring/completion and covered with new unit tests validating forced progress emission when stderr is non-TTY. Evidence: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/reindex-command.spec.ts passed (38/38)."
 notes[1]{created_at,author,text}:
   "2026-04-01T12:00:06.349Z",cursor-agent,Preserve command contract while improving stdin/timeout/buffer failure visibility.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:36:29.413Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[1]{path,scope,note}:
+files[8]{path,scope,note}:
+  src/cli/commands/completion.ts,project,shell completion flags for progress options
+  src/cli/commands/reindex.ts,project,phase progress emission for reindex
+  src/cli/commands/test-all.ts,project,propagate progress option to linked test runner
   src/cli/commands/test.ts,project,runLinkedTests implementation
-tests[1]{command,path,scope,timeout_seconds,note}:
+  src/cli/main.ts,project,progress flags for test/test-all/reindex
+  tests/unit/reindex-command.spec.ts,project,reindex forced non-tty progress test
+  tests/unit/test-all-command.spec.ts,project,test-all forced non-tty progress test
+  tests/unit/test-command.spec.ts,project,forced non-tty progress test
+tests[2]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,2400,linked-test execution regressions
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/reindex-command.spec.ts,null,project,2400,progress ux targeted regression
 docs[1]{path,scope,note}:
   PRD.md,project,test command safety contract
-close_reason: spawn-based linked-test runner with heartbeat and deterministic timeout termination validated
+close_reason: Added opt-in non-interactive progress for test/test-all and phase progress for reindex; linked regressions pass.
 body: Implement subprocess execution hardening in test command.

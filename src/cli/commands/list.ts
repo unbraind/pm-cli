@@ -20,6 +20,7 @@ export interface ListOptions {
   sprint?: string;
   release?: string;
   limit?: string;
+  offset?: string;
   includeBody?: boolean;
   excludeTerminal?: boolean;
 }
@@ -85,6 +86,15 @@ function parseLimit(raw: string | undefined): number | undefined {
   return parsed;
 }
 
+function parseOffset(raw: string | undefined): number | undefined {
+  if (raw === undefined) return undefined;
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new PmCliError("Offset filter must be a non-negative integer", EXIT_CODE.USAGE);
+  }
+  return parsed;
+}
+
 function applyFilters(
   items: ListedItem[],
   status: ItemStatus | undefined,
@@ -135,7 +145,8 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
   const filtered = applyFilters(items, status, options, typeRegistry);
   const sorted = sortItems(filtered);
   const limit = parseLimit(options.limit);
-  const limited = limit === undefined ? sorted : sorted.slice(0, limit);
+  const offset = parseOffset(options.offset) ?? 0;
+  const limited = limit === undefined ? sorted.slice(offset) : sorted.slice(offset, offset + limit);
   const now = nowIso();
   const warnings = [...new Set(listWarnings)].sort((left, right) => left.localeCompare(right));
   return {
@@ -152,6 +163,7 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
       sprint: options.sprint ?? null,
       release: options.release ?? null,
       limit: options.limit ?? null,
+      offset: options.offset ?? null,
       include_body: options.includeBody ?? null,
     },
     now,

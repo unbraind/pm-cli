@@ -4,6 +4,7 @@ import { PmCliError } from "../../core/shared/errors.js";
 import {
   CALENDAR_COMMANDER_STRING_OPTION_CONTRACTS,
   CALENDAR_FLAG_CONTRACTS,
+  CLOSE_FLAG_CONTRACTS,
   CONTRACTS_FLAG_CONTRACTS,
   CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS,
   CONTEXT_FLAG_CONTRACTS,
@@ -16,11 +17,15 @@ import {
   PM_CORE_COMMAND_NAMES,
   PM_TOOL_ACTIONS,
   PM_TOOL_PARAMETERS_SCHEMA,
+  REINDEX_FLAG_CONTRACTS,
   SEARCH_COMMANDER_STRING_OPTION_CONTRACTS,
   SEARCH_FLAG_CONTRACTS,
+  TEST_ALL_FLAG_CONTRACTS,
+  TEST_FLAG_CONTRACTS,
   UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
   UPDATE_COMMANDER_STRING_OPTION_CONTRACTS,
   UPDATE_FLAG_CONTRACTS,
+  VALIDATE_FLAG_CONTRACTS,
   type CliFlagContract,
   type CommanderOptionAliasContract,
 } from "../../sdk/cli-contracts.js";
@@ -115,6 +120,21 @@ function resolveCommandFlags(command: string): CliFlagContract[] {
   }
   if (command === "search") {
     return SEARCH_FLAG_CONTRACTS;
+  }
+  if (command === "reindex") {
+    return REINDEX_FLAG_CONTRACTS;
+  }
+  if (command === "close") {
+    return CLOSE_FLAG_CONTRACTS;
+  }
+  if (command === "test") {
+    return TEST_FLAG_CONTRACTS;
+  }
+  if (command === "test-all") {
+    return TEST_ALL_FLAG_CONTRACTS;
+  }
+  if (command === "validate") {
+    return VALIDATE_FLAG_CONTRACTS;
   }
   if (command === "contracts") {
     return CONTRACTS_FLAG_CONTRACTS;

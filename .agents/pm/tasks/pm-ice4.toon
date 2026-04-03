@@ -1,0 +1,61 @@
+id: pm-ice4
+title: Implement list offset pagination and JSON stream mode
+description: "Extend list command family with offset and stream flags, update completion/contracts/tests, and preserve default output compatibility."
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:list","area:tests",external-audit,pm-cli
+created_at: "2026-04-03T18:07:21.138Z"
+updated_at: "2026-04-03T18:21:57.033Z"
+deadline: "2026-04-08T18:07:21.138Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: list/list-* accept offset and stream controls; default output remains unchanged; tests and docs are updated.
+definition_of_ready: Feature pm-a4z3 exists and target files/tests are identified.
+order: 3
+goal: External audit remediation
+objective: Ship list pagination and streaming behavior
+value: Improves scriptability for large item inventories
+impact: Avoids truncation-style workflow failures in automation
+outcome: List outputs become scalable and deterministic
+why_now: External audit specifically flagged list-large-output processing pain
+parent: pm-a4z3
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: audit-remediation-2026w14
+release: vnext
+blocked_by: pm-a4z3
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run list-closed --json on large set and process incrementally
+expected_result: List commands support paged and streamed JSON processing
+affected_version: 2026.3.12
+fixed_version: target-vnext
+component: cli-list
+regression: true
+customer_impact: Large projects can automate list processing safely
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-a4z3,parent,"2026-04-03T18:07:21.138Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-03T18:07:21.138Z",codex-agent,Task created for list offset and stream implementation.
+  "2026-04-03T18:19:35.713Z",codex-agent,"Implemented list offset pagination and opt-in JSON stream mode with --stream guard requiring --json. Added completion and contract parity plus unit/integration coverage. Evidence: node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/cli.integration.spec.ts passed (123/123)."
+notes[1]{created_at,author,text}:
+  "2026-04-03T18:07:21.138Z",codex-agent,Keep stdout contract stable unless stream is explicitly requested.
+files[8]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,pi wrapper offset parity
+  src/cli/commands/completion.ts,project,list offset/stream completion flags
+  src/cli/commands/list.ts,project,core list behavior changes
+  src/cli/main.ts,project,list stream mode and offset option wiring
+  src/sdk/cli-contracts.ts,project,list offset/stream flag contracts
+  tests/integration/cli.integration.spec.ts,project,list stream integration and json guard
+  tests/unit/completion-command.spec.ts,project,list completion offset/stream assertions
+  tests/unit/list-command.spec.ts,project,offset behavior and validation tests
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,list output behavior regression suite
+  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,4200,list offset-stream targeted regression
+docs[1]{path,scope,note}:
+  README.md,project,user-facing list output options
+close_reason: Implemented list offset pagination plus opt-in JSON stream mode with completion/contract/test parity; linked regressions pass.
+body: Implements feature pm-a4z3 with additive flags and regression coverage.

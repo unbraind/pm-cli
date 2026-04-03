@@ -25,6 +25,7 @@ const EMBEDDINGS_PATH = "search/embeddings.jsonl";
 
 export interface ReindexOptions {
   mode?: string;
+  progress?: boolean;
 }
 
 export interface ReindexResult {
@@ -37,6 +38,21 @@ export interface ReindexResult {
   };
   warnings: string[];
   generated_at: string;
+}
+
+function shouldEmitReindexProgress(options: ReindexOptions): boolean {
+  return options.progress === true || process.stderr.isTTY === true;
+}
+
+function emitReindexProgress(enabled: boolean, message: string): void {
+  if (!enabled) {
+    return;
+  }
+  try {
+    process.stderr.write(`[pm reindex] ${message}\n`);
+  } catch {
+    // Ignore transient stderr write failures.
+  }
 }
 
 function parseMode(raw: string | undefined): "keyword" | "semantic" | "hybrid" {
@@ -233,6 +249,8 @@ async function executeExtensionEmbedding(
 
 export async function runReindex(options: ReindexOptions, global: GlobalOptions): Promise<ReindexResult> {
   const requestedMode = parseMode(options.mode);
+  const progressEnabled = shouldEmitReindexProgress(options);
+  emitReindexProgress(progressEnabled, `start mode=${requestedMode}`);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
@@ -263,7 +281,9 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
     activeVectorStore = vectorResolution.active;
   }
   const mode = requestedMode;
+  emitReindexProgress(progressEnabled, "loading item corpus");
   const documents = await loadDocuments(pmRoot, settings.item_format, typeRegistry.type_to_folder);
+  emitReindexProgress(progressEnabled, `loaded_items=${documents.length}`);
   const generatedAt = nowIso();
 
   const manifest = {
@@ -287,6 +307,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
   const semanticWarnings: string[] = [];
   const vectorizationLedgerEntries: Record<string, string> = {};
   if (mode !== "keyword" && documents.length > 0) {
+    emitReindexProgress(progressEnabled, `embedding_start items=${documents.length}`);
     const corpusInputs = documents.map((document) => buildSemanticCorpusInput(document));
     let vectors: number[][] = [];
     if (extensionEmbedding) {
@@ -315,6 +336,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
       semanticWarnings.push(...embeddingResult.warnings);
       vectors = embeddingResult.vectors;
     }
+    emitReindexProgress(progressEnabled, `embedding_complete vectors=${vectors.length}`);
     if (vectors.length !== documents.length) {
       throw new PmCliError(
         `Embedding output size mismatch (expected ${documents.length}, received ${vectors.length})`,
@@ -334,12 +356,14 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
     }));
     if (extensionVectorUpsert) {
       try {
+        emitReindexProgress(progressEnabled, `vector_upsert_start adapter=${extensionVectorUpsert.name} points=${points.length}`);
         await Promise.resolve(
           extensionVectorUpsert.upsert({
             points,
             settings,
           }),
         );
+        emitReindexProgress(progressEnabled, `vector_upsert_complete adapter=${extensionVectorUpsert.name}`);
       } catch (error: unknown) {
         if (!activeVectorStore) {
           throw new PmCliError(
@@ -350,10 +374,14 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
         semanticWarnings.push(
           `Extension vector adapter "${extensionVectorUpsert.name}" failed; falling back to built-in vector store (${error instanceof Error ? error.message : String(error)})`,
         );
+        emitReindexProgress(progressEnabled, "vector_upsert_fallback built_in_store");
         await executeVectorUpsert(activeVectorStore, points);
+        emitReindexProgress(progressEnabled, `vector_upsert_complete adapter=${activeVectorStore.name}`);
       }
     } else if (activeVectorStore) {
+      emitReindexProgress(progressEnabled, `vector_upsert_start adapter=${activeVectorStore.name} points=${points.length}`);
       await executeVectorUpsert(activeVectorStore, points);
+      emitReindexProgress(progressEnabled, `vector_upsert_complete adapter=${activeVectorStore.name}`);
     } else {
       throw new PmCliError(
         `No vector upsert executor available for reindex mode '${requestedMode}'`,
@@ -364,11 +392,13 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
       vectorizationLedgerEntries[document.front_matter.id] = document.front_matter.updated_at;
     }
   }
+  emitReindexProgress(progressEnabled, "writing keyword artifacts");
   await writeFileAtomic(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   await writeFileAtomic(embeddingsPath, `${embeddingsLines}\n`);
   const vectorizationWarnings: string[] = [];
   if (mode !== "keyword") {
     try {
+      emitReindexProgress(progressEnabled, "writing vectorization status ledger");
       await writeVectorizationStatusLedger(pmRoot, vectorizationLedgerEntries);
     } catch (error: unknown) {
       vectorizationWarnings.push(
@@ -392,6 +422,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
       total_items: documents.length,
     })),
   ];
+  emitReindexProgress(progressEnabled, "done");
 
   return {
     ok: true,

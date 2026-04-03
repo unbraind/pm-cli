@@ -99,7 +99,7 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen(SEARCH_FLAGS)})`,
     "      ;;",
     "    reindex)",
-    `      COMPREPLY=(${compgen("--mode --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--mode --progress --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    config)",
     `      COMPREPLY=(${compgen("--criterion --json --quiet --path --no-extensions --profile --help")})`,
@@ -120,10 +120,13 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen("--format --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    test)",
-    `      COMPREPLY=(${compgen("--add --remove --run --timeout --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --remove --run --timeout --progress --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    test-all)",
-    `      COMPREPLY=(${compgen("--status --timeout --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--status --timeout --progress --json --quiet --path --no-extensions --profile --help")})`,
+    "      ;;",
+    "    validate)",
+    `      COMPREPLY=(${compgen("--check-metadata --check-resolution --check-files --check-history-drift --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    history)",
     `      COMPREPLY=(${compgen("--limit --diff --verify --json --quiet --path --no-extensions --profile --help")})`,
@@ -134,7 +137,10 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     "    contracts)",
     `      COMPREPLY=(${compgen("--action --command --schema-only --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
-    "    claim|release|close|delete|append|restore)",
+    "    close)",
+    `      COMPREPLY=(${compgen("--author --message --validate-close --force --json --quiet --path --no-extensions --profile --help")})`,
+    "      ;;",
+    "    claim|release|delete|append|restore)",
     `      COMPREPLY=(${compgen(MUTATION_FLAGS)})`,
     "      ;;",
     "    beads)",
@@ -208,6 +214,7 @@ _pm_commands() {
     'test-all:Run linked tests across matching items'
     'stats:Show project tracker statistics'
     'health:Show project tracker health checks'
+    'validate:Run standalone validation checks'
     'gc:Clean optional cache artifacts'
     'contracts:Show machine-readable command and schema contracts'
     'claim:Claim an item for active work'
@@ -248,7 +255,9 @@ _pm() {
             '--sprint[Filter by sprint]:sprint' \\
             '--release[Filter by release]:release' \\
             '--limit[Limit returned item count]:number' \\
+            '--offset[Skip the first n matching rows before limit]:number' \\
             '--include-body[Include item body in each returned list row]' \\
+            '--stream[Emit line-delimited JSON rows (requires --json)]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]' \\
             '--path[Override PM path]:path:_files -/'
@@ -347,6 +356,7 @@ _pm() {
         reindex)
           _arguments \\
             '--mode[Reindex mode]:(keyword semantic hybrid)' \\
+            '--progress[Emit progress updates to stderr]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -392,6 +402,25 @@ _pm() {
           _arguments \\
             '--status[Filter by status]:(open in_progress)' \\
             '--timeout[Default timeout seconds]:seconds' \\
+            '--progress[Emit linked-test progress to stderr]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        close)
+          _arguments \\
+            '--author[Mutation author]:author' \\
+            '--message[History message]:message' \\
+            '--validate-close[Validate closure metadata mode]:(warn strict)' \\
+            '--force[Force override]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        validate)
+          _arguments \\
+            '--check-metadata[Run metadata completeness checks]' \\
+            '--check-resolution[Run closed-item resolution metadata checks]' \\
+            '--check-files[Run linked-file and orphaned-file checks]' \\
+            '--check-history-drift[Run item/history hash drift checks]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -511,6 +540,7 @@ complete -c pm -n __pm_no_subcommand -a test          -d 'Manage linked tests an
 complete -c pm -n __pm_no_subcommand -a test-all      -d 'Run linked tests across matching items'
 complete -c pm -n __pm_no_subcommand -a stats         -d 'Show project tracker statistics'
 complete -c pm -n __pm_no_subcommand -a health        -d 'Show project tracker health checks'
+complete -c pm -n __pm_no_subcommand -a validate      -d 'Run standalone validation checks'
 complete -c pm -n __pm_no_subcommand -a gc            -d 'Clean optional cache artifacts'
 complete -c pm -n __pm_no_subcommand -a contracts     -d 'Show machine-readable command and schema contracts'
 complete -c pm -n __pm_no_subcommand -a claim         -d 'Claim an item for active work'
@@ -529,7 +559,9 @@ for list_cmd in ${listCmds}
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l sprint   -d 'Filter by sprint' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l release  -d 'Filter by release' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l limit    -d 'Limit returned item count' -r
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l offset   -d 'Skip the first n matching rows before limit' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l include-body -d 'Include item body in each returned list row'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l stream -d 'Emit line-delimited JSON rows (requires --json)'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l deadline-before -d 'Filter by deadline upper bound (ISO/date string or relative)' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l deadline-after  -d 'Filter by deadline lower bound (ISO/date string or relative)' -r
 end
@@ -611,6 +643,7 @@ complete -c pm -n '__fish_seen_subcommand_from context ctx' -l format    -d 'Out
 
 # reindex flags
 complete -c pm -n '__fish_seen_subcommand_from reindex' -l mode -d 'Reindex mode' -r -a 'keyword semantic hybrid'
+complete -c pm -n '__fish_seen_subcommand_from reindex' -l progress -d 'Emit progress updates to stderr'
 
 # history / activity flags
 complete -c pm -n '__fish_seen_subcommand_from history'  -l limit -d 'Max history entries' -r
@@ -632,6 +665,19 @@ complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l forc
 # test-all flags
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l status  -d 'Filter by status' -r -a 'open in_progress'
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l timeout -d 'Default timeout seconds' -r
+complete -c pm -n '__fish_seen_subcommand_from test-all' -l progress -d 'Emit linked-test progress to stderr'
+
+# close flags
+complete -c pm -n '__fish_seen_subcommand_from close' -l author -d 'Mutation author' -r
+complete -c pm -n '__fish_seen_subcommand_from close' -l message -d 'History message' -r
+complete -c pm -n '__fish_seen_subcommand_from close' -l validate-close -d 'Validate closure metadata mode' -r -a 'warn strict'
+complete -c pm -n '__fish_seen_subcommand_from close' -l force -d 'Force override'
+
+# validate flags
+complete -c pm -n '__fish_seen_subcommand_from validate' -l check-metadata -d 'Run metadata completeness checks'
+complete -c pm -n '__fish_seen_subcommand_from validate' -l check-resolution -d 'Run closed-item resolution metadata checks'
+complete -c pm -n '__fish_seen_subcommand_from validate' -l check-files -d 'Run linked-file and orphaned-file checks'
+complete -c pm -n '__fish_seen_subcommand_from validate' -l check-history-drift -d 'Run item/history hash drift checks'
 
 # completion shell argument
 complete -c pm -n '__fish_seen_subcommand_from completion' -a 'bash zsh fish' -d 'Shell type'

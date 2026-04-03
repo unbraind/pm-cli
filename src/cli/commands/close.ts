@@ -5,11 +5,12 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import type { ItemStatus } from "../../types/index.js";
+import type { ItemFrontMatter, ItemStatus } from "../../types/index.js";
 
 export interface CloseCommandOptions {
   author?: string;
   message?: string;
+  validateClose?: string;
   force?: boolean;
 }
 
@@ -37,6 +38,39 @@ function isTerminal(status: ItemStatus): boolean {
   return status === "closed" || status === "canceled";
 }
 
+type ValidateCloseMode = "warn" | "strict";
+
+const CLOSE_VALIDATION_FIELDS: Array<{ key: keyof Pick<ItemFrontMatter, "resolution" | "expected_result" | "actual_result">; label: string }> = [
+  { key: "resolution", label: "resolution" },
+  { key: "expected_result", label: "expected_result" },
+  { key: "actual_result", label: "actual_result" },
+];
+
+function parseValidateCloseMode(raw: string | undefined): ValidateCloseMode | undefined {
+  if (raw === undefined) {
+    return undefined;
+  }
+  const normalized = raw.trim().toLowerCase();
+  if (normalized.length === 0 || normalized === "warn") {
+    return "warn";
+  }
+  if (normalized === "strict") {
+    return "strict";
+  }
+  throw new PmCliError(`Invalid --validate-close mode "${raw}" (expected "warn" or "strict")`, EXIT_CODE.USAGE);
+}
+
+function findMissingCloseValidationFields(frontMatter: ItemFrontMatter): string[] {
+  const missing: string[] = [];
+  for (const field of CLOSE_VALIDATION_FIELDS) {
+    const rawValue = frontMatter[field.key];
+    if (typeof rawValue !== "string" || rawValue.trim().length === 0) {
+      missing.push(field.label);
+    }
+  }
+  return missing;
+}
+
 export async function runClose(
   id: string,
   closeReasonText: string,
@@ -51,6 +85,7 @@ export async function runClose(
   const settings = await readSettings(pmRoot);
   const author = toAuthor(options.author, settings.author_default);
   const closeReason = ensureCloseReason(closeReasonText);
+  const validateCloseMode = parseValidateCloseMode(options.validateClose);
 
   const result = await mutateItem({
     pmRoot,
@@ -64,6 +99,21 @@ export async function runClose(
       if (isTerminal(document.front_matter.status) && !options.force) {
         throw new PmCliError(`Item ${document.front_matter.id} is already terminal; use --force to close again.`, EXIT_CODE.CONFLICT);
       }
+      const mutationWarnings: string[] = [];
+      if (validateCloseMode) {
+        const missingFields = findMissingCloseValidationFields(document.front_matter);
+        if (missingFields.length > 0) {
+          if (validateCloseMode === "strict") {
+            throw new PmCliError(
+              `Cannot close item ${document.front_matter.id}: missing ${missingFields.join(", ")}. Populate fields or use --validate-close warn.`,
+              EXIT_CODE.USAGE,
+            );
+          }
+          mutationWarnings.push(
+            `close_validation_missing_fields:${document.front_matter.id}:${missingFields.join(",")}`,
+          );
+        }
+      }
 
       document.front_matter.status = "closed";
       document.front_matter.close_reason = closeReason;
@@ -74,7 +124,10 @@ export async function runClose(
         changedFields.push("assignee");
       }
 
-      return { changedFields };
+      return {
+        changedFields,
+        ...(mutationWarnings.length > 0 ? { warnings: mutationWarnings } : {}),
+      };
     },
   });
 

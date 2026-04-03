@@ -28,11 +28,11 @@ src/
       get.ts                     pm get
       update.ts                  pm update
       append.ts                  pm append
-      close.ts                   pm close
+      close.ts                   pm close (includes optional close-time validation mode)
       delete.ts                  pm delete
       claim.ts                   pm claim / release
       release.ts                 (re-exports from claim.ts)
-      list.ts                    pm list (active-only: excludes closed/canceled) / list-all / list-* commands
+      list.ts                    pm list (active-only: excludes closed/canceled) / list-all / list-* commands with offset + JSON stream controls
       calendar.ts                pm calendar / pm cal (agenda/day/week/month views)
       context.ts                 pm context / pm ctx (critical work + agenda snapshot)
       comments.ts                pm comments
@@ -41,15 +41,16 @@ src/
       files.ts                   pm files
       docs.ts                    pm docs
       deps.ts                    pm deps (dependency tree/graph projection)
-      test.ts                    pm test (add/remove/run linked tests)
-      test-all.ts                pm test-all (orchestration)
+      test.ts                    pm test (add/remove/run linked tests; optional forced progress visibility)
+      test-all.ts                pm test-all (orchestration; optional forced progress visibility)
       search.ts                  pm search (keyword / semantic / hybrid)
-      reindex.ts                 pm reindex
+      reindex.ts                 pm reindex (optional forced progress visibility)
       history.ts                 pm history
       activity.ts                pm activity
       restore.ts                 pm restore
       stats.ts                   pm stats
       health.ts                  pm health
+      validate.ts                pm validate (metadata/resolution/files/history drift checks)
       gc.ts                      pm gc
       contracts.ts               pm contracts (machine-readable contracts/schema surface)
       config.ts                  pm config
@@ -232,6 +233,7 @@ Linked arrays (`comments`, `notes`, `learnings`, `files`, `tests`, `docs`) are i
 
 - `pm history --diff` adds field-level patch summaries without changing base history output.
 - `pm history --verify` validates stream hash-chain replay and current-item hash alignment.
+- `pm close --validate-close [warn|strict]` adds optional close-time resolution-field validation without changing default close semantics.
 - `pm files` and `pm docs` support additive linked-path hygiene options:
   - `--add-glob <pattern>` for deterministic batch expansion into linked entries
   - `--migrate from=<old>,to=<new>` for bulk prefix migration
@@ -239,6 +241,8 @@ Linked arrays (`comments`, `notes`, `learnings`, `files`, `tests`, `docs`) are i
   - `--audit` for cross-item linked-path usage inspection
   - `pm files --list` for explicit non-mutating linked-file listing
 - `pm deps --format tree|graph` provides read-only dependency traversal from stored front matter, with deterministic ordering, cycle markers, and missing-node reporting.
+- `pm list` / `pm list-*` support additive `--offset` pagination and JSON-only `--stream` line-delimited output for large datasets.
+- `pm validate` runs standalone repository checks (`metadata`, `resolution`, `files`, `history_drift`) and returns deterministic check payloads.
 
 ## Calendar Pipeline
 
@@ -291,7 +295,7 @@ Pipeline:
 2. **Sparse TOON fallback output** — default TOON output renders command payloads directly and recursively omits `null`/`undefined`/empty arrays/empty objects to reduce token overhead while preserving meaningful scalar values.
 3. **Fail-fast stdin semantics** — stdin token readers reject interactive TTY stdin for piped-only flows (`-`) and provide explicit EOF guidance instead of waiting indefinitely.
 4. **Graceful error exits** — CLI error handling preserves canonical exit codes using graceful `process.exitCode` semantics to reduce output truncation risk under buffered writes.
-5. **Linked test runtime hardening** — linked test subprocess execution uses shell-compatible spawn orchestration, closes child stdin immediately, applies deterministic runtime environment defaults, emits interactive stderr heartbeat progress for long runs, and enforces timeout/maxBuffer diagnostics with force-kill fallback for stubborn process trees.
+5. **Linked test runtime hardening** — linked test subprocess execution uses shell-compatible spawn orchestration, closes child stdin immediately, applies deterministic runtime environment defaults, emits interactive stderr heartbeat progress for long runs, supports explicit non-interactive progress output via `--progress`, and enforces timeout/maxBuffer diagnostics with force-kill fallback for stubborn process trees.
 
 ## Help and Error Guidance Pipeline
 

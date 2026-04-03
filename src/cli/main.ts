@@ -43,6 +43,7 @@ import {
   runTemplatesSave,
   runTemplatesShow,
   runUpdate,
+  runValidate,
   type CalendarOptions,
   type ContextOptions,
   type CreateCommandOptions,
@@ -1720,8 +1721,34 @@ function normalizeListOptions(options: Record<string, unknown>): ListOptions {
     sprint: readListString("sprint"),
     release: readListString("release"),
     limit: readListString("limit"),
+    offset: readListString("offset"),
     includeBody: options.includeBody === true ? true : undefined,
   };
+}
+
+type ListCommandResult = Awaited<ReturnType<typeof runList>>;
+
+function printListJsonStream(commandName: string, result: ListCommandResult, globalOptions: GlobalOptions): void {
+  setActiveCommandResult(result);
+  if (globalOptions.quiet) {
+    return;
+  }
+  const warnings = Array.isArray(result.warnings) ? result.warnings : [];
+  const metaPayload: Record<string, unknown> = {
+    type: "meta",
+    command: commandName,
+    count: result.count,
+    now: result.now,
+    filters: result.filters,
+  };
+  if (warnings.length > 0) {
+    metaPayload.warnings = warnings;
+  }
+  process.stdout.write(`${JSON.stringify(metaPayload)}\n`);
+  for (const item of result.items) {
+    process.stdout.write(`${JSON.stringify({ type: "item", command: commandName, item })}\n`);
+  }
+  process.stdout.write(`${JSON.stringify({ type: "end", command: commandName, count: result.count })}\n`);
 }
 
 function normalizeSearchOptions(options: Record<string, unknown>): Record<string, string | boolean | undefined> {
@@ -2356,14 +2383,24 @@ function registerListCommand(name: string, description: string, status?: ItemSta
     .option("--sprint <value>", "Filter by sprint")
     .option("--release <value>", "Filter by release")
     .option("--limit <n>", "Limit returned item count")
+    .option("--offset <n>", "Skip the first n matching rows before limit is applied")
     .option("--include-body", "Include item body in each returned list row")
+    .option("--stream", "Emit line-delimited JSON rows (requires --json)")
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
       const listOptions = normalizeListOptions(options);
       if (excludeTerminal) listOptions.excludeTerminal = true;
       const result = await runList(status, listOptions, globalOptions);
-      printResult(result, globalOptions);
+      const streamMode = options.stream === true;
+      if (streamMode && !globalOptions.json) {
+        throw new PmCliError("--stream requires --json output mode.", EXIT_CODE.USAGE);
+      }
+      if (streamMode) {
+        printListJsonStream(name, result, globalOptions);
+      } else {
+        printResult(result, globalOptions);
+      }
       if (globalOptions.profile) {
         printError(`profile:command=${name} took_ms=${Date.now() - startedAt}`);
       }
@@ -2552,12 +2589,14 @@ program
   .command("reindex")
   .description("Rebuild search artifacts for keyword, semantic, and hybrid modes.")
   .option("--mode <value>", "Reindex mode: keyword|semantic|hybrid", "keyword")
+  .option("--progress", "Emit progress updates to stderr (always shown in TTY, opt-in for non-TTY)")
   .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
     const result = await runReindex(
       {
         mode: typeof options.mode === "string" ? options.mode : undefined,
+        progress: Boolean(options.progress),
       },
       globalOptions,
     );
@@ -2761,6 +2800,7 @@ program
   .argument("<text>", "Close reason text")
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
+  .option("--validate-close [mode]", 'Validate closure metadata before close: "warn" or "strict" (default: warn)')
   .option("--force", "Force ownership override")
   .description("Close an item with a required reason.")
   .action(async (id: string, text: string, options: Record<string, unknown>, command) => {
@@ -2772,6 +2812,12 @@ program
       {
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
+        validateClose:
+          options.validateClose === true
+            ? "warn"
+            : typeof options.validateClose === "string"
+              ? options.validateClose
+              : undefined,
         force: Boolean(options.force),
       },
       globalOptions,
@@ -3082,6 +3128,7 @@ program
   )
   .option("--run", "Run linked test commands")
   .option("--timeout <seconds>", "Default run timeout in seconds")
+  .option("--progress", "Emit linked-test progress to stderr (always shown in TTY, opt-in for non-TTY)")
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
   .option("--force", "Force ownership override")
@@ -3098,6 +3145,7 @@ program
         remove: removeValues,
         run: Boolean(options.run),
         timeout: typeof options.timeout === "string" ? options.timeout : undefined,
+        progress: Boolean(options.progress),
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
         force: Boolean(options.force),
@@ -3118,6 +3166,7 @@ program
   .description("Run linked tests across matching items.")
   .option("--status <value>", "Filter items by status before running tests")
   .option("--timeout <seconds>", "Default run timeout in seconds")
+  .option("--progress", "Emit linked-test progress to stderr (always shown in TTY, opt-in for non-TTY)")
   .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -3125,6 +3174,7 @@ program
       {
         status: typeof options.status === "string" ? options.status : undefined,
         timeout: typeof options.timeout === "string" ? options.timeout : undefined,
+        progress: Boolean(options.progress),
       },
       globalOptions,
     );
@@ -3160,6 +3210,31 @@ program
     printResult(result, globalOptions);
     if (globalOptions.profile) {
       printError(`profile:command=health took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+program
+  .command("validate")
+  .description("Run standalone metadata, resolution, files, and history drift validation checks.")
+  .option("--check-metadata", "Run metadata completeness checks")
+  .option("--check-resolution", "Run closed-item resolution metadata checks")
+  .option("--check-files", "Run linked-file and orphaned-file checks")
+  .option("--check-history-drift", "Run item/history hash drift checks")
+  .action(async (options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const result = await runValidate(
+      {
+        checkMetadata: Boolean(options.checkMetadata),
+        checkResolution: Boolean(options.checkResolution),
+        checkFiles: Boolean(options.checkFiles),
+        checkHistoryDrift: Boolean(options.checkHistoryDrift),
+      },
+      globalOptions,
+    );
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=validate took_ms=${Date.now() - startedAt}`);
     }
   });
 

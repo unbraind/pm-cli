@@ -1,0 +1,50 @@
+id: pm-qfg8
+title: "External audit follow-up: validation and large-output ergonomics"
+description: "Track unresolved external audit follow-up scope: list pagination/streaming, standalone validate command, close-time resolution checks, and compatibility-safe progress UX updates."
+type: Epic
+status: closed
+priority: 0
+tags[5]: "area:list","area:ux","area:validation",external-audit,pm-cli
+created_at: "2026-04-03T18:06:54.487Z"
+updated_at: "2026-04-03T18:56:10.773Z"
+deadline: "2026-04-10T18:06:54.487Z"
+author: codex-agent
+estimated_minutes: 360
+acceptance_criteria: "Remaining external audit UX and validation gaps are implemented with additive options, regression coverage, and docs/contracts parity without breaking current users."
+definition_of_ready: Dedup scan confirms no active duplicate item for this scope.
+order: 1
+goal: External audit remediation
+objective: Address remaining UX and validation gaps without breaking existing users
+value: Improves operability for large projects and metadata quality checks
+impact: Reduces timeout/truncation confusion and closure metadata drift
+outcome: Audit follow-up gaps are covered by additive commands/options with docs/tests evidence
+why_now: Recent external audit flagged unresolved UX and validation opportunities
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: audit-remediation-2026w14
+release: vnext
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: reproduce external audit findings and verify runtime behavior
+expected_result: New additive behavior resolves remaining audit gaps safely
+affected_version: 2026.3.12
+fixed_version: target-vnext
+component: cli-core
+regression: false
+customer_impact: Improves reliability and inspectability for existing users and agents
+comments[3]{created_at,author,text}:
+  "2026-04-03T18:06:54.487Z",codex-agent,Created after dedup scan and reproduction mapping.
+  "2026-04-03T18:08:13.990Z",codex-agent,"Dedup/repro mapping complete: reopened pm-dzrj for reproduced non-interactive test-all progress gap; list limit/body/status scopes mapped to existing closed items (pm-zzt1, pm-0lbm, pm-ykib, pm-vsux, pm-6e0p) with comment-only evidence; net-new work tracked under pm-a4z3/pm-ice4 (list pagination+stream) and pm-gtdx/pm-k6ml (validate command + close-time checks) with pm-ykgu reserved for docs/verification gate."
+  "2026-04-03T18:55:50.728Z",codex-agent,"Epic evidence: child workstreams now cover progress UX, list pagination/streaming, validate command, close-time validation, docs parity, and passing full regression+coverage gates."
+notes[1]{created_at,author,text}:
+  "2026-04-03T18:06:54.487Z",codex-agent,Use additive opt-in behavior for compatibility.
+files[1]{path,scope,note}:
+  src/cli/main.ts,project,primary command surface
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,7200,full regression baseline
+docs[1]{path,scope,note}:
+  PRD.md,project,authoritative command contract
+close_reason: External audit follow-up workstreams fully delivered and verified
+body: "Tracks unresolved external audit follow-up work: list pagination/streaming, validate command, and close-time validation."

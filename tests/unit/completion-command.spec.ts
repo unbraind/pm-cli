@@ -57,6 +57,7 @@ describe("generateBashScript", () => {
       "test-all",
       "stats",
       "health",
+      "validate",
       "gc",
       "contracts",
       "claim",
@@ -79,6 +80,8 @@ describe("generateBashScript", () => {
     expect(script).toContain("--sprint");
     expect(script).toContain("--release");
     expect(script).toContain("--limit");
+    expect(script).toContain("--offset");
+    expect(script).toContain("--stream");
     expect(script).toContain("--include-body");
     expect(script).toContain("--deadline-before");
     expect(script).toContain("--deadline-after");
@@ -204,6 +207,7 @@ describe("generateZshScript", () => {
     expect(script).toContain("notes:List or add notes for an item");
     expect(script).toContain("learnings:List or add learnings for an item");
     expect(script).toContain("deps:Show dependency relationships for an item");
+    expect(script).toContain("validate:Run standalone validation checks");
     expect(script).toContain("beads:Built-in Beads extension commands");
     expect(script).toContain("todos:Built-in todos extension commands");
   });

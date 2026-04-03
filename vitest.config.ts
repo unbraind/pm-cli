@@ -44,6 +44,7 @@ export default defineConfig({
         "src/cli/commands/test.ts",
         "src/cli/commands/test-all.ts",
         "src/cli/commands/update.ts",
+        "src/cli/commands/validate.ts",
         "src/cli/commands/index.ts",
         "src/cli/extension-command-options.ts",
         "src/core/extensions/builtins.ts",

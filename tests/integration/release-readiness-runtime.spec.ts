@@ -124,6 +124,7 @@ const CORE_COMMANDS = [
   "test-all",
   "stats",
   "health",
+  "validate",
   "gc",
   "contracts",
   "claim",
@@ -200,13 +201,14 @@ const ISSUE_METADATA_CREATE_FLAG_TOKENS = [
 ];
 
 const ISSUE_METADATA_UPDATE_FLAG_TOKENS = [...ISSUE_METADATA_CREATE_FLAG_TOKENS];
-const REQUIRED_TEST_FLAGS = ["--add", "--remove", "--run", "--timeout", "--author", "--message", "--force"];
+const REQUIRED_TEST_FLAGS = ["--add", "--remove", "--run", "--timeout", "--progress", "--author", "--message", "--force"];
 const REQUIRED_COMMENTS_FLAGS = ["--add", "--limit", "--author", "--message", "--force"];
 const REQUIRED_NOTES_FLAGS = ["--add", "--limit", "--author", "--message", "--force"];
 const REQUIRED_LEARNINGS_FLAGS = ["--add", "--limit", "--author", "--message", "--force"];
 const REQUIRED_CLAIM_RELEASE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_RESTORE_FLAGS = ["--author", "--message", "--force"];
-const REQUIRED_CLOSE_FLAGS = ["--author", "--message", "--force"];
+const REQUIRED_CLOSE_FLAGS = ["--author", "--message", "--validate-close", "--force"];
+const REQUIRED_VALIDATE_FLAGS = ["--check-metadata", "--check-resolution", "--check-files", "--check-history-drift"];
 const REQUIRED_DELETE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_APPEND_FLAGS = ["--body", "--author", "--message", "--force"];
 const REQUIRED_DEPS_FLAGS = ["--format"];
@@ -530,7 +532,7 @@ describe("release readiness runtime coverage", () => {
     });
   });
 
-  it("keeps close, delete, append, and restore help aligned with runtime behavior", async () => {
+  it("keeps close, validate, delete, append, and restore help aligned with runtime behavior", async () => {
     await withTempPmPath(async (context) => {
       const closeHelp = context.runCli(["close", "--help"]);
       expect(closeHelp.code).toBe(0);
@@ -562,6 +564,14 @@ describe("release readiness runtime coverage", () => {
       expect(restoreHelp.stdout).toContain("Restore an item to an earlier timestamp or version.");
       for (const flag of REQUIRED_RESTORE_FLAGS) {
         expect(restoreHelp.stdout).toContain(flag);
+      }
+
+      const validateHelp = context.runCli(["validate", "--help"]);
+      expect(validateHelp.code).toBe(0);
+      expect(validateHelp.stdout).toContain("Usage: pm validate [options]");
+      expect(validateHelp.stdout).toContain("standalone metadata, resolution, files, and history drift");
+      for (const flag of REQUIRED_VALIDATE_FLAGS) {
+        expect(validateHelp.stdout).toContain(flag);
       }
     });
   });

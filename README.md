@@ -29,6 +29,9 @@
 - Linked path hygiene for files/docs (`--add-glob`, `--migrate`, `--validate-paths`, `--audit`)
 - Dependency topology inspection via `pm deps --format tree|graph`
 - Deterministic `--tag` completion suggestions from tracked item metadata
+- Additive large-list controls via `--offset` pagination and opt-in JSON streaming (`--stream` with `--json`)
+- Standalone `pm validate` command for metadata, resolution, linked-file, and history-drift audits
+- Opt-in non-interactive progress output for long-running operations (`pm test`, `pm test-all`, `pm reindex` with `--progress`)
 - Optional search and extension support for more advanced setups
 
 ## Unified Command Contracts
@@ -215,6 +218,14 @@ pm reindex --mode hybrid
 
 The vectorization ledger is also refreshed during `pm reindex --mode semantic|hybrid` to keep health diagnostics aligned with the latest indexed corpus.
 
+## Standalone Validation Checks
+
+`pm validate` provides a dedicated audit surface for project metadata quality and integrity checks:
+
+- Runs all validation checks by default (`metadata`, `resolution`, `files`, `history_drift`).
+- Supports scoped checks with `--check-metadata`, `--check-resolution`, `--check-files`, and `--check-history-drift`.
+- Returns deterministic TOON/JSON output suitable for review or automation pipelines.
+
 ## Missing History Stream Policy
 
 `settings.history.missing_stream` controls behavior when an item's `history/<id>.jsonl` stream is missing:
@@ -358,9 +369,9 @@ pm deps pm-a1b2 --format graph --json
 - Use `pm deps <ID> --format tree|graph` for deterministic read-only dependency visualization.
 - `pm update` intentionally does not accept `--file` or `--doc`; command guidance points to `pm files` / `pm docs`.
 - `pm test <ID> --add` intentionally enforces sandbox-safe command entries. Use `node scripts/run-tests.mjs ...` for linked commands, or link specific specs with `--add "path=tests/..."`
-- `pm test <ID> --run` and `pm test-all` now emit heartbeat/progress lines to stderr in interactive terminals during long-running linked commands so active runs are visible instead of appearing stalled.
+- `pm test <ID> --run` and `pm test-all` emit heartbeat/progress lines to stderr in interactive terminals during long-running linked commands, and support explicit non-interactive progress output via `--progress`.
 - Linked test timeout handling uses deterministic process termination (including force-kill fallback) and reports explicit timeout/maxBuffer diagnostics in `run_results`.
-- `pm list` / `pm list-*` return front-matter rows by default; pass `--include-body` when body projection is needed.
+- `pm list` / `pm list-*` return front-matter rows by default; pass `--include-body` when body projection is needed, `--offset <n>` for pagination, and `--stream` (with `--json`) for newline-delimited item streaming.
 
 ## Terminal Compatibility
 

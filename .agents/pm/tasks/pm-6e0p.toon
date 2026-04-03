@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:completion","area:tests",body,json,list,pm-cli
 created_at: "2026-03-31T19:37:26.991Z"
-updated_at: "2026-04-01T20:26:08.617Z"
+updated_at: "2026-04-03T18:06:25.008Z"
 deadline: "2026-04-02T19:37:26.991Z"
 assignee: codex-agent
 author: codex-agent
@@ -44,10 +44,11 @@ customer_impact: Users and automation keep predictable list behavior.
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-gus1,related,"2026-03-31T19:37:26.991Z",codex-agent,null
   pm-ykib,parent,"2026-03-31T19:37:26.991Z",codex-agent,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-03-31T19:37:26.991Z",codex-agent,Task B covers list tests plus shell completion updates
   "2026-03-31T19:45:16.269Z",codex-agent,"Added include-body coverage in list unit/integration tests and shell completion generation for bash, zsh, and fish list flags."
   "2026-03-31T19:45:25.031Z",codex-agent,"Evidence: pm test pm-6e0p --run passed (passed=1 failed=0 skipped=0). Targeted suites passed (tests/unit/list-command.spec.ts, list-sort-branches, completion-command, and integration list lifecycle case)."
+  "2026-04-03T18:06:25.008Z",codex-agent,"External audit 2026-04-03 dedup mapping: list include-body completion/tests scope remains covered by this closed task; no duplicate item created."
 notes[1]{created_at,author,text}:
   "2026-03-31T19:37:26.991Z",codex-agent,Validate both default and include-body paths to preserve backward compatibility
 learnings[1]{created_at,author,text}:

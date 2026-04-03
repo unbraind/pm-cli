@@ -101,6 +101,13 @@ export interface PmToolParameters {
   deadlineBefore?: string;
   deadlineAfter?: string;
   limit?: NumericFlagInput;
+  offset?: NumericFlagInput;
+  progress?: boolean;
+  validateClose?: string;
+  checkMetadata?: boolean;
+  checkResolution?: boolean;
+  checkFiles?: boolean;
+  checkHistoryDrift?: boolean;
   diff?: boolean;
   verify?: boolean;
   timeout?: NumericFlagInput;
@@ -461,6 +468,9 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
     case "reindex":
       args.push("reindex");
       pushOption(args, "--mode", params.mode);
+      if (params.progress) {
+        args.push("--progress");
+      }
       return args;
     case "history":
       args.push("history", requireString(params.id, "id", action));
@@ -486,6 +496,7 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       return args;
     case "close":
       args.push("close", requireString(params.id, "id", action), requireString(params.text, "text", action));
+      pushOption(args, "--validate-close", params.validateClose);
       addAuthorMessageForceFlags(args, params);
       return args;
     case "delete":
@@ -555,17 +566,38 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
         args.push("--run");
       }
       pushOption(args, "--timeout", params.timeout);
+      if (params.progress) {
+        args.push("--progress");
+      }
       addAuthorMessageForceFlags(args, params);
       return args;
     case "test-all":
       args.push("test-all");
       pushOption(args, "--status", params.status);
       pushOption(args, "--timeout", params.timeout);
+      if (params.progress) {
+        args.push("--progress");
+      }
       return args;
     case "stats":
     case "health":
     case "gc":
       args.push(action);
+      return args;
+    case "validate":
+      args.push("validate");
+      if (params.checkMetadata) {
+        args.push("--check-metadata");
+      }
+      if (params.checkResolution) {
+        args.push("--check-resolution");
+      }
+      if (params.checkFiles) {
+        args.push("--check-files");
+      }
+      if (params.checkHistoryDrift) {
+        args.push("--check-history-drift");
+      }
       return args;
     case "contracts":
       args.push("contracts");

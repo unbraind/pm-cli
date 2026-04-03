@@ -115,19 +115,21 @@ Capture durable notes:
 Before close:
 
 1. Run linked tests:
-   - `pm test <ID> --run`
+   - `pm test <ID> --run` (add `--progress` for explicit non-interactive stderr progress visibility)
 2. Run sandbox-safe coverage verification:
    - `node scripts/run-tests.mjs coverage`
 3. Optionally run project sweep:
-   - `pm test-all --status in_progress`
+   - `pm test-all --status in_progress` (add `--progress` for explicit non-interactive visibility)
    - `pm test-all --status closed` (when running a broader release-readiness regression sweep)
    - Avoid linking `pm test-all` itself as an item-level linked test command, since that creates recursive orchestration.
-4. Add closure evidence:
+4. Run targeted close-readiness validation when relevant:
+   - `pm validate --check-resolution --check-history-drift`
+5. Add closure evidence:
    - `pm comments <ID> "Evidence: tests X, Y passed; coverage remains 100%."` (or `--add "..."`)
 
 Close (current v0.1 workflow):
 
-- `pm close <ID> "<reason>" --author "..." --message "Close: <reason with evidence>"`
+- `pm close <ID> "<reason>" --validate-close warn --author "..." --message "Close: <reason with evidence>"`
 
 ### Step G - Release claim
 
@@ -178,6 +180,7 @@ Use release when:
   - Unix/macOS: `Ctrl+D`
   - Windows: `Ctrl+Z` then `Enter`
 - For linked test orchestration (`pm test --run` / `pm test-all`), maintain sandbox safety and non-interactive child process behavior, including deterministic timeout/maxBuffer diagnostics.
+- For long-running linked-test and reindex paths, use additive `--progress` when non-interactive visibility is required.
 
 ## 4) Token Minimization Rules (TOON-first)
 
@@ -248,9 +251,10 @@ pm notes pm-a1b2 --add "Replay path now guards missing history streams before wr
 pm learnings pm-a1b2 --add "Use sandbox runner for linked test commands to preserve PM_PATH safety"
 pm deps pm-a1b2 --format tree
 pm calendar --view agenda --assignee codex-agent --format markdown
-pm test pm-a1b2 --run
+pm test pm-a1b2 --run --progress
+pm validate --check-resolution --check-history-drift
 node scripts/run-tests.mjs coverage
-pm close pm-a1b2 "history replay tests passed; restore emits restore history event" --author "..." --message "Close: history replay tests passed; restore emits restore history event"
+pm close pm-a1b2 "history replay tests passed; restore emits restore history event" --validate-close warn --author "..." --message "Close: history replay tests passed; restore emits restore history event"
 pm release pm-a1b2
 ```
 
@@ -275,6 +279,7 @@ Install the bundled Pi extension with `pm install pi --project` (default) or `pm
 Load it in Pi with `pi -e ./.pi/extensions/pm-cli/index.ts` (or copy to `.pi/extensions/`).
 Use `action: "completion"` with `shell: "bash"|"zsh"|"fish"` to forward to `pm completion <shell>`.
 Use `action: "calendar"` for date-centric event views (`view`, `date`, `from`, `to`, `past`, `type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`, `format`).
+Use `action: "validate"` with optional check toggles (`checkMetadata`, `checkResolution`, `checkFiles`, `checkHistoryDrift`) for standalone audit workflows.
 For `create` and `update`, use camelCase wrapper parameters for the canonical CLI scalar fields such as `parent`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blockedBy`, `blockedReason`, `unblockNote`, `definitionOfReady`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `whyNow`, `reporter`, `severity`, `environment`, `reproSteps`, `resolution`, `expectedResult`, `actualResult`, `affectedVersion`, `fixedVersion`, `component`, `regression`, and `customerImpact`; use repeatable `reminder` values for persistent reminders (`at=<iso|relative>,text=<text>`) and repeatable `typeOption` values for custom type metadata.
 
 ### Example: list open tasks

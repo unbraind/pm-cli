@@ -1,0 +1,67 @@
+id: pm-k6ml
+title: Implement pm validate and --validate-close behavior
+description: "Add validate command runtime and close-time validation modes with deterministic output, tests, and docs/contracts updates."
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:tests","area:validation",external-audit,pm-cli
+created_at: "2026-04-03T18:07:42.651Z"
+updated_at: "2026-04-03T18:56:06.903Z"
+deadline: "2026-04-08T18:07:42.651Z"
+author: codex-agent
+estimated_minutes: 210
+acceptance_criteria: pm validate supports metadata/resolution/files/history checks; pm close --validate-close supports warn and strict modes; tests/docs/contracts are updated.
+definition_of_ready: Feature pm-gtdx exists and implementation/test/docs surfaces are identified.
+order: 5
+goal: External audit remediation
+objective: Deliver actionable validation tooling
+value: Helps teams maintain consistent item quality
+impact: Reduces incomplete closure metadata and hidden integrity drift
+outcome: Validation checks are available directly in CLI workflows
+why_now: Audit report highlighted missing validation command and close-time checks
+parent: pm-gtdx
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: audit-remediation-2026w14
+release: vnext
+blocked_by: pm-gtdx
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run close and validation commands on closed-item datasets
+expected_result: Validation checks and close-time warnings are deterministic and usable
+affected_version: 2026.3.12
+fixed_version: target-vnext
+component: cli-validation
+regression: true
+customer_impact: Improves reliability of historical records and audit workflows
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-gtdx,parent,"2026-04-03T18:07:42.651Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-04-03T18:07:42.651Z",codex-agent,Task created for implementation of validate command and close validation modes.
+  "2026-04-03T18:55:47.266Z",codex-agent,"Implemented standalone pm validate plus pm close --validate-close (warn/strict), wired completion/help/contracts/Pi parity, and added integration/unit coverage including full validate branch-gate tests."
+  "2026-04-03T18:55:47.832Z",codex-agent,"Evidence: node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/validate-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts passed (31/31)."
+notes[1]{created_at,author,text}:
+  "2026-04-03T18:07:42.651Z",codex-agent,Re-use existing health/integrity logic where possible to reduce drift.
+files[13]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,Pi wrapper parity for validate and flags
+  src/cli/commands/close.ts,project,close validate-close mode
+  src/cli/commands/completion.ts,project,validate and close completion flags
+  src/cli/commands/index.ts,project,validate barrel export
+  src/cli/commands/validate.ts,project,new validate command implementation
+  src/cli/help-content.ts,project,help narratives for validate and close
+  src/cli/main.ts,project,validate command and close flag wiring
+  src/sdk/cli-contracts.ts,project,shared contracts for validate and new flags
+  tests/integration/cli.integration.spec.ts,project,validate and close integration tests
+  tests/integration/release-readiness-runtime.spec.ts,project,runtime readiness command/flag coverage
+  tests/unit/close-command.spec.ts,project,close validate-close tests
+  tests/unit/validate-command.spec.ts,project,validate command unit coverage
+  vitest.config.ts,project,coverage include alignment for validate
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/health-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,5400,validate and close behavior regression suite
+  node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/validate-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,validate-close and validate command regressions
+docs[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,validation command architecture notes
+close_reason: "Implemented validate command, close-time validation modes, and regression coverage"
+body: Implements feature pm-gtdx with additive command surfaces and compatibility-safe close validation.

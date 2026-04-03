@@ -58,11 +58,14 @@ interface LinkedTestProgressContext {
   command: string;
 }
 
+type LinkedTestProgressMode = "auto" | "always" | "off";
+
 export interface TestCommandOptions {
   add?: string[];
   remove?: string[];
   run?: boolean;
   timeout?: string;
+  progress?: boolean;
   author?: string;
   message?: string;
   force?: boolean;
@@ -500,7 +503,13 @@ function summarizeLinkedTestCommand(command: string): string {
   return `${normalized.slice(0, MAX_LINKED_TEST_COMMAND_LABEL_LENGTH - 3)}...`;
 }
 
-function shouldEmitLinkedTestProgress(): boolean {
+function shouldEmitLinkedTestProgress(mode: LinkedTestProgressMode): boolean {
+  if (mode === "off") {
+    return false;
+  }
+  if (mode === "always") {
+    return true;
+  }
   return process.stderr.isTTY === true;
 }
 
@@ -512,8 +521,8 @@ function emitLinkedTestProgress(message: string): void {
   }
 }
 
-function beginLinkedTestProgress(context: LinkedTestProgressContext): NodeJS.Timeout | null {
-  if (!shouldEmitLinkedTestProgress()) {
+function beginLinkedTestProgress(context: LinkedTestProgressContext, mode: LinkedTestProgressMode): NodeJS.Timeout | null {
+  if (!shouldEmitLinkedTestProgress(mode)) {
     return null;
   }
   const commandLabel = summarizeLinkedTestCommand(context.command);
@@ -535,8 +544,9 @@ function endLinkedTestProgress(
   context: LinkedTestProgressContext,
   executionResult: Pick<LinkedTestExecutionResult, "timedOut" | "maxBufferExceeded" | "exitCode" | "signal">,
   startedAt: number,
+  mode: LinkedTestProgressMode,
 ): void {
-  if (!shouldEmitLinkedTestProgress()) {
+  if (!shouldEmitLinkedTestProgress(mode)) {
     return;
   }
   const commandLabel = summarizeLinkedTestCommand(context.command);
@@ -593,9 +603,10 @@ async function runLinkedTestCommand(
   timeoutMs: number,
   env: NodeJS.ProcessEnv,
   progressContext: LinkedTestProgressContext,
+  progressMode: LinkedTestProgressMode,
 ): Promise<LinkedTestExecutionResult> {
   const startedAt = Date.now();
-  const heartbeat = beginLinkedTestProgress(progressContext);
+  const heartbeat = beginLinkedTestProgress(progressContext, progressMode);
   const child = spawn(command, {
     cwd: process.cwd(),
     env,
@@ -714,7 +725,7 @@ async function runLinkedTestCommand(
     maxBufferExceeded,
     spawnError,
   };
-  endLinkedTestProgress(progressContext, executionResult, startedAt);
+  endLinkedTestProgress(progressContext, executionResult, startedAt, progressMode);
   return executionResult;
 }
 
@@ -749,11 +760,15 @@ export function resolveLinkedTestFailureExitCode(
 export async function runLinkedTests(
   tests: LinkedTest[],
   defaultTimeoutSeconds: number | undefined,
+  options?: {
+    progress?: boolean;
+  },
 ): Promise<TestRunResult[]> {
   const results: TestRunResult[] = [];
   const sandboxRoot = await mkdtemp(path.join(tmpdir(), "pm-linked-test-"));
   const sandboxPmPath = path.join(sandboxRoot, "project", ".agents", "pm");
   const sandboxGlobalPath = path.join(sandboxRoot, "global");
+  const progressMode: LinkedTestProgressMode = options?.progress === true ? "always" : "auto";
 
   try {
     await runInit(undefined, { path: sandboxPmPath });
@@ -794,6 +809,7 @@ export async function runLinkedTests(
           timeoutMs,
           command: linkedTest.command,
         },
+        progressMode,
       );
       const passed = execution.exitCode === 0 && !execution.timedOut && !execution.maxBufferExceeded;
       if (passed) {
@@ -889,7 +905,8 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
     defaultTimeoutSeconds = parseOptionalNumber(options.timeout, "timeout");
   }
 
-  const runResults = options.run === true ? await runLinkedTests(tests, defaultTimeoutSeconds) : [];
+  const runResults =
+    options.run === true ? await runLinkedTests(tests, defaultTimeoutSeconds, { progress: options.progress }) : [];
 
   return {
     id: itemId,

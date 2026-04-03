@@ -1,7 +1,7 @@
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { runReindex } from "../../src/cli/commands/reindex.js";
 import {
   clearActiveExtensionHooks,
@@ -528,6 +528,32 @@ describe("runReindex", () => {
       expect(events.some((entry) => entry.startsWith("read:"))).toBe(true);
       expect(events).toContain("write:reindex:manifest:manifest.json");
       expect(events).toContain("write:reindex:embeddings:embeddings.jsonl");
+    });
+  });
+
+  it("emits progress updates when progress mode is forced in non-interactive runs", async () => {
+    await withTempPmPath(async (context) => {
+      createSeedItem(context, "Progress Reindex Item", "progress body", false);
+      const originalIsTTY = process.stderr.isTTY;
+      Object.defineProperty(process.stderr, "isTTY", {
+        value: false,
+        configurable: true,
+      });
+      const stderrWriteSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+      try {
+        const result = await runReindex({ mode: "keyword", progress: true }, { path: context.pmPath });
+        expect(result.ok).toBe(true);
+        const stderrOutput = stderrWriteSpy.mock.calls.map((entry) => String(entry[0])).join("");
+        expect(stderrOutput).toContain("[pm reindex] start mode=keyword");
+        expect(stderrOutput).toContain("[pm reindex] loading item corpus");
+        expect(stderrOutput).toContain("[pm reindex] writing keyword artifacts");
+        expect(stderrOutput).toContain("[pm reindex] done");
+      } finally {
+        Object.defineProperty(process.stderr, "isTTY", {
+          value: originalIsTTY,
+          configurable: true,
+        });
+      }
     });
   });
 });

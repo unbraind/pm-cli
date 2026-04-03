@@ -1,0 +1,59 @@
+id: pm-ykgu
+title: External audit follow-up docs sync and verification gate
+description: Update docs/contracts for new audit follow-up behavior and run full build/test/coverage verification before close and release.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:docs","area:verification",external-audit,pm-cli
+created_at: "2026-04-03T18:07:53.409Z"
+updated_at: "2026-04-03T18:56:09.825Z"
+deadline: "2026-04-08T18:07:53.409Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: README/PRD/ARCHITECTURE/CHANGELOG/AGENTS reflect final behavior; targeted and full verification runs are recorded; items are closed/released with evidence before commit/push.
+definition_of_ready: Implementation tasks are active and linked files/tests/docs are identified.
+order: 6
+goal: External audit remediation
+objective: Ship verified and documented behavior
+value: Ensures users receive accurate guidance and stable runtime behavior
+impact: Reduces regression risk and docs drift
+outcome: Audit follow-up changes are release-ready with evidence
+why_now: User requested full functionality verification and docs updates before shipping
+parent: pm-qfg8
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: audit-remediation-2026w14
+release: vnext
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run linked verification matrix and compare docs/contracts
+expected_result: All artifacts are verified and documented before release
+affected_version: 2026.3.12
+fixed_version: target-vnext
+component: docs-verification
+regression: true
+customer_impact: Users get reliable behavior with accurate docs
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-qfg8,parent,"2026-04-03T18:07:53.409Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-04-03T18:07:53.409Z",codex-agent,Task created for docs parity and final verification gate.
+  "2026-04-03T18:55:49.544Z",codex-agent,"Docs synchronized across README/PRD/docs/ARCHITECTURE/CHANGELOG/AGENTS for validate, validate-close, list offset/stream, and explicit --progress behavior."
+  "2026-04-03T18:55:50.114Z",codex-agent,"Verification evidence: node scripts/run-tests.mjs test passed (71 files, 801 tests) and node scripts/run-tests.mjs coverage passed (71 files, 810 tests, branch coverage 91.01%)."
+notes[1]{created_at,author,text}:
+  "2026-04-03T18:07:53.409Z",codex-agent,Capture concrete evidence lines for each verification command.
+files[6]{path,scope,note}:
+  AGENTS.md,project,workflow guidance parity for validate/progress
+  CHANGELOG.md,project,unreleased audit follow-up entries
+  docs/ARCHITECTURE.md,project,architecture sync for validate and progress controls
+  PRD.md,project,command and flag contract updates
+  README.md,project,primary user docs sync
+  tests/unit/validate-command.spec.ts,project,coverage regression additions
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,final coverage verification
+  node scripts/run-tests.mjs test,null,project,7200,full regression verification
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,unreleased external audit follow-up notes
+close_reason: Docs parity and full verification gate completed
+body: "Tracks final documentation parity, regression verification, closure evidence, and release operations for epic pm-qfg8."

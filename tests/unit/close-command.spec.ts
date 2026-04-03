@@ -141,6 +141,43 @@ describe("runClose", () => {
     });
   });
 
+  it("warns when --validate-close warn is enabled and resolution fields are missing", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "close-validate-warn");
+      const result = await runClose(
+        id,
+        "close with warn validation",
+        {
+          validateClose: "warn",
+        },
+        { path: context.pmPath },
+      );
+      const item = result.item as Record<string, unknown>;
+      expect(item.status).toBe("closed");
+      expect(result.warnings).toEqual([
+        `close_validation_missing_fields:${id}:resolution,expected_result,actual_result`,
+      ]);
+    });
+  });
+
+  it("fails when --validate-close strict is enabled and resolution fields are missing", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "close-validate-strict");
+      await expect(
+        runClose(
+          id,
+          "close with strict validation",
+          {
+            validateClose: "strict",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
   it("uses settings author fallback when option and PM_AUTHOR are unset", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "close-settings-author");

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:cli","area:store",body,json,list,pm-cli
 created_at: "2026-03-31T19:37:16.976Z"
-updated_at: "2026-04-01T20:26:10.677Z"
+updated_at: "2026-04-03T18:06:23.966Z"
 deadline: "2026-04-02T19:37:16.976Z"
 assignee: codex-agent
 author: codex-agent
@@ -44,10 +44,11 @@ customer_impact: Users can request body-inclusive list output.
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-r0m,related,"2026-03-31T19:37:16.976Z",codex-agent,null
   pm-ykib,parent,"2026-03-31T19:37:16.976Z",codex-agent,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-03-31T19:37:16.976Z",codex-agent,Task A scope covers main list and store changes
   "2026-03-31T19:45:15.668Z",codex-agent,"Implemented include-body pipeline: list option parsing in main, conditional body projection in runList, and store helper listAllFrontMatterWithBody while preserving default front-matter-only output."
   "2026-03-31T19:45:24.603Z",codex-agent,"Evidence: pm test pm-vsux --run passed (passed=1 failed=0 skipped=0). Full sandbox run node scripts/run-tests.mjs test passed 54 files and 529 tests."
+  "2026-04-03T18:06:23.966Z",codex-agent,"External audit 2026-04-03 dedup mapping: list pipeline include-body implementation remains valid on current build; no duplicate item created."
 notes[1]{created_at,author,text}:
   "2026-03-31T19:37:16.976Z",codex-agent,Keep default list path front-matter only and add conditional body projection
 learnings[1]{created_at,author,text}:

@@ -63,6 +63,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added dependency mutation support on existing items through `pm update`: repeatable `--dep` add/clear (`none`) semantics plus repeatable `--dep-remove`/`--dep_remove` selector removals, with parity across help/completion/contracts/Pi wrapper surfaces.
 - Added read-only dependency visualization command `pm deps` with deterministic `tree` (default) and `graph` projections, including cycle-safe traversal and missing-node reporting.
 - Added `pm update --close-reason` / `--close_reason` support so callers can explicitly set or clear `close_reason` (`none` clears) without using `pm close`.
+- Added standalone `pm validate` command with deterministic check payloads for metadata completeness, closed-item resolution fields, linked-file/orphaned-file hygiene, and item/history drift.
+- Added `pm close --validate-close [warn|strict]` for additive close-time resolution-field validation (`resolution`, `expected_result`, `actual_result`) with warning-first default behavior.
+- Added `--offset` pagination and JSON-only `--stream` output mode for `pm list` and all `pm list-*` command families to improve large-result processing ergonomics.
+- Added explicit `--progress` flag support to `pm test`, `pm test-all`, and `pm reindex` so non-interactive runs can opt into deterministic stderr progress visibility.
 
 ### Changed
 - Commander option normalization, shell completion flag generation, and Pi wrapper action/schema/arg mapping now consume the shared command contract registry to reduce cross-surface drift.
@@ -99,6 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pm create`/`pm update` now validate `--sprint` and `--release` using a warning-first default (`warn`) with deterministic `validation_warning:*` signals, and optional strict rejection mode (`strict_error`) for enforcement.
 - `pm create`/`pm update` now validate missing `--parent` references using warning-first defaults (`validation_warning:parent_reference_missing:<id>`) with optional strict rejection mode (`strict_error`).
 - CLI contracts and Pi wrapper action/schema mapping now include additive `templates-*` actions, `create --template`, `history --diff/--verify`, and files/docs linked-path hygiene flags.
+- CLI contracts, shell completion, and Pi wrapper action/parameter mappings now include additive parity for `validate`, `close --validate-close`, list `--offset/--stream`, and long-run `--progress` controls.
 
 ## [2026.3.12] - 2026-03-12
 

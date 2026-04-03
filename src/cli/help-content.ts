@@ -239,7 +239,11 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   close: {
     why: "Transitions work to terminal closed state with explicit rationale.",
-    examples: ['pm close pm-a1b2 "All acceptance criteria met" --author "codex-agent" --message "Close after verification"'],
+    examples: [
+      'pm close pm-a1b2 "All acceptance criteria met" --author "codex-agent" --message "Close after verification"',
+      'pm close pm-a1b2 "Done" --validate-close',
+      'pm close pm-a1b2 "Done" --validate-close strict',
+    ],
   },
   delete: {
     why: "Removes an item while preserving history evidence and lock/ownership checks.",
@@ -283,7 +287,10 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   "test-all": {
     why: "Runs linked tests in bulk for release/readiness sweeps.",
-    examples: ["pm test-all --status in_progress --timeout 2400", "pm test-all --status closed --timeout 3600"],
+    examples: [
+      "pm test-all --status in_progress --timeout 2400",
+      "pm test-all --status closed --timeout 3600 --progress",
+    ],
   },
   stats: {
     why: "Reports tracker-level totals and distribution by type/status.",
@@ -292,6 +299,10 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   health: {
     why: "Validates tracker/runtime health including extension and migration diagnostics.",
     examples: ["pm health", "pm health --json"],
+  },
+  validate: {
+    why: "Runs standalone metadata, resolution, linked-file, and history drift checks.",
+    examples: ["pm validate", "pm validate --check-resolution --json", "pm validate --check-files --check-history-drift"],
   },
   gc: {
     why: "Cleans optional cache artifacts to keep local tracker state tidy.",

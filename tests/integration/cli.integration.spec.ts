@@ -158,6 +158,155 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("supports list JSON stream mode with offset pagination and enforces --json", async () => {
+    await withTempPmPath(async (context) => {
+      const createArgs = [
+        "create",
+        "--json",
+        "--title",
+        "Stream list seed item",
+        "--description",
+        "Seed item for list stream mode assertions",
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--priority",
+        "1",
+        "--tags",
+        "integration,stream",
+        "--body",
+        "",
+        "--deadline",
+        "none",
+        "--estimate",
+        "10",
+        "--ac",
+        "List stream mode is verified",
+        "--author",
+        "integration-test",
+        "--message",
+        "Seed for list stream assertions",
+        "--assignee",
+        "none",
+        "--dep",
+        "none",
+        "--comment",
+        "none",
+        "--note",
+        "none",
+        "--learning",
+        "none",
+        "--file",
+        "none",
+        "--test",
+        "none",
+        "--doc",
+        "none",
+      ];
+      const createResult = context.runCli(createArgs, { expectJson: true });
+      expect(createResult.code).toBe(0);
+
+      const streamResult = context.runCli(["list-open", "--json", "--stream", "--offset", "0", "--limit", "1"]);
+      expect(streamResult.code).toBe(0);
+      const lines = streamResult.stdout
+        .trim()
+        .split("\n")
+        .filter((line) => line.trim().length > 0)
+        .map((line) => JSON.parse(line) as { type: string; [key: string]: unknown });
+      expect(lines.length).toBeGreaterThanOrEqual(3);
+      expect(lines[0]?.type).toBe("meta");
+      expect(lines[0]?.filters).toMatchObject({
+        status: "open",
+        limit: "1",
+        offset: "0",
+      });
+      expect(lines.some((entry) => entry.type === "item")).toBe(true);
+      expect(lines.at(-1)?.type).toBe("end");
+
+      const invalidStreamResult = context.runCli(["list-open", "--stream"]);
+      expect(invalidStreamResult.code).toBe(2);
+      expect(invalidStreamResult.stderr).toContain("--stream requires --json output mode.");
+    });
+  });
+
+  it("supports close validation modes and standalone validate command", async () => {
+    await withTempPmPath(async (context) => {
+      const createResult = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Validate command integration seed",
+          "--description",
+          "Seed item for close validate and pm validate assertions",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,validate",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "10",
+          "--ac",
+          "Validate command integration is verified",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create validate integration seed",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(createResult.code).toBe(0);
+      const id = (createResult.json as { item: { id: string } }).item.id;
+
+      const strictClose = context.runCli(["close", id, "done", "--validate-close", "strict"]);
+      expect(strictClose.code).toBe(2);
+      expect(strictClose.stderr).toContain("Cannot close item");
+
+      const warnClose = context.runCli(["close", id, "done", "--validate-close", "--json"], { expectJson: true });
+      expect(warnClose.code).toBe(0);
+      expect((warnClose.json as { warnings: string[] }).warnings).toContain(
+        `close_validation_missing_fields:${id}:resolution,expected_result,actual_result`,
+      );
+
+      const validateResult = context.runCli(["validate", "--check-resolution", "--json"], { expectJson: true });
+      expect(validateResult.code).toBe(0);
+      const payload = validateResult.json as {
+        ok: boolean;
+        warnings: string[];
+        checks: Array<{ name: string; status: string; details: { missing_resolution_items?: number } }>;
+      };
+      expect(payload.ok).toBe(false);
+      expect(payload.warnings).toContain("validate_resolution_missing_fields:1");
+      const resolutionCheck = payload.checks.find((check) => check.name === "resolution");
+      expect(resolutionCheck?.status).toBe("warn");
+      expect(resolutionCheck?.details.missing_resolution_items).toBe(1);
+    });
+  });
+
   it("installs Pi extension into project and global scopes", async () => {
     await withTempPmPath(async (context) => {
       const projectRoot = path.join(context.tempRoot, "workspace");

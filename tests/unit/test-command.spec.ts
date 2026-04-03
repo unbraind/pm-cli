@@ -743,4 +743,55 @@ describe("runTest", () => {
       }
     });
   });
+
+  it("emits heartbeat progress when --progress is enabled in non-interactive runs", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "linked-test-forced-progress");
+      await runTest(
+        id,
+        {
+          add: ['command=node -e "setTimeout(() => {}, 60)",scope=project,timeout_seconds=5'],
+          message: "seed forced progress command",
+        },
+        { path: context.pmPath },
+      );
+
+      const previousHeartbeatInterval = process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS;
+      process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS = "10";
+      const originalIsTTY = process.stderr.isTTY;
+      Object.defineProperty(process.stderr, "isTTY", {
+        value: false,
+        configurable: true,
+      });
+      const stderrWriteSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+      try {
+        const run = await runTest(
+          id,
+          {
+            run: true,
+            timeout: "5",
+            progress: true,
+          },
+          { path: context.pmPath },
+        );
+        expect(run.run_results).toHaveLength(1);
+        expect(run.run_results[0]?.status).toBe("passed");
+
+        const stderrOutput = stderrWriteSpy.mock.calls.map((entry) => String(entry[0])).join("");
+        expect(stderrOutput).toContain("[pm test] linked-test 1/1 start");
+        expect(stderrOutput).toContain("[pm test] linked-test 1/1 running");
+        expect(stderrOutput).toContain("[pm test] linked-test 1/1 end status=passed");
+      } finally {
+        if (previousHeartbeatInterval === undefined) {
+          delete process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS;
+        } else {
+          process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS = previousHeartbeatInterval;
+        }
+        Object.defineProperty(process.stderr, "isTTY", {
+          value: originalIsTTY,
+          configurable: true,
+        });
+      }
+    });
+  });
 });
