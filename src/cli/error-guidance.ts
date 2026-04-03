@@ -1,10 +1,35 @@
 interface GuidanceMessage {
+  code: string;
+  type: string;
   title: string;
   happened: string;
   required: string;
   why?: string;
   examples?: string[];
   nextSteps?: string[];
+}
+
+export interface JsonErrorEnvelope {
+  type: string;
+  code: string;
+  title: string;
+  detail: string;
+  required: string;
+  exit_code: number;
+  why?: string;
+  examples?: string[];
+  next_steps?: string[];
+}
+
+function errorType(code: string): string {
+  return `urn:pm-cli:error:${code}`;
+}
+
+function makeGuidanceMessage(params: Omit<GuidanceMessage, "type">): GuidanceMessage {
+  return {
+    ...params,
+    type: errorType(params.code),
+  };
 }
 
 function renderList(title: string, entries: string[]): string[] {
@@ -39,16 +64,38 @@ export function renderGuidanceMessage(message: GuidanceMessage): string {
   return lines.join("\n");
 }
 
+function guidanceToJsonEnvelope(message: GuidanceMessage, exitCode: number): JsonErrorEnvelope {
+  const payload: JsonErrorEnvelope = {
+    type: message.type,
+    code: message.code,
+    title: message.title,
+    detail: message.happened,
+    required: message.required,
+    exit_code: exitCode,
+  };
+  if (message.why) {
+    payload.why = message.why;
+  }
+  if (message.examples && message.examples.length > 0) {
+    payload.examples = message.examples;
+  }
+  if (message.nextSteps && message.nextSteps.length > 0) {
+    payload.next_steps = message.nextSteps;
+  }
+  return payload;
+}
+
 function normalizeMessage(message: string): string {
   return message.replace(/\(outputHelp\)/g, "").trim();
 }
 
-export function formatPmCliErrorForDisplay(rawMessage: string): string {
+function buildPmCliErrorGuidance(rawMessage: string): GuidanceMessage {
   const message = normalizeMessage(rawMessage);
 
   const trackerNotInitialized = message.match(/^Tracker is not initialized at (.+)\. Run pm init first\.$/);
   if (trackerNotInitialized) {
-    return renderGuidanceMessage({
+    return makeGuidanceMessage({
+      code: "tracker_not_initialized",
       title: "Tracker is not initialized",
       happened: `pm data path does not contain initialized tracker metadata (${trackerNotInitialized[1]}).`,
       required: "Initialize tracker storage before running this command.",
@@ -60,7 +107,8 @@ export function formatPmCliErrorForDisplay(rawMessage: string): string {
 
   const itemNotFound = message.match(/^Item ([^ ]+) not found$/);
   if (itemNotFound) {
-    return renderGuidanceMessage({
+    return makeGuidanceMessage({
+      code: "item_not_found",
       title: "Item ID not found",
       happened: `No item with id "${itemNotFound[1]}" exists in the active tracker scope.`,
       required: "Use an existing item ID from current tracker data.",
@@ -71,7 +119,8 @@ export function formatPmCliErrorForDisplay(rawMessage: string): string {
   }
 
   if (message.includes("is assigned to") && message.includes("Use --force to override")) {
-    return renderGuidanceMessage({
+    return makeGuidanceMessage({
+      code: "ownership_conflict",
       title: "Ownership conflict",
       happened: message,
       required: "Run as assigned owner or explicitly bypass with --force when appropriate.",
@@ -81,7 +130,8 @@ export function formatPmCliErrorForDisplay(rawMessage: string): string {
   }
 
   if (message.includes("is locked")) {
-    return renderGuidanceMessage({
+    return makeGuidanceMessage({
+      code: "lock_conflict",
       title: "Lock conflict",
       happened: message,
       required: "Wait for lock release, or use --force where supported if lock is stale and safe to override.",
@@ -91,7 +141,8 @@ export function formatPmCliErrorForDisplay(rawMessage: string): string {
   }
 
   if (message.startsWith("Missing required option ")) {
-    return renderGuidanceMessage({
+    return makeGuidanceMessage({
+      code: "missing_required_option",
       title: "Missing required option",
       happened: message,
       required: "Provide every required option for this command invocation.",
@@ -104,7 +155,8 @@ export function formatPmCliErrorForDisplay(rawMessage: string): string {
   }
 
   if (message.startsWith("No update flags provided")) {
-    return renderGuidanceMessage({
+    return makeGuidanceMessage({
+      code: "no_update_fields",
       title: "No update fields supplied",
       happened: "The update command was called without any field-changing flags.",
       required: "Provide at least one update field such as --status, --priority, --title, --tags, or --message.",
@@ -114,7 +166,8 @@ export function formatPmCliErrorForDisplay(rawMessage: string): string {
   }
 
   if (message.startsWith("Invalid ") || message.includes(" must be ")) {
-    return renderGuidanceMessage({
+    return makeGuidanceMessage({
+      code: "invalid_argument_value",
       title: "Invalid argument value",
       happened: message,
       required: "Use values that match documented command constraints.",
@@ -124,7 +177,8 @@ export function formatPmCliErrorForDisplay(rawMessage: string): string {
     });
   }
 
-  return renderGuidanceMessage({
+  return makeGuidanceMessage({
+    code: "command_failed",
     title: "Command failed",
     happened: message,
     required: "Adjust command input or tracker state and retry.",
@@ -146,27 +200,22 @@ function commandExampleForRequiredOption(commandName: string | undefined, option
   return [`pm ${commandName ?? "<command>"} --help`];
 }
 
-export function formatCommanderErrorForDisplay(
-  rawMessage: string,
-  commandName: string | undefined,
-  allowedTypes: string,
-): string {
+function buildCommanderErrorGuidance(rawMessage: string, commandName: string | undefined, allowedTypes: string): GuidanceMessage {
   const message = normalizeMessage(rawMessage);
 
   const requiredOption = message.match(/required option '([^']+)' not specified/);
   if (requiredOption) {
     const optionFlag = requiredOption[1];
     const isType = optionFlag.startsWith("--type");
-    return renderGuidanceMessage({
+    return makeGuidanceMessage({
+      code: "missing_required_option",
       title: `Missing required option ${optionFlag}`,
       happened: `Commander rejected the command because ${optionFlag} was not provided.`,
       required: `Pass ${optionFlag} with a valid value before running the command.`,
       why: isType
         ? "--type selects item contract and policy routing, including required/disabled option rules."
         : "Required flags define mandatory command intent and prevent ambiguous execution.",
-      examples: isType
-        ? commandExampleForRequiredOption(commandName, optionFlag, allowedTypes)
-        : commandExampleForRequiredOption(commandName, optionFlag, allowedTypes),
+      examples: commandExampleForRequiredOption(commandName, optionFlag, allowedTypes),
       nextSteps: isType
         ? [`Allowed type values: ${allowedTypes}`, `Run "pm ${commandName ?? "create"} --help --type <value>" for type-aware policy details.`]
         : [`Run "pm ${commandName ?? "<command>"} --help" for required option guidance.`],
@@ -176,7 +225,8 @@ export function formatCommanderErrorForDisplay(
   const missingArgument = message.match(/missing required argument '([^']+)'/);
   if (missingArgument) {
     const argumentName = missingArgument[1];
-    return renderGuidanceMessage({
+    return makeGuidanceMessage({
+      code: "missing_required_argument",
       title: `Missing required argument ${argumentName}`,
       happened: `Command invocation omitted positional argument ${argumentName}.`,
       required: `Provide ${argumentName} in the expected command position.`,
@@ -189,7 +239,8 @@ export function formatCommanderErrorForDisplay(
   if (unknownOption) {
     const optionName = unknownOption[1];
     if (commandName === "update" && (optionName === "--file" || optionName === "--doc")) {
-      return renderGuidanceMessage({
+      return makeGuidanceMessage({
+        code: "unsupported_update_option",
         title: `Unsupported option ${optionName} for update`,
         happened: `pm update does not accept ${optionName} for linked artifact mutations.`,
         required: "Use dedicated linked-artifact commands instead of pm update for files/docs changes.",
@@ -201,7 +252,8 @@ export function formatCommanderErrorForDisplay(
         nextSteps: ['Run "pm files --help" and "pm docs --help" for add/remove payload formats.'],
       });
     }
-    return renderGuidanceMessage({
+    return makeGuidanceMessage({
+      code: "unknown_option",
       title: `Unknown option ${optionName}`,
       happened: `Commander does not recognize option ${optionName} for this command path.`,
       required: "Use supported options only, or move option to the correct subcommand.",
@@ -213,7 +265,8 @@ export function formatCommanderErrorForDisplay(
   const unknownCommand = message.match(/unknown command '([^']+)'/);
   if (unknownCommand) {
     const commandToken = unknownCommand[1];
-    return renderGuidanceMessage({
+    return makeGuidanceMessage({
+      code: "unknown_command",
       title: `Unknown command ${commandToken}`,
       happened: `pm does not expose command path "${commandToken}" in current runtime configuration.`,
       required: "Use a valid command name or subcommand path.",
@@ -223,11 +276,49 @@ export function formatCommanderErrorForDisplay(
     });
   }
 
-  return renderGuidanceMessage({
+  return makeGuidanceMessage({
+    code: "invalid_command_usage",
     title: "Invalid command usage",
     happened: message,
     required: "Use the command with valid arguments and options.",
     why: "Commander validates CLI contracts before execution.",
     examples: ["pm --help", `pm ${commandName ?? "<command>"} --help`],
   });
+}
+
+export function formatPmCliErrorForDisplay(rawMessage: string): string {
+  return renderGuidanceMessage(buildPmCliErrorGuidance(rawMessage));
+}
+
+export function formatPmCliErrorForJson(rawMessage: string, exitCode: number): JsonErrorEnvelope {
+  return guidanceToJsonEnvelope(buildPmCliErrorGuidance(rawMessage), exitCode);
+}
+
+export function formatCommanderErrorForDisplay(
+  rawMessage: string,
+  commandName: string | undefined,
+  allowedTypes: string,
+): string {
+  return renderGuidanceMessage(buildCommanderErrorGuidance(rawMessage, commandName, allowedTypes));
+}
+
+export function formatCommanderErrorForJson(
+  rawMessage: string,
+  commandName: string | undefined,
+  allowedTypes: string,
+  exitCode: number,
+): JsonErrorEnvelope {
+  return guidanceToJsonEnvelope(buildCommanderErrorGuidance(rawMessage, commandName, allowedTypes), exitCode);
+}
+
+export function formatUnknownErrorForJson(rawMessage: string, exitCode: number): JsonErrorEnvelope {
+  const guidance = makeGuidanceMessage({
+    code: "unknown_error",
+    title: "Unhandled error",
+    happened: normalizeMessage(rawMessage),
+    required: "Inspect command input and runtime state, then retry.",
+    why: "Unexpected runtime failures can occur from environment or extension-level issues.",
+    examples: ["pm --help", "pm health --json"],
+  });
+  return guidanceToJsonEnvelope(guidance, exitCode);
 }

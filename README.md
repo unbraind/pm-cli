@@ -12,8 +12,8 @@
 - Git-native items that stay reviewable in diffs
 - Safe multi-agent workflows with claims, locks, and restore
 - Deterministic output with TOON by default and `--json` when needed
-- Rich command help guidance with command purpose, practical examples, and usage tips
-- Structured error diagnostics that explain what happened, what is required, why it matters, and concrete fix examples
+- Layered command help: compact default (`Intent` + one example) and deep explainability via `--explain`
+- Structured diagnostics with machine-readable JSON error envelopes when `--json` is active
 - Sparse TOON default output that omits null/undefined/empty fields for token-efficient agent workflows
 - Agent-friendly calendar views (`pm calendar` / `pm cal`) with markdown default output
 - Agent-first context snapshot command (`pm context` / `pm ctx`) for critical work + agenda triage
@@ -34,7 +34,7 @@
 Compatibility policy for command contracts:
 
 - Existing commands/flags and aliases remain valid.
-- Contract evolution is additive-first (new schema properties/flags can be added without breaking existing consumers).
+- Pi tool schema now uses strict action-scoped branches (schema v3); callers should send only action-relevant fields.
 - `--json` remains the full machine payload; default TOON remains sparse/token-efficient.
 
 ## Item Storage Formats
@@ -163,10 +163,13 @@ To (re)build semantic artifacts explicitly:
 pm reindex --mode hybrid
 ```
 
-## Health Drift and Vectorization Checks
+## Health Drift, Integrity, and Vectorization Checks
 
-`pm health` now includes deterministic checks for both history integrity and semantic vector freshness:
+`pm health` includes deterministic checks for item/history integrity and semantic vector freshness:
 
+- `integrity`
+  - scans item and history files for merge-conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`)
+  - reports invalid item parses and invalid JSONL lines in history streams with deterministic warning codes
 - `history_drift`
   - scans current items and compares each canonical item hash against the latest history `after_hash`
   - reports missing history streams, unreadable/corrupt history streams, and hash mismatches
@@ -367,16 +370,13 @@ For `pm create --help` and `pm update --help`, add `--type <value>` to render ty
 
 `pm` now treats command guidance as a first-class UX surface:
 
-- Command help includes a deterministic "Why use this command" section.
-- Command help includes practical copy/paste examples and targeted tips.
-- Usage/runtime errors are rendered with structured sections:
-  - `What happened`
-  - `What is required`
-  - `Why`
-  - `Examples`
-  - optional `Next steps`
+- Default help is compact and token-efficient (`Intent` + one high-signal example).
+- Add `--explain` to any `--help` invocation to render deeper rationale, multiple examples, and tips.
+- Usage/runtime errors use one canonical guidance model:
+  - text mode: structured sections (`What happened`, `What is required`, `Why`, `Examples`, optional `Next steps`)
+  - `--json` mode: machine-readable envelope (`type`, `code`, `title`, `detail`, `required`, `exit_code`, optional `why/examples/next_steps`)
 
-Example:
+Text-mode example:
 
 ```text
 Error: Missing required option --type <value>
@@ -386,6 +386,19 @@ What happened:
 
 What is required:
   Pass --type <value> with a valid value before running the command.
+```
+
+JSON-mode example (`--json`):
+
+```json
+{
+  "type": "urn:pm-cli:error:missing_required_option",
+  "code": "missing_required_option",
+  "title": "Missing required option --type <value>",
+  "detail": "Commander rejected the command because --type <value> was not provided.",
+  "required": "Pass --type <value> with a valid value before running the command.",
+  "exit_code": 2
+}
 ```
 
 ## Sparse TOON Default Output

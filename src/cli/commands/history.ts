@@ -1,6 +1,7 @@
 import { pathExists, readFileIfExists } from "../../core/fs/fs-utils.js";
 import { enforceHistoryStreamPolicyForItem } from "../../core/history/history-stream-policy.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
+import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { getActiveExtensionRegistrations, runActiveOnReadHooks } from "../../core/extensions/index.js";
@@ -48,6 +49,20 @@ export async function readHistoryEntries(historyPath: string, itemId: string): P
   if (raw.trim() === "") {
     return [];
   }
+  const conflictMarker = findFirstMergeConflictMarker(raw);
+  if (conflictMarker) {
+    throw new PmCliError(
+      `History for ${itemId} contains merge conflict markers at line ${conflictMarker.line} (${conflictMarker.marker}). Resolve <<<<<<< ======= >>>>>>> markers and retry.`,
+      EXIT_CODE.GENERIC_FAILURE,
+      {
+        code: "history_merge_conflict_markers_detected",
+        required: "Repair the history stream by resolving merge-conflict markers.",
+        why: "Conflict markers break JSONL parsing and invalidate deterministic audit history.",
+        examples: [`pm history ${itemId}`, `pm restore ${itemId} <timestamp-or-version>`],
+        nextSteps: ["Resolve or restore the history file, then rerun the command."],
+      },
+    );
+  }
 
   const entries: HistoryEntry[] = [];
   const lines = raw.split(/\r?\n/);
@@ -58,7 +73,7 @@ export async function readHistoryEntries(historyPath: string, itemId: string): P
       entries.push(JSON.parse(line) as HistoryEntry);
     } catch {
       throw new PmCliError(
-        `History for ${itemId} contains invalid JSON at line ${index + 1}`,
+        `History for ${itemId} contains invalid JSON at line ${index + 1}. Repair or restore the history stream and retry.`,
         EXIT_CODE.GENERIC_FAILURE,
       );
     }

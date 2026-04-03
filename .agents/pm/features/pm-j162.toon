@@ -1,14 +1,13 @@
 id: pm-j162
 title: Help System Redesign Across All Commands
-description: "Introduce centralized, narrative-rich help sections for every core command explaining purpose, option rationale, and concrete examples."
+description: "Phase 2 help-v2: layered token-efficient default help plus deeper explainability mode sourced from centralized help metadata."
 type: Feature
 status: closed
 priority: 1
 tags[4]: "area:cli","area:help","area:ux",pm-cli
 created_at: "2026-04-01T12:38:21.452Z"
-updated_at: "2026-04-01T20:23:47.048Z"
+updated_at: "2026-04-03T10:57:09.952Z"
 deadline: "2026-04-11T12:38:21.452Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 320
 acceptance_criteria: "Every core command help includes clear command intent, critical option rationale, and practical examples, with deterministic ordering."
@@ -44,8 +43,10 @@ customer_impact: Users get clearer command understanding without external docs
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-30zl,discovered_from,"2026-04-01T12:38:21.452Z",codex-agent,null
   pm-izbd,parent,"2026-04-01T12:38:21.452Z",codex-agent,null
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-01T12:38:21.452Z",codex-agent,Feature splits help concerns from error/output concerns for clearer rollout.
+  "2026-04-03T10:23:22.031Z",codex-agent,Reopened for Phase 2 help-v2 implementation workstream.
+  "2026-04-03T10:57:07.028Z",codex-agent,"Phase 2 help-v2 shipped: compact Intent-first help is now default, --explain renders detailed Why/Examples/Tips, and runtime help tests pass via pm test pm-j162 --run."
 notes[1]{created_at,author,text}:
   "2026-04-01T12:38:21.452Z",codex-agent,Main integration point is command registration in src/cli/main.ts.
 learnings[1]{created_at,author,text}:
@@ -56,5 +57,5 @@ tests[1]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,null,project,1800,Help runtime regression
 docs[1]{path,scope,note}:
   README.md,project,Help guidance examples
-close_reason: Help-system feature delivered with centralized command narratives and examples.
+close_reason: Phase 2 help-v2 complete with layered agent-first help UX verified by linked tests.
 body: "Feature A: help UX redesign"

@@ -1,14 +1,13 @@
 id: pm-i0iy
 title: "Docs, Contracts, and Verification Hardening"
-description: Update all CLI docs/contracts and expand regression coverage to ensure the UX overhaul is release-safe for existing users.
+description: "Phase 2 contracts/docs/test hardening: strict action-scoped schema v3 plus updated contract and release-readiness coverage."
 type: Feature
 status: closed
 priority: 1
 tags[4]: "area:docs","area:release","area:tests",pm-cli
 created_at: "2026-04-01T12:38:52.243Z"
-updated_at: "2026-04-01T20:22:06.596Z"
+updated_at: "2026-04-03T10:57:30.197Z"
 deadline: "2026-04-11T12:38:52.243Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 300
 acceptance_criteria: README/PRD/ARCHITECTURE/EXTENSIONS/CHANGELOG reflect new help-error-output behavior; tests validate contracts; full verification passes before ship.
@@ -44,8 +43,10 @@ customer_impact: Users retain trust through stable behavior and clear documentat
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-izbd,parent,"2026-04-01T12:38:52.243Z",codex-agent,null
   pm-qwp7,related,"2026-04-01T12:38:52.243Z",codex-agent,null
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-01T12:38:52.243Z",codex-agent,Feature covers documentation parity and full release verification evidence.
+  "2026-04-03T10:23:27.517Z",codex-agent,Reopened for Phase 2 schema-v3 and docs/contracts verification workstream.
+  "2026-04-03T10:57:28.162Z",codex-agent,"Phase 2 contracts/docs/test hardening shipped: strict action-scoped schema v3, docs/changelog updates across README/PRD/ARCHITECTURE/EXTENSIONS/CHANGELOG, and full sandboxed regression+coverage verification passed via pm test pm-i0iy --run."
 notes[1]{created_at,author,text}:
   "2026-04-01T12:38:52.243Z",codex-agent,Will use sandbox-safe run-tests scripts for all verification commands.
 learnings[1]{created_at,author,text}:
@@ -56,5 +57,5 @@ tests[1]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs coverage,null,project,3600,Full coverage verification
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,Unreleased behavior notes
-close_reason: "Docs refresh, regression updates, and ship verification evidence completed."
+close_reason: Phase 2 contracts/docs/test hardening complete with full verification passing.
 body: "Feature D: docs/tests/release hardening"

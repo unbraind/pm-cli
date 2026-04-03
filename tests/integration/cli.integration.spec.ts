@@ -10,6 +10,22 @@ function distCliPath(): string {
   return path.resolve(process.cwd(), "dist/cli.js");
 }
 
+interface JsonErrorEnvelope {
+  type: string;
+  code: string;
+  title: string;
+  detail: string;
+  required: string;
+  exit_code: number;
+  why?: string;
+  examples?: string[];
+  next_steps?: string[];
+}
+
+function parseJsonErrorEnvelope(stderr: string): JsonErrorEnvelope {
+  return JSON.parse(stderr) as JsonErrorEnvelope;
+}
+
 describe("CLI integration (sandboxed PM_PATH)", () => {
   it("accepts --ac as create alias for acceptance criteria", async () => {
     await withTempPmPath(async (context) => {
@@ -1716,6 +1732,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         "settings_values",
         "extensions",
         "storage",
+        "integrity",
         "history_drift",
         "vectorization",
       ]);
@@ -2378,8 +2395,12 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const missingGet = context.runCli(["get", "pm-missing", "--json"]);
       expect(missingGet.code).toBe(3);
-      expect(missingGet.stderr).toContain("Error: Item ID not found");
-      expect(missingGet.stderr).toContain("What happened:");
+      const missingGetEnvelope = parseJsonErrorEnvelope(missingGet.stderr);
+      expect(missingGetEnvelope).toMatchObject({
+        code: "item_not_found",
+        exit_code: 3,
+      });
+      expect(missingGetEnvelope.detail).toContain("pm-missing");
 
       const hookLog = await readFile(hookLogPath, "utf8");
       expect(hookLog.trim()).toContain("after:get:ok=false:error=Item pm-missing not found");
@@ -2464,11 +2485,18 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         "none",
       ]);
       expect(blockedCreate.code).toBe(4);
-      expect(blockedCreate.stderr).toContain('Write command "create" blocked by unresolved mandatory extension migrations');
-      expect(blockedCreate.stderr).toContain(
+      const blockedCreateEnvelope = parseJsonErrorEnvelope(blockedCreate.stderr);
+      expect(blockedCreateEnvelope).toMatchObject({
+        code: "command_failed",
+        exit_code: 4,
+      });
+      expect(blockedCreateEnvelope.detail).toContain(
+        'Write command "create" blocked by unresolved mandatory extension migrations',
+      );
+      expect(blockedCreateEnvelope.detail).toContain(
         "extension_migration_blocking:project:migration-gate-ext:required-schema:pending",
       );
-      expect(blockedCreate.stderr).toContain("does not support --force bypass");
+      expect(blockedCreateEnvelope.detail).toContain("does not support --force bypass");
 
       const seedCreate = context.runCli(
         [
@@ -2533,8 +2561,15 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         "Attempt blocked update",
       ]);
       expect(blockedUpdate.code).toBe(4);
-      expect(blockedUpdate.stderr).toContain('Write command "update" blocked by unresolved mandatory extension migrations');
-      expect(blockedUpdate.stderr).toContain("Re-run this command with --force to bypass");
+      const blockedUpdateEnvelope = parseJsonErrorEnvelope(blockedUpdate.stderr);
+      expect(blockedUpdateEnvelope).toMatchObject({
+        code: "command_failed",
+        exit_code: 4,
+      });
+      expect(blockedUpdateEnvelope.detail).toContain(
+        'Write command "update" blocked by unresolved mandatory extension migrations',
+      );
+      expect(blockedUpdateEnvelope.detail).toContain("Re-run this command with --force to bypass");
 
       const forcedUpdate = context.runCli(
         [
@@ -3646,8 +3681,15 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const imported = context.runCli(["beads", "import", "--json", "--file", path.join(context.tempRoot, "missing.jsonl")]);
       expect(imported.code).toBe(1);
-      expect(imported.stderr).toContain('Command "beads import" failed in extension handler');
-      expect(imported.stderr).toContain("extension_command_handler_failed:project:beads-command-handler-fail-ext:beads import");
+      const importedEnvelope = parseJsonErrorEnvelope(imported.stderr);
+      expect(importedEnvelope).toMatchObject({
+        code: "command_failed",
+        exit_code: 1,
+      });
+      expect(importedEnvelope.detail).toContain('Command "beads import" failed in extension handler');
+      expect(importedEnvelope.detail).toContain(
+        "extension_command_handler_failed:project:beads-command-handler-fail-ext:beads import",
+      );
     });
   });
 
@@ -3668,7 +3710,12 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const disabled = context.runCli(["--no-extensions", "beads", "import", "--json", "--file", sourcePath]);
       expect(disabled.code).toBe(3);
-      expect(disabled.stderr).toContain('Command "beads import" is provided by extensions');
+      const disabledEnvelope = parseJsonErrorEnvelope(disabled.stderr);
+      expect(disabledEnvelope).toMatchObject({
+        code: "command_failed",
+        exit_code: 3,
+      });
+      expect(disabledEnvelope.detail).toContain('Command "beads import" is provided by extensions');
     });
   });
 
@@ -3679,11 +3726,21 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const importDisabled = context.runCli(["--no-extensions", "todos", "import", "--json", "--folder", todosFolder]);
       expect(importDisabled.code).toBe(3);
-      expect(importDisabled.stderr).toContain('Command "todos import" is provided by extensions');
+      const importDisabledEnvelope = parseJsonErrorEnvelope(importDisabled.stderr);
+      expect(importDisabledEnvelope).toMatchObject({
+        code: "command_failed",
+        exit_code: 3,
+      });
+      expect(importDisabledEnvelope.detail).toContain('Command "todos import" is provided by extensions');
 
       const exportDisabled = context.runCli(["--no-extensions", "todos", "export", "--json", "--folder", todosFolder]);
       expect(exportDisabled.code).toBe(3);
-      expect(exportDisabled.stderr).toContain('Command "todos export" is provided by extensions');
+      const exportDisabledEnvelope = parseJsonErrorEnvelope(exportDisabled.stderr);
+      expect(exportDisabledEnvelope).toMatchObject({
+        code: "command_failed",
+        exit_code: 3,
+      });
+      expect(exportDisabledEnvelope.detail).toContain('Command "todos export" is provided by extensions');
     });
   });
 

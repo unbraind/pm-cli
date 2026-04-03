@@ -69,6 +69,7 @@ export default defineConfig({
         "src/core/search/vector-stores.ts",
         "src/core/shared/index.ts",
         "src/core/shared/constants.ts",
+        "src/core/shared/conflict-markers.ts",
         "src/core/shared/errors.ts",
         "src/core/shared/serialization.ts",
         "src/core/shared/time.ts",

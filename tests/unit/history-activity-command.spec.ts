@@ -161,6 +161,24 @@ describe("runHistory and runActivity", () => {
     });
   });
 
+  it("rejects history streams containing merge conflict markers", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Conflicted History");
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      await writeFile(
+        historyPath,
+        ["<<<<<<< HEAD", "{}", "=======", "{}", ">>>>>>> branch", ""].join("\n"),
+        "utf8",
+      );
+      await expect(readHistoryEntries(historyPath, id)).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.GENERIC_FAILURE,
+      });
+      await expect(readHistoryEntries(historyPath, id)).rejects.toThrow(
+        `History for ${id} contains merge conflict markers at line 1`,
+      );
+    });
+  });
+
   it("aggregates activity across item history files deterministically", async () => {
     await withTempPmPath(async (context) => {
       const firstId = createItem(context, "Activity One");

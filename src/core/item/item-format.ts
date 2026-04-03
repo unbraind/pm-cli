@@ -22,6 +22,7 @@ import {
 } from "../../types/index.js";
 import { normalizeStatusInput } from "./status.js";
 import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
+import { findFirstMergeConflictMarker } from "../shared/conflict-markers.js";
 import { PmCliError } from "../shared/errors.js";
 import { orderObject } from "../shared/serialization.js";
 import { compareTimestampStrings, isTimestampLiteral } from "../shared/time.js";
@@ -759,6 +760,20 @@ function serializeToonItemDocument(document: ItemDocument): string {
 }
 
 export function parseItemDocument(content: string, options: { format?: ItemFormat } = {}): ItemDocument {
+  const conflictMarker = findFirstMergeConflictMarker(content);
+  if (conflictMarker) {
+    throw new PmCliError(
+      `Merge conflict markers detected in item document at line ${conflictMarker.line} (${conflictMarker.marker}). Resolve <<<<<<< ======= >>>>>>> markers and retry.`,
+      EXIT_CODE.GENERIC_FAILURE,
+      {
+        code: "merge_conflict_markers_detected",
+        required: "Resolve merge-conflict markers in the item file before parsing or mutation commands.",
+        why: "Partially merged documents can corrupt item metadata and history integrity.",
+        examples: ["git status", "git add <resolved-file> && git commit"],
+        nextSteps: ["Resolve conflicts, save the file, then rerun the pm command."],
+      },
+    );
+  }
   const format = options.format ?? "json_markdown";
   return format === "toon" ? parseToonItemDocument(content) : parseJsonMarkdownItemDocument(content);
 }

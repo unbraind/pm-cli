@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -99,6 +99,7 @@ describe("runHealth", () => {
         "settings_values",
         "extensions",
         "storage",
+        "integrity",
         "history_drift",
         "vectorization",
       ]);
@@ -163,6 +164,19 @@ describe("runHealth", () => {
         stale_items_before: [],
         stale_items_after: [],
       });
+
+      const integrityCheck = health.checks.find((check) => check.name === "integrity");
+      expect(integrityCheck?.status).toBe("ok");
+      expect(integrityCheck?.details).toMatchObject({
+        counts: {
+          item_unreadable: 0,
+          item_conflict_markers: 0,
+          item_parse_failures: 0,
+          history_unreadable: 0,
+          history_conflict_markers: 0,
+          history_invalid_json: 0,
+        },
+      });
       expect(health.generated_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     });
   });
@@ -202,6 +216,77 @@ describe("runHealth", () => {
         missing_streams: [missingId],
         unreadable_streams: [unreadableId],
         hash_mismatches: [mismatchId],
+      });
+    });
+  });
+
+  it("reports integrity conflict-marker diagnostics for item and history files", async () => {
+    await withTempPmPath(async (context) => {
+      const itemConflictId = createSeedItem(context);
+      const historyConflictId = createSeedItem(context);
+
+      const markdownItemPath = path.join(context.pmPath, "tasks", `${itemConflictId}.md`);
+      const toonItemPath = path.join(context.pmPath, "tasks", `${itemConflictId}.toon`);
+      let itemPath = markdownItemPath;
+      try {
+        await access(itemPath);
+      } catch {
+        itemPath = toonItemPath;
+      }
+      await writeFile(itemPath, "<<<<<<< HEAD\n{}\n=======\n{}\n>>>>>>> branch\n", "utf8");
+      await writeFile(
+        path.join(context.pmPath, "history", `${historyConflictId}.jsonl`),
+        "<<<<<<< HEAD\n{}\n=======\n{}\n>>>>>>> branch\n",
+        "utf8",
+      );
+
+      const health = await runHealth({ path: context.pmPath });
+      expect(health.ok).toBe(false);
+      const relativeItemPath = path.relative(context.pmPath, itemPath).replaceAll("\\", "/");
+      expect(health.warnings).toEqual(
+        expect.arrayContaining([
+          `integrity_item_conflict_marker:${relativeItemPath}:L1`,
+          `integrity_history_conflict_marker:${historyConflictId}:L1`,
+        ]),
+      );
+
+      const integrityCheck = health.checks.find((check) => check.name === "integrity");
+      expect(integrityCheck?.status).toBe("warn");
+      expect(integrityCheck?.details).toMatchObject({
+        counts: {
+          item_conflict_markers: 1,
+          history_conflict_markers: 1,
+        },
+      });
+    });
+  });
+
+  it("reports integrity unreadable and parse-failure diagnostics", async () => {
+    await withTempPmPath(async (context) => {
+      createSeedItem(context);
+
+      await mkdir(path.join(context.pmPath, "tasks", "integrity-unreadable.md"), { recursive: true });
+      await writeFile(path.join(context.pmPath, "tasks", "integrity-parse-failure.md"), "{ invalid-json", "utf8");
+      await mkdir(path.join(context.pmPath, "history", "integrity-unreadable.jsonl"), { recursive: true });
+
+      const health = await runHealth({ path: context.pmPath });
+      expect(health.ok).toBe(false);
+      expect(health.warnings).toEqual(
+        expect.arrayContaining([
+          "integrity_item_unreadable:tasks/integrity-unreadable.md",
+          "integrity_item_parse_failed:tasks/integrity-parse-failure.md",
+          "integrity_history_unreadable:integrity-unreadable",
+        ]),
+      );
+
+      const integrityCheck = health.checks.find((check) => check.name === "integrity");
+      expect(integrityCheck?.status).toBe("warn");
+      expect(integrityCheck?.details).toMatchObject({
+        counts: {
+          item_unreadable: 1,
+          item_parse_failures: 1,
+          history_unreadable: 1,
+        },
       });
     });
   });

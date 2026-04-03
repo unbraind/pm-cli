@@ -85,7 +85,8 @@ src/
     shared/
       command-types.ts           GlobalOptions, shared command type definitions
       constants.ts               Exit codes, required directory names
-      errors.ts                  PmCliError with exit code
+      conflict-markers.ts        Merge-conflict marker detection helpers
+      errors.ts                  PmCliError with exit code + optional guidance context
       serialization.ts           Deterministic JSON serialization (stable key order)
       time.ts                    ISO timestamp helpers, relative deadline parsing
       index.ts                   barrel
@@ -276,9 +277,9 @@ Pipeline:
 
 Help and error UX is centralized to reduce per-command drift:
 
-1. `src/cli/help-content.ts` defines command-path help bundles (`why`, `examples`, optional `tips`) and attaches them to command help output via `attachRichHelpText(...)`.
-2. `src/cli/error-guidance.ts` defines structured error rendering with deterministic sections (`What happened`, `What is required`, `Why`, `Examples`, optional `Next steps`).
-3. `src/cli/main.ts` routes commander usage failures and `PmCliError` failures through these renderers.
+1. `src/cli/help-content.ts` defines command-path help bundles (`why`, `examples`, optional `tips`) and attaches compact help by default (`Intent` + one example) with deep help enabled via `--explain`.
+2. `src/cli/error-guidance.ts` defines canonical guidance descriptors and renders either structured text sections or machine-readable JSON envelopes (`type`, `code`, `title`, `detail`, `required`, `exit_code`, optional remediation fields).
+3. `src/cli/main.ts` routes commander usage failures and `PmCliError` failures through these renderers, emitting JSON diagnostics when `--json` is active.
 4. Commander native stderr writes are suppressed so the CLI emits a single high-signal guidance payload per failure path.
 
 ## History and Restore
@@ -355,8 +356,9 @@ Runtime semantic defaults:
 - For implicit default-mode search, auto-default semantic execution failures degrade to keyword mode to preserve compatibility for existing users.
 - Auto-defaults can be disabled with `PM_DISABLE_OLLAMA_AUTO_DEFAULTS=1`.
 
-Health-time semantic/vector integrity:
+Health-time integrity and semantic/vector diagnostics:
 
+- `pm health` runs an `integrity` check that scans item/history files for merge-conflict markers and parse/JSONL anomalies.
 - `pm health` now runs a `history_drift` check that compares each current item's canonical hash to the latest history `after_hash`.
 - `pm health` also runs a `vectorization` check that compares current item `updated_at` values to `search/vectorization-status.json`.
 - When stale IDs are detected and semantic runtime is available, `pm health` triggers targeted semantic refresh for stale IDs only (not a full reindex).

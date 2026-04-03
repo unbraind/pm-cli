@@ -563,6 +563,7 @@ If any step fails, return non-zero exit code and preserve prior item bytes.
 - `--quiet` suppress stdout
 - `--path <dir>` override project root path for invocation
 - `--no-extensions` disable extension loading
+- `--explain` render extended rationale/examples in help output
 - `--profile` print deterministic timing diagnostics (stderr)
 - `--version` print CLI version
 
@@ -578,8 +579,10 @@ Default output note:
 
 Help and error UX note:
 
-- Command help should include deterministic narrative sections (why/examples/tips) for built-in command paths.
-- Usage and runtime errors should be rendered in a structured guidance format with sections for what happened, what is required, why, and examples (plus next steps when relevant).
+- Command help should default to compact token-efficient guidance (`Intent` + one high-signal example) and support an explicit deep-help surface via `--explain`.
+- Usage and runtime errors should be rendered from one canonical guidance model:
+  - text mode: structured sections for what happened, what is required, why, examples, and optional next steps
+  - `--json` mode: machine-readable envelope (`type`, `code`, `title`, `detail`, `required`, `exit_code`, optional `why/examples/next_steps`)
 
 ### 11.2 Exit codes
 
@@ -714,7 +717,7 @@ Help and error guidance:
 - `pm create --help` / `pm update --help` accept `--type <value>` to render policy-aware required/disabled/hidden option summaries.
 - Missing `--type` usage errors include rationale, active allowed values, and custom-type examples.
 - Commander usage errors are normalized into a single structured guidance payload (duplicate default commander stderr messaging is not emitted).
-- Runtime `PmCliError` paths should surface structured guidance sections (`What happened`, `What is required`, `Why`, `Examples`, optional `Next steps`) while preserving canonical exit-code mapping.
+- Runtime `PmCliError` paths should surface structured guidance while preserving canonical exit-code mapping, with machine-readable JSON error envelopes when `--json` is active.
 
 Mutating `update` (v0.1 baseline):
 
@@ -801,7 +804,11 @@ Canonical command/action schema metadata is centralized in `src/sdk/cli-contract
 - shell completion generation in `src/cli/commands/completion.ts`
 - Pi wrapper `inputSchema` + action mapping in `.pi/extensions/pm-cli/index.ts`
 
-Contract compatibility policy is additive-first: existing command names/flags/aliases remain valid, while new machine-readable fields may be appended without changing existing semantics.
+Contract compatibility policy keeps command names/flags/aliases stable while allowing stricter machine contracts:
+
+- Existing CLI command paths and aliases remain valid.
+- Pi tool input validation uses strict action-scoped schema branches (schema v3) with per-action required fields and `additionalProperties: false`.
+- Command output remains deterministic; `--json` exposes full machine payloads and JSON error envelopes.
 
 | Command | Key inputs | Output object |
 | --- | --- | --- |
@@ -837,7 +844,7 @@ Contract compatibility policy is additive-first: existing command names/flags/al
 | `pm test <ID> --add/--remove/--run` | id + test refs/options (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`; reject recursive `test-all` linked commands at add-time, including global-flag and package-spec launcher forms such as `pm --json test-all`, `npx @unbrained/pm-cli@latest --json test-all`, `pnpm dlx @unbrained/pm-cli@latest --json test-all`, and `npm exec -- @unbrained/pm-cli@latest --json test-all`; defensively skip legacy recursive entries at run-time; reject sandbox-unsafe test-runner commands including unsandboxed direct package-manager run-script forms such as `npm run test`/`pnpm run test` and chained direct runner segments evaluated independently; this sandbox policy is intentional, and targeted scopes should be linked via `node scripts/run-tests.mjs ...` commands or `path=...` entries; run linked commands via shell-compatible spawn orchestration, close child stdin for non-interactive runs, emit stderr heartbeat progress in interactive terminals, and surface deterministic timeout/maxBuffer diagnostics with force-kill fallback) | `{ id, tests, run_results, changed, count }` |
 | `pm test-all --status --timeout` | optional status filter; duplicate linked command/path entries are deduped per invocation (keyed by scope+normalized command or scope+path) and reported as skipped; when duplicate keys carry different `timeout_seconds`, execution uses deterministic maximum timeout for that key | `{ totals, failed, passed, skipped, results }` |
 | `pm stats` | none | `{ totals, by_type, by_status, generated_at }` |
-| `pm health` | none (runs settings/directories/extensions/storage plus history-drift and vectorization diagnostics) | `{ ok, checks, warnings, generated_at }` |
+| `pm health` | none (runs settings/directories/extensions/storage plus integrity, history-drift, and vectorization diagnostics) | `{ ok, checks, warnings, generated_at }` |
 | `pm gc` | none | `{ ok, removed, retained, warnings, generated_at }` |
 | `pm docs <ID> --add/--remove` | id + doc refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`) | `{ id, docs, changed, count }` |
 | `pm history <ID> --limit` | id + optional limit | `{ id, history, count, limit }` |
@@ -992,8 +999,11 @@ Implemented baseline:
 - Request-target planning, request payload/response normalization, deterministic Qdrant request-execution helper behavior, deterministic LanceDB local query/upsert execution helper behavior, and deterministic query-hit ordering normalization (score desc, id asc tie-break) are available through this abstraction layer.
 - `pm search --mode semantic|hybrid` and `pm reindex --mode semantic|hybrid` use this abstraction for deterministic vector query/upsert execution after configuration validation.
 
-### 13.5 Health drift and vectorization diagnostics
+### 13.5 Health integrity, drift, and vectorization diagnostics
 
+- `pm health` includes deterministic `integrity` diagnostics:
+  - scans item/history files for merge-conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`)
+  - emits deterministic warning codes for conflict markers, invalid item parses, and invalid JSONL history lines
 - `pm health` includes deterministic `history_drift` diagnostics:
   - checks current item corpus against history stream availability/parsability
   - compares current canonical item hash to latest history `after_hash`

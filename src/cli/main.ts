@@ -95,7 +95,13 @@ import { getEnabledBuiltInExtensions } from "../core/extensions/builtins.js";
 import type { ItemStatus, PmSettings } from "../types/index.js";
 import { coerceLooseCommandOptionsWithFlagDefinitions, parseLooseCommandOptions } from "./extension-command-options.js";
 import { attachRichHelpText } from "./help-content.js";
-import { formatCommanderErrorForDisplay, formatPmCliErrorForDisplay } from "./error-guidance.js";
+import {
+  formatCommanderErrorForDisplay,
+  formatCommanderErrorForJson,
+  formatPmCliErrorForDisplay,
+  formatPmCliErrorForJson,
+  formatUnknownErrorForJson,
+} from "./error-guidance.js";
 import {
   CALENDAR_COMMANDER_STRING_OPTION_CONTRACTS,
   CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS,
@@ -297,9 +303,10 @@ function parseBootstrapPathToken(
   };
 }
 
-function parseBootstrapGlobalOptions(argv: string[]): { path?: string; noExtensions: boolean } {
+function parseBootstrapGlobalOptions(argv: string[]): { path?: string; noExtensions: boolean; json: boolean } {
   let pathValue: string | undefined;
   let noExtensions = false;
+  let json = false;
   let index = 0;
   while (index < argv.length) {
     const token = argv[index];
@@ -308,6 +315,11 @@ function parseBootstrapGlobalOptions(argv: string[]): { path?: string; noExtensi
     }
     if (token === "--no-extensions") {
       noExtensions = true;
+      index += 1;
+      continue;
+    }
+    if (token === "--json") {
+      json = true;
       index += 1;
       continue;
     }
@@ -324,6 +336,7 @@ function parseBootstrapGlobalOptions(argv: string[]): { path?: string; noExtensi
   return {
     path: pathValue,
     noExtensions,
+    json,
   };
 }
 
@@ -337,7 +350,14 @@ function parseBootstrapCommandName(argv: string[]): string | undefined {
       index += 1;
       continue;
     }
-    if (token.startsWith("--path=") || token === "--json" || token === "--quiet" || token === "--no-extensions" || token === "--profile") {
+    if (
+      token.startsWith("--path=") ||
+      token === "--json" ||
+      token === "--quiet" ||
+      token === "--no-extensions" ||
+      token === "--profile" ||
+      token === "--explain"
+    ) {
       continue;
     }
     if (token.startsWith("-")) {
@@ -1432,6 +1452,7 @@ program
   .option("--quiet", "Suppress stdout output")
   .option("--path <dir>", "Override PM path for this command")
   .option("--no-extensions", "Disable extension loading")
+  .option("--explain", "Render extended rationale and examples in help output")
   .option("--profile", "Print deterministic timing diagnostics")
   .exitOverride();
 
@@ -2588,9 +2609,15 @@ program
     }
   });
 
-attachRichHelpText(program);
+attachRichHelpText(program, process.argv.slice(2));
 
-async function formatCommanderUsageMessage(error: unknown): Promise<string> {
+interface CommanderUsageContext {
+  message: string;
+  commandName: string | undefined;
+  allowedTypes: string;
+}
+
+async function resolveCommanderUsageContext(error: unknown): Promise<CommanderUsageContext> {
   const rawMessage = typeof error === "object" && error !== null ? (error as { message?: string }).message : undefined;
   const message = rawMessage ?? "Invalid command usage";
   const bootstrapGlobal = parseBootstrapGlobalOptions(process.argv.slice(2));
@@ -2608,6 +2635,16 @@ async function formatCommanderUsageMessage(error: unknown): Promise<string> {
   } catch {
     // Fall back to built-in type guidance when settings cannot be read.
   }
+  return {
+    message,
+    commandName,
+    allowedTypes,
+  };
+}
+
+async function formatCommanderUsageMessage(error: unknown): Promise<string> {
+  const usageContext = await resolveCommanderUsageContext(error);
+  const { message, commandName, allowedTypes } = usageContext;
   const formatted = formatCommanderErrorForDisplay(message, commandName, allowedTypes);
   const serviceOverride = await runActiveServiceOverride("help_format", {
     message: formatted,
@@ -2620,6 +2657,17 @@ async function formatCommanderUsageMessage(error: unknown): Promise<string> {
   return formatted;
 }
 
+async function formatCommanderUsageJson(error: unknown): Promise<string> {
+  const usageContext = await resolveCommanderUsageContext(error);
+  const envelope = formatCommanderErrorForJson(
+    usageContext.message,
+    usageContext.commandName,
+    usageContext.allowedTypes,
+    EXIT_CODE.USAGE,
+  );
+  return JSON.stringify(envelope, null, 2);
+}
+
 async function main(): Promise<void> {
   try {
     await registerDynamicExtensionCommandPaths(program);
@@ -2630,8 +2678,14 @@ async function main(): Promise<void> {
       ok: false,
       error: describeUnknownError(error),
     });
+    const bootstrapGlobal = parseBootstrapGlobalOptions(process.argv.slice(2));
+    const jsonErrors = bootstrapGlobal.json;
     if (error instanceof PmCliError) {
-      printError(formatPmCliErrorForDisplay(error.message));
+      if (jsonErrors) {
+        printError(JSON.stringify(formatPmCliErrorForJson(error.message, error.exitCode), null, 2));
+      } else {
+        printError(formatPmCliErrorForDisplay(error.message));
+      }
       process.exitCode = error.exitCode;
       return;
     }
@@ -2647,14 +2701,22 @@ async function main(): Promise<void> {
         return;
       }
       if (code?.startsWith("commander.")) {
-        printError(await formatCommanderUsageMessage(error));
+        if (jsonErrors) {
+          printError(await formatCommanderUsageJson(error));
+        } else {
+          printError(await formatCommanderUsageMessage(error));
+        }
         process.exitCode = EXIT_CODE.USAGE;
         return;
       }
     }
 
     const message = describeUnknownError(error);
-    printError(message);
+    if (jsonErrors) {
+      printError(JSON.stringify(formatUnknownErrorForJson(message, EXIT_CODE.GENERIC_FAILURE), null, 2));
+    } else {
+      printError(message);
+    }
     process.exitCode = EXIT_CODE.GENERIC_FAILURE;
   }
 }

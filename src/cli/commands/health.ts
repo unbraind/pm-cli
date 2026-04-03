@@ -15,19 +15,21 @@ import { resolveSettingsWithSemanticRuntimeDefaults } from "../../core/search/se
 import { resolveVectorStores } from "../../core/search/vector-stores.js";
 import type { LoadedExtension } from "../../core/extensions/loader.js";
 import { EXIT_CODE, PM_REQUIRED_SUBDIRS } from "../../core/shared/constants.js";
+import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
+import { parseItemDocument } from "../../core/item/item-format.js";
 import { listAllFrontMatterWithBody } from "../../core/store/item-store.js";
-import { getHistoryPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
+import { getHistoryPath, getItemFormatFromPath, getSettingsPath, ITEM_FILE_EXTENSIONS, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettingsWithMetadata } from "../../core/store/settings.js";
-import type { PmSettings } from "../../types/index.js";
+import type { ItemFormat, PmSettings } from "../../types/index.js";
 
 type HealthStatus = "ok" | "warn";
 type MigrationRuntimeStatus = "pending" | "failed" | "applied";
 
 export interface HealthCheck {
-  name: "settings" | "directories" | "settings_values" | "extensions" | "storage" | "history_drift" | "vectorization";
+  name: "settings" | "directories" | "settings_values" | "extensions" | "storage" | "integrity" | "history_drift" | "vectorization";
   status: HealthStatus;
   details: Record<string, unknown>;
 }
@@ -92,6 +94,154 @@ async function countHistoryStreams(pmRoot: string): Promise<{ count: number; war
   return {
     count: historyFiles.length,
     warnings,
+  };
+}
+
+function normalizeRelativePath(pmRoot: string, targetPath: string): string {
+  return path.relative(pmRoot, targetPath).replaceAll("\\", "/");
+}
+
+async function listItemDocumentPaths(pmRoot: string, typeToFolder: Record<string, string>): Promise<string[]> {
+  const folders = [...new Set(Object.values(typeToFolder))].sort((left, right) => left.localeCompare(right));
+  const itemPaths: string[] = [];
+  for (const folder of folders) {
+    const directoryPath = path.join(pmRoot, folder);
+    let entries: string[] = [];
+    try {
+      entries = await fs.readdir(directoryPath);
+    } catch (error: unknown) {
+      if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "ENOENT") {
+        continue;
+      }
+      continue;
+    }
+    for (const entry of entries) {
+      if (!ITEM_FILE_EXTENSIONS.some((extension) => entry.toLowerCase().endsWith(extension))) {
+        continue;
+      }
+      itemPaths.push(path.join(directoryPath, entry));
+    }
+  }
+  itemPaths.sort((left, right) => normalizeRelativePath(pmRoot, left).localeCompare(normalizeRelativePath(pmRoot, right)));
+  return itemPaths;
+}
+
+async function buildIntegrityCheck(
+  pmRoot: string,
+  typeToFolder: Record<string, string>,
+): Promise<{ check: HealthCheck; warnings: string[] }> {
+  const itemPaths = await listItemDocumentPaths(pmRoot, typeToFolder);
+  const itemUnreadable: string[] = [];
+  const itemConflictMarkers: Array<{ path: string; line: number; marker: string }> = [];
+  const itemParseFailures: string[] = [];
+
+  for (const itemPath of itemPaths) {
+    const relativePath = normalizeRelativePath(pmRoot, itemPath);
+    let raw = "";
+    try {
+      raw = await fs.readFile(itemPath, "utf8");
+    } catch {
+      itemUnreadable.push(relativePath);
+      continue;
+    }
+    const conflictMarker = findFirstMergeConflictMarker(raw);
+    if (conflictMarker) {
+      itemConflictMarkers.push({
+        path: relativePath,
+        line: conflictMarker.line,
+        marker: conflictMarker.marker,
+      });
+      continue;
+    }
+    try {
+      parseItemDocument(raw, { format: getItemFormatFromPath(itemPath) as ItemFormat });
+    } catch {
+      itemParseFailures.push(relativePath);
+    }
+  }
+
+  const historyDir = path.join(pmRoot, "history");
+  const historyUnreadable: string[] = [];
+  const historyConflictMarkers: Array<{ id: string; line: number; marker: string }> = [];
+  const historyInvalidJson: Array<{ id: string; line: number }> = [];
+  let historyFiles: string[] = [];
+  try {
+    historyFiles = (await fs.readdir(historyDir)).filter((entry) => entry.endsWith(".jsonl")).sort((left, right) => left.localeCompare(right));
+  } catch (error: unknown) {
+    if (!(typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "ENOENT")) {
+      historyUnreadable.push("history");
+    }
+  }
+  for (const fileName of historyFiles) {
+    const itemId = fileName.slice(0, -".jsonl".length);
+    const historyPath = path.join(historyDir, fileName);
+    let raw = "";
+    try {
+      raw = await fs.readFile(historyPath, "utf8");
+    } catch {
+      historyUnreadable.push(itemId);
+      continue;
+    }
+    const conflictMarker = findFirstMergeConflictMarker(raw);
+    if (conflictMarker) {
+      historyConflictMarkers.push({
+        id: itemId,
+        line: conflictMarker.line,
+        marker: conflictMarker.marker,
+      });
+      continue;
+    }
+    const lines = raw.split(/\r?\n/);
+    for (let index = 0; index < lines.length; index += 1) {
+      const line = lines[index]?.trim();
+      if (!line) {
+        continue;
+      }
+      try {
+        JSON.parse(line);
+      } catch {
+        historyInvalidJson.push({
+          id: itemId,
+          line: index + 1,
+        });
+      }
+    }
+  }
+
+  const warnings = [
+    ...itemUnreadable.map((entry) => `integrity_item_unreadable:${entry}`),
+    ...itemConflictMarkers.map((entry) => `integrity_item_conflict_marker:${entry.path}:L${entry.line}`),
+    ...itemParseFailures.map((entry) => `integrity_item_parse_failed:${entry}`),
+    ...historyUnreadable.map((entry) => `integrity_history_unreadable:${entry}`),
+    ...historyConflictMarkers.map((entry) => `integrity_history_conflict_marker:${entry.id}:L${entry.line}`),
+    ...historyInvalidJson.map((entry) => `integrity_history_invalid_json:${entry.id}:L${entry.line}`),
+  ];
+  const normalizedWarnings = [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
+
+  return {
+    check: {
+      name: "integrity",
+      status: normalizedWarnings.length === 0 ? "ok" : "warn",
+      details: {
+        checked_item_files: itemPaths.length,
+        checked_history_streams: historyFiles.length,
+        counts: {
+          item_unreadable: itemUnreadable.length,
+          item_conflict_markers: itemConflictMarkers.length,
+          item_parse_failures: itemParseFailures.length,
+          history_unreadable: historyUnreadable.length,
+          history_conflict_markers: historyConflictMarkers.length,
+          history_invalid_json: historyInvalidJson.length,
+        },
+        item_unreadable: itemUnreadable,
+        item_conflict_markers: itemConflictMarkers,
+        item_parse_failures: itemParseFailures,
+        history_unreadable: historyUnreadable,
+        history_conflict_markers: historyConflictMarkers,
+        history_invalid_json: historyInvalidJson,
+      },
+    },
+    warnings: normalizedWarnings,
   };
 }
 
@@ -482,6 +632,7 @@ export async function runHealth(global: GlobalOptions): Promise<HealthResult> {
     commandLabel: "health",
   });
   const historySummary = await countHistoryStreams(pmRoot);
+  const integrityCheck = await buildIntegrityCheck(pmRoot, typeRegistry.type_to_folder);
   const historyDriftCheck = await buildHistoryDriftCheck(pmRoot, items);
   const vectorizationCheck = await buildVectorizationCheck(pmRoot, settings, items);
 
@@ -521,6 +672,7 @@ export async function runHealth(global: GlobalOptions): Promise<HealthResult> {
         history_streams: historySummary.count,
       },
     },
+    integrityCheck.check,
     historyDriftCheck.check,
     vectorizationCheck.check,
   ];
@@ -533,6 +685,7 @@ export async function runHealth(global: GlobalOptions): Promise<HealthResult> {
     ...extensionCheck.warnings,
     ...historyPolicy.warnings,
     ...historySummary.warnings,
+    ...integrityCheck.warnings,
     ...historyDriftCheck.warnings,
     ...vectorizationCheck.warnings,
     ...hookWarnings,

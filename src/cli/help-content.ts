@@ -6,7 +6,24 @@ interface HelpBundle {
   tips?: string[];
 }
 
-function renderHelpBundle(bundle: HelpBundle): string {
+type HelpDetailMode = "compact" | "detailed";
+
+function renderCompactHelpBundle(bundle: HelpBundle): string {
+  const lines: string[] = [
+    "",
+    "Intent:",
+    `  ${bundle.why}`,
+  ];
+  if (bundle.examples.length > 0) {
+    lines.push("", "Example:");
+    lines.push(`  ${bundle.examples[0]}`);
+  }
+  lines.push("", "Need deeper rationale and more examples?");
+  lines.push("  Re-run with --explain.");
+  return lines.join("\n");
+}
+
+function renderDetailedHelpBundle(bundle: HelpBundle): string {
   const lines: string[] = [
     "",
     "Why use this command:",
@@ -20,6 +37,13 @@ function renderHelpBundle(bundle: HelpBundle): string {
     lines.push(...bundle.tips.map((tip) => `  - ${tip}`));
   }
   return lines.join("\n");
+}
+
+function renderHelpBundle(bundle: HelpBundle, detailMode: HelpDetailMode): string {
+  if (detailMode === "detailed") {
+    return renderDetailedHelpBundle(bundle);
+  }
+  return renderCompactHelpBundle(bundle);
 }
 
 function findDirectChildCommand(parent: Command, name: string): Command | null {
@@ -38,12 +62,19 @@ function findCommandByPath(root: Command, pathParts: string[]): Command | null {
   return current;
 }
 
-function attachBundleByPath(root: Command, commandPath: string, bundle: HelpBundle): void {
+function attachBundleByPath(root: Command, commandPath: string, bundle: HelpBundle, detailMode: HelpDetailMode): void {
   const command = findCommandByPath(root, commandPath.split(" ").filter((part) => part.length > 0));
   if (!command) {
     return;
   }
-  command.addHelpText("after", renderHelpBundle(bundle));
+  command.addHelpText("after", renderHelpBundle(bundle, detailMode));
+}
+
+function resolveHelpDetailMode(argv: string[]): HelpDetailMode {
+  if (argv.includes("--explain")) {
+    return "detailed";
+  }
+  return "compact";
 }
 
 const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
@@ -265,9 +296,10 @@ const ROOT_HELP_BUNDLE: HelpBundle = {
   ],
 };
 
-export function attachRichHelpText(program: Command): void {
-  program.addHelpText("after", renderHelpBundle(ROOT_HELP_BUNDLE));
+export function attachRichHelpText(program: Command, argv: string[] = process.argv.slice(2)): void {
+  const detailMode = resolveHelpDetailMode(argv);
+  program.addHelpText("after", renderHelpBundle(ROOT_HELP_BUNDLE, detailMode));
   for (const [commandPath, bundle] of Object.entries(HELP_BY_COMMAND_PATH)) {
-    attachBundleByPath(program, commandPath, bundle);
+    attachBundleByPath(program, commandPath, bundle, detailMode);
   }
 }

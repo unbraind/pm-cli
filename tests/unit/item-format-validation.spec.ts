@@ -36,6 +36,18 @@ describe("item-format front-matter validation", () => {
     expect(() => parseItemDocument("{ invalid }\n\nBody")).toThrow("not valid JSON");
   });
 
+  it("throws actionable guidance when merge conflict markers are present", () => {
+    const conflicted = [
+      "<<<<<<< HEAD",
+      buildSource({ title: "conflict-left" }, "left body").trimEnd(),
+      "=======",
+      buildSource({ title: "conflict-right" }, "right body").trimEnd(),
+      ">>>>>>> feature/conflict",
+      "",
+    ].join("\n");
+    expect(() => parseItemDocument(conflicted)).toThrow("Merge conflict markers detected in item document at line 1");
+  });
+
   it("throws when required string fields are missing or invalid", () => {
     expect(() => parseItemDocument(buildSource({ title: undefined }))).toThrow("title is required and must be a string");
     expect(() => parseItemDocument(buildSource({ description: 42 }))).toThrow(

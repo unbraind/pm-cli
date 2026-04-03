@@ -672,107 +672,238 @@ export function readStringArrayFromCommanderOptions(
   return undefined;
 }
 
+const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
+  json: { type: "boolean", default: true },
+  quiet: { type: "boolean" },
+  profile: { type: "boolean" },
+  noExtensions: { type: "boolean" },
+  path: { type: "string" },
+  pmExecutable: { type: "string" },
+  timeoutMs: { type: "number" },
+  id: { type: "string" },
+  target: { type: "string" },
+  query: { type: "string" },
+  keywords: { type: "string" },
+  prefix: { type: "string" },
+  scope: { type: "string" },
+  configAction: { type: "string" },
+  key: { type: "string" },
+  title: { type: "string" },
+  description: { type: "string" },
+  type: { type: "string" },
+  status: { type: "string" },
+  closeReason: { type: "string" },
+  priority: { anyOf: [{ type: "string" }, { type: "number" }] },
+  tags: { type: "string" },
+  body: { type: "string" },
+  deadline: { type: "string" },
+  estimate: { anyOf: [{ type: "string" }, { type: "number" }] },
+  acceptanceCriteria: { type: "string" },
+  author: { type: "string" },
+  message: { type: "string" },
+  assignee: { type: "string" },
+  parent: { type: "string" },
+  reviewer: { type: "string" },
+  risk: { type: "string" },
+  confidence: { anyOf: [{ type: "string" }, { type: "number" }] },
+  sprint: { type: "string" },
+  release: { type: "string" },
+  blockedBy: { type: "string" },
+  blockedReason: { type: "string" },
+  unblockNote: { type: "string" },
+  reporter: { type: "string" },
+  severity: { type: "string" },
+  environment: { type: "string" },
+  reproSteps: { type: "string" },
+  resolution: { type: "string" },
+  expectedResult: { type: "string" },
+  actualResult: { type: "string" },
+  affectedVersion: { type: "string" },
+  fixedVersion: { type: "string" },
+  component: { type: "string" },
+  regression: { anyOf: [{ type: "boolean" }, { type: "string" }, { type: "number" }] },
+  customerImpact: { type: "string" },
+  definitionOfReady: { type: "string" },
+  order: { anyOf: [{ type: "string" }, { type: "number" }] },
+  goal: { type: "string" },
+  objective: { type: "string" },
+  value: { type: "string" },
+  impact: { type: "string" },
+  outcome: { type: "string" },
+  whyNow: { type: "string" },
+  mode: { type: "string" },
+  view: { type: "string" },
+  date: { type: "string" },
+  from: { type: "string" },
+  to: { type: "string" },
+  past: { type: "boolean" },
+  include: { type: "string" },
+  recurrenceLookaheadDays: { anyOf: [{ type: "string" }, { type: "number" }] },
+  recurrenceLookbackDays: { anyOf: [{ type: "string" }, { type: "number" }] },
+  occurrenceLimit: { anyOf: [{ type: "string" }, { type: "number" }] },
+  includeLinked: { type: "boolean" },
+  tag: { type: "string" },
+  deadlineBefore: { type: "string" },
+  deadlineAfter: { type: "string" },
+  limit: { anyOf: [{ type: "string" }, { type: "number" }] },
+  timeout: { anyOf: [{ type: "string" }, { type: "number" }] },
+  force: { type: "boolean" },
+  run: { type: "boolean" },
+  shell: { type: "string" },
+  file: { type: "string" },
+  folder: { type: "string" },
+  text: { type: "string" },
+  add: { type: "array", items: { type: "string" } },
+  remove: { type: "array", items: { type: "string" } },
+  dep: { type: "array", items: { type: "string" } },
+  depRemove: { type: "array", items: { type: "string" } },
+  comment: { type: "array", items: { type: "string" } },
+  note: { type: "array", items: { type: "string" } },
+  learning: { type: "array", items: { type: "string" } },
+  linkedFile: { type: "array", items: { type: "string" } },
+  linkedTest: { type: "array", items: { type: "string" } },
+  doc: { type: "array", items: { type: "string" } },
+  reminder: { type: "array", items: { type: "string" } },
+  event: { type: "array", items: { type: "string" } },
+  typeOption: { type: "array", items: { type: "string" } },
+  criterion: { type: "array", items: { type: "string" } },
+  format: { type: "string" },
+};
+
+const PM_TOOL_GLOBAL_PARAMETER_KEYS = ["json", "quiet", "profile", "noExtensions", "path", "pmExecutable", "timeoutMs"] as const;
+
+interface PmActionSchemaContract {
+  required?: string[];
+  optional?: string[];
+  anyOfRequired?: Array<string[]>;
+}
+
+function toSchemaKeyList(values: string[]): string[] {
+  return normalizeUniqueStringList(values);
+}
+
+const CREATE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
+  ...PI_CREATE_OPTION_CONTRACTS.map((entry) => entry.param),
+  ...PI_SHARED_CREATE_UPDATE_OPTION_CONTRACTS.map((entry) => entry.param),
+  "assignee",
+]);
+
+const UPDATE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
+  ...PI_UPDATE_OPTION_CONTRACTS.map((entry) => entry.param),
+  ...PI_SHARED_CREATE_UPDATE_OPTION_CONTRACTS.map((entry) => entry.param),
+  "force",
+]);
+
+const CALENDAR_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
+  ...PI_CALENDAR_OPTION_CONTRACTS.map((entry) => entry.param),
+  "past",
+]);
+
+const CONTEXT_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
+  ...PI_CONTEXT_OPTION_CONTRACTS.map((entry) => entry.param),
+  "past",
+]);
+
+const LIST_CONTRACT_PARAMETER_KEYS = toSchemaKeyList(PI_LIST_FILTER_OPTION_CONTRACTS.map((entry) => entry.param));
+const SEARCH_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
+  "query",
+  "keywords",
+  "mode",
+  "includeLinked",
+  ...PI_SEARCH_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
+]);
+
+const AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS = ["author", "message", "force"];
+
+const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContract> = {
+  init: { optional: ["prefix"] },
+  config: {
+    required: ["scope", "configAction", "key"],
+    optional: ["criterion", "format"],
+  },
+  create: {
+    required: ["title", "description", "type", "status", "priority", "message"],
+    optional: CREATE_CONTRACT_PARAMETER_KEYS,
+  },
+  list: { optional: LIST_CONTRACT_PARAMETER_KEYS },
+  "list-all": { optional: LIST_CONTRACT_PARAMETER_KEYS },
+  "list-draft": { optional: LIST_CONTRACT_PARAMETER_KEYS },
+  "list-open": { optional: LIST_CONTRACT_PARAMETER_KEYS },
+  "list-in-progress": { optional: LIST_CONTRACT_PARAMETER_KEYS },
+  "list-blocked": { optional: LIST_CONTRACT_PARAMETER_KEYS },
+  "list-closed": { optional: LIST_CONTRACT_PARAMETER_KEYS },
+  "list-canceled": { optional: LIST_CONTRACT_PARAMETER_KEYS },
+  calendar: { optional: CALENDAR_CONTRACT_PARAMETER_KEYS },
+  context: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
+  get: { required: ["id"] },
+  search: {
+    optional: SEARCH_CONTRACT_PARAMETER_KEYS,
+    anyOfRequired: [["query"], ["keywords"]],
+  },
+  reindex: { optional: ["mode"] },
+  history: { required: ["id"], optional: ["limit"] },
+  activity: { optional: ["limit"] },
+  restore: { required: ["id", "target"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
+  update: { required: ["id"], optional: UPDATE_CONTRACT_PARAMETER_KEYS },
+  close: { required: ["id", "text"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
+  delete: { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
+  append: { required: ["id", "body"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
+  comments: { required: ["id"], optional: ["text", "add", "limit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
+  notes: { required: ["id"], optional: ["text", "add", "limit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
+  learnings: { required: ["id"], optional: ["text", "add", "limit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
+  files: { required: ["id"], optional: ["add", "remove", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
+  docs: { required: ["id"], optional: ["add", "remove", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
+  test: { required: ["id"], optional: ["add", "remove", "run", "timeout", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
+  "test-all": { optional: ["status", "timeout"] },
+  stats: {},
+  health: {},
+  gc: {},
+  completion: { required: ["shell"] },
+  claim: { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
+  release: { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
+  "beads-import": { required: ["file"], optional: ["author", "message"] },
+  "todos-import": { optional: ["folder", "author", "message"] },
+  "todos-export": { optional: ["folder"] },
+  "start-task": { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
+  "pause-task": { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
+  "close-task": { required: ["id", "text"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
+};
+
+function buildActionScopedToolSchema(action: PmToolAction): Record<string, unknown> {
+  const contract = PM_TOOL_ACTION_SCHEMA_CONTRACTS[action];
+  const required = toSchemaKeyList(contract.required ?? []);
+  const optional = toSchemaKeyList(contract.optional ?? []);
+  const allowedKeys = toSchemaKeyList([...PM_TOOL_GLOBAL_PARAMETER_KEYS, ...required, ...optional]);
+  const properties: Record<string, unknown> = {
+    action: { const: action },
+  };
+  for (const key of allowedKeys) {
+    if (key === "action") {
+      continue;
+    }
+    const definition = PM_TOOL_PARAMETER_PROPERTIES[key];
+    if (definition) {
+      properties[key] = definition;
+    }
+  }
+  const schema: Record<string, unknown> = {
+    type: "object",
+    additionalProperties: false,
+    required: ["action", ...required],
+    properties,
+  };
+  if (contract.anyOfRequired && contract.anyOfRequired.length > 0) {
+    schema.anyOf = contract.anyOfRequired.map((requiredFields) => ({
+      required: [...requiredFields],
+    }));
+  }
+  return schema;
+}
+
 export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
-  type: "object",
-  additionalProperties: false,
-  required: ["action"],
-  properties: {
-    action: { type: "string", enum: [...PM_TOOL_ACTIONS] },
-    json: { type: "boolean", default: true },
-    quiet: { type: "boolean" },
-    profile: { type: "boolean" },
-    noExtensions: { type: "boolean" },
-    path: { type: "string" },
-    pmExecutable: { type: "string" },
-    timeoutMs: { type: "number" },
-    id: { type: "string" },
-    target: { type: "string" },
-    query: { type: "string" },
-    keywords: { type: "string" },
-    prefix: { type: "string" },
-    scope: { type: "string" },
-    configAction: { type: "string" },
-    key: { type: "string" },
-    title: { type: "string" },
-    description: { type: "string" },
-    type: { type: "string" },
-    status: { type: "string" },
-    closeReason: { type: "string" },
-    priority: { anyOf: [{ type: "string" }, { type: "number" }] },
-    tags: { type: "string" },
-    body: { type: "string" },
-    deadline: { type: "string" },
-    estimate: { anyOf: [{ type: "string" }, { type: "number" }] },
-    acceptanceCriteria: { type: "string" },
-    author: { type: "string" },
-    message: { type: "string" },
-    assignee: { type: "string" },
-    parent: { type: "string" },
-    reviewer: { type: "string" },
-    risk: { type: "string" },
-    confidence: { anyOf: [{ type: "string" }, { type: "number" }] },
-    sprint: { type: "string" },
-    release: { type: "string" },
-    blockedBy: { type: "string" },
-    blockedReason: { type: "string" },
-    unblockNote: { type: "string" },
-    reporter: { type: "string" },
-    severity: { type: "string" },
-    environment: { type: "string" },
-    reproSteps: { type: "string" },
-    resolution: { type: "string" },
-    expectedResult: { type: "string" },
-    actualResult: { type: "string" },
-    affectedVersion: { type: "string" },
-    fixedVersion: { type: "string" },
-    component: { type: "string" },
-    regression: { anyOf: [{ type: "boolean" }, { type: "string" }, { type: "number" }] },
-    customerImpact: { type: "string" },
-    definitionOfReady: { type: "string" },
-    order: { anyOf: [{ type: "string" }, { type: "number" }] },
-    goal: { type: "string" },
-    objective: { type: "string" },
-    value: { type: "string" },
-    impact: { type: "string" },
-    outcome: { type: "string" },
-    whyNow: { type: "string" },
-    mode: { type: "string" },
-    view: { type: "string" },
-    date: { type: "string" },
-    from: { type: "string" },
-    to: { type: "string" },
-    past: { type: "boolean" },
-    include: { type: "string" },
-    recurrenceLookaheadDays: { anyOf: [{ type: "string" }, { type: "number" }] },
-    recurrenceLookbackDays: { anyOf: [{ type: "string" }, { type: "number" }] },
-    occurrenceLimit: { anyOf: [{ type: "string" }, { type: "number" }] },
-    includeLinked: { type: "boolean" },
-    tag: { type: "string" },
-    deadlineBefore: { type: "string" },
-    deadlineAfter: { type: "string" },
-    limit: { anyOf: [{ type: "string" }, { type: "number" }] },
-    timeout: { anyOf: [{ type: "string" }, { type: "number" }] },
-    force: { type: "boolean" },
-    run: { type: "boolean" },
-    shell: { type: "string" },
-    file: { type: "string" },
-    folder: { type: "string" },
-    text: { type: "string" },
-    add: { type: "array", items: { type: "string" } },
-    remove: { type: "array", items: { type: "string" } },
-    dep: { type: "array", items: { type: "string" } },
-    depRemove: { type: "array", items: { type: "string" } },
-    comment: { type: "array", items: { type: "string" } },
-    note: { type: "array", items: { type: "string" } },
-    learning: { type: "array", items: { type: "string" } },
-    linkedFile: { type: "array", items: { type: "string" } },
-    linkedTest: { type: "array", items: { type: "string" } },
-    doc: { type: "array", items: { type: "string" } },
-    reminder: { type: "array", items: { type: "string" } },
-    event: { type: "array", items: { type: "string" } },
-    typeOption: { type: "array", items: { type: "string" } },
-    criterion: { type: "array", items: { type: "string" } },
-    format: { type: "string" },
-  },
+  $id: "https://unbrained.dev/schemas/pm-cli/tool-parameters-v3.schema.json",
+  title: "pm-cli Pi wrapper parameters (action-scoped strict schema)",
+  "x-schema-version": "3.0.0",
+  oneOf: PM_TOOL_ACTIONS.map((action) => buildActionScopedToolSchema(action)),
 };

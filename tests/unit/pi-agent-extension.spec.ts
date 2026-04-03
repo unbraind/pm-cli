@@ -8,6 +8,28 @@ import {
   registerPmTool,
 } from "../../.pi/extensions/pm-cli/index.ts";
 
+function schemaForAction(parameters: Record<string, unknown>, action: string): Record<string, unknown> {
+  const branches = Array.isArray(parameters.oneOf) ? (parameters.oneOf as Array<Record<string, unknown>>) : [];
+  const branch = branches.find((entry) => {
+    const properties = entry.properties as Record<string, unknown> | undefined;
+    const actionProperty = properties?.action as Record<string, unknown> | undefined;
+    return actionProperty?.const === action;
+  });
+  if (!branch) {
+    throw new Error(`Missing schema branch for action "${action}"`);
+  }
+  return branch;
+}
+
+function schemaProperty(schema: Record<string, unknown>, key: string): Record<string, unknown> {
+  const properties = schema.properties as Record<string, unknown> | undefined;
+  const property = properties?.[key] as Record<string, unknown> | undefined;
+  if (!property) {
+    throw new Error(`Missing schema property "${key}"`);
+  }
+  return property;
+}
+
 describe("Pi agent extension wrapper for pm", () => {
   it("builds deterministic CLI args for mapped actions", () => {
     const args = buildPmCliArgs({
@@ -423,155 +445,80 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(registerToolSpy).toHaveBeenCalledTimes(1);
     const tool = registerToolSpy.mock.calls[0]?.[0];
     expect(tool.name).toBe("pm");
+
     expect(tool.parameters).toMatchObject({
-      type: "object",
-      required: ["action"],
+      $schema: "https://json-schema.org/draft/2020-12/schema",
+      "x-schema-version": "3.0.0",
     });
-    expect((tool.parameters as { properties: { action: { enum: string[] } } }).properties.action.enum).toEqual(
-      expect.arrayContaining(PM_TOOL_ACTIONS as unknown as string[]),
+
+    const oneOf = (tool.parameters as { oneOf?: Array<Record<string, unknown>> }).oneOf;
+    expect(Array.isArray(oneOf)).toBe(true);
+    const actionValues = (oneOf as Array<Record<string, unknown>>)
+      .map((entry) => ((entry.properties as Record<string, unknown> | undefined)?.action as { const?: string } | undefined)?.const)
+      .filter((value): value is string => typeof value === "string")
+      .sort((left, right) => left.localeCompare(right));
+    expect(actionValues).toEqual([...PM_TOOL_ACTIONS].sort((left, right) => left.localeCompare(right)));
+
+    const searchSchema = schemaForAction(tool.parameters as Record<string, unknown>, "search");
+    expect(searchSchema.required).toEqual(["action"]);
+    expect(searchSchema.anyOf).toEqual(
+      expect.arrayContaining([expect.objectContaining({ required: ["query"] }), expect.objectContaining({ required: ["keywords"] })]),
     );
-    expect(
-      (tool.parameters as { properties: { includeLinked: { type: string } } }).properties.includeLinked.type,
-    ).toBe("boolean");
-    expect((tool.parameters as { properties: { view: { type: string } } }).properties.view.type).toBe("string");
-    expect((tool.parameters as { properties: { past: { type: string } } }).properties.past.type).toBe("boolean");
-    expect(
-      (
-        tool.parameters as {
-          properties: {
-            reminder: { type: string; items: { type: string } };
-          };
-        }
-      ).properties.reminder,
-    ).toEqual({
+    expect(schemaProperty(searchSchema, "includeLinked").type).toBe("boolean");
+
+    const calendarSchema = schemaForAction(tool.parameters as Record<string, unknown>, "calendar");
+    expect(schemaProperty(calendarSchema, "view").type).toBe("string");
+    expect(schemaProperty(calendarSchema, "past").type).toBe("boolean");
+    expect(schemaProperty(calendarSchema, "include").type).toBe("string");
+    expect(schemaProperty(calendarSchema, "recurrenceLookaheadDays").anyOf).toEqual(
+      expect.arrayContaining([{ type: "string" }, { type: "number" }]),
+    );
+    expect(schemaProperty(calendarSchema, "recurrenceLookbackDays").anyOf).toEqual(
+      expect.arrayContaining([{ type: "string" }, { type: "number" }]),
+    );
+    expect(schemaProperty(calendarSchema, "occurrenceLimit").anyOf).toEqual(
+      expect.arrayContaining([{ type: "string" }, { type: "number" }]),
+    );
+
+    const createSchema = schemaForAction(tool.parameters as Record<string, unknown>, "create");
+    expect(createSchema.required).toEqual(expect.arrayContaining(["action", "title", "description", "type", "status", "priority"]));
+    expect(schemaProperty(createSchema, "reminder")).toEqual({
       type: "array",
       items: { type: "string" },
     });
-    expect(
-      (
-        tool.parameters as {
-          properties: {
-            event: { type: string; items: { type: string } };
-          };
-        }
-      ).properties.event,
-    ).toEqual({
+    expect(schemaProperty(createSchema, "event")).toEqual({
       type: "array",
       items: { type: "string" },
     });
-    expect(
-      (
-        tool.parameters as {
-          properties: {
-            depRemove: { type: string; items: { type: string } };
-          };
-        }
-      ).properties.depRemove,
-    ).toEqual({
+    expect(schemaProperty(createSchema, "blockedBy").type).toBe("string");
+    expect(schemaProperty(createSchema, "definitionOfReady").type).toBe("string");
+    expect(schemaProperty(createSchema, "priority").anyOf).toEqual(
+      expect.arrayContaining([{ type: "string" }, { type: "number" }]),
+    );
+    expect(schemaProperty(createSchema, "estimate").anyOf).toEqual(
+      expect.arrayContaining([{ type: "string" }, { type: "number" }]),
+    );
+    expect(schemaProperty(createSchema, "regression").anyOf).toEqual(
+      expect.arrayContaining([{ type: "boolean" }, { type: "string" }, { type: "number" }]),
+    );
+
+    const updateSchema = schemaForAction(tool.parameters as Record<string, unknown>, "update");
+    expect(updateSchema.required).toEqual(expect.arrayContaining(["action", "id"]));
+    expect(schemaProperty(updateSchema, "closeReason").type).toBe("string");
+    expect(schemaProperty(updateSchema, "depRemove")).toEqual({
       type: "array",
       items: { type: "string" },
     });
-    expect((tool.parameters as { properties: { include: { type: string } } }).properties.include.type).toBe("string");
-    expect(
-      (
-        tool.parameters as {
-          properties: {
-            recurrenceLookaheadDays: { anyOf: Array<{ type: string }> };
-            recurrenceLookbackDays: { anyOf: Array<{ type: string }> };
-            occurrenceLimit: { anyOf: Array<{ type: string }> };
-          };
-        }
-      ).properties.recurrenceLookaheadDays.anyOf,
-    ).toEqual(expect.arrayContaining([{ type: "string" }, { type: "number" }]));
-    expect(
-      (
-        tool.parameters as {
-          properties: {
-            recurrenceLookaheadDays: { anyOf: Array<{ type: string }> };
-            recurrenceLookbackDays: { anyOf: Array<{ type: string }> };
-            occurrenceLimit: { anyOf: Array<{ type: string }> };
-          };
-        }
-      ).properties.recurrenceLookbackDays.anyOf,
-    ).toEqual(expect.arrayContaining([{ type: "string" }, { type: "number" }]));
-    expect(
-      (
-        tool.parameters as {
-          properties: {
-            recurrenceLookaheadDays: { anyOf: Array<{ type: string }> };
-            recurrenceLookbackDays: { anyOf: Array<{ type: string }> };
-            occurrenceLimit: { anyOf: Array<{ type: string }> };
-          };
-        }
-      ).properties.occurrenceLimit.anyOf,
-    ).toEqual(expect.arrayContaining([{ type: "string" }, { type: "number" }]));
-    expect((tool.parameters as { properties: { blockedBy: { type: string } } }).properties.blockedBy.type).toBe(
-      "string",
+
+    const completionSchema = schemaForAction(tool.parameters as Record<string, unknown>, "completion");
+    expect(completionSchema.required).toEqual(expect.arrayContaining(["action", "shell"]));
+    expect(schemaProperty(completionSchema, "shell").type).toBe("string");
+
+    const testAllSchema = schemaForAction(tool.parameters as Record<string, unknown>, "test-all");
+    expect(schemaProperty(testAllSchema, "timeout").anyOf).toEqual(
+      expect.arrayContaining([{ type: "string" }, { type: "number" }]),
     );
-    expect((tool.parameters as { properties: { closeReason: { type: string } } }).properties.closeReason.type).toBe(
-      "string",
-    );
-    expect((tool.parameters as { properties: { definitionOfReady: { type: string } } }).properties.definitionOfReady.type).toBe(
-      "string",
-    );
-    expect((tool.parameters as { properties: { shell: { type: string } } }).properties.shell.type).toBe("string");
-    expect(
-      (
-        tool.parameters as {
-          properties: {
-            regression: { anyOf: Array<{ type: string }> };
-          };
-        }
-      ).properties.regression.anyOf,
-    ).toEqual(expect.arrayContaining([{ type: "boolean" }, { type: "string" }, { type: "number" }]));
-    expect(
-      (
-        tool.parameters as {
-          properties: {
-            priority: { anyOf: Array<{ type: string }> };
-            estimate: { anyOf: Array<{ type: string }> };
-            limit: { anyOf: Array<{ type: string }> };
-            timeout: { anyOf: Array<{ type: string }> };
-          };
-        }
-      ).properties.priority.anyOf,
-    ).toEqual(expect.arrayContaining([{ type: "string" }, { type: "number" }]));
-    expect(
-      (
-        tool.parameters as {
-          properties: {
-            priority: { anyOf: Array<{ type: string }> };
-            estimate: { anyOf: Array<{ type: string }> };
-            limit: { anyOf: Array<{ type: string }> };
-            timeout: { anyOf: Array<{ type: string }> };
-          };
-        }
-      ).properties.estimate.anyOf,
-    ).toEqual(expect.arrayContaining([{ type: "string" }, { type: "number" }]));
-    expect(
-      (
-        tool.parameters as {
-          properties: {
-            priority: { anyOf: Array<{ type: string }> };
-            estimate: { anyOf: Array<{ type: string }> };
-            limit: { anyOf: Array<{ type: string }> };
-            timeout: { anyOf: Array<{ type: string }> };
-          };
-        }
-      ).properties.limit.anyOf,
-    ).toEqual(expect.arrayContaining([{ type: "string" }, { type: "number" }]));
-    expect(
-      (
-        tool.parameters as {
-          properties: {
-            priority: { anyOf: Array<{ type: string }> };
-            estimate: { anyOf: Array<{ type: string }> };
-            limit: { anyOf: Array<{ type: string }> };
-            timeout: { anyOf: Array<{ type: string }> };
-          };
-        }
-      ).properties.timeout.anyOf,
-    ).toEqual(expect.arrayContaining([{ type: "string" }, { type: "number" }]));
+    expect(schemaProperty(testAllSchema, "status").type).toBe("string");
 
     const result = await tool.execute("call-1", { action: "stats" });
     expect(execSpy).toHaveBeenCalledTimes(2);

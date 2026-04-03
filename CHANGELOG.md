@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added centralized command help narratives across core command paths (`Why use this command`, practical examples, and targeted tips) through a shared help composer.
 - Added structured CLI error guidance rendering for commander usage failures and runtime `PmCliError` failures with deterministic sections (`What happened`, `What is required`, `Why`, `Examples`, optional `Next steps`).
 - Added sparse default TOON rendering that emits command payloads directly and omits `null`/`undefined`/empty arrays/empty objects for token-efficient agent workflows while keeping `--json` payload compatibility.
+- Added strict action-scoped Pi tool parameter schema v3 in `src/sdk/cli-contracts.ts` (`oneOf` action branches with per-action required fields and `additionalProperties: false`).
+- Added machine-readable JSON error envelopes for usage/runtime failures when `--json` is active (`type`, `code`, `title`, `detail`, `required`, `exit_code`, optional remediation fields).
+- Added layered help defaults: compact command help by default plus explicit deep-help rendering with `--explain`.
+- Added merge-conflict marker detection in item and history parsing paths with actionable remediation guidance.
+- Added `pm health` `integrity` diagnostics for conflict markers and parse/JSONL anomalies with deterministic warning codes.
 - `list*` commands now accept `--include-body` to project item `body` into each returned row when needed for metadata completeness analysis.
 - Added persistent item reminders via repeatable `--reminder at=<iso|relative>,text=<text>` support on `pm create` and `pm update` (including deterministic `none` clearing semantics).
 - Added `pm update --body` / `-b` support (including stdin token `--body -`) so existing items can backfill or replace body content with standard update history/lock semantics.
@@ -46,6 +51,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Commander option normalization, shell completion flag generation, and Pi wrapper action/schema/arg mapping now consume the shared command contract registry to reduce cross-surface drift.
+- Top-level `--json` error handling now emits canonical machine-readable diagnostics instead of text-only guidance.
+- `pm history` malformed stream errors now include explicit repair/restore remediation guidance.
 - Extension schema-capability registrations now enforce stricter deterministic validation for `registerFlags`, `registerItemFields`, `registerItemTypes`, and `registerMigration` input shapes.
 - Commander error output now emits a single high-signal structured guidance payload (duplicate default commander stderr lines are suppressed).
 - `pm comments` now accepts optional positional text shorthand (`pm comments <ID> "<text>"`) as an intuitive alias for `--add <text>`, and tolerates bare `--author` by falling back to existing author resolution (`PM_AUTHOR` -> settings default -> `unknown`).

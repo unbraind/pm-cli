@@ -171,6 +171,8 @@ Notes:
 - Requires `services` capability.
 - Service resolution is deterministic (last registration for each service key wins).
 - `output_format` and `error_format` are synchronous call sites; async returns are ignored with deterministic warnings.
+- `error_format` receives the final rendered error string. When callers use `--json`, that string is a JSON error envelope.
+- `help_format` applies to text help/usage rendering paths; machine-readable `--json` errors bypass `help_format` and emit canonical JSON diagnostics directly.
 
 ### `api.registerFlags(targetCommand, flags)`
 
@@ -193,7 +195,7 @@ Supported metadata for dynamic extension help rendering:
 - `type` / `value_type` (`string` | `number` | `boolean`) enables runtime loose-option coercion for matching command flags.
 - Validation contract: each entry must provide at least one of `long` or `short`; optional metadata fields must match expected scalar types.
 
-Core help output now also appends command-level narrative sections (why/examples/tips). Dynamic extension commands still receive flag-level rendering from `registerFlags(...)`, so extension authors should provide explicit `description` text on each flag to keep help high-signal.
+Core help output appends command-level guidance with compact defaults (`Intent` + one example) and supports deep help via `--explain`. Dynamic extension commands still receive flag-level rendering from `registerFlags(...)`, so extension authors should provide explicit `description` text on each flag to keep help high-signal.
 
 ### `api.registerRenderer(format, renderer)`
 

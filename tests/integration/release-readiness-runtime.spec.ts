@@ -67,6 +67,22 @@ function expectTopLevelKeyOrder(value: unknown, expectedKeys: string[]): void {
   expect(Object.keys(value as Record<string, unknown>)).toEqual(expectedKeys);
 }
 
+interface JsonErrorEnvelope {
+  type: string;
+  code: string;
+  title: string;
+  detail: string;
+  required: string;
+  exit_code: number;
+  why?: string;
+  examples?: string[];
+  next_steps?: string[];
+}
+
+function parseJsonErrorEnvelope(stderr: string): JsonErrorEnvelope {
+  return JSON.parse(stderr) as JsonErrorEnvelope;
+}
+
 function isValidCalendarDate(year: number, month: number, day: number): boolean {
   const date = new Date(Date.UTC(year, month - 1, day));
   return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
@@ -285,12 +301,20 @@ describe("release readiness runtime coverage", () => {
       const usageResult = context.runCli(["create", "--quiet", "--json"]);
       expect(usageResult.code).toBe(2);
       expect(usageResult.stdout.trim()).toBe("");
-      expect(usageResult.stderr.trim().length).toBeGreaterThan(0);
+      const usageEnvelope = parseJsonErrorEnvelope(usageResult.stderr);
+      expect(usageEnvelope).toMatchObject({
+        code: "missing_required_option",
+        exit_code: 2,
+      });
 
       const notFoundResult = context.runCli(["get", "pm-does-not-exist", "--quiet", "--json"]);
       expect(notFoundResult.code).toBe(3);
       expect(notFoundResult.stdout.trim()).toBe("");
-      expect(notFoundResult.stderr.toLowerCase()).toContain("not found");
+      const notFoundEnvelope = parseJsonErrorEnvelope(notFoundResult.stderr);
+      expect(notFoundEnvelope).toMatchObject({
+        code: "item_not_found",
+        exit_code: 3,
+      });
     });
   });
 
@@ -951,14 +975,23 @@ describe("release readiness runtime coverage", () => {
 
       const usageResult = context.runCli(["create", "--json"]);
       expect(usageResult.code).toBe(2);
-      expect(usageResult.stderr).toContain("What happened:");
-      expect(usageResult.stderr).toContain("What is required:");
-      expect(usageResult.stderr).toContain("Examples:");
+      const usageEnvelope = parseJsonErrorEnvelope(usageResult.stderr);
+      expect(usageEnvelope).toMatchObject({
+        type: "urn:pm-cli:error:missing_required_option",
+        code: "missing_required_option",
+        exit_code: 2,
+      });
+      expect(usageEnvelope.examples?.length ?? 0).toBeGreaterThan(0);
 
       const notFoundResult = context.runCli(["get", "pm-does-not-exist", "--json"]);
       expect(notFoundResult.code).toBe(3);
-      expect(notFoundResult.stderr).toContain("Error: Item ID not found");
-      expect(notFoundResult.stderr).toContain("Next steps:");
+      const notFoundEnvelope = parseJsonErrorEnvelope(notFoundResult.stderr);
+      expect(notFoundEnvelope).toMatchObject({
+        type: "urn:pm-cli:error:item_not_found",
+        code: "item_not_found",
+        exit_code: 3,
+      });
+      expect(notFoundEnvelope.next_steps?.length ?? 0).toBeGreaterThan(0);
 
       const conflictSeed = createSeedItem({
         title: "Exit code conflict seed",
@@ -1035,7 +1068,12 @@ describe("release readiness runtime coverage", () => {
 
       const invalidUpdateCloseResult = context.runCli(["update", createdId, "--status", "closed", "--json"]);
       expect(invalidUpdateCloseResult.code).toBe(2);
-      expect(invalidUpdateCloseResult.stderr).toContain('Use "pm close <ID> <TEXT>"');
+      const invalidUpdateEnvelope = parseJsonErrorEnvelope(invalidUpdateCloseResult.stderr);
+      expect(invalidUpdateEnvelope).toMatchObject({
+        code: "invalid_argument_value",
+        exit_code: 2,
+      });
+      expect(invalidUpdateEnvelope.detail).toContain('Use "pm close <ID> <TEXT>"');
 
       const closeResult = context.runCli(
         ["close", createdId, "close workflow reason", "--author", "test-author", "--message", "close workflow", "--json"],

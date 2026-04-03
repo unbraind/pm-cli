@@ -1,14 +1,13 @@
 id: pm-izbd
 title: "CLI UX Overhaul: Help, Errors, and Output"
-description: Optimize pm CLI output for agent token efficiency by making default TOON output sparse and high-signal while preserving JSON payload compatibility and deterministic behavior.
+description: "Phase 2 controlled-breaking overhaul for agent-first CLI contracts: strict action schemas, machine-readable JSON errors, layered help, and integrity diagnostics."
 type: Epic
 status: closed
 priority: 0
 tags[6]: "area:cli","area:error","area:help","area:output","area:ux",pm-cli
 created_at: "2026-04-01T12:38:01.326Z"
-updated_at: "2026-04-01T20:15:17.292Z"
+updated_at: "2026-04-03T10:57:37.131Z"
 deadline: "2026-04-15T12:38:01.326Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 960
 acceptance_criteria: Default TOON output omits null/undefined/empty containers and removes command-aware envelopes; JSON output remains backward-compatible; docs and regression tests updated; no exit-code regressions.
@@ -47,10 +46,12 @@ dependencies[5]{id,kind,created_at,author,source_kind}:
   pm-b3id,discovered_from,"2026-04-01T12:38:01.326Z",codex-agent,null
   pm-r15d,discovered_from,"2026-04-01T12:38:01.326Z",codex-agent,null
   pm-vqam,discovered_from,"2026-04-01T12:38:01.326Z",codex-agent,null
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-04-01T12:38:01.326Z",codex-agent,Duplicate scan completed against open and in-progress plus targeted search before creation.
   "2026-04-01T12:40:29.287Z",codex-agent,"PM hierarchy created: epic pm-izbd; features pm-j162/pm-frk8/pm-t2hj/pm-i0iy; tasks pm-vf7n/pm-gggs/pm-eonv/pm-x3fh/pm-qhcw/pm-jfpf/pm-y76e."
   "2026-04-01T13:51:13.221Z",codex-agent,"Epic regression evidence: pm test pm-izbd --run passed full sandboxed suite (62 files, 650 tests). Sparse TOON docs/contracts updated across README, docs/ARCHITECTURE.md, docs/EXTENSIONS.md, PRD.md, CHANGELOG.md."
+  "2026-04-03T10:23:19.267Z",codex-agent,"Phase 2 kickoff: reopened epic for controlled-breaking agent-first CLI overhaul with schema-v3, error-envelope-v2, help-v2, and integrity diagnostics scopes."
+  "2026-04-03T10:57:35.214Z",codex-agent,"Phase 2 controlled-breaking overhaul delivered: closed features pm-j162 (help-v2), pm-frk8 (error-envelope-v2), pm-t2hj (integrity hardening), and pm-i0iy (schema/docs/tests) with linked-test evidence plus full suite and coverage passing."
 notes[1]{created_at,author,text}:
   "2026-04-01T12:38:01.326Z",codex-agent,Execution will prioritize compatibility and deterministic JSON contracts.
 learnings[1]{created_at,author,text}:
@@ -62,5 +63,5 @@ tests[1]{command,path,scope,timeout_seconds,note}:
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,release note for sparse TOON behavior update
   README.md,project,Primary user-facing command documentation
-close_reason: "Epic complete for this follow-up: sparse TOON optimization shipped with docs and regression evidence"
-body: "Parent initiative for full-surface CLI user-experience improvements in help, error, and output channels."
+close_reason: Phase 2 agent-first CLI overhaul complete and fully verified.
+body: "Parent initiative for full-surface CLI user-experience improvements in help, error, and output channels.\n\nPhase 2 delta: keep sparse TOON baseline but make schema and error surfaces machine-first. Reusing existing lineage and reopening child features for this iteration."
