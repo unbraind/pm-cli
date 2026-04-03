@@ -363,8 +363,9 @@ When `--type` is missing, usage output now includes:
 - why `--type` is required
 - allowed values from the active runtime type registry
 - concrete `pm create` examples (including custom-type usage)
+- deterministic aggregation when multiple required options are missing for the selected type (single response, stable flag ordering)
 
-For `pm create --help` and `pm update --help`, add `--type <value>` to render type-aware policy details (required/disabled/hidden option lists) from active settings/extensions.
+For `pm create --help` and `pm update --help`, add `--type <value>` to render type-aware policy details (required/disabled/hidden option lists) and type-option schema details (required marker, allowed values, aliases, description) from active settings/extensions.
 
 ## Help and Error Guidance
 

@@ -714,8 +714,9 @@ Per-type option policy overrides (`settings.item_types.definitions[]` and extens
 
 Help and error guidance:
 
-- `pm create --help` / `pm update --help` accept `--type <value>` to render policy-aware required/disabled/hidden option summaries.
+- `pm create --help` / `pm update --help` accept `--type <value>` to render policy-aware required/disabled/hidden option summaries plus type-option schema details (required marker, allowed values, aliases, description).
 - Missing `--type` usage errors include rationale, active allowed values, and custom-type examples.
+- Type-governed create validation aggregates all missing required options into one deterministic usage error payload (stable flag ordering) instead of iterative one-at-a-time failures.
 - Commander usage errors are normalized into a single structured guidance payload (duplicate default commander stderr messaging is not emitted).
 - Runtime `PmCliError` paths should surface structured guidance while preserving canonical exit-code mapping, with machine-readable JSON error envelopes when `--json` is active.
 
@@ -830,7 +831,7 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | `pm beads import [--file <path\|->] [--preserve-source-ids]` | optional Beads JSONL source path (`.beads/issues.jsonl` auto-discovered first, then `issues.jsonl`; implicit `sync_base.jsonl` fallback is refused as unsafe; `--file -` requires piped stdin and fails fast on interactive TTY stdin) | `{ ok, source, imported, skipped, ids, warnings }` |
 | `pm todos import --folder <path?>` | optional todos markdown source folder (defaults to `.pi/todos`); preserves canonical optional `ItemFrontMatter` metadata when present and applies deterministic defaults for missing PM fields | `{ ok, folder, imported, skipped, ids, warnings }` |
 | `pm todos export --folder <path?>` | optional todos markdown destination folder (defaults to `.pi/todos`) | `{ ok, folder, exported, ids, warnings }` |
-| `pm create ...` | required title + schema flags | `{ item, changed_fields, warnings }` |
+| `pm create ...` | required title + schema flags (type-governed missing required options are aggregated into one deterministic usage error payload) | `{ item, changed_fields, warnings }` |
 | `pm update <ID> ...` | id + patch-like flags (`--status closed` is rejected; use `pm close <ID> <TEXT>`; `--close-reason`/`--close_reason` explicitly set/clear `close_reason`; reopening from `closed` to a non-terminal status auto-clears stale `close_reason` unless explicit `--close-reason` is provided; body replacement is supported via `--body`/`-b`; dependencies are mutable via `--dep` / `--dep-remove`; linked artifact flags like `--file`/`--doc` are intentionally unsupported on update and routed to dedicated commands) | `{ item, changed_fields, warnings }` |
 | `pm delete <ID>` | id + optional `--author`/`--message`/`--force` | `{ item, changed_fields, warnings }` |
 | `pm close <ID> <TEXT>` | id + close reason text + optional `--author/--message/--force` | `{ item, changed_fields, warnings }` |

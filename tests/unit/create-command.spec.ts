@@ -1117,6 +1117,53 @@ describe("runCreate", () => {
     });
   });
 
+  it("aggregates missing required create options into a deterministic usage error", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        item_types?: { definitions?: Array<Record<string, unknown>> };
+      };
+      settings.item_types = {
+        definitions: [
+          {
+            name: "Asset",
+            folder: "assets",
+            required_create_fields: [],
+            required_create_repeatables: [],
+            command_option_policies: [
+              { command: "create", option: "message", required: true },
+              { command: "create", option: "goal", required: true },
+            ],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            type: "Asset",
+            message: undefined,
+            goal: undefined,
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            type: "Asset",
+            message: undefined,
+            goal: undefined,
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toThrow('Missing required options --goal, --message for type "Asset"');
+    });
+  });
+
   it("rejects create policies that make an option required and disabled", async () => {
     await withTempPmPath(async (context) => {
       const settingsPath = path.join(context.pmPath, "settings.json");

@@ -1,3 +1,5 @@
+import { readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
@@ -64,6 +66,93 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(envelope.required).toContain("Pass --type <value>");
       expect(envelope.examples?.length ?? 0).toBeGreaterThan(0);
       expect(envelope.next_steps?.length ?? 0).toBeGreaterThan(0);
+    });
+  });
+
+  it("renders plural guidance when create is missing multiple type-required options", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        item_types?: { definitions?: Array<Record<string, unknown>> };
+      };
+      settings.item_types = {
+        definitions: [
+          {
+            name: "Asset",
+            folder: "assets",
+            required_create_fields: [],
+            required_create_repeatables: [],
+            command_option_policies: [
+              { command: "create", option: "message", required: true },
+              { command: "create", option: "goal", required: true },
+            ],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const usage = context.runCli(["create", "--title", "Asset title", "--description", "Asset description", "--type", "Asset", "--json"]);
+      expect(usage.code).toBe(2);
+      const envelope = JSON.parse(usage.stderr) as {
+        type: string;
+        code: string;
+        title: string;
+        detail: string;
+        required: string;
+        exit_code: number;
+      };
+      expect(envelope).toMatchObject({
+        type: "urn:pm-cli:error:missing_required_option",
+        code: "missing_required_option",
+        title: "Missing required options",
+        exit_code: 2,
+      });
+      expect(envelope.detail).toContain("--goal");
+      expect(envelope.detail).toContain("--message");
+    });
+  });
+
+  it("surfaces type-option schema details in create/update type-aware help", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        item_types?: { definitions?: Array<Record<string, unknown>> };
+      };
+      settings.item_types = {
+        definitions: [
+          {
+            name: "Asset",
+            folder: "assets",
+            required_create_fields: [],
+            required_create_repeatables: [],
+            options: [
+              {
+                key: "category",
+                values: ["feature", "maintenance"],
+                required: true,
+                aliases: ["cat"],
+                description: "Asset category selector",
+              },
+            ],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const createHelp = context.runCli(["create", "--help", "--type", "Asset"]);
+      expect(createHelp.code).toBe(0);
+      expect(createHelp.stdout).toContain("Type-aware option policies for Asset:");
+      expect(createHelp.stdout).toContain("type options:");
+      expect(createHelp.stdout).toContain("- category (required)");
+      expect(createHelp.stdout).toContain("values: feature|maintenance");
+      expect(createHelp.stdout).toContain("aliases: cat");
+      expect(createHelp.stdout).toContain("description: Asset category selector");
+
+      const updateHelp = context.runCli(["update", "--help", "--type", "Asset"]);
+      expect(updateHelp.code).toBe(0);
+      expect(updateHelp.stdout).toContain("Type-aware option policies for Asset:");
+      expect(updateHelp.stdout).toContain("type options:");
+      expect(updateHelp.stdout).toContain("- category (required)");
     });
   });
 });

@@ -429,6 +429,21 @@ function buildCreateUpdatePolicyHelpText(
     `  disabled: ${toFlags(policyState.disabled)}`,
     `  hidden: ${toFlags(policyState.hidden)}`,
   ];
+  if (typeDefinition.options.length === 0) {
+    lines.push("  type options: none");
+  } else {
+    lines.push("  type options:");
+    for (const option of typeDefinition.options) {
+      const requiredLabel = option.required ? " (required)" : "";
+      const aliases = option.aliases ?? [];
+      lines.push(`    - ${option.key}${requiredLabel}`);
+      lines.push(`      values: ${option.values.length > 0 ? option.values.join("|") : "any non-empty string"}`);
+      lines.push(`      aliases: ${aliases.length > 0 ? aliases.join("|") : "none"}`);
+      if (option.description && option.description.trim().length > 0) {
+        lines.push(`      description: ${option.description.trim()}`);
+      }
+    }
+  }
   if (policyState.errors.length > 0) {
     lines.push(`  config errors: ${policyState.errors.join("; ")}`);
   }

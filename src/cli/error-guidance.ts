@@ -140,12 +140,17 @@ function buildPmCliErrorGuidance(rawMessage: string): GuidanceMessage {
     });
   }
 
-  if (message.startsWith("Missing required option ")) {
+  const missingRequiredOption = message.match(/^Missing required option /);
+  const missingRequiredOptions = message.match(/^Missing required options /);
+  if (missingRequiredOption || missingRequiredOptions) {
+    const plural = Boolean(missingRequiredOptions);
     return makeGuidanceMessage({
       code: "missing_required_option",
-      title: "Missing required option",
+      title: plural ? "Missing required options" : "Missing required option",
       happened: message,
-      required: "Provide every required option for this command invocation.",
+      required: plural
+        ? "Provide every required option for this command invocation."
+        : "Provide the required option for this command invocation.",
       why: "Required options define command intent and enforce deterministic write contracts.",
       examples: [
         'pm create --title "Task title" --description "Task details" --type Task --status open --priority 1 --message "Create task" --dep none --comment none --note none --learning none --file none --test none --doc none',

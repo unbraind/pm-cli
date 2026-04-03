@@ -690,13 +690,14 @@ function requireCreateOptionByType(typeDefinition: ResolvedItemTypeDefinition, o
     }
   }
 
-  for (const option of policyState.required) {
-    if (!hasOptionValue(option)) {
-      throw new PmCliError(
-        `Missing required option ${commandOptionFlagLabel("create", option)} for type "${typeName}"`,
-        EXIT_CODE.USAGE,
-      );
+  const missingRequiredOptions = policyState.required.filter((required) => !hasOptionValue(required));
+  if (missingRequiredOptions.length > 0) {
+    const missingFlags = [...new Set(missingRequiredOptions.map((required) => commandOptionFlagLabel("create", required)))]
+      .sort((left, right) => left.localeCompare(right));
+    if (missingFlags.length === 1) {
+      throw new PmCliError(`Missing required option ${missingFlags[0]} for type "${typeName}"`, EXIT_CODE.USAGE);
     }
+    throw new PmCliError(`Missing required options ${missingFlags.join(", ")} for type "${typeName}"`, EXIT_CODE.USAGE);
   }
 }
 
