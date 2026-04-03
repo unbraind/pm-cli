@@ -13,7 +13,9 @@
 - Safe multi-agent workflows with claims, locks, and restore
 - Deterministic output with TOON by default and `--json` when needed
 - Layered command help: compact default (`Intent` + one example) and deep explainability via `--explain`
+- Machine-readable help payloads via `pm <command> --help --json` (also `pm help <command> --json`)
 - Structured diagnostics with machine-readable JSON error envelopes when `--json` is active
+- Dedicated machine contract surface via `pm contracts` (`--action`, `--command`, `--schema-only`)
 - Sparse TOON default output that omits null/undefined/empty fields for token-efficient agent workflows
 - Agent-friendly calendar views (`pm calendar` / `pm cal`) with markdown default output
 - Agent-first context snapshot command (`pm context` / `pm ctx`) for critical work + agenda triage
@@ -40,8 +42,9 @@
 Compatibility policy for command contracts:
 
 - Existing commands/flags and aliases remain valid.
-- Pi tool schema now uses strict action-scoped branches (schema v3); callers should send only action-relevant fields.
+- Pi tool schema now uses strict action-scoped branches (schema v4); callers should send only action-relevant fields.
 - `--json` remains the full machine payload; default TOON remains sparse/token-efficient.
+- `pm contracts --json` is the canonical runtime contract introspection surface for agents.
 
 ## Item Storage Formats
 
@@ -462,6 +465,8 @@ For `pm create --help` and `pm update --help`, add `--type <value>` to render ty
 
 - Default help is compact and token-efficient (`Intent` + one high-signal example).
 - Add `--explain` to any `--help` invocation to render deeper rationale, multiple examples, and tips.
+- `pm help` and `pm help <command>` are success paths (exit code `0`) with no trailing usage envelope.
+- `pm <command> --help --json` and `pm help <command> --json` emit deterministic machine-readable help payloads.
 - Usage/runtime errors use one canonical guidance model:
   - text mode: structured sections (`What happened`, `What is required`, `Why`, `Examples`, optional `Next steps`)
   - `--json` mode: machine-readable envelope (`type`, `code`, `title`, `detail`, `required`, `exit_code`, optional `why/examples/next_steps`)

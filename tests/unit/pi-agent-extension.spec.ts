@@ -451,7 +451,7 @@ describe("Pi agent extension wrapper for pm", () => {
 
     expect(tool.parameters).toMatchObject({
       $schema: "https://json-schema.org/draft/2020-12/schema",
-      "x-schema-version": "3.0.0",
+      "x-schema-version": "4.0.0",
     });
 
     const oneOf = (tool.parameters as { oneOf?: Array<Record<string, unknown>> }).oneOf;
@@ -485,11 +485,11 @@ describe("Pi agent extension wrapper for pm", () => {
 
     const createSchema = schemaForAction(tool.parameters as Record<string, unknown>, "create");
     expect(createSchema.required).toEqual(expect.arrayContaining(["action", "title", "description", "type", "status", "priority"]));
-    expect(schemaProperty(createSchema, "reminder")).toEqual({
+    expect(schemaProperty(createSchema, "reminder")).toMatchObject({
       type: "array",
       items: { type: "string" },
     });
-    expect(schemaProperty(createSchema, "event")).toEqual({
+    expect(schemaProperty(createSchema, "event")).toMatchObject({
       type: "array",
       items: { type: "string" },
     });
@@ -508,7 +508,7 @@ describe("Pi agent extension wrapper for pm", () => {
     const updateSchema = schemaForAction(tool.parameters as Record<string, unknown>, "update");
     expect(updateSchema.required).toEqual(expect.arrayContaining(["action", "id"]));
     expect(schemaProperty(updateSchema, "closeReason").type).toBe("string");
-    expect(schemaProperty(updateSchema, "depRemove")).toEqual({
+    expect(schemaProperty(updateSchema, "depRemove")).toMatchObject({
       type: "array",
       items: { type: "string" },
     });
@@ -516,6 +516,12 @@ describe("Pi agent extension wrapper for pm", () => {
     const completionSchema = schemaForAction(tool.parameters as Record<string, unknown>, "completion");
     expect(completionSchema.required).toEqual(expect.arrayContaining(["action", "shell"]));
     expect(schemaProperty(completionSchema, "shell").type).toBe("string");
+
+    const contractsSchema = schemaForAction(tool.parameters as Record<string, unknown>, "contracts");
+    expect(contractsSchema.required).toEqual(["action"]);
+    expect(schemaProperty(contractsSchema, "contractAction").type).toBe("string");
+    expect(schemaProperty(contractsSchema, "command").type).toBe("string");
+    expect(schemaProperty(contractsSchema, "schemaOnly").type).toBe("boolean");
 
     const testAllSchema = schemaForAction(tool.parameters as Record<string, unknown>, "test-all");
     expect(schemaProperty(testAllSchema, "timeout").anyOf).toEqual(
@@ -927,6 +933,15 @@ describe("Pi agent extension wrapper for pm", () => {
         timeout: "1800",
       }),
     ).toEqual(["--json", "test-all", "--status", "in_progress", "--timeout", "1800"]);
+
+    expect(
+      buildPmCliArgs({
+        action: "contracts",
+        contractAction: "create",
+        command: "create",
+        schemaOnly: true,
+      }),
+    ).toEqual(["--json", "contracts", "--action", "create", "--command", "create", "--schema-only"]);
 
     expect(
       buildPmCliArgs({

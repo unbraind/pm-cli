@@ -51,6 +51,7 @@ src/
       stats.ts                   pm stats
       health.ts                  pm health
       gc.ts                      pm gc
+      contracts.ts               pm contracts (machine-readable contracts/schema surface)
       config.ts                  pm config
       install.ts                 pm install pi
       completion.ts              pm completion
@@ -125,6 +126,7 @@ The same registry drives:
 - commander option normalization in `src/cli/main.ts`
 - shell completion flag/command surfaces in `src/cli/commands/completion.ts`
 - Pi wrapper action enum, tool `inputSchema`, and CLI arg mapping in `.pi/extensions/pm-cli/index.ts`
+- runtime `pm contracts` payload generation for action/command/schema introspection
 - additive command surfaces such as `templates-*` actions, `history --diff/--verify`, files/docs path hygiene flags (`--add-glob`, `--migrate`, `--validate-paths`, `--audit`), and `deps --format`
 
 This keeps human CLI UX and machine-facing contracts aligned while preserving additive/backward-compatible evolution.
@@ -294,9 +296,10 @@ Pipeline:
 Help and error UX is centralized to reduce per-command drift:
 
 1. `src/cli/help-content.ts` defines command-path help bundles (`why`, `examples`, optional `tips`) and attaches compact help by default (`Intent` + one example) with deep help enabled via `--explain`.
-2. `src/cli/error-guidance.ts` defines canonical guidance descriptors and renders either structured text sections or machine-readable JSON envelopes (`type`, `code`, `title`, `detail`, `required`, `exit_code`, optional remediation fields).
-3. `src/cli/main.ts` routes commander usage failures and `PmCliError` failures through these renderers, emitting JSON diagnostics when `--json` is active.
-4. Commander native stderr writes are suppressed so the CLI emits a single high-signal guidance payload per failure path.
+2. `src/cli/main.ts` performs bootstrap routing for help paths so `pm help`/`pm help <command>` are deterministic success flows and `--help --json` emits machine-readable help payloads.
+3. `src/cli/error-guidance.ts` defines canonical guidance descriptors and renders either structured text sections or machine-readable JSON envelopes (`type`, `code`, `title`, `detail`, `required`, `exit_code`, optional remediation fields), with `PmCliError.context` overrides for precise runtime guidance.
+4. `src/cli/main.ts` routes commander usage failures and `PmCliError` failures through these renderers, emitting JSON diagnostics when `--json` is active.
+5. Commander native stderr writes are suppressed so the CLI emits a single high-signal guidance payload per failure path.
 
 ## History and Restore
 

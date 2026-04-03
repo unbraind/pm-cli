@@ -24,6 +24,7 @@ export default defineConfig({
         "src/cli/commands/notes.ts",
         "src/cli/commands/learnings.ts",
         "src/cli/commands/config.ts",
+        "src/cli/commands/contracts.ts",
         "src/cli/commands/context.ts",
         "src/cli/commands/deps.ts",
         "src/cli/commands/docs.ts",

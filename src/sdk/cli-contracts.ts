@@ -86,6 +86,7 @@ export const PM_CORE_COMMAND_NAMES = [
   "stats",
   "health",
   "gc",
+  "contracts",
   "claim",
   "release",
   "templates",
@@ -130,6 +131,7 @@ export const PM_TOOL_ACTIONS = [
   "stats",
   "health",
   "gc",
+  "contracts",
   "completion",
   "templates-save",
   "templates-list",
@@ -473,6 +475,12 @@ export const SEARCH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--deadline-after" },
 ];
 
+export const CONTRACTS_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--action" },
+  { flag: "--command" },
+  { flag: "--schema-only" },
+];
+
 export function toCompletionFlagString(flagContracts: CliFlagContract[], includeGlobal = true): string {
   const scoped = flagContracts.flatMap((entry) => [entry.short, entry.flag]).filter((value): value is string => Boolean(value));
   const all = includeGlobal
@@ -694,14 +702,17 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   query: { type: "string" },
   keywords: { type: "string" },
   prefix: { type: "string" },
-  scope: { type: "string" },
-  configAction: { type: "string" },
+  scope: { type: "string", enum: ["project", "global"] },
+  contractAction: { type: "string" },
+  command: { type: "string" },
+  schemaOnly: { type: "boolean" },
+  configAction: { type: "string", enum: ["get", "set"] },
   key: { type: "string" },
   title: { type: "string" },
   description: { type: "string" },
   type: { type: "string" },
   template: { type: "string" },
-  status: { type: "string" },
+  status: { type: "string", enum: ["draft", "open", "in_progress", "blocked", "closed", "canceled", "in-progress"] },
   closeReason: { type: "string" },
   priority: { anyOf: [{ type: "string" }, { type: "number" }] },
   tags: { type: "string" },
@@ -741,8 +752,8 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   impact: { type: "string" },
   outcome: { type: "string" },
   whyNow: { type: "string" },
-  mode: { type: "string" },
-  view: { type: "string" },
+  mode: { type: "string", enum: ["keyword", "semantic", "hybrid"] },
+  view: { type: "string", enum: ["agenda", "day", "week", "month"] },
   date: { type: "string" },
   from: { type: "string" },
   to: { type: "string" },
@@ -761,7 +772,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   timeout: { anyOf: [{ type: "string" }, { type: "number" }] },
   force: { type: "boolean" },
   run: { type: "boolean" },
-  shell: { type: "string" },
+  shell: { type: "string", enum: ["bash", "zsh", "fish"] },
   file: { type: "string" },
   folder: { type: "string" },
   text: { type: "string" },
@@ -882,6 +893,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   stats: {},
   health: {},
   gc: {},
+  contracts: { optional: ["contractAction", "command", "schemaOnly"] },
   completion: { required: ["shell"] },
   "templates-save": {
     required: ["template"],
@@ -899,13 +911,131 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   "close-task": { required: ["id", "text"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
 };
 
+const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples?: unknown[] }> = {
+  action: {
+    description: "Tool action to execute.",
+  },
+  path: {
+    description: "Optional PM data root override for this invocation.",
+    examples: [".agents/pm"],
+  },
+  json: {
+    description: "Emit machine-readable JSON output.",
+  },
+  quiet: {
+    description: "Suppress stdout payload output.",
+  },
+  noExtensions: {
+    description: "Disable extension loading for this invocation.",
+  },
+  profile: {
+    description: "Emit deterministic timing diagnostics to stderr.",
+  },
+  timeoutMs: {
+    description: "Pi wrapper execution timeout in milliseconds.",
+    examples: [120000],
+  },
+  id: {
+    description: "Item identifier for read or mutation actions.",
+    examples: ["pm-a1b2"],
+  },
+  title: {
+    description: "Item title text.",
+  },
+  description: {
+    description: "Item description text.",
+  },
+  type: {
+    description: "Item type name from the active runtime type registry.",
+    examples: ["Task", "Feature"],
+  },
+  status: {
+    description: "Item status value.",
+    examples: ["open", "in_progress"],
+  },
+  priority: {
+    description: "Priority value in range 0..4.",
+    examples: [0, 1, "2"],
+  },
+  tags: {
+    description: "Comma-delimited tag list, or 'none' to clear when supported.",
+    examples: ["pm-cli,agent-ux"],
+  },
+  deadline: {
+    description: "ISO/date timestamp or relative offset (+6h/+1d/+2w/+6m), or 'none' where supported.",
+    examples: ["2026-04-01T00:00:00.000Z", "+1d", "none"],
+  },
+  estimate: {
+    description: "Estimated effort in minutes, or 'none' where supported.",
+    examples: [60, "120", "none"],
+  },
+  acceptanceCriteria: {
+    description: "Acceptance criteria text.",
+  },
+  author: {
+    description: "Mutation author identity.",
+    examples: ["codex-agent"],
+  },
+  message: {
+    description: "History message for mutation audit trail.",
+  },
+  assignee: {
+    description: "Assignee identity or 'none' to unset.",
+    examples: ["codex-agent", "none"],
+  },
+  mode: {
+    description: "Search/reindex mode selector.",
+    examples: ["keyword", "hybrid"],
+  },
+  query: {
+    description: "Search query text for search action.",
+  },
+  shell: {
+    description: "Shell target for completion generation.",
+    examples: ["bash"],
+  },
+  contractAction: {
+    description: "Filter contracts schema to one tool action.",
+    examples: ["create", "update"],
+  },
+  command: {
+    description: "Filter command-level flag contracts to one CLI command name.",
+    examples: ["create", "search"],
+  },
+  schemaOnly: {
+    description: "When true, contracts action omits command flag and alias surfaces.",
+  },
+};
+
+function fallbackToolParameterDescription(key: string): string {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[_-]/g, " ")
+    .trim()
+    .replace(/^./, (value) => value.toUpperCase())
+    .concat(".");
+}
+
+function decorateToolParameterDefinition(key: string, definition: unknown): Record<string, unknown> {
+  const baseDefinition = typeof definition === "object" && definition !== null ? { ...(definition as Record<string, unknown>) } : {};
+  const metadata = PM_TOOL_PARAMETER_METADATA[key];
+  return {
+    ...baseDefinition,
+    description: metadata?.description ?? fallbackToolParameterDescription(key),
+    ...(metadata?.examples ? { examples: metadata.examples } : {}),
+  };
+}
+
 function buildActionScopedToolSchema(action: PmToolAction): Record<string, unknown> {
   const contract = PM_TOOL_ACTION_SCHEMA_CONTRACTS[action];
   const required = toSchemaKeyList(contract.required ?? []);
   const optional = toSchemaKeyList(contract.optional ?? []);
   const allowedKeys = toSchemaKeyList([...PM_TOOL_GLOBAL_PARAMETER_KEYS, ...required, ...optional]);
   const properties: Record<string, unknown> = {
-    action: { const: action },
+    action: {
+      const: action,
+      description: PM_TOOL_PARAMETER_METADATA.action?.description ?? "Tool action to execute.",
+    },
   };
   for (const key of allowedKeys) {
     if (key === "action") {
@@ -913,13 +1043,14 @@ function buildActionScopedToolSchema(action: PmToolAction): Record<string, unkno
     }
     const definition = PM_TOOL_PARAMETER_PROPERTIES[key];
     if (definition) {
-      properties[key] = definition;
+      properties[key] = decorateToolParameterDefinition(key, definition);
     }
   }
   const schema: Record<string, unknown> = {
     type: "object",
     additionalProperties: false,
     required: ["action", ...required],
+    title: `pm action "${action}" parameters`,
     properties,
   };
   if (contract.anyOfRequired && contract.anyOfRequired.length > 0) {
@@ -932,8 +1063,8 @@ function buildActionScopedToolSchema(action: PmToolAction): Record<string, unkno
 
 export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
-  $id: "https://unbrained.dev/schemas/pm-cli/tool-parameters-v3.schema.json",
+  $id: "https://unbrained.dev/schemas/pm-cli/tool-parameters-v4.schema.json",
   title: "pm-cli Pi wrapper parameters (action-scoped strict schema)",
-  "x-schema-version": "3.0.0",
+  "x-schema-version": "4.0.0",
   oneOf: PM_TOOL_ACTIONS.map((action) => buildActionScopedToolSchema(action)),
 };

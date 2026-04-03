@@ -12,9 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added centralized command help narratives across core command paths (`Why use this command`, practical examples, and targeted tips) through a shared help composer.
 - Added structured CLI error guidance rendering for commander usage failures and runtime `PmCliError` failures with deterministic sections (`What happened`, `What is required`, `Why`, `Examples`, optional `Next steps`).
 - Added sparse default TOON rendering that emits command payloads directly and omits `null`/`undefined`/empty arrays/empty objects for token-efficient agent workflows while keeping `--json` payload compatibility.
-- Added strict action-scoped Pi tool parameter schema v3 in `src/sdk/cli-contracts.ts` (`oneOf` action branches with per-action required fields and `additionalProperties: false`).
+- Added strict action-scoped Pi tool parameter schema v4 in `src/sdk/cli-contracts.ts` (`oneOf` action branches with per-action required fields, richer per-field metadata, and `additionalProperties: false`).
 - Added machine-readable JSON error envelopes for usage/runtime failures when `--json` is active (`type`, `code`, `title`, `detail`, `required`, `exit_code`, optional remediation fields).
 - Added layered help defaults: compact command help by default plus explicit deep-help rendering with `--explain`.
+- Added machine-readable help payloads for `pm <command> --help --json` and `pm help <command> --json` with deterministic option metadata (`required`, aliases, value format).
+- Added `pm contracts` command for runtime contract introspection (`--action`, `--command`, `--schema-only`) including shared schema/action/flag surfaces.
 - Added merge-conflict marker detection in item and history parsing paths with actionable remediation guidance.
 - Added `pm health` `integrity` diagnostics for conflict markers and parse/JSONL anomalies with deterministic warning codes.
 - `list*` commands now accept `--include-body` to project item `body` into each returned row when needed for metadata completeness analysis.
@@ -60,6 +62,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Commander option normalization, shell completion flag generation, and Pi wrapper action/schema/arg mapping now consume the shared command contract registry to reduce cross-surface drift.
+- `pm help` and `pm help <command>` now exit successfully without trailing invalid-usage envelopes.
+- Runtime `PmCliError.context` fields (`required`, `why`, `examples`, `next_steps`, and optional code/type overrides) now flow through canonical text/JSON guidance rendering.
 - Top-level `--json` error handling now emits canonical machine-readable diagnostics instead of text-only guidance.
 - `pm history` malformed stream errors now include explicit repair/restore remediation guidance.
 - Extension schema-capability registrations now enforce stricter deterministic validation for `registerFlags`, `registerItemFields`, `registerItemTypes`, and `registerMigration` input shapes.

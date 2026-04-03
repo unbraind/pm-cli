@@ -590,6 +590,7 @@ Default output note:
 Help and error UX note:
 
 - Command help should default to compact token-efficient guidance (`Intent` + one high-signal example) and support an explicit deep-help surface via `--explain`.
+- `pm help` and `pm help <command>` should remain deterministic success flows; `--help --json` should emit machine-readable help payloads instead of text help.
 - Usage and runtime errors should be rendered from one canonical guidance model:
   - text mode: structured sections for what happened, what is required, why, examples, and optional next steps
   - `--json` mode: machine-readable envelope (`type`, `code`, `title`, `detail`, `required`, `exit_code`, optional `why/examples/next_steps`)
@@ -827,7 +828,8 @@ Canonical command/action schema metadata is centralized in `src/sdk/cli-contract
 Contract compatibility policy keeps command names/flags/aliases stable while allowing stricter machine contracts:
 
 - Existing CLI command paths and aliases remain valid.
-- Pi tool input validation uses strict action-scoped schema branches (schema v3) with per-action required fields and `additionalProperties: false`.
+- Pi tool input validation uses strict action-scoped schema branches (schema v4) with per-action required fields and `additionalProperties: false`.
+- `pm contracts` provides deterministic runtime contract introspection (`--action`, `--command`, `--schema-only`) for agent callers.
 - Command output remains deterministic; `--json` exposes full machine payloads and JSON error envelopes.
 
 | Command | Key inputs | Output object |
@@ -869,6 +871,7 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | `pm stats` | none | `{ totals, by_type, by_status, generated_at }` |
 | `pm health` | none (runs settings/directories/extensions/storage plus integrity, history-drift, and vectorization diagnostics) | `{ ok, checks, warnings, generated_at }` |
 | `pm gc` | none | `{ ok, removed, retained, warnings, generated_at }` |
+| `pm contracts [--action <value>] [--command <value>] [--schema-only]` | optional action/command filters and schema-only mode for machine contract introspection | `{ schema_version, schema_id, selected, actions, commands, schema, command_flags?, commander_aliases? }` |
 | `pm docs <ID> --add/--add-glob/--remove/--migrate/--validate-paths/--audit` | id + doc refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`); optional glob expansion via repeatable `--add-glob` (plain glob or `pattern=<glob>,scope=<scope>,note=<text>`); optional additive linked-path hygiene (`--migrate from=<old>,to=<new>`, path existence validation, cross-item audit) | `{ id, docs, changed, count, migrations_applied, validation, audit }` |
 | `pm deps <ID> --format tree|graph` | id + optional output selector (`tree` default, `graph` for node/edge projection) | `{ id, format, node_count, edge_count, missing_count, tree? graph? }` |
 | `pm history <ID> --limit/--diff/--verify` | id + optional limit + additive diagnostics (`--diff` changed-field patch summaries, `--verify` hash-chain/current-hash verification) | `{ id, history, count, limit, diff, verify }` |

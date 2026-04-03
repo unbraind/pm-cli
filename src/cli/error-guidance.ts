@@ -1,3 +1,5 @@
+import type { PmCliErrorContext } from "../core/shared/errors.js";
+
 interface GuidanceMessage {
   code: string;
   type: string;
@@ -89,112 +91,190 @@ function normalizeMessage(message: string): string {
   return message.replace(/\(outputHelp\)/g, "").trim();
 }
 
-function buildPmCliErrorGuidance(rawMessage: string): GuidanceMessage {
+function normalizeContextList(values: string[] | undefined): string[] | undefined {
+  if (!Array.isArray(values)) {
+    return undefined;
+  }
+  const normalized = values.map((value) => value.trim()).filter((value) => value.length > 0);
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function buildFallbackTitleFromMessage(message: string): string | undefined {
+  const firstLine = message.split(/\r?\n/)[0]?.trim() ?? "";
+  if (firstLine.length === 0) {
+    return undefined;
+  }
+  if (firstLine.length <= 120) {
+    return firstLine;
+  }
+  return `${firstLine.slice(0, 117)}...`;
+}
+
+function applyPmCliErrorContext(
+  guidance: GuidanceMessage,
+  rawMessage: string,
+  context: PmCliErrorContext | undefined,
+): GuidanceMessage {
+  if (!context) {
+    return guidance;
+  }
+  const normalizedRawMessage = normalizeMessage(rawMessage);
+  const code = typeof context.code === "string" && context.code.trim().length > 0 ? context.code.trim() : guidance.code;
+  const type = typeof context.type === "string" && context.type.trim().length > 0 ? context.type.trim() : errorType(code);
+  const examples = normalizeContextList(context.examples) ?? guidance.examples;
+  const nextSteps = normalizeContextList(context.nextSteps) ?? guidance.nextSteps;
+  const fallbackTitle = guidance.code === "command_failed" && context.code ? buildFallbackTitleFromMessage(normalizedRawMessage) : undefined;
+  return {
+    ...guidance,
+    code,
+    type,
+    title: fallbackTitle ?? guidance.title,
+    happened: normalizedRawMessage.length > 0 ? normalizedRawMessage : guidance.happened,
+    required: typeof context.required === "string" && context.required.trim().length > 0 ? context.required.trim() : guidance.required,
+    why: typeof context.why === "string" && context.why.trim().length > 0 ? context.why.trim() : guidance.why,
+    examples,
+    nextSteps,
+  };
+}
+
+function buildPmCliErrorGuidance(rawMessage: string, context?: PmCliErrorContext): GuidanceMessage {
   const message = normalizeMessage(rawMessage);
 
   const trackerNotInitialized = message.match(/^Tracker is not initialized at (.+)\. Run pm init first\.$/);
   if (trackerNotInitialized) {
-    return makeGuidanceMessage({
-      code: "tracker_not_initialized",
-      title: "Tracker is not initialized",
-      happened: `pm data path does not contain initialized tracker metadata (${trackerNotInitialized[1]}).`,
-      required: "Initialize tracker storage before running this command.",
-      why: "Most commands require settings and tracker directories created by pm init.",
-      examples: ["pm init", "pm init acme"],
-      nextSteps: ['Run "pm init", then rerun your original command.'],
-    });
+    return applyPmCliErrorContext(
+      makeGuidanceMessage({
+        code: "tracker_not_initialized",
+        title: "Tracker is not initialized",
+        happened: `pm data path does not contain initialized tracker metadata (${trackerNotInitialized[1]}).`,
+        required: "Initialize tracker storage before running this command.",
+        why: "Most commands require settings and tracker directories created by pm init.",
+        examples: ["pm init", "pm init acme"],
+        nextSteps: ['Run "pm init", then rerun your original command.'],
+      }),
+      rawMessage,
+      context,
+    );
   }
 
   const itemNotFound = message.match(/^Item ([^ ]+) not found$/);
   if (itemNotFound) {
-    return makeGuidanceMessage({
-      code: "item_not_found",
-      title: "Item ID not found",
-      happened: `No item with id "${itemNotFound[1]}" exists in the active tracker scope.`,
-      required: "Use an existing item ID from current tracker data.",
-      why: "Mutation and read commands operate only on known IDs.",
-      examples: ["pm list-open --limit 20", `pm get ${itemNotFound[1]}`],
-      nextSteps: ["Confirm the active --path/PM_PATH scope, then retry with a valid id."],
-    });
+    return applyPmCliErrorContext(
+      makeGuidanceMessage({
+        code: "item_not_found",
+        title: "Item ID not found",
+        happened: `No item with id "${itemNotFound[1]}" exists in the active tracker scope.`,
+        required: "Use an existing item ID from current tracker data.",
+        why: "Mutation and read commands operate only on known IDs.",
+        examples: ["pm list-open --limit 20", `pm get ${itemNotFound[1]}`],
+        nextSteps: ["Confirm the active --path/PM_PATH scope, then retry with a valid id."],
+      }),
+      rawMessage,
+      context,
+    );
   }
 
   if (message.includes("is assigned to") && message.includes("Use --force to override")) {
-    return makeGuidanceMessage({
-      code: "ownership_conflict",
-      title: "Ownership conflict",
-      happened: message,
-      required: "Run as assigned owner, claim the item when appropriate, or use --force only for approved override scenarios.",
-      why: "Ownership checks prevent accidental concurrent mutations on claimed items and protect against conflicting writes.",
-      examples: ['pm claim pm-a1b2 --author "codex-agent"', 'pm update pm-a1b2 --status in_progress --force'],
-      nextSteps: [
-        "Use --force for PM audits and systematic metadata updates performed by leads/maintainers.",
-        "Use --force when correcting known stale metadata after coordinating ownership changes.",
-        'For non-terminal reassignment, prefer "pm claim <ID> --author <you>" before running other mutations.',
-      ],
-    });
+    return applyPmCliErrorContext(
+      makeGuidanceMessage({
+        code: "ownership_conflict",
+        title: "Ownership conflict",
+        happened: message,
+        required: "Run as assigned owner, claim the item when appropriate, or use --force only for approved override scenarios.",
+        why: "Ownership checks prevent accidental concurrent mutations on claimed items and protect against conflicting writes.",
+        examples: ['pm claim pm-a1b2 --author "codex-agent"', 'pm update pm-a1b2 --status in_progress --force'],
+        nextSteps: [
+          "Use --force for PM audits and systematic metadata updates performed by leads/maintainers.",
+          "Use --force when correcting known stale metadata after coordinating ownership changes.",
+          'For non-terminal reassignment, prefer "pm claim <ID> --author <you>" before running other mutations.',
+        ],
+      }),
+      rawMessage,
+      context,
+    );
   }
 
   if (message.includes("is locked")) {
-    return makeGuidanceMessage({
-      code: "lock_conflict",
-      title: "Lock conflict",
-      happened: message,
-      required: "Wait for lock release, or use --force where supported if lock is stale and safe to override.",
-      why: "Locking protects item files from concurrent write races.",
-      examples: ['pm update pm-a1b2 --status in_progress --force --author "codex-agent"'],
-    });
+    return applyPmCliErrorContext(
+      makeGuidanceMessage({
+        code: "lock_conflict",
+        title: "Lock conflict",
+        happened: message,
+        required: "Wait for lock release, or use --force where supported if lock is stale and safe to override.",
+        why: "Locking protects item files from concurrent write races.",
+        examples: ['pm update pm-a1b2 --status in_progress --force --author "codex-agent"'],
+      }),
+      rawMessage,
+      context,
+    );
   }
 
   const missingRequiredOption = message.match(/^Missing required option /);
   const missingRequiredOptions = message.match(/^Missing required options /);
   if (missingRequiredOption || missingRequiredOptions) {
     const plural = Boolean(missingRequiredOptions);
-    return makeGuidanceMessage({
-      code: "missing_required_option",
-      title: plural ? "Missing required options" : "Missing required option",
-      happened: message,
-      required: plural
-        ? "Provide every required option for this command invocation."
-        : "Provide the required option for this command invocation.",
-      why: "Required options define command intent and enforce deterministic write contracts.",
-      examples: [
-        'pm create --title "Task title" --description "Task details" --type Task --status open --priority 1 --message "Create task" --dep none --comment none --note none --learning none --file none --test none --doc none',
-      ],
-      nextSteps: ['Run "pm <command> --help" to view required and recommended flags.'],
-    });
+    return applyPmCliErrorContext(
+      makeGuidanceMessage({
+        code: "missing_required_option",
+        title: plural ? "Missing required options" : "Missing required option",
+        happened: message,
+        required: plural
+          ? "Provide every required option for this command invocation."
+          : "Provide the required option for this command invocation.",
+        why: "Required options define command intent and enforce deterministic write contracts.",
+        examples: [
+          'pm create --title "Task title" --description "Task details" --type Task --status open --priority 1 --message "Create task" --dep none --comment none --note none --learning none --file none --test none --doc none',
+        ],
+        nextSteps: ['Run "pm <command> --help" to view required and recommended flags.'],
+      }),
+      rawMessage,
+      context,
+    );
   }
 
   if (message.startsWith("No update flags provided")) {
-    return makeGuidanceMessage({
-      code: "no_update_fields",
-      title: "No update fields supplied",
-      happened: "The update command was called without any field-changing flags.",
-      required: "Provide at least one update field such as --status, --priority, --title, --tags, or --message.",
-      why: "pm update mutates existing item fields; no-op invocations are rejected to avoid ambiguous history.",
-      examples: ['pm update pm-a1b2 --status in_progress --message "Start implementation"'],
-    });
+    return applyPmCliErrorContext(
+      makeGuidanceMessage({
+        code: "no_update_fields",
+        title: "No update fields supplied",
+        happened: "The update command was called without any field-changing flags.",
+        required: "Provide at least one update field such as --status, --priority, --title, --tags, or --message.",
+        why: "pm update mutates existing item fields; no-op invocations are rejected to avoid ambiguous history.",
+        examples: ['pm update pm-a1b2 --status in_progress --message "Start implementation"'],
+      }),
+      rawMessage,
+      context,
+    );
   }
 
   if (message.startsWith("Invalid ") || message.includes(" must be ")) {
-    return makeGuidanceMessage({
-      code: "invalid_argument_value",
-      title: "Invalid argument value",
-      happened: message,
-      required: "Use values that match documented command constraints.",
-      why: "Validation protects data consistency and deterministic behavior across commands.",
-      examples: ["pm create --help", "pm update --help", "pm calendar --help"],
-      nextSteps: ["Check allowed values in command help, then rerun with corrected input."],
-    });
+    return applyPmCliErrorContext(
+      makeGuidanceMessage({
+        code: "invalid_argument_value",
+        title: "Invalid argument value",
+        happened: message,
+        required: "Use values that match documented command constraints.",
+        why: "Validation protects data consistency and deterministic behavior across commands.",
+        examples: ["pm create --help", "pm update --help", "pm calendar --help"],
+        nextSteps: ["Check allowed values in command help, then rerun with corrected input."],
+      }),
+      rawMessage,
+      context,
+    );
   }
 
-  return makeGuidanceMessage({
-    code: "command_failed",
-    title: "Command failed",
-    happened: message,
-    required: "Adjust command input or tracker state and retry.",
-    why: "pm enforces explicit, deterministic contracts for data and command semantics.",
-    examples: ["pm --help", "pm <command> --help"],
-  });
+  return applyPmCliErrorContext(
+    makeGuidanceMessage({
+      code: "command_failed",
+      title: "Command failed",
+      happened: message,
+      required: "Adjust command input or tracker state and retry.",
+      why: "pm enforces explicit, deterministic contracts for data and command semantics.",
+      examples: ["pm --help", "pm <command> --help"],
+    }),
+    rawMessage,
+    context,
+  );
 }
 
 function commandExampleForRequiredOption(commandName: string | undefined, optionFlag: string, allowedTypes: string): string[] {
@@ -296,12 +376,12 @@ function buildCommanderErrorGuidance(rawMessage: string, commandName: string | u
   });
 }
 
-export function formatPmCliErrorForDisplay(rawMessage: string): string {
-  return renderGuidanceMessage(buildPmCliErrorGuidance(rawMessage));
+export function formatPmCliErrorForDisplay(rawMessage: string, context?: PmCliErrorContext): string {
+  return renderGuidanceMessage(buildPmCliErrorGuidance(rawMessage, context));
 }
 
-export function formatPmCliErrorForJson(rawMessage: string, exitCode: number): JsonErrorEnvelope {
-  return guidanceToJsonEnvelope(buildPmCliErrorGuidance(rawMessage), exitCode);
+export function formatPmCliErrorForJson(rawMessage: string, exitCode: number, context?: PmCliErrorContext): JsonErrorEnvelope {
+  return guidanceToJsonEnvelope(buildPmCliErrorGuidance(rawMessage, context), exitCode);
 }
 
 export function formatCommanderErrorForDisplay(

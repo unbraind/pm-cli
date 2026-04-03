@@ -23,6 +23,62 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
+  it("treats help command paths as successful help output", async () => {
+    await withTempPmPath(async (context) => {
+      const topLevelHelp = context.runCli(["help"]);
+      expect(topLevelHelp.code).toBe(0);
+      expect(topLevelHelp.stdout).toContain("Usage: pm [options] [command]");
+      expect(topLevelHelp.stderr.trim()).toBe("");
+
+      const createHelp = context.runCli(["help", "create"]);
+      expect(createHelp.code).toBe(0);
+      expect(createHelp.stdout).toContain("Usage: pm create [options]");
+      expect(createHelp.stderr.trim()).toBe("");
+    });
+  });
+
+  it("renders machine-readable help payloads for --help --json and help --json", async () => {
+    await withTempPmPath(async (context) => {
+      const directJsonHelp = context.runCli(["create", "--help", "--json"], { expectJson: true });
+      expect(directJsonHelp.code).toBe(0);
+      const directPayload = directJsonHelp.json as {
+        format: string;
+        detail_mode: string;
+        resolved_path: string;
+        intent: string;
+        options: Array<{ long: string | null; required: boolean; value_name: string | null }>;
+      };
+      expect(directPayload.format).toBe("pm_help_v1");
+      expect(directPayload.detail_mode).toBe("compact");
+      expect(directPayload.resolved_path).toBe("create");
+      expect(directPayload.intent.length).toBeGreaterThan(0);
+      expect(directPayload.options.some((entry) => entry.long === "--title" && entry.required)).toBe(true);
+      expect(directPayload.options.some((entry) => entry.long === "--title" && entry.value_name === "value")).toBe(true);
+
+      const helpCommandJson = context.runCli(["help", "create", "--json"], { expectJson: true });
+      expect(helpCommandJson.code).toBe(0);
+      const helpCommandPayload = helpCommandJson.json as {
+        format: string;
+        resolved_path: string;
+      };
+      expect(helpCommandPayload.format).toBe("pm_help_v1");
+      expect(helpCommandPayload.resolved_path).toBe("create");
+
+      const detailedRootJson = context.runCli(["--help", "--json", "--explain"], { expectJson: true });
+      expect(detailedRootJson.code).toBe(0);
+      const detailedPayload = detailedRootJson.json as {
+        detail_mode: string;
+        resolved_path: string;
+        examples: string[];
+        tips: string[];
+      };
+      expect(detailedPayload.detail_mode).toBe("detailed");
+      expect(detailedPayload.resolved_path).toBe("pm");
+      expect(detailedPayload.examples.length).toBeGreaterThan(1);
+      expect(detailedPayload.tips.length).toBeGreaterThan(0);
+    });
+  });
+
   it("describes reindex help text as keyword plus semantic and hybrid capable", async () => {
     await withTempPmPath(async (context) => {
       const help = context.runCli(["reindex", "--help"]);

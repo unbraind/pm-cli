@@ -12,6 +12,7 @@ import {
   runComments,
   runCompletion,
   runConfig,
+  runContracts,
   runCreate,
   runDelete,
   runDeps,
@@ -99,7 +100,7 @@ import type { GlobalOptions } from "../core/shared/command-types.js";
 import { getEnabledBuiltInExtensions } from "../core/extensions/builtins.js";
 import type { ItemStatus, PmSettings } from "../types/index.js";
 import { coerceLooseCommandOptionsWithFlagDefinitions, parseLooseCommandOptions } from "./extension-command-options.js";
-import { attachRichHelpText } from "./help-content.js";
+import { attachRichHelpText, normalizeHelpCommandPath, resolveHelpDetailMode, resolveHelpNarrative } from "./help-content.js";
 import {
   formatCommanderErrorForDisplay,
   formatCommanderErrorForJson,
@@ -234,8 +235,37 @@ function collectDynamicExtensionFlagHelpByCommand(
   return helpByCommand;
 }
 
+function commandAliases(command: Command): string[] {
+  const commandRecord = command as unknown as {
+    aliases?: () => string[];
+    alias?: () => string | undefined;
+    _aliases?: string[];
+  };
+  if (typeof commandRecord.aliases === "function") {
+    return commandRecord.aliases().map((value) => value.trim().toLowerCase()).filter((value) => value.length > 0);
+  }
+  if (typeof commandRecord.alias === "function") {
+    const alias = commandRecord.alias();
+    if (typeof alias === "string" && alias.trim().length > 0) {
+      return [alias.trim().toLowerCase()];
+    }
+  }
+  if (Array.isArray(commandRecord._aliases)) {
+    return commandRecord._aliases.map((value) => value.trim().toLowerCase()).filter((value) => value.length > 0);
+  }
+  return [];
+}
+
 function findDirectChildCommand(parent: Command, name: string): Command | null {
-  return parent.commands.find((entry) => entry.name() === name) ?? null;
+  const normalizedTarget = name.trim().toLowerCase();
+  return (
+    parent.commands.find((entry) => {
+      if (entry.name().trim().toLowerCase() === normalizedTarget) {
+        return true;
+      }
+      return commandAliases(entry).includes(normalizedTarget);
+    }) ?? null
+  );
 }
 
 function findCommandByPath(root: Command, pathParts: string[]): Command | null {
@@ -308,10 +338,18 @@ function parseBootstrapPathToken(
   };
 }
 
-function parseBootstrapGlobalOptions(argv: string[]): { path?: string; noExtensions: boolean; json: boolean } {
+interface BootstrapGlobalOptions {
+  path?: string;
+  noExtensions: boolean;
+  json: boolean;
+  quiet: boolean;
+}
+
+function parseBootstrapGlobalOptions(argv: string[]): BootstrapGlobalOptions {
   let pathValue: string | undefined;
   let noExtensions = false;
   let json = false;
+  let quiet = false;
   let index = 0;
   while (index < argv.length) {
     const token = argv[index];
@@ -325,6 +363,11 @@ function parseBootstrapGlobalOptions(argv: string[]): { path?: string; noExtensi
     }
     if (token === "--json") {
       json = true;
+      index += 1;
+      continue;
+    }
+    if (token === "--quiet") {
+      quiet = true;
       index += 1;
       continue;
     }
@@ -342,6 +385,83 @@ function parseBootstrapGlobalOptions(argv: string[]): { path?: string; noExtensi
     path: pathValue,
     noExtensions,
     json,
+    quiet,
+  };
+}
+
+function stripGlobalBootstrapTokens(argv: string[]): string[] {
+  const remaining: string[] = [];
+  let index = 0;
+  while (index < argv.length) {
+    const token = argv[index];
+    if (token === "--") {
+      break;
+    }
+    if (
+      token === "--json" ||
+      token === "--quiet" ||
+      token === "--no-extensions" ||
+      token === "--profile" ||
+      token === "--explain"
+    ) {
+      index += 1;
+      continue;
+    }
+    if (token === "--path") {
+      index += 2;
+      continue;
+    }
+    if (token.startsWith("--path=")) {
+      index += 1;
+      continue;
+    }
+    remaining.push(token);
+    index += 1;
+  }
+  return remaining;
+}
+
+interface BootstrapHelpRequest {
+  requested: boolean;
+  commandPathTokens: string[];
+}
+
+function parseBootstrapHelpRequest(argv: string[]): BootstrapHelpRequest {
+  const stripped = stripGlobalBootstrapTokens(argv);
+  const first = stripped[0]?.trim().toLowerCase();
+  if (first === "help") {
+    const commandPathTokens: string[] = [];
+    for (let index = 1; index < stripped.length; index += 1) {
+      const token = stripped[index];
+      if (token.startsWith("-")) {
+        break;
+      }
+      commandPathTokens.push(token.trim().toLowerCase());
+    }
+    return {
+      requested: true,
+      commandPathTokens,
+    };
+  }
+
+  const helpFlagIndex = stripped.findIndex((token) => token === "--help" || token === "-h");
+  if (helpFlagIndex < 0) {
+    return {
+      requested: false,
+      commandPathTokens: [],
+    };
+  }
+
+  const commandPathTokens: string[] = [];
+  for (const token of stripped) {
+    if (token.startsWith("-")) {
+      break;
+    }
+    commandPathTokens.push(token.trim().toLowerCase());
+  }
+  return {
+    requested: true,
+    commandPathTokens,
   };
 }
 
@@ -371,6 +491,241 @@ function parseBootstrapCommandName(argv: string[]): string | undefined {
     return token.trim().toLowerCase();
   }
   return undefined;
+}
+
+interface HelpArgumentSummary {
+  name: string;
+  required: boolean;
+  variadic: boolean;
+  description: string | null;
+}
+
+interface HelpOptionSummary {
+  flags: string;
+  long: string | null;
+  short: string | null;
+  description: string;
+  takes_value: boolean;
+  value_required: boolean;
+  value_name: string | null;
+  variadic: boolean;
+  required: boolean;
+  aliases: string[];
+  alias_for: string | null;
+  default_value?: unknown;
+}
+
+interface HelpSubcommandSummary {
+  name: string;
+  aliases: string[];
+  description: string;
+}
+
+function resolveCommandFromPathTokens(root: Command, pathTokens: string[]): Command | null {
+  if (pathTokens.length === 0) {
+    return root;
+  }
+  return findCommandByPath(root, pathTokens);
+}
+
+function extractOptionValueName(flags: string): string | null {
+  const match = flags.match(/[<[]([^>\]]+)[>\]]/);
+  if (!match) {
+    return null;
+  }
+  const value = match[1]?.trim();
+  return value && value.length > 0 ? value : null;
+}
+
+function readOptionAttributeName(option: unknown): string | null {
+  const optionRecord = option as {
+    attributeName?: (() => string) | string;
+  };
+  if (typeof optionRecord.attributeName === "function") {
+    const value = optionRecord.attributeName();
+    return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+  }
+  if (typeof optionRecord.attributeName === "string" && optionRecord.attributeName.trim().length > 0) {
+    return optionRecord.attributeName.trim();
+  }
+  return null;
+}
+
+function buildOptionAliasMap(options: unknown[]): Map<string, string[]> {
+  const aliasMap = new Map<string, string[]>();
+  for (const option of options) {
+    const optionRecord = option as {
+      long?: string;
+    };
+    const attributeName = readOptionAttributeName(option);
+    if (!attributeName || typeof optionRecord.long !== "string" || optionRecord.long.trim().length === 0) {
+      continue;
+    }
+    const existing = aliasMap.get(attributeName) ?? [];
+    existing.push(optionRecord.long.trim());
+    aliasMap.set(attributeName, existing);
+  }
+  for (const [attributeName, values] of aliasMap.entries()) {
+    aliasMap.set(
+      attributeName,
+      [...new Set(values.map((value) => value.trim()).filter((value) => value.length > 0))].sort((left, right) =>
+        left.localeCompare(right),
+      ),
+    );
+  }
+  return aliasMap;
+}
+
+function buildHelpOptionSummaries(command: Command): HelpOptionSummary[] {
+  const options = (command.options ?? []) as unknown[];
+  const optionAliasMap = buildOptionAliasMap(options);
+  return options.map((option) => {
+    const optionRecord = option as {
+      flags?: string;
+      long?: string;
+      short?: string;
+      description?: string;
+      mandatory?: boolean;
+      variadic?: boolean;
+      defaultValue?: unknown;
+    };
+    const flags = typeof optionRecord.flags === "string" ? optionRecord.flags.trim() : "";
+    const description = typeof optionRecord.description === "string" ? optionRecord.description.trim() : "";
+    const attributeName = readOptionAttributeName(option);
+    const aliasCandidates = attributeName ? optionAliasMap.get(attributeName) ?? [] : [];
+    const aliases = aliasCandidates
+      .filter((entry) => entry !== optionRecord.long)
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.length > 0);
+    const aliasForMatch = description.match(/^Alias for ([^ ]+)/i);
+    const aliasFor = aliasForMatch && aliasForMatch[1] ? aliasForMatch[1].trim() : null;
+    const required =
+      optionRecord.mandatory === true || description.includes("[required]") || description.toLowerCase().includes("required;");
+    const valueRequired = flags.includes("<");
+    const takesValue = valueRequired || flags.includes("[");
+    const summary: HelpOptionSummary = {
+      flags,
+      long: typeof optionRecord.long === "string" ? optionRecord.long : null,
+      short: typeof optionRecord.short === "string" ? optionRecord.short : null,
+      description,
+      takes_value: takesValue,
+      value_required: valueRequired,
+      value_name: extractOptionValueName(flags),
+      variadic: optionRecord.variadic === true,
+      required,
+      aliases,
+      alias_for: aliasFor,
+    };
+    if (optionRecord.defaultValue !== undefined) {
+      summary.default_value = optionRecord.defaultValue;
+    }
+    return summary;
+  });
+}
+
+function buildHelpArgumentSummaries(command: Command): HelpArgumentSummary[] {
+  const commandRecord = command as unknown as {
+    registeredArguments?: Array<{
+      name?: (() => string) | string;
+      required?: boolean;
+      variadic?: boolean;
+      description?: string;
+    }>;
+    _args?: Array<{
+      name?: (() => string) | string;
+      required?: boolean;
+      variadic?: boolean;
+      description?: string;
+    }>;
+  };
+  const argumentsList = Array.isArray(commandRecord.registeredArguments)
+    ? commandRecord.registeredArguments
+    : Array.isArray(commandRecord._args)
+      ? commandRecord._args
+      : [];
+
+  return argumentsList.map((argument) => {
+    const rawName =
+      typeof argument.name === "function"
+        ? argument.name()
+        : typeof argument.name === "string"
+          ? argument.name
+          : "argument";
+    const description = typeof argument.description === "string" && argument.description.trim().length > 0
+      ? argument.description.trim()
+      : null;
+    return {
+      name: rawName.trim(),
+      required: argument.required === true,
+      variadic: argument.variadic === true,
+      description,
+    };
+  });
+}
+
+function buildHelpSubcommandSummaries(command: Command): HelpSubcommandSummary[] {
+  return command.commands
+    .map((entry) => ({
+      name: entry.name().trim(),
+      aliases: commandAliases(entry),
+      description: entry.description().trim(),
+    }))
+    .sort((left, right) => left.name.localeCompare(right.name));
+}
+
+function buildJsonHelpPayload(rootProgram: Command, targetCommand: Command, argv: string[], requestedPath: string[]): Record<string, unknown> {
+  const detailMode = resolveHelpDetailMode(argv);
+  const resolvedPath = normalizeHelpCommandPath(getCommandPath(targetCommand));
+  const commandPath = resolvedPath.length > 0 ? resolvedPath : undefined;
+  const narrative = resolveHelpNarrative(commandPath, detailMode);
+  const subcommands = buildHelpSubcommandSummaries(targetCommand);
+  return {
+    format: "pm_help_v1",
+    detail_mode: detailMode,
+    root_command: rootProgram.name(),
+    requested_path: requestedPath,
+    resolved_path: resolvedPath.length > 0 ? resolvedPath : rootProgram.name(),
+    description: targetCommand.description(),
+    usage: targetCommand.usage(),
+    intent: narrative.intent,
+    examples: narrative.examples,
+    tips: narrative.tips,
+    arguments: buildHelpArgumentSummaries(targetCommand),
+    options: buildHelpOptionSummaries(targetCommand),
+    subcommands,
+    has_subcommands: subcommands.length > 0,
+  };
+}
+
+async function maybeRenderBootstrapJsonHelp(rootProgram: Command, argv: string[]): Promise<boolean> {
+  const bootstrapGlobal = parseBootstrapGlobalOptions(argv);
+  if (!bootstrapGlobal.json) {
+    return false;
+  }
+  const helpRequest = parseBootstrapHelpRequest(argv);
+  if (!helpRequest.requested) {
+    return false;
+  }
+  const targetCommand = resolveCommandFromPathTokens(rootProgram, helpRequest.commandPathTokens);
+  if (!targetCommand) {
+    if (!bootstrapGlobal.quiet) {
+      const envelope = formatCommanderErrorForJson(
+        `unknown command '${helpRequest.commandPathTokens.join(" ")}'`,
+        "help",
+        "Epic|Feature|Task|Chore|Issue",
+        EXIT_CODE.USAGE,
+      );
+      printError(JSON.stringify(envelope, null, 2));
+    }
+    process.exitCode = EXIT_CODE.USAGE;
+    return true;
+  }
+  if (!bootstrapGlobal.quiet) {
+    const payload = buildJsonHelpPayload(rootProgram, targetCommand, argv, helpRequest.commandPathTokens);
+    process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+  }
+  process.exitCode = EXIT_CODE.SUCCESS;
+  return true;
 }
 
 function parseBootstrapTypeValue(argv: string[]): string | undefined {
@@ -2778,6 +3133,29 @@ program
   });
 
 program
+  .command("contracts")
+  .description("Show machine-readable command and schema contracts for agents.")
+  .option("--action <value>", "Filter tool schema branches to a specific action")
+  .option("--command <value>", "Filter command-flag contracts to one command")
+  .option("--schema-only", "Return schema-focused output only")
+  .action(async (options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const result = await runContracts(
+      {
+        action: typeof options.action === "string" ? options.action : undefined,
+        command: typeof options.command === "string" ? options.command : undefined,
+        schemaOnly: Boolean(options.schemaOnly),
+      },
+      globalOptions,
+    );
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=contracts took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+program
   .command("claim")
   .argument("<id>", "Item id")
   .option("--author <value>", "Mutation author")
@@ -2910,6 +3288,10 @@ async function main(): Promise<void> {
   try {
     await registerDynamicExtensionCommandPaths(program);
     wrapProgramActionsForExtensionHandlers(program);
+    const renderedBootstrapJsonHelp = await maybeRenderBootstrapJsonHelp(program, process.argv.slice(2));
+    if (renderedBootstrapJsonHelp) {
+      return;
+    }
     await program.parseAsync(process.argv);
   } catch (error: unknown) {
     await runAndClearAfterCommandHooks({
@@ -2920,9 +3302,9 @@ async function main(): Promise<void> {
     const jsonErrors = bootstrapGlobal.json;
     if (error instanceof PmCliError) {
       if (jsonErrors) {
-        printError(JSON.stringify(formatPmCliErrorForJson(error.message, error.exitCode), null, 2));
+        printError(JSON.stringify(formatPmCliErrorForJson(error.message, error.exitCode, error.context), null, 2));
       } else {
-        printError(formatPmCliErrorForDisplay(error.message));
+        printError(formatPmCliErrorForDisplay(error.message, error.context));
       }
       process.exitCode = error.exitCode;
       return;
@@ -2930,7 +3312,10 @@ async function main(): Promise<void> {
 
     if (typeof error === "object" && error !== null && "code" in error) {
       const code = (error as { code?: string }).code;
-      if (code === "commander.helpDisplayed") {
+      const rawMessage = typeof (error as { message?: unknown }).message === "string" ? ((error as { message?: string }).message ?? "") : "";
+      const isHelpDisplayCode =
+        code === "commander.helpDisplayed" || code === "commander.help" || code === "commander.helpCommand";
+      if (isHelpDisplayCode || rawMessage.includes("(outputHelp)")) {
         process.exitCode = EXIT_CODE.SUCCESS;
         return;
       }

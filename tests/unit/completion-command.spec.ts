@@ -57,6 +57,7 @@ describe("generateBashScript", () => {
       "stats",
       "health",
       "gc",
+      "contracts",
       "claim",
       "release",
       "beads",
@@ -193,6 +194,7 @@ describe("generateZshScript", () => {
     expect(script).toContain("install:Install supported integrations and extensions");
     expect(script).toContain("create:Create a new project management item");
     expect(script).toContain("completion:Generate shell completion");
+    expect(script).toContain("contracts:Show machine-readable command and schema contracts");
     expect(script).toContain("calendar:Show calendar views for deadlines and reminders");
     expect(script).toContain("cal:Alias for calendar");
     expect(script).toContain("context:Show a token-efficient project context snapshot");
@@ -315,6 +317,7 @@ describe("generateFishScript", () => {
       ["get", "Show item details"],
       ["search", "Search items"],
       ["completion", "Generate shell completion"],
+      ["contracts", "machine-readable command and schema contracts"],
       ["health", "project tracker health"],
       ["stats", "project tracker statistics"],
     ] as [string, string][]) {
@@ -345,6 +348,14 @@ describe("generateFishScript", () => {
   it("includes search mode completions", () => {
     const script = generateFishScript();
     expect(script).toContain("keyword semantic hybrid");
+  });
+
+  it("includes contracts command flag completions", () => {
+    const script = generateFishScript();
+    expect(script).toContain("__fish_seen_subcommand_from contracts");
+    expect(script).toContain("-l action");
+    expect(script).toContain("-l command");
+    expect(script).toContain("-l schema-only");
   });
 
   it("includes completion shell argument completions", () => {

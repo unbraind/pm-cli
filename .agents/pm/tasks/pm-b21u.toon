@@ -1,0 +1,46 @@
+id: pm-b21u
+title: Execute Agent-First CLI UX v3 implementation
+description: "Implement all approved workstreams across CLI help/error/contract surfaces, tests, and docs under feature pm-dqqa."
+type: Task
+status: closed
+priority: 1
+tags[7]: agent-ux,"area:contracts","area:error","area:help","area:schema",implementation,pm-cli
+created_at: "2026-04-03T15:42:04.739Z"
+updated_at: "2026-04-03T16:02:54.465Z"
+deadline: "2026-04-10T15:42:04.739Z"
+author: codex-agent
+estimated_minutes: 480
+acceptance_criteria: "Code, tests, docs, and verification commands for UX v3 are completed and linked with evidence."
+parent: pm-dqqa
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-dqqa,parent,"2026-04-03T15:42:04.739Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-04-03T15:42:04.739Z",codex-agent,Task created and ready to claim for implementation.
+  "2026-04-03T15:42:13.574Z",codex-agent,"Implementation started: working through help semantics, JSON help surfaces, contracts command, schema v4, and context-aware diagnostics."
+  "2026-04-03T16:02:27.934Z",codex-agent,"Implemented help-command success semantics, bootstrap --help --json machine payloads, new pm contracts command, schema v4 metadata, Pi wrapper contracts action mapping, and PmCliError.context guidance plumbing. Verification: pnpm build; node scripts/run-tests.mjs test; node scripts/run-tests.mjs coverage all passed."
+notes[1]{created_at,author,text}:
+  "2026-04-03T15:42:04.739Z",codex-agent,Will link changed files/tests/docs and closure evidence as work completes.
+learnings[1]{created_at,author,text}:
+  "2026-04-03T16:02:28.886Z",codex-agent,Routing --help --json before commander parse avoids duplicated text/error output and keeps machine help deterministic.
+files[8]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,Pi wrapper contracts action mapping
+  src/cli/commands/completion.ts,project,contracts completion surfaces
+  src/cli/commands/contracts.ts,project,contracts command runtime
+  src/cli/commands/index.ts,project,contracts command export
+  src/cli/error-guidance.ts,project,PmCliError context-aware guidance formatting
+  src/cli/help-content.ts,project,help model and rendering
+  src/cli/main.ts,project,"help routing,command registration,and error dispatch"
+  src/sdk/cli-contracts.ts,project,schema v4 and action metadata
+tests[4]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,full sandbox coverage suite
+  node scripts/run-tests.mjs test,null,project,7200,full sandbox test suite
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,7200,targeted suites
+  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/error-guidance.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,targeted regression suite
+docs[5]{path,scope,note}:
+  CHANGELOG.md,project,unreleased release notes for UX v3
+  docs/ARCHITECTURE.md,project,internal pipeline and source tree updates
+  docs/EXTENSIONS.md,project,service override behavior for JSON help/errors
+  PRD.md,project,contract baseline reference
+  README.md,project,user-facing help/schema surface updates
+close_reason: "Implemented and verified agent-first CLI UX v3 help, contracts, schema, and error-guidance upgrades."
+body: Execution task for coding and verification.

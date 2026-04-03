@@ -172,7 +172,7 @@ Notes:
 - Service resolution is deterministic (last registration for each service key wins).
 - `output_format` and `error_format` are synchronous call sites; async returns are ignored with deterministic warnings.
 - `error_format` receives the final rendered error string. When callers use `--json`, that string is a JSON error envelope.
-- `help_format` applies to text help/usage rendering paths; machine-readable `--json` errors bypass `help_format` and emit canonical JSON diagnostics directly.
+- `help_format` applies to text help/usage rendering paths; machine-readable `--json` errors and `--help --json` payloads bypass `help_format` and emit canonical JSON diagnostics/help data directly.
 
 ### `api.registerFlags(targetCommand, flags)`
 

@@ -1,0 +1,28 @@
+id: pm-dqqa
+title: Implement agent-first help/schema/error surfaces
+description: "Implement help command semantic fix, machine-readable help output, contracts command, schema metadata v4, and runtime-context error guidance updates."
+type: Feature
+status: closed
+priority: 1
+tags[6]: agent-ux,"area:contracts","area:error","area:help","area:schema",pm-cli
+created_at: "2026-04-03T15:41:56.689Z"
+updated_at: "2026-04-03T16:02:55.380Z"
+deadline: "2026-04-13T15:41:56.689Z"
+author: codex-agent
+estimated_minutes: 540
+acceptance_criteria: All planned surfaces are implemented with deterministic behavior and regression coverage; docs stay in sync.
+parent: pm-pfn8
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-pfn8,parent,"2026-04-03T15:41:56.689Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-03T15:41:56.689Z",codex-agent,Feature created as implementation child of epic pm-pfn8.
+notes[1]{created_at,author,text}:
+  "2026-04-03T15:41:56.689Z",codex-agent,"Includes command routing,help renderer,contracts schema,and diagnostics updates."
+files[1]{path,scope,note}:
+  src/sdk/cli-contracts.ts,project,shared contracts and schema surface
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,7200,targeted regression
+docs[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,runtime and contract architecture docs
+close_reason: Feature scope complete via task pm-b21u with docs/tests/contracts/help updates verified.
+body: "Execution feature under epic pm-pfn8 for source, tests, and docs updates."

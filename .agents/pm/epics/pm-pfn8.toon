@@ -1,0 +1,29 @@
+id: pm-pfn8
+title: Agent-First CLI UX v3 follow-up
+description: "Controlled-breaking follow-up to ship JSON help surfaces, dedicated contracts command, help-command semantic fix, schema-v4 metadata, and context-driven error guidance."
+type: Epic
+status: closed
+priority: 0
+tags[6]: agent-ux,"area:contracts","area:error","area:help","area:schema",pm-cli
+created_at: "2026-04-03T15:41:49.872Z"
+updated_at: "2026-04-03T16:02:56.292Z"
+deadline: "2026-04-17T15:41:49.872Z"
+author: codex-agent
+estimated_minutes: 720
+acceptance_criteria: Help command semantics are fixed; --help --json and contracts command surfaces are shipped; schema metadata upgraded; error guidance uses runtime context; docs/tests updated and passing.
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-frk8,discovered_from,"2026-04-03T15:41:49.872Z",codex-agent,null
+  pm-izbd,discovered_from,"2026-04-03T15:41:49.872Z",codex-agent,null
+  pm-j162,discovered_from,"2026-04-03T15:41:49.872Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-03T15:41:49.872Z",codex-agent,Created after duplicate scan found no open or in-progress items for this scope.
+notes[1]{created_at,author,text}:
+  "2026-04-03T15:41:49.872Z",codex-agent,Track follow-up as controlled-breaking workstream focused on agent-first machine surfaces.
+files[1]{path,scope,note}:
+  src/cli/main.ts,project,command routing and help/error dispatch
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,7200,full regression baseline
+docs[1]{path,scope,note}:
+  README.md,project,user-facing behavior contract
+close_reason: "Epic scope complete: agent-first CLI UX v3 follow-up implemented and verified."
+body: Follow-up implementation after prior closed UX overhaul items; this tracks new agent-first machine-readable help/schema surfaces and help command semantic corrections.

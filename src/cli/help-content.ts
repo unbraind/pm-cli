@@ -1,12 +1,19 @@
 import { Command } from "commander";
 
-interface HelpBundle {
+export interface HelpBundle {
   why: string;
   examples: string[];
   tips?: string[];
 }
 
-type HelpDetailMode = "compact" | "detailed";
+export interface HelpNarrative {
+  intent: string;
+  examples: string[];
+  tips: string[];
+  detail_mode: HelpDetailMode;
+}
+
+export type HelpDetailMode = "compact" | "detailed";
 
 function renderCompactHelpBundle(bundle: HelpBundle): string {
   const lines: string[] = [
@@ -46,6 +53,20 @@ function renderHelpBundle(bundle: HelpBundle, detailMode: HelpDetailMode): strin
   return renderCompactHelpBundle(bundle);
 }
 
+export function normalizeHelpCommandPath(commandPath: string): string {
+  return commandPath
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((part) => part.length > 0)
+    .join(" ");
+}
+
+const HELP_PATH_ALIASES: Record<string, string> = {
+  cal: "calendar",
+  ctx: "context",
+};
+
 function findDirectChildCommand(parent: Command, name: string): Command | null {
   return parent.commands.find((entry) => entry.name() === name) ?? null;
 }
@@ -70,7 +91,7 @@ function attachBundleByPath(root: Command, commandPath: string, bundle: HelpBund
   command.addHelpText("after", renderHelpBundle(bundle, detailMode));
 }
 
-function resolveHelpDetailMode(argv: string[]): HelpDetailMode {
+export function resolveHelpDetailMode(argv: string[]): HelpDetailMode {
   if (argv.includes("--explain")) {
     return "detailed";
   }
@@ -274,6 +295,10 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Generates shell completion scripts for faster and more reliable command entry.",
     examples: ["pm completion bash", "pm completion zsh", "pm completion fish"],
   },
+  contracts: {
+    why: "Exposes machine-readable CLI command and tool schema contracts for agent integrations.",
+    examples: ["pm contracts", "pm contracts --action create", "pm contracts --schema-only"],
+  },
   "beads import": {
     why: "Imports Beads JSONL records into pm item format.",
     examples: ['pm beads import --file .beads/issues.jsonl --author "codex-agent" --message "Import legacy beads data"'],
@@ -288,7 +313,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
 };
 
-const ROOT_HELP_BUNDLE: HelpBundle = {
+export const ROOT_HELP_BUNDLE: HelpBundle = {
   why: "Provides deterministic project management workflows for humans and coding agents.",
   examples: ["pm init", "pm list-open --limit 10", 'pm create --title "..." --description "..." --type Task --status open --priority 1 --message "..." --dep none --comment none --note none --learning none --file none --test none --doc none'],
   tips: [
@@ -296,6 +321,36 @@ const ROOT_HELP_BUNDLE: HelpBundle = {
     "Use --json for machine parsing and integration flows.",
   ],
 };
+
+function resolveCanonicalHelpPath(commandPath: string | undefined): string {
+  const normalized = normalizeHelpCommandPath(commandPath ?? "");
+  if (!normalized) {
+    return "";
+  }
+  return HELP_PATH_ALIASES[normalized] ?? normalized;
+}
+
+export function resolveHelpBundleForPath(commandPath: string | undefined): HelpBundle {
+  const canonicalPath = resolveCanonicalHelpPath(commandPath);
+  if (!canonicalPath) {
+    return ROOT_HELP_BUNDLE;
+  }
+  return HELP_BY_COMMAND_PATH[canonicalPath] ?? ROOT_HELP_BUNDLE;
+}
+
+export function resolveHelpNarrative(commandPath: string | undefined, detailMode: HelpDetailMode): HelpNarrative {
+  const bundle = resolveHelpBundleForPath(commandPath);
+  return {
+    intent: bundle.why,
+    examples: detailMode === "detailed" ? [...bundle.examples] : bundle.examples.length > 0 ? [bundle.examples[0]] : [],
+    tips: detailMode === "detailed" ? [...(bundle.tips ?? [])] : [],
+    detail_mode: detailMode,
+  };
+}
+
+export function listDocumentedHelpPaths(): string[] {
+  return Object.keys(HELP_BY_COMMAND_PATH).sort((left, right) => left.localeCompare(right));
+}
 
 export function attachRichHelpText(program: Command, argv: string[] = process.argv.slice(2)): void {
   const detailMode = resolveHelpDetailMode(argv);

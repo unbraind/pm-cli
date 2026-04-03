@@ -128,6 +128,9 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     "    activity)",
     `      COMPREPLY=(${compgen("--limit --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
+    "    contracts)",
+    `      COMPREPLY=(${compgen("--action --command --schema-only --json --quiet --path --no-extensions --profile --help")})`,
+    "      ;;",
     "    claim|release|close|delete|append|restore)",
     `      COMPREPLY=(${compgen(MUTATION_FLAGS)})`,
     "      ;;",
@@ -202,6 +205,7 @@ _pm_commands() {
     'stats:Show project tracker statistics'
     'health:Show project tracker health checks'
     'gc:Clean optional cache artifacts'
+    'contracts:Show machine-readable command and schema contracts'
     'claim:Claim an item for active work'
     'release:Release the active claim for an item'
     'beads:Built-in Beads extension commands'
@@ -356,6 +360,14 @@ _pm() {
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
+        contracts)
+          _arguments \\
+            '--action[Filter schema by tool action]:action' \\
+            '--command[Filter command flag contracts]:command' \\
+            '--schema-only[Return schema-only payload]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
         comments|notes|learnings)
           _arguments \\
             '--add[Add one entry (plain text, text=<value>, markdown pairs, or - for stdin)]:text' \\
@@ -477,6 +489,7 @@ complete -c pm -n __pm_no_subcommand -a test-all      -d 'Run linked tests acros
 complete -c pm -n __pm_no_subcommand -a stats         -d 'Show project tracker statistics'
 complete -c pm -n __pm_no_subcommand -a health        -d 'Show project tracker health checks'
 complete -c pm -n __pm_no_subcommand -a gc            -d 'Clean optional cache artifacts'
+complete -c pm -n __pm_no_subcommand -a contracts     -d 'Show machine-readable command and schema contracts'
 complete -c pm -n __pm_no_subcommand -a claim         -d 'Claim an item for active work'
 complete -c pm -n __pm_no_subcommand -a release       -d 'Release the active claim for an item'
 complete -c pm -n __pm_no_subcommand -a beads         -d 'Built-in Beads extension commands'
@@ -581,6 +594,9 @@ complete -c pm -n '__fish_seen_subcommand_from history'  -l limit -d 'Max histor
 complete -c pm -n '__fish_seen_subcommand_from history'  -l diff -d 'Include changed-field patch summary'
 complete -c pm -n '__fish_seen_subcommand_from history'  -l verify -d 'Verify history hash chain and replay integrity'
 complete -c pm -n '__fish_seen_subcommand_from activity' -l limit -d 'Max activity entries' -r
+complete -c pm -n '__fish_seen_subcommand_from contracts' -l action -d 'Filter schema by tool action' -r
+complete -c pm -n '__fish_seen_subcommand_from contracts' -l command -d 'Filter command flag contracts' -r
+complete -c pm -n '__fish_seen_subcommand_from contracts' -l schema-only -d 'Return schema-only payload'
 complete -c pm -n '__fish_seen_subcommand_from deps' -l format -d 'Output format' -r -a 'tree graph'
 
 # comments / notes / learnings flags

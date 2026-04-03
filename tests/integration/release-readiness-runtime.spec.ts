@@ -124,6 +124,7 @@ const CORE_COMMANDS = [
   "stats",
   "health",
   "gc",
+  "contracts",
   "claim",
   "release",
   "completion",

@@ -35,6 +35,9 @@ export interface PmToolParameters {
   keywords?: string;
   prefix?: string;
   scope?: string;
+  contractAction?: string;
+  command?: string;
+  schemaOnly?: boolean;
   configAction?: string;
   key?: string;
   title?: string;
@@ -513,6 +516,14 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
     case "health":
     case "gc":
       args.push(action);
+      return args;
+    case "contracts":
+      args.push("contracts");
+      pushOption(args, "--action", params.contractAction);
+      pushOption(args, "--command", params.command);
+      if (params.schemaOnly) {
+        args.push("--schema-only");
+      }
       return args;
     case "completion":
       args.push("completion", requireString(params.shell, "shell", action));
