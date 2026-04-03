@@ -1,0 +1,53 @@
+id: pm-bkvx
+title: Linked-test sandbox project/global extension parity
+description: Make linked-test sandbox execution load both project and global extension/settings context so extension-defined item types validate identically to workspace runs.
+type: Feature
+status: closed
+priority: 1
+tags[4]: custom-types,extensions,linked-tests,pm-cli
+created_at: "2026-04-03T22:53:26.793Z"
+updated_at: "2026-04-03T23:47:32.046Z"
+deadline: "2026-04-13T22:53:26.793Z"
+author: codex-agent
+estimated_minutes: 300
+acceptance_criteria: Linked commands executed via pm test and pm test-all accept extension-defined type filters that are valid in direct workspace commands for both project and global extension roots.
+definition_of_ready: Epic pm-mf5z exists and parity implementation files/tests identified.
+order: 2
+goal: Linked test reliability
+objective: Restore extension-defined type parity in linked sandboxes
+value: Eliminates contradictory custom-type validation between direct and linked commands
+impact: Improves correctness of governance evidence in extension-enabled repositories
+outcome: Linked sandbox mirrors project/global extension behavior for type validation
+why_now: User-reported pm-lvej and pm-6fmt regressions block reliable automation in custom-schema projects.
+parent: pm-mf5z
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: linked-test-hardening
+release: vnext
+reporter: codex-agent
+severity: medium
+environment: linux-node25-local
+repro_steps: Install extension-defined custom type then run same list/search command directly and through linked pm test run.
+resolution: implemented
+expected_result: Linked sandbox and workspace commands share type-filter acceptance for extension-defined types.
+actual_result: Linked sandbox rejects custom type filter with core-only allowed list.
+affected_version: 2026.3.12
+component: linked-test-sandbox
+regression: true
+customer_impact: Custom-schema teams cannot rely on linked test evidence consistency.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-mf5z,parent,"2026-04-03T22:53:26.793Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-03T22:53:26.793Z",codex-agent,Feature carved from epic scope for pm-lvej and pm-6fmt parity.
+  "2026-04-03T23:46:53.817Z",codex-agent,"Feature delivered: linked-test sandbox now seeds source project/global settings+extensions before command execution, restoring extension-defined type parity in linked runs. Verified by new runTest/runTestAll parity regressions and pm test pm-qtvv evidence."
+notes[1]{created_at,author,text}:
+  "2026-04-03T22:53:26.793Z",codex-agent,Seed sandbox with source project/global settings plus extensions before command execution.
+files[1]{path,scope,note}:
+  src/cli/commands/test.ts,project,sandbox runner seeding changes
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,2400,parity and orchestration regressions
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,document extension parity behavior
+close_reason: linked-test project/global extension parity delivered with regression coverage
+body: Implements pm-lvej and pm-6fmt scope by seeding linked-test sandbox roots with source project/global settings and extension directories while preserving sandbox isolation.

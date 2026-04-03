@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -93,6 +93,37 @@ async function overwriteTaskTests(
   await writeFile(taskPath, serializeItemDocument(parsed, { format }), "utf8");
 }
 
+async function writeSchemaTypeExtension(pmRoot: string, extensionDirName: string, typeName: string): Promise<void> {
+  const extensionDir = path.join(pmRoot, "extensions", extensionDirName);
+  await mkdir(extensionDir, { recursive: true });
+  await writeFile(
+    path.join(extensionDir, "manifest.json"),
+    `${JSON.stringify(
+      {
+        name: `${extensionDirName}-ext`,
+        version: "1.0.0",
+        entry: "index.mjs",
+        capabilities: ["schema"],
+      },
+      null,
+      2,
+    )}\n`,
+    "utf8",
+  );
+  await writeFile(
+    path.join(extensionDir, "index.mjs"),
+    [
+      "export function activate(api) {",
+      "  api.registerItemTypes([",
+      `    { name: \"${typeName}\", folder: \"${typeName.toLowerCase()}\" },`,
+      "  ]);",
+      "}",
+      "",
+    ].join("\n"),
+    "utf8",
+  );
+}
+
 describe("runTestAll", () => {
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-test-all-not-init-"));
@@ -147,11 +178,12 @@ describe("runTestAll", () => {
         status: "open",
         testEntries: ["command=node --this-flag-does-not-exist,scope=project"],
       });
-      createTaskWithTests(context, {
+      const skippedTaskId = createTaskWithTests(context, {
         title: "Skipped Task",
         status: "open",
-        testEntries: ["path=tests/sample.spec.ts,scope=project"],
+        testEntries: ["command=node -e \"process.stdout.write('skip-placeholder')\",scope=project"],
       });
+      await overwriteTaskTests(context, skippedTaskId, [{ path: "tests/sample.spec.ts", scope: "project" }]);
       createTaskWithTests(context, {
         title: "Closed Task",
         status: "closed",
@@ -178,22 +210,58 @@ describe("runTestAll", () => {
     });
   });
 
+  it("executes linked commands with project and global extension type parity", async () => {
+    await withTempPmPath(async (context) => {
+      const globalPmRoot = context.env.PM_GLOBAL_PATH;
+      expect(typeof globalPmRoot).toBe("string");
+      await writeSchemaTypeExtension(context.pmPath, "project-test-all-type", "ProjectAsset");
+      await writeSchemaTypeExtension(globalPmRoot as string, "global-test-all-type", "GlobalAsset");
+
+      createTaskWithTests(context, {
+        title: "Project Type Filter Source",
+        status: "open",
+        testEntries: ["command=node dist/cli.js list --type ProjectAsset --limit 1 --json,scope=project"],
+      });
+      createTaskWithTests(context, {
+        title: "Global Type Filter Source",
+        status: "open",
+        testEntries: ["command=node dist/cli.js list --type GlobalAsset --limit 1 --json,scope=project"],
+      });
+
+      const result = await runTestAll({ status: "open", timeout: "30" }, { path: context.pmPath });
+      expect(result.totals.items).toBe(2);
+      expect(result.totals.linked_tests).toBe(2);
+      expect(result.failed).toBe(0);
+      expect(result.passed).toBe(2);
+      expect(result.skipped).toBe(0);
+    });
+  });
+
   it("deduplicates duplicate command and path entries across items", async () => {
     await withTempPmPath(async (context) => {
       const duplicateCommand = "command=node -e \"process.stdout.write('dup-command-token')\",scope=project";
       const uniqueCommand = "command=node -e \"process.stdout.write('unique-command-token')\",scope=project";
-      const duplicatePath = "path=tests/duplicate-path.spec.ts,scope=project";
+      const duplicatePath = "tests/duplicate-path.spec.ts";
 
-      createTaskWithTests(context, {
+      const firstDuplicateId = createTaskWithTests(context, {
         title: "First Duplicate Source",
         status: "open",
-        testEntries: [duplicateCommand, duplicatePath],
+        testEntries: [duplicateCommand],
       });
-      createTaskWithTests(context, {
+      const secondDuplicateId = createTaskWithTests(context, {
         title: "Second Duplicate Source",
         status: "open",
-        testEntries: [duplicateCommand, duplicatePath, uniqueCommand],
+        testEntries: [duplicateCommand, uniqueCommand],
       });
+      await overwriteTaskTests(context, firstDuplicateId, [
+        { command: "node -e \"process.stdout.write('dup-command-token')\"", scope: "project" },
+        { path: duplicatePath, scope: "project" },
+      ]);
+      await overwriteTaskTests(context, secondDuplicateId, [
+        { command: "node -e \"process.stdout.write('dup-command-token')\"", scope: "project" },
+        { path: duplicatePath, scope: "project" },
+        { command: "node -e \"process.stdout.write('unique-command-token')\"", scope: "project" },
+      ]);
 
       const result = await runTestAll({ status: "open", timeout: "30" }, { path: context.pmPath });
       expect(result.totals.items).toBe(2);
@@ -310,7 +378,7 @@ describe("runTestAll", () => {
       const mixedTimeoutId = createTaskWithTests(context, {
         title: "Mixed Timeout Duplicate Source",
         status: "open",
-        testEntries: ["path=tests/mixed-timeout-placeholder.spec.ts,scope=project"],
+        testEntries: ["command=node -e \"process.stdout.write('mixed-timeout-seed')\",scope=project"],
       });
       await overwriteTaskTests(context, mixedTimeoutId, [
         {
@@ -344,7 +412,7 @@ describe("runTestAll", () => {
       const mixedTimeoutId = createTaskWithTests(context, {
         title: "Mixed Path Timeout Duplicate Source",
         status: "open",
-        testEntries: ["path=tests/mixed-path-timeout-placeholder.spec.ts,scope=project"],
+        testEntries: ["command=node -e \"process.stdout.write('mixed-path-timeout-seed')\",scope=project"],
       });
       await overwriteTaskTests(context, mixedTimeoutId, [
         {
@@ -374,12 +442,12 @@ describe("runTestAll", () => {
       const malformedA = createTaskWithTests(context, {
         title: "Malformed A",
         status: "open",
-        testEntries: ["path=tests/placeholder-a.spec.ts,scope=project"],
+        testEntries: ["command=node -e \"process.stdout.write('placeholder-a')\",scope=project"],
       });
       const malformedB = createTaskWithTests(context, {
         title: "Malformed B",
         status: "open",
-        testEntries: ["path=tests/placeholder-b.spec.ts,scope=project"],
+        testEntries: ["command=node -e \"process.stdout.write('placeholder-b')\",scope=project"],
       });
 
       await overwriteTaskTests(context, malformedA, [{ scope: "project" }]);

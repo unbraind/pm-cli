@@ -684,7 +684,7 @@ describe("runCreate", () => {
           file: ["path=src/cli.ts"],
           test: [
             "command=node dist/cli.js --version,timeout=15",
-            "path=tests/unit/create-command.spec.ts",
+            "command=node -e \"process.stdout.write('create-path-metadata')\",path=tests/unit/create-command.spec.ts",
           ],
           doc: ["path=README.md"],
         }),
@@ -716,6 +716,7 @@ describe("runCreate", () => {
           }),
           expect.objectContaining({
             path: "tests/unit/create-command.spec.ts",
+            command: "node -e \"process.stdout.write('create-path-metadata')\"",
             scope: "project",
           }),
         ]),
@@ -728,6 +729,31 @@ describe("runCreate", () => {
           }),
         ]),
       );
+    });
+  });
+
+  it("rejects path-only linked test seed entries", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            title: "create-path-only-test-seed",
+            test: ["path=tests/unit/create-command.spec.ts"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            title: "create-path-only-test-seed-message",
+            test: ["path=tests/unit/create-command.spec.ts"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toThrow("--test requires command=<value>");
     });
   });
 

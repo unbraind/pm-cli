@@ -383,7 +383,9 @@ pm deps pm-a1b2 --format graph --json
 - Dependency links on existing items are now mutated through `pm update` (`--dep` to add entries or clear with `none`, `--dep-remove`/`--dep_remove` to remove selectors).
 - Use `pm deps <ID> --format tree|graph` for deterministic read-only dependency visualization.
 - `pm update` intentionally does not accept `--file` or `--doc`; command guidance points to `pm files` / `pm docs`.
-- `pm test <ID> --add` intentionally enforces sandbox-safe command entries. Use `node scripts/run-tests.mjs ...` for linked commands, or link specific specs with `--add "path=tests/..."`
+- `pm test <ID> --add` intentionally enforces sandbox-safe, runnable command entries. Every new linked test must include `command=...`; optional `path=...` is metadata-only context.
+- `pm create --test` follows the same policy: `command=...` is required, optional `path=...` can annotate command scope.
+- `pm test <ID> --run` / `pm test-all` execute in temporary sandbox roots but seed project/global `settings.json` and `extensions/` directories from source roots so extension-defined type behavior matches direct workspace commands.
 - `pm test <ID> --run` and `pm test-all` emit heartbeat/progress lines to stderr in interactive terminals during long-running linked commands, and support explicit non-interactive progress output via `--progress`.
 - Linked test timeout handling uses deterministic process termination (including force-kill fallback) and reports explicit timeout/maxBuffer diagnostics in `run_results`.
 - `pm list` / `pm list-*` return front-matter rows by default; pass `--include-body` when body projection is needed, `--offset <n>` for pagination, and `--stream` (with `--json`) for newline-delimited item streaming.

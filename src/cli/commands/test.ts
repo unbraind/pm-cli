@@ -1,5 +1,5 @@
 import { spawn, type ChildProcess } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
@@ -10,7 +10,7 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { locateItem, mutateItem, readLocatedItem } from "../../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
+import { getSettingsPath, resolveGlobalPmRoot, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { runInit } from "./init.js";
 import { SCOPE_VALUES } from "../../types/index.js";
@@ -59,6 +59,11 @@ interface LinkedTestProgressContext {
 }
 
 type LinkedTestProgressMode = "auto" | "always" | "off";
+
+interface LinkedTestSandboxSourceRoots {
+  projectPmRoot: string;
+  globalPmRoot: string;
+}
 
 export interface TestCommandOptions {
   add?: string[];
@@ -438,8 +443,8 @@ function parseAddEntries(raw: string[] | undefined): LinkedTest[] {
     const kv = parseCsvKv(entry, "--add");
     const command = kv.command?.trim() || undefined;
     const filePath = kv.path?.trim() || undefined;
-    if (!command && !filePath) {
-      throw new PmCliError("--add requires command=<value> and/or path=<value>", EXIT_CODE.USAGE);
+    if (!command) {
+      throw new PmCliError("--add requires command=<value> (path=<value> is optional metadata)", EXIT_CODE.USAGE);
     }
     if (command) {
       assertNoRecursiveTestAllCommand(command);
@@ -747,6 +752,37 @@ function formatLinkedTestExecutionError(result: LinkedTestExecutionResult, timeo
   return `${baseMessage} ${details.join(" ")}`;
 }
 
+async function copyIntoSandboxIfPresent(sourcePath: string, targetPath: string, recursive = false): Promise<void> {
+  if (!(await pathExists(sourcePath))) {
+    return;
+  }
+  await mkdir(path.dirname(targetPath), { recursive: true });
+  if (recursive) {
+    await cp(sourcePath, targetPath, { recursive: true, force: true });
+    return;
+  }
+  await cp(sourcePath, targetPath, { force: true });
+}
+
+async function seedLinkedTestSandbox(
+  sandboxPmPath: string,
+  sandboxGlobalPath: string,
+  sourceRoots: LinkedTestSandboxSourceRoots,
+): Promise<void> {
+  await copyIntoSandboxIfPresent(getSettingsPath(sourceRoots.projectPmRoot), getSettingsPath(sandboxPmPath));
+  await copyIntoSandboxIfPresent(
+    path.join(sourceRoots.projectPmRoot, "extensions"),
+    path.join(sandboxPmPath, "extensions"),
+    true,
+  );
+  await copyIntoSandboxIfPresent(getSettingsPath(sourceRoots.globalPmRoot), getSettingsPath(sandboxGlobalPath));
+  await copyIntoSandboxIfPresent(
+    path.join(sourceRoots.globalPmRoot, "extensions"),
+    path.join(sandboxGlobalPath, "extensions"),
+    true,
+  );
+}
+
 export function resolveLinkedTestFailureExitCode(
   execution: Pick<LinkedTestExecutionResult, "exitCode" | "timedOut" | "maxBufferExceeded">,
 ): number {
@@ -762,6 +798,7 @@ export async function runLinkedTests(
   defaultTimeoutSeconds: number | undefined,
   options?: {
     progress?: boolean;
+    sourceRoots?: LinkedTestSandboxSourceRoots;
   },
 ): Promise<TestRunResult[]> {
   const results: TestRunResult[] = [];
@@ -772,6 +809,10 @@ export async function runLinkedTests(
 
   try {
     await runInit(undefined, { path: sandboxPmPath });
+    await runInit(undefined, { path: sandboxGlobalPath });
+    if (options?.sourceRoots) {
+      await seedLinkedTestSandbox(sandboxPmPath, sandboxGlobalPath, options.sourceRoots);
+    }
     for (let index = 0; index < tests.length; index += 1) {
       const linkedTest = tests[index];
       if (!linkedTest.command) {
@@ -905,8 +946,15 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
     defaultTimeoutSeconds = parseOptionalNumber(options.timeout, "timeout");
   }
 
-  const runResults =
-    options.run === true ? await runLinkedTests(tests, defaultTimeoutSeconds, { progress: options.progress }) : [];
+  const runResults = options.run === true
+    ? await runLinkedTests(tests, defaultTimeoutSeconds, {
+        progress: options.progress,
+        sourceRoots: {
+          projectPmRoot: pmRoot,
+          globalPmRoot: resolveGlobalPmRoot(process.cwd()),
+        },
+      })
+    : [];
 
   return {
     id: itemId,

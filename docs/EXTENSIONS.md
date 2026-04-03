@@ -11,6 +11,12 @@ Extensions let you add commands, parser/preflight lifecycle control, core servic
 
 **Load order:** core built-ins → global → project. Project-local extensions take precedence over global when they declare the same command name or renderer key.
 
+## Linked-Test Sandbox Parity
+
+`pm test --run` and `pm test-all` execute linked commands in temporary sandbox roots (`PM_PATH`, `PM_GLOBAL_PATH`) to avoid mutating live tracker data. Before command execution, the runtime seeds sandbox project/global `settings.json` and `extensions/` directories from the source roots.
+
+This preserves extension-defined schema behavior (including custom item type validation/filtering) while retaining sandbox isolation for linked-test execution.
+
 ## Lifecycle Manager CLI
 
 `pm extension` is the canonical lifecycle manager for custom extensions.

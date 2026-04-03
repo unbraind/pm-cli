@@ -1,0 +1,57 @@
+id: pm-qtvv
+title: Implement sandbox seeding for project/global extension parity
+description: Update linked-test runner to seed sandbox project/global settings and extension directories before executing linked commands.
+type: Task
+status: closed
+priority: 1
+tags[4]: extensions,implementation,linked-tests,pm-cli
+created_at: "2026-04-03T22:53:55.590Z"
+updated_at: "2026-04-03T23:47:28.987Z"
+deadline: "2026-04-10T22:53:55.590Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: "runLinkedTests receives source roots, seeds sandbox settings/extensions for project+global, and linked commands validate custom extension types consistently."
+definition_of_ready: Feature pm-bkvx is active and target runtime files/tests are linked.
+order: 4
+goal: Linked test reliability
+objective: Implement linked sandbox parity runtime
+value: Restores deterministic behavior across command execution contexts
+impact: Avoids custom-type false negatives in automation
+outcome: Linked sandbox has project/global extension context parity
+why_now: Current linked runs initialize empty sandbox roots and lose extension-registered types.
+parent: pm-bkvx
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: linked-test-hardening
+release: vnext
+reporter: codex-agent
+severity: medium
+environment: linux-node25-local
+repro_steps: Run linked command using extension-defined type filter after sandbox init.
+resolution: implemented
+expected_result: Linked sandbox contains equivalent extension/settings context to source roots.
+actual_result: Sandbox starts clean and misses extension-defined type registrations.
+affected_version: 2026.3.12
+component: linked-test-sandbox
+regression: true
+customer_impact: Automation currently disagrees with manual command outcomes.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-bkvx,parent,"2026-04-03T22:53:55.590Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-03T22:53:55.590Z",codex-agent,Task focuses on runtime sandbox seeding and caller propagation.
+  "2026-04-03T23:46:43.524Z",codex-agent,"Implemented linked-test sandbox seeding for project/global settings and extensions in src/cli/commands/test.ts and propagated source roots in test-all. Evidence: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts passed; pm test pm-qtvv --run --timeout 7200 --json passed (1/1)."
+notes[1]{created_at,author,text}:
+  "2026-04-03T22:53:55.590Z",codex-agent,Preserve temp PM_PATH/PM_GLOBAL_PATH isolation while copying required source context.
+files[4]{path,scope,note}:
+  src/cli/commands/test-all.ts,project,propagate sandbox source roots in test-all
+  src/cli/commands/test.ts,project,runLinkedTests and seeding helpers
+  tests/unit/test-all-command.spec.ts,project,extension parity runTestAll regression
+  tests/unit/test-command.spec.ts,project,extension parity runTest regression
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,2400,sandbox parity verification
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,document linked-test sandbox parity
+  PRD.md,project,runtime contract updates
+close_reason: linked-test sandbox now seeds project/global settings+extensions with parity regressions passing
+body: Code task for pm-lvej/pm-6fmt runtime parity in src/cli/commands/test.ts and test-all call paths.

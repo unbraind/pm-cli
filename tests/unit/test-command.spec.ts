@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
@@ -103,6 +103,37 @@ async function overwriteTaskTests(
   await writeFile(taskPath, serializeItemDocument(parsed, { format }), "utf8");
 }
 
+async function writeSchemaTypeExtension(pmRoot: string, extensionDirName: string, typeName: string): Promise<void> {
+  const extensionDir = path.join(pmRoot, "extensions", extensionDirName);
+  await mkdir(extensionDir, { recursive: true });
+  await writeFile(
+    path.join(extensionDir, "manifest.json"),
+    `${JSON.stringify(
+      {
+        name: `${extensionDirName}-ext`,
+        version: "1.0.0",
+        entry: "index.mjs",
+        capabilities: ["schema"],
+      },
+      null,
+      2,
+    )}\n`,
+    "utf8",
+  );
+  await writeFile(
+    path.join(extensionDir, "index.mjs"),
+    [
+      "export function activate(api) {",
+      "  api.registerItemTypes([",
+      `    { name: \"${typeName}\", folder: \"${typeName.toLowerCase()}\" },`,
+      "  ]);",
+      "}",
+      "",
+    ].join("\n"),
+    "utf8",
+  );
+}
+
 describe("runTest", () => {
   it("normalizes failure exit codes for timeout/maxBuffer edge cases", () => {
     expect(
@@ -177,6 +208,9 @@ describe("runTest", () => {
           { path: context.pmPath },
         ),
       ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runTest(id, { add: ["path=tests/path-only.spec.ts"] }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(runTest(id, { remove: ["   "] }, { path: context.pmPath })).rejects.toMatchObject({
@@ -450,7 +484,7 @@ describe("runTest", () => {
           add: [
             "command=node --version,scope=project,timeout=2.9,note=version",
             "command=node --version,scope=project,timeout_seconds=2,note=duplicate",
-            "path=tests/example.spec.ts,note=implicit project scope",
+            "command=node -e \"process.stdout.write('path-metadata-token')\",path=tests/example.spec.ts,note=implicit project scope",
           ],
           message: "add linked tests",
         },
@@ -503,7 +537,9 @@ describe("runTest", () => {
 
       const addedMarkdown = await runTest(
         id,
-        { add: ["path:tests/markdown-test.spec.ts,scope:project,timeout:5"] },
+        {
+          add: ["command:node --help,path:tests/markdown-test.spec.ts,scope:project,timeout:5"],
+        },
         { path: context.pmPath },
       );
       expect(addedMarkdown.count).toBe(2);
@@ -585,13 +621,16 @@ describe("runTest", () => {
             "command=node -e \"console.log(process.env.PM_PATH||'');console.log(process.env.PM_GLOBAL_PATH||'')\",scope=project,timeout_seconds=20",
             "command=node -e \"process.exit(3)\",scope=project,timeout_seconds=20",
             "command=node -e \"setTimeout(() => {}, 2000)\",scope=project",
-            "path=tests/no-command.spec.ts,scope=project",
           ],
           message: "seed run entries",
         },
         { path: context.pmPath },
       );
-      expect(linked.count).toBe(4);
+      expect(linked.count).toBe(3);
+      await overwriteTaskTests(context, id, [
+        ...(linked.tests as unknown as Array<Record<string, unknown>>),
+        { path: "tests/no-command.spec.ts", scope: "project" },
+      ]);
 
       const run = await runTest(
         id,
@@ -623,6 +662,40 @@ describe("runTest", () => {
       const skipped = run.run_results.find((entry) => entry.status === "skipped");
       expect(skipped?.path).toBe("tests/no-command.spec.ts");
       expect(skipped?.error ?? "").toContain("No command configured");
+    });
+  });
+
+  it("runs linked commands with project and global extension type parity", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "linked-sandbox-extension-parity");
+      const globalPmRoot = context.env.PM_GLOBAL_PATH;
+      expect(typeof globalPmRoot).toBe("string");
+      await writeSchemaTypeExtension(context.pmPath, "project-linked-type", "ProjectAsset");
+      await writeSchemaTypeExtension(globalPmRoot as string, "global-linked-type", "GlobalAsset");
+
+      const seeded = await runTest(
+        id,
+        {
+          add: [
+            "command=node dist/cli.js list --type ProjectAsset --limit 1 --json,scope=project,timeout_seconds=30",
+            "command=node dist/cli.js list --type GlobalAsset --limit 1 --json,scope=project,timeout_seconds=30",
+          ],
+          message: "seed extension parity linked commands",
+        },
+        { path: context.pmPath },
+      );
+      expect(seeded.count).toBe(2);
+
+      const run = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "30",
+        },
+        { path: context.pmPath },
+      );
+      expect(run.run_results).toHaveLength(2);
+      expect(run.run_results.every((entry) => entry.status === "passed")).toBe(true);
     });
   });
 

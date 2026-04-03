@@ -87,7 +87,7 @@ Attach references to keep work reproducible:
   - `pm files <ID> --add path=src/new.ts,scope=project --append-stable` when preserving existing link order and minimizing history patch churn
 - Tests:
   - `pm test <ID> --add command="node scripts/run-tests.mjs test",scope=project,timeout_seconds=240`
-  - `pm test <ID> --add path=tests/history.spec.ts,scope=project`
+  - `pm test <ID> --add command="node scripts/run-tests.mjs test -- tests/history.spec.ts",path=tests/history.spec.ts,scope=project`
 - Docs:
   - `pm docs <ID> --add path=docs/ARCHITECTURE.md,scope=project`
 - Command boundaries:
@@ -159,8 +159,9 @@ Use release when:
 - Tests must never read/write the repository's real `.agents/pm` data.
 - Unit/integration test runs must set `PM_PATH` to a temporary sandbox directory.
 - pm-driven test execution should use `node scripts/run-tests.mjs <test|coverage>` so both `PM_PATH` and `PM_GLOBAL_PATH` are sandboxed automatically per run.
-- `pm test <ID> --add` should only link sandbox-safe test-runner commands: use `node scripts/run-tests.mjs ...` or explicitly set both `PM_PATH` and `PM_GLOBAL_PATH`; sandbox-unsafe runner commands are rejected at add-time, including unsandboxed package-manager run-script variants (for example `npm run test`, `pnpm run test`, `yarn run test`, and `bun run test`) and chained direct test-runner segments that are not explicitly sandboxed.
+- `pm test <ID> --add` should only link sandbox-safe runnable commands and now requires `command=...` metadata (optional `path=...` is supplemental context): use `node scripts/run-tests.mjs ...` or explicitly set both `PM_PATH` and `PM_GLOBAL_PATH`; sandbox-unsafe runner commands are rejected at add-time, including unsandboxed package-manager run-script variants (for example `npm run test`, `pnpm run test`, `yarn run test`, and `bun run test`) and chained direct test-runner segments that are not explicitly sandboxed.
 - `pm test <ID> --run` should defensively skip legacy linked commands that invoke `pm test-all` (including global-flag and package-spec launcher forms such as `pm --json test-all`, `npx @unbrained/pm-cli@latest --json test-all`, `pnpm dlx @unbrained/pm-cli@latest --json test-all`, and `npm exec -- @unbrained/pm-cli@latest --json test-all`) and report deterministic skipped results.
+- `pm test <ID> --run` / `pm test-all` should preserve sandbox isolation while seeding project/global `settings.json` and `extensions/` from source roots so extension-defined type/schema behavior matches direct workspace runs.
 - `pm test-all` deduplicates linked tests by scope+normalized command or scope+path and reports duplicates as skipped; when duplicate keys disagree on `timeout_seconds`, execution uses the deterministic maximum timeout for that key.
 - Integration tests should invoke the built CLI (`node dist/cli.js ...`) with explicit `PM_PATH`, `PM_GLOBAL_PATH`, and `PM_AUTHOR`.
 - Cleanup temporary test directories after each test/suite.

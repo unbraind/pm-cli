@@ -1904,7 +1904,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "--add",
           "command=node --version,scope=project,timeout=30,note=pass",
           "--add",
-          "path=tests/example.spec.ts,scope=project,note=skip",
+          "command=node --help,path=tests/example.spec.ts,scope=project,note=path-metadata",
           "--author",
           "integration-test",
           "--message",

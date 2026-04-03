@@ -100,7 +100,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Output rendering now treats stdout/stderr broken-pipe writes (`EPIPE`) as expected pipeline behavior, suppressing unhandled Node stack traces while preserving non-EPIPE failure semantics.
 - Linked test runtime execution now uses shell-compatible spawn orchestration, closes child stdin for non-interactive runs, emits interactive stderr heartbeat progress for long-running commands, and applies deterministic timeout/maxBuffer diagnostics with force-kill fallback for stubborn subprocess trees.
 - History-touching commands now enforce `settings.history.missing_stream` consistently across read/diagnostic paths (`history`, `activity`, `stats`, `health`) and existing-item mutation/restore flows.
-- Linked test command validation now explicitly documents sandbox-safe `pm test --add` policy expectations in command contracts (use `node scripts/run-tests.mjs ...` or `path=...` linked entries for targeted scope).
+- Linked-test sandbox runs now seed project/global `settings.json` and `extensions/` directories into temporary sandbox roots so extension-defined type/filter behavior matches direct workspace commands.
+- `pm test --add` and `pm create --test` now require `command=...` for new linked-test entries (optional `path=...` is metadata-only); runtime still skips legacy stored path-only entries with deterministic diagnostics.
 - `pm update` now auto-clears stale `close_reason` when reopening items from `closed` to non-terminal statuses unless an explicit `--close-reason` value is provided in the same mutation.
 - `pm claim` now allows takeover of already-assigned non-terminal items without `--force`; force remains required for terminal-status or lock-override claim paths.
 - `pm comments` guidance is now explicit about `--force` usage across rich help, shell completion, and docs parity surfaces.

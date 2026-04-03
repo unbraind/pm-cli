@@ -288,8 +288,8 @@ function parseTests(raw: string[] | undefined): { values: LinkedTest[] | undefin
     const kv = parseCsvKv(entry, "--test");
     const command = parseOptionalString(kv.command);
     const filePath = parseOptionalString(kv.path);
-    if (!command && !filePath) {
-      throw new PmCliError("--test requires command=<value> and/or path=<value>", EXIT_CODE.USAGE);
+    if (!command) {
+      throw new PmCliError("--test requires command=<value> (path=<value> is optional metadata)", EXIT_CODE.USAGE);
     }
     const timeoutSecondsRaw = parseOptionalString(kv.timeout_seconds);
     const timeoutAliasRaw = parseOptionalString(kv.timeout);

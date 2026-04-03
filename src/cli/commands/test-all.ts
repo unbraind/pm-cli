@@ -7,7 +7,7 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { listAllFrontMatter } from "../../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
+import { getSettingsPath, resolveGlobalPmRoot, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemStatus, LinkedTest } from "../../types/index.js";
 import { runLinkedTests, runTest, type TestRunResult } from "./test.js";
@@ -116,6 +116,10 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
     .filter((item) => (statusFilter ? item.status === statusFilter : true))
     .sort((a, b) => a.id.localeCompare(b.id));
   const defaultTimeoutSeconds = parseTimeout(options.timeout);
+  const sourceRoots = {
+    projectPmRoot: pmRoot,
+    globalPmRoot: resolveGlobalPmRoot(process.cwd()),
+  };
 
   const results: TestAllItemResult[] = [];
   const seenTestKeys = new Set<string>();
@@ -169,7 +173,9 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
     });
 
     const executedResults =
-      testsToRun.length > 0 ? await runLinkedTests(testsToRun, defaultTimeoutSeconds, { progress: options.progress }) : [];
+      testsToRun.length > 0
+        ? await runLinkedTests(testsToRun, defaultTimeoutSeconds, { progress: options.progress, sourceRoots })
+        : [];
     let executedIndex = 0;
     const runResults = keyedTests.map(({ test, key, duplicate }) => {
       if (!duplicate) {

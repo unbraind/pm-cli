@@ -1,0 +1,53 @@
+id: pm-44iu
+title: Enforce command-required linked tests at mutation time
+description: Reject new linked-test entries without command metadata in both pm test --add and create --test flows while retaining safe runtime handling for legacy stored malformed entries.
+type: Feature
+status: closed
+priority: 1
+tags[4]: governance,linked-tests,pm-cli,validation
+created_at: "2026-04-03T22:53:42.450Z"
+updated_at: "2026-04-03T23:47:33.052Z"
+deadline: "2026-04-13T22:53:42.450Z"
+author: codex-agent
+estimated_minutes: 300
+acceptance_criteria: pm test --add and create --test reject entries missing command metadata; existing malformed stored entries still skip deterministically at runtime with explicit diagnostics.
+definition_of_ready: Epic pm-mf5z exists and mutation/runtime behavior boundaries are confirmed.
+order: 3
+goal: Linked test reliability
+objective: Prevent creation of unrunnable linked-test metadata
+value: Improves trust in linked verification coverage
+impact: Reduces silent overestimation of test evidence
+outcome: All newly added linked tests are runnable commands
+why_now: "User-reported pm-8ys5 shows path-only entries are accepted then skipped, masking verification gaps."
+parent: pm-mf5z
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: linked-test-hardening
+release: vnext
+reporter: codex-agent
+severity: medium
+environment: linux-node25-local
+repro_steps: Add path-only linked test then run pm test --run and observe non-runnable skip message.
+resolution: implemented
+expected_result: Linked-test mutations require command metadata for new entries.
+actual_result: Path-only linked tests are accepted and later skipped as unrunnable.
+affected_version: 2026.3.12
+component: linked-test-validation
+regression: true
+customer_impact: Governance sweeps can misreport coverage when linked tests are non-runnable.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-mf5z,parent,"2026-04-03T22:53:42.450Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-03T22:53:42.450Z",codex-agent,Feature carved from epic scope for pm-8ys5 command-required policy.
+  "2026-04-03T23:46:54.478Z",codex-agent,"Feature delivered: linked-test mutation boundaries now require command metadata (path optional), preventing new unrunnable path-only entries while preserving deterministic runtime skips for legacy malformed records. Verified by parser unit/integration regressions and pm test pm-wn34 evidence."
+notes[1]{created_at,author,text}:
+  "2026-04-03T22:53:42.450Z",codex-agent,Enforce add/create mutation boundaries while preserving legacy runtime skip safety.
+files[1]{path,scope,note}:
+  src/cli/commands/create.ts,project,create seed parser enforcement
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/test-command.spec.ts,null,project,2400,mutation parser regressions
+docs[1]{path,scope,note}:
+  README.md,project,user-facing linked-test policy
+close_reason: command-required linked-test mutation policy delivered without legacy runtime breakage
+body: "Implements pm-8ys5 by preventing acceptance of path-only linked tests that cannot execute, reducing false verification coverage signals."

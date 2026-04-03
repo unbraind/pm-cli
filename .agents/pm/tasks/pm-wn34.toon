@@ -1,0 +1,57 @@
+id: pm-wn34
+title: Enforce command-required linked test mutations
+description: Require command metadata in pm test --add and create --test parsers while preserving runtime skip behavior for legacy malformed stored entries.
+type: Task
+status: closed
+priority: 1
+tags[4]: implementation,linked-tests,pm-cli,validation
+created_at: "2026-04-03T22:54:06.408Z"
+updated_at: "2026-04-03T23:47:29.995Z"
+deadline: "2026-04-10T22:54:06.408Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: parseAddEntries and create parseTests reject missing command metadata; legacy malformed records still produce deterministic runtime skip diagnostics.
+definition_of_ready: Feature pm-44iu is active and parser/runtime boundary is defined.
+order: 5
+goal: Linked test reliability
+objective: Stop new unrunnable linked-test metadata from entering tracker
+value: Ensures linked tests represent executable verification evidence
+impact: Prevents coverage overestimation caused by non-runnable path-only entries
+outcome: Mutation paths require command metadata for linked tests
+why_now: Current acceptance of path-only entries leads to skipped run output and governance confusion.
+parent: pm-44iu
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: linked-test-hardening
+release: vnext
+reporter: codex-agent
+severity: medium
+environment: linux-node25-local
+repro_steps: Add path-only linked test through create/test mutation options and run linked tests.
+resolution: implemented
+expected_result: New linked test metadata must include command and remains runnable.
+actual_result: Path-only linked test metadata is accepted and later skipped.
+affected_version: 2026.3.12
+component: linked-test-validation
+regression: true
+customer_impact: Users may think tests are linked and validated when they are not runnable.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-44iu,parent,"2026-04-03T22:54:06.408Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-03T22:54:06.408Z",codex-agent,Task targets parser mutation guards and compatibility-preserving runtime behavior.
+  "2026-04-03T23:46:44.159Z",codex-agent,"Implemented command-required mutation enforcement for linked tests: pm test --add and create --test now reject entries without command metadata while runtime still skips legacy malformed stored entries. Evidence: node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/test-command.spec.ts tests/integration/cli.integration.spec.ts passed; pm test pm-wn34 --run --timeout 7200 --json passed (1/1)."
+notes[1]{created_at,author,text}:
+  "2026-04-03T22:54:06.408Z",codex-agent,Update test fixtures that currently seed path-only entries through mutation paths.
+files[5]{path,scope,note}:
+  src/cli/commands/create.ts,project,seed parser command-required validation
+  src/cli/commands/test.ts,project,require command metadata in --add parser
+  tests/integration/cli.integration.spec.ts,project,integration add path metadata with command
+  tests/unit/create-command.spec.ts,project,path-only create seed rejection coverage
+  tests/unit/test-command.spec.ts,project,path-only add rejection and legacy skip coverage
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/test-command.spec.ts,null,project,2400,parser behavior regressions
+docs[1]{path,scope,note}:
+  README.md,project,linked-test command-required policy update
+close_reason: linked-test mutation parser now requires command metadata while preserving legacy runtime skip safety
+body: Code task for pm-8ys5 parser enforcement in test/create command mutation flows plus compatibility-safe runtime behavior.

@@ -1,0 +1,50 @@
+id: pm-mf5z
+title: Linked-test parity and runnable command enforcement
+description: Deliver linked-test sandbox parity for extension-defined custom types and enforce runnable linked-test command metadata without regressing existing repositories.
+type: Epic
+status: closed
+priority: 0
+tags[5]: custom-types,extensions,governance,linked-tests,pm-cli
+created_at: "2026-04-03T22:53:12.919Z"
+updated_at: "2026-04-03T23:47:34.066Z"
+deadline: "2026-04-17T22:53:12.919Z"
+author: codex-agent
+estimated_minutes: 480
+acceptance_criteria: Linked tests preserve project/global extension parity for custom types and new linked-test entries require command metadata while legacy malformed entries remain safely handled at runtime.
+definition_of_ready: Dedupe checks completed and implementation/test/doc scope identified.
+order: 1
+goal: Linked test reliability
+objective: Eliminate linked-test parity and runnable-metadata drift
+value: Prevents contradictory automation evidence for custom-type repositories
+impact: Improves trust in pm test and pm test-all governance evidence
+outcome: Consistent type-filter behavior and runnable linked-test metadata
+why_now: User-reported regressions show divergence between interactive and linked-test automation contexts.
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: linked-test-hardening
+release: vnext
+reporter: codex-agent
+severity: medium
+environment: linux-node25-local
+repro_steps: Run pm list/search with custom type directly then via pm test linked command and compare filter acceptance.
+resolution: implemented
+expected_result: Linked automation and workspace commands accept equivalent custom type filters and linked tests are runnable.
+actual_result: Linked sandbox rejects extension-defined types and path-only linked tests are accepted but skipped.
+affected_version: 2026.3.12
+component: linked-test-runtime
+regression: true
+customer_impact: Teams may trust incomplete linked-test evidence and get false negatives for valid custom-type filters.
+comments[2]{created_at,author,text}:
+  "2026-04-03T22:53:12.919Z",codex-agent,Created after dedupe checks confirmed no active item for pm-lvej pm-6fmt pm-8ys5 scope.
+  "2026-04-03T23:46:55.056Z",codex-agent,"Epic scope pm-lvej/pm-6fmt/pm-8ys5 implemented via child features: sandbox extension parity and command-required linked test mutations, with docs/changelog sync and verification evidence captured in pm-qtvv/pm-wn34/pm-dk0a."
+notes[1]{created_at,author,text}:
+  "2026-04-03T22:53:12.919Z",codex-agent,Implement docs-first with unit integration and regression verification.
+files[1]{path,scope,note}:
+  src/cli/commands/test.ts,project,primary linked-test runtime surface
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,2400,linked-test runtime regression
+docs[1]{path,scope,note}:
+  PRD.md,project,authoritative command contract
+close_reason: pm-lvej pm-6fmt pm-8ys5 hardening scope delivered end-to-end
+body: "Tracks pm-lvej, pm-6fmt, and pm-8ys5 by aligning linked-test sandbox behavior with normal workspace command semantics and preventing new unrunnable linked-test metadata."
