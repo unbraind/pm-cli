@@ -1,17 +1,17 @@
 id: pm-pmd
 title: "M4: Keyword indexing and search command"
-description: Implement keyword corpus indexing and query execution.
+description: "External audit Issue 12 follow-up: add deterministic tag suggestions/autocomplete to improve tag consistency in CLI workflows."
 type: Task
-status: closed
+status: in_progress
 priority: 1
 tags[4]: "area:search-keyword",core,"milestone:4",pm-cli
 created_at: "2026-02-17T23:02:10.065Z"
-updated_at: "2026-04-01T20:33:08.541Z"
-deadline: "2026-03-07T23:02:10.065Z"
-assignee: steve
+updated_at: "2026-04-03T11:59:54.046Z"
+deadline: "2026-04-15T11:57:42.084Z"
+assignee: codex-agent
 author: steve
 estimated_minutes: 120
-acceptance_criteria: "Keyword search command is available and returns deterministic ranked hits across title, description, tags, status, body, comments, notes, learnings, and dependency ids/kinds with TOON/JSON parity and 100% coverage maintained."
+acceptance_criteria: CLI offers deterministic tag suggestions sourced from existing tracker tags with completion/help coverage and no command regressions.
 definition_of_ready: scope-links-and-verification-evidence-identified
 order: 2
 goal: task-delivery-governance
@@ -44,17 +44,21 @@ customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-54d,blocks,"2026-02-17T23:02:10.065Z",steve,null
   pm-f45,parent,"2026-02-17T23:02:10.065Z",steve,null
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-02-18T18:03:38.258Z",cursor-maintainer,"Plan: docs-first update PRD/README to move keyword search from roadmap to implemented, then add deterministic keyword search command with ranking and tests before running linked pm test + pm test-all."
   "2026-02-18T18:04:43.179Z",cursor-maintainer,"Docs-first update complete: README and PRD now declare pm search keyword mode in implemented command surface, while semantic/hybrid, reindex, close, and delete remain roadmap work."
   "2026-02-18T18:19:26.331Z",cursor-maintainer,"Implementation complete: added pm search keyword command with deterministic scoring/sorting and list-like filters, wired CLI/help surface, updated README/PRD contracts, and added unit/integration coverage. Evidence: pm test pm-pmd --run passed both linked commands (coverage + targeted search tests) with 100% statements/branches/functions/lines. Regression evidence: pm test-all --status in_progress --timeout 1800 --json passed totals items=5 linked_tests=17 passed=17 failed=0 skipped=0."
-notes[1]{created_at,author,text}:
+  "2026-04-03T11:55:45.386Z",codex-agent,"Mapped external-audit Issue 12: add deterministic tag suggestion/autocomplete flow to improve taxonomy consistency."
+  "2026-04-03T11:59:30.180Z",codex-agent,"Wave3 scope: tag suggestion behavior should be advisory/autocomplete-only unless explicitly requested, preserving existing free-form tag writes."
+notes[2]{created_at,author,text}:
   "2026-04-01T20:33:07.488Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+  "2026-04-03T11:59:54.046Z",codex-agent,"Mandatory closure checklist: (1) run linked targeted tests via pm test <id> --run; (2) run pnpm build; (3) run node scripts/run-tests.mjs test; (4) run node scripts/run-tests.mjs coverage; (5) update touched docs (README/PRD/AGENTS/CHANGELOG/ARCHITECTURE as applicable); (6) add pm comment with concrete evidence/results; (7) close + release item before commit/push."
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:33:08.541Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[11]{path,scope,note}:
+files[12]{path,scope,note}:
   PRD.md,project,Docs-first update for milestone/command matrix
   README.md,project,Docs-first update for command surface
+  src/cli/commands/completion.ts,project,tag completion exposure
   src/cli/commands/index.ts,project,Export search command runner
   src/cli/commands/search.ts,project,Keyword search scoring and filtering implementation
   src/cli/main.ts,project,CLI command registration
@@ -64,9 +68,10 @@ files[11]{path,scope,note}:
   tests/unit/search-command.spec.ts,project,Search ranking and corpus coverage tests
   tests/unit/structure-exports.spec.ts,project,Ensure runSearch is exported from command index
   vitest.config.ts,project,Include search command in strict 100 percent coverage gate
-tests[2]{command,path,scope,timeout_seconds,note}:
+tests[3]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs coverage,null,project,1200,Sandboxed full coverage gate
   node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,300,Targeted sandboxed search unit tests
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/completion-command.spec.ts,null,project,3600,issue12 tag suggestion regressions
 docs[3]{path,scope,note}:
   AGENTS.md,project,Dogfood workflow rules
   PRD.md,project,Authoritative product contract

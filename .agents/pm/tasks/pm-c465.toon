@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:learnings","area:notes","area:tests",external-audit,pm-cli
 created_at: "2026-04-01T16:22:47.797Z"
-updated_at: "2026-04-01T20:36:16.361Z"
+updated_at: "2026-04-03T11:55:49.241Z"
 deadline: "2026-04-06T16:22:47.797Z"
 assignee: cursor-agent
 author: cursor-agent
@@ -43,10 +43,11 @@ regression: true
 customer_impact: Users can capture ongoing notes and learnings
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-v1s1,parent,"2026-04-01T16:22:47.797Z",cursor-agent,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-01T16:22:47.797Z",cursor-agent,Task created for Issue1 implementation scope.
   "2026-04-01T16:34:20.737Z",cursor-agent,"Implemented notes/learnings command stack across new command modules, CLI registration/write-gate wiring, completion/help surfaces, command-aware output, Pi wrapper actions, and unit/integration coverage. Verification: node scripts/run-tests.mjs test -- tests/unit/notes-learnings-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/cli.integration.spec.ts (all passing in reruns)."
   "2026-04-01T16:59:57.702Z",cursor-agent,Completed notes/learnings command parity across runtime surfaces (CLI/help/completion/output/Pi wrapper) with unit+integration coverage and green targeted/full test runs.
+  "2026-04-03T11:55:49.241Z",codex-agent,"Validated-no-op for external-audit Issue 7: notes/learnings command stack parity already implemented with positional plus --add consistency."
 notes[1]{created_at,author,text}:
   "2026-04-01T16:22:47.797Z",cursor-agent,Will mirror comments command ergonomics and validation patterns.
 learnings[1]{created_at,author,text}:

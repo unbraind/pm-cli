@@ -1,17 +1,17 @@
 id: pm-3gi
 title: "M1: Item schema model and validation"
-description: Define canonical item schema and runtime validation path.
+description: "External audit Issue 13 follow-up: validate parent references to prevent non-existent parent IDs from being persisted silently."
 type: Task
-status: closed
+status: in_progress
 priority: 1
 tags[4]: "area:schema",core,"milestone:1",pm-cli
 created_at: "2026-02-17T23:02:07.402Z"
-updated_at: "2026-04-01T20:33:41.230Z"
-deadline: "2026-02-23T23:02:07.402Z"
-assignee: steve
+updated_at: "2026-04-03T11:59:54.896Z"
+deadline: "2026-04-15T11:57:43.129Z"
+assignee: codex-agent
 author: steve
 estimated_minutes: 120
-acceptance_criteria: Item schema enforces PRD fields and allowed enums.
+acceptance_criteria: Create/update enforce parent reference validation in warning-first or strict mode with deterministic messaging and backward-compatible rollout.
 definition_of_ready: scope-links-and-verification-evidence-identified
 order: 2
 goal: task-delivery-governance
@@ -44,20 +44,28 @@ customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-2xl,blocks,"2026-02-17T23:02:07.402Z",steve,null
   pm-u9r,parent,"2026-02-17T23:02:07.402Z",steve,null
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-02-22T22:16:13.123Z",maintainer-agent,"Plan: harden runtime item front-matter validation in parser paths, add targeted unit tests for required fields/enums/priority/timestamps, then run item tests and regression test-all before closure decision."
   "2026-02-22T22:20:57.528Z",maintainer-agent,"Implemented parser-level front-matter validation for required PRD fields (id/title/description/type/status/priority/tags/timestamps), with deterministic PmCliError messages for missing/malformed JSON and invalid enum/range/timestamp values. Added unit coverage in tests/unit/item-format-validation.spec.ts."
   "2026-02-22T22:22:58.993Z",maintainer-agent,"pm test --run failed coverage gate at 99.95% lines/99.96% statements due uncovered item-format parse catch branch (line 267). Next change: add a malformed-balanced JSON front-matter test that reaches JSON.parse catch path."
   "2026-02-22T22:37:25.610Z",maintainer-agent,"Evidence: (1) pm test pm-3gi --run --timeout 1200 first surfaced coverage regression at 99.95% lines/99.96% statements (uncovered parse catch branch), then passed after adding malformed-balanced JSON test with full 100/100/100/100 coverage. (2) pm test-all --status in_progress --timeout 1200 => items=9 linked_tests=30 passed=11 failed=0 skipped=19. (3) pm test-all --status closed --timeout 1200 => items=28 linked_tests=103 passed=46 failed=0 skipped=57. Follow-up items: none needed for this change-set."
-notes[1]{created_at,author,text}:
+  "2026-04-03T11:55:46.515Z",codex-agent,"Mapped external-audit Issue 13: add parent reference validation safeguards (warning-first or strict mode) to prevent broken parent pointers."
+  "2026-04-03T11:59:31.999Z",codex-agent,"Wave4 scope: parent validation starts warning-first or behind strict mode to avoid breaking existing repos with historical invalid parent references."
+notes[2]{created_at,author,text}:
   "2026-04-01T20:33:40.215Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
+  "2026-04-03T11:59:54.896Z",codex-agent,"Mandatory closure checklist: (1) run linked targeted tests via pm test <id> --run; (2) run pnpm build; (3) run node scripts/run-tests.mjs test; (4) run node scripts/run-tests.mjs coverage; (5) update touched docs (README/PRD/AGENTS/CHANGELOG/ARCHITECTURE as applicable); (6) add pm comment with concrete evidence/results; (7) close + release item before commit/push."
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:33:41.230Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[2]{path,scope,note}:
+files[6]{path,scope,note}:
+  src/cli/commands/create.ts,project,parent validation on create
+  src/cli/commands/update.ts,project,parent validation on update
   src/core/item/item-format.ts,project,front-matter validation implementation
+  tests/unit/create-command.spec.ts,project,parent validation tests
   tests/unit/item-format-validation.spec.ts,project,schema validation coverage
-tests[1]{command,path,scope,timeout_seconds,note}:
+  tests/unit/update-command.spec.ts,project,parent validation tests
+tests[2]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs coverage,null,project,1200,full sandbox coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,null,project,3600,issue13 parent validation regressions
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent operating rules
   PRD.md,project,governing spec

@@ -1,17 +1,17 @@
 id: pm-ap8l
 title: Stability regressions and update/file UX guidance hardening
-description: Add regressions for repeated files/docs add flows and improve update unknown-option guidance for --file/--doc.
+description: "External audit Issues 3, 4, and 6 follow-up: add linked-path bulk migration, optional path validation, and cross-item linked-file auditing/listing flows."
 type: Feature
-status: closed
+status: in_progress
 priority: 1
 tags[5]: "area:docs","area:files","area:ux",external-audit,pm-cli
 created_at: "2026-04-01T16:22:26.127Z"
-updated_at: "2026-04-01T20:36:25.559Z"
-deadline: "2026-04-07T16:22:26.127Z"
-assignee: cursor-agent
+updated_at: "2026-04-03T11:59:51.587Z"
+deadline: "2026-04-17T11:57:38.765Z"
+assignee: codex-agent
 author: cursor-agent
 estimated_minutes: 200
-acceptance_criteria: Repeated pm files/docs add operations are covered by regression tests with no runtime crash; pm update --file/--doc guidance points users to pm files/pm docs.
+acceptance_criteria: "Users can migrate linked paths in bulk, run existence/type validation for linked paths, and list/audit linked files across items without regressions."
 definition_of_ready: Epic is active and no active duplicate item exists for files/docs stability and update guidance hardening.
 order: 2
 goal: External audit remediation
@@ -43,18 +43,29 @@ regression: true
 customer_impact: Users get safer file/doc flows and clearer update guidance
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-my6o,parent,"2026-04-01T16:22:26.127Z",cursor-agent,null
-comments[2]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-04-01T16:22:26.127Z",cursor-agent,Feature created for unresolved Issue4/5/6 hardening after de-dup audit.
   "2026-04-01T17:00:10.411Z",cursor-agent,"Feature scope complete: child task pm-e0ab closed with repeated files/docs add regression protection and explicit update --file/--doc guidance."
-notes[1]{created_at,author,text}:
+  "2026-04-03T11:55:42.157Z",codex-agent,"Mapped external-audit Issues 3, 4, and 6: bulk linked-path migration, optional linked-path validation, and cross-item linked-file auditing/listing."
+  "2026-04-03T11:57:00.157Z",codex-agent,"Dedup decision for plan todo2: no extra standalone linked-file audit feature created because reopened pm-ap8l now explicitly owns Issues 3/4/6 (bulk path migration, validation, and cross-item linked-file audit/listing)."
+  "2026-04-03T11:59:27.515Z",codex-agent,"Wave2 scope: linked-file hygiene features ship as additive commands/options; existing files/docs add/remove behavior remains unchanged by default."
+notes[2]{created_at,author,text}:
   "2026-04-01T16:22:26.127Z",cursor-agent,Scope includes integration tests and unknown-option guidance improvements.
+  "2026-04-03T11:59:51.587Z",codex-agent,"Mandatory closure checklist: (1) run linked targeted tests via pm test <id> --run; (2) run pnpm build; (3) run node scripts/run-tests.mjs test; (4) run node scripts/run-tests.mjs coverage; (5) update touched docs (README/PRD/AGENTS/CHANGELOG/ARCHITECTURE as applicable); (6) add pm comment with concrete evidence/results; (7) close + release item before commit/push."
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:36:25.559Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[1]{path,scope,note}:
+files[6]{path,scope,note}:
   README.md,project,metadata-audit-linked-context
-tests[1]{command,path,scope,timeout_seconds,note}:
+  src/cli/commands/docs.ts,project,linked doc parity for migration/validation
+  src/cli/commands/files.ts,project,bulk migration and linked file listing
+  src/cli/commands/health.ts,project,linked path validation diagnostics
+  src/cli/main.ts,project,new command wiring for linked path audit
+  tests/unit/files-docs-command.spec.ts,project,linked-path command regressions
+tests[2]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test,null,project,7200,metadata-audit-baseline-regression
-docs[1]{path,scope,note}:
+  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,5400,issues346 linked-path regressions
+docs[3]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,linked artifact data-flow updates
+  PRD.md,project,linked artifact command contract
   README.md,project,metadata-audit-documentation-context
-close_reason: Files/docs stability hardening and update guidance delivered.
 body: Covers Issue4/5 stability hardening and Issue6 guidance clarity while preserving existing command boundaries.

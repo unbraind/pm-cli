@@ -1,17 +1,17 @@
 id: pm-r15d
 title: Configurable item types and required-option UX
-description: Add settings and extension driven custom item types and improve required option error/help guidance without breaking defaults.
+description: "External audit Issues 2 and 5 follow-up: make type-specific required fields and type-option schemas discoverable without trial-and-error."
 type: Epic
-status: closed
+status: in_progress
 priority: 0
 tags[4]: agent-ux,"area:cli","area:schema",pm-cli
 created_at: "2026-03-31T23:47:27.635Z"
-updated_at: "2026-04-01T20:15:38.673Z"
-deadline: "2026-04-14T23:47:27.635Z"
+updated_at: "2026-04-03T11:59:50.740Z"
+deadline: "2026-04-17T11:57:37.630Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 480
-acceptance_criteria: Users can define custom item types/options via settings/extensions and CLI guidance for missing required options is actionable with examples; all docs and tests pass without regressions.
+acceptance_criteria: CLI surfaces type-specific required fields and type-option definitions via explicit help/introspection paths with tests and docs parity.
 definition_of_ready: scope-links-and-verification-evidence-identified
 order: 1
 goal: Customizable workflows
@@ -41,24 +41,32 @@ fixed_version: archive-2026q2
 component: core/cli
 regression: false
 customer_impact: Teams can model work domains without hacks
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-03-31T23:47:27.635Z",codex-agent,Epic created from approved implementation plan.
   "2026-04-01T00:29:14.263Z",codex-agent,Completed configurable item-type delivery across settings/extensions/CLI/storage/help output with docs updates and compatibility defaults.
   "2026-04-01T00:29:15.182Z",codex-agent,"Evidence: node scripts/run-tests.mjs test passed (57 files, 588 tests). node scripts/run-tests.mjs coverage executed; thresholds currently report 97.45 lines / 97.03 branches / 97.14 funcs / 97.29 stmts."
-notes[1]{created_at,author,text}:
+  "2026-04-03T11:55:40.990Z",codex-agent,"Mapped external-audit Issues 2 and 5: improve discoverability for type-specific required fields and extension type options from CLI help/introspection surfaces."
+  "2026-04-03T11:59:25.339Z",codex-agent,"Wave breakdown: Wave1 Type UX (Issues 1/2/5) on pm-bzyr and pm-r15d; Wave2 Linked-file hygiene (Issues 3/4/6) on pm-ap8l; Wave3 Diff/template/search/list UX (Issues 8/9/10/12) on pm-p9z, pm-zzt1, pm-780f, pm-pmd; Wave4 Reference validation (Issues 13/14) on pm-3gi and pm-2p6q. Non-breaking constraints: preserve existing command defaults, prefer additive/opt-in flags for new behavior, keep aliases and exit-code contracts stable, and use warning-first validation where strict enforcement could break current users."
+notes[2]{created_at,author,text}:
   "2026-03-31T23:47:27.635Z",codex-agent,Default behavior must remain unchanged when no custom type settings exist.
+  "2026-04-03T11:59:50.740Z",codex-agent,"Mandatory closure checklist: (1) run linked targeted tests via pm test <id> --run; (2) run pnpm build; (3) run node scripts/run-tests.mjs test; (4) run node scripts/run-tests.mjs coverage; (5) update touched docs (README/PRD/AGENTS/CHANGELOG/ARCHITECTURE as applicable); (6) add pm comment with concrete evidence/results; (7) close + release item before commit/push."
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:15:38.673Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[6]{path,scope,note}:
+files[10]{path,scope,note}:
   CHANGELOG.md,project,unreleased summary for configurable types and UX
   docs/ARCHITECTURE.md,project,runtime type registry/storage architecture
   docs/EXTENSIONS.md,project,registerItemTypes extension API docs
   PRD.md,project,dynamic type requirements and config contracts
   README.md,project,custom type/options usage documentation
+  src/cli/commands/completion.ts,project,type discovery completion entries
+  src/cli/main.ts,project,type-aware help/introspection surface
+  src/core/item/type-registry.ts,project,required and type-option discoverability
+  src/sdk/cli-contracts.ts,project,wrapper exposure for type introspection
   src/types.ts,project,type model anchor
-tests[1]{command,path,scope,timeout_seconds,note}:
+tests[2]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs test,null,project,2400,full regression baseline
-docs[1]{path,scope,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,3600,issues2and5 discoverability regressions
+docs[2]{path,scope,note}:
   PRD.md,project,command and schema contract
-close_reason: configurable item types/options and required-option UX delivered with full regression validation and updated docs
+  README.md,project,type discoverability usage docs
 body: "Track implementation of customizable item types, per-type options/requirements, and actionable required-option guidance."

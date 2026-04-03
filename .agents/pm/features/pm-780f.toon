@@ -1,0 +1,37 @@
+id: pm-780f
+title: Add reusable item templates for pm create
+description: Implement a first-class template workflow for recurring PM item patterns so users can save and reuse standardized create metadata.
+type: Feature
+status: in_progress
+priority: 1
+tags[4]: "area:create","area:templates",external-audit,pm-cli
+created_at: "2026-04-03T11:56:47.754Z"
+updated_at: "2026-04-03T11:59:56.638Z"
+deadline: "2026-04-17T11:57:45.116Z"
+assignee: codex-agent
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: "Users can save/list/show/apply named create templates (including repeatable seeds), and applying templates does not break existing explicit flag behavior."
+definition_of_ready: No equivalent active/closed runtime template feature exists and command surfaces to touch are identified.
+sprint: audit-followup
+release: vnext
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-bzyr,related,"2026-04-03T11:56:47.754Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-03T11:56:47.754Z",codex-agent,Created after dedup search confirmed no existing runtime template-system feature.
+  "2026-04-03T11:59:31.079Z",codex-agent,"Wave3 scope: templates are optional and additive; explicit create flags continue to work and should override template defaults deterministically."
+notes[2]{created_at,author,text}:
+  "2026-04-03T11:56:47.754Z",codex-agent,Must preserve current create behavior and remain optional for existing users.
+  "2026-04-03T11:59:56.638Z",codex-agent,"Mandatory closure checklist: (1) run linked targeted tests via pm test <id> --run; (2) run pnpm build; (3) run node scripts/run-tests.mjs test; (4) run node scripts/run-tests.mjs coverage; (5) update touched docs (README/PRD/AGENTS/CHANGELOG/ARCHITECTURE as applicable); (6) add pm comment with concrete evidence/results; (7) close + release item before commit/push."
+files[3]{path,scope,note}:
+  src/cli/commands/completion.ts,project,template command completion
+  src/cli/commands/create.ts,project,template apply merge with create options
+  src/cli/main.ts,project,template command registration surface
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts,null,project,2400,baseline create regression
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,5400,issue10 template workflow regressions
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,unreleased template feature notes
+  PRD.md,project,template command contract
+  README.md,project,template workflow documentation
+body: External audit Issue 10 follow-up. Add save/list/show/apply template capabilities with deterministic merge rules and backward-compatible create behavior.

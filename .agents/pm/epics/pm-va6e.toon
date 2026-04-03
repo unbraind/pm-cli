@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: "area:cli","area:docs","area:time",compatibility,pm-cli
 created_at: "2026-04-01T11:26:14.996Z"
-updated_at: "2026-04-01T20:15:22.729Z"
+updated_at: "2026-04-03T11:55:50.128Z"
 deadline: "2026-04-15T11:26:14.996Z"
 assignee: codex-agent
 author: codex-agent
@@ -41,11 +41,12 @@ fixed_version: archive-2026q2
 component: core/shared/time
 regression: true
 customer_impact: Existing users keep current behavior while additional date inputs are accepted.
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-04-01T11:26:14.996Z",codex-agent,Created after duplicate scan across list-open/list-in-progress/list-blocked plus focused searches for +6m and deadline parsing; no equivalent item found.
   "2026-04-01T11:27:43.942Z",codex-agent,"Execution hierarchy created: feature pm-lau3 with tasks pm-y8a8 (parser), pm-9sg4 (docs/help), and pm-x6l7 (verification). Detailed implementation plan is documented in pm-lau3 body before code edits."
   "2026-04-01T11:41:09.535Z",codex-agent,"Epic delivered via feature pm-lau3 and tasks pm-y8a8 pm-9sg4 pm-x6l7. Implementation includes parser expansion, docs alignment, and full test verification with no functional regressions observed."
   "2026-04-01T11:41:53.421Z",codex-agent,"Final delivery commit ef161fc pushed to origin/main. Evidence: targeted parser tests passed (78/78), full suite passed (638/638), and coverage run reported only the existing global 100% threshold shortfall (97.98/96.29/98.38/97.79)."
+  "2026-04-03T11:55:50.128Z",codex-agent,"Validated-no-op for external-audit Issue 11: deadline/date format consistency previously hardened (+m and flexible date normalization) with docs/help updates."
 notes[1]{created_at,author,text}:
   "2026-04-01T11:26:14.996Z",codex-agent,"Implementation strategy: parser normalization first,then cross-command regression tests and docs/help/completion updates."
 learnings[1]{created_at,author,text}:

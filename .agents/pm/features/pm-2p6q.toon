@@ -1,17 +1,17 @@
 id: pm-2p6q
 title: "Extended schema fields v1.1 - parent, reviewer, risk, sprint, release"
-description: "Add optional front-matter fields parent, reviewer, risk, sprint, release, blocked_by, blocked_reason to make pm-cli production-ready for diverse project workflows."
+description: "External audit Issue 14 follow-up: introduce sprint/release format validation policies to reduce inconsistent metadata values."
 type: Feature
-status: closed
+status: in_progress
 priority: 1
 tags[9]: "area:cli","area:core","area:docs","area:schema",code,"milestone:7",pm-cli,"priority:1",tests
 created_at: "2026-03-07T23:59:27.285Z"
-updated_at: "2026-04-01T20:34:48.084Z"
-deadline: "2026-03-10T23:59:27.285Z"
-assignee: maintainer-agent
+updated_at: "2026-04-03T11:59:55.773Z"
+deadline: "2026-04-15T11:57:44.149Z"
+assignee: codex-agent
 author: maintainer-agent
 estimated_minutes: 180
-acceptance_criteria: PRD updated with new optional fields; create/update help shows new flags; new fields serialize in canonical key order; 100% test coverage maintained; release-readiness contract tests updated.
+acceptance_criteria: Sprint and release fields support deterministic format validation with compatibility-safe migration strategy and docs/tests updates.
 definition_of_ready: scope-links-and-verification-evidence-identified
 order: 2
 goal: feature-delivery-governance
@@ -41,13 +41,16 @@ fixed_version: archive-2026q2
 component: cli-component
 regression: false
 customer_impact: improves-reliability-and-clarity-for-contributors
-comments[4]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-03-07T23:59:27.285Z",maintainer-agent,These fields are commonly needed for real-world project management across teams and tools. Docs-first approach per R1.
   "2026-03-08T00:00:38.074Z",maintainer-agent,"Starting docs-first implementation. Adding parent, reviewer, risk, sprint, release, blocked_by, blocked_reason as optional front-matter fields to PRD schema section 7.1, then updating canonical key order in 7.2."
   "2026-03-08T00:17:10.436Z",maintainer-agent,"Implementing end-to-end support for parent/reviewer/risk/sprint/release/blocked fields: keep docs aligned, persist fields in normalization, and expand unit+integration contracts before full regression."
   "2026-03-08T00:31:15.305Z",maintainer-agent,"Evidence: pm test pm-2p6q --run passed (linked coverage + test); pm test-all --status in_progress passed (2/2); pm test-all --status closed passed (64 passed, 0 failed, 296 skipped duplicates/no-command); coverage remained 100% lines/branches/functions/statements."
-notes[1]{created_at,author,text}:
+  "2026-04-03T11:55:47.459Z",codex-agent,"Mapped external-audit Issue 14: add sprint/release format validation policy with compatibility-safe rollout."
+  "2026-04-03T11:59:32.897Z",codex-agent,"Wave4 scope: sprint/release format checks follow compatibility-safe rollout (warn first, strict mode opt-in, migration path documented)."
+notes[2]{created_at,author,text}:
   "2026-03-07T23:59:27.285Z",maintainer-agent,"Plan: 1) Update PRD schema section 2) Update README 3) Add types 4) Wire create/update flags 5) Update serialization key order 6) Add tests 7) Verify coverage"
+  "2026-04-03T11:59:55.773Z",codex-agent,"Mandatory closure checklist: (1) run linked targeted tests via pm test <id> --run; (2) run pnpm build; (3) run node scripts/run-tests.mjs test; (4) run node scripts/run-tests.mjs coverage; (5) update touched docs (README/PRD/AGENTS/CHANGELOG/ARCHITECTURE as applicable); (6) add pm comment with concrete evidence/results; (7) close + release item before commit/push."
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:34:48.084Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[13]{path,scope,note}:
@@ -64,12 +67,12 @@ files[13]{path,scope,note}:
   tests/unit/create-command.spec.ts,project,create command coverage for optional scalar fields
   tests/unit/shared-constants-errors.spec.ts,project,key order contract coverage
   tests/unit/update-command.spec.ts,project,update command coverage for optional scalar fields
-tests[2]{command,path,scope,timeout_seconds,note}:
+tests[3]{command,path,scope,timeout_seconds,note}:
   node scripts/run-tests.mjs coverage,null,project,3600,coverage gate
   node scripts/run-tests.mjs test,null,project,2400,sandbox-safe full regression
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,5400,issue14 sprint release validation regressions
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer workflow contract
   PRD.md,project,authoritative schema contract
   README.md,project,public command contract update
-close_reason: Extended optional schema fields now persist end-to-end with create/update flag parity and verified 100% regression coverage.
 body: "Docs-first implementation of extended schema fields that make pm-cli usable across any project type. Adds parent (shorthand dep), reviewer, risk, sprint, release, blocked_by, blocked_reason as optional front-matter fields with create/update CLI flag parity."
