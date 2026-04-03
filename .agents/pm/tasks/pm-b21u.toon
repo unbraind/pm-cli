@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: agent-ux,"area:contracts","area:error","area:help","area:schema",implementation,pm-cli
 created_at: "2026-04-03T15:42:04.739Z"
-updated_at: "2026-04-03T16:02:54.465Z"
+updated_at: "2026-04-03T16:03:29.319Z"
 deadline: "2026-04-10T15:42:04.739Z"
 author: codex-agent
 estimated_minutes: 480
@@ -14,10 +14,11 @@ acceptance_criteria: "Code, tests, docs, and verification commands for UX v3 are
 parent: pm-dqqa
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-dqqa,parent,"2026-04-03T15:42:04.739Z",codex-agent,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-03T15:42:04.739Z",codex-agent,Task created and ready to claim for implementation.
   "2026-04-03T15:42:13.574Z",codex-agent,"Implementation started: working through help semantics, JSON help surfaces, contracts command, schema v4, and context-aware diagnostics."
   "2026-04-03T16:02:27.934Z",codex-agent,"Implemented help-command success semantics, bootstrap --help --json machine payloads, new pm contracts command, schema v4 metadata, Pi wrapper contracts action mapping, and PmCliError.context guidance plumbing. Verification: pnpm build; node scripts/run-tests.mjs test; node scripts/run-tests.mjs coverage all passed."
+  "2026-04-03T16:03:29.319Z",codex-agent,"Closure evidence: commit 1dea2e6 pushed to origin/main; full sandbox test and coverage suites passed before close."
 notes[1]{created_at,author,text}:
   "2026-04-03T15:42:04.739Z",codex-agent,Will link changed files/tests/docs and closure evidence as work completes.
 learnings[1]{created_at,author,text}:
