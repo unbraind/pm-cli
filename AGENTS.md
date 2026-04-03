@@ -57,6 +57,7 @@ Then filter:
 
 - `pm claim <ID>`
 - If conflict and explicitly approved: `pm claim <ID> --force`
+- `pm claim` takeover of non-terminal items assigned to another owner does not require `--force`; reserve `--force` for terminal-state or lock override paths.
 
 Rules:
 
@@ -72,6 +73,7 @@ Populate metadata early:
 - `pm update <ID> --body "..."` (replace body content for normalization/backfill; use `pm append --body` for additive notes)
 - `pm update <ID> --estimate <minutes>`
 - `pm update <ID> --deadline +1d` (accepts ISO/date strings or relative `+6h/+1d/+2w/+6m`; resolved to ISO at write)
+- `pm update <ID> --close-reason <text|none>` for explicit close_reason set/clear; reopen transitions from `closed` to non-terminal status auto-clear stale close_reason unless explicitly overridden in that same update call
 - when team-level close-readiness policy changes, update Definition of Done criteria via:
   - `pm config project set definition-of-done --criterion "tests pass" --criterion "linked files/tests/docs present"`
 
@@ -97,6 +99,7 @@ Attach references to keep work reproducible:
 Use append-style updates:
 
 - `pm comments <ID> "Implemented lock retry path"` (or `--add "..."` for structured/stdin forms)
+- use `pm comments <ID> ... --force` when adding an entry to items currently assigned to another owner
 - `pm update <ID> --status in_progress`
 - `pm append <ID> --body "Detailed implementation notes..."`
 

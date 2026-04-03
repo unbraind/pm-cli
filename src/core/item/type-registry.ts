@@ -87,6 +87,7 @@ const UPDATE_COMMAND_OPTION_KEYS = [
   "description",
   "body",
   "status",
+  "closeReason",
   "priority",
   "type",
   "tags",
@@ -132,6 +133,8 @@ const UPDATE_COMMAND_OPTION_KEYS = [
 ] as const;
 
 const SHARED_COMMAND_OPTION_ALIASES: Record<string, string> = {
+  "close-reason": "closeReason",
+  close_reason: "closeReason",
   "estimated-minutes": "estimatedMinutes",
   estimated_minutes: "estimatedMinutes",
   estimate: "estimatedMinutes",
@@ -234,6 +237,7 @@ const UPDATE_COMMAND_OPTION_FLAG_LABELS: Record<string, string> = {
   description: "--description",
   body: "--body",
   status: "--status",
+  closeReason: "--close-reason",
   priority: "--priority",
   type: "--type",
   tags: "--tags",

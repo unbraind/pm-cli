@@ -1,0 +1,58 @@
+id: pm-g8jp
+title: "Task: implement update close_reason flag and reopen auto-clear"
+description: Implement --close-reason on update and clear stale close_reason when status reopens from closed to non-terminal.
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:update",close-reason,implementation,pm-cli
+created_at: "2026-04-03T09:34:23.361Z"
+updated_at: "2026-04-03T09:58:12.212Z"
+deadline: "2026-04-08T09:34:23.361Z"
+author: codex-agent
+estimated_minutes: 140
+acceptance_criteria: "Update accepts close_reason set/clear, reopen auto-clear works, and all affected surfaces (contracts/completion/pi/help/docs/tests) are synchronized."
+definition_of_ready: Feature pm-m4vu accepted with impacted files/tests identified.
+order: 1
+goal: CLI UX and data integrity hardening
+objective: Deliver update close_reason lifecycle behavior
+value: Removes contradictory item states after reopen
+impact: Ensures metadata integrity in lifecycle transitions
+outcome: close_reason lifecycle handled correctly in update
+why_now: Reopened items currently retain stale closure metadata
+parent: pm-m4vu
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: ux-hardening
+release: vnext
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: close then update status to open/in_progress
+expected_result: close_reason is set/cleared intentionally and stale values removed on reopen
+affected_version: 2026.3.12
+component: cli/update
+regression: true
+customer_impact: Reopened work reflects accurate lifecycle state
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-m4vu,parent,"2026-04-03T09:34:23.361Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-03T09:34:23.361Z",codex-agent,Task created to implement runtime and surface parity for close_reason update semantics.
+  "2026-04-03T09:57:57.683Z",codex-agent,"Implemented update close_reason lifecycle: added --close-reason/--close_reason wiring across CLI/contracts/type-policy/Pi/completion, plus closed->non-terminal auto-clear logic and new unit/integration regression coverage."
+notes[1]{created_at,author,text}:
+  "2026-04-03T09:34:23.361Z",codex-agent,"Will touch update.ts,main.ts,cli-contracts.ts,type-registry.ts,completion.ts,and pi extension mapping."
+files[8]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,update-close-reason implementation
+  src/cli/commands/completion.ts,project,update-close-reason implementation
+  src/cli/commands/update.ts,project,core mutation logic
+  src/cli/main.ts,project,update-close-reason implementation
+  src/core/item/type-registry.ts,project,update-close-reason implementation
+  src/sdk/cli-contracts.ts,project,update-close-reason implementation
+  tests/integration/cli.integration.spec.ts,project,update-close-reason implementation
+  tests/unit/update-command.spec.ts,project,update-close-reason implementation
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,7200,update lifecycle regressions
+docs[1]{path,scope,note}:
+  PRD.md,project,update close_reason contract
+close_reason: Implemented update close_reason controls plus reopen auto-clear with full surface parity and tests.
+body: "Code changes across update runtime, CLI option wiring, contracts, type policy keys, completion, and Pi wrapper for close_reason update semantics."

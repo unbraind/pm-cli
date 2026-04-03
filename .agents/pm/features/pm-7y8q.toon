@@ -1,0 +1,50 @@
+id: pm-7y8q
+title: "Feature: comments force guidance parity"
+description: "Make comments force-override behavior explicit and consistent across help, completion, and docs surfaces."
+type: Feature
+status: closed
+priority: 1
+tags[5]: "area:comments","area:docs","area:help",pm-cli,ux
+created_at: "2026-04-03T09:34:08.462Z"
+updated_at: "2026-04-03T09:58:16.560Z"
+deadline: "2026-04-09T09:34:08.462Z"
+author: codex-agent
+estimated_minutes: 90
+acceptance_criteria: comments force behavior is explicitly documented in rich help/completion/docs and validated by tests without runtime regressions.
+definition_of_ready: Epic pm-hp31 exists and command help/docs/completion surfaces are identified.
+order: 3
+goal: CLI UX and data integrity hardening
+objective: Eliminate confusion around comments ownership override usage
+value: Reduces command retries and support friction from hidden behavior
+impact: Improves discoverability and confidence in mutation workflows
+outcome: Consistent comments --force guidance across surfaces
+why_now: Users reported force requirement confusion due incomplete help guidance
+parent: pm-hp31
+reviewer: maintainer-review
+risk: low
+confidence: high
+sprint: ux-hardening
+release: vnext
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: attempt comments add on claimed item from different author
+expected_result: Help and docs clearly explain comments force override paths
+affected_version: 2026.3.12
+component: cli/help
+regression: true
+customer_impact: Users can self-serve the correct comments mutation syntax
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-hp31,parent,"2026-04-03T09:34:08.462Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-03T09:34:08.462Z",codex-agent,Feature keeps runtime behavior and hardens help/docs parity.
+notes[1]{created_at,author,text}:
+  "2026-04-03T09:34:08.462Z",codex-agent,Will update help bundle examples and completion lists where implicit.
+files[1]{path,scope,note}:
+  src/cli/help-content.ts,project,rich help guidance
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/unit/completion-command.spec.ts,null,project,7200,help and completion parity checks
+docs[1]{path,scope,note}:
+  README.md,project,user-facing command guidance
+close_reason: "Feature delivered: comments force guidance parity across help/completion/docs surfaces with passing runtime contracts."
+body: This feature keeps comments runtime unchanged while hardening guidance parity so users can discover when and why --force is needed for comment mutations.

@@ -97,6 +97,7 @@ describe("generateBashScript", () => {
   it("includes update flags", () => {
     const script = generateBashScript();
     expect(script).toContain("--body");
+    expect(script).toContain("--close-reason");
     expect(script).toContain("--force");
     expect(script).toContain("--message");
     expect(script).toContain("--author");
@@ -104,6 +105,11 @@ describe("generateBashScript", () => {
     expect(script).toContain("--dep-remove");
     expect(script).toContain("--reminder");
     expect(script).toContain("--event");
+  });
+
+  it("includes comments mutation metadata flags in bash completion", () => {
+    const script = generateBashScript();
+    expect(script).toContain("--add --limit --author --message --force");
   });
 
   it("includes calendar-specific flags", () => {
@@ -247,6 +253,11 @@ describe("generateZshScript", () => {
     expect(script).toContain("--past");
     expect(script).toContain("markdown toon json");
   });
+
+  it("includes zsh update close-reason completion", () => {
+    const script = generateZshScript();
+    expect(script).toContain("--close-reason");
+  });
 });
 
 describe("generateFishScript", () => {
@@ -357,6 +368,7 @@ describe("generateFishScript", () => {
     const script = generateFishScript();
     expect(script).toContain("__fish_seen_subcommand_from update");
     expect(script).toContain("-l body");
+    expect(script).toContain("-l close-reason");
     expect(script).toContain("-l force");
     expect(script).toContain("-l reminder");
     expect(script).toContain("-l event");

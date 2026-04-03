@@ -142,6 +142,7 @@ const REQUIRED_UPDATE_FLAGS = [
   "--description",
   "--body",
   "--status",
+  "--close-reason",
   "--priority",
   "--type",
   "--tags",

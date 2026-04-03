@@ -1,0 +1,53 @@
+id: pm-hp31
+title: CLI UX and Integrity Hardening
+description: "Address close_reason lifecycle integrity, comments force guidance clarity, and claim takeover ergonomics without regressions."
+type: Epic
+status: closed
+priority: 0
+tags[6]: "area:cli","area:docs","area:ownership",data-integrity,pm-cli,ux
+created_at: "2026-04-03T09:33:27.690Z"
+updated_at: "2026-04-03T09:58:17.393Z"
+deadline: "2026-04-10T09:33:27.690Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: "All three issues are implemented with tests/docs parity, no regressions in current flows, and delivery evidence recorded."
+definition_of_ready: "Duplicate search complete and impacted surfaces identified across CLI runtime, contracts, wrapper, completion, tests, and docs."
+order: 1
+goal: CLI UX and data integrity hardening
+objective: Deliver deterministic and intuitive behavior across update/comments/claim workflows
+value: Reduces operator confusion and stale metadata while preserving safe multi-user workflows
+impact: Improves trust in item state transitions and day-to-day command ergonomics
+outcome: Consistent runtime/help/docs behavior for reported issue set
+why_now: User-reported friction currently causes stale metadata and unnecessary force-flag retries
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: ux-hardening
+release: vnext
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: run reported update/comments/claim flows
+expected_result: Reported flows behave consistently and intuitively
+affected_version: 2026.3.12
+component: cli/core
+regression: true
+customer_impact: Operators and agents avoid stale close reasons and unnecessary claim force retries
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-3nv9,related,"2026-04-03T09:33:27.690Z",codex-agent,null
+  pm-f0e9,related,"2026-04-03T09:33:27.690Z",codex-agent,null
+  pm-v3g3,related,"2026-04-03T09:33:27.690Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-04-03T09:33:27.690Z",codex-agent,Created after duplicate search confirmed no active matching initiative.
+  "2026-04-03T09:36:48.151Z",codex-agent,Created and claimed epic/feature/task hierarchy with related links to prior closed items; beginning implementation on pm-g8jp.
+  "2026-04-03T09:58:01.219Z",codex-agent,"Verification evidence: targeted suites passed; full node scripts/run-tests.mjs test passed (715/715); full node scripts/run-tests.mjs coverage passed; pm test-all --status in_progress passed (items=7 linked_tests=7 passed=6 skipped=1 duplicate)."
+notes[1]{created_at,author,text}:
+  "2026-04-03T09:33:27.690Z",codex-agent,Will implement docs/contracts/runtime/tests in one coordinated hardening pass.
+files[1]{path,scope,note}:
+  src/cli/main.ts,project,primary CLI wiring surface
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,7200,project regression sweep
+docs[1]{path,scope,note}:
+  PRD.md,project,normative command behavior contract
+close_reason: "All three reported UX/integrity issues implemented, documented, and fully verified with targeted and full regression/coverage runs."
+body: "Tracks implementation of three user-reported CLI UX and integrity issues: update close_reason lifecycle, comments --force guidance parity, and claim takeover semantics for non-terminal items."

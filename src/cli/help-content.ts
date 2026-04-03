@@ -76,11 +76,13 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Mutates existing item fields while preserving history and lock safety.",
     examples: [
       'pm update pm-a1b2 --status in_progress --message "Start implementation"',
+      'pm update pm-a1b2 --close-reason none --message "Clear stale close reason after reopen"',
       'pm update pm-a1b2 --assignee none --deadline +2d --message "Replan ownership and deadline"',
       'pm update pm-a1b2 --body "Backfilled body text for legacy item" --message "Normalize missing body"',
     ],
     tips: [
       'Use "pm close <ID> <TEXT>" to close items instead of --status closed.',
+      "When reopening from closed to a non-terminal status, update clears stale close_reason unless explicitly set via --close-reason.",
       'Use "pm append <ID> --body <text>" for additive notes; use update --body to replace body content.',
     ],
   },
@@ -178,7 +180,12 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   comments: {
     why: "Adds or reviews lightweight status updates linked to an item.",
-    examples: ['pm comments pm-a1b2 --add "Verified fix on Linux and macOS"', "pm comments pm-a1b2 --limit 10"],
+    examples: [
+      'pm comments pm-a1b2 --add "Verified fix on Linux and macOS"',
+      'pm comments pm-a1b2 --add "Follow-up needed after review" --author "codex-agent" --force',
+      "pm comments pm-a1b2 --limit 10",
+    ],
+    tips: ["Use --force when adding comments to items currently assigned to a different owner."],
   },
   notes: {
     why: "Adds or reviews durable implementation notes linked to an item.",
@@ -221,7 +228,11 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   claim: {
     why: "Claims an item to signal active ownership and reduce conflicts.",
-    examples: ['pm claim pm-a1b2 --author "codex-agent" --message "Claim for implementation"'],
+    examples: [
+      'pm claim pm-a1b2 --author "codex-agent" --message "Claim for implementation"',
+      'pm claim pm-a1b2 --force --author "codex-agent" --message "Take over terminal item"',
+    ],
+    tips: ["Claim takeover for non-terminal items does not require --force; --force is reserved for terminal/lock overrides."],
   },
   release: {
     why: "Releases an active claim when paused, handed off, or completed.",

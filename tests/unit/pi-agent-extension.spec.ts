@@ -114,6 +114,7 @@ describe("Pi agent extension wrapper for pm", () => {
       title: "new title",
       description: "",
       body: "",
+      closeReason: "legacy close reason",
       tags: "",
       acceptanceCriteria: "",
       message: "",
@@ -126,6 +127,8 @@ describe("Pi agent extension wrapper for pm", () => {
         "",
         "--body",
         "",
+        "--close-reason",
+        "legacy close reason",
         "--tags",
         "",
         "--acceptance-criteria",
@@ -338,6 +341,7 @@ describe("Pi agent extension wrapper for pm", () => {
       expectedResult: "fixed",
       actualResult: "broken",
       whyNow: "still urgent",
+      closeReason: "none",
       dep: ["id=pm-a1b3,kind=related"],
       depRemove: ["id=pm-a1b4,kind=blocks"],
     });
@@ -366,6 +370,8 @@ describe("Pi agent extension wrapper for pm", () => {
         "broken",
         "--why-now",
         "still urgent",
+        "--close-reason",
+        "none",
         "--dep",
         "id=pm-a1b3,kind=related",
         "--dep-remove",
@@ -500,6 +506,9 @@ describe("Pi agent extension wrapper for pm", () => {
       ).properties.occurrenceLimit.anyOf,
     ).toEqual(expect.arrayContaining([{ type: "string" }, { type: "number" }]));
     expect((tool.parameters as { properties: { blockedBy: { type: string } } }).properties.blockedBy.type).toBe(
+      "string",
+    );
+    expect((tool.parameters as { properties: { closeReason: { type: string } } }).properties.closeReason.type).toBe(
       "string",
     );
     expect((tool.parameters as { properties: { definitionOfReady: { type: string } } }).properties.definitionOfReady.type).toBe(

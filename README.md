@@ -139,6 +139,11 @@ pm claim <item-id>
 
 From there, use `pm update`, `pm comments`, `pm notes`, `pm learnings`, `pm files`, `pm docs`, `pm test`, `pm search`, and `pm close` as work progresses.
 
+Claim behavior note:
+
+- `pm claim <ID>` can take over non-terminal items even when currently assigned to someone else.
+- Use `--force` for claim/release only when overriding terminal-state or lock conflicts.
+
 ## Semantic Search Defaults (Ollama)
 
 `pm search` now auto-enables semantic-capable defaults on hosts where local Ollama is installed, without requiring manual semantic provider/vector configuration in `settings.json`.
@@ -206,6 +211,8 @@ Policy enforcement applies to `pm history`, `pm activity`, `pm stats`, `pm healt
 - Canonical status values are: `draft`, `open`, `in_progress`, `blocked`, `closed`, `canceled`.
 - Status input flags also accept `in-progress` as an alias for `in_progress` (`pm create`, `pm update`, `pm calendar`, and `pm test-all`).
 - Persisted item data and command output remain canonical (`in_progress`) for deterministic storage and filtering.
+- `pm update --close-reason <text>` sets `close_reason` explicitly; `--close-reason none` clears it.
+- When `pm update --status` reopens an item from `closed` to a non-terminal status, stale `close_reason` is auto-cleared unless `--close-reason` is explicitly provided in that update call.
 
 ## Resilient Entry Input Formats
 
@@ -226,6 +233,7 @@ pm test pm-a1b2 --add $'command: node scripts/run-tests.mjs test\nscope: project
 # Comments can be added positionally or with --add
 pm comments pm-a1b2 "captured from shorthand positional text"
 pm comments pm-a1b2 --add "text: captured from markdown formatter"
+pm comments pm-a1b2 --add "handoff note from alternate author" --author "alex-maintainer" --force
 
 # Notes and learnings support the same positional/--add shorthand
 pm notes pm-a1b2 "implementation context captured from shorthand positional text"

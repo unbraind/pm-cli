@@ -96,7 +96,7 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES): st
     `      COMPREPLY=(${compgen("pi --project --global --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    comments|notes|learnings)",
-    `      COMPREPLY=(${compgen("--add --limit --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --limit --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    files|docs)",
     `      COMPREPLY=(${compgen("--add --remove --json --quiet --path --no-extensions --profile --help")})`,
@@ -248,6 +248,7 @@ _pm() {
             '(-d --description)'{-d,--description}'[Item description]:description' \\
             '(-b --body)'{-b,--body}'[Item body]:body' \\
             '(-s --status)'{-s,--status}'[Item status]:(draft open in_progress blocked canceled)' \\
+            '--close-reason[Set close reason (none to clear)]:close_reason' \\
             '(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)' \\
             '--type[Item type]:(${typeChoices})' \\
             '--tags[Comma-separated tags]:tags' \\
@@ -474,6 +475,7 @@ complete -c pm -n '__fish_seen_subcommand_from update' -s t -l title            
 complete -c pm -n '__fish_seen_subcommand_from update' -s d -l description        -d 'Item description' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -s b -l body               -d 'Item body' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -s s -l status             -d 'Item status' -r -a 'draft open in_progress blocked canceled'
+complete -c pm -n '__fish_seen_subcommand_from update' -l close-reason            -d 'Set close reason (none to clear)' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -s p -l priority           -d 'Priority (0-4)' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from update' -l type                    -d 'Item type' -r -a '${typeChoices}'
 complete -c pm -n '__fish_seen_subcommand_from update' -l reminder                -d 'Reminder entry at=<iso|relative>,text=<text> (none to clear)' -r

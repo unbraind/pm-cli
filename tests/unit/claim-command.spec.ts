@@ -107,7 +107,7 @@ describe("runClaim/runRelease", () => {
     });
   });
 
-  it("supports re-claiming already-owned items and blocks foreign assignees unless forced", async () => {
+  it("supports re-claiming already-owned items and taking over foreign non-terminal assignees without force", async () => {
     await withTempPmPath(async (context) => {
       const mine = createTask(context, {
         title: "claim-current-assignee",
@@ -123,14 +123,10 @@ describe("runClaim/runRelease", () => {
         status: "open",
         assignee: "other-author",
       });
-      await expect(runClaim(foreign, false, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
-        exitCode: EXIT_CODE.CONFLICT,
-      });
-
-      const forced = await runClaim(foreign, true, { path: context.pmPath });
-      expect(forced.previous_assignee).toBe("other-author");
-      expect(forced.forced).toBe(true);
-      expect(forced.item.assignee).toBe("test-author");
+      const takeover = await runClaim(foreign, false, { path: context.pmPath });
+      expect(takeover.previous_assignee).toBe("other-author");
+      expect(takeover.forced).toBe(false);
+      expect(takeover.item.assignee).toBe("test-author");
     });
   });
 

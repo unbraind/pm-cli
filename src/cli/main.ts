@@ -1252,6 +1252,7 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
     description: readUpdateString("description"),
     body: readUpdateString("body"),
     status: readUpdateString("status"),
+    closeReason: readUpdateString("closeReason"),
     priority: readUpdateString("priority"),
     type: readUpdateString("type"),
     tags: readUpdateString("tags"),
@@ -2056,6 +2057,8 @@ program
   .option("--description, -d <value>", "Set description")
   .option("--body, -b <value>", "Set body (allow empty string)")
   .option("--status, -s <value>", "Set status (use close command for closed)")
+  .option("--close-reason <value>", "Set close reason (or none)")
+  .option("--close_reason <value>", "Alias for --close-reason")
   .option("--priority, -p <value>", "Set priority")
   .option("--type <value>", "Set type")
   .option("--tags <value>", "Set comma-separated tags")

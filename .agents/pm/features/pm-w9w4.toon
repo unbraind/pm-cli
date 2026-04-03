@@ -1,0 +1,50 @@
+id: pm-w9w4
+title: "Feature: claim takeover on non-terminal items"
+description: Allow pm claim to take over already-assigned non-terminal items without requiring force.
+type: Feature
+status: closed
+priority: 1
+tags[4]: "area:claim","area:ownership",pm-cli,ux
+created_at: "2026-04-03T09:33:58.431Z"
+updated_at: "2026-04-03T09:58:15.722Z"
+deadline: "2026-04-09T09:33:58.431Z"
+author: codex-agent
+estimated_minutes: 120
+acceptance_criteria: Claiming non-terminal items assigned to another user succeeds without force; terminal claim behavior remains guarded; tests/docs updated.
+definition_of_ready: Epic pm-hp31 exists and ownership guard surfaces are identified.
+order: 2
+goal: CLI UX and data integrity hardening
+objective: Reduce unnecessary force usage in audit and ownership handoff workflows
+value: Improves ergonomics while preserving safety for terminal and lock scenarios
+impact: Fewer failed claim attempts and cleaner operator workflows
+outcome: Non-terminal claim takeover works without force
+why_now: Current workflow requires unnecessary force for routine reassignment
+parent: pm-hp31
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: ux-hardening
+release: vnext
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: claim item assigned to different author
+expected_result: Claim takeover succeeds for non-terminal items without force
+affected_version: 2026.3.12
+component: core/item-store
+regression: true
+customer_impact: Reduces friction in ownership transfer and PM audit flows
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-hp31,parent,"2026-04-03T09:33:58.431Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-03T09:33:58.431Z",codex-agent,Feature addresses user-reported claim force friction for non-terminal items.
+notes[1]{created_at,author,text}:
+  "2026-04-03T09:33:58.431Z",codex-agent,Will modify item-store ownership conflict guard and validate command-level terminal protections.
+files[1]{path,scope,note}:
+  src/core/store/item-store.ts,project,ownership guard mutation gate
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts,null,project,7200,claim behavior regression
+docs[1]{path,scope,note}:
+  PRD.md,project,ownership model semantics
+close_reason: "Feature delivered: claim takeover semantics now allow non-terminal reassignment without force, verified by unit/integration tests."
+body: Adjust ownership enforcement so claim takeover of non-terminal items succeeds without --force while preserving terminal-item and lock-force protections.

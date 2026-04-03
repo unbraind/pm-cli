@@ -41,6 +41,7 @@ export interface PmToolParameters {
   description?: string;
   type?: string;
   status?: string;
+  closeReason?: string;
   priority?: NumericFlagInput;
   tags?: string;
   body?: string;

@@ -589,6 +589,63 @@ describe("runUpdate", () => {
     });
   });
 
+  it("auto-clears close_reason when reopening from closed to non-terminal status", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-reopen-clears-close-reason");
+      const closed = context.runCli(
+        ["close", id, "Completed work", "--json", "--author", "test-author", "--message", "close for reopen test"],
+        { expectJson: true },
+      );
+      expect(closed.code).toBe(0);
+      expect((closed.json as { item: { close_reason?: string } }).item.close_reason).toBe("Completed work");
+
+      const reopened = await runUpdate(
+        id,
+        {
+          status: "open",
+          author: "test-author",
+          message: "reopen item",
+        },
+        { path: context.pmPath },
+      );
+
+      const item = reopened.item as Record<string, unknown>;
+      expect(item.status).toBe("open");
+      expect(item.close_reason).toBeUndefined();
+      expect(reopened.changed_fields).toEqual(expect.arrayContaining(["status", "close_reason"]));
+    });
+  });
+
+  it("supports explicit close_reason set and clear via update flag", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-explicit-close-reason");
+
+      const setReason = await runUpdate(
+        id,
+        {
+          closeReason: "Paused pending dependency triage",
+          author: "test-author",
+          message: "set close reason explicitly",
+        },
+        { path: context.pmPath },
+      );
+      expect((setReason.item as Record<string, unknown>).close_reason).toBe("Paused pending dependency triage");
+      expect(setReason.changed_fields).toContain("close_reason");
+
+      const clearedReason = await runUpdate(
+        id,
+        {
+          closeReason: "none",
+          author: "test-author",
+          message: "clear close reason explicitly",
+        },
+        { path: context.pmPath },
+      );
+      expect((clearedReason.item as Record<string, unknown>).close_reason).toBeUndefined();
+      expect(clearedReason.changed_fields).toContain("close_reason");
+    });
+  });
+
   it("accepts month-relative and normalized date-string deadline updates", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-deadline-format-expansion");
@@ -647,6 +704,9 @@ describe("runUpdate", () => {
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(runUpdate(id, { severity: "urgent" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runUpdate(id, { closeReason: "   " }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(runUpdate(id, { regression: "sometimes" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({

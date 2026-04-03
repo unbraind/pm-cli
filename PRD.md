@@ -111,6 +111,8 @@ Lifecycle rules:
 - `pm update <ID> --status closed` is invalid usage and returns exit code `2`.
 - `closed` and `canceled` are terminal unless explicitly restored or reopened.
 - `close` command must write `close_reason`.
+- `pm update <ID> --close-reason <TEXT>` explicitly sets `close_reason`; `--close-reason none` clears it.
+- When `pm update` reopens an item from `closed` to a non-terminal status, stale `close_reason` is auto-cleared unless `--close-reason` is explicitly supplied on that same mutation.
 - `claim` on terminal status fails unless explicitly overridden by `--force`.
 
 ### 5.3 Ownership model
@@ -118,7 +120,8 @@ Lifecycle rules:
 - Ownership marker is `assignee`.
 - `pm claim <id>` sets ownership to current mutation author identity.
 - `pm release <id>` clears ownership.
-- Mutations against items assigned to another assignee return conflict unless `--force`.
+- `pm claim <id>` may take over non-terminal items assigned to another assignee without `--force`.
+- Mutations other than `claim` against items assigned to another assignee return conflict unless `--force`.
 
 ### 5.4 Dependencies model
 
@@ -767,6 +770,8 @@ Mutating `update` (v0.1 baseline):
 
 - `--status` supports all non-terminal values plus `canceled`.
 - `--status closed` is not supported; callers must use `pm close <ID> <TEXT>` so `close_reason` is always captured.
+- `--close-reason`, `--close_reason` support explicit close-reason set/clear (`none` clears).
+- Reopen transition safety: moving from `closed` to a non-terminal status via `--status` auto-clears stale `close_reason` unless `--close-reason` is explicitly provided on that update call.
 
 List/search filters:
 
@@ -819,13 +824,13 @@ Contract compatibility policy is additive-first: existing command names/flags/al
 | `pm todos import --folder <path?>` | optional todos markdown source folder (defaults to `.pi/todos`); preserves canonical optional `ItemFrontMatter` metadata when present and applies deterministic defaults for missing PM fields | `{ ok, folder, imported, skipped, ids, warnings }` |
 | `pm todos export --folder <path?>` | optional todos markdown destination folder (defaults to `.pi/todos`) | `{ ok, folder, exported, ids, warnings }` |
 | `pm create ...` | required title + schema flags | `{ item, changed_fields, warnings }` |
-| `pm update <ID> ...` | id + patch-like flags (`--status closed` is rejected; use `pm close <ID> <TEXT>`; body replacement is supported via `--body`/`-b`; dependencies are mutable via `--dep` / `--dep-remove`; linked artifact flags like `--file`/`--doc` are intentionally unsupported on update and routed to dedicated commands) | `{ item, changed_fields, warnings }` |
+| `pm update <ID> ...` | id + patch-like flags (`--status closed` is rejected; use `pm close <ID> <TEXT>`; `--close-reason`/`--close_reason` explicitly set/clear `close_reason`; reopening from `closed` to a non-terminal status auto-clears stale `close_reason` unless explicit `--close-reason` is provided; body replacement is supported via `--body`/`-b`; dependencies are mutable via `--dep` / `--dep-remove`; linked artifact flags like `--file`/`--doc` are intentionally unsupported on update and routed to dedicated commands) | `{ item, changed_fields, warnings }` |
 | `pm delete <ID>` | id + optional `--author`/`--message`/`--force` | `{ item, changed_fields, warnings }` |
 | `pm close <ID> <TEXT>` | id + close reason text + optional `--author/--message/--force` | `{ item, changed_fields, warnings }` |
 | `pm append <ID> --body` | id + appended markdown (`--body -` reads piped stdin) | `{ item, appended, changed_fields }` |
-| `pm claim <ID>` | id, optional `--author`/`--message`/`--force` | `{ item, claimed_by, previous_assignee, forced }` |
+| `pm claim <ID>` | id, optional `--author`/`--message`/`--force` (`--force` required for terminal/lock override paths; non-terminal assignee takeover does not require force) | `{ item, claimed_by, previous_assignee, forced }` |
 | `pm release <ID>` | id, optional `--author`/`--message`/`--force` | `{ item, released_by, previous_assignee, forced }` |
-| `pm comments <ID> [TEXT] --add/--limit` | id + optional positional comment text shorthand + comment text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`) | `{ id, comments, count }` |
+| `pm comments <ID> [TEXT] --add/--limit` | id + optional positional comment text shorthand + comment text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`); optional mutation metadata flags `--author`/`--message`/`--force` | `{ id, comments, count }` |
 | `pm notes <ID> [TEXT] --add/--limit` | id + optional positional note text shorthand + note text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`) | `{ id, notes, count }` |
 | `pm learnings <ID> [TEXT] --add/--limit` | id + optional positional learning text shorthand + learning text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`) | `{ id, learnings, count }` |
 | `pm files <ID> --add/--remove` | id + file refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`) | `{ id, files, changed, count }` |
@@ -1192,7 +1197,7 @@ Current baseline status (release-hardening):
   - completion parity field `shell` (`action=completion` -> `pm completion <shell>`)
   - search-specific parity fields including `mode` and `includeLinked` (`--include-linked`)
   - claim/release metadata parity fields including `author`, `message`, and `force` (`--author`, `--message`, `--force`)
-  - create/update scalar parity fields using camelCase wrapper parameters that forward to the canonical CLI flags for planning/workflow metadata (`parent`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blockedBy`, `blockedReason`, `unblockNote`, `definitionOfReady`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `whyNow`) and issue metadata (`reporter`, `severity`, `environment`, `reproSteps`, `resolution`, `expectedResult`, `actualResult`, `affectedVersion`, `fixedVersion`, `component`, `regression`, `customerImpact`)
+  - create/update scalar parity fields using camelCase wrapper parameters that forward to the canonical CLI flags for planning/workflow metadata (`parent`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blockedBy`, `blockedReason`, `unblockNote`, `definitionOfReady`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `whyNow`, `closeReason`) and issue metadata (`reporter`, `severity`, `environment`, `reproSteps`, `resolution`, `expectedResult`, `actualResult`, `affectedVersion`, `fixedVersion`, `component`, `regression`, `customerImpact`)
   - explicit empty-string passthrough for empty-allowed CLI flags (for example `--description ""` and `--body ""`)
   - numeric scalar parity for numeric CLI flags: wrapper accepts either JSON numbers or strings for `priority`, `estimate`, `limit`, and `timeout`, then stringifies values for deterministic CLI argument emission
 - Return object:

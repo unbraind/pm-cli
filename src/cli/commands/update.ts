@@ -35,6 +35,7 @@ export interface UpdateCommandOptions {
   description?: string;
   body?: string;
   status?: string;
+  closeReason?: string;
   priority?: string;
   type?: string;
   tags?: string;
@@ -506,6 +507,7 @@ function collectProvidedUpdatePolicyOptions(options: UpdateCommandOptions): Set<
   mark("description", options.description !== undefined);
   mark("body", options.body !== undefined);
   mark("status", options.status !== undefined);
+  mark("closeReason", options.closeReason !== undefined);
   mark("priority", options.priority !== undefined);
   mark("type", options.type !== undefined);
   mark("tags", options.tags !== undefined);
@@ -610,6 +612,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     options.description !== undefined,
     options.body !== undefined,
     options.status !== undefined,
+    options.closeReason !== undefined,
     options.priority !== undefined,
     options.type !== undefined,
     options.tags !== undefined,
@@ -686,6 +689,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         document.body = options.body;
         changedFields.push("body");
       }
+      const previousStatus = document.front_matter.status;
       if (options.status !== undefined) {
         const status = parseStatus(options.status);
         if (status === "closed") {
@@ -699,6 +703,26 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
           delete document.front_matter.assignee;
         }
         changedFields.push("status");
+      }
+      if (options.closeReason !== undefined) {
+        if (isNoneToken(options.closeReason)) {
+          delete document.front_matter.close_reason;
+        } else {
+          const closeReason = options.closeReason.trim();
+          if (closeReason.length === 0) {
+            throw new PmCliError("--close-reason must not be empty", EXIT_CODE.USAGE);
+          }
+          document.front_matter.close_reason = closeReason;
+        }
+        changedFields.push("close_reason");
+      } else if (
+        options.status !== undefined &&
+        previousStatus === "closed" &&
+        document.front_matter.status !== "canceled" &&
+        document.front_matter.close_reason !== undefined
+      ) {
+        delete document.front_matter.close_reason;
+        changedFields.push("close_reason");
       }
       if (options.priority !== undefined) {
         document.front_matter.priority = ensurePriority(options.priority);

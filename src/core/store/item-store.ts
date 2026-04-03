@@ -207,7 +207,8 @@ export async function mutateItem(params: {
     const { raw: originalRaw, document } = await readLocatedItem(located);
 
     const assigned = document.front_matter.assignee?.trim();
-    if (assigned && assigned !== params.author && !params.force) {
+    const bypassAssigneeConflict = params.op === "claim";
+    if (assigned && assigned !== params.author && !params.force && !bypassAssigneeConflict) {
       throw new PmCliError(
         `Item ${located.id} is assigned to ${assigned}. Use --force to override.`,
         EXIT_CODE.CONFLICT,

@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added integration regressions for repeated `pm files --add` / `pm docs --add` mutation flows to keep linked-artifact add workflows stable across subsequent command invocations.
 - Added targeted guidance for unsupported `pm update --file` / `pm update --doc` usage, with actionable examples that route users to `pm files` / `pm docs`.
 - Added dependency mutation support on existing items through `pm update`: repeatable `--dep` add/clear (`none`) semantics plus repeatable `--dep-remove`/`--dep_remove` selector removals, with parity across help/completion/contracts/Pi wrapper surfaces.
+- Added `pm update --close-reason` / `--close_reason` support so callers can explicitly set or clear `close_reason` (`none` clears) without using `pm close`.
 
 ### Changed
 - Commander option normalization, shell completion flag generation, and Pi wrapper action/schema/arg mapping now consume the shared command contract registry to reduce cross-surface drift.
@@ -64,6 +65,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Linked test runtime execution now uses shell-compatible spawn orchestration, closes child stdin for non-interactive runs, emits interactive stderr heartbeat progress for long-running commands, and applies deterministic timeout/maxBuffer diagnostics with force-kill fallback for stubborn subprocess trees.
 - History-touching commands now enforce `settings.history.missing_stream` consistently across read/diagnostic paths (`history`, `activity`, `stats`, `health`) and existing-item mutation/restore flows.
 - Linked test command validation now explicitly documents sandbox-safe `pm test --add` policy expectations in command contracts (use `node scripts/run-tests.mjs ...` or `path=...` linked entries for targeted scope).
+- `pm update` now auto-clears stale `close_reason` when reopening items from `closed` to non-terminal statuses unless an explicit `--close-reason` value is provided in the same mutation.
+- `pm claim` now allows takeover of already-assigned non-terminal items without `--force`; force remains required for terminal-status or lock-override claim paths.
+- `pm comments` guidance is now explicit about `--force` usage across rich help, shell completion, and docs parity surfaces.
 
 ## [2026.3.12] - 2026-03-12
 

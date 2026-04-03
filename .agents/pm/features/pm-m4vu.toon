@@ -1,0 +1,50 @@
+id: pm-m4vu
+title: "Feature: update close_reason lifecycle integrity"
+description: Add explicit update close_reason controls and ensure stale close_reason is cleared on reopen transitions.
+type: Feature
+status: closed
+priority: 1
+tags[5]: "area:metadata","area:update",close-reason,pm-cli,ux
+created_at: "2026-04-03T09:33:47.173Z"
+updated_at: "2026-04-03T09:58:14.898Z"
+deadline: "2026-04-09T09:33:47.173Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: "pm update supports close_reason set/clear, reopening removes stale close_reason automatically, and all contracts/tests/docs stay aligned."
+definition_of_ready: Epic pm-hp31 exists and update/runtime/contracts surfaces are identified.
+order: 1
+goal: CLI UX and data integrity hardening
+objective: Eliminate stale close_reason metadata after reopen
+value: Preserves item state correctness and avoids contradictory open items with close reasons
+impact: Improves trust in lifecycle transitions for users and agents
+outcome: update command handles close_reason deterministically
+why_now: Stale close_reason after reopen currently causes contradictory state
+parent: pm-hp31
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: ux-hardening
+release: vnext
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: close item then reopen via update status
+expected_result: Reopened items do not retain stale close_reason unless explicitly set
+affected_version: 2026.3.12
+component: cli/update
+regression: true
+customer_impact: Reduces confusion in reopened work tracking
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-hp31,parent,"2026-04-03T09:33:47.173Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-03T09:33:47.173Z",codex-agent,Feature spun from user-reported close_reason integrity issue.
+notes[1]{created_at,author,text}:
+  "2026-04-03T09:33:47.173Z",codex-agent,Will change update runtime plus schema/contract/help/completion/wrapper surfaces.
+files[1]{path,scope,note}:
+  src/cli/commands/update.ts,project,primary runtime logic
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,null,project,7200,targeted update regression
+docs[1]{path,scope,note}:
+  PRD.md,project,status and close_reason contract
+close_reason: "Feature delivered: update close_reason flag support and reopen auto-clear behavior with docs/contracts/tests parity."
+body: "Implements update-side close_reason semantics: explicit set/clear via new flag and automatic stale-field cleanup when reopening from closed to non-terminal status."

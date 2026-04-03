@@ -1749,6 +1749,73 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(closeJson.item.assignee).toBeUndefined();
       expect(closeJson.changed_fields).toEqual(expect.arrayContaining(["status", "close_reason"]));
 
+      const reopenResult = context.runCli(
+        [
+          "update",
+          id,
+          "--json",
+          "--status",
+          "open",
+          "--author",
+          "integration-test",
+          "--message",
+          "Reopen integration item",
+        ],
+        { expectJson: true },
+      );
+      expect(reopenResult.code).toBe(0);
+      const reopenJson = reopenResult.json as {
+        item: { status: string; close_reason?: string };
+        changed_fields: string[];
+      };
+      expect(reopenJson.item.status).toBe("open");
+      expect(reopenJson.item.close_reason).toBeUndefined();
+      expect(reopenJson.changed_fields).toEqual(expect.arrayContaining(["status", "close_reason"]));
+
+      const setCloseReasonResult = context.runCli(
+        [
+          "update",
+          id,
+          "--json",
+          "--close-reason",
+          "Explicit lifecycle note",
+          "--author",
+          "integration-test",
+          "--message",
+          "Set close reason explicitly",
+        ],
+        { expectJson: true },
+      );
+      expect(setCloseReasonResult.code).toBe(0);
+      const setCloseReasonJson = setCloseReasonResult.json as {
+        item: { close_reason?: string };
+        changed_fields: string[];
+      };
+      expect(setCloseReasonJson.item.close_reason).toBe("Explicit lifecycle note");
+      expect(setCloseReasonJson.changed_fields).toContain("close_reason");
+
+      const clearCloseReasonResult = context.runCli(
+        [
+          "update",
+          id,
+          "--json",
+          "--close-reason",
+          "none",
+          "--author",
+          "integration-test",
+          "--message",
+          "Clear close reason explicitly",
+        ],
+        { expectJson: true },
+      );
+      expect(clearCloseReasonResult.code).toBe(0);
+      const clearCloseReasonJson = clearCloseReasonResult.json as {
+        item: { close_reason?: string };
+        changed_fields: string[];
+      };
+      expect(clearCloseReasonJson.item.close_reason).toBeUndefined();
+      expect(clearCloseReasonJson.changed_fields).toContain("close_reason");
+
       const releaseResult = context.runCli(["release", id, "--json"], { expectJson: true });
       expect(releaseResult.code).toBe(0);
     });
@@ -3819,6 +3886,72 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       );
       expect(otherAssignee.status).toBe(4);
       expect(otherAssignee.stderr).toContain("assigned to");
+    });
+  });
+
+  it("allows claim takeover of non-terminal assigned items without force", async () => {
+    await withTempPmPath(async (context) => {
+      const createResult = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Claim takeover seed item",
+          "--description",
+          "Verify non-terminal claim takeover semantics",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,claim,takeover",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "20",
+          "--acceptance-criteria",
+          "Claim takeover succeeds without force",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create claim takeover seed",
+          "--assignee",
+          "owner-a",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(createResult.code).toBe(0);
+      const id = (createResult.json as { item: { id: string } }).item.id;
+
+      const takeover = context.runCli(["claim", id, "--json", "--author", "owner-b"], { expectJson: true });
+      expect(takeover.code).toBe(0);
+      const takeoverJson = takeover.json as {
+        item: { assignee?: string; status: string };
+        previous_assignee: string | null;
+        forced: boolean;
+      };
+      expect(takeoverJson.item.status).toBe("open");
+      expect(takeoverJson.item.assignee).toBe("owner-b");
+      expect(takeoverJson.previous_assignee).toBe("owner-a");
+      expect(takeoverJson.forced).toBe(false);
     });
   });
 
