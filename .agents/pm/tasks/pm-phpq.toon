@@ -6,47 +6,48 @@ status: closed
 priority: 0
 tags[9]: "area:docs","area:release-readiness","area:tests",code,doc,"milestone:6",pm-cli,"priority:0",tests
 created_at: "2026-03-07T07:23:53.401Z"
-updated_at: "2026-04-04T12:08:56.334Z"
+updated_at: "2026-04-04T17:46:59.926Z"
 deadline: "2026-03-08T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: 1) Identify and fix at least one docs/implementation/test contract gap. 2) Run linked pm test and pm test-all regression sweeps. 3) Keep coverage at 100 percent and log evidence.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Release-readiness maintenance loop 2026-03-07 run 2 are documented for reuse."
 order: 1
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-phpq
+goal: Implement and verify scoped work for Release-readiness maintenance loop 2026-03-07 run 2.
+objective: Capture actionable implementation context and verification evidence for Release-readiness maintenance loop 2026-03-07 run 2.
+value: Improves future change velocity by making Release-readiness maintenance loop 2026-03-07 run 2 decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Release-readiness maintenance loop 2026-03-07 run 2.
+outcome: This record can be used as canonical context when modifying Release-readiness maintenance loop 2026-03-07 run 2.
+why_now: Historical decisions for Release-readiness maintenance loop 2026-03-07 run 2 need durable context for future maintenance and audits.
+parent: pm-8a2s
 reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: no-active-blocker
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Release-readiness maintenance loop 2026-03-07 run 2.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Release-readiness maintenance loop 2026-03-07 run 2."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Release-readiness maintenance loop 2026-03-07 run 2 (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Release-readiness maintenance loop 2026-03-07 run 2.
+expected_result: Acceptance criteria for Release-readiness maintenance loop 2026-03-07 run 2 are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Release-readiness maintenance loop 2026-03-07 run 2.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: docs-component
+component: project-management/release-readiness-maintenance-loop-2026-03-07-ru
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
-comments[5]{created_at,author,text}:
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Release-readiness maintenance loop 2026-03-07 run 2.
+comments[6]{created_at,author,text}:
   "2026-03-07T07:23:53.401Z",maintainer-agent,This item exists to keep docs implementation and tests aligned while preserving release readiness.
   "2026-03-07T07:24:12.786Z",maintainer-agent,Starting gap audit from live --help output and contract tests to identify the smallest high-value hardening change for this run.
   "2026-03-07T07:25:30.966Z",maintainer-agent,"Implementing help-contract hardening: remove misleading default-array text from required create seed flags by adjusting option wiring and add a regression assertion."
   "2026-03-07T07:36:17.106Z",maintainer-agent,"Implemented create-help hardening: removed default-array rendering from required seed flags by dropping default [] registration for create repeatable options and making collector resilient to undefined accumulator."
   "2026-03-07T07:36:22.743Z",maintainer-agent,"Evidence: node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts passed (28/28). pm test pm-phpq --run passed. pm test-all --status in_progress passed (items=1 linked_tests=1). pm test-all --status closed passed (items=115 linked_tests=311 passed=62 skipped=249 failed=0; dedupe behavior exercised). node scripts/run-tests.mjs coverage passed with 100% lines/branches/functions/statements."
+  "2026-04-04T17:32:44.699Z",codex-agent,"Duplicate consolidation pass: canonical item pm-phpq now anchors cluster 'release-loop::2026-03-07'. Superseded siblings preserved for historical traceability: pm-iziy, pm-204c, pm-wjdr, pm-mn6w, pm-f0e9, pm-a5ea, pm-u8fr, pm-dyu6, pm-acx9."
 notes[1]{created_at,author,text}:
   "2026-03-07T07:23:53.401Z",maintainer-agent,Start with authoritative doc + help output audit then implement smallest high-value hardening patch.
 learnings[1]{created_at,author,text}:

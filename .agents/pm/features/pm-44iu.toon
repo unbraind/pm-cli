@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: governance,linked-tests,pm-cli,validation
 created_at: "2026-04-03T22:53:42.450Z"
-updated_at: "2026-04-04T12:43:54.072Z"
+updated_at: "2026-04-04T17:38:20.630Z"
 deadline: "2026-04-13T22:53:42.450Z"
 author: codex-agent
 estimated_minutes: 300
@@ -25,9 +25,11 @@ risk: medium
 confidence: high
 sprint: linked-test-hardening
 release: vnext
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Enforce command-required linked tests at mutation time.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Enforce command-required linked tests at mutation time."
 reporter: codex-agent
 severity: medium
-environment: linux-node25-local
+environment: Project workspace execution context for Enforce command-required linked tests at mutation time (pm CLI + Node/pnpm toolchain).
 repro_steps: Add path-only linked test then run pm test --run and observe non-runnable skip message.
 resolution: implemented
 expected_result: Linked-test mutations require command metadata for new entries.

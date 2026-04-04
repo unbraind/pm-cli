@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: docs,linked-tests,pm-cli,tests,verification
 created_at: "2026-04-03T22:54:20.449Z"
-updated_at: "2026-04-03T23:47:31.018Z"
+updated_at: "2026-04-04T17:41:18.205Z"
 deadline: "2026-04-10T22:54:20.449Z"
 author: codex-agent
 estimated_minutes: 240
@@ -27,9 +27,10 @@ sprint: linked-test-hardening
 release: vnext
 blocked_by: pm-qtvv
 blocked_reason: Requires runtime parity implementation before final docs and evidence sweeps.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Update linked-test regressions docs and verification evidence."
 reporter: codex-agent
 severity: medium
-environment: linux-node25-local
+environment: Project workspace execution context for Update linked-test regressions docs and verification evidence (pm CLI + Node/pnpm toolchain).
 repro_steps: Run targeted and full test matrix after docs and test updates.
 resolution: implemented
 expected_result: Behavior docs and verification evidence align with implementation.

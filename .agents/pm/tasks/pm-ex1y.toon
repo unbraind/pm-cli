@@ -6,41 +6,41 @@ status: closed
 priority: 0
 tags[7]: "area:cli",code,docs,"milestone:3",pm-cli,"priority:0",tests
 created_at: "2026-03-06T23:44:33.076Z"
-updated_at: "2026-04-01T20:31:31.595Z"
+updated_at: "2026-04-04T17:45:04.897Z"
 deadline: "2026-03-10T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "pm list-draft is available in help, returns only draft items with existing list filters, docs are updated first, and regression + coverage remain 100%."
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Add list-draft command parity for draft status are documented for reuse."
 order: 1
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-ex1y
+goal: Implement and verify scoped work for Add list-draft command parity for draft status.
+objective: Capture actionable implementation context and verification evidence for Add list-draft command parity for draft status.
+value: Improves future change velocity by making Add list-draft command parity for draft status decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Add list-draft command parity for draft status.
+outcome: This record can be used as canonical context when modifying Add list-draft command parity for draft status.
+why_now: Historical decisions for Add list-draft command parity for draft status need durable context for future maintenance and audits.
+parent: pm-8a2s
 reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-54d
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Add list-draft command parity for draft status.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Add list-draft command parity for draft status."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Add list-draft command parity for draft status (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Add list-draft command parity for draft status.
+expected_result: Acceptance criteria for Add list-draft command parity for draft status are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Add list-draft command parity for draft status.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: cli-component
+component: project-management/add-list-draft-command-parity-for-draft-status
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add list-draft command parity for draft status.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-54d,related,"2026-03-06T23:44:33.076Z",maintainer-agent,null
 comments[4]{created_at,author,text}:

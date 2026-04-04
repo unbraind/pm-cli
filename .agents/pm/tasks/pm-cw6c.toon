@@ -6,41 +6,41 @@ status: closed
 priority: 1
 tags[8]: "area:extensions","area:health",code,doc,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-06T08:22:27.153Z"
-updated_at: "2026-04-01T20:34:27.551Z"
+updated_at: "2026-04-04T17:44:48.741Z"
 deadline: "2026-03-08T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: pm health activation.migration_status reports applied/pending/failed deterministically; applied migrations are excluded from pending warnings; docs reflect the contract; regression and coverage stay 100%.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for M5 follow-up: classify applied extension migrations are documented for reuse."
 order: 2
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-cw6c
+goal: "Implement and verify scoped work for M5 follow-up: classify applied extension migrations."
+objective: "Capture actionable implementation context and verification evidence for M5 follow-up: classify applied extension migrations."
+value: "Improves future change velocity by making M5 follow-up: classify applied extension migrations decisions and scope explicit."
+impact: "Reduces ambiguity and handoff risk for future work touching M5 follow-up: classify applied extension migrations."
+outcome: "This record can be used as canonical context when modifying M5 follow-up: classify applied extension migrations."
+why_now: "Historical decisions for M5 follow-up: classify applied extension migrations need durable context for future maintenance and audits."
+parent: pm-2p6q
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-42oa
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: "Current status is closed; no unresolved blocker is recorded for M5 follow-up: classify applied extension migrations."
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming M5 follow-up: classify applied extension migrations."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: "Project workspace execution context for M5 follow-up: classify applied extension migrations (pm CLI + Node/pnpm toolchain)."
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: "Closed with implementation evidence captured for M5 follow-up: classify applied extension migrations."
+expected_result: "Acceptance criteria for M5 follow-up: classify applied extension migrations are satisfied with reproducible verification evidence."
+actual_result: "Work completed and recorded with linked artifacts for M5 follow-up: classify applied extension migrations."
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: extensions-component
+component: project-management/m5-follow-up-classify-applied-extension-migratio
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 follow-up: classify applied extension migrations."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-42oa,related,"2026-03-06T08:22:27.153Z",maintainer-agent,null
 comments[5]{created_at,author,text}:
@@ -66,4 +66,5 @@ docs[3]{path,scope,note}:
   AGENTS.md,project,governing workflow rules
   PRD.md,project,authoritative migration diagnostics contract
   README.md,project,public migration diagnostics contract
+close_reason: "Completed planned scope for M5 follow-up: classify applied extension migrations and preserved verification context for future changes."
 body: "Context: health currently classifies any non-failed migration as pending which obscures already-applied migrations. Approach: docs-first contract update (PRD/README) then implement applied/pending/failed summary in health diagnostics with deterministic ordering and warnings only for pending/failed."

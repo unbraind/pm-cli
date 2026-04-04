@@ -6,7 +6,7 @@ status: blocked
 priority: 1
 tags[3]: agent-ux,"area:context",pm-cli
 created_at: "2026-04-01T14:10:36.966Z"
-updated_at: "2026-04-01T20:14:51.780Z"
+updated_at: "2026-04-04T17:39:05.482Z"
 deadline: "2026-04-06T14:10:36.966Z"
 assignee: codex-agent
 author: codex-agent
@@ -31,10 +31,10 @@ blocked_reason: Feature implementation complete but closure blocked by global co
 unblock_note: complete-linked-dependency-then-update-status
 reporter: codex-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Implement context command runtime and surfaces (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
 resolution: planned-or-active-implementation
-expected_result: behavior-aligns-with-acceptance-criteria
+expected_result: Resume execution for Implement context command runtime and surfaces once blockers are cleared and verification path is confirmed.
 actual_result: work-tracked-as-active-or-open
 affected_version: vnext
 fixed_version: target-vnext

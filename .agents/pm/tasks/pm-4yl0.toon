@@ -6,41 +6,41 @@ status: closed
 priority: 1
 tags[7]: "area:commands",code,docs,"milestone:1",pm-cli,"priority:1",tests
 created_at: "2026-03-04T00:26:07.113Z"
-updated_at: "2026-04-04T12:09:55.544Z"
+updated_at: "2026-04-04T17:44:19.540Z"
 deadline: "2026-03-08T23:59:00.000Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
 estimated_minutes: 180
 acceptance_criteria: "pm delete <ID> is available in CLI help and docs, deletes item files safely with lock and ownership enforcement, appends deterministic delete history entries, preserves 100% coverage, and passes pm test plus pm test-all sweeps."
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Implement pm delete command are documented for reuse."
 order: 2
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-4yl0
+goal: Implement and verify scoped work for Implement pm delete command.
+objective: Capture actionable implementation context and verification evidence for Implement pm delete command.
+value: Improves future change velocity by making Implement pm delete command decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Implement pm delete command.
+outcome: This record can be used as canonical context when modifying Implement pm delete command.
+why_now: Historical decisions for Implement pm delete command need durable context for future maintenance and audits.
+parent: pm-u9r
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-u9r
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Implement pm delete command.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Implement pm delete command."
 reporter: cursor-maintainer
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Implement pm delete command (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Implement pm delete command.
+expected_result: Acceptance criteria for Implement pm delete command are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Implement pm delete command.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: commands-component
+component: project-management/implement-pm-delete-command
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Implement pm delete command.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-u9r,parent,"2026-03-04T00:26:07.113Z",cursor-maintainer,null
 comments[5]{created_at,author,text}:
@@ -77,4 +77,5 @@ docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow rules
   PRD.md,project,governing spec
   README.md,project,user-facing command surface
+close_reason: Completed planned scope for Implement pm delete command and preserved verification context for future changes.
 body: "Docs-first: promote pm delete from roadmap to core command contract; implement command wiring and store delete mutation with rollback-safe history append; add unit integration and README PRD help contract coverage."

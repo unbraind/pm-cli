@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:cli","area:contracts",body,json,list,pm-cli
 created_at: "2026-03-31T19:36:37.724Z"
-updated_at: "2026-04-03T20:56:11.060Z"
+updated_at: "2026-04-04T17:36:55.239Z"
 deadline: "2026-04-03T19:36:37.724Z"
 assignee: codex-agent
 author: codex-agent
@@ -20,22 +20,21 @@ value: Prevents false metadata-completeness conclusions while preserving lightwe
 impact: Improves reliability for automation consuming list JSON
 outcome: Consumers can opt into body on list results
 why_now: External issue report shows current behavior appears misleading without explicit opt-in.
-parent: pm-0lbm
 reviewer: maintainer-review
 risk: low
 confidence: high
 sprint: maintainer-loop-2026-03-31
 release: v0.1
 blocked_by: pm-54d
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for List JSON Body Projection Contract.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming List JSON Body Projection Contract."
 reporter: codex-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for List JSON Body Projection Contract (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for List JSON Body Projection Contract.
+expected_result: Acceptance criteria for List JSON Body Projection Contract are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for List JSON Body Projection Contract.
 affected_version: v0.1
 fixed_version: v0.1
 component: cli/list

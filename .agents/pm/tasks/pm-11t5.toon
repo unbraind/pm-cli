@@ -6,41 +6,41 @@ status: closed
 priority: 1
 tags[6]: "area:test-command",code,"milestone:3",pm-cli,"priority:1",tests
 created_at: "2026-03-05T11:05:52.887Z"
-updated_at: "2026-04-01T20:27:17.830Z"
+updated_at: "2026-04-04T17:43:53.936Z"
 deadline: "2026-03-06T23:59:00.000Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
 estimated_minutes: 90
 acceptance_criteria: pm test --add rejects recursive test-all commands launched via pnpm dlx and npm exec package-spec forms; pm test --run skips legacy recursive entries for those forms; docs and tests reflect behavior; coverage remains 100 percent.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Harden recursive test-all detection for pnpm dlx and npm exec launchers are documented for reuse."
 order: 2
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-11t5
+goal: Implement and verify scoped work for Harden recursive test-all detection for pnpm dlx and npm exec launchers.
+objective: Capture actionable implementation context and verification evidence for Harden recursive test-all detection for pnpm dlx and npm exec launchers.
+value: Improves future change velocity by making Harden recursive test-all detection for pnpm dlx and npm exec launchers decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Harden recursive test-all detection for pnpm dlx and npm exec launchers.
+outcome: This record can be used as canonical context when modifying Harden recursive test-all detection for pnpm dlx and npm exec launchers.
+why_now: Historical decisions for Harden recursive test-all detection for pnpm dlx and npm exec launchers need durable context for future maintenance and audits.
+parent: pm-2p6q
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-8fvl
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Harden recursive test-all detection for pnpm dlx and npm exec launchers.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Harden recursive test-all detection for pnpm dlx and npm exec launchers."
 reporter: cursor-maintainer
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Harden recursive test-all detection for pnpm dlx and npm exec launchers (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Harden recursive test-all detection for pnpm dlx and npm exec launchers.
+expected_result: Acceptance criteria for Harden recursive test-all detection for pnpm dlx and npm exec launchers are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Harden recursive test-all detection for pnpm dlx and npm exec launchers.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: test-command-component
+component: project-management/harden-recursive-test-all-detection-for-pnpm-dlx
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Harden recursive test-all detection for pnpm dlx and npm exec launchers.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-8fvl,related,"2026-03-05T11:05:52.887Z",cursor-maintainer,null
 comments[6]{created_at,author,text}:
@@ -67,4 +67,5 @@ docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer workflow and safety rules
   PRD.md,project,authoritative recursive safety contract
   README.md,project,public recursive safety contract
+close_reason: Completed planned scope for Harden recursive test-all detection for pnpm dlx and npm exec launchers and preserved verification context for future changes.
 body: "Context: recursive test-all guard currently catches pm/node/npx launcher forms but allows pnpm dlx pm-cli@latest --json test-all. Approach: docs-first contract update, then token-aware launcher parsing for pnpm dlx and npm exec variants, plus regression tests for add-time rejection and runtime skip behavior."

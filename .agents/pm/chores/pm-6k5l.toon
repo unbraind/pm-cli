@@ -6,13 +6,13 @@ status: closed
 priority: 0
 tags[7]: "area:maintenance","area:tests",code,doc,"milestone:6",pm-cli,"priority:0"
 created_at: "2026-03-09T15:52:30.417Z"
-updated_at: "2026-04-04T12:07:51.030Z"
+updated_at: "2026-04-04T17:48:20.790Z"
 deadline: "2026-03-10T16:00:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 45
 acceptance_criteria: Legacy create_tasks.sh removed with no references and pm tracking evidence updated and regression plus coverage gates pass at 100 percent.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Maintain release readiness 2026-03-09 (Run 5) are documented for reuse."
 order: 1
 goal: Release-hardening
 objective: Keep repository release-ready post launch
@@ -20,34 +20,35 @@ value: Reduce maintenance drift and prevent stale workflows
 impact: Lowers risk of invalid pm item seeding
 outcome: Repo stays green with simplified maintainer workflow
 why_now: Immediate cleanup after launch prevents stale script reuse
-parent: pm-6k5l
+parent: pm-8a2s
 reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: maintainer-loop-2026-03-09-5
 release: v0.1
 blocked_by: no-active-blocker
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Maintain release readiness 2026-03-09 (Run 5).
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Maintain release readiness 2026-03-09 (Run 5)."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Maintain release readiness 2026-03-09 (Run 5) (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Maintain release readiness 2026-03-09 (Run 5).
+expected_result: Acceptance criteria for Maintain release readiness 2026-03-09 (Run 5) are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Maintain release readiness 2026-03-09 (Run 5).
 affected_version: v0.1
 fixed_version: v0.1
-component: maintenance-component
+component: project-management/maintain-release-readiness-2026-03-09-run-5
 regression: false
-customer_impact: improves-reliability-and-clarity-for-contributors
-comments[6]{created_at,author,text}:
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Maintain release readiness 2026-03-09 (Run 5).
+comments[7]{created_at,author,text}:
   "2026-03-09T15:52:30.417Z",maintainer-agent,Why this exists keep post release repo state clean and release ready while enforcing dogfood tracking
   "2026-03-09T15:52:46.132Z",maintainer-agent,Intended changeset remove obsolete create_tasks.sh and keep release evidence current with full regression verification
   "2026-03-09T16:10:28.479Z",maintainer-agent,Observed regression in closed sweep item pm-tq1 installer command fails with npm EEXIST when prefix already contains pm binary; implementing idempotent installer fix
   "2026-03-09T16:29:36.935Z",maintainer-agent,Implemented installer idempotency fix by adding npm --force in scripts/install.sh and scripts/install.ps1 and added release-readiness contract assertions for --force in tests/integration/release-readiness-contract.spec.ts
   "2026-03-09T16:29:38.297Z",maintainer-agent,Validation evidence pm test pm-6k5l --run passed after changes including node scripts/run-tests.mjs coverage and targeted cli integration tests; pm test-all --status in_progress passed totals items=1 linked_tests=2 passed=2 failed=0; pm test-all --status closed rerun passed totals items=177 linked_tests=422 passed=79 failed=0 skipped=343
   "2026-03-09T16:29:38.719Z",maintainer-agent,Coverage evidence from pm-driven runs remains 100 percent for lines branches functions and statements
+  "2026-04-04T17:33:21.517Z",codex-agent,"Duplicate consolidation mapping: this item is superseded by pm-7vr0 for cluster 'maintain-release-loop::2026-03-09'. Record retained only as historical evidence."
 notes[1]{created_at,author,text}:
   "2026-03-09T15:52:30.417Z",maintainer-agent,Plan claim item link touched files docs and tests run pm test and test all then record evidence with coverage confirmation
 learnings[1]{created_at,author,text}:
@@ -63,5 +64,5 @@ docs[3]{path,scope,note}:
   AGENTS.md,project,all-fields and dogfood protocol
   PRD.md,project,authoritative product requirements
   README.md,project,public contract alignment
-close_reason: Installer idempotency fixed and full pm regression sweeps passed with 100 percent coverage
+close_reason: "Superseded by canonical item pm-7vr0 during governance duplicate-consolidation for cluster 'maintain-release-loop::2026-03-09'; historical evidence retained in this record."
 body: Post-release maintenance sweep to keep repository release-ready and remove obsolete helper automation that no longer matches all-fields create contract.

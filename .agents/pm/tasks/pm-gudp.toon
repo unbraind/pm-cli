@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:docs","area:release",body,json,list,pm-cli
 created_at: "2026-03-31T19:37:36.074Z"
-updated_at: "2026-04-01T20:26:05.927Z"
+updated_at: "2026-04-04T17:41:48.418Z"
 deadline: "2026-04-02T19:37:36.074Z"
 assignee: codex-agent
 author: codex-agent
@@ -27,15 +27,15 @@ confidence: high
 sprint: maintainer-loop-2026-03-31
 release: v0.1
 blocked_by: pm-ote
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Document include-body list contract and capture validation evidence.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Document include-body list contract and capture validation evidence."
 reporter: codex-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Document include-body list contract and capture validation evidence (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Document include-body list contract and capture validation evidence.
+expected_result: Acceptance criteria for Document include-body list contract and capture validation evidence are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Document include-body list contract and capture validation evidence.
 affected_version: v0.1
 fixed_version: v0.1
 component: docs/contracts

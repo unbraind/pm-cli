@@ -6,17 +6,29 @@ status: closed
 priority: 1
 tags[4]: "area:create","area:templates",external-audit,pm-cli
 created_at: "2026-04-03T11:56:47.754Z"
-updated_at: "2026-04-04T12:01:19.085Z"
+updated_at: "2026-04-04T17:39:57.038Z"
 deadline: "2026-04-17T11:57:45.116Z"
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: "Users can save/list/show/apply named create templates (including repeatable seeds), and applying templates does not break existing explicit flag behavior."
 definition_of_ready: No equivalent active/closed runtime template feature exists and command surfaces to touch are identified.
+goal: Deliver feature capability for Add reusable item templates for pm create.
+objective: Capture actionable implementation context and verification evidence for Add reusable item templates for pm create.
+value: Improves future change velocity by making Add reusable item templates for pm create decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Add reusable item templates for pm create.
+outcome: This record can be used as canonical context when modifying Add reusable item templates for pm create.
+why_now: Historical decisions for Add reusable item templates for pm create need durable context for future maintenance and audits.
+parent: pm-pb0g
 sprint: audit-followup
 release: vnext
-resolution: historical-closure-normalized-by-governance-pass
-expected_result: historical-expected-result-backfilled-for-governance-audit
-actual_result: historical-actual-result-backfilled-for-governance-audit
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Add reusable item templates for pm create.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Add reusable item templates for pm create."
+environment: Project workspace execution context for Add reusable item templates for pm create (pm CLI + Node/pnpm toolchain).
+resolution: Closed with implementation evidence captured for Add reusable item templates for pm create.
+expected_result: Acceptance criteria for Add reusable item templates for pm create are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Add reusable item templates for pm create.
+component: project-management/add-reusable-item-templates-for-pm-create
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add reusable item templates for pm create.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-bzyr,related,"2026-04-03T11:56:47.754Z",codex-agent,null
 comments[5]{created_at,author,text}:

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:tests","area:validation",external-audit,pm-cli
 created_at: "2026-04-03T18:07:42.651Z"
-updated_at: "2026-04-04T12:02:05.134Z"
+updated_at: "2026-04-04T17:42:05.224Z"
 deadline: "2026-04-08T18:07:42.651Z"
 author: codex-agent
 estimated_minutes: 210
@@ -26,13 +26,15 @@ confidence: high
 sprint: audit-remediation-2026w14
 release: vnext
 blocked_by: pm-gtdx
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Implement pm validate and --validate-close behavior.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Implement pm validate and --validate-close behavior."
 reporter: codex-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Implement pm validate and --validate-close behavior (pm CLI + Node/pnpm toolchain).
 repro_steps: run close and validation commands on closed-item datasets
-resolution: historical-closure-normalized-by-governance-pass
+resolution: Closed with implementation evidence captured for Implement pm validate and --validate-close behavior.
 expected_result: Validation checks and close-time warnings are deterministic and usable
-actual_result: historical-actual-result-backfilled-for-governance-audit
+actual_result: Work completed and recorded with linked artifacts for Implement pm validate and --validate-close behavior.
 affected_version: 2026.3.12
 fixed_version: target-vnext
 component: cli-validation

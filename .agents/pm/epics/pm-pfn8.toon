@@ -6,14 +6,26 @@ status: closed
 priority: 0
 tags[6]: agent-ux,"area:contracts","area:error","area:help","area:schema",pm-cli
 created_at: "2026-04-03T15:41:49.872Z"
-updated_at: "2026-04-04T12:02:11.288Z"
+updated_at: "2026-04-04T17:36:43.391Z"
 deadline: "2026-04-17T15:41:49.872Z"
 author: codex-agent
 estimated_minutes: 720
 acceptance_criteria: Help command semantics are fixed; --help --json and contracts command surfaces are shipped; schema metadata upgraded; error guidance uses runtime context; docs/tests updated and passing.
-resolution: historical-closure-normalized-by-governance-pass
-expected_result: historical-expected-result-backfilled-for-governance-audit
-actual_result: historical-actual-result-backfilled-for-governance-audit
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Agent-First CLI UX v3 follow-up are documented for reuse."
+goal: Coordinate roadmap delivery for Agent-First CLI UX v3 follow-up.
+objective: Capture actionable implementation context and verification evidence for Agent-First CLI UX v3 follow-up.
+value: Improves future change velocity by making Agent-First CLI UX v3 follow-up decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Agent-First CLI UX v3 follow-up.
+outcome: This record can be used as canonical context when modifying Agent-First CLI UX v3 follow-up.
+why_now: Historical decisions for Agent-First CLI UX v3 follow-up need durable context for future maintenance and audits.
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Agent-First CLI UX v3 follow-up.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Agent-First CLI UX v3 follow-up."
+environment: Project workspace execution context for Agent-First CLI UX v3 follow-up (pm CLI + Node/pnpm toolchain).
+resolution: Closed with implementation evidence captured for Agent-First CLI UX v3 follow-up.
+expected_result: Acceptance criteria for Agent-First CLI UX v3 follow-up are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Agent-First CLI UX v3 follow-up.
+component: project-management/agent-first-cli-ux-v3-follow-up
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Agent-First CLI UX v3 follow-up.
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-frk8,discovered_from,"2026-04-03T15:41:49.872Z",codex-agent,null
   pm-izbd,discovered_from,"2026-04-03T15:41:49.872Z",codex-agent,null

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:create","area:parser",external-audit,pm-cli
 created_at: "2026-04-04T08:23:37.509Z"
-updated_at: "2026-04-04T08:40:14.523Z"
+updated_at: "2026-04-04T17:39:14.764Z"
 deadline: "2026-04-10T08:23:37.509Z"
 author: codex-agent
 estimated_minutes: 240
@@ -30,7 +30,7 @@ blocked_reason: epic-sequencing
 unblock_note: Start implementation task once feature is claimed
 reporter: codex-agent
 severity: medium
-environment: linux-node25-local
+environment: Project workspace execution context for Implement deterministic guard for ambiguous create log seeds (pm CLI + Node/pnpm toolchain).
 repro_steps: "Run pm create with unquoted text containing comma-separated segments where trailing segments parse as key:value."
 resolution: Delivered deterministic create log-seed key guard via child task pm-l5tr with regression and docs parity.
 expected_result: Feature enforces non-lossy create log-seed behavior and preserves quoted/markdown/stdin compatibility.

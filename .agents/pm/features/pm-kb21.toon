@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: "area:history","area:restore",pm-cli
 created_at: "2026-04-01T15:26:50.133Z"
-updated_at: "2026-04-01T21:21:20.155Z"
+updated_at: "2026-04-04T17:39:11.916Z"
 deadline: "2026-04-07T15:26:50.133Z"
 author: cursor-agent
 estimated_minutes: 240
@@ -26,14 +26,14 @@ confidence: high
 sprint: history-hardening
 release: vnext
 blocked_by: pm-9lc
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Implement missing-history stream policy and restore fallback.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Implement missing-history stream policy and restore fallback."
 reporter: cursor-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Implement missing-history stream policy and restore fallback (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
 resolution: planned-or-active-implementation
-expected_result: behavior-aligns-with-acceptance-criteria
+expected_result: Acceptance criteria for Implement missing-history stream policy and restore fallback are satisfied with reproducible verification evidence.
 actual_result: work-tracked-as-active-or-open
 affected_version: vnext
 fixed_version: target-vnext

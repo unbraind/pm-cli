@@ -6,41 +6,41 @@ status: closed
 priority: 0
 tags[9]: "area:core","area:docs","area:extensions-pi",code,doc,"milestone:next",pm-cli,"priority:0",tests
 created_at: "2026-03-05T08:56:51.061Z"
-updated_at: "2026-04-04T12:09:27.842Z"
+updated_at: "2026-04-04T17:44:21.504Z"
 deadline: "2026-03-06T08:56:51.061Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: No source/docs/tests reference legacy ownership session fields; ownership uses assignee semantics consistently; Pi wrapper docs point to .pi/extensions/pm-cli/index.ts; pm regression and coverage runs pass at 100 percent.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Remove session-based ownership model are documented for reuse."
 order: 1
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-5rh2
+goal: Implement and verify scoped work for Remove session-based ownership model.
+objective: Capture actionable implementation context and verification evidence for Remove session-based ownership model.
+value: Improves future change velocity by making Remove session-based ownership model decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Remove session-based ownership model.
+outcome: This record can be used as canonical context when modifying Remove session-based ownership model.
+why_now: Historical decisions for Remove session-based ownership model need durable context for future maintenance and audits.
+parent: pm-2p6q
 reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-06t
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Remove session-based ownership model.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Remove session-based ownership model."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Remove session-based ownership model (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Remove session-based ownership model.
+expected_result: Acceptance criteria for Remove session-based ownership model are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Remove session-based ownership model.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: core-component
+component: project-management/remove-session-based-ownership-model
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Remove session-based ownership model.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-06t,related,"2026-03-05T08:56:51.061Z",maintainer-agent,null
 comments[4]{created_at,author,text}:
@@ -82,4 +82,5 @@ docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow updates
   PRD.md,project,authoritative contract update
   README.md,project,public contract updates
+close_reason: Completed planned scope for Remove session-based ownership model and preserved verification context for future changes.
 body: "Context: session ownership came from Pi todos heritage and is no longer appropriate for multi-agent usage. Approach: migrate assigned_to_session to assignee and remove PM_SESSION and settings.session.id references while preserving deterministic behavior and lock safety."

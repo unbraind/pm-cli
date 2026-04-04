@@ -6,41 +6,41 @@ status: closed
 priority: 1
 tags[7]: "area:extensions",code,doc,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-05T20:15:49.066Z"
-updated_at: "2026-04-01T20:27:07.217Z"
+updated_at: "2026-04-04T17:45:25.949Z"
 deadline: "2026-03-07T20:15:48.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: ExtensionApi exposes registration methods for flags schema migrations importers exporters search providers and vector adapters. Activation captures deterministic counts and registries. Docs and tests are updated and sandbox coverage stays 100 percent.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for M5 follow-up: Extension API registration surface baseline are documented for reuse."
 order: 2
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-iuzs
+goal: "Implement and verify scoped work for M5 follow-up: Extension API registration surface baseline."
+objective: "Capture actionable implementation context and verification evidence for M5 follow-up: Extension API registration surface baseline."
+value: "Improves future change velocity by making M5 follow-up: Extension API registration surface baseline decisions and scope explicit."
+impact: "Reduces ambiguity and handoff risk for future work touching M5 follow-up: Extension API registration surface baseline."
+outcome: "This record can be used as canonical context when modifying M5 follow-up: Extension API registration surface baseline."
+why_now: "Historical decisions for M5 follow-up: Extension API registration surface baseline need durable context for future maintenance and audits."
+parent: pm-2p6q
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-b1w
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: "Current status is closed; no unresolved blocker is recorded for M5 follow-up: Extension API registration surface baseline."
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming M5 follow-up: Extension API registration surface baseline."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: "Project workspace execution context for M5 follow-up: Extension API registration surface baseline (pm CLI + Node/pnpm toolchain)."
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: "Closed with implementation evidence captured for M5 follow-up: Extension API registration surface baseline."
+expected_result: "Acceptance criteria for M5 follow-up: Extension API registration surface baseline are satisfied with reproducible verification evidence."
+actual_result: "Work completed and recorded with linked artifacts for M5 follow-up: Extension API registration surface baseline."
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: extensions-component
+component: project-management/m5-follow-up-extension-api-registration-surface-
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 follow-up: Extension API registration surface baseline."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-b1w,related,"2026-03-05T20:15:49.066Z",maintainer-agent,null
 comments[4]{created_at,author,text}:
@@ -67,4 +67,5 @@ docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow alignment
   PRD.md,project,authoritative extension API contract
   README.md,project,public contract alignment
+close_reason: "Completed planned scope for M5 follow-up: Extension API registration surface baseline and preserved verification context for future changes."
 body: "Context: PRD v1 draft includes additional ExtensionApi registration methods that are still roadmap. Approach: promote registration-time support now with deterministic validation and activation reporting while keeping runtime wiring staged for follow-up."

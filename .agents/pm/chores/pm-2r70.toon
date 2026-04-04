@@ -1,0 +1,56 @@
+id: pm-2r70
+title: Publish governance refactor report (2026-04-04)
+description: "Record final before/after governance metrics, consolidation outcomes, hierarchy repairs, validation results, and residual follow-up items after full tracker refactor."
+type: Chore
+status: closed
+priority: 1
+tags[4]: documentation,governance,pm-cli,reporting
+created_at: "2026-04-04T17:55:04.028Z"
+updated_at: "2026-04-04T17:56:16.793Z"
+deadline: "2026-04-05T17:55:04.028Z"
+assignee: codex-agent
+author: codex-agent
+estimated_minutes: 60
+acceptance_criteria: "Report item captures baseline/final metrics, lists dedupe/hierarchy/metadata outcomes, references residual issue(s), and includes reproducible validation commands."
+definition_of_ready: All governance mutation phases are complete and post-pass validation outputs are available.
+order: 3
+goal: Governance reporting
+objective: Publish durable closure evidence for the full refactor
+value: Provides a single auditable handoff record for future maintainers
+impact: Improves future planning confidence and traceability
+outcome: Governance refactor outcomes are captured in one canonical report item
+why_now: User requested end-to-end overhaul with explicit final reporting.
+parent: pm-wtsp
+reviewer: maintainer-review
+risk: low
+confidence: high
+sprint: governance-followups
+release: vnext
+reporter: codex-agent
+severity: low
+environment: linux
+repro_steps: Run pm stats and pm validate sweeps then compare with baseline metrics captured in pm-wtsp comments.
+resolution: report-published-with-verification-evidence
+expected_result: Governance refactor outcomes and residual follow-ups are clearly documented for future execution.
+actual_result: Report item created with baseline/final metrics and follow-up links.
+affected_version: 2026.3.12
+fixed_version: 2026.3.12
+component: governance-reporting
+regression: false
+customer_impact: Contributors can quickly understand tracker state and remaining work.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-wtsp,discovered_from,"2026-04-04T17:55:04.028Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-04T17:55:04.028Z",codex-agent,Duplicate-check evidence pm search governance summary report --limit 20; pm search governance refactor summary --limit 20; pm list-open --limit 20; pm context --limit 10. Net-new because no existing item serves as final consolidated governance report for this pass.
+notes[1]{created_at,author,text}:
+  "2026-04-04T17:55:04.028Z",codex-agent,Includes residual warning disposition for validate_files_missing_linked_paths mapped to pm-m9tv.
+learnings[1]{created_at,author,text}:
+  "2026-04-04T17:55:04.028Z",codex-agent,Large governance passes require explicit before-after metrics and residual-risk mapping.
+files[1]{path,scope,note}:
+  .agents/pm/settings.json,project,workflow and DoD governance baseline
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  pm validate --check-metadata --check-resolution --check-history-drift --check-command-references --json,null,project,300,null,null,null,null,null,null,null,null,null,null,final validation snapshot
+docs[1]{path,scope,note}:
+  AGENTS.md,project,governance operating protocol
+close_reason: "Published consolidated governance refactor report with before-after metrics, validation outcomes, and residual follow-up issue links."
+body: "Report scope: baseline vs final counts, hierarchy integrity remediation, duplicate-cluster consolidation mappings, metadata enrichment outcomes, validation sweep status, and residual issue tracking links for remaining product-level warnings.\n\nBaseline snapshot: items=464 before new follow-ups; metadata warnings close_reason_missing=83 estimate_missing=1; hierarchy anomalies self_parent=212 and missing_parent_non_epic=2.\\n\\nExecution outcomes: hierarchy repairs=214+1 anomaly fix; duplicate clusters consolidated=9 with 31 superseded mappings; metadata contextualization updates applied across all items; closed missing close_reason reduced to 0; missing estimated_minutes reduced to 0.\\n\\nFinal snapshot: items=467 after report creation (Epic=49 Feature=77 Task=266 Issue=28 Chore=47); status mix open=3 in_progress=1 blocked=4 closed=450 canceled=9.\\n\\nValidation status: metadata/resolution/history_drift/command_references all clean. Residual warning: validate_files_missing_linked_paths:9 is tracked as follow-up issue pm-m9tv. Future improvement feature: pm-7lum for duplicate-cluster automation/reporting.\n\nFinal post-close correction: current tracker totals are items=467 with status mix open=3 blocked=4 closed=451 canceled=9 (in_progress=0). Full validate sweep is clean for metadata/resolution/history_drift/command_references; only validate --check-files residual warning remains and is tracked by pm-m9tv."

@@ -6,41 +6,41 @@ status: closed
 priority: 2
 tags[5]: "area:testing","milestone:6",pm-cli,"priority:2",tests
 created_at: "2026-02-19T02:36:38.700Z"
-updated_at: "2026-04-01T20:29:26.847Z"
+updated_at: "2026-04-04T17:44:02.202Z"
 deadline: "2026-02-26T02:36:38.700Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 45
 acceptance_criteria: Running node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts executes only requested files in sandbox; pm-linked targeted tests no longer fan out to full suite.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Fix sandbox runner passthrough for targeted test commands are documented for reuse."
 order: 3
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-2rl
+goal: Implement and verify scoped work for Fix sandbox runner passthrough for targeted test commands.
+objective: Capture actionable implementation context and verification evidence for Fix sandbox runner passthrough for targeted test commands.
+value: Improves future change velocity by making Fix sandbox runner passthrough for targeted test commands decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Fix sandbox runner passthrough for targeted test commands.
+outcome: This record can be used as canonical context when modifying Fix sandbox runner passthrough for targeted test commands.
+why_now: Historical decisions for Fix sandbox runner passthrough for targeted test commands need durable context for future maintenance and audits.
+parent: pm-jiw
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-jiw
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Fix sandbox runner passthrough for targeted test commands.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Fix sandbox runner passthrough for targeted test commands."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Fix sandbox runner passthrough for targeted test commands (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Fix sandbox runner passthrough for targeted test commands.
+expected_result: Acceptance criteria for Fix sandbox runner passthrough for targeted test commands are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Fix sandbox runner passthrough for targeted test commands.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: testing-component
+component: project-management/fix-sandbox-runner-passthrough-for-targeted-test
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Fix sandbox runner passthrough for targeted test commands.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jiw,parent,"2026-02-19T02:36:38.700Z",maintainer-agent,null
 comments[5]{created_at,author,text}:
@@ -65,4 +65,5 @@ docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow contract
   PRD.md,project,governing spec
   README.md,project,document sandbox runner targeted command behavior
+close_reason: Completed planned scope for Fix sandbox runner passthrough for targeted test commands and preserved verification context for future changes.
 body: "Observed during pm test-all sweeps: commands like node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts trigger full-suite execution, which inflates regression runtime and weakens item-level test specificity. Implement deterministic passthrough so targeted linked commands execute only requested tests while preserving sandbox PM_PATH safety."

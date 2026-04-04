@@ -6,41 +6,40 @@ status: canceled
 priority: 0
 tags[7]: "area:milestone",code,docs,"milestone:2",pm-cli,"priority:0",tests
 created_at: "2026-03-06T22:55:53.640Z"
-updated_at: "2026-04-01T20:31:25.982Z"
+updated_at: "2026-04-04T17:37:34.287Z"
 deadline: "2026-03-20T22:55:53.640Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 240
 acceptance_criteria: Milestone 2 deliverables in PRD section 21 are fully represented by linked features and validated evidence.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for PRD Milestone 2 - History and Restore are documented for reuse."
 order: 1
-goal: epic-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-epic-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-murz
+goal: Coordinate roadmap delivery for PRD Milestone 2 - History and Restore.
+objective: Capture actionable implementation context and verification evidence for PRD Milestone 2 - History and Restore.
+value: Improves future change velocity by making PRD Milestone 2 - History and Restore decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching PRD Milestone 2 - History and Restore.
+outcome: This record can be used as canonical context when modifying PRD Milestone 2 - History and Restore.
+why_now: Historical decisions for PRD Milestone 2 - History and Restore need durable context for future maintenance and audits.
 reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-zetb
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is canceled; no unresolved blocker is recorded for PRD Milestone 2 - History and Restore.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming PRD Milestone 2 - History and Restore."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for PRD Milestone 2 - History and Restore (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Canceled with explicit rationale and preserved historical context for PRD Milestone 2 - History and Restore.
+expected_result: Scope for PRD Milestone 2 - History and Restore is either superseded or intentionally deprioritized with clear rationale.
+actual_result: Execution stopped intentionally; context remains available for future reassessment of PRD Milestone 2 - History and Restore.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: milestone-component
+component: project-management/prd-milestone-2-history-and-restore
 regression: false
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for PRD Milestone 2 - History and Restore.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-zetb,blocks,"2026-03-06T22:55:53.640Z",maintainer-agent,null
 comments[2]{created_at,author,text}:

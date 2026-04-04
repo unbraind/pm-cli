@@ -6,41 +6,41 @@ status: closed
 priority: 1
 tags[7]: "area:extensions",code,docs,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-06T09:21:20.880Z"
-updated_at: "2026-04-01T20:34:30.752Z"
+updated_at: "2026-04-04T17:45:51.669Z"
 deadline: "2026-03-08T09:21:08.000Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
 estimated_minutes: 75
 acceptance_criteria: Extension activation rejects register* or hooks.* calls when required capability is missing; README/PRD describe capability enforcement; all linked and regression tests pass with 100% coverage.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for M5 hardening: enforce extension capability declarations are documented for reuse."
 order: 2
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-mwwp
+goal: "Implement and verify scoped work for M5 hardening: enforce extension capability declarations."
+objective: "Capture actionable implementation context and verification evidence for M5 hardening: enforce extension capability declarations."
+value: "Improves future change velocity by making M5 hardening: enforce extension capability declarations decisions and scope explicit."
+impact: "Reduces ambiguity and handoff risk for future work touching M5 hardening: enforce extension capability declarations."
+outcome: "This record can be used as canonical context when modifying M5 hardening: enforce extension capability declarations."
+why_now: "Historical decisions for M5 hardening: enforce extension capability declarations need durable context for future maintenance and audits."
+parent: pm-8a2s
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: no-active-blocker
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: "Current status is closed; no unresolved blocker is recorded for M5 hardening: enforce extension capability declarations."
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming M5 hardening: enforce extension capability declarations."
 reporter: cursor-maintainer
 severity: low
-environment: linux-node25-local
+environment: "Project workspace execution context for M5 hardening: enforce extension capability declarations (pm CLI + Node/pnpm toolchain)."
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: "Closed with implementation evidence captured for M5 hardening: enforce extension capability declarations."
+expected_result: "Acceptance criteria for M5 hardening: enforce extension capability declarations are satisfied with reproducible verification evidence."
+actual_result: "Work completed and recorded with linked artifacts for M5 hardening: enforce extension capability declarations."
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: extensions-component
+component: project-management/m5-hardening-enforce-extension-capability-declar
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 hardening: enforce extension capability declarations."
 comments[4]{created_at,author,text}:
   "2026-03-06T09:21:20.880Z",cursor-maintainer,Capability list is currently descriptive only and should become an enforced safety boundary.
   "2026-03-06T09:21:38.917Z",cursor-maintainer,"Planned changeset: docs-first update PRD/README capability contracts, then enforce capability checks in extension API registration/hook methods and add extension-loader regressions."
@@ -62,4 +62,5 @@ docs[3]{path,scope,note}:
   AGENTS.md,project,Maintainer workflow and safety contract
   PRD.md,project,Authoritative extension capability contract
   README.md,project,Public command and extension contract
+close_reason: "Completed planned scope for M5 hardening: enforce extension capability declarations and preserved verification context for future changes."
 body: Add capability gating for extension API registration methods so manifests explicitly declare commands/renderers/hooks/schema/importers/search usage. Keep deterministic activation failure behavior and validate with targeted+full regression runs.

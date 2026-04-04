@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: "area:release",code,"milestone:6",pm-cli,"priority:0",tests
 created_at: "2026-03-08T13:38:46.107Z"
-updated_at: "2026-04-04T12:07:34.708Z"
+updated_at: "2026-04-04T17:47:21.173Z"
 deadline: "2026-03-09T13:38:45.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -14,39 +14,40 @@ estimated_minutes: 45
 acceptance_criteria: Release-readiness integration suite asserts pm restore --help usage/description and --author/--message/--force metadata flags aligned with PRD contract.
 definition_of_ready: Gap confirmed via release-readiness contract scan and no duplicate active task.
 order: 1
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
+goal: Implement and verify scoped work for Release-readiness maintenance loop 2026-03-08 run 1.
+objective: Capture actionable implementation context and verification evidence for Release-readiness maintenance loop 2026-03-08 run 1.
+value: Improves future change velocity by making Release-readiness maintenance loop 2026-03-08 run 1 decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Release-readiness maintenance loop 2026-03-08 run 1.
+outcome: This record can be used as canonical context when modifying Release-readiness maintenance loop 2026-03-08 run 1.
 why_now: Prevent silent restore-help contract drift before release.
-parent: pm-vz16
+parent: pm-8a2s
 reviewer: maintainer-review
 risk: low
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: no-active-blocker
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Release-readiness maintenance loop 2026-03-08 run 1.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Release-readiness maintenance loop 2026-03-08 run 1."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Release-readiness maintenance loop 2026-03-08 run 1 (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Release-readiness maintenance loop 2026-03-08 run 1.
+expected_result: Acceptance criteria for Release-readiness maintenance loop 2026-03-08 run 1 are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Release-readiness maintenance loop 2026-03-08 run 1.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: release-component
+component: project-management/release-readiness-maintenance-loop-2026-03-08-ru
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
-comments[5]{created_at,author,text}:
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Release-readiness maintenance loop 2026-03-08 run 1.
+comments[6]{created_at,author,text}:
   "2026-03-08T13:38:46.107Z",maintainer-agent,"Why this exists: explicit restore help metadata contract is not covered by release-readiness guard suite yet."
   "2026-03-08T13:38:56.395Z",maintainer-agent,"Planned changeset: add explicit restore help metadata parity assertions (usage/description and --author/--message/--force) to release-readiness contract suite before running linked tests and regression sweeps."
   "2026-03-08T13:39:20.208Z",maintainer-agent,Implemented release-readiness contract hardening in tests/integration/release-readiness-contract.spec.ts by adding restore help metadata parity assertions (PRD row token + restore --help usage/description + --author/--message/--force checks).
   "2026-03-08T13:52:54.158Z",maintainer-agent,"Evidence: pm test pm-vz16 --run --timeout 1800 passed linked tests (2/2) including node scripts/run-tests.mjs coverage and targeted release-readiness spec. pm test-all --status in_progress --timeout 1800 passed (items=1, linked_tests=2, failed=0). pm test-all --status closed --timeout 1800 passed (items=149, linked_tests=380, passed=68, failed=0, skipped=312). Coverage remains 100% lines/branches/functions/statements (All files 100/100/100/100)."
   "2026-04-04T12:00:06.688Z",codex-agent,"Governance dedupe mapping: canonical survivor for 2026-03-08 run 1 duplicate-title cluster (archival variant: pm-knwz)."
+  "2026-04-04T17:34:14.398Z",codex-agent,"Duplicate consolidation pass: canonical item pm-vz16 now anchors cluster 'release-loop::2026-03-08'. Superseded siblings preserved for historical traceability: pm-knwz, pm-3tjx."
 notes[1]{created_at,author,text}:
   "2026-03-08T13:38:46.107Z",maintainer-agent,"Validation plan: add test case in release-readiness-contract.spec.ts and run pm test + pm test-all + sandbox coverage."
 learnings[1]{created_at,author,text}:

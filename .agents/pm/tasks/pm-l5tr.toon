@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:create","area:docs","area:parser","area:tests",external-audit,pm-cli
 created_at: "2026-04-04T08:23:48.930Z"
-updated_at: "2026-04-04T08:40:04.873Z"
+updated_at: "2026-04-04T17:42:11.499Z"
 deadline: "2026-04-09T08:23:48.930Z"
 author: codex-agent
 estimated_minutes: 300
@@ -30,7 +30,7 @@ blocked_reason: feature-sequencing
 unblock_note: Claim task and implement code/tests/docs
 reporter: codex-agent
 severity: medium
-environment: linux-node25-local
+environment: Project workspace execution context for Code/test/docs for create log-seed ambiguity guard (pm CLI + Node/pnpm toolchain).
 repro_steps: "Run pm create with --comment author=x,text=hello,scope:project and inspect stored comment text."
 resolution: Implemented deterministic create log-seed key validation to reject ambiguous unquoted continuations and preserve safe quoted/markdown/stdin flows.
 expected_result: Ambiguous unquoted key-like continuations are rejected with guidance and no silent text truncation occurs.

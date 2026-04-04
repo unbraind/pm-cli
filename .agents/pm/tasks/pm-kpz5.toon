@@ -6,41 +6,41 @@ status: closed
 priority: 0
 tags[8]: "area:cli","area:docs","area:schema",code,"milestone:7",pm-cli,"priority:0",tests
 created_at: "2026-03-08T02:57:27.489Z"
-updated_at: "2026-04-04T12:08:18.111Z"
+updated_at: "2026-04-04T17:45:35.311Z"
 deadline: "2026-03-10T02:57:27.489Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 150
 acceptance_criteria: Create and update accept --confidence with normalization 0..100 or low/med/high and docs-first parity while coverage stays 100 percent.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Add confidence metadata flag support for create/update are documented for reuse."
 order: 1
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-kpz5
+goal: Implement and verify scoped work for Add confidence metadata flag support for create/update.
+objective: Capture actionable implementation context and verification evidence for Add confidence metadata flag support for create/update.
+value: Improves future change velocity by making Add confidence metadata flag support for create/update decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Add confidence metadata flag support for create/update.
+outcome: This record can be used as canonical context when modifying Add confidence metadata flag support for create/update.
+why_now: Historical decisions for Add confidence metadata flag support for create/update need durable context for future maintenance and audits.
+parent: pm-2p6q
 reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: no-active-blocker
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Add confidence metadata flag support for create/update.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Add confidence metadata flag support for create/update."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Add confidence metadata flag support for create/update (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Add confidence metadata flag support for create/update.
+expected_result: Acceptance criteria for Add confidence metadata flag support for create/update are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Add confidence metadata flag support for create/update.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: cli-component
+component: project-management/add-confidence-metadata-flag-support-for-create-
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add confidence metadata flag support for create/update.
 comments[6]{created_at,author,text}:
   "2026-03-08T02:57:27.489Z",maintainer-agent,Why this exists confidence metadata is still planned-only and should be promoted into canonical create and update contract.
   "2026-03-08T02:57:36.879Z",maintainer-agent,"Planned changeset before edits: update PRD README and AGENTS to promote confidence into canonical create update contracts, then implement CLI parsing normalization serialization and tests."

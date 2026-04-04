@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:body","area:update",pm-cli,runtime
 created_at: "2026-04-02T11:45:10.089Z"
-updated_at: "2026-04-04T12:01:46.770Z"
+updated_at: "2026-04-04T17:41:30.237Z"
 deadline: "2026-04-06T11:45:10.089Z"
 author: codex-agent
 estimated_minutes: 120
@@ -25,11 +25,13 @@ risk: medium
 confidence: high
 sprint: body-backfill-2026w14
 release: vnext
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Wire update body runtime mutation path.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Wire update body runtime mutation path."
 reporter: codex-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Wire update body runtime mutation path (pm CLI + Node/pnpm toolchain).
 repro_steps: run pm update ID --body text and inspect failure
-resolution: historical-closure-normalized-by-governance-pass
+resolution: Closed with implementation evidence captured for Wire update body runtime mutation path.
 expected_result: runtime accepts and applies body
 actual_result: runtime rejects body option
 affected_version: 2026.3.12

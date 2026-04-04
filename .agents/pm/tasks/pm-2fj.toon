@@ -6,41 +6,41 @@ status: closed
 priority: 1
 tags[4]: "area:history",core,"milestone:2",pm-cli
 created_at: "2026-02-17T23:02:08.818Z"
-updated_at: "2026-04-04T12:07:09.963Z"
+updated_at: "2026-04-04T17:43:59.114Z"
 deadline: "2026-02-27T23:02:08.818Z"
 assignee: steve
 author: steve
 estimated_minutes: 90
 acceptance_criteria: History and activity command outputs are deterministic and complete.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for History and activity commands are documented for reuse."
 order: 2
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-2fj
+goal: Implement and verify scoped work for History and activity commands.
+objective: Capture actionable implementation context and verification evidence for History and activity commands.
+value: Improves future change velocity by making History and activity commands decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching History and activity commands.
+outcome: This record can be used as canonical context when modifying History and activity commands.
+why_now: Historical decisions for History and activity commands need durable context for future maintenance and audits.
+parent: pm-c0r
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-c0r
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for History and activity commands.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming History and activity commands."
 reporter: steve
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for History and activity commands (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for History and activity commands.
+expected_result: Acceptance criteria for History and activity commands are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for History and activity commands.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: history-component
+component: project-management/history-and-activity-commands
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for History and activity commands.
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-c0r,parent,"2026-02-17T23:02:08.818Z",steve,null
   pm-u9r,blocks,"2026-02-17T23:02:08.818Z",steve,null
@@ -67,4 +67,5 @@ tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,a
 docs[2]{path,scope,note}:
   PRD.md,project,Authoritative command and output contract
   README.md,project,Public command surface reference
+close_reason: Completed planned scope for History and activity commands and preserved verification context for future changes.
 body: Expose history timelines through command output contracts.

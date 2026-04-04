@@ -6,41 +6,40 @@ status: closed
 priority: 0
 tags[5]: agent-ux,"area:calendar","area:recurrence",core,pm-cli
 created_at: "2026-03-31T22:29:17.588Z"
-updated_at: "2026-04-01T20:15:42.106Z"
+updated_at: "2026-04-04T17:37:53.948Z"
 deadline: "2026-04-14T22:29:17.588Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 720
 acceptance_criteria: "Calendar supports first-class events and recurring events with deterministic rendering, safe mutation paths, and release-grade test/docs coverage."
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Calendar parity phase 2: events and recurrence are documented for reuse."
 order: 1
-goal: epic-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-epic-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-vdrn
+goal: "Coordinate roadmap delivery for Calendar parity phase 2: events and recurrence."
+objective: "Capture actionable implementation context and verification evidence for Calendar parity phase 2: events and recurrence."
+value: "Improves future change velocity by making Calendar parity phase 2: events and recurrence decisions and scope explicit."
+impact: "Reduces ambiguity and handoff risk for future work touching Calendar parity phase 2: events and recurrence."
+outcome: "This record can be used as canonical context when modifying Calendar parity phase 2: events and recurrence."
+why_now: "Historical decisions for Calendar parity phase 2: events and recurrence need durable context for future maintenance and audits."
 reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-qh3p
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: "Current status is closed; no unresolved blocker is recorded for Calendar parity phase 2: events and recurrence."
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Calendar parity phase 2: events and recurrence."
 reporter: codex-agent
 severity: low
-environment: linux-node25-local
+environment: "Project workspace execution context for Calendar parity phase 2: events and recurrence (pm CLI + Node/pnpm toolchain)."
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: "Closed with implementation evidence captured for Calendar parity phase 2: events and recurrence."
+expected_result: "Acceptance criteria for Calendar parity phase 2: events and recurrence are satisfied with reproducible verification evidence."
+actual_result: "Work completed and recorded with linked artifacts for Calendar parity phase 2: events and recurrence."
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: calendar-component
+component: project-management/calendar-parity-phase-2-events-and-recurrence
 regression: false
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: "Gives maintainers and contributors clearer context and safer change execution for Calendar parity phase 2: events and recurrence."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-qh3p,related,"2026-03-31T22:29:17.588Z",codex-agent,null
 comments[3]{created_at,author,text}:

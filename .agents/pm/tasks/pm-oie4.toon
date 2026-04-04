@@ -6,41 +6,41 @@ status: closed
 priority: 1
 tags[5]: "area:docs","area:tests",contract,pi-wrapper,pm-cli
 created_at: "2026-03-06T13:52:02.707Z"
-updated_at: "2026-04-04T12:10:37.503Z"
+updated_at: "2026-04-04T17:45:57.975Z"
 deadline: "2026-03-07T13:52:02.707Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 45
 acceptance_criteria: AGENTS Pi create example uses full explicit create payload and release-readiness test fails if required create keys disappear from that example.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Sync AGENTS Pi create example with explicit contract are documented for reuse."
 order: 2
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-oie4
+goal: Implement and verify scoped work for Sync AGENTS Pi create example with explicit contract.
+objective: Capture actionable implementation context and verification evidence for Sync AGENTS Pi create example with explicit contract.
+value: Improves future change velocity by making Sync AGENTS Pi create example with explicit contract decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Sync AGENTS Pi create example with explicit contract.
+outcome: This record can be used as canonical context when modifying Sync AGENTS Pi create example with explicit contract.
+why_now: Historical decisions for Sync AGENTS Pi create example with explicit contract need durable context for future maintenance and audits.
+parent: pm-i0iy
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: no-active-blocker
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Sync AGENTS Pi create example with explicit contract.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Sync AGENTS Pi create example with explicit contract."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Sync AGENTS Pi create example with explicit contract (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Sync AGENTS Pi create example with explicit contract.
+expected_result: Acceptance criteria for Sync AGENTS Pi create example with explicit contract are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Sync AGENTS Pi create example with explicit contract.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: docs-component
+component: project-management/sync-agents-pi-create-example-with-explicit-cont
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Sync AGENTS Pi create example with explicit contract.
 comments[3]{created_at,author,text}:
   "2026-03-06T13:52:02.707Z",maintainer-agent,Why this exists keep AGENTS Pi create usage aligned with current explicit create contract.
   "2026-03-06T13:52:19.701Z",maintainer-agent,Planned changeset update AGENTS Pi create example to explicit all-fields payload and add release-readiness assertion that required create keys remain documented in that example.

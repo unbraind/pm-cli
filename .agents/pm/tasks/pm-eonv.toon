@@ -6,13 +6,13 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:error",code,pm-cli
 created_at: "2026-04-01T12:39:34.369Z"
-updated_at: "2026-04-01T20:23:51.759Z"
+updated_at: "2026-04-04T17:41:28.492Z"
 deadline: "2026-04-08T12:39:34.369Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 160
 acceptance_criteria: Commander usage failures emit one high-signal guidance message path without duplicate lines and with actionable examples.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Error2: Refactor commander usage mapping and dedupe error output are documented for reuse."
 order: 2
 goal: CLI usability excellence
 objective: High-signal usage failures
@@ -27,15 +27,15 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-frk8
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: "Current status is closed; no unresolved blocker is recorded for Error2: Refactor commander usage mapping and dedupe error output."
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Error2: Refactor commander usage mapping and dedupe error output."
 reporter: codex-agent
 severity: low
-environment: linux-node25-local
+environment: "Project workspace execution context for Error2: Refactor commander usage mapping and dedupe error output (pm CLI + Node/pnpm toolchain)."
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: "Closed with implementation evidence captured for Error2: Refactor commander usage mapping and dedupe error output."
+expected_result: "Acceptance criteria for Error2: Refactor commander usage mapping and dedupe error output are satisfied with reproducible verification evidence."
+actual_result: "Work completed and recorded with linked artifacts for Error2: Refactor commander usage mapping and dedupe error output."
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
 component: cli-commander

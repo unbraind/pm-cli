@@ -6,13 +6,13 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:schema","area:settings",pm-cli
 created_at: "2026-03-31T23:47:37.031Z"
-updated_at: "2026-04-01T20:24:58.931Z"
+updated_at: "2026-04-04T17:39:36.907Z"
 deadline: "2026-04-10T23:47:37.031Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 300
 acceptance_criteria: "Registry resolves built-ins plus configured custom types/options, and all type consumers can read from one source of truth."
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Configurable item type registry (settings + extensions) are documented for reuse."
 order: 2
 goal: Customizable workflows
 objective: Decouple type model from hard-coded enums
@@ -27,15 +27,15 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-r15d
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Configurable item type registry (settings + extensions).
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Configurable item type registry (settings + extensions)."
 reporter: codex-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Configurable item type registry (settings + extensions) (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Configurable item type registry (settings + extensions).
+expected_result: Acceptance criteria for Configurable item type registry (settings + extensions) are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Configurable item type registry (settings + extensions).
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
 component: core/types

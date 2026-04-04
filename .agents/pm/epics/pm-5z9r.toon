@@ -6,19 +6,28 @@ status: closed
 priority: 0
 tags[4]: extensions,external-audit,linked-tests,pm-cli
 created_at: "2026-04-04T12:42:06.028Z"
-updated_at: "2026-04-04T14:03:04.674Z"
+updated_at: "2026-04-04T17:36:49.862Z"
 deadline: "2026-04-18T12:42:06.028Z"
 author: codex-agent
 estimated_minutes: 420
 acceptance_criteria: Unresolved external audit deltas are implemented additively with full docs/tests verification and no regressions for existing users.
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for External audit follow-up: linked-test evidence and extension diagnostics are documented for reuse."
+goal: "Coordinate roadmap delivery for External audit follow-up: linked-test evidence and extension diagnostics."
+objective: "Capture actionable implementation context and verification evidence for External audit follow-up: linked-test evidence and extension diagnostics."
+value: "Improves future change velocity by making External audit follow-up: linked-test evidence and extension diagnostics decisions and scope explicit."
+impact: "Reduces ambiguity and handoff risk for future work touching External audit follow-up: linked-test evidence and extension diagnostics."
+outcome: "This record can be used as canonical context when modifying External audit follow-up: linked-test evidence and extension diagnostics."
+why_now: "Historical decisions for External audit follow-up: linked-test evidence and extension diagnostics need durable context for future maintenance and audits."
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: external-audit-followup
 release: vnext
+blocked_reason: "Current status is closed; no unresolved blocker is recorded for External audit follow-up: linked-test evidence and extension diagnostics."
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming External audit follow-up: linked-test evidence and extension diagnostics."
 reporter: codex-agent
 severity: medium
-environment: linux-node25-local
+environment: "Project workspace execution context for External audit follow-up: linked-test evidence and extension diagnostics (pm CLI + Node/pnpm toolchain)."
 repro_steps: Reproduce external report findings against linked-test and extension diagnostics flows.
 resolution: Completed all external audit follow-up deliverables.
 expected_result: Linked-test governance signal and extension diagnostics are deterministic and actionable.

@@ -6,15 +6,27 @@ status: closed
 priority: 1
 tags[5]: "area:validation",audit,governance,implementation,pm-cli
 created_at: "2026-04-03T20:58:05.700Z"
-updated_at: "2026-04-04T12:02:07.201Z"
+updated_at: "2026-04-04T17:42:08.749Z"
 deadline: "2026-04-11T20:58:05.700Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: validate supports scan-mode tracked-all and reports candidate totals; tests and contracts pass.
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Implement Issue1 validate scan-mode and candidate totals are documented for reuse."
+goal: Implement and verify scoped work for Implement Issue1 validate scan-mode and candidate totals.
+objective: Capture actionable implementation context and verification evidence for Implement Issue1 validate scan-mode and candidate totals.
+value: Improves future change velocity by making Implement Issue1 validate scan-mode and candidate totals decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Implement Issue1 validate scan-mode and candidate totals.
+outcome: This record can be used as canonical context when modifying Implement Issue1 validate scan-mode and candidate totals.
+why_now: Historical decisions for Implement Issue1 validate scan-mode and candidate totals need durable context for future maintenance and audits.
 parent: pm-j371
-resolution: historical-closure-normalized-by-governance-pass
-expected_result: historical-expected-result-backfilled-for-governance-audit
-actual_result: historical-actual-result-backfilled-for-governance-audit
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Implement Issue1 validate scan-mode and candidate totals.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Implement Issue1 validate scan-mode and candidate totals."
+environment: Project workspace execution context for Implement Issue1 validate scan-mode and candidate totals (pm CLI + Node/pnpm toolchain).
+resolution: Closed with implementation evidence captured for Implement Issue1 validate scan-mode and candidate totals.
+expected_result: Acceptance criteria for Implement Issue1 validate scan-mode and candidate totals are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Implement Issue1 validate scan-mode and candidate totals.
+component: project-management/implement-issue1-validate-scan-mode-and-candidat
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Implement Issue1 validate scan-mode and candidate totals.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-j371,parent,"2026-04-03T20:58:05.700Z",codex-agent,null
 comments[3]{created_at,author,text}:

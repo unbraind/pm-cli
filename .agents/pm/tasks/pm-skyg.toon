@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: ci,cross-platform,github-actions,pm-cli,tests
 created_at: "2026-04-03T17:25:23.654Z"
-updated_at: "2026-04-03T17:46:32.431Z"
+updated_at: "2026-04-04T17:42:53.061Z"
 deadline: "2026-04-10T17:25:23.654Z"
 author: codex-agent
 estimated_minutes: 180
@@ -25,6 +25,8 @@ risk: high
 confidence: high
 sprint: 2026-w14
 release: vnext
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Fix cross-platform CI regressions surfaced by GitHub checks.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Fix cross-platform CI regressions surfaced by GitHub checks."
 reporter: codex-agent
 severity: high
 environment: github-actions-macos-windows

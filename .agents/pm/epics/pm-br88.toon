@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: command-references,governance,linked-tests,validate
 created_at: "2026-04-04T10:10:35.532Z"
-updated_at: "2026-04-04T12:01:37.309Z"
+updated_at: "2026-04-04T17:36:27.390Z"
 deadline: "2026-04-11T10:10:35.532Z"
 author: codex-agent
 estimated_minutes: 300
@@ -24,12 +24,14 @@ risk: medium
 confidence: high
 sprint: linked-test-hardening
 release: vnext
+blocked_reason: "Current status is closed; no unresolved blocker is recorded for Issue3: Validate stale PM-id command references."
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Issue3: Validate stale PM-id command references."
 reporter: codex-agent
 severity: medium
-environment: linux-node25-local
-resolution: historical-closure-normalized-by-governance-pass
-expected_result: historical-expected-result-backfilled-for-governance-audit
-actual_result: historical-actual-result-backfilled-for-governance-audit
+environment: "Project workspace execution context for Issue3: Validate stale PM-id command references (pm CLI + Node/pnpm toolchain)."
+resolution: "Closed with implementation evidence captured for Issue3: Validate stale PM-id command references."
+expected_result: "Acceptance criteria for Issue3: Validate stale PM-id command references are satisfied with reproducible verification evidence."
+actual_result: "Work completed and recorded with linked artifacts for Issue3: Validate stale PM-id command references."
 affected_version: 2026.3.12
 fixed_version: vnext
 component: linked-test-runtime

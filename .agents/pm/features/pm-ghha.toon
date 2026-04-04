@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:body","area:update",feature,pm-cli
 created_at: "2026-04-02T11:44:56.845Z"
-updated_at: "2026-04-04T12:04:10.230Z"
+updated_at: "2026-04-04T17:38:59.685Z"
 deadline: "2026-04-07T11:44:56.845Z"
 author: codex-agent
 estimated_minutes: 180
@@ -25,11 +25,13 @@ risk: medium
 confidence: high
 sprint: body-backfill-2026w14
 release: vnext
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Support pm update body end-to-end.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Support pm update body end-to-end."
 reporter: codex-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Support pm update body end-to-end (pm CLI + Node/pnpm toolchain).
 repro_steps: run pm update ID --body text and observe failure
-resolution: historical-closure-normalized-by-governance-pass
+resolution: Closed with implementation evidence captured for Support pm update body end-to-end.
 expected_result: update accepts and persists body
 actual_result: update has no body option
 affected_version: 2026.3.12

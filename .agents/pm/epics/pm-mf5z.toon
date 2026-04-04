@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: custom-types,extensions,governance,linked-tests,pm-cli
 created_at: "2026-04-03T22:53:12.919Z"
-updated_at: "2026-04-04T12:43:54.216Z"
+updated_at: "2026-04-04T17:36:39.537Z"
 deadline: "2026-04-17T22:53:12.919Z"
 author: codex-agent
 estimated_minutes: 480
@@ -24,9 +24,11 @@ risk: medium
 confidence: high
 sprint: linked-test-hardening
 release: vnext
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Linked-test parity and runnable command enforcement.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Linked-test parity and runnable command enforcement."
 reporter: codex-agent
 severity: medium
-environment: linux-node25-local
+environment: Project workspace execution context for Linked-test parity and runnable command enforcement (pm CLI + Node/pnpm toolchain).
 repro_steps: Run pm list/search with custom type directly then via pm test linked command and compare filter acceptance.
 resolution: implemented
 expected_result: Linked automation and workspace commands accept equivalent custom type filters and linked tests are runnable.

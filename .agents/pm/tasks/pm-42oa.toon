@@ -6,41 +6,41 @@ status: closed
 priority: 1
 tags[8]: "area:extensions","area:health",code,docs,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-06T07:18:07.309Z"
-updated_at: "2026-04-01T20:34:25.241Z"
+updated_at: "2026-04-04T17:44:13.644Z"
 deadline: "2026-03-08T07:18:07.309Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
 estimated_minutes: 90
 acceptance_criteria: pm health reports deterministic migration status summary with pending/failed visibility from extension migration registrations; docs are updated first; targeted and regression sweeps pass with coverage at 100%.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for M5 follow-up: report pending extension migrations in health are documented for reuse."
 order: 2
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-42oa
+goal: "Implement and verify scoped work for M5 follow-up: report pending extension migrations in health."
+objective: "Capture actionable implementation context and verification evidence for M5 follow-up: report pending extension migrations in health."
+value: "Improves future change velocity by making M5 follow-up: report pending extension migrations in health decisions and scope explicit."
+impact: "Reduces ambiguity and handoff risk for future work touching M5 follow-up: report pending extension migrations in health."
+outcome: "This record can be used as canonical context when modifying M5 follow-up: report pending extension migrations in health."
+why_now: "Historical decisions for M5 follow-up: report pending extension migrations in health need durable context for future maintenance and audits."
+parent: pm-8a2s
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: no-active-blocker
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: "Current status is closed; no unresolved blocker is recorded for M5 follow-up: report pending extension migrations in health."
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming M5 follow-up: report pending extension migrations in health."
 reporter: cursor-maintainer
 severity: low
-environment: linux-node25-local
+environment: "Project workspace execution context for M5 follow-up: report pending extension migrations in health (pm CLI + Node/pnpm toolchain)."
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: "Closed with implementation evidence captured for M5 follow-up: report pending extension migrations in health."
+expected_result: "Acceptance criteria for M5 follow-up: report pending extension migrations in health are satisfied with reproducible verification evidence."
+actual_result: "Work completed and recorded with linked artifacts for M5 follow-up: report pending extension migrations in health."
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: extensions-component
+component: project-management/m5-follow-up-report-pending-extension-migrations
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 follow-up: report pending extension migrations in health."
 comments[6]{created_at,author,text}:
   "2026-03-06T07:18:07.309Z",cursor-maintainer,Need explicit migration status visibility in health output to close extension registration runtime gap.
   "2026-03-06T07:18:45.598Z",cursor-maintainer,"Planned changeset: docs-first update PRD/README migration diagnostics contract, then implement health migration pending/failed summary from extension registration + activation data with targeted unit coverage and full pm verification sweeps."
@@ -66,4 +66,5 @@ docs[3]{path,scope,note}:
   AGENTS.md,project,governing spec
   PRD.md,project,migration health contract
   README.md,project,governing spec
+close_reason: "Completed planned scope for M5 follow-up: report pending extension migrations in health and preserved verification context for future changes."
 body: Implement docs-first migration visibility for extension registrations. Add deterministic health diagnostics for pending/failed migration status and regression tests.

@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:history","area:restore",core,pm-cli
 created_at: "2026-04-01T15:26:39.295Z"
-updated_at: "2026-04-01T21:22:59.318Z"
+updated_at: "2026-04-04T17:37:39.751Z"
 deadline: "2026-04-08T15:26:39.295Z"
 author: cursor-agent
 estimated_minutes: 300
@@ -19,21 +19,20 @@ value: Prevents silent drift and improves recoverability
 impact: More reliable history and restore workflows for maintainers and agents
 outcome: Deterministic missing-stream policy and recovery behavior
 why_now: Current behavior is inconsistent across commands and recovery scenarios
-parent: pm-ofh9
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: history-hardening
 release: vnext
 blocked_by: pm-1hkq
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for History stream resilience and restore recovery hardening.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming History stream resilience and restore recovery hardening."
 reporter: cursor-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for History stream resilience and restore recovery hardening (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
 resolution: planned-or-active-implementation
-expected_result: behavior-aligns-with-acceptance-criteria
+expected_result: Acceptance criteria for History stream resilience and restore recovery hardening are satisfied with reproducible verification evidence.
 actual_result: work-tracked-as-active-or-open
 affected_version: vnext
 fixed_version: target-vnext

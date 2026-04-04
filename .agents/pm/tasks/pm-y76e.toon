@@ -6,13 +6,13 @@ status: closed
 priority: 1
 tags[4]: "area:release","area:tests",evidence,pm-cli
 created_at: "2026-04-01T12:40:12.308Z"
-updated_at: "2026-04-01T20:23:48.210Z"
+updated_at: "2026-04-04T17:43:29.848Z"
 deadline: "2026-04-08T12:40:12.308Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 120
 acceptance_criteria: Build/tests/coverage are run and documented; linked PM items have closure evidence; final commit and push completed.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Ship1: Full verification, closure evidence, commit, and push are documented for reuse."
 order: 2
 goal: CLI usability excellence
 objective: Verified release
@@ -27,15 +27,15 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-i0iy
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: "Current status is closed; no unresolved blocker is recorded for Ship1: Full verification, closure evidence, commit, and push."
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Ship1: Full verification, closure evidence, commit, and push."
 reporter: codex-agent
 severity: low
-environment: linux-node25-local
+environment: "Project workspace execution context for Ship1: Full verification, closure evidence, commit, and push (pm CLI + Node/pnpm toolchain)."
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: "Closed with implementation evidence captured for Ship1: Full verification, closure evidence, commit, and push."
+expected_result: "Acceptance criteria for Ship1: Full verification, closure evidence, commit, and push are satisfied with reproducible verification evidence."
+actual_result: "Work completed and recorded with linked artifacts for Ship1: Full verification, closure evidence, commit, and push."
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
 component: release

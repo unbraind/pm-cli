@@ -6,13 +6,13 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:tests",pm-cli,tests
 created_at: "2026-04-01T12:40:02.826Z"
-updated_at: "2026-04-01T20:23:49.386Z"
+updated_at: "2026-04-04T17:42:02.355Z"
 deadline: "2026-04-08T12:40:02.826Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: "Regression tests cover help, error, commander, and output behavior changes with stable exit-code expectations."
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Test1: Expand regression coverage for help/error/output UX are documented for reuse."
 order: 2
 goal: CLI usability excellence
 objective: Reliable rollout
@@ -27,15 +27,15 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-i0iy
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: "Current status is closed; no unresolved blocker is recorded for Test1: Expand regression coverage for help/error/output UX."
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Test1: Expand regression coverage for help/error/output UX."
 reporter: codex-agent
 severity: low
-environment: linux-node25-local
+environment: "Project workspace execution context for Test1: Expand regression coverage for help/error/output UX (pm CLI + Node/pnpm toolchain)."
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: "Closed with implementation evidence captured for Test1: Expand regression coverage for help/error/output UX."
+expected_result: "Acceptance criteria for Test1: Expand regression coverage for help/error/output UX are satisfied with reproducible verification evidence."
+actual_result: "Work completed and recorded with linked artifacts for Test1: Expand regression coverage for help/error/output UX."
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
 component: cli-tests

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: dependabot,dependencies,github-pr,pm-cli
 created_at: "2026-04-03T17:25:08.955Z"
-updated_at: "2026-04-03T17:46:24.295Z"
+updated_at: "2026-04-04T17:47:17.895Z"
 deadline: "2026-04-17T17:25:08.955Z"
 author: codex-agent
 estimated_minutes: 30
@@ -25,6 +25,8 @@ risk: medium
 confidence: high
 sprint: 2026-w14
 release: vnext
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Track open Dependabot PR #7.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Track open Dependabot PR #7."
 reporter: github-dependabot
 severity: medium
 environment: github pull request
@@ -37,9 +39,10 @@ fixed_version: target-vnext
 component: dependabot-pr
 regression: true
 customer_impact: Delayed updates can keep vulnerabilities or compatibility gaps open
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-03T17:25:08.955Z",codex-agent,Imported open Dependabot PR #7 for tracking and remediation.
   "2026-04-03T17:46:23.342Z",codex-agent,Superseded by direct dependency/workflow upgrades on main branch and validated by full regression and coverage runs.
+  "2026-04-04T17:33:56.650Z",codex-agent,"Duplicate consolidation mapping: this item is superseded by pm-0jpx for cluster 'dependabot-pr-tracking'. Record retained only as historical evidence."
 notes[1]{created_at,author,text}:
   "2026-04-03T17:25:08.955Z",codex-agent,Resolve CI or compatibility blockers and disposition this PR.
 files[1]{path,scope,note}:
@@ -48,5 +51,5 @@ tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,a
   node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,baseline regression verification
 docs[1]{path,scope,note}:
   README.md,project,public contract context
-close_reason: Dependabot PR finding superseded by equivalent direct updates and verification evidence.
+close_reason: Superseded by canonical item pm-0jpx during governance duplicate-consolidation for cluster 'dependabot-pr-tracking'; historical evidence retained in this record.
 body: "Open Dependabot PR finding #7\\nTitle: chore(deps): bump actions/checkout from 4 to 6\\nURL: https://github.com/unbraind/pm-cli/pull/7\\nHead: dependabot/github_actions/actions/checkout-6\\nLabels: dependencies,github_actions\\nCreated: 2026-03-16T04:17:22Z"

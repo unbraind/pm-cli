@@ -6,20 +6,29 @@ status: closed
 priority: 1
 tags[4]: context-parity,external-audit,linked-tests,pm-cli
 created_at: "2026-04-04T12:42:19.890Z"
-updated_at: "2026-04-04T14:03:02.512Z"
+updated_at: "2026-04-04T17:49:12.136Z"
 deadline: "2026-04-14T12:42:19.890Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: "Linked-test PM-command runs can enforce dataset parity and fail when context mismatch is detected, with explicit per-run context metadata."
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Linked-test PM command context can drift from workspace dataset are documented for reuse."
+goal: Resolve reliability/security risk in Linked-test PM command context can drift from workspace dataset.
+objective: Capture actionable implementation context and verification evidence for Linked-test PM command context can drift from workspace dataset.
+value: Improves future change velocity by making Linked-test PM command context can drift from workspace dataset decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Linked-test PM command context can drift from workspace dataset.
+outcome: This record can be used as canonical context when modifying Linked-test PM command context can drift from workspace dataset.
+why_now: Historical decisions for Linked-test PM command context can drift from workspace dataset need durable context for future maintenance and audits.
 parent: pm-5z9r
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: external-audit-followup
 release: vnext
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Linked-test PM command context can drift from workspace dataset.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Linked-test PM command context can drift from workspace dataset."
 reporter: codex-agent
 severity: high
-environment: linux-node25-local
+environment: Project workspace execution context for Linked-test PM command context can drift from workspace dataset (pm CLI + Node/pnpm toolchain).
 repro_steps: Compare direct pm list-all outputs versus linked pm test run outputs for the same command.
 resolution: Resolved by PM-context parity controls and mismatch guardrails.
 expected_result: Linked PM-command tests reflect equivalent tracker context or fail with explicit mismatch diagnostics.

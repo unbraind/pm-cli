@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: calendar,dependabot,github,operations,recurring
 created_at: "2026-04-03T17:33:17.602Z"
-updated_at: "2026-04-04T12:12:50.424Z"
+updated_at: "2026-04-04T17:42:14.386Z"
 events[1]:
   - start_at: "2026-04-10T09:00:00.000Z"
     end_at: "2026-04-10T09:30:00.000Z"
@@ -32,6 +32,8 @@ risk: low
 confidence: high
 sprint: 2026-w14
 release: vnext
+blocked_reason: Current status is open; no unresolved blocker is recorded for Run weekly GitHub findings review.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Run weekly GitHub findings review."
 reporter: codex-agent
 severity: medium
 environment: github-cli + pm-cli

@@ -6,41 +6,41 @@ status: closed
 priority: 1
 tags[8]: "area:extensions","area:locking",code,docs,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-06T05:46:45.784Z"
-updated_at: "2026-04-01T20:34:23.948Z"
+updated_at: "2026-04-04T17:44:24.890Z"
 deadline: "2026-03-07T23:59:00.000Z"
 assignee: codex-maintainer
 author: codex-maintainer
 estimated_minutes: 75
 acceptance_criteria: Lock file read/write/unlink operations dispatch extension hook calls with deterministic op labels and are covered by unit tests while coverage remains 100 percent.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for M5 follow-up: dispatch lock lifecycle hooks are documented for reuse."
 order: 2
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-671u
+goal: "Implement and verify scoped work for M5 follow-up: dispatch lock lifecycle hooks."
+objective: "Capture actionable implementation context and verification evidence for M5 follow-up: dispatch lock lifecycle hooks."
+value: "Improves future change velocity by making M5 follow-up: dispatch lock lifecycle hooks decisions and scope explicit."
+impact: "Reduces ambiguity and handoff risk for future work touching M5 follow-up: dispatch lock lifecycle hooks."
+outcome: "This record can be used as canonical context when modifying M5 follow-up: dispatch lock lifecycle hooks."
+why_now: "Historical decisions for M5 follow-up: dispatch lock lifecycle hooks need durable context for future maintenance and audits."
+parent: pm-8a2s
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-b1w
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: "Current status is closed; no unresolved blocker is recorded for M5 follow-up: dispatch lock lifecycle hooks."
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming M5 follow-up: dispatch lock lifecycle hooks."
 reporter: codex-maintainer
 severity: low
-environment: linux-node25-local
+environment: "Project workspace execution context for M5 follow-up: dispatch lock lifecycle hooks (pm CLI + Node/pnpm toolchain)."
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: "Closed with implementation evidence captured for M5 follow-up: dispatch lock lifecycle hooks."
+expected_result: "Acceptance criteria for M5 follow-up: dispatch lock lifecycle hooks are satisfied with reproducible verification evidence."
+actual_result: "Work completed and recorded with linked artifacts for M5 follow-up: dispatch lock lifecycle hooks."
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: extensions-component
+component: project-management/m5-follow-up-dispatch-lock-lifecycle-hooks
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 follow-up: dispatch lock lifecycle hooks."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-b1w,related,"2026-03-06T05:46:45.784Z",codex-maintainer,null
 comments[7]{created_at,author,text}:
@@ -70,4 +70,5 @@ docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow and dogfood requirements
   PRD.md,project,hook lifecycle call-site contract
   README.md,project,public contract for extension hook lifecycle
+close_reason: "Completed planned scope for M5 follow-up: dispatch lock lifecycle hooks and preserved verification context for future changes."
 body: "Broaden Milestone 5 hook call-site coverage by dispatching extension onRead/onWrite hooks around lock metadata reads, lock acquisition writes, and lock release/stale-lock unlink operations."

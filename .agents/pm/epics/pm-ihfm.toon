@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:body","area:update",normalization,pm-cli
 created_at: "2026-04-02T11:44:45.857Z"
-updated_at: "2026-04-04T12:01:58.865Z"
+updated_at: "2026-04-04T17:36:29.448Z"
 deadline: "2026-04-09T11:44:45.857Z"
 author: codex-agent
 estimated_minutes: 240
@@ -24,11 +24,13 @@ risk: medium
 confidence: high
 sprint: body-backfill-2026w14
 release: vnext
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Update body backfill normalization parity.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Update body backfill normalization parity."
 reporter: codex-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Update body backfill normalization parity (pm CLI + Node/pnpm toolchain).
 repro_steps: run pm update ID --body text and observe unknown option
-resolution: historical-closure-normalized-by-governance-pass
+resolution: Closed with implementation evidence captured for Update body backfill normalization parity.
 expected_result: update accepts body edits
 actual_result: update rejects body option
 affected_version: 2026.3.12

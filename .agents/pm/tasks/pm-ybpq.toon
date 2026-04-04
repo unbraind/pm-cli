@@ -6,20 +6,20 @@ status: closed
 priority: 1
 tags[5]: docs,pm-cli,tests,toon,verification
 created_at: "2026-03-31T20:13:39.416Z"
-updated_at: "2026-04-01T20:25:28.508Z"
+updated_at: "2026-04-04T17:43:34.486Z"
 deadline: "2026-04-14T20:13:39.416Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: Targeted and full sandbox regression suites pass with updated docs describing TOON default and compatibility guarantees.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Add TOON migration tests docs and verification are documented for reuse."
 order: 2
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
+goal: Implement and verify scoped work for Add TOON migration tests docs and verification.
+objective: Capture actionable implementation context and verification evidence for Add TOON migration tests docs and verification.
+value: Improves future change velocity by making Add TOON migration tests docs and verification decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Add TOON migration tests docs and verification.
+outcome: This record can be used as canonical context when modifying Add TOON migration tests docs and verification.
+why_now: Historical decisions for Add TOON migration tests docs and verification need durable context for future maintenance and audits.
 parent: pm-u919
 reviewer: maintainer-review
 risk: medium
@@ -27,20 +27,20 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-u919
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Add TOON migration tests docs and verification.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Add TOON migration tests docs and verification."
 reporter: codex-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Add TOON migration tests docs and verification (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Add TOON migration tests docs and verification.
+expected_result: Acceptance criteria for Add TOON migration tests docs and verification are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Add TOON migration tests docs and verification.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: task-component
+component: project-management/add-toon-migration-tests-docs-and-verification
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add TOON migration tests docs and verification.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-u919,parent,"2026-03-31T20:13:39.416Z",codex-agent,null
 comments[3]{created_at,author,text}:

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: "area:config","area:history",pm-cli
 created_at: "2026-04-01T15:27:04.794Z"
-updated_at: "2026-04-01T21:14:18.925Z"
+updated_at: "2026-04-04T17:40:54.956Z"
 deadline: "2026-04-06T15:27:04.794Z"
 author: cursor-agent
 estimated_minutes: 120
@@ -26,14 +26,14 @@ confidence: high
 sprint: history-hardening
 release: vnext
 blocked_by: pm-kb21
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Add history missing-stream policy setting and config support.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Add history missing-stream policy setting and config support."
 reporter: cursor-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Add history missing-stream policy setting and config support (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
 resolution: planned-or-active-implementation
-expected_result: behavior-aligns-with-acceptance-criteria
+expected_result: Acceptance criteria for Add history missing-stream policy setting and config support are satisfied with reproducible verification evidence.
 actual_result: work-tracked-as-active-or-open
 affected_version: vnext
 fixed_version: target-vnext

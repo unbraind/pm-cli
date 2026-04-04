@@ -6,20 +6,29 @@ status: closed
 priority: 1
 tags[4]: assertions,external-audit,implementation,linked-tests
 created_at: "2026-04-04T12:43:14.932Z"
-updated_at: "2026-04-04T14:02:09.391Z"
+updated_at: "2026-04-04T17:43:43.690Z"
 deadline: "2026-04-11T12:43:14.932Z"
 author: codex-agent
 estimated_minutes: 260
 acceptance_criteria: Linked-test assertions can fail commands even when exit code is zero; fail-on-skipped policy can elevate skipped coverage to dependency-failed exit semantics.
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Implement fail-on-skipped policy and linked-test assertions are documented for reuse."
+goal: Implement and verify scoped work for Implement fail-on-skipped policy and linked-test assertions.
+objective: Capture actionable implementation context and verification evidence for Implement fail-on-skipped policy and linked-test assertions.
+value: Improves future change velocity by making Implement fail-on-skipped policy and linked-test assertions decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Implement fail-on-skipped policy and linked-test assertions.
+outcome: This record can be used as canonical context when modifying Implement fail-on-skipped policy and linked-test assertions.
+why_now: Historical decisions for Implement fail-on-skipped policy and linked-test assertions need durable context for future maintenance and audits.
 parent: pm-wtq6
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: external-audit-followup
 release: vnext
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Implement fail-on-skipped policy and linked-test assertions.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Implement fail-on-skipped policy and linked-test assertions."
 reporter: codex-agent
 severity: medium
-environment: linux-node25-local
+environment: Project workspace execution context for Implement fail-on-skipped policy and linked-test assertions (pm CLI + Node/pnpm toolchain).
 repro_steps: "Run a linked command with logical-bad output but zero exit code, and a run with skipped linked tests."
 resolution: Implemented fail-on-skipped plus linked-test assertion semantics.
 expected_result: Assertion and skipped-policy governance signals are explicit and deterministic.

@@ -6,13 +6,13 @@ status: blocked
 priority: 1
 tags[3]: agents,docs,pm-hygiene
 created_at: "2026-03-12T22:26:40.371Z"
-updated_at: "2026-04-04T12:00:39.978Z"
+updated_at: "2026-04-04T17:42:21.292Z"
 deadline: "2026-03-26T22:26:40.371Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 20
 acceptance_criteria: AGENTS.md clearly instructs agents to search existing pm items before creating a new item and to avoid duplicate pm items.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Parent lineage, affected files/tests/docs, and verification path are identified for Add AGENTS rule to check existing pm items before creating new ones."
 order: 2
 goal: Tracker hygiene
 objective: Prevent duplicate pm items
@@ -31,10 +31,10 @@ blocked_reason: Broader README and help contract failures remain in the current 
 unblock_note: complete-linked-dependency-then-update-status
 reporter: codex-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Add AGENTS rule to check existing pm items before creating new ones (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
 resolution: planned-or-active-implementation
-expected_result: behavior-aligns-with-acceptance-criteria
+expected_result: Resume execution for Add AGENTS rule to check existing pm items before creating new ones once blockers are cleared and verification path is confirmed.
 actual_result: work-tracked-as-active-or-open
 affected_version: vnext
 fixed_version: target-vnext

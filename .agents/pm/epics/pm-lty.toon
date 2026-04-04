@@ -6,7 +6,7 @@ status: canceled
 priority: 0
 tags[4]: "area:program",core,"milestone:root",pm-cli
 created_at: "2026-02-17T22:58:48.411Z"
-updated_at: "2026-04-04T12:00:00.404Z"
+updated_at: "2026-04-04T17:37:28.224Z"
 deadline: "2026-03-19T22:58:48.411Z"
 assignee: steve
 author: steve
@@ -20,7 +20,6 @@ value: reduce-duplicate-root-structures
 impact: cleaner-hierarchy-and-reporting
 outcome: single-canonical-root-model
 why_now: backlog-hygiene-needs-parent-mapping
-parent: pm-lty
 reviewer: maintainer-review
 risk: medium
 confidence: medium
@@ -31,7 +30,7 @@ blocked_reason: sequencing-dependency
 unblock_note: align-with-canonical-roadmap
 reporter: steve
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Build pm-cli v1 (superseded duplicate archive) (pm CLI + Node/pnpm toolchain).
 repro_steps: roadmap-decomposition-tracking
 resolution: duplicate-root-canceled-during-normalization
 expected_result: canonical-root-epic-remains-singular

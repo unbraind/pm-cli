@@ -6,41 +6,41 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","milestone:5",pm-cli,roadmap
 created_at: "2026-03-07T14:01:18.992Z"
-updated_at: "2026-04-01T20:37:01.817Z"
+updated_at: "2026-04-04T17:45:45.635Z"
 deadline: "2026-03-10T21:36:41.713Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "runInit dispatches onWrite hooks for each required directory ensure operation, docs reflect expanded hook call-site coverage, and regression tests/coverage stay at 100%."
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for M5 roadmap: Broader call-site expansion for hooks are documented for reuse."
 order: 3
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-m6yd
+goal: "Implement and verify scoped work for M5 roadmap: Broader call-site expansion for hooks."
+objective: "Capture actionable implementation context and verification evidence for M5 roadmap: Broader call-site expansion for hooks."
+value: "Improves future change velocity by making M5 roadmap: Broader call-site expansion for hooks decisions and scope explicit."
+impact: "Reduces ambiguity and handoff risk for future work touching M5 roadmap: Broader call-site expansion for hooks."
+outcome: "This record can be used as canonical context when modifying M5 roadmap: Broader call-site expansion for hooks."
+why_now: "Historical decisions for M5 roadmap: Broader call-site expansion for hooks need durable context for future maintenance and audits."
+parent: pm-hbc1
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: no-active-blocker
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: "Current status is closed; no unresolved blocker is recorded for M5 roadmap: Broader call-site expansion for hooks."
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming M5 roadmap: Broader call-site expansion for hooks."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: "Project workspace execution context for M5 roadmap: Broader call-site expansion for hooks (pm CLI + Node/pnpm toolchain)."
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: "Closed with implementation evidence captured for M5 roadmap: Broader call-site expansion for hooks."
+expected_result: "Acceptance criteria for M5 roadmap: Broader call-site expansion for hooks are satisfied with reproducible verification evidence."
+actual_result: "Work completed and recorded with linked artifacts for M5 roadmap: Broader call-site expansion for hooks."
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: extensions-component
+component: project-management/m5-roadmap-broader-call-site-expansion-for-hooks
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 roadmap: Broader call-site expansion for hooks."
 comments[4]{created_at,author,text}:
   "2026-03-07T21:36:53.800Z",maintainer-agent,"Planned change-set: docs-first update PRD and README hook lifecycle call-site contract to include init directory bootstrap writes, then implement runInit onWrite hook dispatch for directory ensure operations and add unit regression coverage for deterministic warning propagation."
   "2026-03-07T21:51:23.643Z",maintainer-agent,"Implemented docs-first and code/test updates for hook lifecycle call-site expansion: PRD/README now include init directory bootstrap ensure-write dispatch, runInit now dispatches onWrite hooks for each required directory ensure operation, and tests/unit/init-command.spec.ts adds deterministic regression coverage for trace + warning behavior."

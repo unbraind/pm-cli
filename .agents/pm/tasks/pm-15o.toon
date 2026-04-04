@@ -6,41 +6,41 @@ status: closed
 priority: 1
 tags[4]: "area:docs-validation",core,"milestone:6",pm-cli
 created_at: "2026-02-17T23:02:12.823Z"
-updated_at: "2026-04-04T12:10:46.232Z"
+updated_at: "2026-04-04T17:43:55.461Z"
 deadline: "2026-03-19T23:02:12.823Z"
 assignee: steve
 author: steve
 estimated_minutes: 90
 acceptance_criteria: README and help examples are exercised and passing in tests.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Command help and README examples validated in tests are documented for reuse."
 order: 2
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-15o
+goal: Implement and verify scoped work for Command help and README examples validated in tests.
+objective: Capture actionable implementation context and verification evidence for Command help and README examples validated in tests.
+value: Improves future change velocity by making Command help and README examples validated in tests decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Command help and README examples validated in tests.
+outcome: This record can be used as canonical context when modifying Command help and README examples validated in tests.
+why_now: Historical decisions for Command help and README examples validated in tests need durable context for future maintenance and audits.
+parent: pm-jiw
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-b1w
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Command help and README examples validated in tests.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Command help and README examples validated in tests."
 reporter: steve
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Command help and README examples validated in tests (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Command help and README examples validated in tests.
+expected_result: Acceptance criteria for Command help and README examples validated in tests are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Command help and README examples validated in tests.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: docs-validation-component
+component: project-management/command-help-and-readme-examples-validated-in-te
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Command help and README examples validated in tests.
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-b1w,blocks,"2026-02-17T23:02:12.823Z",steve,null
   pm-jiw,parent,"2026-02-17T23:02:12.823Z",steve,null
@@ -61,4 +61,5 @@ docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow compliance
   PRD.md,project,governing spec
   README.md,project,validate examples and documented command surface
+close_reason: Completed planned scope for Command help and README examples validated in tests and preserved verification context for future changes.
 body: Automate validation for command help and README examples.

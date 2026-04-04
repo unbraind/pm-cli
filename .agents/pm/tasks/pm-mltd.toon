@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:docs",pm-cli,quickstart,readme
 created_at: "2026-03-12T23:22:33.164Z"
-updated_at: "2026-04-01T20:35:05.506Z"
+updated_at: "2026-04-04T17:45:49.593Z"
 deadline: "2026-03-13T23:22:33.164Z"
 assignee: codex-maintainer
 author: codex-maintainer
@@ -20,22 +20,22 @@ value: Reduces ambiguity around optional metadata and seed flags
 impact: Fewer incorrect create invocations and better discoverability
 outcome: Users can see the full create surface from the README quick start
 why_now: "The quick start is the first public example many users will copy, so it must show the full contract clearly."
-parent: pm-mltd
+parent: pm-nhgt
 reviewer: maintainer-review
 risk: low
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: no-active-blocker
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Expand README quick start create example to full field surface.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Expand README quick start create example to full field surface."
 reporter: codex-maintainer
 severity: low
 environment: docs
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
+resolution: Closed with implementation evidence captured for Expand README quick start create example to full field surface.
 expected_result: README quick start create example demonstrates the complete field surface.
-actual_result: current-state-matches-expected-behavior
+actual_result: Work completed and recorded with linked artifacts for Expand README quick start create example to full field surface.
 affected_version: 2026.3.9
 fixed_version: archive-2026q2
 component: documentation

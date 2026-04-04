@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:extensions-todos",code,docs,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-08T13:57:37.636Z"
-updated_at: "2026-04-01T20:34:52.001Z"
+updated_at: "2026-04-04T17:46:58.372Z"
 deadline: "2026-03-09T13:56:50.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -20,22 +20,22 @@ value: Prevents silent metadata loss in extension workflows.
 impact: Improves migration safety and cross-tool compatibility for real project tracking.
 outcome: Todos markdown round-trips preserve canonical pm metadata.
 why_now: Milestone 5 still documents todos hardening as partial and current import behavior contradicts that intent.
-parent: pm-3s0
+parent: pm-b1w
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: maintainer-loop-2026-03-08
 release: v0.1
 blocked_by: pm-3s0
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Restore full todos import metadata parity.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Restore full todos import metadata parity."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Restore full todos import metadata parity (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Restore full todos import metadata parity.
+expected_result: Acceptance criteria for Restore full todos import metadata parity are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Restore full todos import metadata parity.
 affected_version: v0.1
 fixed_version: v0.1
 component: extensions/todos

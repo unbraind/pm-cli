@@ -6,41 +6,40 @@ status: closed
 priority: 0
 tags[4]: "area:foundations",core,"milestone:0",pm-cli
 created_at: "2026-02-17T23:01:10.322Z"
-updated_at: "2026-04-01T20:30:57.011Z"
+updated_at: "2026-04-04T17:36:58.369Z"
 deadline: "2026-02-20T23:01:10.322Z"
 assignee: steve
 author: steve
 estimated_minutes: 360
 acceptance_criteria: Milestone 0 checklist items are implemented and verifiable.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Milestone 0 - Foundations are documented for reuse."
 order: 1
-goal: epic-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-epic-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-2xl
+goal: Coordinate roadmap delivery for Milestone 0 - Foundations.
+objective: Capture actionable implementation context and verification evidence for Milestone 0 - Foundations.
+value: Improves future change velocity by making Milestone 0 - Foundations decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Milestone 0 - Foundations.
+outcome: This record can be used as canonical context when modifying Milestone 0 - Foundations.
+why_now: Historical decisions for Milestone 0 - Foundations need durable context for future maintenance and audits.
 reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-j7a
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Milestone 0 - Foundations.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Milestone 0 - Foundations."
 reporter: steve
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Milestone 0 - Foundations (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Milestone 0 - Foundations.
+expected_result: Acceptance criteria for Milestone 0 - Foundations are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Milestone 0 - Foundations.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: foundations-component
+component: project-management/milestone-0-foundations
 regression: false
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Milestone 0 - Foundations.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-j7a,child,"2026-02-17T23:01:10.322Z",steve,null
 comments[3]{created_at,author,text}:
@@ -62,4 +61,5 @@ docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow and evidence protocol
   PRD.md,project,authoritative milestone checklist
   README.md,project,public command/docs contract
+close_reason: Completed planned scope for Milestone 0 - Foundations and preserved verification context for future changes.
 body: Deliver baseline CLI scaffolding and deterministic primitives.

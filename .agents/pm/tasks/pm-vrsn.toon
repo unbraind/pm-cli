@@ -6,20 +6,29 @@ status: closed
 priority: 1
 tags[4]: context-parity,external-audit,implementation,linked-tests
 created_at: "2026-04-04T12:43:04.119Z"
-updated_at: "2026-04-04T14:02:06.595Z"
+updated_at: "2026-04-04T17:43:41.820Z"
 deadline: "2026-04-11T12:43:04.119Z"
 author: codex-agent
 estimated_minutes: 220
 acceptance_criteria: "Linked PM-command tests can run with tracker parity mode, emit context metadata, and optionally fail on detected context mismatch without changing default behavior."
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Implement PM-context parity mode and mismatch metadata for linked tests are documented for reuse."
+goal: Implement and verify scoped work for Implement PM-context parity mode and mismatch metadata for linked tests.
+objective: Capture actionable implementation context and verification evidence for Implement PM-context parity mode and mismatch metadata for linked tests.
+value: Improves future change velocity by making Implement PM-context parity mode and mismatch metadata for linked tests decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Implement PM-context parity mode and mismatch metadata for linked tests.
+outcome: This record can be used as canonical context when modifying Implement PM-context parity mode and mismatch metadata for linked tests.
+why_now: Historical decisions for Implement PM-context parity mode and mismatch metadata for linked tests need durable context for future maintenance and audits.
 parent: pm-8izv
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: external-audit-followup
 release: vnext
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Implement PM-context parity mode and mismatch metadata for linked tests.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Implement PM-context parity mode and mismatch metadata for linked tests."
 reporter: codex-agent
 severity: medium
-environment: linux-node25-local
+environment: Project workspace execution context for Implement PM-context parity mode and mismatch metadata for linked tests (pm CLI + Node/pnpm toolchain).
 repro_steps: Run pm list-all as a linked command and compare source versus sandbox item counts.
 resolution: Implemented PM context parity controls and mismatch guardrails.
 expected_result: Context drift is visible and enforceable for PM-command linked tests.

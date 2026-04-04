@@ -6,41 +6,41 @@ status: closed
 priority: 1
 tags[7]: "area:test-command",code,doc,"milestone:3",pm-cli,"priority:1",tests
 created_at: "2026-03-05T12:46:34.203Z"
-updated_at: "2026-04-01T20:27:14.909Z"
+updated_at: "2026-04-04T17:46:44.141Z"
 deadline: "2026-03-06T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: pm test --add rejects chained direct runner segments that lack explicit PM_PATH and PM_GLOBAL_PATH even when other segments set them; docs and unit tests cover the behavior and coverage remains 100 percent.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Harden chained sandbox env detection per segment are documented for reuse."
 order: 2
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-wdgn
+goal: Implement and verify scoped work for Harden chained sandbox env detection per segment.
+objective: Capture actionable implementation context and verification evidence for Harden chained sandbox env detection per segment.
+value: Improves future change velocity by making Harden chained sandbox env detection per segment decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Harden chained sandbox env detection per segment.
+outcome: This record can be used as canonical context when modifying Harden chained sandbox env detection per segment.
+why_now: Historical decisions for Harden chained sandbox env detection per segment need durable context for future maintenance and audits.
+parent: pm-2p6q
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-mlc3
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Harden chained sandbox env detection per segment.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Harden chained sandbox env detection per segment."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Harden chained sandbox env detection per segment (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Harden chained sandbox env detection per segment.
+expected_result: Acceptance criteria for Harden chained sandbox env detection per segment are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Harden chained sandbox env detection per segment.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: test-command-component
+component: project-management/harden-chained-sandbox-env-detection-per-segment
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Harden chained sandbox env detection per segment.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-mlc3,related,"2026-03-05T12:46:34.203Z",maintainer-agent,null
 comments[4]{created_at,author,text}:
@@ -62,4 +62,5 @@ docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood and test safety protocol
   PRD.md,project,authoritative behavior contract
   README.md,project,clarify chained sandbox env requirement
+close_reason: Completed planned scope for Harden chained sandbox env detection per segment and preserved verification context for future changes.
 body: Current sandbox env detection in pm test --add is command-wide. Chained commands can pass validation when PM_PATH and PM_GLOBAL_PATH are set in one segment but an unsafe direct runner appears in a different segment. Tighten validation so each chained direct-runner segment must either use node scripts/run-tests.mjs or explicitly set both env vars.

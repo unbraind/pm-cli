@@ -6,15 +6,27 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:contracts","area:error","area:help","area:schema",pm-cli
 created_at: "2026-04-03T15:41:56.689Z"
-updated_at: "2026-04-04T12:01:44.093Z"
+updated_at: "2026-04-04T17:38:53.253Z"
 deadline: "2026-04-13T15:41:56.689Z"
 author: codex-agent
 estimated_minutes: 540
 acceptance_criteria: All planned surfaces are implemented with deterministic behavior and regression coverage; docs stay in sync.
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Implement agent-first help/schema/error surfaces are documented for reuse."
+goal: Deliver feature capability for Implement agent-first help/schema/error surfaces.
+objective: Capture actionable implementation context and verification evidence for Implement agent-first help/schema/error surfaces.
+value: Improves future change velocity by making Implement agent-first help/schema/error surfaces decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Implement agent-first help/schema/error surfaces.
+outcome: This record can be used as canonical context when modifying Implement agent-first help/schema/error surfaces.
+why_now: Historical decisions for Implement agent-first help/schema/error surfaces need durable context for future maintenance and audits.
 parent: pm-pfn8
-resolution: historical-closure-normalized-by-governance-pass
-expected_result: historical-expected-result-backfilled-for-governance-audit
-actual_result: historical-actual-result-backfilled-for-governance-audit
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Implement agent-first help/schema/error surfaces.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Implement agent-first help/schema/error surfaces."
+environment: Project workspace execution context for Implement agent-first help/schema/error surfaces (pm CLI + Node/pnpm toolchain).
+resolution: Closed with implementation evidence captured for Implement agent-first help/schema/error surfaces.
+expected_result: Acceptance criteria for Implement agent-first help/schema/error surfaces are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Implement agent-first help/schema/error surfaces.
+component: project-management/implement-agent-first-help-schema-error-surfaces
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Implement agent-first help/schema/error surfaces.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-pfn8,parent,"2026-04-03T15:41:56.689Z",codex-agent,null
 comments[1]{created_at,author,text}:

@@ -6,41 +6,41 @@ status: closed
 priority: 0
 tags[4]: contract-sync,maintenance,pm-cli,release-readiness
 created_at: "2026-03-06T19:44:34.375Z"
-updated_at: "2026-04-04T12:09:08.477Z"
+updated_at: "2026-04-04T17:47:41.598Z"
 deadline: "2026-03-07T19:44:34.375Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: Release-readiness tests assert docs require pm close workflow and disallow update --status closed guidance; sandbox-safe verification and coverage remain 100%.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Close-workflow contract guard across docs and runtime are documented for reuse."
 order: 1
-goal: chore-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-chore-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-fvox
+goal: Maintain operational quality for Close-workflow contract guard across docs and runtime.
+objective: Capture actionable implementation context and verification evidence for Close-workflow contract guard across docs and runtime.
+value: Improves future change velocity by making Close-workflow contract guard across docs and runtime decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Close-workflow contract guard across docs and runtime.
+outcome: This record can be used as canonical context when modifying Close-workflow contract guard across docs and runtime.
+why_now: Historical decisions for Close-workflow contract guard across docs and runtime need durable context for future maintenance and audits.
+parent: pm-8a2s
 reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: no-active-blocker
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Close-workflow contract guard across docs and runtime.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Close-workflow contract guard across docs and runtime."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Close-workflow contract guard across docs and runtime (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Close-workflow contract guard across docs and runtime.
+expected_result: Acceptance criteria for Close-workflow contract guard across docs and runtime are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Close-workflow contract guard across docs and runtime.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: chore-component
+component: project-management/close-workflow-contract-guard-across-docs-and-ru
 regression: false
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Close-workflow contract guard across docs and runtime.
 comments[4]{created_at,author,text}:
   "2026-03-06T19:44:34.375Z",maintainer-agent,Queue next non-duplicate release-hardening guard around close workflow semantics.
   "2026-03-06T19:44:50.643Z",maintainer-agent,"Planned changeset: add release-readiness integration assertions that docs retain pm close workflow guidance and avoid update --status closed instructions; include a runtime check that update --status closed remains usage-invalid."

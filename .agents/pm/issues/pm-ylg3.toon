@@ -6,12 +6,12 @@ status: closed
 priority: 0
 tags[4]: dependabot,github-alert,security,undici
 created_at: "2026-04-03T17:24:35.516Z"
-updated_at: "2026-04-03T17:46:16.182Z"
+updated_at: "2026-04-04T17:49:23.832Z"
 deadline: "2026-04-17T17:24:35.516Z"
 author: codex-agent
 estimated_minutes: 45
 acceptance_criteria: Alert is resolved by an upgrade or explicitly dismissed with recorded rationale and verification.
-definition_of_ready: GitHub alert details are captured and remediation path is understood.
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Track GitHub Dependabot alert #26 for undici are documented for reuse."
 order: 1
 goal: Security hygiene
 objective: Track runtime dependency vulnerabilities reported by GitHub
@@ -25,6 +25,8 @@ risk: high
 confidence: high
 sprint: 2026-w14
 release: vnext
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Track GitHub Dependabot alert #26 for undici.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Track GitHub Dependabot alert #26 for undici."
 reporter: github-dependabot
 severity: high
 environment: runtime direct dependency in package.json
@@ -37,9 +39,10 @@ fixed_version: 6.24.0
 component: "dependency:undici"
 regression: true
 customer_impact: Runtime dependency vulnerabilities may affect CLI users and maintainers until remediated.
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-03T17:24:35.516Z",codex-agent,Imported open GitHub Dependabot alert GHSA-v9p9-hfj2-hcw8.
   "2026-04-03T17:46:15.241Z",codex-agent,"Remediated in GH findings sweep: upgraded undici to 8.0.1, updated dependency stack to patched versions, added brace-expansion override >=5.0.5, and verified pnpm audit --prod/--all report zero vulnerabilities."
+  "2026-04-04T17:34:29.091Z",codex-agent,"Duplicate consolidation pass: canonical item pm-ylg3 now anchors cluster 'ghsa::ghsa-v9p9-hfj2-hcw8'. Superseded siblings preserved for historical traceability: pm-53q4."
 notes[1]{created_at,author,text}:
   "2026-04-03T17:24:35.516Z",codex-agent,Remediate or dismiss this alert with verification evidence.
 files[1]{path,scope,note}:

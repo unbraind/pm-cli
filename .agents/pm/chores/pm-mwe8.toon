@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[8]: "area:ci","area:release",code,docs,"milestone:6",pm-cli,"priority:0",release-readiness
 created_at: "2026-03-08T21:08:48.927Z"
-updated_at: "2026-04-04T12:00:04.245Z"
+updated_at: "2026-04-04T17:47:55.890Z"
 deadline: "2026-03-09T21:08:48.927Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -20,27 +20,27 @@ value: Eliminates manual publish steps and ensures compatibility with future Nod
 impact: Reduces release friction; increases confidence in Node version compatibility
 outcome: Automated releases on tag push; CI confirms Node 24 compatibility
 why_now: Project is at v0.1 release milestone; automated publish is standard for production npm packages
-parent: pm-mwe8
+parent: pm-8a2s
 reviewer: maintainer-review
 risk: low
 confidence: high
 sprint: archive-2026w14
 release: v0.1
 blocked_by: no-active-blocker
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Add automated npm release workflow and Node 24 CI coverage.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Add automated npm release workflow and Node 24 CI coverage."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Add automated npm release workflow and Node 24 CI coverage (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Add automated npm release workflow and Node 24 CI coverage.
+expected_result: Acceptance criteria for Add automated npm release workflow and Node 24 CI coverage are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Add automated npm release workflow and Node 24 CI coverage.
 affected_version: v0.1
 fixed_version: v0.1
-component: ci-component
+component: project-management/add-automated-npm-release-workflow-and-node-24-c
 regression: false
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add automated npm release workflow and Node 24 CI coverage.
 comments[3]{created_at,author,text}:
   "2026-03-08T21:08:48.927Z",maintainer-agent,"Addresses two gaps: missing release automation and Node 24 CI coverage."
   "2026-03-08T21:12:26.863Z",maintainer-agent,"Implementation complete. Changes: (1) .github/workflows/release.yml created with v*.*.* tag trigger, full CI suite, npm publish, and coverage upload. (2) node: 24 added to ci.yml and nightly.yml matrices. (3) PRD Milestone 6 checklist updated to mark release workflow as complete. (4) README.md Automated Release section added. (5) CHANGELOG.md updated with CI/release automation entries. (6) ci-workflow-contract.spec.ts updated with new assertions for Node 24 in both matrices and a new test for release.yml contract. Tests: 535 passing (1 new), 100% coverage maintained."

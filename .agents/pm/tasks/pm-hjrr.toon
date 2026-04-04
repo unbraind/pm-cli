@@ -6,20 +6,29 @@ status: closed
 priority: 1
 tags[4]: diagnostics,extensions,external-audit,implementation
 created_at: "2026-04-04T12:43:31.599Z"
-updated_at: "2026-04-04T14:02:11.259Z"
+updated_at: "2026-04-04T17:43:45.276Z"
 deadline: "2026-04-11T12:43:31.599Z"
 author: codex-agent
 estimated_minutes: 200
 acceptance_criteria: Extension doctor command provides deterministic summary/deep outputs and remediation hints while preserving existing extension manage/health contracts.
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Implement extension doctor summary/deep diagnostics command are documented for reuse."
+goal: Implement and verify scoped work for Implement extension doctor summary/deep diagnostics command.
+objective: Capture actionable implementation context and verification evidence for Implement extension doctor summary/deep diagnostics command.
+value: Improves future change velocity by making Implement extension doctor summary/deep diagnostics command decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Implement extension doctor summary/deep diagnostics command.
+outcome: This record can be used as canonical context when modifying Implement extension doctor summary/deep diagnostics command.
+why_now: Historical decisions for Implement extension doctor summary/deep diagnostics command need durable context for future maintenance and audits.
 parent: pm-gm9y
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: external-audit-followup
 release: vnext
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Implement extension doctor summary/deep diagnostics command.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Implement extension doctor summary/deep diagnostics command."
 reporter: codex-agent
 severity: medium
-environment: linux-node25-local
+environment: Project workspace execution context for Implement extension doctor summary/deep diagnostics command (pm CLI + Node/pnpm toolchain).
 repro_steps: Compare triage effort between fragmented manage/health outputs and dedicated doctor output.
 resolution: Implemented extension doctor summary/deep diagnostics action.
 expected_result: Single command provides focused extension diagnostics with machine-readable details and concise summary mode.

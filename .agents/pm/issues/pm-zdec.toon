@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:dependencies","area:metadata",core,pm-cli,release-readiness
 created_at: "2026-04-01T20:43:14.612Z"
-updated_at: "2026-04-01T21:33:41.360Z"
+updated_at: "2026-04-04T17:49:10.355Z"
 deadline: "2026-04-06T20:43:14.612Z"
 author: codex-agent
 estimated_minutes: 180
@@ -30,7 +30,7 @@ blocked_reason: need-command-shape-confirmation-for-dependency-mutations
 unblock_note: implement-command-after-contract-review-and-test-plan-signoff
 reporter: codex-agent
 severity: medium
-environment: linux-node25-local
+environment: Project workspace execution context for Add dependency mutation command for existing items (pm CLI + Node/pnpm toolchain).
 repro_steps: 1) Run pm list-all --json and identify items with empty dependencies 2) Attempt pm update --dep ... 3) Observe unknown option and no alternative dependency mutation command
 resolution: implement a dedicated dependency mutation surface for existing items
 expected_result: Agents can add dependency entries to existing items via a supported command and history records capture each mutation.

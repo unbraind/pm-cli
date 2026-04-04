@@ -6,41 +6,41 @@ status: closed
 priority: 1
 tags[8]: "area:search","area:security",code,docs,"milestone:4",pm-cli,"priority:1",tests
 created_at: "2026-03-04T20:55:49.857Z"
-updated_at: "2026-04-01T20:34:08.932Z"
+updated_at: "2026-04-04T17:46:12.997Z"
 deadline: "2026-03-05T20:55:49.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: search --include-linked ignores linked file/doc/test paths that resolve outside their allowed project/global roots; traversal-style paths do not influence scoring; docs and tests are updated; coverage remains 100%.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Harden include-linked path containment are documented for reuse."
 order: 2
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-q35x
+goal: Implement and verify scoped work for Harden include-linked path containment.
+objective: Capture actionable implementation context and verification evidence for Harden include-linked path containment.
+value: Improves future change velocity by making Harden include-linked path containment decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Harden include-linked path containment.
+outcome: This record can be used as canonical context when modifying Harden include-linked path containment.
+why_now: Historical decisions for Harden include-linked path containment need durable context for future maintenance and audits.
+parent: pm-j7a
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-cwp
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Harden include-linked path containment.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Harden include-linked path containment."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Harden include-linked path containment (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Harden include-linked path containment.
+expected_result: Acceptance criteria for Harden include-linked path containment are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Harden include-linked path containment.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: search-component
+component: project-management/harden-include-linked-path-containment
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Harden include-linked path containment.
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-cwp,related,"2026-03-04T20:55:49.857Z",maintainer-agent,null
   pm-j7a,parent,"2026-03-04T20:55:49.857Z",maintainer-agent,null
@@ -67,4 +67,5 @@ docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow contract
   PRD.md,project,governing spec
   README.md,project,user contract
+close_reason: Completed planned scope for Harden include-linked path containment and preserved verification context for future changes.
 body: "Context: PRD security section requires path input validation; include-linked currently resolves linked paths without explicit scope-root containment checks. Approach: docs-first clarify containment behavior, then enforce root-bounded linked reads for project/global scope and add regression tests."

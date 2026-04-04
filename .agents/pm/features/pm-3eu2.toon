@@ -6,15 +6,27 @@ status: closed
 priority: 1
 tags[5]: "area:docs","area:files","area:ux",external-audit,pm-cli
 created_at: "2026-04-03T14:48:12.160Z"
-updated_at: "2026-04-04T12:04:03.869Z"
+updated_at: "2026-04-04T17:38:17.007Z"
 deadline: "2026-04-13T14:48:12.160Z"
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: "files/docs support repeatable --add-glob with deterministic dedup and parity across CLI contracts, wrapper mapping, docs, and tests."
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Add glob-based linked artifact additions for files/docs are documented for reuse."
+goal: Deliver feature capability for Add glob-based linked artifact additions for files/docs.
+objective: Capture actionable implementation context and verification evidence for Add glob-based linked artifact additions for files/docs.
+value: Improves future change velocity by making Add glob-based linked artifact additions for files/docs decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Add glob-based linked artifact additions for files/docs.
+outcome: This record can be used as canonical context when modifying Add glob-based linked artifact additions for files/docs.
+why_now: Historical decisions for Add glob-based linked artifact additions for files/docs need durable context for future maintenance and audits.
 parent: pm-iswo
-resolution: historical-closure-normalized-by-governance-pass
-expected_result: historical-expected-result-backfilled-for-governance-audit
-actual_result: historical-actual-result-backfilled-for-governance-audit
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Add glob-based linked artifact additions for files/docs.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Add glob-based linked artifact additions for files/docs."
+environment: Project workspace execution context for Add glob-based linked artifact additions for files/docs (pm CLI + Node/pnpm toolchain).
+resolution: Closed with implementation evidence captured for Add glob-based linked artifact additions for files/docs.
+expected_result: Acceptance criteria for Add glob-based linked artifact additions for files/docs are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Add glob-based linked artifact additions for files/docs.
+component: project-management/add-glob-based-linked-artifact-additions-for-fil
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add glob-based linked artifact additions for files/docs.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-ap8l,related,"2026-04-03T14:48:12.160Z",codex-agent,null
 comments[3]{created_at,author,text}:

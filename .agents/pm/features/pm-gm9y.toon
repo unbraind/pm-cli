@@ -6,20 +6,29 @@ status: closed
 priority: 1
 tags[4]: diagnostics,extensions,external-audit,pm-cli
 created_at: "2026-04-04T12:42:52.452Z"
-updated_at: "2026-04-04T14:03:00.418Z"
+updated_at: "2026-04-04T17:39:49.443Z"
 deadline: "2026-04-14T12:42:52.452Z"
 author: codex-agent
 estimated_minutes: 220
 acceptance_criteria: A dedicated extension doctor command returns deterministic summary and deep diagnostics with normalized warning/error codes and remediation hints.
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Dedicated extension doctor diagnostics surface are documented for reuse."
+goal: Deliver feature capability for Dedicated extension doctor diagnostics surface.
+objective: Capture actionable implementation context and verification evidence for Dedicated extension doctor diagnostics surface.
+value: Improves future change velocity by making Dedicated extension doctor diagnostics surface decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Dedicated extension doctor diagnostics surface.
+outcome: This record can be used as canonical context when modifying Dedicated extension doctor diagnostics surface.
+why_now: Historical decisions for Dedicated extension doctor diagnostics surface need durable context for future maintenance and audits.
 parent: pm-5z9r
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: external-audit-followup
 release: vnext
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Dedicated extension doctor diagnostics surface.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Dedicated extension doctor diagnostics surface."
 reporter: codex-agent
 severity: medium
-environment: linux-node25-local
+environment: Project workspace execution context for Dedicated extension doctor diagnostics surface (pm CLI + Node/pnpm toolchain).
 repro_steps: Triage currently requires manual correlation across extension --manage and health outputs.
 resolution: Implemented dedicated extension doctor diagnostics via pm-hjrr.
 expected_result: Single diagnostics surface supports quick summary triage and deep machine-readable troubleshooting detail.

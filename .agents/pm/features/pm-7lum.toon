@@ -1,0 +1,49 @@
+id: pm-7lum
+title: Automate duplicate-cluster detection and canonical mapping report
+description: "Add a deterministic command/reporting workflow that groups similar pm items, proposes canonical records, and emits supersession mappings before mutation."
+type: Feature
+status: open
+priority: 2
+tags[4]: dedupe,governance,pm-cli,reporting
+created_at: "2026-04-04T17:53:51.723Z"
+updated_at: "2026-04-04T17:53:51.723Z"
+deadline: "2026-04-18T17:53:51.723Z"
+assignee: codex-agent
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: "A deterministic command or report output groups duplicate candidates, identifies canonical item candidates, and produces auditable mapping output that can be reviewed before any mutation operations."
+definition_of_ready: "Scope, candidate clustering rules, and expected output contract are documented with linked files/tests/docs."
+order: 2
+goal: Governance automation
+objective: Reduce manual duplicate-consolidation effort
+value: Makes dedupe operations reproducible and reviewable
+impact: Lowers risk of inconsistent supersession decisions across agents
+outcome: Duplicate-management workflow becomes deterministic and auditable
+why_now: Governance pass required manual clustering and should be productized for future runs.
+parent: pm-wtsp
+reviewer: maintainer-review
+risk: medium
+confidence: medium
+sprint: governance-followups
+release: vnext
+reporter: codex-agent
+severity: low
+environment: linux
+repro_steps: Run search/list/context inventory and manually cluster near-duplicate titles; compare with scripted clustering output.
+affected_version: 2026.3.12
+component: dedupe-automation
+regression: false
+customer_impact: Maintainers get faster and safer duplicate management for large trackers.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-wtsp,discovered_from,"2026-04-04T17:53:51.723Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-04T17:53:51.723Z",codex-agent,Duplicate-check evidence pm context --limit 10; pm search duplicate cluster consolidation automation --limit 20; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because no dedicated automation feature exists for duplicate-cluster reporting.
+notes[1]{created_at,author,text}:
+  "2026-04-04T17:53:51.723Z",codex-agent,Initial governance pass required custom scripts for similarity clustering and canonical mapping across 9 duplicate families.
+files[1]{path,scope,note}:
+  src/cli/commands/search.ts,project,existing similarity/search surface for extension
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,search/reporting regression baseline
+docs[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,future dedupe report workflow design
+body: "Current deduplication requires ad-hoc scripting. This feature will provide repeatable cluster generation for near-duplicate titles (run loops, alert families, repetitive trackers), canonical selection hints, and safe preview output for maintainers before applying close_reason mappings."

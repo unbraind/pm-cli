@@ -6,41 +6,41 @@ status: closed
 priority: 1
 tags[7]: "area:search",code,docs,"milestone:4",pm-cli,"priority:1",tests
 created_at: "2026-03-05T13:05:50.978Z"
-updated_at: "2026-04-01T20:34:20.796Z"
+updated_at: "2026-04-04T17:45:08.146Z"
 deadline: "2026-03-06T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: Delete and other missing-ID mutation refresh paths remove corresponding vectors in active stores (Qdrant/LanceDB). Warnings stay deterministic and coverage remains 100%.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for M4 follow-up: remove deleted items from semantic vector indexes are documented for reuse."
 order: 2
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-fdla
+goal: "Implement and verify scoped work for M4 follow-up: remove deleted items from semantic vector indexes."
+objective: "Capture actionable implementation context and verification evidence for M4 follow-up: remove deleted items from semantic vector indexes."
+value: "Improves future change velocity by making M4 follow-up: remove deleted items from semantic vector indexes decisions and scope explicit."
+impact: "Reduces ambiguity and handoff risk for future work touching M4 follow-up: remove deleted items from semantic vector indexes."
+outcome: "This record can be used as canonical context when modifying M4 follow-up: remove deleted items from semantic vector indexes."
+why_now: "Historical decisions for M4 follow-up: remove deleted items from semantic vector indexes need durable context for future maintenance and audits."
+parent: pm-f45
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-f45
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: "Current status is closed; no unresolved blocker is recorded for M4 follow-up: remove deleted items from semantic vector indexes."
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming M4 follow-up: remove deleted items from semantic vector indexes."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: "Project workspace execution context for M4 follow-up: remove deleted items from semantic vector indexes (pm CLI + Node/pnpm toolchain)."
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: "Closed with implementation evidence captured for M4 follow-up: remove deleted items from semantic vector indexes."
+expected_result: "Acceptance criteria for M4 follow-up: remove deleted items from semantic vector indexes are satisfied with reproducible verification evidence."
+actual_result: "Work completed and recorded with linked artifacts for M4 follow-up: remove deleted items from semantic vector indexes."
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: search-component
+component: project-management/m4-follow-up-remove-deleted-items-from-semantic-
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M4 follow-up: remove deleted items from semantic vector indexes."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-f45,parent,"2026-03-05T13:05:50.978Z",maintainer-agent,null
 comments[7]{created_at,author,text}:
@@ -70,4 +70,5 @@ docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow and test safety
   PRD.md,project,authoritative semantic refresh contract
   README.md,project,user-facing semantic refresh contract
+close_reason: "Completed planned scope for M4 follow-up: remove deleted items from semantic vector indexes and preserved verification context for future changes."
 body: "Delete mutations currently refresh existing item embeddings but skip missing IDs. This can leave stale vectors in configured stores. This task adds docs-first contract clarification, vector-delete execution support, and mutation refresh behavior that prunes deleted IDs."

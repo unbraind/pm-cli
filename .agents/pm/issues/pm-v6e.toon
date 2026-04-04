@@ -6,41 +6,41 @@ status: closed
 priority: 1
 tags[6]: "area:test-all",code,"milestone:3",pm-cli,"priority:1",tests
 created_at: "2026-02-20T20:58:59.997Z"
-updated_at: "2026-04-04T12:07:11.115Z"
+updated_at: "2026-04-04T17:49:13.824Z"
 deadline: "2026-02-27T20:58:59.000Z"
 assignee: steve-maintainer
 author: steve-maintainer
 estimated_minutes: 120
 acceptance_criteria: "test-all executes each unique linked command/path at most once per invocation, duplicates are marked skipped (not failed), totals remain deterministic, and unit/integration tests cover duplicate command and duplicate path scenarios."
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Deduplicate test-all linked test execution across items are documented for reuse."
 order: 2
 goal: issue-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-issue-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-v6e
+objective: Capture actionable implementation context and verification evidence for Deduplicate test-all linked test execution across items.
+value: Improves future change velocity by making Deduplicate test-all linked test execution across items decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Deduplicate test-all linked test execution across items.
+outcome: This record can be used as canonical context when modifying Deduplicate test-all linked test execution across items.
+why_now: Historical decisions for Deduplicate test-all linked test execution across items need durable context for future maintenance and audits.
+parent: pm-54d
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-54d
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Deduplicate test-all linked test execution across items.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Deduplicate test-all linked test execution across items."
 reporter: steve-maintainer
 severity: high
-environment: linux-node25-local
+environment: Project workspace execution context for Deduplicate test-all linked test execution across items (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Deduplicate test-all linked test execution across items.
+expected_result: Acceptance criteria for Deduplicate test-all linked test execution across items are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Deduplicate test-all linked test execution across items.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: test-all-component
+component: project-management/deduplicate-test-all-linked-test-execution-acros
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Deduplicate test-all linked test execution across items.
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-54d,parent,"2026-02-20T20:58:59.997Z",steve-maintainer,null
   pm-66o,related,"2026-02-20T20:58:59.997Z",steve-maintainer,null
@@ -65,4 +65,5 @@ tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,a
 docs[2]{path,scope,note}:
   PRD.md,project,update test-all deterministic orchestration contract if behavior/output changes
   README.md,project,document duplicate-skip semantics for test-all
+close_reason: Completed planned scope for Deduplicate test-all linked test execution across items and preserved verification context for future changes.
 body: "Problem: when multiple items link the same test command/path, pm test-all executes duplicates repeatedly. Proposed behavior: skip duplicate command/path entries within a single test-all run while preserving deterministic results and reporting."

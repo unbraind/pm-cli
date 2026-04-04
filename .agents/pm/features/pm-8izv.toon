@@ -6,11 +6,18 @@ status: closed
 priority: 1
 tags[4]: context-parity,external-audit,linked-tests,pm-cli
 created_at: "2026-04-04T12:42:31.364Z"
-updated_at: "2026-04-04T14:02:56.100Z"
+updated_at: "2026-04-04T17:39:46.491Z"
 deadline: "2026-04-14T12:42:31.364Z"
 author: codex-agent
 estimated_minutes: 260
 acceptance_criteria: pm test and pm test-all support additive PM context parity controls; PM-command run results include execution context metadata; strict mismatch guard can fail linked commands deterministically.
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Linked-test PM context parity controls and mismatch guardrails are documented for reuse."
+goal: Deliver feature capability for Linked-test PM context parity controls and mismatch guardrails.
+objective: Capture actionable implementation context and verification evidence for Linked-test PM context parity controls and mismatch guardrails.
+value: Improves future change velocity by making Linked-test PM context parity controls and mismatch guardrails decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Linked-test PM context parity controls and mismatch guardrails.
+outcome: This record can be used as canonical context when modifying Linked-test PM context parity controls and mismatch guardrails.
+why_now: Historical decisions for Linked-test PM context parity controls and mismatch guardrails need durable context for future maintenance and audits.
 parent: pm-5z9r
 reviewer: maintainer-review
 risk: medium
@@ -22,7 +29,7 @@ blocked_reason: Issue triage open; implementation can proceed in same workstream
 unblock_note: Implement with additive defaults to avoid regressions.
 reporter: codex-agent
 severity: medium
-environment: linux-node25-local
+environment: Project workspace execution context for Linked-test PM context parity controls and mismatch guardrails (pm CLI + Node/pnpm toolchain).
 repro_steps: Linked PM command observes different item counts than direct workspace command.
 resolution: Implemented PM-context parity feature via pm-vrsn.
 expected_result: Context parity options and metadata make PM-command linked-test behavior explicit and enforceable.

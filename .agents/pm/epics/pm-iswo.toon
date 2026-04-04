@@ -6,14 +6,26 @@ status: closed
 priority: 0
 tags[5]: "area:dependencies","area:files","area:ux",external-audit,pm-cli
 created_at: "2026-04-03T14:47:48.291Z"
-updated_at: "2026-04-04T12:02:02.073Z"
+updated_at: "2026-04-04T17:36:31.104Z"
 deadline: "2026-04-17T14:47:48.291Z"
 author: codex-agent
 estimated_minutes: 360
 acceptance_criteria: "Unresolved gaps ship with backward-compatible behavior, docs/contracts parity, and full verification evidence."
-resolution: historical-closure-normalized-by-governance-pass
-expected_result: historical-expected-result-backfilled-for-governance-audit
-actual_result: historical-actual-result-backfilled-for-governance-audit
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for External audit follow-up: unresolved UX and dependency visualization gaps are documented for reuse."
+goal: "Coordinate roadmap delivery for External audit follow-up: unresolved UX and dependency visualization gaps."
+objective: "Capture actionable implementation context and verification evidence for External audit follow-up: unresolved UX and dependency visualization gaps."
+value: "Improves future change velocity by making External audit follow-up: unresolved UX and dependency visualization gaps decisions and scope explicit."
+impact: "Reduces ambiguity and handoff risk for future work touching External audit follow-up: unresolved UX and dependency visualization gaps."
+outcome: "This record can be used as canonical context when modifying External audit follow-up: unresolved UX and dependency visualization gaps."
+why_now: "Historical decisions for External audit follow-up: unresolved UX and dependency visualization gaps need durable context for future maintenance and audits."
+blocked_reason: "Current status is closed; no unresolved blocker is recorded for External audit follow-up: unresolved UX and dependency visualization gaps."
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming External audit follow-up: unresolved UX and dependency visualization gaps."
+environment: "Project workspace execution context for External audit follow-up: unresolved UX and dependency visualization gaps (pm CLI + Node/pnpm toolchain)."
+resolution: "Closed with implementation evidence captured for External audit follow-up: unresolved UX and dependency visualization gaps."
+expected_result: "Acceptance criteria for External audit follow-up: unresolved UX and dependency visualization gaps are satisfied with reproducible verification evidence."
+actual_result: "Work completed and recorded with linked artifacts for External audit follow-up: unresolved UX and dependency visualization gaps."
+component: project-management/external-audit-follow-up-unresolved-ux-and-depen
+customer_impact: "Gives maintainers and contributors clearer context and safer change execution for External audit follow-up: unresolved UX and dependency visualization gaps."
 comments[3]{created_at,author,text}:
   "2026-04-03T14:47:48.291Z",codex-agent,Created after de-dup mapping confirmed closed items already cover the remaining report scope.
   "2026-04-03T14:48:57.089Z",codex-agent,"Created and claimed child hierarchy for unresolved scope: pm-8sgf (ownership guidance), pm-3eu2 (files/docs add-glob), pm-x85o (deps visualization), pm-tcx8 (docs/contracts parity)."

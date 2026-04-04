@@ -6,41 +6,41 @@ status: closed
 priority: 1
 tags[6]: "area:history",code,"milestone:3",pm-cli,"priority:1",tests
 created_at: "2026-03-06T04:58:36.054Z"
-updated_at: "2026-04-01T20:27:04.159Z"
+updated_at: "2026-04-04T17:45:01.495Z"
 deadline: "2026-03-07T23:59:00.000Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
 estimated_minutes: 75
 acceptance_criteria: "pm activity returns {activity:[],count:0} when history directory is absent; targeted and full regression tests pass with 100% coverage unchanged."
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for M3 follow-up: harden activity when history directory is missing are documented for reuse."
 order: 2
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-er7n
+goal: "Implement and verify scoped work for M3 follow-up: harden activity when history directory is missing."
+objective: "Capture actionable implementation context and verification evidence for M3 follow-up: harden activity when history directory is missing."
+value: "Improves future change velocity by making M3 follow-up: harden activity when history directory is missing decisions and scope explicit."
+impact: "Reduces ambiguity and handoff risk for future work touching M3 follow-up: harden activity when history directory is missing."
+outcome: "This record can be used as canonical context when modifying M3 follow-up: harden activity when history directory is missing."
+why_now: "Historical decisions for M3 follow-up: harden activity when history directory is missing need durable context for future maintenance and audits."
+parent: pm-2p6q
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-54d
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: "Current status is closed; no unresolved blocker is recorded for M3 follow-up: harden activity when history directory is missing."
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming M3 follow-up: harden activity when history directory is missing."
 reporter: cursor-maintainer
 severity: low
-environment: linux-node25-local
+environment: "Project workspace execution context for M3 follow-up: harden activity when history directory is missing (pm CLI + Node/pnpm toolchain)."
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: "Closed with implementation evidence captured for M3 follow-up: harden activity when history directory is missing."
+expected_result: "Acceptance criteria for M3 follow-up: harden activity when history directory is missing are satisfied with reproducible verification evidence."
+actual_result: "Work completed and recorded with linked artifacts for M3 follow-up: harden activity when history directory is missing."
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: history-component
+component: project-management/m3-follow-up-harden-activity-when-history-direct
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M3 follow-up: harden activity when history directory is missing."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-54d,related,"2026-03-06T04:58:36.054Z",cursor-maintainer,null
 comments[5]{created_at,author,text}:
@@ -63,4 +63,5 @@ docs[3]{path,scope,note}:
   AGENTS.md,project,governing workflow
   PRD.md,project,authoritative contract
   README.md,project,public command contract
+close_reason: "Completed planned scope for M3 follow-up: harden activity when history directory is missing and preserved verification context for future changes."
 body: "Harden activity command by treating a missing history directory as zero history streams, preserving deterministic output and avoiding ENOENT failures in partially initialized/corrupted stores."

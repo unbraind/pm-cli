@@ -6,7 +6,7 @@ status: blocked
 priority: 0
 tags[4]: agent-ux,"area:context",core,pm-cli
 created_at: "2026-04-01T14:09:44.275Z"
-updated_at: "2026-04-04T12:00:38.339Z"
+updated_at: "2026-04-04T17:36:32.957Z"
 deadline: "2026-04-08T14:09:44.275Z"
 assignee: codex-agent
 author: codex-agent
@@ -30,10 +30,10 @@ blocked_reason: Epic delivery is blocked only by repository-wide coverage thresh
 unblock_note: complete-linked-dependency-then-update-status
 reporter: codex-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Agent context command ( / ) (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
 resolution: planned-or-active-implementation
-expected_result: behavior-aligns-with-acceptance-criteria
+expected_result: Resume execution for Agent context command ( / ) once blockers are cleared and verification path is confirmed.
 actual_result: work-tracked-as-active-or-open
 affected_version: vnext
 fixed_version: target-vnext

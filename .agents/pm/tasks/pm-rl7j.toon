@@ -6,20 +6,20 @@ status: closed
 priority: 1
 tags[4]: "area:release","area:tests",evidence,pm-cli
 created_at: "2026-04-01T02:18:07.586Z"
-updated_at: "2026-04-01T20:20:40.173Z"
+updated_at: "2026-04-04T17:42:43.297Z"
 deadline: "2026-04-10T02:18:07.586Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 100
 acceptance_criteria: All linked verification commands pass and closure evidence is recorded in pm comments before final close/release.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for E2: Final verification and closure evidence are documented for reuse."
 order: 2
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
+goal: "Implement and verify scoped work for E2: Final verification and closure evidence."
+objective: "Capture actionable implementation context and verification evidence for E2: Final verification and closure evidence."
+value: "Improves future change velocity by making E2: Final verification and closure evidence decisions and scope explicit."
+impact: "Reduces ambiguity and handoff risk for future work touching E2: Final verification and closure evidence."
+outcome: "This record can be used as canonical context when modifying E2: Final verification and closure evidence."
+why_now: "Historical decisions for E2: Final verification and closure evidence need durable context for future maintenance and audits."
 parent: pm-qwp7
 reviewer: maintainer-review
 risk: medium
@@ -27,20 +27,20 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-qwp7
-blocked_reason: no-current-blocker
+blocked_reason: "Current status is closed; no unresolved blocker is recorded for E2: Final verification and closure evidence."
 unblock_note: Coverage gate alignment complete; verification rerun passing.
 reporter: codex-agent
 severity: low
-environment: linux-node25-local
+environment: "Project workspace execution context for E2: Final verification and closure evidence (pm CLI + Node/pnpm toolchain)."
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: "Closed with implementation evidence captured for E2: Final verification and closure evidence."
+expected_result: "Acceptance criteria for E2: Final verification and closure evidence are satisfied with reproducible verification evidence."
+actual_result: "Work completed and recorded with linked artifacts for E2: Final verification and closure evidence."
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: release-component
+component: project-management/e2-final-verification-and-closure-evidence
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: "Gives maintainers and contributors clearer context and safer change execution for E2: Final verification and closure evidence."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-qwp7,parent,"2026-04-01T02:18:07.586Z",codex-agent,null
 comments[5]{created_at,author,text}:

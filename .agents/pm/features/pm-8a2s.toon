@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[9]: "area:extensions-pi","area:install",code,docs,"milestone:6",pm-cli,"priority:0",release-readiness,tests
 created_at: "2026-03-08T19:47:48.867Z"
-updated_at: "2026-04-04T15:49:33.776Z"
+updated_at: "2026-04-04T17:40:01.795Z"
 deadline: "2026-03-10T20:00:00.000Z"
 author: maintainer-agent
 estimated_minutes: 180
@@ -19,22 +19,22 @@ value: Reduces setup friction and prevents incorrect manual copy paths
 impact: Improves adoption and reliability of pm integration in Pi TUI
 outcome: Users can install and use pm Pi extension via pm command
 why_now: User workflow requires direct pm-driven extension installation with immediate usability in Pi TUI
-parent: pm-8a2s
+parent: pm-m9jc
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: maintainer-loop-2026-03-08
 release: v0.1
 blocked_by: pm-oqe0
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Sunset pm install command and migrate to extension manager installs.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Sunset pm install command and migrate to extension manager installs."
 reporter: maintainer-agent
 severity: low
 environment: linux
 repro_steps: run pm --help and observe no install command
-resolution: implemented-or-disposition-recorded
+resolution: Closed with implementation evidence captured for Sunset pm install command and migrate to extension manager installs.
 expected_result: pm install pi installs extension into selected Pi scope
-actual_result: current-state-matches-expected-behavior
+actual_result: Work completed and recorded with linked artifacts for Sunset pm install command and migrate to extension manager installs.
 affected_version: 0.1.0
 fixed_version: v0.1
 component: cli-installer

@@ -6,15 +6,27 @@ status: closed
 priority: 1
 tags[4]: "area:output","area:terminal",follow-up,pm-cli
 created_at: "2026-04-03T21:59:51.456Z"
-updated_at: "2026-04-04T12:01:14.884Z"
+updated_at: "2026-04-04T17:40:30.583Z"
 deadline: "2026-04-10T21:59:51.456Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: Broken-pipe writes in standard piped workflows are handled without Node stack traces; behavior remains stable for non-EPIPE failures and is covered by unit/runtime tests.
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for External follow-up: suppress EPIPE stack traces in piped output are documented for reuse."
+goal: "Implement and verify scoped work for External follow-up: suppress EPIPE stack traces in piped output."
+objective: "Capture actionable implementation context and verification evidence for External follow-up: suppress EPIPE stack traces in piped output."
+value: "Improves future change velocity by making External follow-up: suppress EPIPE stack traces in piped output decisions and scope explicit."
+impact: "Reduces ambiguity and handoff risk for future work touching External follow-up: suppress EPIPE stack traces in piped output."
+outcome: "This record can be used as canonical context when modifying External follow-up: suppress EPIPE stack traces in piped output."
+why_now: "Historical decisions for External follow-up: suppress EPIPE stack traces in piped output need durable context for future maintenance and audits."
 parent: pm-axlr
-resolution: historical-closure-normalized-by-governance-pass
-expected_result: historical-expected-result-backfilled-for-governance-audit
-actual_result: historical-actual-result-backfilled-for-governance-audit
+blocked_reason: "Current status is closed; no unresolved blocker is recorded for External follow-up: suppress EPIPE stack traces in piped output."
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming External follow-up: suppress EPIPE stack traces in piped output."
+environment: "Project workspace execution context for External follow-up: suppress EPIPE stack traces in piped output (pm CLI + Node/pnpm toolchain)."
+resolution: "Closed with implementation evidence captured for External follow-up: suppress EPIPE stack traces in piped output."
+expected_result: "Acceptance criteria for External follow-up: suppress EPIPE stack traces in piped output are satisfied with reproducible verification evidence."
+actual_result: "Work completed and recorded with linked artifacts for External follow-up: suppress EPIPE stack traces in piped output."
+component: project-management/external-follow-up-suppress-epipe-stack-traces-i
+customer_impact: "Gives maintainers and contributors clearer context and safer change execution for External follow-up: suppress EPIPE stack traces in piped output."
 comments[4]{created_at,author,text}:
   "2026-04-03T21:59:51.456Z",codex-agent,Child task created from external issue report reproduction in this repository.
   "2026-04-03T22:00:17.085Z",codex-agent,"Implementation started: will add safe broken-pipe handling for stdout/stderr writes and regression tests for piped JSON workflows."

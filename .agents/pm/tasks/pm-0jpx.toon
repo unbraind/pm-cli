@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: dependabot,dependencies,github-pr,pm-cli
 created_at: "2026-04-03T17:25:03.360Z"
-updated_at: "2026-04-03T17:46:30.540Z"
+updated_at: "2026-04-04T17:47:11.170Z"
 deadline: "2026-04-17T17:25:03.360Z"
 author: codex-agent
 estimated_minutes: 30
@@ -25,6 +25,8 @@ risk: high
 confidence: high
 sprint: 2026-w14
 release: vnext
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Track open Dependabot PR #14.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Track open Dependabot PR #14."
 reporter: github-dependabot
 severity: medium
 environment: github pull request
@@ -37,9 +39,10 @@ fixed_version: target-vnext
 component: dependabot-pr
 regression: true
 customer_impact: Delayed updates can keep vulnerabilities or compatibility gaps open
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-03T17:25:03.360Z",codex-agent,Imported open Dependabot PR #14 for tracking and remediation.
   "2026-04-03T17:46:29.624Z",codex-agent,Superseded by direct dependency/workflow upgrades on main branch and validated by full regression and coverage runs.
+  "2026-04-04T17:33:44.497Z",codex-agent,"Duplicate consolidation pass: canonical item pm-0jpx now anchors cluster 'dependabot-pr-tracking'. Superseded siblings preserved for historical traceability: pm-16pn, pm-eoil, pm-u4hy, pm-n8w4, pm-7akk, pm-akty."
 notes[1]{created_at,author,text}:
   "2026-04-03T17:25:03.360Z",codex-agent,Resolve CI or compatibility blockers and disposition this PR.
 files[1]{path,scope,note}:

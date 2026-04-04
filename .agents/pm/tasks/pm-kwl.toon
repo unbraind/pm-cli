@@ -6,41 +6,41 @@ status: closed
 priority: 1
 tags[4]: "area:linked-ops",core,"milestone:3",pm-cli
 created_at: "2026-02-17T23:02:09.505Z"
-updated_at: "2026-04-04T12:07:08.888Z"
+updated_at: "2026-04-04T17:45:37.568Z"
 deadline: "2026-03-03T23:02:09.505Z"
 assignee: steve
 author: steve
 estimated_minutes: 150
 acceptance_criteria: comments/files/docs/test flows are deterministic and both timeout and timeout_seconds seed keys parse to timeout_seconds metadata.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for comments files docs and test commands are documented for reuse."
 order: 2
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-kwl
+goal: Implement and verify scoped work for comments files docs and test commands.
+objective: Capture actionable implementation context and verification evidence for comments files docs and test commands.
+value: Improves future change velocity by making comments files docs and test commands decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching comments files docs and test commands.
+outcome: This record can be used as canonical context when modifying comments files docs and test commands.
+why_now: Historical decisions for comments files docs and test commands need durable context for future maintenance and audits.
+parent: pm-54d
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-54d
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for comments files docs and test commands.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming comments files docs and test commands."
 reporter: steve
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for comments files docs and test commands (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for comments files docs and test commands.
+expected_result: Acceptance criteria for comments files docs and test commands are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for comments files docs and test commands.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: linked-ops-component
+component: project-management/comments-files-docs-and-test-commands
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for comments files docs and test commands.
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-54d,parent,"2026-02-17T23:02:09.505Z",steve,null
   pm-c0r,blocks,"2026-02-17T23:02:09.505Z",steve,null
@@ -65,4 +65,5 @@ docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood command recipe alignment
   PRD.md,project,canonical seed schema and command contracts
   README.md,project,quickstart linked test examples
+close_reason: Completed planned scope for comments files docs and test commands and preserved verification context for future changes.
 body: Implement comment and linked artifact command handlers.

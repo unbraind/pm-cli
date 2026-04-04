@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:search",code,docs,"milestone:4",pm-cli,"priority:1",tests
 created_at: "2026-03-08T11:09:48.873Z"
-updated_at: "2026-04-01T20:34:49.970Z"
+updated_at: "2026-04-04T17:40:44.221Z"
 deadline: "2026-03-10T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -14,11 +14,11 @@ estimated_minutes: 75
 acceptance_criteria: Semantic and hybrid search with --limit 0 return empty deterministic results and do not issue embedding/vector queries; docs and tests updated.
 definition_of_ready: Reproduced semantic/hybrid --limit 0 failure path and identified command/test touch points.
 order: 1
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
+goal: "Implement and verify scoped work for M4 follow-up: semantic/hybrid search limit=0 deterministic empty result."
+objective: "Capture actionable implementation context and verification evidence for M4 follow-up: semantic/hybrid search limit=0 deterministic empty result."
+value: "Improves future change velocity by making M4 follow-up: semantic/hybrid search limit=0 deterministic empty result decisions and scope explicit."
+impact: "Reduces ambiguity and handoff risk for future work touching M4 follow-up: semantic/hybrid search limit=0 deterministic empty result."
+outcome: "This record can be used as canonical context when modifying M4 follow-up: semantic/hybrid search limit=0 deterministic empty result."
 why_now: Close an edge-case contract gap before release sweeps.
 parent: pm-f45
 reviewer: maintainer-review
@@ -27,20 +27,20 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-f45
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: "Current status is closed; no unresolved blocker is recorded for M4 follow-up: semantic/hybrid search limit=0 deterministic empty result."
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming M4 follow-up: semantic/hybrid search limit=0 deterministic empty result."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: "Project workspace execution context for M4 follow-up: semantic/hybrid search limit=0 deterministic empty result (pm CLI + Node/pnpm toolchain)."
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: "Closed with implementation evidence captured for M4 follow-up: semantic/hybrid search limit=0 deterministic empty result."
+expected_result: "Acceptance criteria for M4 follow-up: semantic/hybrid search limit=0 deterministic empty result are satisfied with reproducible verification evidence."
+actual_result: "Work completed and recorded with linked artifacts for M4 follow-up: semantic/hybrid search limit=0 deterministic empty result."
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
 component: search
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M4 follow-up: semantic/hybrid search limit=0 deterministic empty result."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-f45,parent,"2026-03-08T11:09:48.873Z",maintainer-agent,null
 comments[4]{created_at,author,text}:

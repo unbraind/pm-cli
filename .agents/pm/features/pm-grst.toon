@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:extensions","area:health","area:state","milestone:extension-manager",pm-cli
 created_at: "2026-04-03T16:16:38.574Z"
-updated_at: "2026-04-04T12:01:50.416Z"
+updated_at: "2026-04-04T17:39:01.020Z"
 deadline: "2026-04-13T16:16:38.574Z"
 author: codex-agent
 estimated_minutes: 300
@@ -25,13 +25,15 @@ risk: medium
 confidence: medium
 sprint: extension-manager-rollout
 release: vnext
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Implement managed extension state and lifecycle health surfaces.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Implement managed extension state and lifecycle health surfaces."
 reporter: codex-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Implement managed extension state and lifecycle health surfaces (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: historical-closure-normalized-by-governance-pass
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: historical-actual-result-backfilled-for-governance-audit
+resolution: Closed with implementation evidence captured for Implement managed extension state and lifecycle health surfaces.
+expected_result: Acceptance criteria for Implement managed extension state and lifecycle health surfaces are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Implement managed extension state and lifecycle health surfaces.
 affected_version: vnext
 fixed_version: target-vnext
 component: extension-state

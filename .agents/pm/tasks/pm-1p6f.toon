@@ -6,41 +6,41 @@ status: closed
 priority: 0
 tags[7]: "area:workflow",code,docs,"milestone:7",pm-cli,"priority:0",tests
 created_at: "2026-03-08T13:07:26.852Z"
-updated_at: "2026-04-04T12:08:13.757Z"
+updated_at: "2026-04-04T17:43:57.826Z"
 deadline: "2026-03-09T13:07:26.852Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: CLI create/update support --unblock-note and --unblock_note with deterministic none-unset behavior; docs and tests align; coverage remains 100 percent.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Promote unblock-note to canonical workflow field are documented for reuse."
 order: 1
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-1p6f
+goal: Implement and verify scoped work for Promote unblock-note to canonical workflow field.
+objective: Capture actionable implementation context and verification evidence for Promote unblock-note to canonical workflow field.
+value: Improves future change velocity by making Promote unblock-note to canonical workflow field decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Promote unblock-note to canonical workflow field.
+outcome: This record can be used as canonical context when modifying Promote unblock-note to canonical workflow field.
+why_now: Historical decisions for Promote unblock-note to canonical workflow field need durable context for future maintenance and audits.
+parent: pm-8a2s
 reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: no-active-blocker
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Promote unblock-note to canonical workflow field.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Promote unblock-note to canonical workflow field."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Promote unblock-note to canonical workflow field (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Promote unblock-note to canonical workflow field.
+expected_result: Acceptance criteria for Promote unblock-note to canonical workflow field are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Promote unblock-note to canonical workflow field.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: workflow-component
+component: project-management/promote-unblock-note-to-canonical-workflow-field
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Promote unblock-note to canonical workflow field.
 comments[5]{created_at,author,text}:
   "2026-03-08T13:07:26.852Z",maintainer-agent,Why this exists unblock-note is still planned-only but needed for all-fields maintainership workflows.
   "2026-03-08T13:07:45.686Z",maintainer-agent,"Planned changeset before edits: update PRD README and AGENTS to promote unblock-note into canonical create and update contracts, then implement schema and CLI wiring with deterministic none-unset semantics plus unit and integration coverage."

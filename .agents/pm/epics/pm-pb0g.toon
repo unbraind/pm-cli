@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:create","area:parser",external-audit,pm-cli
 created_at: "2026-04-04T08:23:25.627Z"
-updated_at: "2026-04-04T08:40:25.035Z"
+updated_at: "2026-04-04T17:36:41.554Z"
 deadline: "2026-04-11T08:23:25.627Z"
 author: codex-agent
 estimated_minutes: 300
@@ -24,9 +24,11 @@ risk: medium
 confidence: high
 sprint: audit-remediation-2026w14
 release: vnext
+blocked_reason: "Current status is closed; no unresolved blocker is recorded for External audit Issue1 follow-up: log-seed ambiguity guard."
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming External audit Issue1 follow-up: log-seed ambiguity guard."
 reporter: codex-agent
 severity: medium
-environment: linux-node25-local
+environment: "Project workspace execution context for External audit Issue1 follow-up: log-seed ambiguity guard (pm CLI + Node/pnpm toolchain)."
 repro_steps: "Run pm create with --comment text containing unquoted comma segments that resemble key:value tokens."
 resolution: "External audit Issue1 net-new scope delivered through feature pm-m3mf and task pm-l5tr with deterministic parser guard, docs parity, and verification evidence."
 expected_result: No silent truncation in create log-seed text; ambiguous unquoted key-like continuations fail with guidance.

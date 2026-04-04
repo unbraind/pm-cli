@@ -6,40 +6,40 @@ status: closed
 priority: 1
 tags[9]: "area:cli","area:core","area:docs","area:schema",code,"milestone:7",pm-cli,"priority:1",tests
 created_at: "2026-03-07T23:59:27.285Z"
-updated_at: "2026-04-04T12:10:15.347Z"
+updated_at: "2026-04-04T17:39:55.404Z"
 deadline: "2026-04-15T11:57:44.149Z"
 author: maintainer-agent
 estimated_minutes: 180
 acceptance_criteria: Sprint and release fields support deterministic format validation with compatibility-safe migration strategy and docs/tests updates.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Extended schema fields v1.1 - parent, reviewer, risk, sprint, release are documented for reuse."
 order: 2
-goal: feature-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-feature-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-2p6q
+goal: "Deliver feature capability for Extended schema fields v1.1 - parent, reviewer, risk, sprint, release."
+objective: "Capture actionable implementation context and verification evidence for Extended schema fields v1.1 - parent, reviewer, risk, sprint, release."
+value: "Improves future change velocity by making Extended schema fields v1.1 - parent, reviewer, risk, sprint, release decisions and scope explicit."
+impact: "Reduces ambiguity and handoff risk for future work touching Extended schema fields v1.1 - parent, reviewer, risk, sprint, release."
+outcome: "This record can be used as canonical context when modifying Extended schema fields v1.1 - parent, reviewer, risk, sprint, release."
+why_now: "Historical decisions for Extended schema fields v1.1 - parent, reviewer, risk, sprint, release need durable context for future maintenance and audits."
+parent: pm-r15d
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: no-active-blocker
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: "Current status is closed; no unresolved blocker is recorded for Extended schema fields v1.1 - parent, reviewer, risk, sprint, release."
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Extended schema fields v1.1 - parent, reviewer, risk, sprint, release."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: "Project workspace execution context for Extended schema fields v1.1 - parent, reviewer, risk, sprint, release (pm CLI + Node/pnpm toolchain)."
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: "Closed with implementation evidence captured for Extended schema fields v1.1 - parent, reviewer, risk, sprint, release."
+expected_result: "Acceptance criteria for Extended schema fields v1.1 - parent, reviewer, risk, sprint, release are satisfied with reproducible verification evidence."
+actual_result: "Work completed and recorded with linked artifacts for Extended schema fields v1.1 - parent, reviewer, risk, sprint, release."
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: cli-component
+component: project-management/extended-schema-fields-v1-1-parent-reviewer-risk
 regression: false
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: "Gives maintainers and contributors clearer context and safer change execution for Extended schema fields v1.1 - parent, reviewer, risk, sprint, release."
 comments[7]{created_at,author,text}:
   "2026-03-07T23:59:27.285Z",maintainer-agent,These fields are commonly needed for real-world project management across teams and tools. Docs-first approach per R1.
   "2026-03-08T00:00:38.074Z",maintainer-agent,"Starting docs-first implementation. Adding parent, reviewer, risk, sprint, release, blocked_by, blocked_reason as optional front-matter fields to PRD schema section 7.1, then updating canonical key order in 7.2."

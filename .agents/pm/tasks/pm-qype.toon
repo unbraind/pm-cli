@@ -6,41 +6,41 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","milestone:5",pm-cli,roadmap
 created_at: "2026-03-07T14:01:18.825Z"
-updated_at: "2026-04-01T20:36:57.931Z"
+updated_at: "2026-04-04T17:46:16.613Z"
 deadline: "2026-03-10T20:32:23.001Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 120
 acceptance_criteria: "Dynamic extension command loose-option parsing ignores unsafe prototype keys, preserves deterministic option parsing for normal keys, and is covered by unit tests with sandbox-safe regression evidence."
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for M5 roadmap: Broader command sandbox API boundary are documented for reuse."
 order: 3
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-qype
+goal: "Implement and verify scoped work for M5 roadmap: Broader command sandbox API boundary."
+objective: "Capture actionable implementation context and verification evidence for M5 roadmap: Broader command sandbox API boundary."
+value: "Improves future change velocity by making M5 roadmap: Broader command sandbox API boundary decisions and scope explicit."
+impact: "Reduces ambiguity and handoff risk for future work touching M5 roadmap: Broader command sandbox API boundary."
+outcome: "This record can be used as canonical context when modifying M5 roadmap: Broader command sandbox API boundary."
+why_now: "Historical decisions for M5 roadmap: Broader command sandbox API boundary need durable context for future maintenance and audits."
+parent: pm-hbc1
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: no-active-blocker
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: "Current status is closed; no unresolved blocker is recorded for M5 roadmap: Broader command sandbox API boundary."
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming M5 roadmap: Broader command sandbox API boundary."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: "Project workspace execution context for M5 roadmap: Broader command sandbox API boundary (pm CLI + Node/pnpm toolchain)."
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: "Closed with implementation evidence captured for M5 roadmap: Broader command sandbox API boundary."
+expected_result: "Acceptance criteria for M5 roadmap: Broader command sandbox API boundary are satisfied with reproducible verification evidence."
+actual_result: "Work completed and recorded with linked artifacts for M5 roadmap: Broader command sandbox API boundary."
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: extensions-component
+component: project-management/m5-roadmap-broader-command-sandbox-api-boundary
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 roadmap: Broader command sandbox API boundary."
 comments[6]{created_at,author,text}:
   "2026-03-07T20:32:24.476Z",maintainer-agent,"Planned change-set: harden dynamic extension command loose-option parsing in src/cli/main.ts by rejecting unsafe prototype-related keys and using a null-prototype map; add unit tests to lock deterministic behavior and guard against prototype-pollution vectors."
   "2026-03-07T20:34:35.159Z",maintainer-agent,"Implemented docs-first contract updates in PRD/README for extension loose-option parser hardening, extracted parser into src/cli/extension-command-options.ts, and added focused unit coverage in tests/unit/main-loose-options.spec.ts for deterministic parsing plus unsafe-key rejection."

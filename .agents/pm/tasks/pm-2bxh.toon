@@ -6,20 +6,20 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:runtime",override,pm-cli
 created_at: "2026-04-01T02:16:50.493Z"
-updated_at: "2026-04-01T20:24:51.310Z"
+updated_at: "2026-04-04T17:40:21.184Z"
 deadline: "2026-04-10T02:16:50.493Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: Core and dynamic commands execute through one extension-aware router with deterministic fallback and no duplicate loader activation cycles.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for A1: Unified extension-first command router are documented for reuse."
 order: 2
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
+goal: "Implement and verify scoped work for A1: Unified extension-first command router."
+objective: "Capture actionable implementation context and verification evidence for A1: Unified extension-first command router."
+value: "Improves future change velocity by making A1: Unified extension-first command router decisions and scope explicit."
+impact: "Reduces ambiguity and handoff risk for future work touching A1: Unified extension-first command router."
+outcome: "This record can be used as canonical context when modifying A1: Unified extension-first command router."
+why_now: "Historical decisions for A1: Unified extension-first command router need durable context for future maintenance and audits."
 parent: pm-al0h
 reviewer: maintainer-review
 risk: medium
@@ -27,20 +27,20 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-al0h
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: "Current status is closed; no unresolved blocker is recorded for A1: Unified extension-first command router."
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming A1: Unified extension-first command router."
 reporter: codex-agent
 severity: low
-environment: linux-node25-local
+environment: "Project workspace execution context for A1: Unified extension-first command router (pm CLI + Node/pnpm toolchain)."
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: "Closed with implementation evidence captured for A1: Unified extension-first command router."
+expected_result: "Acceptance criteria for A1: Unified extension-first command router are satisfied with reproducible verification evidence."
+actual_result: "Work completed and recorded with linked artifacts for A1: Unified extension-first command router."
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: extensions-component
+component: project-management/a1-unified-extension-first-command-router
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: "Gives maintainers and contributors clearer context and safer change execution for A1: Unified extension-first command router."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-al0h,parent,"2026-04-01T02:16:50.493Z",codex-agent,null
 comments[2]{created_at,author,text}:

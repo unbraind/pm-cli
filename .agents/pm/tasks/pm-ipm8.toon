@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:docs","area:release","area:update",pm-cli
 created_at: "2026-04-02T11:45:37.141Z"
-updated_at: "2026-04-04T12:02:00.280Z"
+updated_at: "2026-04-04T17:41:58.941Z"
 deadline: "2026-04-06T11:45:37.141Z"
 author: codex-agent
 estimated_minutes: 120
@@ -25,11 +25,13 @@ risk: low
 confidence: high
 sprint: body-backfill-2026w14
 release: vnext
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Document update body support and ship verification evidence.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Document update body support and ship verification evidence."
 reporter: codex-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Document update body support and ship verification evidence (pm CLI + Node/pnpm toolchain).
 repro_steps: review docs and run verification commands
-resolution: historical-closure-normalized-by-governance-pass
+resolution: Closed with implementation evidence captured for Document update body support and ship verification evidence.
 expected_result: docs and verification align with runtime
 actual_result: update body support undocumented
 affected_version: 2026.3.12

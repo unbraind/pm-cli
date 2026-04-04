@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: extensions,implementation,linked-tests,pm-cli
 created_at: "2026-04-03T22:53:55.590Z"
-updated_at: "2026-04-03T23:47:28.987Z"
+updated_at: "2026-04-04T17:42:36.122Z"
 deadline: "2026-04-10T22:53:55.590Z"
 author: codex-agent
 estimated_minutes: 180
@@ -25,9 +25,11 @@ risk: medium
 confidence: high
 sprint: linked-test-hardening
 release: vnext
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Implement sandbox seeding for project/global extension parity.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Implement sandbox seeding for project/global extension parity."
 reporter: codex-agent
 severity: medium
-environment: linux-node25-local
+environment: Project workspace execution context for Implement sandbox seeding for project/global extension parity (pm CLI + Node/pnpm toolchain).
 repro_steps: Run linked command using extension-defined type filter after sandbox init.
 resolution: implemented
 expected_result: Linked sandbox contains equivalent extension/settings context to source roots.

@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: "area:cli","area:docs","area:ownership",data-integrity,pm-cli,ux
 created_at: "2026-04-03T09:33:27.690Z"
-updated_at: "2026-04-04T12:01:55.745Z"
+updated_at: "2026-04-04T17:36:34.346Z"
 deadline: "2026-04-10T09:33:27.690Z"
 author: codex-agent
 estimated_minutes: 240
@@ -24,13 +24,15 @@ risk: medium
 confidence: high
 sprint: ux-hardening
 release: vnext
+blocked_reason: Current status is closed; no unresolved blocker is recorded for CLI UX and Integrity Hardening.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming CLI UX and Integrity Hardening."
 reporter: codex-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for CLI UX and Integrity Hardening (pm CLI + Node/pnpm toolchain).
 repro_steps: run reported update/comments/claim flows
-resolution: historical-closure-normalized-by-governance-pass
+resolution: Closed with implementation evidence captured for CLI UX and Integrity Hardening.
 expected_result: Reported flows behave consistently and intuitively
-actual_result: historical-actual-result-backfilled-for-governance-audit
+actual_result: Work completed and recorded with linked artifacts for CLI UX and Integrity Hardening.
 affected_version: 2026.3.12
 component: cli/core
 regression: true

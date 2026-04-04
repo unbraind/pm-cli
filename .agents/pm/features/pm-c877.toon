@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:reminders","area:schema",core,pm-cli
 created_at: "2026-03-31T21:27:38.931Z"
-updated_at: "2026-04-01T20:25:18.464Z"
+updated_at: "2026-04-04T17:38:49.055Z"
 deadline: "2026-04-10T21:27:38.931Z"
 assignee: codex-agent
 author: codex-agent
@@ -27,15 +27,15 @@ confidence: high
 sprint: calendar-rollout
 release: vnext
 blocked_by: pm-2p6q
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Persistent reminder item fields and CLI mutation support.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Persistent reminder item fields and CLI mutation support."
 reporter: codex-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Persistent reminder item fields and CLI mutation support (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Persistent reminder item fields and CLI mutation support.
+expected_result: Acceptance criteria for Persistent reminder item fields and CLI mutation support are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Persistent reminder item fields and CLI mutation support.
 affected_version: vnext
 fixed_version: vnext
 component: core/item-format

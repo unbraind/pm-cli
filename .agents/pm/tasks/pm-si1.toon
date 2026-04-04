@@ -6,41 +6,41 @@ status: closed
 priority: 1
 tags[4]: "area:fixtures",core,"milestone:6",pm-cli
 created_at: "2026-02-17T23:02:12.642Z"
-updated_at: "2026-04-01T20:33:24.123Z"
+updated_at: "2026-04-04T17:46:31.620Z"
 deadline: "2026-03-19T23:02:12.642Z"
 assignee: steve
 author: steve
 estimated_minutes: 180
 acceptance_criteria: Fixtures live under tests/fixtures and are consumed by restore/beads/search tests; pm test and test-all pass with 100% coverage.
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Fixture corpus for restore import and search are documented for reuse."
 order: 2
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-si1
+goal: Implement and verify scoped work for Fixture corpus for restore import and search.
+objective: Capture actionable implementation context and verification evidence for Fixture corpus for restore import and search.
+value: Improves future change velocity by making Fixture corpus for restore import and search decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Fixture corpus for restore import and search.
+outcome: This record can be used as canonical context when modifying Fixture corpus for restore import and search.
+why_now: Historical decisions for Fixture corpus for restore import and search need durable context for future maintenance and audits.
+parent: pm-jiw
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-b1w
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Fixture corpus for restore import and search.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Fixture corpus for restore import and search."
 reporter: steve
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Fixture corpus for restore import and search (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Fixture corpus for restore import and search.
+expected_result: Acceptance criteria for Fixture corpus for restore import and search are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Fixture corpus for restore import and search.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: fixtures-component
+component: project-management/fixture-corpus-for-restore-import-and-search
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Fixture corpus for restore import and search.
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-b1w,blocks,"2026-02-17T23:02:12.642Z",steve,null
   pm-jiw,parent,"2026-02-17T23:02:12.642Z",steve,null
@@ -72,4 +72,5 @@ docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow and evidence protocol
   PRD.md,project,governing spec for milestone 6 fixtures
   README.md,project,public behavior and testing contract
+close_reason: Completed planned scope for Fixture corpus for restore import and search and preserved verification context for future changes.
 body: Add deterministic fixture corpus for test coverage.

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:release","area:tests",compatibility,pm-cli
 created_at: "2026-04-01T11:27:01.828Z"
-updated_at: "2026-04-01T20:24:00.408Z"
+updated_at: "2026-04-04T17:43:25.492Z"
 deadline: "2026-04-08T11:27:01.828Z"
 assignee: codex-agent
 author: codex-agent
@@ -27,15 +27,15 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-lau3
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Cross-command regression verification for date parsing expansion.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Cross-command regression verification for date parsing expansion."
 reporter: codex-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Cross-command regression verification for date parsing expansion (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Cross-command regression verification for date parsing expansion.
+expected_result: Acceptance criteria for Cross-command regression verification for date parsing expansion are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Cross-command regression verification for date parsing expansion.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
 component: tests/cli

@@ -6,12 +6,12 @@ status: closed
 priority: 0
 tags[4]: dependabot,github-alert,security,undici
 created_at: "2026-04-03T17:24:38.934Z"
-updated_at: "2026-04-03T17:46:11.604Z"
+updated_at: "2026-04-04T17:49:25.998Z"
 deadline: "2026-04-17T17:24:38.934Z"
 author: codex-agent
 estimated_minutes: 45
 acceptance_criteria: Alert is resolved by an upgrade or explicitly dismissed with recorded rationale and verification.
-definition_of_ready: GitHub alert details are captured and remediation path is understood.
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Track GitHub Dependabot alert #23 for undici are documented for reuse."
 order: 1
 goal: Security hygiene
 objective: Track runtime dependency vulnerabilities reported by GitHub
@@ -25,6 +25,8 @@ risk: high
 confidence: high
 sprint: 2026-w14
 release: vnext
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Track GitHub Dependabot alert #23 for undici.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Track GitHub Dependabot alert #23 for undici."
 reporter: github-dependabot
 severity: high
 environment: runtime direct dependency in pnpm-lock.yaml
@@ -37,9 +39,10 @@ fixed_version: 7.24.0
 component: "dependency:undici"
 regression: true
 customer_impact: Runtime dependency vulnerabilities may affect CLI users and maintainers until remediated.
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-03T17:24:38.934Z",codex-agent,Imported open GitHub Dependabot alert GHSA-v9p9-hfj2-hcw8.
   "2026-04-03T17:46:09.945Z",codex-agent,"Remediated in GH findings sweep: upgraded undici to 8.0.1, updated dependency stack to patched versions, added brace-expansion override >=5.0.5, and verified pnpm audit --prod/--all report zero vulnerabilities."
+  "2026-04-04T17:34:31.681Z",codex-agent,"Duplicate consolidation mapping: this item is superseded by pm-ylg3 for cluster 'ghsa::ghsa-v9p9-hfj2-hcw8'. Record retained only as historical evidence."
 notes[1]{created_at,author,text}:
   "2026-04-03T17:24:38.934Z",codex-agent,Remediate or dismiss this alert with verification evidence.
 files[1]{path,scope,note}:
@@ -48,5 +51,5 @@ tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,a
   node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,metadata-audit-baseline-regression
 docs[1]{path,scope,note}:
   SECURITY.md,project,security reporting and handling policy
-close_reason: Dependency remediation verified locally; no remaining known vulnerabilities in current dependency graph.
+close_reason: "Superseded by canonical item pm-ylg3 during governance duplicate-consolidation for cluster 'ghsa::ghsa-v9p9-hfj2-hcw8'; historical evidence retained in this record."
 body: "GitHub Dependabot alert #23\\nPackage: undici\\nGHSA: GHSA-v9p9-hfj2-hcw8\\nCVE: CVE-2026-2229\\nSeverity: high\\nManifest: pnpm-lock.yaml\\nScope: runtime\\nRelationship: direct\\nVulnerable range: >= 7.0.0, < 7.24.0\\nFirst patched version: 7.24.0\\nAlert URL: https://github.com/unbraind/pm-cli/security/dependabot/23"

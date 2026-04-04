@@ -6,48 +6,49 @@ status: closed
 priority: 0
 tags[9]: "area:cli","area:docs","area:tests",code,doc,"milestone:6",pm-cli,"priority:0",tests
 created_at: "2026-03-07T09:31:15.557Z"
-updated_at: "2026-04-04T12:08:42.875Z"
+updated_at: "2026-04-04T17:47:06.330Z"
 deadline: "2026-03-08T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 90
 acceptance_criteria: "1) release-readiness contract suite asserts pm close --help flag presence and required argument/help text semantics. 2) pm test <item> --run, pm test-all --status in_progress, and pm test-all --status closed pass. 3) coverage remains 100%."
-definition_of_ready: scope-links-and-verification-evidence-identified
+definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Release-readiness maintenance loop 2026-03-07 run 6 are documented for reuse."
 order: 1
-goal: task-delivery-governance
-objective: complete-metadata-and-verification-traceability
-value: improve-planning-traceability
-impact: improve-auditability-and-team-handoffs
-outcome: fully-specified-task-record
-why_now: global-pm-audit-requires-complete-fields
-parent: pm-mn6w
+goal: Implement and verify scoped work for Release-readiness maintenance loop 2026-03-07 run 6.
+objective: Capture actionable implementation context and verification evidence for Release-readiness maintenance loop 2026-03-07 run 6.
+value: Improves future change velocity by making Release-readiness maintenance loop 2026-03-07 run 6 decisions and scope explicit.
+impact: Reduces ambiguity and handoff risk for future work touching Release-readiness maintenance loop 2026-03-07 run 6.
+outcome: This record can be used as canonical context when modifying Release-readiness maintenance loop 2026-03-07 run 6.
+why_now: Historical decisions for Release-readiness maintenance loop 2026-03-07 run 6 need durable context for future maintenance and audits.
+parent: pm-7hx6
 reviewer: maintainer-review
 risk: high
 confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-f0e9
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Release-readiness maintenance loop 2026-03-07 run 6.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Release-readiness maintenance loop 2026-03-07 run 6."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Release-readiness maintenance loop 2026-03-07 run 6 (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Release-readiness maintenance loop 2026-03-07 run 6.
+expected_result: Acceptance criteria for Release-readiness maintenance loop 2026-03-07 run 6 are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Release-readiness maintenance loop 2026-03-07 run 6.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
-component: cli-component
+component: project-management/release-readiness-maintenance-loop-2026-03-07-ru
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Release-readiness maintenance loop 2026-03-07 run 6.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-f0e9,related,"2026-03-07T09:31:15.557Z",maintainer-agent,null
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-03-07T09:31:15.557Z",maintainer-agent,This run exists to extend help-contract hardening to pm close.
   "2026-03-07T09:31:22.670Z",maintainer-agent,"Intended change-set: extend release-readiness contract tests with pm close --help assertions for required options and usage text semantics so close help cannot drift from PRD/README contract."
   "2026-03-07T09:42:35.961Z",maintainer-agent,"Implemented release-readiness contract hardening in tests/integration/release-readiness-contract.spec.ts: added REQUIRED_CLOSE_FLAGS and a new pm close --help assertion block validating usage text, description text, and required mutation metadata flags (--author/--message/--force)."
   "2026-03-07T09:42:36.105Z",maintainer-agent,"Evidence: pm test pm-mn6w --run --timeout 7200 --json passed all linked tests (3/3). pm test-all --status in_progress --timeout 7200 --json passed (items=1 linked_tests=3 passed=3 failed=0 skipped=0). pm test-all --status closed --timeout 7200 --json passed (items=119 linked_tests=321 passed=62 failed=0 skipped=259). Coverage remains 100% lines/branches/functions/statements in sandbox coverage runs."
+  "2026-04-04T17:32:58.070Z",codex-agent,"Duplicate consolidation mapping: this item is superseded by pm-phpq for cluster 'release-loop::2026-03-07'. Record retained only as historical evidence."
 notes[1]{created_at,author,text}:
   "2026-03-07T09:31:15.557Z",maintainer-agent,Plan docs parity check then targeted release-readiness test update and mandatory verification sweeps.
 learnings[1]{created_at,author,text}:
@@ -62,5 +63,5 @@ docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer workflow contract
   PRD.md,project,authoritative command/help determinism contract
   README.md,project,public command contract
-close_reason: "Added close-help contract coverage; pm test, pm test-all sweeps passed; coverage remains 100%."
+close_reason: "Superseded by canonical item pm-phpq during governance duplicate-consolidation for cluster 'release-loop::2026-03-07'; historical evidence retained in this record."
 body: "Context: all backlog items are closed; this run adds one incremental release-hardening guard for close-command help contract parity."

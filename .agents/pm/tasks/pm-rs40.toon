@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[8]: "area:cli","area:docs","area:schema",code,"milestone:8",pm-cli,"priority:0",tests
 created_at: "2026-03-08T10:34:28.069Z"
-updated_at: "2026-04-04T12:08:15.978Z"
+updated_at: "2026-04-04T17:46:25.957Z"
 deadline: "2026-03-09T10:34:28.069Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -20,27 +20,27 @@ value: Richer issue tracking data for production workflows
 impact: Improves incident triage and audit readiness
 outcome: Issue records capture reproducibility and impact context
 why_now: Current all-fields maintainer workflow requires these metadata fields
-parent: pm-rs40
+parent: pm-2p6q
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: maintainer-loop-2026-03-08
 release: v0.1
 blocked_by: no-active-blocker
-blocked_reason: no-current-blocker
-unblock_note: continue-normal-execution-flow
+blocked_reason: Current status is closed; no unresolved blocker is recorded for Add issue-specific metadata fields to item schema and CLI.
+unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Add issue-specific metadata fields to item schema and CLI."
 reporter: maintainer-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Add issue-specific metadata fields to item schema and CLI (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
-resolution: implemented-or-disposition-recorded
-expected_result: behavior-aligns-with-acceptance-criteria
-actual_result: current-state-matches-expected-behavior
+resolution: Closed with implementation evidence captured for Add issue-specific metadata fields to item schema and CLI.
+expected_result: Acceptance criteria for Add issue-specific metadata fields to item schema and CLI are satisfied with reproducible verification evidence.
+actual_result: Work completed and recorded with linked artifacts for Add issue-specific metadata fields to item schema and CLI.
 affected_version: v0.1
 fixed_version: v0.1
-component: cli-component
+component: project-management/add-issue-specific-metadata-fields-to-item-schem
 regression: true
-customer_impact: improves-reliability-and-clarity-for-contributors
+customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add issue-specific metadata fields to item schema and CLI.
 comments[5]{created_at,author,text}:
   "2026-03-08T10:34:28.069Z",maintainer-agent,"Why this exists: issue workflows need richer metadata than the current shared schema supports."
   "2026-03-08T10:34:45.942Z",maintainer-agent,"Planned changeset before edits: update PRD README and AGENTS to add issue-specific metadata contract (reporter severity environment repro expected actual versions component regression customer impact resolution), then implement create/update flag wiring, schema/key-order normalization, and focused+full regression tests."

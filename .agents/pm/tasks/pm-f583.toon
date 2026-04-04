@@ -6,7 +6,7 @@ status: blocked
 priority: 1
 tags[3]: "area:context",implementation,pm-cli
 created_at: "2026-04-01T14:10:51.504Z"
-updated_at: "2026-04-01T20:14:49.670Z"
+updated_at: "2026-04-04T17:51:20.039Z"
 deadline: "2026-04-05T14:10:51.504Z"
 assignee: codex-agent
 author: codex-agent
@@ -31,10 +31,10 @@ blocked_reason: Global coverage threshold baseline remains below 100% (97.64/95.
 unblock_note: complete-linked-dependency-then-update-status
 reporter: codex-agent
 severity: low
-environment: linux-node25-local
+environment: Project workspace execution context for Implement and verify pm context command (pm CLI + Node/pnpm toolchain).
 repro_steps: run-linked-flow-and-compare-to-ac
 resolution: planned-or-active-implementation
-expected_result: behavior-aligns-with-acceptance-criteria
+expected_result: Resume execution for Implement and verify pm context command once blockers are cleared and verification path is confirmed.
 actual_result: work-tracked-as-active-or-open
 affected_version: vnext
 fixed_version: target-vnext
@@ -50,17 +50,26 @@ notes[1]{created_at,author,text}:
   "2026-04-01T14:10:51.504Z",codex-agent,Will track files tests docs and verification evidence before close.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:14:49.670Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[12]{path,scope,note}:
+files[21]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,pi wrapper context action
+  src/cli/commands/beads.ts,project,governance-link-backfill
   src/cli/commands/completion.ts,project,shell completion parity
   src/cli/commands/context.ts,project,core command implementation
   src/cli/commands/index.ts,project,command exports
+  src/cli/commands/install.ts,project,governance-link-backfill
+  src/cli/commands/todos.ts,project,governance-link-backfill
   src/cli/help-content.ts,project,context help bundle
   src/cli/main.ts,project,command registration and format handling
+  src/core/extensions/builtins.ts,project,governance-link-backfill
+  src/extensions/builtins/beads/index.ts,project,governance-link-backfill
+  src/extensions/builtins/todos/import-export.ts,project,governance-link-backfill
+  src/extensions/builtins/todos/index.ts,project,governance-link-backfill
   tests/integration/cli.integration.spec.ts,project,context integration behavior
   tests/integration/release-readiness-runtime.spec.ts,project,runtime contract coverage
   tests/unit/completion-command.spec.ts,project,completion context assertions
   tests/unit/context-command.spec.ts,project,context unit coverage
+  tests/unit/extensions-builtins.spec.ts,project,governance-link-backfill
+  tests/unit/install-command.spec.ts,project,governance-link-backfill
   tests/unit/pi-agent-extension.spec.ts,project,wrapper context mapping assertions
   vitest.config.ts,project,coverage include update
 tests[4]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
