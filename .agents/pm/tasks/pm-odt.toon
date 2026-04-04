@@ -1,12 +1,12 @@
 id: pm-odt
 title: "M5: Built-in beads import extension"
-description: Rework beads command delivery as bundled managed extension source under .agents/pm/extensions/beads with install-only command availability.
+description: Restore beads runtime ownership under extension source folder and keep bundled extension behavior install-gated with zero functional regressions.
 type: Task
 status: closed
 priority: 1
 tags[4]: "area:extensions-beads",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:02:11.883Z"
-updated_at: "2026-04-04T15:49:24.208Z"
+updated_at: "2026-04-04T16:13:34.539Z"
 deadline: "2026-03-13T23:02:11.883Z"
 author: steve
 estimated_minutes: 120
@@ -43,7 +43,7 @@ customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-b1w,parent,"2026-02-17T23:02:11.883Z",steve,null
   pm-f45,blocks,"2026-02-17T23:02:11.883Z",steve,null
-comments[17]{created_at,author,text}:
+comments[19]{created_at,author,text}:
   "2026-02-19T18:37:14.624Z",cursor-agent,"Planned change-set: docs-first update for built-in beads import command status, then implement pm beads import --file parser/mapping with deterministic defaults and import history evidence; add unit/integration tests and run pm test + pm test-all regression sweeps."
   "2026-02-19T18:39:22.684Z",cursor-agent,"Docs-first update completed: README command surface now includes pm beads import baseline and extension roadmap notes; PRD command matrix now includes beads import output contract, section 15 captures default file/skip-warning behavior, and Milestone 5 checklist marks beads as partial baseline in progress."
   "2026-02-19T18:45:39.668Z",cursor-agent,"Implemented beads import baseline: added src/cli/commands/beads.ts with JSONL parsing, deterministic field mapping/defaults, duplicate-id and invalid-line warnings, and per-item import history entries (op=import); wired nested CLI command pm beads import in src/cli/main.ts; exported handlers via src/cli/commands/index.ts and src/commands/beads.ts; added unit and integration coverage plus vitest coverage include for src/cli/commands/beads.ts."
@@ -61,13 +61,17 @@ comments[17]{created_at,author,text}:
   "2026-04-04T14:55:28.765Z",codex-agent,"Duplicate-check evidence: reopened existing beads task after dedupe scan; scope updated from built-in auto-load to bundled managed extension under .agents/pm/extensions/beads with extension-manager installation flow."
   "2026-04-04T15:41:41.091Z",codex-agent,"Implemented bundled-managed beads extension packaging under .agents/pm/extensions/beads, removed static beads command wiring, and validated install-gated command availability through integration coverage."
   "2026-04-04T15:48:48.645Z",codex-agent,"Final verification: pnpm build, node scripts/run-tests.mjs test, and node scripts/run-tests.mjs coverage all passed. Coverage gate now clears with branch coverage 91.01% (threshold 91%)."
+  "2026-04-04T15:53:05.168Z",codex-agent,"Reopened for follow-up: user requested extension runtime code ownership to live in extension folders (not only CLI command modules); implementing without feature regressions."
+  "2026-04-04T16:13:16.229Z",codex-agent,"Follow-up completed per user request: full beads runtime source now lives under .agents/pm/extensions/beads (runtime.ts + runtime.js), removed runtime sources from src, and verified no behavior regression."
 notes[1]{created_at,author,text}:
   "2026-04-01T20:33:54.322Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:33:55.416Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[15]{path,scope,note}:
+files[17]{path,scope,note}:
   .agents/pm/extensions/beads/index.js,project,bundled beads extension entrypoint
   .agents/pm/extensions/beads/manifest.json,project,bundled beads manifest
+  .agents/pm/extensions/beads/runtime.js,project,beads runtime execution module colocated with extension
+  .agents/pm/extensions/beads/runtime.ts,project,full beads TypeScript source moved under extension folder
   PRD.md,project,milestone and command contract update
   README.md,project,docs-first command status update
   src/cli/commands/beads.ts,project,legacy wrapper export for beads command
@@ -81,14 +85,15 @@ files[15]{path,scope,note}:
   tests/unit/extension-loader.spec.ts,project,unit coverage for command-definition registration
   tests/unit/extensions-runtime.spec.ts,project,runtime wrapper coverage for active command handlers
   tests/unit/output.spec.ts,project,command registry shape updates in output override coverage
-tests[4]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+tests[5]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,full sandboxed coverage gate
   node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,integration beads import coverage
   node scripts/run-tests.mjs test -- tests/unit/beads-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,targeted beads unit coverage
+  node scripts/run-tests.mjs test -- tests/unit/beads-command.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/integration/cli.integration.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,beads runtime relocation regressions
   node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,command-definition extension registration coverage
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood protocol
   PRD.md,project,governing spec
   README.md,project,public command surface
-close_reason: Bundled managed beads extension shipped; command path is install-gated and verified by full build/test/coverage.
+close_reason: "Follow-up complete: full beads runtime source now lives in .agents/pm/extensions/beads (runtime.ts + runtime.js), removed from src, and regression suite remains green."
 body: Task tracks beads migration from src/extensions/builtins to bundled managed extension source and runtime command gating.

@@ -27,10 +27,12 @@ function resetRuntimeCalls(): void {
 let testPackageRoot = "";
 
 async function seedRuntimeCommandStubs(packageRoot: string): Promise<void> {
-  const commandRoot = path.join(packageRoot, "dist", "cli", "commands");
-  await mkdir(commandRoot, { recursive: true });
+  const beadsRuntimeRoot = path.join(packageRoot, ".agents", "pm", "extensions", "beads");
+  const todosRuntimeRoot = path.join(packageRoot, ".agents", "pm", "extensions", "todos");
+  await mkdir(beadsRuntimeRoot, { recursive: true });
+  await mkdir(todosRuntimeRoot, { recursive: true });
   await writeFile(
-    path.join(commandRoot, "beads.js"),
+    path.join(beadsRuntimeRoot, "runtime.js"),
     `export async function runBeadsImport(options, global) {
   const calls = Array.isArray(globalThis.${RUNTIME_CALLS_KEY}) ? globalThis.${RUNTIME_CALLS_KEY} : [];
   calls.push({ kind: "beads", options, global });
@@ -48,7 +50,7 @@ async function seedRuntimeCommandStubs(packageRoot: string): Promise<void> {
     "utf8",
   );
   await writeFile(
-    path.join(commandRoot, "todos.js"),
+    path.join(todosRuntimeRoot, "runtime.js"),
     `export async function runTodosImport(options, global) {
   const calls = Array.isArray(globalThis.${RUNTIME_CALLS_KEY}) ? globalThis.${RUNTIME_CALLS_KEY} : [];
   calls.push({ kind: "todos-import", options, global });

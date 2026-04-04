@@ -1,23 +1,23 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { pathExists, removeFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
-import { getActiveExtensionRegistrations, runActiveOnReadHooks, runActiveOnWriteHooks } from "../../core/extensions/index.js";
-import { appendHistoryEntry, createHistoryEntry } from "../../core/history/history.js";
-import { generateItemId, normalizeItemId, normalizeRawItemId } from "../../core/item/id.js";
-import { canonicalDocument, normalizeFrontMatter, serializeItemDocument } from "../../core/item/item-format.js";
-import { normalizeStatusInput } from "../../core/item/status.js";
-import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { parseTags } from "../../core/item/parse.js";
-import { acquireLock } from "../../core/lock/lock.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
-import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
-import { isTimestampLiteral, nowIso } from "../../core/shared/time.js";
-import { locateItem } from "../../core/store/item-store.js";
-import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
-import type { Dependency, ItemDocument, ItemFrontMatter, ItemStatus, ItemType, LogNote, LinkedFile, LinkedTest, LinkedDoc } from "../../types/index.js";
-import { DEPENDENCY_KIND_VALUES } from "../../types/index.js";
+import { pathExists, removeFileIfExists, writeFileAtomic } from "../../../../src/core/fs/fs-utils.js";
+import { getActiveExtensionRegistrations, runActiveOnReadHooks, runActiveOnWriteHooks } from "../../../../src/core/extensions/index.js";
+import { appendHistoryEntry, createHistoryEntry } from "../../../../src/core/history/history.js";
+import { generateItemId, normalizeItemId, normalizeRawItemId } from "../../../../src/core/item/id.js";
+import { canonicalDocument, normalizeFrontMatter, serializeItemDocument } from "../../../../src/core/item/item-format.js";
+import { normalizeStatusInput } from "../../../../src/core/item/status.js";
+import { resolveItemTypeRegistry } from "../../../../src/core/item/type-registry.js";
+import { parseTags } from "../../../../src/core/item/parse.js";
+import { acquireLock } from "../../../../src/core/lock/lock.js";
+import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
+import type { GlobalOptions } from "../../../../src/core/shared/command-types.js";
+import { PmCliError } from "../../../../src/core/shared/errors.js";
+import { isTimestampLiteral, nowIso } from "../../../../src/core/shared/time.js";
+import { locateItem } from "../../../../src/core/store/item-store.js";
+import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../../../src/core/store/paths.js";
+import { readSettings } from "../../../../src/core/store/settings.js";
+import type { Dependency, ItemDocument, ItemFrontMatter, ItemStatus, ItemType, LogNote, LinkedFile, LinkedTest, LinkedDoc } from "../../../../src/types/index.js";
+import { DEPENDENCY_KIND_VALUES } from "../../../../src/types/index.js";
 
 const PRIMARY_AUTO_DISCOVERY_FILES = [
   ".beads/issues.jsonl",

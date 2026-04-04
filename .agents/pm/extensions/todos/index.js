@@ -46,10 +46,10 @@ function resolvePackageRootCandidates() {
   return [...new Set(candidates)];
 }
 
-async function loadRuntimeModule(moduleName) {
+async function loadRuntimeModule() {
   const attempted = [];
   for (const packageRoot of resolvePackageRootCandidates()) {
-    const modulePath = path.join(packageRoot, "dist", "cli", "commands", moduleName);
+    const modulePath = path.join(packageRoot, ".agents", "pm", "extensions", "todos", "runtime.js");
     attempted.push(modulePath);
     try {
       return await import(pathToFileURL(modulePath).href);
@@ -58,23 +58,23 @@ async function loadRuntimeModule(moduleName) {
     }
   }
   throw new Error(
-    `Unable to resolve bundled extension runtime module "${moduleName}". ` +
+    "Unable to resolve bundled todos extension runtime module. " +
       `Tried: ${attempted.join(", ")}. Ensure PM_CLI_PACKAGE_ROOT points to an installed pm package root.`,
   );
 }
 
 async function runTodosImportFromRuntime(options, global) {
-  const runtime = await loadRuntimeModule("todos.js");
+  const runtime = await loadRuntimeModule();
   if (typeof runtime.runTodosImport !== "function") {
-    throw new Error('Bundled runtime module "todos.js" is missing runTodosImport().');
+    throw new Error('Bundled todos runtime module is missing runTodosImport().');
   }
   return runtime.runTodosImport(options, global);
 }
 
 async function runTodosExportFromRuntime(options, global) {
-  const runtime = await loadRuntimeModule("todos.js");
+  const runtime = await loadRuntimeModule();
   if (typeof runtime.runTodosExport !== "function") {
-    throw new Error('Bundled runtime module "todos.js" is missing runTodosExport().');
+    throw new Error('Bundled todos runtime module is missing runTodosExport().');
   }
   return runtime.runTodosExport(options, global);
 }

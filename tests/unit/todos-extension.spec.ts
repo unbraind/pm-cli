@@ -3,10 +3,10 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { acquireLock } from "../../src/core/lock/lock.js";
-import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
+import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../dist/core/extensions/index.js";
 import { splitFrontMatter } from "../../src/core/item/item-format.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
-import { runTodosExport, runTodosImport } from "../../src/cli/commands/todos.js";
+import { runTodosExport, runTodosImport } from "../../.agents/pm/extensions/todos/runtime.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 async function writeTodoMarkdown(
@@ -1020,10 +1020,10 @@ describe("built-in todos extension import/export", () => {
 
   it("records export warnings when located items are missing or unreadable", async () => {
     await withTempPmPath(async (context) => {
-      const itemStoreModulePath = "../../src/core/store/item-store.js";
+      const itemStoreModulePath = "../../dist/core/store/item-store.js";
       vi.resetModules();
       vi.doMock(itemStoreModulePath, async () => {
-        const actualModule = (await vi.importActual(itemStoreModulePath)) as typeof import("../../src/core/store/item-store.js");
+        const actualModule = (await vi.importActual(itemStoreModulePath)) as typeof import("../../dist/core/store/item-store.js");
         return {
           ...actualModule,
           listAllFrontMatter: async () => [{ id: "raw-id" }, { id: "pm-read-failed" }],
@@ -1043,7 +1043,7 @@ describe("built-in todos extension import/export", () => {
         };
       });
 
-      const mockedModule = await import("../../src/cli/commands/todos.js");
+      const mockedModule = await import("../../.agents/pm/extensions/todos/runtime.js");
       const exported = await mockedModule.runTodosExport(
         { folder: path.join(context.tempRoot, "todos-mocked-export") },
         { path: context.pmPath },
@@ -1058,10 +1058,10 @@ describe("built-in todos extension import/export", () => {
 
   it("marks todos markdown as invalid when split front-matter parses to non-object JSON", async () => {
     await withTempPmPath(async (context) => {
-      const itemFormatModulePath = "../../src/core/item/item-format.js";
+      const itemFormatModulePath = "../../dist/core/item/item-format.js";
       vi.resetModules();
       vi.doMock(itemFormatModulePath, async () => {
-        const actualModule = (await vi.importActual(itemFormatModulePath)) as typeof import("../../src/core/item/item-format.js");
+        const actualModule = (await vi.importActual(itemFormatModulePath)) as typeof import("../../dist/core/item/item-format.js");
         return {
           ...actualModule,
           splitFrontMatter: () => ({
@@ -1071,7 +1071,7 @@ describe("built-in todos extension import/export", () => {
         };
       });
 
-      const mockedModule = await import("../../src/cli/commands/todos.js");
+      const mockedModule = await import("../../.agents/pm/extensions/todos/runtime.js");
       const sourceFolder = path.join(context.tempRoot, "todos-mocked-frontmatter");
       await mkdir(sourceFolder, { recursive: true });
       await writeTodoMarkdown(sourceFolder, "non-object.md", { title: "Ignored by split mock" }, "ignored");
@@ -1085,11 +1085,11 @@ describe("built-in todos extension import/export", () => {
 
   it("adds read_failed warning when source markdown cannot be read", async () => {
     await withTempPmPath(async (context) => {
-      const itemFormatModulePath = "../../src/core/item/item-format.js";
+      const itemFormatModulePath = "../../dist/core/item/item-format.js";
       const fsModulePath = "node:fs/promises";
       vi.resetModules();
       vi.doMock(itemFormatModulePath, async () => {
-        const actualModule = (await vi.importActual(itemFormatModulePath)) as typeof import("../../src/core/item/item-format.js");
+        const actualModule = (await vi.importActual(itemFormatModulePath)) as typeof import("../../dist/core/item/item-format.js");
         return actualModule;
       });
       vi.doMock(fsModulePath, async () => {
@@ -1113,7 +1113,7 @@ describe("built-in todos extension import/export", () => {
         };
       });
 
-      const mockedModule = await import("../../src/cli/commands/todos.js");
+      const mockedModule = await import("../../.agents/pm/extensions/todos/runtime.js");
       const sourceFolder = path.join(context.tempRoot, "todos-read-failure");
       await mkdir(sourceFolder, { recursive: true });
       await writeTodoMarkdown(sourceFolder, "unreadable.md", { title: "Unreadable file" }, "ignored");

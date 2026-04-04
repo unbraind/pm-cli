@@ -1,7 +1,6 @@
 export { runAppend } from "./append.js";
 export { runCompletion, type CompletionResult, type CompletionShell } from "./completion.js";
 export { runActivity } from "./activity.js";
-export { runBeadsImport, type BeadsImportOptions, type BeadsImportResult } from "./beads.js";
 export { runClaim, runRelease } from "./claim.js";
 export { runClose, type CloseCommandOptions, type CloseResult } from "./close.js";
 export { runComments } from "./comments.js";
@@ -47,7 +46,6 @@ export { runRestore } from "./restore.js";
 export { runStats } from "./stats.js";
 export { runTest } from "./test.js";
 export { runTestAll } from "./test-all.js";
-export { runTodosExport, runTodosImport, type TodosExportOptions, type TodosImportOptions } from "./todos.js";
 export {
   loadCreateTemplateOptions,
   runTemplatesList,

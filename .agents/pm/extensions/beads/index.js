@@ -45,10 +45,10 @@ function resolvePackageRootCandidates() {
   return [...new Set(candidates)];
 }
 
-async function loadRuntimeModule(moduleName) {
+async function loadRuntimeModule() {
   const attempted = [];
   for (const packageRoot of resolvePackageRootCandidates()) {
-    const modulePath = path.join(packageRoot, "dist", "cli", "commands", moduleName);
+    const modulePath = path.join(packageRoot, ".agents", "pm", "extensions", "beads", "runtime.js");
     attempted.push(modulePath);
     try {
       return await import(pathToFileURL(modulePath).href);
@@ -57,15 +57,15 @@ async function loadRuntimeModule(moduleName) {
     }
   }
   throw new Error(
-    `Unable to resolve bundled extension runtime module "${moduleName}". ` +
+    "Unable to resolve bundled beads extension runtime module. " +
       `Tried: ${attempted.join(", ")}. Ensure PM_CLI_PACKAGE_ROOT points to an installed pm package root.`,
   );
 }
 
 async function runBeadsImportFromRuntime(options, global) {
-  const runtime = await loadRuntimeModule("beads.js");
+  const runtime = await loadRuntimeModule();
   if (typeof runtime.runBeadsImport !== "function") {
-    throw new Error('Bundled runtime module "beads.js" is missing runBeadsImport().');
+    throw new Error('Bundled beads runtime module is missing runBeadsImport().');
   }
   return runtime.runBeadsImport(options, global);
 }
