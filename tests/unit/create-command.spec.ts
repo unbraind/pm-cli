@@ -1001,6 +1001,62 @@ describe("runCreate", () => {
     });
   });
 
+  it("rejects ambiguous unquoted key-like continuations for log seed text", async () => {
+    await withTempPmPath(async (context) => {
+      for (const field of ["comment", "note", "learning"] as const) {
+        const overrides: Partial<CreateCommandOptions> = {
+          title: `create-ambiguous-${field}-seed`,
+        };
+        overrides[field] = ["author=seed-author,text=hello,scope:project"];
+        await expect(runCreate(baseCreateOptions(overrides), { path: context.pmPath })).rejects.toThrow(
+          "supports only author, created_at, and text seed fields",
+        );
+      }
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            title: "create-ambiguous-comment-seed-multiple-keys",
+            comment: ["author=seed-author,text=hello,scope:project,priority:1"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toThrow("Found unsupported keys");
+    });
+  });
+
+  it("accepts quoted and markdown log seed formats for comment text", async () => {
+    await withTempPmPath(async (context) => {
+      const quoted = await runCreate(
+        baseCreateOptions({
+          title: "create-comment-quoted-text",
+          comment: ['author=quoted-author,text="hello,scope:project"'],
+        }),
+        { path: context.pmPath },
+      );
+      expect(quoted.item.comments?.at(0)).toEqual(
+        expect.objectContaining({
+          author: "quoted-author",
+          text: "hello,scope:project",
+        }),
+      );
+
+      const markdown = await runCreate(
+        baseCreateOptions({
+          title: "create-comment-markdown-text",
+          comment: ["author: markdown-author\ntext: markdown seeded comment"],
+        }),
+        { path: context.pmPath },
+      );
+      expect(markdown.item.comments?.at(0)).toEqual(
+        expect.objectContaining({
+          author: "markdown-author",
+          text: "markdown seeded comment",
+        }),
+      );
+    });
+  });
+
   it("validates linked file, test, and doc seed parsing", async () => {
     await withTempPmPath(async (context) => {
       await expect(

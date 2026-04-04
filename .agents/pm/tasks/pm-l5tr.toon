@@ -1,0 +1,63 @@
+id: pm-l5tr
+title: Code/test/docs for create log-seed ambiguity guard
+description: "Implement and verify deterministic rejection of ambiguous unquoted comment/note/learning seeds in pm create, with guidance for quoted/markdown/stdin alternatives."
+type: Task
+status: closed
+priority: 1
+tags[6]: "area:create","area:docs","area:parser","area:tests",external-audit,pm-cli
+created_at: "2026-04-04T08:23:48.930Z"
+updated_at: "2026-04-04T08:40:04.873Z"
+deadline: "2026-04-09T08:23:48.930Z"
+author: codex-agent
+estimated_minutes: 300
+acceptance_criteria: "Implementation rejects ambiguous unquoted log-seed continuations that look like key/value entries, preserves safe input forms, and ships with tests/docs plus full verification evidence."
+definition_of_ready: Feature pm-m3mf is active with implementation surfaces identified.
+order: 1
+goal: External audit reconciliation
+objective: Deliver verified parser ambiguity fix
+value: Eliminates silent evidence loss risk during create seeding
+impact: Improves confidence in governance automation
+outcome: Deterministic create behavior for log seed text
+why_now: Only unresolved external audit concern requires targeted implementation
+parent: pm-m3mf
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: audit-remediation-2026w14
+release: vnext
+blocked_by: pm-m3mf
+blocked_reason: feature-sequencing
+unblock_note: Claim task and implement code/tests/docs
+reporter: codex-agent
+severity: medium
+environment: linux-node25-local
+repro_steps: "Run pm create with --comment author=x,text=hello,scope:project and inspect stored comment text."
+resolution: Implemented deterministic create log-seed key validation to reject ambiguous unquoted continuations and preserve safe quoted/markdown/stdin flows.
+expected_result: Ambiguous unquoted key-like continuations are rejected with guidance and no silent text truncation occurs.
+actual_result: "Behavior now rejects unsupported parsed keys for --comment/--note/--learning while quoted, markdown, and stdin paths pass with updated tests/docs."
+affected_version: 2026.3.12
+fixed_version: target-vnext
+component: cli-create-parser
+regression: true
+customer_impact: Users and agents retain complete narrative audit evidence during item creation.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-m3mf,parent,"2026-04-04T08:23:48.930Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-04T08:23:48.930Z",codex-agent,Task created after reproducing the unresolved Issue1 ambiguity path.
+  "2026-04-04T08:39:55.895Z",codex-agent,"Implemented create log-seed ambiguity guard in src/cli/commands/create.ts: --comment/--note/--learning now reject parsed unsupported keys to prevent silent text truncation (example text=hello,scope:project), while quoted/markdown/stdin flows remain supported. Added regressions in tests/unit/create-command.spec.ts for comment/note/learning ambiguous seeds, quoted+markdown happy paths, and plural-key branch coverage. Updated docs/contracts: README.md, PRD.md, docs/ARCHITECTURE.md, AGENTS.md, CHANGELOG.md. Verification evidence: node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/parse-utils.spec.ts (46 passed); node scripts/run-tests.mjs test (71 files, 830 tests passed); node scripts/run-tests.mjs coverage (71 files, 830 tests passed, global branches 91.01% threshold met); pm health --json status ok; pm validate --check-files --scan-mode tracked-all --json and --include-pm-internals --json reproduced expected warning-only audit baselines; pm test pm-l5tr --run --progress --json passed both linked commands."
+notes[1]{created_at,author,text}:
+  "2026-04-04T08:23:48.930Z",codex-agent,"Scope includes create parser boundary,unit regressions,and docs/contracts parity updates."
+files[2]{path,scope,note}:
+  src/cli/commands/create.ts,project,log-seed guard implementation
+  tests/unit/create-command.spec.ts,project,create command ambiguity regressions
+tests[2]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test,null,project,7200,full regression verification
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/parse-utils.spec.ts,null,project,900,targeted ambiguity coverage
+docs[5]{path,scope,note}:
+  AGENTS.md,project,agent workflow guidance for log-seed ambiguity
+  CHANGELOG.md,project,unreleased behavior change note
+  docs/ARCHITECTURE.md,project,create log-seed guard architecture note
+  PRD.md,project,create contract clarification
+  README.md,project,seed input guidance update
+close_reason: Issue1 log-seed ambiguity guard implemented with tests/docs and verification evidence.
+body: "Code task for external Issue1 net-new scope: update create log-seed validation, add regression coverage, and sync command/documentation contracts."

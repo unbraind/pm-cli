@@ -6,16 +6,17 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","area:health",follow-up,pm-cli
 created_at: "2026-04-03T22:00:05.513Z"
-updated_at: "2026-04-03T22:17:24.065Z"
+updated_at: "2026-04-04T08:22:49.743Z"
 deadline: "2026-04-10T22:00:05.513Z"
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: "extension --manage and health extension diagnostics expose concise triage summary fields and actionable remediation hints in deterministic output, with backward-compatible detail payloads and test coverage."
 parent: pm-grst
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-03T22:00:05.513Z",codex-agent,Child task created from external extension diagnostics triage request.
   "2026-04-03T22:06:22.186Z",codex-agent,"Implementation started: add concise triage summary and remediation hints to extension --manage and health extension diagnostics while preserving full detail payloads."
   "2026-04-03T22:17:11.560Z",codex-agent,"Implemented focused extension triage without adding new commands: extension --manage now returns concise triage summary/remediation hints, and health extensions check includes condensed triage counts + next steps. Evidence: pm test pm-doek --run passed; full build/test/coverage passed; smoke checks confirm details.triage in both manage and health JSON outputs."
+  "2026-04-04T08:22:49.743Z",codex-agent,"External Audit 2026-04-04 mapping: external Issue 5 ID pm-cs7u is not present in this tracker. Canonical local coverage remains pm-grst/pm-doek (extension triage summaries in extension --manage and health) with closed verified evidence; no duplicate item created."
 notes[1]{created_at,author,text}:
   "2026-04-03T22:00:05.513Z",codex-agent,No new command surface; improve manage and health diagnostics only.
 files[5]{path,scope,note}:

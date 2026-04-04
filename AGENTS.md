@@ -95,6 +95,7 @@ Attach references to keep work reproducible:
   - `pm deps` is read-only and intended for dependency tree/graph inspection (`--format tree|graph`).
 - Entry-format resilience:
   - `--add`/repeatable seed flags accept CSV `key=value`, markdown `key: value`, or stdin token `-` with piped payload.
+  - for `pm create` log-seed flags (`--comment`, `--note`, `--learning`), only `author`, `created_at`, and `text` keys are valid; quote punctuation-heavy text (for example `text="hello,scope:project"`) or use markdown/stdin to avoid ambiguous key-like continuations.
   - Example: `printf '%s\n' 'path: src/app.ts' 'scope: project' | pm files <ID> --add -`
 
 ### Step E - Record progress

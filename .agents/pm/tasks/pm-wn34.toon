@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: implementation,linked-tests,pm-cli,validation
 created_at: "2026-04-03T22:54:06.408Z"
-updated_at: "2026-04-03T23:47:29.995Z"
+updated_at: "2026-04-04T08:22:47.797Z"
 deadline: "2026-04-10T22:54:06.408Z"
 author: codex-agent
 estimated_minutes: 180
@@ -38,9 +38,10 @@ regression: true
 customer_impact: Users may think tests are linked and validated when they are not runnable.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-44iu,parent,"2026-04-03T22:54:06.408Z",codex-agent,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-03T22:54:06.408Z",codex-agent,Task targets parser mutation guards and compatibility-preserving runtime behavior.
   "2026-04-03T23:46:44.159Z",codex-agent,"Implemented command-required mutation enforcement for linked tests: pm test --add and create --test now reject entries without command metadata while runtime still skips legacy malformed stored entries. Evidence: node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/test-command.spec.ts tests/integration/cli.integration.spec.ts passed; pm test pm-wn34 --run --timeout 7200 --json passed (1/1)."
+  "2026-04-04T08:22:47.797Z",codex-agent,"External Audit 2026-04-04 mapping: external Issue 2 ID pm-8ys5 is not present in this tracker. Canonical local coverage remains pm-44iu/pm-wn34 (command-required linked-test mutations) with closed verified evidence; no duplicate item created."
 notes[1]{created_at,author,text}:
   "2026-04-03T22:54:06.408Z",codex-agent,Update test fixtures that currently seed path-only entries through mutation paths.
 files[5]{path,scope,note}:

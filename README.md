@@ -374,6 +374,8 @@ pm deps pm-a1b2 --format graph --json
 
 `none` semantics are unchanged for explicit clears in repeatable fields (`--file none`, `--comment none`, etc.).
 
+For `pm create` log-seed flags (`--comment`, `--note`, `--learning`), only `author`, `created_at`, and `text` keys are accepted. Ambiguous unquoted payloads that introduce extra parsed keys (for example `text=hello,scope:project`) are rejected to prevent silent text truncation. Use quoted text (`text="hello,scope:project"`), markdown-style key/value input, or stdin token `-` for punctuation-heavy text.
+
 ## Linked Artifact and Test Policy
 
 - Use dedicated linked-artifact commands for file/doc mutations:

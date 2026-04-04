@@ -1,0 +1,57 @@
+id: pm-m3mf
+title: Implement deterministic guard for ambiguous create log seeds
+description: Add focused create-path validation so --comment/--note/--learning payloads never silently drop narrative text when unquoted comma segments resemble key/value tokens.
+type: Feature
+status: closed
+priority: 1
+tags[4]: "area:create","area:parser",external-audit,pm-cli
+created_at: "2026-04-04T08:23:37.509Z"
+updated_at: "2026-04-04T08:40:14.523Z"
+deadline: "2026-04-10T08:23:37.509Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: "Ambiguous unquoted log-seed payloads are rejected with deterministic guidance; quoted, markdown, and stdin flows remain supported; tests and docs reflect behavior."
+definition_of_ready: Epic pm-pb0g is active and no active duplicate feature exists for this exact parser ambiguity.
+order: 1
+goal: External audit reconciliation
+objective: Ship deterministic create log-seed validation
+value: Prevents silent truncation of audit narrative text
+impact: Maintains governance evidence fidelity for automation and maintainers
+outcome: Create command guards ambiguous log-seed text paths
+why_now: Issue 1 remains the only unresolved external audit item after dedupe
+parent: pm-pb0g
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: audit-remediation-2026w14
+release: vnext
+blocked_by: pm-pb0g
+blocked_reason: epic-sequencing
+unblock_note: Start implementation task once feature is claimed
+reporter: codex-agent
+severity: medium
+environment: linux-node25-local
+repro_steps: "Run pm create with unquoted text containing comma-separated segments where trailing segments parse as key:value."
+resolution: Delivered deterministic create log-seed key guard via child task pm-l5tr with regression and docs parity.
+expected_result: Feature enforces non-lossy create log-seed behavior and preserves quoted/markdown/stdin compatibility.
+actual_result: "Child task pm-l5tr implemented guard, tests/docs updates, and verification gates passed."
+affected_version: 2026.3.12
+fixed_version: target-vnext
+component: cli-create-parser
+regression: true
+customer_impact: Users avoid silent narrative truncation during seeded metadata creation.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-pb0g,parent,"2026-04-04T08:23:37.509Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-04T08:23:37.509Z",codex-agent,Feature created as the single net-new follow-up after dedupe mapping.
+  "2026-04-04T08:40:12.225Z",codex-agent,"Child task pm-l5tr is closed with evidence. Feature outcome met: create log-seed parsing now rejects unsupported parsed keys to prevent silent truncation, and quoted/markdown/stdin paths remain valid with regression + docs parity."
+notes[1]{created_at,author,text}:
+  "2026-04-04T08:23:37.509Z",codex-agent,Implement validation at create log-seed boundary rather than broad parser breaking changes.
+files[1]{path,scope,note}:
+  src/cli/commands/create.ts,project,feature implementation surface
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/parse-utils.spec.ts,null,project,600,feature regression coverage
+docs[1]{path,scope,note}:
+  PRD.md,project,command contract update target
+close_reason: "Issue1 feature delivered via pm-l5tr implementation, tests, docs, and verification evidence."
+body: "Deliver parser behavior for create log-seed options that rejects ambiguous unquoted continuations while preserving accepted safe forms (quoted, markdown key/value lines, stdin token)."

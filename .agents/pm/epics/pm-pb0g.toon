@@ -1,0 +1,51 @@
+id: pm-pb0g
+title: "External audit Issue1 follow-up: log-seed ambiguity guard"
+description: Track unresolved external Issue 1 behavior where unquoted comma-delimited log-seed text can be silently truncated when later segments parse as key/value tokens.
+type: Epic
+status: closed
+priority: 1
+tags[4]: "area:create","area:parser",external-audit,pm-cli
+created_at: "2026-04-04T08:23:25.627Z"
+updated_at: "2026-04-04T08:40:25.035Z"
+deadline: "2026-04-11T08:23:25.627Z"
+author: codex-agent
+estimated_minutes: 300
+acceptance_criteria: Create log-seed parsing never silently drops user text; ambiguous unquoted key/value-like continuations fail with deterministic usage guidance; docs and tests are updated without regressions.
+definition_of_ready: Dedup scan confirms no active tracker item for this exact ambiguity path.
+order: 1
+goal: External audit reconciliation
+objective: Close unresolved Issue 1 parser ambiguity safely
+value: Prevents silent evidence loss in automation-driven metadata seeding
+impact: Improves trust in create-time audit evidence fidelity
+outcome: Deterministic parser behavior for comment/note/learning seeds
+why_now: External audit confirms Issues 2-5 are already resolved; this remains net-new unresolved scope
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: audit-remediation-2026w14
+release: vnext
+reporter: codex-agent
+severity: medium
+environment: linux-node25-local
+repro_steps: "Run pm create with --comment text containing unquoted comma segments that resemble key:value tokens."
+resolution: "External audit Issue1 net-new scope delivered through feature pm-m3mf and task pm-l5tr with deterministic parser guard, docs parity, and verification evidence."
+expected_result: No silent truncation in create log-seed text; ambiguous unquoted key-like continuations fail with guidance.
+actual_result: Issue1 guard implemented and verified; Issues 2-5 remained mapped to pre-existing closed canonical items without duplication.
+affected_version: 2026.3.12
+fixed_version: target-vnext
+component: cli-create-parser
+regression: true
+customer_impact: Maintainers and agents retain complete audit evidence when seeding narrative text.
+comments[2]{created_at,author,text}:
+  "2026-04-04T08:23:25.627Z",codex-agent,Created after dedupe sweep confirmed only Issue1 remains unresolved.
+  "2026-04-04T08:40:22.568Z",codex-agent,"Epic closure evidence: feature pm-m3mf and task pm-l5tr are closed/released with code/test/docs updates, full regression+coverage pass, and health/validate audit checks. External Issues 2-5 were handled via canonical closed items (pm-wn34, pm-4emi, pm-a228, pm-doek) without duplicates."
+notes[1]{created_at,author,text}:
+  "2026-04-04T08:23:25.627Z",codex-agent,Implement as additive validation focused on log-seed fields to avoid breaking unrelated parser contracts.
+files[1]{path,scope,note}:
+  src/cli/commands/create.ts,project,primary implementation surface
+tests[1]{command,path,scope,timeout_seconds,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts,null,project,240,targeted create parser regression
+docs[1]{path,scope,note}:
+  README.md,project,public guidance update target
+close_reason: "External audit reconciliation complete: only Issue1 required net-new implementation; all validations passed."
+body: "Implement a compatibility-safe fix for comment/note/learning seed ambiguity: fail fast on ambiguous unquoted payloads with deterministic guidance while preserving quoted/markdown/stdin paths."

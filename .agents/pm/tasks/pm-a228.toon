@@ -6,16 +6,17 @@ status: closed
 priority: 1
 tags[4]: "area:files","area:validation",follow-up,pm-cli
 created_at: "2026-04-03T21:59:58.425Z"
-updated_at: "2026-04-03T22:17:21.817Z"
+updated_at: "2026-04-04T08:22:49.105Z"
 deadline: "2026-04-10T21:59:58.425Z"
 author: codex-agent
 estimated_minutes: 220
 acceptance_criteria: pm validate --check-files --scan-mode tracked-all prioritizes actionable repository files by default; users can explicitly include PM internals when desired; completion/contracts/wrapper/tests are aligned.
 parent: pm-j371
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-03T21:59:58.425Z",codex-agent,Child task created from tracked-all orphaned-path signal-quality report.
   "2026-04-03T22:03:12.315Z",codex-agent,"Implementation started: add default tracked-all exclusion for PM internals plus explicit opt-in include flag with contracts/completion/Pi parity."
   "2026-04-03T22:17:03.821Z",codex-agent,"Implemented tracked-all PM-internal filtering: default scans exclude PM internals for higher-signal orphaned results; --include-pm-internals restores full internal audit coverage. Added completion/contracts/Pi parity and regressions. Evidence: pm test pm-a228 --run passed; full build/test/coverage passed; smoke check shows include_pm_internals=false with .agents paths excluded by default and include=true reintroduces them."
+  "2026-04-04T08:22:49.105Z",codex-agent,"External Audit 2026-04-04 mapping: external Issue 4 ID pm-e5z1 is not present in this tracker. Canonical local coverage remains pm-j371/pm-a228 (tracked-all default PM-internal exclusion plus include opt-in) with closed verified evidence; no duplicate item created."
 notes[1]{created_at,author,text}:
   "2026-04-03T21:59:58.425Z",codex-agent,Implement as additive behavior to avoid breaking existing users.
 files[9]{path,scope,note}:

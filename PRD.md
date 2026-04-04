@@ -723,6 +723,7 @@ Mutating `create` flags (repeatable; strict mode may require each at least once 
 - `--comment` value format: `author=<a>,created_at=<iso|now>,text=<t>` (also accepts markdown `key: value` lines and stdin token `-`)
 - `--note` value format: `author=<a>,created_at=<iso|now>,text=<t>` (also accepts markdown `key: value` lines and stdin token `-`)
 - `--learning` value format: `author=<a>,created_at=<iso|now>,text=<t>` (also accepts markdown `key: value` lines and stdin token `-`)
+- Log-seed repeatables (`--comment`/`--note`/`--learning`) accept only `author`, `created_at`, and `text` keys. Parsed extra keys are rejected with usage guidance to avoid silent truncation when unquoted comma segments resemble key/value pairs; quoted text (`text="hello,scope:project"`), markdown key/value input, and stdin token `-` remain supported.
 - `--file` value format: `path=<p>,scope=<project|global>,note=<n?>` (also accepts markdown `key: value` lines and stdin token `-`)
 - `--test` value format: `command=<c>,path=<p?>,scope=<project|global>,timeout_seconds=<n?>,note=<n?>` (also accepts markdown `key: value` lines and stdin token `-`; `command` is required and `path` is optional metadata)
 - `--doc` value format: `path=<p>,scope=<project|global>,note=<n?>` (also accepts markdown `key: value` lines and stdin token `-`)

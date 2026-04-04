@@ -121,6 +121,22 @@ export interface CreateResult {
 
 type CreateMode = "strict" | "progressive";
 const CREATE_MODE_VALUES = ["strict", "progressive"] as const;
+const LOG_SEED_ALLOWED_KEYS = new Set(["author", "created_at", "text"]);
+
+function buildInvalidLogSeedKeysMessage(
+  optionName: "--comment" | "--note" | "--learning",
+  unsupportedKeys: string[],
+): string {
+  const sortedUnsupported = [...unsupportedKeys].sort((left, right) => left.localeCompare(right));
+  const keyLabel = sortedUnsupported.length === 1 ? "key" : "keys";
+  return (
+    `${optionName} supports only author, created_at, and text seed fields. ` +
+    `Found unsupported ${keyLabel}: ${sortedUnsupported.join(", ")}. ` +
+    `If text contains comma-separated key:value-like fragments, wrap text in quotes ` +
+    '(for example text="first,scope:project"), use markdown-style key/value input, ' +
+    `or pass ${optionName} - with piped stdin.`
+  );
+}
 
 function ensureEnumValue<T extends string>(value: string, allowed: readonly T[], label: string): T {
   if (!allowed.includes(value as T)) {
@@ -241,6 +257,10 @@ function parseLogSeed(
   }
   const values = raw.map((entry) => {
     const kv = parseCsvKv(entry, optionName);
+    const unsupportedKeys = Object.keys(kv).filter((key) => !LOG_SEED_ALLOWED_KEYS.has(key));
+    if (unsupportedKeys.length > 0) {
+      throw new PmCliError(buildInvalidLogSeedKeysMessage(optionName, unsupportedKeys), EXIT_CODE.USAGE);
+    }
     const text = kv.text ?? "";
     if (text === "") {
       throw new PmCliError(`${optionName} requires text=<value>`, EXIT_CODE.USAGE);
