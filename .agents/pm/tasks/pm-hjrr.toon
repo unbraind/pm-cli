@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: diagnostics,extensions,external-audit,implementation
 created_at: "2026-04-04T12:43:31.599Z"
-updated_at: "2026-04-04T17:43:45.276Z"
+updated_at: "2026-04-04T18:34:13.429Z"
 deadline: "2026-04-11T12:43:31.599Z"
 author: codex-agent
 estimated_minutes: 200
@@ -38,9 +38,10 @@ fixed_version: target-vnext
 component: extension-diagnostics
 regression: true
 customer_impact: Cuts incident triage time for extension activation/schema failures.
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-04T12:43:31.599Z",codex-agent,"Task created after dedupe checks: existing closed pm-doek intentionally avoided new command surface,so dedicated doctor action remains net-new implementation scope."
   "2026-04-04T14:01:45.092Z",codex-agent,"Implemented dedicated extension doctor action with summary/deep detail modes, warning-code aggregation, remediation hints, CLI/help/SDK/Pi contract parity, and unit/integration coverage. Evidence: node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts and pm test pm-hjrr --run passed."
+  "2026-04-04T18:31:12.837Z",codex-agent,"Implemented doctor deep root fix to use canonical pm root, added project active-vs-loaded consistency diagnostics, and extended unit coverage. Evidence: node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts plus targeted doctor/health repro checks."
 notes[1]{created_at,author,text}:
   "2026-04-04T12:43:31.599Z",codex-agent,Doctor output must expose normalized warning/error codes and actionable remediation commands.
 files[8]{path,scope,note}:
@@ -52,7 +53,10 @@ files[8]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,extension-doctor-implementation
   tests/unit/extension-command.spec.ts,project,extension-doctor-implementation
   tests/unit/pi-agent-extension.spec.ts,project,extension-doctor-implementation
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,doctor-regression-target
   node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,extension-doctor-regression
-close_reason: Extension doctor diagnostics surface delivered with summary/deep outputs and verified cross-surface contracts.
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,doctor-behavior-contract
+close_reason: doctor deep root and consistency fixes verified
 body: Code workstream for feature pm-gm9y.

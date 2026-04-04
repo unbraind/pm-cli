@@ -392,10 +392,12 @@ For `pm create` log-seed flags (`--comment`, `--note`, `--learning`), only `auth
 - Linked test entries also support optional per-entry runtime directives and assertions: `env_set=KEY=VALUE;KEY2=VALUE2`, `env_clear=KEY1;KEY2`, `shared_host_safe=true|false`, `assert_stdout_contains=...`, `assert_stdout_regex=...`, `assert_stderr_contains=...`, `assert_stderr_regex=...`, `assert_stdout_min_lines=<int>`, `assert_json_field_equals=path=value`, `assert_json_field_gte=path=<number>`.
 - `pm test <ID> --run` / `pm test-all` execute in temporary sandbox roots but seed project/global `settings.json` and `extensions/` directories from source roots so extension-defined type behavior matches direct workspace commands.
 - `pm test <ID> --run` / `pm test-all` support additive run-level runtime controls: repeatable `--env-set KEY=VALUE`, repeatable `--env-clear NAME`, `--shared-host-safe` (ephemeral/shared-host-friendly defaults such as `PORT=0` when unset), `--pm-context schema|tracker`, `--fail-on-context-mismatch`, `--fail-on-skipped`, and `--require-assertions-for-pm`.
-- Linked-test `run_results` now include `execution_context` metadata (context mode, PM roots, item counts, mismatch signal, extension seeding state) so PM-command parity is explicit in machine-readable output.
+- Linked-test `run_results` include `execution_context` metadata (context mode, PM roots, item counts, mismatch signal, extension seeding state, PM tracker-read classification) so PM-command parity is explicit in machine-readable output.
+- In default `--pm-context schema` mode, PM tracker-read linked commands (for example `list*`, `get`, `search`, `stats`, `test-all`) fail on dataset mismatch by default; use `--pm-context tracker` to run against seeded tracker data.
 - `pm test <ID> --run` and `pm test-all` emit heartbeat/progress lines to stderr in interactive terminals during long-running linked commands, and support explicit non-interactive progress output via `--progress`.
 - Linked test timeout handling uses deterministic process termination (including force-kill fallback) and reports explicit timeout/maxBuffer diagnostics in `run_results`.
 - Failed linked test `run_results` now include `failure_category` (for example `infra_collision` vs `assertion_failure`) and `pm test-all` totals include aggregated `failure_categories` counts for triage.
+- `pm test <ID> --run` now returns dependency-failed exit code (`5`) when any linked test run result fails (matching `pm test-all` failure gating behavior).
 - `pm list` / `pm list-*` return front-matter rows by default; pass `--include-body` when body projection is needed, `--offset <n>` for pagination, and `--stream` (with `--json`) for newline-delimited item streaming.
 
 ## Terminal Compatibility
@@ -628,7 +630,7 @@ Activation and health behavior:
 - Deactivate/activate toggle `extensions.disabled[]`/`extensions.enabled[]` in settings.
 - `pm extension --explore` lists discovered extensions and active status.
 - `pm extension --manage` refreshes GitHub-managed update metadata, persists it to scope-local `.managed-extensions.json`, and includes a concise triage summary with remediation hints.
-- `pm extension --doctor` (or `pm extension doctor`) provides consolidated extension diagnostics with normalized warning codes, remediation hints, and optional deep output via `--detail deep`.
+- `pm extension --doctor` (or `pm extension doctor`) provides consolidated extension diagnostics with normalized warning codes, canonical load roots, active-vs-loaded consistency diagnostics, remediation hints, and optional deep output via `--detail deep`.
 - `pm health` includes managed extension state diagnostics plus a condensed extension triage block for quick load/activation/migration issue triage across project and global roots.
 
 Use `pm extension --help` for compact guidance or `pm extension --help --explain` for expanded examples/tips.

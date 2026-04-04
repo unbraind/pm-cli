@@ -256,7 +256,7 @@ describe("runTestAll", () => {
         testEntries: ["command=node dist/cli.js list --type GlobalAsset --limit 1 --json,scope=project"],
       });
 
-      const result = await runTestAll({ status: "open", timeout: "30" }, { path: context.pmPath });
+      const result = await runTestAll({ status: "open", timeout: "30", pmContext: "tracker" }, { path: context.pmPath });
       expect(result.totals.items).toBe(2);
       expect(result.totals.linked_tests).toBe(2);
       expect(result.failed).toBe(0);
@@ -611,6 +611,15 @@ describe("runTestAll", () => {
         status: "open",
         testEntries: ["command=node dist/cli.js list-all --type Task --limit 200 --json,scope=project"],
       });
+
+      const schemaDefault = await runTestAll(
+        {
+          status: "open",
+        },
+        { path: context.pmPath },
+      );
+      expect(schemaDefault.failed).toBe(1);
+      expect(schemaDefault.results[0]?.run_results[0]?.error ?? "").toContain("context mismatch");
 
       const schemaStrict = await runTestAll(
         {

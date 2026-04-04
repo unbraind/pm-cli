@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: extensions,external-audit,linked-tests,pm-cli
 created_at: "2026-04-04T12:42:06.028Z"
-updated_at: "2026-04-04T17:36:49.862Z"
+updated_at: "2026-04-04T18:34:22.308Z"
 deadline: "2026-04-18T12:42:06.028Z"
 author: codex-agent
 estimated_minutes: 420
@@ -37,10 +37,11 @@ fixed_version: target-vnext
 component: linked-test-runtime
 regression: true
 customer_impact: Prevents false-green governance evidence and shortens extension triage time.
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-04T12:42:06.028Z",codex-agent,"Duplicate-check evidence before create: pm context --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20; pm search path-only linked test --limit 10; pm search extension doctor diagnostics --limit 10; pm search fail-on-skipped linked tests --limit 10; no active unresolved item covers combined remaining scope."
   "2026-04-04T14:02:39.793Z",codex-agent,"Audit follow-up scope completed: pm-vrsn, pm-au2z, pm-hjrr, and pm-64f1 are closed with linked regression+coverage evidence and docs updates."
+  "2026-04-04T18:31:18.866Z",codex-agent,"Regression cycle evidence: build passed, targeted regression suites passed, full coverage passed, and all three reported behaviors reproduced as fixed (doctor deep consistency, schema mismatch gating, pm test exit semantics)."
 notes[1]{created_at,author,text}:
   "2026-04-04T12:42:06.028Z",codex-agent,"Reuses closed lineage for covered scope (pm-mf5z,pm-44iu,pm-wn34,pm-grst,pm-doek) and tracks only net-new deltas."
-close_reason: "External audit follow-up completed with additive hardening, docs alignment, and full verification evidence."
+close_reason: all three external regression follow-ups delivered and verified
 body: "Net-new scope after dedupe: #2 full PM dataset parity guardrails, #4 assertion semantics and fail-on-skipped policy, and #3 dedicated extension doctor surface."

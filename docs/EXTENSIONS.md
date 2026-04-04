@@ -19,7 +19,7 @@ This preserves extension-defined schema behavior (including custom item type val
 
 Linked-test runtime controls are additive: run-level `--env-set`/`--env-clear`/`--shared-host-safe` flags and per-linked-test metadata directives (`env_set`, `env_clear`, `shared_host_safe`) apply before sandbox-protected `PM_PATH`/`PM_GLOBAL_PATH` overrides.
 
-PM-command linked tests can opt into tracker-data parity via `--pm-context tracker` (default `schema` keeps isolated tracker data while still seeding settings/extensions). Per-run `execution_context` metadata includes resolved roots, item counts, and mismatch signal; strict guards can enforce `--fail-on-context-mismatch`, `--fail-on-skipped`, and `--require-assertions-for-pm`.
+PM-command linked tests can opt into tracker-data parity via `--pm-context tracker` (default `schema` keeps isolated tracker data while still seeding settings/extensions). In default `schema` mode, PM tracker-read linked commands fail on context mismatch by default; strict guards remain available for other PM command shapes via `--fail-on-context-mismatch` plus `--fail-on-skipped` and `--require-assertions-for-pm`. Per-run `execution_context` metadata includes resolved roots, item counts, mismatch signal, and PM tracker-read classification.
 
 Linked-test assertion metadata is optional and additive (`assert_stdout_contains`, `assert_stdout_regex`, `assert_stderr_contains`, `assert_stderr_regex`, `assert_stdout_min_lines`, `assert_json_field_equals`, `assert_json_field_gte`).
 
@@ -108,7 +108,7 @@ Lifecycle semantics:
 - Activate/deactivate updates `settings.extensions.enabled[]` / `settings.extensions.disabled[]`.
 - Explore returns discovered extensions + active/managed status.
 - Manage performs GitHub update checks (`git ls-remote`) for managed GitHub entries and persists update metadata (`last_update_check_at`, `last_update_remote_commit`, `update_available`, `update_error`).
-- Doctor consolidates diagnostics into summary/deep modes (`--detail summary|deep`) with normalized warning codes and remediation hints (`pm extension --doctor` or `pm extension doctor`).
+- Doctor consolidates diagnostics into summary/deep modes (`--detail summary|deep`) with normalized warning codes, canonical extension load roots, consistency diagnostics for active-vs-loaded project extensions, and remediation hints (`pm extension --doctor` or `pm extension doctor`).
 
 ### Health integration
 

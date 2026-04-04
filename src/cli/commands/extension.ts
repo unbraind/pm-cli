@@ -936,6 +936,7 @@ async function checkGithubUpdate(source: ManagedExtensionSource): Promise<Github
 }
 
 function resolveExtensionRootsForScope(scope: ExtensionScope, global: GlobalOptions): {
+  pm_root: string;
   scope: ExtensionScope;
   settings_root: string;
   selected_root: string;
@@ -946,6 +947,7 @@ function resolveExtensionRootsForScope(scope: ExtensionScope, global: GlobalOpti
   const settingsRoot = scope === "global" ? resolveGlobalPmRoot(process.cwd()) : pmRoot;
   const selectedRoot = scope === "global" ? roots.global : roots.project;
   return {
+    pm_root: pmRoot,
     scope,
     settings_root: settingsRoot,
     selected_root: selectedRoot,
@@ -1036,6 +1038,70 @@ function warningCode(value: string): string {
     return normalized;
   }
   return normalized.slice(0, separator);
+}
+
+function buildDoctorConsistencySummary(
+  scope: ExtensionScope,
+  installedExtensions: ManagedExtensionSummary[],
+  loadedExtensions: Array<{ layer: string; name: string }>,
+  failedLoads: Array<{ name: string }>,
+  disabledByFlag: boolean,
+): {
+  warnings: string[];
+  summary: {
+    active_project_count: number;
+    loaded_project_count: number;
+    active_project_names: string[];
+    loaded_project_names: string[];
+    missing_active_project_names: string[];
+  };
+} {
+  if (scope !== "project" || disabledByFlag) {
+    return {
+      warnings: [],
+      summary: {
+        active_project_count: 0,
+        loaded_project_count: 0,
+        active_project_names: [],
+        loaded_project_names: [],
+        missing_active_project_names: [],
+      },
+    };
+  }
+
+  const activeProjectNames = [
+    ...new Set(
+      installedExtensions
+        .filter((entry) => entry.active)
+        .map((entry) => normalizeExtensionNameForMatch(entry.name)),
+    ),
+  ].sort((left, right) => left.localeCompare(right));
+  const loadedProjectNames = [
+    ...new Set(
+      loadedExtensions
+        .filter((entry) => entry.layer === "project")
+        .map((entry) => normalizeExtensionNameForMatch(entry.name)),
+    ),
+  ].sort((left, right) => left.localeCompare(right));
+  const failedLoadNames = new Set(failedLoads.map((entry) => normalizeExtensionNameForMatch(entry.name)));
+  const missingActiveProjectNames = activeProjectNames
+    .filter((name) => !loadedProjectNames.includes(name) && !failedLoadNames.has(name))
+    .sort((left, right) => left.localeCompare(right));
+
+  const warnings = missingActiveProjectNames.length > 0
+    ? [`extension_doctor_consistency_active_not_loaded:${missingActiveProjectNames.join(",")}`]
+    : [];
+
+  return {
+    warnings,
+    summary: {
+      active_project_count: activeProjectNames.length,
+      loaded_project_count: loadedProjectNames.length,
+      active_project_names: activeProjectNames,
+      loaded_project_names: loadedProjectNames,
+      missing_active_project_names: missingActiveProjectNames,
+    },
+  };
 }
 
 export async function runExtension(
@@ -1245,7 +1311,7 @@ export async function runExtension(
     warnings.push(...installed.warnings);
 
     const loadResult = await loadExtensions({
-      pmRoot: resolvedRoots.roots.project,
+      pmRoot: resolvedRoots.pm_root,
       settings,
       cwd: process.cwd(),
       noExtensions: global.noExtensions === true,
@@ -1256,6 +1322,14 @@ export async function runExtension(
     });
     warnings.push(...loadResult.warnings);
     warnings.push(...activationResult.warnings);
+    const doctorConsistency = buildDoctorConsistencySummary(
+      scope,
+      installed.extensions,
+      loadResult.loaded.map((entry) => ({ layer: entry.layer, name: entry.name })),
+      loadResult.failed.map((entry) => ({ name: entry.name })),
+      loadResult.disabled_by_flag,
+    );
+    warnings.push(...doctorConsistency.warnings);
     const updateCheckWarnings = managedStateRead.state.entries
       .filter((entry) => typeof entry.update_error === "string" && entry.update_error.trim().length > 0)
       .map((entry) => `extension_update_check_failed:${entry.name}`);
@@ -1294,6 +1368,7 @@ export async function runExtension(
       ).length,
       load_failure_count: loadResult.failed.length,
       activation_failure_count: activationResult.failed.length,
+      consistency_warning_count: doctorConsistency.warnings.length,
       remediation,
     };
 
@@ -1335,6 +1410,7 @@ export async function runExtension(
           service_override_count: activationResult.service_override_count,
           renderer_override_count: activationResult.renderer_override_count,
         },
+        consistency: doctorConsistency.summary,
       };
     }
     return withResult(details);

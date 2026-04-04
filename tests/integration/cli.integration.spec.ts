@@ -4294,6 +4294,69 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("returns dependency-failed exit code when pm test run has linked test failures", async () => {
+    await withTempPmPath(async (context) => {
+      const createFailing = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Failing test command item",
+          "--description",
+          "Used to validate dependency-failed test command exit code",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,test",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "10",
+          "--acceptance-criteria",
+          "test exits with dependency failed when linked test fails",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create failing item for test command",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "command=node --this-flag-does-not-exist,scope=project,timeout=30",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(createFailing.code).toBe(0);
+      const failingId = (createFailing.json as { item: { id: string } }).item.id;
+
+      const runTests = context.runCli(["test", failingId, "--json", "--run", "--timeout", "30"], { expectJson: true });
+      expect(runTests.code).toBe(5);
+      const runTestsJson = runTests.json as {
+        run_results: Array<{ status: string }>;
+        failure_categories: { assertion_failure?: number };
+      };
+      expect(runTestsJson.run_results.some((entry) => entry.status === "failed")).toBe(true);
+      expect((runTestsJson.failure_categories.assertion_failure ?? 0) >= 1).toBe(true);
+    });
+  });
+
   it("returns dependency-failed exit code when any linked test fails", async () => {
     await withTempPmPath(async (context) => {
       const createFailing = context.runCli(

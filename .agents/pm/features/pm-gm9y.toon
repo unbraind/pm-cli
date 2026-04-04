@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: diagnostics,extensions,external-audit,pm-cli
 created_at: "2026-04-04T12:42:52.452Z"
-updated_at: "2026-04-04T17:39:49.443Z"
+updated_at: "2026-04-04T18:34:17.350Z"
 deadline: "2026-04-14T12:42:52.452Z"
 author: codex-agent
 estimated_minutes: 220
@@ -38,10 +38,11 @@ fixed_version: target-vnext
 component: extension-diagnostics
 regression: true
 customer_impact: Maintainers and agents can triage extension incidents faster with less output traversal.
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-04T12:42:52.452Z",codex-agent,"Duplicate-check evidence: pm-doek improved manage/health triage but intentionally did not add a new command surface; dedicated doctor command remains net-new scope."
   "2026-04-04T14:02:32.847Z",codex-agent,Child task pm-hjrr delivered extension doctor summary/deep diagnostics with contract/help parity and regression coverage.
+  "2026-04-04T18:31:15.686Z",codex-agent,"Feature follow-up complete via pm-hjrr: doctor deep diagnostics now use canonical roots and include consistency checks aligned with health/explore outputs."
 notes[1]{created_at,author,text}:
   "2026-04-04T12:42:52.452Z",codex-agent,Keep behavior additive and preserve existing extension --manage and health payload contracts.
-close_reason: Extension doctor diagnostics feature completed with deterministic summary/deep outputs and remediation hints.
+close_reason: extension doctor feature follow-up completed
 body: Implements unresolved external report #3 delta beyond existing manage/health triage summaries by adding a single dedicated diagnostics surface.

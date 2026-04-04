@@ -1016,6 +1016,7 @@ describe("runTest", () => {
         {
           run: true,
           timeout: "30",
+          pmContext: "tracker",
         },
         { path: context.pmPath },
       );
@@ -1046,13 +1047,15 @@ describe("runTest", () => {
       );
       expect(schemaMode.run_results).toHaveLength(1);
       const schemaResult = schemaMode.run_results[0];
-      expect(schemaResult?.status).toBe("passed");
+      expect(schemaResult?.status).toBe("failed");
       expect(schemaResult?.execution_context).toMatchObject({
         pm_context_mode: "schema",
         is_pm_command: true,
+        is_pm_tracker_read_command: true,
       });
       expect(schemaResult?.execution_context?.source_project_item_count ?? 0).toBeGreaterThan(0);
       expect(schemaResult?.execution_context?.mismatch_detected).toBe(true);
+      expect(schemaResult?.error ?? "").toContain("context mismatch");
 
       const strictMismatch = await runTest(
         id,

@@ -3110,7 +3110,7 @@ program
       await invalidateSearchCachesForMutation(globalOptions, result);
     }
     printResult(result, globalOptions);
-    if (result.fail_on_skipped_triggered === true) {
+    if (result.run_results.some((entry) => entry.status === "failed") || result.fail_on_skipped_triggered === true) {
       process.exitCode = EXIT_CODE.DEPENDENCY_FAILED;
     }
     if (globalOptions.profile) {

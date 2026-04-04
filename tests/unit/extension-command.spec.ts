@@ -316,14 +316,18 @@ describe("extension command runtime", () => {
             name: "doctor-ext",
             version: "1.0.0",
             entry: "index.js",
-            capabilities: ["commands"],
+            capabilities: ["schema"],
           },
           null,
           2,
         ),
         "utf8",
       );
-      await writeFile(path.join(sourceDir, "index.js"), "export default { activate() {} };", "utf8");
+      await writeFile(
+        path.join(sourceDir, "index.js"),
+        "export function activate(api) { api.registerItemTypes([{ name: \"DoctorAsset\", folder: \"doctor-assets\" }]); }\n",
+        "utf8",
+      );
       await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
 
       const summaryDoctor = await runExtension(undefined, { doctor: true, project: true }, { path: context.pmPath });
@@ -341,7 +345,24 @@ describe("extension command runtime", () => {
       expect(deepDoctor.details).toMatchObject({
         mode: "deep",
       });
-      expect((deepDoctor.details.deep as Record<string, unknown>).installed_extensions).toBeDefined();
+      const deep = deepDoctor.details.deep as {
+        installed_extensions?: unknown;
+        load?: {
+          roots?: { project?: string };
+          loaded?: Array<{ name: string }>;
+        };
+        activation?: {
+          registration_counts?: { item_types?: number };
+        };
+        consistency?: {
+          missing_active_project_names?: string[];
+        };
+      };
+      expect(deep.installed_extensions).toBeDefined();
+      expect(deep.load?.roots?.project).toBe(path.join(context.pmPath, "extensions"));
+      expect((deep.load?.loaded ?? []).some((entry) => entry.name === "doctor-ext")).toBe(true);
+      expect(deep.activation?.registration_counts?.item_types ?? 0).toBeGreaterThan(0);
+      expect(deep.consistency?.missing_active_project_names ?? []).toEqual([]);
 
       const targetDoctor = await runExtension("doctor", {}, { path: context.pmPath });
       expect(targetDoctor.action).toBe("doctor");

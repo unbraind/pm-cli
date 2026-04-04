@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: context-parity,external-audit,linked-tests,pm-cli
 created_at: "2026-04-04T12:42:31.364Z"
-updated_at: "2026-04-04T17:39:46.491Z"
+updated_at: "2026-04-04T18:34:18.737Z"
 deadline: "2026-04-14T12:42:31.364Z"
 author: codex-agent
 estimated_minutes: 260
@@ -41,10 +41,11 @@ regression: true
 customer_impact: Reduces false-green linked verification for governance-critical PM commands.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-6pij,related,"2026-04-04T12:42:31.364Z",codex-agent,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-04T12:42:31.364Z",codex-agent,"Duplicate-check evidence: pm-mf5z and pm-qtvv restored extension-defined type parity but do not provide tracker-data parity mode or mismatch-fail controls."
   "2026-04-04T14:02:27.223Z",codex-agent,"Child task pm-vrsn delivered PM-context parity controls, execution_context metadata, and mismatch guardrails with linked sweeps passing."
+  "2026-04-04T18:31:16.681Z",codex-agent,"Feature follow-up complete via pm-vrsn: schema-mode default mismatch gating now fails PM tracker-read linked commands while retaining additive strict flags and tracker mode remediation."
 notes[1]{created_at,author,text}:
   "2026-04-04T12:42:31.364Z",codex-agent,"Design constraint: additive defaults only; existing users keep current sandbox behavior unless opting into stricter modes."
-close_reason: Linked-test PM context parity feature completed via pm-vrsn implementation and verification evidence.
+close_reason: linked-test context parity follow-up completed
 body: "Implements unresolved external report #2 delta beyond existing extension/schema parity: tracker dataset parity mode plus explicit mismatch guardrails."

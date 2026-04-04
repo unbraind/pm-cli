@@ -51,6 +51,28 @@ const PM_SUBCOMMANDS_WITH_ITEM_REFERENCE = new Set([
   "deps",
   "test",
 ]);
+const PM_TRACKER_READ_SUBCOMMANDS = new Set([
+  "activity",
+  "calendar",
+  "context",
+  "ctx",
+  "deps",
+  "get",
+  "health",
+  "history",
+  "list",
+  "list-all",
+  "list-blocked",
+  "list-canceled",
+  "list-closed",
+  "list-draft",
+  "list-in-progress",
+  "list-open",
+  "search",
+  "stats",
+  "test-all",
+  "validate",
+]);
 
 function readPositiveIntegerEnv(name: string, fallback: number): number {
   const raw = process.env[name];
@@ -137,6 +159,7 @@ export interface TestRunResult {
   execution_context?: {
     pm_context_mode: LinkedTestPmContextMode;
     is_pm_command: boolean;
+    is_pm_tracker_read_command: boolean;
     source_project_pm_path: string;
     sandbox_project_pm_path: string;
     source_global_pm_path: string;
@@ -656,6 +679,21 @@ function extractPmInvocationArgsFromSegment(segment: string): string[] | null {
 function commandInvokesPmCli(command: string): boolean {
   const normalizedCommand = normalizeCommandForValidation(command);
   return splitNormalizedCommandSegments(normalizedCommand).some((segment) => extractPmInvocationArgsFromSegment(segment) !== null);
+}
+
+function commandInvokesPmTrackerReadCommand(command: string): boolean {
+  const normalizedCommand = normalizeCommandForValidation(command);
+  return splitNormalizedCommandSegments(normalizedCommand).some((segment) => {
+    const invocationArgs = extractPmInvocationArgsFromSegment(segment);
+    if (!invocationArgs) {
+      return false;
+    }
+    const context = resolvePmSubcommandContext(invocationArgs);
+    if (!context) {
+      return false;
+    }
+    return PM_TRACKER_READ_SUBCOMMANDS.has(context.subcommand);
+  });
 }
 
 export function extractReferencedPmItemIdsFromCommand(command: string, idPrefix = "pm"): string[] {
@@ -1597,10 +1635,13 @@ export async function runLinkedTests(
       command: string | undefined,
     ): NonNullable<TestRunResult["execution_context"]> => {
       const isPmCommand = typeof command === "string" && command.length > 0 ? commandInvokesPmCli(command) : false;
+      const isPmTrackerReadCommand =
+        isPmCommand && typeof command === "string" && command.length > 0 ? commandInvokesPmTrackerReadCommand(command) : false;
       const mismatchDetected = isPmCommand && sourceProjectItemCount !== sandboxProjectItemCount;
       return {
         pm_context_mode: pmContextMode,
         is_pm_command: isPmCommand,
+        is_pm_tracker_read_command: isPmTrackerReadCommand,
         source_project_pm_path: sourceRoots?.projectPmRoot ?? "",
         sandbox_project_pm_path: sandboxPmPath,
         source_global_pm_path: sourceRoots?.globalPmRoot ?? "",
@@ -1639,7 +1680,16 @@ export async function runLinkedTests(
         });
         continue;
       }
-      if (options?.failOnContextMismatch === true && executionContext.is_pm_command && executionContext.mismatch_detected) {
+      const failOnMismatchByDefault =
+        executionContext.pm_context_mode === "schema" &&
+        executionContext.is_pm_tracker_read_command &&
+        executionContext.mismatch_detected;
+      const failOnMismatchByFlag =
+        options?.failOnContextMismatch === true && executionContext.is_pm_command && executionContext.mismatch_detected;
+      if (failOnMismatchByDefault || failOnMismatchByFlag) {
+        const mismatchHint = failOnMismatchByDefault && !failOnMismatchByFlag
+          ? " Use --pm-context tracker to run PM tracker-read commands against seeded tracker data."
+          : "";
         results.push({
           command: linkedTest.command,
           path: linkedTest.path,
@@ -1649,7 +1699,7 @@ export async function runLinkedTests(
           execution_context: executionContext,
           error:
             `Linked test PM context mismatch detected (source_project_items=${executionContext.source_project_item_count}, ` +
-            `sandbox_project_items=${executionContext.sandbox_project_item_count}).`,
+            `sandbox_project_items=${executionContext.sandbox_project_item_count}).${mismatchHint}`,
         });
         continue;
       }

@@ -1156,6 +1156,11 @@ describe("release readiness runtime coverage", () => {
         testEntry: 'command=node -e "process.exit(1)",scope=project,timeout_seconds=5,note=exit-code-fail-signal',
       });
       expect(dependencySeed.code).toBe(0);
+      const dependencySeedId = (dependencySeed.json as { item: { id: string } }).item.id;
+      const dependencyTestResult = context.runCli(["test", dependencySeedId, "--run", "--timeout", "5", "--json"], {
+        expectJson: true,
+      });
+      expect(dependencyTestResult.code).toBe(5);
       const dependencyFailedResult = context.runCli(["test-all", "--status", "open", "--timeout", "5", "--json"]);
       expect(dependencyFailedResult.code).toBe(5);
     });
