@@ -63,11 +63,11 @@ files[12]{path,scope,note}:
   tests/unit/context-command.spec.ts,project,context unit coverage
   tests/unit/pi-agent-extension.spec.ts,project,wrapper context mapping assertions
   vitest.config.ts,project,coverage include update
-tests[4]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,coverage gate (known global baseline shortfall)
-  node scripts/run-tests.mjs test,null,project,7200,full regression
-  node scripts/run-tests.mjs test -- tests/unit/context-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,targeted regression suite
-  pnpm build,null,project,1200,typescript build verification
+tests[4]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,coverage gate (known global baseline shortfall)
+  node scripts/run-tests.mjs test,null,project,7200,null,null,null,full regression
+  node scripts/run-tests.mjs test -- tests/unit/context-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,targeted regression suite
+  pnpm build,null,project,1200,null,null,null,typescript build verification
 docs[5]{path,scope,note}:
   AGENTS.md,project,workflow recommendation update
   CHANGELOG.md,project,unreleased feature note

@@ -52,8 +52,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:22:50.865Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/commands/update.ts,project,primary user-facing status mutation path
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,3600,status alias regression target set
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,3600,null,null,null,status alias regression target set
 docs[1]{path,scope,note}:
   README.md,project,status alias behavior documentation
 close_reason: "Feature goals met: status alias normalization implemented, regressions covered, and docs updated."

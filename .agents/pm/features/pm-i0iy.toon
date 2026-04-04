@@ -53,8 +53,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:22:06.596Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   README.md,project,Primary docs surface for CLI behavior
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,Full coverage verification
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,Full coverage verification
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,Unreleased behavior notes
 close_reason: Phase 2 contracts/docs/test hardening complete with full verification passing.

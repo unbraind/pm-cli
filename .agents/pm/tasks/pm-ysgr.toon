@@ -56,8 +56,8 @@ files[3]{path,scope,note}:
   src/cli/commands/create.ts,project,reminder create parsing
   src/cli/commands/update.ts,project,update reminder mutation behavior
   src/cli/main.ts,project,wire reminder flags into create/update option normalization
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,null,project,1800,create update reminder coverage
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,null,project,1800,null,null,null,create update reminder coverage
 docs[1]{path,scope,note}:
   README.md,project,create update reminder flag docs
 close_reason: Create/update reminder flags and mutation semantics implemented and verified.

@@ -3136,6 +3136,9 @@ program
   .option("--run", "Run linked test commands")
   .option("--timeout <seconds>", "Default run timeout in seconds")
   .option("--progress", "Emit linked-test progress to stderr (always shown in TTY, opt-in for non-TTY)")
+  .option("--env-set <value>", "Set environment variable(s) for linked-test runs (KEY=VALUE, repeatable)", collect)
+  .option("--env-clear <value>", "Clear environment variable(s) for linked-test runs (NAME, repeatable)", collect)
+  .option("--shared-host-safe", "Apply additive shared-host-safe runtime defaults for linked-test runs")
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
   .option("--force", "Force ownership override")
@@ -3153,6 +3156,9 @@ program
         run: Boolean(options.run),
         timeout: typeof options.timeout === "string" ? options.timeout : undefined,
         progress: Boolean(options.progress),
+        envSet: Array.isArray(options.envSet) ? (options.envSet as string[]) : [],
+        envClear: Array.isArray(options.envClear) ? (options.envClear as string[]) : [],
+        sharedHostSafe: Boolean(options.sharedHostSafe),
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
         force: Boolean(options.force),
@@ -3174,6 +3180,9 @@ program
   .option("--status <value>", "Filter items by status before running tests")
   .option("--timeout <seconds>", "Default run timeout in seconds")
   .option("--progress", "Emit linked-test progress to stderr (always shown in TTY, opt-in for non-TTY)")
+  .option("--env-set <value>", "Set environment variable(s) for linked-test runs (KEY=VALUE, repeatable)", collect)
+  .option("--env-clear <value>", "Clear environment variable(s) for linked-test runs (NAME, repeatable)", collect)
+  .option("--shared-host-safe", "Apply additive shared-host-safe runtime defaults for linked-test runs")
   .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -3182,6 +3191,9 @@ program
         status: typeof options.status === "string" ? options.status : undefined,
         timeout: typeof options.timeout === "string" ? options.timeout : undefined,
         progress: Boolean(options.progress),
+        envSet: Array.isArray(options.envSet) ? (options.envSet as string[]) : [],
+        envClear: Array.isArray(options.envClear) ? (options.envClear as string[]) : [],
+        sharedHostSafe: Boolean(options.sharedHostSafe),
       },
       globalOptions,
     );
@@ -3222,10 +3234,11 @@ program
 
 program
   .command("validate")
-  .description("Run standalone metadata, resolution, files, and history drift validation checks.")
+  .description("Run standalone metadata, resolution, files, linked-command reference, and history drift validation checks.")
   .option("--check-metadata", "Run metadata completeness checks")
   .option("--check-resolution", "Run closed-item resolution metadata checks")
   .option("--check-files", "Run linked-file and orphaned-file checks")
+  .option("--check-command-references", "Run linked-command PM-ID reference checks")
   .option("--scan-mode <value>", "Select file candidate scan mode for --check-files (default|tracked-all)")
   .option("--include-pm-internals", "Include PM storage internals in tracked-all candidate scans")
   .option("--check-history-drift", "Run item/history hash drift checks")
@@ -3237,6 +3250,7 @@ program
         checkMetadata: Boolean(options.checkMetadata),
         checkResolution: Boolean(options.checkResolution),
         checkFiles: Boolean(options.checkFiles),
+        checkCommandReferences: Boolean(options.checkCommandReferences),
         scanMode: typeof options.scanMode === "string" ? options.scanMode : undefined,
         includePmInternals: Boolean(options.includePmInternals),
         checkHistoryDrift: Boolean(options.checkHistoryDrift),

@@ -57,11 +57,11 @@ files[4]{path,scope,note}:
   README.md,project,docs-first migration status contract
   src/cli/commands/health.ts,project,planned migration health diagnostics
   tests/unit/health-command.spec.ts,project,migration status regression coverage
-tests[4]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,240,sandboxed coverage gate
-  node scripts/run-tests.mjs test,null,project,240,sandboxed full suite
-  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts,null,project,240,targeted health migration tests
-  pnpm build,null,project,240,build verification
+tests[4]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,240,null,null,null,sandboxed coverage gate
+  node scripts/run-tests.mjs test,null,project,240,null,null,null,sandboxed full suite
+  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts,null,project,240,null,null,null,targeted health migration tests
+  pnpm build,null,project,240,null,null,null,build verification
 docs[3]{path,scope,note}:
   AGENTS.md,project,governing spec
   PRD.md,project,migration health contract

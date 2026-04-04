@@ -54,8 +54,8 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/sdk/cli-contracts.ts,project,contract schema updates
   src/sdk/index.ts,project,SDK export surface
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,sdk compatibility coverage
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,null,null,null,sdk compatibility coverage
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,sdk v2 contract docs
 close_reason: Phase 2 feature scope complete and verified

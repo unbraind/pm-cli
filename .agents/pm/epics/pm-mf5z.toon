@@ -42,8 +42,8 @@ notes[1]{created_at,author,text}:
   "2026-04-03T22:53:12.919Z",codex-agent,Implement docs-first with unit integration and regression verification.
 files[1]{path,scope,note}:
   src/cli/commands/test.ts,project,primary linked-test runtime surface
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,2400,linked-test runtime regression
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,2400,null,null,null,linked-test runtime regression
 docs[1]{path,scope,note}:
   PRD.md,project,authoritative command contract
 close_reason: pm-lvej pm-6fmt pm-8ys5 hardening scope delivered end-to-end

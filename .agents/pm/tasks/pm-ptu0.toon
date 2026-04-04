@@ -56,8 +56,8 @@ files[4]{path,scope,note}:
   docs/ARCHITECTURE.md,project,runtime detection and fallback design
   PRD.md,project,search contract updates for Ollama auto defaults
   README.md,project,user-facing semantic default behavior
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test,null,project,3600,final regression verification
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test,null,project,3600,null,null,null,final regression verification
 docs[4]{path,scope,note}:
   CHANGELOG.md,project,release-note entry for default semantic behavior
   docs/ARCHITECTURE.md,project,architecture contract updates

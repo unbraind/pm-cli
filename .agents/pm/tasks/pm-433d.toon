@@ -57,9 +57,9 @@ files[4]{path,scope,note}:
   README.md,project,public docs for canonicalized extension command paths
   src/core/extensions/loader.ts,project,command name normalization
   tests/unit/extension-loader.spec.ts,project,whitespace normalization tests
-tests[2]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,full coverage gate regression
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,900,targeted extension loader tests
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,full coverage gate regression
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,900,null,null,null,targeted extension loader tests
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow requirements
   PRD.md,project,governing extension semantics

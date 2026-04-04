@@ -3,7 +3,13 @@ import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { resolveLinkedTestFailureExitCode, runTest } from "../../src/cli/commands/test.js";
+import {
+  classifyLinkedTestFailure,
+  countFailureCategories,
+  extractReferencedPmItemIdsFromCommand,
+  resolveLinkedTestFailureExitCode,
+  runTest,
+} from "../../src/cli/commands/test.js";
 import { EXIT_CODE } from "../../src/constants.js";
 import { parseItemDocument, serializeItemDocument } from "../../src/item-format.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
@@ -173,6 +179,69 @@ describe("runTest", () => {
     ).toBe(2);
   });
 
+  it("classifies linked-test failure categories deterministically", () => {
+    expect(
+      classifyLinkedTestFailure({
+        stdout: "",
+        stderr: "Error: EADDRINUSE: address already in use 127.0.0.1:4173",
+        spawnError: undefined,
+        signal: null,
+        timedOut: false,
+        maxBufferExceeded: false,
+      }),
+    ).toBe("infra_collision");
+    expect(
+      classifyLinkedTestFailure({
+        stdout: "",
+        stderr: "",
+        spawnError: undefined,
+        signal: null,
+        timedOut: true,
+        maxBufferExceeded: false,
+      }),
+    ).toBe("timeout");
+    expect(
+      classifyLinkedTestFailure({
+        stdout: "",
+        stderr: "",
+        spawnError: undefined,
+        signal: null,
+        timedOut: false,
+        maxBufferExceeded: true,
+      }),
+    ).toBe("max_buffer");
+    expect(
+      classifyLinkedTestFailure({
+        stdout: "",
+        stderr: "",
+        spawnError: "spawn ENOENT",
+        signal: null,
+        timedOut: false,
+        maxBufferExceeded: false,
+      }),
+    ).toBe("spawn_error");
+    expect(
+      classifyLinkedTestFailure({
+        stdout: "",
+        stderr: "",
+        spawnError: undefined,
+        signal: "SIGTERM",
+        timedOut: false,
+        maxBufferExceeded: false,
+      }),
+    ).toBe("signal");
+    expect(
+      classifyLinkedTestFailure({
+        stdout: "",
+        stderr: "",
+        spawnError: undefined,
+        signal: null,
+        timedOut: false,
+        maxBufferExceeded: false,
+      }),
+    ).toBe("assertion_failure");
+  });
+
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-test-not-init-"));
     try {
@@ -213,6 +282,46 @@ describe("runTest", () => {
       await expect(runTest(id, { add: ["path=tests/path-only.spec.ts"] }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
+      await expect(
+        runTest(id, { add: ["command=node --version,scope=project,env_set=invalid-assignment"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runTest(id, { add: ["command=node --version,scope=project,env_set=;;"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runTest(id, { add: ["command=node --version,scope=project,env_set=1INVALID=value"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runTest(id, { add: ["command=node --version,scope=project,env_set=PM_PATH=/tmp/unsafe"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runTest(id, { add: ["command=node --version,scope=project,env_clear=FORCE_COLOR"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runTest(id, { add: ["command=node --version,scope=project,env_clear=;;"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runTest(id, { add: ["command=node --version,scope=project,env_clear=1INVALID"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runTest(id, { add: ["command=node --version,scope=project,shared_host_safe=maybe"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
       await expect(runTest(id, { remove: ["   "] }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
@@ -222,6 +331,24 @@ describe("runTest", () => {
       await expect(runTest(id, { run: true, timeout: "not-a-number" }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
+      await expect(runTest(id, { envSet: ["PORT=0"] }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+
+      const seeded = await runTest(
+        id,
+        { add: ["command=node --version,scope=project,shared_host_safe=false"], message: "seed bool false" },
+        { path: context.pmPath },
+      );
+      expect(seeded.tests.some((entry) => entry.command === "node --version")).toBe(true);
+      expect(seeded.tests.every((entry) => entry.shared_host_safe !== true)).toBe(true);
+
+      const runWithEmptyRuntimeDirectives = await runTest(
+        id,
+        { run: true, envSet: [""], envClear: ["", "DELETE_ME"], timeout: "5" },
+        { path: context.pmPath },
+      );
+      expect(runWithEmptyRuntimeDirectives.run_results.length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -317,6 +444,56 @@ describe("runTest", () => {
       expect(safe?.status).toBe("passed");
       expect(safe?.exit_code).toBe(0);
     });
+  });
+
+  it("extracts referenced PM item ids from linked command variants", () => {
+    expect(extractReferencedPmItemIdsFromCommand("pm get pm-a1b2")).toEqual(["pm-a1b2"]);
+    expect(extractReferencedPmItemIdsFromCommand("node dist/cli.js close pm-z9x8 done")).toEqual(["pm-z9x8"]);
+    expect(
+      extractReferencedPmItemIdsFromCommand("npx @unbrained/pm-cli@latest update pm-b2c3 --status open --json"),
+    ).toEqual(["pm-b2c3"]);
+    expect(
+      extractReferencedPmItemIdsFromCommand("npm exec -- @unbrained/pm-cli@latest test pm-t123 --run --json"),
+    ).toEqual(["pm-t123"]);
+    expect(
+      extractReferencedPmItemIdsFromCommand(
+        "PNPM_HOME=/tmp pnpm --silent dlx @unbrained/pm-cli@latest comments pm-c9d8 --add audit --json",
+      ),
+    ).toEqual(["pm-c9d8"]);
+    expect(
+      extractReferencedPmItemIdsFromCommand(
+        "npm --silent exec -- @unbrained/pm-cli@latest claim pm-k7m6 --force --author qa",
+      ),
+    ).toEqual(["pm-k7m6"]);
+    expect(extractReferencedPmItemIdsFromCommand("pm --path /tmp get pm-p1q2 --json")).toEqual(["pm-p1q2"]);
+    expect(extractReferencedPmItemIdsFromCommand("pm --path /tmp -- get pm-r3s4 --json")).toEqual(["pm-r3s4"]);
+    expect(extractReferencedPmItemIdsFromCommand("pm --path /tmp")).toEqual([]);
+    expect(extractReferencedPmItemIdsFromCommand("pm get --json")).toEqual([]);
+    expect(extractReferencedPmItemIdsFromCommand("pm -h get pm-h1i2")).toEqual(["pm-h1i2"]);
+    expect(extractReferencedPmItemIdsFromCommand("pm list-open --limit 1 --json")).toEqual([]);
+    expect(extractReferencedPmItemIdsFromCommand("pm stats --json")).toEqual([]);
+    expect(extractReferencedPmItemIdsFromCommand("pnpm install")).toEqual([]);
+    expect(extractReferencedPmItemIdsFromCommand("npm run test -- --runInBand")).toEqual([]);
+    expect(extractReferencedPmItemIdsFromCommand("pm get custom-123", "custom-")).toEqual(["custom-123"]);
+    expect(extractReferencedPmItemIdsFromCommand("pm get pm-a1b2", "")).toEqual([]);
+    expect(extractReferencedPmItemIdsFromCommand("pm get bad-id", "pm-")).toEqual([]);
+    expect(extractReferencedPmItemIdsFromCommand("FOO=bar")).toEqual([]);
+    expect(extractReferencedPmItemIdsFromCommand("   ")).toEqual([]);
+    expect(extractReferencedPmItemIdsFromCommand("echo no pm invocation")).toEqual([]);
+  });
+
+  it("counts failure categories only for failed run results", () => {
+    const counts = countFailureCategories([
+      { status: "passed", command: "node --version" },
+      { status: "failed", command: "node -e \"process.exit(1)\"", failure_category: "assertion_failure" },
+      { status: "failed", command: "node -e \"process.exit(1)\"", failure_category: "assertion_failure" },
+      { status: "failed", command: "node -e \"setTimeout(() => {}, 1)\"", failure_category: "timeout" },
+      { status: "failed", command: "node -e \"setTimeout(() => {}, 1)\"" },
+      { status: "skipped", command: "pm test-all", error: "skipped recursive" },
+    ]);
+    expect(counts.assertion_failure).toBe(2);
+    expect(counts.timeout).toBe(1);
+    expect(counts.infra_collision).toBe(0);
   });
 
   it("rejects sandbox-unsafe test-runner commands and allows sandbox-safe variants", async () => {
@@ -653,15 +830,80 @@ describe("runTest", () => {
       const commandFailure = run.run_results.find((entry) => entry.command?.includes("process.exit(3)"));
       expect(commandFailure?.status).toBe("failed");
       expect(commandFailure?.exit_code).toBe(3);
+      expect(commandFailure?.failure_category).toBe("assertion_failure");
 
       const timeoutFailure = run.run_results.find((entry) => entry.command?.includes("setTimeout(() => {}, 2000)"));
       expect(timeoutFailure?.status).toBe("failed");
       expect(timeoutFailure?.exit_code).toBe(1);
+      expect(timeoutFailure?.failure_category).toBe("timeout");
       expect(timeoutFailure?.error ?? "").toContain("timed out after");
+      expect(run.failure_categories.assertion_failure).toBeGreaterThanOrEqual(1);
+      expect(run.failure_categories.timeout).toBeGreaterThanOrEqual(1);
 
       const skipped = run.run_results.find((entry) => entry.status === "skipped");
       expect(skipped?.path).toBe("tests/no-command.spec.ts");
       expect(skipped?.error ?? "").toContain("No command configured");
+    });
+  });
+
+  it("applies run-level and per-test env directives with shared-host-safe defaults", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "linked-test-env-directives");
+      await runTest(
+        id,
+        {
+          add: [
+            "command=node -e \"process.stdout.write([process.env.RUN_LEVEL||'',process.env.CUSTOM_FLAG||'',process.env.PORT||'',process.env.HOST||'',process.env.PM_SHARED_HOST_SAFE||'',String(process.env.DELETE_ME===undefined)].join('|'))\",scope=project,env_set=RUN_LEVEL=per-test;CUSTOM_FLAG=linked,env_clear=DELETE_ME,shared_host_safe=true",
+          ],
+          message: "seed env directive command",
+        },
+        { path: context.pmPath },
+      );
+
+      const run = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "20",
+          envSet: ["RUN_LEVEL=run-level", "DELETE_ME=remove-me"],
+        },
+        { path: context.pmPath },
+      );
+      expect(run.run_results).toHaveLength(1);
+      expect(run.run_results[0]?.status).toBe("passed");
+      expect(run.run_results[0]?.stdout ?? "").toContain("per-test|linked|0|127.0.0.1|1|true");
+    });
+  });
+
+  it("ignores protected env directive keys from linked metadata while preserving sandbox safety", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "linked-test-protected-env-keys");
+      await overwriteTaskTests(context, id, [
+        {
+          command:
+            "node -e \"process.stdout.write([process.env.PM_PATH||'',process.env.PM_GLOBAL_PATH||'',process.env.SAFE_VAR||'',process.env.FORCE_COLOR||''].join('|'))\"",
+          scope: "project",
+          env_set: {
+            PM_PATH: "/tmp/unsafe-pm-path",
+            SAFE_VAR: "ok",
+          },
+          env_clear: ["PM_GLOBAL_PATH", "FORCE_COLOR"],
+        },
+      ]);
+
+      const run = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "20",
+        },
+        { path: context.pmPath },
+      );
+      expect(run.run_results[0]?.status).toBe("passed");
+      const stdout = run.run_results[0]?.stdout ?? "";
+      expect(stdout).toContain("pm-linked-test-");
+      expect(stdout).not.toContain("/tmp/unsafe-pm-path");
+      expect(stdout).toContain("|ok|0");
     });
   });
 
@@ -854,6 +1096,64 @@ describe("runTest", () => {
         expect(stderrOutput).toContain("[pm test] linked-test 1/1 start");
         expect(stderrOutput).toContain("[pm test] linked-test 1/1 running");
         expect(stderrOutput).toContain("[pm test] linked-test 1/1 end status=passed");
+      } finally {
+        if (previousHeartbeatInterval === undefined) {
+          delete process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS;
+        } else {
+          process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS = previousHeartbeatInterval;
+        }
+        Object.defineProperty(process.stderr, "isTTY", {
+          value: originalIsTTY,
+          configurable: true,
+        });
+      }
+    });
+  });
+
+  it("records progress failure reasons for timeout, max-buffer, and signal failures", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "linked-test-progress-failure-reasons");
+      await runTest(
+        id,
+        {
+          add: [
+            "command=node -e \"process.kill(process.pid,'SIGTERM')\",scope=project,timeout_seconds=5",
+            "command=node -e \"setTimeout(() => {}, 2000)\" && echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,scope=project,timeout_seconds=1",
+            'command=node -e "process.stdout.write(\'x\'.repeat(22 * 1024 * 1024))",scope=project,timeout_seconds=20',
+          ],
+          message: "seed progress reason commands",
+        },
+        { path: context.pmPath },
+      );
+
+      const previousHeartbeatInterval = process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS;
+      process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS = "not-a-number";
+      const originalIsTTY = process.stderr.isTTY;
+      Object.defineProperty(process.stderr, "isTTY", {
+        value: false,
+        configurable: true,
+      });
+      const stderrWriteSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+      try {
+        const run = await runTest(
+          id,
+          {
+            run: true,
+            progress: true,
+          },
+          { path: context.pmPath },
+        );
+        expect(run.run_results).toHaveLength(3);
+        const categories = run.run_results
+          .filter((entry) => entry.status === "failed")
+          .map((entry) => entry.failure_category)
+          .sort();
+        expect(categories).toEqual(["max_buffer", "signal", "timeout"]);
+
+        const stderrOutput = stderrWriteSpy.mock.calls.map((entry) => String(entry[0])).join("");
+        expect(stderrOutput).toContain("reason=timeout");
+        expect(stderrOutput).toContain("reason=max_buffer");
+        expect(stderrOutput).toContain("signal=SIGTERM");
       } finally {
         if (previousHeartbeatInterval === undefined) {
           delete process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS;

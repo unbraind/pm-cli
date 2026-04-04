@@ -55,9 +55,9 @@ files[4]{path,scope,note}:
   src/cli/main.ts,project,canonical CLI entrypoint wiring
   src/core/store/paths.ts,project,pm root/global path resolution
   src/core/store/settings.ts,project,deterministic settings loader and defaults
-tests[2]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,1200,coverage-gate-proof
-  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/integration/cli.integration.spec.ts,null,project,1200,focused-cli-config-loader-validation
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,coverage-gate-proof
+  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/integration/cli.integration.spec.ts,null,project,1200,null,null,null,focused-cli-config-loader-validation
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow and evidence requirements
   PRD.md,project,authoritative requirements for milestone-0 foundations

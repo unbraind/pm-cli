@@ -71,6 +71,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `pm comments --allow-audit-comment` to permit append-only audit comments on items owned by other assignees without broad ownership override semantics.
 - Added `--offset` pagination and JSON-only `--stream` output mode for `pm list` and all `pm list-*` command families to improve large-result processing ergonomics.
 - Added explicit `--progress` flag support to `pm test`, `pm test-all`, and `pm reindex` so non-interactive runs can opt into deterministic stderr progress visibility.
+- Added additive linked-test runtime environment controls: repeatable `--env-set` / `--env-clear` and `--shared-host-safe` on `pm test --run` and `pm test-all`.
+- Added per-linked-test runtime directives in linked test metadata (`env_set`, `env_clear`, `shared_host_safe`) for deterministic command-level execution control.
+- Added structured linked-test failure classification in `run_results` (`failure_category`) and aggregated `failure_categories` totals in `pm test`/`pm test-all` results for triage (`infra_collision` vs `assertion_failure` and related categories).
+- Added standalone `pm validate` linked command-reference diagnostics (`command_references`) with default-on stale PM-id detection and dedicated warning token (`validate_command_references_stale_pm_ids:<count>`).
 
 ### Changed
 - Commander option normalization, shell completion flag generation, and Pi wrapper action/schema/arg mapping now consume the shared command contract registry to reduce cross-surface drift.
@@ -113,6 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI contracts, shell completion, and Pi wrapper action/parameter mappings now include additive parity for `validate`, `close --validate-close`, list `--offset/--stream`, and long-run `--progress` controls.
 - `pm validate --check-files --scan-mode tracked-all` now excludes PM-internal storage files by default, adds `--include-pm-internals` for explicit internal-audit scans, and reports filtered/raw candidate counts (`candidate_total*`, `candidate_scanned*`, `pm_internal_excluded_count`).
 - `pm extension --manage` and `pm health` extension diagnostics now include condensed `details.triage` summaries with prioritized counts and remediation-oriented next steps alongside full detailed payloads.
+- CLI/contracts/completion/Pi wrapper parity now includes linked-test runtime env controls (`--env-set`, `--env-clear`, `--shared-host-safe`) and `pm validate --check-command-references`.
 
 ## [2026.3.12] - 2026-03-12
 

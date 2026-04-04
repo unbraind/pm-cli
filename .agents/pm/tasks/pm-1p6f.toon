@@ -66,9 +66,9 @@ files[14]{path,scope,note}:
   tests/unit/create-command.spec.ts,project,create coverage for unblock note
   tests/unit/shared-constants-errors.spec.ts,project,canonical key order coverage
   tests/unit/update-command.spec.ts,project,update coverage for unblock note
-tests[2]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,sandbox-safe full coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/shared-constants-errors.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,7200,targeted unblock-note regression
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,sandbox-safe full coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/shared-constants-errors.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,7200,null,null,null,targeted unblock-note regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer workflow template
   PRD.md,project,authoritative flag contract update

@@ -42,8 +42,8 @@ notes[1]{created_at,author,text}:
   "2026-04-03T16:16:50.033Z",codex-agent,Will update cli-contracts constants/schemas and wrapper action mapping with tests.
 files[1]{path,scope,note}:
   src/sdk/cli-contracts.ts,project,shared command and action contracts
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts,null,project,1800,Pi wrapper action mapping regression
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts,null,project,1800,null,null,null,Pi wrapper action mapping regression
 docs[1]{path,scope,note}:
   README.md,project,SDK and wrapper action documentation
 close_reason: SDK contracts and Pi wrapper now expose deterministic extension lifecycle action parity.

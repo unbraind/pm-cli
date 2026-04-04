@@ -57,8 +57,8 @@ files[5]{path,scope,note}:
   src/core/store/item-format-migration.ts,project,migration respects dynamic type folders
   src/core/store/item-store.ts,project,mutateItem relocation logic
   src/core/store/paths.ts,project,dynamic type folder resolution
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/item-store.spec.ts tests/unit/config-command.spec.ts tests/unit/store-paths.spec.ts,null,project,2400,storage path regression
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/unit/item-store.spec.ts tests/unit/config-command.spec.ts tests/unit/store-paths.spec.ts,null,project,2400,null,null,null,storage path regression
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,storage model updates
 close_reason: dynamic type-folder storage routing and safe moves implemented with passing regressions

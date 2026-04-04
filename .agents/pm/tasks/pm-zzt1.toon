@@ -57,9 +57,9 @@ files[4]{path,scope,note}:
   src/cli/main.ts,project,wire pm list with excludeTerminal=true
   tests/integration/help-runtime.spec.ts,project,list help guidance assertions
   tests/unit/list-command.spec.ts,project,list status filter regressions
-tests[2]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,300,full coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,3600,issue9 list status UX regressions
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,300,null,null,null,full coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,3600,null,null,null,issue9 list status UX regressions
 docs[2]{path,scope,note}:
   PRD.md,project,update pm list vs pm list-all distinction
   README.md,project,update commands section

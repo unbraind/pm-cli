@@ -60,11 +60,11 @@ files[8]{path,scope,note}:
   src/core/search/providers.ts,project,embedding provider execution path
   src/core/search/vector-stores.ts,project,vector store upsert query path
   tests/unit/search-cache.spec.ts,project,unit coverage for refresh behavior
-tests[4]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,1800,coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts,null,project,1800,reindex baseline regression
-  node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts,null,project,1800,targeted mutation refresh tests
-  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,1800,targeted search regression
+tests[4]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts,null,project,1800,null,null,null,reindex baseline regression
+  node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts,null,project,1800,null,null,null,targeted mutation refresh tests
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,1800,null,null,null,targeted search regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,governing maintainer workflow
   PRD.md,project,authoritative roadmap contract

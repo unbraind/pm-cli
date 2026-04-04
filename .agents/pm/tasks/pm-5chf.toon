@@ -53,8 +53,8 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,integration matrix expansion
   tests/unit/extensions-item-fields.spec.ts,project,new runtime wiring unit coverage
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/extensions-runtime.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,override/no-extension regression suite
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/extensions-runtime.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,null,null,null,override/no-extension regression suite
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,tested runtime invariants
 close_reason: Regression matrix expanded for override/runtime wiring with passing targeted and full test runs.

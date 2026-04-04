@@ -1,0 +1,38 @@
+id: pm-br88
+title: "Issue3: Validate stale PM-id command references"
+description: "Issue3: Validate stale PM-id command references"
+type: Epic
+status: closed
+priority: 1
+tags[4]: command-references,governance,linked-tests,validate
+created_at: "2026-04-04T10:10:35.532Z"
+updated_at: "2026-04-04T11:40:37.498Z"
+deadline: "2026-04-11T10:10:35.532Z"
+author: codex-agent
+estimated_minutes: 300
+acceptance_criteria: pm validate detects stale PM-id references inside linked test commands by default and emits dedicated diagnostics before execution-time failures.
+definition_of_ready: Scope and acceptance criteria documented.
+order: 1
+goal: Linked test reliability
+objective: Eliminate nondeterministic linked test governance failures
+value: Deterministic verification in shared-host workflows
+impact: Higher confidence in close-time evidence
+outcome: Predictable linked test and validate behavior
+why_now: External governance audit found unresolved gaps.
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: linked-test-hardening
+release: vnext
+reporter: codex-agent
+severity: medium
+environment: linux-node25-local
+affected_version: 2026.3.12
+fixed_version: vnext
+component: linked-test-runtime
+regression: true
+customer_impact: improves deterministic verification outcomes
+comments[1]{created_at,author,text}:
+  "2026-04-04T11:40:02.296Z",codex-agent,"Evidence: pnpm build passed; node scripts/run-tests.mjs test passed (844 tests); node scripts/run-tests.mjs coverage passed (branches 91.02%); PM linked-test sweep passed via pm test-all --status in_progress (linked_tests=3 failed=0, failure categories all zero)."
+close_reason: stale PM-id command reference validation epic delivered
+body: ""

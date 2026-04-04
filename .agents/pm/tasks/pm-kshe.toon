@@ -31,9 +31,9 @@ files[8]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,validate help flag parity assertion
   tests/unit/completion-command.spec.ts,project,completion flag coverage
   tests/unit/validate-command.spec.ts,project,targeted regression coverage
-tests[2]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,null,project,3600,issue1 targeted suite
-  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,Issue1 targeted validation suite
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,null,project,3600,null,null,null,issue1 targeted suite
+  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,Issue1 targeted validation suite
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,validate architecture updates
 close_reason: "Implemented scan-mode tracked-all with candidate totals, updated docs/contracts/completion/Pi surfaces, and validated via full test+coverage+smoke run."

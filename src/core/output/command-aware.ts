@@ -175,6 +175,16 @@ function resolveHighlights(command: string, result: unknown): string[] {
     if (failed !== null) highlights.push(`failed=${failed}`);
     if (passed !== null) highlights.push(`passed=${passed}`);
     if (skipped !== null) highlights.push(`skipped=${skipped}`);
+    const totals = asRecord(record.totals);
+    const failureCategories = asRecord(totals?.failure_categories);
+    if (failureCategories) {
+      for (const key of Object.keys(failureCategories).sort((left, right) => left.localeCompare(right))) {
+        const value = failureCategories[key];
+        if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+          highlights.push(`failed_${key}=${value}`);
+        }
+      }
+    }
   }
   if (command === "test") {
     const count = toCount(record, "count");
@@ -184,6 +194,15 @@ function resolveHighlights(command: string, result: unknown): string[] {
     const runResults = Array.isArray(record.run_results) ? record.run_results.length : null;
     if (runResults !== null) {
       highlights.push(`run_results=${runResults}`);
+    }
+    const failureCategories = asRecord(record.failure_categories);
+    if (failureCategories) {
+      for (const key of Object.keys(failureCategories).sort((left, right) => left.localeCompare(right))) {
+        const value = failureCategories[key];
+        if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+          highlights.push(`failed_${key}=${value}`);
+        }
+      }
     }
   }
   if (command === "calendar") {

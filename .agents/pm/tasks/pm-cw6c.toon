@@ -58,10 +58,10 @@ files[4]{path,scope,note}:
   README.md,project,docs-first contract update
   src/cli/commands/health.ts,project,applied migration status classification
   tests/unit/health-command.spec.ts,project,applied migration coverage
-tests[3]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,sandboxed coverage gate
-  node scripts/run-tests.mjs test,null,project,7200,sandboxed full regression
-  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts,null,project,7200,targeted migration status regression
+tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,sandboxed coverage gate
+  node scripts/run-tests.mjs test,null,project,7200,null,null,null,sandboxed full regression
+  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts,null,project,7200,null,null,null,targeted migration status regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,governing workflow rules
   PRD.md,project,authoritative migration diagnostics contract

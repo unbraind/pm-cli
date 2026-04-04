@@ -203,7 +203,19 @@ const ISSUE_METADATA_CREATE_FLAG_TOKENS = [
 ];
 
 const ISSUE_METADATA_UPDATE_FLAG_TOKENS = [...ISSUE_METADATA_CREATE_FLAG_TOKENS];
-const REQUIRED_TEST_FLAGS = ["--add", "--remove", "--run", "--timeout", "--progress", "--author", "--message", "--force"];
+const REQUIRED_TEST_FLAGS = [
+  "--add",
+  "--remove",
+  "--run",
+  "--timeout",
+  "--progress",
+  "--env-set",
+  "--env-clear",
+  "--shared-host-safe",
+  "--author",
+  "--message",
+  "--force",
+];
 const REQUIRED_COMMENTS_FLAGS = ["--add", "--limit", "--author", "--message", "--allow-audit-comment", "--force"];
 const REQUIRED_NOTES_FLAGS = ["--add", "--limit", "--author", "--message", "--force"];
 const REQUIRED_LEARNINGS_FLAGS = ["--add", "--limit", "--author", "--message", "--force"];
@@ -214,6 +226,7 @@ const REQUIRED_VALIDATE_FLAGS = [
   "--check-metadata",
   "--check-resolution",
   "--check-files",
+  "--check-command-references",
   "--scan-mode",
   "--include-pm-internals",
   "--check-history-drift",
@@ -649,7 +662,7 @@ describe("release readiness runtime coverage", () => {
       const validateHelp = context.runCli(["validate", "--help"]);
       expect(validateHelp.code).toBe(0);
       expect(validateHelp.stdout).toContain("Usage: pm validate [options]");
-      expect(validateHelp.stdout).toContain("standalone metadata, resolution, files, and history drift");
+      expect(validateHelp.stdout).toContain("standalone metadata, resolution, files, linked-command reference, and");
       for (const flag of REQUIRED_VALIDATE_FLAGS) {
         expect(validateHelp.stdout).toContain(flag);
       }
@@ -950,7 +963,7 @@ describe("release readiness runtime coverage", () => {
 
       const testResult = context.runCli(["test", createdId, "--json"], { expectJson: true });
       expect(testResult.code).toBe(0);
-      expectTopLevelKeyOrder(testResult.json, ["id", "tests", "run_results", "changed", "count"]);
+      expectTopLevelKeyOrder(testResult.json, ["id", "tests", "run_results", "failure_categories", "changed", "count"]);
 
       const listResult = context.runCli(["list-open", "--limit", "20", "--json"], { expectJson: true });
       expect(listResult.code).toBe(0);

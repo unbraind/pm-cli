@@ -74,10 +74,10 @@ files[21]{path,scope,note}:
   tests/unit/claim-command.spec.ts,project,author-assignee behavior coverage
   tests/unit/close-command.spec.ts,project,close clears assignee coverage
   tests/unit/update-command.spec.ts,project,assignee update semantics coverage
-tests[3]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,sandboxed full coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts tests/unit/update-command.spec.ts tests/unit/create-command.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,1800,targeted ownership and wrapper tests
-  node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/integration/help-readme-contract.spec.ts tests/integration/cli.integration.spec.ts,null,project,2400,post-migration conflict-regression verification
+tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,sandboxed full coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts tests/unit/update-command.spec.ts tests/unit/create-command.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,1800,null,null,null,targeted ownership and wrapper tests
+  node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/integration/help-readme-contract.spec.ts tests/integration/cli.integration.spec.ts,null,project,2400,null,null,null,post-migration conflict-regression verification
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow updates
   PRD.md,project,authoritative contract update

@@ -58,9 +58,9 @@ files[13]{path,scope,note}:
   tests/unit/close-command.spec.ts,project,close validate-close tests
   tests/unit/validate-command.spec.ts,project,validate command unit coverage
   vitest.config.ts,project,coverage include alignment for validate
-tests[2]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/health-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,5400,validate and close behavior regression suite
-  node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/validate-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,validate-close and validate command regressions
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/health-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,5400,null,null,null,validate and close behavior regression suite
+  node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/validate-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,validate-close and validate command regressions
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,validation command architecture notes
 close_reason: "Implemented validate command, close-time validation modes, and regression coverage"

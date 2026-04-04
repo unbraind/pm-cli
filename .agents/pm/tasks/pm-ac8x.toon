@@ -55,10 +55,10 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:36:28.450Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   README.md,project,metadata-audit-linked-context
-tests[3]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,1200,coverage gate validation (known baseline failure on origin/main)
-  node scripts/run-tests.mjs test,null,project,1200,full sandboxed test sweep
-  node scripts/run-tests.mjs test -- tests/unit/notes-learnings-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/cli.integration.spec.ts,null,project,900,targeted remediation suites
+tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,coverage gate validation (known baseline failure on origin/main)
+  node scripts/run-tests.mjs test,null,project,1200,null,null,null,full sandboxed test sweep
+  node scripts/run-tests.mjs test -- tests/unit/notes-learnings-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/cli.integration.spec.ts,null,project,900,null,null,null,targeted remediation suites
 docs[1]{path,scope,note}:
   README.md,project,metadata-audit-documentation-context
 close_reason: Verification sweeps executed with full passing tests; coverage threshold mismatch confirmed pre-existing on origin/main baseline.

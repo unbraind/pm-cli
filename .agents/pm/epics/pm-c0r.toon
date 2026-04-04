@@ -54,8 +54,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:31:02.904Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   README.md,project,metadata-audit-linked-context
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,milestone closure coverage gate
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,milestone closure coverage gate
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow
   PRD.md,project,governing spec

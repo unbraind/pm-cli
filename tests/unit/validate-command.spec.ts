@@ -1,9 +1,10 @@
 import { spawnSync } from "node:child_process";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runClose } from "../../src/cli/commands/close.js";
+import { runInit } from "../../src/cli/commands/init.js";
 import { runValidate } from "../../src/cli/commands/validate.js";
 import { EXIT_CODE } from "../../src/constants.js";
 import { PmCliError } from "../../src/errors.js";
@@ -84,7 +85,100 @@ describe("runValidate", () => {
     await withTempPmPath(async (context) => {
       createTask(context, "validate-default-checks");
       const result = await runValidate({}, { path: context.pmPath });
-      expect(result.checks.map((entry) => entry.name)).toEqual(["metadata", "resolution", "files", "history_drift"]);
+      expect(result.checks.map((entry) => entry.name)).toEqual([
+        "metadata",
+        "resolution",
+        "files",
+        "command_references",
+        "history_drift",
+      ]);
+    });
+  });
+
+  it("supports command-reference-only scoped checks", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, "validate-command-reference-only");
+      const result = await runValidate({ checkCommandReferences: true }, { path: context.pmPath });
+      expect(result.checks).toHaveLength(1);
+      expect(result.checks[0]?.name).toBe("command_references");
+      expect(result.checks[0]?.status).toBe("ok");
+    });
+  });
+
+  it("reports stale linked command PM-id references", async () => {
+    await withTempPmPath(async (context) => {
+      const ownerId = createTask(context, "validate-command-reference-stale");
+      const linked = context.runCli(
+        [
+          "test",
+          ownerId,
+          "--json",
+          "--add",
+          "command=pm get pm-missing-reference,scope=project,note=stale-reference",
+        ],
+        { expectJson: true },
+      );
+      expect(linked.code).toBe(0);
+
+      const result = await runValidate({ checkCommandReferences: true }, { path: context.pmPath });
+      expect(result.ok).toBe(false);
+      expect(result.warnings).toContain("validate_command_references_stale_pm_ids:1");
+      const commandCheck = checkByName(result, "command_references");
+      expect(commandCheck.status).toBe("warn");
+      const details = commandCheck.details as {
+        linked_commands_scanned: number;
+        stale_pm_id_references_count: number;
+        stale_pm_ids: string[];
+      };
+      expect(details.linked_commands_scanned).toBe(1);
+      expect(details.stale_pm_id_references_count).toBe(1);
+      expect(details.stale_pm_ids).toContain("pm-missing-reference");
+    });
+  });
+
+  it("ignores path-only and non-reference commands while sorting stale PM-id diagnostics", async () => {
+    await withTempPmPath(async (context) => {
+      const ownerId = createTask(context, "validate-command-reference-mixed");
+      for (const addEntry of [
+        "command=node --version,scope=project,note=non-reference",
+        "command=pm get pm-zref1,scope=project,note=stale-z",
+        "command=pm get pm-aref1,scope=project,note=stale-a",
+      ]) {
+        const linked = context.runCli(["test", ownerId, "--json", "--add", addEntry], { expectJson: true });
+        expect(linked.code).toBe(0);
+      }
+
+      const itemPath = path.join(context.pmPath, "tasks", `${ownerId}.toon`);
+      const before = await readFile(itemPath, "utf8");
+      const testsHeaderPattern =
+        /tests\[(\d+)\]\{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note\}:/m;
+      const headerMatch = before.match(testsHeaderPattern);
+      expect(headerMatch).not.toBeNull();
+      const currentCount = Number(headerMatch?.[1] ?? "0");
+      const afterCount = currentCount + 1;
+      const afterWithHeader = before.replace(
+        testsHeaderPattern,
+        `tests[${afterCount}]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:`,
+      );
+      const after = afterWithHeader.replace(
+        /\nbody:/m,
+        "\n  null,tests/path-only.spec.ts,project,null,null,null,null,null\nbody:",
+      );
+      expect(after).not.toBe(before);
+      await writeFile(itemPath, after, "utf8");
+
+      const result = await runValidate({ checkCommandReferences: true }, { path: context.pmPath });
+      expect(result.ok).toBe(false);
+      const commandCheck = checkByName(result, "command_references");
+      expect(commandCheck.status).toBe("warn");
+      const details = commandCheck.details as {
+        linked_commands_scanned: number;
+        stale_pm_ids: string[];
+        stale_pm_id_references_count: number;
+      };
+      expect(details.linked_commands_scanned).toBe(3);
+      expect(details.stale_pm_ids).toEqual(["pm-aref1", "pm-zref1"]);
+      expect(details.stale_pm_id_references_count).toBe(2);
     });
   });
 
@@ -357,6 +451,60 @@ describe("runValidate", () => {
     });
   });
 
+  it("uses cwd fallback for non-standard PM root layouts", async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-validate-workspace-fallback-"));
+    const workspaceRoot = path.join(tempDir, "workspace");
+    const customPmRoot = path.join(workspaceRoot, "pm-data");
+    const previousCwd = process.cwd();
+    try {
+      await mkdir(workspaceRoot, { recursive: true });
+      process.chdir(workspaceRoot);
+      await runInit(undefined, { path: customPmRoot });
+      await mkdir(path.join(workspaceRoot, "src"), { recursive: true });
+      await writeFile(path.join(workspaceRoot, "src", "fallback.ts"), "export const fallback = true;\n", "utf8");
+
+      const result = await runValidate({ checkFiles: true }, { path: customPmRoot });
+      const filesCheck = checkByName(result, "files");
+      expect(filesCheck.status).toBe("warn");
+      const details = filesCheck.details as { candidate_total: number; candidate_scan_source: string };
+      expect(details.candidate_scan_source).toBe("default-curated");
+      expect(details.candidate_total).toBe(1);
+    } finally {
+      process.chdir(previousCwd);
+      await rm(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it("rethrows non-ENOENT errors while scanning project directories", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, "validate-files-readdir-error");
+      const workspaceRoot = path.dirname(path.dirname(context.pmPath));
+      await writeFile(path.join(workspaceRoot, "src"), "not-a-directory\n", "utf8");
+      await expect(runValidate({ checkFiles: true }, { path: context.pmPath })).rejects.toMatchObject<{ code: string }>({
+        code: "ENOTDIR",
+      });
+    });
+  });
+
+  it("skips non-file dirent entries while scanning default candidates", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, "validate-files-symlink-skip");
+      const workspaceRoot = path.dirname(path.dirname(context.pmPath));
+      const srcDir = path.join(workspaceRoot, "src");
+      await mkdir(srcDir, { recursive: true });
+      const realFile = path.join(srcDir, "real.ts");
+      await writeFile(realFile, "export const real = true;\n", "utf8");
+      await symlink(realFile, path.join(srcDir, "real-link.ts"));
+
+      const result = await runValidate({ checkFiles: true }, { path: context.pmPath });
+      const filesCheck = checkByName(result, "files");
+      expect(filesCheck.status).toBe("warn");
+      const details = filesCheck.details as { candidate_total: number; scanned_candidate_files: number };
+      expect(details.candidate_total).toBe(1);
+      expect(details.scanned_candidate_files).toBe(1);
+    });
+  });
+
   it("excludes PM internals from tracked-all by default and supports explicit inclusion", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "validate-files-tracked-all-pm-internals");
@@ -420,6 +568,24 @@ describe("runValidate", () => {
       >({
         exitCode: EXIT_CODE.USAGE,
       });
+    });
+  });
+
+  it("normalizes blank and explicit default scan-mode values", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, "validate-files-default-scan-mode-normalization");
+      const blankMode = await runValidate({ checkFiles: true, scanMode: "   " }, { path: context.pmPath });
+      const blankDetails = checkByName(blankMode, "files").details as { scan_mode_requested: string; scan_mode_applied: string };
+      expect(blankDetails.scan_mode_requested).toBe("default");
+      expect(blankDetails.scan_mode_applied).toBe("default");
+
+      const explicitDefaultMode = await runValidate({ checkFiles: true, scanMode: "default" }, { path: context.pmPath });
+      const explicitDetails = checkByName(explicitDefaultMode, "files").details as {
+        scan_mode_requested: string;
+        scan_mode_applied: string;
+      };
+      expect(explicitDetails.scan_mode_requested).toBe("default");
+      expect(explicitDetails.scan_mode_applied).toBe("default");
     });
   });
 

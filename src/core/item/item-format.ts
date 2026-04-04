@@ -454,6 +454,20 @@ function sortTests(values: LinkedTest[] | undefined): LinkedTest[] | undefined {
       path: value.path ? normalizePathValue(value.path) : undefined,
       scope: value.scope,
       timeout_seconds: value.timeout_seconds,
+      env_set: value.env_set
+        ? Object.fromEntries(
+            Object.entries(value.env_set)
+              .map(([key, envValue]) => [key.trim(), String(envValue).trim()] as const)
+              .filter(([key, envValue]) => key.length > 0 && envValue.length > 0)
+              .sort(([left], [right]) => left.localeCompare(right)),
+          )
+        : undefined,
+      env_clear: value.env_clear
+        ? [...new Set(value.env_clear.map((entry) => entry.trim()).filter((entry) => entry.length > 0))].sort((a, b) =>
+            a.localeCompare(b),
+          )
+        : undefined,
+      shared_host_safe: value.shared_host_safe === true ? true : undefined,
       note: value.note?.trim() || undefined,
     }))
     .sort((a, b) => {
@@ -465,6 +479,12 @@ function sortTests(values: LinkedTest[] | undefined): LinkedTest[] | undefined {
       if (byCommand !== 0) return byCommand;
       const byTimeout = (a.timeout_seconds ?? 0) - (b.timeout_seconds ?? 0);
       if (byTimeout !== 0) return byTimeout;
+      const bySharedHostSafe = Number(Boolean(a.shared_host_safe)) - Number(Boolean(b.shared_host_safe));
+      if (bySharedHostSafe !== 0) return bySharedHostSafe;
+      const byEnvClear = JSON.stringify(a.env_clear ?? []).localeCompare(JSON.stringify(b.env_clear ?? []));
+      if (byEnvClear !== 0) return byEnvClear;
+      const byEnvSet = JSON.stringify(a.env_set ?? {}).localeCompare(JSON.stringify(b.env_set ?? {}));
+      if (byEnvSet !== 0) return byEnvSet;
       return (a.note ?? "").localeCompare(b.note ?? "");
     });
 }

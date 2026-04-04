@@ -104,6 +104,9 @@ export interface PmToolParameters {
   limit?: NumericFlagInput;
   offset?: NumericFlagInput;
   progress?: boolean;
+  envSet?: string[];
+  envClear?: string[];
+  sharedHostSafe?: boolean;
   validateClose?: string;
   checkMetadata?: boolean;
   checkResolution?: boolean;
@@ -111,6 +114,7 @@ export interface PmToolParameters {
   scanMode?: string;
   includePmInternals?: boolean;
   checkHistoryDrift?: boolean;
+  checkCommandReferences?: boolean;
   diff?: boolean;
   verify?: boolean;
   timeout?: NumericFlagInput;
@@ -580,6 +584,11 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       if (params.progress) {
         args.push("--progress");
       }
+      pushRepeatable(args, "--env-set", params.envSet);
+      pushRepeatable(args, "--env-clear", params.envClear);
+      if (params.sharedHostSafe) {
+        args.push("--shared-host-safe");
+      }
       addAuthorMessageForceFlags(args, params);
       return args;
     case "test-all":
@@ -588,6 +597,11 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       pushOption(args, "--timeout", params.timeout);
       if (params.progress) {
         args.push("--progress");
+      }
+      pushRepeatable(args, "--env-set", params.envSet);
+      pushRepeatable(args, "--env-clear", params.envClear);
+      if (params.sharedHostSafe) {
+        args.push("--shared-host-safe");
       }
       return args;
     case "stats":
@@ -612,6 +626,9 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       }
       if (params.checkHistoryDrift) {
         args.push("--check-history-drift");
+      }
+      if (params.checkCommandReferences) {
+        args.push("--check-command-references");
       }
       return args;
     case "contracts":

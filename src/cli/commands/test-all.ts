@@ -10,12 +10,15 @@ import { listAllFrontMatter } from "../../core/store/item-store.js";
 import { getSettingsPath, resolveGlobalPmRoot, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemStatus, LinkedTest } from "../../types/index.js";
-import { runLinkedTests, runTest, type TestRunResult } from "./test.js";
+import { countFailureCategories, runLinkedTests, runTest, type LinkedTestFailureCategory, type TestRunResult } from "./test.js";
 
 export interface TestAllCommandOptions {
   status?: string;
   timeout?: string;
   progress?: boolean;
+  envSet?: string[];
+  envClear?: string[];
+  sharedHostSafe?: boolean;
 }
 
 export interface TestAllItemResult {
@@ -26,6 +29,7 @@ export interface TestAllItemResult {
   failed: number;
   skipped: number;
   run_results: TestRunResult[];
+  failure_categories: Record<LinkedTestFailureCategory, number>;
 }
 
 export interface TestAllResult {
@@ -35,6 +39,7 @@ export interface TestAllResult {
     passed: number;
     failed: number;
     skipped: number;
+    failure_categories: Record<LinkedTestFailureCategory, number>;
   };
   failed: number;
   passed: number;
@@ -64,10 +69,29 @@ function normalizeCommand(command: string): string {
   return command.trim().replaceAll(/\s+/g, " ");
 }
 
+function normalizeEnvSetSignature(value: LinkedTest["env_set"]): string {
+  if (!value || Object.keys(value).length === 0) {
+    return "{}";
+  }
+  return JSON.stringify(
+    Object.fromEntries(Object.entries(value).sort(([left], [right]) => left.localeCompare(right))),
+  );
+}
+
+function normalizeEnvClearSignature(value: LinkedTest["env_clear"]): string {
+  if (!value || value.length === 0) {
+    return "[]";
+  }
+  return JSON.stringify([...value].sort((left, right) => left.localeCompare(right)));
+}
+
 function buildLinkedTestKey(test: LinkedTest): string {
   const command = test.command?.trim();
   if (command && command.length > 0) {
-    return `command:${test.scope}:${normalizeCommand(command)}`;
+    const envSet = normalizeEnvSetSignature(test.env_set);
+    const envClear = normalizeEnvClearSignature(test.env_clear);
+    const sharedHostSafe = test.shared_host_safe === true ? "true" : "false";
+    return `command:${test.scope}:${normalizeCommand(command)}:${envSet}:${envClear}:${sharedHostSafe}`;
   }
   const linkedPath = test.path?.trim() ?? "";
   return `path:${test.scope}:${linkedPath}`;
@@ -102,6 +126,15 @@ function countStatuses(runResults: TestRunResult[]): { passed: number; failed: n
   return { passed, failed, skipped };
 }
 
+function mergeFailureCategoryCounts(
+  target: Record<LinkedTestFailureCategory, number>,
+  source: Record<LinkedTestFailureCategory, number>,
+): void {
+  for (const [key, value] of Object.entries(source)) {
+    target[key as LinkedTestFailureCategory] += value;
+  }
+}
+
 export async function runTestAll(options: TestAllCommandOptions, global: GlobalOptions): Promise<TestAllResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
@@ -127,6 +160,7 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
   let failed = 0;
   let skipped = 0;
   let linkedTests = 0;
+  const failureCategories = countFailureCategories([]);
   const itemTests: Array<{ item: (typeof filteredItems)[number]; tests: LinkedTest[] }> = [];
 
   for (const item of filteredItems) {
@@ -174,7 +208,13 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
 
     const executedResults =
       testsToRun.length > 0
-        ? await runLinkedTests(testsToRun, defaultTimeoutSeconds, { progress: options.progress, sourceRoots })
+        ? await runLinkedTests(testsToRun, defaultTimeoutSeconds, {
+            progress: options.progress,
+            sourceRoots,
+            envSet: options.envSet,
+            envClear: options.envClear,
+            sharedHostSafe: options.sharedHostSafe,
+          })
         : [];
     let executedIndex = 0;
     const runResults = keyedTests.map(({ test, key, duplicate }) => {
@@ -192,6 +232,8 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
     });
 
     const summary = countStatuses(runResults);
+    const itemFailureCategories = countFailureCategories(runResults);
+    mergeFailureCategoryCounts(failureCategories, itemFailureCategories);
     passed += summary.passed;
     failed += summary.failed;
     skipped += summary.skipped;
@@ -203,6 +245,7 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
       failed: summary.failed,
       skipped: summary.skipped,
       run_results: runResults,
+      failure_categories: itemFailureCategories,
     });
   }
 
@@ -213,6 +256,7 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
       passed,
       failed,
       skipped,
+      failure_categories: failureCategories,
     },
     failed,
     passed,

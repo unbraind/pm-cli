@@ -52,9 +52,9 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:20:58.732Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   vitest.config.ts,project,coverage gate
-tests[2]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,full coverage sweep
-  node scripts/run-tests.mjs test,null,project,7200,full test sweep
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,full coverage sweep
+  node scripts/run-tests.mjs test,null,project,7200,null,null,null,full test sweep
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,release evidence summary
 close_reason: Phase 2 implementation and verification complete

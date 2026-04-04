@@ -59,9 +59,9 @@ files[4]{path,scope,note}:
   PRD.md,project,docs-first parity update
   README.md,project,docs-first parity update
   tests/unit/pi-agent-extension.spec.ts,project,unit coverage updates
-tests[2]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,sandboxed coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts,null,project,1200,targeted unit parity coverage
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,sandboxed coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts,null,project,1200,null,null,null,targeted unit parity coverage
 docs[3]{path,scope,note}:
   AGENTS.md,project,workflow contract
   PRD.md,project,governing spec

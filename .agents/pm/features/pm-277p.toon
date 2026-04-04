@@ -56,8 +56,8 @@ files[4]{path,scope,note}:
   src/cli/commands/update.ts,project,type-option updates and type-transition validation
   src/cli/main.ts,project,type-aware command contract
   src/core/store/item-store.ts,project,type-aware routing and safe type moves
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/search-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/completion-command.spec.ts,null,project,2400,command integration regression
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/search-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/completion-command.spec.ts,null,project,2400,null,null,null,command integration regression
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,storage and command flow docs
 close_reason: "dynamic type integration completed across CLI, storage, and completion with regression coverage"

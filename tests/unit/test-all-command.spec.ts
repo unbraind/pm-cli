@@ -196,6 +196,7 @@ describe("runTestAll", () => {
       expect(openOnly.passed).toBeGreaterThanOrEqual(1);
       expect(openOnly.failed).toBeGreaterThanOrEqual(1);
       expect(openOnly.skipped).toBeGreaterThanOrEqual(1);
+      expect(openOnly.totals.failure_categories.assertion_failure).toBeGreaterThanOrEqual(1);
       expect(openOnly.results.every((entry) => entry.status === "open")).toBe(true);
       const envSandboxResult = openOnly.results
         .flatMap((entry) => entry.run_results)
@@ -207,6 +208,33 @@ describe("runTestAll", () => {
       const allStatuses = await runTestAll({}, { path: context.pmPath });
       expect(allStatuses.totals.items).toBe(4);
       expect(allStatuses.totals.linked_tests).toBe(4);
+    });
+  });
+
+  it("applies run-level env overrides and shared-host-safe defaults in test-all", async () => {
+    await withTempPmPath(async (context) => {
+      createTaskWithTests(context, {
+        title: "Shared Host Safe Env Source",
+        status: "open",
+        testEntries: [
+          "command=node -e \"process.stdout.write([process.env.RUN_LEVEL||'',process.env.PORT||'',process.env.PM_SHARED_HOST_SAFE||'',String(process.env.DELETE_ME===undefined)].join('|'))\",scope=project,env_set=Z_HINT=yes;A_HINT=yes,env_clear=DELETE_ME",
+        ],
+      });
+
+      const result = await runTestAll(
+        {
+          status: "open",
+          timeout: "20",
+          envSet: ["RUN_LEVEL=run-level", "DELETE_ME=remove-me"],
+          sharedHostSafe: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(result.totals.items).toBe(1);
+      expect(result.totals.linked_tests).toBe(1);
+      expect(result.failed).toBe(0);
+      expect(result.passed).toBe(1);
+      expect(result.results[0]?.run_results[0]?.stdout ?? "").toContain("run-level|0|1|true");
     });
   });
 

@@ -56,8 +56,8 @@ files[4]{path,scope,note}:
   src/cli/commands/beads.ts,project,null
   tests/fixtures/beads/import-records.jsonl,project,null
   tests/unit/beads-command.spec.ts,project,null
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test,null,project,240,null
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test,null,project,240,null,null,null,null
 docs[2]{path,scope,note}:
   PRD.md,project,beads import parity contract
   README.md,project,beads import behavior contract

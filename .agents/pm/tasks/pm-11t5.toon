@@ -60,9 +60,9 @@ files[5]{path,scope,note}:
   README.md,project,docs-first recursive launcher examples
   src/cli/commands/test.ts,project,recursive launcher detection
   tests/unit/test-command.spec.ts,project,regression coverage for pnpm dlx and npm exec
-tests[2]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,1800,full coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,1200,targeted recursion guard regressions
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,full coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,1200,null,null,null,targeted recursion guard regressions
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer workflow and safety rules
   PRD.md,project,authoritative recursive safety contract

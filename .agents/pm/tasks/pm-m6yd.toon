@@ -55,9 +55,9 @@ files[4]{path,scope,note}:
   README.md,project,hook lifecycle contract update
   src/cli/commands/init.ts,project,init directory bootstrap hook dispatch
   tests/unit/init-command.spec.ts,project,init hook dispatch regression coverage
-tests[2]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,5400,coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/init-command.spec.ts,null,project,1800,targeted init hook regression
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,5400,null,null,null,coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/init-command.spec.ts,null,project,1800,null,null,null,targeted init hook regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer workflow contract
   PRD.md,project,governing spec for hook lifecycle

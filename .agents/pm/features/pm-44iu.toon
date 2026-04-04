@@ -45,8 +45,8 @@ notes[1]{created_at,author,text}:
   "2026-04-03T22:53:42.450Z",codex-agent,Enforce add/create mutation boundaries while preserving legacy runtime skip safety.
 files[1]{path,scope,note}:
   src/cli/commands/create.ts,project,create seed parser enforcement
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/test-command.spec.ts,null,project,2400,mutation parser regressions
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/test-command.spec.ts,null,project,2400,null,null,null,mutation parser regressions
 docs[1]{path,scope,note}:
   README.md,project,user-facing linked-test policy
 close_reason: command-required linked-test mutation policy delivered without legacy runtime breakage

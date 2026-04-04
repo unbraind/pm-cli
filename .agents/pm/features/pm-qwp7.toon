@@ -53,8 +53,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:20:43.170Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,core integration coverage surface
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,coverage gate for release
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,coverage gate for release
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,release evidence and migration notes
 close_reason: Verification hardening complete

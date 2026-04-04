@@ -57,9 +57,9 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/cli/commands/test.ts,project,runner safety detection logic
   tests/unit/test-command.spec.ts,project,regression coverage for package-manager flag variants
-tests[2]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,coverage gate validation after hardening
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,1200,targeted runner safety regression suite
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,coverage gate validation after hardening
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,1200,null,null,null,targeted runner safety regression suite
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood and test safety policy
   PRD.md,project,authoritative sandbox-safe test runner contract

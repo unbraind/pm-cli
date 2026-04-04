@@ -56,9 +56,9 @@ files[3]{path,scope,note}:
   src/core/item/item-format.ts,project,reminder validation logic
   src/core/shared/constants.ts,project,front-matter key-order includes reminders
   src/types.ts,project,add Reminder type and front-matter field
-tests[2]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/item-format-validation.spec.ts,null,project,1800,schema coverage
-  node scripts/run-tests.mjs test -- tests/unit/item-format-validation.spec.ts tests/unit/shared-constants-errors.spec.ts,null,project,1800,schema and constants reminder coverage
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/unit/item-format-validation.spec.ts,null,project,1800,null,null,null,schema coverage
+  node scripts/run-tests.mjs test -- tests/unit/item-format-validation.spec.ts tests/unit/shared-constants-errors.spec.ts,null,project,1800,null,null,null,schema and constants reminder coverage
 docs[1]{path,scope,note}:
   PRD.md,project,schema contract updates
 close_reason: Reminder schema validation and deterministic ordering shipped with passing linked tests.

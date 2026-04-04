@@ -54,9 +54,9 @@ files[3]{path,scope,note}:
   CHANGELOG.md,project,unreleased recurrence additions
   docs/ARCHITECTURE.md,project,calendar recurrence pipeline documentation
   README.md,project,event recurrence usage docs
-tests[2]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,final release-quality verification
-  node scripts/run-tests.mjs test,null,project,3600,final regression run
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,final release-quality verification
+  node scripts/run-tests.mjs test,null,project,3600,null,null,null,final regression run
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,unreleased recurrence entries
   docs/ARCHITECTURE.md,project,internal calendar pipeline docs

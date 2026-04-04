@@ -45,8 +45,8 @@ notes[1]{created_at,author,text}:
   "2026-04-03T09:33:27.690Z",codex-agent,Will implement docs/contracts/runtime/tests in one coordinated hardening pass.
 files[1]{path,scope,note}:
   src/cli/main.ts,project,primary CLI wiring surface
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test,null,project,7200,project regression sweep
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test,null,project,7200,null,null,null,project regression sweep
 docs[1]{path,scope,note}:
   PRD.md,project,normative command behavior contract
 close_reason: "All three reported UX/integrity issues implemented, documented, and fully verified with targeted and full regression/coverage runs."

@@ -58,8 +58,8 @@ files[4]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,runtime contract updates
   tests/unit/calendar-command.spec.ts,project,calendar unit coverage
   vitest.config.ts,project,coverage include for calendar command module
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,full coverage gate
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,full coverage gate
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,test coverage and risk notes
 close_reason: Calendar/reminder regression and release-readiness coverage expanded with full 100% gate passing.

@@ -56,10 +56,10 @@ files[5]{path,scope,note}:
   src/core/search/embedding-batches.ts,project,shared embedding batching+retry helper
   tests/unit/reindex-command.spec.ts,project,reindex batching tests
   tests/unit/search-cache.spec.ts,project,semantic refresh batching tests
-tests[3]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts,null,project,1800,targeted reindex regression
-  node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts,null,project,1800,targeted semantic refresh regression
+tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts,null,project,1800,null,null,null,targeted reindex regression
+  node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts,null,project,1800,null,null,null,targeted semantic refresh regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer workflow contract
   PRD.md,project,search settings contract

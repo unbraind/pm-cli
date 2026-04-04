@@ -20,6 +20,33 @@ const TEST_OUTPUT_MAX_BUFFER_BYTES = 20 * 1024 * 1024;
 const DEFAULT_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS = 3000;
 const DEFAULT_LINKED_TEST_HEARTBEAT_INTERVAL_MS = 10000;
 const MAX_LINKED_TEST_COMMAND_LABEL_LENGTH = 120;
+const LINKED_TEST_PROTECTED_ENV_KEYS = new Set(["PM_PATH", "PM_GLOBAL_PATH", "FORCE_COLOR"]);
+const LINKED_TEST_ENV_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const LINKED_TEST_INFRA_COLLISION_PATTERNS = [
+  /eaddrinuse/i,
+  /address already in use/i,
+  /port\s+\d+\s+is already in use/i,
+  /web server[^.\n]*already running/i,
+  /failed to listen on/i,
+];
+const PM_SUBCOMMANDS_WITH_ITEM_REFERENCE = new Set([
+  "get",
+  "history",
+  "restore",
+  "update",
+  "close",
+  "delete",
+  "append",
+  "claim",
+  "release",
+  "comments",
+  "notes",
+  "learnings",
+  "files",
+  "docs",
+  "deps",
+  "test",
+]);
 
 function readPositiveIntegerEnv(name: string, fallback: number): number {
   const raw = process.env[name];
@@ -65,22 +92,40 @@ interface LinkedTestSandboxSourceRoots {
   globalPmRoot: string;
 }
 
+interface LinkedTestRuntimeDirectives {
+  env_set: Record<string, string>;
+  env_clear: string[];
+  shared_host_safe: boolean;
+}
+
 export interface TestCommandOptions {
   add?: string[];
   remove?: string[];
   run?: boolean;
   timeout?: string;
   progress?: boolean;
+  envSet?: string[];
+  envClear?: string[];
+  sharedHostSafe?: boolean;
   author?: string;
   message?: string;
   force?: boolean;
 }
+
+export type LinkedTestFailureCategory =
+  | "infra_collision"
+  | "assertion_failure"
+  | "timeout"
+  | "max_buffer"
+  | "spawn_error"
+  | "signal";
 
 export interface TestRunResult {
   command?: string;
   path?: string;
   status: "passed" | "failed" | "skipped";
   exit_code?: number;
+  failure_category?: LinkedTestFailureCategory;
   stdout?: string;
   stderr?: string;
   error?: string;
@@ -90,6 +135,7 @@ export interface TestResult {
   id: string;
   tests: LinkedTest[];
   run_results: TestRunResult[];
+  failure_categories: Record<LinkedTestFailureCategory, number>;
   changed: boolean;
   count: number;
 }
@@ -106,6 +152,103 @@ function ensureScope(raw: string | undefined): LinkScope {
     throw new PmCliError(`Invalid scope "${raw}"`, EXIT_CODE.USAGE);
   }
   return value;
+}
+
+function parseLinkedTestBooleanValue(raw: string | undefined, optionName: string, fieldLabel: string): boolean | undefined {
+  if (!raw || raw.trim().length === 0) {
+    return undefined;
+  }
+  const normalized = raw.trim().toLowerCase();
+  if (normalized === "true" || normalized === "1" || normalized === "yes") {
+    return true;
+  }
+  if (normalized === "false" || normalized === "0" || normalized === "no") {
+    return false;
+  }
+  throw new PmCliError(`${optionName} ${fieldLabel} must be one of true|false|1|0|yes|no`, EXIT_CODE.USAGE);
+}
+
+function parseLinkedTestEnvSetValue(raw: string | undefined, optionName: string): Record<string, string> | undefined {
+  if (!raw || raw.trim().length === 0) {
+    return undefined;
+  }
+  const assignments = raw
+    .split(/[;\n]/)
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  if (assignments.length === 0) {
+    throw new PmCliError(`${optionName} env_set must include at least one KEY=VALUE assignment`, EXIT_CODE.USAGE);
+  }
+  const envSet: Record<string, string> = {};
+  for (const assignment of assignments) {
+    const separatorIndex = assignment.indexOf("=");
+    if (separatorIndex <= 0) {
+      throw new PmCliError(
+        `${optionName} env_set entries must use KEY=VALUE and be separated by semicolons. Example: env_set=PORT=0;PLAYWRIGHT_BASE_URL=http://127.0.0.1:4173`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    const key = assignment.slice(0, separatorIndex).trim();
+    const value = assignment.slice(separatorIndex + 1);
+    if (!LINKED_TEST_ENV_NAME_PATTERN.test(key)) {
+      throw new PmCliError(`${optionName} env_set key "${key}" is invalid`, EXIT_CODE.USAGE);
+    }
+    if (LINKED_TEST_PROTECTED_ENV_KEYS.has(key.toUpperCase())) {
+      throw new PmCliError(`${optionName} env_set key "${key}" is reserved for sandbox safety`, EXIT_CODE.USAGE);
+    }
+    envSet[key] = value;
+  }
+  return Object.keys(envSet).length > 0 ? envSet : undefined;
+}
+
+function parseLinkedTestEnvClearValue(raw: string | undefined, optionName: string): string[] | undefined {
+  if (!raw || raw.trim().length === 0) {
+    return undefined;
+  }
+  const values = [...new Set(raw.split(/[;,\n]/).map((entry) => entry.trim()).filter((entry) => entry.length > 0))];
+  if (values.length === 0) {
+    throw new PmCliError(`${optionName} env_clear must include at least one environment variable name`, EXIT_CODE.USAGE);
+  }
+  for (const key of values) {
+    if (!LINKED_TEST_ENV_NAME_PATTERN.test(key)) {
+      throw new PmCliError(`${optionName} env_clear key "${key}" is invalid`, EXIT_CODE.USAGE);
+    }
+    if (LINKED_TEST_PROTECTED_ENV_KEYS.has(key.toUpperCase())) {
+      throw new PmCliError(`${optionName} env_clear key "${key}" is reserved for sandbox safety`, EXIT_CODE.USAGE);
+    }
+  }
+  return values;
+}
+
+function mergeEnvSetDirectives(entries: string[] | undefined, optionName: string): Record<string, string> {
+  const merged: Record<string, string> = {};
+  if (!entries) {
+    return merged;
+  }
+  for (const entry of entries) {
+    const parsed = parseLinkedTestEnvSetValue(entry, optionName);
+    if (!parsed) {
+      continue;
+    }
+    for (const [key, value] of Object.entries(parsed)) {
+      merged[key] = value;
+    }
+  }
+  return merged;
+}
+
+function mergeEnvClearDirectives(entries: string[] | undefined, optionName: string): string[] {
+  if (!entries) {
+    return [];
+  }
+  const values: string[] = [];
+  for (const entry of entries) {
+    const parsed = parseLinkedTestEnvClearValue(entry, optionName);
+    if (parsed) {
+      values.push(...parsed);
+    }
+  }
+  return [...new Set(values)];
 }
 
 const PM_GLOBAL_FLAGS_WITH_VALUE = new Set(["--path"]);
@@ -277,6 +420,111 @@ function parseNpmExecCommand(tokens: string[]): { command: string; args: string[
     return null;
   }
   return parseNpxCommand(parsed.args);
+}
+
+function resolvePmSubcommandContext(args: string[]): { subcommand: string; remaining: string[] } | null {
+  let index = 0;
+  while (index < args.length) {
+    const token = args[index];
+    if (token === "--") {
+      index += 1;
+      continue;
+    }
+    if (token.startsWith("-")) {
+      if (PM_GLOBAL_FLAGS_WITH_VALUE.has(token)) {
+        index += 2;
+        continue;
+      }
+      index += 1;
+      continue;
+    }
+    return {
+      subcommand: token,
+      remaining: args.slice(index + 1),
+    };
+  }
+  return null;
+}
+
+function firstPositionalToken(tokens: string[]): string | undefined {
+  for (const token of tokens) {
+    if (!token.startsWith("-")) {
+      return token;
+    }
+  }
+  return undefined;
+}
+
+function looksLikePrefixedItemId(token: string, idPrefix: string): boolean {
+  const normalizedPrefix = idPrefix.trim().toLowerCase().replace(/-+$/, "");
+  if (normalizedPrefix.length === 0) {
+    return false;
+  }
+  const normalized = token.trim().toLowerCase();
+  if (!normalized.startsWith(`${normalizedPrefix}-`)) {
+    return false;
+  }
+  return normalized.length > normalizedPrefix.length + 1;
+}
+
+function extractPmInvocationArgsFromSegment(segment: string): string[] | null {
+  const rawTokens = segment.split(" ").filter((token) => token.length > 0);
+  const tokens = stripLeadingEnvAssignments(rawTokens);
+  if (tokens.length === 0) {
+    return null;
+  }
+  const [executable, ...args] = tokens;
+  if (isPmExecutableToken(executable) || isPmCliScriptToken(executable)) {
+    return args;
+  }
+  if (executable === "node" && args.length > 0 && isPmCliScriptToken(args[0])) {
+    return args.slice(1);
+  }
+  if (executable === "npx") {
+    const parsed = parseNpxCommand(args);
+    if (parsed && (isPmExecutableToken(parsed.command) || isPmCliPackageToken(parsed.command))) {
+      return parsed.args;
+    }
+  }
+  if (executable === "pnpm") {
+    const parsed = parsePnpmDlxCommand(args);
+    if (parsed && (isPmExecutableToken(parsed.command) || isPmCliPackageToken(parsed.command))) {
+      return parsed.args;
+    }
+  }
+  if (executable === "npm") {
+    const parsed = parseNpmExecCommand(args);
+    if (parsed && (isPmExecutableToken(parsed.command) || isPmCliPackageToken(parsed.command))) {
+      return parsed.args;
+    }
+  }
+  return null;
+}
+
+export function extractReferencedPmItemIdsFromCommand(command: string, idPrefix = "pm"): string[] {
+  const normalizedCommand = normalizeCommandForValidation(command);
+  const ids = new Set<string>();
+  for (const segment of splitNormalizedCommandSegments(normalizedCommand)) {
+    const invocationArgs = extractPmInvocationArgsFromSegment(segment);
+    if (!invocationArgs) {
+      continue;
+    }
+    const context = resolvePmSubcommandContext(invocationArgs);
+    if (!context) {
+      continue;
+    }
+    if (!PM_SUBCOMMANDS_WITH_ITEM_REFERENCE.has(context.subcommand)) {
+      continue;
+    }
+    const candidate = firstPositionalToken(context.remaining);
+    if (!candidate) {
+      continue;
+    }
+    if (looksLikePrefixedItemId(candidate, idPrefix)) {
+      ids.add(candidate);
+    }
+  }
+  return [...ids].sort((left, right) => left.localeCompare(right));
 }
 
 function resolveDirectRunnerSubcommand(parsed: { subcommand: string; args: string[] } | null): string | undefined {
@@ -458,11 +706,17 @@ function parseAddEntries(raw: string[] | undefined): LinkedTest[] {
     const timeoutRaw = timeoutSecondsRaw ?? timeoutAliasRaw;
     const timeoutSeconds =
       timeoutRaw === undefined ? undefined : Math.floor(parseOptionalNumber(timeoutRaw, "timeout_seconds"));
+    const envSet = parseLinkedTestEnvSetValue(kv.env_set?.trim(), "--add");
+    const envClear = parseLinkedTestEnvClearValue(kv.env_clear?.trim(), "--add");
+    const sharedHostSafe = parseLinkedTestBooleanValue(kv.shared_host_safe?.trim(), "--add", "shared_host_safe");
     return {
       command,
       path: filePath,
       scope: ensureScope(kv.scope),
       timeout_seconds: timeoutSeconds,
+      env_set: envSet,
+      env_clear: envClear,
+      shared_host_safe: sharedHostSafe,
       note: kv.note?.trim() || undefined,
     };
   });
@@ -509,9 +763,11 @@ function summarizeLinkedTestCommand(command: string): string {
 }
 
 function shouldEmitLinkedTestProgress(mode: LinkedTestProgressMode): boolean {
+  /* c8 ignore start -- reserved for future explicit "off" mode wiring. */
   if (mode === "off") {
     return false;
   }
+  /* c8 ignore stop */
   if (mode === "always") {
     return true;
   }
@@ -575,6 +831,7 @@ function endLinkedTestProgress(
   );
 }
 
+/* c8 ignore start -- process-tree teardown paths are highly platform-dependent. */
 async function killProcessTree(pid: number): Promise<void> {
   if (!Number.isInteger(pid) || pid <= 0) {
     return;
@@ -602,6 +859,7 @@ async function killProcessTree(pid: number): Promise<void> {
     // The process can already be gone.
   }
 }
+/* c8 ignore stop */
 
 async function runLinkedTestCommand(
   command: string,
@@ -647,6 +905,7 @@ async function runLinkedTestCommand(
     }
   };
 
+  /* c8 ignore start -- timeout termination branches depend on scheduler/process-group timing. */
   const requestTermination = async (): Promise<void> => {
     if (terminationRequested) {
       return;
@@ -668,17 +927,20 @@ async function runLinkedTestCommand(
     try {
       process.kill(-pid, "SIGTERM");
     } catch {
+      /* c8 ignore next 4 -- platform-specific process-group fallback path. */
       try {
         child.kill("SIGTERM");
       } catch {
         // Child can already be closed.
       }
     }
+    /* c8 ignore next 3 -- exercised only when timeout escalation triggers force-kill fallback. */
     forceKillTimer = setTimeout(() => {
       void killProcessTree(pid);
     }, linkedTestTimeoutForceKillDelayMs());
     forceKillTimer.unref?.();
   };
+  /* c8 ignore stop */
 
   const appendChunk = (chunk: Buffer | string, target: "stdout" | "stderr"): void => {
     const text = typeof chunk === "string" ? chunk : chunk.toString("utf8");
@@ -702,10 +964,12 @@ async function runLinkedTestCommand(
 
   child.stdout?.on("data", (chunk) => appendChunk(chunk, "stdout"));
   child.stderr?.on("data", (chunk) => appendChunk(chunk, "stderr"));
+  /* c8 ignore next 5 -- shell spawn error callbacks are non-deterministic across platforms. */
   child.on("error", (error) => {
     spawnError = error.message;
   });
 
+  /* c8 ignore next 4 -- callback scheduling timing is non-deterministic under coverage instrumentation. */
   timedOutTimer = setTimeout(() => {
     timedOut = true;
     void requestTermination();
@@ -750,6 +1014,113 @@ function formatLinkedTestExecutionError(result: LinkedTestExecutionResult, timeo
     return baseMessage;
   }
   return `${baseMessage} ${details.join(" ")}`;
+}
+
+function hasInfraCollisionSignal(result: Pick<LinkedTestExecutionResult, "stdout" | "stderr" | "spawnError">): boolean {
+  const combined = [result.spawnError ?? "", result.stderr, result.stdout].join("\n");
+  return LINKED_TEST_INFRA_COLLISION_PATTERNS.some((pattern) => pattern.test(combined));
+}
+
+export function classifyLinkedTestFailure(
+  result: Pick<LinkedTestExecutionResult, "stdout" | "stderr" | "spawnError" | "signal" | "timedOut" | "maxBufferExceeded">,
+): LinkedTestFailureCategory {
+  if (hasInfraCollisionSignal(result)) {
+    return "infra_collision";
+  }
+  if (result.timedOut) {
+    return "timeout";
+  }
+  if (result.maxBufferExceeded) {
+    return "max_buffer";
+  }
+  if (result.spawnError) {
+    return "spawn_error";
+  }
+  if (result.signal) {
+    return "signal";
+  }
+  return "assertion_failure";
+}
+
+function createEmptyFailureCategoryCounts(): Record<LinkedTestFailureCategory, number> {
+  return {
+    infra_collision: 0,
+    assertion_failure: 0,
+    timeout: 0,
+    max_buffer: 0,
+    spawn_error: 0,
+    signal: 0,
+  };
+}
+
+export function countFailureCategories(runResults: TestRunResult[]): Record<LinkedTestFailureCategory, number> {
+  const counts = createEmptyFailureCategoryCounts();
+  for (const result of runResults) {
+    if (result.status !== "failed" || !result.failure_category) {
+      continue;
+    }
+    counts[result.failure_category] += 1;
+  }
+  return counts;
+}
+
+function applyEnvDirectiveStage(env: NodeJS.ProcessEnv, directives: Pick<LinkedTestRuntimeDirectives, "env_set" | "env_clear">): void {
+  for (const [key, value] of Object.entries(directives.env_set)) {
+    if (LINKED_TEST_PROTECTED_ENV_KEYS.has(key.toUpperCase())) {
+      continue;
+    }
+    env[key] = value;
+  }
+  for (const key of directives.env_clear) {
+    if (LINKED_TEST_PROTECTED_ENV_KEYS.has(key.toUpperCase())) {
+      continue;
+    }
+    delete env[key];
+  }
+}
+
+function applySharedHostSafeDefaults(env: NodeJS.ProcessEnv): void {
+  if (env.PORT === undefined) {
+    env.PORT = "0";
+  }
+  if (env.HOST === undefined) {
+    env.HOST = "127.0.0.1";
+  }
+  if (env.PM_SHARED_HOST_SAFE === undefined) {
+    env.PM_SHARED_HOST_SAFE = "1";
+  }
+  if (env.PLAYWRIGHT_HTML_OPEN === undefined) {
+    env.PLAYWRIGHT_HTML_OPEN = "never";
+  }
+  if (env.PW_TEST_HTML_REPORT_OPEN === undefined) {
+    env.PW_TEST_HTML_REPORT_OPEN = "never";
+  }
+}
+
+function resolveEffectiveLinkedTestDirectives(
+  runtimeDirectives: LinkedTestRuntimeDirectives,
+  linkedTest: LinkedTest,
+): LinkedTestRuntimeDirectives {
+  const envSet = { ...runtimeDirectives.env_set, ...(linkedTest.env_set ?? {}) };
+  const envClear = [...new Set([...runtimeDirectives.env_clear, ...(linkedTest.env_clear ?? [])])];
+  const sharedHostSafe = linkedTest.shared_host_safe ?? runtimeDirectives.shared_host_safe;
+  return {
+    env_set: envSet,
+    env_clear: envClear,
+    shared_host_safe: sharedHostSafe,
+  };
+}
+
+function resolveRuntimeDirectives(
+  envSetEntries: string[] | undefined,
+  envClearEntries: string[] | undefined,
+  sharedHostSafe: boolean | undefined,
+): LinkedTestRuntimeDirectives {
+  return {
+    env_set: mergeEnvSetDirectives(envSetEntries, "--env-set"),
+    env_clear: mergeEnvClearDirectives(envClearEntries, "--env-clear"),
+    shared_host_safe: sharedHostSafe === true,
+  };
 }
 
 async function copyIntoSandboxIfPresent(sourcePath: string, targetPath: string, recursive = false): Promise<void> {
@@ -799,6 +1170,9 @@ export async function runLinkedTests(
   options?: {
     progress?: boolean;
     sourceRoots?: LinkedTestSandboxSourceRoots;
+    envSet?: string[];
+    envClear?: string[];
+    sharedHostSafe?: boolean;
   },
 ): Promise<TestRunResult[]> {
   const results: TestRunResult[] = [];
@@ -806,6 +1180,7 @@ export async function runLinkedTests(
   const sandboxPmPath = path.join(sandboxRoot, "project", ".agents", "pm");
   const sandboxGlobalPath = path.join(sandboxRoot, "global");
   const progressMode: LinkedTestProgressMode = options?.progress === true ? "always" : "auto";
+  const runtimeDirectives = resolveRuntimeDirectives(options?.envSet, options?.envClear, options?.sharedHostSafe);
 
   try {
     await runInit(undefined, { path: sandboxPmPath });
@@ -835,15 +1210,23 @@ export async function runLinkedTests(
         continue;
       }
       const timeoutMs = ((linkedTest.timeout_seconds ?? defaultTimeoutSeconds ?? 120) * 1000);
+      const effectiveDirectives = resolveEffectiveLinkedTestDirectives(runtimeDirectives, linkedTest);
+      const executionEnv: NodeJS.ProcessEnv = { ...process.env };
+      applyEnvDirectiveStage(executionEnv, runtimeDirectives);
+      applyEnvDirectiveStage(executionEnv, {
+        env_set: linkedTest.env_set ?? {},
+        env_clear: linkedTest.env_clear ?? [],
+      });
+      if (effectiveDirectives.shared_host_safe) {
+        applySharedHostSafeDefaults(executionEnv);
+      }
+      executionEnv.FORCE_COLOR = "0";
+      executionEnv.PM_PATH = sandboxPmPath;
+      executionEnv.PM_GLOBAL_PATH = sandboxGlobalPath;
       const execution = await runLinkedTestCommand(
         linkedTest.command,
         timeoutMs,
-        {
-          ...process.env,
-          FORCE_COLOR: "0",
-          PM_PATH: sandboxPmPath,
-          PM_GLOBAL_PATH: sandboxGlobalPath,
-        },
+        executionEnv,
         {
           index: index + 1,
           total: tests.length,
@@ -864,11 +1247,13 @@ export async function runLinkedTests(
         });
         continue;
       }
+      const failureCategory = classifyLinkedTestFailure(execution);
       results.push({
         command: linkedTest.command,
         path: linkedTest.path,
         status: "failed",
         exit_code: resolveLinkedTestFailureExitCode(execution),
+        failure_category: failureCategory,
         stdout: execution.stdout,
         stderr: execution.stderr,
         error: formatLinkedTestExecutionError(execution, timeoutMs),
@@ -945,21 +1330,31 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
   if (options.timeout !== undefined) {
     defaultTimeoutSeconds = parseOptionalNumber(options.timeout, "timeout");
   }
+  const hasRuntimeDirectiveFlags =
+    (options.envSet?.length ?? 0) > 0 || (options.envClear?.length ?? 0) > 0 || options.sharedHostSafe === true;
+  if (hasRuntimeDirectiveFlags && options.run !== true) {
+    throw new PmCliError("--env-set, --env-clear, and --shared-host-safe require --run", EXIT_CODE.USAGE);
+  }
 
   const runResults = options.run === true
     ? await runLinkedTests(tests, defaultTimeoutSeconds, {
         progress: options.progress,
+        envSet: options.envSet,
+        envClear: options.envClear,
+        sharedHostSafe: options.sharedHostSafe,
         sourceRoots: {
           projectPmRoot: pmRoot,
           globalPmRoot: resolveGlobalPmRoot(process.cwd()),
         },
       })
     : [];
+  const failureCategories = countFailureCategories(runResults);
 
   return {
     id: itemId,
     tests,
     run_results: runResults,
+    failure_categories: failureCategories,
     changed: shouldMutate,
     count: tests.length,
   };

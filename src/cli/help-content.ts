@@ -283,14 +283,14 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Links test commands/paths and optionally executes them for one item.",
     examples: [
       'pm test pm-a1b2 --add "command=node scripts/run-tests.mjs test -- tests/unit/output.spec.ts,scope=project,timeout_seconds=2400"',
-      "pm test pm-a1b2 --run --timeout 2400",
+      "pm test pm-a1b2 --run --timeout 2400 --env-set PORT=0 --env-clear PLAYWRIGHT_BASE_URL --shared-host-safe",
     ],
   },
   "test-all": {
     why: "Runs linked tests in bulk for release/readiness sweeps.",
     examples: [
       "pm test-all --status in_progress --timeout 2400",
-      "pm test-all --status closed --timeout 3600 --progress",
+      "pm test-all --status closed --timeout 3600 --progress --env-set PORT=0 --shared-host-safe",
     ],
   },
   stats: {
@@ -302,11 +302,12 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     examples: ["pm health", "pm health --json"],
   },
   validate: {
-    why: "Runs standalone metadata, resolution, linked-file, and history drift checks.",
+    why: "Runs standalone metadata, resolution, linked-file, linked-command reference, and history drift checks.",
     examples: [
       "pm validate",
       "pm validate --check-resolution --json",
       "pm validate --check-files --scan-mode tracked-all",
+      "pm validate --check-command-references",
       "pm validate --check-files --scan-mode tracked-all --include-pm-internals",
     ],
   },

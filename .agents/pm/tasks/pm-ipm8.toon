@@ -42,8 +42,8 @@ comments[2]{created_at,author,text}:
   "2026-04-02T11:59:14.691Z",codex-agent,"Updated README PRD AGENTS CHANGELOG for update body support and ran full verification. Evidence: pnpm build passed; node scripts/run-tests.mjs test passed (64 files, 710 tests); pm test pm-ipm8 --run passed (coverage command)."
 notes[1]{created_at,author,text}:
   "2026-04-02T11:45:37.141Z",codex-agent,Update README PRD AGENTS CHANGELOG and capture test evidence.
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,10800,release verification coverage run
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,10800,null,null,null,release verification coverage run
 docs[4]{path,scope,note}:
   AGENTS.md,project,agent workflow update body guidance
   CHANGELOG.md,project,unreleased entry for update body

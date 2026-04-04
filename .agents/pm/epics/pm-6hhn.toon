@@ -50,8 +50,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:31:23.688Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   PRD.md,project,milestone source
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test,null,project,600,sandbox-safe regression
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test,null,project,600,null,null,null,sandbox-safe regression
 docs[1]{path,scope,note}:
   PRD.md,project,milestone definition
 body: Canonical milestone tracking item seeded from PRD section 21. Child features and tasks should attach here via dependencies.

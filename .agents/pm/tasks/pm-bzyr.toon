@@ -64,9 +64,9 @@ files[8]{path,scope,note}:
   src/cli/main.ts,project,usage error handling
   tests/integration/help-runtime.spec.ts,project,integration guidance assertions
   tests/unit/create-command.spec.ts,project,unit regression for aggregate errors
-tests[2]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/unit/create-command.spec.ts,null,project,2400,required option guidance regression
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,3600,issue1 aggregate required-option regression
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/unit/create-command.spec.ts,null,project,2400,null,null,null,required option guidance regression
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,3600,null,null,null,issue1 aggregate required-option regression
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,unreleased issue1 notes
   PRD.md,project,create validation contract

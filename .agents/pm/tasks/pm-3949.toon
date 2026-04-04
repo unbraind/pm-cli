@@ -52,8 +52,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:23:36.606Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   SECURITY.md,project,extension trust model updates
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,1800,release docs/runtime contract checks
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,1800,null,null,null,release docs/runtime contract checks
 docs[4]{path,scope,note}:
   CHANGELOG.md,project,migration and breaking-change notes
   CONTRIBUTING.md,project,extension SDK and routing guidance

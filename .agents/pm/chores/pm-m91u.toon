@@ -55,9 +55,9 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   CONTRIBUTING.md,project,maintainer bootstrap guidance
   tests/integration/release-readiness-contract.spec.ts,project,contract guard for contributing bootstrap
-tests[2]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,sandbox-safe coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,release-readiness contract regression
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,sandbox-safe coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,null,null,null,release-readiness contract regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,authoritative maintainer bootstrap requirement
   PRD.md,project,release-ready docs contract

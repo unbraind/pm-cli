@@ -63,9 +63,9 @@ files[9]{path,scope,note}:
   tests/unit/completion-command.spec.ts,project,completion install command assertions
   tests/unit/install-command.spec.ts,project,installer behavior coverage
   vitest.config.ts,project,coverage include alignment
-tests[2]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/install-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,2400,targeted installer regressions
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/install-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,2400,null,null,null,targeted installer regressions
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer Pi workflow
   PRD.md,project,command contract

@@ -17,6 +17,8 @@ Extensions let you add commands, parser/preflight lifecycle control, core servic
 
 This preserves extension-defined schema behavior (including custom item type validation/filtering) while retaining sandbox isolation for linked-test execution.
 
+Linked-test runtime controls are additive: run-level `--env-set`/`--env-clear`/`--shared-host-safe` flags and per-linked-test metadata directives (`env_set`, `env_clear`, `shared_host_safe`) apply before sandbox-protected `PM_PATH`/`PM_GLOBAL_PATH` overrides.
+
 ## Lifecycle Manager CLI
 
 `pm extension` is the canonical lifecycle manager for custom extensions.

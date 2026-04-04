@@ -49,8 +49,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:32:09.295Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   package.json,project,c8 and rollup override updated
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,600,full coverage gate
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,full coverage gate
 docs[1]{path,scope,note}:
   README.md,project,metadata-audit-documentation-context
 body: "Dependency path for minimatch: c8 -> test-exclude -> minimatch (9.x had ReDoS in pattern matching). Fixed by updating to c8 v11 which uses test-exclude v8 which depends on minimatch v10.\\n\\nDependency path for rollup: vitest -> @vitest/mocker -> vite -> rollup (4.57.1 had arbitrary file write via path traversal). Fixed by adding pnpm.overrides rollup >= 4.59.0.\\n\\nBoth are devDependencies and do not affect the published npm package or end users."

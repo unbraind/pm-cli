@@ -50,8 +50,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:16:13.705Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   .agents/pm/history/pm-axl0.jsonl,project,publication-safety review target
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/check-secrets.mjs,null,project,240,credential-pattern scan before push
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/check-secrets.mjs,null,project,240,null,null,null,credential-pattern scan before push
 docs[1]{path,scope,note}:
   README.md,project,metadata-audit-documentation-context
 close_reason: Pending changes reviewed and sanitized for publication; staged build and secret scan passed; safe to push.

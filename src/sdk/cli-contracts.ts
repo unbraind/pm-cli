@@ -341,6 +341,9 @@ export const TEST_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--run" },
   { flag: "--timeout" },
   { flag: "--progress" },
+  { flag: "--env-set" },
+  { flag: "--env-clear" },
+  { flag: "--shared-host-safe" },
   { flag: "--author" },
   { flag: "--message" },
   { flag: "--force" },
@@ -350,6 +353,9 @@ export const TEST_ALL_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--status" },
   { flag: "--timeout" },
   { flag: "--progress" },
+  { flag: "--env-set" },
+  { flag: "--env-clear" },
+  { flag: "--shared-host-safe" },
 ];
 
 export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -359,6 +365,7 @@ export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--scan-mode" },
   { flag: "--include-pm-internals" },
   { flag: "--check-history-drift" },
+  { flag: "--check-command-references" },
 ];
 
 export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -827,6 +834,9 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   limit: { anyOf: [{ type: "string" }, { type: "number" }] },
   offset: { anyOf: [{ type: "string" }, { type: "number" }] },
   progress: { type: "boolean" },
+  envSet: { type: "array", items: { type: "string" } },
+  envClear: { type: "array", items: { type: "string" } },
+  sharedHostSafe: { type: "boolean" },
   diff: { type: "boolean" },
   verify: { type: "boolean" },
   timeout: { anyOf: [{ type: "string" }, { type: "number" }] },
@@ -837,6 +847,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   scanMode: { type: "string", enum: ["default", "tracked-all"] },
   includePmInternals: { type: "boolean" },
   checkHistoryDrift: { type: "boolean" },
+  checkCommandReferences: { type: "boolean" },
   allowAuditComment: { type: "boolean" },
   force: { type: "boolean" },
   run: { type: "boolean" },
@@ -966,11 +977,34 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
     optional: ["add", "addGlob", "remove", "migrate", "validatePaths", "audit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
   },
   deps: { required: ["id"], optional: ["format"] },
-  test: { required: ["id"], optional: ["add", "remove", "run", "timeout", "progress", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
-  "test-all": { optional: ["status", "timeout", "progress"] },
+  test: {
+    required: ["id"],
+    optional: [
+      "add",
+      "remove",
+      "run",
+      "timeout",
+      "progress",
+      "envSet",
+      "envClear",
+      "sharedHostSafe",
+      ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
+    ],
+  },
+  "test-all": { optional: ["status", "timeout", "progress", "envSet", "envClear", "sharedHostSafe"] },
   stats: {},
   health: {},
-  validate: { optional: ["checkMetadata", "checkResolution", "checkFiles", "scanMode", "includePmInternals", "checkHistoryDrift"] },
+  validate: {
+    optional: [
+      "checkMetadata",
+      "checkResolution",
+      "checkFiles",
+      "scanMode",
+      "includePmInternals",
+      "checkHistoryDrift",
+      "checkCommandReferences",
+    ],
+  },
   gc: {},
   contracts: { optional: ["contractAction", "command", "schemaOnly"] },
   completion: { required: ["shell"] },
@@ -1089,6 +1123,17 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   progress: {
     description: "Emit progress diagnostics to stderr for long-running operations.",
   },
+  envSet: {
+    description: "Repeatable runtime environment KEY=VALUE overrides for linked-test execution.",
+    examples: [["PORT=0", "PLAYWRIGHT_HTML_OPEN=never"]],
+  },
+  envClear: {
+    description: "Repeatable runtime environment variable names to clear before linked-test execution.",
+    examples: [["PLAYWRIGHT_BASE_URL"]],
+  },
+  sharedHostSafe: {
+    description: "Apply additive shared-host-safe runtime defaults during linked-test execution.",
+  },
   offset: {
     description: "Number of matching rows to skip before limit is applied.",
     examples: [0, 50, "100"],
@@ -1115,6 +1160,9 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   checkHistoryDrift: {
     description: "Run item/history hash drift checks.",
+  },
+  checkCommandReferences: {
+    description: "Run linked-command PM-ID reference checks.",
   },
   allowAuditComment: {
     description: "Allow non-owner append-only comment audits without requiring --force.",

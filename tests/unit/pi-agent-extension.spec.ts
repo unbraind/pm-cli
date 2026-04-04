@@ -502,6 +502,7 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(schemaProperty(validateSchema, "checkFiles").type).toBe("boolean");
     expect(schemaProperty(validateSchema, "scanMode").enum).toEqual(["default", "tracked-all"]);
     expect(schemaProperty(validateSchema, "includePmInternals").type).toBe("boolean");
+    expect(schemaProperty(validateSchema, "checkCommandReferences").type).toBe("boolean");
 
     const calendarSchema = schemaForAction(tool.parameters as Record<string, unknown>, "calendar");
     expect(schemaProperty(calendarSchema, "view").type).toBe("string");
@@ -562,6 +563,15 @@ describe("Pi agent extension wrapper for pm", () => {
       expect.arrayContaining([{ type: "string" }, { type: "number" }]),
     );
     expect(schemaProperty(testAllSchema, "status").type).toBe("string");
+    expect(schemaProperty(testAllSchema, "envSet")).toMatchObject({
+      type: "array",
+      items: { type: "string" },
+    });
+    expect(schemaProperty(testAllSchema, "envClear")).toMatchObject({
+      type: "array",
+      items: { type: "string" },
+    });
+    expect(schemaProperty(testAllSchema, "sharedHostSafe").type).toBe("boolean");
 
     const result = await tool.execute("call-1", { action: "stats" });
     expect(execSpy).toHaveBeenCalledTimes(2);
@@ -698,6 +708,7 @@ describe("Pi agent extension wrapper for pm", () => {
         scanMode: "tracked-all",
         includePmInternals: true,
         checkHistoryDrift: true,
+        checkCommandReferences: true,
       }),
     ).toEqual([
       "--json",
@@ -707,6 +718,7 @@ describe("Pi agent extension wrapper for pm", () => {
       "tracked-all",
       "--include-pm-internals",
       "--check-history-drift",
+      "--check-command-references",
     ]);
 
     expect(
@@ -1025,6 +1037,9 @@ describe("Pi agent extension wrapper for pm", () => {
         add: ["command=node scripts/run-tests.mjs coverage,scope=project,timeout_seconds=1200"],
         run: true,
         timeout: "1800",
+        envSet: ["PORT=0"],
+        envClear: ["PLAYWRIGHT_BASE_URL"],
+        sharedHostSafe: true,
       }),
     ).toEqual([
       "--json",
@@ -1035,6 +1050,11 @@ describe("Pi agent extension wrapper for pm", () => {
       "--run",
       "--timeout",
       "1800",
+      "--env-set",
+      "PORT=0",
+      "--env-clear",
+      "PLAYWRIGHT_BASE_URL",
+      "--shared-host-safe",
     ]);
 
     expect(
@@ -1042,8 +1062,23 @@ describe("Pi agent extension wrapper for pm", () => {
         action: "test-all",
         status: "in_progress",
         timeout: "1800",
+        envSet: ["PORT=0"],
+        envClear: ["PLAYWRIGHT_BASE_URL"],
+        sharedHostSafe: true,
       }),
-    ).toEqual(["--json", "test-all", "--status", "in_progress", "--timeout", "1800"]);
+    ).toEqual([
+      "--json",
+      "test-all",
+      "--status",
+      "in_progress",
+      "--timeout",
+      "1800",
+      "--env-set",
+      "PORT=0",
+      "--env-clear",
+      "PLAYWRIGHT_BASE_URL",
+      "--shared-host-safe",
+    ]);
 
     expect(
       buildPmCliArgs({

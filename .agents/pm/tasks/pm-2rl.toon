@@ -57,10 +57,10 @@ files[3]{path,scope,note}:
   README.md,project,document targeted passthrough behavior
   scripts/run-tests.mjs,project,fix argument passthrough semantics
   tests/integration/run-tests-script.integration.spec.ts,project,verify runner targeted passthrough contract
-tests[3]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,1800,coverage gate in sandbox after runner fix
-  node scripts/run-tests.mjs test -- tests/integration/run-tests-script.integration.spec.ts,null,project,900,runner passthrough regression
-  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts,null,project,600,verify targeted execution remains filtered
+tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,coverage gate in sandbox after runner fix
+  node scripts/run-tests.mjs test -- tests/integration/run-tests-script.integration.spec.ts,null,project,900,null,null,null,runner passthrough regression
+  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts,null,project,600,null,null,null,verify targeted execution remains filtered
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow contract
   PRD.md,project,governing spec

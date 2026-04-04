@@ -59,8 +59,8 @@ files[8]{path,scope,note}:
   src/core/item/item-format.ts,project,item parse normalization to canonical status
   src/core/item/status.ts,project,new shared status normalization utility
   src/extensions/builtins/todos/import-export.ts,project,todos import status alias normalization
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,3600,status normalization unit regression
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,3600,null,null,null,status normalization unit regression
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,core parsing behavior reference
 close_reason: Centralized status alias normalization implemented across command and parsing surfaces; full sandbox test suite passed.

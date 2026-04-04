@@ -296,6 +296,78 @@ function parseFiles(raw: string[] | undefined): { values: LinkedFile[] | undefin
   return { values, explicitEmpty: false };
 }
 
+const LINKED_TEST_PROTECTED_ENV_KEYS = new Set(["PM_PATH", "PM_GLOBAL_PATH", "FORCE_COLOR"]);
+const LINKED_TEST_ENV_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+function parseLinkedTestEnvSet(raw: string | undefined, optionName: string): Record<string, string> | undefined {
+  const normalized = parseOptionalString(raw);
+  if (!normalized || isNoneToken(normalized)) {
+    return undefined;
+  }
+  const assignments = normalized
+    .split(/[;\n]/)
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  if (assignments.length === 0) {
+    throw new PmCliError(`${optionName} env_set must include at least one KEY=VALUE assignment`, EXIT_CODE.USAGE);
+  }
+  const envSet: Record<string, string> = {};
+  for (const assignment of assignments) {
+    const separatorIndex = assignment.indexOf("=");
+    if (separatorIndex <= 0) {
+      throw new PmCliError(
+        `${optionName} env_set entries must use KEY=VALUE and be separated by semicolons. Example: env_set=PORT=0;PLAYWRIGHT_BASE_URL=http://127.0.0.1:4173`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    const key = assignment.slice(0, separatorIndex).trim();
+    const value = assignment.slice(separatorIndex + 1);
+    if (!LINKED_TEST_ENV_NAME_PATTERN.test(key)) {
+      throw new PmCliError(`${optionName} env_set key "${key}" is invalid`, EXIT_CODE.USAGE);
+    }
+    if (LINKED_TEST_PROTECTED_ENV_KEYS.has(key.toUpperCase())) {
+      throw new PmCliError(`${optionName} env_set key "${key}" is reserved for sandbox safety`, EXIT_CODE.USAGE);
+    }
+    envSet[key] = value;
+  }
+  return Object.keys(envSet).length > 0 ? envSet : undefined;
+}
+
+function parseLinkedTestEnvClear(raw: string | undefined, optionName: string): string[] | undefined {
+  const normalized = parseOptionalString(raw);
+  if (!normalized || isNoneToken(normalized)) {
+    return undefined;
+  }
+  const keys = [...new Set(normalized.split(/[;,\n]/).map((entry) => entry.trim()).filter((entry) => entry.length > 0))];
+  if (keys.length === 0) {
+    throw new PmCliError(`${optionName} env_clear must include at least one environment variable name`, EXIT_CODE.USAGE);
+  }
+  for (const key of keys) {
+    if (!LINKED_TEST_ENV_NAME_PATTERN.test(key)) {
+      throw new PmCliError(`${optionName} env_clear key "${key}" is invalid`, EXIT_CODE.USAGE);
+    }
+    if (LINKED_TEST_PROTECTED_ENV_KEYS.has(key.toUpperCase())) {
+      throw new PmCliError(`${optionName} env_clear key "${key}" is reserved for sandbox safety`, EXIT_CODE.USAGE);
+    }
+  }
+  return keys;
+}
+
+function parseLinkedTestBoolean(raw: string | undefined, optionName: string, fieldLabel: string): boolean | undefined {
+  const normalized = parseOptionalString(raw);
+  if (!normalized || isNoneToken(normalized)) {
+    return undefined;
+  }
+  const value = normalized.trim().toLowerCase();
+  if (value === "true" || value === "1" || value === "yes") {
+    return true;
+  }
+  if (value === "false" || value === "0" || value === "no") {
+    return false;
+  }
+  throw new PmCliError(`${optionName} ${fieldLabel} must be one of true|false|1|0|yes|no`, EXIT_CODE.USAGE);
+}
+
 function parseTests(raw: string[] | undefined): { values: LinkedTest[] | undefined; explicitEmpty: boolean } {
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
   if (raw.some((entry) => isNoneToken(entry))) {
@@ -322,6 +394,9 @@ function parseTests(raw: string[] | undefined): { values: LinkedTest[] | undefin
       path: filePath,
       scope: ensureEnumValue(kv.scope ?? "project", SCOPE_VALUES, "test scope"),
       timeout_seconds: timeoutRaw ? parseOptionalNumber(timeoutRaw, "timeout_seconds") : undefined,
+      env_set: parseLinkedTestEnvSet(kv.env_set, "--test"),
+      env_clear: parseLinkedTestEnvClear(kv.env_clear, "--test"),
+      shared_host_safe: parseLinkedTestBoolean(kv.shared_host_safe, "--test", "shared_host_safe"),
       note: parseOptionalString(kv.note),
     };
   });

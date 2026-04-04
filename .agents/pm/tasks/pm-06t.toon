@@ -93,13 +93,13 @@ files[25]{path,scope,note}:
   tests/unit/close-command.spec.ts,project,unit coverage for runClose
   tests/unit/pi-agent-extension.spec.ts,project,assert Pi wrapper emits required assigned-to-session flag
   tests/unit/todos-extension.spec.ts,project,update create fixtures for required assigned-to-session contract
-tests[6]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,full coverage gate in sandbox
-  node scripts/run-tests.mjs test,null,project,1200,Sandboxed core command regression
-  node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,1800,sandboxed focused validation for close command
-  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts,null,project,1800,targeted create/PI parity regression
-  node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts,null,project,900,validate create-required assigned flag across todos fixtures
-  pnpm build,null,project,120,TypeScript build verification
+tests[6]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,full coverage gate in sandbox
+  node scripts/run-tests.mjs test,null,project,1200,null,null,null,Sandboxed core command regression
+  node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,1800,null,null,null,sandboxed focused validation for close command
+  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts,null,project,1800,null,null,null,targeted create/PI parity regression
+  node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts,null,project,900,null,null,null,validate create-required assigned flag across todos fixtures
+  pnpm build,null,project,120,null,null,null,TypeScript build verification
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow and dogfood protocol
   PRD.md,project,authoritative behavior contract

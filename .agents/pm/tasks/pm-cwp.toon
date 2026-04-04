@@ -74,12 +74,12 @@ files[12]{path,scope,note}:
   tests/unit/search-command.spec.ts,project,search command unit coverage
   tests/unit/settings-store.spec.ts,project,settings serialization and merge coverage
   tests/unit/shared-constants-errors.spec.ts,project,default settings contract coverage
-tests[5]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,1200,coverage gate regression
-  node scripts/run-tests.mjs test -- tests/integration/help-readme-contract.spec.ts,null,project,900,search include-linked help contract
-  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,240,targeted include-linked tests
-  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts,null,project,900,settings hybrid-weight regression
-  node scripts/run-tests.mjs test -- tests/unit/shared-constants-errors.spec.ts,null,project,900,shared defaults hybrid-weight regression
+tests[5]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,coverage gate regression
+  node scripts/run-tests.mjs test -- tests/integration/help-readme-contract.spec.ts,null,project,900,null,null,null,search include-linked help contract
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,240,null,null,null,targeted include-linked tests
+  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts,null,project,900,null,null,null,settings hybrid-weight regression
+  node scripts/run-tests.mjs test -- tests/unit/shared-constants-errors.spec.ts,null,project,900,null,null,null,shared defaults hybrid-weight regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow contract
   PRD.md,project,governing spec

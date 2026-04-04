@@ -59,9 +59,9 @@ files[5]{path,scope,note}:
   README.md,project,docs-first recursion guard clarification
   src/cli/commands/test.ts,project,recursive invocation detection logic
   tests/unit/test-command.spec.ts,project,regression coverage for recursion variants
-tests[2]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,1800,full coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,240,targeted regression coverage
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,full coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,240,null,null,null,targeted regression coverage
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood and test safety requirements
   PRD.md,project,authoritative test safety contract

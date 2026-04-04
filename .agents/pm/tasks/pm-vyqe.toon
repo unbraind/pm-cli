@@ -60,9 +60,9 @@ files[7]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,create alias integration coverage
   tests/integration/help-readme-contract.spec.ts,project,help readme alias contract regression
   tests/integration/release-readiness-contract.spec.ts,project,required create flags contract includes alias
-tests[2]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/help-readme-contract.spec.ts,null,project,1800,help readme alias regression
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/help-readme-contract.spec.ts,null,project,1800,null,null,null,help readme alias regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer operation contract
   PRD.md,project,authoritative command contract

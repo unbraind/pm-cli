@@ -61,11 +61,11 @@ files[7]{path,scope,note}:
   src/core/extensions/builtins.ts,project,shared built-in extension metadata helper
   tests/unit/extensions-builtins.spec.ts,project,shared built-in extension helper coverage
   tests/unit/health-command.spec.ts,project,health diagnostics regression coverage
-tests[4]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/extensions-builtins.spec.ts,null,project,900,built-in extension helper unit coverage
-  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/unit/extension-loader.spec.ts,null,project,1800,targeted extension health tests
-  pnpm build,null,project,600,compile verification
+tests[4]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/extensions-builtins.spec.ts,null,project,900,null,null,null,built-in extension helper unit coverage
+  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/unit/extension-loader.spec.ts,null,project,1800,null,null,null,targeted extension health tests
+  pnpm build,null,project,600,null,null,null,compile verification
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow contract
   PRD.md,project,governing spec

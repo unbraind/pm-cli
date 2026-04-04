@@ -57,9 +57,9 @@ files[4]{path,scope,note}:
   src/core/store/item-store.ts,project,item retrieval and ordering behavior
   tests/unit/list-command.spec.ts,project,list filter validation and normalization cases
   tests/unit/list-sort-branches.spec.ts,project,unit coverage for deterministic ordering branches
-tests[2]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,900,sandboxed full coverage gate
-  node scripts/run-tests.mjs test,null,project,900,sandboxed regression test gate
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,sandboxed full coverage gate
+  node scripts/run-tests.mjs test,null,project,900,null,null,null,sandboxed regression test gate
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood and test safety workflow
   PRD.md,project,authoritative requirements for list sorting and filters

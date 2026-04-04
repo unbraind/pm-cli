@@ -63,11 +63,11 @@ files[9]{path,scope,note}:
   tests/unit/beads-command.spec.ts,project,beads fixture-driven tests
   tests/unit/restore-command.spec.ts,project,restore fixture-driven tests
   tests/unit/search-command.spec.ts,project,search fixture-driven tests
-tests[4]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,full sandboxed coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/beads-command.spec.ts,null,project,900,beads fixture regression
-  node scripts/run-tests.mjs test -- tests/unit/restore-command.spec.ts,null,project,900,restore fixture regression
-  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,900,search fixture regression
+tests[4]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,full sandboxed coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/beads-command.spec.ts,null,project,900,null,null,null,beads fixture regression
+  node scripts/run-tests.mjs test -- tests/unit/restore-command.spec.ts,null,project,900,null,null,null,restore fixture regression
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,900,null,null,null,search fixture regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow and evidence protocol
   PRD.md,project,governing spec for milestone 6 fixtures

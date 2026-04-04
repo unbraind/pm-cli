@@ -1,0 +1,48 @@
+id: pm-ec5o
+title: "Issue2 Feature: Run-level env controls and shared-host-safe flags"
+description: "Issue2 Feature: Run-level env controls and shared-host-safe flags"
+type: Feature
+status: closed
+priority: 1
+tags[3]: cli-contracts,linked-tests,shared-host
+created_at: "2026-04-04T10:10:31.831Z"
+updated_at: "2026-04-04T11:40:32.951Z"
+deadline: "2026-04-11T10:10:31.831Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: pm test and pm test-all expose additive run-level env set/clear controls and shared-host-safe mode across CLI/contracts/Pi/help surfaces.
+definition_of_ready: Scope and acceptance criteria documented.
+order: 1
+goal: Linked test reliability
+objective: Eliminate nondeterministic linked test governance failures
+value: Deterministic verification in shared-host workflows
+impact: Higher confidence in close-time evidence
+outcome: Predictable linked test and validate behavior
+why_now: External governance audit found unresolved gaps.
+parent: pm-9dp3
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: linked-test-hardening
+release: vnext
+reporter: codex-agent
+severity: medium
+environment: linux-node25-local
+affected_version: 2026.3.12
+fixed_version: vnext
+component: linked-test-runtime
+regression: true
+customer_impact: improves deterministic verification outcomes
+comments[1]{created_at,author,text}:
+  "2026-04-04T11:39:58.926Z",codex-agent,"Evidence: pnpm build passed; node scripts/run-tests.mjs test passed (844 tests); node scripts/run-tests.mjs coverage passed (branches 91.02%); PM linked-test sweep passed via pm test-all --status in_progress (linked_tests=3 failed=0, failure categories all zero)."
+files[6]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,pi arg mapping
+  src/cli/commands/test-all.ts,project,run-level option plumbing
+  src/cli/commands/test.ts,project,run-level option plumbing
+  src/cli/help-content.ts,project,help examples
+  src/cli/main.ts,project,test/test-all flag wiring
+  src/sdk/cli-contracts.ts,project,flag contracts and schemas
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,3600,null,null,null,run-level flag and pi parity
+close_reason: run-level env controls and shared-host-safe flags shipped and verified
+body: ""

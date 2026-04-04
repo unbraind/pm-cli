@@ -45,8 +45,8 @@ notes[1]{created_at,author,text}:
   "2026-04-03T22:53:26.793Z",codex-agent,Seed sandbox with source project/global settings plus extensions before command execution.
 files[1]{path,scope,note}:
   src/cli/commands/test.ts,project,sandbox runner seeding changes
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,2400,parity and orchestration regressions
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,2400,null,null,null,parity and orchestration regressions
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,document extension parity behavior
 close_reason: linked-test project/global extension parity delivered with regression coverage

@@ -56,8 +56,8 @@ files[4]{path,scope,note}:
   docs/EXTENSIONS.md,project,extension registerItemTypes docs
   README.md,project,custom type and usage examples
   src/cli/main.ts,project,error/help surface
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,2400,help/runtime contract
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,help/runtime contract
 docs[1]{path,scope,note}:
   README.md,project,user-facing command examples
 close_reason: required-option messaging and docs parity delivered for configurable type workflows

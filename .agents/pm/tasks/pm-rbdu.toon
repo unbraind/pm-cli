@@ -53,8 +53,8 @@ files[3]{path,scope,note}:
   .agents/pm/history/pm-4ydh.jsonl,project,representative imported tracker history
   .agents/pm/issues/pm-4ydh.md,project,representative imported tracker file
   .agents/pm/issues/pm-51y8.md,project,imported tracker file
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/check-secrets.mjs,null,project,240,tracked-file credential scan after staging intended files
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/check-secrets.mjs,null,project,240,null,null,null,tracked-file credential scan after staging intended files
 docs[1]{path,scope,note}:
   SECURITY.md,project,security handling reference
 close_reason: "Imported pm issue/history files were audited, found free of credential-like private data, and are ready to be committed and pushed."

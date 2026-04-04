@@ -61,10 +61,10 @@ files[8]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,restore end-to-end validation
   tests/unit/restore-command.spec.ts,project,restore command unit coverage
   vitest.config.ts,project,include restore command in enforced 100 percent coverage set
-tests[3]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,600,full coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,360,restore integration coverage
-  node scripts/run-tests.mjs test -- tests/unit/restore-command.spec.ts,null,project,240,restore unit coverage
+tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,full coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,360,null,null,null,restore integration coverage
+  node scripts/run-tests.mjs test -- tests/unit/restore-command.spec.ts,null,project,240,null,null,null,restore unit coverage
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood tracking rules
   PRD.md,project,governing spec

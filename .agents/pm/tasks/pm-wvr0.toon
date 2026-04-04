@@ -1,0 +1,55 @@
+id: pm-wvr0
+title: "Issue3 Task: Contracts Pi docs and tests parity"
+description: "Issue3 Task: Contracts Pi docs and tests parity"
+type: Task
+status: closed
+priority: 1
+tags[4]: contracts,docs,tests,validate
+created_at: "2026-04-04T10:10:38.932Z"
+updated_at: "2026-04-04T11:40:31.829Z"
+deadline: "2026-04-11T10:10:38.932Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: "CLI contracts, Pi wrapper, docs, and tests reflect new validate command-reference checks and flags with deterministic outputs."
+definition_of_ready: Scope and acceptance criteria documented.
+order: 1
+goal: Linked test reliability
+objective: Eliminate nondeterministic linked test governance failures
+value: Deterministic verification in shared-host workflows
+impact: Higher confidence in close-time evidence
+outcome: Predictable linked test and validate behavior
+why_now: External governance audit found unresolved gaps.
+parent: pm-br88
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: linked-test-hardening
+release: vnext
+reporter: codex-agent
+severity: medium
+environment: linux-node25-local
+affected_version: 2026.3.12
+fixed_version: vnext
+component: linked-test-runtime
+regression: true
+customer_impact: improves deterministic verification outcomes
+comments[1]{created_at,author,text}:
+  "2026-04-04T11:39:58.224Z",codex-agent,"Evidence: pnpm build passed; node scripts/run-tests.mjs test passed (844 tests); node scripts/run-tests.mjs coverage passed (branches 91.02%); PM linked-test sweep passed via pm test-all --status in_progress (linked_tests=3 failed=0, failure categories all zero)."
+files[9]{path,scope,note}:
+  CHANGELOG.md,project,release notes
+  docs/ARCHITECTURE.md,project,runtime architecture docs update
+  docs/EXTENSIONS.md,project,sandbox parity docs update
+  PRD.md,project,command contract docs update
+  README.md,project,user docs update
+  tests/unit/pi-agent-extension.spec.ts,project,pi action parity tests
+  tests/unit/test-all-command.spec.ts,project,test-all option coverage
+  tests/unit/test-command.spec.ts,project,linked test option coverage
+  tests/unit/validate-command.spec.ts,project,validate command-reference coverage
+docs[5]{path,scope,note}:
+  CHANGELOG.md,project,unreleased entries
+  docs/ARCHITECTURE.md,project,runtime behavior docs
+  docs/EXTENSIONS.md,project,sandbox/env parity docs
+  PRD.md,project,command contract updates
+  README.md,project,user-facing flag docs
+close_reason: contracts docs and test parity completed and verified
+body: ""

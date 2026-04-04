@@ -44,8 +44,8 @@ notes[1]{created_at,author,text}:
   "2026-04-03T18:07:10.235Z",codex-agent,Default non-stream output contract must remain stable.
 files[1]{path,scope,note}:
   src/cli/commands/list.ts,project,list pagination and stream implementation
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,list regression suite
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,null,null,null,list regression suite
 docs[1]{path,scope,note}:
   PRD.md,project,list command contract updates
 close_reason: List pagination and stream ergonomics delivered with compatibility-safe defaults

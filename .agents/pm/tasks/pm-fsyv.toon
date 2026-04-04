@@ -58,9 +58,9 @@ files[4]{path,scope,note}:
   README.md,project,docs-first boundary contract update
   src/core/extensions/loader.ts,project,planned symlink boundary hardening
   tests/unit/extension-loader.spec.ts,project,symlink boundary regression coverage
-tests[2]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,coverage gate proof
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,1200,targeted loader regression
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,coverage gate proof
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,1200,null,null,null,targeted loader regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,workflow and test safety contract
   PRD.md,project,governing security contract

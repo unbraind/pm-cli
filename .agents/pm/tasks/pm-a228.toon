@@ -29,8 +29,8 @@ files[9]{path,scope,note}:
   tests/unit/completion-command.spec.ts,project,validate completion flag test
   tests/unit/pi-agent-extension.spec.ts,project,Pi schema/mapping include flag tests
   tests/unit/validate-command.spec.ts,project,tracked-all internal exclusion tests
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,tracked-all option and contract regressions
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,null,null,null,tracked-all option and contract regressions
 docs[4]{path,scope,note}:
   CHANGELOG.md,project,tracked-all internal exclusion changelog
   docs/ARCHITECTURE.md,project,validate filtered/raw candidate metrics docs

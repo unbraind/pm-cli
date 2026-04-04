@@ -54,8 +54,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:25:02.517Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/commands/calendar.ts,project,new calendar command implementation
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test,null,project,1800,sandbox-safe command regression
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test,null,project,1800,null,null,null,sandbox-safe command regression
 docs[1]{path,scope,note}:
   README.md,project,calendar command user documentation
 close_reason: Calendar command core views and markdown-default output are implemented and regression-tested.

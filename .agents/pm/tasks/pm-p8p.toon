@@ -100,15 +100,15 @@ files[27]{path,scope,note}:
   tests/unit/stats-command.spec.ts,project,stats hook dispatch regression coverage
   tests/unit/todos-extension.spec.ts,project,regression coverage for todos hook call-site dispatch
   vitest.config.ts,project,coverage include updates if needed
-tests[8]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,1800,full sandboxed coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1200,integration verification for extension before/after hook lifecycle
-  node scripts/run-tests.mjs test -- tests/unit/beads-command.spec.ts tests/unit/todos-extension.spec.ts,null,project,1200,targeted built-in extension hook call-site regression
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,900,targeted extension hook lifecycle regression
-  node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts,null,project,900,targeted reindex hook call-site regression
-  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,900,targeted search hook lifecycle regression
-  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts,null,project,900,targeted settings hook regression
-  node scripts/run-tests.mjs test -- tests/unit/stats-command.spec.ts tests/unit/health-command.spec.ts tests/unit/gc-command.spec.ts,null,project,1200,targeted hook call-site regression for stats health gc
+tests[8]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,full sandboxed coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1200,null,null,null,integration verification for extension before/after hook lifecycle
+  node scripts/run-tests.mjs test -- tests/unit/beads-command.spec.ts tests/unit/todos-extension.spec.ts,null,project,1200,null,null,null,targeted built-in extension hook call-site regression
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,900,null,null,null,targeted extension hook lifecycle regression
+  node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts,null,project,900,null,null,null,targeted reindex hook call-site regression
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,900,null,null,null,targeted search hook lifecycle regression
+  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts,null,project,900,null,null,null,targeted settings hook regression
+  node scripts/run-tests.mjs test -- tests/unit/stats-command.spec.ts tests/unit/health-command.spec.ts tests/unit/gc-command.spec.ts,null,project,1200,null,null,null,targeted hook call-site regression for stats health gc
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent dogfood protocol
   PRD.md,project,governing spec

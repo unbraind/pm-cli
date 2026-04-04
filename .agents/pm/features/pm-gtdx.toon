@@ -44,8 +44,8 @@ notes[1]{created_at,author,text}:
   "2026-04-03T18:07:31.764Z",codex-agent,Prefer warning-first behavior for compatibility unless strict mode is explicit.
 files[1]{path,scope,note}:
   src/cli/commands/close.ts,project,close validation option surface
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/health-command.spec.ts,null,project,3600,validation-related regression suite
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/health-command.spec.ts,null,project,3600,null,null,null,validation-related regression suite
 docs[1]{path,scope,note}:
   PRD.md,project,validate and close command contracts
 close_reason: Validation feature complete with standalone validate and close-time checks

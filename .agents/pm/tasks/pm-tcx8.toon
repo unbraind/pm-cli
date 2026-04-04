@@ -25,8 +25,8 @@ notes[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,release-readiness help and output contract parity checks
   vitest.config.ts,project,coverage include sync for deps command module
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,3600,docs and contract parity regression suite
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,3600,null,null,null,docs and contract parity regression suite
 docs[5]{path,scope,note}:
   AGENTS.md,project,agent workflow examples include add-glob and deps
   CHANGELOG.md,project,unreleased notes for ownership guidance add-glob and deps

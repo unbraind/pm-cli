@@ -232,10 +232,12 @@ The vectorization ledger is also refreshed during `pm reindex --mode semantic|hy
 `pm validate` provides a dedicated audit surface for project metadata quality and integrity checks:
 
 - Runs all validation checks by default (`metadata`, `resolution`, `files`, `history_drift`).
-- Supports scoped checks with `--check-metadata`, `--check-resolution`, `--check-files`, and `--check-history-drift`.
+- Runs linked-command PM reference checks by default (`command_references`) to catch stale `pm-<id>` references before execution-time failures.
+- Supports scoped checks with `--check-metadata`, `--check-resolution`, `--check-files`, `--check-command-references`, and `--check-history-drift`.
 - `--check-files` supports `--scan-mode default|tracked-all`; `tracked-all` uses git-tracked candidates when available.
 - `tracked-all` excludes PM internals by default for higher-signal orphaned results; pass `--include-pm-internals` for full internal-audit scans.
 - File-check details report filtered candidate counts (`candidate_total`, `candidate_scanned`) plus raw pre-filter counts (`candidate_total_raw`, `candidate_scanned_raw`) and `pm_internal_excluded_count`.
+- Command-reference details report referenced PM IDs and stale-reference rows; stale rows emit `validate_command_references_stale_pm_ids:<count>` warnings.
 - Returns deterministic TOON/JSON output suitable for review or automation pipelines.
 - Output writers treat broken pipes (`EPIPE`) as expected shell behavior, so early-terminating pipelines do not emit unhandled Node stack traces.
 
@@ -387,9 +389,12 @@ For `pm create` log-seed flags (`--comment`, `--note`, `--learning`), only `auth
 - `pm update` intentionally does not accept `--file` or `--doc`; command guidance points to `pm files` / `pm docs`.
 - `pm test <ID> --add` intentionally enforces sandbox-safe, runnable command entries. Every new linked test must include `command=...`; optional `path=...` is metadata-only context.
 - `pm create --test` follows the same policy: `command=...` is required, optional `path=...` can annotate command scope.
+- Linked test entries also support optional per-entry runtime directives: `env_set=KEY=VALUE;KEY2=VALUE2`, `env_clear=KEY1;KEY2`, and `shared_host_safe=true|false`.
 - `pm test <ID> --run` / `pm test-all` execute in temporary sandbox roots but seed project/global `settings.json` and `extensions/` directories from source roots so extension-defined type behavior matches direct workspace commands.
+- `pm test <ID> --run` / `pm test-all` support additive run-level runtime controls: repeatable `--env-set KEY=VALUE`, repeatable `--env-clear NAME`, and `--shared-host-safe` (ephemeral/shared-host-friendly defaults such as `PORT=0` when unset).
 - `pm test <ID> --run` and `pm test-all` emit heartbeat/progress lines to stderr in interactive terminals during long-running linked commands, and support explicit non-interactive progress output via `--progress`.
 - Linked test timeout handling uses deterministic process termination (including force-kill fallback) and reports explicit timeout/maxBuffer diagnostics in `run_results`.
+- Failed linked test `run_results` now include `failure_category` (for example `infra_collision` vs `assertion_failure`) and `pm test-all` totals include aggregated `failure_categories` counts for triage.
 - `pm list` / `pm list-*` return front-matter rows by default; pass `--include-body` when body projection is needed, `--offset <n>` for pagination, and `--stream` (with `--json`) for newline-delimited item streaming.
 
 ## Terminal Compatibility

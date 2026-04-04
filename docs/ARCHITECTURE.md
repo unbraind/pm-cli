@@ -246,7 +246,7 @@ Linked arrays (`comments`, `notes`, `learnings`, `files`, `tests`, `docs`) are i
 - `pm create` log-seed repeatables (`--comment`, `--note`, `--learning`) now enforce explicit key boundaries (`author`, `created_at`, `text`) and reject parsed extra keys with usage guidance so unquoted key:value-like comma continuations cannot silently truncate seeded narrative text.
 - `pm deps --format tree|graph` provides read-only dependency traversal from stored front matter, with deterministic ordering, cycle markers, and missing-node reporting.
 - `pm list` / `pm list-*` support additive `--offset` pagination and JSON-only `--stream` line-delimited output for large datasets.
-- `pm validate` runs standalone repository checks (`metadata`, `resolution`, `files`, `history_drift`), supports file candidate selection via `--scan-mode default|tracked-all`, supports additive internal-audit coverage with `--include-pm-internals`, and returns deterministic filtered + raw file scan metrics.
+- `pm validate` runs standalone repository checks (`metadata`, `resolution`, `files`, `command_references`, `history_drift`), supports file candidate selection via `--scan-mode default|tracked-all`, supports additive internal-audit coverage with `--include-pm-internals`, and returns deterministic filtered + raw file scan metrics plus stale PM-id command-reference diagnostics.
 
 ## Calendar Pipeline
 
@@ -300,7 +300,7 @@ Pipeline:
 3. **Fail-fast stdin semantics** — stdin token readers reject interactive TTY stdin for piped-only flows (`-`) and provide explicit EOF guidance instead of waiting indefinitely.
 4. **Graceful error exits** — CLI error handling preserves canonical exit codes using graceful `process.exitCode` semantics to reduce output truncation risk under buffered writes.
 5. **Broken-pipe-safe output writes** — stdout/stderr stream error handlers treat `EPIPE` as expected pipeline behavior (set non-zero exit code, suppress unhandled stack traces) while preserving existing non-EPIPE error handling.
-6. **Linked test runtime hardening** — linked test subprocess execution uses shell-compatible spawn orchestration, closes child stdin immediately, applies deterministic runtime environment defaults, emits interactive stderr heartbeat progress for long runs, supports explicit non-interactive progress output via `--progress`, and enforces timeout/maxBuffer diagnostics with force-kill fallback for stubborn process trees.
+6. **Linked test runtime hardening** — linked test subprocess execution uses shell-compatible spawn orchestration, closes child stdin immediately, applies deterministic runtime environment defaults, supports additive run-level/per-test env directives (`--env-set`, `--env-clear`, `--shared-host-safe`, plus linked metadata `env_set`/`env_clear`/`shared_host_safe`), emits interactive stderr heartbeat progress for long runs, supports explicit non-interactive progress output via `--progress`, and enforces timeout/maxBuffer diagnostics with force-kill fallback plus structured failure categorization (`infra_collision`, `assertion_failure`, etc.).
 
 ## Help and Error Guidance Pipeline
 

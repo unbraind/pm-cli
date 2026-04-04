@@ -23,7 +23,7 @@ notes[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/cli/error-guidance.ts,project,ownership conflict guidance scenarios
   tests/integration/help-runtime.spec.ts,project,runtime assertions for ownership guidance
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,null,project,2400,ownership guidance regression
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,null,project,2400,null,null,null,ownership guidance regression
 close_reason: Ownership conflict guidance now includes explicit force-usage scenarios and linked runtime regressions/full verification passed.
 body: "Net-new scope from external report: guidance clarity only (no ownership rule changes)."

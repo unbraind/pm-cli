@@ -52,9 +52,9 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:34:37.731Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   tests/integration/release-readiness-contract.spec.ts,project,add close-workflow status contract coverage
-tests[2]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,600,sandbox-safe coverage gate
-  node scripts/run-tests.mjs test,null,project,240,sandbox-safe baseline test runner
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,sandbox-safe coverage gate
+  node scripts/run-tests.mjs test,null,project,240,null,null,null,sandbox-safe baseline test runner
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow contract
   PRD.md,project,authoritative contract

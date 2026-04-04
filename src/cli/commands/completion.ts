@@ -126,13 +126,13 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen("--format --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    test)",
-    `      COMPREPLY=(${compgen("--add --remove --run --timeout --progress --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --remove --run --timeout --progress --env-set --env-clear --shared-host-safe --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    test-all)",
-    `      COMPREPLY=(${compgen("--status --timeout --progress --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--status --timeout --progress --env-set --env-clear --shared-host-safe --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    validate)",
-    `      COMPREPLY=(${compgen("--check-metadata --check-resolution --check-files --scan-mode --include-pm-internals --check-history-drift --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--check-metadata --check-resolution --check-files --scan-mode --include-pm-internals --check-history-drift --check-command-references --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    history)",
     `      COMPREPLY=(${compgen("--limit --diff --verify --json --quiet --path --no-extensions --profile --help")})`,
@@ -421,6 +421,9 @@ _pm() {
             '--status[Filter by status]:(open in_progress)' \\
             '--timeout[Default timeout seconds]:seconds' \\
             '--progress[Emit linked-test progress to stderr]' \\
+            '--env-set[Set linked-test runtime environment values]:entry' \\
+            '--env-clear[Clear linked-test runtime environment values]:name' \\
+            '--shared-host-safe[Apply shared-host-safe runtime defaults]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -441,6 +444,7 @@ _pm() {
             '--scan-mode[Select file candidate scan mode for --check-files]:(default tracked-all)' \\
             '--include-pm-internals[Include PM storage internals in tracked-all candidate scans]' \\
             '--check-history-drift[Run item/history hash drift checks]' \\
+            '--check-command-references[Run linked-command PM-ID reference checks]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -688,6 +692,9 @@ complete -c pm -n '__fish_seen_subcommand_from comments' -l allow-audit-comment 
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l status  -d 'Filter by status' -r -a 'open in_progress'
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l timeout -d 'Default timeout seconds' -r
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l progress -d 'Emit linked-test progress to stderr'
+complete -c pm -n '__fish_seen_subcommand_from test-all' -l env-set -d 'Set linked-test runtime environment values' -r
+complete -c pm -n '__fish_seen_subcommand_from test-all' -l env-clear -d 'Clear linked-test runtime environment values' -r
+complete -c pm -n '__fish_seen_subcommand_from test-all' -l shared-host-safe -d 'Apply shared-host-safe runtime defaults'
 
 # close flags
 complete -c pm -n '__fish_seen_subcommand_from close' -l author -d 'Mutation author' -r
@@ -702,6 +709,7 @@ complete -c pm -n '__fish_seen_subcommand_from validate' -l check-files -d 'Run 
 complete -c pm -n '__fish_seen_subcommand_from validate' -l scan-mode -d 'Select file candidate scan mode for --check-files' -r -a 'default tracked-all'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l include-pm-internals -d 'Include PM storage internals in tracked-all candidate scans'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-history-drift -d 'Run item/history hash drift checks'
+complete -c pm -n '__fish_seen_subcommand_from validate' -l check-command-references -d 'Run linked-command PM-ID reference checks'
 
 # completion shell argument
 complete -c pm -n '__fish_seen_subcommand_from completion' -a 'bash zsh fish' -d 'Shell type'

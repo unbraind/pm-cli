@@ -88,6 +88,9 @@ export interface LinkedTest {
   path?: string;
   scope: LinkScope;
   timeout_seconds?: number;
+  env_set?: Record<string, string>;
+  env_clear?: string[];
+  shared_host_safe?: boolean;
   note?: string;
 }
 

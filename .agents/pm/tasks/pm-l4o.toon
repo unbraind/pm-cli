@@ -55,10 +55,10 @@ files[3]{path,scope,note}:
   src/core/item/item-format.ts,project,parser and serializer implementation
   tests/unit/determinism.spec.ts,project,canonical round-trip determinism coverage
   tests/unit/item-format-validation.spec.ts,project,front-matter validation coverage
-tests[3]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,full sandboxed coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts,null,project,900,targeted serialization round-trip
-  node scripts/run-tests.mjs test -- tests/unit/item-format-validation.spec.ts,null,project,900,targeted front-matter validation
+tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,full sandboxed coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts,null,project,900,null,null,null,targeted serialization round-trip
+  node scripts/run-tests.mjs test -- tests/unit/item-format-validation.spec.ts,null,project,900,null,null,null,targeted front-matter validation
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow contract
   PRD.md,project,governing spec

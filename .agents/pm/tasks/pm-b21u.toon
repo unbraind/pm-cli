@@ -32,11 +32,11 @@ files[8]{path,scope,note}:
   src/cli/help-content.ts,project,help model and rendering
   src/cli/main.ts,project,"help routing,command registration,and error dispatch"
   src/sdk/cli-contracts.ts,project,schema v4 and action metadata
-tests[4]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,full sandbox coverage suite
-  node scripts/run-tests.mjs test,null,project,7200,full sandbox test suite
-  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,7200,targeted suites
-  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/error-guidance.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,targeted regression suite
+tests[4]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,full sandbox coverage suite
+  node scripts/run-tests.mjs test,null,project,7200,null,null,null,full sandbox test suite
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,7200,null,null,null,targeted suites
+  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/error-guidance.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,targeted regression suite
 docs[5]{path,scope,note}:
   CHANGELOG.md,project,unreleased release notes for UX v3
   docs/ARCHITECTURE.md,project,internal pipeline and source tree updates

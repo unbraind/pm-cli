@@ -53,8 +53,8 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/sdk/cli-contracts.ts,project,contract schema updates
   src/sdk/index.ts,project,SDK export barrel
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,3600,sdk typing and behavior coverage
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,3600,null,null,null,sdk typing and behavior coverage
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,sdk contract documentation
 close_reason: Phase 2 implementation and verification complete

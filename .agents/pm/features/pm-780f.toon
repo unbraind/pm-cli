@@ -34,9 +34,9 @@ files[8]{path,scope,note}:
   src/cli/main.ts,project,template command registration surface
   src/sdk/cli-contracts.ts,project,templates actions and create --template contracts
   tests/unit/templates-command.spec.ts,project,templates command and create --template regressions
-tests[2]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts,null,project,2400,baseline create regression
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,5400,issue10 template workflow regressions
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts,null,project,2400,null,null,null,baseline create regression
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,5400,null,null,null,issue10 template workflow regressions
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,unreleased template feature notes
   PRD.md,project,template command contract

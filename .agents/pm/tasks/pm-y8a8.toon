@@ -57,8 +57,8 @@ files[6]{path,scope,note}:
   tests/unit/list-command.spec.ts,project,deadline filter acceptance coverage
   tests/unit/search-command.spec.ts,project,search deadline filter acceptance coverage
   tests/unit/update-command.spec.ts,project,update deadline input acceptance coverage
-tests[1]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs test,null,project,2400,parser regression
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test,null,project,2400,null,null,null,parser regression
 docs[1]{path,scope,note}:
   PRD.md,project,parser contract references
 close_reason: Parser now accepts +m and flexible date strings while preserving deterministic ISO persistence; targeted parser/list/search/create/update tests passed.

@@ -56,9 +56,9 @@ files[4]{path,scope,note}:
   PRD.md,project,docs-first Pi workflow preset coverage update
   README.md,project,docs-first action list update
   tests/unit/pi-agent-extension.spec.ts,project,add close-task workflow preset tests
-tests[2]{command,path,scope,timeout_seconds,note}:
-  node scripts/run-tests.mjs coverage,null,project,1200,sandbox-safe full coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts,null,project,240,targeted sandbox safe unit coverage
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,sandbox-safe full coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts,null,project,240,null,null,null,targeted sandbox safe unit coverage
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer workflow policy
   PRD.md,project,Pi wrapper action contract
