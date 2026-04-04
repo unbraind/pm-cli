@@ -1,12 +1,12 @@
 id: pm-18p8
-title: Add automated npm release workflow and Node 24 CI coverage
+title: Add automated npm release workflow and Node 24 CI coverage (superseded duplicate archive)
 description: "The repository lacks an automated npm publishing workflow triggered by version tags. Additionally, Node 24 (current release, will become LTS Oct 2025) is not in the CI matrix. Both are production-readiness requirements for a widely-used npm package."
 type: Chore
 status: canceled
 priority: 0
 tags[8]: "area:ci","area:release",code,docs,"milestone:6",pm-cli,"priority:0",release-readiness
 created_at: "2026-03-08T21:08:26.103Z"
-updated_at: "2026-04-01T20:32:16.564Z"
+updated_at: "2026-04-04T12:00:03.570Z"
 deadline: "2026-03-09T21:08:26.103Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -41,8 +41,9 @@ fixed_version: v0.1
 component: ci-component
 regression: false
 customer_impact: improves-reliability-and-clarity-for-contributors
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-03-08T21:08:26.103Z",maintainer-agent,"This task addresses the two remaining production-readiness gaps identified in the baseline audit: missing release automation and Node 24 CI coverage."
+  "2026-04-04T12:00:03.570Z",codex-agent,"Governance dedupe mapping: superseded duplicate of canonical closed chore pm-mwe8."
 notes[1]{created_at,author,text}:
   "2026-03-08T21:08:26.103Z",maintainer-agent,"Implementation plan: (1) Create .github/workflows/release.yml with tag-trigger publish flow. (2) Add Node 24 to ci.yml matrix. (3) Add Node 24 to nightly.yml. (4) Update docs. (5) Run full coverage suite to confirm no regressions."
 learnings[1]{created_at,author,text}:

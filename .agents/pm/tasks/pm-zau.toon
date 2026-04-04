@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:operations",core,"milestone:3",pm-cli
 created_at: "2026-02-17T23:02:09.876Z"
-updated_at: "2026-04-01T20:33:06.446Z"
+updated_at: "2026-04-04T12:07:06.965Z"
 deadline: "2026-03-03T23:02:09.876Z"
 assignee: steve
 author: steve
@@ -62,11 +62,11 @@ learnings[1]{created_at,author,text}:
 files[12]{path,scope,note}:
   PRD.md,project,update milestone checklist and command matrix
   README.md,project,document implemented command surface
+  src/cli/commands/gc.ts,project,gc command implementation
+  src/cli/commands/health.ts,project,health command implementation
   src/cli/commands/index.ts,project,export stats command
+  src/cli/commands/stats.ts,project,stats command implementation
   src/cli/main.ts,project,register stats command
-  src/commands/gc.ts,project,gc command implementation
-  src/commands/health.ts,project,health command implementation
-  src/commands/stats.ts,project,stats command implementation
   tests/integration/cli.integration.spec.ts,project,cli stats integration coverage
   tests/unit/gc-command.spec.ts,project,unit coverage for gc command
   tests/unit/health-command.spec.ts,project,unit coverage for health command

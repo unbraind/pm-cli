@@ -6,12 +6,15 @@ status: closed
 priority: 1
 tags[5]: "area:comments",audit,governance,implementation,pm-cli
 created_at: "2026-04-03T20:58:26.987Z"
-updated_at: "2026-04-03T21:27:32.655Z"
+updated_at: "2026-04-04T12:01:22.836Z"
 deadline: "2026-04-11T20:58:26.987Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: "comments command supports safe audit append behavior without force for non-owner comment entries, and structural mutation ownership protections remain unchanged."
 parent: pm-ahq1
+resolution: historical-closure-normalized-by-governance-pass
+expected_result: historical-expected-result-backfilled-for-governance-audit
+actual_result: historical-actual-result-backfilled-for-governance-audit
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-ahq1,parent,"2026-04-03T20:58:26.987Z",codex-agent,null
 comments[3]{created_at,author,text}:

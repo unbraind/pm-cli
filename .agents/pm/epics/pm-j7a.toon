@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:program",core,"milestone:root",pm-cli
 created_at: "2026-02-17T22:59:06.628Z"
-updated_at: "2026-04-01T20:31:06.825Z"
+updated_at: "2026-04-04T12:00:01.034Z"
 deadline: "2026-03-19T22:59:06.628Z"
 assignee: steve
 author: steve
@@ -41,7 +41,7 @@ fixed_version: archive-2026q2
 component: program-component
 regression: false
 customer_impact: improves-reliability-and-clarity-for-contributors
-comments[14]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-02-17T22:59:06.628Z",steve,Root epic exists to coordinate milestone delivery.
   "2026-03-04T16:22:45.978Z",cursor-maintainer,"Progress update: closed milestone epic pm-jiw (Milestone 6) after sandboxed coverage gate and full pm test-all regression sweeps passed with zero failures; remaining open milestone is pm-b1w."
   "2026-03-04T16:50:30.256Z",cursor-maintainer,"Progress update: closed extension hardening task pm-qkx0 under milestone pm-b1w and validated via pm test plus pm test-all sweeps with 100 percent coverage gate passing."
@@ -56,6 +56,7 @@ comments[14]{created_at,author,text}:
   "2026-03-04T21:45:15.921Z",maintainer-agent,"Evidence: ran pm test pm-j7a --run (2/2 linked tests passed: node scripts/run-tests.mjs coverage + node scripts/run-tests.mjs test); ran pm test-all --status in_progress (items=1, passed=2, failed=0, skipped=0); ran pm test-all --status closed (items=61, linked_tests=194, passed=57, failed=0, skipped=137 duplicate/no-command skips). Coverage gate remains enforced at 100% thresholds via node scripts/run-tests.mjs coverage and passed."
   "2026-03-04T23:24:14.666Z",cursor-maintainer,"Progress update: closed task pm-ni7x for Pi wrapper numeric scalar parity (priority estimate limit timeout accept number|string with deterministic stringification), with docs-first README/PRD updates and pm test plus regression sweeps passing at 100 percent coverage."
   "2026-03-05T00:40:32.009Z",maintainer-agent,"Progress update: closed task pm-e6qb to harden Pi wrapper fallback invocation by resolving node dist/cli.js path from module location; validated via pm test pm-e6qb --run plus pm test-all in_progress/closed sweeps with 100% coverage maintained."
+  "2026-04-04T12:00:01.034Z",codex-agent,"Governance dedupe mapping: canonical survivor for initial 'Build pm-cli v1' duplicate-title cluster (superseded peer: pm-lty)."
 notes[1]{created_at,author,text}:
   "2026-02-17T22:59:06.628Z",steve,Success means milestones 0-6 are closed with evidence.
 learnings[1]{created_at,author,text}:

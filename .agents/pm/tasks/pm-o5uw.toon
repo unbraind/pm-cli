@@ -6,7 +6,7 @@ status: blocked
 priority: 1
 tags[3]: agents,docs,pm-hygiene
 created_at: "2026-03-12T22:26:40.371Z"
-updated_at: "2026-04-01T20:14:55.714Z"
+updated_at: "2026-04-04T12:00:39.978Z"
 deadline: "2026-03-26T22:26:40.371Z"
 assignee: codex-agent
 author: codex-agent
@@ -20,7 +20,7 @@ value: Keeps planning state accurate and avoids duplicate work records
 impact: Improves multi-agent coordination and reduces cleanup
 outcome: Agents search before creating
 why_now: The repository instructions should explicitly encode this best practice
-parent: pm-o5uw
+parent: pm-wtsp
 reviewer: maintainer-review
 risk: low
 confidence: high

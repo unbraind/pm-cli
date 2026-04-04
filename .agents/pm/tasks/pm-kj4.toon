@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:search-vector",core,"milestone:4",pm-cli
 created_at: "2026-02-17T23:02:10.455Z"
-updated_at: "2026-04-01T20:33:45.771Z"
+updated_at: "2026-04-04T12:09:43.475Z"
 deadline: "2026-03-07T23:02:10.455Z"
 assignee: steve
 author: steve
@@ -70,17 +70,16 @@ notes[1]{created_at,author,text}:
   "2026-04-01T20:33:44.298Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:33:45.771Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[13]{path,scope,note}:
+files[12]{path,scope,note}:
   PRD.md,project,docs-first milestone status update
   README.md,project,docs-first status/contract update
   src/cli/commands/reindex.ts,project,reindex semantic/hybrid validation wiring
-  src/cli/commands/search.ts,project,semantic/hybrid validation wiring
+  src/cli/commands/search.ts,project,legacy wrapper export parity
   src/cli/main.ts,project,semantic-hybrid help text parity
-  src/commands/search.ts,project,legacy wrapper export parity
   src/core/search/providers.ts,project,existing provider abstraction reference
   src/core/search/vector-stores.ts,project,new vector adapter abstraction module
-  tests/unit/command-wrapper-exports.spec.ts,project,wrapper export surface contract coverage
   tests/unit/reindex-command.spec.ts,project,vector validation diagnostics coverage
+  tests/unit/runtime-registrations.spec.ts,project,wrapper export surface contract coverage
   tests/unit/search-command.spec.ts,project,vector validation diagnostics coverage
   tests/unit/vector-store-adapter.spec.ts,project,unit coverage for vector adapter helpers
   vitest.config.ts,project,enforce coverage on vector adapter module

@@ -6,11 +6,14 @@ status: closed
 priority: 0
 tags[5]: "area:dependencies","area:files","area:ux",external-audit,pm-cli
 created_at: "2026-04-03T14:47:48.291Z"
-updated_at: "2026-04-03T15:22:51.092Z"
+updated_at: "2026-04-04T12:02:02.073Z"
 deadline: "2026-04-17T14:47:48.291Z"
 author: codex-agent
 estimated_minutes: 360
 acceptance_criteria: "Unresolved gaps ship with backward-compatible behavior, docs/contracts parity, and full verification evidence."
+resolution: historical-closure-normalized-by-governance-pass
+expected_result: historical-expected-result-backfilled-for-governance-audit
+actual_result: historical-actual-result-backfilled-for-governance-audit
 comments[3]{created_at,author,text}:
   "2026-04-03T14:47:48.291Z",codex-agent,Created after de-dup mapping confirmed closed items already cover the remaining report scope.
   "2026-04-03T14:48:57.089Z",codex-agent,"Created and claimed child hierarchy for unresolved scope: pm-8sgf (ownership guidance), pm-3eu2 (files/docs add-glob), pm-x85o (deps visualization), pm-tcx8 (docs/contracts parity)."

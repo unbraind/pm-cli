@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[9]: "area:cli","area:core","area:docs","area:schema",code,"milestone:7",pm-cli,"priority:1",tests
 created_at: "2026-03-07T23:59:27.285Z"
-updated_at: "2026-04-03T13:07:16.680Z"
+updated_at: "2026-04-04T12:10:15.347Z"
 deadline: "2026-04-15T11:57:44.149Z"
 author: maintainer-agent
 estimated_minutes: 180
@@ -69,7 +69,7 @@ files[22]{path,scope,note}:
   src/sdk/cli-contracts.ts,project,Pi schema parity for config policy parameter
   src/types.ts,project,type definitions
   tests/integration/cli.integration.spec.ts,project,cli optional flag alias integration coverage
-  tests/integration/release-readiness-contract.spec.ts,project,release contract expectations update
+  tests/integration/release-readiness-runtime.spec.ts,project,release contract expectations update
   tests/unit/config-command.spec.ts,project,config command sprint-release policy coverage
   tests/unit/create-command.spec.ts,project,create command coverage for optional scalar fields
   tests/unit/pi-agent-extension.spec.ts,project,Pi config arg mapping includes policy

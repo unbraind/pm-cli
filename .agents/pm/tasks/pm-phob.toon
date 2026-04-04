@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[8]: "area:cli","area:docs","area:schema",code,"milestone:7",pm-cli,"priority:0",tests
 created_at: "2026-03-08T00:44:03.331Z"
-updated_at: "2026-04-01T20:31:59.195Z"
+updated_at: "2026-04-04T12:08:22.694Z"
 deadline: "2026-03-10T00:44:03.331Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -59,7 +59,7 @@ files[11]{path,scope,note}:
   src/core/shared/constants.ts,project,canonical key order
   src/types.ts,project,front matter field types
   tests/integration/cli.integration.spec.ts,project,integration flag coverage
-  tests/integration/release-readiness-contract.spec.ts,project,doc/help contract alignment
+  tests/integration/release-readiness-runtime.spec.ts,project,doc/help contract alignment
   tests/unit/create-command.spec.ts,project,unit create coverage
   tests/unit/shared-constants-errors.spec.ts,project,key-order contract coverage
   tests/unit/update-command.spec.ts,project,unit update coverage

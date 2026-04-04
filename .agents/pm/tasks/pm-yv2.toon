@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:search-semantic",core,"milestone:4",pm-cli
 created_at: "2026-02-17T23:02:10.253Z"
-updated_at: "2026-04-01T20:33:52.833Z"
+updated_at: "2026-04-04T12:09:47.189Z"
 deadline: "2026-03-07T23:02:10.253Z"
 assignee: steve
 author: steve
@@ -80,16 +80,15 @@ notes[1]{created_at,author,text}:
   "2026-04-01T20:33:51.174Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:33:52.833Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[13]{path,scope,note}:
+files[12]{path,scope,note}:
   PRD.md,project,docs-first provider abstraction milestone status update
   README.md,project,docs-first search roadmap status update
   src/cli/commands/reindex.ts,project,hook semantic provider resolution
-  src/cli/commands/search.ts,project,hook semantic provider resolution
+  src/cli/commands/search.ts,project,legacy wrapper export parity for search helper
   src/cli/main.ts,project,search option default/help wording
-  src/commands/search.ts,project,legacy wrapper export parity for search helper
   src/core/search/providers.ts,project,provider abstraction and resolver
   src/types.ts,project,provider interface types
-  tests/integration/help-readme-contract.spec.ts,project,stabilize quickstart contract runtime under coverage load
+  tests/integration/help-runtime.spec.ts,project,stabilize quickstart contract runtime under coverage load
   tests/unit/embedding-provider.spec.ts,project,unit tests for provider resolver
   tests/unit/reindex-command.spec.ts,project,reindex provider gating tests
   tests/unit/search-command.spec.ts,project,semantic provider gating tests

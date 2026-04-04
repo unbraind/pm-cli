@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: architecture,pm-cli,refactor,release-readiness
 created_at: "2026-02-17T23:37:26.647Z"
-updated_at: "2026-04-01T20:34:45.505Z"
+updated_at: "2026-04-04T12:11:45.790Z"
 deadline: "2026-02-21T23:37:26.647Z"
 assignee: cursor-agent
 author: cursor-agent
@@ -96,48 +96,29 @@ notes[1]{created_at,author,text}:
   "2026-04-01T20:34:43.863Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:34:45.505Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[80]{path,scope,note}:
+files[61]{path,scope,note}:
   src/cli.ts,project,Stable bin wrapper that delegates to src/cli/main.ts
-  src/cli/commands/activity.ts,project,command implementation moved under cli boundary
-  src/cli/commands/append.ts,project,canonical append command implementation
-  src/cli/commands/claim.ts,project,canonical claim/release command implementation
-  src/cli/commands/comments.ts,project,cli-boundary-migration
-  src/cli/commands/create.ts,project,canonical create command implementation
-  src/cli/commands/docs.ts,project,cli-boundary-migration
-  src/cli/commands/files.ts,project,cli-boundary-migration
-  src/cli/commands/gc.ts,project,canonical gc command implementation
-  src/cli/commands/get.ts,project,canonical get command implementation
-  src/cli/commands/health.ts,project,canonical health command implementation
-  src/cli/commands/history.ts,project,command implementation moved under cli boundary
+  src/cli/commands/activity.ts,project,import-boundary migration candidate
+  src/cli/commands/append.ts,project,import-boundary migration candidate
+  src/cli/commands/claim.ts,project,import-boundary migration candidate
+  src/cli/commands/comments.ts,project,import-boundary migration candidate
+  src/cli/commands/create.ts,project,import-boundary migration candidate
+  src/cli/commands/docs.ts,project,import-boundary migration candidate
+  src/cli/commands/files.ts,project,import-boundary migration candidate
+  src/cli/commands/gc.ts,project,import-boundary migration to core modules
+  src/cli/commands/get.ts,project,import-boundary migration candidate
+  src/cli/commands/health.ts,project,import-boundary migration to core modules
+  src/cli/commands/history.ts,project,import-boundary migration candidate
   src/cli/commands/index.ts,project,CLI command boundary bridge
-  src/cli/commands/init.ts,project,cli-boundary-migration
-  src/cli/commands/list.ts,project,command implementation moved under cli boundary
-  src/cli/commands/restore.ts,project,cli-boundary-migration
-  src/cli/commands/stats.ts,project,canonical stats command implementation
-  src/cli/commands/test-all.ts,project,Canonical test-all implementation moved into cli command namespace
-  src/cli/commands/test.ts,project,cli-boundary-migration
-  src/cli/commands/update.ts,project,canonical update command implementation
+  src/cli/commands/init.ts,project,import-boundary migration to core modules
+  src/cli/commands/list.ts,project,List limit support for deterministic filtering
+  src/cli/commands/restore.ts,project,import-boundary migration candidate
+  src/cli/commands/stats.ts,project,import-boundary migration to core modules
+  src/cli/commands/test-all.ts,project,Cross-item linked test orchestration command
+  src/cli/commands/test.ts,project,import-boundary migration candidate
+  src/cli/commands/update.ts,project,import-boundary migration candidate
   src/cli/main.ts,project,New CLI wiring entrypoint with expanded commands
   src/command-types.ts,project,compatibility wrapper to core shared command types
-  src/commands/activity.ts,project,import-boundary migration candidate
-  src/commands/append.ts,project,import-boundary migration candidate
-  src/commands/claim.ts,project,import-boundary migration candidate
-  src/commands/comments.ts,project,import-boundary migration candidate
-  src/commands/create.ts,project,import-boundary migration candidate
-  src/commands/docs.ts,project,import-boundary migration candidate
-  src/commands/files.ts,project,import-boundary migration candidate
-  src/commands/gc.ts,project,import-boundary migration to core modules
-  src/commands/get.ts,project,import-boundary migration candidate
-  src/commands/health.ts,project,import-boundary migration to core modules
-  src/commands/history.ts,project,import-boundary migration candidate
-  src/commands/init.ts,project,import-boundary migration to core modules
-  src/commands/list.ts,project,List limit support for deterministic filtering
-  src/commands/release.ts,project,import-boundary migration candidate
-  src/commands/restore.ts,project,import-boundary migration candidate
-  src/commands/stats.ts,project,import-boundary migration to core modules
-  src/commands/test-all.ts,project,Cross-item linked test orchestration command
-  src/commands/test.ts,project,import-boundary migration candidate
-  src/commands/update.ts,project,import-boundary migration candidate
   src/constants.ts,project,compatibility wrapper to core shared constants
   src/core/fs/fs-utils.ts,project,Core boundary wrapper
   src/core/fs/index.ts,project,Core namespace export
@@ -174,8 +155,8 @@ files[80]{path,scope,note}:
   src/settings.ts,project,compatibility re-export
   src/time.ts,project,compatibility wrapper to core shared time
   src/types/index.ts,project,Shared type namespace entry
-  tests/unit/command-wrapper-exports.spec.ts,project,wrapper parity contract coverage
   tests/unit/list-sort-branches.spec.ts,project,mock compatibility for core store boundary migration
+  tests/unit/runtime-registrations.spec.ts,project,wrapper parity contract coverage
   vitest.config.ts,project,coverage include paths updated to cli command implementations
 tests[5]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
   node dist/cli.js --help,null,project,60,null,null,null,Command surface smoke check

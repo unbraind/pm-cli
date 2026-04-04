@@ -6,12 +6,15 @@ status: closed
 priority: 1
 tags[4]: "area:contracts","area:docs",external-audit,pm-cli
 created_at: "2026-04-03T14:48:29.306Z"
-updated_at: "2026-04-03T15:22:48.946Z"
+updated_at: "2026-04-04T12:02:16.507Z"
 deadline: "2026-04-13T14:48:29.306Z"
 author: codex-agent
 estimated_minutes: 120
 acceptance_criteria: "All touched command surfaces are documented and contract-tested with no drift across CLI, SDK contracts, and Pi wrapper mappings."
 parent: pm-iswo
+resolution: historical-closure-normalized-by-governance-pass
+expected_result: historical-expected-result-backfilled-for-governance-audit
+actual_result: historical-actual-result-backfilled-for-governance-audit
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-3eu2,blocks,"2026-04-03T14:48:29.306Z",codex-agent,null
   pm-8sgf,blocks,"2026-04-03T14:48:29.306Z",codex-agent,null

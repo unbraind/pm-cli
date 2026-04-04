@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[8]: "area:ci","area:release",code,docs,"milestone:6",pm-cli,"priority:0",release-readiness
 created_at: "2026-03-08T21:08:48.927Z"
-updated_at: "2026-04-01T20:32:14.562Z"
+updated_at: "2026-04-04T12:00:04.245Z"
 deadline: "2026-03-09T21:08:48.927Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -41,9 +41,10 @@ fixed_version: v0.1
 component: ci-component
 regression: false
 customer_impact: improves-reliability-and-clarity-for-contributors
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-03-08T21:08:48.927Z",maintainer-agent,"Addresses two gaps: missing release automation and Node 24 CI coverage."
   "2026-03-08T21:12:26.863Z",maintainer-agent,"Implementation complete. Changes: (1) .github/workflows/release.yml created with v*.*.* tag trigger, full CI suite, npm publish, and coverage upload. (2) node: 24 added to ci.yml and nightly.yml matrices. (3) PRD Milestone 6 checklist updated to mark release workflow as complete. (4) README.md Automated Release section added. (5) CHANGELOG.md updated with CI/release automation entries. (6) ci-workflow-contract.spec.ts updated with new assertions for Node 24 in both matrices and a new test for release.yml contract. Tests: 535 passing (1 new), 100% coverage maintained."
+  "2026-04-04T12:00:04.245Z",codex-agent,"Governance dedupe mapping: canonical survivor for duplicate-title cluster (superseded peer: pm-18p8)."
 notes[1]{created_at,author,text}:
   "2026-03-08T21:08:48.927Z",maintainer-agent,Create release.yml with tag-trigger publish and add Node 24 to CI matrices.
 learnings[1]{created_at,author,text}:

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:body","area:update",feature,pm-cli
 created_at: "2026-04-02T11:44:56.845Z"
-updated_at: "2026-04-02T11:59:16.627Z"
+updated_at: "2026-04-04T12:04:10.230Z"
 deadline: "2026-04-07T11:44:56.845Z"
 author: codex-agent
 estimated_minutes: 180
@@ -29,6 +29,7 @@ reporter: codex-agent
 severity: low
 environment: linux-node25-local
 repro_steps: run pm update ID --body text and observe failure
+resolution: historical-closure-normalized-by-governance-pass
 expected_result: update accepts and persists body
 actual_result: update has no body option
 affected_version: 2026.3.12
@@ -42,5 +43,11 @@ comments[2]{created_at,author,text}:
   "2026-04-02T11:59:15.902Z",codex-agent,"Feature complete: runtime update-body support, contracts/completion parity, regression coverage, and docs updates are all implemented via closed child tasks pm-eszd, pm-ha5a, and pm-ipm8."
 notes[1]{created_at,author,text}:
   "2026-04-02T11:44:56.845Z",codex-agent,"Tasks split runtime,contracts/tests,and docs/release evidence."
+files[1]{path,scope,note}:
+  src/cli/commands/update.ts,project,update body runtime surface
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
+  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,2400,null,null,null,update body regression coverage
+docs[1]{path,scope,note}:
+  PRD.md,project,update body contract and lifecycle docs
 close_reason: All feature tasks are closed and verification suites passed.
 body: "Feature includes CLI flag plumbing, update mutation handling, contracts/completion parity, and release-readiness docs/tests updates."

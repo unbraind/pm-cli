@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[7]: "area:workflow",code,docs,"milestone:7",pm-cli,"priority:0",tests
 created_at: "2026-03-08T13:07:26.852Z"
-updated_at: "2026-04-01T20:32:03.524Z"
+updated_at: "2026-04-04T12:08:13.757Z"
 deadline: "2026-03-09T13:07:26.852Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -62,7 +62,7 @@ files[14]{path,scope,note}:
   src/core/shared/constants.ts,project,canonical key order
   src/types.ts,project,front matter schema
   tests/integration/cli.integration.spec.ts,project,cli flag integration contract
-  tests/integration/release-readiness-contract.spec.ts,project,docs help parity contract
+  tests/integration/release-readiness-runtime.spec.ts,project,docs help parity contract
   tests/unit/create-command.spec.ts,project,create coverage for unblock note
   tests/unit/shared-constants-errors.spec.ts,project,canonical key order coverage
   tests/unit/update-command.spec.ts,project,update coverage for unblock note

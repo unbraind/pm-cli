@@ -6,12 +6,15 @@ status: closed
 priority: 1
 tags[4]: "area:ownership","area:ux",external-audit,pm-cli
 created_at: "2026-04-03T14:48:03.782Z"
-updated_at: "2026-04-03T15:22:41.636Z"
+updated_at: "2026-04-04T12:04:02.662Z"
 deadline: "2026-04-13T14:48:03.782Z"
 author: codex-agent
 estimated_minutes: 120
 acceptance_criteria: Ownership conflict errors include actionable force-usage scenarios and tests/docs remain deterministic and backward compatible.
 parent: pm-iswo
+resolution: historical-closure-normalized-by-governance-pass
+expected_result: historical-expected-result-backfilled-for-governance-audit
+actual_result: historical-actual-result-backfilled-for-governance-audit
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-w9w4,related,"2026-04-03T14:48:03.782Z",codex-agent,null
 comments[3]{created_at,author,text}:
@@ -25,5 +28,7 @@ files[2]{path,scope,note}:
   tests/integration/help-runtime.spec.ts,project,runtime assertions for ownership guidance
 tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
   node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,null,project,2400,null,null,null,ownership guidance regression
+docs[1]{path,scope,note}:
+  AGENTS.md,project,ownership override guidance policy
 close_reason: Ownership conflict guidance now includes explicit force-usage scenarios and linked runtime regressions/full verification passed.
 body: "Net-new scope from external report: guidance clarity only (no ownership rule changes)."

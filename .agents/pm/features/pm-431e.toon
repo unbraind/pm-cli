@@ -6,12 +6,15 @@ status: closed
 priority: 1
 tags[5]: "area:create","area:validation",audit,governance,pm-cli
 created_at: "2026-04-03T20:57:44.679Z"
-updated_at: "2026-04-03T21:27:27.381Z"
+updated_at: "2026-04-04T12:01:13.677Z"
 deadline: "2026-04-12T20:57:44.679Z"
 author: codex-agent
 estimated_minutes: 300
 acceptance_criteria: pm create supports additive strict/progressive policy selection with strict default preserved and progressive mode enabling staged creation workflows.
 parent: pm-r7t2
+resolution: historical-closure-normalized-by-governance-pass
+expected_result: historical-expected-result-backfilled-for-governance-audit
+actual_result: historical-actual-result-backfilled-for-governance-audit
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-r7t2,parent,"2026-04-03T20:57:44.679Z",codex-agent,null
 comments[1]{created_at,author,text}:

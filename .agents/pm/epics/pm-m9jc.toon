@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: "area:docs","area:extensions","area:sdk","milestone:extension-manager",pm-cli
 created_at: "2026-04-03T16:15:57.991Z"
-updated_at: "2026-04-03T17:10:58.356Z"
+updated_at: "2026-04-04T12:02:09.916Z"
 deadline: "2026-04-17T16:15:57.991Z"
 author: codex-agent
 estimated_minutes: 900
@@ -28,7 +28,9 @@ reporter: codex-agent
 severity: low
 environment: linux-node25-local
 repro_steps: run-linked-flow-and-compare-to-ac
+resolution: historical-closure-normalized-by-governance-pass
 expected_result: behavior-aligns-with-acceptance-criteria
+actual_result: historical-actual-result-backfilled-for-governance-audit
 affected_version: vnext
 fixed_version: target-vnext
 component: extensions-runtime

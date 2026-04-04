@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:commands",core,"milestone:1",pm-cli
 created_at: "2026-02-17T23:02:08.240Z"
-updated_at: "2026-04-01T20:34:18.607Z"
+updated_at: "2026-04-04T12:09:57.958Z"
 deadline: "2026-02-23T23:02:08.240Z"
 assignee: steve
 author: steve
@@ -67,29 +67,28 @@ notes[1]{created_at,author,text}:
   "2026-04-01T20:34:17.459Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:34:18.607Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[25]{path,scope,note}:
+files[24]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,Pi wrapper project-scoped module path
   AGENTS.md,project,create repeatable seed requirement note
   PRD.md,project,core vs roadmap command list update
   README.md,project,command matrix updated for close
   src/cli.ts,project,command registration and global flags
-  src/cli/commands/close.ts,project,close command implementation
+  src/cli/commands/claim.ts,project,session ownership commands
+  src/cli/commands/close.ts,project,compat re-export for close command
+  src/cli/commands/comments.ts,project,comments mutation and listing
+  src/cli/commands/create.ts,project,create rollback and session-aware lock usage
+  src/cli/commands/docs.ts,project,linked docs tracking command
+  src/cli/commands/files.ts,project,linked file tracking command
   src/cli/commands/index.ts,project,export runClose
+  src/cli/commands/test.ts,project,linked test tracking and optional execution
+  src/cli/commands/update.ts,project,update command implementation
   src/cli/main.ts,project,register close command
-  src/commands/claim.ts,project,session ownership commands
-  src/commands/close.ts,project,compat re-export for close command
-  src/commands/comments.ts,project,comments mutation and listing
-  src/commands/create.ts,project,create rollback and session-aware lock usage
-  src/commands/docs.ts,project,linked docs tracking command
-  src/commands/files.ts,project,linked file tracking command
-  src/commands/test.ts,project,linked test tracking and optional execution
-  src/commands/update.ts,project,update command implementation
   src/item-format.ts,project,undefined-key normalization cleanup
   src/item-store.ts,project,shared lock mutate and history pipeline
   src/parse.ts,project,CSV key-value parser with quoted comma support
   src/settings.ts,project,persistent session id generation
   tests/integration/cli.integration.spec.ts,project,exercise close command in lifecycle
-  tests/integration/release-readiness-contract.spec.ts,project,doc/help command alignment contract
+  tests/integration/release-readiness-runtime.spec.ts,project,doc/help command alignment contract
   tests/unit/close-command.spec.ts,project,unit coverage for runClose
   tests/unit/pi-agent-extension.spec.ts,project,assert Pi wrapper emits required assigned-to-session flag
   tests/unit/todos-extension.spec.ts,project,update create fixtures for required assigned-to-session contract

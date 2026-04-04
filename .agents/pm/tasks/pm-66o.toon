@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:test-orchestration",core,"milestone:3",pm-cli
 created_at: "2026-02-17T23:02:09.686Z"
-updated_at: "2026-04-01T20:33:36.774Z"
+updated_at: "2026-04-04T12:07:03.056Z"
 deadline: "2026-03-03T23:02:09.686Z"
 assignee: steve
 author: steve
@@ -60,7 +60,7 @@ learnings[1]{created_at,author,text}:
 files[6]{path,scope,note}:
   PRD.md,project,security-contract-update
   README.md,project,documented-behavior
-  src/commands/test.ts,project,linked-test-validation
+  src/cli/commands/test.ts,project,linked-test-validation
   tests/integration/cli.integration.spec.ts,project,cli-dependency-exit-and-safety
   tests/unit/test-all-command.spec.ts,project,unit-orchestration-safety-coverage
   tests/unit/test-command.spec.ts,project,runTest-recursion-guard-unit-tests

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:docs","area:verification",external-audit,pm-cli
 created_at: "2026-04-03T18:07:53.409Z"
-updated_at: "2026-04-03T18:56:09.825Z"
+updated_at: "2026-04-04T12:02:24.316Z"
 deadline: "2026-04-08T18:07:53.409Z"
 author: codex-agent
 estimated_minutes: 180
@@ -29,7 +29,9 @@ reporter: codex-agent
 severity: low
 environment: linux-node25-local
 repro_steps: run linked verification matrix and compare docs/contracts
+resolution: historical-closure-normalized-by-governance-pass
 expected_result: All artifacts are verified and documented before release
+actual_result: historical-actual-result-backfilled-for-governance-audit
 affected_version: 2026.3.12
 fixed_version: target-vnext
 component: docs-verification

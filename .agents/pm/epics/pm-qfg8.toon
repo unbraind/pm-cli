@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: "area:list","area:ux","area:validation",external-audit,pm-cli
 created_at: "2026-04-03T18:06:54.487Z"
-updated_at: "2026-04-03T20:56:14.562Z"
+updated_at: "2026-04-04T12:02:13.686Z"
 deadline: "2026-04-10T18:06:54.487Z"
 author: codex-agent
 estimated_minutes: 360
@@ -28,7 +28,9 @@ reporter: codex-agent
 severity: low
 environment: linux-node25-local
 repro_steps: reproduce external audit findings and verify runtime behavior
+resolution: historical-closure-normalized-by-governance-pass
 expected_result: New additive behavior resolves remaining audit gaps safely
+actual_result: historical-actual-result-backfilled-for-governance-audit
 affected_version: 2026.3.12
 fixed_version: target-vnext
 component: cli-core

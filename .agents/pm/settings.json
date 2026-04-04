@@ -9,11 +9,23 @@
   "output": {
     "default_format": "toon"
   },
+  "history": {
+    "missing_stream": "auto_create"
+  },
+  "validation": {
+    "sprint_release_format": "warn",
+    "parent_reference": "warn"
+  },
   "workflow": {
     "definition_of_done": [
+      "duplicate check performed before create",
       "linked files/tests/docs present",
+      "parent/dependency links complete",
       "tests pass"
     ]
+  },
+  "item_types": {
+    "definitions": []
   },
   "extensions": {
     "enabled": [],
@@ -25,7 +37,8 @@
     "max_results": 50,
     "embedding_model": "",
     "embedding_batch_size": 32,
-    "scanner_max_batch_retries": 3
+    "scanner_max_batch_retries": 3,
+    "provider": ""
   },
   "providers": {
     "openai": {
@@ -39,6 +52,7 @@
     }
   },
   "vector_store": {
+    "adapter": "",
     "qdrant": {
       "url": "",
       "api_key": ""

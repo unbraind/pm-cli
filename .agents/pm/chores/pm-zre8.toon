@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: "area:bootstrap",doc,"milestone:6",pm-cli,"priority:0",tests
 created_at: "2026-03-09T17:05:54.655Z"
-updated_at: "2026-04-01T20:32:38.224Z"
+updated_at: "2026-04-04T12:07:46.474Z"
 deadline: "2026-03-10T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -56,7 +56,7 @@ learnings[1]{created_at,author,text}:
 files[3]{path,scope,note}:
   AGENTS.md,project,bootstrap sanity checklist parity
   README.md,project,add runtime/build sanity checks to maintainer bootstrap
-  tests/integration/release-readiness-contract.spec.ts,project,enforce bootstrap sanity tokens
+  tests/integration/release-readiness-runtime.spec.ts,project,enforce bootstrap sanity tokens
 tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
   node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,full coverage gate
   node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,null,null,null,bootstrap contract regression

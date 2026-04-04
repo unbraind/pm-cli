@@ -6,12 +6,15 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:dependencies","area:visualization",external-audit,pm-cli
 created_at: "2026-04-03T14:48:19.923Z"
-updated_at: "2026-04-03T15:22:46.114Z"
+updated_at: "2026-04-04T12:03:59.325Z"
 deadline: "2026-04-13T14:48:19.923Z"
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: "pm deps returns deterministic dependency views (tree and graph), has help/contract parity, and includes regression coverage."
 parent: pm-iswo
+resolution: historical-closure-normalized-by-governance-pass
+expected_result: historical-expected-result-backfilled-for-governance-audit
+actual_result: historical-actual-result-backfilled-for-governance-audit
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-zdec,related,"2026-04-03T14:48:19.923Z",codex-agent,null
 comments[3]{created_at,author,text}:
@@ -33,5 +36,7 @@ files[10]{path,scope,note}:
   tests/unit/pi-agent-extension.spec.ts,project,deps action argument mapping regression
 tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
   node scripts/run-tests.mjs test -- tests/unit/deps-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,null,null,null,deps runtime + wrapper + completion regression suite
+docs[1]{path,scope,note}:
+  README.md,project,pm deps user-facing command documentation
 close_reason: "pm deps tree/graph visualization is implemented with cycle-safe traversal and validated through linked tests, full suite, and smoke checks."
 body: Net-new read-only command to visualize dependency topology from existing item metadata.

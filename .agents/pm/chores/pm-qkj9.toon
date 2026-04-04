@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: contract-sync,maintenance,pm-cli,release-readiness
 created_at: "2026-03-06T16:52:18.127Z"
-updated_at: "2026-04-01T20:31:11.687Z"
+updated_at: "2026-04-04T12:09:21.058Z"
 deadline: "2026-03-07T16:52:18.127Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -54,7 +54,7 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:31:11.687Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[2]{path,scope,note}:
   README.md,project,repository structure contract sync
-  tests/integration/release-readiness-contract.spec.ts,project,legacy prompt-doc contract check tolerates absent docs directory
+  tests/integration/release-readiness-runtime.spec.ts,project,legacy prompt-doc contract check tolerates absent docs directory
 tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
   node scripts/run-tests.mjs coverage,null,project,600,null,null,null,sandbox-safe coverage gate
   node scripts/run-tests.mjs test,null,project,240,null,null,null,sandbox-safe regression

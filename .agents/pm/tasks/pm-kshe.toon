@@ -6,12 +6,15 @@ status: closed
 priority: 1
 tags[5]: "area:validation",audit,governance,implementation,pm-cli
 created_at: "2026-04-03T20:58:05.700Z"
-updated_at: "2026-04-03T21:27:29.362Z"
+updated_at: "2026-04-04T12:02:07.201Z"
 deadline: "2026-04-11T20:58:05.700Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: validate supports scan-mode tracked-all and reports candidate totals; tests and contracts pass.
 parent: pm-j371
+resolution: historical-closure-normalized-by-governance-pass
+expected_result: historical-expected-result-backfilled-for-governance-audit
+actual_result: historical-actual-result-backfilled-for-governance-audit
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-j371,parent,"2026-04-03T20:58:05.700Z",codex-agent,null
 comments[3]{created_at,author,text}:

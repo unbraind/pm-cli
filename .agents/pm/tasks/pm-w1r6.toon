@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: "area:cli",code,doc,pm-cli,tests
 created_at: "2026-03-07T13:10:28.926Z"
-updated_at: "2026-04-01T20:31:49.908Z"
+updated_at: "2026-04-04T12:08:31.183Z"
 deadline: "2026-03-09T13:10:28.926Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -54,7 +54,7 @@ files[6]{path,scope,note}:
   README.md,project,null
   src/cli/commands/update.ts,project,null
   src/cli/main.ts,project,null
-  tests/integration/release-readiness-contract.spec.ts,project,null
+  tests/integration/release-readiness-runtime.spec.ts,project,migrated linked path
   tests/unit/update-command.spec.ts,project,null
 tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
   node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null

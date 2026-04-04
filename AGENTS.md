@@ -40,6 +40,9 @@ Before creating any new `pm` item, always check for an existing relevant item fi
   - `pm list-in-progress --limit 20`
 - If a relevant item already exists, reuse it, update it, or claim it instead of creating a new one.
 - Never create duplicate `pm` items for the same work.
+- Before `pm create`, identify the canonical parent lineage (`Epic` -> `Feature`) for the incoming scope.
+- If scope is truly net-new, create/normalize parent lineage first, then create child work with explicit `--parent`.
+- Add a create-time comment that records duplicate-check evidence (commands run + why net-new scope was required).
 
 Use one of:
 
@@ -71,11 +74,12 @@ Populate metadata early:
 - `pm update <ID> --description "..."`
 - `pm update <ID> --acceptance-criteria/--ac "..."`
 - `pm update <ID> --body "..."` (replace body content for normalization/backfill; use `pm append --body` for additive notes)
+- `pm update <ID> --parent <ID|none>` to keep hierarchy deterministic for future linking
 - `pm update <ID> --estimate <minutes>`
 - `pm update <ID> --deadline +1d` (accepts ISO/date strings or relative `+6h/+1d/+2w/+6m`; resolved to ISO at write)
 - `pm update <ID> --close-reason <text|none>` for explicit close_reason set/clear; reopen transitions from `closed` to non-terminal status auto-clear stale close_reason unless explicitly overridden in that same update call
 - when team-level close-readiness policy changes, update Definition of Done criteria via:
-  - `pm config project set definition-of-done --criterion "tests pass" --criterion "linked files/tests/docs present"`
+  - `pm config project set definition-of-done --criterion "tests pass" --criterion "linked files/tests/docs present" --criterion "parent/dependency links complete" --criterion "duplicate check performed before create"`
 
 ### Step D - Link execution context
 

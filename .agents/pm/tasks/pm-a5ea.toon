@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[9]: "area:cli","area:docs","area:tests",code,doc,"milestone:6",pm-cli,"priority:0",tests
 created_at: "2026-03-07T10:12:40.909Z"
-updated_at: "2026-04-01T20:31:39.024Z"
+updated_at: "2026-04-04T12:08:35.982Z"
 deadline: "2026-03-08T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -53,7 +53,7 @@ notes[1]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:31:39.024Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
-  tests/integration/release-readiness-contract.spec.ts,project,delete help contract assertion
+  tests/integration/release-readiness-runtime.spec.ts,project,delete help contract assertion
 tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
   node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,coverage gate
   node scripts/run-tests.mjs test,null,project,240,null,null,null,sandbox-safe regression

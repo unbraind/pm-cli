@@ -6,12 +6,15 @@ status: closed
 priority: 1
 tags[4]: "area:output","area:terminal",follow-up,pm-cli
 created_at: "2026-04-03T21:59:51.456Z"
-updated_at: "2026-04-04T08:22:48.437Z"
+updated_at: "2026-04-04T12:01:14.884Z"
 deadline: "2026-04-10T21:59:51.456Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: Broken-pipe writes in standard piped workflows are handled without Node stack traces; behavior remains stable for non-EPIPE failures and is covered by unit/runtime tests.
 parent: pm-axlr
+resolution: historical-closure-normalized-by-governance-pass
+expected_result: historical-expected-result-backfilled-for-governance-audit
+actual_result: historical-actual-result-backfilled-for-governance-audit
 comments[4]{created_at,author,text}:
   "2026-04-03T21:59:51.456Z",codex-agent,Child task created from external issue report reproduction in this repository.
   "2026-04-03T22:00:17.085Z",codex-agent,"Implementation started: will add safe broken-pipe handling for stdout/stderr writes and regression tests for piped JSON workflows."

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:body","area:update",pm-cli,runtime
 created_at: "2026-04-02T11:45:10.089Z"
-updated_at: "2026-04-02T11:59:13.032Z"
+updated_at: "2026-04-04T12:01:46.770Z"
 deadline: "2026-04-06T11:45:10.089Z"
 author: codex-agent
 estimated_minutes: 120
@@ -29,6 +29,7 @@ reporter: codex-agent
 severity: low
 environment: linux-node25-local
 repro_steps: run pm update ID --body text and inspect failure
+resolution: historical-closure-normalized-by-governance-pass
 expected_result: runtime accepts and applies body
 actual_result: runtime rejects body option
 affected_version: 2026.3.12

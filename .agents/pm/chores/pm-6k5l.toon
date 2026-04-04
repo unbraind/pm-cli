@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[7]: "area:maintenance","area:tests",code,doc,"milestone:6",pm-cli,"priority:0"
 created_at: "2026-03-09T15:52:30.417Z"
-updated_at: "2026-04-01T20:32:36.023Z"
+updated_at: "2026-04-04T12:07:51.030Z"
 deadline: "2026-03-10T16:00:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -52,8 +52,7 @@ notes[1]{created_at,author,text}:
   "2026-03-09T15:52:30.417Z",maintainer-agent,Plan claim item link touched files docs and tests run pm test and test all then record evidence with coverage confirmation
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:32:36.023Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[4]{path,scope,note}:
-  create_tasks.sh,project,remove obsolete seed script
+files[3]{path,scope,note}:
   scripts/install.ps1,project,keep PowerShell installer parity for idempotent updates
   scripts/install.sh,project,make npm install idempotent under reused prefix
   tests/integration/cli.integration.spec.ts,project,add regression coverage for repeat install with same prefix

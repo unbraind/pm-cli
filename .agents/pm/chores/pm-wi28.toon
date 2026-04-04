@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:docs",pm-cli,prompts,release-readiness
 created_at: "2026-03-06T16:23:11.472Z"
-updated_at: "2026-04-01T20:34:39.423Z"
+updated_at: "2026-04-04T12:11:42.768Z"
 deadline: "2026-03-07T16:23:11.472Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -50,14 +50,12 @@ notes[1]{created_at,author,text}:
   "2026-03-06T16:23:11.472Z",maintainer-agent,Plan claim item link docs patch template run targeted release contract tests and pm-linked checks.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:34:39.423Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[2]{path,scope,note}:
-  docs/prompts/prompt-03.md,project,primary drift location
-  tests/integration/release-readiness-contract.spec.ts,project,contract guard coverage update
+files[1]{path,scope,note}:
+  tests/integration/release-readiness-runtime.spec.ts,project,contract guard coverage update
 tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
   node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,300,null,null,null,verify release readiness docs contract
-docs[4]{path,scope,note}:
+docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer workflow contract
-  docs/prompts/prompt-03.md,project,prompt contract source updated
   PRD.md,project,canonical command contract
   README.md,project,public command contract
 close_reason: Prompt-03 now uses the canonical create/start-work/evidence/close templates with planned flags marked as not-yet-canonical; release-readiness contract guard updated and full verification sweeps passed with 100% coverage.

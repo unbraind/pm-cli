@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:restore",core,"milestone:2",pm-cli
 created_at: "2026-02-17T23:02:09.056Z"
-updated_at: "2026-04-01T20:33:04.408Z"
+updated_at: "2026-04-04T12:07:07.990Z"
 deadline: "2026-02-27T23:02:09.056Z"
 assignee: steve
 author: steve
@@ -56,8 +56,8 @@ files[8]{path,scope,note}:
   PRD.md,project,update milestone and command matrix
   README.md,project,document restore command availability
   src/cli/commands/index.ts,project,export runRestore for CLI wiring
+  src/cli/commands/restore.ts,project,restore command implementation
   src/cli/main.ts,project,wire restore command
-  src/commands/restore.ts,project,restore command implementation
   tests/integration/cli.integration.spec.ts,project,restore end-to-end validation
   tests/unit/restore-command.spec.ts,project,restore command unit coverage
   vitest.config.ts,project,include restore command in enforced 100 percent coverage set

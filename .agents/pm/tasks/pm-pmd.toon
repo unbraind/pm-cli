@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:search-keyword",core,"milestone:4",pm-cli
 created_at: "2026-02-17T23:02:10.065Z"
-updated_at: "2026-04-03T14:12:53.482Z"
+updated_at: "2026-04-04T12:10:04.200Z"
 deadline: "2026-04-15T11:57:42.084Z"
 author: steve
 estimated_minutes: 120
@@ -56,18 +56,17 @@ notes[2]{created_at,author,text}:
   "2026-04-03T11:59:54.046Z",codex-agent,"Mandatory closure checklist: (1) run linked targeted tests via pm test <id> --run; (2) run pnpm build; (3) run node scripts/run-tests.mjs test; (4) run node scripts/run-tests.mjs coverage; (5) update touched docs (README/PRD/AGENTS/CHANGELOG/ARCHITECTURE as applicable); (6) add pm comment with concrete evidence/results; (7) close + release item before commit/push."
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:33:08.541Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[15]{path,scope,note}:
+files[14]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,pi schema/action alignment for additive command flags
   PRD.md,project,Docs-first update for milestone/command matrix
   README.md,project,Docs-first update for command surface
   src/cli/commands/completion.ts,project,tag completion exposure
   src/cli/commands/index.ts,project,Export search command runner
-  src/cli/commands/search.ts,project,Keyword search scoring and filtering implementation
+  src/cli/commands/search.ts,project,Keyword search implementation
   src/cli/main.ts,project,CLI command registration
-  src/commands/search.ts,project,Keyword search implementation
   src/sdk/cli-contracts.ts,project,completion/search contract alignment for additive flags
   tests/integration/cli.integration.spec.ts,project,CLI smoke coverage for search command
-  tests/integration/help-readme-contract.spec.ts,project,README heading contract update for roadmap section
+  tests/integration/help-runtime.spec.ts,project,README heading contract update for roadmap section
   tests/unit/completion-command.spec.ts,project,deterministic tag completion suggestions
   tests/unit/search-command.spec.ts,project,Search ranking and corpus coverage tests
   tests/unit/structure-exports.spec.ts,project,Ensure runSearch is exported from command index

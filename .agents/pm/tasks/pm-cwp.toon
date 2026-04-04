@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:search-ranking",core,"milestone:4",pm-cli
 created_at: "2026-02-17T23:02:10.662Z"
-updated_at: "2026-04-01T20:34:00.659Z"
+updated_at: "2026-04-04T12:09:50.329Z"
 deadline: "2026-03-07T23:02:10.662Z"
 assignee: steve
 author: steve
@@ -61,16 +61,15 @@ notes[1]{created_at,author,text}:
   "2026-04-01T20:33:59.444Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:34:00.659Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[12]{path,scope,note}:
+files[11]{path,scope,note}:
   PRD.md,project,milestone status update
   README.md,project,command docs update
-  src/cli/commands/search.ts,project,include-linked search scoring
+  src/cli/commands/search.ts,project,legacy command wrapper export parity for new search resolver
   src/cli/main.ts,project,search option wiring
-  src/commands/search.ts,project,legacy command wrapper export parity for new search resolver
   src/core/shared/constants.ts,project,add hybrid search weight default
   src/core/store/settings.ts,project,settings schema and ordering for hybrid weight
   src/types.ts,project,typed settings contract for hybrid weight
-  tests/integration/help-readme-contract.spec.ts,project,contract test for include-linked help text
+  tests/integration/help-runtime.spec.ts,project,contract test for include-linked help text
   tests/unit/search-command.spec.ts,project,search command unit coverage
   tests/unit/settings-store.spec.ts,project,settings serialization and merge coverage
   tests/unit/shared-constants-errors.spec.ts,project,default settings contract coverage

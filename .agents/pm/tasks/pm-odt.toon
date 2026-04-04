@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions-beads",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:02:11.883Z"
-updated_at: "2026-04-01T20:33:55.416Z"
+updated_at: "2026-04-04T12:06:58.906Z"
 deadline: "2026-03-13T23:02:11.883Z"
 assignee: steve
 author: steve
@@ -63,13 +63,12 @@ notes[1]{created_at,author,text}:
   "2026-04-01T20:33:54.322Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:33:55.416Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[14]{path,scope,note}:
+files[13]{path,scope,note}:
   PRD.md,project,milestone and command contract update
   README.md,project,docs-first command status update
-  src/cli/commands/beads.ts,project,beads import implementation
+  src/cli/commands/beads.ts,project,legacy wrapper export for beads command
   src/cli/commands/index.ts,project,export beads command handler
   src/cli/main.ts,project,wire beads import command
-  src/commands/beads.ts,project,legacy wrapper export for beads command
   src/core/extensions/index.ts,project,runtime wrappers for active extension command handlers
   src/core/extensions/loader.ts,project,add extension command-handler registration and dispatch
   src/extensions/builtins/beads/index.ts,project,built-in beads extension activate hook
