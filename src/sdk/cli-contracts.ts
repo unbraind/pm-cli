@@ -856,6 +856,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   run: { type: "boolean" },
   shell: { type: "string", enum: ["bash", "zsh", "fish"] },
   file: { type: "string" },
+  preserveSourceIds: { type: "boolean" },
   folder: { type: "string" },
   text: { type: "string" },
   add: { type: "array", items: { type: "string" } },
@@ -1037,7 +1038,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   "templates-show": { required: ["template"] },
   claim: { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   release: { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
-  "beads-import": { required: ["file"], optional: ["author", "message"] },
+  "beads-import": { optional: ["file", "author", "message", "preserveSourceIds"] },
   "todos-import": { optional: ["folder", "author", "message"] },
   "todos-export": { optional: ["folder"] },
   "start-task": { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
@@ -1204,6 +1205,10 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   allowAuditComment: {
     description: "Allow non-owner append-only comment audits without requiring --force.",
+  },
+  preserveSourceIds: {
+    description: "Preserve explicit source IDs during Beads imports instead of normalizing to tracker prefix.",
+    examples: [true],
   },
   appendStable: {
     description: "When true for files action, preserve existing linked-file order and append new links without full-array resorting.",

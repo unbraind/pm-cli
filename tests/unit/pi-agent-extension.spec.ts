@@ -577,6 +577,11 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(schemaProperty(testAllSchema, "failOnSkipped").type).toBe("boolean");
     expect(schemaProperty(testAllSchema, "requireAssertionsForPm").type).toBe("boolean");
 
+    const beadsImportSchema = schemaForAction(tool.parameters as Record<string, unknown>, "beads-import");
+    expect(beadsImportSchema.required).toEqual(["action"]);
+    expect(schemaProperty(beadsImportSchema, "file").type).toBe("string");
+    expect(schemaProperty(beadsImportSchema, "preserveSourceIds").type).toBe("boolean");
+
     const result = await tool.execute("call-1", { action: "stats" });
     expect(execSpy).toHaveBeenCalledTimes(2);
     expect(execSpy.mock.calls[0]?.[0]).toBe("pm");
@@ -1132,6 +1137,7 @@ describe("Pi agent extension wrapper for pm", () => {
         file: ".beads/issues.jsonl",
         author: "pi-bot",
         message: "import beads",
+        preserveSourceIds: true,
       }),
     ).toEqual([
       "--json",
@@ -1143,7 +1149,15 @@ describe("Pi agent extension wrapper for pm", () => {
       "pi-bot",
       "--message",
       "import beads",
+      "--preserve-source-ids",
     ]);
+
+    expect(
+      buildPmCliArgs({
+        action: "beads-import",
+        author: "pi-bot",
+      }),
+    ).toEqual(["--json", "beads", "import", "--author", "pi-bot"]);
 
     expect(
       buildPmCliArgs({

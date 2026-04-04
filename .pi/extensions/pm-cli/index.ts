@@ -128,6 +128,7 @@ export interface PmToolParameters {
   run?: boolean;
   shell?: string;
   file?: string;
+  preserveSourceIds?: boolean;
   folder?: string;
   text?: string;
   add?: string[];
@@ -698,6 +699,9 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       pushOption(args, "--file", params.file);
       pushOption(args, "--author", params.author);
       pushOption(args, "--message", params.message);
+      if (params.preserveSourceIds) {
+        args.push("--preserve-source-ids");
+      }
       return args;
     case "todos-import":
       args.push("todos", "import");
