@@ -52,9 +52,9 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   scripts/run-tests.mjs,project,sandbox-safe test runner
   tests/integration/release-readiness-runtime.spec.ts,project,contract coverage source
-tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,full coverage gate regression
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,null,null,null,targeted contract regression
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,full coverage gate regression
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,targeted contract regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow requirements
   PRD.md,project,authoritative requirements

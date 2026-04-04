@@ -53,8 +53,8 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/cli/help-content.ts,project,Centralized help bundle composer
   src/cli/main.ts,project,Help text integration target
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,Help behavior regression
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,Help behavior regression
 docs[1]{path,scope,note}:
   README.md,project,Help examples documentation
 close_reason: Centralized help composer shipped with rich why/examples/tips sections across core command paths.

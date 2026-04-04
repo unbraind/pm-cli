@@ -51,8 +51,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:23:31.550Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/main.ts,project,unified command dispatch
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,2400,null,null,null,command dispatch integration coverage
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,command dispatch integration coverage
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,runtime router architecture
 close_reason: All feature A tasks (A1-A3) are complete with passing linked regression tests.

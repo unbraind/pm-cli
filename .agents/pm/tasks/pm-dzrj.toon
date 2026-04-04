@@ -62,9 +62,9 @@ files[8]{path,scope,note}:
   tests/unit/reindex-command.spec.ts,project,reindex forced non-tty progress test
   tests/unit/test-all-command.spec.ts,project,test-all forced non-tty progress test
   tests/unit/test-command.spec.ts,project,forced non-tty progress test
-tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,2400,null,null,null,linked-test execution regressions
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/reindex-command.spec.ts,null,project,2400,null,null,null,progress ux targeted regression
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,linked-test execution regressions
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/reindex-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,progress ux targeted regression
 docs[1]{path,scope,note}:
   PRD.md,project,test command safety contract
 close_reason: Added opt-in non-interactive progress for test/test-all and phase progress for reindex; linked regressions pass.

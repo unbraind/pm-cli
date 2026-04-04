@@ -317,6 +317,98 @@ describe("runTestAll", () => {
     });
   });
 
+  it("treats assertion-distinct linked commands as unique dedupe keys", async () => {
+    await withTempPmPath(async (context) => {
+      const firstId = createTaskWithTests(context, {
+        title: "Assertion Signature First",
+        status: "open",
+        testEntries: [
+          "command=node -e \"process.stderr.write('warn\\\\n'); process.stdout.write(JSON.stringify({count:2,a:1,z:1}))\",scope=project",
+        ],
+      });
+      const secondId = createTaskWithTests(context, {
+        title: "Assertion Signature Second",
+        status: "open",
+        testEntries: [
+          "command=node -e \"process.stderr.write('warn\\\\n'); process.stdout.write(JSON.stringify({count:2,a:1,z:1}))\",scope=project",
+        ],
+      });
+
+      await overwriteTaskTests(context, firstId, [
+        {
+          command: "node -e \"process.stderr.write('warn\\\\n'); process.stdout.write(JSON.stringify({count:2,a:1,z:1}))\"",
+          scope: "project",
+          assert_stdout_contains: ["count", "a"],
+          assert_stdout_regex: ["count", "\\\\{\\\"count\\\""],
+          assert_stderr_contains: ["warn", "wa"],
+          assert_stderr_regex: ["warn", "wa.*"],
+          assert_stdout_min_lines: 0,
+          assert_json_field_equals: {
+            z: "1",
+            a: "1",
+          },
+          assert_json_field_gte: {
+            count: 1,
+            a: 1,
+          },
+        },
+      ]);
+      await overwriteTaskTests(context, secondId, [
+        {
+          command: "node -e \"process.stderr.write('warn\\\\n'); process.stdout.write(JSON.stringify({count:2,a:1,z:1}))\"",
+          scope: "project",
+          assert_stdout_contains: ["count", "a"],
+          assert_stdout_regex: ["count", "\\\\{\\\"count\\\""],
+          assert_stderr_contains: ["warn", "wa"],
+          assert_stderr_regex: ["warn", "wa.*"],
+          assert_stdout_min_lines: 0,
+          assert_json_field_equals: {
+            z: "1",
+            a: "1",
+          },
+          assert_json_field_gte: {
+            count: 3,
+            a: 1,
+          },
+        },
+      ]);
+
+      const result = await runTestAll({ status: "open", timeout: "20" }, { path: context.pmPath });
+      expect(result.totals.items).toBe(2);
+      expect(result.totals.linked_tests).toBe(2);
+      expect(result.passed + result.failed + result.skipped).toBe(2);
+      expect(result.failed).toBeGreaterThanOrEqual(1);
+      expect(result.skipped).toBe(0);
+      const runResults = result.results.flatMap((entry) => entry.run_results);
+      expect(runResults.filter((entry) => entry.command?.includes("JSON.stringify({count:2,a:1,z:1})"))).toHaveLength(2);
+      expect(runResults.some((entry) => (entry.error ?? "").includes("Duplicate linked test skipped"))).toBe(false);
+    });
+  });
+
+  it("treats per-test shared_host_safe metadata as part of dedupe identity", async () => {
+    await withTempPmPath(async (context) => {
+      const firstId = createTaskWithTests(context, {
+        title: "Shared Host Safe True",
+        status: "open",
+        testEntries: ["command=node --version,scope=project"],
+      });
+      const secondId = createTaskWithTests(context, {
+        title: "Shared Host Safe False",
+        status: "open",
+        testEntries: ["command=node --version,scope=project"],
+      });
+
+      await overwriteTaskTests(context, firstId, [{ command: "node --version", scope: "project", shared_host_safe: true }]);
+      await overwriteTaskTests(context, secondId, [{ command: "node --version", scope: "project", shared_host_safe: false }]);
+
+      const result = await runTestAll({ status: "open", timeout: "20" }, { path: context.pmPath });
+      expect(result.totals.items).toBe(2);
+      expect(result.totals.linked_tests).toBe(2);
+      expect(result.passed).toBe(2);
+      expect(result.skipped).toBe(0);
+    });
+  });
+
   it("deduplicates timeout-variant duplicate commands using the maximum timeout", async () => {
     await withTempPmPath(async (context) => {
       const slowDuplicateCommand =
@@ -495,6 +587,62 @@ describe("runTestAll", () => {
         true,
       );
       expect(runResults.some((entry) => (entry.error ?? "").includes("Duplicate linked test skipped"))).toBe(true);
+    });
+  });
+
+  it("reports fail-on-skipped aggregate policy triggers", async () => {
+    await withTempPmPath(async (context) => {
+      const malformed = createTaskWithTests(context, {
+        title: "Fail On Skipped Aggregate",
+        status: "open",
+        testEntries: ["command=node -e \"process.stdout.write('placeholder')\",scope=project"],
+      });
+      await overwriteTaskTests(context, malformed, [{ path: "tests/legacy-path-only.spec.ts", scope: "project" }]);
+      const result = await runTestAll({ status: "open", failOnSkipped: true }, { path: context.pmPath });
+      expect(result.skipped).toBeGreaterThan(0);
+      expect(result.fail_on_skipped_triggered).toBe(true);
+    });
+  });
+
+  it("supports PM context mismatch guards and PM assertion policy in test-all", async () => {
+    await withTempPmPath(async (context) => {
+      createTaskWithTests(context, {
+        title: "Test-All PM Context Guard",
+        status: "open",
+        testEntries: ["command=node dist/cli.js list-all --type Task --limit 200 --json,scope=project"],
+      });
+
+      const schemaStrict = await runTestAll(
+        {
+          status: "open",
+          failOnContextMismatch: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(schemaStrict.failed).toBe(1);
+      expect(schemaStrict.results[0]?.run_results[0]?.error ?? "").toContain("context mismatch");
+
+      const trackerStrict = await runTestAll(
+        {
+          status: "open",
+          pmContext: "tracker",
+          failOnContextMismatch: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(trackerStrict.failed).toBe(0);
+      expect(trackerStrict.passed).toBe(1);
+
+      const requireAssertions = await runTestAll(
+        {
+          status: "open",
+          pmContext: "tracker",
+          requireAssertionsForPm: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(requireAssertions.failed).toBe(1);
+      expect(requireAssertions.results[0]?.run_results[0]?.error ?? "").toContain("requires assertions");
     });
   });
 

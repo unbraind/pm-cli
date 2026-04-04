@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","area:health",follow-up,pm-cli
 created_at: "2026-04-03T22:00:05.513Z"
-updated_at: "2026-04-04T12:01:41.780Z"
+updated_at: "2026-04-04T12:43:54.373Z"
 deadline: "2026-04-10T22:00:05.513Z"
 author: codex-agent
 estimated_minutes: 240
@@ -15,11 +15,12 @@ parent: pm-grst
 resolution: historical-closure-normalized-by-governance-pass
 expected_result: historical-expected-result-backfilled-for-governance-audit
 actual_result: historical-actual-result-backfilled-for-governance-audit
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-04-03T22:00:05.513Z",codex-agent,Child task created from external extension diagnostics triage request.
   "2026-04-03T22:06:22.186Z",codex-agent,"Implementation started: add concise triage summary and remediation hints to extension --manage and health extension diagnostics while preserving full detail payloads."
   "2026-04-03T22:17:11.560Z",codex-agent,"Implemented focused extension triage without adding new commands: extension --manage now returns concise triage summary/remediation hints, and health extensions check includes condensed triage counts + next steps. Evidence: pm test pm-doek --run passed; full build/test/coverage passed; smoke checks confirm details.triage in both manage and health JSON outputs."
   "2026-04-04T08:22:49.743Z",codex-agent,"External Audit 2026-04-04 mapping: external Issue 5 ID pm-cs7u is not present in this tracker. Canonical local coverage remains pm-grst/pm-doek (extension triage summaries in extension --manage and health) with closed verified evidence; no duplicate item created."
+  "2026-04-04T12:43:54.373Z",codex-agent,"External audit 2026-04-04 mapping refresh: this task already delivered manage/health triage summaries; net-new unresolved scope is dedicated doctor command surface tracked in pm-gm9y/pm-hjrr (no duplicate manage-health task created)."
 notes[1]{created_at,author,text}:
   "2026-04-03T22:00:05.513Z",codex-agent,No new command surface; improve manage and health diagnostics only.
 files[5]{path,scope,note}:
@@ -28,8 +29,8 @@ files[5]{path,scope,note}:
   src/cli/help-content.ts,project,help alignment for triage and validate examples
   tests/unit/extension-command.spec.ts,project,manage/explore triage regression tests
   tests/unit/health-command.spec.ts,project,health extension triage regression tests
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/health-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,null,null,null,extension triage diagnostics regressions
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/health-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,extension triage diagnostics regressions
 docs[4]{path,scope,note}:
   CHANGELOG.md,project,extension triage changelog
   docs/ARCHITECTURE.md,project,extension diagnostics architecture notes

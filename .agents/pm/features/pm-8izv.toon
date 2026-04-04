@@ -1,0 +1,43 @@
+id: pm-8izv
+title: Linked-test PM context parity controls and mismatch guardrails
+description: "Add additive PM-command context parity modes, per-run context metadata, and strict mismatch failure controls for pm test and pm test-all."
+type: Feature
+status: closed
+priority: 1
+tags[4]: context-parity,external-audit,linked-tests,pm-cli
+created_at: "2026-04-04T12:42:31.364Z"
+updated_at: "2026-04-04T14:02:56.100Z"
+deadline: "2026-04-14T12:42:31.364Z"
+author: codex-agent
+estimated_minutes: 260
+acceptance_criteria: pm test and pm test-all support additive PM context parity controls; PM-command run results include execution context metadata; strict mismatch guard can fail linked commands deterministically.
+parent: pm-5z9r
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: external-audit-followup
+release: vnext
+blocked_by: pm-6pij
+blocked_reason: Issue triage open; implementation can proceed in same workstream.
+unblock_note: Implement with additive defaults to avoid regressions.
+reporter: codex-agent
+severity: medium
+environment: linux-node25-local
+repro_steps: Linked PM command observes different item counts than direct workspace command.
+resolution: Implemented PM-context parity feature via pm-vrsn.
+expected_result: Context parity options and metadata make PM-command linked-test behavior explicit and enforceable.
+actual_result: Current behavior can hide dataset mismatch under successful exit code.
+affected_version: 2026.3.12
+fixed_version: target-vnext
+component: linked-test-runtime
+regression: true
+customer_impact: Reduces false-green linked verification for governance-critical PM commands.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-6pij,related,"2026-04-04T12:42:31.364Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-04T12:42:31.364Z",codex-agent,"Duplicate-check evidence: pm-mf5z and pm-qtvv restored extension-defined type parity but do not provide tracker-data parity mode or mismatch-fail controls."
+  "2026-04-04T14:02:27.223Z",codex-agent,"Child task pm-vrsn delivered PM-context parity controls, execution_context metadata, and mismatch guardrails with linked sweeps passing."
+notes[1]{created_at,author,text}:
+  "2026-04-04T12:42:31.364Z",codex-agent,"Design constraint: additive defaults only; existing users keep current sandbox behavior unless opting into stricter modes."
+close_reason: Linked-test PM context parity feature completed via pm-vrsn implementation and verification evidence.
+body: "Implements unresolved external report #2 delta beyond existing extension/schema parity: tracker dataset parity mode plus explicit mismatch guardrails."

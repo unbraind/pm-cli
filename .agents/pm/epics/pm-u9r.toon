@@ -58,10 +58,10 @@ files[4]{path,scope,note}:
   src/core/item/id.ts,project,id normalization and generation
   src/core/lock/lock.ts,project,lock semantics and stale lock handling
   src/core/store/item-store.ts,project,core CRUD persistence and atomic writes
-tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,full sandboxed coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,null,null,null,CRUD lock lifecycle integration matrix
-  node scripts/run-tests.mjs test -- tests/unit/core-item-lock-coverage.spec.ts,null,project,1200,null,null,null,core lock branch coverage
+tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,full sandboxed coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,CRUD lock lifecycle integration matrix
+  node scripts/run-tests.mjs test -- tests/unit/core-item-lock-coverage.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,core lock branch coverage
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow contract
   PRD.md,project,governing spec for milestone 1

@@ -37,9 +37,9 @@ files[11]{path,scope,note}:
   tests/unit/comments-command.spec.ts,project,ownership bypass regression coverage
   tests/unit/completion-command.spec.ts,project,comments completion flag coverage
   tests/unit/pi-agent-extension.spec.ts,project,pi comments flag mapping coverage
-tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,3600,null,null,null,issue5 targeted suite
-  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,Issue5 targeted regression suite
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,issue5 targeted suite
+  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,Issue5 targeted regression suite
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,ownership mutation architecture docs
 close_reason: "Implemented allow-audit-comment append-only ownership-safe path, updated docs, and verified via full build/test/coverage/smoke."

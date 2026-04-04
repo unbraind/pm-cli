@@ -66,9 +66,9 @@ files[9]{path,scope,note}:
   src/sdk/cli-contracts.ts,project,files/docs migrate-validate-audit contract surfaces
   tests/integration/release-readiness-runtime.spec.ts,project,coverage include allowlist updates for new additive modules
   tests/unit/files-docs-command.spec.ts,project,linked-path command regressions
-tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test,null,project,7200,null,null,null,metadata-audit-baseline-regression
-  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,5400,null,null,null,issues346 linked-path regressions
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,metadata-audit-baseline-regression
+  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,issues346 linked-path regressions
 docs[3]{path,scope,note}:
   docs/ARCHITECTURE.md,project,linked artifact data-flow updates
   PRD.md,project,linked artifact command contract

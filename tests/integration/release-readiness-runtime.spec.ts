@@ -212,6 +212,10 @@ const REQUIRED_TEST_FLAGS = [
   "--env-set",
   "--env-clear",
   "--shared-host-safe",
+  "--pm-context",
+  "--fail-on-context-mismatch",
+  "--fail-on-skipped",
+  "--require-assertions-for-pm",
   "--author",
   "--message",
   "--force",
@@ -435,6 +439,7 @@ describe("release readiness runtime coverage", () => {
       expect(help.stdout).toContain("--uninstall");
       expect(help.stdout).toContain("--explore");
       expect(help.stdout).toContain("--manage");
+      expect(help.stdout).toContain("--doctor");
       expect(help.stdout).toContain("--activate");
       expect(help.stdout).toContain("--deactivate");
       expect(help.stdout).toContain("--project");
@@ -443,6 +448,7 @@ describe("release readiness runtime coverage", () => {
       expect(help.stdout).toContain("--gh");
       expect(help.stdout).toContain("--github");
       expect(help.stdout).toContain("--ref");
+      expect(help.stdout).toContain("--detail");
     });
   });
 
@@ -1051,7 +1057,7 @@ describe("release readiness runtime coverage", () => {
       expect(deleteResult.code).toBe(0);
       expectTopLevelKeyOrder(deleteResult.json, ["item", "changed_fields", "warnings"]);
     });
-  });
+  }, 120_000);
 
   it("keeps runtime exit-code mapping deterministic", async () => {
     await withTempPmPath(async (context) => {

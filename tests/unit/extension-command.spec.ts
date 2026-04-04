@@ -201,6 +201,53 @@ describe("extension command runtime", () => {
     });
   });
 
+  it("runs extension doctor in summary/deep modes and supports doctor subcommand target syntax", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceDir = path.join(context.tempRoot, "doctor-source-ext");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(
+        path.join(sourceDir, "manifest.json"),
+        JSON.stringify(
+          {
+            name: "doctor-ext",
+            version: "1.0.0",
+            entry: "index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(path.join(sourceDir, "index.js"), "export default { activate() {} };", "utf8");
+      await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
+
+      const summaryDoctor = await runExtension(undefined, { doctor: true, project: true }, { path: context.pmPath });
+      expect(summaryDoctor.action).toBe("doctor");
+      expect(summaryDoctor.details).toMatchObject({
+        mode: "summary",
+        summary: {
+          scope: "project",
+        },
+      });
+      const warningCodes = (summaryDoctor.details.summary as { warning_codes?: unknown }).warning_codes;
+      expect(Array.isArray(warningCodes)).toBe(true);
+
+      const deepDoctor = await runExtension(undefined, { doctor: true, project: true, detail: "deep" }, { path: context.pmPath });
+      expect(deepDoctor.details).toMatchObject({
+        mode: "deep",
+      });
+      expect((deepDoctor.details.deep as Record<string, unknown>).installed_extensions).toBeDefined();
+
+      const targetDoctor = await runExtension("doctor", {}, { path: context.pmPath });
+      expect(targetDoctor.action).toBe("doctor");
+
+      await expect(runExtension(undefined, { doctor: true, detail: "verbose" }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
   it("validates action flags and missing targets", async () => {
     await expect(runExtension(undefined, {}, { path: ".agents/pm" })).rejects.toMatchObject({
       exitCode: EXIT_CODE.USAGE,

@@ -118,13 +118,16 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     examples: ["pm install pi --project", "pm install pi --global"],
   },
   extension: {
-    why: "Installs, explores, manages, and activates/deactivates custom extensions across project or global scope.",
+    why: "Installs, explores, manages, diagnoses, and activates/deactivates custom extensions across project or global scope.",
     examples: [
       "pm extension --install .agents/pm/extensions/sample --project",
       "pm extension --install https://github.com/unbraind/pm-cli/tree/main/.agents/pm/extensions/pi --global",
       "pm extension --install --gh unbraind/pm-cli/pi --project",
       "pm extension --explore --project",
       "pm extension --manage --global",
+      "pm extension --doctor --project",
+      "pm extension --doctor --global --detail deep",
+      "pm extension doctor --detail deep",
       "pm extension --activate sample-ext --project",
       "pm extension --deactivate sample-ext --project",
       "pm extension --uninstall sample-ext --global",
@@ -134,6 +137,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "Use --gh/--github shorthand for GitHub sources and --ref to pin a branch, tag, or ref.",
       "Install updates settings activation state automatically unless extension allowlist mode is unchanged.",
       "Use --manage for concise triage summaries and remediation-oriented diagnostics alongside full extension details.",
+      "Use --doctor for consolidated diagnostics with warning codes, remediation hints, and optional deep detail payloads.",
     ],
   },
   create: {
@@ -283,14 +287,16 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Links test commands/paths and optionally executes them for one item.",
     examples: [
       'pm test pm-a1b2 --add "command=node scripts/run-tests.mjs test -- tests/unit/output.spec.ts,scope=project,timeout_seconds=2400"',
-      "pm test pm-a1b2 --run --timeout 2400 --env-set PORT=0 --env-clear PLAYWRIGHT_BASE_URL --shared-host-safe",
+      'pm test pm-a1b2 --add "command=pm list-all --type Task --limit 200,scope=project,assert_stdout_contains=count:,assert_stdout_regex=count:\\s+\\d+"',
+      "pm test pm-a1b2 --run --timeout 2400 --env-set PORT=0 --env-clear PLAYWRIGHT_BASE_URL --shared-host-safe --pm-context tracker --fail-on-context-mismatch --fail-on-skipped",
     ],
   },
   "test-all": {
     why: "Runs linked tests in bulk for release/readiness sweeps.",
     examples: [
       "pm test-all --status in_progress --timeout 2400",
-      "pm test-all --status closed --timeout 3600 --progress --env-set PORT=0 --shared-host-safe",
+      "pm test-all --status closed --timeout 3600 --progress --env-set PORT=0 --shared-host-safe --fail-on-skipped",
+      "pm test-all --status in_progress --pm-context tracker --fail-on-context-mismatch --require-assertions-for-pm",
     ],
   },
   stats: {

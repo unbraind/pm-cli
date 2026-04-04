@@ -52,8 +52,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:15:25.956Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/commands/create.ts,project,status input normalization entry point
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test,null,project,3600,null,null,null,full regression baseline for compatibility hardening
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test,null,project,3600,null,null,null,null,null,null,null,null,null,null,full regression baseline for compatibility hardening
 docs[1]{path,scope,note}:
   PRD.md,project,status contract documentation update
 close_reason: "Epic completed: in-progress alias compatibility delivered end-to-end with tracked implementation, tests, and documentation updates."

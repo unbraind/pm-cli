@@ -58,8 +58,8 @@ files[5]{path,scope,note}:
   README.md,project,document timeout conflict resolution in test-all dedupe
   src/cli/commands/test-all.ts,project,dedupe key and timeout selection logic
   tests/unit/test-all-command.spec.ts,project,coverage for timeout-variant dedupe
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/unit/test-all-command.spec.ts,null,project,1200,null,null,null,targeted command coverage
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-all-command.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,targeted command coverage
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer workflow contract
   PRD.md,project,command contract for test-all dedupe semantics

@@ -62,9 +62,9 @@ files[7]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,integration coverage for install --path project destination
   tests/integration/release-readiness-runtime.spec.ts,project,contract coverage for install semantics
   tests/unit/install-command.spec.ts,project,unit coverage for path-aware project scope installs
-tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,coverage gate verification
-  node scripts/run-tests.mjs test -- tests/unit/install-command.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,7200,null,null,null,sandbox-safe targeted regression
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,coverage gate verification
+  node scripts/run-tests.mjs test -- tests/unit/install-command.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,sandbox-safe targeted regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,governing maintainer workflow
   PRD.md,project,authoritative install command contract

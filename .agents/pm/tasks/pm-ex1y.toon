@@ -59,10 +59,10 @@ files[6]{path,scope,note}:
   src/cli/main.ts,project,add list-draft command registration
   tests/integration/cli.integration.spec.ts,project,integration coverage for list-draft
   tests/unit/pi-agent-extension.spec.ts,project,list-draft wrapper action coverage
-tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,coverage gate
-  node scripts/run-tests.mjs test,null,project,3600,null,null,null,full sandbox regression
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,null,null,null,cli command surface regression
+tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,coverage gate
+  node scripts/run-tests.mjs test,null,project,3600,null,null,null,null,null,null,null,null,null,null,full sandbox regression
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,cli command surface regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow command usage
   PRD.md,project,command surface contract

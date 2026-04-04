@@ -757,6 +757,78 @@ describe("runCreate", () => {
     });
   });
 
+  it("parses linked-test runtime directives and assertion metadata in create seeds", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runCreate(
+        baseCreateOptions({
+          title: "create-linked-test-directive-assertions",
+          test: [
+            "command=node --version,scope=project,timeout_seconds=25,env_set=PORT=0;DEBUG=1,env_clear=PLAYWRIGHT_BASE_URL;TMPDIR,shared_host_safe=yes,assert_stdout_contains=v,assert_stdout_regex=v\\\\d+,assert_stderr_contains=warn,assert_stderr_regex=warn,assert_stdout_min_lines=0,assert_json_field_equals=flag=true;status=ok,assert_json_field_gte=count=2,note=directive-seed",
+          ],
+        }),
+        { path: context.pmPath },
+      );
+      const linked = result.item.tests?.[0];
+      expect(linked).toMatchObject({
+        command: "node --version",
+        scope: "project",
+        timeout_seconds: 25,
+        env_set: {
+          DEBUG: "1",
+          PORT: "0",
+        },
+        shared_host_safe: true,
+        assert_stdout_contains: ["v"],
+        assert_stdout_regex: ["v\\\\d+"],
+        assert_stderr_contains: ["warn"],
+        assert_stderr_regex: ["warn"],
+        assert_stdout_min_lines: 0,
+        assert_json_field_equals: {
+          flag: "true",
+          status: "ok",
+        },
+        assert_json_field_gte: {
+          count: 2,
+        },
+        note: "directive-seed",
+      });
+      expect(linked?.env_clear).toEqual(expect.arrayContaining(["PLAYWRIGHT_BASE_URL", "TMPDIR"]));
+    });
+  });
+
+  it("rejects invalid linked-test runtime directives and assertion metadata", async () => {
+    await withTempPmPath(async (context) => {
+      const invalidFragments = [
+        "env_set=PORT",
+        "env_set=PM_PATH=/tmp/unsafe",
+        "env_clear=FORCE_COLOR",
+        "env_clear=1INVALID",
+        "shared_host_safe=maybe",
+        "assert_stdout_regex=[",
+        "assert_stderr_regex=[",
+        "assert_stdout_min_lines=-1",
+        "assert_stdout_min_lines=1.5",
+        "assert_json_field_equals=count",
+        "assert_json_field_equals==value",
+        "assert_json_field_gte=count",
+        "assert_json_field_gte=count=abc",
+      ];
+      for (const [index, fragment] of invalidFragments.entries()) {
+        await expect(
+          runCreate(
+            baseCreateOptions({
+              title: `create-invalid-linked-test-${index}`,
+              test: [`command=node --version,scope=project,${fragment}`],
+            }),
+            { path: context.pmPath },
+          ),
+        ).rejects.toMatchObject<PmCliError>({
+          exitCode: EXIT_CODE.USAGE,
+        });
+      }
+    });
+  });
+
   it("validates enum and numeric required fields", async () => {
     await withTempPmPath(async (context) => {
       await expect(

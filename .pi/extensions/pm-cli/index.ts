@@ -107,6 +107,11 @@ export interface PmToolParameters {
   envSet?: string[];
   envClear?: string[];
   sharedHostSafe?: boolean;
+  detail?: string;
+  pmContext?: string;
+  failOnContextMismatch?: boolean;
+  failOnSkipped?: boolean;
+  requireAssertionsForPm?: boolean;
   validateClose?: string;
   checkMetadata?: boolean;
   checkResolution?: boolean;
@@ -414,6 +419,11 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       args.push("extension", "--manage");
       addExtensionScopeFlag(args, params);
       return args;
+    case "extension-doctor":
+      args.push("extension", "--doctor");
+      addExtensionScopeFlag(args, params);
+      pushOption(args, "--detail", params.detail);
+      return args;
     case "extension-activate":
       args.push("extension", "--activate", requireString(params.target, "target", action));
       addExtensionScopeFlag(args, params);
@@ -589,6 +599,16 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       if (params.sharedHostSafe) {
         args.push("--shared-host-safe");
       }
+      pushOption(args, "--pm-context", params.pmContext);
+      if (params.failOnContextMismatch) {
+        args.push("--fail-on-context-mismatch");
+      }
+      if (params.failOnSkipped) {
+        args.push("--fail-on-skipped");
+      }
+      if (params.requireAssertionsForPm) {
+        args.push("--require-assertions-for-pm");
+      }
       addAuthorMessageForceFlags(args, params);
       return args;
     case "test-all":
@@ -602,6 +622,16 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       pushRepeatable(args, "--env-clear", params.envClear);
       if (params.sharedHostSafe) {
         args.push("--shared-host-safe");
+      }
+      pushOption(args, "--pm-context", params.pmContext);
+      if (params.failOnContextMismatch) {
+        args.push("--fail-on-context-mismatch");
+      }
+      if (params.failOnSkipped) {
+        args.push("--fail-on-skipped");
+      }
+      if (params.requireAssertionsForPm) {
+        args.push("--require-assertions-for-pm");
       }
       return args;
     case "stats":

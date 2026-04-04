@@ -63,8 +63,8 @@ files[11]{path,scope,note}:
   tests/unit/history-activity-command.spec.ts,project,strict mode and shape-error regression coverage
   tests/unit/item-store.spec.ts,project,strict mode mutation regression
   tests/unit/stats-command.spec.ts,project,strict mode stats regression
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts tests/unit/stats-command.spec.ts tests/unit/health-command.spec.ts tests/unit/item-store.spec.ts,null,project,5400,null,null,null,targeted runtime enforcement coverage
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts tests/unit/stats-command.spec.ts tests/unit/health-command.spec.ts tests/unit/item-store.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,targeted runtime enforcement coverage
 docs[1]{path,scope,note}:
   PRD.md,project,history-touching command requirements
 close_reason: Shared policy helper and command enforcement shipped with passing linked tests

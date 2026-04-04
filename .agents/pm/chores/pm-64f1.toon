@@ -1,0 +1,62 @@
+id: pm-64f1
+title: "Docs, contracts, and verification sweep for external audit follow-up"
+description: "Update docs/contracts/changelog for new linked-test and extension diagnostics behavior, run full verification, and record closure evidence."
+type: Chore
+status: closed
+priority: 1
+tags[4]: docs,external-audit,pm-cli,verification
+created_at: "2026-04-04T12:43:42.029Z"
+updated_at: "2026-04-04T14:02:13.465Z"
+deadline: "2026-04-12T12:43:42.029Z"
+author: codex-agent
+estimated_minutes: 220
+acceptance_criteria: README/PRD/ARCHITECTURE/EXTENSIONS/AGENTS/CHANGELOG reflect delivered behavior; build/test/coverage and linked pm sweeps pass with evidence attached before close.
+parent: pm-5z9r
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: external-audit-followup
+release: vnext
+reporter: codex-agent
+severity: low
+environment: linux-node25-local
+repro_steps: Run full verification matrix after implementation and compare docs/contracts with runtime behavior.
+resolution: Completed docs/contracts alignment and full verification sweep.
+expected_result: Docs and command contracts stay in lockstep with implementation and verification evidence is reproducible.
+actual_result: Documentation updated and build/regression/coverage plus linked test sweeps all passed.
+affected_version: 2026.3.12
+fixed_version: target-vnext
+component: docs-and-verification
+regression: true
+customer_impact: Users get accurate docs and reliable upgrade guidance for new audit-hardening behavior.
+comments[2]{created_at,author,text}:
+  "2026-04-04T12:43:42.029Z",codex-agent,Created as net-new cross-cutting closure sweep item; existing closed docs items do not cover this unresolved audit delta implementation batch.
+  "2026-04-04T14:01:47.958Z",codex-agent,"Updated README/PRD/docs/ARCHITECTURE/docs/EXTENSIONS/AGENTS/CHANGELOG to reflect PM-context controls, fail-on-skipped/assertions, and extension doctor guidance. Verification evidence: pnpm build; expanded regression suite (create/test/test-all/validate/extension/pi-agent/integration); node scripts/run-tests.mjs coverage (thresholds met); pm test sweeps for pm-vrsn/pm-au2z/pm-hjrr/pm-64f1 all passed."
+notes[1]{created_at,author,text}:
+  "2026-04-04T12:43:42.029Z",codex-agent,Will link all changed files/tests/docs and closure evidence after full regression and pm test sweeps.
+files[13]{path,scope,note}:
+  AGENTS.md,project,docs-and-verification-sweep
+  CHANGELOG.md,project,docs-and-verification-sweep
+  docs/ARCHITECTURE.md,project,docs-and-verification-sweep
+  docs/EXTENSIONS.md,project,docs-and-verification-sweep
+  PRD.md,project,docs-and-verification-sweep
+  README.md,project,docs-and-verification-sweep
+  tests/integration/release-readiness-runtime.spec.ts,project,docs-and-verification-sweep
+  tests/unit/create-command.spec.ts,project,docs-and-verification-sweep
+  tests/unit/extension-command.spec.ts,project,docs-and-verification-sweep
+  tests/unit/pi-agent-extension.spec.ts,project,docs-and-verification-sweep
+  tests/unit/test-all-command.spec.ts,project,docs-and-verification-sweep
+  tests/unit/test-command.spec.ts,project,docs-and-verification-sweep
+  tests/unit/validate-command.spec.ts,project,docs-and-verification-sweep
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,full-coverage-gate
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/validate-command.spec.ts tests/unit/extension-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,expanded-regression-sweep
+docs[6]{path,scope,note}:
+  AGENTS.md,project,audit-followup-doc-update
+  CHANGELOG.md,project,audit-followup-doc-update
+  docs/ARCHITECTURE.md,project,audit-followup-doc-update
+  docs/EXTENSIONS.md,project,audit-followup-doc-update
+  PRD.md,project,audit-followup-doc-update
+  README.md,project,audit-followup-doc-update
+close_reason: Documentation/contracts synchronized and full verification sweep completed successfully.
+body: Cross-cutting release-readiness sweep for epic pm-5z9r.

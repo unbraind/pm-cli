@@ -61,9 +61,9 @@ files[8]{path,scope,note}:
   src/cli/main.ts,project,Register history/activity commands
   tests/integration/cli.integration.spec.ts,project,Add history/activity CLI integration checks
   tests/unit/history-activity-command.spec.ts,project,Unit coverage for history/activity handlers
-tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,Sandboxed coverage gate
-  node scripts/run-tests.mjs test,null,project,600,null,null,null,Sandboxed regression tests
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,Sandboxed coverage gate
+  node scripts/run-tests.mjs test,null,project,600,null,null,null,null,null,null,null,null,null,null,Sandboxed regression tests
 docs[2]{path,scope,note}:
   PRD.md,project,Authoritative command and output contract
   README.md,project,Public command surface reference

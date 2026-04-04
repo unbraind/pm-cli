@@ -23,8 +23,8 @@ notes[1]{created_at,author,text}:
   "2026-04-03T15:41:56.689Z",codex-agent,"Includes command routing,help renderer,contracts schema,and diagnostics updates."
 files[1]{path,scope,note}:
   src/sdk/cli-contracts.ts,project,shared contracts and schema surface
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,7200,null,null,null,targeted regression
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,targeted regression
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,runtime and contract architecture docs
 close_reason: Feature scope complete via task pm-b21u with docs/tests/contracts/help updates verified.

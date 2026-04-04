@@ -59,9 +59,9 @@ files[4]{path,scope,note}:
   src/cli/commands/restore.ts,project,restore onWrite dispatch
   tests/unit/create-command.spec.ts,project,create hook regression coverage
   tests/unit/restore-command.spec.ts,project,restore hook regression coverage
-tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,full coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/restore-command.spec.ts,null,project,1200,null,null,null,targeted create restore hook tests
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,full coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/restore-command.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,targeted create restore hook tests
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer workflow contract
   PRD.md,project,hook lifecycle call-site coverage

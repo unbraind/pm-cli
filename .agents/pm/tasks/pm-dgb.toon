@@ -56,10 +56,10 @@ files[3]{path,scope,note}:
   src/core/item/id.ts,project,fix default token length generation logic
   tests/unit/id-generation.spec.ts,project,new deterministic ID generation tests
   vitest.config.ts,project,enforce ID module in 100 percent coverage gate
-tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,coverage gate proof
-  node scripts/run-tests.mjs test,null,project,1200,null,null,null,sandbox full regression
-  node scripts/run-tests.mjs test -- tests/unit/id-generation.spec.ts,null,project,300,null,null,null,targeted ID generation regression
+tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,coverage gate proof
+  node scripts/run-tests.mjs test,null,project,1200,null,null,null,null,null,null,null,null,null,null,sandbox full regression
+  node scripts/run-tests.mjs test -- tests/unit/id-generation.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,targeted ID generation regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow
   PRD.md,project,governing ID contract

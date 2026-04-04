@@ -55,11 +55,11 @@ files[4]{path,scope,note}:
   docs/ARCHITECTURE.md,project,health drift and vectorization architecture updates
   PRD.md,project,health contract and vectorization ledger requirements
   README.md,project,user-facing health behavior updates
-tests[4]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,final coverage verification
-  node scripts/run-tests.mjs test,null,project,7200,null,null,null,full regression
-  PM_DISABLE_OLLAMA_AUTO_DEFAULTS=1 pm health --json,null,project,2400,null,null,null,health smoke with deterministic auto-default guard
-  pnpm build,null,project,1200,null,null,null,typecheck build
+tests[4]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,final coverage verification
+  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,full regression
+  PM_DISABLE_OLLAMA_AUTO_DEFAULTS=1 pm health --json,null,project,2400,null,null,null,null,null,null,null,null,null,null,health smoke with deterministic auto-default guard
+  pnpm build,null,project,1200,null,null,null,null,null,null,null,null,null,null,typecheck build
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,unreleased entries for health enhancements
 close_reason: "Docs and verification evidence captured; build/full tests/health smoke pass, and coverage gate remains below repository-wide 100% threshold baseline."

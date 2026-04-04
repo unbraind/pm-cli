@@ -55,9 +55,9 @@ files[4]{path,scope,note}:
   README.md,project,Capability-enforcement documentation
   src/core/extensions/loader.ts,project,Capability enforcement implementation
   tests/unit/extension-loader.spec.ts,project,Capability-enforcement regression coverage
-tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs coverage,null,project,240,null,null,null,Coverage gate proof
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,240,null,null,null,Targeted extension-loader regression
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,240,null,null,null,null,null,null,null,null,null,null,Coverage gate proof
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,Targeted extension-loader regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,Maintainer workflow and safety contract
   PRD.md,project,Authoritative extension capability contract

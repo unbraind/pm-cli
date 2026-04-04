@@ -1,0 +1,51 @@
+id: pm-vrsn
+title: Implement PM-context parity mode and mismatch metadata for linked tests
+description: "Extend pm test and pm test-all linked-test runtime with additive PM context mode controls, explicit execution-context metadata, and optional mismatch failure guardrails."
+type: Task
+status: closed
+priority: 1
+tags[4]: context-parity,external-audit,implementation,linked-tests
+created_at: "2026-04-04T12:43:04.119Z"
+updated_at: "2026-04-04T14:02:06.595Z"
+deadline: "2026-04-11T12:43:04.119Z"
+author: codex-agent
+estimated_minutes: 220
+acceptance_criteria: "Linked PM-command tests can run with tracker parity mode, emit context metadata, and optionally fail on detected context mismatch without changing default behavior."
+parent: pm-8izv
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: external-audit-followup
+release: vnext
+reporter: codex-agent
+severity: medium
+environment: linux-node25-local
+repro_steps: Run pm list-all as a linked command and compare source versus sandbox item counts.
+resolution: Implemented PM context parity controls and mismatch guardrails.
+expected_result: Context drift is visible and enforceable for PM-command linked tests.
+actual_result: pm test/test-all now emit execution_context metadata and support tracker mode with mismatch fail policy.
+affected_version: 2026.3.12
+fixed_version: target-vnext
+component: linked-test-runtime
+regression: true
+customer_impact: Improves trust in PM-command governance evidence from linked runs.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-6pij,related,"2026-04-04T12:43:04.119Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-04T12:43:04.119Z",codex-agent,Task created after dedupe checks found no active implementation item for PM dataset parity controls and mismatch-fail behavior.
+  "2026-04-04T14:01:37.286Z",codex-agent,"Implemented --pm-context schema|tracker runtime controls, execution_context telemetry, and --fail-on-context-mismatch guardrails across test/test-all surfaces. Evidence: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts and pm test pm-vrsn --run --pm-context tracker --fail-on-context-mismatch passed."
+notes[1]{created_at,author,text}:
+  "2026-04-04T12:43:04.119Z",codex-agent,Keep default mode backward compatible; all strict behavior must be opt-in.
+files[8]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,context-parity-implementation
+  src/cli/commands/test-all.ts,project,context-parity-implementation
+  src/cli/commands/test.ts,project,context-parity-implementation
+  src/cli/main.ts,project,context-parity-implementation
+  src/sdk/cli-contracts.ts,project,context-parity-implementation
+  tests/integration/release-readiness-runtime.spec.ts,project,context-parity-implementation
+  tests/unit/test-all-command.spec.ts,project,context-parity-implementation
+  tests/unit/test-command.spec.ts,project,context-parity-implementation
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,context-parity-regression
+close_reason: Context parity controls and mismatch guardrails implemented with deterministic run metadata and passing regression evidence.
+body: Code workstream for feature pm-8izv and issue pm-6pij.

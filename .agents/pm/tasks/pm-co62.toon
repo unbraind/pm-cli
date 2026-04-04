@@ -52,8 +52,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:24:06.516Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/commands/create.ts,project,policy enforcement in create
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,runtime enforcement regressions
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,runtime enforcement regressions
 docs[1]{path,scope,note}:
   README.md,project,user-facing policy behavior examples
 close_reason: Runtime enforcement and help/error option-policy guidance implemented

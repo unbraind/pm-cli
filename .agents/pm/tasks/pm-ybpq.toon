@@ -54,8 +54,8 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   tests/unit/item-format-migration.spec.ts,project,added migration edge-case coverage for missing dirs and target-only variants
   tests/unit/test-all-command.spec.ts,project,added deterministic timeout dedupe branch coverage
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,full sandbox verification evidence
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,full sandbox verification evidence
 docs[2]{path,scope,note}:
   docs/ARCHITECTURE.md,project,documented dual-format item storage architecture
   README.md,project,documented TOON default and compatibility

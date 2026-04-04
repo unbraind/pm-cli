@@ -36,9 +36,9 @@ files[10]{path,scope,note}:
   tests/unit/completion-command.spec.ts,project,completion append-stable coverage
   tests/unit/files-docs-command.spec.ts,project,append-stable ordering regression coverage
   tests/unit/pi-agent-extension.spec.ts,project,pi append-stable arg mapping coverage
-tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts,null,project,3600,null,null,null,issue3 targeted suite
-  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,Issue3 targeted regression suite
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,issue3 targeted suite
+  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,Issue3 targeted regression suite
 docs[1]{path,scope,note}:
   README.md,project,files stable append option docs
 close_reason: Implemented opt-in append-stable files mutation mode with parity updates and verified via full build/test/coverage/smoke.

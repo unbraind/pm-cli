@@ -105,6 +105,7 @@ export const PM_TOOL_ACTIONS = [
   "extension-uninstall",
   "extension-explore",
   "extension-manage",
+  "extension-doctor",
   "extension-activate",
   "extension-deactivate",
   "create",
@@ -837,6 +838,11 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   envSet: { type: "array", items: { type: "string" } },
   envClear: { type: "array", items: { type: "string" } },
   sharedHostSafe: { type: "boolean" },
+  detail: { type: "string", enum: ["summary", "deep"] },
+  pmContext: { type: "string", enum: ["schema", "tracker"] },
+  failOnContextMismatch: { type: "boolean" },
+  failOnSkipped: { type: "boolean" },
+  requireAssertionsForPm: { type: "boolean" },
   diff: { type: "boolean" },
   verify: { type: "boolean" },
   timeout: { anyOf: [{ type: "string" }, { type: "number" }] },
@@ -936,6 +942,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   "extension-uninstall": { required: ["target"], optional: ["scope"] },
   "extension-explore": { optional: ["scope"] },
   "extension-manage": { optional: ["scope"] },
+  "extension-doctor": { optional: ["scope", "detail"] },
   "extension-activate": { required: ["target"], optional: ["scope"] },
   "extension-deactivate": { required: ["target"], optional: ["scope"] },
   create: {
@@ -988,10 +995,27 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
       "envSet",
       "envClear",
       "sharedHostSafe",
+      "pmContext",
+      "failOnContextMismatch",
+      "failOnSkipped",
+      "requireAssertionsForPm",
       ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
     ],
   },
-  "test-all": { optional: ["status", "timeout", "progress", "envSet", "envClear", "sharedHostSafe"] },
+  "test-all": {
+    optional: [
+      "status",
+      "timeout",
+      "progress",
+      "envSet",
+      "envClear",
+      "sharedHostSafe",
+      "pmContext",
+      "failOnContextMismatch",
+      "failOnSkipped",
+      "requireAssertionsForPm",
+    ],
+  },
   stats: {},
   health: {},
   validate: {
@@ -1035,6 +1059,10 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   scope: {
     description: "Scope selector for commands that operate on project or global state.",
     examples: ["project", "global"],
+  },
+  detail: {
+    description: "Detail mode for commands that support concise and deep diagnostics.",
+    examples: ["summary", "deep"],
   },
   target: {
     description: "Positional target argument for the selected action (ID, source, or extension name).",
@@ -1133,6 +1161,19 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   sharedHostSafe: {
     description: "Apply additive shared-host-safe runtime defaults during linked-test execution.",
+  },
+  pmContext: {
+    description: "PM linked-test context mode (schema keeps isolated tracker data; tracker seeds source tracker data).",
+    examples: ["schema", "tracker"],
+  },
+  failOnContextMismatch: {
+    description: "Fail linked PM command runs when source and sandbox tracker item counts differ.",
+  },
+  failOnSkipped: {
+    description: "Treat skipped linked tests as dependency-failed policy violations.",
+  },
+  requireAssertionsForPm: {
+    description: "Require assertion metadata for linked PM command test entries during run execution.",
   },
   offset: {
     description: "Number of matching rows to skip before limit is applied.",

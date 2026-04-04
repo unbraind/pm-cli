@@ -54,8 +54,8 @@ files[3]{path,scope,note}:
   tests/integration/help-runtime.spec.ts,project,Structured help and usage guidance coverage
   tests/integration/release-readiness-runtime.spec.ts,project,Runtime contract coverage
   tests/unit/output.spec.ts,project,Output envelope regression coverage
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test,null,project,3600,null,null,null,Full test suite
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test,null,project,3600,null,null,null,null,null,null,null,null,null,null,Full test suite
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,Testing and contracts notes
 close_reason: "Regression suites expanded and updated for help, error guidance, output envelope behavior, and coverage include drift checks."

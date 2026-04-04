@@ -43,7 +43,7 @@ files[4]{path,scope,note}:
   src/cli/commands/validate.ts,project,command reference validation check
   src/cli/main.ts,project,new validate flag wiring
   src/sdk/cli-contracts.ts,project,validate flag schemas
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,null,project,2400,null,null,null,validate command reference diagnostics
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,validate command reference diagnostics
 close_reason: default-on command-reference validation implemented and verified
 body: ""

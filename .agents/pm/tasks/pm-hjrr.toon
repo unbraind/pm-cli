@@ -1,0 +1,49 @@
+id: pm-hjrr
+title: Implement extension doctor summary/deep diagnostics command
+description: "Add dedicated extension doctor action with concise summary and deep diagnostics modes, normalized codes, and remediation hints."
+type: Task
+status: closed
+priority: 1
+tags[4]: diagnostics,extensions,external-audit,implementation
+created_at: "2026-04-04T12:43:31.599Z"
+updated_at: "2026-04-04T14:02:11.259Z"
+deadline: "2026-04-11T12:43:31.599Z"
+author: codex-agent
+estimated_minutes: 200
+acceptance_criteria: Extension doctor command provides deterministic summary/deep outputs and remediation hints while preserving existing extension manage/health contracts.
+parent: pm-gm9y
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: external-audit-followup
+release: vnext
+reporter: codex-agent
+severity: medium
+environment: linux-node25-local
+repro_steps: Compare triage effort between fragmented manage/health outputs and dedicated doctor output.
+resolution: Implemented extension doctor summary/deep diagnostics action.
+expected_result: Single command provides focused extension diagnostics with machine-readable details and concise summary mode.
+actual_result: extension doctor now returns consolidated warning codes and remediation hints with deep detail mode.
+affected_version: 2026.3.12
+fixed_version: target-vnext
+component: extension-diagnostics
+regression: true
+customer_impact: Cuts incident triage time for extension activation/schema failures.
+comments[2]{created_at,author,text}:
+  "2026-04-04T12:43:31.599Z",codex-agent,"Task created after dedupe checks: existing closed pm-doek intentionally avoided new command surface,so dedicated doctor action remains net-new implementation scope."
+  "2026-04-04T14:01:45.092Z",codex-agent,"Implemented dedicated extension doctor action with summary/deep detail modes, warning-code aggregation, remediation hints, CLI/help/SDK/Pi contract parity, and unit/integration coverage. Evidence: node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts and pm test pm-hjrr --run passed."
+notes[1]{created_at,author,text}:
+  "2026-04-04T12:43:31.599Z",codex-agent,Doctor output must expose normalized warning/error codes and actionable remediation commands.
+files[8]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,extension-doctor-implementation
+  src/cli/commands/extension.ts,project,extension-doctor-implementation
+  src/cli/help-content.ts,project,extension-doctor-implementation
+  src/cli/main.ts,project,extension-doctor-implementation
+  src/sdk/cli-contracts.ts,project,extension-doctor-implementation
+  tests/integration/release-readiness-runtime.spec.ts,project,extension-doctor-implementation
+  tests/unit/extension-command.spec.ts,project,extension-doctor-implementation
+  tests/unit/pi-agent-extension.spec.ts,project,extension-doctor-implementation
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,extension-doctor-regression
+close_reason: Extension doctor diagnostics surface delivered with summary/deep outputs and verified cross-surface contracts.
+body: Code workstream for feature pm-gm9y.

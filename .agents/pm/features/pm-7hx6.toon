@@ -54,8 +54,8 @@ files[5]{path,scope,note}:
   src/cli/main.ts,project,register command
   tests/unit/completion-command.spec.ts,project,47 tests covering all completion shells and CLI behavior
   vitest.config.ts,project,added completion.ts to coverage include list
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,coverage gate
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,coverage gate
 docs[1]{path,scope,note}:
   PRD.md,project,spec
 close_reason: "Shell completion implemented for bash/zsh/fish. 47 new tests cover all code paths. 522 total tests pass at 100% coverage. All docs (PRD, README, CHANGELOG) updated per R1."

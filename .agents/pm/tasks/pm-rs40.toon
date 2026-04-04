@@ -64,10 +64,10 @@ files[12]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,docs/help contract assertions
   tests/unit/create-command.spec.ts,project,create issue metadata tests
   tests/unit/update-command.spec.ts,project,update issue metadata tests
-tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,sandbox-safe 100% coverage gate
-  node scripts/run-tests.mjs test,null,project,3600,null,null,null,sandbox-safe full regression
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,1800,null,null,null,targeted issue metadata regressions
+tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,sandbox-safe 100% coverage gate
+  node scripts/run-tests.mjs test,null,project,3600,null,null,null,null,null,null,null,null,null,null,sandbox-safe full regression
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,targeted issue metadata regressions
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer all-fields workflow contract
   PRD.md,project,authoritative contract

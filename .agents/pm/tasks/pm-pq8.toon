@@ -67,8 +67,8 @@ files[9]{path,scope,note}:
   README.md,project,Docs-first release contract alignment
   scripts/run-tests.mjs,project,sandbox-safe pm-linked test runner
   SECURITY.md,project,recommended security policy
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,Sandbox coverage gate for docs and release baseline
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,Sandbox coverage gate for docs and release baseline
 docs[8]{path,scope,note}:
   AGENTS.md,project,Contributor workflow contract
   CHANGELOG.md,project,release changelog baseline

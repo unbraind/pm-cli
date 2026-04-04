@@ -44,8 +44,8 @@ notes[1]{created_at,author,text}:
   "2026-04-03T17:25:05.812Z",codex-agent,Resolve CI or compatibility blockers and disposition this PR.
 files[1]{path,scope,note}:
   package.json,project,likely dependency touchpoint
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test,null,project,7200,null,null,null,baseline regression verification
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,baseline regression verification
 docs[1]{path,scope,note}:
   README.md,project,public contract context
 close_reason: Dependabot PR finding superseded by equivalent direct updates and verification evidence.

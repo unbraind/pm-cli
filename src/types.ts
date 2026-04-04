@@ -91,6 +91,13 @@ export interface LinkedTest {
   env_set?: Record<string, string>;
   env_clear?: string[];
   shared_host_safe?: boolean;
+  assert_stdout_contains?: string[];
+  assert_stdout_regex?: string[];
+  assert_stderr_contains?: string[];
+  assert_stderr_regex?: string[];
+  assert_stdout_min_lines?: number;
+  assert_json_field_equals?: Record<string, string>;
+  assert_json_field_gte?: Record<string, number>;
   note?: string;
 }
 

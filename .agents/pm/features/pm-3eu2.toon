@@ -36,8 +36,8 @@ files[12]{path,scope,note}:
   tests/unit/completion-command.spec.ts,project,completion regression for add-glob flag
   tests/unit/files-docs-command.spec.ts,project,unit coverage for add-glob parsing/expansion/dedup
   tests/unit/pi-agent-extension.spec.ts,project,Pi argument mapping regression for addGlob
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,null,null,null,add-glob + wrapper + completion regression suite
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,add-glob + wrapper + completion regression suite
 docs[1]{path,scope,note}:
   README.md,project,glob linked-artifact add guidance
 close_reason: files/docs now support repeatable --add-glob with deterministic dedup and parity surfaces verified by linked + full test gates.

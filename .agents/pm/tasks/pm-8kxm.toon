@@ -54,8 +54,8 @@ files[3]{path,scope,note}:
   src/cli/commands/calendar.ts,project,include filters and recurrence bounds controls
   src/cli/main.ts,project,calendar option surface expansion
   tests/unit/calendar-command.spec.ts,project,advanced include and bounded recurrence tests
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,option contract coverage
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,option contract coverage
 docs[1]{path,scope,note}:
   README.md,project,advanced calendar option docs
 close_reason: Advanced include filters and bounded recurrence controls implemented with passing unit/runtime tests.

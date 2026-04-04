@@ -63,8 +63,8 @@ files[10]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,integration coverage for notes/learnings command lifecycle
   tests/integration/release-readiness-runtime.spec.ts,project,release-readiness help/runtime coverage for notes/learnings
   tests/unit/notes-learnings-command.spec.ts,project,unit coverage for notes/learnings command behaviors
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/unit/notes-learnings-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/cli.integration.spec.ts,null,project,900,null,null,null,targeted parity verification suite
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/notes-learnings-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/cli.integration.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,targeted parity verification suite
 docs[1]{path,scope,note}:
   README.md,project,metadata-audit-documentation-context
 close_reason: Notes/learnings command parity implemented and validated across runtime/test surfaces.

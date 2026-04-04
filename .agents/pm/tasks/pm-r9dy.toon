@@ -56,9 +56,9 @@ files[5]{path,scope,note}:
   src/cli/main.ts,project,policy-aware help and dynamic extension flag markers
   src/core/item/type-registry.ts,project,command option policy resolver
   tests/integration/release-readiness-runtime.spec.ts,project,runtime contract coverage
-tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,full sandbox-safe coverage validation
-  node scripts/run-tests.mjs test,null,project,7200,null,null,null,full sandbox regression
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,full sandbox-safe coverage validation
+  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,full sandbox regression
 docs[5]{path,scope,note}:
   CHANGELOG.md,project,unreleased notes for option policy feature
   docs/ARCHITECTURE.md,project,architecture notes for option policy model

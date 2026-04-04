@@ -4,6 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import type { ExtensionManifest } from "../../core/extensions/loader.js";
+import { getEnabledBuiltInExtensions } from "../../core/extensions/builtins.js";
+import { activateExtensions, loadExtensions } from "../../core/extensions/index.js";
 import { resolveExtensionRoots } from "../../core/extensions/loader.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
@@ -19,7 +21,7 @@ const DEFAULT_EXTENSION_PRIORITY = 100;
 const MANAGED_EXTENSION_STATE_FILENAME = ".managed-extensions.json";
 const MANAGED_EXTENSION_STATE_VERSION = 1;
 
-export type ExtensionCommandAction = "install" | "uninstall" | "explore" | "manage" | "activate" | "deactivate";
+export type ExtensionCommandAction = "install" | "uninstall" | "explore" | "manage" | "doctor" | "activate" | "deactivate";
 export type ExtensionScope = "project" | "global";
 
 export interface ExtensionCommandOptions {
@@ -27,6 +29,7 @@ export interface ExtensionCommandOptions {
   uninstall?: boolean;
   explore?: boolean;
   manage?: boolean;
+  doctor?: boolean;
   activate?: boolean;
   deactivate?: boolean;
   project?: boolean;
@@ -35,6 +38,7 @@ export interface ExtensionCommandOptions {
   gh?: string;
   github?: string;
   ref?: string;
+  detail?: string;
 }
 
 export interface ManagedExtensionSource {
@@ -150,6 +154,8 @@ interface ExtensionTriageSummary {
   top_warnings: string[];
   remediation: string[];
 }
+
+type ExtensionDoctorDetailMode = "summary" | "deep";
 
 function normalizeStringList(values: readonly string[]): string[] {
   return [...new Set(values.map((value) => value.trim()).filter((value) => value.length > 0))].sort((left, right) =>
@@ -484,18 +490,22 @@ function clearExtensionState(settings: PmSettings, name: string): boolean {
   );
 }
 
-function resolveAction(options: ExtensionCommandOptions): ExtensionCommandAction {
+function resolveAction(target: string | undefined, options: ExtensionCommandOptions): ExtensionCommandAction {
   const selected = [
     options.install ? "install" : null,
     options.uninstall ? "uninstall" : null,
     options.explore ? "explore" : null,
     options.manage ? "manage" : null,
+    options.doctor ? "doctor" : null,
     options.activate ? "activate" : null,
     options.deactivate ? "deactivate" : null,
   ].filter((value): value is ExtensionCommandAction => value !== null);
   if (selected.length === 0) {
+    if (typeof target === "string" && target.trim().toLowerCase() === "doctor") {
+      return "doctor";
+    }
     throw new PmCliError(
-      'One action flag is required. Use one of: --install, --uninstall, --explore, --manage, --activate, --deactivate.',
+      'One action flag is required. Use one of: --install, --uninstall, --explore, --manage, --doctor, --activate, --deactivate.',
       EXIT_CODE.USAGE,
     );
   }
@@ -976,12 +986,33 @@ function buildExtensionTriageSummary(
   };
 }
 
+function parseDoctorDetailMode(raw: string | undefined): ExtensionDoctorDetailMode {
+  if (!raw || raw.trim().length === 0) {
+    return "summary";
+  }
+  const normalized = raw.trim().toLowerCase();
+  if (normalized === "summary" || normalized === "deep") {
+    return normalized;
+  }
+  throw new PmCliError(`Invalid --detail value "${raw}". Expected summary or deep.`, EXIT_CODE.USAGE);
+}
+
+function warningCode(value: string): string {
+  const normalized = value.trim();
+  const separator = normalized.indexOf(":");
+  if (separator === -1) {
+    return normalized;
+  }
+  return normalized.slice(0, separator);
+}
+
 export async function runExtension(
   target: string | undefined,
   options: ExtensionCommandOptions,
   global: GlobalOptions,
 ): Promise<ExtensionCommandResult> {
-  const action = resolveAction(options);
+  const action = resolveAction(target, options);
+  const normalizedTarget = action === "doctor" && target?.trim().toLowerCase() === "doctor" ? undefined : target;
   const scope = resolveScope(options);
   const resolvedRoots = resolveExtensionRootsForScope(scope, global);
   const warnings: string[] = [];
@@ -1002,7 +1033,7 @@ export async function runExtension(
 
   if (action === "install") {
     const githubOption = resolveGithubOption(options);
-    const sourceInput = githubOption ?? requireTarget(target, action);
+    const sourceInput = githubOption ?? requireTarget(normalizedTarget, action);
     const installSource = parseExtensionInstallSource(sourceInput, {
       forceGithub: typeof githubOption === "string",
       ref: options.ref,
@@ -1090,16 +1121,16 @@ export async function runExtension(
   }
 
   if (action === "uninstall") {
-    const extensionTarget = requireTarget(target, action);
+    const extensionTarget = requireTarget(normalizedTarget, action);
     const settings = await readSettings(resolvedRoots.settings_root);
     const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
     warnings.push(...managedStateRead.warnings);
     const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
     warnings.push(...installed.warnings);
-    const normalizedTarget = normalizeExtensionNameForMatch(extensionTarget);
+    const normalizedLookup = normalizeExtensionNameForMatch(extensionTarget);
     const candidate =
-      installed.extensions.find((entry) => normalizeExtensionNameForMatch(entry.name) === normalizedTarget) ??
-      installed.extensions.find((entry) => normalizeExtensionNameForMatch(entry.directory) === normalizedTarget);
+      installed.extensions.find((entry) => normalizeExtensionNameForMatch(entry.name) === normalizedLookup) ??
+      installed.extensions.find((entry) => normalizeExtensionNameForMatch(entry.directory) === normalizedLookup);
     if (!candidate) {
       throw new PmCliError(`Installed extension "${extensionTarget}" was not found in ${scope} scope.`, EXIT_CODE.NOT_FOUND);
     }
@@ -1134,16 +1165,16 @@ export async function runExtension(
   }
 
   if (action === "activate" || action === "deactivate") {
-    const extensionTarget = requireTarget(target, action);
+    const extensionTarget = requireTarget(normalizedTarget, action);
     const settings = await readSettings(resolvedRoots.settings_root);
     const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
     warnings.push(...managedStateRead.warnings);
     const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
     warnings.push(...installed.warnings);
-    const normalizedTarget = normalizeExtensionNameForMatch(extensionTarget);
+    const normalizedLookup = normalizeExtensionNameForMatch(extensionTarget);
     const candidate =
-      installed.extensions.find((entry) => normalizeExtensionNameForMatch(entry.name) === normalizedTarget) ??
-      installed.extensions.find((entry) => normalizeExtensionNameForMatch(entry.directory) === normalizedTarget);
+      installed.extensions.find((entry) => normalizeExtensionNameForMatch(entry.name) === normalizedLookup) ??
+      installed.extensions.find((entry) => normalizeExtensionNameForMatch(entry.directory) === normalizedLookup);
     if (!candidate) {
       throw new PmCliError(`Installed extension "${extensionTarget}" was not found in ${scope} scope.`, EXIT_CODE.NOT_FOUND);
     }
@@ -1165,6 +1196,116 @@ export async function runExtension(
         disabled: [...settings.extensions.disabled],
       },
     });
+  }
+
+  if (action === "doctor") {
+    if (normalizedTarget && normalizedTarget.trim().length > 0) {
+      throw new PmCliError('Action "doctor" does not accept a target argument.', EXIT_CODE.USAGE);
+    }
+    const detailMode = parseDoctorDetailMode(options.detail);
+    const settings = await readSettings(resolvedRoots.settings_root);
+    const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
+    warnings.push(...managedStateRead.warnings);
+    const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
+    warnings.push(...installed.warnings);
+
+    const loadResult = await loadExtensions({
+      pmRoot: resolvedRoots.roots.project,
+      settings,
+      cwd: process.cwd(),
+      noExtensions: global.noExtensions === true,
+    });
+    const loadedWithBuiltIns = global.noExtensions === true
+      ? loadResult.loaded
+      : [...getEnabledBuiltInExtensions(settings), ...loadResult.loaded];
+    const activationResult = await activateExtensions({
+      ...loadResult,
+      loaded: loadedWithBuiltIns,
+    });
+    warnings.push(...loadResult.warnings);
+    warnings.push(...activationResult.warnings);
+    const updateCheckWarnings = managedStateRead.state.entries
+      .filter((entry) => typeof entry.update_error === "string" && entry.update_error.trim().length > 0)
+      .map((entry) => `extension_update_check_failed:${entry.name}`);
+    warnings.push(...updateCheckWarnings);
+
+    const normalizedWarnings = [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
+    const warningCodes = [...new Set(normalizedWarnings.map((value) => warningCode(value)))].sort((left, right) =>
+      left.localeCompare(right),
+    );
+    const triage = buildExtensionTriageSummary(scope, normalizedWarnings, installed.extensions);
+    const remediation = [
+      ...new Set(
+        [
+          ...triage.remediation,
+          ...(loadResult.failed.length > 0
+            ? ["Run pm extension --explore --project and pm extension --explore --global to inspect load failures."]
+            : []),
+          ...(activationResult.failed.length > 0
+            ? ["Review activation failures in pm extension --doctor --detail deep output."]
+            : []),
+        ].map((entry) => entry.trim()).filter((entry) => entry.length > 0),
+      ),
+    ];
+
+    const summary = {
+      status: normalizedWarnings.length === 0 ? "ok" : "warn",
+      scope,
+      warning_count: normalizedWarnings.length,
+      warning_codes: warningCodes,
+      total_extensions: installed.extensions.length,
+      managed_total: installed.extensions.filter((entry) => entry.managed).length,
+      active_total: installed.extensions.filter((entry) => entry.active).length,
+      update_available_total: installed.extensions.filter((entry) => entry.update_available === true).length,
+      update_check_failed_total: installed.extensions.filter(
+        (entry) => typeof entry.update_error === "string" && entry.update_error.trim().length > 0,
+      ).length,
+      load_failure_count: loadResult.failed.length,
+      activation_failure_count: activationResult.failed.length,
+      remediation,
+    };
+
+    const details: Record<string, unknown> = {
+      mode: detailMode,
+      summary,
+      triage,
+    };
+    if (detailMode === "deep") {
+      details.deep = {
+        warnings: normalizedWarnings,
+        warning_codes: warningCodes,
+        managed_state: {
+          path: managedStateRead.path,
+          count: managedStateRead.state.entries.length,
+          entries: managedStateRead.state.entries,
+        },
+        installed_extensions: installed.extensions,
+        load: {
+          roots: loadResult.roots,
+          warnings: loadResult.warnings,
+          failed: loadResult.failed,
+          loaded: loadedWithBuiltIns.map((entry) => ({
+            layer: entry.layer,
+            directory: entry.directory,
+            name: entry.name,
+            version: entry.version,
+            entry: entry.entry,
+            priority: entry.priority,
+          })),
+        },
+        activation: {
+          failed: activationResult.failed,
+          warnings: activationResult.warnings,
+          hook_counts: activationResult.hook_counts,
+          registration_counts: activationResult.registration_counts,
+          parser_override_count: activationResult.parser_override_count,
+          preflight_override_count: activationResult.preflight_override_count,
+          service_override_count: activationResult.service_override_count,
+          renderer_override_count: activationResult.renderer_override_count,
+        },
+      };
+    }
+    return withResult(details);
   }
 
   if (action === "explore" || action === "manage") {

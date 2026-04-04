@@ -49,8 +49,8 @@ files[5]{path,scope,note}:
   docs/EXTENSIONS.md,project,comprehensive extension manager docs
   PRD.md,project,command contracts and extension architecture requirements
   README.md,project,extension lifecycle manager usage and equivalence examples
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,null,null,null,release docs contract regression
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,release docs contract regression
 docs[5]{path,scope,note}:
   CHANGELOG.md,project,unreleased notes for extension manager parity
   docs/ARCHITECTURE.md,project,internal extension manager architecture

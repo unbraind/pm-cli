@@ -51,8 +51,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:21:48.583Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/core/search/cache.ts,project,targeted semantic refresh plumbing
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts,null,project,2400,null,null,null,targeted semantic refresh regression
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,targeted semantic refresh regression
 docs[1]{path,scope,note}:
   PRD.md,project,health command and semantic behavior contract
 close_reason: Vectorization status + targeted refresh shipped with ledger synchronization and regression coverage (pm-v48k).

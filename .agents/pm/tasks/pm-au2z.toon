@@ -1,0 +1,54 @@
+id: pm-au2z
+title: Implement fail-on-skipped policy and linked-test assertions
+description: Add additive fail-on-skipped execution policy and linked-test assertion evaluation (text/regex/json threshold style) for pm test and pm test-all.
+type: Task
+status: closed
+priority: 1
+tags[4]: assertions,external-audit,implementation,linked-tests
+created_at: "2026-04-04T12:43:14.932Z"
+updated_at: "2026-04-04T14:02:09.391Z"
+deadline: "2026-04-11T12:43:14.932Z"
+author: codex-agent
+estimated_minutes: 260
+acceptance_criteria: Linked-test assertions can fail commands even when exit code is zero; fail-on-skipped policy can elevate skipped coverage to dependency-failed exit semantics.
+parent: pm-wtq6
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: external-audit-followup
+release: vnext
+reporter: codex-agent
+severity: medium
+environment: linux-node25-local
+repro_steps: "Run a linked command with logical-bad output but zero exit code, and a run with skipped linked tests."
+resolution: Implemented fail-on-skipped plus linked-test assertion semantics.
+expected_result: Assertion and skipped-policy governance signals are explicit and deterministic.
+actual_result: Linked-test runs now enforce optional assertion metadata and can fail on skipped policy.
+affected_version: 2026.3.12
+fixed_version: target-vnext
+component: linked-test-runtime
+regression: true
+customer_impact: Prevents false-green releases where logical assertions are unmet or coverage is silently skipped.
+comments[2]{created_at,author,text}:
+  "2026-04-04T12:43:14.932Z",codex-agent,Task created after dedupe checks confirmed no active item implements fail-on-skipped policy plus linked-test assertion evaluation semantics.
+  "2026-04-04T14:01:41.605Z",codex-agent,"Implemented fail-on-skipped policy flags plus linked-test assertions (stdout/stderr contains+regex, min-lines, JSON equals/gte) across create/test/test-all runtime and contracts. Evidence: node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/validate-command.spec.ts; node scripts/run-tests.mjs coverage; pm test pm-au2z --run --fail-on-skipped passed."
+notes[1]{created_at,author,text}:
+  "2026-04-04T12:43:14.932Z",codex-agent,All new policy and assertions remain opt-in to avoid breaking existing user workflows.
+files[13]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,assertion-and-skip-policy-implementation
+  src/cli/commands/create.ts,project,assertion-and-skip-policy-implementation
+  src/cli/commands/test-all.ts,project,assertion-and-skip-policy-implementation
+  src/cli/commands/test.ts,project,assertion-and-skip-policy-implementation
+  src/cli/main.ts,project,assertion-and-skip-policy-implementation
+  src/core/item/item-format.ts,project,assertion-and-skip-policy-implementation
+  src/sdk/cli-contracts.ts,project,assertion-and-skip-policy-implementation
+  src/types.ts,project,assertion-and-skip-policy-implementation
+  tests/integration/release-readiness-runtime.spec.ts,project,assertion-and-skip-policy-implementation
+  tests/unit/create-command.spec.ts,project,assertion-and-skip-policy-implementation
+  tests/unit/test-all-command.spec.ts,project,assertion-and-skip-policy-implementation
+  tests/unit/test-command.spec.ts,project,assertion-and-skip-policy-implementation
+  tests/unit/validate-command.spec.ts,project,assertion-and-skip-policy-implementation
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/validate-command.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,assertion-and-skip-policy-regression
+close_reason: Fail-on-skipped policy and assertion semantics implemented additively with full regression and coverage gates passing.
+body: Code workstream for feature pm-wtq6.

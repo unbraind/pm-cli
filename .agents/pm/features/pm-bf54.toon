@@ -41,8 +41,8 @@ comments[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/cli/commands/test.ts,project,linked command parser reuse
   src/cli/commands/validate.ts,project,reference extraction integration
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/test-command.spec.ts,null,project,2400,null,null,null,linked command parser regression coverage
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/test-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,linked command parser regression coverage
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,linked command reference extraction architecture
 close_reason: linked command PM-id extraction shipped and verified

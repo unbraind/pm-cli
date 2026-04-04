@@ -54,8 +54,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:25:04.313Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/core/item/item-format.ts,project,reminder field validation and normalization
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test,null,project,1800,null,null,null,schema regression tests
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test,null,project,1800,null,null,null,null,null,null,null,null,null,null,schema regression tests
 docs[1]{path,scope,note}:
   PRD.md,project,schema and command contract updates
 close_reason: Persistent reminder fields and CLI mutation support are fully implemented and validated.

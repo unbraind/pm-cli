@@ -49,8 +49,8 @@ notes[1]{created_at,author,text}:
   "2026-04-04T08:23:37.509Z",codex-agent,Implement validation at create log-seed boundary rather than broad parser breaking changes.
 files[1]{path,scope,note}:
   src/cli/commands/create.ts,project,feature implementation surface
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/parse-utils.spec.ts,null,project,600,null,null,null,feature regression coverage
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/parse-utils.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,feature regression coverage
 docs[1]{path,scope,note}:
   PRD.md,project,command contract update target
 close_reason: "Issue1 feature delivered via pm-l5tr implementation, tests, docs, and verification evidence."

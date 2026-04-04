@@ -2059,6 +2059,7 @@ program
   .option("--uninstall", "Uninstall an installed extension")
   .option("--explore", "List discovered extensions in selected scope")
   .option("--manage", "List managed extensions with update-check metadata")
+  .option("--doctor", "Run consolidated extension diagnostics (summary/deep modes)")
   .option("--activate", "Activate an extension in selected scope settings")
   .option("--deactivate", "Deactivate an extension in selected scope settings")
   .option("--project", "Use project extension scope (default)")
@@ -2067,6 +2068,7 @@ program
   .option("--gh <owner/repo[/path]>", "Install from GitHub shorthand source")
   .option("--github <owner/repo[/path]>", "Alias for --gh")
   .option("--ref <ref>", "Git ref/branch/tag for GitHub install sources")
+  .option("--detail <mode>", "Detail mode for extension diagnostics (summary|deep)")
   .description("Manage extension lifecycle operations for project or global scope.")
   .action(async (target: string | undefined, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
@@ -2078,6 +2080,7 @@ program
         uninstall: options.uninstall === true,
         explore: options.explore === true,
         manage: options.manage === true,
+        doctor: options.doctor === true,
         activate: options.activate === true,
         deactivate: options.deactivate === true,
         project: options.project === true,
@@ -2086,6 +2089,7 @@ program
         gh: typeof options.gh === "string" ? options.gh : undefined,
         github: typeof options.github === "string" ? options.github : undefined,
         ref: typeof options.ref === "string" ? options.ref : undefined,
+        detail: typeof options.detail === "string" ? options.detail : undefined,
       },
       globalOptions,
     );
@@ -3139,6 +3143,10 @@ program
   .option("--env-set <value>", "Set environment variable(s) for linked-test runs (KEY=VALUE, repeatable)", collect)
   .option("--env-clear <value>", "Clear environment variable(s) for linked-test runs (NAME, repeatable)", collect)
   .option("--shared-host-safe", "Apply additive shared-host-safe runtime defaults for linked-test runs")
+  .option("--pm-context <mode>", "PM linked-test context mode: schema|tracker (default: schema)")
+  .option("--fail-on-context-mismatch", "Fail linked PM commands when context item counts differ")
+  .option("--fail-on-skipped", "Treat skipped linked tests as dependency failures")
+  .option("--require-assertions-for-pm", "Require assertion metadata for linked PM command tests")
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
   .option("--force", "Force ownership override")
@@ -3159,6 +3167,10 @@ program
         envSet: Array.isArray(options.envSet) ? (options.envSet as string[]) : [],
         envClear: Array.isArray(options.envClear) ? (options.envClear as string[]) : [],
         sharedHostSafe: Boolean(options.sharedHostSafe),
+        pmContext: typeof options.pmContext === "string" ? options.pmContext : undefined,
+        failOnContextMismatch: Boolean(options.failOnContextMismatch),
+        failOnSkipped: Boolean(options.failOnSkipped),
+        requireAssertionsForPm: Boolean(options.requireAssertionsForPm),
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
         force: Boolean(options.force),
@@ -3169,6 +3181,9 @@ program
       await invalidateSearchCachesForMutation(globalOptions, result);
     }
     printResult(result, globalOptions);
+    if (result.fail_on_skipped_triggered === true) {
+      process.exitCode = EXIT_CODE.DEPENDENCY_FAILED;
+    }
     if (globalOptions.profile) {
       printError(`profile:command=test took_ms=${Date.now() - startedAt}`);
     }
@@ -3183,6 +3198,10 @@ program
   .option("--env-set <value>", "Set environment variable(s) for linked-test runs (KEY=VALUE, repeatable)", collect)
   .option("--env-clear <value>", "Clear environment variable(s) for linked-test runs (NAME, repeatable)", collect)
   .option("--shared-host-safe", "Apply additive shared-host-safe runtime defaults for linked-test runs")
+  .option("--pm-context <mode>", "PM linked-test context mode: schema|tracker (default: schema)")
+  .option("--fail-on-context-mismatch", "Fail linked PM commands when context item counts differ")
+  .option("--fail-on-skipped", "Treat skipped linked tests as dependency failures")
+  .option("--require-assertions-for-pm", "Require assertion metadata for linked PM command tests")
   .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -3194,11 +3213,15 @@ program
         envSet: Array.isArray(options.envSet) ? (options.envSet as string[]) : [],
         envClear: Array.isArray(options.envClear) ? (options.envClear as string[]) : [],
         sharedHostSafe: Boolean(options.sharedHostSafe),
+        pmContext: typeof options.pmContext === "string" ? options.pmContext : undefined,
+        failOnContextMismatch: Boolean(options.failOnContextMismatch),
+        failOnSkipped: Boolean(options.failOnSkipped),
+        requireAssertionsForPm: Boolean(options.requireAssertionsForPm),
       },
       globalOptions,
     );
     printResult(result, globalOptions);
-    if (result.failed > 0) {
+    if (result.failed > 0 || result.fail_on_skipped_triggered === true) {
       process.exitCode = EXIT_CODE.DEPENDENCY_FAILED;
     }
     if (globalOptions.profile) {

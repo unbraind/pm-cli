@@ -56,8 +56,8 @@ files[5]{path,scope,note}:
   src/types.ts,project,event and recurrence type definitions
   tests/unit/item-format-validation.spec.ts,project,event recurrence schema tests
   tests/unit/shared-constants-errors.spec.ts,project,key order contract includes events
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/unit/item-format-validation.spec.ts tests/unit/shared-constants-errors.spec.ts,null,project,2400,null,null,null,schema validation coverage
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/item-format-validation.spec.ts tests/unit/shared-constants-errors.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,schema validation coverage
 docs[1]{path,scope,note}:
   PRD.md,project,event recurrence field contracts
 close_reason: Event and recurrence schema normalization implemented with passing targeted schema tests.

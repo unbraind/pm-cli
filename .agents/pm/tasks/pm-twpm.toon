@@ -52,8 +52,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:23:46.818Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/main.ts,project,migration execution and gating flow
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/unit/health-command.spec.ts,null,project,2400,null,null,null,migration lifecycle regression
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/unit/health-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,migration lifecycle regression
 docs[1]{path,scope,note}:
   PRD.md,project,migration lifecycle contract
 close_reason: Extension migration execution lifecycle and mandatory gate enforcement are integrated in pre-action flow.

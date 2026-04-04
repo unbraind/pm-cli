@@ -45,8 +45,8 @@ files[6]{path,scope,note}:
   src/cli/help-content.ts,project,help examples
   src/cli/main.ts,project,test/test-all flag wiring
   src/sdk/cli-contracts.ts,project,flag contracts and schemas
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,3600,null,null,null,run-level flag and pi parity
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,run-level flag and pi parity
 docs[1]{path,scope,note}:
   PRD.md,project,Issue2 run-level env control contract
 close_reason: run-level env controls and shared-host-safe flags shipped and verified

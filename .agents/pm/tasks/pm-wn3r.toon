@@ -57,9 +57,9 @@ files[5]{path,scope,note}:
   src/cli/main.ts,project,search help text contract
   src/core/search/providers.ts,project,provider auto-detection helpers
   src/core/search/semantic-defaults.ts,project,auto Ollama semantic defaults resolver
-tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/embedding-provider.spec.ts,null,project,3600,null,null,null,runtime behavior tests
-  node scripts/run-tests.mjs test -- tests/unit/semantic-defaults.spec.ts tests/unit/search-command.spec.ts tests/unit/reindex-command.spec.ts,null,project,3600,null,null,null,runtime semantic defaults targeted suite
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/embedding-provider.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,runtime behavior tests
+  node scripts/run-tests.mjs test -- tests/unit/semantic-defaults.spec.ts tests/unit/search-command.spec.ts tests/unit/reindex-command.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,runtime semantic defaults targeted suite
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,runtime semantic dependency resolution docs
 close_reason: runtime defaults shipped with host semantic validation

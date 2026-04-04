@@ -1,0 +1,38 @@
+id: pm-wtq6
+title: Strict skipped-test policy and linked-test assertion semantics
+description: Introduce additive fail-on-skipped policy and assertion metadata for linked tests so successful exit codes alone are not the only verification signal.
+type: Feature
+status: closed
+priority: 1
+tags[4]: assertions,external-audit,linked-tests,pm-cli
+created_at: "2026-04-04T12:42:41.897Z"
+updated_at: "2026-04-04T14:02:57.886Z"
+deadline: "2026-04-14T12:42:41.897Z"
+author: codex-agent
+estimated_minutes: 300
+acceptance_criteria: pm test and pm test-all support fail-on-skipped policy; linked tests can define assertions (text/regex/json-threshold style) that fail deterministically when unmet.
+parent: pm-5z9r
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: external-audit-followup
+release: vnext
+reporter: codex-agent
+severity: medium
+environment: linux-node25-local
+repro_steps: Linked command exits 0 with logically bad output or skipped entries and still reports pass today.
+resolution: Implemented strict skipped-policy and assertion semantics via pm-au2z.
+expected_result: Verification can enforce assertion intent and optionally fail on skipped coverage.
+actual_result: Exit-code-only semantics can overstate linked-test evidence quality.
+affected_version: 2026.3.12
+fixed_version: target-vnext
+component: linked-test-runtime
+regression: true
+customer_impact: Improves confidence in governance automation and release-readiness evidence.
+comments[2]{created_at,author,text}:
+  "2026-04-04T12:42:41.897Z",codex-agent,"Duplicate-check evidence: pm-4g5i classifies failures but does not add fail-on-skipped policy or user-defined assertion evaluation semantics."
+  "2026-04-04T14:02:29.955Z",codex-agent,Child task pm-au2z delivered fail-on-skipped policy and assertion semantics with coverage gate passing.
+notes[1]{created_at,author,text}:
+  "2026-04-04T12:42:41.897Z",codex-agent,"Compatibility guard: default behavior unchanged unless new policy/assertion options are used."
+close_reason: Strict skipped-policy and assertion semantics feature completed additively with full regression evidence.
+body: Implements unresolved external report #4 plus strict governance option from report #1 improvements.

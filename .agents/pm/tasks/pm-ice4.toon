@@ -54,9 +54,9 @@ files[8]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,list stream integration and json guard
   tests/unit/completion-command.spec.ts,project,list completion offset/stream assertions
   tests/unit/list-command.spec.ts,project,offset behavior and validation tests
-tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,null,null,null,list output behavior regression suite
-  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,4200,null,null,null,list offset-stream targeted regression
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,list output behavior regression suite
+  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,4200,null,null,null,null,null,null,null,null,null,null,list offset-stream targeted regression
 docs[1]{path,scope,note}:
   README.md,project,user-facing list output options
 close_reason: Implemented list offset pagination plus opt-in JSON stream mode with completion/contract/test parity; linked regressions pass.

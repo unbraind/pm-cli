@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `pm extension` lifecycle management command with mutually-exclusive actions: `--install`, `--uninstall`, `--explore`, `--manage`, `--activate`, and `--deactivate`.
 - Added extension install source normalization for local paths plus GitHub URL/shorthand forms (`https://github.com/...`, `github.com/...`, `--gh/--github owner/repo[/path]`) with optional `--ref` support.
 - Added scope-local managed extension state (`<extensions-root>/.managed-extensions.json`) with deterministic metadata for source, install/update timestamps, and GitHub update checks.
+- Added `pm extension --doctor` (and `pm extension doctor` shorthand) with consolidated extension diagnostics, normalized warning-code summaries, remediation hints, and optional deep diagnostics via `--detail deep`.
 - Added Extension Host V2 override planes: `registerParser` (command-context parsing), `registerPreflight` (mutation-gate/migration interception), and `registerService` (output/error/help plus lock/history/item-store service overrides) with deterministic last-wins precedence.
 - Added richer command lifecycle hook payload parity (`beforeCommand` / `afterCommand`) including command options, global options, and final command result context.
 - Added live runtime wiring for extension search/vector selectors (`settings.search.provider`, `settings.vector_store.adapter`) in `pm search` and `pm reindex`.
@@ -73,6 +74,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added explicit `--progress` flag support to `pm test`, `pm test-all`, and `pm reindex` so non-interactive runs can opt into deterministic stderr progress visibility.
 - Added additive linked-test runtime environment controls: repeatable `--env-set` / `--env-clear` and `--shared-host-safe` on `pm test --run` and `pm test-all`.
 - Added per-linked-test runtime directives in linked test metadata (`env_set`, `env_clear`, `shared_host_safe`) for deterministic command-level execution control.
+- Added linked-test PM-context and strict-governance controls: `--pm-context schema|tracker`, `--fail-on-context-mismatch`, `--fail-on-skipped`, and `--require-assertions-for-pm` on `pm test --run` and `pm test-all`.
+- Added linked-test assertion metadata support (`assert_stdout_contains`, `assert_stdout_regex`, `assert_stderr_contains`, `assert_stderr_regex`, `assert_stdout_min_lines`, `assert_json_field_equals`, `assert_json_field_gte`) with deterministic assertion-failure classification and per-run `execution_context` telemetry in `run_results`.
 - Added structured linked-test failure classification in `run_results` (`failure_category`) and aggregated `failure_categories` totals in `pm test`/`pm test-all` results for triage (`infra_collision` vs `assertion_failure` and related categories).
 - Added standalone `pm validate` linked command-reference diagnostics (`command_references`) with default-on stale PM-id detection and dedicated warning token (`validate_command_references_stale_pm_ids:<count>`).
 

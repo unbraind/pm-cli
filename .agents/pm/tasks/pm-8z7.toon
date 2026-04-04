@@ -58,9 +58,9 @@ files[4]{path,scope,note}:
   .github/workflows/nightly.yml,project,nightly matrix coverage
   PRD.md,project,mark Milestone 6 CI matrix checklist as complete
   tests/integration/ci-workflow-contract.spec.ts,project,workflow contract expectations for finalized matrix
-tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,coverage gate in sandbox
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,600,null,null,null,CLI integration regression
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,coverage gate in sandbox
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,CLI integration regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood and test safety rules
   PRD.md,project,milestone 6 CI requirements

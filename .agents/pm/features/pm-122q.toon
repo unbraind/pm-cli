@@ -54,8 +54,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:25:00.171Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,pi wrapper action parity
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test,null,project,1800,null,null,null,integration and docs contract regression
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test,null,project,1800,null,null,null,null,null,null,null,null,null,null,integration and docs contract regression
 docs[1]{path,scope,note}:
   README.md,project,calendar/reminder command docs
 close_reason: Integration surfaces and documentation hardening for calendar/reminders are complete with full test coverage.

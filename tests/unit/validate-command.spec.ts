@@ -150,19 +150,32 @@ describe("runValidate", () => {
 
       const itemPath = path.join(context.pmPath, "tasks", `${ownerId}.toon`);
       const before = await readFile(itemPath, "utf8");
-      const testsHeaderPattern =
-        /tests\[(\d+)\]\{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note\}:/m;
+      const testsHeaderPattern = /tests\[(\d+)\](\{[^}]+\}:)/m;
       const headerMatch = before.match(testsHeaderPattern);
       expect(headerMatch).not.toBeNull();
       const currentCount = Number(headerMatch?.[1] ?? "0");
       const afterCount = currentCount + 1;
       const afterWithHeader = before.replace(
         testsHeaderPattern,
-        `tests[${afterCount}]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:`,
+        `tests[${afterCount}]${headerMatch?.[2] ?? "{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:"}`,
       );
+      const testFields = (headerMatch?.[2] ?? "{command,path,scope}:")
+        .replace(/^\{/, "")
+        .replace(/\}:$/, "")
+        .split(",")
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0);
+      const legacyPathOnlyRow = testFields
+        .map((field) => {
+          if (field === "command") return "null";
+          if (field === "path") return "tests/path-only.spec.ts";
+          if (field === "scope") return "project";
+          return "null";
+        })
+        .join(",");
       const after = afterWithHeader.replace(
         /\nbody:/m,
-        "\n  null,tests/path-only.spec.ts,project,null,null,null,null,null\nbody:",
+        `\n  ${legacyPathOnlyRow}\nbody:`,
       );
       expect(after).not.toBe(before);
       await writeFile(itemPath, after, "utf8");

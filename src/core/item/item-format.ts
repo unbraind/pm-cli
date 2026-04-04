@@ -468,6 +468,48 @@ function sortTests(values: LinkedTest[] | undefined): LinkedTest[] | undefined {
           )
         : undefined,
       shared_host_safe: value.shared_host_safe === true ? true : undefined,
+      assert_stdout_contains: value.assert_stdout_contains
+        ? [...new Set(value.assert_stdout_contains.map((entry) => entry.trim()).filter((entry) => entry.length > 0))].sort((a, b) =>
+            a.localeCompare(b),
+          )
+        : undefined,
+      assert_stdout_regex: value.assert_stdout_regex
+        ? [...new Set(value.assert_stdout_regex.map((entry) => entry.trim()).filter((entry) => entry.length > 0))].sort((a, b) =>
+            a.localeCompare(b),
+          )
+        : undefined,
+      assert_stderr_contains: value.assert_stderr_contains
+        ? [...new Set(value.assert_stderr_contains.map((entry) => entry.trim()).filter((entry) => entry.length > 0))].sort((a, b) =>
+            a.localeCompare(b),
+          )
+        : undefined,
+      assert_stderr_regex: value.assert_stderr_regex
+        ? [...new Set(value.assert_stderr_regex.map((entry) => entry.trim()).filter((entry) => entry.length > 0))].sort((a, b) =>
+            a.localeCompare(b),
+          )
+        : undefined,
+      assert_stdout_min_lines:
+        typeof value.assert_stdout_min_lines === "number" &&
+          Number.isFinite(value.assert_stdout_min_lines) &&
+          value.assert_stdout_min_lines >= 0
+          ? Math.floor(value.assert_stdout_min_lines)
+          : undefined,
+      assert_json_field_equals: value.assert_json_field_equals
+        ? Object.fromEntries(
+            Object.entries(value.assert_json_field_equals)
+              .map(([key, expectedValue]) => [key.trim(), String(expectedValue).trim()] as const)
+              .filter(([key, expectedValue]) => key.length > 0 && expectedValue.length > 0)
+              .sort(([left], [right]) => left.localeCompare(right)),
+          )
+        : undefined,
+      assert_json_field_gte: value.assert_json_field_gte
+        ? Object.fromEntries(
+            Object.entries(value.assert_json_field_gte)
+              .map(([key, expectedValue]) => [key.trim(), Number(expectedValue)] as const)
+              .filter(([key, expectedValue]) => key.length > 0 && Number.isFinite(expectedValue))
+              .sort(([left], [right]) => left.localeCompare(right)),
+          )
+        : undefined,
       note: value.note?.trim() || undefined,
     }))
     .sort((a, b) => {
@@ -485,6 +527,32 @@ function sortTests(values: LinkedTest[] | undefined): LinkedTest[] | undefined {
       if (byEnvClear !== 0) return byEnvClear;
       const byEnvSet = JSON.stringify(a.env_set ?? {}).localeCompare(JSON.stringify(b.env_set ?? {}));
       if (byEnvSet !== 0) return byEnvSet;
+      const byStdoutContains = JSON.stringify(a.assert_stdout_contains ?? []).localeCompare(
+        JSON.stringify(b.assert_stdout_contains ?? []),
+      );
+      if (byStdoutContains !== 0) return byStdoutContains;
+      const byStdoutRegex = JSON.stringify(a.assert_stdout_regex ?? []).localeCompare(
+        JSON.stringify(b.assert_stdout_regex ?? []),
+      );
+      if (byStdoutRegex !== 0) return byStdoutRegex;
+      const byStderrContains = JSON.stringify(a.assert_stderr_contains ?? []).localeCompare(
+        JSON.stringify(b.assert_stderr_contains ?? []),
+      );
+      if (byStderrContains !== 0) return byStderrContains;
+      const byStderrRegex = JSON.stringify(a.assert_stderr_regex ?? []).localeCompare(
+        JSON.stringify(b.assert_stderr_regex ?? []),
+      );
+      if (byStderrRegex !== 0) return byStderrRegex;
+      const byStdoutMinLines = (a.assert_stdout_min_lines ?? 0) - (b.assert_stdout_min_lines ?? 0);
+      if (byStdoutMinLines !== 0) return byStdoutMinLines;
+      const byJsonFieldEquals = JSON.stringify(a.assert_json_field_equals ?? {}).localeCompare(
+        JSON.stringify(b.assert_json_field_equals ?? {}),
+      );
+      if (byJsonFieldEquals !== 0) return byJsonFieldEquals;
+      const byJsonFieldGte = JSON.stringify(a.assert_json_field_gte ?? {}).localeCompare(
+        JSON.stringify(b.assert_json_field_gte ?? {}),
+      );
+      if (byJsonFieldGte !== 0) return byJsonFieldGte;
       return (a.note ?? "").localeCompare(b.note ?? "");
     });
 }

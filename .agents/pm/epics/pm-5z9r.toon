@@ -1,0 +1,37 @@
+id: pm-5z9r
+title: "External audit follow-up: linked-test evidence and extension diagnostics"
+description: "Track unresolved external audit deltas: linked-test PM dataset parity, strict skipped/assertion semantics, and dedicated extension doctor diagnostics surface."
+type: Epic
+status: closed
+priority: 0
+tags[4]: extensions,external-audit,linked-tests,pm-cli
+created_at: "2026-04-04T12:42:06.028Z"
+updated_at: "2026-04-04T14:03:04.674Z"
+deadline: "2026-04-18T12:42:06.028Z"
+author: codex-agent
+estimated_minutes: 420
+acceptance_criteria: Unresolved external audit deltas are implemented additively with full docs/tests verification and no regressions for existing users.
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: external-audit-followup
+release: vnext
+reporter: codex-agent
+severity: medium
+environment: linux-node25-local
+repro_steps: Reproduce external report findings against linked-test and extension diagnostics flows.
+resolution: Completed all external audit follow-up deliverables.
+expected_result: Linked-test governance signal and extension diagnostics are deterministic and actionable.
+actual_result: Linked-test parity/assertion hardening plus extension doctor and docs/verification sweep completed with passing evidence.
+affected_version: 2026.3.12
+fixed_version: target-vnext
+component: linked-test-runtime
+regression: true
+customer_impact: Prevents false-green governance evidence and shortens extension triage time.
+comments[2]{created_at,author,text}:
+  "2026-04-04T12:42:06.028Z",codex-agent,"Duplicate-check evidence before create: pm context --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20; pm search path-only linked test --limit 10; pm search extension doctor diagnostics --limit 10; pm search fail-on-skipped linked tests --limit 10; no active unresolved item covers combined remaining scope."
+  "2026-04-04T14:02:39.793Z",codex-agent,"Audit follow-up scope completed: pm-vrsn, pm-au2z, pm-hjrr, and pm-64f1 are closed with linked regression+coverage evidence and docs updates."
+notes[1]{created_at,author,text}:
+  "2026-04-04T12:42:06.028Z",codex-agent,"Reuses closed lineage for covered scope (pm-mf5z,pm-44iu,pm-wn34,pm-grst,pm-doek) and tracks only net-new deltas."
+close_reason: "External audit follow-up completed with additive hardening, docs alignment, and full verification evidence."
+body: "Net-new scope after dedupe: #2 full PM dataset parity guardrails, #4 assertion semantics and fail-on-skipped policy, and #3 dedicated extension doctor surface."

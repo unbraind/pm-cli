@@ -54,9 +54,9 @@ files[3]{path,scope,note}:
   README.md,project,quick start create example to expand
   src/cli/main.ts,project,create command field surface reference
   tests/integration/cli.integration.spec.ts,project,runtime create-field coverage
-tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,null,null,null,sandboxed runtime create-field verification
-  pnpm build,null,project,300,null,null,null,TypeScript build verification
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,sandboxed runtime create-field verification
+  pnpm build,null,project,300,null,null,null,null,null,null,null,null,null,null,TypeScript build verification
 docs[1]{path,scope,note}:
   README.md,project,metadata-audit-documentation-context
 close_reason: "README quick start now shows the full create field surface; runtime create verification, sandbox sample, coverage, and secret scan passed."

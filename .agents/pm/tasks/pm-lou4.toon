@@ -52,8 +52,8 @@ notes[1]{created_at,author,text}:
   "2026-04-03T17:33:17.602Z",codex-agent,Each run should dedupe against existing pm items before creating new ones.
 files[1]{path,scope,note}:
   .github/dependabot.yml,project,source of scheduled dependency updates
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts,null,project,240,null,null,null,calendar recurrence regression
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,calendar recurrence regression
 docs[1]{path,scope,note}:
   AGENTS.md,project,required pm workflow and dedupe protocol
 body: "Operational cadence task: run weekly GH findings triage, deduplicate against existing pm items, and open/update remediation items as needed."

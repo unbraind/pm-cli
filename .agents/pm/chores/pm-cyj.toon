@@ -59,8 +59,8 @@ files[3]{path,scope,note}:
   .github/workflows/ci.yml,project,add npm pack dry-run CI gate
   .gitignore,project,Ignore coverage artifacts from local verification runs
   package.json,project,Added files allowlist and prepublish build guard
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  npm pack --dry-run,null,project,120,null,null,null,Validate packaged file set excludes dev artifacts
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  npm pack --dry-run,null,project,120,null,null,null,null,null,null,null,null,null,null,Validate packaged file set excludes dev artifacts
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow contract
   PRD.md,project,governing spec

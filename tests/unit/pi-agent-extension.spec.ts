@@ -572,6 +572,10 @@ describe("Pi agent extension wrapper for pm", () => {
       items: { type: "string" },
     });
     expect(schemaProperty(testAllSchema, "sharedHostSafe").type).toBe("boolean");
+    expect(schemaProperty(testAllSchema, "pmContext").enum).toEqual(["schema", "tracker"]);
+    expect(schemaProperty(testAllSchema, "failOnContextMismatch").type).toBe("boolean");
+    expect(schemaProperty(testAllSchema, "failOnSkipped").type).toBe("boolean");
+    expect(schemaProperty(testAllSchema, "requireAssertionsForPm").type).toBe("boolean");
 
     const result = await tool.execute("call-1", { action: "stats" });
     expect(execSpy).toHaveBeenCalledTimes(2);
@@ -684,6 +688,14 @@ describe("Pi agent extension wrapper for pm", () => {
         scope: "global",
       }),
     ).toEqual(["--json", "extension", "--manage", "--global"]);
+
+    expect(
+      buildPmCliArgs({
+        action: "extension-doctor",
+        scope: "project",
+        detail: "deep",
+      }),
+    ).toEqual(["--json", "extension", "--doctor", "--project", "--detail", "deep"]);
 
     expect(
       buildPmCliArgs({
@@ -1040,6 +1052,10 @@ describe("Pi agent extension wrapper for pm", () => {
         envSet: ["PORT=0"],
         envClear: ["PLAYWRIGHT_BASE_URL"],
         sharedHostSafe: true,
+        pmContext: "tracker",
+        failOnContextMismatch: true,
+        failOnSkipped: true,
+        requireAssertionsForPm: true,
       }),
     ).toEqual([
       "--json",
@@ -1055,6 +1071,11 @@ describe("Pi agent extension wrapper for pm", () => {
       "--env-clear",
       "PLAYWRIGHT_BASE_URL",
       "--shared-host-safe",
+      "--pm-context",
+      "tracker",
+      "--fail-on-context-mismatch",
+      "--fail-on-skipped",
+      "--require-assertions-for-pm",
     ]);
 
     expect(
@@ -1065,6 +1086,10 @@ describe("Pi agent extension wrapper for pm", () => {
         envSet: ["PORT=0"],
         envClear: ["PLAYWRIGHT_BASE_URL"],
         sharedHostSafe: true,
+        pmContext: "tracker",
+        failOnContextMismatch: true,
+        failOnSkipped: true,
+        requireAssertionsForPm: true,
       }),
     ).toEqual([
       "--json",
@@ -1078,6 +1103,11 @@ describe("Pi agent extension wrapper for pm", () => {
       "--env-clear",
       "PLAYWRIGHT_BASE_URL",
       "--shared-host-safe",
+      "--pm-context",
+      "tracker",
+      "--fail-on-context-mismatch",
+      "--fail-on-skipped",
+      "--require-assertions-for-pm",
     ]);
 
     expect(

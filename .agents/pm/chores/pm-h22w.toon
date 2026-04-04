@@ -51,8 +51,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:34:34.822Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,guard prompt docs contract drift
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,2400,null,null,null,docs contract regression
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,docs contract regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow contract
   PRD.md,project,authoritative create contract

@@ -1,5 +1,5 @@
 import { spawn, type ChildProcess } from "node:child_process";
-import { cp, mkdir, mkdtemp, rm } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
@@ -10,7 +10,7 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { locateItem, mutateItem, readLocatedItem } from "../../core/store/item-store.js";
-import { getSettingsPath, resolveGlobalPmRoot, resolvePmRoot } from "../../core/store/paths.js";
+import { getSettingsPath, ITEM_FILE_EXTENSIONS, resolveGlobalPmRoot, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { runInit } from "./init.js";
 import { SCOPE_VALUES } from "../../types/index.js";
@@ -22,6 +22,10 @@ const DEFAULT_LINKED_TEST_HEARTBEAT_INTERVAL_MS = 10000;
 const MAX_LINKED_TEST_COMMAND_LABEL_LENGTH = 120;
 const LINKED_TEST_PROTECTED_ENV_KEYS = new Set(["PM_PATH", "PM_GLOBAL_PATH", "FORCE_COLOR"]);
 const LINKED_TEST_ENV_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const PM_CONTEXT_MODE_VALUES = ["schema", "tracker"] as const;
+type LinkedTestPmContextMode = (typeof PM_CONTEXT_MODE_VALUES)[number];
+const LINKED_TEST_TRACKER_DIRS_TO_SKIP = new Set(["locks", "extensions"]);
+const LINKED_TEST_ITEM_COUNT_DIRS_TO_SKIP = new Set(["history", "index", "search", "extensions", "locks"]);
 const LINKED_TEST_INFRA_COLLISION_PATTERNS = [
   /eaddrinuse/i,
   /address already in use/i,
@@ -107,6 +111,10 @@ export interface TestCommandOptions {
   envSet?: string[];
   envClear?: string[];
   sharedHostSafe?: boolean;
+  pmContext?: string;
+  failOnContextMismatch?: boolean;
+  failOnSkipped?: boolean;
+  requireAssertionsForPm?: boolean;
   author?: string;
   message?: string;
   force?: boolean;
@@ -126,6 +134,21 @@ export interface TestRunResult {
   status: "passed" | "failed" | "skipped";
   exit_code?: number;
   failure_category?: LinkedTestFailureCategory;
+  execution_context?: {
+    pm_context_mode: LinkedTestPmContextMode;
+    is_pm_command: boolean;
+    source_project_pm_path: string;
+    sandbox_project_pm_path: string;
+    source_global_pm_path: string;
+    sandbox_global_pm_path: string;
+    source_project_item_count: number;
+    sandbox_project_item_count: number;
+    source_global_item_count: number;
+    sandbox_global_item_count: number;
+    mismatch_detected: boolean;
+    project_extensions_seeded: boolean;
+    global_extensions_seeded: boolean;
+  };
   stdout?: string;
   stderr?: string;
   error?: string;
@@ -136,6 +159,7 @@ export interface TestResult {
   tests: LinkedTest[];
   run_results: TestRunResult[];
   failure_categories: Record<LinkedTestFailureCategory, number>;
+  fail_on_skipped_triggered?: boolean;
   changed: boolean;
   count: number;
 }
@@ -218,6 +242,134 @@ function parseLinkedTestEnvClearValue(raw: string | undefined, optionName: strin
     }
   }
   return values;
+}
+
+function parseLinkedTestStringList(raw: string | undefined): string[] | undefined {
+  if (!raw || raw.trim().length === 0) {
+    return undefined;
+  }
+  const values = [...new Set(raw.split(/[;\n]/).map((entry) => entry.trim()).filter((entry) => entry.length > 0))];
+  return values.length > 0 ? values : undefined;
+}
+
+function parseLinkedTestRegexList(raw: string | undefined, optionName: string, fieldLabel: string): string[] | undefined {
+  const values = parseLinkedTestStringList(raw);
+  if (!values || values.length === 0) {
+    return undefined;
+  }
+  for (const pattern of values) {
+    try {
+      // Validate syntax when linked-test metadata is added.
+      new RegExp(pattern, "m");
+    } catch (error: unknown) {
+      throw new PmCliError(
+        `${optionName} ${fieldLabel} includes invalid regex "${pattern}": ${error instanceof Error ? error.message : String(error)}`,
+        EXIT_CODE.USAGE,
+      );
+    }
+  }
+  return values;
+}
+
+function parseLinkedTestMinLines(raw: string | undefined, optionName: string): number | undefined {
+  if (!raw || raw.trim().length === 0) {
+    return undefined;
+  }
+  const parsed = parseOptionalNumber(raw, "assert_stdout_min_lines");
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new PmCliError(`${optionName} assert_stdout_min_lines must be an integer >= 0`, EXIT_CODE.USAGE);
+  }
+  return parsed;
+}
+
+function parseLinkedTestAssertionEqualsMap(raw: string | undefined, optionName: string): Record<string, string> | undefined {
+  if (!raw || raw.trim().length === 0) {
+    return undefined;
+  }
+  const assignments = raw
+    .split(/[;\n]/)
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  if (assignments.length === 0) {
+    throw new PmCliError(`${optionName} assert_json_field_equals must include at least one path=value assignment`, EXIT_CODE.USAGE);
+  }
+  const values: Record<string, string> = {};
+  for (const assignment of assignments) {
+    const separatorIndex = assignment.indexOf("=");
+    if (separatorIndex <= 0) {
+      throw new PmCliError(
+        `${optionName} assert_json_field_equals entries must use path=value and be separated by semicolons`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    const key = assignment.slice(0, separatorIndex).trim();
+    const value = assignment.slice(separatorIndex + 1).trim();
+    if (key.length === 0 || value.length === 0) {
+      throw new PmCliError(`${optionName} assert_json_field_equals entries must include non-empty path and value`, EXIT_CODE.USAGE);
+    }
+    values[key] = value;
+  }
+  return Object.keys(values).length > 0 ? values : undefined;
+}
+
+function parseLinkedTestAssertionGteMap(raw: string | undefined, optionName: string): Record<string, number> | undefined {
+  if (!raw || raw.trim().length === 0) {
+    return undefined;
+  }
+  const assignments = raw
+    .split(/[;\n]/)
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  if (assignments.length === 0) {
+    throw new PmCliError(`${optionName} assert_json_field_gte must include at least one path=value assignment`, EXIT_CODE.USAGE);
+  }
+  const values: Record<string, number> = {};
+  for (const assignment of assignments) {
+    const separatorIndex = assignment.indexOf("=");
+    if (separatorIndex <= 0) {
+      throw new PmCliError(
+        `${optionName} assert_json_field_gte entries must use path=value and be separated by semicolons`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    const key = assignment.slice(0, separatorIndex).trim();
+    const valueRaw = assignment.slice(separatorIndex + 1).trim();
+    if (key.length === 0 || valueRaw.length === 0) {
+      throw new PmCliError(`${optionName} assert_json_field_gte entries must include non-empty path and value`, EXIT_CODE.USAGE);
+    }
+    const value = Number.parseFloat(valueRaw);
+    if (!Number.isFinite(value)) {
+      throw new PmCliError(`${optionName} assert_json_field_gte value for "${key}" must be numeric`, EXIT_CODE.USAGE);
+    }
+    values[key] = value;
+  }
+  return Object.keys(values).length > 0 ? values : undefined;
+}
+
+function parsePmContextMode(raw: string | undefined): LinkedTestPmContextMode {
+  if (!raw) {
+    return "schema";
+  }
+  const normalized = raw.trim().toLowerCase();
+  if ((PM_CONTEXT_MODE_VALUES as readonly string[]).includes(normalized)) {
+    return normalized as LinkedTestPmContextMode;
+  }
+  throw new PmCliError(
+    `Invalid --pm-context value "${raw}". Expected one of: ${PM_CONTEXT_MODE_VALUES.join(", ")}`,
+    EXIT_CODE.USAGE,
+  );
+}
+
+function hasLinkedTestAssertions(linkedTest: LinkedTest): boolean {
+  return (
+    (linkedTest.assert_stdout_contains?.length ?? 0) > 0 ||
+    (linkedTest.assert_stdout_regex?.length ?? 0) > 0 ||
+    (linkedTest.assert_stderr_contains?.length ?? 0) > 0 ||
+    (linkedTest.assert_stderr_regex?.length ?? 0) > 0 ||
+    typeof linkedTest.assert_stdout_min_lines === "number" ||
+    Object.keys(linkedTest.assert_json_field_equals ?? {}).length > 0 ||
+    Object.keys(linkedTest.assert_json_field_gte ?? {}).length > 0
+  );
 }
 
 function mergeEnvSetDirectives(entries: string[] | undefined, optionName: string): Record<string, string> {
@@ -501,6 +653,11 @@ function extractPmInvocationArgsFromSegment(segment: string): string[] | null {
   return null;
 }
 
+function commandInvokesPmCli(command: string): boolean {
+  const normalizedCommand = normalizeCommandForValidation(command);
+  return splitNormalizedCommandSegments(normalizedCommand).some((segment) => extractPmInvocationArgsFromSegment(segment) !== null);
+}
+
 export function extractReferencedPmItemIdsFromCommand(command: string, idPrefix = "pm"): string[] {
   const normalizedCommand = normalizeCommandForValidation(command);
   const ids = new Set<string>();
@@ -717,6 +874,13 @@ function parseAddEntries(raw: string[] | undefined): LinkedTest[] {
       env_set: envSet,
       env_clear: envClear,
       shared_host_safe: sharedHostSafe,
+      assert_stdout_contains: parseLinkedTestStringList(kv.assert_stdout_contains?.trim()),
+      assert_stdout_regex: parseLinkedTestRegexList(kv.assert_stdout_regex?.trim(), "--add", "assert_stdout_regex"),
+      assert_stderr_contains: parseLinkedTestStringList(kv.assert_stderr_contains?.trim()),
+      assert_stderr_regex: parseLinkedTestRegexList(kv.assert_stderr_regex?.trim(), "--add", "assert_stderr_regex"),
+      assert_stdout_min_lines: parseLinkedTestMinLines(kv.assert_stdout_min_lines?.trim(), "--add"),
+      assert_json_field_equals: parseLinkedTestAssertionEqualsMap(kv.assert_json_field_equals?.trim(), "--add"),
+      assert_json_field_gte: parseLinkedTestAssertionGteMap(kv.assert_json_field_gte?.trim(), "--add"),
       note: kv.note?.trim() || undefined,
     };
   });
@@ -1154,6 +1318,56 @@ async function seedLinkedTestSandbox(
   );
 }
 
+async function seedLinkedTestTrackerData(sourceRoot: string, sandboxRoot: string): Promise<void> {
+  if (!(await pathExists(sourceRoot))) {
+    return;
+  }
+  const entries = await readdir(sourceRoot, { withFileTypes: true });
+  for (const entry of entries) {
+    if (LINKED_TEST_TRACKER_DIRS_TO_SKIP.has(entry.name)) {
+      continue;
+    }
+    const sourcePath = path.join(sourceRoot, entry.name);
+    const targetPath = path.join(sandboxRoot, entry.name);
+    if (entry.isDirectory()) {
+      await copyIntoSandboxIfPresent(sourcePath, targetPath, true);
+      continue;
+    }
+    if (entry.isFile()) {
+      await copyIntoSandboxIfPresent(sourcePath, targetPath);
+    }
+  }
+}
+
+async function countLinkedTestItemFiles(pmRoot: string): Promise<number> {
+  if (!(await pathExists(pmRoot))) {
+    return 0;
+  }
+  let total = 0;
+  const entries = await readdir(pmRoot, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isDirectory() || LINKED_TEST_ITEM_COUNT_DIRS_TO_SKIP.has(entry.name)) {
+      continue;
+    }
+    const folderPath = path.join(pmRoot, entry.name);
+    let files;
+    try {
+      files = await readdir(folderPath, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const file of files) {
+      if (!file.isFile()) {
+        continue;
+      }
+      if (ITEM_FILE_EXTENSIONS.some((extension) => file.name.toLowerCase().endsWith(extension))) {
+        total += 1;
+      }
+    }
+  }
+  return total;
+}
+
 export function resolveLinkedTestFailureExitCode(
   execution: Pick<LinkedTestExecutionResult, "exitCode" | "timedOut" | "maxBufferExceeded">,
 ): number {
@@ -1162,6 +1376,177 @@ export function resolveLinkedTestFailureExitCode(
     return 1;
   }
   return rawExitCode;
+}
+
+function splitJsonPathSegments(fieldPath: string): Array<string | number> {
+  const segments: Array<string | number> = [];
+  const tokens = fieldPath.match(/[^.[\]]+|\[\d+\]/g) ?? [];
+  for (const token of tokens) {
+    if (token.startsWith("[") && token.endsWith("]")) {
+      const parsedIndex = Number.parseInt(token.slice(1, -1), 10);
+      if (!Number.isInteger(parsedIndex) || parsedIndex < 0) {
+        return [];
+      }
+      segments.push(parsedIndex);
+      continue;
+    }
+    segments.push(token);
+  }
+  return segments;
+}
+
+function readJsonPathValue(root: unknown, fieldPath: string): { found: boolean; value: unknown } {
+  const normalizedPath = fieldPath.trim();
+  if (normalizedPath.length === 0) {
+    return { found: false, value: undefined };
+  }
+  const segments = splitJsonPathSegments(normalizedPath);
+  if (segments.length === 0) {
+    return { found: false, value: undefined };
+  }
+  let current: unknown = root;
+  for (const segment of segments) {
+    if (typeof segment === "number") {
+      if (!Array.isArray(current) || segment >= current.length) {
+        return { found: false, value: undefined };
+      }
+      current = current[segment];
+      continue;
+    }
+    if (typeof current !== "object" || current === null || !(segment in current)) {
+      return { found: false, value: undefined };
+    }
+    current = (current as Record<string, unknown>)[segment];
+  }
+  return { found: true, value: current };
+}
+
+function parseAssertionLiteral(raw: string): unknown {
+  const trimmed = raw.trim();
+  if (trimmed === "true") {
+    return true;
+  }
+  if (trimmed === "false") {
+    return false;
+  }
+  if (trimmed === "null") {
+    return null;
+  }
+  const numeric = Number(trimmed);
+  if (trimmed.length > 0 && Number.isFinite(numeric)) {
+    return numeric;
+  }
+  if ((trimmed.startsWith("{") && trimmed.endsWith("}")) || (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
+    try {
+      return JSON.parse(trimmed) as unknown;
+    } catch {
+      // Fall back to string comparison for malformed JSON literals.
+    }
+  }
+  return trimmed;
+}
+
+function compareAssertionValues(actual: unknown, expected: unknown): boolean {
+  if (
+    typeof actual === "object" &&
+    actual !== null &&
+    typeof expected === "object" &&
+    expected !== null
+  ) {
+    return JSON.stringify(actual) === JSON.stringify(expected);
+  }
+  return Object.is(actual, expected);
+}
+
+function evaluateLinkedTestAssertions(linkedTest: LinkedTest, stdout: string, stderr: string): string[] {
+  const failures: string[] = [];
+  for (const expected of linkedTest.assert_stdout_contains ?? []) {
+    if (!stdout.includes(expected)) {
+      failures.push(`stdout missing required text: "${expected}"`);
+    }
+  }
+  for (const pattern of linkedTest.assert_stdout_regex ?? []) {
+    try {
+      const regex = new RegExp(pattern, "m");
+      if (!regex.test(stdout)) {
+        failures.push(`stdout failed regex assertion: /${pattern}/m`);
+      }
+    } catch (error: unknown) {
+      failures.push(`stdout regex assertion is invalid: /${pattern}/ (${error instanceof Error ? error.message : String(error)})`);
+    }
+  }
+  for (const expected of linkedTest.assert_stderr_contains ?? []) {
+    if (!stderr.includes(expected)) {
+      failures.push(`stderr missing required text: "${expected}"`);
+    }
+  }
+  for (const pattern of linkedTest.assert_stderr_regex ?? []) {
+    try {
+      const regex = new RegExp(pattern, "m");
+      if (!regex.test(stderr)) {
+        failures.push(`stderr failed regex assertion: /${pattern}/m`);
+      }
+    } catch (error: unknown) {
+      failures.push(`stderr regex assertion is invalid: /${pattern}/ (${error instanceof Error ? error.message : String(error)})`);
+    }
+  }
+  if (typeof linkedTest.assert_stdout_min_lines === "number") {
+    const lineCount = stdout
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0).length;
+    if (lineCount < linkedTest.assert_stdout_min_lines) {
+      failures.push(`stdout line count ${lineCount} is below required minimum ${linkedTest.assert_stdout_min_lines}`);
+    }
+  }
+
+  const jsonEqualsAssertions = linkedTest.assert_json_field_equals ?? {};
+  const jsonGteAssertions = linkedTest.assert_json_field_gte ?? {};
+  const needsJsonAssertions = Object.keys(jsonEqualsAssertions).length > 0 || Object.keys(jsonGteAssertions).length > 0;
+  if (!needsJsonAssertions) {
+    return failures;
+  }
+
+  let parsedJson: unknown;
+  try {
+    parsedJson = JSON.parse(stdout);
+  } catch (error: unknown) {
+    failures.push(
+      `stdout is not valid JSON for assert_json_field_* checks: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    return failures;
+  }
+
+  for (const [fieldPath, expectedRaw] of Object.entries(jsonEqualsAssertions)) {
+    const resolved = readJsonPathValue(parsedJson, fieldPath);
+    if (!resolved.found) {
+      failures.push(`assert_json_field_equals missing path "${fieldPath}"`);
+      continue;
+    }
+    const expected = parseAssertionLiteral(expectedRaw);
+    if (!compareAssertionValues(resolved.value, expected)) {
+      failures.push(
+        `assert_json_field_equals mismatch at "${fieldPath}" (expected=${JSON.stringify(expected)} actual=${JSON.stringify(resolved.value)})`,
+      );
+    }
+  }
+
+  for (const [fieldPath, expectedMinimum] of Object.entries(jsonGteAssertions)) {
+    const resolved = readJsonPathValue(parsedJson, fieldPath);
+    if (!resolved.found) {
+      failures.push(`assert_json_field_gte missing path "${fieldPath}"`);
+      continue;
+    }
+    if (typeof resolved.value !== "number" || !Number.isFinite(resolved.value)) {
+      failures.push(`assert_json_field_gte path "${fieldPath}" resolved to non-numeric value`);
+      continue;
+    }
+    if (resolved.value < expectedMinimum) {
+      failures.push(`assert_json_field_gte failed at "${fieldPath}" (expected >= ${expectedMinimum}, actual ${resolved.value})`);
+    }
+  }
+
+  return failures;
 }
 
 export async function runLinkedTests(
@@ -1173,28 +1558,72 @@ export async function runLinkedTests(
     envSet?: string[];
     envClear?: string[];
     sharedHostSafe?: boolean;
+    pmContext?: string;
+    failOnContextMismatch?: boolean;
+    requireAssertionsForPm?: boolean;
   },
 ): Promise<TestRunResult[]> {
   const results: TestRunResult[] = [];
   const sandboxRoot = await mkdtemp(path.join(tmpdir(), "pm-linked-test-"));
   const sandboxPmPath = path.join(sandboxRoot, "project", ".agents", "pm");
   const sandboxGlobalPath = path.join(sandboxRoot, "global");
+  const pmContextMode = parsePmContextMode(options?.pmContext);
   const progressMode: LinkedTestProgressMode = options?.progress === true ? "always" : "auto";
   const runtimeDirectives = resolveRuntimeDirectives(options?.envSet, options?.envClear, options?.sharedHostSafe);
+  let sourceProjectItemCount = 0;
+  let sourceGlobalItemCount = 0;
+  let sandboxProjectItemCount = 0;
+  let sandboxGlobalItemCount = 0;
+  const sourceRoots = options?.sourceRoots;
+  const projectExtensionsSeeded = Boolean(sourceRoots);
+  const globalExtensionsSeeded = Boolean(sourceRoots);
 
   try {
     await runInit(undefined, { path: sandboxPmPath });
     await runInit(undefined, { path: sandboxGlobalPath });
-    if (options?.sourceRoots) {
-      await seedLinkedTestSandbox(sandboxPmPath, sandboxGlobalPath, options.sourceRoots);
+    if (sourceRoots) {
+      await seedLinkedTestSandbox(sandboxPmPath, sandboxGlobalPath, sourceRoots);
+      if (pmContextMode === "tracker") {
+        await seedLinkedTestTrackerData(sourceRoots.projectPmRoot, sandboxPmPath);
+        await seedLinkedTestTrackerData(sourceRoots.globalPmRoot, sandboxGlobalPath);
+      }
+      sourceProjectItemCount = await countLinkedTestItemFiles(sourceRoots.projectPmRoot);
+      sourceGlobalItemCount = await countLinkedTestItemFiles(sourceRoots.globalPmRoot);
     }
+    sandboxProjectItemCount = await countLinkedTestItemFiles(sandboxPmPath);
+    sandboxGlobalItemCount = await countLinkedTestItemFiles(sandboxGlobalPath);
+
+    const buildExecutionContext = (
+      command: string | undefined,
+    ): NonNullable<TestRunResult["execution_context"]> => {
+      const isPmCommand = typeof command === "string" && command.length > 0 ? commandInvokesPmCli(command) : false;
+      const mismatchDetected = isPmCommand && sourceProjectItemCount !== sandboxProjectItemCount;
+      return {
+        pm_context_mode: pmContextMode,
+        is_pm_command: isPmCommand,
+        source_project_pm_path: sourceRoots?.projectPmRoot ?? "",
+        sandbox_project_pm_path: sandboxPmPath,
+        source_global_pm_path: sourceRoots?.globalPmRoot ?? "",
+        sandbox_global_pm_path: sandboxGlobalPath,
+        source_project_item_count: sourceProjectItemCount,
+        sandbox_project_item_count: sandboxProjectItemCount,
+        source_global_item_count: sourceGlobalItemCount,
+        sandbox_global_item_count: sandboxGlobalItemCount,
+        mismatch_detected: mismatchDetected,
+        project_extensions_seeded: projectExtensionsSeeded,
+        global_extensions_seeded: globalExtensionsSeeded,
+      };
+    };
+
     for (let index = 0; index < tests.length; index += 1) {
       const linkedTest = tests[index];
+      const executionContext = buildExecutionContext(linkedTest.command);
       if (!linkedTest.command) {
         results.push({
           command: linkedTest.command,
           path: linkedTest.path,
           status: "skipped",
+          execution_context: executionContext,
           error: "No command configured for this linked test.",
         });
         continue;
@@ -1205,7 +1634,34 @@ export async function runLinkedTests(
           command: linkedTest.command,
           path: linkedTest.path,
           status: "skipped",
+          execution_context: executionContext,
           error: runtimeSafetySkipReason,
+        });
+        continue;
+      }
+      if (options?.failOnContextMismatch === true && executionContext.is_pm_command && executionContext.mismatch_detected) {
+        results.push({
+          command: linkedTest.command,
+          path: linkedTest.path,
+          status: "failed",
+          exit_code: 1,
+          failure_category: "assertion_failure",
+          execution_context: executionContext,
+          error:
+            `Linked test PM context mismatch detected (source_project_items=${executionContext.source_project_item_count}, ` +
+            `sandbox_project_items=${executionContext.sandbox_project_item_count}).`,
+        });
+        continue;
+      }
+      if (options?.requireAssertionsForPm === true && executionContext.is_pm_command && !hasLinkedTestAssertions(linkedTest)) {
+        results.push({
+          command: linkedTest.command,
+          path: linkedTest.path,
+          status: "failed",
+          exit_code: 1,
+          failure_category: "assertion_failure",
+          execution_context: executionContext,
+          error: "Linked PM command requires assertions when --require-assertions-for-pm is enabled.",
         });
         continue;
       }
@@ -1237,11 +1693,27 @@ export async function runLinkedTests(
       );
       const passed = execution.exitCode === 0 && !execution.timedOut && !execution.maxBufferExceeded;
       if (passed) {
+        const assertionFailures = evaluateLinkedTestAssertions(linkedTest, execution.stdout, execution.stderr);
+        if (assertionFailures.length > 0) {
+          results.push({
+            command: linkedTest.command,
+            path: linkedTest.path,
+            status: "failed",
+            exit_code: 1,
+            failure_category: "assertion_failure",
+            execution_context: executionContext,
+            stdout: execution.stdout,
+            stderr: execution.stderr,
+            error: `Linked test assertion(s) failed: ${assertionFailures.join("; ")}`,
+          });
+          continue;
+        }
         results.push({
           command: linkedTest.command,
           path: linkedTest.path,
           status: "passed",
           exit_code: 0,
+          execution_context: executionContext,
           stdout: execution.stdout,
           stderr: execution.stderr,
         });
@@ -1254,6 +1726,7 @@ export async function runLinkedTests(
         status: "failed",
         exit_code: resolveLinkedTestFailureExitCode(execution),
         failure_category: failureCategory,
+        execution_context: executionContext,
         stdout: execution.stdout,
         stderr: execution.stderr,
         error: formatLinkedTestExecutionError(execution, timeoutMs),
@@ -1330,10 +1803,20 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
   if (options.timeout !== undefined) {
     defaultTimeoutSeconds = parseOptionalNumber(options.timeout, "timeout");
   }
+  const pmContextMode = parsePmContextMode(options.pmContext);
   const hasRuntimeDirectiveFlags =
-    (options.envSet?.length ?? 0) > 0 || (options.envClear?.length ?? 0) > 0 || options.sharedHostSafe === true;
+    (options.envSet?.length ?? 0) > 0 ||
+    (options.envClear?.length ?? 0) > 0 ||
+    options.sharedHostSafe === true ||
+    options.pmContext !== undefined ||
+    options.failOnContextMismatch === true ||
+    options.failOnSkipped === true ||
+    options.requireAssertionsForPm === true;
   if (hasRuntimeDirectiveFlags && options.run !== true) {
-    throw new PmCliError("--env-set, --env-clear, and --shared-host-safe require --run", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "--env-set, --env-clear, --shared-host-safe, --pm-context, --fail-on-context-mismatch, --fail-on-skipped, and --require-assertions-for-pm require --run",
+      EXIT_CODE.USAGE,
+    );
   }
 
   const runResults = options.run === true
@@ -1342,6 +1825,9 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
         envSet: options.envSet,
         envClear: options.envClear,
         sharedHostSafe: options.sharedHostSafe,
+        pmContext: pmContextMode,
+        failOnContextMismatch: options.failOnContextMismatch,
+        requireAssertionsForPm: options.requireAssertionsForPm,
         sourceRoots: {
           projectPmRoot: pmRoot,
           globalPmRoot: resolveGlobalPmRoot(process.cwd()),
@@ -1349,12 +1835,15 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
       })
     : [];
   const failureCategories = countFailureCategories(runResults);
+  const failOnSkippedTriggered =
+    options.run === true && options.failOnSkipped === true && runResults.some((entry) => entry.status === "skipped");
 
   return {
     id: itemId,
     tests,
     run_results: runResults,
     failure_categories: failureCategories,
+    fail_on_skipped_triggered: failOnSkippedTriggered ? true : undefined,
     changed: shouldMutate,
     count: tests.length,
   };

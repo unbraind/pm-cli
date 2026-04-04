@@ -66,10 +66,10 @@ files[4]{path,scope,note}:
   scripts/install.ps1,project,PowerShell installer with prefix and version options
   scripts/install.sh,project,POSIX installer with prefix and version options
   tests/integration/help-runtime.spec.ts,project,assert installer URL contract in README
-tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,Coverage gate regression proof
-  node scripts/run-tests.mjs test -- tests/integration/help-readme-contract.spec.ts,null,project,300,null,null,null,README installer contract regression
-  "PM_CLI_PACKAGE=file:/home/steve/GITHUB_RELEASE/pm-cli bash scripts/install.sh --prefix /tmp/pm-cli-install-test --version latest",null,project,180,null,null,null,Local package install smoke test
+tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,Coverage gate regression proof
+  node scripts/run-tests.mjs test -- tests/integration/help-readme-contract.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,README installer contract regression
+  "PM_CLI_PACKAGE=file:/home/steve/GITHUB_RELEASE/pm-cli bash scripts/install.sh --prefix /tmp/pm-cli-install-test --version latest",null,project,180,null,null,null,null,null,null,null,null,null,null,Local package install smoke test
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow contract
   PRD.md,project,governing spec for release-ready docs

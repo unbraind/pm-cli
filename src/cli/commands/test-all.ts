@@ -19,6 +19,10 @@ export interface TestAllCommandOptions {
   envSet?: string[];
   envClear?: string[];
   sharedHostSafe?: boolean;
+  pmContext?: string;
+  failOnContextMismatch?: boolean;
+  failOnSkipped?: boolean;
+  requireAssertionsForPm?: boolean;
 }
 
 export interface TestAllItemResult {
@@ -44,6 +48,7 @@ export interface TestAllResult {
   failed: number;
   passed: number;
   skipped: number;
+  fail_on_skipped_triggered?: boolean;
   results: TestAllItemResult[];
 }
 
@@ -85,13 +90,31 @@ function normalizeEnvClearSignature(value: LinkedTest["env_clear"]): string {
   return JSON.stringify([...value].sort((left, right) => left.localeCompare(right)));
 }
 
+function normalizeAssertionSignature(test: LinkedTest): string {
+  const normalized = {
+    assert_stdout_contains: [...new Set(test.assert_stdout_contains ?? [])].sort((left, right) => left.localeCompare(right)),
+    assert_stdout_regex: [...new Set(test.assert_stdout_regex ?? [])].sort((left, right) => left.localeCompare(right)),
+    assert_stderr_contains: [...new Set(test.assert_stderr_contains ?? [])].sort((left, right) => left.localeCompare(right)),
+    assert_stderr_regex: [...new Set(test.assert_stderr_regex ?? [])].sort((left, right) => left.localeCompare(right)),
+    assert_stdout_min_lines: typeof test.assert_stdout_min_lines === "number" ? test.assert_stdout_min_lines : undefined,
+    assert_json_field_equals: Object.fromEntries(
+      Object.entries(test.assert_json_field_equals ?? {}).sort(([left], [right]) => left.localeCompare(right)),
+    ),
+    assert_json_field_gte: Object.fromEntries(
+      Object.entries(test.assert_json_field_gte ?? {}).sort(([left], [right]) => left.localeCompare(right)),
+    ),
+  };
+  return JSON.stringify(normalized);
+}
+
 function buildLinkedTestKey(test: LinkedTest): string {
   const command = test.command?.trim();
   if (command && command.length > 0) {
     const envSet = normalizeEnvSetSignature(test.env_set);
     const envClear = normalizeEnvClearSignature(test.env_clear);
     const sharedHostSafe = test.shared_host_safe === true ? "true" : "false";
-    return `command:${test.scope}:${normalizeCommand(command)}:${envSet}:${envClear}:${sharedHostSafe}`;
+    const assertions = normalizeAssertionSignature(test);
+    return `command:${test.scope}:${normalizeCommand(command)}:${envSet}:${envClear}:${sharedHostSafe}:${assertions}`;
   }
   const linkedPath = test.path?.trim() ?? "";
   return `path:${test.scope}:${linkedPath}`;
@@ -214,6 +237,9 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
             envSet: options.envSet,
             envClear: options.envClear,
             sharedHostSafe: options.sharedHostSafe,
+            pmContext: options.pmContext,
+            failOnContextMismatch: options.failOnContextMismatch,
+            requireAssertionsForPm: options.requireAssertionsForPm,
           })
         : [];
     let executedIndex = 0;
@@ -249,6 +275,8 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
     });
   }
 
+  const failOnSkippedTriggered = options.failOnSkipped === true && skipped > 0;
+
   return {
     totals: {
       items: filteredItems.length,
@@ -261,6 +289,7 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
     failed,
     passed,
     skipped,
+    fail_on_skipped_triggered: failOnSkippedTriggered ? true : undefined,
     results,
   };
 }

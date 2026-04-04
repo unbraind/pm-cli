@@ -322,6 +322,46 @@ describe("runTest", () => {
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
+      await expect(
+        runTest(id, { add: ["command=node --version,scope=project,assert_stdout_regex=["] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runTest(id, { add: ["command=node --version,scope=project,assert_stderr_regex=["] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runTest(id, { add: ["command=node --version,scope=project,assert_stdout_min_lines=-1"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runTest(id, { add: ["command=node --version,scope=project,assert_stdout_min_lines=1.5"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runTest(id, { add: ["command=node --version,scope=project,assert_json_field_equals=count"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runTest(id, { add: ["command=node --version,scope=project,assert_json_field_equals==value"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runTest(id, { add: ["command=node --version,scope=project,assert_json_field_gte=count"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runTest(id, { add: ["command=node --version,scope=project,assert_json_field_gte=count=abc"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
       await expect(runTest(id, { remove: ["   "] }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
@@ -331,7 +371,22 @@ describe("runTest", () => {
       await expect(runTest(id, { run: true, timeout: "not-a-number" }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
+      await expect(runTest(id, { run: true, pmContext: "invalid" }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
       await expect(runTest(id, { envSet: ["PORT=0"] }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runTest(id, { pmContext: "tracker" }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runTest(id, { failOnContextMismatch: true }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runTest(id, { failOnSkipped: true }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runTest(id, { requireAssertionsForPm: true }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
 
@@ -342,6 +397,34 @@ describe("runTest", () => {
       );
       expect(seeded.tests.some((entry) => entry.command === "node --version")).toBe(true);
       expect(seeded.tests.every((entry) => entry.shared_host_safe !== true)).toBe(true);
+
+      const seededAssertions = await runTest(
+        id,
+        {
+          add: [
+            "command=node --version,scope=project,path=tests/path-metadata.spec.ts,assert_stdout_contains=v,assert_stdout_regex=v\\\\d+,assert_stderr_contains=warn,assert_stderr_regex=warn,assert_stdout_min_lines=0,assert_json_field_equals=status=ok,assert_json_field_gte=count=1",
+          ],
+          message: "seed assertion metadata",
+        },
+        { path: context.pmPath },
+      );
+      const assertedEntry = seededAssertions.tests.find((entry) => entry.path === "tests/path-metadata.spec.ts");
+      expect(assertedEntry).toMatchObject({
+        assert_stdout_contains: ["v"],
+        assert_stdout_regex: ["v\\\\d+"],
+        assert_stderr_contains: ["warn"],
+        assert_stderr_regex: ["warn"],
+        assert_stdout_min_lines: 0,
+        assert_json_field_equals: { status: "ok" },
+        assert_json_field_gte: { count: 1 },
+      });
+
+      const removedByPath = await runTest(
+        id,
+        { remove: ["tests/path-metadata.spec.ts"], message: "remove path metadata entry" },
+        { path: context.pmPath },
+      );
+      expect(removedByPath.tests.some((entry) => entry.path === "tests/path-metadata.spec.ts")).toBe(false);
 
       const runWithEmptyRuntimeDirectives = await runTest(
         id,
@@ -938,6 +1021,245 @@ describe("runTest", () => {
       );
       expect(run.run_results).toHaveLength(2);
       expect(run.run_results.every((entry) => entry.status === "passed")).toBe(true);
+    });
+  });
+
+  it("emits PM execution context metadata and supports mismatch guardrails", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "linked-test-pm-context-metadata");
+      await runTest(
+        id,
+        {
+          add: ["command=node dist/cli.js list-all --type Task --limit 200 --json,scope=project,timeout_seconds=30"],
+          message: "seed PM context command",
+        },
+        { path: context.pmPath },
+      );
+
+      const schemaMode = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "30",
+        },
+        { path: context.pmPath },
+      );
+      expect(schemaMode.run_results).toHaveLength(1);
+      const schemaResult = schemaMode.run_results[0];
+      expect(schemaResult?.status).toBe("passed");
+      expect(schemaResult?.execution_context).toMatchObject({
+        pm_context_mode: "schema",
+        is_pm_command: true,
+      });
+      expect(schemaResult?.execution_context?.source_project_item_count ?? 0).toBeGreaterThan(0);
+      expect(schemaResult?.execution_context?.mismatch_detected).toBe(true);
+
+      const strictMismatch = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "30",
+          failOnContextMismatch: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(strictMismatch.run_results[0]?.status).toBe("failed");
+      expect(strictMismatch.run_results[0]?.error ?? "").toContain("context mismatch");
+
+      const trackerMode = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "30",
+          pmContext: "tracker",
+          failOnContextMismatch: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(trackerMode.run_results[0]?.status).toBe("passed");
+      expect(trackerMode.run_results[0]?.execution_context?.pm_context_mode).toBe("tracker");
+      expect(trackerMode.run_results[0]?.execution_context?.mismatch_detected).toBe(false);
+    });
+  });
+
+  it("evaluates linked-test assertions and strict PM assertion requirement", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "linked-test-assertions");
+      await overwriteTaskTests(context, id, [
+        {
+          command: "node -e \"process.stdout.write(JSON.stringify({count:2}))\"",
+          scope: "project",
+          assert_stdout_contains: ["count"],
+          assert_stdout_regex: ["count"],
+          assert_json_field_gte: {
+            count: 1,
+          },
+        },
+      ]);
+
+      const passingAssertions = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "20",
+        },
+        { path: context.pmPath },
+      );
+      expect(passingAssertions.run_results[0]?.status).toBe("passed");
+
+      await overwriteTaskTests(context, id, [
+        {
+          command: "node -e \"process.stdout.write(JSON.stringify({count:2}))\"",
+          scope: "project",
+          assert_json_field_gte: {
+            count: 5,
+          },
+        },
+      ]);
+      const failingAssertions = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "20",
+        },
+        { path: context.pmPath },
+      );
+      expect(failingAssertions.run_results[0]?.status).toBe("failed");
+      expect(failingAssertions.run_results[0]?.failure_category).toBe("assertion_failure");
+      expect(failingAssertions.run_results[0]?.error ?? "").toContain("assert_json_field_gte");
+
+      await overwriteTaskTests(context, id, [
+        {
+          command: "node dist/cli.js list-all --type Task --limit 10 --json",
+          scope: "project",
+        },
+      ]);
+      const strictPmAssertions = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "20",
+          pmContext: "tracker",
+          requireAssertionsForPm: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(strictPmAssertions.run_results[0]?.status).toBe("failed");
+      expect(strictPmAssertions.run_results[0]?.error ?? "").toContain("requires assertions");
+    });
+  });
+
+  it("handles assertion literal/path edge cases and legacy invalid regex metadata", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "linked-test-assertion-edge-cases");
+
+      await overwriteTaskTests(context, id, [
+        {
+          command: "node -e 'process.stdout.write(JSON.stringify({flag:true,nil:null,obj:{a:1},literal:\"{bad}\",count:2,label:\"ok\"}))'",
+          scope: "project",
+          assert_stdout_min_lines: 1,
+          assert_json_field_equals: {
+            flag: "true",
+            nil: "null",
+            obj: "{\"a\":1}",
+            literal: "{bad}",
+            count: "2",
+            label: "ok",
+          },
+          assert_json_field_gte: {
+            count: 1,
+          },
+        },
+      ]);
+      const literalPass = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "20",
+        },
+        { path: context.pmPath },
+      );
+      expect(literalPass.run_results[0]?.status).toBe("passed");
+
+      await overwriteTaskTests(context, id, [
+        {
+          command: "node -e \"process.stdout.write('not-json')\"",
+          scope: "project",
+          assert_json_field_gte: {
+            count: 1,
+          },
+        },
+      ]);
+      const invalidJson = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "20",
+        },
+        { path: context.pmPath },
+      );
+      expect(invalidJson.run_results[0]?.status).toBe("failed");
+      expect(invalidJson.run_results[0]?.error ?? "").toContain("not valid JSON");
+
+      await overwriteTaskTests(context, id, [
+        {
+          command: "node -e \"process.stdout.write(JSON.stringify({count:'abc'}))\"",
+          scope: "project",
+          assert_json_field_equals: {
+            missing: "1",
+          },
+          assert_json_field_gte: {
+            count: 2,
+          },
+        },
+      ]);
+      const missingAndNonNumeric = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "20",
+        },
+        { path: context.pmPath },
+      );
+      expect(missingAndNonNumeric.run_results[0]?.status).toBe("failed");
+      expect(missingAndNonNumeric.run_results[0]?.error ?? "").toContain("assert_json_field_equals missing path");
+      expect(missingAndNonNumeric.run_results[0]?.error ?? "").toContain("resolved to non-numeric value");
+
+      await overwriteTaskTests(context, id, [
+        {
+          command: "node -e \"process.stdout.write('plain')\"",
+          scope: "project",
+          assert_stdout_regex: ["["],
+          assert_stderr_regex: ["["],
+        },
+      ]);
+      const invalidRegexMetadata = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "20",
+        },
+        { path: context.pmPath },
+      );
+      expect(invalidRegexMetadata.run_results[0]?.status).toBe("failed");
+      expect(invalidRegexMetadata.run_results[0]?.error ?? "").toContain("regex assertion is invalid");
+    });
+  });
+
+  it("reports fail-on-skipped policy triggers", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "linked-test-fail-on-skipped");
+      await overwriteTaskTests(context, id, [{ path: "tests/legacy-path-only.spec.ts", scope: "project" }]);
+      const run = await runTest(
+        id,
+        {
+          run: true,
+          failOnSkipped: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(run.run_results[0]?.status).toBe("skipped");
+      expect(run.fail_on_skipped_triggered).toBe(true);
     });
   });
 

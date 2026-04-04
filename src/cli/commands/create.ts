@@ -368,6 +368,112 @@ function parseLinkedTestBoolean(raw: string | undefined, optionName: string, fie
   throw new PmCliError(`${optionName} ${fieldLabel} must be one of true|false|1|0|yes|no`, EXIT_CODE.USAGE);
 }
 
+function parseLinkedTestStringList(raw: string | undefined): string[] | undefined {
+  const normalized = parseOptionalString(raw);
+  if (!normalized || isNoneToken(normalized)) {
+    return undefined;
+  }
+  const values = [...new Set(normalized.split(/[;\n]/).map((entry) => entry.trim()).filter((entry) => entry.length > 0))];
+  return values.length > 0 ? values : undefined;
+}
+
+function parseLinkedTestRegexList(raw: string | undefined, optionName: string, fieldLabel: string): string[] | undefined {
+  const values = parseLinkedTestStringList(raw);
+  if (!values || values.length === 0) {
+    return undefined;
+  }
+  for (const pattern of values) {
+    try {
+      // Validate syntax early so malformed assertions fail at mutation time.
+      new RegExp(pattern, "m");
+    } catch (error: unknown) {
+      throw new PmCliError(
+        `${optionName} ${fieldLabel} includes invalid regex "${pattern}": ${error instanceof Error ? error.message : String(error)}`,
+        EXIT_CODE.USAGE,
+      );
+    }
+  }
+  return values;
+}
+
+function parseLinkedTestMinLines(raw: string | undefined, optionName: string): number | undefined {
+  const normalized = parseOptionalString(raw);
+  if (!normalized || isNoneToken(normalized)) {
+    return undefined;
+  }
+  const parsed = parseOptionalNumber(normalized, "assert_stdout_min_lines");
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new PmCliError(`${optionName} assert_stdout_min_lines must be an integer >= 0`, EXIT_CODE.USAGE);
+  }
+  return parsed;
+}
+
+function parseLinkedTestAssertionEqualsMap(raw: string | undefined, optionName: string): Record<string, string> | undefined {
+  const normalized = parseOptionalString(raw);
+  if (!normalized || isNoneToken(normalized)) {
+    return undefined;
+  }
+  const assignments = normalized
+    .split(/[;\n]/)
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  if (assignments.length === 0) {
+    throw new PmCliError(`${optionName} assert_json_field_equals must include at least one path=value assignment`, EXIT_CODE.USAGE);
+  }
+  const values: Record<string, string> = {};
+  for (const assignment of assignments) {
+    const separatorIndex = assignment.indexOf("=");
+    if (separatorIndex <= 0) {
+      throw new PmCliError(
+        `${optionName} assert_json_field_equals entries must use path=value and be separated by semicolons`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    const key = assignment.slice(0, separatorIndex).trim();
+    const value = assignment.slice(separatorIndex + 1).trim();
+    if (key.length === 0 || value.length === 0) {
+      throw new PmCliError(`${optionName} assert_json_field_equals entries must include non-empty path and value`, EXIT_CODE.USAGE);
+    }
+    values[key] = value;
+  }
+  return Object.keys(values).length > 0 ? values : undefined;
+}
+
+function parseLinkedTestAssertionGteMap(raw: string | undefined, optionName: string): Record<string, number> | undefined {
+  const normalized = parseOptionalString(raw);
+  if (!normalized || isNoneToken(normalized)) {
+    return undefined;
+  }
+  const assignments = normalized
+    .split(/[;\n]/)
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  if (assignments.length === 0) {
+    throw new PmCliError(`${optionName} assert_json_field_gte must include at least one path=value assignment`, EXIT_CODE.USAGE);
+  }
+  const values: Record<string, number> = {};
+  for (const assignment of assignments) {
+    const separatorIndex = assignment.indexOf("=");
+    if (separatorIndex <= 0) {
+      throw new PmCliError(
+        `${optionName} assert_json_field_gte entries must use path=value and be separated by semicolons`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    const key = assignment.slice(0, separatorIndex).trim();
+    const valueRaw = assignment.slice(separatorIndex + 1).trim();
+    if (key.length === 0 || valueRaw.length === 0) {
+      throw new PmCliError(`${optionName} assert_json_field_gte entries must include non-empty path and value`, EXIT_CODE.USAGE);
+    }
+    const value = Number.parseFloat(valueRaw);
+    if (!Number.isFinite(value)) {
+      throw new PmCliError(`${optionName} assert_json_field_gte value for "${key}" must be numeric`, EXIT_CODE.USAGE);
+    }
+    values[key] = value;
+  }
+  return Object.keys(values).length > 0 ? values : undefined;
+}
+
 function parseTests(raw: string[] | undefined): { values: LinkedTest[] | undefined; explicitEmpty: boolean } {
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
   if (raw.some((entry) => isNoneToken(entry))) {
@@ -397,6 +503,13 @@ function parseTests(raw: string[] | undefined): { values: LinkedTest[] | undefin
       env_set: parseLinkedTestEnvSet(kv.env_set, "--test"),
       env_clear: parseLinkedTestEnvClear(kv.env_clear, "--test"),
       shared_host_safe: parseLinkedTestBoolean(kv.shared_host_safe, "--test", "shared_host_safe"),
+      assert_stdout_contains: parseLinkedTestStringList(kv.assert_stdout_contains),
+      assert_stdout_regex: parseLinkedTestRegexList(kv.assert_stdout_regex, "--test", "assert_stdout_regex"),
+      assert_stderr_contains: parseLinkedTestStringList(kv.assert_stderr_contains),
+      assert_stderr_regex: parseLinkedTestRegexList(kv.assert_stderr_regex, "--test", "assert_stderr_regex"),
+      assert_stdout_min_lines: parseLinkedTestMinLines(kv.assert_stdout_min_lines, "--test"),
+      assert_json_field_equals: parseLinkedTestAssertionEqualsMap(kv.assert_json_field_equals, "--test"),
+      assert_json_field_gte: parseLinkedTestAssertionGteMap(kv.assert_json_field_gte, "--test"),
       note: parseOptionalString(kv.note),
     };
   });

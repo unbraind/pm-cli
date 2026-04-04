@@ -25,8 +25,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-03T20:57:36.551Z",codex-agent,History readability matters for governance and concurrent maintainer workflows.
 files[1]{path,scope,note}:
   src/cli/commands/files.ts,project,primary files mutation logic
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,note}:
-  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts,null,project,3600,null,null,null,files stable append regression
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,files stable append regression
 docs[1]{path,scope,note}:
   PRD.md,project,files command contract update
 close_reason: "Child task pm-xv39 completed: files append-stable mode implemented with deterministic compatibility defaults and full verification pass."

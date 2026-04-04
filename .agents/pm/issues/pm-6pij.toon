@@ -1,0 +1,38 @@
+id: pm-6pij
+title: Linked-test PM command context can drift from workspace dataset
+description: "PM commands executed inside linked-test sandbox can observe dataset differences from direct workspace execution, producing false-green governance evidence."
+type: Issue
+status: closed
+priority: 1
+tags[4]: context-parity,external-audit,linked-tests,pm-cli
+created_at: "2026-04-04T12:42:19.890Z"
+updated_at: "2026-04-04T14:03:02.512Z"
+deadline: "2026-04-14T12:42:19.890Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: "Linked-test PM-command runs can enforce dataset parity and fail when context mismatch is detected, with explicit per-run context metadata."
+parent: pm-5z9r
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: external-audit-followup
+release: vnext
+reporter: codex-agent
+severity: high
+environment: linux-node25-local
+repro_steps: Compare direct pm list-all outputs versus linked pm test run outputs for the same command.
+resolution: Resolved by PM-context parity controls and mismatch guardrails.
+expected_result: Linked PM-command tests reflect equivalent tracker context or fail with explicit mismatch diagnostics.
+actual_result: Sandbox-linked PM commands can pass while observing empty or divergent datasets.
+affected_version: 2026.3.12
+fixed_version: target-vnext
+component: linked-test-runtime
+regression: true
+customer_impact: Teams can trust linked-test PM command evidence for governance and release checks.
+comments[2]{created_at,author,text}:
+  "2026-04-04T12:42:19.890Z",codex-agent,"Duplicate-check evidence: existing closed parity item pm-mf5z restored extension/type parity but does not add tracker dataset parity guardrails or strict mismatch failure behavior."
+  "2026-04-04T14:02:36.560Z",codex-agent,Resolved by pm-vrsn context parity implementation; linked PM command runs now support tracker parity mode and mismatch guardrails.
+notes[1]{created_at,author,text}:
+  "2026-04-04T12:42:19.890Z",codex-agent,Tracks only unresolved context mismatch delta from external report item #2.
+close_reason: Issue resolved via PM-context parity controls and mismatch-fail guardrails delivered in pm-vrsn/pm-8izv.
+body: "External report #2 follow-up: add explicit context parity controls, metadata, and guardrails so PM-command linked tests cannot silently pass on mismatched datasets."
