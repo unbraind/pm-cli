@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: dependabot,github-alert,picomatch,security
 created_at: "2026-04-03T17:24:33.313Z"
-updated_at: "2026-04-04T17:48:46.799Z"
+updated_at: "2026-04-04T21:41:23.255Z"
 deadline: "2026-04-17T17:24:33.313Z"
 author: codex-agent
 estimated_minutes: 45
@@ -25,13 +25,13 @@ risk: medium
 confidence: high
 sprint: 2026-w14
 release: vnext
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Track GitHub Dependabot alert #29 for picomatch.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Track GitHub Dependabot alert #29 for picomatch."
+blocked_reason: Track GitHub Dependabot alert #29 for picomatch (GHSA-3v7f-55p6-f55p) has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Track GitHub Dependabot alert #29 for picomatch (GHSA-3v7f-55p6-f55p) is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: github-dependabot
 severity: medium
 environment: development transitive dependency in pnpm-lock.yaml
 repro_steps: "Open https://github.com/unbraind/pm-cli/security/dependabot/29"
-resolution: planned-or-active-implementation
+resolution: Implementation and verification for Track GitHub Dependabot alert #29 for picomatch (GHSA-3v7f-55p6-f55p) are complete with linked evidence retained.
 expected_result: No open GitHub Dependabot alert remains for GHSA-3v7f-55p6-f55p.
 actual_result: "GitHub reports open alert #29 for picomatch affecting >= 4.0.0, < 4.0.4."
 affected_version: ">= 4.0.0, < 4.0.4"

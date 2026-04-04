@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","area:health",follow-up,pm-cli
 created_at: "2026-04-03T22:00:05.513Z"
-updated_at: "2026-04-04T17:41:20.273Z"
+updated_at: "2026-04-04T21:41:01.623Z"
 deadline: "2026-04-10T22:00:05.513Z"
 author: codex-agent
 estimated_minutes: 240
@@ -19,8 +19,8 @@ impact: "Reduces ambiguity and handoff risk for future work touching External fo
 outcome: "This record can be used as canonical context when modifying External follow-up: add focused extension diagnostics triage summaries."
 why_now: "Historical decisions for External follow-up: add focused extension diagnostics triage summaries need durable context for future maintenance and audits."
 parent: pm-grst
-blocked_reason: "Current status is closed; no unresolved blocker is recorded for External follow-up: add focused extension diagnostics triage summaries."
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming External follow-up: add focused extension diagnostics triage summaries."
+blocked_reason: "External follow-up: add focused extension diagnostics triage summaries has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
+unblock_note: "If External follow-up: add focused extension diagnostics triage summaries is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 environment: "Project workspace execution context for External follow-up: add focused extension diagnostics triage summaries (pm CLI + Node/pnpm toolchain)."
 resolution: "Closed with implementation evidence captured for External follow-up: add focused extension diagnostics triage summaries."
 expected_result: "Acceptance criteria for External follow-up: add focused extension diagnostics triage summaries are satisfied with reproducible verification evidence."

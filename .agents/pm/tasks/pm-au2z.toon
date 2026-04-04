@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: assertions,external-audit,implementation,linked-tests
 created_at: "2026-04-04T12:43:14.932Z"
-updated_at: "2026-04-04T17:43:43.690Z"
+updated_at: "2026-04-04T21:40:41.719Z"
 deadline: "2026-04-11T12:43:14.932Z"
 author: codex-agent
 estimated_minutes: 260
@@ -24,8 +24,8 @@ risk: medium
 confidence: high
 sprint: external-audit-followup
 release: vnext
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Implement fail-on-skipped policy and linked-test assertions.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Implement fail-on-skipped policy and linked-test assertions."
+blocked_reason: Implement fail-on-skipped policy and linked-test assertions has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Implement fail-on-skipped policy and linked-test assertions is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: medium
 environment: Project workspace execution context for Implement fail-on-skipped policy and linked-test assertions (pm CLI + Node/pnpm toolchain).

@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: ci,pm-cli,release-readiness,security
 created_at: "2026-03-09T12:42:13.949Z"
-updated_at: "2026-04-04T17:47:29.846Z"
+updated_at: "2026-04-04T21:50:37.949Z"
 deadline: "2026-03-10T12:42:13.949Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: no-active-blocker
-blocked_reason: "Current status is closed; no unresolved blocker is recorded for Release hardening: scoped npm + version policy + CI."
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Release hardening: scoped npm + version policy + CI."
+blocked_reason: "Release hardening: scoped npm + version policy + CI has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
+unblock_note: "If Release hardening: scoped npm + version policy + CI is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
 severity: low
 environment: "Project workspace execution context for Release hardening: scoped npm + version policy + CI (pm CLI + Node/pnpm toolchain)."
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: "Review linked files/tests/docs for pm-1hm2 (Release hardening: scoped npm + version policy + CI); run linked verification via pm test pm-1hm2 --run when available; compare observed behavior with acceptance criteria and capture results in comments."
 resolution: "Closed with implementation evidence captured for Release hardening: scoped npm + version policy + CI."
 expected_result: "Acceptance criteria for Release hardening: scoped npm + version policy + CI are satisfied with reproducible verification evidence."
 actual_result: "Work completed and recorded with linked artifacts for Release hardening: scoped npm + version policy + CI."

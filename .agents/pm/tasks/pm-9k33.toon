@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:search","area:semantic","area:tests",compatibility,pm-cli
 created_at: "2026-04-01T13:06:48.719Z"
-updated_at: "2026-04-04T17:40:57.921Z"
+updated_at: "2026-04-04T21:39:07.445Z"
 deadline: "2026-04-08T13:06:48.719Z"
 assignee: codex-agent
 author: codex-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-wn3r
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Add regression coverage for Ollama-backed semantic defaults.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Add regression coverage for Ollama-backed semantic defaults."
+blocked_reason: Add regression coverage for Ollama-backed semantic defaults has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Add regression coverage for Ollama-backed semantic defaults is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: linux
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-9k33 (Add regression coverage for Ollama-backed semantic defaults); run linked verification via pm test pm-9k33 --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Add regression coverage for Ollama-backed semantic defaults.
 expected_result: Acceptance criteria for Add regression coverage for Ollama-backed semantic defaults are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Add regression coverage for Ollama-backed semantic defaults.

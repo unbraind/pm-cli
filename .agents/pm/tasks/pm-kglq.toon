@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:calendar","area:output",code,pm-cli
 created_at: "2026-03-31T21:28:33.277Z"
-updated_at: "2026-04-04T21:12:07.591Z"
+updated_at: "2026-04-04T21:37:36.632Z"
 deadline: "2026-04-07T21:28:33.277Z"
 author: codex-agent
 estimated_minutes: 90
@@ -26,12 +26,12 @@ confidence: high
 sprint: calendar-rollout
 release: vnext
 blocked_by: pm-3aga
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Implement calendar markdown default and explicit output overrides.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Implement calendar markdown default and explicit output overrides."
+blocked_reason: "Follow-up: enhance calendar UX for agents and LLM parsing has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
+unblock_note: "If Follow-up: enhance calendar UX for agents and LLM parsing is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Implement calendar markdown default and explicit output overrides (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: "Review linked files/tests/docs for pm-kglq (Follow-up: enhance calendar UX for agents and LLM parsing); run linked verification via pm test pm-kglq --run when available; compare observed behavior with acceptance criteria and capture results in comments."
 resolution: Closed with implementation evidence captured for Implement calendar markdown default and explicit output overrides.
 expected_result: Acceptance criteria for Implement calendar markdown default and explicit output overrides are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Implement calendar markdown default and explicit output overrides.
@@ -43,7 +43,7 @@ customer_impact: Ensures human/agent-readable default output for calendar workfl
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-3aga,related,"2026-03-31T21:28:33.277Z",codex-agent,null
   pm-ezri,blocks,"2026-03-31T21:28:33.277Z",codex-agent,null
-  pm-tuhf,parent,"2026-03-31T21:28:33.277Z",codex-agent,null
+  pm-122q,parent,"2026-04-04T21:29:28.438Z",codex-agent,null
 comments[5]{created_at,author,text}:
   "2026-03-31T21:28:33.277Z",codex-agent,Task created for markdown-default calendar output handling.
   "2026-03-31T21:45:12.525Z",codex-agent,Added calendar-specific markdown default rendering with explicit --format and --json override precedence checks.

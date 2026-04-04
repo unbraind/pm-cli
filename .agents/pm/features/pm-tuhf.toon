@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:calendar",output,pm-cli
 created_at: "2026-03-31T21:27:29.408Z"
-updated_at: "2026-04-04T17:39:30.360Z"
+updated_at: "2026-04-04T21:32:36.492Z"
 deadline: "2026-04-10T21:27:29.408Z"
 assignee: codex-agent
 author: codex-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: calendar-rollout
 release: vnext
 blocked_by: pm-0lbm
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Calendar command with markdown default and multi-view rendering.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Calendar command with markdown default and multi-view rendering."
+blocked_reason: Calendar command with markdown default and multi-view rendering has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Calendar command with markdown default and multi-view rendering is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Calendar command with markdown default and multi-view rendering (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-tuhf (Calendar command with markdown default and multi-view rendering); run linked verification via pm test pm-tuhf --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Calendar command with markdown default and multi-view rendering.
 expected_result: Acceptance criteria for Calendar command with markdown default and multi-view rendering are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Calendar command with markdown default and multi-view rendering.

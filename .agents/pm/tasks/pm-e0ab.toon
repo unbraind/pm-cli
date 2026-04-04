@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:docs","area:files","area:tests","area:ux",external-audit,pm-cli
 created_at: "2026-04-01T16:22:47.808Z"
-updated_at: "2026-04-04T17:41:26.162Z"
+updated_at: "2026-04-04T21:48:55.719Z"
 deadline: "2026-04-06T16:22:47.808Z"
 assignee: cursor-agent
 author: cursor-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: audit-remediation
 release: vnext
 blocked_by: pm-ap8l
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Add files/docs repeated-add regressions and update flag guidance.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Add files/docs repeated-add regressions and update flag guidance."
+blocked_reason: Add files/docs repeated-add regressions and update flag guidance has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Add files/docs repeated-add regressions and update flag guidance is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: cursor-agent
 severity: low
 environment: Project workspace execution context for Add files/docs repeated-add regressions and update flag guidance (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-e0ab (Add files/docs repeated-add regressions and update flag guidance); run linked verification via pm test pm-e0ab --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Add files/docs repeated-add regressions and update flag guidance.
 expected_result: Acceptance criteria for Add files/docs repeated-add regressions and update flag guidance are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Add files/docs repeated-add regressions and update flag guidance.

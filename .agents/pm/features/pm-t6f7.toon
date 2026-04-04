@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:docs","area:terminal","area:tests",compatibility,pm-cli
 created_at: "2026-04-01T11:59:30.058Z"
-updated_at: "2026-04-04T17:39:27.366Z"
+updated_at: "2026-04-04T21:44:51.614Z"
 deadline: "2026-04-11T11:59:30.058Z"
 assignee: cursor-agent
 author: cursor-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-mudv
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Terminal compatibility regression suite and docs parity.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Terminal compatibility regression suite and docs parity."
+blocked_reason: Terminal compatibility regression suite and docs parity has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Terminal compatibility regression suite and docs parity is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: cursor-agent
 severity: low
 environment: Project workspace execution context for Terminal compatibility regression suite and docs parity (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-t6f7 (Terminal compatibility regression suite and docs parity); run linked verification via pm test pm-t6f7 --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Terminal compatibility regression suite and docs parity.
 expected_result: Acceptance criteria for Terminal compatibility regression suite and docs parity are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Terminal compatibility regression suite and docs parity.

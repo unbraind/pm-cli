@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: dedupe,documentation,governance,pm-cli,traceability
 created_at: "2026-04-04T11:58:22.655Z"
-updated_at: "2026-04-04T17:56:01.653Z"
+updated_at: "2026-04-04T21:32:13.883Z"
 author: codex-agent
 estimated_minutes: 480
 acceptance_criteria: "All items are deduplicated or explicitly related, active hierarchy is normalized, key capabilities are mapped to canonical epic/feature lineage, and anti-dup guardrails are enforced with validation evidence."
@@ -19,7 +19,7 @@ outcome: This record can be used as canonical context when modifying PM CLI gove
 why_now: Historical governance decisions from this pass must remain explicit for future audits and follow-up execution.
 risk: medium
 confidence: high
-blocked_reason: Current status is closed; no unresolved blocker remains for this completed governance pass.
+blocked_reason: PM CLI governance and documentation overhaul has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: No unblock action required; follow-up work continues in pm-m9tv and pm-7lum.
 environment: Project workspace execution context for PM CLI governance and documentation overhaul (pm CLI + Node/pnpm toolchain).
 resolution: governance-overhaul-completed

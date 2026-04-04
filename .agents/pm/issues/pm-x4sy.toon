@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: dependabot,github-alert,security,undici
 created_at: "2026-04-03T17:24:37.834Z"
-updated_at: "2026-04-04T17:49:15.421Z"
+updated_at: "2026-04-04T21:41:27.076Z"
 deadline: "2026-04-17T17:24:37.834Z"
 author: codex-agent
 estimated_minutes: 45
@@ -25,13 +25,13 @@ risk: medium
 confidence: high
 sprint: 2026-w14
 release: vnext
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Track GitHub Dependabot alert #24 for undici.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Track GitHub Dependabot alert #24 for undici."
+blocked_reason: Track GitHub Dependabot alert #24 for undici (GHSA-2mjp-6q6p-2qxm) has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Track GitHub Dependabot alert #24 for undici (GHSA-2mjp-6q6p-2qxm) is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: github-dependabot
 severity: medium
 environment: runtime direct dependency in package.json
 repro_steps: "Open https://github.com/unbraind/pm-cli/security/dependabot/24"
-resolution: planned-or-active-implementation
+resolution: Implementation and verification for Track GitHub Dependabot alert #24 for undici (GHSA-2mjp-6q6p-2qxm) are complete with linked evidence retained.
 expected_result: No open GitHub Dependabot alert remains for GHSA-2mjp-6q6p-2qxm.
 actual_result: GitHub reports open alert #24 for undici affecting < 6.24.0.
 affected_version: < 6.24.0

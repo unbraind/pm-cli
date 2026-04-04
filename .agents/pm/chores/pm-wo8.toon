@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: ci,github-actions,pm-cli,release-readiness
 created_at: "2026-02-17T23:37:41.134Z"
-updated_at: "2026-04-04T17:48:09.869Z"
+updated_at: "2026-04-04T21:50:55.720Z"
 deadline: "2026-02-22T23:37:41.134Z"
 assignee: cursor-agent
 author: cursor-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-912
-blocked_reason: Current status is closed; no unresolved blocker is recorded for CI workflows and quality gates.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming CI workflows and quality gates."
+blocked_reason: CI workflows and quality gates has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If CI workflows and quality gates is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: cursor-agent
 severity: low
 environment: Project workspace execution context for CI workflows and quality gates (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-wo8 (CI workflows and quality gates); run linked verification via pm test pm-wo8 --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for CI workflows and quality gates.
 expected_result: Acceptance criteria for CI workflows and quality gates are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for CI workflows and quality gates.

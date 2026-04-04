@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:docs","area:release",code,pm-cli
 created_at: "2026-03-31T21:29:03.438Z"
-updated_at: "2026-04-04T17:40:23.048Z"
+updated_at: "2026-04-04T21:37:41.607Z"
 deadline: "2026-04-07T21:29:03.438Z"
 assignee: codex-agent
 author: codex-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: calendar-rollout
 release: vnext
 blocked_by: pm-122q
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Update docs and finalize calendar/reminder release changes.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Update docs and finalize calendar/reminder release changes."
+blocked_reason: Update docs and finalize calendar/reminder release changes has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Update docs and finalize calendar/reminder release changes is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Update docs and finalize calendar/reminder release changes (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-2v01 (Update docs and finalize calendar/reminder release changes); run linked verification via pm test pm-2v01 --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Update docs and finalize calendar/reminder release changes.
 expected_result: Acceptance criteria for Update docs and finalize calendar/reminder release changes are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Update docs and finalize calendar/reminder release changes.

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:sdk",phase2,pm-cli
 created_at: "2026-04-01T19:28:48.026Z"
-updated_at: "2026-04-04T17:38:06.464Z"
+updated_at: "2026-04-04T21:33:36.880Z"
 deadline: "2026-04-11T19:28:48.026Z"
 assignee: codex-agent
 author: codex-agent
@@ -27,12 +27,12 @@ confidence: medium
 sprint: phase2-override
 release: vnext
 blocked_by: pm-bw3h
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Phase 2 SDK v2 contracts with backward-compat adapters.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Phase 2 SDK v2 contracts with backward-compat adapters."
+blocked_reason: Phase 2 SDK v2 contracts with backward-compat adapters has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Phase 2 SDK v2 contracts with backward-compat adapters is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Phase 2 SDK v2 contracts with backward-compat adapters (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-0u1y (Phase 2 SDK v2 contracts with backward-compat adapters); run linked verification via pm test pm-0u1y --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Phase 2 SDK v2 contracts with backward-compat adapters.
 expected_result: Acceptance criteria for Phase 2 SDK v2 contracts with backward-compat adapters are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Phase 2 SDK v2 contracts with backward-compat adapters.

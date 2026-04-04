@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:schema","area:settings",code,pm-cli
 created_at: "2026-03-31T23:48:06.252Z"
-updated_at: "2026-04-04T21:12:04.366Z"
+updated_at: "2026-04-04T21:37:54.576Z"
 deadline: "2026-04-07T23:48:06.252Z"
 author: codex-agent
 estimated_minutes: 180
@@ -26,12 +26,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-x2k0
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Implement settings schema for configurable item types/options.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Implement settings schema for configurable item types/options."
+blocked_reason: "Follow-up: expand built-in item types for calendar-native work has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
+unblock_note: "If Follow-up: expand built-in item types for calendar-native work is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Implement settings schema for configurable item types/options (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: "Review linked files/tests/docs for pm-p5q3 (Follow-up: expand built-in item types for calendar-native work); run linked verification via pm test pm-p5q3 --run when available; compare observed behavior with acceptance criteria and capture results in comments."
 resolution: Closed with implementation evidence captured for Implement settings schema for configurable item types/options.
 expected_result: Acceptance criteria for Implement settings schema for configurable item types/options are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Implement settings schema for configurable item types/options.

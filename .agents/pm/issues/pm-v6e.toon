@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:test-all",code,"milestone:3",pm-cli,"priority:1",tests
 created_at: "2026-02-20T20:58:59.997Z"
-updated_at: "2026-04-04T17:49:13.824Z"
+updated_at: "2026-04-04T21:49:41.135Z"
 deadline: "2026-02-27T20:58:59.000Z"
 assignee: steve-maintainer
 author: steve-maintainer
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-54d
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Deduplicate test-all linked test execution across items.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Deduplicate test-all linked test execution across items."
+blocked_reason: Deduplicate test-all linked test execution across items has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Deduplicate test-all linked test execution across items is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: steve-maintainer
 severity: high
 environment: Project workspace execution context for Deduplicate test-all linked test execution across items (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-v6e (Deduplicate test-all linked test execution across items); run linked verification via pm test pm-v6e --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Deduplicate test-all linked test execution across items.
 expected_result: Acceptance criteria for Deduplicate test-all linked test execution across items are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Deduplicate test-all linked test execution across items.

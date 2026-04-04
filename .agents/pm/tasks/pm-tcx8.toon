@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:contracts","area:docs",external-audit,pm-cli
 created_at: "2026-04-03T14:48:29.306Z"
-updated_at: "2026-04-04T17:42:58.867Z"
+updated_at: "2026-04-04T21:39:59.006Z"
 deadline: "2026-04-13T14:48:29.306Z"
 author: codex-agent
 estimated_minutes: 120
@@ -19,8 +19,8 @@ impact: Reduces ambiguity and handoff risk for future work touching Sync docs/co
 outcome: This record can be used as canonical context when modifying Sync docs/contracts/wrapper parity for unresolved external audit additions.
 why_now: Historical decisions for Sync docs/contracts/wrapper parity for unresolved external audit additions need durable context for future maintenance and audits.
 parent: pm-iswo
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Sync docs/contracts/wrapper parity for unresolved external audit additions.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Sync docs/contracts/wrapper parity for unresolved external audit additions."
+blocked_reason: Sync docs/contracts/wrapper parity for unresolved external audit additions has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Sync docs/contracts/wrapper parity for unresolved external audit additions is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 environment: Project workspace execution context for Sync docs/contracts/wrapper parity for unresolved external audit additions (pm CLI + Node/pnpm toolchain).
 resolution: Closed with implementation evidence captured for Sync docs/contracts/wrapper parity for unresolved external audit additions.
 expected_result: Acceptance criteria for Sync docs/contracts/wrapper parity for unresolved external audit additions are satisfied with reproducible verification evidence.

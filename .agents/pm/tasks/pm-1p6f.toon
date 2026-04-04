@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[7]: "area:workflow",code,docs,"milestone:7",pm-cli,"priority:0",tests
 created_at: "2026-03-08T13:07:26.852Z"
-updated_at: "2026-04-04T17:43:57.826Z"
+updated_at: "2026-04-04T21:45:48.475Z"
 deadline: "2026-03-09T13:07:26.852Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: no-active-blocker
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Promote unblock-note to canonical workflow field.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Promote unblock-note to canonical workflow field."
+blocked_reason: Promote unblock-note to canonical workflow field has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Promote unblock-note to canonical workflow field is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
 severity: low
 environment: Project workspace execution context for Promote unblock-note to canonical workflow field (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-1p6f (Promote unblock-note to canonical workflow field); run linked verification via pm test pm-1p6f --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Promote unblock-note to canonical workflow field.
 expected_result: Acceptance criteria for Promote unblock-note to canonical workflow field are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Promote unblock-note to canonical workflow field.

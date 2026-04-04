@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: extensions,implementation,linked-tests,pm-cli
 created_at: "2026-04-03T22:53:55.590Z"
-updated_at: "2026-04-04T17:42:36.122Z"
+updated_at: "2026-04-04T21:40:30.115Z"
 deadline: "2026-04-10T22:53:55.590Z"
 author: codex-agent
 estimated_minutes: 180
@@ -25,8 +25,8 @@ risk: medium
 confidence: high
 sprint: linked-test-hardening
 release: vnext
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Implement sandbox seeding for project/global extension parity.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Implement sandbox seeding for project/global extension parity."
+blocked_reason: Implement sandbox seeding for project/global extension parity has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Implement sandbox seeding for project/global extension parity is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: medium
 environment: Project workspace execution context for Implement sandbox seeding for project/global extension parity (pm CLI + Node/pnpm toolchain).

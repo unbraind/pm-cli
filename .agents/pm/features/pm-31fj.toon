@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:docs","area:extensions","area:security",pm-cli
 created_at: "2026-04-01T02:16:05.793Z"
-updated_at: "2026-04-04T17:38:13.687Z"
+updated_at: "2026-04-04T21:32:57.621Z"
 deadline: "2026-04-11T02:16:05.793Z"
 assignee: codex-agent
 author: codex-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-x395
-blocked_reason: "Current status is closed; no unresolved blocker is recorded for Documentation, migration, and safety posture."
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Documentation, migration, and safety posture."
+blocked_reason: "Documentation, migration, and safety posture has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
+unblock_note: "If Documentation, migration, and safety posture is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: "Project workspace execution context for Documentation, migration, and safety posture (pm CLI + Node/pnpm toolchain)."
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: "Review linked files/tests/docs for pm-31fj (Documentation, migration, and safety posture); run linked verification via pm test pm-31fj --run when available; compare observed behavior with acceptance criteria and capture results in comments."
 resolution: "Closed with implementation evidence captured for Documentation, migration, and safety posture."
 expected_result: "Acceptance criteria for Documentation, migration, and safety posture are satisfied with reproducible verification evidence."
 actual_result: "Work completed and recorded with linked artifacts for Documentation, migration, and safety posture."

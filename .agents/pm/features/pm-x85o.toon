@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:dependencies","area:visualization",external-audit,pm-cli
 created_at: "2026-04-03T14:48:19.923Z"
-updated_at: "2026-04-04T17:39:38.675Z"
+updated_at: "2026-04-04T21:33:51.956Z"
 deadline: "2026-04-13T14:48:19.923Z"
 author: codex-agent
 estimated_minutes: 240
@@ -19,8 +19,8 @@ impact: Reduces ambiguity and handoff risk for future work touching Add dependen
 outcome: This record can be used as canonical context when modifying Add dependency visualization command (pm deps).
 why_now: Historical decisions for Add dependency visualization command (pm deps) need durable context for future maintenance and audits.
 parent: pm-iswo
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Add dependency visualization command (pm deps).
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Add dependency visualization command (pm deps)."
+blocked_reason: Add dependency visualization command (pm deps) has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Add dependency visualization command (pm deps) is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 environment: Project workspace execution context for Add dependency visualization command (pm deps) (pm CLI + Node/pnpm toolchain).
 resolution: Closed with implementation evidence captured for Add dependency visualization command (pm deps).
 expected_result: Acceptance criteria for Add dependency visualization command (pm deps) are satisfied with reproducible verification evidence.

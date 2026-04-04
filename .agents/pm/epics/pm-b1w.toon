@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:extensions",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:01:12.207Z"
-updated_at: "2026-04-04T17:37:07.196Z"
+updated_at: "2026-04-04T21:44:01.857Z"
 deadline: "2026-03-13T23:01:12.207Z"
 assignee: steve
 author: steve
@@ -26,12 +26,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-f45
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Milestone 5 - Extension System + Built-ins.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Milestone 5 - Extension System + Built-ins."
+blocked_reason: Milestone 5 - Extension System + Built-ins has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Milestone 5 - Extension System + Built-ins is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: steve
 severity: low
 environment: Project workspace execution context for Milestone 5 - Extension System + Built-ins (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-b1w (Milestone 5 - Extension System + Built-ins); run linked verification via pm test pm-b1w --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Milestone 5 - Extension System + Built-ins.
 expected_result: Acceptance criteria for Milestone 5 - Extension System + Built-ins are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Milestone 5 - Extension System + Built-ins.

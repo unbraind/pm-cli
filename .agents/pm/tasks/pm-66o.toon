@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:test-orchestration",core,"milestone:3",pm-cli
 created_at: "2026-02-17T23:02:09.686Z"
-updated_at: "2026-04-04T17:44:23.298Z"
+updated_at: "2026-04-04T21:46:31.261Z"
 deadline: "2026-03-03T23:02:09.686Z"
 assignee: steve
 author: steve
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-54d
-blocked_reason: Current status is closed; no unresolved blocker is recorded for test-all orchestration and dependency-failed exit handling.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming test-all orchestration and dependency-failed exit handling."
+blocked_reason: "M3: test-all orchestration and dependency-failed exit handling has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
+unblock_note: "If M3: test-all orchestration and dependency-failed exit handling is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: steve
 severity: low
 environment: Project workspace execution context for test-all orchestration and dependency-failed exit handling (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: "Review linked files/tests/docs for pm-66o (M3: test-all orchestration and dependency-failed exit handling); run linked verification via pm test pm-66o --run when available; compare observed behavior with acceptance criteria and capture results in comments."
 resolution: Closed with implementation evidence captured for test-all orchestration and dependency-failed exit handling.
 expected_result: Acceptance criteria for test-all orchestration and dependency-failed exit handling are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for test-all orchestration and dependency-failed exit handling.

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:search",pm-cli,runtime
 created_at: "2026-04-01T02:17:16.030Z"
-updated_at: "2026-04-04T17:40:15.028Z"
+updated_at: "2026-04-04T21:38:13.078Z"
 deadline: "2026-04-10T02:17:16.030Z"
 assignee: codex-agent
 author: codex-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-zd6y
-blocked_reason: "Current status is closed; no unresolved blocker is recorded for B2: Wire search providers and vector adapters."
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming B2: Wire search providers and vector adapters."
+blocked_reason: "B2: Wire search providers and vector adapters has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
+unblock_note: "If B2: Wire search providers and vector adapters is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: "Project workspace execution context for B2: Wire search providers and vector adapters (pm CLI + Node/pnpm toolchain)."
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: "Review linked files/tests/docs for pm-14qs (B2: Wire search providers and vector adapters); run linked verification via pm test pm-14qs --run when available; compare observed behavior with acceptance criteria and capture results in comments."
 resolution: "Closed with implementation evidence captured for B2: Wire search providers and vector adapters."
 expected_result: "Acceptance criteria for B2: Wire search providers and vector adapters are satisfied with reproducible verification evidence."
 actual_result: "Work completed and recorded with linked artifacts for B2: Wire search providers and vector adapters."

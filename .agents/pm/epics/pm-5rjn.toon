@@ -1,0 +1,44 @@
+id: pm-5rjn
+title: Continuous governance automation and policy enforcement
+description: "Productize tracker-governance workflows so normalization, placeholder detection, and large-scale policy enforcement can run deterministically without ad-hoc scripts."
+type: Epic
+status: open
+priority: 1
+tags[4]: automation,governance,pm-cli,traceability
+created_at: "2026-04-04T21:54:42.936Z"
+updated_at: "2026-04-04T21:58:02.822Z"
+deadline: "2026-04-25T21:54:42.936Z"
+author: codex-agent
+estimated_minutes: 360
+acceptance_criteria: "Governance automation roadmap includes deterministic normalization/reporting capabilities, validation checks for low-signal metadata, and safe operational workflows that reduce manual force-override churn while preserving ownership semantics."
+definition_of_ready: Existing governance baseline metrics and pain points are documented from recent tracker sweep.
+goal: Governance operations by default
+objective: Replace manual sweeps with repeatable command-level workflows
+value: Cuts governance maintenance cost and improves consistency
+impact: Reduces manual mutation risk and accelerates future tracker cleanup
+outcome: Future agents can run governance upkeep through supported pm surfaces
+why_now: Current standards-alignment required long scripted passes and ownership remediations that should be converted into productized workflows.
+reviewer: maintainer-review
+risk: medium
+confidence: medium
+sprint: governance-followups
+release: vnext
+reporter: codex-agent
+severity: medium
+environment: linux
+repro_steps: Re-run full tracker normalization manually and observe script-heavy operational burden.
+affected_version: 2026.3.12
+component: governance-automation
+regression: false
+customer_impact: "Maintainers and agents gain safer, faster, and more deterministic governance maintenance."
+comments[1]{created_at,author,text}:
+  "2026-04-04T21:54:42.936Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'bulk governance normalization command pm tracker' --limit 20; pm search 'validate placeholder metadata blocked_reason unblock_note repro_steps' --limit 20; pm search 'ownership-safe batch mutation mode governance override' --limit 20; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because existing governance epics are historical execution snapshots rather than productized automation roadmap."
+notes[1]{created_at,author,text}:
+  "2026-04-04T21:54:42.936Z",codex-agent,"Roadmap will prioritize dry-run visibility,deterministic mutation plans,and safety semantics compatible with ownership and lock constraints."
+files[1]{path,scope,note}:
+  AGENTS.md,project,governance policy reference
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  pm validate --check-metadata --check-resolution --check-history-drift --json,null,project,1200,null,null,null,null,null,null,null,null,null,null,automation acceptance baseline
+docs[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,future governance automation architecture
+body: Establish a long-lived epic for converting manual governance sweeps into first-class pm capabilities with auditable dry-run and apply workflows.

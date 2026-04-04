@@ -6,7 +6,7 @@ status: canceled
 priority: 0
 tags[8]: "area:ci","area:release",code,docs,"milestone:6",pm-cli,"priority:0",release-readiness
 created_at: "2026-03-08T21:08:26.103Z"
-updated_at: "2026-04-04T17:47:25.927Z"
+updated_at: "2026-04-04T21:50:24.133Z"
 deadline: "2026-03-09T21:08:26.103Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: v0.1
 blocked_by: no-active-blocker
-blocked_reason: Current status is canceled; no unresolved blocker is recorded for Add automated npm release workflow and Node 24 CI coverage (superseded duplicate archive).
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Add automated npm release workflow and Node 24 CI coverage (superseded duplicate archive)."
+blocked_reason: Add automated npm release workflow and Node 24 CI coverage (superseded duplicate archive) is intentionally canceled; no active blocker applies while historical context is preserved for future reference.
+unblock_note: "If Add automated npm release workflow and Node 24 CI coverage (superseded duplicate archive) is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
 severity: low
 environment: Project workspace execution context for Add automated npm release workflow and Node 24 CI coverage (superseded duplicate archive) (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-18p8 (Add automated npm release workflow and Node 24 CI coverage (superseded duplicate archive)); run linked verification via pm test pm-18p8 --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Canceled with explicit rationale and preserved historical context for Add automated npm release workflow and Node 24 CI coverage (superseded duplicate archive).
 expected_result: Scope for Add automated npm release workflow and Node 24 CI coverage (superseded duplicate archive) is either superseded or intentionally deprioritized with clear rationale.
 actual_result: Execution stopped intentionally; context remains available for future reassessment of Add automated npm release workflow and Node 24 CI coverage (superseded duplicate archive).
@@ -58,4 +58,5 @@ docs[3]{path,scope,note}:
   CHANGELOG.md,project,document new CI and release features
   PRD.md,project,update milestone 6 checklist
   README.md,project,update release readiness section
+close_reason: Add automated npm release workflow and Node 24 CI coverage (superseded duplicate archive) is canceled because scope is intentionally superseded/deferred while historical context remains preserved.
 body: "## Changes Required\\n\\n### 1) .github/workflows/release.yml\\n- Trigger on version tags (v*.*.*)\\n- Run full build + typecheck + test + coverage gate\\n- Then publish to npm via NODE_AUTH_TOKEN\\n- Upload coverage artifact\\n\\n### 2) ci.yml and nightly.yml\\n- Add Node 24 to CI matrix (ubuntu-latest + Node 24)\\n- Nightly: add Node 24 alongside 20 and 22\\n\\n### 3) PRD/README/AGENTS doc updates\\n- Update PRD Milestone 6 checklist to include release workflow\\n- Update README Release Readiness Checklist to mention release workflow\\n- Update CHANGELOG under [Unreleased]"

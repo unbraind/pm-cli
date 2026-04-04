@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:calendar","area:integration","area:recurrence",code,pm-cli
 created_at: "2026-03-31T22:30:11.475Z"
-updated_at: "2026-04-04T17:40:37.017Z"
+updated_at: "2026-04-04T21:37:50.264Z"
 deadline: "2026-04-07T22:30:11.475Z"
 assignee: codex-agent
 author: codex-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-qze9
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Update completion and Pi wrapper for event recurrence flags.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Update completion and Pi wrapper for event recurrence flags."
+blocked_reason: Update completion and Pi wrapper for event recurrence flags has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Update completion and Pi wrapper for event recurrence flags is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Update completion and Pi wrapper for event recurrence flags (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-5hbj (Update completion and Pi wrapper for event recurrence flags); run linked verification via pm test pm-5hbj --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Update completion and Pi wrapper for event recurrence flags.
 expected_result: Acceptance criteria for Update completion and Pi wrapper for event recurrence flags are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Update completion and Pi wrapper for event recurrence flags.

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:core","area:docs",close,pm-cli,workflow
 created_at: "2026-03-06T13:04:03.661Z"
-updated_at: "2026-04-04T17:44:09.490Z"
+updated_at: "2026-04-04T21:47:56.828Z"
 deadline: "2026-03-07T13:04:03.661Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: no-active-blocker
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Enforce close-command closure path.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Enforce close-command closure path."
+blocked_reason: Enforce close-command closure path has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Enforce close-command closure path is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
 severity: low
 environment: Project workspace execution context for Enforce close-command closure path (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-3nv9 (Enforce close-command closure path); run linked verification via pm test pm-3nv9 --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Enforce close-command closure path.
 expected_result: Acceptance criteria for Enforce close-command closure path are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Enforce close-command closure path.

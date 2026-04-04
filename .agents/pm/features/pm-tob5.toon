@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:compat","area:docs","area:tests",pm-cli
 created_at: "2026-04-01T10:12:10.894Z"
-updated_at: "2026-04-04T17:39:28.835Z"
+updated_at: "2026-04-04T21:33:02.562Z"
 deadline: "2026-04-08T10:12:10.894Z"
 assignee: codex-agent
 author: codex-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-nhgt
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Compatibility docs and verification hardening.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Compatibility docs and verification hardening."
+blocked_reason: Compatibility docs and verification hardening has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Compatibility docs and verification hardening is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Compatibility docs and verification hardening (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-tob5 (Compatibility docs and verification hardening); run linked verification via pm test pm-tob5 --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Compatibility docs and verification hardening.
 expected_result: Acceptance criteria for Compatibility docs and verification hardening are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Compatibility docs and verification hardening.

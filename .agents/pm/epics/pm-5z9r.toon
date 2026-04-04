@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: extensions,external-audit,linked-tests,pm-cli
 created_at: "2026-04-04T12:42:06.028Z"
-updated_at: "2026-04-04T18:34:22.308Z"
+updated_at: "2026-04-04T21:32:15.419Z"
 deadline: "2026-04-18T12:42:06.028Z"
 author: codex-agent
 estimated_minutes: 420
@@ -23,8 +23,8 @@ risk: medium
 confidence: high
 sprint: external-audit-followup
 release: vnext
-blocked_reason: "Current status is closed; no unresolved blocker is recorded for External audit follow-up: linked-test evidence and extension diagnostics."
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming External audit follow-up: linked-test evidence and extension diagnostics."
+blocked_reason: "External audit follow-up: linked-test evidence and extension diagnostics has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
+unblock_note: "If External audit follow-up: linked-test evidence and extension diagnostics is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: medium
 environment: "Project workspace execution context for External audit follow-up: linked-test evidence and extension diagnostics (pm CLI + Node/pnpm toolchain)."

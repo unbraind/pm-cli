@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:comments","area:docs","area:help",pm-cli,ux
 created_at: "2026-04-03T09:34:08.462Z"
-updated_at: "2026-04-04T17:38:29.587Z"
+updated_at: "2026-04-04T21:33:45.539Z"
 deadline: "2026-04-09T09:34:08.462Z"
 author: codex-agent
 estimated_minutes: 90
@@ -25,8 +25,8 @@ risk: low
 confidence: high
 sprint: ux-hardening
 release: vnext
-blocked_reason: "Current status is closed; no unresolved blocker is recorded for Feature: comments force guidance parity."
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Feature: comments force guidance parity."
+blocked_reason: "Feature: comments force guidance parity has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
+unblock_note: "If Feature: comments force guidance parity is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: "Project workspace execution context for Feature: comments force guidance parity (pm CLI + Node/pnpm toolchain)."

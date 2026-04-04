@@ -6,7 +6,7 @@ status: blocked
 priority: 1
 tags[3]: agent-ux,"area:context",pm-cli
 created_at: "2026-04-01T14:10:36.966Z"
-updated_at: "2026-04-04T17:39:05.482Z"
+updated_at: "2026-04-04T21:53:11.695Z"
 deadline: "2026-04-06T14:10:36.966Z"
 assignee: codex-agent
 author: codex-agent
@@ -28,11 +28,11 @@ sprint: context-rollout
 release: vnext
 blocked_by: pm-abhj
 blocked_reason: Feature implementation complete but closure blocked by global coverage threshold baseline below 100%.
-unblock_note: complete-linked-dependency-then-update-status
+unblock_note: "Unblock by clearing pm-abhj coverage-gate blocker, rerunning linked regression/coverage commands, and then moving this feature back to in_progress for closure verification."
 reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Implement context command runtime and surfaces (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-iyqf (Implement context command runtime and surfaces); run linked verification via pm test pm-iyqf --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: planned-or-active-implementation
 expected_result: Resume execution for Implement context command runtime and surfaces once blockers are cleared and verification path is confirmed.
 actual_result: work-tracked-as-active-or-open

@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[8]: "area:ci","area:release",code,docs,"milestone:6",pm-cli,"priority:0",release-readiness
 created_at: "2026-03-08T21:08:48.927Z"
-updated_at: "2026-04-04T17:47:55.890Z"
+updated_at: "2026-04-04T21:50:26.337Z"
 deadline: "2026-03-09T21:08:48.927Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: v0.1
 blocked_by: no-active-blocker
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Add automated npm release workflow and Node 24 CI coverage.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Add automated npm release workflow and Node 24 CI coverage."
+blocked_reason: Add automated npm release workflow and Node 24 CI coverage has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Add automated npm release workflow and Node 24 CI coverage is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
 severity: low
 environment: Project workspace execution context for Add automated npm release workflow and Node 24 CI coverage (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-mwe8 (Add automated npm release workflow and Node 24 CI coverage); run linked verification via pm test pm-mwe8 --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Add automated npm release workflow and Node 24 CI coverage.
 expected_result: Acceptance criteria for Add automated npm release workflow and Node 24 CI coverage are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Add automated npm release workflow and Node 24 CI coverage.
@@ -60,4 +60,4 @@ docs[3]{path,scope,note}:
   PRD.md,project,update milestone 6 checklist
   README.md,project,update release readiness section
 close_reason: "Release workflow and Node 24 CI coverage fully implemented. .github/workflows/release.yml created with tag-trigger npm publish. Node 24 added to ci.yml and nightly.yml matrices. CI contract tests updated (535 tests, 100% coverage)."
-body: ""
+body: "Scope context: The repository lacks an automated npm publishing workflow triggered by version tags. Additionally, Node 24 (current release, will become LTS Oct 2025) is not in the CI matrix. Both are production-readiness requirements for a widely-used npm package.\n\nExecution intent: This chore is tracked under pm-8a2s with component project-management/add-automated-npm-release-workflow-and-node-24-c.\n\nCompletion signal: Pushing a v0.1.0 tag triggers CI + npm publish; Node 24 appears in ci.yml and nightly.yml matrix; docs updated; tests pass at 100%\n\nGovernance intent: Release readiness. Maintain linked files/tests/docs and evidence comments so future agents can reuse this record as authoritative context."

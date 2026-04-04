@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:body","area:update",feature,pm-cli
 created_at: "2026-04-02T11:44:56.845Z"
-updated_at: "2026-04-04T17:38:59.685Z"
+updated_at: "2026-04-04T21:33:40.170Z"
 deadline: "2026-04-07T11:44:56.845Z"
 author: codex-agent
 estimated_minutes: 180
@@ -25,8 +25,8 @@ risk: medium
 confidence: high
 sprint: body-backfill-2026w14
 release: vnext
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Support pm update body end-to-end.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Support pm update body end-to-end."
+blocked_reason: Support pm update body end-to-end has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Support pm update body end-to-end is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Support pm update body end-to-end (pm CLI + Node/pnpm toolchain).

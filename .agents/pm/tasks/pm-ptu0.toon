@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:docs","area:search","area:semantic",compatibility,pm-cli
 created_at: "2026-04-01T13:07:03.217Z"
-updated_at: "2026-04-04T17:42:31.506Z"
+updated_at: "2026-04-04T21:39:08.978Z"
 deadline: "2026-04-08T13:07:03.217Z"
 assignee: codex-agent
 author: codex-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-9k33
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Update docs and release evidence for default Ollama semantic behavior.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Update docs and release evidence for default Ollama semantic behavior."
+blocked_reason: Update docs and release evidence for default Ollama semantic behavior has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Update docs and release evidence for default Ollama semantic behavior is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: linux
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-ptu0 (Update docs and release evidence for default Ollama semantic behavior); run linked verification via pm test pm-ptu0 --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Update docs and release evidence for default Ollama semantic behavior.
 expected_result: Acceptance criteria for Update docs and release evidence for default Ollama semantic behavior are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Update docs and release evidence for default Ollama semantic behavior.

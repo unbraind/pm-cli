@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: custom-types,extensions,linked-tests,pm-cli
 created_at: "2026-04-03T22:53:26.793Z"
-updated_at: "2026-04-04T17:38:47.398Z"
+updated_at: "2026-04-04T21:34:12.967Z"
 deadline: "2026-04-13T22:53:26.793Z"
 author: codex-agent
 estimated_minutes: 300
@@ -25,8 +25,8 @@ risk: medium
 confidence: high
 sprint: linked-test-hardening
 release: vnext
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Linked-test sandbox project/global extension parity.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Linked-test sandbox project/global extension parity."
+blocked_reason: Linked-test sandbox project/global extension parity has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Linked-test sandbox project/global extension parity is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: medium
 environment: Project workspace execution context for Linked-test sandbox project/global extension parity (pm CLI + Node/pnpm toolchain).

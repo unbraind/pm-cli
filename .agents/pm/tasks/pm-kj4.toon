@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:search-vector",core,"milestone:4",pm-cli
 created_at: "2026-02-17T23:02:10.455Z"
-updated_at: "2026-04-04T17:45:33.471Z"
+updated_at: "2026-04-04T21:46:37.348Z"
 deadline: "2026-03-07T23:02:10.455Z"
 assignee: steve
 author: steve
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-54d
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Vector store adapters for Qdrant and LanceDB.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Vector store adapters for Qdrant and LanceDB."
+blocked_reason: "M4: Vector store adapters for Qdrant and LanceDB has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
+unblock_note: "If M4: Vector store adapters for Qdrant and LanceDB is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: steve
 severity: low
 environment: Project workspace execution context for Vector store adapters for Qdrant and LanceDB (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: "Review linked files/tests/docs for pm-kj4 (M4: Vector store adapters for Qdrant and LanceDB); run linked verification via pm test pm-kj4 --run when available; compare observed behavior with acceptance criteria and capture results in comments."
 resolution: Closed with implementation evidence captured for Vector store adapters for Qdrant and LanceDB.
 expected_result: Acceptance criteria for Vector store adapters for Qdrant and LanceDB are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Vector store adapters for Qdrant and LanceDB.

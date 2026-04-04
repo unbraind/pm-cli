@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:calendar","area:docs","area:recurrence",pm-cli,release
 created_at: "2026-03-31T22:30:11.669Z"
-updated_at: "2026-04-04T17:43:04.482Z"
+updated_at: "2026-04-04T21:37:53.001Z"
 deadline: "2026-04-07T22:30:11.669Z"
 assignee: codex-agent
 author: codex-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-2v01
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Document recurrence features and finalize release evidence.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Document recurrence features and finalize release evidence."
+blocked_reason: Document recurrence features and finalize release evidence has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Document recurrence features and finalize release evidence is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Document recurrence features and finalize release evidence (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-tytr (Document recurrence features and finalize release evidence); run linked verification via pm test pm-tytr --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Document recurrence features and finalize release evidence.
 expected_result: Acceptance criteria for Document recurrence features and finalize release evidence are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Document recurrence features and finalize release evidence.

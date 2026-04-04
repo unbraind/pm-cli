@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:extensions",code,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-04T19:12:46.724Z"
-updated_at: "2026-04-04T17:44:03.533Z"
+updated_at: "2026-04-04T21:47:10.783Z"
 deadline: "2026-03-06T23:59:00.000Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-b1w
-blocked_reason: "Current status is closed; no unresolved blocker is recorded for M5 follow-up: validate extension hook registration handlers."
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming M5 follow-up: validate extension hook registration handlers."
+blocked_reason: "M5 follow-up: validate extension hook registration handlers has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
+unblock_note: "If M5 follow-up: validate extension hook registration handlers is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: cursor-maintainer
 severity: low
 environment: "Project workspace execution context for M5 follow-up: validate extension hook registration handlers (pm CLI + Node/pnpm toolchain)."
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: "Review linked files/tests/docs for pm-30lh (M5 follow-up: validate extension hook registration handlers); run linked verification via pm test pm-30lh --run when available; compare observed behavior with acceptance criteria and capture results in comments."
 resolution: "Closed with implementation evidence captured for M5 follow-up: validate extension hook registration handlers."
 expected_result: "Acceptance criteria for M5 follow-up: validate extension hook registration handlers are satisfied with reproducible verification evidence."
 actual_result: "Work completed and recorded with linked artifacts for M5 follow-up: validate extension hook registration handlers."

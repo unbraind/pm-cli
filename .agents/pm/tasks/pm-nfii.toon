@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:parser",phase2,pm-cli
 created_at: "2026-04-01T19:27:28.613Z"
-updated_at: "2026-04-04T17:42:18.292Z"
+updated_at: "2026-04-04T21:39:34.055Z"
 deadline: "2026-04-08T19:27:28.613Z"
 assignee: codex-agent
 author: codex-agent
@@ -27,12 +27,12 @@ confidence: medium
 sprint: phase2-override
 release: vnext
 blocked_by: pm-k1zw
-blocked_reason: "Current status is closed; no unresolved blocker is recorded for Phase 2: wire parser override contracts in runtime."
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Phase 2: wire parser override contracts in runtime."
+blocked_reason: "Phase 2: wire parser override contracts in runtime has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
+unblock_note: "If Phase 2: wire parser override contracts in runtime is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: "Project workspace execution context for Phase 2: wire parser override contracts in runtime (pm CLI + Node/pnpm toolchain)."
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: "Review linked files/tests/docs for pm-nfii (Phase 2: wire parser override contracts in runtime); run linked verification via pm test pm-nfii --run when available; compare observed behavior with acceptance criteria and capture results in comments."
 resolution: "Closed with implementation evidence captured for Phase 2: wire parser override contracts in runtime."
 expected_result: "Acceptance criteria for Phase 2: wire parser override contracts in runtime are satisfied with reproducible verification evidence."
 actual_result: "Work completed and recorded with linked artifacts for Phase 2: wire parser override contracts in runtime."

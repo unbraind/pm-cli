@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:hooks","area:runtime",extensions,pm-cli
 created_at: "2026-04-01T02:17:03.345Z"
-updated_at: "2026-04-04T17:42:24.249Z"
+updated_at: "2026-04-04T21:38:09.946Z"
 deadline: "2026-04-10T02:17:03.345Z"
 assignee: codex-agent
 author: codex-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-al0h
-blocked_reason: "Current status is closed; no unresolved blocker is recorded for A3: Hook context parity and lifecycle symmetry."
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming A3: Hook context parity and lifecycle symmetry."
+blocked_reason: "A3: Hook context parity and lifecycle symmetry has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
+unblock_note: "If A3: Hook context parity and lifecycle symmetry is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: "Project workspace execution context for A3: Hook context parity and lifecycle symmetry (pm CLI + Node/pnpm toolchain)."
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: "Review linked files/tests/docs for pm-osk5 (A3: Hook context parity and lifecycle symmetry); run linked verification via pm test pm-osk5 --run when available; compare observed behavior with acceptance criteria and capture results in comments."
 resolution: "Closed with implementation evidence captured for A3: Hook context parity and lifecycle symmetry."
 expected_result: "Acceptance criteria for A3: Hook context parity and lifecycle symmetry are satisfied with reproducible verification evidence."
 actual_result: "Work completed and recorded with linked artifacts for A3: Hook context parity and lifecycle symmetry."

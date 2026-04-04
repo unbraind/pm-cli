@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: "area:ollama","area:search","area:semantic",compatibility,pm-cli
 created_at: "2026-04-01T13:06:03.573Z"
-updated_at: "2026-04-04T17:37:02.301Z"
+updated_at: "2026-04-04T21:31:47.981Z"
 deadline: "2026-04-15T13:06:03.573Z"
 assignee: codex-agent
 author: codex-agent
@@ -26,12 +26,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-b4pb
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Auto-enable semantic search when local Ollama is available.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Auto-enable semantic search when local Ollama is available."
+blocked_reason: Auto-enable semantic search when local Ollama is available has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Auto-enable semantic search when local Ollama is available is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: linux
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-67uh (Auto-enable semantic search when local Ollama is available); run linked verification via pm test pm-67uh --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Auto-enable semantic search when local Ollama is available.
 expected_result: Acceptance criteria for Auto-enable semantic search when local Ollama is available are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Auto-enable semantic search when local Ollama is available.

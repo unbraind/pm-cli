@@ -6,7 +6,7 @@ status: blocked
 priority: 1
 tags[3]: agents,docs,pm-hygiene
 created_at: "2026-03-12T22:26:40.371Z"
-updated_at: "2026-04-04T17:42:21.292Z"
+updated_at: "2026-04-04T21:53:14.696Z"
 deadline: "2026-03-26T22:26:40.371Z"
 assignee: codex-agent
 author: codex-agent
@@ -26,13 +26,13 @@ risk: low
 confidence: high
 sprint: 2026-w14
 release: vnext
-blocked_by: pending-upstream-dependency
+blocked_by: pm-wtsp
 blocked_reason: Broader README and help contract failures remain in the current coverage sweep.
-unblock_note: complete-linked-dependency-then-update-status
+unblock_note: "Unblock by resolving pm-wtsp-linked README/help contract regressions, rerunning linked secret-scan plus impacted suites, then continue execution with updated evidence comment."
 reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Add AGENTS rule to check existing pm items before creating new ones (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-o5uw (Add AGENTS rule to check existing pm items before creating new ones); run linked verification via pm test pm-o5uw --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: planned-or-active-implementation
 expected_result: Resume execution for Add AGENTS rule to check existing pm items before creating new ones once blockers are cleared and verification path is confirmed.
 actual_result: work-tracked-as-active-or-open

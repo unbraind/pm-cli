@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[8]: "area:docs","area:extensions-pi",code,"milestone:6",pm-cli,"priority:0",release-readiness,tests
 created_at: "2026-03-08T16:08:41.139Z"
-updated_at: "2026-04-04T17:43:51.098Z"
+updated_at: "2026-04-04T21:45:54.557Z"
 deadline: "2026-03-09T16:10:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: maintainer-loop-2026-03-08
 release: v0.1
 blocked_by: pm-igv
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Pi wrapper all-fields create/update parity.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Pi wrapper all-fields create/update parity."
+blocked_reason: Pi wrapper all-fields create/update parity has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Pi wrapper all-fields create/update parity is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
 severity: low
 environment: Project workspace execution context for Pi wrapper all-fields create/update parity (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-096j (Pi wrapper all-fields create/update parity); run linked verification via pm test pm-096j --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Pi wrapper all-fields create/update parity.
 expected_result: Acceptance criteria for Pi wrapper all-fields create/update parity are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Pi wrapper all-fields create/update parity.

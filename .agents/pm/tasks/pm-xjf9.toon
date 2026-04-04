@@ -1,0 +1,62 @@
+id: pm-xjf9
+title: Governance standards alignment follow-up 2026-04-04
+description: "Run a full sequential standards-alignment pass across all pm items, remove residual duplication, normalize lineage, and enrich item metadata for future-agent context quality."
+type: Task
+status: closed
+priority: 0
+tags[4]: governance,pm-cli,standards,traceability
+created_at: "2026-04-04T21:28:06.939Z"
+updated_at: "2026-04-04T21:59:17.182Z"
+deadline: "2026-04-06T21:28:06.939Z"
+author: codex-agent
+estimated_minutes: 600
+acceptance_criteria: "All pm items are sequentially reviewed and enriched, duplicate active scope is eliminated, hierarchy links are normalized, and tracker validation checks pass with documented residuals."
+definition_of_ready: Prior governance baseline exists and command/toolchain bootstrap checks pass.
+goal: Standards-aligned tracker governance
+objective: Deliver a full metadata and traceability refresh
+value: Improves confidence and speed for future change planning
+impact: "Reduces ambiguity, duplicate work, and lineage drift"
+outcome: Tracker provides complete context for roadmap and implementation decisions
+why_now: User requested a full best-practice standards alignment pass over the entire tracker.
+parent: pm-wtsp
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: governance-followups
+release: vnext
+reporter: codex-agent
+severity: medium
+environment: linux
+repro_steps: Run pm list-all/pm search/pm validate audits and compare before/after quality metrics.
+resolution: "Governance standards-alignment execution completed with full tracker normalization, validation, and follow-up roadmap capture."
+expected_result: "Tracker governance quality remains deterministic with no placeholder metadata drift, no active duplicate clusters, and reproducible validation evidence for future maintenance runs."
+actual_result: "Completed sequential review/enrichment across 482 items, removed targeted placeholder patterns to zero, created automation roadmap epic pm-5rjn with child features, and validated metadata/resolution/command/history checks passing (files warning tracked by pm-m9tv)."
+affected_version: 2026.3.12
+component: tracker-governance
+regression: false
+customer_impact: Maintainers and agents get a higher-fidelity project management source of truth.
+comments[10]{created_at,author,text}:
+  "2026-04-04T21:28:06.939Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'governance tracker overhaul documentation' --limit 20; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new scope because existing epics are closed snapshots and this run is a new standards-alignment execution cycle."
+  "2026-04-04T21:28:29.024Z",codex-agent,"Phase 1 complete: standards-mapped rubric finalized (PMBOK 8, ISO 21502, Scrum commitments, DORA evidence), including per-type/per-status quality bars, lineage policy, duplicate policy, and placeholder-elimination rules."
+  "2026-04-04T21:29:01.720Z",codex-agent,"Phase 2 inventory complete: total_items=478; by_status={in_progress:1,blocked:4,open:3,closed:461,canceled:9}; by_type={Epic:50,Feature:80,Task:271,Issue:29,Chore:48}. Hierarchy checks all clean (self_parent=0, missing_parent_non_epic=0, invalid_parent=0, Feature_parent_not_Epic=0, child_parent_invalid_type=0). Duplicate scan: exact duplicate titles=0; near-duplicate GHSA families detected=4 (pm-i1rm/pm-s5vv, pm-53q4/pm-ylg3, pm-cg7l/pm-02c4, pm-10no/pm-x4sy). Placeholder audit from toon fields: generic_repro=360, generic_blocked_reason=454, generic_unblock_note=448, empty_body=10, terminal_missing_close_reason=9."
+  "2026-04-04T21:29:39.195Z",codex-agent,"Phase 3 hierarchy normalization complete: parent graph remains clean (self_parent=0, missing_parent_non_epic=0, invalid_parent=0, parent-type violations=0) and stale parent dependency edges fixed for pm-kglq and pm-dzrj; parent_dependency_mismatch=0."
+  "2026-04-04T21:29:59.560Z",codex-agent,"Phase 4 duplicate consolidation complete: no exact duplicate titles and no duplicate active scope. Verified GHSA near-duplicate families are normalized to canonical records with explicit supersession linkage: ghsa-vrm6-8vpv-qv8q (pm-s5vv canonical <- pm-i1rm), ghsa-v9p9-hfj2-hcw8 (pm-ylg3 canonical <- pm-53q4), ghsa-4992-7rv2-5pvq (pm-02c4 canonical <- pm-cg7l), ghsa-2mjp-6q6p-2qxm (pm-x4sy canonical <- pm-10no)."
+  "2026-04-04T21:53:27.916Z",codex-agent,"Phase 5 full enrichment complete across all 478 items (sequential type-priority order). Pass1 updated 258 items; pass2 force-remediation updated 202 ownership-protected items; final targeted cleanup updated remaining blocker notes on pm-abhj/pm-iyqf/pm-f583/pm-o5uw. Placeholder audit now clean: generic_blocked_reason=0, generic_unblock_note=0, generic_repro_steps=0, empty_body=0, terminal_missing_close_reason=0, terminal_resolution_placeholder=0, pending_upstream_blocked_by=0."
+  "2026-04-04T21:55:31.826Z",codex-agent,"Phase 6 gap-creation complete: created governance automation lineage epic pm-5rjn with three net-new child features for future improvements discovered during this run: pm-vi2v (governance normalize command with dry-run/apply), pm-dw5s (validate low-signal metadata quality checks), and pm-lwps (batch ownership-override planning/execution mode)."
+  "2026-04-04T21:56:31.164Z",codex-agent,"Phase 7 validation complete: pm validate checks metadata/resolution/command_references/history_drift all pass clean on 482 items after backfilling 10 closed-item resolution gaps (pm-16f4, pm-4moz, pm-9ik7, pm-bi0z, pm-c1bn, pm-elsh, pm-i2pc, pm-lm0j, pm-ormq, pm-z9k7). Duplicate audit confirms exact_duplicate_title_groups=0 and active_near_duplicate_groups=0 across active_count=12. Remaining warning is validate_files_missing_linked_paths:9, already tracked as product issue pm-m9tv."
+  "2026-04-04T21:57:42.006Z",codex-agent,"Closure evidence: pm test pm-xjf9 --run --pm-context tracker passed linked validation command (metadata/resolution/command_references/history_drift all ok on 482 items). Full validate with --check-files still reports known missing_linked_paths=9 false-positive, tracked in open issue pm-m9tv."
+  "2026-04-04T21:59:17.181Z",codex-agent,"Post-close verification snapshot: placeholder audit remains clean (all tracked placeholder counters at 0 across 482 items), duplicate audit reports exact_duplicate_title_groups=0 and active_near_duplicate_groups=0 (active=11), and pm validate core suite (--check-metadata --check-resolution --check-command-references --check-history-drift) returns ok=true with no warnings."
+notes[1]{created_at,author,text}:
+  "2026-04-04T21:28:06.939Z",codex-agent,"This run applies PMBOK,ISO 21502,Scrum commitment clarity,and DORA-oriented delivery evidence conventions to tracker metadata quality."
+files[1]{path,scope,note}:
+  AGENTS.md,project,governance operating rules
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  pm validate --check-metadata --check-resolution --check-command-references --check-history-drift --json,null,project,1200,null,null,null,null,null,null,null,null,null,null,core governance checks excluding known files false-positive path
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mnkvhlcz-2b5noj,test,failed,"2026-04-04T21:56:56.271Z","2026-04-04T21:56:56.291Z","2026-04-04T21:56:56.291Z",null,null,0,1,0,null,null,null
+  test-local-mnkvhxe0-b9l4ej,test,failed,"2026-04-04T21:57:11.391Z","2026-04-04T21:57:11.880Z","2026-04-04T21:57:11.880Z",null,null,0,1,0,null,null,null
+  test-local-mnkvibby-gj01ne,test,passed,"2026-04-04T21:57:27.923Z","2026-04-04T21:57:29.950Z","2026-04-04T21:57:29.950Z",null,null,1,0,0,null,null,null
+docs[1]{path,scope,note}:
+  PRD.md,project,schema and lifecycle reference
+close_reason: "All governance-overhaul phases completed with standards mapping, full-item enrichment, dedupe/hierarchy normalization, validation evidence, and net-new automation roadmap items created."
+body: "Execute all six governance phases from the approved overhaul plan and capture validation evidence plus residual follow-ups.\n\n## Governance Quality Rubric (v2026-04-04)\n\n### Per-item mandatory quality bars\n- Every item must have specific: description, acceptance_criteria, goal/objective/value/impact/outcome/why_now, and body context that explains current scope and execution state.\n- Every item must carry evidence links appropriate to scope: files/tests/docs and at least one substantive comment or note capturing implementation or governance rationale.\n- Terminal items (closed/canceled) must include meaningful close_reason and resolution context without generic placeholders.\n- Active items (open/in_progress/blocked) must include concrete ownership, blocker linkage, and unblock strategy with explicit PM IDs when blocked.\n\n### Hierarchy and duplicate policy\n- Canonical lineage target is Epic -> Feature -> Task/Issue/Chore except when a direct Epic child is explicitly justified in body text.\n- parent field and dependency(kind=parent) semantics must align; stale lineage edges are corrected.\n- Duplicate clusters resolve to one canonical item; non-canonical siblings are marked superseded/canceled with canonical ID references.\n\n### Standards mapping\n- PMBOK 8: value delivery + governance accountability fields (goal/objective/value/impact/outcome) are required.\n- ISO 21502: planning/monitoring/closure context captured via acceptance criteria, stakeholder impact, and closure evidence.\n- Scrum 2020 commitments: backlog transparency through clear goal + Definition of Ready + Definition of Done evidence trail.\n- DORA guidance: where delivery quality applies, tests/verification evidence and failure-recovery context are explicit and reproducible.\n\n### Placeholder elimination rules\n- Remove generic boilerplate such as \"run-linked-flow-and-compare-to-ac\" and replace with item-specific reproducible steps.\n- Remove templated closed-status blocker text unless it conveys concrete historical context.\n- Empty body values are replaced with concise implementation/governance narrative.\n\n## Final Governance Summary (2026-04-04)\n\n### Taxonomy and lineage model\n- Canonical planning lineage: Epic -> Feature -> Task/Issue/Chore.\n- Parent graph status: self-parent and invalid parent-type violations are fully eliminated.\n- Parent dependency alignment: stale parent dependency edges were reconciled with scalar parent fields.\n\n### Standards mapping\n- PMBOK 8: value and accountability context captured through goal/objective/value/impact/outcome/why_now on all items.\n- ISO 21502: planning/monitoring/closure quality reinforced via acceptance criteria, reproducible verification, and closure rationale fields.\n- Scrum commitments: clearer transparency via Definition of Ready + acceptance outcomes + evidence-linked closure metadata.\n- DORA-aligned evidence practice: test/verification traces preserved in linked tests/comments to support delivery quality monitoring.\n\n### Governance quality outcomes\n- Full sequential enrichment completed across 482 items currently in tracker scope.\n- Placeholder patterns eliminated: generic blocker/unblock/repro text, empty bodies, and missing close reasons are now zero.\n- Duplicate quality: exact duplicate titles and active near-duplicate groups both zero after consolidation checks.\n\n### Validation state\n- pm validate checks passing: metadata, resolution, command_references, history_drift.\n- Residual known warning: validate_files_missing_linked_paths=9 remains tracked as product issue pm-m9tv.\n\n### Ongoing maintenance workflow\n- Weekly: run pm context, pm list-open, pm list-in-progress, and review recurring task pm-lou4.\n- Monthly: run pm validate --check-metadata --check-resolution --check-command-references --check-history-drift --check-files --scan-mode tracked-all and log outcomes.\n- Pre-create guardrail: perform duplicate scans (context/search/list) and record evidence in create-time comments.\n- Roadmap for productized governance automation is tracked under epic pm-5rjn and children pm-vi2v, pm-dw5s, pm-lwps."

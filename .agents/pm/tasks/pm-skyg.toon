@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: ci,cross-platform,github-actions,pm-cli,tests
 created_at: "2026-04-03T17:25:23.654Z"
-updated_at: "2026-04-04T17:42:53.061Z"
+updated_at: "2026-04-04T21:35:22.269Z"
 deadline: "2026-04-10T17:25:23.654Z"
 author: codex-agent
 estimated_minutes: 180
@@ -25,13 +25,13 @@ risk: high
 confidence: high
 sprint: 2026-w14
 release: vnext
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Fix cross-platform CI regressions surfaced by GitHub checks.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Fix cross-platform CI regressions surfaced by GitHub checks."
+blocked_reason: Fix cross-platform CI regressions surfaced by GitHub checks has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Fix cross-platform CI regressions surfaced by GitHub checks is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: high
 environment: github-actions-macos-windows
 repro_steps: Inspect failing Test step logs in gh run view output for latest CI runs
-resolution: planned-or-active-implementation
+resolution: Implementation and verification for Fix cross-platform CI regressions surfaced by GitHub checks are complete with linked evidence retained.
 expected_result: All CI matrix lanes pass for equivalent changes
 actual_result: macOS and Windows lanes fail while Ubuntu passes
 affected_version: 2026.3.12

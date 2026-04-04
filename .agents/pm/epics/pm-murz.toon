@@ -6,7 +6,7 @@ status: canceled
 priority: 0
 tags[7]: "area:milestone",code,docs,"milestone:2",pm-cli,"priority:0",tests
 created_at: "2026-03-06T22:55:53.640Z"
-updated_at: "2026-04-04T17:37:34.287Z"
+updated_at: "2026-04-04T21:44:11.892Z"
 deadline: "2026-03-20T22:55:53.640Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -26,12 +26,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-zetb
-blocked_reason: Current status is canceled; no unresolved blocker is recorded for PRD Milestone 2 - History and Restore.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming PRD Milestone 2 - History and Restore."
+blocked_reason: PRD Milestone 2 - History and Restore is intentionally canceled; no active blocker applies while historical context is preserved for future reference.
+unblock_note: "If PRD Milestone 2 - History and Restore is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
 severity: low
 environment: Project workspace execution context for PRD Milestone 2 - History and Restore (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-murz (PRD Milestone 2 - History and Restore); run linked verification via pm test pm-murz --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Canceled with explicit rationale and preserved historical context for PRD Milestone 2 - History and Restore.
 expected_result: Scope for PRD Milestone 2 - History and Restore is either superseded or intentionally deprioritized with clear rationale.
 actual_result: Execution stopped intentionally; context remains available for future reassessment of PRD Milestone 2 - History and Restore.
@@ -55,4 +55,5 @@ tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,a
   node scripts/run-tests.mjs test,null,project,600,null,null,null,null,null,null,null,null,null,null,sandbox-safe regression
 docs[1]{path,scope,note}:
   PRD.md,project,milestone definition
+close_reason: PRD Milestone 2 - History and Restore is canceled because scope is intentionally superseded/deferred while historical context remains preserved.
 body: Canonical milestone tracking item seeded from PRD section 21. Child features and tasks should attach here via dependencies.

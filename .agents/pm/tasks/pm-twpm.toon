@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:migrations",pm-cli,runtime
 created_at: "2026-04-01T02:17:22.189Z"
-updated_at: "2026-04-04T17:43:01.562Z"
+updated_at: "2026-04-04T21:38:14.455Z"
 deadline: "2026-04-10T02:17:22.189Z"
 assignee: codex-agent
 author: codex-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-zd6y
-blocked_reason: "Current status is closed; no unresolved blocker is recorded for B3: Executable extension migration lifecycle."
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming B3: Executable extension migration lifecycle."
+blocked_reason: "B3: Executable extension migration lifecycle has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
+unblock_note: "If B3: Executable extension migration lifecycle is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: "Project workspace execution context for B3: Executable extension migration lifecycle (pm CLI + Node/pnpm toolchain)."
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: "Review linked files/tests/docs for pm-twpm (B3: Executable extension migration lifecycle); run linked verification via pm test pm-twpm --run when available; compare observed behavior with acceptance criteria and capture results in comments."
 resolution: "Closed with implementation evidence captured for B3: Executable extension migration lifecycle."
 expected_result: "Acceptance criteria for B3: Executable extension migration lifecycle are satisfied with reproducible verification evidence."
 actual_result: "Work completed and recorded with linked artifacts for B3: Executable extension migration lifecycle."

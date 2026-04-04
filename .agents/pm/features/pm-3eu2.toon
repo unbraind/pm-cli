@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:docs","area:files","area:ux",external-audit,pm-cli
 created_at: "2026-04-03T14:48:12.160Z"
-updated_at: "2026-04-04T17:38:17.007Z"
+updated_at: "2026-04-04T21:33:50.193Z"
 deadline: "2026-04-13T14:48:12.160Z"
 author: codex-agent
 estimated_minutes: 240
@@ -19,8 +19,8 @@ impact: Reduces ambiguity and handoff risk for future work touching Add glob-bas
 outcome: This record can be used as canonical context when modifying Add glob-based linked artifact additions for files/docs.
 why_now: Historical decisions for Add glob-based linked artifact additions for files/docs need durable context for future maintenance and audits.
 parent: pm-iswo
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Add glob-based linked artifact additions for files/docs.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Add glob-based linked artifact additions for files/docs."
+blocked_reason: Add glob-based linked artifact additions for files/docs has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Add glob-based linked artifact additions for files/docs is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 environment: Project workspace execution context for Add glob-based linked artifact additions for files/docs (pm CLI + Node/pnpm toolchain).
 resolution: Closed with implementation evidence captured for Add glob-based linked artifact additions for files/docs.
 expected_result: Acceptance criteria for Add glob-based linked artifact additions for files/docs are satisfied with reproducible verification evidence.

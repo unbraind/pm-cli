@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:docs",contract,pm-cli,prompts
 created_at: "2026-03-06T14:08:27.897Z"
-updated_at: "2026-04-04T17:47:46.427Z"
+updated_at: "2026-04-04T21:51:00.203Z"
 deadline: "2026-03-07T14:08:27.897Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: no-active-blocker
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Sync legacy prompt docs with create contract.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Sync legacy prompt docs with create contract."
+blocked_reason: Sync legacy prompt docs with create contract has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Sync legacy prompt docs with create contract is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
 severity: low
 environment: Project workspace execution context for Sync legacy prompt docs with create contract (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-h22w (Sync legacy prompt docs with create contract); run linked verification via pm test pm-h22w --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Sync legacy prompt docs with create contract.
 expected_result: Acceptance criteria for Sync legacy prompt docs with create contract are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Sync legacy prompt docs with create contract.

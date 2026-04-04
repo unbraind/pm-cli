@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:error-model",core,"milestone:0",pm-cli
 created_at: "2026-02-17T23:02:07.105Z"
-updated_at: "2026-04-04T17:46:33.128Z"
+updated_at: "2026-04-04T21:46:13.827Z"
 deadline: "2026-02-20T23:02:07.105Z"
 assignee: steve
 author: steve
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-2xl
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Error model and exit code mapping.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Error model and exit code mapping."
+blocked_reason: "M0: Error model and exit code mapping has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
+unblock_note: "If M0: Error model and exit code mapping is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: steve
 severity: low
 environment: Project workspace execution context for Error model and exit code mapping (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: "Review linked files/tests/docs for pm-siz (M0: Error model and exit code mapping); run linked verification via pm test pm-siz --run when available; compare observed behavior with acceptance criteria and capture results in comments."
 resolution: Closed with implementation evidence captured for Error model and exit code mapping.
 expected_result: Acceptance criteria for Error model and exit code mapping are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Error model and exit code mapping.

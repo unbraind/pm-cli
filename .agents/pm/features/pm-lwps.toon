@@ -1,0 +1,46 @@
+id: pm-lwps
+title: Add governance batch-mutation mode with explicit ownership override planning
+description: "Provide a safe orchestration mode for governance operations that precomputes required ownership overrides, surfaces approval-ready plans, and executes deterministic batches with per-item audit traces."
+type: Feature
+status: open
+priority: 2
+tags[4]: automation,governance,ownership,pm-cli
+created_at: "2026-04-04T21:55:27.146Z"
+updated_at: "2026-04-04T21:55:27.146Z"
+deadline: "2026-04-25T21:55:27.146Z"
+assignee: codex-agent
+author: codex-agent
+estimated_minutes: 300
+acceptance_criteria: "A governance batch mode can generate an override plan (dry-run), list affected assignees/items, require explicit confirmation, and execute scoped mutations with clear per-item audit output."
+definition_of_ready: Ownership conflict patterns from governance sweeps are documented and acceptance safety constraints are defined.
+goal: Governance operations by default
+objective: Reduce manual ownership-conflict remediation during approved audits
+value: Lowers execution friction for legitimate cross-owner governance maintenance
+impact: Cuts repetitive force operations while preserving transparent safety controls
+outcome: Approved governance runs can execute at scale with clear auditability
+why_now: The latest standards-alignment run required over 200 ownership override updates handled manually.
+parent: pm-5rjn
+reviewer: maintainer-review
+risk: high
+confidence: medium
+sprint: governance-followups
+release: vnext
+reporter: codex-agent
+severity: medium
+environment: linux
+repro_steps: Run large governance normalization over cross-owned items and observe repetitive ownership conflict handling.
+affected_version: 2026.3.12
+component: governance-batch-ownership
+regression: false
+customer_impact: Maintainers can execute approved governance maintenance faster with explicit safety evidence.
+comments[1]{created_at,author,text}:
+  "2026-04-04T21:55:27.146Z",codex-agent,"Duplicate-check evidence: pm search 'ownership conflict force audit override workflow' --limit 20; pm search 'ownership-safe batch mutation mode governance override' --limit 20; pm list-open --limit 20. Net-new because current items improve guidance only; no feature currently provides plan+execute batch ownership override workflow for governance operations."
+notes[1]{created_at,author,text}:
+  "2026-04-04T21:55:27.146Z",codex-agent,Design should separate planning and execution phases and require explicit operator confirmation before any forced mutation batch.
+files[1]{path,scope,note}:
+  src/cli/error-guidance.ts,project,ownership conflict and override UX anchor
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,ownership workflow regression baseline
+docs[1]{path,scope,note}:
+  AGENTS.md,project,policy constraints for approved ownership overrides
+body: Feature targets large tracker maintenance workflows where many items are assigned to different owners and manual force-update loops create operational overhead.

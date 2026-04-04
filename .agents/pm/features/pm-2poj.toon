@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:extensions","area:github","area:install","milestone:extension-manager",pm-cli
 created_at: "2026-04-03T16:16:29.109Z"
-updated_at: "2026-04-04T17:39:50.715Z"
+updated_at: "2026-04-04T21:33:56.474Z"
 deadline: "2026-04-13T16:16:29.109Z"
 author: codex-agent
 estimated_minutes: 420
@@ -25,12 +25,12 @@ risk: high
 confidence: medium
 sprint: extension-manager-rollout
 release: vnext
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Implement extension source resolver and installer engine.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Implement extension source resolver and installer engine."
+blocked_reason: Implement extension source resolver and installer engine has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Implement extension source resolver and installer engine is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Implement extension source resolver and installer engine (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-2poj (Implement extension source resolver and installer engine); run linked verification via pm test pm-2poj --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Implement extension source resolver and installer engine.
 expected_result: Acceptance criteria for Implement extension source resolver and installer engine are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Implement extension source resolver and installer engine.

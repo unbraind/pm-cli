@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:output","area:terminal",follow-up,pm-cli
 created_at: "2026-04-03T21:59:51.456Z"
-updated_at: "2026-04-04T17:40:30.583Z"
+updated_at: "2026-04-04T21:40:27.077Z"
 deadline: "2026-04-10T21:59:51.456Z"
 author: codex-agent
 estimated_minutes: 180
@@ -19,8 +19,8 @@ impact: "Reduces ambiguity and handoff risk for future work touching External fo
 outcome: "This record can be used as canonical context when modifying External follow-up: suppress EPIPE stack traces in piped output."
 why_now: "Historical decisions for External follow-up: suppress EPIPE stack traces in piped output need durable context for future maintenance and audits."
 parent: pm-axlr
-blocked_reason: "Current status is closed; no unresolved blocker is recorded for External follow-up: suppress EPIPE stack traces in piped output."
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming External follow-up: suppress EPIPE stack traces in piped output."
+blocked_reason: "External follow-up: suppress EPIPE stack traces in piped output has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
+unblock_note: "If External follow-up: suppress EPIPE stack traces in piped output is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 environment: "Project workspace execution context for External follow-up: suppress EPIPE stack traces in piped output (pm CLI + Node/pnpm toolchain)."
 resolution: "Closed with implementation evidence captured for External follow-up: suppress EPIPE stack traces in piped output."
 expected_result: "Acceptance criteria for External follow-up: suppress EPIPE stack traces in piped output are satisfied with reproducible verification evidence."

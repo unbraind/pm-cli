@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:docs","area:release",docs,pm-cli
 created_at: "2026-04-01T12:39:54.066Z"
-updated_at: "2026-04-04T17:42:33.097Z"
+updated_at: "2026-04-04T21:39:01.133Z"
 deadline: "2026-04-08T12:39:54.066Z"
 assignee: codex-agent
 author: codex-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-i0iy
-blocked_reason: "Current status is closed; no unresolved blocker is recorded for Docs1: Refresh README/PRD/architecture/extensions/changelog."
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Docs1: Refresh README/PRD/architecture/extensions/changelog."
+blocked_reason: "Docs1: Refresh README/PRD/architecture/extensions/changelog has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
+unblock_note: "If Docs1: Refresh README/PRD/architecture/extensions/changelog is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: "Project workspace execution context for Docs1: Refresh README/PRD/architecture/extensions/changelog (pm CLI + Node/pnpm toolchain)."
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: "Review linked files/tests/docs for pm-qhcw (Docs1: Refresh README/PRD/architecture/extensions/changelog); run linked verification via pm test pm-qhcw --run when available; compare observed behavior with acceptance criteria and capture results in comments."
 resolution: "Closed with implementation evidence captured for Docs1: Refresh README/PRD/architecture/extensions/changelog."
 expected_result: "Acceptance criteria for Docs1: Refresh README/PRD/architecture/extensions/changelog are satisfied with reproducible verification evidence."
 actual_result: "Work completed and recorded with linked artifacts for Docs1: Refresh README/PRD/architecture/extensions/changelog."

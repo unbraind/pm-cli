@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:error",code,pm-cli
 created_at: "2026-04-01T12:39:34.369Z"
-updated_at: "2026-04-04T17:41:28.492Z"
+updated_at: "2026-04-04T21:38:57.581Z"
 deadline: "2026-04-08T12:39:34.369Z"
 assignee: codex-agent
 author: codex-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-frk8
-blocked_reason: "Current status is closed; no unresolved blocker is recorded for Error2: Refactor commander usage mapping and dedupe error output."
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Error2: Refactor commander usage mapping and dedupe error output."
+blocked_reason: "Error2: Refactor commander usage mapping and dedupe error output has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
+unblock_note: "If Error2: Refactor commander usage mapping and dedupe error output is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: "Project workspace execution context for Error2: Refactor commander usage mapping and dedupe error output (pm CLI + Node/pnpm toolchain)."
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: "Review linked files/tests/docs for pm-eonv (Error2: Refactor commander usage mapping and dedupe error output); run linked verification via pm test pm-eonv --run when available; compare observed behavior with acceptance criteria and capture results in comments."
 resolution: "Closed with implementation evidence captured for Error2: Refactor commander usage mapping and dedupe error output."
 expected_result: "Acceptance criteria for Error2: Refactor commander usage mapping and dedupe error output are satisfied with reproducible verification evidence."
 actual_result: "Work completed and recorded with linked artifacts for Error2: Refactor commander usage mapping and dedupe error output."

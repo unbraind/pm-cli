@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions","area:release","area:tests",pm-cli
 created_at: "2026-04-01T02:16:16.834Z"
-updated_at: "2026-04-04T17:39:22.347Z"
+updated_at: "2026-04-04T21:32:59.039Z"
 deadline: "2026-04-11T02:16:16.834Z"
 assignee: codex-agent
 author: codex-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-x395
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Regression and release hardening.
+blocked_reason: Regression and release hardening has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
 unblock_note: Coverage gate alignment complete; verification rerun passing.
 reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Regression and release hardening (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-qwp7 (Regression and release hardening); run linked verification via pm test pm-qwp7 --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Regression and release hardening.
 expected_result: Acceptance criteria for Regression and release hardening are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Regression and release hardening.

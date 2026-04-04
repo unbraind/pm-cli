@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[8]: "area:search",code,doc,"milestone:4",pm-cli,"priority:1",roadmap,tests
 created_at: "2026-03-06T22:11:04.906Z"
-updated_at: "2026-04-04T17:44:16.823Z"
+updated_at: "2026-04-04T21:48:04.420Z"
 deadline: "2026-03-08T22:11:04.906Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-f45
-blocked_reason: "Current status is closed; no unresolved blocker is recorded for M4 follow-up: exact-title lexical boost for deterministic search ranking."
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming M4 follow-up: exact-title lexical boost for deterministic search ranking."
+blocked_reason: "M4 follow-up: exact-title lexical boost for deterministic search ranking has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
+unblock_note: "If M4 follow-up: exact-title lexical boost for deterministic search ranking is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
 severity: low
 environment: "Project workspace execution context for M4 follow-up: exact-title lexical boost for deterministic search ranking (pm CLI + Node/pnpm toolchain)."
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: "Review linked files/tests/docs for pm-4iga (M4 follow-up: exact-title lexical boost for deterministic search ranking); run linked verification via pm test pm-4iga --run when available; compare observed behavior with acceptance criteria and capture results in comments."
 resolution: "Closed with implementation evidence captured for M4 follow-up: exact-title lexical boost for deterministic search ranking."
 expected_result: "Acceptance criteria for M4 follow-up: exact-title lexical boost for deterministic search ranking are satisfied with reproducible verification evidence."
 actual_result: "Work completed and recorded with linked artifacts for M4 follow-up: exact-title lexical boost for deterministic search ranking."

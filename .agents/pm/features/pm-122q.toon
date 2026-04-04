@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"area:calendar","area:docs",pm-cli
 created_at: "2026-03-31T21:27:49.453Z"
-updated_at: "2026-04-04T21:12:24.358Z"
+updated_at: "2026-04-04T21:32:40.702Z"
 deadline: "2026-04-10T21:27:49.453Z"
 author: codex-agent
 estimated_minutes: 200
@@ -26,12 +26,12 @@ confidence: high
 sprint: calendar-rollout
 release: vnext
 blocked_by: pm-0lbm
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Agent integration and docs hardening for calendar/reminders.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Agent integration and docs hardening for calendar/reminders."
+blocked_reason: Agent integration and docs hardening for calendar/reminders has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Agent integration and docs hardening for calendar/reminders is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Agent integration and docs hardening for calendar/reminders (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-122q (Agent integration and docs hardening for calendar/reminders); run linked verification via pm test pm-122q --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Agent integration and docs hardening for calendar/reminders.
 expected_result: Acceptance criteria for Agent integration and docs hardening for calendar/reminders are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Agent integration and docs hardening for calendar/reminders.

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: command-references,governance,linked-tests,validate
 created_at: "2026-04-04T10:10:35.532Z"
-updated_at: "2026-04-04T17:36:27.390Z"
+updated_at: "2026-04-04T21:32:23.008Z"
 deadline: "2026-04-11T10:10:35.532Z"
 author: codex-agent
 estimated_minutes: 300
@@ -24,8 +24,8 @@ risk: medium
 confidence: high
 sprint: linked-test-hardening
 release: vnext
-blocked_reason: "Current status is closed; no unresolved blocker is recorded for Issue3: Validate stale PM-id command references."
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Issue3: Validate stale PM-id command references."
+blocked_reason: "Issue3: Validate stale PM-id command references has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
+unblock_note: "If Issue3: Validate stale PM-id command references is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: medium
 environment: "Project workspace execution context for Issue3: Validate stale PM-id command references (pm CLI + Node/pnpm toolchain)."
@@ -40,4 +40,4 @@ customer_impact: improves deterministic verification outcomes
 comments[1]{created_at,author,text}:
   "2026-04-04T11:40:02.296Z",codex-agent,"Evidence: pnpm build passed; node scripts/run-tests.mjs test passed (844 tests); node scripts/run-tests.mjs coverage passed (branches 91.02%); PM linked-test sweep passed via pm test-all --status in_progress (linked_tests=3 failed=0, failure categories all zero)."
 close_reason: stale PM-id command reference validation epic delivered
-body: ""
+body: "Scope context: Issue3: Validate stale PM-id command references\n\nExecution intent: This epic is tracked under top-level scope with component linked-test-runtime.\n\nCompletion signal: pm validate detects stale PM-id references inside linked test commands by default and emits dedicated diagnostics before execution-time failures.\n\nGovernance intent: Linked test reliability. Maintain linked files/tests/docs and evidence comments so future agents can reuse this record as authoritative context."

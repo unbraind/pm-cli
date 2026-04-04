@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:item-io",core,"milestone:1",pm-cli
 created_at: "2026-02-17T23:02:07.611Z"
-updated_at: "2026-04-04T17:45:38.827Z"
+updated_at: "2026-04-04T21:46:15.767Z"
 deadline: "2026-02-23T23:02:07.611Z"
 assignee: steve
 author: steve
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-2xl
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Markdown item parser and serializer.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Markdown item parser and serializer."
+blocked_reason: "M1: Markdown item parser and serializer has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
+unblock_note: "If M1: Markdown item parser and serializer is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: steve
 severity: low
 environment: Project workspace execution context for Markdown item parser and serializer (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: "Review linked files/tests/docs for pm-l4o (M1: Markdown item parser and serializer); run linked verification via pm test pm-l4o --run when available; compare observed behavior with acceptance criteria and capture results in comments."
 resolution: Closed with implementation evidence captured for Markdown item parser and serializer.
 expected_result: Acceptance criteria for Markdown item parser and serializer are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Markdown item parser and serializer.

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:docs",compatibility,pm-cli
 created_at: "2026-04-01T11:26:51.855Z"
-updated_at: "2026-04-04T17:41:00.253Z"
+updated_at: "2026-04-04T21:38:41.083Z"
 deadline: "2026-04-08T11:26:51.855Z"
 assignee: codex-agent
 author: codex-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-lau3
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Docs/help refresh for expanded deadline/date inputs.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Docs/help refresh for expanded deadline/date inputs."
+blocked_reason: Docs/help refresh for expanded deadline/date inputs has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Docs/help refresh for expanded deadline/date inputs is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Docs/help refresh for expanded deadline/date inputs (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-9sg4 (Docs/help refresh for expanded deadline/date inputs); run linked verification via pm test pm-9sg4 --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Docs/help refresh for expanded deadline/date inputs.
 expected_result: Acceptance criteria for Docs/help refresh for expanded deadline/date inputs are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Docs/help refresh for expanded deadline/date inputs.

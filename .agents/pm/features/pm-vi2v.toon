@@ -1,0 +1,46 @@
+id: pm-vi2v
+title: Add governance normalize command with dry-run and apply modes
+description: Implement a first-class pm command that detects low-signal metadata patterns and optionally applies deterministic normalization updates with auditable mutation plans.
+type: Feature
+status: open
+priority: 1
+tags[4]: automation,governance,normalization,pm-cli
+created_at: "2026-04-04T21:55:02.727Z"
+updated_at: "2026-04-04T21:55:02.727Z"
+deadline: "2026-04-18T21:55:02.727Z"
+assignee: codex-agent
+author: codex-agent
+estimated_minutes: 300
+acceptance_criteria: "A governance normalize command can (1) scan and report placeholder/low-signal metadata patterns, (2) emit deterministic mutation previews, and (3) apply approved updates while preserving history and ownership semantics."
+definition_of_ready: Pattern catalog and replacement policies are captured from completed governance sweeps.
+goal: Governance operations by default
+objective: Replace manual metadata normalization scripts
+value: Reduces manual command volume and inconsistent cleanup outcomes
+impact: Improves repeatability and lowers operational error risk
+outcome: Agents can run governance normalization from a supported pm command
+why_now: Recent sweep required >400 scripted metadata mutations that should be productized.
+parent: pm-5rjn
+reviewer: maintainer-review
+risk: medium
+confidence: medium
+sprint: governance-followups
+release: vnext
+reporter: codex-agent
+severity: medium
+environment: linux
+repro_steps: Attempt full metadata normalization on tracker without custom scripts and observe missing command support.
+affected_version: 2026.3.12
+component: governance-normalize
+regression: false
+customer_impact: Maintainers and agents can perform consistent tracker normalization with less manual overhead.
+comments[1]{created_at,author,text}:
+  "2026-04-04T21:55:02.727Z",codex-agent,"Duplicate-check evidence: pm search 'automated standards alignment metadata normalization command' --limit 20; pm search 'bulk governance normalization command pm tracker' --limit 20; pm list-open --limit 20. Net-new because existing items capture manual execution history,not a dedicated normalize command surface."
+notes[1]{created_at,author,text}:
+  "2026-04-04T21:55:02.727Z",codex-agent,"Design should support audit-only mode first,then explicit apply mode with deterministic ordering and change summaries."
+files[1]{path,scope,note}:
+  src/cli/main.ts,project,command registration surface
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,governance normalization behavior coverage
+docs[1]{path,scope,note}:
+  README.md,project,future governance command docs
+body: "Feature converts ad-hoc governance scripts into supported command flows: scan -> report -> optional apply, with explicit scope and safety controls."

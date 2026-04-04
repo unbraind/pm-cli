@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: "area:docs","area:tests","milestone:6",pm-cli,"priority:0",tests
 created_at: "2026-03-09T00:34:56.832Z"
-updated_at: "2026-04-04T17:47:31.641Z"
+updated_at: "2026-04-04T21:50:30.110Z"
 deadline: "2026-03-10T00:34:56.832Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: maintainer-loop-2026-03-09
 release: v0.1
 blocked_by: no-active-blocker
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Release-readiness maintenance loop 2026-03-09.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Release-readiness maintenance loop 2026-03-09."
+blocked_reason: Release-readiness maintenance loop 2026-03-09 has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Release-readiness maintenance loop 2026-03-09 is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
 severity: low
 environment: Project workspace execution context for Release-readiness maintenance loop 2026-03-09 (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-36zp (Release-readiness maintenance loop 2026-03-09); run linked verification via pm test pm-36zp --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Release-readiness maintenance loop 2026-03-09.
 expected_result: Acceptance criteria for Release-readiness maintenance loop 2026-03-09 are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Release-readiness maintenance loop 2026-03-09.

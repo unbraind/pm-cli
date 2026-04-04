@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: "area:operations",core,"milestone:3",pm-cli
 created_at: "2026-02-17T23:01:11.350Z"
-updated_at: "2026-04-04T17:37:00.391Z"
+updated_at: "2026-04-04T21:43:58.912Z"
 deadline: "2026-03-03T23:01:11.350Z"
 assignee: steve
 author: steve
@@ -26,12 +26,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-c0r
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Milestone 3 - Query + Operations.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Milestone 3 - Query + Operations."
+blocked_reason: Milestone 3 - Query + Operations has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Milestone 3 - Query + Operations is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: steve
 severity: low
 environment: Project workspace execution context for Milestone 3 - Query + Operations (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-54d (Milestone 3 - Query + Operations); run linked verification via pm test pm-54d --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Milestone 3 - Query + Operations.
 expected_result: Acceptance criteria for Milestone 3 - Query + Operations are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Milestone 3 - Query + Operations.

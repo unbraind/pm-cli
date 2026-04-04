@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:extensions","area:pi","area:sdk","milestone:extension-manager",pm-cli
 created_at: "2026-04-03T16:16:50.033Z"
-updated_at: "2026-04-04T17:39:52.138Z"
+updated_at: "2026-04-04T21:33:59.805Z"
 deadline: "2026-04-13T16:16:50.033Z"
 author: codex-agent
 estimated_minutes: 180
@@ -25,12 +25,12 @@ risk: medium
 confidence: medium
 sprint: extension-manager-rollout
 release: vnext
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Extend SDK contracts and Pi wrapper for extension lifecycle actions.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Extend SDK contracts and Pi wrapper for extension lifecycle actions."
+blocked_reason: Extend SDK contracts and Pi wrapper for extension lifecycle actions has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Extend SDK contracts and Pi wrapper for extension lifecycle actions is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Extend SDK contracts and Pi wrapper for extension lifecycle actions (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-9ajy (Extend SDK contracts and Pi wrapper for extension lifecycle actions); run linked verification via pm test pm-9ajy --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Extend SDK contracts and Pi wrapper for extension lifecycle actions.
 expected_result: Acceptance criteria for Extend SDK contracts and Pi wrapper for extension lifecycle actions are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Extend SDK contracts and Pi wrapper for extension lifecycle actions.

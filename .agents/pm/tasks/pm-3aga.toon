@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: commands,extensions,pm-cli,toon
 created_at: "2026-03-31T20:13:39.356Z"
-updated_at: "2026-04-04T17:40:27.523Z"
+updated_at: "2026-04-04T21:37:28.982Z"
 deadline: "2026-04-14T20:13:39.356Z"
 assignee: codex-agent
 author: codex-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-u919
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Integrate command and extension format behavior.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Integrate command and extension format behavior."
+blocked_reason: Integrate command and extension format behavior has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Integrate command and extension format behavior is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Integrate command and extension format behavior (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-3aga (Integrate command and extension format behavior); run linked verification via pm test pm-3aga --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Integrate command and extension format behavior.
 expected_result: Acceptance criteria for Integrate command and extension format behavior are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Integrate command and extension format behavior.

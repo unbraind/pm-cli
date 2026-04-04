@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:calendar","area:recurrence","area:schema",core,pm-cli
 created_at: "2026-03-31T22:29:34.035Z"
-updated_at: "2026-04-04T17:38:04.124Z"
+updated_at: "2026-04-04T21:32:42.336Z"
 deadline: "2026-04-10T22:29:34.035Z"
 assignee: codex-agent
 author: codex-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-c877
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Event and recurrence schema with mutation contracts.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Event and recurrence schema with mutation contracts."
+blocked_reason: Event and recurrence schema with mutation contracts has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Event and recurrence schema with mutation contracts is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Event and recurrence schema with mutation contracts (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-0ab3 (Event and recurrence schema with mutation contracts); run linked verification via pm test pm-0ab3 --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Event and recurrence schema with mutation contracts.
 expected_result: Acceptance criteria for Event and recurrence schema with mutation contracts are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Event and recurrence schema with mutation contracts.

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: background-runtime,linked-tests,pm-cli,test-runs
 created_at: "2026-04-04T19:06:35.921Z"
-updated_at: "2026-04-04T20:22:37.625Z"
+updated_at: "2026-04-04T21:56:18.202Z"
 deadline: "2026-04-13T19:06:35.921Z"
 author: codex-agent
 estimated_minutes: 240
@@ -21,7 +21,9 @@ reporter: codex-agent
 severity: medium
 environment: linux
 repro_steps: Invoke pm test --run --background and manage it via pm test-runs subcommands.
+resolution: Closed with implementation and verification evidence preserved in linked artifacts and comments.
 expected_result: Background command surface is available and deterministic.
+actual_result: Work completed with acceptance criteria outcomes captured in linked files/tests/docs and comments.
 affected_version: 2026.3.12
 fixed_version: target-vnext
 component: cli-main

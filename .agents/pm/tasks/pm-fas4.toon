@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:stdin","area:terminal",code,compatibility,pm-cli
 created_at: "2026-04-01T11:59:45.450Z"
-updated_at: "2026-04-04T17:41:39.558Z"
+updated_at: "2026-04-04T21:48:38.686Z"
 deadline: "2026-04-08T11:59:45.450Z"
 assignee: cursor-agent
 author: cursor-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-olxl
-blocked_reason: "Current status is closed; no unresolved blocker is recorded for T1: Implement stdin and PTY fail-safe behavior."
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming T1: Implement stdin and PTY fail-safe behavior."
+blocked_reason: "T1: Implement stdin and PTY fail-safe behavior has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
+unblock_note: "If T1: Implement stdin and PTY fail-safe behavior is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: cursor-agent
 severity: low
 environment: "Project workspace execution context for T1: Implement stdin and PTY fail-safe behavior (pm CLI + Node/pnpm toolchain)."
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: "Review linked files/tests/docs for pm-fas4 (T1: Implement stdin and PTY fail-safe behavior); run linked verification via pm test pm-fas4 --run when available; compare observed behavior with acceptance criteria and capture results in comments."
 resolution: "Closed with implementation evidence captured for T1: Implement stdin and PTY fail-safe behavior."
 expected_result: "Acceptance criteria for T1: Implement stdin and PTY fail-safe behavior are satisfied with reproducible verification evidence."
 actual_result: "Work completed and recorded with linked artifacts for T1: Implement stdin and PTY fail-safe behavior."

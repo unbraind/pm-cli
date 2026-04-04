@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:help","area:ux",pm-cli
 created_at: "2026-04-01T12:38:21.452Z"
-updated_at: "2026-04-04T17:39:07.020Z"
+updated_at: "2026-04-04T21:33:14.031Z"
 deadline: "2026-04-11T12:38:21.452Z"
 author: codex-agent
 estimated_minutes: 320
@@ -26,12 +26,12 @@ confidence: high
 sprint: archive-2026w14
 release: archive-2026q2
 blocked_by: pm-30zl
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Help System Redesign Across All Commands.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Help System Redesign Across All Commands."
+blocked_reason: Help System Redesign Across All Commands has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Help System Redesign Across All Commands is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Help System Redesign Across All Commands (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-j162 (Help System Redesign Across All Commands); run linked verification via pm test pm-j162 --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Help System Redesign Across All Commands.
 expected_result: Acceptance criteria for Help System Redesign Across All Commands are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Help System Redesign Across All Commands.

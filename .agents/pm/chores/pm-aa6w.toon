@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:ci","area:docs",code,doc,"milestone:6",pm-cli,tests
 created_at: "2026-03-08T21:32:45.349Z"
-updated_at: "2026-04-04T17:47:34.967Z"
+updated_at: "2026-04-04T21:51:10.823Z"
 deadline: "2026-03-09T21:32:45.349Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -27,12 +27,12 @@ confidence: high
 sprint: maintainer-loop
 release: v0.1.0
 blocked_by: no-active-blocker
-blocked_reason: Current status is closed; no unresolved blocker is recorded for Add Node 25 to nightly CI and create docs/ architecture+extension guides.
-unblock_note: "If blocked in future, capture blocking item ID and mitigation steps before resuming Add Node 25 to nightly CI and create docs/ architecture+extension guides."
+blocked_reason: Add Node 25 to nightly CI and create docs/ architecture+extension guides has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
+unblock_note: "If Add Node 25 to nightly CI and create docs/ architecture+extension guides is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: maintainer-agent
 severity: low
 environment: Project workspace execution context for Add Node 25 to nightly CI and create docs/ architecture+extension guides (pm CLI + Node/pnpm toolchain).
-repro_steps: run-linked-flow-and-compare-to-ac
+repro_steps: Review linked files/tests/docs for pm-aa6w (Add Node 25 to nightly CI and create docs/ architecture+extension guides); run linked verification via pm test pm-aa6w --run when available; compare observed behavior with acceptance criteria and capture results in comments.
 resolution: Closed with implementation evidence captured for Add Node 25 to nightly CI and create docs/ architecture+extension guides.
 expected_result: Acceptance criteria for Add Node 25 to nightly CI and create docs/ architecture+extension guides are satisfied with reproducible verification evidence.
 actual_result: Work completed and recorded with linked artifacts for Add Node 25 to nightly CI and create docs/ architecture+extension guides.
