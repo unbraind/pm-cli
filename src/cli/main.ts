@@ -24,7 +24,6 @@ import {
   runHealth,
   runHistory,
   runInit,
-  runInstall,
   runLearnings,
   runList,
   runNotes,
@@ -77,7 +76,6 @@ import {
   type ExtensionParserRegistry,
   type ExtensionPreflightRegistry,
   type ExtensionServiceRegistry,
-  type LoadedExtension,
   type PreflightRuntimeDecision,
   type RegisteredExtensionFlagDefinitions,
   type RegisteredExtensionSchemaMigrationDefinition,
@@ -99,7 +97,6 @@ import { listAllFrontMatter } from "../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings, readSettingsWithMetadata } from "../core/store/settings.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
-import { getEnabledBuiltInExtensions } from "../core/extensions/builtins.js";
 import type { ItemStatus, PmSettings } from "../types/index.js";
 import { coerceLooseCommandOptionsWithFlagDefinitions, parseLooseCommandOptions } from "./extension-command-options.js";
 import { attachRichHelpText, normalizeHelpCommandPath, resolveHelpDetailMode, resolveHelpNarrative } from "./help-content.js";
@@ -122,6 +119,17 @@ import {
   readFirstStringFromCommanderOptions,
   readStringArrayFromCommanderOptions,
 } from "../sdk/cli-contracts.js";
+
+const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
+
+function resolvePmPackageRoot(): string {
+  const mainPath = fileURLToPath(import.meta.url);
+  return path.resolve(path.dirname(mainPath), "../..");
+}
+
+if (typeof process.env[PM_PACKAGE_ROOT_ENV] !== "string" || process.env[PM_PACKAGE_ROOT_ENV]?.trim().length === 0) {
+  process.env[PM_PACKAGE_ROOT_ENV] = resolvePmPackageRoot();
+}
 
 function collect(value: string, previous: string[] | undefined): string[] {
   const next = previous ?? [];
@@ -1232,10 +1240,9 @@ async function loadRuntimeExtensionSnapshot(pmRoot: string): Promise<RuntimeExte
       cwd: process.cwd(),
       noExtensions: false,
     });
-    const loadedWithBuiltins: LoadedExtension[] = [...getEnabledBuiltInExtensions(settings), ...loadResult.loaded];
     const activationResult = await activateExtensions({
       ...loadResult,
-      loaded: loadedWithBuiltins,
+      loaded: loadResult.loaded,
     });
     const commandHandlers = [...new Set(activationResult.commands.handlers.map((entry) => normalizeExtensionCommandPath(entry.command)))]
       .filter((entry) => entry.length > 0)
@@ -1255,7 +1262,7 @@ async function loadRuntimeExtensionSnapshot(pmRoot: string): Promise<RuntimeExte
       commandFlagHelp,
       loadWarnings: [...loadResult.warnings],
       activationWarnings: [...activationResult.warnings],
-      loadedCount: loadedWithBuiltins.length,
+      loadedCount: loadResult.loaded.length,
       loadFailedCount: loadResult.failed.length,
       activationFailedCount: activationResult.failed.length,
     };
@@ -1538,6 +1545,7 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command): Promi
           extensionFlagDefinitions,
         );
         const result = await runRequiredExtensionCommand(command, looseOptions, globalOptions);
+        await invalidateSearchCachesForMutation(globalOptions, result);
         printResult(result, globalOptions);
         if (globalOptions.profile) {
           printError(`profile:command=${commandPath} took_ms=${Date.now() - startedAt}`);
@@ -2027,32 +2035,6 @@ program
   });
 
 program
-  .command("install")
-  .argument("<target>", "Install target: pi")
-  .option(
-    "--project",
-    "Install Pi extension into resolved project root .pi/extensions (derived from --path, default)",
-  )
-  .option("--global", "Install Pi extension into global PI_CODING_AGENT_DIR or ~/.pi/agent")
-  .description("Install supported integrations and extensions.")
-  .action(async (target: string, options: Record<string, unknown>, command) => {
-    const globalOptions = getGlobalOptions(command);
-    const startedAt = Date.now();
-    const result = await runInstall(
-      target,
-      {
-        project: options.project === true,
-        global: options.global === true,
-      },
-      globalOptions,
-    );
-    printResult(result, globalOptions);
-    if (globalOptions.profile) {
-      printError(`profile:command=install took_ms=${Date.now() - startedAt}`);
-    }
-  });
-
-program
   .command("extension")
   .argument("[target]", "Extension source (install) or extension name (activate/deactivate/uninstall)")
   .option("--install", "Install extension from local path or GitHub source")
@@ -2513,59 +2495,6 @@ function registerContextCommand(): void {
 }
 
 registerContextCommand();
-
-program
-  .command("beads")
-  .description("Built-in Beads extension commands.")
-  .command("import")
-  .description("Import Beads JSONL records as PM items.")
-  .option("--file <path>", "Path to Beads JSONL file, or - for stdin")
-  .option("--author <value>", "Mutation author")
-  .option("--message <value>", "History message for import entries")
-  .option("--preserve-source-ids", "Preserve explicit Beads ids instead of rewriting them to the tracker prefix")
-  .action(async (options: Record<string, unknown>, command) => {
-    const globalOptions = getGlobalOptions(command);
-    const startedAt = Date.now();
-    const result = await runRequiredExtensionCommand(command, options, globalOptions);
-    await invalidateSearchCachesForMutation(globalOptions, result);
-    printResult(result, globalOptions);
-    if (globalOptions.profile) {
-      printError(`profile:command=beads import took_ms=${Date.now() - startedAt}`);
-    }
-  });
-
-const todosCommand = program.command("todos").description("Built-in todos extension commands.");
-
-todosCommand
-  .command("import")
-  .description("Import todos markdown files as PM items.")
-  .option("--folder <path>", "Path to todos markdown folder", ".pi/todos")
-  .option("--author <value>", "Mutation author")
-  .option("--message <value>", "History message for import entries")
-  .action(async (options: Record<string, unknown>, command) => {
-    const globalOptions = getGlobalOptions(command);
-    const startedAt = Date.now();
-    const result = await runRequiredExtensionCommand(command, options, globalOptions);
-    await invalidateSearchCachesForMutation(globalOptions, result);
-    printResult(result, globalOptions);
-    if (globalOptions.profile) {
-      printError(`profile:command=todos import took_ms=${Date.now() - startedAt}`);
-    }
-  });
-
-todosCommand
-  .command("export")
-  .description("Export PM items to todos markdown files.")
-  .option("--folder <path>", "Path to todos markdown folder", ".pi/todos")
-  .action(async (options: Record<string, unknown>, command) => {
-    const globalOptions = getGlobalOptions(command);
-    const startedAt = Date.now();
-    const result = await runRequiredExtensionCommand(command, options, globalOptions);
-    printResult(result, globalOptions);
-    if (globalOptions.profile) {
-      printError(`profile:command=todos export took_ms=${Date.now() - startedAt}`);
-    }
-  });
 
 program
   .command("search")

@@ -287,8 +287,8 @@ pm restore pm-a1b2 2026-02-17T11:15:03.120Z
 
 The built-in Pi wrapper exposes one tool: `pm`.
 Reference implementation source lives at `.pi/extensions/pm-cli/index.ts` as a Pi agent extension module.
-Install the bundled Pi extension with `pm install pi --project` (default) or `pm install pi --global`.
-Load it in Pi with `pi -e ./.pi/extensions/pm-cli/index.ts` (or copy to `.pi/extensions/`).
+`pm install` has been removed; install bundled managed runtime extensions via `pm extension --install beads|todos` (or explicit `.agents/pm/extensions/<name>` paths) when needed.
+Load the Pi wrapper in Pi with `pi -e ./.pi/extensions/pm-cli/index.ts` (or copy it into your Pi extensions directory).
 Use `action: "completion"` with `shell: "bash"|"zsh"|"fish"` to forward to `pm completion <shell>`.
 Use `action: "calendar"` for date-centric event views (`view`, `date`, `from`, `to`, `past`, `type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`, `format`).
 Use `action: "validate"` with optional check toggles (`checkMetadata`, `checkResolution`, `checkFiles`, `checkHistoryDrift`) and optional `scanMode` (`default|tracked-all`) for standalone audit workflows.

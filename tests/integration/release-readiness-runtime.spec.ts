@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { access, readdir, readFile } from "node:fs/promises";
+import { access, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -92,7 +92,6 @@ function isValidCalendarDate(year: number, month: number, day: number): boolean 
 const CORE_COMMANDS = [
   "init",
   "config",
-  "install",
   "extension",
   "create",
   "list",
@@ -279,12 +278,26 @@ describe("release readiness runtime coverage", () => {
     });
   });
 
-  it("shows built-in extension subcommands in subcommand help", async () => {
+  it("exposes bundled extension command paths only after extension install", async () => {
     await withTempPmPath(async (context) => {
+      const missingSourcePath = path.join(context.tempRoot, "missing-before-install.jsonl");
+      const missingBeads = context.runCli(["beads", "import", "--json", "--file", missingSourcePath]);
+      expect(missingBeads.code).toBe(2);
+      const missingEnvelope = parseJsonErrorEnvelope(missingBeads.stderr);
+      expect(missingEnvelope).toMatchObject({
+        code: "unknown_command",
+        exit_code: 2,
+      });
+
+      const installBeads = context.runCli(["extension", "--install", "beads", "--project", "--json"], { expectJson: true });
+      expect(installBeads.code).toBe(0);
+
       const beadsHelp = context.runCli(["beads", "--help"]);
       expect(beadsHelp.code).toBe(0);
       expectHelpContainsCommands(beadsHelp.stdout, ["import"]);
 
+      const installTodos = context.runCli(["extension", "--install", "todos", "--project", "--json"], { expectJson: true });
+      expect(installTodos.code).toBe(0);
       const todosHelp = context.runCli(["todos", "--help"]);
       expect(todosHelp.code).toBe(0);
       expectHelpContainsCommands(todosHelp.stdout, ["import", "export"]);
@@ -417,17 +430,6 @@ describe("release readiness runtime coverage", () => {
       expect(pipedResult.status).toBe(1);
       expect(pipedResult.stderr).not.toContain("Unhandled 'error' event");
       expect(pipedResult.stderr).not.toContain("Error: write EPIPE");
-    });
-  });
-
-  it("keeps install help aligned with supported install targets and flags", async () => {
-    await withTempPmPath(async (context) => {
-      const help = context.runCli(["install", "--help"]);
-      expect(help.code).toBe(0);
-      expect(help.stdout).toContain("Install target: pi");
-      expect(help.stdout).toContain("--project");
-      expect(help.stdout).toContain("derived from --path");
-      expect(help.stdout).toContain("--global");
     });
   });
 
@@ -1113,12 +1115,9 @@ describe("release readiness runtime coverage", () => {
       const successResult = context.runCli(["list-open", "--limit", "1", "--json"], { expectJson: true });
       expect(successResult.code).toBe(0);
 
-      const genericFailureResult = context.runCli([
-        "beads",
-        "import",
-        "--file",
-        path.join(context.tempRoot, "missing-beads.jsonl"),
-      ]);
+      const blockedRoot = path.join(context.tempRoot, "exit-code-blocked-root");
+      await writeFile(blockedRoot, "not-a-directory", "utf8");
+      const genericFailureResult = context.runCli(["init", "--path", blockedRoot, "--json"]);
       expect(genericFailureResult.code).toBe(1);
 
       const usageResult = context.runCli(["create", "--json"]);
@@ -1250,7 +1249,7 @@ describe("release readiness runtime coverage", () => {
       "README.md",
       "LICENSE",
       "docs/**",
-      ".pi/extensions/pm-cli/index.ts",
+      ".agents/pm/extensions/**",
       "scripts/install.sh",
       "scripts/install.ps1",
     ];

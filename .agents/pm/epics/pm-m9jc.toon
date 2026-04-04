@@ -1,16 +1,16 @@
 id: pm-m9jc
 title: Extension lifecycle manager and SDK parity rollout
-description: "Deliver lifecycle extension management commands, source installation workflows, managed state, and docs/contracts parity for pm extensions without duplicating prior full-override work."
+description: "Migrate beads and todos from auto-loaded built-ins to bundled managed extensions shipped under .agents/pm/extensions, remove pm install, and preserve user-safe extension lifecycle behavior."
 type: Epic
 status: closed
 priority: 0
 tags[5]: "area:docs","area:extensions","area:sdk","milestone:extension-manager",pm-cli
 created_at: "2026-04-03T16:15:57.991Z"
-updated_at: "2026-04-04T12:02:09.916Z"
+updated_at: "2026-04-04T15:49:35.614Z"
 deadline: "2026-04-17T16:15:57.991Z"
 author: codex-agent
 estimated_minutes: 900
-acceptance_criteria: pm extension lifecycle commands and source installers are implemented with tests/docs/contracts parity and verified via full build/test/coverage without regressing current users.
+acceptance_criteria: "Bundled beads/todos are shipped but not auto-installed, pm extension installs them via shorthand and explicit paths, pm install surface is removed, and build/test/coverage/docs verification passes without regressions."
 definition_of_ready: No duplicate active extension-manager epic exists and prior closed extension-platform lineage is linked.
 order: 1
 goal: Extension platform parity
@@ -41,9 +41,11 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-cxn3,discovered_from,"2026-04-03T16:15:57.991Z",codex-agent,null
   pm-igv,discovered_from,"2026-04-03T16:15:57.991Z",codex-agent,null
   pm-x395,discovered_from,"2026-04-03T16:15:57.991Z",codex-agent,null
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-03T16:15:57.991Z",codex-agent,Created after context and search dedupe checks showed no active extension-manager lifecycle epic.
   "2026-04-03T17:10:57.450Z",codex-agent,All extension-manager child features/tasks are now closed with implementation + docs + verification evidence; rollout commit 0c49b5d is pushed to origin/main.
+  "2026-04-04T14:55:27.606Z",codex-agent,"Duplicate-check evidence: ran pm context --limit 10, pm search \"extension manager beads todos install\" --limit 20, pm list-open --limit 20, pm list-in-progress --limit 20, and pm get for pm-m9jc, pm-2poj, pm-odt, pm-3s0, pm-8a2s, pm-cxn3, pm-cdsf. Reusing and reopening existing lineage with no new PM items."
+  "2026-04-04T15:49:17.660Z",codex-agent,"Epic-level evidence: beads/todos migrated to bundled managed extensions, install-only command surfacing enforced, pm install removed, docs refreshed, and full build/test/coverage verification passed."
 notes[1]{created_at,author,text}:
   "2026-04-03T16:15:57.991Z",codex-agent,Implementation will remain additive-first for compatibility and link all changed files/tests/docs.
 files[1]{path,scope,note}:
@@ -52,5 +54,5 @@ tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,a
   node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,full regression baseline
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,primary extension manager user and developer contract
-close_reason: Extension lifecycle manager and SDK/docs parity rollout completed with verified tests and pushed commit evidence.
-body: Tracks implementation of pm extension lifecycle manager and parity surfaces requested after prior full-override baseline.
+close_reason: "Bundled managed extension migration completed with verified command-surface, runtime, test, coverage, and docs parity."
+body: "Active migration umbrella for bundled managed extensions: move beads/todos into packaged .agents sources, remove auto-load and static command stubs, remove pm install, and deliver parity tests/docs with no duplicate PM items."

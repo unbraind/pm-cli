@@ -2,9 +2,9 @@ import { execFile } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import type { ExtensionManifest } from "../../core/extensions/loader.js";
-import { getEnabledBuiltInExtensions } from "../../core/extensions/builtins.js";
 import { activateExtensions, loadExtensions } from "../../core/extensions/index.js";
 import { resolveExtensionRoots } from "../../core/extensions/loader.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
@@ -20,6 +20,11 @@ const execFileAsync = promisify(execFile);
 const DEFAULT_EXTENSION_PRIORITY = 100;
 const MANAGED_EXTENSION_STATE_FILENAME = ".managed-extensions.json";
 const MANAGED_EXTENSION_STATE_VERSION = 1;
+const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
+const BUNDLED_EXTENSION_ALIASES: Record<string, string> = {
+  beads: "beads",
+  todos: "todos",
+};
 
 export type ExtensionCommandAction = "install" | "uninstall" | "explore" | "manage" | "doctor" | "activate" | "deactivate";
 export type ExtensionScope = "project" | "global";
@@ -112,6 +117,33 @@ interface ResolvedInstallSource {
   resolved_subpath?: string;
   commit?: string;
   cleanup?: () => Promise<void>;
+}
+
+function resolvePackageRootCandidates(): string[] {
+  const candidates: string[] = [];
+  const envRoot = process.env[PM_PACKAGE_ROOT_ENV];
+  if (typeof envRoot === "string" && envRoot.trim().length > 0) {
+    candidates.push(path.resolve(envRoot.trim()));
+  }
+  const moduleRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+  candidates.push(moduleRoot);
+  return [...new Set(candidates)];
+}
+
+async function resolveBundledExtensionAliasSource(input: string): Promise<string | null> {
+  const normalized = input.trim().toLowerCase();
+  const alias = BUNDLED_EXTENSION_ALIASES[normalized];
+  if (!alias) {
+    return null;
+  }
+
+  for (const packageRoot of resolvePackageRootCandidates()) {
+    const bundledPath = path.join(packageRoot, ".agents", "pm", "extensions", alias);
+    if (await pathExists(path.join(bundledPath, "manifest.json"))) {
+      return bundledPath;
+    }
+  }
+  return null;
 }
 
 export interface ManagedExtensionSummary {
@@ -1033,7 +1065,10 @@ export async function runExtension(
 
   if (action === "install") {
     const githubOption = resolveGithubOption(options);
-    const sourceInput = githubOption ?? requireTarget(normalizedTarget, action);
+    const explicitSourceInput = githubOption ?? requireTarget(normalizedTarget, action);
+    const bundledAliasSource =
+      typeof githubOption === "string" ? null : await resolveBundledExtensionAliasSource(explicitSourceInput);
+    const sourceInput = bundledAliasSource ?? explicitSourceInput;
     const installSource = parseExtensionInstallSource(sourceInput, {
       forceGithub: typeof githubOption === "string",
       ref: options.ref,
@@ -1215,12 +1250,9 @@ export async function runExtension(
       cwd: process.cwd(),
       noExtensions: global.noExtensions === true,
     });
-    const loadedWithBuiltIns = global.noExtensions === true
-      ? loadResult.loaded
-      : [...getEnabledBuiltInExtensions(settings), ...loadResult.loaded];
     const activationResult = await activateExtensions({
       ...loadResult,
-      loaded: loadedWithBuiltIns,
+      loaded: loadResult.loaded,
     });
     warnings.push(...loadResult.warnings);
     warnings.push(...activationResult.warnings);
@@ -1284,7 +1316,7 @@ export async function runExtension(
           roots: loadResult.roots,
           warnings: loadResult.warnings,
           failed: loadResult.failed,
-          loaded: loadedWithBuiltIns.map((entry) => ({
+          loaded: loadResult.loaded.map((entry) => ({
             layer: entry.layer,
             directory: entry.directory,
             name: entry.name,

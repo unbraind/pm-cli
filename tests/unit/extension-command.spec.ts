@@ -8,6 +8,8 @@ import { EXIT_CODE } from "../../src/constants.js";
 import { readSettings, writeSettings } from "../../src/settings.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
+const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
+
 function runGit(args: string[]): { status: number | null; stdout: string; stderr: string } {
   const completed = spawnSync("git", args, {
     encoding: "utf8",
@@ -70,6 +72,108 @@ describe("extension command runtime", () => {
       /Unsupported extension source URL/,
     );
     expect(() => parseExtensionInstallSource("github.com/only-owner")).toThrowError(/Invalid GitHub source/);
+  });
+
+  it("installs bundled beads and todos aliases via extension install", async () => {
+    await withTempPmPath(async (context) => {
+      const beadsInstall = await runExtension("beads", { install: true, project: true }, { path: context.pmPath });
+      expect(beadsInstall.details).toMatchObject({
+        extension: {
+          name: "builtin-beads-import",
+        },
+        activated: true,
+      });
+
+      const todosInstall = await runExtension("todos", { install: true, project: true }, { path: context.pmPath });
+      expect(todosInstall.details).toMatchObject({
+        extension: {
+          name: "builtin-todos-import-export",
+        },
+        activated: true,
+      });
+    });
+  });
+
+  it("installs bundled extension source via explicit local path", async () => {
+    await withTempPmPath(async (context) => {
+      const bundledTodosPath = path.resolve(process.cwd(), ".agents", "pm", "extensions", "todos");
+      const install = await runExtension(bundledTodosPath, { install: true, project: true }, { path: context.pmPath });
+      expect(install.details).toMatchObject({
+        extension: {
+          name: "builtin-todos-import-export",
+        },
+        activated: true,
+      });
+    });
+  });
+
+  it("prefers PM_CLI_PACKAGE_ROOT bundled alias source when provided", async () => {
+    await withTempPmPath(async (context) => {
+      const tempPackageRoot = await mkdtemp(path.join(context.tempRoot, "pm-bundled-root-"));
+      const bundledBeadsDir = path.join(tempPackageRoot, ".agents", "pm", "extensions", "beads");
+      await mkdir(bundledBeadsDir, { recursive: true });
+      await writeFile(
+        path.join(bundledBeadsDir, "manifest.json"),
+        JSON.stringify(
+          {
+            name: "env-beads-ext",
+            version: "1.0.0",
+            entry: "index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(path.join(bundledBeadsDir, "index.js"), "export default { activate() {} };", "utf8");
+
+      const previousPackageRoot = process.env[PM_PACKAGE_ROOT_ENV];
+      process.env[PM_PACKAGE_ROOT_ENV] = tempPackageRoot;
+      try {
+        const install = await runExtension("beads", { install: true, project: true }, { path: context.pmPath });
+        expect(install.details).toMatchObject({
+          extension: {
+            name: "env-beads-ext",
+          },
+          source: {
+            kind: "local",
+            location: bundledBeadsDir,
+          },
+        });
+      } finally {
+        if (previousPackageRoot === undefined) {
+          delete process.env[PM_PACKAGE_ROOT_ENV];
+        } else {
+          process.env[PM_PACKAGE_ROOT_ENV] = previousPackageRoot;
+        }
+      }
+    });
+  });
+
+  it("falls back from missing PM_CLI_PACKAGE_ROOT alias path to module-root bundle", async () => {
+    await withTempPmPath(async (context) => {
+      const missingRoot = path.join(context.tempRoot, "missing-bundle-root");
+      const previousPackageRoot = process.env[PM_PACKAGE_ROOT_ENV];
+      process.env[PM_PACKAGE_ROOT_ENV] = missingRoot;
+      try {
+        const install = await runExtension("todos", { install: true, project: true }, { path: context.pmPath });
+        expect(install.details).toMatchObject({
+          extension: {
+            name: "builtin-todos-import-export",
+          },
+          source: {
+            kind: "local",
+          },
+        });
+      } finally {
+        if (previousPackageRoot === undefined) {
+          delete process.env[PM_PACKAGE_ROOT_ENV];
+        } else {
+          process.env[PM_PACKAGE_ROOT_ENV] = previousPackageRoot;
+        }
+      }
+    });
   });
 
   it("reads managed extension state fallback and invalid schema warnings", async () => {
@@ -245,6 +349,46 @@ describe("extension command runtime", () => {
       await expect(runExtension(undefined, { doctor: true, detail: "verbose" }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
+    });
+  });
+
+  it("rejects doctor action when an explicit extension target is provided", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runExtension("sample-ext", { doctor: true, project: true }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
+  it("reports warning codes and remediation in doctor deep mode", async () => {
+    await withTempPmPath(async (context) => {
+      const extensionsRoot = path.join(context.pmPath, "extensions");
+      await mkdir(path.join(extensionsRoot, "missing-manifest"), { recursive: true });
+
+      const invalidJsonDir = path.join(extensionsRoot, "invalid-json");
+      await mkdir(invalidJsonDir, { recursive: true });
+      await writeFile(path.join(invalidJsonDir, "manifest.json"), "{", "utf8");
+
+      const doctor = await runExtension(undefined, { doctor: true, project: true, detail: "deep" }, { path: context.pmPath });
+      const summary = doctor.details.summary as {
+        status: string;
+        warning_count: number;
+        warning_codes: string[];
+        remediation: string[];
+      };
+      const deep = doctor.details.deep as { warning_codes?: unknown };
+
+      expect(summary.status).toBe("warn");
+      expect(summary.warning_count).toBeGreaterThanOrEqual(2);
+      expect(summary.warning_codes).toEqual(
+        expect.arrayContaining(["extension_manifest_invalid_json", "extension_manifest_missing"]),
+      );
+      expect(summary.remediation).toEqual(
+        expect.arrayContaining([expect.stringContaining("pm extension --explore --project")]),
+      );
+      expect(Array.isArray(deep.warning_codes)).toBe(true);
     });
   });
 

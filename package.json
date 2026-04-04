@@ -45,7 +45,7 @@
     "AGENTS.md",
     "PRD.md",
     "docs/**",
-    ".pi/extensions/pm-cli/index.ts",
+    ".agents/pm/extensions/**",
     "scripts/install.sh",
     "scripts/install.ps1"
   ],

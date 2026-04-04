@@ -1,7 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { getEnabledBuiltInExtensions } from "../../core/extensions/builtins.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { activateExtensions, getActiveExtensionRegistrations, loadExtensions, runActiveOnReadHooks } from "../../core/extensions/index.js";
 import { hashDocument } from "../../core/history/history.js";
@@ -445,13 +444,10 @@ async function buildExtensionCheck(
     cwd: process.cwd(),
     noExtensions: noExtensionsFlag,
   });
-  const loadedWithBuiltIns = noExtensionsFlag
-    ? loadResult.loaded
-    : [...getEnabledBuiltInExtensions(settings), ...loadResult.loaded];
-  const loadedSummaries = loadedWithBuiltIns.map((extension) => summarizeLoadedExtension(extension));
+  const loadedSummaries = loadResult.loaded.map((extension) => summarizeLoadedExtension(extension));
   const activationResult = await activateExtensions({
     ...loadResult,
-    loaded: loadedWithBuiltIns,
+    loaded: loadResult.loaded,
   });
   const [projectManagedState, globalManagedState] = await Promise.all([
     readManagedExtensionState(loadResult.roots.project),

@@ -10,8 +10,10 @@ This document describes the internal architecture of `pm-cli` for contributors a
 src/
   cli/            CLI layer: command registration, option parsing, output rendering
   core/           Domain logic: storage, locking, history, search, extensions
-  extensions/     Built-in extension implementations (beads, todos)
+  extensions/     Optional extension authoring sources (non-bundled)
   types/          Shared TypeScript type definitions
+.agents/
+  pm/extensions/  Bundled managed extension sources shipped with package (beads, todos)
 ```
 
 ## Source Tree
@@ -54,16 +56,15 @@ src/
       gc.ts                      pm gc
       contracts.ts               pm contracts (machine-readable contracts/schema surface)
       config.ts                  pm config
-      install.ts                 pm install pi
       extension.ts               pm extension lifecycle manager (install/uninstall/explore/manage/activate/deactivate)
       completion.ts              pm completion
-      beads.ts                   pm beads (subcommand router to built-in extension)
+      beads.ts                   Beads import runtime used by bundled managed extension
+      todos.ts                   Todos import/export runtime used by bundled managed extension
       index.ts                   barrel re-export
     extension-command-options.ts Loose option parser for dynamic extension commands
   core/
     extensions/
       loader.ts                  Extension manifest discovery, load, activate
-      builtins.ts                Built-in extension registrations
       index.ts                   barrel
     fs/
       fs-utils.ts                Atomic write, path existence, mkdirp
@@ -103,13 +104,6 @@ src/
       index.ts                   barrel
   types/
     index.ts                     ItemFrontMatter, ItemType, ItemStatus, Dependency, etc.
-  extensions/
-    builtins/
-      beads/
-        index.ts                 Beads JSONL import extension
-      todos/
-        index.ts                 todos extension activate()
-        import-export.ts         todos import/export logic
   sdk/
     cli-contracts.ts             Canonical command/action contracts + JSON Schema exports
     index.ts                     Public SDK exports
@@ -117,6 +111,15 @@ src/
   constants.ts                   (re-export shim)
   errors.ts                      (re-export shim)
   ... (other re-export shims for backward compat)
+.agents/
+  pm/
+    extensions/
+      beads/
+        manifest.json            Bundled managed beads extension manifest
+        index.js                 Registers `beads import` command and loads runtime from dist
+      todos/
+        manifest.json            Bundled managed todos extension manifest
+        index.js                 Registers `todos import` / `todos export` and loads runtime from dist
 ```
 
 ## Command Contract Registry

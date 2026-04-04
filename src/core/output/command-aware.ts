@@ -113,8 +113,6 @@ function resolveSummary(command: string, result: unknown): string {
       return "Config command completed.";
     case "init":
       return "Tracker initialization completed.";
-    case "install":
-      return "Install command completed.";
     case "restore":
       return itemId ? `Restored item ${itemId}.` : "Restore command completed.";
     case "completion":

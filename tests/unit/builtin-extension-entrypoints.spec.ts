@@ -1,34 +1,84 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import type {
-  CommandDefinition,
-  CommandOverride,
-  ExtensionApi,
-  RendererOverride,
-} from "../../src/core/extensions/loader.js";
+import { beforeEach, afterEach, describe, expect, it } from "vitest";
+import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import type { CommandDefinition, CommandOverride, ExtensionApi, RendererOverride } from "../../src/core/extensions/loader.js";
+import beadsBuiltin, { activate as activateBeads, manifest as beadsManifest } from "../../.agents/pm/extensions/beads/index.js";
+import todosBuiltin, { activate as activateTodos, manifest as todosManifest } from "../../.agents/pm/extensions/todos/index.js";
 
-const mocked = vi.hoisted(() => ({
-  runBeadsImport: vi.fn(),
-  runTodosImport: vi.fn(),
-  runTodosExport: vi.fn(),
-}));
+const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
+const RUNTIME_CALLS_KEY = "__PM_TEST_RUNTIME_CALLS";
 
-vi.mock("../../src/cli/commands/beads.js", () => ({
-  runBeadsImport: mocked.runBeadsImport,
-}));
+interface RuntimeCall {
+  kind: "beads" | "todos-import" | "todos-export";
+  options: Record<string, unknown>;
+  global: Record<string, unknown>;
+}
 
-vi.mock("../../src/extensions/builtins/todos/import-export.js", () => ({
-  runTodosImport: mocked.runTodosImport,
-  runTodosExport: mocked.runTodosExport,
-}));
+function readRuntimeCalls(): RuntimeCall[] {
+  const raw = (globalThis as Record<string, unknown>)[RUNTIME_CALLS_KEY];
+  return Array.isArray(raw) ? (raw as RuntimeCall[]) : [];
+}
 
-import beadsBuiltin, {
-  activate as activateBeads,
-  manifest as beadsManifest,
-} from "../../src/extensions/builtins/beads/index.js";
-import todosBuiltin, {
-  activate as activateTodos,
-  manifest as todosManifest,
-} from "../../src/extensions/builtins/todos/index.js";
+function resetRuntimeCalls(): void {
+  (globalThis as Record<string, unknown>)[RUNTIME_CALLS_KEY] = [];
+}
+
+let testPackageRoot = "";
+
+async function seedRuntimeCommandStubs(packageRoot: string): Promise<void> {
+  const commandRoot = path.join(packageRoot, "dist", "cli", "commands");
+  await mkdir(commandRoot, { recursive: true });
+  await writeFile(
+    path.join(commandRoot, "beads.js"),
+    `export async function runBeadsImport(options, global) {
+  const calls = Array.isArray(globalThis.${RUNTIME_CALLS_KEY}) ? globalThis.${RUNTIME_CALLS_KEY} : [];
+  calls.push({ kind: "beads", options, global });
+  globalThis.${RUNTIME_CALLS_KEY} = calls;
+  return {
+    ok: true,
+    source: typeof options?.file === "string" ? options.file : "issues.jsonl",
+    imported: 1,
+    skipped: 0,
+    ids: ["pm-bead"],
+    warnings: [],
+  };
+}
+`,
+    "utf8",
+  );
+  await writeFile(
+    path.join(commandRoot, "todos.js"),
+    `export async function runTodosImport(options, global) {
+  const calls = Array.isArray(globalThis.${RUNTIME_CALLS_KEY}) ? globalThis.${RUNTIME_CALLS_KEY} : [];
+  calls.push({ kind: "todos-import", options, global });
+  globalThis.${RUNTIME_CALLS_KEY} = calls;
+  return {
+    ok: true,
+    folder: typeof options?.folder === "string" ? options.folder : ".pi/todos",
+    imported: 2,
+    skipped: 0,
+    ids: ["pm-a", "pm-b"],
+    warnings: [],
+  };
+}
+
+export async function runTodosExport(options, global) {
+  const calls = Array.isArray(globalThis.${RUNTIME_CALLS_KEY}) ? globalThis.${RUNTIME_CALLS_KEY} : [];
+  calls.push({ kind: "todos-export", options, global });
+  globalThis.${RUNTIME_CALLS_KEY} = calls;
+  return {
+    ok: true,
+    folder: typeof options?.folder === "string" ? options.folder : ".pi/todos",
+    exported: 3,
+    ids: ["pm-a", "pm-b", "pm-c"],
+    warnings: [],
+  };
+}
+`,
+    "utf8",
+  );
+}
 
 const globalFlags = {
   json: false,
@@ -61,10 +111,20 @@ function createCommandOnlyApi(): { api: ExtensionApi; commands: CommandDefinitio
 }
 
 describe("built-in extension entrypoints", () => {
-  beforeEach(() => {
-    mocked.runBeadsImport.mockReset();
-    mocked.runTodosImport.mockReset();
-    mocked.runTodosExport.mockReset();
+  beforeEach(async () => {
+    resetRuntimeCalls();
+    testPackageRoot = await mkdtemp(path.join(os.tmpdir(), "pm-bundled-extension-runtime-"));
+    await seedRuntimeCommandStubs(testPackageRoot);
+    process.env[PM_PACKAGE_ROOT_ENV] = testPackageRoot;
+  });
+
+  afterEach(async () => {
+    delete process.env[PM_PACKAGE_ROOT_ENV];
+    resetRuntimeCalls();
+    if (testPackageRoot.length > 0) {
+      await rm(testPackageRoot, { recursive: true, force: true });
+      testPackageRoot = "";
+    }
   });
 
   it("exposes deterministic manifests and default exports", () => {
@@ -95,14 +155,6 @@ describe("built-in extension entrypoints", () => {
 
   it("registers beads import handler and coerces extension options", async () => {
     const { api, commands } = createCommandOnlyApi();
-    mocked.runBeadsImport.mockResolvedValue({
-      ok: true,
-      source: ".beads/issues.jsonl",
-      imported: 1,
-      skipped: 0,
-      ids: ["pm-bead"],
-      warnings: [],
-    });
 
     activateBeads(api);
     expect(commands.map((command) => command.name)).toEqual(["beads import"]);
@@ -120,16 +172,18 @@ describe("built-in extension entrypoints", () => {
       pm_root: "/tmp/pm",
     });
 
-    expect(mocked.runBeadsImport).toHaveBeenCalledTimes(1);
-    expect(mocked.runBeadsImport).toHaveBeenCalledWith(
-      {
+    const calls = readRuntimeCalls();
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toEqual({
+      kind: "beads",
+      options: {
         file: ".beads/issues.jsonl",
         author: undefined,
         message: "entrypoint import",
         preserveSourceIds: true,
       },
-      globalFlags,
-    );
+      global: globalFlags,
+    });
     expect(result).toEqual({
       ok: true,
       source: ".beads/issues.jsonl",
@@ -142,14 +196,6 @@ describe("built-in extension entrypoints", () => {
 
   it("drops non-boolean preserveSourceIds values when coercing extension options", async () => {
     const { api, commands } = createCommandOnlyApi();
-    mocked.runBeadsImport.mockResolvedValue({
-      ok: true,
-      source: "issues.jsonl",
-      imported: 1,
-      skipped: 0,
-      ids: ["pm-bead"],
-      warnings: [],
-    });
 
     activateBeads(api);
     await commands[0]!.run({
@@ -162,34 +208,22 @@ describe("built-in extension entrypoints", () => {
       pm_root: "/tmp/pm",
     });
 
-    expect(mocked.runBeadsImport).toHaveBeenLastCalledWith(
-      {
+    const calls = readRuntimeCalls();
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toEqual({
+      kind: "beads",
+      options: {
         file: undefined,
         author: undefined,
         message: undefined,
         preserveSourceIds: undefined,
       },
-      globalFlags,
-    );
+      global: globalFlags,
+    });
   });
 
   it("registers todos import/export handlers and coerces option fields", async () => {
     const { api, commands } = createCommandOnlyApi();
-    mocked.runTodosImport.mockResolvedValue({
-      ok: true,
-      folder: "/tmp/todos",
-      imported: 2,
-      skipped: 0,
-      ids: ["pm-a", "pm-b"],
-      warnings: [],
-    });
-    mocked.runTodosExport.mockResolvedValue({
-      ok: true,
-      folder: ".pi/todos",
-      exported: 3,
-      ids: ["pm-a", "pm-b", "pm-c"],
-      warnings: [],
-    });
 
     activateTodos(api);
     expect(commands.map((command) => command.name)).toEqual([
@@ -208,15 +242,17 @@ describe("built-in extension entrypoints", () => {
       global: globalFlags,
       pm_root: "/tmp/pm",
     });
-    expect(mocked.runTodosImport).toHaveBeenCalledTimes(1);
-    expect(mocked.runTodosImport).toHaveBeenCalledWith(
-      {
+    let calls = readRuntimeCalls();
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toEqual({
+      kind: "todos-import",
+      options: {
         folder: "/tmp/todos",
         author: undefined,
         message: "entrypoint todos import",
       },
-      globalFlags,
-    );
+      global: globalFlags,
+    });
     expect(importResult).toEqual({
       ok: true,
       folder: "/tmp/todos",
@@ -235,13 +271,15 @@ describe("built-in extension entrypoints", () => {
       global: globalFlags,
       pm_root: "/tmp/pm",
     });
-    expect(mocked.runTodosExport).toHaveBeenCalledTimes(1);
-    expect(mocked.runTodosExport).toHaveBeenCalledWith(
-      {
+    calls = readRuntimeCalls();
+    expect(calls).toHaveLength(2);
+    expect(calls[1]).toEqual({
+      kind: "todos-export",
+      options: {
         folder: undefined,
       },
-      globalFlags,
-    );
+      global: globalFlags,
+    });
     expect(exportResult).toEqual({
       ok: true,
       folder: ".pi/todos",

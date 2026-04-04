@@ -1,7 +1,6 @@
 import { spawnSync } from "node:child_process";
-import { mkdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import os from "node:os";
 import { describe, expect, it } from "vitest";
 import { splitFrontMatter } from "../../src/core/item/item-format.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
@@ -24,14 +23,6 @@ interface JsonErrorEnvelope {
 
 function parseJsonErrorEnvelope(stderr: string): JsonErrorEnvelope {
   return JSON.parse(stderr) as JsonErrorEnvelope;
-}
-
-async function canonicalizePathForAssertion(targetPath: string): Promise<string> {
-  try {
-    return await realpath(targetPath);
-  } catch {
-    return path.resolve(targetPath);
-  }
 }
 
 describe("CLI integration (sandboxed PM_PATH)", () => {
@@ -304,75 +295,6 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const resolutionCheck = payload.checks.find((check) => check.name === "resolution");
       expect(resolutionCheck?.status).toBe("warn");
       expect(resolutionCheck?.details.missing_resolution_items).toBe(1);
-    });
-  });
-
-  it("installs Pi extension into project and global scopes", async () => {
-    await withTempPmPath(async (context) => {
-      const projectRoot = path.join(context.tempRoot, "workspace");
-      await mkdir(projectRoot, { recursive: true });
-
-      const projectInstall = context.runCli(["install", "pi", "--json"], { expectJson: true, cwd: projectRoot });
-      expect(projectInstall.code).toBe(0);
-      const projectPayload = projectInstall.json as {
-        scope: string;
-        destination_path: string;
-      };
-      expect(projectPayload.scope).toBe("project");
-      expect(await canonicalizePathForAssertion(projectPayload.destination_path)).toBe(
-        await canonicalizePathForAssertion(path.join(projectRoot, ".pi", "extensions", "pm-cli", "index.ts")),
-      );
-
-      const pathDerivedRoot = path.join(context.tempRoot, "path-derived-workspace");
-      const pathDerivedPmRoot = path.join(pathDerivedRoot, ".agents", "pm");
-      const pathDerivedCaller = path.join(context.tempRoot, "path-derived-caller");
-      await mkdir(pathDerivedPmRoot, { recursive: true });
-      await mkdir(pathDerivedCaller, { recursive: true });
-      const cliPathArg = path.relative(pathDerivedCaller, pathDerivedPmRoot);
-
-      const projectInstallWithPath = context.runCli(
-        ["--path", cliPathArg, "install", "pi", "--project", "--json"],
-        { expectJson: true, cwd: pathDerivedCaller },
-      );
-      expect(projectInstallWithPath.code).toBe(0);
-      const projectPathPayload = projectInstallWithPath.json as {
-        scope: string;
-        destination_path: string;
-      };
-      expect(projectPathPayload.scope).toBe("project");
-      expect(await canonicalizePathForAssertion(projectPathPayload.destination_path)).toBe(
-        await canonicalizePathForAssertion(path.join(pathDerivedRoot, ".pi", "extensions", "pm-cli", "index.ts")),
-      );
-
-      const globalRoot = path.join(context.tempRoot, "pi-agent-global", os.platform());
-      const previousAgentDir = context.env.PI_CODING_AGENT_DIR;
-      context.env.PI_CODING_AGENT_DIR = globalRoot;
-      try {
-        const globalInstall = context.runCli(["install", "pi", "--global", "--json"], { expectJson: true });
-        expect(globalInstall.code).toBe(0);
-        const globalPayload = globalInstall.json as {
-          scope: string;
-          destination_path: string;
-        };
-        expect(globalPayload.scope).toBe("global");
-        expect(await canonicalizePathForAssertion(globalPayload.destination_path)).toBe(
-          await canonicalizePathForAssertion(path.join(globalRoot, "extensions", "pm-cli", "index.ts")),
-        );
-      } finally {
-        if (previousAgentDir === undefined) {
-          delete context.env.PI_CODING_AGENT_DIR;
-        } else {
-          context.env.PI_CODING_AGENT_DIR = previousAgentDir;
-        }
-      }
-    });
-  });
-
-  it("rejects mutually exclusive install scope flags", async () => {
-    await withTempPmPath(async (context) => {
-      const result = context.runCli(["install", "pi", "--project", "--global"]);
-      expect(result.code).toBe(2);
-      expect(result.stderr).toContain("mutually exclusive");
     });
   });
 
@@ -3975,8 +3897,10 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
-  it("treats beads import as extension-only when extensions are disabled", async () => {
+  it("hides beads command paths when extensions are disabled", async () => {
     await withTempPmPath(async (context) => {
+      const install = context.runCli(["extension", "--install", "beads", "--project", "--json"], { expectJson: true });
+      expect(install.code).toBe(0);
       const sourcePath = path.join(context.tempRoot, "beads-extension-only.jsonl");
       await writeFile(
         sourcePath,
@@ -3991,43 +3915,45 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       );
 
       const disabled = context.runCli(["--no-extensions", "beads", "import", "--json", "--file", sourcePath]);
-      expect(disabled.code).toBe(3);
+      expect(disabled.code).toBe(2);
       const disabledEnvelope = parseJsonErrorEnvelope(disabled.stderr);
       expect(disabledEnvelope).toMatchObject({
-        code: "command_failed",
-        exit_code: 3,
+        code: "unknown_command",
+        exit_code: 2,
       });
-      expect(disabledEnvelope.detail).toContain('Command "beads import" is provided by extensions');
     });
   });
 
-  it("treats todos import/export as extension-only when extensions are disabled", async () => {
+  it("hides todos command paths when extensions are disabled", async () => {
     await withTempPmPath(async (context) => {
+      const install = context.runCli(["extension", "--install", "todos", "--project", "--json"], { expectJson: true });
+      expect(install.code).toBe(0);
       const todosFolder = path.join(context.tempRoot, "todos-extension-only");
       await mkdir(todosFolder, { recursive: true });
 
       const importDisabled = context.runCli(["--no-extensions", "todos", "import", "--json", "--folder", todosFolder]);
-      expect(importDisabled.code).toBe(3);
+      expect(importDisabled.code).toBe(2);
       const importDisabledEnvelope = parseJsonErrorEnvelope(importDisabled.stderr);
       expect(importDisabledEnvelope).toMatchObject({
-        code: "command_failed",
-        exit_code: 3,
+        code: "unknown_command",
+        exit_code: 2,
       });
-      expect(importDisabledEnvelope.detail).toContain('Command "todos import" is provided by extensions');
 
       const exportDisabled = context.runCli(["--no-extensions", "todos", "export", "--json", "--folder", todosFolder]);
-      expect(exportDisabled.code).toBe(3);
+      expect(exportDisabled.code).toBe(2);
       const exportDisabledEnvelope = parseJsonErrorEnvelope(exportDisabled.stderr);
       expect(exportDisabledEnvelope).toMatchObject({
-        code: "command_failed",
-        exit_code: 3,
+        code: "unknown_command",
+        exit_code: 2,
       });
-      expect(exportDisabledEnvelope.detail).toContain('Command "todos export" is provided by extensions');
     });
   });
 
-  it("imports and exports todos markdown through built-in extension commands", async () => {
+  it("imports and exports todos markdown through bundled extension commands", async () => {
     await withTempPmPath(async (context) => {
+      const install = context.runCli(["extension", "--install", "todos", "--project", "--json"], { expectJson: true });
+      expect(install.code).toBe(0);
+
       const sourceFolder = path.join(context.tempRoot, "todos-cli-source");
       await mkdir(sourceFolder, { recursive: true });
 
@@ -4126,6 +4052,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
   it("preserves hierarchical IDs through the todos import CLI command", async () => {
     await withTempPmPath(async (context) => {
+      const install = context.runCli(["extension", "--install", "todos", "--project", "--json"], { expectJson: true });
+      expect(install.code).toBe(0);
+
       const sourceFolder = path.join(context.tempRoot, "todos-cli-hierarchical-source");
       await mkdir(sourceFolder, { recursive: true });
 
@@ -4296,6 +4225,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
   it("imports Beads JSONL records through the beads import CLI command", async () => {
     await withTempPmPath(async (context) => {
+      const install = context.runCli(["extension", "--install", "beads", "--project", "--json"], { expectJson: true });
+      expect(install.code).toBe(0);
+
       const sourcePath = path.join(context.tempRoot, "beads-integration.jsonl");
       const lines = [
         JSON.stringify({

@@ -1,17 +1,16 @@
 id: pm-8a2s
-title: Add pm install pi command and verify temp-folder Pi integration
-description: Implement a dedicated installer command to place the pm Pi extension in project or global Pi extension directories and validate with a real temporary Pi run.
+title: Sunset pm install command and migrate to extension manager installs
+description: Retire pm install command surface now that extension lifecycle is managed by pm extension command family.
 type: Feature
 status: closed
 priority: 0
 tags[9]: "area:extensions-pi","area:install",code,docs,"milestone:6",pm-cli,"priority:0",release-readiness,tests
 created_at: "2026-03-08T19:47:48.867Z"
-updated_at: "2026-04-04T12:08:03.214Z"
+updated_at: "2026-04-04T15:49:33.776Z"
 deadline: "2026-03-10T20:00:00.000Z"
-assignee: maintainer-agent
 author: maintainer-agent
 estimated_minutes: 180
-acceptance_criteria: "pm install pi supports --project and --global (default project), copies .pi/extensions/pm-cli/index.ts to the correct Pi extension path with deterministic JSON/TOON output, docs reflect usage, pm test and test-all sweeps pass, and a manual temp-folder pi run loads the installed extension successfully."
+acceptance_criteria: "pm install command wiring, help/contracts/completion/tests are removed, and install flows are handled by pm extension without breaking extension management UX."
 definition_of_ready: "Gap confirmed: pm CLI currently lacks install command for Pi extension placement despite docs/users requiring one-step setup."
 order: 1
 goal: Release-hardening
@@ -43,12 +42,14 @@ regression: false
 customer_impact: Pi users can load pm tracking tools in TUI without manual file-copy steps
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-oqe0,related,"2026-03-08T19:47:48.867Z",maintainer-agent,null
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-03-08T19:47:48.867Z",maintainer-agent,Why this exists users need one-command Pi extension install for project/global scopes and reliable TUI availability.
   "2026-03-08T19:48:00.841Z",maintainer-agent,"Planned changeset before edits: update PRD/README/AGENTS with install command contract and Pi scope semantics, implement runInstallPi command + CLI wiring, add unit/integration/release-contract tests, then run temporary-folder Pi smoke validation."
   "2026-03-08T19:54:30.312Z",maintainer-agent,"Implemented docs-first command contract plus code: added runInstall command for pi scope install, wired CLI command pm install <target> with --project/--global semantics, and expanded completion/help docs contracts and tests."
   "2026-03-08T20:18:49.520Z",maintainer-agent,"Evidence: validated Pi docs/examples and ran real temp-folder smoke tests (pm install pi --project --json, PI_CODING_AGENT_DIR=<tmp> pm install pi --global --json, PI_CODING_AGENT_DIR=<tmp> pi install ./.pi/extensions/pm-cli/index.ts, PI_CODING_AGENT_DIR=<tmp> pi --no-session --print -e ./.pi/extensions/pm-cli/index.ts \"Use the pm tool to run action stats...\"). Verification runs passed: pm test pm-8a2s --run --timeout 7200 --json, pm test-all --status in_progress --timeout 7200 --json, pm test-all --status closed --timeout 7200 --json with totals items=159 linked_tests=398 passed=73 failed=0 skipped=325. Coverage gate remains 100% lines/branches/functions/statements."
   "2026-03-08T20:20:53.762Z",maintainer-agent,"Post-fix smoke rerun in isolated temp environments passed for both scopes: project-only (PI_CODING_AGENT_DIR=<tmp> pi --no-session --print -e ./.pi/extensions/pm-cli/index.ts \"Use the pm tool to run action stats in this folder.\") and global-only (PI_CODING_AGENT_DIR=<tmp> pm install pi --global --json then PI_CODING_AGENT_DIR=<tmp> pi --no-session --print \"Use the pm tool to run action stats in this folder.\"). Both returned pm stats output successfully."
+  "2026-04-04T14:55:30.091Z",codex-agent,"Duplicate-check evidence: reopened existing install-command feature to track install-command sunset/removal and migration to pm extension manager flows; no duplicate feature created."
+  "2026-04-04T15:49:14.972Z",codex-agent,"Feature-level evidence: pm install surface removed, extension lifecycle is managed by pm extension, and command metadata/help/completion/runtime contracts are synchronized with passing regression gates."
 notes[1]{created_at,author,text}:
   "2026-03-08T19:47:48.867Z",maintainer-agent,Plan update PRD README AGENTS first then implement command and tests plus temp-folder Pi smoke validation.
 learnings[1]{created_at,author,text}:
@@ -70,5 +71,5 @@ docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer Pi workflow
   PRD.md,project,command contract
   README.md,project,public install contract
-close_reason: "Implemented pm install pi command with project/global scopes, validated Pi integration in temp workspace, and passed all required pm test sweeps with 100% coverage."
-body: "Docs-first: define command contract and usage; implement installer command with deterministic destination paths and safe overwrite behavior; add unit/integration tests and run Pi smoke check in temp workspace."
+close_reason: pm install command retired; extension-manager-only lifecycle behavior shipped with full verification.
+body: Feature repurposed from install introduction to install-command removal and migration hardening.

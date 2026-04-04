@@ -146,16 +146,7 @@ describe("runHealth", () => {
       const defaultLoaded = (
         extensionCheck?.details as { loaded?: Array<{ name: string; has_activate: boolean; module?: unknown }> }
       ).loaded ?? [];
-      expect(defaultLoaded).toEqual([
-        expect.objectContaining({
-          name: "builtin-beads-import",
-          has_activate: true,
-        }),
-        expect.objectContaining({
-          name: "builtin-todos-import-export",
-          has_activate: true,
-        }),
-      ]);
+      expect(defaultLoaded).toEqual([]);
       expect(defaultLoaded.every((entry) => !("module" in entry))).toBe(true);
 
       const storageCheck = health.checks.find((check) => check.name === "storage");
@@ -555,14 +546,6 @@ describe("runHealth", () => {
       ).loaded ?? [];
       expect(loaded).toEqual([
         expect.objectContaining({
-          name: "builtin-beads-import",
-          has_activate: true,
-        }),
-        expect.objectContaining({
-          name: "builtin-todos-import-export",
-          has_activate: true,
-        }),
-        expect.objectContaining({
           name: "ok-ext",
           has_activate: false,
         }),
@@ -652,15 +635,13 @@ describe("runHealth", () => {
             on_index: 0,
           },
           command_override_count: 0,
-          command_handler_count: 3,
+          command_handler_count: 0,
           renderer_override_count: 0,
         },
       });
 
       const loaded = (extensionCheck?.details as { loaded?: Array<{ name: string }> }).loaded ?? [];
       expect(loaded.map((entry) => entry.name)).toEqual([
-        "builtin-beads-import",
-        "builtin-todos-import-export",
         "activate-boom-ext",
         "ok-ext",
       ]);

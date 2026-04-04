@@ -1,17 +1,16 @@
 id: pm-3s0
 title: "M5: Built-in todos import export extension"
-description: Implement todos markdown import and export extension.
+description: Rework todos import/export delivery as bundled managed extension source under .agents/pm/extensions/todos with install-only command availability.
 type: Task
 status: closed
 priority: 1
 tags[4]: "area:extensions-todos",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:02:12.078Z"
-updated_at: "2026-04-01T20:34:06.753Z"
+updated_at: "2026-04-04T15:49:26.723Z"
 deadline: "2026-03-13T23:02:12.078Z"
-assignee: steve
 author: steve
 estimated_minutes: 120
-acceptance_criteria: Todos import and export preserve mapped fields deterministically.
+acceptance_criteria: "todos extension source is bundled in package, not auto-installed, and pm todos import/export appear only after extension install/activation via pm extension manager."
 definition_of_ready: scope-links-and-verification-evidence-identified
 order: 2
 goal: task-delivery-governance
@@ -44,31 +43,39 @@ customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-b1w,parent,"2026-02-17T23:02:12.078Z",steve,null
   pm-f45,blocks,"2026-02-17T23:02:12.078Z",steve,null
-comments[6]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-02-19T20:12:36.006Z",cursor-agent,"Planned change-set: docs-first update to mark todos import and export as built-in extension command handlers, then implement built-in todos extension modules and command-path dispatch through extension registry, keeping beads as import-only extension command without core fallback."
   "2026-02-19T20:16:43.603Z",cursor-agent,"Docs-first update completed: README now lists pm todos import/export as built-in extension commands and clarifies beads is extension import-only; PRD command contracts now include todos import/export outputs, marks todos built-in extension as implemented baseline, and tightens beads to extension-only (no core fallback)."
   "2026-02-19T21:25:47.916Z",cursor-agent,"Implemented built-in todos import/export extension module with command handlers for todos import and todos export, todos markdown mapping logic, and CLI command-path wiring through required extension dispatch. Added integration and unit coverage for todos import/export behavior and extension-only command handling."
   "2026-02-19T21:25:48.115Z",cursor-agent,"Evidence: pnpm build passed. node dist/cli.js test pm-3s0 --run --timeout 2400 --json passed all linked tests including node scripts/run-tests.mjs coverage with 100% lines/branches/functions/statements. Final regression sweeps on this code state passed: node dist/cli.js test-all --status in_progress --timeout 2400 --json totals items=7 linked_tests=33 passed=32 failed=0 skipped=1; node dist/cli.js test-all --status closed --timeout 2400 --json totals items=16 linked_tests=44 passed=41 failed=0 skipped=3."
   "2026-03-04T13:30:07.637Z",steve,"Planned closure pass: re-run linked sandbox-safe tests with pm test --run and regression sweeps via pm test-all (in_progress + closed). If green and coverage remains 100%, close this item with evidence."
   "2026-03-04T13:40:47.327Z",steve,"Evidence: pm test pm-3s0 --run --timeout 7200 --json passed all linked tests (3/3, failed=0). Regression sweeps passed: pm test-all --status in_progress --timeout 7200 --json totals items=2 linked_tests=9 passed=7 failed=0 skipped=2; pm test-all --status closed --timeout 7200 --json totals items=43 linked_tests=154 passed=54 failed=0 skipped=100. Coverage statement: sandboxed coverage run remained 100% lines/branches/functions/statements."
+  "2026-04-04T14:55:29.483Z",codex-agent,"Duplicate-check evidence: reopened existing todos task after dedupe scan; scope updated from built-in auto-load to bundled managed extension under .agents/pm/extensions/todos and dynamic command registration only after install."
+  "2026-04-04T15:42:02.422Z",codex-agent,"Moved todos runtime implementation into src/cli/commands/todos.ts, packaged bundled managed todos extension under .agents/pm/extensions/todos, and validated install-gated todos command behavior in unit/integration tests."
+  "2026-04-04T15:48:49.402Z",codex-agent,"Final verification: pnpm build, full test suite (842/842), and coverage run all passed after todos runtime migration and managed-extension packaging updates."
 notes[1]{created_at,author,text}:
   "2026-04-01T20:34:05.628Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:34:06.753Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[7]{path,scope,note}:
+files[10]{path,scope,note}:
+  .agents/pm/extensions/todos/index.js,project,bundled todos extension entrypoint
+  .agents/pm/extensions/todos/manifest.json,project,bundled todos manifest
   PRD.md,project,docs-first built-in extensions status update
   README.md,project,docs-first command surface update
+  src/cli/commands/todos.ts,project,todos import-export runtime moved to CLI commands
   src/cli/main.ts,project,declare todos command paths and extension-only dispatch
   src/extensions/builtins/todos/import-export.ts,project,todos import export mapping logic
   src/extensions/builtins/todos/index.ts,project,built-in todos extension activate hook
   tests/integration/cli.integration.spec.ts,project,integration coverage for todos extension commands
   tests/unit/todos-extension.spec.ts,project,unit coverage for todos extension mappings
-tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+tests[4]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,full sandboxed coverage gate
   node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,integration extension command coverage
   node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,todos extension unit coverage
+  node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts tests/integration/cli.integration.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,todos install-gated runtime coverage
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood and workflow constraints
   PRD.md,project,governing extension behavior and command contracts
   README.md,project,documented command surface
-body: Ship built-in todos adapter extension.
+close_reason: Bundled managed todos extension shipped; runtime moved to src/cli/commands/todos.ts and install-gated command behavior verified.
+body: "Task tracks todos migration from src/extensions/builtins, including command gating and runtime module relocation support."

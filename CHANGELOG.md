@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added bundled managed extension sources at `.agents/pm/extensions/beads` and `.agents/pm/extensions/todos`, each with manifest + runtime entrypoint wiring for extension-managed command registration.
+- Added bundled extension alias installs for `pm extension --install beads` and `pm extension --install todos` (with parity support for explicit local bundled paths).
 - Added unified command/action contract registry exports in `src/sdk/cli-contracts.ts` (including JSON Schema Draft 2020-12 tool-parameter contract) for cross-surface CLI + agent parity.
 - Added centralized command help narratives across core command paths (`Why use this command`, practical examples, and targeted tips) through a shared help composer.
 - Added structured CLI error guidance rendering for commander usage failures and runtime `PmCliError` failures with deterministic sections (`What happened`, `What is required`, `Why`, `Examples`, optional `Next steps`).
@@ -80,6 +82,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added standalone `pm validate` linked command-reference diagnostics (`command_references`) with default-on stale PM-id detection and dedicated warning token (`validate_command_references_stale_pm_ids:<count>`).
 
 ### Changed
+- Removed the `pm install` command surface; extension lifecycle installs now flow through `pm extension` only.
+- `pm beads import`, `pm todos import`, and `pm todos export` are now extension-discovered command paths that appear only after corresponding bundled extensions are installed and active.
 - Commander option normalization, shell completion flag generation, and Pi wrapper action/schema/arg mapping now consume the shared command contract registry to reduce cross-surface drift.
 - `pm help` and `pm help <command>` now exit successfully without trailing invalid-usage envelopes.
 - Runtime `PmCliError.context` fields (`required`, `why`, `examples`, `next_steps`, and optional code/type overrides) now flow through canonical text/JSON guidance rendering.

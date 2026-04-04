@@ -6,7 +6,7 @@ import { acquireLock } from "../../src/core/lock/lock.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
 import { splitFrontMatter } from "../../src/core/item/item-format.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
-import { runTodosExport, runTodosImport } from "../../src/extensions/builtins/todos/import-export.js";
+import { runTodosExport, runTodosImport } from "../../src/cli/commands/todos.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 async function writeTodoMarkdown(
@@ -1043,7 +1043,7 @@ describe("built-in todos extension import/export", () => {
         };
       });
 
-      const mockedModule = await import("../../src/extensions/builtins/todos/import-export.js");
+      const mockedModule = await import("../../src/cli/commands/todos.js");
       const exported = await mockedModule.runTodosExport(
         { folder: path.join(context.tempRoot, "todos-mocked-export") },
         { path: context.pmPath },
@@ -1071,7 +1071,7 @@ describe("built-in todos extension import/export", () => {
         };
       });
 
-      const mockedModule = await import("../../src/extensions/builtins/todos/import-export.js");
+      const mockedModule = await import("../../src/cli/commands/todos.js");
       const sourceFolder = path.join(context.tempRoot, "todos-mocked-frontmatter");
       await mkdir(sourceFolder, { recursive: true });
       await writeTodoMarkdown(sourceFolder, "non-object.md", { title: "Ignored by split mock" }, "ignored");
@@ -1113,7 +1113,7 @@ describe("built-in todos extension import/export", () => {
         };
       });
 
-      const mockedModule = await import("../../src/extensions/builtins/todos/import-export.js");
+      const mockedModule = await import("../../src/cli/commands/todos.js");
       const sourceFolder = path.join(context.tempRoot, "todos-read-failure");
       await mkdir(sourceFolder, { recursive: true });
       await writeTodoMarkdown(sourceFolder, "unreadable.md", { title: "Unreadable file" }, "ignored");

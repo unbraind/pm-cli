@@ -104,11 +104,8 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     "    config)",
     `      COMPREPLY=(${compgen("--criterion --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
-    "    install)",
-    `      COMPREPLY=(${compgen("pi --project --global --json --quiet --path --no-extensions --profile --help")})`,
-    "      ;;",
     "    extension)",
-    `      COMPREPLY=(${compgen("--install --uninstall --explore --manage --activate --deactivate --project --local --global --gh --github --ref --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--install --uninstall --explore --manage --doctor --activate --deactivate --project --local --global --gh --github --ref --detail --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    comments)",
     `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-comment --force --json --quiet --path --no-extensions --profile --help")})`,
@@ -149,12 +146,6 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     "    claim|release|delete|append|restore)",
     `      COMPREPLY=(${compgen(MUTATION_FLAGS)})`,
     "      ;;",
-    "    beads)",
-    `      COMPREPLY=(${compgen("import")})`,
-    "      ;;",
-    "    todos)",
-    `      COMPREPLY=(${compgen("import export")})`,
-    "      ;;",
     "    completion)",
     `      COMPREPLY=(${compgen("bash zsh fish")})`,
     "      ;;",
@@ -185,7 +176,6 @@ _pm_commands() {
   commands=(
     'init:Initialize pm storage for the current workspace'
     'config:Read or update pm settings'
-    'install:Install supported integrations and extensions'
     'extension:Manage extension lifecycle operations'
     'create:Create a new project management item'
     'list:List active items with optional filters'
@@ -225,8 +215,6 @@ _pm_commands() {
     'contracts:Show machine-readable command and schema contracts'
     'claim:Claim an item for active work'
     'release:Release the active claim for an item'
-    'beads:Built-in Beads extension commands'
-    'todos:Built-in todos extension commands'
     'templates:Manage reusable create templates'
     'completion:Generate shell completion'
     'help:Display help for a command'
@@ -448,20 +436,13 @@ _pm() {
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
-        install)
-          _arguments \\
-            '--project[Install Pi extension into current project .pi/extensions]' \\
-            '--global[Install Pi extension into global PI_CODING_AGENT_DIR or ~/.pi/agent]' \\
-            '--json[Output JSON]' \\
-            '--quiet[Suppress stdout]' \\
-            '1:target:(pi)'
-          ;;
         extension)
           _arguments \\
             '--install[Install extension from local path or GitHub source]' \\
             '--uninstall[Uninstall extension by name]' \\
             '--explore[List discovered extensions for selected scope]' \\
             '--manage[List managed extensions with update metadata]' \\
+            '--doctor[Run consolidated extension diagnostics (summary/deep)]' \\
             '--activate[Activate extension in selected scope settings]' \\
             '--deactivate[Deactivate extension in selected scope settings]' \\
             '--project[Use project extension scope (default)]' \\
@@ -470,6 +451,7 @@ _pm() {
             '--gh[Install from GitHub shorthand owner/repo/path]:github_spec' \\
             '--github[Alias for --gh]:github_spec' \\
             '--ref[Git ref/branch/tag for GitHub source]:git_ref' \\
+            '--detail[Detail mode for extension diagnostics]:detail_mode:(summary deep)' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]' \\
             '*:target_or_name:_files -/'
@@ -481,16 +463,6 @@ _pm() {
           local -a templates_cmds
           templates_cmds=('save:Save or update a create template' 'list:List saved create templates' 'show:Show saved template details')
           _describe 'templates command' templates_cmds
-          ;;
-        beads)
-          local -a beads_cmds
-          beads_cmds=('import:Import Beads JSONL records')
-          _describe 'beads command' beads_cmds
-          ;;
-        todos)
-          local -a todos_cmds
-          todos_cmds=('import:Import todos markdown files' 'export:Export todos markdown files')
-          _describe 'todos command' todos_cmds
           ;;
       esac
       ;;
@@ -529,7 +501,6 @@ end
 # Subcommands
 complete -c pm -n __pm_no_subcommand -a init          -d 'Initialize pm storage for the current workspace'
 complete -c pm -n __pm_no_subcommand -a config        -d 'Read or update pm settings'
-complete -c pm -n __pm_no_subcommand -a install       -d 'Install supported integrations and extensions'
 complete -c pm -n __pm_no_subcommand -a extension     -d 'Manage extension lifecycle operations'
 complete -c pm -n __pm_no_subcommand -a create        -d 'Create a new project management item'
 complete -c pm -n __pm_no_subcommand -a list          -d 'List active items with optional filters'
@@ -569,8 +540,6 @@ complete -c pm -n __pm_no_subcommand -a gc            -d 'Clean optional cache a
 complete -c pm -n __pm_no_subcommand -a contracts     -d 'Show machine-readable command and schema contracts'
 complete -c pm -n __pm_no_subcommand -a claim         -d 'Claim an item for active work'
 complete -c pm -n __pm_no_subcommand -a release       -d 'Release the active claim for an item'
-complete -c pm -n __pm_no_subcommand -a beads         -d 'Built-in Beads extension commands'
-complete -c pm -n __pm_no_subcommand -a todos         -d 'Built-in todos extension commands'
 complete -c pm -n __pm_no_subcommand -a templates     -d 'Manage reusable create templates'
 complete -c pm -n __pm_no_subcommand -a completion    -d 'Generate shell completion'
 
@@ -717,16 +686,12 @@ complete -c pm -n '__fish_seen_subcommand_from completion' -a 'bash zsh fish' -d
 # templates subcommands
 complete -c pm -n '__fish_seen_subcommand_from templates' -a 'save list show' -d 'Templates command'
 
-# install target and flags
-complete -c pm -n '__fish_seen_subcommand_from install' -a 'pi' -d 'Install pm Pi extension'
-complete -c pm -n '__fish_seen_subcommand_from install' -l project -d 'Install into current project .pi/extensions'
-complete -c pm -n '__fish_seen_subcommand_from install' -l global -d 'Install into PI_CODING_AGENT_DIR or ~/.pi/agent'
-
 # extension lifecycle flags
 complete -c pm -n '__fish_seen_subcommand_from extension' -l install -d 'Install extension from local path or GitHub source'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l uninstall -d 'Uninstall extension by name'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l explore -d 'List discovered extensions for selected scope'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l manage -d 'List managed extensions with update metadata'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l doctor -d 'Run consolidated extension diagnostics'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l activate -d 'Activate extension in selected scope settings'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l deactivate -d 'Deactivate extension in selected scope settings'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l project -d 'Use project extension scope'
@@ -735,13 +700,7 @@ complete -c pm -n '__fish_seen_subcommand_from extension' -l global -d 'Use glob
 complete -c pm -n '__fish_seen_subcommand_from extension' -l gh -d 'GitHub shorthand owner/repo/path' -r
 complete -c pm -n '__fish_seen_subcommand_from extension' -l github -d 'Alias for --gh' -r
 complete -c pm -n '__fish_seen_subcommand_from extension' -l ref -d 'Git ref/branch/tag for GitHub source' -r
-
-# beads subcommands
-complete -c pm -n '__fish_seen_subcommand_from beads' -a import -d 'Import Beads JSONL records'
-
-# todos subcommands
-complete -c pm -n '__fish_seen_subcommand_from todos' -a import -d 'Import todos markdown files'
-complete -c pm -n '__fish_seen_subcommand_from todos' -a export -d 'Export todos markdown files'`;
+complete -c pm -n '__fish_seen_subcommand_from extension' -l detail -d 'Detail mode for extension diagnostics' -r -a 'summary deep'`;
 }
 
 const SETUP_HINTS: Record<CompletionShell, string> = {

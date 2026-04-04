@@ -9,7 +9,7 @@ Extensions let you add commands, parser/preflight lifecycle control, core servic
 | Global | `~/.pm-cli/extensions/<name>/` (override: `PM_GLOBAL_PATH/extensions/<name>/`) |
 | Project | `.agents/pm/extensions/<name>/` (override: `PM_PATH/extensions/<name>/`) |
 
-**Load order:** core built-ins → global → project. Project-local extensions take precedence over global when they declare the same command name or renderer key.
+**Load order:** global → project. Project-local extensions take precedence over global when they declare the same command name or renderer key.
 
 ## Linked-Test Sandbox Parity
 
@@ -57,7 +57,7 @@ Project scope resolves against `.agents/pm/extensions`. Global scope resolves ag
 - `--gh <owner>/<repo>[/path]` (alias: `--github`)
 - optional `--ref <branch|tag|sha>` for GitHub sources
 
-When the source path is shorthand (for example `owner/repo/pi`), install resolution probes in this order:
+When the source path is shorthand (for example `owner/repo/my-ext`), install resolution probes in this order:
 
 1. `<clone>/<subpath>`
 2. `<clone>/.agents/pm/extensions/<subpath>`
@@ -74,23 +74,23 @@ If multiple extension manifests are discovered, install fails with deterministic
 ### Requested equivalence examples
 
 ```bash
-# Multiple extensions in one repo (default roots)
-pm extension --install --project https://github.com/unbraind/pm-cli/tree/main/.agents/pm/extensions/pi
-pm extension --install --project github.com/unbraind/pm-cli/pi
-pm extension --install --project --gh unbraind/pm-cli/pi
+# Bundled aliases shipped with pm-cli (not auto-installed)
+pm extension --install --project beads
+pm extension --install --project todos
+
+# Equivalent bundled local paths
+pm extension --install --project .agents/pm/extensions/beads
+pm extension --install --project .agents/pm/extensions/todos
 
 # Custom roots
-pm extension --install --project https://github.com/unbraind/pm-cli/tree/main/.custom/pm-extensions/pi
-pm extension --install --project github.com/unbraind/pm-cli/.custom/pm-extension/pi
-pm extension --install --project --gh unbraind/pm-cli/pi
+pm extension --install --project https://github.com/unbraind/pm-cli/tree/main/.custom/pm-extensions/my-ext
+pm extension --install --project github.com/unbraind/pm-cli/.custom/pm-extension/my-ext
+pm extension --install --project --gh unbraind/pm-cli/.custom/pm-extensions/my-ext
 
 # Single-extension repo or extension rooted at repository top-level
 pm extension --install --project https://github.com/unbraind/pm-cli
 pm extension --install --project github.com/unbraind/pm-cli
 pm extension --install --project --gh unbraind/pm-cli
-
-# Local extension source
-pm extension --install --project .agents/pm/extensions/pi
 ```
 
 ### Managed extension state
@@ -599,25 +599,32 @@ pm hello
 # => message: Hello from extension!
 ```
 
-## Built-in Extensions
+## Bundled Managed Extensions
 
-`pm-cli` ships two built-in extensions compiled into the package:
+`pm-cli` ships two bundled extension sources in `.agents/pm/extensions`, but they are not auto-installed in project or global scope.
 
-| Extension | Commands | Purpose |
-|-----------|----------|---------|
-| `builtin-beads-import` | `pm beads import` | Import Beads JSONL records into pm items |
-| `builtin-todos-import-export` | `pm todos import`, `pm todos export` | Round-trip todos markdown format |
+| Extension | Alias | Commands (after install) | Purpose |
+|-----------|-------|---------------------------|---------|
+| `builtin-beads-import` | `beads` | `pm beads import` | Import Beads JSONL records into pm items |
+| `builtin-todos-import-export` | `todos` | `pm todos import`, `pm todos export` | Round-trip todos markdown format |
 
-Built-in extensions are loaded automatically and cannot be disabled via settings (use `--no-extensions` to disable all extensions including built-ins).
+Install either via alias or explicit bundled path:
+
+```bash
+# Alias installs
+pm extension --install --project beads
+pm extension --install --project todos
+
+# Equivalent local bundled paths
+pm extension --install --project .agents/pm/extensions/beads
+pm extension --install --project .agents/pm/extensions/todos
+```
+
+The command paths `pm beads ...` and `pm todos ...` are available only after the extension is installed and active for the selected scope.
 
 ## Pi Agent Extension
 
-The bundled Pi tool wrapper lives at `.pi/extensions/pm-cli/index.ts` and is a Pi agent extension (not a pm-cli extension). Install it with:
-
-```bash
-pm install pi          # to current project .pi/extensions/pm-cli/index.ts
-pm install pi --global # to PI_CODING_AGENT_DIR/extensions/pm-cli/index.ts
-```
+The Pi wrapper implementation source remains at `.pi/extensions/pm-cli/index.ts` and is a Pi agent extension (not a pm-cli runtime extension managed by `pm extension`).
 
 Current wrapper parity includes:
 

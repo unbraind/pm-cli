@@ -22,7 +22,6 @@ describe("generateBashScript", () => {
     const script = generateBashScript();
     for (const cmd of [
       "init",
-      "install",
       "extension",
       "create",
       "get",
@@ -62,8 +61,6 @@ describe("generateBashScript", () => {
       "contracts",
       "claim",
       "release",
-      "beads",
-      "todos",
       "completion",
       "config",
     ]) {
@@ -209,7 +206,6 @@ describe("generateZshScript", () => {
   it("includes all pm subcommand descriptions", () => {
     const script = generateZshScript();
     expect(script).toContain("init:Initialize");
-    expect(script).toContain("install:Install supported integrations and extensions");
     expect(script).toContain("extension:Manage extension lifecycle operations");
     expect(script).toContain("create:Create a new project management item");
     expect(script).toContain("completion:Generate shell completion");
@@ -222,8 +218,6 @@ describe("generateZshScript", () => {
     expect(script).toContain("learnings:List or add learnings for an item");
     expect(script).toContain("deps:Show dependency relationships for an item");
     expect(script).toContain("validate:Run standalone validation checks");
-    expect(script).toContain("beads:Built-in Beads extension commands");
-    expect(script).toContain("todos:Built-in todos extension commands");
   });
 
   it("includes type completions for relevant flags", () => {
@@ -250,13 +244,6 @@ describe("generateZshScript", () => {
     expect(script).toContain("_arguments");
     expect(script).toContain("_describe");
     expect(script).toContain("_pm_commands");
-  });
-
-  it("includes beads and todos subcommand completion", () => {
-    const script = generateZshScript();
-    expect(script).toContain("import:Import Beads JSONL records");
-    expect(script).toContain("import:Import todos markdown files");
-    expect(script).toContain("export:Export todos markdown files");
   });
 
   it("includes zsh completion for list filters", () => {
@@ -328,7 +315,6 @@ describe("generateFishScript", () => {
     const script = generateFishScript();
     for (const [cmd, desc] of [
       ["init", "Initialize"],
-      ["install", "Install supported integrations and extensions"],
       ["extension", "Manage extension lifecycle operations"],
       ["create", "Create"],
       ["calendar", "deadline/reminder calendar views"],
@@ -385,14 +371,6 @@ describe("generateFishScript", () => {
     expect(script).toContain("bash zsh fish");
   });
 
-  it("includes install target and scope completions", () => {
-    const script = generateFishScript();
-    expect(script).toContain("__fish_seen_subcommand_from install");
-    expect(script).toContain("Install pm Pi extension");
-    expect(script).toContain("-l project");
-    expect(script).toContain("-l global");
-  });
-
   it("includes extension lifecycle completions", () => {
     const script = generateFishScript();
     expect(script).toContain("__fish_seen_subcommand_from extension");
@@ -400,18 +378,13 @@ describe("generateFishScript", () => {
     expect(script).toContain("-l uninstall");
     expect(script).toContain("-l explore");
     expect(script).toContain("-l manage");
+    expect(script).toContain("-l doctor");
     expect(script).toContain("-l activate");
     expect(script).toContain("-l deactivate");
     expect(script).toContain("-l gh");
     expect(script).toContain("-l github");
     expect(script).toContain("-l ref");
-  });
-
-  it("includes beads and todos subcommand completions", () => {
-    const script = generateFishScript();
-    expect(script).toContain("Import Beads JSONL records");
-    expect(script).toContain("Import todos markdown files");
-    expect(script).toContain("Export todos markdown files");
+    expect(script).toContain("-l detail");
   });
 
   it("includes __pm_no_subcommand helper function", () => {

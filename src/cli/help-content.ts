@@ -113,13 +113,11 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm config project set sprint-release-format-policy --policy strict_error",
     ],
   },
-  install: {
-    why: "Installs supported integrations (currently Pi extension support).",
-    examples: ["pm install pi --project", "pm install pi --global"],
-  },
   extension: {
     why: "Installs, explores, manages, diagnoses, and activates/deactivates custom extensions across project or global scope.",
     examples: [
+      "pm extension --install beads --project",
+      "pm extension --install todos --global",
       "pm extension --install .agents/pm/extensions/sample --project",
       "pm extension --install https://github.com/unbraind/pm-cli/tree/main/.agents/pm/extensions/pi --global",
       "pm extension --install --gh unbraind/pm-cli/pi --project",
@@ -134,6 +132,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     ],
     tips: [
       "Action flags are mutually exclusive; pass exactly one lifecycle action per invocation.",
+      "Bundled aliases beads and todos resolve to package-shipped extension sources.",
       "Use --gh/--github shorthand for GitHub sources and --ref to pin a branch, tag, or ref.",
       "Install updates settings activation state automatically unless extension allowlist mode is unchanged.",
       "Use --manage for concise triage summaries and remediation-oriented diagnostics alongside full extension details.",
@@ -340,18 +339,6 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   contracts: {
     why: "Exposes machine-readable CLI command and tool schema contracts for agent integrations.",
     examples: ["pm contracts", "pm contracts --action create", "pm contracts --schema-only"],
-  },
-  "beads import": {
-    why: "Imports Beads JSONL records into pm item format.",
-    examples: ['pm beads import --file .beads/issues.jsonl --author "codex-agent" --message "Import legacy beads data"'],
-  },
-  "todos import": {
-    why: "Imports todos markdown files as pm items.",
-    examples: ['pm todos import --folder .pi/todos --author "codex-agent" --message "Import todos into tracker"'],
-  },
-  "todos export": {
-    why: "Exports pm items into todos markdown files for downstream workflows.",
-    examples: ["pm todos export --folder .pi/todos"],
   },
 };
 

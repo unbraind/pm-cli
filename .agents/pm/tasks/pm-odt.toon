@@ -1,17 +1,16 @@
 id: pm-odt
 title: "M5: Built-in beads import extension"
-description: Implement beads JSONL importer extension.
+description: Rework beads command delivery as bundled managed extension source under .agents/pm/extensions/beads with install-only command availability.
 type: Task
 status: closed
 priority: 1
 tags[4]: "area:extensions-beads",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:02:11.883Z"
-updated_at: "2026-04-04T12:06:58.906Z"
+updated_at: "2026-04-04T15:49:24.208Z"
 deadline: "2026-03-13T23:02:11.883Z"
-assignee: steve
 author: steve
 estimated_minutes: 120
-acceptance_criteria: Beads import maps source records and writes create/import history.
+acceptance_criteria: "beads extension source is bundled in package, not auto-installed, and pm beads import appears only after extension install/activation via pm extension manager."
 definition_of_ready: scope-links-and-verification-evidence-identified
 order: 2
 goal: task-delivery-governance
@@ -44,7 +43,7 @@ customer_impact: improves-reliability-and-clarity-for-contributors
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-b1w,parent,"2026-02-17T23:02:11.883Z",steve,null
   pm-f45,blocks,"2026-02-17T23:02:11.883Z",steve,null
-comments[14]{created_at,author,text}:
+comments[17]{created_at,author,text}:
   "2026-02-19T18:37:14.624Z",cursor-agent,"Planned change-set: docs-first update for built-in beads import command status, then implement pm beads import --file parser/mapping with deterministic defaults and import history evidence; add unit/integration tests and run pm test + pm test-all regression sweeps."
   "2026-02-19T18:39:22.684Z",cursor-agent,"Docs-first update completed: README command surface now includes pm beads import baseline and extension roadmap notes; PRD command matrix now includes beads import output contract, section 15 captures default file/skip-warning behavior, and Milestone 5 checklist marks beads as partial baseline in progress."
   "2026-02-19T18:45:39.668Z",cursor-agent,"Implemented beads import baseline: added src/cli/commands/beads.ts with JSONL parsing, deterministic field mapping/defaults, duplicate-id and invalid-line warnings, and per-item import history entries (op=import); wired nested CLI command pm beads import in src/cli/main.ts; exported handlers via src/cli/commands/index.ts and src/commands/beads.ts; added unit and integration coverage plus vitest coverage include for src/cli/commands/beads.ts."
@@ -59,11 +58,16 @@ comments[14]{created_at,author,text}:
   "2026-02-19T21:25:48.322Z",cursor-agent,Implemented extension-only beads dispatch in CLI runtime by removing the core fallback path and requiring active extension command handlers for beads import command execution.
   "2026-02-19T21:25:48.580Z",cursor-agent,"Evidence refresh on current code state: node dist/cli.js test pm-odt --run --timeout 2400 --json passed all linked tests; node dist/cli.js test-all --status in_progress --timeout 2400 --json totals items=7 linked_tests=33 passed=32 failed=0 skipped=1; node dist/cli.js test-all --status closed --timeout 2400 --json totals items=16 linked_tests=44 passed=41 failed=0 skipped=3; coverage gate remains 100% lines/branches/functions/statements via linked coverage runs."
   "2026-03-04T12:09:34.156Z",cursor-maintainer,"Evidence: ran pm test pm-odt --run --timeout 3600 (all linked tests passed, including node scripts/run-tests.mjs coverage with 100% lines/branches/functions/statements). Ran pm test-all --status in_progress --timeout 3600 (passed=15 failed=0 skipped=14) and pm test-all --status closed --timeout 3600 (passed=52 failed=0 skipped=82). Acceptance criteria validated: Beads import maps source records and writes import history entries; regression remains green."
+  "2026-04-04T14:55:28.765Z",codex-agent,"Duplicate-check evidence: reopened existing beads task after dedupe scan; scope updated from built-in auto-load to bundled managed extension under .agents/pm/extensions/beads with extension-manager installation flow."
+  "2026-04-04T15:41:41.091Z",codex-agent,"Implemented bundled-managed beads extension packaging under .agents/pm/extensions/beads, removed static beads command wiring, and validated install-gated command availability through integration coverage."
+  "2026-04-04T15:48:48.645Z",codex-agent,"Final verification: pnpm build, node scripts/run-tests.mjs test, and node scripts/run-tests.mjs coverage all passed. Coverage gate now clears with branch coverage 91.01% (threshold 91%)."
 notes[1]{created_at,author,text}:
   "2026-04-01T20:33:54.322Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:33:55.416Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[13]{path,scope,note}:
+files[15]{path,scope,note}:
+  .agents/pm/extensions/beads/index.js,project,bundled beads extension entrypoint
+  .agents/pm/extensions/beads/manifest.json,project,bundled beads manifest
   PRD.md,project,milestone and command contract update
   README.md,project,docs-first command status update
   src/cli/commands/beads.ts,project,legacy wrapper export for beads command
@@ -86,4 +90,5 @@ docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood protocol
   PRD.md,project,governing spec
   README.md,project,public command surface
-body: Ship built-in beads importer extension.
+close_reason: Bundled managed beads extension shipped; command path is install-gated and verified by full build/test/coverage.
+body: Task tracks beads migration from src/extensions/builtins to bundled managed extension source and runtime command gating.

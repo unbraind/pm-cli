@@ -51,7 +51,6 @@ function normalizeUniqueStringList(values: Iterable<string>): string[] {
 export const PM_CORE_COMMAND_NAMES = [
   "init",
   "config",
-  "install",
   "extension",
   "create",
   "list",
@@ -92,8 +91,6 @@ export const PM_CORE_COMMAND_NAMES = [
   "claim",
   "release",
   "templates",
-  "beads",
-  "todos",
   "completion",
   "help",
 ] as const;

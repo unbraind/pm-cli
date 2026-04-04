@@ -1,16 +1,16 @@
 id: pm-cdsf
 title: Overhaul extension and SDK documentation with install equivalence examples
-description: "Update README, EXTENSIONS, ARCHITECTURE, PRD, and CHANGELOG with comprehensive lifecycle manager docs and parity examples."
+description: Refresh docs for bundled managed extensions migration and pm install removal across user and maintainer references.
 type: Task
 status: closed
 priority: 1
 tags[5]: "area:docs","area:extensions","area:sdk","milestone:extension-manager",pm-cli
 created_at: "2026-04-03T16:16:59.302Z"
-updated_at: "2026-04-04T12:01:38.514Z"
+updated_at: "2026-04-04T15:49:29.542Z"
 deadline: "2026-04-13T16:16:59.302Z"
 author: codex-agent
 estimated_minutes: 240
-acceptance_criteria: "Documentation clearly explains extension lifecycle commands, source equivalence forms, SDK patterns, and compatibility expectations with actionable examples."
+acceptance_criteria: "README, docs/EXTENSIONS, docs/ARCHITECTURE, PRD, AGENTS, and CHANGELOG reflect bundled-but-not-auto-installed beads/todos plus extension-manager install workflows."
 definition_of_ready: Epic pm-m9jc exists and no duplicate active docs-overhaul task exists.
 order: 5
 goal: Extension platform parity
@@ -37,10 +37,13 @@ fixed_version: target-vnext
 component: docs-extensions
 regression: false
 customer_impact: Users can self-serve extension setup and management
-comments[3]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-04-03T16:16:59.302Z",codex-agent,Created after de-dup scan for extension-manager docs parity work.
   "2026-04-03T16:36:47.818Z",codex-agent,"Documentation overhaul now includes full pm extension lifecycle guidance, source-equivalence install examples, managed-state behavior, and Pi contract parity references across README/EXTENSIONS/ARCHITECTURE/PRD/CHANGELOG."
   "2026-04-03T17:09:39.810Z",codex-agent,"Completed README/EXTENSIONS/ARCHITECTURE/PRD/CHANGELOG documentation overhaul with full install-equivalence examples, managed-state behavior, and lifecycle workflow guidance."
+  "2026-04-04T14:55:31.296Z",codex-agent,"Duplicate-check evidence: reopened existing docs overhaul task for migration docs updates across README, EXTENSIONS, ARCHITECTURE, PRD, AGENTS, and CHANGELOG."
+  "2026-04-04T15:43:00.754Z",codex-agent,"Updated README/EXTENSIONS/ARCHITECTURE/PRD/AGENTS/CHANGELOG for bundled-managed beads/todos migration and pm install removal, then validated with full test and coverage runs."
+  "2026-04-04T15:48:51.530Z",codex-agent,"Documentation refresh verification: README, docs/EXTENSIONS.md, docs/ARCHITECTURE.md, PRD.md, AGENTS.md, and CHANGELOG.md updated for bundled managed aliases and pm install removal; full build/test/coverage runs passed."
 notes[1]{created_at,author,text}:
   "2026-04-03T16:16:59.302Z",codex-agent,Will include all requested GitHub/local install equivalence examples and state-management guidance.
 files[5]{path,scope,note}:
@@ -49,13 +52,16 @@ files[5]{path,scope,note}:
   docs/EXTENSIONS.md,project,comprehensive extension manager docs
   PRD.md,project,command contracts and extension architecture requirements
   README.md,project,extension lifecycle manager usage and equivalence examples
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,coverage gate validation
+  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,full regression suite
   node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,release docs contract regression
-docs[5]{path,scope,note}:
+docs[6]{path,scope,note}:
+  AGENTS.md,project,agent operating guidance updated for pm install removal
   CHANGELOG.md,project,unreleased notes for extension manager parity
   docs/ARCHITECTURE.md,project,internal extension manager architecture
   docs/EXTENSIONS.md,project,authoritative extension manager and SDK guide
   PRD.md,project,normative command and extension requirements
   README.md,project,user-facing extension lifecycle docs
-close_reason: Extension lifecycle and SDK docs now comprehensively cover requested install forms and operational guidance.
-body: Docs and examples task from extension manager rollout.
+close_reason: Documentation set updated for bundled managed extensions and pm install removal; full build/test/coverage verification linked.
+body: "Docs task for migration parity: bundled extensions packaging, shorthand install UX, dynamic command availability, and install command removal guidance."

@@ -413,9 +413,10 @@ For `pm create` log-seed flags (`--comment`, `--note`, `--learning`), only `auth
   - Unix/macOS terminals: `Ctrl+D`
   - Windows terminals: `Ctrl+Z` then `Enter`
 
-Example piped Beads import:
+Example piped Beads import (after installing the bundled extension once per scope):
 
 ```bash
+pm extension --install --project beads
 cat issues.jsonl | pm beads import --file -
 ```
 
@@ -602,23 +603,23 @@ Install source selectors:
 Requested source equivalence examples:
 
 ```bash
-# Multiple extensions in one repo (default extension roots)
-pm extension --install --project https://github.com/unbraind/pm-cli/tree/main/.agents/pm/extensions/pi
-pm extension --install --project github.com/unbraind/pm-cli/pi
-pm extension --install --project --gh unbraind/pm-cli/pi
+# Bundled managed aliases shipped with pm-cli (not auto-installed)
+pm extension --install --project beads
+pm extension --install --project todos
+
+# Equivalent explicit local bundled paths
+pm extension --install --project .agents/pm/extensions/beads
+pm extension --install --project .agents/pm/extensions/todos
 
 # Custom extension roots in repo
-pm extension --install --project https://github.com/unbraind/pm-cli/tree/main/.custom/pm-extensions/pi
-pm extension --install --project github.com/unbraind/pm-cli/.custom/pm-extension/pi
-pm extension --install --project --gh unbraind/pm-cli/pi
+pm extension --install --project https://github.com/unbraind/pm-cli/tree/main/.custom/pm-extensions/my-ext
+pm extension --install --project github.com/unbraind/pm-cli/.custom/pm-extensions/my-ext
+pm extension --install --project --gh unbraind/pm-cli/.custom/pm-extensions/my-ext
 
 # Single-extension repo or extension at repository root
 pm extension --install --project https://github.com/unbraind/pm-cli
 pm extension --install --project github.com/unbraind/pm-cli
 pm extension --install --project --gh unbraind/pm-cli
-
-# Local extension directory
-pm extension --install --project .agents/pm/extensions/pi
 ```
 
 Activation and health behavior:

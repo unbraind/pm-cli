@@ -38,7 +38,6 @@ export { runGet } from "./get.js";
 export { runHealth } from "./health.js";
 export { runHistory } from "./history.js";
 export { runInit } from "./init.js";
-export { runInstall, type InstallCommandOptions, type InstallResult } from "./install.js";
 export { runLearnings } from "./learnings.js";
 export { runList, type ListOptions } from "./list.js";
 export { runNotes } from "./notes.js";
@@ -48,6 +47,7 @@ export { runRestore } from "./restore.js";
 export { runStats } from "./stats.js";
 export { runTest } from "./test.js";
 export { runTestAll } from "./test-all.js";
+export { runTodosExport, runTodosImport, type TodosExportOptions, type TodosImportOptions } from "./todos.js";
 export {
   loadCreateTemplateOptions,
   runTemplatesList,
