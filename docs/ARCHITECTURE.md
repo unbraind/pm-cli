@@ -187,7 +187,7 @@ Fields are normalized and serialized in canonical key order (defined in `item-fo
 
 Type resolution is centralized in the runtime type registry:
 
-- built-in types (`Epic`, `Feature`, `Task`, `Chore`, `Issue`)
+- built-in types (`Epic`, `Feature`, `Task`, `Chore`, `Issue`, `Event`, `Reminder`, `Milestone`, `Meeting`)
 - `settings.item_types.definitions`
 - extension `registerItemTypes(...)` registrations
 
@@ -278,7 +278,8 @@ Pipeline:
    - `day`, `week`, `month` (anchored by `--date`)
    - `--past` toggles lower-bound behavior for bounded views
 7. Sort events deterministically by timestamp, priority, item id, event kind, event title, then reminder text.
-8. Bucket events by UTC date and compute summary counts (`deadlines`, `reminders`, `scheduled`).
+8. Bucket events by UTC date and compute summary counts (`events`, `items`, `deadlines`, `reminders`, `scheduled`) plus deterministic aggregate breakdowns (`by_kind`, `by_type`, `by_status`, `recurring_events`).
+9. Render markdown event rows with deterministic detail tokens (item type, recurrence markers/rules, end-time derivation, timezone/location metadata, and description context when present).
 
 Output behavior is command-specific: `pm calendar` defaults to markdown for agent/human readability while keeping explicit `--format`/`--json` overrides. Global TOON defaults for other commands are unchanged.
 
@@ -292,7 +293,7 @@ Pipeline:
 2. Rank candidate items deterministically by status (`in_progress` before `open`), then priority, explicit `order`, deadline proximity, recency, and id tie-break.
 3. Split ranked active items into:
    - high-level focus (`Epic`, `Feature`)
-   - low-level focus (all other item types)
+   - low-level focus (all other item types, including calendar-native built-ins such as `Event`, `Reminder`, `Milestone`, and `Meeting`)
 4. If active focus is empty, project top blocked items into a blocked fallback section.
 5. Run `calendar` logic in agenda mode with shared filters and context window controls (`--date`, `--from`, `--to`, `--past`).
 6. Filter agenda projection to non-terminal items and summarize deadlines/reminders/events counts.

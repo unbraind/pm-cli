@@ -11,6 +11,7 @@ import {
   UPDATE_FLAG_CONTRACTS,
   toCompletionFlagString,
 } from "../../sdk/cli-contracts.js";
+import { BUILTIN_ITEM_TYPE_VALUES } from "../../types/index.js";
 
 export type CompletionShell = "bash" | "zsh" | "fish";
 
@@ -21,7 +22,7 @@ export interface CompletionResult {
 }
 
 const VALID_SHELLS: CompletionShell[] = ["bash", "zsh", "fish"];
-const DEFAULT_ITEM_TYPES = ["Epic", "Feature", "Task", "Chore", "Issue"];
+const DEFAULT_ITEM_TYPES = [...BUILTIN_ITEM_TYPE_VALUES];
 
 const ALL_COMMANDS = [...PM_CORE_COMMAND_NAMES];
 const LIST_FLAGS = toCompletionFlagString(LIST_FILTER_FLAG_CONTRACTS);

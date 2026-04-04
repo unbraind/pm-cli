@@ -1,16 +1,16 @@
 id: pm-r15d
 title: Configurable item types and required-option UX
-description: "External audit Issues 2 and 5 follow-up: make type-specific required fields and type-option schemas discoverable without trial-and-error."
+description: Extend type-model UX to include calendar-native built-ins and keep type discoverability deterministic for agents and users.
 type: Epic
 status: closed
 priority: 0
 tags[4]: agent-ux,"area:cli","area:schema",pm-cli
 created_at: "2026-03-31T23:47:27.635Z"
-updated_at: "2026-04-04T17:37:46.690Z"
+updated_at: "2026-04-04T21:12:34.726Z"
 deadline: "2026-04-17T11:57:37.630Z"
 author: codex-agent
 estimated_minutes: 480
-acceptance_criteria: CLI surfaces type-specific required fields and type-option definitions via explicit help/introspection paths with tests and docs parity.
+acceptance_criteria: "Type-model UX clearly exposes the expanded built-in set, required options remain discoverable, and behavior stays backward compatible across create/update/help/completion surfaces."
 definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for Configurable item types and required-option UX are documented for reuse."
 order: 1
 goal: Customizable workflows
@@ -39,13 +39,15 @@ fixed_version: archive-2026q2
 component: core/cli
 regression: false
 customer_impact: Teams can model work domains without hacks
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-03-31T23:47:27.635Z",codex-agent,Epic created from approved implementation plan.
   "2026-04-01T00:29:14.263Z",codex-agent,Completed configurable item-type delivery across settings/extensions/CLI/storage/help output with docs updates and compatibility defaults.
   "2026-04-01T00:29:15.182Z",codex-agent,"Evidence: node scripts/run-tests.mjs test passed (57 files, 588 tests). node scripts/run-tests.mjs coverage executed; thresholds currently report 97.45 lines / 97.03 branches / 97.14 funcs / 97.29 stmts."
   "2026-04-03T11:55:40.990Z",codex-agent,"Mapped external-audit Issues 2 and 5: improve discoverability for type-specific required fields and extension type options from CLI help/introspection surfaces."
   "2026-04-03T11:59:25.339Z",codex-agent,"Wave breakdown: Wave1 Type UX (Issues 1/2/5) on pm-bzyr and pm-r15d; Wave2 Linked-file hygiene (Issues 3/4/6) on pm-ap8l; Wave3 Diff/template/search/list UX (Issues 8/9/10/12) on pm-p9z, pm-zzt1, pm-780f, pm-pmd; Wave4 Reference validation (Issues 13/14) on pm-3gi and pm-2p6q. Non-breaking constraints: preserve existing command defaults, prefer additive/opt-in flags for new behavior, keep aliases and exit-code contracts stable, and use warning-first validation where strict enforcement could break current users."
   "2026-04-03T12:29:13.548Z",codex-agent,"Implemented Wave1 type discoverability follow-up by extending type-aware help in src/cli/main.ts to include explicit type-option schema details (required marker, allowed values, aliases, description) for create/update --help --type <value>. Added integration coverage in tests/integration/help-runtime.spec.ts and updated README/PRD/CHANGELOG discoverability language. Evidence: pm test pm-r15d --run passed (full 722-test regression + targeted 86-test discoverability suite); pnpm build passed; node scripts/run-tests.mjs coverage passed (94.44% stmts, 91.42% branch, 96.19% funcs, 94.73% lines)."
+  "2026-04-04T20:39:02.007Z",codex-agent,"Duplicate-check evidence for reactivation: searched tracker for type-model and calendar UX overlap, reviewed open/in-progress queues, and confirmed this existing epic is the canonical parent for type discoverability and required-option UX continuation."
+  "2026-04-04T21:12:32.418Z",codex-agent,"Epic close-out: completed reopened delta through pm-x2k0/pm-p5q3 by adding Event/Reminder/Milestone/Meeting as built-in item types and keeping required-option discoverability deterministic across CLI/help/completion surfaces. Evidence: pm test-all --status in_progress passed linked tests; node scripts/run-tests.mjs test passed (856 tests); node scripts/run-tests.mjs coverage passed (branch 91.03%)."
 notes[2]{created_at,author,text}:
   "2026-03-31T23:47:27.635Z",codex-agent,Default behavior must remain unchanged when no custom type settings exist.
   "2026-04-03T11:59:50.740Z",codex-agent,"Mandatory closure checklist: (1) run linked targeted tests via pm test <id> --run; (2) run pnpm build; (3) run node scripts/run-tests.mjs test; (4) run node scripts/run-tests.mjs coverage; (5) update touched docs (README/PRD/AGENTS/CHANGELOG/ARCHITECTURE as applicable); (6) add pm comment with concrete evidence/results; (7) close + release item before commit/push."
@@ -66,9 +68,11 @@ files[11]{path,scope,note}:
 tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test,null,project,2400,null,null,null,null,null,null,null,null,null,null,full regression baseline
   node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,issues2and5 discoverability regressions
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-all-local-mnktqphw-natg7c,test-all,passed,"2026-04-04T21:08:02.324Z","2026-04-04T21:10:56.880Z","2026-04-04T21:10:56.880Z",null,null,1,0,1,1,2,null
 docs[3]{path,scope,note}:
   CHANGELOG.md,project,unreleased type-option help and aggregation notes
   PRD.md,project,command and schema contract
   README.md,project,type discoverability usage docs
-close_reason: "Wave1 Issues2and5 complete: type-aware help now exposes type-option schema details with docs and integration coverage"
-body: "Track implementation of customizable item types, per-type options/requirements, and actionable required-option guidance."
+close_reason: Configurable type-model UX epic updated and verified
+body: "Track implementation of customizable item types, per-type options/requirements, and actionable required-option guidance.\n\n2026-04-04 reactivation scope: extend type UX/discoverability for expanded built-in type set while preserving existing create/update semantics and required-option guidance."

@@ -129,7 +129,7 @@ function resolveSummary(command: string, result: unknown): string {
     case "calendar": {
       const view = typeof record.view === "string" ? record.view : "agenda";
       const summary = asRecord(record.summary);
-      const total = summary && typeof summary.total === "number" ? summary.total : null;
+      const total = summary && typeof summary.events === "number" ? summary.events : null;
       return total !== null ? `Calendar ${view} view returned ${total} event(s).` : `Calendar ${view} view completed.`;
     }
     case "activity": {
@@ -264,8 +264,17 @@ function resolveHighlights(command: string, result: unknown): string[] {
   }
   if (command === "calendar") {
     const summary = asRecord(record.summary);
-    if (summary && typeof summary.total === "number") {
-      highlights.push(`events=${String(summary.total)}`);
+    if (summary && typeof summary.events === "number") {
+      highlights.push(`events=${String(summary.events)}`);
+    }
+    if (summary && typeof summary.deadlines === "number") {
+      highlights.push(`deadlines=${String(summary.deadlines)}`);
+    }
+    if (summary && typeof summary.reminders === "number") {
+      highlights.push(`reminders=${String(summary.reminders)}`);
+    }
+    if (summary && typeof summary.scheduled === "number") {
+      highlights.push(`scheduled=${String(summary.scheduled)}`);
     }
     if (typeof record.view === "string") {
       highlights.push(`view=${record.view}`);

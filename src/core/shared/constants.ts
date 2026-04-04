@@ -10,6 +10,10 @@ export const PM_REQUIRED_SUBDIRS = [
   "tasks",
   "chores",
   "issues",
+  "events",
+  "reminders",
+  "milestones",
+  "meetings",
   "history",
   "index",
   "search",
@@ -23,6 +27,10 @@ export const TYPE_TO_FOLDER: Record<BuiltinItemType, string> = {
   Task: "tasks",
   Chore: "chores",
   Issue: "issues",
+  Event: "events",
+  Reminder: "reminders",
+  Milestone: "milestones",
+  Meeting: "meetings",
 };
 
 export const FRONT_MATTER_KEY_ORDER: ReadonlyArray<keyof ItemFrontMatter> = [

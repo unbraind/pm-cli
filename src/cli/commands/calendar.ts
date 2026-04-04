@@ -50,6 +50,7 @@ export interface CalendarEvent {
   event_all_day: boolean | null;
   event_timezone: string | null;
   event_recurring: boolean | null;
+  event_recurrence_rule: string | null;
   item_id: string;
   item_title: string;
   item_type: ItemType;
@@ -98,6 +99,14 @@ export interface CalendarResult {
     deadlines: number;
     reminders: number;
     scheduled: number;
+    by_kind: {
+      deadline: number;
+      reminder: number;
+      event: number;
+    };
+    by_type: Record<string, number>;
+    by_status: Record<string, number>;
+    recurring_events: number;
   };
   events: CalendarEvent[];
   days: CalendarDayBucket[];
@@ -256,6 +265,43 @@ function startOfNextUtcMonth(timestamp: string): string {
 
 function maxTimestamp(left: string, right: string): string {
   return compareTimestampStrings(left, right) >= 0 ? left : right;
+}
+
+function toSortedCountRecord(values: Map<string, number>): Record<string, number> {
+  return Object.fromEntries([...values.entries()].sort(([left], [right]) => left.localeCompare(right)));
+}
+
+function incrementCount(values: Map<string, number>, key: string): void {
+  values.set(key, (values.get(key) ?? 0) + 1);
+}
+
+function formatRecurrenceRuleForSummary(rule: RecurrenceRule | undefined): string | null {
+  if (!rule) {
+    return null;
+  }
+  const parts: string[] = [`freq=${rule.freq}`];
+  if (rule.interval !== undefined) {
+    parts.push(`interval=${rule.interval}`);
+  }
+  if (rule.count !== undefined) {
+    parts.push(`count=${rule.count}`);
+  }
+  if (rule.until) {
+    parts.push(`until=${rule.until}`);
+  }
+  if (rule.by_weekday && rule.by_weekday.length > 0) {
+    const weekdays = [...rule.by_weekday].sort((left, right) => weekdayOrderIndex(left) - weekdayOrderIndex(right));
+    parts.push(`by_weekday=${weekdays.join("|")}`);
+  }
+  if (rule.by_month_day && rule.by_month_day.length > 0) {
+    const monthDays = [...rule.by_month_day].sort((left, right) => left - right);
+    parts.push(`by_month_day=${monthDays.join("|")}`);
+  }
+  if (rule.exdates && rule.exdates.length > 0) {
+    const exdates = [...rule.exdates].sort((left, right) => left.localeCompare(right));
+    parts.push(`exdates=${exdates.join("|")}`);
+  }
+  return parts.join(",");
 }
 
 function buildUtcTimestamp(year: number, month: number, day: number, timeSource: Date): string | undefined {
@@ -476,6 +522,7 @@ function buildEventSeed(
         event_all_day: null,
         event_timezone: null,
         event_recurring: null,
+        event_recurrence_rule: null,
         item_id: item.id,
         item_title: item.title,
         item_type: item.type,
@@ -498,6 +545,7 @@ function buildEventSeed(
         event_all_day: null,
         event_timezone: null,
         event_recurring: null,
+        event_recurrence_rule: null,
         item_id: item.id,
         item_title: item.title,
         item_type: item.type,
@@ -509,21 +557,34 @@ function buildEventSeed(
       });
     }
     for (const event of includeSources.has("events") ? (item.events ?? []) : []) {
+      const recurrenceRuleSummary = formatRecurrenceRuleForSummary(event.recurrence);
+      const recurringDurationMs = (() => {
+        if (!event.end_at) {
+          return null;
+        }
+        const duration = Date.parse(event.end_at) - Date.parse(event.start_at);
+        return Number.isFinite(duration) && duration > 0 ? duration : null;
+      })();
       const occurrences = event.recurrence
         ? expandRecurringOccurrences(event.start_at, event.recurrence, recurringWindow, occurrenceLimit)
         : [event.start_at];
       for (const occurrenceAt of occurrences) {
+        const occurrenceEnd =
+          event.recurrence && recurringDurationMs !== null
+            ? new Date(new Date(occurrenceAt).getTime() + recurringDurationMs).toISOString()
+            : (event.end_at ?? null);
         events.push({
           at: occurrenceAt,
           date: toUtcDayKey(occurrenceAt),
           kind: "event",
           reminder_text: event.description ?? null,
           event_title: event.title ?? item.title,
-          event_end: event.end_at ?? null,
+          event_end: occurrenceEnd,
           event_location: event.location ?? null,
           event_all_day: event.all_day ?? null,
           event_timezone: event.timezone ?? null,
           event_recurring: event.recurrence ? true : false,
+          event_recurrence_rule: recurrenceRuleSummary,
           item_id: item.id,
           item_title: item.title,
           item_type: item.type,
@@ -550,7 +611,7 @@ function filterItems(items: ItemFrontMatter[], options: CalendarOptions, typeReg
 
   return items.filter((item) => {
     if (typeFilter && item.type !== typeFilter) return false;
-    if (tagFilter && !item.tags.includes(tagFilter)) return false;
+    if (tagFilter && !item.tags.some((tag) => tag.trim().toLowerCase() === tagFilter)) return false;
     if (priorityFilter !== undefined && item.priority !== priorityFilter) return false;
     if (statusFilter && item.status !== statusFilter) return false;
     if (assigneeFilter !== undefined) {
@@ -646,17 +707,25 @@ function bucketEventsByDay(events: CalendarEvent[]): CalendarDayBucket[] {
 
 function summarize(events: CalendarEvent[]): CalendarResult["summary"] {
   const itemIds = new Set<string>();
+  const byType = new Map<string, number>();
+  const byStatus = new Map<string, number>();
   let deadlines = 0;
   let reminders = 0;
   let scheduled = 0;
+  let recurringEvents = 0;
   for (const event of events) {
     itemIds.add(event.item_id);
+    incrementCount(byType, event.item_type);
+    incrementCount(byStatus, event.item_status);
     if (event.kind === "deadline") {
       deadlines += 1;
     } else if (event.kind === "reminder") {
       reminders += 1;
     } else {
       scheduled += 1;
+      if (event.event_recurring === true) {
+        recurringEvents += 1;
+      }
     }
   }
   return {
@@ -665,6 +734,14 @@ function summarize(events: CalendarEvent[]): CalendarResult["summary"] {
     deadlines,
     reminders,
     scheduled,
+    by_kind: {
+      deadline: deadlines,
+      reminder: reminders,
+      event: scheduled,
+    },
+    by_type: toSortedCountRecord(byType),
+    by_status: toSortedCountRecord(byStatus),
+    recurring_events: recurringEvents,
   };
 }
 
@@ -678,16 +755,63 @@ function formatClock(timestamp: string): string {
   return `${new Date(timestamp).toISOString().slice(11, 16)}Z`;
 }
 
+function formatSummaryCountRecord(values: Record<string, number>): string {
+  const entries = Object.entries(values);
+  if (entries.length === 0) {
+    return "none";
+  }
+  return entries.map(([key, value]) => `${key}=${value}`).join(", ");
+}
+
+function formatEventEnd(event: CalendarEvent): string | null {
+  if (!event.event_end) {
+    return null;
+  }
+  if (event.event_all_day === true) {
+    return event.event_end.slice(0, 10);
+  }
+  if (event.date === toUtcDayKey(event.event_end)) {
+    return formatClock(event.event_end);
+  }
+  return event.event_end;
+}
+
 function formatEventLine(event: CalendarEvent): string {
-  const core = `${formatClock(event.at)} [${event.kind}] ${event.item_id} p${event.item_priority} ${event.item_status} ${event.item_title}`;
+  const core = `${formatClock(event.at)} [${event.kind}] ${event.item_id} type=${event.item_type} p${event.item_priority} ${event.item_status} ${event.item_title}`;
   if (event.kind === "reminder") {
-    return `${core} — ${event.reminder_text}`;
+    const reminderText = event.reminder_text ?? "";
+    return `${core} — ${reminderText} reminder=${JSON.stringify(reminderText)}`;
   }
   if (event.kind === "event") {
-    const title = event.event_title!;
-    const recurrenceSuffix = event.event_recurring ? " (recurring)" : "";
-    const locationSuffix = event.event_location ? ` @ ${event.event_location}` : "";
-    return `${core} — ${title}${recurrenceSuffix}${locationSuffix}`;
+    const details: string[] = [];
+    const title = event.event_title ?? event.item_title;
+    details.push(title);
+    details.push(`title=${JSON.stringify(title)}`);
+    if (event.event_recurring) {
+      details.push("(recurring)");
+      details.push("recurring=true");
+    }
+    const end = formatEventEnd(event);
+    if (end) {
+      details.push(`end=${end}`);
+    }
+    if (event.event_all_day !== null) {
+      details.push(`all_day=${event.event_all_day ? "true" : "false"}`);
+    }
+    if (event.event_timezone) {
+      details.push(`timezone=${event.event_timezone}`);
+    }
+    if (event.event_location) {
+      details.push(`@ ${event.event_location}`);
+      details.push(`location=${JSON.stringify(event.event_location)}`);
+    }
+    if (event.event_recurrence_rule) {
+      details.push(`recurrence=${event.event_recurrence_rule}`);
+    }
+    if (event.reminder_text) {
+      details.push(`description=${JSON.stringify(event.reminder_text)}`);
+    }
+    return `${core} — ${details.join(" ")}`;
   }
   return core;
 }
@@ -702,6 +826,10 @@ export function renderCalendarMarkdown(result: CalendarResult): string {
     `- events: ${result.summary.events} (deadlines: ${result.summary.deadlines}, reminders: ${result.summary.reminders}, scheduled: ${result.summary.scheduled})`,
   );
   lines.push(`- items: ${result.summary.items}`);
+  lines.push(`- by-kind: ${formatSummaryCountRecord(result.summary.by_kind)}`);
+  lines.push(`- by-type: ${formatSummaryCountRecord(result.summary.by_type)}`);
+  lines.push(`- by-status: ${formatSummaryCountRecord(result.summary.by_status)}`);
+  lines.push(`- recurring-events: ${result.summary.recurring_events}`);
   lines.push("");
 
   if (result.events.length === 0) {
@@ -713,6 +841,13 @@ export function renderCalendarMarkdown(result: CalendarResult): string {
     lines.push(`## ${day.date} (${day.count})`);
     for (const event of day.events) {
       lines.push(`- ${formatEventLine(event)}`);
+    }
+    lines.push("");
+  }
+  if (result.warnings && result.warnings.length > 0) {
+    lines.push("### warnings");
+    for (const warning of result.warnings) {
+      lines.push(`- ${warning}`);
     }
     lines.push("");
   }

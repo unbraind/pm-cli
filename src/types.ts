@@ -1,4 +1,14 @@
-export const BUILTIN_ITEM_TYPE_VALUES = ["Epic", "Feature", "Task", "Chore", "Issue"] as const;
+export const BUILTIN_ITEM_TYPE_VALUES = [
+  "Epic",
+  "Feature",
+  "Task",
+  "Chore",
+  "Issue",
+  "Event",
+  "Reminder",
+  "Milestone",
+  "Meeting",
+] as const;
 export const ITEM_TYPE_VALUES = BUILTIN_ITEM_TYPE_VALUES;
 export type BuiltinItemType = (typeof BUILTIN_ITEM_TYPE_VALUES)[number];
 export type ItemType = string;

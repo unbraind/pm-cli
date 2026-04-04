@@ -175,6 +175,68 @@ describe("calendar command module", () => {
     });
   });
 
+  it("renders rich event metadata and warnings in markdown output", async () => {
+    await withTempPmPath(async (context) => {
+      createCalendarItem(context, {
+        title: "Rich metadata seed",
+        events: [
+          "start=2026-04-09T14:00:00.000Z,title=Agent sync,timezone=America/New_York,location=Room 12,description=deep focus block",
+        ],
+      });
+
+      const result = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-04-09T00:00:00.000Z",
+          to: "2026-04-10T00:00:00.000Z",
+          include: "events",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.events).toHaveLength(1);
+      const markdown = renderCalendarMarkdown({
+        ...result,
+        warnings: ["calendar warning seed"],
+      });
+      expect(markdown).toContain("timezone=America/New_York");
+      expect(markdown).toContain('location="Room 12"');
+      expect(markdown).toContain('description="deep focus block"');
+      expect(markdown).toContain("### warnings");
+      expect(markdown).toContain("- calendar warning seed");
+    });
+  });
+
+  it("formats event end-times for all-day, same-day, and cross-day events", async () => {
+    await withTempPmPath(async (context) => {
+      createCalendarItem(context, {
+        title: "Event end formatting seed",
+        events: [
+          "start=2026-04-12T00:00:00.000Z,end=2026-04-13T00:00:00.000Z,all_day=true,title=All day review",
+          "start=2026-04-12T09:00:00.000Z,end=2026-04-12T10:30:00.000Z,all_day=false,title=Same day sync",
+          "start=2026-04-12T22:00:00.000Z,end=2026-04-13T01:00:00.000Z,all_day=false,title=Cross day handoff",
+        ],
+      });
+
+      const result = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-04-12T00:00:00.000Z",
+          to: "2026-04-14T00:00:00.000Z",
+          include: "events",
+        },
+        { path: context.pmPath },
+      );
+
+      const markdown = renderCalendarMarkdown(result);
+      expect(markdown).toContain("end=2026-04-13");
+      expect(markdown).toContain("end=10:30Z");
+      expect(markdown).toContain("end=2026-04-13T01:00:00.000Z");
+      expect(markdown).toContain("all_day=true");
+      expect(markdown).toContain("all_day=false");
+    });
+  });
+
   it("applies filters and event limits", async () => {
     await withTempPmPath(async (context) => {
       createCalendarItem(context, {

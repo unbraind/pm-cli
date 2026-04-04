@@ -12,7 +12,16 @@ function createItem(
   context: TempPmContext,
   params: {
     title: string;
-    type: "Epic" | "Feature" | "Task" | "Chore" | "Issue";
+    type:
+      | "Epic"
+      | "Feature"
+      | "Task"
+      | "Chore"
+      | "Issue"
+      | "Event"
+      | "Reminder"
+      | "Milestone"
+      | "Meeting";
     status: "open" | "blocked" | "closed";
   },
 ): string {
@@ -98,6 +107,10 @@ describe("runStats", () => {
         Task: 0,
         Chore: 0,
         Issue: 0,
+        Event: 0,
+        Reminder: 0,
+        Milestone: 0,
+        Meeting: 0,
       });
       expect(stats.by_status).toEqual({
         draft: 0,
@@ -175,6 +188,10 @@ describe("runStats", () => {
         Task: 1,
         Chore: 0,
         Issue: 1,
+        Event: 0,
+        Reminder: 0,
+        Milestone: 0,
+        Meeting: 0,
       });
       expect(stats.by_status).toEqual({
         draft: 0,

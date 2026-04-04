@@ -1,17 +1,16 @@
 id: pm-122q
 title: Agent integration and docs hardening for calendar/reminders
-description: "Extend completion, Pi wrapper, release/runtime contracts, and docs so calendar and reminders are agent-friendly and safely documented."
+description: Align agent integration surfaces and docs with calendar-native built-ins and enhanced calendar UX for deterministic automation.
 type: Feature
 status: closed
 priority: 1
 tags[4]: agent-ux,"area:calendar","area:docs",pm-cli
 created_at: "2026-03-31T21:27:49.453Z"
-updated_at: "2026-04-04T17:38:07.975Z"
+updated_at: "2026-04-04T21:12:24.358Z"
 deadline: "2026-04-10T21:27:49.453Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 200
-acceptance_criteria: "Completion, Pi wrapper, tests, and docs include calendar/reminder support with no regressions."
+acceptance_criteria: "CLI contracts, Pi wrapper, help/completion, and documentation fully describe new built-ins/calendar UX with integration tests proving parity and compatibility."
 definition_of_ready: Command surface and documentation touchpoints are identified.
 order: 4
 goal: Agent planning ergonomics
@@ -45,18 +44,26 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-0lbm,related,"2026-03-31T21:27:49.453Z",codex-agent,null
   pm-igv,related,"2026-03-31T21:27:49.453Z",codex-agent,null
   pm-qh3p,parent,"2026-03-31T21:27:49.453Z",codex-agent,null
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-03-31T21:27:49.453Z",codex-agent,Feature created to track integrations and docs hardening scope.
   "2026-03-31T22:09:21.219Z",codex-agent,"Feature complete via closed tasks pm-qze9 pm-tyq3 pm-2v01; integrations, docs, and release-readiness tests all pass at 100% coverage."
+  "2026-04-04T20:39:03.392Z",codex-agent,"Reopened for integration parity continuation: calendar UX additions for agents/LLMs plus synchronized contracts/help/completion/Pi wrapper/docs and release-readiness tests."
+  "2026-04-04T21:12:20.868Z",codex-agent,"Integration/docs hardening completed for calendar enhancements: updated README/ARCHITECTURE/PRD/CHANGELOG, synchronized release-readiness runtime assertions, and preserved additive/non-breaking command behavior. Evidence: pm test-all --status in_progress passed linked checks (including full test command and release-readiness targeted suites); node scripts/run-tests.mjs coverage passed with thresholds."
 notes[1]{created_at,author,text}:
   "2026-03-31T21:27:49.453Z",codex-agent,Keep release-readiness runtime tests aligned with new command surface.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:25:00.171Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[1]{path,scope,note}:
+files[2]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,pi wrapper action parity
+  tests/integration/release-readiness-runtime.spec.ts,project,calendar flag and runtime parity assertions
 tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test,null,project,1800,null,null,null,null,null,null,null,null,null,null,integration and docs contract regression
-docs[1]{path,scope,note}:
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-all-local-mnktqphw-natg7c,test-all,passed,"2026-04-04T21:08:02.324Z","2026-04-04T21:10:10.969Z","2026-04-04T21:10:10.969Z",null,null,1,0,0,1,1,null
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,release notes for integrations
+  docs/ARCHITECTURE.md,project,calendar architecture updates
+  PRD.md,project,agent contract updates
   README.md,project,calendar/reminder command docs
-close_reason: Integration surfaces and documentation hardening for calendar/reminders are complete with full test coverage.
-body: "Feature C for integration surfaces, compatibility contracts, and user/developer documentation updates."
+close_reason: Calendar integration and documentation parity completed
+body: "Feature C for integration surfaces, compatibility contracts, and user/developer documentation updates.\n\n2026-04-04 reactivation scope: align calendar command UX with agent parsing needs and synchronize contracts, completion, Pi wrapper, release-readiness tests, and docs."

@@ -1,17 +1,16 @@
 id: pm-kglq
-title: Implement calendar markdown default and explicit output overrides
-description: Add calendar-specific markdown default rendering while preserving TOON/JSON contracts and explicit override behavior.
+title: "Follow-up: enhance calendar UX for agents and LLM parsing"
+description: Enhance pm calendar output for agent/LLM readability with deterministic summary breakdowns and richer markdown event details while preserving existing defaults.
 type: Task
 status: closed
 priority: 1
 tags[4]: "area:calendar","area:output",code,pm-cli
 created_at: "2026-03-31T21:28:33.277Z"
-updated_at: "2026-04-04T17:42:07.234Z"
+updated_at: "2026-04-04T21:12:07.591Z"
 deadline: "2026-04-07T21:28:33.277Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 90
-acceptance_criteria: "Calendar defaults to markdown output, supports explicit json/toon overrides, and does not alter global output defaults."
+acceptance_criteria: Calendar output keeps existing defaults/contracts but adds deterministic agent-friendly summary fields and richer markdown details (title/location/all-day/timezone/recurrence context) with tests covering parsing stability.
 definition_of_ready: Output precedence and override semantics are documented.
 order: 8
 goal: Agent planning ergonomics
@@ -20,7 +19,7 @@ value: Readable default calendar output
 impact: Fewer parsing steps for agents
 outcome: Calendar output is ergonomic and deterministic
 why_now: Output behavior is part of core calendar usability.
-parent: pm-tuhf
+parent: pm-122q
 reviewer: maintainer-review
 risk: medium
 confidence: high
@@ -45,21 +44,29 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-3aga,related,"2026-03-31T21:28:33.277Z",codex-agent,null
   pm-ezri,blocks,"2026-03-31T21:28:33.277Z",codex-agent,null
   pm-tuhf,parent,"2026-03-31T21:28:33.277Z",codex-agent,null
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-03-31T21:28:33.277Z",codex-agent,Task created for markdown-default calendar output handling.
   "2026-03-31T21:45:12.525Z",codex-agent,Added calendar-specific markdown default rendering with explicit --format and --json override precedence checks.
   "2026-03-31T21:45:24.102Z",codex-agent,"Evidence: output behavior tests passed including calendar output precedence."
+  "2026-04-04T20:40:18.489Z",codex-agent,Reopened and reparented under pm-122q after duplicate scan; existing closed task already covered calendar output UX and is the canonical record to extend for agent/LLM deterministic parsing improvements.
+  "2026-04-04T21:12:05.151Z",codex-agent,"Implemented calendar UX enhancements for agent/LLM consumption: richer summary aggregates (by_kind/by_type/by_status/recurring_events), deterministic markdown event metadata tokens, recurrence rendering details, and command-aware calendar highlight alignment. Added focused calendar tests for metadata/warnings/end-time formatting branches. Evidence: node scripts/run-tests.mjs test (69 files / 856 tests passed), node scripts/run-tests.mjs coverage passed (branch 91.03%), and pm test-all --status in_progress passed linked calendar checks."
 notes[1]{created_at,author,text}:
   "2026-03-31T21:28:33.277Z",codex-agent,Avoid changes to global TOON default behavior for existing commands.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:25:12.157Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[3]{path,scope,note}:
+files[4]{path,scope,note}:
   src/cli/commands/calendar.ts,project,markdown renderer and format resolution
   src/cli/main.ts,project,calendar output switch logic
+  src/core/output/command-aware.ts,project,calendar summary highlights for agents
   tests/unit/calendar-command.spec.ts,project,output precedence tests
 tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/output.spec.ts tests/unit/calendar-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,output behavior coverage
-docs[1]{path,scope,note}:
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-all-local-mnktqphw-natg7c,test-all,passed,"2026-04-04T21:08:02.324Z","2026-04-04T21:10:32.449Z","2026-04-04T21:10:32.449Z",null,null,1,0,0,1,1,null
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,calendar ux release notes
+  docs/ARCHITECTURE.md,project,calendar summary and markdown pipeline
+  PRD.md,project,calendar command contract details
   README.md,project,calendar output mode documentation
-close_reason: Calendar markdown default and output override behavior implemented and verified.
-body: Task for command-specific output strategy and markdown renderer utility.
+close_reason: Calendar UX enhancements completed with deterministic agent-readable output
+body: "Task for command-specific output strategy and markdown renderer utility.\n\n2026-04-04 follow-up scope: continue calendar UX work for agent and LLM consumption under pm-122q by improving deterministic summaries and markdown fidelity without breaking TOON/JSON/flag compatibility."

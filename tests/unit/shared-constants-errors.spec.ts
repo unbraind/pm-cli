@@ -22,6 +22,10 @@ describe("shared constants and errors contracts", () => {
       "tasks",
       "chores",
       "issues",
+      "events",
+      "reminders",
+      "milestones",
+      "meetings",
       "history",
       "index",
       "search",
@@ -34,6 +38,10 @@ describe("shared constants and errors contracts", () => {
       Task: "tasks",
       Chore: "chores",
       Issue: "issues",
+      Event: "events",
+      Reminder: "reminders",
+      Milestone: "milestones",
+      Meeting: "meetings",
     });
     expect(FRONT_MATTER_KEY_ORDER).toEqual([
       "id",

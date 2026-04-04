@@ -222,7 +222,7 @@ describe("generateZshScript", () => {
 
   it("includes type completions for relevant flags", () => {
     const script = generateZshScript();
-    expect(script).toContain("Epic Feature Task Chore Issue");
+    expect(script).toContain("Epic Feature Task Chore Issue Event Reminder Milestone Meeting");
     expect(script).toContain("0 1 2 3 4");
     expect(script).toContain("keyword semantic hybrid");
     expect(script).toContain("bash zsh fish");
@@ -348,7 +348,7 @@ describe("generateFishScript", () => {
 
   it("includes type and status value completions", () => {
     const script = generateFishScript();
-    expect(script).toContain("Epic Feature Task Chore Issue");
+    expect(script).toContain("Epic Feature Task Chore Issue Event Reminder Milestone Meeting");
     expect(script).toContain("0 1 2 3 4");
   });
 

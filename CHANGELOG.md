@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added resilient entry parsing for mutation `--add` and create/update repeatable seed flags: CSV `key=value`, markdown-style `key: value`, and `-` stdin-token ingestion are now supported with deterministic normalization.
 - Added stdin token support for `pm append --body -` and structured comment ingestion for `pm comments --add` (plain text remains supported).
 - Added runtime-configurable item type registry support: `settings.item_types.definitions` plus extension `registerItemTypes(...)` registrations now drive allowed type values, aliases, per-type required create fields/repeatables, option schemas, and type folder routing.
+- Added calendar-native built-in item types: `Event`, `Reminder`, `Milestone`, and `Meeting` (with deterministic folder routing, completion defaults, and help/usage fallback guidance parity).
 - Added `--type-option` / `--type_option` support on `pm create` and `pm update` for validated per-type metadata (`key=value` or `key=<name>,value=<value>`, with `none` clear semantics).
 - Added per-type `command_option_policies` support (settings + extension item-type registrations) for `create`/`update` option-level `required`, `enabled`, and `visible` behavior controls.
 - Added type-aware help policy sections for `pm create --help` / `pm update --help` when `--type <value>` is supplied, including required/disabled/hidden option summaries from active settings/extensions.
@@ -99,6 +100,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Default `list*` output remains front-matter-only; `body` projection is now explicit and opt-in via `--include-body` to preserve lightweight list payloads.
 - Calendar command output now defaults to markdown for agent/human readability while preserving explicit `--format toon|json|markdown` and global `--json` overrides; all other commands keep existing TOON-default behavior.
 - Calendar markdown summaries now include scheduled-event counts and event rendering includes recurring/location metadata where present.
+- Calendar JSON/markdown summaries now expose deterministic aggregate breakdowns (`by_kind`, `by_type`, `by_status`, `recurring_events`) and markdown event lines now include richer metadata tokens (item type, recurrence rule, end-time projection, timezone/location, and description context).
+- Command-aware output summaries now consume the canonical calendar `summary.events` structure (instead of stale `summary.total`) and emit richer calendar highlight telemetry (`events`, `deadlines`, `reminders`, `scheduled`, `view`).
 - Mutation parsing errors for entry-style flags now include actionable format guidance and explicit stdin-token usage hints to reduce malformed-input retries.
 - `pm create` log-seed repeatables (`--comment`, `--note`, `--learning`) now reject parsed unsupported keys to prevent silent narrative truncation when unquoted comma segments resemble key/value tokens; guidance now explicitly routes punctuation-heavy text to quoted `text=...`, markdown key/value input, or stdin token usage.
 - Type validation/filtering/completion now resolve from the runtime registry across create/update/list/search/calendar/completion/init/health/storage paths while preserving built-in defaults when no custom type config exists.

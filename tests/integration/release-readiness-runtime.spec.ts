@@ -250,6 +250,10 @@ const REQUIRED_CALENDAR_FLAGS = [
   "--assignee",
   "--sprint",
   "--release",
+  "--include",
+  "--recurrence-lookahead-days",
+  "--recurrence-lookback-days",
+  "--occurrence-limit",
   "--limit",
   "--format",
 ];

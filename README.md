@@ -447,6 +447,7 @@ cat issues.jsonl | pm beads import --file -
 ## Custom Item Types and Type Options
 
 `pm` supports project/global custom item types through `settings.json` and extension registrations. When no custom configuration exists, built-in types keep their default behavior.
+Current built-ins are: `Epic`, `Feature`, `Task`, `Chore`, `Issue`, `Event`, `Reminder`, `Milestone`, and `Meeting`.
 
 ### Configure custom types in `settings.json`
 
@@ -739,6 +740,8 @@ pm update pm-a1b2 --event none
 - Views: `agenda` (default), `day`, `week`, `month`
 - Default output for calendar is markdown (command-specific override)
 - Explicit output override: `--format markdown|toon|json` or global `--json`
+- JSON summary includes deterministic aggregate breakdowns: `by_kind`, `by_type`, `by_status`, and `recurring_events`.
+- Markdown event lines include richer deterministic metadata for agent parsing (item type, event title, recurrence marker/rule, end-time, timezone, location, and description when present).
 - Event source controls:
   - `--include deadlines|reminders|events|all` (comma or pipe-delimited when passing multiple values)
   - default source set is `all`
@@ -775,7 +778,7 @@ pm calendar --view month --tag release --format json
   - recency/id tie-breakers
 - Output is split into:
   - high-level focus (`Epic`, `Feature`)
-  - low-level focus (`Task`, `Issue`, `Chore`, etc.)
+  - low-level focus (`Task`, `Issue`, `Chore`, `Event`, `Reminder`, `Milestone`, `Meeting`, etc.)
 - Agenda context is included from deadlines, reminders, and scheduled events in an agenda window.
 - If there are no open or in-progress items, `pm context` automatically includes a blocked-work fallback section.
 - Shared filters: `--type`, `--tag`, `--priority`, `--assignee`, `--sprint`, `--release`, `--limit`.

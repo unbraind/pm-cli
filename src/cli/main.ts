@@ -105,6 +105,7 @@ import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings, readSettingsWithMetadata } from "../core/store/settings.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import type { ItemStatus, PmSettings } from "../types/index.js";
+import { BUILTIN_ITEM_TYPE_VALUES } from "../types/index.js";
 import { coerceLooseCommandOptionsWithFlagDefinitions, parseLooseCommandOptions } from "./extension-command-options.js";
 import { attachRichHelpText, normalizeHelpCommandPath, resolveHelpDetailMode, resolveHelpNarrative } from "./help-content.js";
 import {
@@ -603,6 +604,8 @@ interface HelpSubcommandSummary {
   description: string;
 }
 
+const BUILTIN_TYPE_HELP_VALUES = BUILTIN_ITEM_TYPE_VALUES.join("|");
+
 function resolveCommandFromPathTokens(root: Command, pathTokens: string[]): Command | null {
   if (pathTokens.length === 0) {
     return root;
@@ -794,7 +797,7 @@ async function maybeRenderBootstrapJsonHelp(rootProgram: Command, argv: string[]
       const envelope = formatCommanderErrorForJson(
         `unknown command '${helpRequest.commandPathTokens.join(" ")}'`,
         "help",
-        "Epic|Feature|Task|Chore|Issue",
+        BUILTIN_TYPE_HELP_VALUES,
         EXIT_CODE.USAGE,
       );
       printError(JSON.stringify(envelope, null, 2));
@@ -3565,7 +3568,7 @@ async function resolveCommanderUsageContext(error: unknown): Promise<CommanderUs
   const message = rawMessage ?? "Invalid command usage";
   const bootstrapGlobal = parseBootstrapGlobalOptions(process.argv.slice(2));
   const commandName = parseBootstrapCommandName(process.argv.slice(2));
-  let allowedTypes = "Epic|Feature|Task|Chore|Issue";
+  let allowedTypes = BUILTIN_TYPE_HELP_VALUES;
   try {
     const pmRoot = resolvePmRoot(process.cwd(), bootstrapGlobal.path);
     if (await pathExists(getSettingsPath(pmRoot))) {

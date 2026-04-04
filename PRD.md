@@ -20,7 +20,7 @@ Existing trackers either rely on hosted backends, store state in non-diff-friend
 
 - Build a cross-platform TypeScript CLI named `pm`.
 - Store all core tracker data in project-local files under `.agents/pm` by default.
-- Model work as first-class items: `Epic`, `Feature`, `Task`, `Chore`, `Issue`.
+- Model work as first-class items: `Epic`, `Feature`, `Task`, `Chore`, `Issue`, `Event`, `Reminder`, `Milestone`, `Meeting`.
 - Support full item lifecycle operations, deterministic listing/filtering, and rich metadata.
 - Support reminder-aware scheduling workflows with deterministic calendar views for agents and humans.
 - Provide append-only item history with patch-level restore.
@@ -88,6 +88,10 @@ From TOON guidance:
 - `Task`
 - `Chore`
 - `Issue`
+- `Event`
+- `Reminder`
+- `Milestone`
+- `Meeting`
 
 ### 5.2 Status lifecycle
 
@@ -244,7 +248,7 @@ Required fields:
 - `tags: string[]`
 - `status: "draft" | "open" | "in_progress" | "blocked" | "closed" | "canceled"`
 - `priority: 0 | 1 | 2 | 3 | 4`
-- `type: "Epic" | "Feature" | "Task" | "Chore" | "Issue"`
+- `type: "Epic" | "Feature" | "Task" | "Chore" | "Issue" | "Event" | "Reminder" | "Milestone" | "Meeting"`
 - `created_at: ISO string`
 - `updated_at: ISO string`
 
@@ -871,7 +875,7 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | `pm get <ID>` | normalized id | `{ item, body, linked: { files, tests, docs } }` |
 | `pm search <keywords>` | keyword query + optional mode/include-linked/limit filters | `{ query, mode, items, count, filters, now }` |
 | `pm reindex` | optional `--mode` (`keyword|semantic|hybrid` baseline) and additive `--progress` stderr visibility | `{ ok, mode, total_items, artifacts, warnings, generated_at }` |
-| `pm calendar` / `pm cal` | `--view agenda|day|week|month`, `--date`, `--from`/`--to` (agenda), `--past`, and list-like filters (`type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`) | `{ view, output_default, now, anchor, range, filters, summary, events, days }` (defaults to markdown unless `--format` or `--json` override) |
+| `pm calendar` / `pm cal` | `--view agenda|day|week|month`, `--date`, `--from`/`--to` (agenda), `--past`, list-like filters (`type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`), source controls (`--include`), and recurrence bounds (`--recurrence-lookahead-days`, `--recurrence-lookback-days`, `--occurrence-limit`) | `{ view, output_default, now, anchor, range, filters, summary, events, days }` where `summary` includes deterministic aggregate breakdown fields (`by_kind`, `by_type`, `by_status`, `recurring_events`) and markdown output includes rich event detail tokens by default |
 | `pm context` / `pm ctx` | `--date`, `--from`/`--to`, `--past`, list-like filters (`type`, `tag`, `priority`, `assignee`, `sprint`, `release`, `limit`), `--format` | `{ output_default, now, window, filters, summary, high_level, low_level, blocked_fallback, agenda }` (defaults to TOON unless `--format` or `--json` override) |
 | `pm beads import [--file <path\|->] [--preserve-source-ids]` | optional Beads JSONL source path (`.beads/issues.jsonl` auto-discovered first, then `issues.jsonl`; implicit `sync_base.jsonl` fallback is refused as unsafe; `--file -` requires piped stdin and fails fast on interactive TTY stdin) | `{ ok, source, imported, skipped, ids, warnings }` |
 | `pm todos import --folder <path?>` | optional todos markdown source folder (defaults to `.pi/todos`); preserves canonical optional `ItemFrontMatter` metadata when present and applies deterministic defaults for missing PM fields | `{ ok, folder, imported, skipped, ids, warnings }` |

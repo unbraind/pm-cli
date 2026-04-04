@@ -210,7 +210,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm context --from +0d --to +7d --format markdown",
     ],
     tips: [
-      "High-level focus contains Epics/Features and low-level focus contains Tasks/Issues/Chores.",
+      "High-level focus contains Epics/Features and low-level focus contains Tasks/Issues/Chores/Event/Reminder/Milestone/Meeting.",
       "When no open or in-progress work exists, blocked items are shown as fallback context.",
     ],
   },

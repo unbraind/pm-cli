@@ -1,17 +1,16 @@
 id: pm-qh3p
 title: Agent-optimized calendar and reminders
-description: "Deliver a powerful agent-first calendar workflow for deadlines, reminders, and date planning without breaking existing users."
+description: Deliver additive calendar-native built-in item types plus enhanced pm calendar agent/LLM UX without breaking existing defaults.
 type: Epic
 status: closed
 priority: 0
 tags[5]: agent-ux,"area:calendar","area:reminders",core,pm-cli
 created_at: "2026-03-31T21:27:17.807Z"
-updated_at: "2026-04-04T17:37:45.078Z"
+updated_at: "2026-04-04T21:12:37.654Z"
 deadline: "2026-04-14T21:27:17.807Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 480
-acceptance_criteria: "Calendar and reminder capabilities are implemented, tested, documented, and backward compatible."
+acceptance_criteria: Built-in types Event/Reminder/Milestone/Meeting are supported end-to-end; calendar output adds richer deterministic summaries and readable markdown details; contracts/docs/tests pass with backward-compatible behavior.
 definition_of_ready: Calendar scope and compatibility constraints are defined.
 order: 1
 goal: Agent planning ergonomics
@@ -44,10 +43,12 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-2fj,related,"2026-03-31T21:27:17.807Z",codex-agent,null
   pm-2p6q,related,"2026-03-31T21:27:17.807Z",codex-agent,null
   pm-r0m,related,"2026-03-31T21:27:17.807Z",codex-agent,null
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-03-31T21:27:17.807Z",codex-agent,Calendar epic created after duplicate scan across existing pm items.
   "2026-03-31T21:29:17.884Z",codex-agent,"Hierarchy seeded after duplicate scan: features pm-tuhf pm-c877 pm-122q; tasks pm-7e6n pm-ysgr pm-ezri pm-kglq pm-qze9 pm-tyq3 pm-2v01. Linked related historical items pm-r0m pm-2p6q pm-0lbm pm-2fj for continuity."
   "2026-03-31T22:09:22.767Z",codex-agent,"Epic complete: features pm-c877 pm-tuhf pm-122q are closed; full regression and 100% coverage passed with documented release-ready calendar/reminder support."
+  "2026-04-04T20:39:01.309Z",codex-agent,"Duplicate-check evidence for reactivation: pm context --limit 12; pm list-open --limit 30; pm list-in-progress --limit 30; pm search 'calendar type ux' --limit 20; pm get pm-qh3p/pm-r15d/pm-x2k0/pm-122q. No active duplicate lineage found; reopened canonical epic/feature chain for this scope."
+  "2026-04-04T21:12:35.429Z",codex-agent,"Epic close-out: delivered additive calendar-native built-ins and enhanced pm calendar agent/LLM UX under pm-kglq and pm-122q, with updated docs/contracts and non-breaking behavior guarantees. Evidence: linked PM test sweep passed, full regression passed (856 tests), and coverage thresholds passed (branch 91.03%)."
 notes[1]{created_at,author,text}:
   "2026-03-31T21:27:17.807Z",codex-agent,Keep TOON default globally and scope markdown default to calendar command.
 learnings[1]{created_at,author,text}:
@@ -56,7 +57,9 @@ files[1]{path,scope,note}:
   src/cli/main.ts,project,calendar command wiring
 tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test,null,project,1800,null,null,null,null,null,null,null,null,null,null,sandbox-safe regression gate
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-all-local-mnktqphw-natg7c,test-all,passed,"2026-04-04T21:08:02.324Z","2026-04-04T21:10:37.966Z","2026-04-04T21:10:37.966Z",null,null,0,0,1,1,1,null
 docs[1]{path,scope,note}:
   PRD.md,project,calendar requirements and contract updates
-close_reason: Agent-optimized calendar and reminder rollout completed end-to-end without regressions.
-body: "Epic for calendar command, persistent reminders, agent integrations, and documentation hardening."
+close_reason: Agent-optimized calendar and reminder epic completed
+body: "Epic for calendar command, persistent reminders, agent integrations, and documentation hardening.\n\n2026-04-04 reactivation scope: expand built-in item model with calendar-native types (Event, Reminder, Milestone, Meeting), enhance pm calendar agent/LLM UX deterministically, and deliver compatibility-safe contracts/docs/tests to closure."
