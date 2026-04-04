@@ -88,6 +88,33 @@ async function setSettingsAuthorDefault(pmPath: string, authorDefault: string): 
   await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
 }
 
+async function setTestResultTracking(pmPath: string, enabled: boolean): Promise<void> {
+  const settingsPath = path.join(pmPath, "settings.json");
+  const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+    testing?: { record_results_to_items?: boolean };
+  };
+  settings.testing = {
+    ...(settings.testing ?? {}),
+    record_results_to_items: enabled,
+  };
+  await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+}
+
+async function loadTaskFrontMatter(context: TempPmContext, id: string): Promise<Record<string, unknown>> {
+  const toonPath = path.join(context.pmPath, "tasks", `${id}.toon`);
+  const markdownPath = path.join(context.pmPath, "tasks", `${id}.md`);
+  let taskPath = toonPath;
+  let source: string;
+  try {
+    source = await readFile(taskPath, "utf8");
+  } catch {
+    taskPath = markdownPath;
+    source = await readFile(taskPath, "utf8");
+  }
+  const format = taskPath.endsWith(".toon") ? "toon" : "json_markdown";
+  return parseItemDocument(source, { format }).front_matter as unknown as Record<string, unknown>;
+}
+
 async function overwriteTaskTests(
   context: TempPmContext,
   id: string,
@@ -1490,6 +1517,180 @@ describe("runTest", () => {
           configurable: true,
         });
       }
+    });
+  });
+
+  it("reports JSON assertion mismatch and missing-path failures", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "json-assertion-mismatch");
+      await runTest(
+        id,
+        {
+          add: [
+            "command=node -e \"process.stdout.write(JSON.stringify({count:1}))\",scope=project,assert_json_field_equals=count=2,assert_json_field_gte=missing=1",
+          ],
+        },
+        { path: context.pmPath },
+      );
+
+      const result = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "20",
+        },
+        { path: context.pmPath },
+      );
+      expect(result.run_results).toHaveLength(1);
+      expect(result.run_results[0]?.status).toBe("failed");
+      expect(result.run_results[0]?.error ?? "").toContain("assert_json_field_equals mismatch");
+      expect(result.run_results[0]?.error ?? "").toContain('assert_json_field_gte missing path "missing"');
+    });
+  });
+
+  it("reports stderr assertion and minimum stdout line failures", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "stderr-and-line-assertions");
+      await runTest(
+        id,
+        {
+          add: [
+            "command=node -e \"process.stdout.write('ok\\n')\",scope=project,assert_stderr_contains=boom,assert_stderr_regex=boom.*,assert_stdout_min_lines=2",
+          ],
+        },
+        { path: context.pmPath },
+      );
+
+      const result = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "20",
+        },
+        { path: context.pmPath },
+      );
+      expect(result.run_results).toHaveLength(1);
+      expect(result.run_results[0]?.status).toBe("failed");
+      const error = result.run_results[0]?.error ?? "";
+      expect(error).toContain('stderr missing required text: "boom"');
+      expect(error).toContain("stderr failed regex assertion: /boom.*/m");
+      expect(error).toContain("stdout line count 1 is below required minimum 2");
+    });
+  });
+
+  it("evaluates array JSON-path assertions and false literals", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "json-array-path-assertions");
+      await runTest(
+        id,
+        {
+          add: [
+            "command=node -e \"process.stdout.write(JSON.stringify({items:[{flag:true}]}))\",scope=project,assert_stdout_contains=missing-text,assert_json_field_equals=items[0].flag=false",
+          ],
+        },
+        { path: context.pmPath },
+      );
+
+      const result = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "20",
+        },
+        { path: context.pmPath },
+      );
+      expect(result.run_results).toHaveLength(1);
+      expect(result.run_results[0]?.status).toBe("failed");
+      const error = result.run_results[0]?.error ?? "";
+      expect(error).toContain('stdout missing required text: "missing-text"');
+      expect(error).toContain('assert_json_field_equals mismatch at "items[0].flag"');
+    });
+  });
+
+  it("records item test_runs summaries when tracking is enabled", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "track-test-run-summary");
+      await runTest(
+        id,
+        {
+          add: ["command=node --version,scope=project"],
+        },
+        { path: context.pmPath },
+      );
+      await setTestResultTracking(context.pmPath, true);
+
+      const previousRunId = process.env.PM_BACKGROUND_TEST_RUN_ID;
+      const previousAttempt = process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT;
+      const previousResumedFrom = process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM;
+      process.env.PM_BACKGROUND_TEST_RUN_ID = "tr-unit-success";
+      process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT = "2";
+      process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM = "tr-previous";
+      try {
+        const result = await runTest(
+          id,
+          {
+            run: true,
+            timeout: "20",
+          },
+          { path: context.pmPath },
+        );
+        expect(result.warnings).toBeUndefined();
+        const frontMatter = await loadTaskFrontMatter(context, id);
+        const testRuns = (frontMatter.test_runs ?? []) as Array<Record<string, unknown>>;
+        expect(testRuns).toHaveLength(1);
+        expect(testRuns[0]).toMatchObject({
+          run_id: "tr-unit-success",
+          kind: "test",
+          status: "passed",
+          attempt: 2,
+          resumed_from: "tr-previous",
+        });
+      } finally {
+        if (previousRunId === undefined) {
+          delete process.env.PM_BACKGROUND_TEST_RUN_ID;
+        } else {
+          process.env.PM_BACKGROUND_TEST_RUN_ID = previousRunId;
+        }
+        if (previousAttempt === undefined) {
+          delete process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT;
+        } else {
+          process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT = previousAttempt;
+        }
+        if (previousResumedFrom === undefined) {
+          delete process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM;
+        } else {
+          process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM = previousResumedFrom;
+        }
+      }
+    });
+  });
+
+  it("returns tracking warnings when summary persistence cannot mutate item", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "track-test-run-warning");
+      await runTest(
+        id,
+        {
+          add: ["command=node --version,scope=project"],
+        },
+        { path: context.pmPath },
+      );
+      await setTestResultTracking(context.pmPath, true);
+      const reassigned = context.runCli(
+        ["update", "--json", id, "--assignee", "other-owner", "--message", "Reassign for tracking warning branch"],
+        { expectJson: true },
+      );
+      expect(reassigned.code).toBe(0);
+
+      const result = await runTest(
+        id,
+        {
+          run: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(result.run_results[0]?.status).toBe("passed");
+      expect(result.warnings?.[0] ?? "").toContain("test_result_tracking_failed");
     });
   });
 });

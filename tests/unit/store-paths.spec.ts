@@ -6,7 +6,17 @@ import {
   getItemFormatFromPath,
   getItemPath,
   getLockPath,
+  getRuntimePath,
   getSettingsPath,
+  getTestRunRecordPath,
+  getTestRunResultPath,
+  getTestRunStderrPath,
+  getTestRunStdoutPath,
+  getTestRunsPath,
+  getTestRunsRecordsPath,
+  getTestRunsResultsPath,
+  getTestRunsStderrPath,
+  getTestRunsStdoutPath,
   getTypeDirPath,
   resolveGlobalPmRoot,
   resolvePmRoot,
@@ -81,5 +91,29 @@ describe("core/store/paths", () => {
     expect(getItemFormatFromPath(path.join(pmRoot, "tasks", `${id}.md`))).toBe("json_markdown");
     expect(getItemFormatFromPath(path.join(pmRoot, "tasks", `${id}.toon`))).toBe("toon");
     expect(getItemFormatFromPath(path.join(pmRoot, "tasks", `${id}.txt`))).toBeNull();
+  });
+
+  it("derives deterministic fallback folders for unknown item types", () => {
+    const pmRoot = "/tmp/project/.agents/pm";
+
+    expect(getTypeDirPath(pmRoot, "Custom Type")).toBe(path.join(pmRoot, "custom-types"));
+    expect(getTypeDirPath(pmRoot, "Metrics")).toBe(path.join(pmRoot, "metrics"));
+    expect(getTypeDirPath(pmRoot, "!!!")).toBe(path.join(pmRoot, "items"));
+  });
+
+  it("builds deterministic runtime and background test-run paths", () => {
+    const pmRoot = "/tmp/project/.agents/pm";
+    const runId = "run-1234";
+
+    expect(getRuntimePath(pmRoot)).toBe(path.join(pmRoot, "runtime"));
+    expect(getTestRunsPath(pmRoot)).toBe(path.join(pmRoot, "runtime", "test-runs"));
+    expect(getTestRunsRecordsPath(pmRoot)).toBe(path.join(pmRoot, "runtime", "test-runs", "runs"));
+    expect(getTestRunRecordPath(pmRoot, runId)).toBe(path.join(pmRoot, "runtime", "test-runs", "runs", `${runId}.json`));
+    expect(getTestRunsStdoutPath(pmRoot)).toBe(path.join(pmRoot, "runtime", "test-runs", "stdout"));
+    expect(getTestRunsStderrPath(pmRoot)).toBe(path.join(pmRoot, "runtime", "test-runs", "stderr"));
+    expect(getTestRunStdoutPath(pmRoot, runId)).toBe(path.join(pmRoot, "runtime", "test-runs", "stdout", `${runId}.log`));
+    expect(getTestRunStderrPath(pmRoot, runId)).toBe(path.join(pmRoot, "runtime", "test-runs", "stderr", `${runId}.log`));
+    expect(getTestRunsResultsPath(pmRoot)).toBe(path.join(pmRoot, "runtime", "test-runs", "results"));
+    expect(getTestRunResultPath(pmRoot, runId)).toBe(path.join(pmRoot, "runtime", "test-runs", "results", `${runId}.json`));
   });
 });

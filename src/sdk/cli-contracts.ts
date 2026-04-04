@@ -83,6 +83,7 @@ export const PM_CORE_COMMAND_NAMES = [
   "deps",
   "test",
   "test-all",
+  "test-runs",
   "stats",
   "health",
   "validate",
@@ -134,6 +135,11 @@ export const PM_TOOL_ACTIONS = [
   "deps",
   "test",
   "test-all",
+  "test-runs-list",
+  "test-runs-status",
+  "test-runs-logs",
+  "test-runs-stop",
+  "test-runs-resume",
   "stats",
   "health",
   "validate",
@@ -337,11 +343,16 @@ export const TEST_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--add" },
   { flag: "--remove" },
   { flag: "--run" },
+  { flag: "--background" },
   { flag: "--timeout" },
   { flag: "--progress" },
   { flag: "--env-set" },
   { flag: "--env-clear" },
   { flag: "--shared-host-safe" },
+  { flag: "--pm-context" },
+  { flag: "--fail-on-context-mismatch" },
+  { flag: "--fail-on-skipped" },
+  { flag: "--require-assertions-for-pm" },
   { flag: "--author" },
   { flag: "--message" },
   { flag: "--force" },
@@ -349,11 +360,25 @@ export const TEST_FLAG_CONTRACTS: CliFlagContract[] = [
 
 export const TEST_ALL_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--status" },
+  { flag: "--background" },
   { flag: "--timeout" },
   { flag: "--progress" },
   { flag: "--env-set" },
   { flag: "--env-clear" },
   { flag: "--shared-host-safe" },
+  { flag: "--pm-context" },
+  { flag: "--fail-on-context-mismatch" },
+  { flag: "--fail-on-skipped" },
+  { flag: "--require-assertions-for-pm" },
+];
+
+export const TEST_RUNS_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--status" },
+  { flag: "--limit" },
+  { flag: "--stream" },
+  { flag: "--tail" },
+  { flag: "--force" },
+  { flag: "--author" },
 ];
 
 export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -832,6 +857,10 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   limit: { anyOf: [{ type: "string" }, { type: "number" }] },
   offset: { anyOf: [{ type: "string" }, { type: "number" }] },
   progress: { type: "boolean" },
+  background: { type: "boolean" },
+  runId: { type: "string" },
+  stream: { type: "string", enum: ["stdout", "stderr", "both"] },
+  tail: { anyOf: [{ type: "string" }, { type: "number" }] },
   envSet: { type: "array", items: { type: "string" } },
   envClear: { type: "array", items: { type: "string" } },
   sharedHostSafe: { type: "boolean" },
@@ -988,6 +1017,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
       "add",
       "remove",
       "run",
+      "background",
       "timeout",
       "progress",
       "envSet",
@@ -1003,6 +1033,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   "test-all": {
     optional: [
       "status",
+      "background",
       "timeout",
       "progress",
       "envSet",
@@ -1013,6 +1044,24 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
       "failOnSkipped",
       "requireAssertionsForPm",
     ],
+  },
+  "test-runs-list": {
+    optional: ["status", "limit"],
+  },
+  "test-runs-status": {
+    required: ["runId"],
+  },
+  "test-runs-logs": {
+    required: ["runId"],
+    optional: ["stream", "tail"],
+  },
+  "test-runs-stop": {
+    required: ["runId"],
+    optional: ["force"],
+  },
+  "test-runs-resume": {
+    required: ["runId"],
+    optional: ["author"],
   },
   stats: {},
   health: {},
@@ -1094,6 +1143,10 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     description: "Item identifier for read or mutation actions.",
     examples: ["pm-a1b2"],
   },
+  runId: {
+    description: "Background test run identifier.",
+    examples: ["tr-kq9x3f-93acde"],
+  },
   title: {
     description: "Item title text.",
   },
@@ -1148,6 +1201,9 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   progress: {
     description: "Emit progress diagnostics to stderr for long-running operations.",
+  },
+  background: {
+    description: "Run linked tests in managed background mode.",
   },
   envSet: {
     description: "Repeatable runtime environment KEY=VALUE overrides for linked-test execution.",
@@ -1212,6 +1268,14 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   appendStable: {
     description: "When true for files action, preserve existing linked-file order and append new links without full-array resorting.",
+  },
+  stream: {
+    description: "Background run log stream selector.",
+    examples: ["stderr", "stdout", "both"],
+  },
+  tail: {
+    description: "Number of lines to tail for background run logs.",
+    examples: [100],
   },
   query: {
     description: "Search query text for search action.",

@@ -36,8 +36,15 @@ import {
   resolveCalendarOutputFormat,
   resolveContextOutputFormat,
   runStats,
+  runStartBackgroundRun,
   runTest,
   runTestAll,
+  runTestRunsList,
+  runTestRunsLogs,
+  runTestRunsResume,
+  runTestRunsStatus,
+  runTestRunsStop,
+  runTestRunsWorker,
   runTemplatesList,
   runTemplatesSave,
   runTemplatesShow,
@@ -135,6 +142,71 @@ function collect(value: string, previous: string[] | undefined): string[] {
   const next = previous ?? [];
   next.push(value);
   return next;
+}
+
+function pushOptionalValueFlag(args: string[], flag: string, value: unknown): void {
+  if (typeof value !== "string") {
+    return;
+  }
+  const trimmed = value.trim();
+  if (trimmed.length === 0) {
+    return;
+  }
+  args.push(flag, trimmed);
+}
+
+function pushOptionalBooleanFlag(args: string[], flag: string, value: unknown): void {
+  if (value === true) {
+    args.push(flag);
+  }
+}
+
+function pushRepeatableValueFlag(args: string[], flag: string, values: unknown): void {
+  if (!Array.isArray(values)) {
+    return;
+  }
+  for (const value of values) {
+    if (typeof value !== "string") {
+      continue;
+    }
+    const trimmed = value.trim();
+    if (trimmed.length === 0) {
+      continue;
+    }
+    args.push(flag, trimmed);
+  }
+}
+
+function buildBackgroundTestCommandArgs(id: string, options: Record<string, unknown>): string[] {
+  const args: string[] = ["test", id, "--run", "--json", "--progress"];
+  pushRepeatableValueFlag(args, "--add", options.add);
+  pushRepeatableValueFlag(args, "--remove", options.remove);
+  pushOptionalValueFlag(args, "--timeout", options.timeout);
+  pushRepeatableValueFlag(args, "--env-set", options.envSet);
+  pushRepeatableValueFlag(args, "--env-clear", options.envClear);
+  pushOptionalBooleanFlag(args, "--shared-host-safe", options.sharedHostSafe);
+  pushOptionalValueFlag(args, "--pm-context", options.pmContext);
+  pushOptionalBooleanFlag(args, "--fail-on-context-mismatch", options.failOnContextMismatch);
+  pushOptionalBooleanFlag(args, "--fail-on-skipped", options.failOnSkipped);
+  pushOptionalBooleanFlag(args, "--require-assertions-for-pm", options.requireAssertionsForPm);
+  pushOptionalValueFlag(args, "--author", options.author);
+  pushOptionalValueFlag(args, "--message", options.message);
+  pushOptionalBooleanFlag(args, "--force", options.force);
+  return args;
+}
+
+function buildBackgroundTestAllCommandArgs(options: Record<string, unknown>): string[] {
+  const args: string[] = ["test-all", "--json", "--progress"];
+  pushOptionalValueFlag(args, "--status", options.status);
+  pushOptionalValueFlag(args, "--timeout", options.timeout);
+  pushRepeatableValueFlag(args, "--env-set", options.envSet);
+  pushRepeatableValueFlag(args, "--env-clear", options.envClear);
+  pushOptionalBooleanFlag(args, "--shared-host-safe", options.sharedHostSafe);
+  pushOptionalValueFlag(args, "--pm-context", options.pmContext);
+  pushOptionalBooleanFlag(args, "--fail-on-context-mismatch", options.failOnContextMismatch);
+  pushOptionalBooleanFlag(args, "--fail-on-skipped", options.failOnSkipped);
+  pushOptionalBooleanFlag(args, "--require-assertions-for-pm", options.requireAssertionsForPm);
+  return args;
 }
 
 function getGlobalOptions(command: Command): GlobalOptions {
@@ -2004,13 +2076,13 @@ program
   .argument("<action>", "Config action: get|set")
   .argument(
     "<key>",
-    "Config key: definition-of-done|item-format|history-missing-stream-policy|sprint-release-format-policy|parent-reference-policy",
+    "Config key: definition-of-done|item-format|history-missing-stream-policy|sprint-release-format-policy|parent-reference-policy|test-result-tracking",
   )
   .option("--criterion <text>", "Definition-of-Done criterion (repeatable for set)", collect)
   .option("--format <value>", "Item format for item-format key: toon|json_markdown")
   .option(
     "--policy <value>",
-    "Policy key values: history-missing-stream-policy=auto_create|strict_error; sprint-release-format-policy=warn|strict_error; parent-reference-policy=warn|strict_error",
+    "Policy key values: history-missing-stream-policy=auto_create|strict_error; sprint-release-format-policy=warn|strict_error; parent-reference-policy=warn|strict_error; test-result-tracking=enabled|disabled",
   )
   .description("Read or update pm settings for the current workspace or global profile.")
   .action(async (scope: string, action: string, key: string, options: Record<string, unknown>, command) => {
@@ -3067,6 +3139,7 @@ program
     collect,
   )
   .option("--run", "Run linked test commands")
+  .option("--background", "Run linked tests in managed background mode")
   .option("--timeout <seconds>", "Default run timeout in seconds")
   .option("--progress", "Emit linked-test progress to stderr (always shown in TTY, opt-in for non-TTY)")
   .option("--env-set <value>", "Set environment variable(s) for linked-test runs (KEY=VALUE, repeatable)", collect)
@@ -3085,6 +3158,34 @@ program
     const startedAt = Date.now();
     const addValues = Array.isArray(options.add) ? (options.add as string[]) : [];
     const removeValues = Array.isArray(options.remove) ? (options.remove as string[]) : [];
+    const runInBackground = options.background === true;
+    if (runInBackground && options.run !== true) {
+      throw new PmCliError("--background requires --run", EXIT_CODE.USAGE);
+    }
+    if (runInBackground && (addValues.length > 0 || removeValues.length > 0)) {
+      throw new PmCliError("--background does not support --add/--remove; update linked tests first, then run in background", EXIT_CODE.USAGE);
+    }
+    if (runInBackground) {
+      const result = await runStartBackgroundRun(
+        {
+          kind: "test",
+          commandArgs: buildBackgroundTestCommandArgs(id, {
+            ...options,
+            add: addValues,
+            remove: removeValues,
+          }),
+          targetId: id,
+          author: typeof options.author === "string" ? options.author : undefined,
+          noExtensions: globalOptions.noExtensions === true,
+        },
+        globalOptions,
+      );
+      printResult(result, globalOptions);
+      if (globalOptions.profile) {
+        printError(`profile:command=test took_ms=${Date.now() - startedAt}`);
+      }
+      return;
+    }
     const result = await runTest(
       id,
       {
@@ -3122,6 +3223,7 @@ program
   .command("test-all")
   .description("Run linked tests across matching items.")
   .option("--status <value>", "Filter items by status before running tests")
+  .option("--background", "Run linked tests in managed background mode")
   .option("--timeout <seconds>", "Default run timeout in seconds")
   .option("--progress", "Emit linked-test progress to stderr (always shown in TTY, opt-in for non-TTY)")
   .option("--env-set <value>", "Set environment variable(s) for linked-test runs (KEY=VALUE, repeatable)", collect)
@@ -3134,6 +3236,23 @@ program
   .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
+    const runInBackground = options.background === true;
+    if (runInBackground) {
+      const result = await runStartBackgroundRun(
+        {
+          kind: "test-all",
+          commandArgs: buildBackgroundTestAllCommandArgs(options),
+          statusFilter: typeof options.status === "string" ? options.status : undefined,
+          noExtensions: globalOptions.noExtensions === true,
+        },
+        globalOptions,
+      );
+      printResult(result, globalOptions);
+      if (globalOptions.profile) {
+        printError(`profile:command=test-all took_ms=${Date.now() - startedAt}`);
+      }
+      return;
+    }
     const result = await runTestAll(
       {
         status: typeof options.status === "string" ? options.status : undefined,
@@ -3156,6 +3275,118 @@ program
     if (globalOptions.profile) {
       printError(`profile:command=test-all took_ms=${Date.now() - startedAt}`);
     }
+  });
+
+const testRunsCommand = program.command("test-runs").description("Manage background linked-test runs.");
+
+testRunsCommand
+  .command("list")
+  .option("--status <value>", "Filter by background run status")
+  .option("--limit <value>", "Limit number of runs returned")
+  .description("List background test runs.")
+  .action(async (options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const result = await runTestRunsList(
+      {
+        status: typeof options.status === "string" ? options.status : undefined,
+        limit: typeof options.limit === "string" ? options.limit : undefined,
+      },
+      globalOptions,
+    );
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=test-runs list took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+testRunsCommand
+  .command("status")
+  .argument("<runId>", "Background run id")
+  .description("Show status, health, and resource snapshot for a background run.")
+  .action(async (runId: string, _options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const result = await runTestRunsStatus(runId, globalOptions);
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=test-runs status took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+testRunsCommand
+  .command("logs")
+  .argument("<runId>", "Background run id")
+  .option("--stream <value>", "Log stream selector: stdout|stderr|both")
+  .option("--tail <value>", "Tail number of lines per selected stream")
+  .description("Show tailed logs for a background run.")
+  .action(async (runId: string, options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const result = await runTestRunsLogs(
+      runId,
+      {
+        stream: typeof options.stream === "string" ? options.stream : undefined,
+        tail: typeof options.tail === "string" ? options.tail : undefined,
+      },
+      globalOptions,
+    );
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=test-runs logs took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+testRunsCommand
+  .command("stop")
+  .argument("<runId>", "Background run id")
+  .option("--force", "Force-stop via SIGKILL")
+  .description("Stop a running background test run.")
+  .action(async (runId: string, options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const result = await runTestRunsStop(
+      runId,
+      {
+        force: options.force === true,
+      },
+      globalOptions,
+    );
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=test-runs stop took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+testRunsCommand
+  .command("resume")
+  .argument("<runId>", "Background run id")
+  .option("--author <value>", "Resume author (falls back to PM_AUTHOR/settings)")
+  .description("Resume a previously terminal background test run by starting a new attempt.")
+  .action(async (runId: string, options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const result = await runTestRunsResume(
+      runId,
+      {
+        author: typeof options.author === "string" ? options.author : undefined,
+        noExtensions: globalOptions.noExtensions === true,
+      },
+      globalOptions,
+    );
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=test-runs resume took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+program
+  .command("test-runs-worker", { hidden: true })
+  .argument("<runId>", "Background run id")
+  .description("Internal background worker command.")
+  .action(async (runId: string, _options: Record<string, unknown>, command: Command) => {
+    const globalOptions = getGlobalOptions(command);
+    await runTestRunsWorker(runId, globalOptions);
   });
 
 program

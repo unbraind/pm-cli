@@ -1,16 +1,16 @@
 id: pm-dzrj
 title: "T3: Harden linked-test subprocess anti-hang behavior"
-description: "Improve runLinkedTests child-process execution for terminal-neutral operation, including explicit stdin handling and clearer timeout/maxBuffer diagnostics."
+description: "Expand linked-test runtime hardening into managed background execution lifecycle support (registry, process control, and duplicate-run guarding) while preserving foreground behavior."
 type: Task
 status: closed
 priority: 1
 tags[5]: "area:terminal","area:tests",code,compatibility,pm-cli
 created_at: "2026-04-01T12:00:06.349Z"
-updated_at: "2026-04-04T17:41:22.219Z"
+updated_at: "2026-04-04T20:22:36.288Z"
 deadline: "2026-04-08T12:00:06.349Z"
 author: cursor-agent
 estimated_minutes: 130
-acceptance_criteria: "Linked test execution remains sandbox-safe, provides deterministic timeout/buffer diagnostics, and avoids avoidable stdin-related hangs."
+acceptance_criteria: "Linked-test execution remains sandbox-safe, provides deterministic timeout/buffer diagnostics, supports managed background run lifecycle controls, and avoids duplicate active runs for equivalent fingerprints."
 definition_of_ready: Feature pm-axlr accepted with subprocess scope defined.
 order: 2
 goal: Universal terminal reliability
@@ -19,7 +19,7 @@ value: Fewer ambiguous hangs in automation
 impact: More actionable failure diagnostics
 outcome: Reliable linked-test orchestration
 why_now: Child process shell and stdio semantics vary across terminal hosts and can be misread as hangs.
-parent: pm-axlr
+parent: pm-bi0z
 reviewer: maintainer-review
 risk: medium
 confidence: high
@@ -42,30 +42,38 @@ regression: true
 customer_impact: More reliable test-run behavior for users and agents.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-axlr,parent,"2026-04-01T12:00:06.349Z",cursor-agent,null
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-04-01T12:00:06.349Z",cursor-agent,Task corresponds to plan workstream C.
   "2026-04-01T12:05:24.487Z",cursor-agent,"Implemented linked-test subprocess hardening in src/cli/commands/test.ts: execution now closes child stdin immediately to force EOF in non-interactive runs, sets FORCE_COLOR=0 and windowsHide=true for stable cross-terminal behavior, and enriches failure diagnostics for timeout and maxBuffer cases. Evidence: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts passed (22/22)."
   "2026-04-01T18:53:11.431Z",cursor-agent,"Task reopened as continuation (no duplicate): implement spawn-based linked-test execution core, add periodic stderr heartbeat during long-running test commands, and ensure deterministic timeout failure with robust child-process termination."
   "2026-04-01T19:10:49.222Z",cursor-agent,"Implemented second-pass linked-test runtime hardening in src/cli/commands/test.ts: moved from buffered exec to shell-compatible spawn orchestration, added interactive stderr heartbeat progress, and enforced timeout maxBuffer deterministic termination with force-kill fallback for stubborn process trees. Verification: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts (26/26)."
   "2026-04-03T18:06:10.269Z",codex-agent,"Reproduced audit gap on current build: pm test-all --status closed --json produced no incremental progress output in non-interactive run for ~38s and required manual termination. Reopening this item to implement explicit opt-in progress output for non-interactive contexts while preserving default behavior."
   "2026-04-03T18:13:34.619Z",codex-agent,"Implemented opt-in non-interactive progress controls for pm test/pm test-all and phase progress output for pm reindex while preserving default behavior. Added --progress flags in CLI wiring/completion and covered with new unit tests validating forced progress emission when stderr is non-TTY. Evidence: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/reindex-command.spec.ts passed (38/38)."
+  "2026-04-04T19:06:13.322Z",codex-agent,"Reopened for net-new scope: background managed lifecycle (list/status/logs/stop/resume) and fingerprint dedupe. Existing closed work covered subprocess hardening/progress only."
+  "2026-04-04T20:22:23.878Z",codex-agent,"Background managed runtime implemented with deterministic fingerprint dedupe, worker lifecycle controls, and test-runs command handlers. Evidence: pm test pm-dzrj --run passed all linked tests."
 notes[1]{created_at,author,text}:
   "2026-04-01T12:00:06.349Z",cursor-agent,Preserve command contract while improving stdin/timeout/buffer failure visibility.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:36:29.413Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[8]{path,scope,note}:
+files[11]{path,scope,note}:
   src/cli/commands/completion.ts,project,shell completion flags for progress options
   src/cli/commands/reindex.ts,project,phase progress emission for reindex
   src/cli/commands/test-all.ts,project,propagate progress option to linked test runner
+  src/cli/commands/test-runs.ts,project,test-runs lifecycle command handlers
   src/cli/commands/test.ts,project,runLinkedTests implementation
   src/cli/main.ts,project,progress flags for test/test-all/reindex
+  src/core/store/paths.ts,project,runtime test-run storage path helpers
+  src/core/test/background-runs.ts,project,background registry worker lifecycle
   tests/unit/reindex-command.spec.ts,project,reindex forced non-tty progress test
   tests/unit/test-all-command.spec.ts,project,test-all forced non-tty progress test
   tests/unit/test-command.spec.ts,project,forced non-tty progress test
 tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,linked-test execution regressions
   node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/reindex-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,progress ux targeted regression
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mnkrm09h-zj82vz,test,passed,"2026-04-04T20:07:12.664Z","2026-04-04T20:08:23.765Z","2026-04-04T20:08:23.765Z",null,null,2,0,0,null,null,null
+  test-all-local-mnkrqfdt-hjxetp,test-all,passed,"2026-04-04T20:11:49.984Z","2026-04-04T20:16:28.078Z","2026-04-04T20:16:28.078Z",null,null,2,0,0,1,2,null
 docs[1]{path,scope,note}:
   PRD.md,project,test command safety contract
-close_reason: Added opt-in non-interactive progress for test/test-all and phase progress for reindex; linked regressions pass.
+close_reason: background runtime lifecycle and dedupe shipped; linked tests passed
 body: Implement subprocess execution hardening in test command.

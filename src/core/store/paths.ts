@@ -70,3 +70,43 @@ export function getHistoryPath(pmRoot: string, id: string): string {
 export function getLockPath(pmRoot: string, id: string): string {
   return path.join(pmRoot, "locks", `${id}.lock`);
 }
+
+export function getRuntimePath(pmRoot: string): string {
+  return path.join(pmRoot, "runtime");
+}
+
+export function getTestRunsPath(pmRoot: string): string {
+  return path.join(getRuntimePath(pmRoot), "test-runs");
+}
+
+export function getTestRunsRecordsPath(pmRoot: string): string {
+  return path.join(getTestRunsPath(pmRoot), "runs");
+}
+
+export function getTestRunRecordPath(pmRoot: string, runId: string): string {
+  return path.join(getTestRunsRecordsPath(pmRoot), `${runId}.json`);
+}
+
+export function getTestRunsStdoutPath(pmRoot: string): string {
+  return path.join(getTestRunsPath(pmRoot), "stdout");
+}
+
+export function getTestRunsStderrPath(pmRoot: string): string {
+  return path.join(getTestRunsPath(pmRoot), "stderr");
+}
+
+export function getTestRunStdoutPath(pmRoot: string, runId: string): string {
+  return path.join(getTestRunsStdoutPath(pmRoot), `${runId}.log`);
+}
+
+export function getTestRunStderrPath(pmRoot: string, runId: string): string {
+  return path.join(getTestRunsStderrPath(pmRoot), `${runId}.log`);
+}
+
+export function getTestRunsResultsPath(pmRoot: string): string {
+  return path.join(getTestRunsPath(pmRoot), "results");
+}
+
+export function getTestRunResultPath(pmRoot: string, runId: string): string {
+  return path.join(getTestRunsResultsPath(pmRoot), `${runId}.json`);
+}

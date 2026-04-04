@@ -159,6 +159,23 @@ export interface ItemTypeDefinition {
   command_option_policies?: ItemTypeCommandOptionPolicy[];
 }
 
+export interface ItemTestRunSummary {
+  run_id: string;
+  kind: "test" | "test-all";
+  status: "passed" | "failed" | "stopped" | "canceled";
+  started_at: string;
+  finished_at: string;
+  recorded_at: string;
+  attempt?: number;
+  resumed_from?: string;
+  passed: number;
+  failed: number;
+  skipped: number;
+  items?: number;
+  linked_tests?: number;
+  fail_on_skipped_triggered?: boolean;
+}
+
 export interface ItemFrontMatter {
   id: string;
   title: string;
@@ -217,6 +234,7 @@ export interface ItemFrontMatter {
   learnings?: LogNote[];
   files?: LinkedFile[];
   tests?: LinkedTest[];
+  test_runs?: ItemTestRunSummary[];
   docs?: LinkedDoc[];
   close_reason?: string;
 }
@@ -263,6 +281,9 @@ export interface PmSettings {
   };
   workflow: {
     definition_of_done: string[];
+  };
+  testing: {
+    record_results_to_items: boolean;
   };
   item_types: {
     definitions: ItemTypeDefinition[];

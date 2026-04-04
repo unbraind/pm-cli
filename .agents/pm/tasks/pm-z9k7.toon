@@ -1,0 +1,48 @@
+id: pm-z9k7
+title: Add test-result tracking settings and config policy
+description: Extend settings schema/defaults and pm config key surface for test-result tracking enablement.
+type: Task
+status: closed
+priority: 1
+tags[4]: item-tracking,linked-tests,pm-cli,settings
+created_at: "2026-04-04T19:06:44.096Z"
+updated_at: "2026-04-04T20:22:39.418Z"
+deadline: "2026-04-13T19:06:44.096Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: settings schema/defaults include test-result tracking key; pm config get/set supports deterministic enabled/disabled policy values for project/global scopes.
+parent: pm-16f4
+reviewer: maintainer-review
+risk: medium
+confidence: medium
+sprint: background-service-rollout
+release: vnext
+reporter: codex-agent
+severity: medium
+environment: linux
+repro_steps: Run pm config project set/get for test-result tracking and validate persisted settings.json values.
+expected_result: Tracking policy is configurable via settings and config command.
+affected_version: 2026.3.12
+fixed_version: target-vnext
+component: settings-config
+regression: true
+customer_impact: Lets teams opt into item-level test-result history safely.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-16f4,parent,"2026-04-04T19:06:44.096Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-04T19:06:44.096Z",codex-agent,"Duplicate-check evidence: no active open task exposes a dedicated settings/config policy path for item-level test-result tracking."
+  "2026-04-04T20:22:21.000Z",codex-agent,Added testing.record_results_to_items defaults/schema plus config key policy handling; settings/constants verification suites passed (14 tests).
+notes[1]{created_at,author,text}:
+  "2026-04-04T19:06:44.096Z",codex-agent,Scope is settings schema/types/constants plus config key parsing/wiring/help.
+files[4]{path,scope,note}:
+  .agents/pm/settings.json,project,project tracking policy activated
+  src/cli/commands/config.ts,project,test-result-tracking config get/set policy
+  src/core/shared/constants.ts,project,testing defaults and front-matter ordering
+  src/core/store/settings.ts,project,settings schema merge and serialization for testing block
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/shared-constants-errors.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,settings and constants tracking policy coverage
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-all-local-mnkrqfdt-hjxetp,test-all,passed,"2026-04-04T20:11:49.984Z","2026-04-04T20:16:28.102Z","2026-04-04T20:16:28.102Z",null,null,0,0,0,1,0,null
+  test-local-mnkrz8x3-b1sw6r,test,passed,"2026-04-04T20:18:35.501Z","2026-04-04T20:18:41.511Z","2026-04-04T20:18:41.511Z",null,null,1,0,0,null,null,null
+close_reason: tracking policy settings and config support completed; verification passed
+body: Implements testing setting fields and config get/set handling for test-result persistence toggles.

@@ -123,10 +123,13 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen("--format --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    test)",
-    `      COMPREPLY=(${compgen("--add --remove --run --timeout --progress --env-set --env-clear --shared-host-safe --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --remove --run --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --fail-on-context-mismatch --fail-on-skipped --require-assertions-for-pm --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    test-all)",
-    `      COMPREPLY=(${compgen("--status --timeout --progress --env-set --env-clear --shared-host-safe --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--status --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --fail-on-context-mismatch --fail-on-skipped --require-assertions-for-pm --json --quiet --path --no-extensions --profile --help")})`,
+    "      ;;",
+    "    test-runs)",
+    `      COMPREPLY=(${compgen("list status logs stop resume --status --limit --stream --tail --force --author --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    validate)",
     `      COMPREPLY=(${compgen("--check-metadata --check-resolution --check-files --scan-mode --include-pm-internals --check-history-drift --check-command-references --json --quiet --path --no-extensions --profile --help")})`,
@@ -208,6 +211,7 @@ _pm_commands() {
     'deps:Show dependency relationships for an item'
     'test:Manage linked tests and optionally run them'
     'test-all:Run linked tests across matching items'
+    'test-runs:Manage background linked-test runs'
     'stats:Show project tracker statistics'
     'health:Show project tracker health checks'
     'validate:Run standalone validation checks'
@@ -404,14 +408,52 @@ _pm() {
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
-        test-all)
+        test)
           _arguments \\
-            '--status[Filter by status]:(open in_progress)' \\
+            '--add[Add linked test entry]:entry' \\
+            '--remove[Remove linked test entry by command/path]:entry' \\
+            '--run[Run linked tests]' \\
+            '--background[Run linked tests in managed background mode]' \\
             '--timeout[Default timeout seconds]:seconds' \\
             '--progress[Emit linked-test progress to stderr]' \\
             '--env-set[Set linked-test runtime environment values]:entry' \\
             '--env-clear[Clear linked-test runtime environment values]:name' \\
             '--shared-host-safe[Apply shared-host-safe runtime defaults]' \\
+            '--pm-context[PM linked-test context mode]:(schema tracker)' \\
+            '--fail-on-context-mismatch[Fail when context item counts mismatch]' \\
+            '--fail-on-skipped[Treat skipped linked tests as dependency failures]' \\
+            '--require-assertions-for-pm[Require assertions for linked PM command tests]' \\
+            '--author[Mutation author]:author' \\
+            '--message[History message]:message' \\
+            '--force[Force override]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        test-all)
+          _arguments \\
+            '--status[Filter by status]:(open in_progress)' \\
+            '--background[Run linked tests in managed background mode]' \\
+            '--timeout[Default timeout seconds]:seconds' \\
+            '--progress[Emit linked-test progress to stderr]' \\
+            '--env-set[Set linked-test runtime environment values]:entry' \\
+            '--env-clear[Clear linked-test runtime environment values]:name' \\
+            '--shared-host-safe[Apply shared-host-safe runtime defaults]' \\
+            '--pm-context[PM linked-test context mode]:(schema tracker)' \\
+            '--fail-on-context-mismatch[Fail when context item counts mismatch]' \\
+            '--fail-on-skipped[Treat skipped linked tests as dependency failures]' \\
+            '--require-assertions-for-pm[Require assertions for linked PM command tests]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        test-runs)
+          _arguments \\
+            '1:subcommand:(list status logs stop resume)' \\
+            '--status[Filter by background run status]:status:(queued running passed failed stopped canceled)' \\
+            '--limit[Limit returned runs]:number' \\
+            '--stream[Background log stream]:stream:(stdout stderr both)' \\
+            '--tail[Tail number of lines]:number' \\
+            '--force[Force stop with SIGKILL]' \\
+            '--author[Resume author]:author' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -533,6 +575,7 @@ complete -c pm -n __pm_no_subcommand -a docs          -d 'Manage linked docs'
 complete -c pm -n __pm_no_subcommand -a deps          -d 'Show dependency relationships for an item'
 complete -c pm -n __pm_no_subcommand -a test          -d 'Manage linked tests and optionally run them'
 complete -c pm -n __pm_no_subcommand -a test-all      -d 'Run linked tests across matching items'
+complete -c pm -n __pm_no_subcommand -a test-runs     -d 'Manage background linked-test runs'
 complete -c pm -n __pm_no_subcommand -a stats         -d 'Show project tracker statistics'
 complete -c pm -n __pm_no_subcommand -a health        -d 'Show project tracker health checks'
 complete -c pm -n __pm_no_subcommand -a validate      -d 'Run standalone validation checks'
@@ -657,13 +700,45 @@ complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l mess
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l force -d 'Force override'
 complete -c pm -n '__fish_seen_subcommand_from comments' -l allow-audit-comment -d 'Allow non-owner append-only comment audits without requiring --force'
 
+# test flags
+complete -c pm -n '__fish_seen_subcommand_from test' -l add -d 'Add linked test entry' -r
+complete -c pm -n '__fish_seen_subcommand_from test' -l remove -d 'Remove linked test entry' -r
+complete -c pm -n '__fish_seen_subcommand_from test' -l run -d 'Run linked tests'
+complete -c pm -n '__fish_seen_subcommand_from test' -l background -d 'Run linked tests in managed background mode'
+complete -c pm -n '__fish_seen_subcommand_from test' -l timeout -d 'Default timeout seconds' -r
+complete -c pm -n '__fish_seen_subcommand_from test' -l progress -d 'Emit linked-test progress to stderr'
+complete -c pm -n '__fish_seen_subcommand_from test' -l env-set -d 'Set linked-test runtime environment values' -r
+complete -c pm -n '__fish_seen_subcommand_from test' -l env-clear -d 'Clear linked-test runtime environment values' -r
+complete -c pm -n '__fish_seen_subcommand_from test' -l shared-host-safe -d 'Apply shared-host-safe runtime defaults'
+complete -c pm -n '__fish_seen_subcommand_from test' -l pm-context -d 'PM linked-test context mode' -r -a 'schema tracker'
+complete -c pm -n '__fish_seen_subcommand_from test' -l fail-on-context-mismatch -d 'Fail when context item counts mismatch'
+complete -c pm -n '__fish_seen_subcommand_from test' -l fail-on-skipped -d 'Treat skipped linked tests as dependency failures'
+complete -c pm -n '__fish_seen_subcommand_from test' -l require-assertions-for-pm -d 'Require assertions for linked PM command tests'
+complete -c pm -n '__fish_seen_subcommand_from test' -l author -d 'Mutation author' -r
+complete -c pm -n '__fish_seen_subcommand_from test' -l message -d 'History message' -r
+complete -c pm -n '__fish_seen_subcommand_from test' -l force -d 'Force override'
+
 # test-all flags
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l status  -d 'Filter by status' -r -a 'open in_progress'
+complete -c pm -n '__fish_seen_subcommand_from test-all' -l background -d 'Run linked tests in managed background mode'
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l timeout -d 'Default timeout seconds' -r
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l progress -d 'Emit linked-test progress to stderr'
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l env-set -d 'Set linked-test runtime environment values' -r
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l env-clear -d 'Clear linked-test runtime environment values' -r
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l shared-host-safe -d 'Apply shared-host-safe runtime defaults'
+complete -c pm -n '__fish_seen_subcommand_from test-all' -l pm-context -d 'PM linked-test context mode' -r -a 'schema tracker'
+complete -c pm -n '__fish_seen_subcommand_from test-all' -l fail-on-context-mismatch -d 'Fail when context item counts mismatch'
+complete -c pm -n '__fish_seen_subcommand_from test-all' -l fail-on-skipped -d 'Treat skipped linked tests as dependency failures'
+complete -c pm -n '__fish_seen_subcommand_from test-all' -l require-assertions-for-pm -d 'Require assertions for linked PM command tests'
+
+# test-runs flags
+complete -c pm -n '__fish_seen_subcommand_from test-runs' -a 'list status logs stop resume' -d 'test-runs subcommand'
+complete -c pm -n '__fish_seen_subcommand_from test-runs' -l status -d 'Filter background runs by status' -r -a 'queued running passed failed stopped canceled'
+complete -c pm -n '__fish_seen_subcommand_from test-runs' -l limit -d 'Limit returned runs' -r
+complete -c pm -n '__fish_seen_subcommand_from test-runs' -l stream -d 'Background log stream selector' -r -a 'stdout stderr both'
+complete -c pm -n '__fish_seen_subcommand_from test-runs' -l tail -d 'Tail number of lines from logs' -r
+complete -c pm -n '__fish_seen_subcommand_from test-runs' -l force -d 'Force-stop run with SIGKILL'
+complete -c pm -n '__fish_seen_subcommand_from test-runs' -l author -d 'Resume author' -r
 
 # close flags
 complete -c pm -n '__fish_seen_subcommand_from close' -l author -d 'Mutation author' -r

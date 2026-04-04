@@ -1,0 +1,37 @@
+id: pm-16f4
+title: Configurable test-result tracking on PM items
+description: Introduce settings-controlled persistence of linked-test run summaries onto item records for pm test and pm test-all.
+type: Feature
+status: closed
+priority: 1
+tags[4]: item-tracking,linked-tests,pm-cli,settings
+created_at: "2026-04-04T19:05:33.871Z"
+updated_at: "2026-04-04T20:22:55.377Z"
+deadline: "2026-04-14T19:05:33.871Z"
+author: codex-agent
+estimated_minutes: 300
+acceptance_criteria: "A project/global setting controls whether test results are written to items; when enabled, pm test and pm test-all record bounded deterministic summaries without breaking foreground behavior."
+parent: pm-lm0j
+reviewer: maintainer-review
+risk: medium
+confidence: medium
+sprint: background-service-rollout
+release: vnext
+reporter: codex-agent
+severity: medium
+environment: linux
+repro_steps: Run pm test --run repeatedly and observe item record updates only when tracking setting is enabled.
+expected_result: Settings-gated test run summaries are persisted deterministically.
+affected_version: 2026.3.12
+fixed_version: target-vnext
+component: settings-item-store
+regression: true
+customer_impact: Adds auditability of test outcomes directly on work items.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-lm0j,parent,"2026-04-04T19:05:33.871Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-04T19:05:33.871Z",codex-agent,"Duplicate-check evidence: searched record test results to pm items and run_results scopes; no active item covers settings-gated persistence of linked-test run summaries on item front matter."
+notes[1]{created_at,author,text}:
+  "2026-04-04T19:05:33.871Z",codex-agent,"Owns setting schema,config key wiring,and item summary retention model."
+close_reason: item tracking feature delivered with settings gate and bounded summaries
+body: "Feature scope: settings schema/config command updates and deterministic item-level run summary persistence with bounded retention."

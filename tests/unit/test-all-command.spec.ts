@@ -93,6 +93,33 @@ async function overwriteTaskTests(
   await writeFile(taskPath, serializeItemDocument(parsed, { format }), "utf8");
 }
 
+async function setTestResultTracking(pmPath: string, enabled: boolean): Promise<void> {
+  const settingsPath = path.join(pmPath, "settings.json");
+  const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+    testing?: { record_results_to_items?: boolean };
+  };
+  settings.testing = {
+    ...(settings.testing ?? {}),
+    record_results_to_items: enabled,
+  };
+  await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+}
+
+async function loadTaskFrontMatter(context: TempPmContext, id: string): Promise<Record<string, unknown>> {
+  const toonPath = path.join(context.pmPath, "tasks", `${id}.toon`);
+  const markdownPath = path.join(context.pmPath, "tasks", `${id}.md`);
+  let taskPath = toonPath;
+  let source: string;
+  try {
+    source = await readFile(taskPath, "utf8");
+  } catch {
+    taskPath = markdownPath;
+    source = await readFile(taskPath, "utf8");
+  }
+  const format = taskPath.endsWith(".toon") ? "toon" : "json_markdown";
+  return parseItemDocument(source, { format }).front_matter as unknown as Record<string, unknown>;
+}
+
 async function writeSchemaTypeExtension(pmRoot: string, extensionDirName: string, typeName: string): Promise<void> {
   const extensionDir = path.join(pmRoot, "extensions", extensionDirName);
   await mkdir(extensionDir, { recursive: true });
@@ -748,6 +775,137 @@ describe("runTestAll", () => {
           value: originalIsTTY,
           configurable: true,
         });
+      }
+    });
+  });
+
+  it("records test-all item summaries when tracking is enabled", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTaskWithTests(context, {
+        title: "Track Test-All Summary Source",
+        status: "open",
+        testEntries: ["command=node --version,scope=project"],
+      });
+      await setTestResultTracking(context.pmPath, true);
+
+      const previousRunId = process.env.PM_BACKGROUND_TEST_RUN_ID;
+      const previousAttempt = process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT;
+      const previousResumedFrom = process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM;
+      process.env.PM_BACKGROUND_TEST_RUN_ID = "tr-test-all-success";
+      process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT = "3";
+      process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM = "tr-prior";
+      try {
+        const result = await runTestAll({ status: "open", timeout: "20" }, { path: context.pmPath });
+        expect(result.failed).toBe(0);
+        expect(result.warnings).toBeUndefined();
+        const frontMatter = await loadTaskFrontMatter(context, id);
+        const testRuns = (frontMatter.test_runs ?? []) as Array<Record<string, unknown>>;
+        expect(testRuns).toHaveLength(1);
+        expect(testRuns[0]).toMatchObject({
+          run_id: "tr-test-all-success",
+          kind: "test-all",
+          status: "passed",
+          attempt: 3,
+          resumed_from: "tr-prior",
+        });
+      } finally {
+        if (previousRunId === undefined) {
+          delete process.env.PM_BACKGROUND_TEST_RUN_ID;
+        } else {
+          process.env.PM_BACKGROUND_TEST_RUN_ID = previousRunId;
+        }
+        if (previousAttempt === undefined) {
+          delete process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT;
+        } else {
+          process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT = previousAttempt;
+        }
+        if (previousResumedFrom === undefined) {
+          delete process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM;
+        } else {
+          process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM = previousResumedFrom;
+        }
+      }
+    });
+  });
+
+  it("reports tracking warnings when test-all item summary persistence fails", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTaskWithTests(context, {
+        title: "Track Test-All Warning Source",
+        status: "open",
+        testEntries: ["command=node --version,scope=project"],
+      });
+      await setTestResultTracking(context.pmPath, true);
+      const reassigned = context.runCli(
+        ["update", "--json", id, "--assignee", "other-owner", "--message", "Reassign for test-all tracking warning"],
+        { expectJson: true },
+      );
+      expect(reassigned.code).toBe(0);
+
+      const result = await runTestAll({ status: "open", timeout: "20" }, { path: context.pmPath });
+      expect(result.failed).toBe(0);
+      expect(result.warnings?.[0] ?? "").toContain("test_result_tracking_failed");
+    });
+  });
+
+  it("tracks skipped-only runs as failed summaries when fail-on-skipped is enabled", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTaskWithTests(context, {
+        title: "Track Test-All Skip Failure Source",
+        status: "open",
+        testEntries: ["command=node -e \"process.stdout.write('skip')\",scope=project"],
+      });
+      await overwriteTaskTests(context, id, [{ path: "tests/skip-only.spec.ts", scope: "project" }]);
+      await setTestResultTracking(context.pmPath, true);
+
+      const previousAuthor = process.env.PM_AUTHOR;
+      process.env.PM_AUTHOR = "   ";
+      try {
+        const result = await runTestAll({ status: "open", failOnSkipped: true }, { path: context.pmPath });
+        expect(result.fail_on_skipped_triggered).toBe(true);
+        expect(result.skipped).toBeGreaterThanOrEqual(1);
+        const frontMatter = await loadTaskFrontMatter(context, id);
+        const testRuns = (frontMatter.test_runs ?? []) as Array<Record<string, unknown>>;
+        expect(testRuns).toHaveLength(1);
+        expect(testRuns[0]).toMatchObject({
+          kind: "test-all",
+          status: "failed",
+          fail_on_skipped_triggered: true,
+        });
+      } finally {
+        if (previousAuthor === undefined) {
+          delete process.env.PM_AUTHOR;
+        } else {
+          process.env.PM_AUTHOR = previousAuthor;
+        }
+      }
+    });
+  });
+
+  it("tracks summaries when PM_AUTHOR is unset and fallback author is used", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTaskWithTests(context, {
+        title: "Track Test-All Fallback Author",
+        status: "open",
+        testEntries: ["command=node --version,scope=project"],
+      });
+      await setTestResultTracking(context.pmPath, true);
+
+      const previousAuthor = process.env.PM_AUTHOR;
+      delete process.env.PM_AUTHOR;
+      try {
+        const result = await runTestAll({ status: "open", timeout: "20" }, { path: context.pmPath });
+        expect(result.failed).toBe(0);
+        const frontMatter = await loadTaskFrontMatter(context, id);
+        const testRuns = (frontMatter.test_runs ?? []) as Array<Record<string, unknown>>;
+        expect(testRuns).toHaveLength(1);
+        expect(testRuns[0]).toMatchObject({ kind: "test-all", status: "passed" });
+      } finally {
+        if (previousAuthor === undefined) {
+          delete process.env.PM_AUTHOR;
+        } else {
+          process.env.PM_AUTHOR = previousAuthor;
+        }
       }
     });
   });

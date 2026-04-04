@@ -9,9 +9,11 @@ import { createStdinTokenResolver, parseCsvKv, parseOptionalNumber } from "../..
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { nowIso } from "../../core/shared/time.js";
 import { locateItem, mutateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getSettingsPath, ITEM_FILE_EXTENSIONS, resolveGlobalPmRoot, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
+import { appendTrackedTestRunSummary } from "../../core/test/item-test-run-tracking.js";
 import { runInit } from "./init.js";
 import { SCOPE_VALUES } from "../../types/index.js";
 import type { LinkedTest, LinkScope } from "../../types/index.js";
@@ -183,6 +185,7 @@ export interface TestResult {
   run_results: TestRunResult[];
   failure_categories: Record<LinkedTestFailureCategory, number>;
   fail_on_skipped_triggered?: boolean;
+  warnings?: string[];
   changed: boolean;
   count: number;
 }
@@ -191,6 +194,32 @@ function resolveAuthor(candidate: string | undefined, fallback: string): string 
   const resolved = candidate ?? process.env.PM_AUTHOR ?? fallback;
   const trimmed = resolved.trim();
   return trimmed || "unknown";
+}
+
+function resolveTrackedRunId(kind: "test" | "test-all"): string {
+  const fromEnv = process.env.PM_BACKGROUND_TEST_RUN_ID?.trim();
+  if (fromEnv && fromEnv.length > 0) {
+    return fromEnv;
+  }
+  return `${kind}-local-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function summarizeRunResultStatuses(results: TestRunResult[]): { passed: number; failed: number; skipped: number } {
+  let passed = 0;
+  let failed = 0;
+  let skipped = 0;
+  for (const entry of results) {
+    if (entry.status === "passed") {
+      passed += 1;
+      continue;
+    }
+    if (entry.status === "failed") {
+      failed += 1;
+      continue;
+    }
+    skipped += 1;
+  }
+  return { passed, failed, skipped };
 }
 
 function ensureScope(raw: string | undefined): LinkScope {
@@ -1869,6 +1898,7 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
     );
   }
 
+  const runStartedAt = options.run === true ? nowIso() : undefined;
   const runResults = options.run === true
     ? await runLinkedTests(tests, defaultTimeoutSeconds, {
         progress: options.progress,
@@ -1887,6 +1917,40 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
   const failureCategories = countFailureCategories(runResults);
   const failOnSkippedTriggered =
     options.run === true && options.failOnSkipped === true && runResults.some((entry) => entry.status === "skipped");
+  const warnings: string[] = [];
+
+  if (options.run === true && runStartedAt && settings.testing.record_results_to_items === true) {
+    const summary = summarizeRunResultStatuses(runResults);
+    const trackedRunId = resolveTrackedRunId("test");
+    const attemptRaw = process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT?.trim();
+    const parsedAttempt = attemptRaw ? Number.parseInt(attemptRaw, 10) : Number.NaN;
+    const resumedFrom = process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM?.trim();
+    try {
+      await appendTrackedTestRunSummary({
+        pmRoot,
+        settings,
+        itemId,
+        author: resolveAuthor(options.author, settings.author_default),
+        message: `Track test run summary (${trackedRunId})`,
+        entry: {
+          run_id: trackedRunId,
+          kind: "test",
+          status: summary.failed > 0 || failOnSkippedTriggered === true ? "failed" : "passed",
+          started_at: runStartedAt,
+          finished_at: nowIso(),
+          recorded_at: nowIso(),
+          attempt: Number.isFinite(parsedAttempt) && parsedAttempt >= 1 ? parsedAttempt : undefined,
+          resumed_from: resumedFrom && resumedFrom.length > 0 ? resumedFrom : undefined,
+          passed: summary.passed,
+          failed: summary.failed,
+          skipped: summary.skipped,
+          fail_on_skipped_triggered: failOnSkippedTriggered ? true : undefined,
+        },
+      });
+    } catch (error: unknown) {
+      warnings.push(`test_result_tracking_failed:${itemId}:${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
 
   return {
     id: itemId,
@@ -1894,6 +1958,7 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
     run_results: runResults,
     failure_categories: failureCategories,
     fail_on_skipped_triggered: failOnSkippedTriggered ? true : undefined,
+    warnings: warnings.length > 0 ? warnings : undefined,
     changed: shouldMutate,
     count: tests.length,
   };

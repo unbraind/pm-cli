@@ -32,6 +32,8 @@
 - Additive large-list controls via `--offset` pagination and opt-in JSON streaming (`--stream` with `--json`)
 - Standalone `pm validate` command for metadata, resolution, linked-file, and history-drift audits
 - Opt-in non-interactive progress output for long-running operations (`pm test`, `pm test-all`, `pm reindex` with `--progress`)
+- Managed background linked-test orchestration (`pm test --run --background`, `pm test-all --background`, and `pm test-runs list|status|logs|stop|resume`)
+- Settings-gated item-level test result tracking (`pm config ... test-result-tracking --policy enabled|disabled`)
 - Optional search and extension support for more advanced setups
 
 ## Unified Command Contracts
@@ -296,6 +298,23 @@ pm config project set parent-reference-policy --policy strict_error
 pm config project get parent-reference-policy --json
 ```
 
+## Test Result Tracking Policy
+
+`settings.testing.record_results_to_items` controls whether `pm test --run` / `pm test-all` append bounded `test_runs` summaries to item front matter:
+
+- `disabled` (default)
+  - test execution output is returned in command results only
+- `enabled`
+  - successful/failed runs append deterministic item-level `test_runs` summary entries (bounded history retention)
+
+Configure policy with:
+
+```bash
+pm config project set test-result-tracking --policy enabled
+pm config project set test-result-tracking --policy disabled
+pm config project get test-result-tracking --json
+```
+
 ## History Diff and Verify
 
 `pm history` now supports additive diagnostics:
@@ -392,6 +411,9 @@ For `pm create` log-seed flags (`--comment`, `--note`, `--learning`), only `auth
 - Linked test entries also support optional per-entry runtime directives and assertions: `env_set=KEY=VALUE;KEY2=VALUE2`, `env_clear=KEY1;KEY2`, `shared_host_safe=true|false`, `assert_stdout_contains=...`, `assert_stdout_regex=...`, `assert_stderr_contains=...`, `assert_stderr_regex=...`, `assert_stdout_min_lines=<int>`, `assert_json_field_equals=path=value`, `assert_json_field_gte=path=<number>`.
 - `pm test <ID> --run` / `pm test-all` execute in temporary sandbox roots but seed project/global `settings.json` and `extensions/` directories from source roots so extension-defined type behavior matches direct workspace commands.
 - `pm test <ID> --run` / `pm test-all` support additive run-level runtime controls: repeatable `--env-set KEY=VALUE`, repeatable `--env-clear NAME`, `--shared-host-safe` (ephemeral/shared-host-friendly defaults such as `PORT=0` when unset), `--pm-context schema|tracker`, `--fail-on-context-mismatch`, `--fail-on-skipped`, and `--require-assertions-for-pm`.
+- `pm test <ID> --run --background` and `pm test-all --background` start managed background runs and return run metadata immediately.
+- `pm test-runs list|status|logs|stop|resume` provides background lifecycle management, log tailing, health snapshots, and stop/resume controls.
+- Background run dedupe prevents parallel duplicate execution when an equivalent active run fingerprint already exists.
 - Linked-test `run_results` include `execution_context` metadata (context mode, PM roots, item counts, mismatch signal, extension seeding state, PM tracker-read classification) so PM-command parity is explicit in machine-readable output.
 - In default `--pm-context schema` mode, PM tracker-read linked commands (for example `list*`, `get`, `search`, `stats`, `test-all`) fail on dataset mismatch by default; use `--pm-context tracker` to run against seeded tracker data.
 - `pm test <ID> --run` and `pm test-all` emit heartbeat/progress lines to stderr in interactive terminals during long-running linked commands, and support explicit non-interactive progress output via `--progress`.

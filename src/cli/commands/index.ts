@@ -47,6 +47,15 @@ export { runStats } from "./stats.js";
 export { runTest } from "./test.js";
 export { runTestAll } from "./test-all.js";
 export {
+  runStartBackgroundRun,
+  runTestRunsList,
+  runTestRunsLogs,
+  runTestRunsResume,
+  runTestRunsStatus,
+  runTestRunsStop,
+  runTestRunsWorker,
+} from "./test-runs.js";
+export {
   loadCreateTemplateOptions,
   runTemplatesList,
   runTemplatesSave,

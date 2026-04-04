@@ -123,6 +123,7 @@ Before close:
 
 1. Run linked tests:
    - `pm test <ID> --run` (add `--progress` for explicit non-interactive stderr progress visibility)
+   - optional managed background mode: `pm test <ID> --run --background` / `pm test-all --background`, then monitor/control with `pm test-runs list|status|logs|stop|resume`
 2. Run sandbox-safe coverage verification:
    - `node scripts/run-tests.mjs coverage`
 3. Optionally run project sweep:
@@ -167,11 +168,13 @@ Use release when:
 - `pm test <ID> --add` should only link sandbox-safe runnable commands and now requires `command=...` metadata (optional `path=...` is supplemental context): use `node scripts/run-tests.mjs ...` or explicitly set both `PM_PATH` and `PM_GLOBAL_PATH`; sandbox-unsafe runner commands are rejected at add-time, including unsandboxed package-manager run-script variants (for example `npm run test`, `pnpm run test`, `yarn run test`, and `bun run test`) and chained direct test-runner segments that are not explicitly sandboxed.
 - `pm test <ID> --run` should defensively skip legacy linked commands that invoke `pm test-all` (including global-flag and package-spec launcher forms such as `pm --json test-all`, `npx @unbrained/pm-cli@latest --json test-all`, `pnpm dlx @unbrained/pm-cli@latest --json test-all`, and `npm exec -- @unbrained/pm-cli@latest --json test-all`) and report deterministic skipped results.
 - `pm test <ID> --run` / `pm test-all` should preserve sandbox isolation while seeding project/global `settings.json` and `extensions/` from source roots so extension-defined type/schema behavior matches direct workspace runs.
+- `pm test <ID> --run --background` / `pm test-all --background` should be treated as additive lifecycle controls only; use `pm test-runs` commands for status/log/stop/resume and rely on fingerprint dedupe to avoid duplicate parallel runs.
 - PM-command linked-test runs should default to `--pm-context schema`; PM tracker-read linked commands now fail on context mismatch by default in schema mode, and `--pm-context tracker` should be used when workspace tracker parity is required. Rely on `run_results[].execution_context` metadata (including tracker-read classification) for parity diagnostics.
 - Use strict governance flags when verification quality matters: `--fail-on-context-mismatch`, `--fail-on-skipped`, and `--require-assertions-for-pm`.
 - Treat failed linked-test run results from `pm test <ID> --run` as dependency-failed process exits (code `5`) in automation/CI checks, matching `pm test-all` gating semantics.
 - Linked-test assertion metadata is optional but preferred for PM-command checks (`assert_stdout_contains`, `assert_stdout_regex`, `assert_stderr_contains`, `assert_stderr_regex`, `assert_stdout_min_lines`, `assert_json_field_equals`, `assert_json_field_gte`).
 - `pm test-all` deduplicates linked tests by scope+normalized command or scope+path and reports duplicates as skipped; when duplicate keys disagree on `timeout_seconds`, execution uses the deterministic maximum timeout for that key.
+- Item-level test result persistence is controlled via `pm config ... test-result-tracking --policy enabled|disabled`; when enabled, bounded `test_runs` summaries are appended on `pm test --run` / `pm test-all` completion.
 - Integration tests should invoke the built CLI (`node dist/cli.js ...`) with explicit `PM_PATH`, `PM_GLOBAL_PATH`, and `PM_AUTHOR`.
 - Cleanup temporary test directories after each test/suite.
 
@@ -251,6 +254,7 @@ Quick start loop:
 
 ```bash
 pm config project set definition-of-done --criterion "tests pass" --criterion "linked files/tests/docs present"
+pm config project set test-result-tracking --policy enabled
 pm list-open --type Task --priority 0 --limit 5
 pm claim pm-a1b2
 pm update pm-a1b2 --status in_progress --description "Implement restore replay"

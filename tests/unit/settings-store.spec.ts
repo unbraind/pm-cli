@@ -134,6 +134,7 @@ describe("core/store/settings", () => {
         "history",
         "validation",
         "workflow",
+        "testing",
         "item_types",
         "extensions",
         "search",
@@ -145,6 +146,7 @@ describe("core/store/settings", () => {
       expectOrderedObjectKeys(parsed.history, ["missing_stream"]);
       expectOrderedObjectKeys(parsed.validation, ["sprint_release_format", "parent_reference"]);
       expectOrderedObjectKeys(parsed.workflow, ["definition_of_done"]);
+      expectOrderedObjectKeys(parsed.testing, ["record_results_to_items"]);
       expectOrderedObjectKeys(parsed.item_types, ["definitions"]);
       expectOrderedObjectKeys(parsed.extensions, ["enabled", "disabled"]);
       expectOrderedObjectKeys(parsed.search, [

@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added managed background linked-test execution for `pm test --run --background` and `pm test-all --background`, including persistent run registry metadata, worker lifecycle orchestration, and duplicate-run fingerprint prevention.
+- Added `pm test-runs` lifecycle command surface (`list`, `status`, `logs`, `stop`, `resume`) for background run management with health/resource snapshots and tailed stdout/stderr inspection.
+- Added configurable test-result tracking policy at `settings.testing.record_results_to_items` with `pm config <project|global> get|set test-result-tracking --policy enabled|disabled`.
+- Added bounded deterministic item-level `test_runs` summary persistence (settings-gated) for `pm test --run` and `pm test-all`, including background-run propagation metadata.
 - Added bundled managed extension sources at `.agents/pm/extensions/beads` and `.agents/pm/extensions/todos`, each with manifest + runtime entrypoint wiring for extension-managed command registration.
 - Added bundled extension alias installs for `pm extension --install beads` and `pm extension --install todos` (with parity support for explicit local bundled paths).
 - Added unified command/action contract registry exports in `src/sdk/cli-contracts.ts` (including JSON Schema Draft 2020-12 tool-parameter contract) for cross-surface CLI + agent parity.

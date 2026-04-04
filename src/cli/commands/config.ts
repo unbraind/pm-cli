@@ -29,6 +29,8 @@ const CONFIG_KEY_VALUES = [
   "sprint_release_format_policy",
   "parent-reference-policy",
   "parent_reference_policy",
+  "test-result-tracking",
+  "test_result_tracking",
 ] as const;
 type ConfigAction = "get" | "set";
 type ConfigKey =
@@ -36,8 +38,10 @@ type ConfigKey =
   | "item_format"
   | "history_missing_stream_policy"
   | "sprint_release_format_policy"
-  | "parent_reference_policy";
+  | "parent_reference_policy"
+  | "test_result_tracking";
 type HistoryMissingStreamPolicy = "auto_create" | "strict_error";
+type TestResultTrackingPolicy = "enabled" | "disabled";
 
 export interface ConfigCommandOptions {
   criterion?: string[];
@@ -50,7 +54,7 @@ export interface ConfigResult {
   key: ConfigKey;
   criteria?: string[];
   format?: ItemFormat;
-  policy?: HistoryMissingStreamPolicy | SprintReleaseFormatPolicy | ParentReferencePolicy;
+  policy?: HistoryMissingStreamPolicy | SprintReleaseFormatPolicy | ParentReferencePolicy | TestResultTrackingPolicy;
   has_explicit_item_format?: boolean;
   migration?: {
     target_format: ItemFormat;
@@ -95,6 +99,9 @@ function normalizeKey(value: string): ConfigKey {
     if (value === "parent-reference-policy" || value === "parent_reference_policy") {
       return "parent_reference_policy";
     }
+    if (value === "test-result-tracking" || value === "test_result_tracking") {
+      return "test_result_tracking";
+    }
     return "definition_of_done";
   }
   throw new PmCliError(
@@ -128,6 +135,17 @@ function normalizeHistoryMissingStreamPolicy(value: string | undefined): History
   }
   throw new PmCliError(
     "Config set history-missing-stream-policy requires --policy with one of: auto_create, strict_error",
+    EXIT_CODE.USAGE,
+  );
+}
+
+function normalizeTestResultTrackingPolicy(value: string | undefined): TestResultTrackingPolicy {
+  const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
+  if (normalized === "enabled" || normalized === "disabled") {
+    return normalized;
+  }
+  throw new PmCliError(
+    "Config set test-result-tracking requires --policy with one of: enabled, disabled",
     EXIT_CODE.USAGE,
   );
 }
@@ -207,6 +225,15 @@ export async function runConfig(
         scope,
         key,
         policy: settings.validation.parent_reference,
+        settings_path: target.settingsPath,
+        changed: false,
+      }, warnings);
+    }
+    if (key === "test_result_tracking") {
+      return withWarnings({
+        scope,
+        key,
+        policy: settings.testing.record_results_to_items ? "enabled" : "disabled",
         settings_path: target.settingsPath,
         changed: false,
       }, warnings);
@@ -296,6 +323,23 @@ export async function runConfig(
       scope,
       key,
       policy: settings.validation.parent_reference,
+      settings_path: target.settingsPath,
+      changed,
+    }, warnings);
+  }
+
+  if (key === "test_result_tracking") {
+    const nextPolicy = normalizeTestResultTrackingPolicy(options.policy);
+    const nextEnabled = nextPolicy === "enabled";
+    const changed = settings.testing.record_results_to_items !== nextEnabled;
+    settings.testing.record_results_to_items = nextEnabled;
+    if (changed) {
+      await writeSettings(target.pmRoot, settings, "config:set:test_result_tracking");
+    }
+    return withWarnings({
+      scope,
+      key,
+      policy: settings.testing.record_results_to_items ? "enabled" : "disabled",
       settings_path: target.settingsPath,
       changed,
     }, warnings);

@@ -111,6 +111,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       'pm config project set definition-of-done --criterion "tests pass"',
       "pm config project set item-format --format toon",
       "pm config project set sprint-release-format-policy --policy strict_error",
+      "pm config project set test-result-tracking --policy enabled",
     ],
   },
   extension: {
@@ -288,6 +289,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       'pm test pm-a1b2 --add "command=node scripts/run-tests.mjs test -- tests/unit/output.spec.ts,scope=project,timeout_seconds=2400"',
       'pm test pm-a1b2 --add "command=pm list-all --type Task --limit 200,scope=project,assert_stdout_contains=count:,assert_stdout_regex=count:\\s+\\d+"',
       "pm test pm-a1b2 --run --timeout 2400 --env-set PORT=0 --env-clear PLAYWRIGHT_BASE_URL --shared-host-safe --pm-context tracker --fail-on-context-mismatch --fail-on-skipped",
+      "pm test pm-a1b2 --run --background --timeout 2400 --progress",
     ],
   },
   "test-all": {
@@ -296,6 +298,17 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm test-all --status in_progress --timeout 2400",
       "pm test-all --status closed --timeout 3600 --progress --env-set PORT=0 --shared-host-safe --fail-on-skipped",
       "pm test-all --status in_progress --pm-context tracker --fail-on-context-mismatch --require-assertions-for-pm",
+      "pm test-all --status in_progress --background --timeout 3600",
+    ],
+  },
+  "test-runs": {
+    why: "Manages background linked-test runs with lifecycle controls and log/status inspection.",
+    examples: [
+      "pm test-runs list --status running --limit 20",
+      "pm test-runs status tr-abc123",
+      "pm test-runs logs tr-abc123 --stream stderr --tail 200",
+      "pm test-runs stop tr-abc123",
+      "pm test-runs resume tr-abc123",
     ],
   },
   stats: {

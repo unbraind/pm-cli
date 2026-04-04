@@ -24,6 +24,9 @@
       "tests pass"
     ]
   },
+  "testing": {
+    "record_results_to_items": true
+  },
   "item_types": {
     "definitions": []
   },

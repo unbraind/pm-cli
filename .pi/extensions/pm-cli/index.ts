@@ -104,6 +104,10 @@ export interface PmToolParameters {
   limit?: NumericFlagInput;
   offset?: NumericFlagInput;
   progress?: boolean;
+  background?: boolean;
+  runId?: string;
+  stream?: string;
+  tail?: NumericFlagInput;
   envSet?: string[];
   envClear?: string[];
   sharedHostSafe?: boolean;
@@ -591,6 +595,9 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       if (params.run) {
         args.push("--run");
       }
+      if (params.background) {
+        args.push("--background");
+      }
       pushOption(args, "--timeout", params.timeout);
       if (params.progress) {
         args.push("--progress");
@@ -615,6 +622,9 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
     case "test-all":
       args.push("test-all");
       pushOption(args, "--status", params.status);
+      if (params.background) {
+        args.push("--background");
+      }
       pushOption(args, "--timeout", params.timeout);
       if (params.progress) {
         args.push("--progress");
@@ -634,6 +644,29 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       if (params.requireAssertionsForPm) {
         args.push("--require-assertions-for-pm");
       }
+      return args;
+    case "test-runs-list":
+      args.push("test-runs", "list");
+      pushOption(args, "--status", params.status);
+      pushOption(args, "--limit", params.limit);
+      return args;
+    case "test-runs-status":
+      args.push("test-runs", "status", requireString(params.runId, "runId", action));
+      return args;
+    case "test-runs-logs":
+      args.push("test-runs", "logs", requireString(params.runId, "runId", action));
+      pushOption(args, "--stream", params.stream);
+      pushOption(args, "--tail", params.tail);
+      return args;
+    case "test-runs-stop":
+      args.push("test-runs", "stop", requireString(params.runId, "runId", action));
+      if (params.force) {
+        args.push("--force");
+      }
+      return args;
+    case "test-runs-resume":
+      args.push("test-runs", "resume", requireString(params.runId, "runId", action));
+      pushOption(args, "--author", params.author);
       return args;
     case "stats":
     case "health":

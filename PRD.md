@@ -269,6 +269,7 @@ Optional fields:
 - `learnings?: LogNote[]`
 - `files?: LinkedFile[]`
 - `tests?: LinkedTest[]`
+- `test_runs?: ItemTestRunSummary[]`
 - `docs?: LinkedDoc[]`
 - `estimated_minutes?: number`
 - `parent?: string` (item ID reference; shorthand for a `kind=parent` dependency)
@@ -301,6 +302,7 @@ Types:
 - `LogNote = { created_at: string; author: string; text: string }`
 - `LinkedFile = { path: string; scope: "project" | "global"; note?: string }`
 - `LinkedTest = { command?: string; path?: string; scope: "project" | "global"; timeout_seconds?: number; note?: string }`
+- `ItemTestRunSummary = { run_id: string; kind: "test" | "test-all"; status: "passed" | "failed" | "stopped" | "canceled"; started_at: string; finished_at: string; recorded_at: string; attempt?: number; resumed_from?: string; passed: number; failed: number; skipped: number; items?: number; linked_tests?: number; fail_on_skipped_triggered?: boolean }`
 - `LinkedDoc = { path: string; scope: "project" | "global"; note?: string }`
 - `Reminder = { at: string; text: string }`
 - `IssueSeverity = "low" | "medium" | "high" | "critical"`
@@ -359,8 +361,9 @@ Keys MUST serialize in this order:
 48. `learnings`
 49. `files`
 50. `tests`
-51. `docs`
-52. `close_reason`
+51. `test_runs`
+52. `docs`
+53. `close_reason`
 
 Unset optional fields are omitted.
 
@@ -376,6 +379,7 @@ Unset optional fields are omitted.
 - `reminders` sorted by `at` ascending, then `text` ascending.
 - `files` preserve provided order in canonical storage; `pm files` default mutation mode writes deterministic sorted order unless `--append-stable` is explicitly selected.
 - `tests` sorted by `scope` asc, then `path` asc, then `command` asc, then `timeout_seconds` asc, then `note` asc.
+- `test_runs` sorted by `recorded_at` asc, then `run_id` asc, then `kind` asc; retention is bounded to latest N entries per item.
 - `docs` sorted by `scope` asc, then `path` asc, then `note` asc.
 - Paths normalized to forward-slash logical form for storage while preserving OS-correct access at runtime.
 - For optional create/update fields, explicit unset intent is supported via sentinel values:
@@ -518,6 +522,15 @@ Scope: this policy applies to read/diagnostic paths (`history`, `activity`, `sta
 
 Conforming value pattern: `^[A-Za-z0-9][A-Za-z0-9._/-]*$` (max 64 characters, no spaces).
 
+### 9.6 Test-result tracking policy
+
+`settings.testing.record_results_to_items` controls whether linked-test executions append bounded `test_runs` summaries to item front matter:
+
+- `false` (default): command output only; no item mutation for run summaries.
+- `true`: `pm test --run` and `pm test-all` append deterministic summary entries (`run_id`, `kind`, `status`, counts, timestamps) with bounded retention.
+
+Background executions (`--background`) reuse the same run pipeline and therefore follow the same policy gate.
+
 ## 10) Concurrency, Claiming, Locking, Safe Writes
 
 ### 10.1 Assignee identity
@@ -640,6 +653,7 @@ Help and error UX note:
 - `pm deps <ID>`
 - `pm test <ID>`
 - `pm test-all`
+- `pm test-runs <list|status|logs|stop|resume>`
 - `pm stats`
 - `pm health`
 - `pm validate`
@@ -657,6 +671,8 @@ Help and error UX note:
 - `pm config <project|global> get sprint-release-format-policy`
 - `pm config <project|global> set parent-reference-policy --policy warn|strict_error`
 - `pm config <project|global> get parent-reference-policy`
+- `pm config <project|global> set test-result-tracking --policy enabled|disabled`
+- `pm config <project|global> get test-result-tracking`
 - `pm close <ID> <TEXT>`
 - `pm beads import [--file <path>]`
 - `pm todos import [--folder <path>]`
@@ -874,8 +890,9 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | `pm notes <ID> [TEXT] --add/--limit` | id + optional positional note text shorthand + note text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`) | `{ id, notes, count }` |
 | `pm learnings <ID> [TEXT] --add/--limit` | id + optional positional learning text shorthand + learning text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`) | `{ id, learnings, count }` |
 | `pm files <ID> --add/--add-glob/--remove/--migrate/--append-stable/--validate-paths/--audit/--list` | id + file refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`); optional glob expansion via repeatable `--add-glob` (plain glob or `pattern=<glob>,scope=<scope>,note=<text>`); optional additive linked-path hygiene (`--migrate from=<old>,to=<new>`, path existence validation, cross-item audit, non-mutating list); optional `--append-stable` avoids full-array resorting and appends new links while preserving current order | `{ id, files, changed, count, migrations_applied, validation, audit }` |
-| `pm test <ID> --add/--remove/--run` | id + test refs/options (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`; new linked test entries must include `command=...` and may include `path=...` as optional metadata; optional linked-test runtime directives support `env_set`, `env_clear`, `shared_host_safe`, and assertion metadata fields `assert_stdout_contains` / `assert_stdout_regex` / `assert_stderr_contains` / `assert_stderr_regex` / `assert_stdout_min_lines` / `assert_json_field_equals` / `assert_json_field_gte`; run-time supports additive `--env-set`, `--env-clear`, `--shared-host-safe`, `--pm-context schema\|tracker`, `--fail-on-context-mismatch`, `--fail-on-skipped`, and `--require-assertions-for-pm`; path-only add/create entries are rejected; reject recursive `test-all` linked commands at add-time, including global-flag and package-spec launcher forms such as `pm --json test-all`, `npx @unbrained/pm-cli@latest --json test-all`, `pnpm dlx @unbrained/pm-cli@latest --json test-all`, and `npm exec -- @unbrained/pm-cli@latest --json test-all`; defensively skip legacy recursive entries at run-time; reject sandbox-unsafe test-runner commands including unsandboxed direct package-manager run-script forms such as `npm run test`/`pnpm run test` and chained direct runner segments evaluated independently; linked command execution seeds sandbox project/global settings and extensions from source roots for extension/type parity, optionally seeds tracker corpus when `--pm-context tracker` is selected, fails PM tracker-read command mismatches by default in schema mode, emits `execution_context` metadata (including tracker-read classification) in each run result, and runs linked commands via shell-compatible spawn orchestration with deterministic timeout/maxBuffer diagnostics and structured `failure_category` classification) | `{ id, tests, run_results, failure_categories, fail_on_skipped_triggered?, changed, count }` |
-| `pm test-all --status --timeout` | optional status filter plus additive `--progress` stderr visibility and additive `--env-set`/`--env-clear`/`--shared-host-safe`/`--pm-context`/`--fail-on-context-mismatch`/`--fail-on-skipped`/`--require-assertions-for-pm` run-level controls (schema-mode runs fail PM tracker-read command mismatches by default); duplicate linked command/path entries are deduped per invocation (keyed by scope+normalized command or scope+path plus runtime directives + assertion metadata) and reported as skipped; when duplicate keys carry different `timeout_seconds`, execution uses deterministic maximum timeout for that key | `{ totals, failed, passed, skipped, fail_on_skipped_triggered?, results }` (`totals.failure_categories` included) |
+| `pm test <ID> --add/--remove/--run` | id + test refs/options (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`; new linked test entries must include `command=...` and may include `path=...` as optional metadata; optional linked-test runtime directives support `env_set`, `env_clear`, `shared_host_safe`, and assertion metadata fields `assert_stdout_contains` / `assert_stdout_regex` / `assert_stderr_contains` / `assert_stderr_regex` / `assert_stdout_min_lines` / `assert_json_field_equals` / `assert_json_field_gte`; run-time supports additive `--background`, `--env-set`, `--env-clear`, `--shared-host-safe`, `--pm-context schema\|tracker`, `--fail-on-context-mismatch`, `--fail-on-skipped`, and `--require-assertions-for-pm`; path-only add/create entries are rejected; reject recursive `test-all` linked commands at add-time, including global-flag and package-spec launcher forms such as `pm --json test-all`, `npx @unbrained/pm-cli@latest --json test-all`, `pnpm dlx @unbrained/pm-cli@latest --json test-all`, and `npm exec -- @unbrained/pm-cli@latest --json test-all`; defensively skip legacy recursive entries at run-time; reject sandbox-unsafe test-runner commands including unsandboxed direct package-manager run-script forms such as `npm run test`/`pnpm run test` and chained direct runner segments evaluated independently; linked command execution seeds sandbox project/global settings and extensions from source roots for extension/type parity, optionally seeds tracker corpus when `--pm-context tracker` is selected, fails PM tracker-read command mismatches by default in schema mode, emits `execution_context` metadata (including tracker-read classification) in each run result, and runs linked commands via shell-compatible spawn orchestration with deterministic timeout/maxBuffer diagnostics and structured `failure_category` classification) | foreground: `{ id, tests, run_results, failure_categories, fail_on_skipped_triggered?, warnings?, changed, count }`; background start: `{ started, duplicate_of?, run }` |
+| `pm test-all --status --timeout` | optional status filter plus additive run controls `--background`, `--progress`, `--env-set`/`--env-clear`/`--shared-host-safe`/`--pm-context`/`--fail-on-context-mismatch`/`--fail-on-skipped`/`--require-assertions-for-pm` (schema-mode runs fail PM tracker-read command mismatches by default); duplicate linked command/path entries are deduped per invocation (keyed by scope+normalized command or scope+path plus runtime directives + assertion metadata) and reported as skipped; when duplicate keys carry different `timeout_seconds`, execution uses deterministic maximum timeout for that key | foreground: `{ totals, failed, passed, skipped, fail_on_skipped_triggered?, warnings?, results }`; background start: `{ started, duplicate_of?, run }` (`totals.failure_categories` included) |
+| `pm test-runs list|status|logs|stop|resume` | list/status/log/stop/resume lifecycle control for managed background test runs (`logs` supports `--stream stdout|stderr|both` and `--tail`; `stop` supports `--force`) | list: `{ runs, count, filters }`; status: `{ run, health }`; logs: `{ run, stream, tail, stdout, stderr }`; stop: `{ run, signal_sent }`; resume: `{ resumed_from, run }` |
 | `pm stats` | none | `{ totals, by_type, by_status, generated_at }` |
 | `pm health` | none (runs settings/directories/extensions/storage plus integrity, history-drift, and vectorization diagnostics) | `{ ok, checks, warnings, generated_at }` with extension diagnostics including condensed `details.triage` |
 | `pm validate` | optional scoped checks (`--check-metadata`, `--check-resolution`, `--check-files`, `--check-command-references`, `--check-history-drift`; default all checks); file checks accept `--scan-mode default|tracked-all` plus `--include-pm-internals` opt-in and report filtered + raw candidate metrics (`candidate_total`, `candidate_scanned`, `candidate_total_raw`, `candidate_scanned_raw`); command-reference checks detect stale PM-id references in linked commands before execution | `{ ok, checks, warnings, generated_at }` |

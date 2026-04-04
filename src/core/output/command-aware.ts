@@ -64,14 +64,47 @@ function resolveSummary(command: string, result: unknown): string {
     case "docs":
       return itemId ? `Updated linked docs for ${itemId}.` : "Updated linked docs.";
     case "test":
+      if ("started" in record && "run" in record) {
+        const run = asRecord(record.run);
+        const runId = run && typeof run.id === "string" ? run.id : null;
+        const started = record.started === true;
+        if (started) {
+          return runId ? `Started background test run ${runId} for ${itemId ?? "item tests"}.` : "Started background test run.";
+        }
+        return runId ? `Reused active background test run ${runId}.` : "Background test run already active.";
+      }
       return itemId ? `Processed linked tests for ${itemId}.` : "Processed linked tests.";
     case "test-all": {
+      if ("started" in record && "run" in record) {
+        const run = asRecord(record.run);
+        const runId = run && typeof run.id === "string" ? run.id : null;
+        const started = record.started === true;
+        if (started) {
+          return runId ? `Started background test-all run ${runId}.` : "Started background test-all run.";
+        }
+        return runId ? `Reused active background run ${runId}.` : "Background test-all run already active.";
+      }
       const failed = toCount(record, "failed");
       if (failed !== null) {
         return failed > 0 ? `Finished test-all with ${failed} failing result group(s).` : "Finished test-all with no failures.";
       }
       return "Finished test-all run.";
     }
+    case "test-runs list": {
+      const count = toCount(record, "count");
+      return count !== null ? `Listed ${count} background test run(s).` : "Listed background test runs.";
+    }
+    case "test-runs status": {
+      const run = asRecord(record.run);
+      const runId = run && typeof run.id === "string" ? run.id : null;
+      return runId ? `Loaded background run status for ${runId}.` : "Loaded background run status.";
+    }
+    case "test-runs logs":
+      return "Loaded background run logs.";
+    case "test-runs stop":
+      return "Requested stop for background test run.";
+    case "test-runs resume":
+      return "Started resumed background test run.";
     case "list":
     case "list-all":
     case "list-draft":
@@ -167,6 +200,19 @@ function resolveHighlights(command: string, result: unknown): string[] {
     }
   }
   if (command === "test-all") {
+    if ("started" in record && "run" in record) {
+      const run = asRecord(record.run);
+      if (typeof record.started === "boolean") {
+        highlights.push(`started=${record.started ? "true" : "false"}`);
+      }
+      if (run && typeof run.id === "string") {
+        highlights.push(`run_id=${run.id}`);
+      }
+      if (typeof record.duplicate_of === "string") {
+        highlights.push(`duplicate_of=${record.duplicate_of}`);
+      }
+      return highlights;
+    }
     const failed = toCount(record, "failed");
     const passed = toCount(record, "passed");
     const skipped = toCount(record, "skipped");
@@ -185,6 +231,19 @@ function resolveHighlights(command: string, result: unknown): string[] {
     }
   }
   if (command === "test") {
+    if ("started" in record && "run" in record) {
+      const run = asRecord(record.run);
+      if (typeof record.started === "boolean") {
+        highlights.push(`started=${record.started ? "true" : "false"}`);
+      }
+      if (run && typeof run.id === "string") {
+        highlights.push(`run_id=${run.id}`);
+      }
+      if (typeof record.duplicate_of === "string") {
+        highlights.push(`duplicate_of=${record.duplicate_of}`);
+      }
+      return highlights;
+    }
     const count = toCount(record, "count");
     if (count !== null) {
       highlights.push(`linked_tests=${count}`);
@@ -210,6 +269,24 @@ function resolveHighlights(command: string, result: unknown): string[] {
     }
     if (typeof record.view === "string") {
       highlights.push(`view=${record.view}`);
+    }
+  }
+  if (command.startsWith("test-runs")) {
+    const run = asRecord(record.run);
+    if (run && typeof run.id === "string") {
+      highlights.push(`run_id=${run.id}`);
+    }
+    const signalSent = typeof record.signal_sent === "string" ? record.signal_sent : null;
+    if (signalSent) {
+      highlights.push(`signal=${signalSent}`);
+    }
+    const health = asRecord(record.health);
+    if (health && typeof health.state === "string") {
+      highlights.push(`health=${health.state}`);
+    }
+    const count = toCount(record, "count");
+    if (count !== null) {
+      highlights.push(`count=${count}`);
     }
   }
   return highlights;
@@ -249,9 +326,17 @@ function resolveNextSteps(command: string, result: unknown): string[] {
     case "reindex":
       return ['pm search "<query>" --mode hybrid --limit 10'];
     case "test":
-      return [`pm test ${itemId} --run --timeout 2400`, "node scripts/run-tests.mjs coverage"];
+      return [`pm test ${itemId} --run --background`, "pm test-runs list --limit 10", "node scripts/run-tests.mjs coverage"];
     case "test-all":
-      return ["node scripts/run-tests.mjs coverage", "pm list-in-progress --limit 20"];
+      return ["pm test-all --status in_progress --background", "pm test-runs list --status running", "node scripts/run-tests.mjs coverage"];
+    case "test-runs list":
+      return ["pm test-runs status <runId>", "pm test-runs logs <runId> --stream stderr --tail 200"];
+    case "test-runs status":
+      return ["pm test-runs logs <runId> --tail 200", "pm test-runs stop <runId>"];
+    case "test-runs stop":
+      return ["pm test-runs status <runId>", "pm test-runs resume <runId>"];
+    case "test-runs resume":
+      return ["pm test-runs status <runId>", "pm test-runs logs <runId> --tail 200"];
     case "calendar":
       return ["pm calendar --view agenda --from +0d --to +7d", "pm calendar --view month --format json"];
     case "init":
@@ -259,7 +344,7 @@ function resolveNextSteps(command: string, result: unknown): string[] {
         'pm create --title "Example" --description "..." --type Task --status open --priority 1 --message "Create initial item" --dep none --comment none --note none --learning none --file none --test none --doc none',
       ];
     case "config":
-      return ["pm config project get definition-of-done", "pm config project get item-format"];
+      return ["pm config project get definition-of-done", "pm config project get item-format", "pm config project get test-result-tracking"];
     case "get":
       return [
         `pm history ${itemId} --limit 20`,

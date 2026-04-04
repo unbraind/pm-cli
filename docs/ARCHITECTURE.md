@@ -45,6 +45,7 @@ src/
       deps.ts                    pm deps (dependency tree/graph projection)
       test.ts                    pm test (add/remove/run linked tests; optional forced progress visibility)
       test-all.ts                pm test-all (orchestration; optional forced progress visibility)
+      test-runs.ts               pm test-runs (background run lifecycle: list/status/logs/stop/resume)
       search.ts                  pm search (keyword / semantic / hybrid)
       reindex.ts                 pm reindex (optional forced progress visibility)
       history.ts                 pm history
@@ -89,6 +90,9 @@ src/
       embedding-batches.ts       Deterministic batch embedding generation with retry
       providers.ts               OpenAI / Ollama embedding provider abstraction
       vector-stores.ts           Qdrant / LanceDB vector store abstraction
+    test/
+      background-runs.ts         Background linked-test run registry/worker lifecycle + dedupe
+      item-test-run-tracking.ts  Settings-gated bounded item `test_runs` summary persistence
     shared/
       command-types.ts           GlobalOptions, shared command type definitions
       constants.ts               Exit codes, required directory names
@@ -303,7 +307,7 @@ Pipeline:
 3. **Fail-fast stdin semantics** — stdin token readers reject interactive TTY stdin for piped-only flows (`-`) and provide explicit EOF guidance instead of waiting indefinitely.
 4. **Graceful error exits** — CLI error handling preserves canonical exit codes using graceful `process.exitCode` semantics to reduce output truncation risk under buffered writes.
 5. **Broken-pipe-safe output writes** — stdout/stderr stream error handlers treat `EPIPE` as expected pipeline behavior (set non-zero exit code, suppress unhandled stack traces) while preserving existing non-EPIPE error handling.
-6. **Linked test runtime hardening** — linked test subprocess execution uses shell-compatible spawn orchestration, closes child stdin immediately, applies deterministic runtime environment defaults, supports additive run-level/per-test env directives (`--env-set`, `--env-clear`, `--shared-host-safe`, plus linked metadata `env_set`/`env_clear`/`shared_host_safe`), supports additive PM-context controls (`--pm-context schema|tracker`, `--fail-on-context-mismatch`, `--fail-on-skipped`, `--require-assertions-for-pm`), enforces default schema-mode mismatch failures for PM tracker-read linked commands, evaluates optional linked-test assertions (stdout/stderr contains/regex, min-lines, JSON equals/gte), emits per-run `execution_context` metadata for PM-command parity diagnostics (including tracker-read classification), emits interactive stderr heartbeat progress for long runs (with explicit non-interactive `--progress`), enforces timeout/maxBuffer diagnostics with force-kill fallback plus structured failure categorization (`infra_collision`, `assertion_failure`, etc.), and maps `pm test --run` linked failures to dependency-failed exit code (`5`) for CI-safe gating parity with `pm test-all`.
+6. **Linked test runtime hardening** — linked test subprocess execution uses shell-compatible spawn orchestration, closes child stdin immediately, applies deterministic runtime environment defaults, supports additive run-level/per-test env directives (`--env-set`, `--env-clear`, `--shared-host-safe`, plus linked metadata `env_set`/`env_clear`/`shared_host_safe`), supports additive PM-context controls (`--pm-context schema|tracker`, `--fail-on-context-mismatch`, `--fail-on-skipped`, `--require-assertions-for-pm`), enforces default schema-mode mismatch failures for PM tracker-read linked commands, evaluates optional linked-test assertions (stdout/stderr contains/regex, min-lines, JSON equals/gte), emits per-run `execution_context` metadata for PM-command parity diagnostics (including tracker-read classification), emits interactive stderr heartbeat progress for long runs (with explicit non-interactive `--progress`), supports managed background execution (`--background`) with `pm test-runs` lifecycle controls and duplicate-run fingerprints, enforces timeout/maxBuffer diagnostics with force-kill fallback plus structured failure categorization (`infra_collision`, `assertion_failure`, etc.), and maps `pm test --run` linked failures to dependency-failed exit code (`5`) for CI-safe gating parity with `pm test-all`.
 
 ## Help and Error Guidance Pipeline
 
@@ -432,6 +436,7 @@ Weights are configurable via `settings.json` under `search.tuning`.
 | `history.missing_stream` | Missing history-stream policy: `auto_create` (default) or `strict_error` |
 | `validation.sprint_release_format` | Sprint/release format policy: `warn` (default) or `strict_error` |
 | `validation.parent_reference` | Parent-reference policy for create/update: `warn` (default) or `strict_error` |
+| `testing.record_results_to_items` | Item-level test summary persistence toggle: `false` (default) / `true` |
 | `item_types.definitions[]` | Custom type names, aliases, folders, required fields/repeatables, `--type-option` definitions, and `command_option_policies` (`required`/`enabled`/`visible`) |
 | `search.*` | Search provider and tuning settings |
 | `providers.openai` / `providers.ollama` | Embedding provider config |
@@ -447,6 +452,7 @@ Validation policies can be configured via:
 
 - `pm config ... sprint-release-format-policy --policy warn|strict_error`
 - `pm config ... parent-reference-policy --policy warn|strict_error`
+- `pm config ... test-result-tracking --policy enabled|disabled`
 
 Under `warn`, create/update continue and return deterministic validation warnings; under `strict_error`, invalid values are rejected with usage errors.
 

@@ -5,6 +5,7 @@ import type {
   Dependency,
   ItemDocument,
   ItemFrontMatter,
+  ItemTestRunSummary,
   LinkedDoc,
   LinkedFile,
   LinkedTest,
@@ -446,6 +447,59 @@ function normalizeFiles(values: LinkedFile[] | undefined): LinkedFile[] | undefi
     }));
 }
 
+function normalizeTestRunSummaries(values: ItemTestRunSummary[] | undefined): ItemTestRunSummary[] | undefined {
+  if (!values || values.length === 0) return undefined;
+  const normalized = values
+    .map((value) => {
+      const runId = typeof value.run_id === "string" ? value.run_id.trim() : "";
+      const kind = value.kind === "test" || value.kind === "test-all" ? value.kind : "test";
+      const status =
+        value.status === "passed" || value.status === "failed" || value.status === "stopped" || value.status === "canceled"
+          ? value.status
+          : "failed";
+      const startedAt = typeof value.started_at === "string" ? value.started_at : "";
+      const finishedAt = typeof value.finished_at === "string" ? value.finished_at : "";
+      const recordedAt = typeof value.recorded_at === "string" ? value.recorded_at : "";
+      const passed = typeof value.passed === "number" && Number.isFinite(value.passed) ? Math.max(0, Math.floor(value.passed)) : 0;
+      const failed = typeof value.failed === "number" && Number.isFinite(value.failed) ? Math.max(0, Math.floor(value.failed)) : 0;
+      const skipped = typeof value.skipped === "number" && Number.isFinite(value.skipped) ? Math.max(0, Math.floor(value.skipped)) : 0;
+      return {
+        run_id: runId,
+        kind,
+        status,
+        started_at: startedAt,
+        finished_at: finishedAt,
+        recorded_at: recordedAt,
+        attempt:
+          typeof value.attempt === "number" && Number.isFinite(value.attempt) && value.attempt >= 1
+            ? Math.floor(value.attempt)
+            : undefined,
+        resumed_from: value.resumed_from?.trim() || undefined,
+        passed,
+        failed,
+        skipped,
+        items:
+          typeof value.items === "number" && Number.isFinite(value.items) && value.items >= 0
+            ? Math.floor(value.items)
+            : undefined,
+        linked_tests:
+          typeof value.linked_tests === "number" && Number.isFinite(value.linked_tests) && value.linked_tests >= 0
+            ? Math.floor(value.linked_tests)
+            : undefined,
+        fail_on_skipped_triggered: value.fail_on_skipped_triggered === true ? true : undefined,
+      };
+    })
+    .filter((value) => value.run_id.length > 0 && value.started_at.length > 0 && value.finished_at.length > 0 && value.recorded_at.length > 0)
+    .sort((a, b) => {
+      const byRecorded = compareTimestampStrings(a.recorded_at, b.recorded_at);
+      if (byRecorded !== 0) return byRecorded;
+      const byRunId = a.run_id.localeCompare(b.run_id);
+      if (byRunId !== 0) return byRunId;
+      return a.kind.localeCompare(b.kind);
+    });
+  return normalized.length > 0 ? normalized : undefined;
+}
+
 function sortTests(values: LinkedTest[] | undefined): LinkedTest[] | undefined {
   if (!values || values.length === 0) return undefined;
   return [...values]
@@ -646,6 +700,7 @@ export function normalizeFrontMatter(frontMatter: ItemFrontMatter): ItemFrontMat
     learnings: sortLogValues(frontMatter.learnings),
     files: normalizeFiles(frontMatter.files),
     tests: sortTests(frontMatter.tests),
+    test_runs: normalizeTestRunSummaries(frontMatter.test_runs),
     docs: sortDocs(frontMatter.docs),
     deadline: frontMatter.deadline || undefined,
     reminders: sortReminders(frontMatter.reminders),

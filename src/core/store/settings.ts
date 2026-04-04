@@ -64,6 +64,11 @@ const settingsSchema = z.object({
       definition_of_done: z.array(z.string()),
     })
     .optional(),
+  testing: z
+    .object({
+      record_results_to_items: z.boolean(),
+    })
+    .optional(),
   item_types: z
     .object({
       definitions: z.array(itemTypeDefinitionSchema),
@@ -250,6 +255,9 @@ function mergeSettings(raw: unknown): PmSettings {
     workflow: {
       definition_of_done: [...(settings.workflow?.definition_of_done ?? defaults.workflow.definition_of_done)],
     },
+    testing: {
+      record_results_to_items: settings.testing?.record_results_to_items ?? defaults.testing.record_results_to_items,
+    },
     item_types: {
       definitions: normalizeItemTypeDefinitions(settings.item_types?.definitions),
     },
@@ -281,6 +289,7 @@ export function serializeSettings(settings: PmSettings): string {
     "history",
     "validation",
     "workflow",
+    "testing",
     "item_types",
     "extensions",
     "search",
@@ -296,6 +305,7 @@ export function serializeSettings(settings: PmSettings): string {
     "parent_reference",
   ]);
   ordered.workflow = orderObject(ordered.workflow as Record<string, unknown>, ["definition_of_done"]);
+  ordered.testing = orderObject(ordered.testing as Record<string, unknown>, ["record_results_to_items"]);
   ordered.item_types = orderObject(ordered.item_types as Record<string, unknown>, ["definitions"]);
   ordered.extensions = orderObject(ordered.extensions as Record<string, unknown>, ["enabled", "disabled"]);
   ordered.search = orderObject(ordered.search as Record<string, unknown>, [

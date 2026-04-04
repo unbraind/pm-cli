@@ -1312,12 +1312,15 @@ describe("release readiness runtime coverage", () => {
     expect(uncoveredFiles.sort((left, right) => left.localeCompare(right))).toEqual([
       "src/cli.ts",
       "src/cli/commands/templates.ts",
+      "src/cli/commands/test-runs.ts",
       "src/cli/error-guidance.ts",
       "src/cli/help-content.ts",
       "src/cli/main.ts",
       "src/core/item/parent-reference-policy.ts",
       "src/core/item/type-registry.ts",
       "src/core/output/command-aware.ts",
+      "src/core/test/background-runs.ts",
+      "src/core/test/item-test-run-tracking.ts",
       "src/sdk/cli-contracts.ts",
     ]);
   });

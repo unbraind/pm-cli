@@ -6,9 +6,11 @@ import { normalizeStatusInput } from "../../core/item/status.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { nowIso } from "../../core/shared/time.js";
 import { listAllFrontMatter } from "../../core/store/item-store.js";
 import { getSettingsPath, resolveGlobalPmRoot, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
+import { appendTrackedTestRunSummary } from "../../core/test/item-test-run-tracking.js";
 import type { ItemStatus, LinkedTest } from "../../types/index.js";
 import { countFailureCategories, runLinkedTests, runTest, type LinkedTestFailureCategory, type TestRunResult } from "./test.js";
 
@@ -49,6 +51,7 @@ export interface TestAllResult {
   passed: number;
   skipped: number;
   fail_on_skipped_triggered?: boolean;
+  warnings?: string[];
   results: TestAllItemResult[];
 }
 
@@ -68,6 +71,20 @@ function parseTimeout(raw: string | undefined): number | undefined {
     return undefined;
   }
   return parseOptionalNumber(raw, "timeout");
+}
+
+function resolveTrackingAuthor(fallback: string): string {
+  const candidate = process.env.PM_AUTHOR ?? fallback;
+  const trimmed = candidate.trim();
+  return trimmed.length > 0 ? trimmed : "unknown";
+}
+
+function resolveTrackedRunId(): string {
+  const fromEnv = process.env.PM_BACKGROUND_TEST_RUN_ID?.trim();
+  if (fromEnv && fromEnv.length > 0) {
+    return fromEnv;
+  }
+  return `test-all-local-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function normalizeCommand(command: string): string {
@@ -176,6 +193,14 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
     projectPmRoot: pmRoot,
     globalPmRoot: resolveGlobalPmRoot(process.cwd()),
   };
+  const runStartedAt = nowIso();
+  const trackingEnabled = settings.testing.record_results_to_items === true;
+  const trackingRunId = resolveTrackedRunId();
+  const trackingAuthor = resolveTrackingAuthor(settings.author_default);
+  const trackingAttemptRaw = process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT?.trim();
+  const trackingParsedAttempt = trackingAttemptRaw ? Number.parseInt(trackingAttemptRaw, 10) : Number.NaN;
+  const trackingResumedFrom = process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM?.trim();
+  const trackingWarnings: string[] = [];
 
   const results: TestAllItemResult[] = [];
   const seenTestKeys = new Set<string>();
@@ -263,6 +288,35 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
     passed += summary.passed;
     failed += summary.failed;
     skipped += summary.skipped;
+    if (trackingEnabled) {
+      try {
+        await appendTrackedTestRunSummary({
+          pmRoot,
+          settings,
+          itemId: item.id,
+          author: trackingAuthor,
+          message: `Track test-all run summary (${trackingRunId})`,
+          entry: {
+            run_id: trackingRunId,
+            kind: "test-all",
+            status: summary.failed > 0 || (options.failOnSkipped === true && summary.skipped > 0) ? "failed" : "passed",
+            started_at: runStartedAt,
+            finished_at: nowIso(),
+            recorded_at: nowIso(),
+            attempt: Number.isFinite(trackingParsedAttempt) && trackingParsedAttempt >= 1 ? trackingParsedAttempt : undefined,
+            resumed_from: trackingResumedFrom && trackingResumedFrom.length > 0 ? trackingResumedFrom : undefined,
+            passed: summary.passed,
+            failed: summary.failed,
+            skipped: summary.skipped,
+            items: 1,
+            linked_tests: tests.length,
+            fail_on_skipped_triggered: options.failOnSkipped === true && summary.skipped > 0 ? true : undefined,
+          },
+        });
+      } catch (error: unknown) {
+        trackingWarnings.push(`test_result_tracking_failed:${item.id}:${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
     results.push({
       id: item.id,
       status: item.status,
@@ -290,6 +344,7 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
     passed,
     skipped,
     fail_on_skipped_triggered: failOnSkippedTriggered ? true : undefined,
+    warnings: trackingWarnings.length > 0 ? trackingWarnings : undefined,
     results,
   };
 }

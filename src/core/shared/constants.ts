@@ -83,6 +83,7 @@ export const FRONT_MATTER_KEY_ORDER: ReadonlyArray<keyof ItemFrontMatter> = [
   "learnings",
   "files",
   "tests",
+  "test_runs",
   "docs",
   "close_reason",
 ];
@@ -107,6 +108,9 @@ export const SETTINGS_DEFAULTS: PmSettings = {
   },
   workflow: {
     definition_of_done: [],
+  },
+  testing: {
+    record_results_to_items: false,
   },
   item_types: {
     definitions: [],

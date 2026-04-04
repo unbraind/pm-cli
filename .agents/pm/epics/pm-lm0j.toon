@@ -1,0 +1,33 @@
+id: pm-lm0j
+title: Background linked-test service and item result tracking
+description: Implement opt-in background execution and lifecycle management for pm test/test-all plus configurable persistence of test outcomes to PM items.
+type: Epic
+status: closed
+priority: 0
+tags[5]: background-runtime,item-tracking,linked-tests,pm-cli,test-runs
+created_at: "2026-04-04T19:05:06.647Z"
+updated_at: "2026-04-04T20:22:57.965Z"
+deadline: "2026-04-18T19:05:06.647Z"
+author: codex-agent
+estimated_minutes: 720
+acceptance_criteria: Background test orchestration lifecycle commands are available with duplicate prevention; test result tracking is configurable and persisted safely; docs/contracts/tests remain release-ready.
+reviewer: maintainer-review
+risk: medium
+confidence: medium
+sprint: background-service-rollout
+release: vnext
+reporter: codex-agent
+severity: medium
+environment: linux
+expected_result: Background runs can be managed and optionally tracked on items.
+affected_version: 2026.3.12
+fixed_version: target-vnext
+component: linked-test-runtime
+regression: true
+customer_impact: Improves agent/operator ergonomics without changing default foreground behavior.
+comments[1]{created_at,author,text}:
+  "2026-04-04T19:05:06.647Z",codex-agent,"Duplicate-check evidence: pm context --limit 10 --json; pm search background test service linked tests --limit 20 --json; pm search record test results to pm items --limit 20 --json; pm list-open --limit 50 --json; pm list-in-progress --limit 50 --json; pm list-blocked --limit 50 --json. Net-new because no active item delivers background lifecycle management plus item-level test-result tracking."
+notes[1]{created_at,author,text}:
+  "2026-04-04T19:05:06.647Z",codex-agent,Parent lineage for background test service and configurable PM item test-result tracking.
+close_reason: background linked-test service and item tracking epic delivered
+body: Delivery epic for background linked-test orchestration and test-result tracking on item records.
