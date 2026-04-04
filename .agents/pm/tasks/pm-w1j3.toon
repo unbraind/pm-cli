@@ -1,0 +1,39 @@
+id: pm-w1j3
+title: Implement comments-audit command with filters/latest
+description: "Implement additive comments-audit command, wire CLI/completion/contracts/Pi surfaces, and add regression coverage."
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:comments",external-audit,implementation,pm-cli
+created_at: "2026-04-04T22:38:14.047Z"
+updated_at: "2026-04-04T23:35:15.093Z"
+deadline: "2026-04-10T22:38:14.047Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: "comments-audit command returns deterministic grouped comment snapshots with status/type/assignee filters and latest limit, without modifying existing comments behavior."
+goal: External report remediation
+objective: Deliver bulk comments governance query
+value: Efficient comment history audits
+impact: Cuts runtime and complexity for governance sweeps
+outcome: Operators can audit comments in one command
+why_now: Current serial per-item approach is too expensive for medium/large trackers
+parent: pm-ayyt
+comments[3]{created_at,author,text}:
+  "2026-04-04T22:38:14.047Z",codex-agent,Task created for direct implementation of comments-audit command and integration parity updates.
+  "2026-04-04T22:48:16.609Z",codex-agent,"Implemented additive comments-audit surface with status/type/assignee filters, --limit-items, and --latest snapshots. Wired main/completion/contracts/Pi and added runCommentsAudit unit coverage. Evidence: node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts passed."
+  "2026-04-04T23:34:59.203Z",codex-agent,"Final evidence: comments-audit command implemented with status/type/assignee filters plus --limit-items/--latest, with command wiring/contracts/completion/Pi parity and docs updates. Verification passed: linked test run via pm test pm-w1j3 --run, full node scripts/run-tests.mjs test, and node scripts/run-tests.mjs coverage."
+notes[1]{created_at,author,text}:
+  "2026-04-04T22:38:14.047Z",codex-agent,Planned files include new command module plus main/completion/contracts/Pi and comments command tests.
+files[6]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,pi-comments-audit-mapping
+  src/cli/commands/comments-audit.ts,project,bulk-comments-audit-command
+  src/cli/commands/completion.ts,project,comments-audit-completion
+  src/cli/main.ts,project,comments-audit-command-wiring
+  src/sdk/cli-contracts.ts,project,comments-audit-contract
+  tests/unit/comments-command.spec.ts,project,comments-audit-regression
+tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,comments-audit-targeted
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mnkywjwz-pmp61j,test,passed,"2026-04-04T23:32:18.348Z","2026-04-04T23:32:33.108Z","2026-04-04T23:32:33.108Z",null,null,1,0,0,null,null,null
+close_reason: Implemented comments-audit bulk query surface and verified linked/full test coverage.
+body: "Execution task for feature pm-ayyt covering command implementation, output schema, and docs/tests parity."

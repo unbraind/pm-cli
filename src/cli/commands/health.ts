@@ -13,7 +13,7 @@ import { resolveEmbeddingProviders } from "../../core/search/providers.js";
 import { resolveSettingsWithSemanticRuntimeDefaults } from "../../core/search/semantic-defaults.js";
 import { resolveVectorStores } from "../../core/search/vector-stores.js";
 import type { LoadedExtension } from "../../core/extensions/loader.js";
-import { EXIT_CODE, PM_REQUIRED_SUBDIRS } from "../../core/shared/constants.js";
+import { EXIT_CODE, PM_CORE_REQUIRED_SUBDIRS, PM_OPTIONAL_TYPE_SUBDIRS } from "../../core/shared/constants.js";
 import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -39,6 +39,10 @@ export interface HealthResult {
   checks: HealthCheck[];
   warnings: string[];
   generated_at: string;
+}
+
+export interface RunHealthOptions {
+  strictDirectories?: boolean;
 }
 
 interface MigrationStatusEntry {
@@ -674,7 +678,7 @@ function validateSettingsValues(settings: PmSettings): string[] {
   return warnings;
 }
 
-export async function runHealth(global: GlobalOptions): Promise<HealthResult> {
+export async function runHealth(global: GlobalOptions, options: RunHealthOptions = {}): Promise<HealthResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const settingsPath = getSettingsPath(pmRoot);
   if (!(await pathExists(settingsPath))) {
@@ -684,10 +688,23 @@ export async function runHealth(global: GlobalOptions): Promise<HealthResult> {
   const { settings, warnings: settingsReadWarnings } = await readSettingsWithMetadata(pmRoot);
   const normalizedSettingsReadWarnings = [...new Set(settingsReadWarnings)];
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const requiredDirs = [...new Set([...PM_REQUIRED_SUBDIRS.filter((entry) => entry.length > 0), ...typeRegistry.folders])];
-  const missingDirs: string[] = [];
+  const strictDirectories = options.strictDirectories === true;
+  const optionalBuiltinDirs = new Set<string>(PM_OPTIONAL_TYPE_SUBDIRS.filter((entry) => entry.length > 0));
+  const requiredDirSet = new Set<string>(PM_CORE_REQUIRED_SUBDIRS.filter((entry) => entry.length > 0));
+  const optionalDirSet = new Set<string>();
+  for (const folder of typeRegistry.folders) {
+    if (optionalBuiltinDirs.has(folder)) {
+      optionalDirSet.add(folder);
+      continue;
+    }
+    requiredDirSet.add(folder);
+  }
+  const requiredDirs = [...requiredDirSet].sort((left, right) => left.localeCompare(right));
+  const optionalDirs = [...optionalDirSet].sort((left, right) => left.localeCompare(right));
+  const missingRequiredDirs: string[] = [];
+  const missingOptionalDirs: string[] = [];
   const hookWarnings: string[] = [];
-  for (const relativeDir of requiredDirs) {
+  for (const relativeDir of [...requiredDirs, ...optionalDirs]) {
     const directoryPath = path.join(pmRoot, relativeDir);
     hookWarnings.push(
       ...(await runActiveOnReadHooks({
@@ -696,9 +713,14 @@ export async function runHealth(global: GlobalOptions): Promise<HealthResult> {
       })),
     );
     if (!(await isDirectory(directoryPath))) {
-      missingDirs.push(relativeDir);
+      if (optionalDirSet.has(relativeDir)) {
+        missingOptionalDirs.push(relativeDir);
+      } else {
+        missingRequiredDirs.push(relativeDir);
+      }
     }
   }
+  const missingDirs = strictDirectories ? [...missingRequiredDirs, ...missingOptionalDirs] : [...missingRequiredDirs];
 
   const settingWarnings = validateSettingsValues(settings);
   const extensionCheck = await buildExtensionCheck(pmRoot, settings, Boolean(global.noExtensions));
@@ -733,7 +755,11 @@ export async function runHealth(global: GlobalOptions): Promise<HealthResult> {
       status: missingDirs.length === 0 ? "ok" : "warn",
       details: {
         required: requiredDirs,
+        optional: optionalDirs,
+        missing_required: missingRequiredDirs,
+        missing_optional: missingOptionalDirs,
         missing: missingDirs,
+        strict_directories: strictDirectories,
       },
     },
     {

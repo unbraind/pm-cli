@@ -1,0 +1,27 @@
+id: pm-kslz
+title: Config key discovery and export actions
+description: Add pm config list/export actions so operators and agents can discover supported keys and retrieve one-shot resolved snapshots.
+type: Feature
+status: closed
+priority: 1
+tags[4]: "area:config","area:ux",external-audit,pm-cli
+created_at: "2026-04-04T22:38:22.678Z"
+updated_at: "2026-04-04T23:35:44.014Z"
+deadline: "2026-04-11T22:38:22.678Z"
+author: codex-agent
+estimated_minutes: 240
+acceptance_criteria: pm config supports list and export actions with deterministic output across project/global scopes and full contracts/docs/tests parity.
+goal: External report remediation
+objective: Improve config discoverability for automation
+value: Fewer brittle hardcoded integration assumptions
+impact: Lower maintenance overhead for agents and scripts
+outcome: Config keys and values can be discovered/exported in one call
+why_now: Current config UX requires hardcoding keys and repetitive calls
+parent: pm-gt8u
+comments[2]{created_at,author,text}:
+  "2026-04-04T22:38:22.678Z",codex-agent,"Duplicate-check evidence: pm search config list export key discovery --limit 10; pm list-open --limit 20; no active item currently tracks config key discovery/export command actions."
+  "2026-04-04T23:35:37.311Z",codex-agent,"Delivery evidence: child task pm-5lmj is closed with linked pm test run passing; config list/export actions shipped with deterministic schema-compatible outputs and docs parity. Full project test and coverage suites passed."
+notes[1]{created_at,author,text}:
+  "2026-04-04T22:38:22.678Z",codex-agent,Keep get/set compatibility and add list/export as additive actions with explicit schemas.
+close_reason: Feature completed via closed child task pm-5lmj with full verification and docs parity.
+body: Net-new config UX surface for key discovery and automation-friendly export without changing existing get/set behavior.

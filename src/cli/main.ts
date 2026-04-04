@@ -10,6 +10,7 @@ import {
   runClaim,
   runClose,
   runComments,
+  runCommentsAudit,
   runCompletion,
   runConfig,
   runContracts,
@@ -2076,10 +2077,10 @@ program
 program
   .command("config")
   .argument("<scope>", "Config scope: project|global")
-  .argument("<action>", "Config action: get|set")
+  .argument("<action>", "Config action: get|set|list|export")
   .argument(
-    "<key>",
-    "Config key: definition-of-done|item-format|history-missing-stream-policy|sprint-release-format-policy|parent-reference-policy|test-result-tracking",
+    "[key]",
+    "Config key for get|set: definition-of-done|item-format|history-missing-stream-policy|sprint-release-format-policy|parent-reference-policy|test-result-tracking",
   )
   .option("--criterion <text>", "Definition-of-Done criterion (repeatable for set)", collect)
   .option("--format <value>", "Item format for item-format key: toon|json_markdown")
@@ -2088,7 +2089,7 @@ program
     "Policy key values: history-missing-stream-policy=auto_create|strict_error; sprint-release-format-policy=warn|strict_error; parent-reference-policy=warn|strict_error; test-result-tracking=enabled|disabled",
   )
   .description("Read or update pm settings for the current workspace or global profile.")
-  .action(async (scope: string, action: string, key: string, options: Record<string, unknown>, command) => {
+  .action(async (scope: string, action: string, key: string | undefined, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
     const criteria = Array.isArray(options.criterion) ? (options.criterion as string[]) : [];
@@ -2936,6 +2937,33 @@ program
   });
 
 program
+  .command("comments-audit")
+  .option("--status <value>", "Filter by item status")
+  .option("--type <value>", "Filter by item type")
+  .option("--assignee <value>", "Filter by assignee (use none for unassigned)")
+  .option("--limit-items <n>", "Limit returned item count")
+  .option("--latest <n>", "Return latest n comments per item (default: 1)")
+  .description("Audit latest comments across filtered items.")
+  .action(async (options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const result = await runCommentsAudit(
+      {
+        status: typeof options.status === "string" ? options.status : undefined,
+        type: typeof options.type === "string" ? options.type : undefined,
+        assignee: typeof options.assignee === "string" ? options.assignee : undefined,
+        limitItems: typeof options.limitItems === "string" ? options.limitItems : undefined,
+        latest: typeof options.latest === "string" ? options.latest : undefined,
+      },
+      globalOptions,
+    );
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=comments-audit took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+program
   .command("notes")
   .argument("<id>", "Item id")
   .argument("[text]", "Optional note text shorthand (equivalent to --add; use - for stdin)")
@@ -3408,10 +3436,13 @@ program
 program
   .command("health")
   .description("Show project tracker health checks.")
-  .action(async (_options, command) => {
+  .option("--strict-directories", "Treat optional item-type directories as required failures")
+  .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
-    const result = await runHealth(globalOptions);
+    const result = await runHealth(globalOptions, {
+      strictDirectories: Boolean(options.strictDirectories),
+    });
     printResult(result, globalOptions);
     if (globalOptions.profile) {
       printError(`profile:command=health took_ms=${Date.now() - startedAt}`);
@@ -3425,7 +3456,7 @@ program
   .option("--check-resolution", "Run closed-item resolution metadata checks")
   .option("--check-files", "Run linked-file and orphaned-file checks")
   .option("--check-command-references", "Run linked-command PM-ID reference checks")
-  .option("--scan-mode <value>", "Select file candidate scan mode for --check-files (default|tracked-all)")
+  .option("--scan-mode <value>", "Select file candidate scan mode for --check-files (default|tracked-all|tracked-all-strict)")
   .option("--include-pm-internals", "Include PM storage internals in tracked-all candidate scans")
   .option("--check-history-drift", "Run item/history hash drift checks")
   .action(async (options: Record<string, unknown>, command) => {

@@ -76,6 +76,7 @@ export const PM_CORE_COMMAND_NAMES = [
   "delete",
   "append",
   "comments",
+  "comments-audit",
   "notes",
   "learnings",
   "files",
@@ -128,6 +129,7 @@ export const PM_TOOL_ACTIONS = [
   "delete",
   "append",
   "comments",
+  "comments-audit",
   "notes",
   "learnings",
   "files",
@@ -380,6 +382,8 @@ export const TEST_RUNS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--force" },
   { flag: "--author" },
 ];
+
+export const HEALTH_FLAG_CONTRACTS: CliFlagContract[] = [{ flag: "--strict-directories" }];
 
 export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--check-metadata" },
@@ -793,7 +797,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   contractAction: { type: "string" },
   command: { type: "string" },
   schemaOnly: { type: "boolean" },
-  configAction: { type: "string", enum: ["get", "set"] },
+  configAction: { type: "string", enum: ["get", "set", "list", "export"] },
   key: { type: "string" },
   title: { type: "string" },
   description: { type: "string" },
@@ -855,6 +859,8 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   deadlineBefore: { type: "string" },
   deadlineAfter: { type: "string" },
   limit: { anyOf: [{ type: "string" }, { type: "number" }] },
+  limitItems: { anyOf: [{ type: "string" }, { type: "number" }] },
+  latest: { anyOf: [{ type: "string" }, { type: "number" }] },
   offset: { anyOf: [{ type: "string" }, { type: "number" }] },
   progress: { type: "boolean" },
   background: { type: "boolean" },
@@ -876,7 +882,8 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   checkMetadata: { type: "boolean" },
   checkResolution: { type: "boolean" },
   checkFiles: { type: "boolean" },
-  scanMode: { type: "string", enum: ["default", "tracked-all"] },
+  strictDirectories: { type: "boolean" },
+  scanMode: { type: "string", enum: ["default", "tracked-all", "tracked-all-strict"] },
   includePmInternals: { type: "boolean" },
   checkHistoryDrift: { type: "boolean" },
   checkCommandReferences: { type: "boolean" },
@@ -959,8 +966,8 @@ const AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS = ["author", "message", "force"];
 const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContract> = {
   init: { optional: ["prefix"] },
   config: {
-    required: ["scope", "configAction", "key"],
-    optional: ["criterion", "format", "policy"],
+    required: ["scope", "configAction"],
+    optional: ["key", "criterion", "format", "policy"],
   },
   "extension-install": {
     optional: ["target", "github", "scope", "ref"],
@@ -1000,6 +1007,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   delete: { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   append: { required: ["id", "body"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   comments: { required: ["id"], optional: ["text", "add", "limit", "allowAuditComment", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
+  "comments-audit": { optional: ["status", "type", "assignee", "limitItems", "latest"] },
   notes: { required: ["id"], optional: ["text", "add", "limit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   learnings: { required: ["id"], optional: ["text", "add", "limit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   files: {
@@ -1064,7 +1072,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
     optional: ["author"],
   },
   stats: {},
-  health: {},
+  health: { optional: ["strictDirectories"] },
   validate: {
     optional: [
       "checkMetadata",
@@ -1233,6 +1241,14 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     description: "Number of matching rows to skip before limit is applied.",
     examples: [0, 50, "100"],
   },
+  limitItems: {
+    description: "Maximum number of filtered items to include in comments-audit output.",
+    examples: [10, "25"],
+  },
+  latest: {
+    description: "Number of most recent comments to include per item in comments-audit output.",
+    examples: [1, "3"],
+  },
   validateClose: {
     description: 'Close-time metadata validation mode ("warn" or "strict").',
     examples: ["warn", "strict"],
@@ -1246,9 +1262,12 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   checkFiles: {
     description: "Run linked-file and orphaned-file checks.",
   },
+  strictDirectories: {
+    description: "Treat optional item-type directories as required health failures.",
+  },
   scanMode: {
     description: "Select file candidate scan mode for --check-files.",
-    examples: ["default", "tracked-all"],
+    examples: ["default", "tracked-all", "tracked-all-strict"],
   },
   includePmInternals: {
     description: "Include PM storage internals in tracked-all candidate scans.",

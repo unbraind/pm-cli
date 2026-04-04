@@ -1,16 +1,16 @@
 id: pm-doek
 title: "External follow-up: add focused extension diagnostics triage summaries"
-description: "Improve extension triage by enhancing existing extension manage and health diagnostics with concise, remediation-oriented summaries."
+description: Enhance extension --manage output to distinguish update-check lifecycle states (checked/skipped/failed) with explicit reason fields while preserving existing triage summary behavior.
 type: Task
 status: closed
 priority: 2
 tags[4]: "area:extensions","area:health",follow-up,pm-cli
 created_at: "2026-04-03T22:00:05.513Z"
-updated_at: "2026-04-04T21:41:01.623Z"
+updated_at: "2026-04-04T23:35:20.709Z"
 deadline: "2026-04-10T22:00:05.513Z"
 author: codex-agent
 estimated_minutes: 240
-acceptance_criteria: "extension --manage and health extension diagnostics expose concise triage summary fields and actionable remediation hints in deterministic output, with backward-compatible detail payloads and test coverage."
+acceptance_criteria: "extension --manage output includes deterministic per-extension update_check_status and update_check_reason fields plus triage aggregates by status, with backward-compatible extension detail payloads."
 definition_of_ready: "Historical lineage, affected artifacts, and verification evidence for External follow-up: add focused extension diagnostics triage summaries are documented for reuse."
 goal: "Implement and verify scoped work for External follow-up: add focused extension diagnostics triage summaries."
 objective: "Capture actionable implementation context and verification evidence for External follow-up: add focused extension diagnostics triage summaries."
@@ -18,7 +18,7 @@ value: "Improves future change velocity by making External follow-up: add focuse
 impact: "Reduces ambiguity and handoff risk for future work touching External follow-up: add focused extension diagnostics triage summaries."
 outcome: "This record can be used as canonical context when modifying External follow-up: add focused extension diagnostics triage summaries."
 why_now: "Historical decisions for External follow-up: add focused extension diagnostics triage summaries need durable context for future maintenance and audits."
-parent: pm-grst
+parent: pm-gt8u
 blocked_reason: "External follow-up: add focused extension diagnostics triage summaries has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If External follow-up: add focused extension diagnostics triage summaries is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 environment: "Project workspace execution context for External follow-up: add focused extension diagnostics triage summaries (pm CLI + Node/pnpm toolchain)."
@@ -27,26 +27,32 @@ expected_result: "Acceptance criteria for External follow-up: add focused extens
 actual_result: "Work completed and recorded with linked artifacts for External follow-up: add focused extension diagnostics triage summaries."
 component: project-management/external-follow-up-add-focused-extension-diagnos
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for External follow-up: add focused extension diagnostics triage summaries."
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-04-03T22:00:05.513Z",codex-agent,Child task created from external extension diagnostics triage request.
   "2026-04-03T22:06:22.186Z",codex-agent,"Implementation started: add concise triage summary and remediation hints to extension --manage and health extension diagnostics while preserving full detail payloads."
   "2026-04-03T22:17:11.560Z",codex-agent,"Implemented focused extension triage without adding new commands: extension --manage now returns concise triage summary/remediation hints, and health extensions check includes condensed triage counts + next steps. Evidence: pm test pm-doek --run passed; full build/test/coverage passed; smoke checks confirm details.triage in both manage and health JSON outputs."
   "2026-04-04T08:22:49.743Z",codex-agent,"External Audit 2026-04-04 mapping: external Issue 5 ID pm-cs7u is not present in this tracker. Canonical local coverage remains pm-grst/pm-doek (extension triage summaries in extension --manage and health) with closed verified evidence; no duplicate item created."
   "2026-04-04T12:43:54.373Z",codex-agent,"External audit 2026-04-04 mapping refresh: this task already delivered manage/health triage summaries; net-new unresolved scope is dedicated doctor command surface tracked in pm-gm9y/pm-hjrr (no duplicate manage-health task created)."
+  "2026-04-04T22:39:14.454Z",codex-agent,Reused and reopened existing extension-manage lineage for external issue report follow-up (no duplicate task created). This cycle adds explicit per-extension update_check_status/update_check_reason semantics and triage aggregates under epic pm-gt8u.
+  "2026-04-04T23:35:04.931Z",codex-agent,"Final evidence: extension manage output now includes per-extension update_check_status/update_check_reason and triage status totals while preserving backward-compatible detail payloads; docs and contracts updated. Verification passed: linked test run via pm test pm-doek --run, full node scripts/run-tests.mjs test, and node scripts/run-tests.mjs coverage."
 notes[1]{created_at,author,text}:
   "2026-04-03T22:00:05.513Z",codex-agent,No new command surface; improve manage and health diagnostics only.
-files[5]{path,scope,note}:
+files[6]{path,scope,note}:
   src/cli/commands/extension.ts,project,manage diagnostics summary
   src/cli/commands/health.ts,project,extension health triage summary
   src/cli/help-content.ts,project,help alignment for triage and validate examples
+  src/sdk/cli-contracts.ts,project,extension-manage-status-contract
   tests/unit/extension-command.spec.ts,project,manage/explore triage regression tests
   tests/unit/health-command.spec.ts,project,health extension triage regression tests
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,extension-manage-status-targeted
   node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/health-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,extension triage diagnostics regressions
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mnkyz155-94kzvs,test,passed,"2026-04-04T23:33:30.903Z","2026-04-04T23:34:28.745Z","2026-04-04T23:34:28.745Z",null,null,2,0,0,null,null,null
 docs[4]{path,scope,note}:
   CHANGELOG.md,project,extension triage changelog
   docs/ARCHITECTURE.md,project,extension diagnostics architecture notes
   PRD.md,project,extension triage output contract docs
   README.md,project,extension manage/health triage docs
-close_reason: Extension manage/health diagnostics now include concise triage summaries and remediation hints with tests/docs parity.
+close_reason: Implemented extension manage update-check status/reason reporting with triage aggregates and verified linked/full test coverage.
 body: External report requests a fast triage surface. Chosen direction avoids new command; enhance existing extension --manage and health extension diagnostics with compact summaries and next-step hints while preserving full JSON detail.

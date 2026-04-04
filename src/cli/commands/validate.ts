@@ -19,7 +19,7 @@ import { extractReferencedPmItemIdsFromCommand } from "./test.js";
 
 type ValidateCheckName = "metadata" | "resolution" | "files" | "command_references" | "history_drift";
 type ValidateStatus = "ok" | "warn";
-type ValidateFileScanMode = "default" | "tracked-all";
+type ValidateFileScanMode = "default" | "tracked-all" | "tracked-all-strict";
 type ItemWithBody = Awaited<ReturnType<typeof listAllFrontMatterWithBody>>[number];
 type FileCandidateSource = "default-curated" | "tracked-git" | "tracked-all-fallback-default";
 
@@ -36,7 +36,7 @@ const FILE_SCAN_ROOT_FILES = [
 ] as const;
 const DIRECTORY_IGNORE_SET = new Set(["node_modules", ".git", ".cursor", ".agents", "dist", "coverage"]);
 const RESOLUTION_FIELD_KEYS = ["resolution", "expected_result", "actual_result"] as const;
-const VALIDATE_FILE_SCAN_MODES = ["default", "tracked-all"] as const;
+const VALIDATE_FILE_SCAN_MODES = ["default", "tracked-all", "tracked-all-strict"] as const;
 const GIT_LS_FILES_MAX_BUFFER = 32 * 1024 * 1024;
 const execFileAsync = promisify(execFile);
 
@@ -93,6 +93,9 @@ function resolveFileScanMode(scanMode: string | undefined): ValidateFileScanMode
   }
   if (normalized === "tracked-all" || normalized === "tracked_all") {
     return "tracked-all";
+  }
+  if (normalized === "tracked-all-strict" || normalized === "tracked_all_strict") {
+    return "tracked-all-strict";
   }
   throw new PmCliError(
     `Unknown --scan-mode value "${scanMode}". Supported values: ${VALIDATE_FILE_SCAN_MODES.join(", ")}.`,
@@ -217,7 +220,7 @@ async function collectProjectFileCandidates(
   workspaceRoot: string,
   scanMode: ValidateFileScanMode,
 ): Promise<FileCandidateCollection> {
-  if (scanMode === "tracked-all") {
+  if (scanMode === "tracked-all" || scanMode === "tracked-all-strict") {
     const trackedCandidates = await collectTrackedGitFileCandidates(workspaceRoot);
     if (trackedCandidates) {
       return {
@@ -426,12 +429,27 @@ async function buildFilesCheck(
 
   const uniqueMissingLinkedPaths = [...new Set(missingLinkedPaths)].sort((left, right) => left.localeCompare(right));
   const fileCandidates = await collectProjectFileCandidates(workspaceRoot, fileScanMode);
-  const pmInternalCandidatePrefixes = includePmInternals ? [] : resolvePmInternalCandidatePrefixes(pmRoot, workspaceRoot);
+  const strictTrackedAllMode = fileScanMode === "tracked-all-strict";
+  const includePmInternalsEffective = includePmInternals || strictTrackedAllMode;
+  const pmInternalCandidatePrefixes = includePmInternalsEffective ? [] : resolvePmInternalCandidatePrefixes(pmRoot, workspaceRoot);
+  const excludedPmInternalPaths =
+    pmInternalCandidatePrefixes.length === 0
+      ? []
+      : fileCandidates.candidateFiles.filter((candidate) => hasPathPrefix(candidate, pmInternalCandidatePrefixes));
   const candidateFiles =
     pmInternalCandidatePrefixes.length === 0
       ? fileCandidates.candidateFiles
       : fileCandidates.candidateFiles.filter((candidate) => !hasPathPrefix(candidate, pmInternalCandidatePrefixes));
-  const excludedPmInternalCount = fileCandidates.candidateFiles.length - candidateFiles.length;
+  const excludedPmInternalCount = excludedPmInternalPaths.length;
+  const excludedByReason: Record<string, unknown> = {};
+  if (excludedPmInternalCount > 0) {
+    const summarizedPmInternalPaths = summarizeList(excludedPmInternalPaths);
+    excludedByReason.pm_internals = {
+      count: excludedPmInternalCount,
+      paths: summarizedPmInternalPaths.values,
+      paths_truncated: summarizedPmInternalPaths.truncated,
+    };
+  }
   const orphanedFiles = candidateFiles.filter((candidate) => !linkedProjectPaths.has(candidate));
   const warnings: string[] = [];
   if (uniqueMissingLinkedPaths.length > 0) {
@@ -451,10 +469,14 @@ async function buildFilesCheck(
         workspace_root: workspaceRoot,
         scan_mode_requested: fileCandidates.requestedMode,
         scan_mode_applied: fileCandidates.appliedMode,
+        strict_tracked_all_mode: strictTrackedAllMode,
         candidate_scan_source: fileCandidates.source,
-        include_pm_internals: includePmInternals,
+        include_pm_internals: includePmInternalsEffective,
+        include_pm_internals_requested: includePmInternals,
         pm_internal_candidate_prefixes: pmInternalCandidatePrefixes,
         pm_internal_excluded_count: excludedPmInternalCount,
+        excluded_total: excludedPmInternalCount,
+        excluded_by_reason: excludedByReason,
         linked_project_paths: linkedProjectPaths.size,
         candidate_total_raw: fileCandidates.candidateTotal,
         candidate_scanned_raw: fileCandidates.candidateScanned,

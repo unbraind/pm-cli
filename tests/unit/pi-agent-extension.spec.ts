@@ -195,6 +195,20 @@ describe("Pi agent extension wrapper for pm", () => {
       "strict_error",
     ]);
 
+    const configListArgs = buildPmCliArgs({
+      action: "config",
+      scope: "project",
+      configAction: "list",
+    });
+    expect(configListArgs).toEqual(["--json", "config", "project", "list"]);
+
+    const configExportArgs = buildPmCliArgs({
+      action: "config",
+      scope: "project",
+      configAction: "export",
+    });
+    expect(configExportArgs).toEqual(["--json", "config", "project", "export"]);
+
     const createArgs = buildPmCliArgs({
       action: "create",
       title: "Pi numeric task",
@@ -416,6 +430,13 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(() => buildPmCliArgs({ action: "config", scope: "project", configAction: "set" })).toThrow(
       'Action "config" requires "key".',
     );
+    expect(() =>
+      buildPmCliArgs({
+        action: "config",
+        scope: "project",
+        configAction: "nope",
+      }),
+    ).toThrow('Unsupported configAction "nope". Expected get|set|list|export.');
     expect(() => buildPmCliArgs({ action: "get" })).toThrow('Action "get" requires "id".');
     expect(() => buildPmCliArgs({ action: "restore", id: "pm-a1b2" })).toThrow(
       'Action "restore" requires "target".',
@@ -500,7 +521,7 @@ describe("Pi agent extension wrapper for pm", () => {
     const validateSchema = schemaForAction(tool.parameters as Record<string, unknown>, "validate");
     expect(validateSchema.required).toEqual(["action"]);
     expect(schemaProperty(validateSchema, "checkFiles").type).toBe("boolean");
-    expect(schemaProperty(validateSchema, "scanMode").enum).toEqual(["default", "tracked-all"]);
+    expect(schemaProperty(validateSchema, "scanMode").enum).toEqual(["default", "tracked-all", "tracked-all-strict"]);
     expect(schemaProperty(validateSchema, "includePmInternals").type).toBe("boolean");
     expect(schemaProperty(validateSchema, "checkCommandReferences").type).toBe("boolean");
 

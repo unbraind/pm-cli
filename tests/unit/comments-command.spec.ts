@@ -4,6 +4,7 @@ import path from "node:path";
 import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runComments } from "../../src/cli/commands/comments.js";
+import { runCommentsAudit } from "../../src/cli/commands/comments-audit.js";
 import { EXIT_CODE } from "../../src/constants.js";
 import { PmCliError } from "../../src/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
@@ -237,6 +238,53 @@ describe("runComments", () => {
 
       const result = await runComments(id, { add: "-" }, { path: context.pmPath });
       expect(result.comments.at(-1)?.text).toBe("from stdin");
+    });
+  });
+
+  it("returns filtered latest comment snapshots across items", async () => {
+    await withTempPmPath(async (context) => {
+      const openId = createTask(context, "comments-audit-open");
+      const closedId = createTask(context, "comments-audit-closed");
+
+      const closed = context.runCli(
+        ["close", closedId, "close item for audit test", "--author", "owner-a", "--message", "close item for audit test", "--json"],
+        {
+          expectJson: true,
+        },
+      );
+      expect(closed.code).toBe(0);
+
+      await runComments(openId, { add: "open-first", author: "audit-a" }, { path: context.pmPath });
+      await runComments(openId, { add: "open-second", author: "audit-b" }, { path: context.pmPath });
+      await runComments(closedId, { add: "closed-only", author: "audit-c" }, { path: context.pmPath });
+
+      const auditOpen = await runCommentsAudit({ status: "open", latest: "1" }, { path: context.pmPath });
+      expect(auditOpen.filters).toMatchObject({
+        status: "open",
+        latest: 1,
+      });
+      expect(auditOpen.items.some((entry) => entry.id === closedId)).toBe(false);
+      expect(auditOpen.items.find((entry) => entry.id === openId)?.comments.map((entry) => entry.text)).toEqual(["open-second"]);
+
+      const auditClosed = await runCommentsAudit({ status: "closed", latest: "3", limitItems: "1" }, { path: context.pmPath });
+      expect(auditClosed.count).toBe(1);
+      expect(auditClosed.items[0]?.id).toBe(closedId);
+      expect(auditClosed.items[0]?.comments.map((entry) => entry.text)).toEqual(["closed-only"]);
+      expect(auditClosed.items[0]?.comment_count).toBe(1);
+    });
+  });
+
+  it("validates comments-audit filter values", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(runCommentsAudit({ status: "not-a-status" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runCommentsAudit({ latest: "-1" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runCommentsAudit({ limitItems: "1.5" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 });

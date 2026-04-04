@@ -650,6 +650,7 @@ Help and error UX note:
 - `pm release <ID>`
 - `pm delete <ID>`
 - `pm comments <ID> [TEXT]`
+- `pm comments-audit`
 - `pm notes <ID> [TEXT]`
 - `pm learnings <ID> [TEXT]`
 - `pm files <ID>`
@@ -677,6 +678,8 @@ Help and error UX note:
 - `pm config <project|global> get parent-reference-policy`
 - `pm config <project|global> set test-result-tracking --policy enabled|disabled`
 - `pm config <project|global> get test-result-tracking`
+- `pm config <project|global> list`
+- `pm config <project|global> export`
 - `pm close <ID> <TEXT>`
 - `pm beads import [--file <path>]`
 - `pm todos import [--folder <path>]`
@@ -863,7 +866,7 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | Command | Key inputs | Output object |
 | --- | --- | --- |
 | `pm init [PREFIX]` | optional prefix, `--path` | `{ ok, path, settings, created_dirs, warnings }` |
-| `pm extension [target] --install\|--uninstall\|--explore\|--manage\|--doctor\|--activate\|--deactivate` | exactly one lifecycle action, optional `target` (required for install/uninstall/activate/deactivate; `doctor` supports `pm extension doctor` target syntax), scope flags (`--project` default, `--local` alias, `--global`), install source selectors (`target`, `--gh`, `--github`, optional `--ref`), bundled aliases (`beads`, `todos`), doctor detail mode (`--detail summary\|deep`) | `{ ok, action, scope, roots, warnings, details }` where `details` is action-specific and `explore/manage` include `triage` summary + remediation hints while `doctor` includes consolidated summary/deep diagnostics |
+| `pm extension [target] --install\|--uninstall\|--explore\|--manage\|--doctor\|--activate\|--deactivate` | exactly one lifecycle action, optional `target` (required for install/uninstall/activate/deactivate; `doctor` supports `pm extension doctor` target syntax), scope flags (`--project` default, `--local` alias, `--global`), install source selectors (`target`, `--gh`, `--github`, optional `--ref`), bundled aliases (`beads`, `todos`), doctor detail mode (`--detail summary\|deep`) | `{ ok, action, scope, roots, warnings, details }` where `details` is action-specific and `explore/manage` include per-extension `update_check_status`/`update_check_reason` plus `triage` status totals + remediation hints while `doctor` includes consolidated summary/deep diagnostics |
 | `pm list` | optional filter flags (including `--include-body`, `--offset`, and JSON-only `--stream`); excludes terminal statuses (`closed`, `canceled`) by default | `{ items, count, filters, now }` (or streamed newline-delimited rows when `--json --stream`) |
 | `pm list-all` | optional filter flags (including `--include-body`, `--offset`, and JSON-only `--stream`); includes all statuses including terminal | `{ items, count, filters, now }` (or streamed newline-delimited rows when `--json --stream`) |
 | `pm list-draft` | optional type/tag/priority/deadline/assignee/sprint/release/include-body/offset filters plus JSON-only stream mode | `{ items, count, filters, now }` (or streamed newline-delimited rows when `--json --stream`) |
@@ -891,6 +894,7 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | `pm claim <ID>` | id, optional `--author`/`--message`/`--force` (`--force` required for terminal/lock override paths; non-terminal assignee takeover does not require force) | `{ item, claimed_by, previous_assignee, forced }` |
 | `pm release <ID>` | id, optional `--author`/`--message`/`--force` | `{ item, released_by, previous_assignee, forced }` |
 | `pm comments <ID> [TEXT] --add/--limit` | id + optional positional comment text shorthand + comment text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`); optional mutation metadata flags `--author`/`--message`/`--force`; additive ownership-safe audit path `--allow-audit-comment` for non-owner append-only comments | `{ id, comments, count }` |
+| `pm comments-audit` | optional governance filters (`--status`, `--type`, `--assignee`, `--limit-items`, `--latest`) for latest comment snapshots across matching items | `{ items, count, filters, now, warnings? }` where each item includes `comment_count` and `comments` limited to latest `n` entries |
 | `pm notes <ID> [TEXT] --add/--limit` | id + optional positional note text shorthand + note text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`) | `{ id, notes, count }` |
 | `pm learnings <ID> [TEXT] --add/--limit` | id + optional positional learning text shorthand + learning text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`) | `{ id, learnings, count }` |
 | `pm files <ID> --add/--add-glob/--remove/--migrate/--append-stable/--validate-paths/--audit/--list` | id + file refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`); optional glob expansion via repeatable `--add-glob` (plain glob or `pattern=<glob>,scope=<scope>,note=<text>`); optional additive linked-path hygiene (`--migrate from=<old>,to=<new>`, path existence validation, cross-item audit, non-mutating list); optional `--append-stable` avoids full-array resorting and appends new links while preserving current order | `{ id, files, changed, count, migrations_applied, validation, audit }` |
@@ -898,8 +902,9 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | `pm test-all --status --timeout` | optional status filter plus additive run controls `--background`, `--progress`, `--env-set`/`--env-clear`/`--shared-host-safe`/`--pm-context`/`--fail-on-context-mismatch`/`--fail-on-skipped`/`--require-assertions-for-pm` (schema-mode runs fail PM tracker-read command mismatches by default); duplicate linked command/path entries are deduped per invocation (keyed by scope+normalized command or scope+path plus runtime directives + assertion metadata) and reported as skipped; when duplicate keys carry different `timeout_seconds`, execution uses deterministic maximum timeout for that key | foreground: `{ totals, failed, passed, skipped, fail_on_skipped_triggered?, warnings?, results }`; background start: `{ started, duplicate_of?, run }` (`totals.failure_categories` included) |
 | `pm test-runs list|status|logs|stop|resume` | list/status/log/stop/resume lifecycle control for managed background test runs (`logs` supports `--stream stdout|stderr|both` and `--tail`; `stop` supports `--force`) | list: `{ runs, count, filters }`; status: `{ run, health }`; logs: `{ run, stream, tail, stdout, stderr }`; stop: `{ run, signal_sent }`; resume: `{ resumed_from, run }` |
 | `pm stats` | none | `{ totals, by_type, by_status, generated_at }` |
-| `pm health` | none (runs settings/directories/extensions/storage plus integrity, history-drift, and vectorization diagnostics) | `{ ok, checks, warnings, generated_at }` with extension diagnostics including condensed `details.triage` |
-| `pm validate` | optional scoped checks (`--check-metadata`, `--check-resolution`, `--check-files`, `--check-command-references`, `--check-history-drift`; default all checks); file checks accept `--scan-mode default|tracked-all` plus `--include-pm-internals` opt-in and report filtered + raw candidate metrics (`candidate_total`, `candidate_scanned`, `candidate_total_raw`, `candidate_scanned_raw`); command-reference checks detect stale PM-id references in linked commands before execution | `{ ok, checks, warnings, generated_at }` |
+| `pm health` | none (runs settings/directories/extensions/storage plus integrity, history-drift, and vectorization diagnostics); supports `--strict-directories` to treat optional built-in item-type directories as required warning/failure conditions | `{ ok, checks, warnings, generated_at }` with extension diagnostics including condensed `details.triage` and directory check details (`required`, `optional`, `missing_required`, `missing_optional`) |
+| `pm validate` | optional scoped checks (`--check-metadata`, `--check-resolution`, `--check-files`, `--check-command-references`, `--check-history-drift`; default all checks); file checks accept `--scan-mode default|tracked-all|tracked-all-strict` plus `--include-pm-internals` opt-in and report filtered + raw candidate metrics (`candidate_total`, `candidate_scanned`, `candidate_total_raw`, `candidate_scanned_raw`) plus structured exclusion summaries (`excluded_by_reason`) | `{ ok, checks, warnings, generated_at }` |
+| `pm config <project\|global> <get\|set\|list\|export> [key]` | scope + action; `get/set` require key, `list/export` reject key; policy/format/criterion flags apply where relevant | `get/set`: existing key-specific result shape; `list`: `{ scope, keys, count, settings_path, changed, warnings? }`; `export`: `{ scope, values, settings_path, changed, warnings? }` |
 | `pm gc` | none | `{ ok, removed, retained, warnings, generated_at }` |
 | `pm contracts [--action <value>] [--command <value>] [--schema-only]` | optional action/command filters and schema-only mode for machine contract introspection | `{ schema_version, schema_id, selected, actions, commands, schema, command_flags?, commander_aliases? }` |
 | `pm docs <ID> --add/--add-glob/--remove/--migrate/--validate-paths/--audit` | id + doc refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`); optional glob expansion via repeatable `--add-glob` (plain glob or `pattern=<glob>,scope=<scope>,note=<text>`); optional additive linked-path hygiene (`--migrate from=<old>,to=<new>`, path existence validation, cross-item audit) | `{ id, docs, changed, count, migrations_applied, validation, audit }` |
@@ -1059,6 +1064,10 @@ Implemented baseline:
 
 ### 13.5 Health integrity, drift, and vectorization diagnostics
 
+- `pm health` includes deterministic `directories` diagnostics:
+  - separates core required directories from optional built-in type directories (`events`, `reminders`, `milestones`, `meetings`)
+  - reports `missing_required` and `missing_optional` details independently
+  - `--strict-directories` treats missing optional directories as warning/failure contributors
 - `pm health` includes deterministic `integrity` diagnostics:
   - scans item/history files for merge-conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`)
   - emits deterministic warning codes for conflict markers, invalid item parses, and invalid JSONL history lines
@@ -1086,7 +1095,7 @@ Lifecycle manager command:
 - Install sources: local directory, GitHub HTTPS URL, `github.com/<owner>/<repo>[/path]`, or `--gh/--github <owner>/<repo>[/path]` with optional `--ref`.
 - GitHub subpath resolution probes deterministic default extension roots (`.agents/pm/extensions`, `.custom/pm-extensions`, `.custom/pm-extension`) when shorthand inputs do not include full paths.
 - Scope-local managed state is persisted in `<extension-root>/.managed-extensions.json` and includes source metadata plus update-check status.
-- `pm extension --manage` performs GitHub remote update checks for managed GitHub entries, persists latest check metadata, and returns deterministic `details.triage` summaries with remediation hints.
+- `pm extension --manage` performs GitHub remote update checks for managed GitHub entries, persists latest check metadata, and returns deterministic per-extension `update_check_status`/`update_check_reason` fields plus `details.triage` status totals/remediation hints.
 - `pm extension --doctor` (or `pm extension doctor`) returns consolidated diagnostics with summary/deep modes (`--detail summary|deep`), normalized warning codes, canonical load roots, active-vs-loaded project consistency diagnostics, and remediation hints.
 - `pm health` extension diagnostics include managed-state summaries/warnings for both project and global scope plus condensed `details.triage` counts/remediation for load, activation, and migration issues.
 

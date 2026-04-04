@@ -4,6 +4,7 @@ export { runActivity } from "./activity.js";
 export { runClaim, runRelease } from "./claim.js";
 export { runClose, type CloseCommandOptions, type CloseResult } from "./close.js";
 export { runComments } from "./comments.js";
+export { runCommentsAudit, type CommentsAuditOptions, type CommentsAuditResult } from "./comments-audit.js";
 export { runConfig, type ConfigCommandOptions, type ConfigResult } from "./config.js";
 export { runContracts, type ContractsCommandOptions, type ContractsResult } from "./contracts.js";
 export {

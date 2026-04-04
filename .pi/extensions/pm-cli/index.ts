@@ -103,6 +103,8 @@ export interface PmToolParameters {
   deadlineAfter?: string;
   limit?: NumericFlagInput;
   offset?: NumericFlagInput;
+  limitItems?: NumericFlagInput;
+  latest?: NumericFlagInput;
   progress?: boolean;
   background?: boolean;
   runId?: string;
@@ -120,6 +122,7 @@ export interface PmToolParameters {
   checkMetadata?: boolean;
   checkResolution?: boolean;
   checkFiles?: boolean;
+  strictDirectories?: boolean;
   scanMode?: string;
   includePmInternals?: boolean;
   checkHistoryDrift?: boolean;
@@ -389,12 +392,16 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       }
       return args;
     case "config":
-      args.push(
-        "config",
-        requireString(params.scope, "scope", action),
-        requireString(params.configAction, "configAction", action),
-        requireString(params.key, "key", action),
-      );
+      {
+        const scope = requireString(params.scope, "scope", action);
+        const configAction = requireString(params.configAction, "configAction", action);
+        args.push("config", scope, configAction);
+        if (configAction === "get" || configAction === "set") {
+          args.push(requireString(params.key, "key", action));
+        } else if (configAction !== "list" && configAction !== "export") {
+          throw new Error(`Unsupported configAction "${configAction}". Expected get|set|list|export.`);
+        }
+      }
       pushRepeatable(args, "--criterion", params.criterion);
       pushOption(args, "--format", params.format);
       pushOption(args, "--policy", params.policy);
@@ -541,6 +548,14 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       }
       addAuthorMessageForceFlags(args, params);
       return args;
+    case "comments-audit":
+      args.push("comments-audit");
+      pushOption(args, "--status", params.status);
+      pushOption(args, "--type", params.type);
+      pushOption(args, "--assignee", params.assignee);
+      pushOption(args, "--limit-items", params.limitItems ?? params.limit);
+      pushOption(args, "--latest", params.latest);
+      return args;
     case "notes":
       args.push("notes", requireString(params.id, "id", action));
       pushOption(args, "--add", params.text ?? params.add?.[0]);
@@ -669,9 +684,14 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       pushOption(args, "--author", params.author);
       return args;
     case "stats":
-    case "health":
     case "gc":
       args.push(action);
+      return args;
+    case "health":
+      args.push("health");
+      if (params.strictDirectories) {
+        args.push("--strict-directories");
+      }
       return args;
     case "validate":
       args.push("validate");

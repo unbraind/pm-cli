@@ -216,6 +216,11 @@ pm reindex --mode hybrid
 
 `pm health` includes deterministic checks for item/history integrity and semantic vector freshness:
 
+- `directories`
+  - distinguishes required tracker directories from optional built-in item-type directories
+  - reports `missing_required` and `missing_optional` separately in check details
+  - treats missing optional built-in type directories (`events`, `reminders`, `milestones`, `meetings`) as informational by default
+  - supports `--strict-directories` to treat missing optional directories as health warnings/failures
 - `integrity`
   - scans item and history files for merge-conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`)
   - reports invalid item parses and invalid JSONL lines in history streams with deterministic warning codes
@@ -236,9 +241,10 @@ The vectorization ledger is also refreshed during `pm reindex --mode semantic|hy
 - Runs all validation checks by default (`metadata`, `resolution`, `files`, `history_drift`).
 - Runs linked-command PM reference checks by default (`command_references`) to catch stale `pm-<id>` references before execution-time failures.
 - Supports scoped checks with `--check-metadata`, `--check-resolution`, `--check-files`, `--check-command-references`, and `--check-history-drift`.
-- `--check-files` supports `--scan-mode default|tracked-all`; `tracked-all` uses git-tracked candidates when available.
+- `--check-files` supports `--scan-mode default|tracked-all|tracked-all-strict`; tracked modes use git-tracked candidates when available.
 - `tracked-all` excludes PM internals by default for higher-signal orphaned results; pass `--include-pm-internals` for full internal-audit scans.
-- File-check details report filtered candidate counts (`candidate_total`, `candidate_scanned`) plus raw pre-filter counts (`candidate_total_raw`, `candidate_scanned_raw`) and `pm_internal_excluded_count`.
+- `tracked-all-strict` forces full tracked coverage (including PM internals) and bypasses internal exclusion filtering.
+- File-check details report filtered candidate counts (`candidate_total`, `candidate_scanned`) plus raw pre-filter counts (`candidate_total_raw`, `candidate_scanned_raw`), `pm_internal_excluded_count`, and structured `excluded_by_reason` summaries when paths are filtered.
 - Command-reference details report referenced PM IDs and stale-reference rows; stale rows emit `validate_command_references_stale_pm_ids:<count>` warnings.
 - Returns deterministic TOON/JSON output suitable for review or automation pipelines.
 - Output writers treat broken pipes (`EPIPE`) as expected shell behavior, so early-terminating pipelines do not emit unhandled Node stack traces.
@@ -314,6 +320,18 @@ pm config project set test-result-tracking --policy enabled
 pm config project set test-result-tracking --policy disabled
 pm config project get test-result-tracking --json
 ```
+
+## Config Discovery and Snapshot Export
+
+`pm config` also supports read-only key discovery and one-shot snapshot export for integration workflows:
+
+```bash
+pm config project list --json
+pm config project export --json
+```
+
+- `list` returns key metadata (`key`, aliases, value kind, applicable set flags, summary) plus current resolved values.
+- `export` returns the resolved config value object in one payload for deterministic machine consumption.
 
 ## History Diff and Verify
 
@@ -391,6 +409,9 @@ pm update pm-a1b2 --dep-remove "pm-b3c4"
 pm update pm-a1b2 --dep none
 pm deps pm-a1b2 --format tree
 pm deps pm-a1b2 --format graph --json
+
+# Bulk governance snapshots for latest comments across matching items
+pm comments-audit --status in_progress --latest 1 --limit-items 20 --json
 ```
 
 `none` semantics are unchanged for explicit clears in repeatable fields (`--file none`, `--comment none`, etc.).
@@ -652,7 +673,7 @@ Activation and health behavior:
 - Install auto-activates the extension in selected scope settings.
 - Deactivate/activate toggle `extensions.disabled[]`/`extensions.enabled[]` in settings.
 - `pm extension --explore` lists discovered extensions and active status.
-- `pm extension --manage` refreshes GitHub-managed update metadata, persists it to scope-local `.managed-extensions.json`, and includes a concise triage summary with remediation hints.
+- `pm extension --manage` refreshes GitHub-managed update metadata, persists it to scope-local `.managed-extensions.json`, and includes explicit per-extension `update_check_status`/`update_check_reason` fields (`checked`, `failed`, `skipped_unmanaged`, `skipped_non_github`, `not_checked`) plus triage status totals/remediation hints.
 - `pm extension --doctor` (or `pm extension doctor`) provides consolidated extension diagnostics with normalized warning codes, canonical load roots, active-vs-loaded consistency diagnostics, remediation hints, and optional deep output via `--detail deep`.
 - `pm health` includes managed extension state diagnostics plus a condensed extension triage block for quick load/activation/migration issue triage across project and global roots.
 

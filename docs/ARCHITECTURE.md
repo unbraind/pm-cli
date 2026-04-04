@@ -253,7 +253,7 @@ Linked arrays (`comments`, `notes`, `learnings`, `files`, `tests`, `docs`) are i
 - `pm create` log-seed repeatables (`--comment`, `--note`, `--learning`) now enforce explicit key boundaries (`author`, `created_at`, `text`) and reject parsed extra keys with usage guidance so unquoted key:value-like comma continuations cannot silently truncate seeded narrative text.
 - `pm deps --format tree|graph` provides read-only dependency traversal from stored front matter, with deterministic ordering, cycle markers, and missing-node reporting.
 - `pm list` / `pm list-*` support additive `--offset` pagination and JSON-only `--stream` line-delimited output for large datasets.
-- `pm validate` runs standalone repository checks (`metadata`, `resolution`, `files`, `command_references`, `history_drift`), supports file candidate selection via `--scan-mode default|tracked-all`, supports additive internal-audit coverage with `--include-pm-internals`, and returns deterministic filtered + raw file scan metrics plus stale PM-id command-reference diagnostics.
+- `pm validate` runs standalone repository checks (`metadata`, `resolution`, `files`, `command_references`, `history_drift`), supports file candidate selection via `--scan-mode default|tracked-all|tracked-all-strict`, supports additive internal-audit coverage with `--include-pm-internals`, and returns deterministic filtered + raw file scan metrics, structured `excluded_by_reason` summaries, plus stale PM-id command-reference diagnostics.
 
 ## Calendar Pipeline
 
@@ -361,7 +361,7 @@ Lifecycle manager command architecture:
 - `src/cli/commands/extension.ts` implements `pm extension` actions (`install`, `uninstall`, `explore`, `manage`, `activate`, `deactivate`) with deterministic validation and mutually-exclusive action routing.
 - Install sources support local directories, GitHub HTTPS URLs, `github.com/<owner>/<repo>[/path]`, and forced shorthand via `--gh/--github`.
 - Scope-local managed state is persisted at `<extensions-root>/.managed-extensions.json` for deterministic source metadata, install/update timestamps, and update-check status.
-- `--manage` executes GitHub remote checks (`git ls-remote`) for managed GitHub entries, updates managed-state metadata, and emits deterministic `details.triage` summary/remediation hints.
+- `--manage` executes GitHub remote checks (`git ls-remote`) for managed GitHub entries, updates managed-state metadata, and emits deterministic per-extension `update_check_status`/`update_check_reason` fields plus `details.triage` status totals/remediation hints.
 - Health diagnostics include managed extension summaries/warnings for both project and global extension roots and a condensed `details.triage` surface for load/activation/migration triage.
 
 Extension Host V2 adds three additional override planes:
@@ -404,6 +404,7 @@ Runtime semantic defaults:
 
 Health-time integrity and semantic/vector diagnostics:
 
+- `pm health` runs a `directories` check that separates required tracker directories from optional built-in type directories and supports `--strict-directories` for stricter failure semantics.
 - `pm health` runs an `integrity` check that scans item/history files for merge-conflict markers and parse/JSONL anomalies.
 - `pm health` now runs a `history_drift` check that compares each current item's canonical hash to the latest history `after_hash`.
 - `pm health` also runs a `vectorization` check that compares current item `updated_at` values to `search/vectorization-status.json`.
@@ -454,6 +455,7 @@ Validation policies can be configured via:
 - `pm config ... sprint-release-format-policy --policy warn|strict_error`
 - `pm config ... parent-reference-policy --policy warn|strict_error`
 - `pm config ... test-result-tracking --policy enabled|disabled`
+- `pm config ... list|export` for key discovery and one-shot resolved snapshot export
 
 Under `warn`, create/update continue and return deterministic validation warnings; under `strict_error`, invalid values are rejected with usage errors.
 

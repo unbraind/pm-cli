@@ -3,23 +3,28 @@ import type { BuiltinItemType, ItemFrontMatter, PmSettings } from "../../types/i
 export const PM_DIRNAME = ".agents/pm";
 export const SETTINGS_FILENAME = "settings.json";
 
-export const PM_REQUIRED_SUBDIRS = [
+export const PM_CORE_REQUIRED_SUBDIRS = [
   "",
   "epics",
   "features",
   "tasks",
   "chores",
   "issues",
-  "events",
-  "reminders",
-  "milestones",
-  "meetings",
   "history",
   "index",
   "search",
   "extensions",
   "locks",
 ] as const;
+
+export const PM_OPTIONAL_TYPE_SUBDIRS = [
+  "events",
+  "reminders",
+  "milestones",
+  "meetings",
+] as const;
+
+export const PM_REQUIRED_SUBDIRS = [...PM_CORE_REQUIRED_SUBDIRS, ...PM_OPTIONAL_TYPE_SUBDIRS] as const;
 
 export const TYPE_TO_FOLDER: Record<BuiltinItemType, string> = {
   Epic: "epics",

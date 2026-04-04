@@ -159,6 +159,8 @@ export interface ManagedExtensionSummary {
   last_update_check_at?: string;
   last_update_remote_commit?: string;
   update_error?: string;
+  update_check_status: ExtensionUpdateCheckStatus;
+  update_check_reason: string;
 }
 
 export interface ExtensionCommandResult {
@@ -182,9 +184,17 @@ interface ExtensionTriageSummary {
   managed_total: number;
   active_total: number;
   update_available_total: number;
+  update_check_status_totals: Record<ExtensionUpdateCheckStatus, number>;
   update_check_failed_total: number;
   top_warnings: string[];
   remediation: string[];
+}
+
+type ExtensionUpdateCheckStatus = "checked" | "skipped_unmanaged" | "skipped_non_github" | "failed" | "not_checked";
+
+interface ExtensionUpdateCheckResolution {
+  status: ExtensionUpdateCheckStatus;
+  reason: string;
 }
 
 type ExtensionDoctorDetailMode = "summary" | "deep";
@@ -788,6 +798,50 @@ function upsertManagedEntry(state: ManagedExtensionState, entry: ManagedExtensio
   };
 }
 
+function resolveUpdateCheckResolution(managedEntry: ManagedExtensionRecord | undefined): ExtensionUpdateCheckResolution {
+  if (!managedEntry) {
+    return {
+      status: "skipped_unmanaged",
+      reason: "extension_not_managed",
+    };
+  }
+  if (managedEntry.source.kind !== "github") {
+    return {
+      status: "skipped_non_github",
+      reason: `managed_source_kind_${managedEntry.source.kind}`,
+    };
+  }
+  const updateError = typeof managedEntry.update_error === "string" ? managedEntry.update_error.trim() : "";
+  if (updateError.length > 0) {
+    return {
+      status: "failed",
+      reason: updateError,
+    };
+  }
+  if (typeof managedEntry.last_update_check_at === "string" && managedEntry.last_update_check_at.trim().length > 0) {
+    if (managedEntry.update_available === true) {
+      return {
+        status: "checked",
+        reason: "update_available",
+      };
+    }
+    if (managedEntry.update_available === false) {
+      return {
+        status: "checked",
+        reason: "up_to_date",
+      };
+    }
+    return {
+      status: "checked",
+      reason: "checked_without_commit_baseline",
+    };
+  }
+  return {
+    status: "not_checked",
+    reason: "no_update_check_recorded",
+  };
+}
+
 async function listInstalledExtensions(
   extensionsRoot: string,
   scope: ExtensionScope,
@@ -822,6 +876,7 @@ async function listInstalledExtensions(
     if (!(await pathExists(manifestPath))) {
       warnings.push(`extension_manifest_missing:${scope}:${directoryName}`);
       const managedEntry = managedByDirectory.get(normalizeExtensionNameForMatch(directoryName));
+      const updateCheck = resolveUpdateCheckResolution(managedEntry);
       summaries.push({
         name: managedEntry?.name ?? directoryName,
         directory: directoryName,
@@ -835,6 +890,8 @@ async function listInstalledExtensions(
         last_update_check_at: managedEntry?.last_update_check_at,
         last_update_remote_commit: managedEntry?.last_update_remote_commit,
         update_error: managedEntry?.update_error,
+        update_check_status: updateCheck.status,
+        update_check_reason: updateCheck.reason,
       });
       continue;
     }
@@ -854,6 +911,7 @@ async function listInstalledExtensions(
     const managedEntry =
       managedByName.get(normalizeExtensionNameForMatch(manifest.name)) ??
       managedByDirectory.get(normalizeExtensionNameForMatch(directoryName));
+    const updateCheck = resolveUpdateCheckResolution(managedEntry);
     summaries.push({
       name: manifest.name,
       directory: directoryName,
@@ -867,6 +925,8 @@ async function listInstalledExtensions(
       last_update_check_at: managedEntry?.last_update_check_at,
       last_update_remote_commit: managedEntry?.last_update_remote_commit,
       update_error: managedEntry?.update_error,
+      update_check_status: updateCheck.status,
+      update_check_reason: updateCheck.reason,
     });
   }
   return {
@@ -985,9 +1045,19 @@ function buildExtensionTriageSummary(
   const managedTotal = extensions.filter((entry) => entry.managed).length;
   const activeTotal = extensions.filter((entry) => entry.active).length;
   const updateAvailableTotal = extensions.filter((entry) => entry.update_available === true).length;
-  const updateCheckFailedTotal = extensions.filter(
-    (entry) => typeof entry.update_error === "string" && entry.update_error.trim().length > 0,
-  ).length;
+  const updateCheckStatusTotals: Record<ExtensionUpdateCheckStatus, number> = {
+    checked: 0,
+    skipped_unmanaged: 0,
+    skipped_non_github: 0,
+    failed: 0,
+    not_checked: 0,
+  };
+  for (const entry of extensions) {
+    updateCheckStatusTotals[entry.update_check_status] += 1;
+  }
+  const updateCheckFailedTotal = updateCheckStatusTotals.failed;
+  const skippedUnmanagedTotal = updateCheckStatusTotals.skipped_unmanaged;
+  const skippedNonGithubTotal = updateCheckStatusTotals.skipped_non_github;
   const scopeFlag = scope === "global" ? "--global" : "--project";
   const remediation: string[] = [];
   if (normalizedWarnings.length > 0) {
@@ -1000,6 +1070,12 @@ function buildExtensionTriageSummary(
     if (normalizedWarnings.some((warning) => warning.startsWith("extension_manager_state_"))) {
       remediation.push(`Review and repair ${scope} managed extension state file if schema/read warnings persist.`);
     }
+  }
+  if (skippedUnmanagedTotal > 0) {
+    remediation.push(`Unmanaged extensions are skipped by update checks. Install/manage them via pm extension --install ${scopeFlag} <source>.`);
+  }
+  if (skippedNonGithubTotal > 0) {
+    remediation.push(`Non-GitHub managed extensions are skipped by update checks. Use doctor output for non-update diagnostics.`);
   }
   if (updateAvailableTotal > 0) {
     remediation.push(`Update available managed extensions via pm extension --install ${scopeFlag} <source>.`);
@@ -1014,6 +1090,7 @@ function buildExtensionTriageSummary(
     managed_total: managedTotal,
     active_total: activeTotal,
     update_available_total: updateAvailableTotal,
+    update_check_status_totals: updateCheckStatusTotals,
     update_check_failed_total: updateCheckFailedTotal,
     top_warnings: normalizedWarnings.slice(0, 8),
     remediation,
@@ -1330,8 +1407,8 @@ export async function runExtension(
       loadResult.disabled_by_flag,
     );
     warnings.push(...doctorConsistency.warnings);
-    const updateCheckWarnings = managedStateRead.state.entries
-      .filter((entry) => typeof entry.update_error === "string" && entry.update_error.trim().length > 0)
+    const updateCheckWarnings = installed.extensions
+      .filter((entry) => entry.update_check_status === "failed")
       .map((entry) => `extension_update_check_failed:${entry.name}`);
     warnings.push(...updateCheckWarnings);
 
@@ -1363,9 +1440,7 @@ export async function runExtension(
       managed_total: installed.extensions.filter((entry) => entry.managed).length,
       active_total: installed.extensions.filter((entry) => entry.active).length,
       update_available_total: installed.extensions.filter((entry) => entry.update_available === true).length,
-      update_check_failed_total: installed.extensions.filter(
-        (entry) => typeof entry.update_error === "string" && entry.update_error.trim().length > 0,
-      ).length,
+      update_check_failed_total: installed.extensions.filter((entry) => entry.update_check_status === "failed").length,
       load_failure_count: loadResult.failed.length,
       activation_failure_count: activationResult.failed.length,
       consistency_warning_count: doctorConsistency.warnings.length,
@@ -1446,14 +1521,16 @@ export async function runExtension(
         entries: sortManagedEntries(updates),
       };
       await writeManagedExtensionState(resolvedRoots.selected_root, managedState);
-      const updateWarnings = managedState.entries
-        .filter((entry) => typeof entry.update_error === "string" && entry.update_error.trim().length > 0)
-        .map((entry) => `extension_update_check_failed:${entry.name}`);
-      warnings.push(...updateWarnings);
     }
 
     const refreshedInstalled = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedState);
     warnings.push(...refreshedInstalled.warnings);
+    if (action === "manage") {
+      const updateWarnings = refreshedInstalled.extensions
+        .filter((entry) => entry.update_check_status === "failed")
+        .map((entry) => `extension_update_check_failed:${entry.name}`);
+      warnings.push(...updateWarnings);
+    }
     const triage = buildExtensionTriageSummary(scope, warnings, refreshedInstalled.extensions);
     return withResult({
       total: refreshedInstalled.extensions.length,

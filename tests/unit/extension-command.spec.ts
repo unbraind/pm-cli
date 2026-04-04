@@ -260,6 +260,16 @@ describe("extension command runtime", () => {
       expect(settingsAfterActivate.extensions.disabled).not.toContain("sample-ext");
 
       const manage = await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath });
+      const managedExtensions = (manage.details.extensions as Array<Record<string, unknown>>) ?? [];
+      expect(managedExtensions).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: "sample-ext",
+            update_check_status: "skipped_non_github",
+            update_check_reason: "managed_source_kind_local",
+          }),
+        ]),
+      );
       expect(manage.details).toMatchObject({
         total: 1,
         managed_total: 1,
@@ -267,6 +277,9 @@ describe("extension command runtime", () => {
         triage: {
           status: "ok",
           warning_count: 0,
+          update_check_status_totals: {
+            skipped_non_github: 1,
+          },
         },
       });
 
@@ -301,6 +314,48 @@ describe("extension command runtime", () => {
       const install = await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
       expect(install.details).toMatchObject({
         installed_in_place: true,
+      });
+    });
+  });
+
+  it("marks unmanaged discovered extensions as skipped_unmanaged during manage", async () => {
+    await withTempPmPath(async (context) => {
+      const unmanagedDir = path.join(context.pmPath, "extensions", "manual-unmanaged");
+      await mkdir(unmanagedDir, { recursive: true });
+      await writeFile(
+        path.join(unmanagedDir, "manifest.json"),
+        JSON.stringify(
+          {
+            name: "manual-unmanaged",
+            version: "1.0.0",
+            entry: "index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(path.join(unmanagedDir, "index.js"), "export default { activate() {} };", "utf8");
+
+      const manage = await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath });
+      const extensions = (manage.details.extensions as Array<Record<string, unknown>>) ?? [];
+      expect(extensions).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: "manual-unmanaged",
+            managed: false,
+            update_check_status: "skipped_unmanaged",
+            update_check_reason: "extension_not_managed",
+          }),
+        ]),
+      );
+      expect(manage.details).toMatchObject({
+        triage: {
+          update_check_status_totals: {
+            skipped_unmanaged: 1,
+          },
+        },
       });
     });
   });
@@ -724,6 +779,8 @@ describe("extension command runtime", () => {
             name: "github-managed-ext",
             update_available: true,
             last_update_remote_commit: remoteCommit,
+            update_check_status: "checked",
+            update_check_reason: "update_available",
           }),
         ]),
       );
@@ -844,6 +901,9 @@ describe("extension command runtime", () => {
         triage: {
           status: "warn",
           update_check_failed_total: 1,
+          update_check_status_totals: {
+            failed: 1,
+          },
         },
       });
     });
@@ -894,6 +954,9 @@ describe("extension command runtime", () => {
         triage: {
           status: "warn",
           update_check_failed_total: 1,
+          update_check_status_totals: {
+            failed: 1,
+          },
         },
       });
     });

@@ -73,11 +73,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `pm update --close-reason` / `--close_reason` support so callers can explicitly set or clear `close_reason` (`none` clears) without using `pm close`.
 - Added standalone `pm validate` command with deterministic check payloads for metadata completeness, closed-item resolution fields, linked-file/orphaned-file hygiene, and item/history drift.
 - Added `pm validate --scan-mode default|tracked-all` for file-check candidate selection, including explicit `candidate_total`/`candidate_scanned` reporting while preserving compatibility fields.
+- Added `pm validate --scan-mode tracked-all-strict` plus structured file-check exclusion reporting (`excluded_by_reason`) so tracked coverage behavior is explicit and machine-readable.
 - Added `pm close --validate-close [warn|strict]` for additive close-time resolution-field validation (`resolution`, `expected_result`, `actual_result`) with warning-first default behavior.
 - Added `pm files --append-stable` for minimal-diff file-link appends that preserve existing link order and reduce history patch churn during large audits.
 - Added `pm create --create-mode strict|progressive` so strict remains default while governance workflows can use staged progressive creation.
 - Added `pm comments --allow-audit-comment` to permit append-only audit comments on items owned by other assignees without broad ownership override semantics.
+- Added `pm comments-audit` for bulk latest-comment snapshots across status/type/assignee-filtered item sets (`--limit-items`, `--latest`) to support governance audit workflows.
 - Added `--offset` pagination and JSON-only `--stream` output mode for `pm list` and all `pm list-*` command families to improve large-result processing ergonomics.
+- Added additive `pm health --strict-directories` behavior with required-vs-optional directory diagnostics (`missing_required`, `missing_optional`) so optional built-in item-type directory gaps do not fail default health runs.
+- Added `pm config <project|global> list` and `pm config <project|global> export` for config-key discovery and one-shot resolved snapshot export.
+- Added explicit extension manage update-check reporting with per-extension `update_check_status` / `update_check_reason` fields and triage `update_check_status_totals`.
 - Added explicit `--progress` flag support to `pm test`, `pm test-all`, and `pm reindex` so non-interactive runs can opt into deterministic stderr progress visibility.
 - Added additive linked-test runtime environment controls: repeatable `--env-set` / `--env-clear` and `--shared-host-safe` on `pm test --run` and `pm test-all`.
 - Added per-linked-test runtime directives in linked test metadata (`env_set`, `env_clear`, `shared_host_safe`) for deterministic command-level execution control.

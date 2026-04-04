@@ -32,7 +32,7 @@ const CONFIG_KEY_VALUES = [
   "test-result-tracking",
   "test_result_tracking",
 ] as const;
-type ConfigAction = "get" | "set";
+type ConfigAction = "get" | "set" | "list" | "export";
 type ConfigKey =
   | "definition_of_done"
   | "item_format"
@@ -42,6 +42,22 @@ type ConfigKey =
   | "test_result_tracking";
 type HistoryMissingStreamPolicy = "auto_create" | "strict_error";
 type TestResultTrackingPolicy = "enabled" | "disabled";
+type ConfigValue =
+  | string[]
+  | ItemFormat
+  | HistoryMissingStreamPolicy
+  | SprintReleaseFormatPolicy
+  | ParentReferencePolicy
+  | TestResultTrackingPolicy;
+
+interface ConfigKeyDescriptor {
+  key: ConfigKey;
+  aliases: string[];
+  value_kind: "string_array" | "enum";
+  set_flags: string[];
+  summary: string;
+  value: ConfigValue;
+}
 
 export interface ConfigCommandOptions {
   criterion?: string[];
@@ -51,10 +67,13 @@ export interface ConfigCommandOptions {
 
 export interface ConfigResult {
   scope: ConfigScope;
-  key: ConfigKey;
+  key?: ConfigKey;
   criteria?: string[];
   format?: ItemFormat;
   policy?: HistoryMissingStreamPolicy | SprintReleaseFormatPolicy | ParentReferencePolicy | TestResultTrackingPolicy;
+  keys?: ConfigKeyDescriptor[];
+  values?: Record<ConfigKey, ConfigValue>;
+  count?: number;
   has_explicit_item_format?: boolean;
   migration?: {
     target_format: ItemFormat;
@@ -68,6 +87,24 @@ export interface ConfigResult {
   warnings?: string[];
 }
 
+const CONFIG_KEY_ALIASES: Record<ConfigKey, string[]> = {
+  definition_of_done: ["definition-of-done", "definition_of_done"],
+  item_format: ["item-format", "item_format"],
+  history_missing_stream_policy: ["history-missing-stream-policy", "history_missing_stream_policy"],
+  sprint_release_format_policy: ["sprint-release-format-policy", "sprint_release_format_policy"],
+  parent_reference_policy: ["parent-reference-policy", "parent_reference_policy"],
+  test_result_tracking: ["test-result-tracking", "test_result_tracking"],
+};
+
+const CONFIG_KEY_SUMMARIES: Record<ConfigKey, string> = {
+  definition_of_done: "Definition of Done criteria list.",
+  item_format: "Default item file format.",
+  history_missing_stream_policy: "Missing history stream handling policy.",
+  sprint_release_format_policy: "Sprint/release format validation policy.",
+  parent_reference_policy: "Parent reference validation policy.",
+  test_result_tracking: "Item-level linked test result persistence policy.",
+};
+
 function normalizeScope(value: string): ConfigScope {
   if ((CONFIG_SCOPE_VALUES as readonly string[]).includes(value)) {
     return value as ConfigScope;
@@ -79,10 +116,10 @@ function normalizeScope(value: string): ConfigScope {
 }
 
 function normalizeAction(value: string): ConfigAction {
-  if (value === "get" || value === "set") {
+  if (value === "get" || value === "set" || value === "list" || value === "export") {
     return value;
   }
-  throw new PmCliError(`Invalid config action "${value}". Allowed: get, set`, EXIT_CODE.USAGE);
+  throw new PmCliError(`Invalid config action "${value}". Allowed: get, set, list, export`, EXIT_CODE.USAGE);
 }
 
 function normalizeKey(value: string): ConfigKey {
@@ -154,6 +191,47 @@ function normalizeWarnings(values: string[]): string[] {
   return [...new Set(values)].sort((left, right) => left.localeCompare(right));
 }
 
+function normalizeKeyForAction(action: ConfigAction, value: string | undefined): ConfigKey | undefined {
+  if (action === "list" || action === "export") {
+    if (typeof value === "string" && value.trim().length > 0) {
+      throw new PmCliError(`Config action "${action}" does not accept <key>`, EXIT_CODE.USAGE);
+    }
+    return undefined;
+  }
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new PmCliError(`Config action "${action}" requires <key>`, EXIT_CODE.USAGE);
+  }
+  return normalizeKey(value);
+}
+
+function readConfigValue(settings: {
+  workflow: { definition_of_done: string[] };
+  item_format: ItemFormat;
+  history: { missing_stream: HistoryMissingStreamPolicy };
+  validation: {
+    sprint_release_format: SprintReleaseFormatPolicy;
+    parent_reference: ParentReferencePolicy;
+  };
+  testing: { record_results_to_items: boolean };
+}, key: ConfigKey): ConfigValue {
+  if (key === "item_format") {
+    return settings.item_format;
+  }
+  if (key === "history_missing_stream_policy") {
+    return settings.history.missing_stream;
+  }
+  if (key === "sprint_release_format_policy") {
+    return settings.validation.sprint_release_format;
+  }
+  if (key === "parent_reference_policy") {
+    return settings.validation.parent_reference;
+  }
+  if (key === "test_result_tracking") {
+    return settings.testing.record_results_to_items ? "enabled" : "disabled";
+  }
+  return [...settings.workflow.definition_of_done];
+}
+
 function withWarnings(result: ConfigResult, warnings: string[]): ConfigResult {
   if (warnings.length === 0) {
     return result;
@@ -180,18 +258,67 @@ async function resolveSettingsTarget(
 export async function runConfig(
   scopeValue: string,
   actionValue: string,
-  keyValue: string,
+  keyValue: string | undefined,
   options: ConfigCommandOptions,
   global: GlobalOptions,
 ): Promise<ConfigResult> {
   const scope = normalizeScope(scopeValue);
   const action = normalizeAction(actionValue);
-  const key = normalizeKey(keyValue);
+  const key = normalizeKeyForAction(action, keyValue);
   const target = await resolveSettingsTarget(scope, global);
   const { settings, metadata, warnings: settingsReadWarnings } = await readSettingsWithMetadata(target.pmRoot);
   const warnings = normalizeWarnings(settingsReadWarnings);
 
+  if (action === "list") {
+    const keys = (Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]).map((candidate) => ({
+      key: candidate,
+      aliases: CONFIG_KEY_ALIASES[candidate],
+      value_kind: candidate === "definition_of_done" ? ("string_array" as const) : ("enum" as const),
+      set_flags:
+        candidate === "definition_of_done"
+          ? ["--criterion"]
+          : candidate === "item_format"
+            ? ["--format"]
+            : ["--policy"],
+      summary: CONFIG_KEY_SUMMARIES[candidate],
+      value: readConfigValue(settings, candidate),
+    }));
+    return withWarnings(
+      {
+        scope,
+        keys,
+        count: keys.length,
+        settings_path: target.settingsPath,
+        changed: false,
+      },
+      warnings,
+    );
+  }
+
+  if (action === "export") {
+    const values = {
+      definition_of_done: readConfigValue(settings, "definition_of_done"),
+      item_format: readConfigValue(settings, "item_format"),
+      history_missing_stream_policy: readConfigValue(settings, "history_missing_stream_policy"),
+      sprint_release_format_policy: readConfigValue(settings, "sprint_release_format_policy"),
+      parent_reference_policy: readConfigValue(settings, "parent_reference_policy"),
+      test_result_tracking: readConfigValue(settings, "test_result_tracking"),
+    } satisfies Record<ConfigKey, ConfigValue>;
+    return withWarnings(
+      {
+        scope,
+        values,
+        settings_path: target.settingsPath,
+        changed: false,
+      },
+      warnings,
+    );
+  }
+
   if (action === "get") {
+    if (!key) {
+      throw new PmCliError('Config action "get" requires <key>', EXIT_CODE.USAGE);
+    }
     if (key === "item_format") {
       return withWarnings({
         scope,
@@ -247,6 +374,9 @@ export async function runConfig(
     }, warnings);
   }
 
+  if (!key) {
+    throw new PmCliError('Config action "set" requires <key>', EXIT_CODE.USAGE);
+  }
   if (key === "item_format") {
     const nextFormat = normalizeItemFormat(options.format);
     const changed = settings.item_format !== nextFormat || !metadata.has_explicit_item_format;

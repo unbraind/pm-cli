@@ -538,15 +538,25 @@ describe("runValidate", () => {
       const defaultResult = await runValidate({ checkFiles: true, scanMode: "tracked-all" }, { path: context.pmPath });
       const defaultDetails = checkByName(defaultResult, "files").details as {
         include_pm_internals: boolean;
+        include_pm_internals_requested: boolean;
         candidate_total_raw: number;
         candidate_total: number;
         pm_internal_excluded_count: number;
+        excluded_by_reason: {
+          pm_internals?: {
+            count: number;
+            paths: string[];
+          };
+        };
         orphaned_paths_count: number;
       };
       expect(defaultDetails.include_pm_internals).toBe(false);
+      expect(defaultDetails.include_pm_internals_requested).toBe(false);
       expect(defaultDetails.candidate_total_raw).toBe(2);
       expect(defaultDetails.candidate_total).toBe(1);
       expect(defaultDetails.pm_internal_excluded_count).toBe(1);
+      expect(defaultDetails.excluded_by_reason.pm_internals?.count).toBe(1);
+      expect(defaultDetails.excluded_by_reason.pm_internals?.paths.some((entry) => entry.endsWith(`${id}.toon`))).toBe(true);
       expect(defaultDetails.orphaned_paths_count).toBe(0);
 
       const includeResult = await runValidate(
@@ -559,17 +569,63 @@ describe("runValidate", () => {
       );
       const includeDetails = checkByName(includeResult, "files").details as {
         include_pm_internals: boolean;
+        include_pm_internals_requested: boolean;
         candidate_total_raw: number;
         candidate_total: number;
         pm_internal_excluded_count: number;
+        excluded_by_reason: Record<string, unknown>;
         orphaned_paths_count: number;
       };
       expect(includeDetails.include_pm_internals).toBe(true);
+      expect(includeDetails.include_pm_internals_requested).toBe(true);
       expect(includeDetails.candidate_total_raw).toBe(2);
       expect(includeDetails.candidate_total).toBe(2);
       expect(includeDetails.pm_internal_excluded_count).toBe(0);
+      expect(includeDetails.excluded_by_reason).toEqual({});
       expect(includeDetails.orphaned_paths_count).toBe(1);
       expect(includeResult.warnings).toContain("validate_files_orphaned_paths:1");
+    });
+  });
+
+  it("supports tracked-all-strict mode with explicit no-exclusion behavior", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "validate-files-tracked-all-strict");
+      const workspaceRoot = path.dirname(path.dirname(context.pmPath));
+      const srcDir = path.join(workspaceRoot, "src");
+      await mkdir(srcDir, { recursive: true });
+      await writeFile(path.join(srcDir, "tracked.ts"), "export const tracked = true;\n", "utf8");
+
+      const linked = context.runCli(["files", id, "--json", "--add", "path=src/tracked.ts,scope=project,note=tracked"], { expectJson: true });
+      expect(linked.code).toBe(0);
+
+      const gitInit = spawnSync("git", ["init"], { cwd: workspaceRoot, encoding: "utf8" });
+      expect(gitInit.status).toBe(0);
+      const internalTaskPath = path.relative(workspaceRoot, path.join(context.pmPath, "tasks", `${id}.toon`)).replaceAll("\\", "/");
+      const gitAdd = spawnSync("git", ["add", "src/tracked.ts", internalTaskPath], { cwd: workspaceRoot, encoding: "utf8" });
+      expect(gitAdd.status).toBe(0);
+
+      const strictResult = await runValidate({ checkFiles: true, scanMode: "tracked-all-strict" }, { path: context.pmPath });
+      const strictDetails = checkByName(strictResult, "files").details as {
+        scan_mode_requested: string;
+        scan_mode_applied: string;
+        strict_tracked_all_mode: boolean;
+        include_pm_internals: boolean;
+        include_pm_internals_requested: boolean;
+        candidate_total_raw: number;
+        candidate_total: number;
+        pm_internal_excluded_count: number;
+        excluded_by_reason: Record<string, unknown>;
+      };
+
+      expect(strictDetails.scan_mode_requested).toBe("tracked-all-strict");
+      expect(strictDetails.scan_mode_applied).toBe("tracked-all-strict");
+      expect(strictDetails.strict_tracked_all_mode).toBe(true);
+      expect(strictDetails.include_pm_internals_requested).toBe(false);
+      expect(strictDetails.include_pm_internals).toBe(true);
+      expect(strictDetails.candidate_total_raw).toBe(2);
+      expect(strictDetails.candidate_total).toBe(2);
+      expect(strictDetails.pm_internal_excluded_count).toBe(0);
+      expect(strictDetails.excluded_by_reason).toEqual({});
     });
   });
 

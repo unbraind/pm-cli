@@ -466,6 +466,53 @@ describe("runHealth", () => {
     });
   });
 
+  it("treats missing optional type directories as informational by default", async () => {
+    await withTempPmPath(async (context) => {
+      await rm(path.join(context.pmPath, "events"), { recursive: true, force: true });
+      await rm(path.join(context.pmPath, "reminders"), { recursive: true, force: true });
+      await rm(path.join(context.pmPath, "milestones"), { recursive: true, force: true });
+      await rm(path.join(context.pmPath, "meetings"), { recursive: true, force: true });
+
+      const health = await runHealth({ path: context.pmPath });
+      expect(health.ok).toBe(true);
+      expect(health.warnings).toEqual([]);
+
+      const directoriesCheck = health.checks.find((check) => check.name === "directories");
+      expect(directoriesCheck?.status).toBe("ok");
+      expect(directoriesCheck?.details).toMatchObject({
+        missing: [],
+        missing_optional: ["events", "meetings", "milestones", "reminders"],
+        strict_directories: false,
+      });
+    });
+  });
+
+  it("fails on missing optional directories when strict mode is enabled", async () => {
+    await withTempPmPath(async (context) => {
+      await rm(path.join(context.pmPath, "events"), { recursive: true, force: true });
+      await rm(path.join(context.pmPath, "reminders"), { recursive: true, force: true });
+      await rm(path.join(context.pmPath, "milestones"), { recursive: true, force: true });
+      await rm(path.join(context.pmPath, "meetings"), { recursive: true, force: true });
+
+      const health = await runHealth({ path: context.pmPath }, { strictDirectories: true });
+      expect(health.ok).toBe(false);
+      expect(health.warnings).toEqual([
+        "missing_directory:events",
+        "missing_directory:meetings",
+        "missing_directory:milestones",
+        "missing_directory:reminders",
+      ]);
+
+      const directoriesCheck = health.checks.find((check) => check.name === "directories");
+      expect(directoriesCheck?.status).toBe("warn");
+      expect(directoriesCheck?.details).toMatchObject({
+        missing: ["events", "meetings", "milestones", "reminders"],
+        missing_optional: ["events", "meetings", "milestones", "reminders"],
+        strict_directories: true,
+      });
+    });
+  });
+
   it("marks extension check unhealthy when runtime load probe fails", async () => {
     await withTempPmPath(async (context) => {
       const projectExtensionsRoot = path.join(context.pmPath, "extensions");

@@ -5,6 +5,7 @@ import {
   CONTEXT_FLAG_CONTRACTS,
   CREATE_FLAG_CONTRACTS,
   GLOBAL_FLAG_CONTRACTS,
+  HEALTH_FLAG_CONTRACTS,
   LIST_FILTER_FLAG_CONTRACTS,
   PM_CORE_COMMAND_NAMES,
   SEARCH_FLAG_CONTRACTS,
@@ -31,6 +32,7 @@ const UPDATE_FLAGS = toCompletionFlagString(UPDATE_FLAG_CONTRACTS);
 const CALENDAR_FLAGS = toCompletionFlagString(CALENDAR_FLAG_CONTRACTS);
 const CONTEXT_FLAGS = toCompletionFlagString(CONTEXT_FLAG_CONTRACTS);
 const SEARCH_FLAGS = toCompletionFlagString(SEARCH_FLAG_CONTRACTS);
+const HEALTH_FLAGS = toCompletionFlagString(HEALTH_FLAG_CONTRACTS);
 
 const MUTATION_FLAGS = "--author --message --force --json --quiet --path --no-extensions --profile --help";
 
@@ -103,13 +105,16 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen("--mode --progress --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    config)",
-    `      COMPREPLY=(${compgen("--criterion --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--criterion --format --policy --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    extension)",
     `      COMPREPLY=(${compgen("--install --uninstall --explore --manage --doctor --activate --deactivate --project --local --global --gh --github --ref --detail --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    comments)",
     `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-comment --force --json --quiet --path --no-extensions --profile --help")})`,
+    "      ;;",
+    "    comments-audit)",
+    `      COMPREPLY=(${compgen("--status --type --assignee --limit-items --latest --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    notes|learnings)",
     `      COMPREPLY=(${compgen("--add --limit --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
@@ -134,6 +139,9 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     "      ;;",
     "    validate)",
     `      COMPREPLY=(${compgen("--check-metadata --check-resolution --check-files --scan-mode --include-pm-internals --check-history-drift --check-command-references --json --quiet --path --no-extensions --profile --help")})`,
+    "      ;;",
+    "    health)",
+    `      COMPREPLY=(${compgen(HEALTH_FLAGS)})`,
     "      ;;",
     "    history)",
     `      COMPREPLY=(${compgen("--limit --diff --verify --json --quiet --path --no-extensions --profile --help")})`,
@@ -205,6 +213,7 @@ _pm_commands() {
     'delete:Delete an item and record the change'
     'append:Append text to an item body'
     'comments:List or add comments for an item'
+    'comments-audit:Audit latest comments across filtered items'
     'notes:List or add notes for an item'
     'learnings:List or add learnings for an item'
     'files:Manage linked files'
@@ -458,6 +467,14 @@ _pm() {
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
+        config)
+          _arguments \\
+            '--criterion[Definition-of-Done criterion (repeatable for set)]:criterion' \\
+            '--format[Item format for item-format key]:format:(toon json_markdown)' \\
+            '--policy[Policy value for supported policy keys]:policy' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
         close)
           _arguments \\
             '--author[Mutation author]:author' \\
@@ -472,10 +489,26 @@ _pm() {
             '--check-metadata[Run metadata completeness checks]' \\
             '--check-resolution[Run closed-item resolution metadata checks]' \\
             '--check-files[Run linked-file and orphaned-file checks]' \\
-            '--scan-mode[Select file candidate scan mode for --check-files]:(default tracked-all)' \\
+            '--scan-mode[Select file candidate scan mode for --check-files]:(default tracked-all tracked-all-strict)' \\
             '--include-pm-internals[Include PM storage internals in tracked-all candidate scans]' \\
             '--check-history-drift[Run item/history hash drift checks]' \\
             '--check-command-references[Run linked-command PM-ID reference checks]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        health)
+          _arguments \\
+            '--strict-directories[Treat optional item-type directories as required failures]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        comments-audit)
+          _arguments \\
+            '--status[Filter by item status]:status:(draft open in_progress blocked closed canceled)' \\
+            '--type[Filter by item type]:(${typeChoices})' \\
+            '--assignee[Filter by assignee (none for unassigned)]:assignee' \\
+            '--limit-items[Limit returned item count]:number' \\
+            '--latest[Return latest n comments per item]:number' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -569,6 +602,7 @@ complete -c pm -n __pm_no_subcommand -a close         -d 'Close an item with a r
 complete -c pm -n __pm_no_subcommand -a delete        -d 'Delete an item and record the change'
 complete -c pm -n __pm_no_subcommand -a append        -d 'Append text to an item body'
 complete -c pm -n __pm_no_subcommand -a comments      -d 'List or add comments for an item'
+complete -c pm -n __pm_no_subcommand -a comments-audit -d 'Audit latest comments across filtered items'
 complete -c pm -n __pm_no_subcommand -a notes         -d 'List or add notes for an item'
 complete -c pm -n __pm_no_subcommand -a learnings     -d 'List or add learnings for an item'
 complete -c pm -n __pm_no_subcommand -a files         -d 'Manage linked files'
@@ -751,10 +785,19 @@ complete -c pm -n '__fish_seen_subcommand_from close' -l force -d 'Force overrid
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-metadata -d 'Run metadata completeness checks'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-resolution -d 'Run closed-item resolution metadata checks'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-files -d 'Run linked-file and orphaned-file checks'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l scan-mode -d 'Select file candidate scan mode for --check-files' -r -a 'default tracked-all'
+complete -c pm -n '__fish_seen_subcommand_from validate' -l scan-mode -d 'Select file candidate scan mode for --check-files' -r -a 'default tracked-all tracked-all-strict'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l include-pm-internals -d 'Include PM storage internals in tracked-all candidate scans'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-history-drift -d 'Run item/history hash drift checks'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-command-references -d 'Run linked-command PM-ID reference checks'
+complete -c pm -n '__fish_seen_subcommand_from config' -l criterion -d 'Definition-of-Done criterion (repeatable for set)' -r
+complete -c pm -n '__fish_seen_subcommand_from config' -l format -d 'Item format for item-format key' -r -a 'toon json_markdown'
+complete -c pm -n '__fish_seen_subcommand_from config' -l policy -d 'Policy value for supported policy keys' -r
+complete -c pm -n '__fish_seen_subcommand_from health' -l strict-directories -d 'Treat optional item-type directories as required failures'
+complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l status -d 'Filter by item status' -r -a 'draft open in_progress blocked closed canceled'
+complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l type -d 'Filter by item type' -r -a '${typeChoices}'
+complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l assignee -d 'Filter by assignee (none for unassigned)' -r
+complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l limit-items -d 'Limit returned item count' -r
+complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l latest -d 'Return latest n comments per item' -r
 
 # completion shell argument
 complete -c pm -n '__fish_seen_subcommand_from completion' -a 'bash zsh fish' -d 'Shell type'

@@ -1,0 +1,27 @@
+id: pm-ayyt
+title: Bulk comments audit query surface
+description: Add a status/type-filtered comments audit command that returns latest-N comment snapshots across items without per-item serial calls.
+type: Feature
+status: closed
+priority: 1
+tags[4]: "area:audit","area:comments",external-audit,pm-cli
+created_at: "2026-04-04T22:38:06.028Z"
+updated_at: "2026-04-04T23:35:42.527Z"
+deadline: "2026-04-11T22:38:06.028Z"
+author: codex-agent
+estimated_minutes: 260
+acceptance_criteria: CLI provides a bulk comments audit surface with status/type/assignee filters and latest-N output in deterministic grouped shape with docs and tests.
+goal: External report remediation
+objective: Reduce governance comment-audit overhead
+value: One-call comments auditing for large trackers
+impact: Removes high shell/process overhead in maintenance workflows
+outcome: Bulk comments snapshots are queryable by filters
+why_now: Current workflow requires hundreds of per-item comments calls
+parent: pm-gt8u
+comments[2]{created_at,author,text}:
+  "2026-04-04T22:38:06.028Z",codex-agent,"Duplicate-check evidence: pm search bulk comments audit status latest --limit 10; pm list-open --limit 20; no active item currently tracks a bulk comments query command surface."
+  "2026-04-04T23:35:34.695Z",codex-agent,"Delivery evidence: child task pm-w1j3 is closed with linked pm test run passing; comments-audit command shipped with filters/latest controls plus contracts/completion/Pi/docs parity. Full project test and coverage suites passed."
+notes[1]{created_at,author,text}:
+  "2026-04-04T22:38:06.028Z",codex-agent,Keep pm comments single-item semantics unchanged and add an additive audit command.
+close_reason: Feature completed via closed child task pm-w1j3 with full verification and docs parity.
+body: Net-new capability for governance workflows that need comment visibility across many items in one deterministic command.

@@ -56,6 +56,51 @@ describe("runConfig", () => {
     });
   });
 
+  it("lists config keys with metadata and current values", async () => {
+    await withTempRoot(async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      const settings = structuredClone(SETTINGS_DEFAULTS);
+      settings.workflow.definition_of_done = ["tests pass"];
+      settings.testing.record_results_to_items = true;
+      await writeSettings(pmRoot, settings);
+
+      const result = await runConfig("project", "list", undefined, {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot });
+      expect(result.changed).toBe(false);
+      expect(result.count).toBe(6);
+      expect(result.keys?.map((entry) => entry.key)).toEqual([
+        "definition_of_done",
+        "item_format",
+        "history_missing_stream_policy",
+        "sprint_release_format_policy",
+        "parent_reference_policy",
+        "test_result_tracking",
+      ]);
+      expect(result.keys?.find((entry) => entry.key === "definition_of_done")?.value).toEqual(["tests pass"]);
+      expect(result.keys?.find((entry) => entry.key === "test_result_tracking")?.value).toBe("enabled");
+    });
+  });
+
+  it("exports resolved config snapshot values", async () => {
+    await withTempRoot(async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      const settings = structuredClone(SETTINGS_DEFAULTS);
+      settings.workflow.definition_of_done = ["tests pass"];
+      settings.validation.parent_reference = "strict_error";
+      await writeSettings(pmRoot, settings);
+
+      const result = await runConfig("project", "export", undefined, {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot });
+      expect(result.changed).toBe(false);
+      expect(result.values).toEqual({
+        definition_of_done: ["tests pass"],
+        item_format: "toon",
+        history_missing_stream_policy: "auto_create",
+        sprint_release_format_policy: "warn",
+        parent_reference_policy: "strict_error",
+        test_result_tracking: "disabled",
+      });
+    });
+  });
+
   it("persists sorted deduplicated project definition-of-done criteria", async () => {
     await withTempRoot(async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
@@ -167,6 +212,12 @@ describe("runConfig", () => {
       await expect(
         runConfig("project", "list", "definition-of-done", {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot }),
       ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runConfig("project", "get", undefined, {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runConfig("project", "set", undefined, {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(
