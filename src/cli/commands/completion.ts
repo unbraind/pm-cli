@@ -138,7 +138,7 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen("list status logs stop resume --status --limit --stream --tail --force --author --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    validate)",
-    `      COMPREPLY=(${compgen("--check-metadata --metadata-profile --check-resolution --check-files --scan-mode --include-pm-internals --strict-exit --fail-on-warn --check-history-drift --check-command-references --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--check-metadata --metadata-profile --check-resolution --check-lifecycle --check-stale-blockers --check-files --scan-mode --include-pm-internals --strict-exit --fail-on-warn --check-history-drift --check-command-references --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    health)",
     `      COMPREPLY=(${compgen(HEALTH_FLAGS)})`,
@@ -499,6 +499,8 @@ _pm() {
             '--check-metadata[Run metadata completeness checks]' \\
             '--metadata-profile[Select metadata validation profile for --check-metadata]:(core strict custom)' \\
             '--check-resolution[Run closed-item resolution metadata checks]' \\
+            '--check-lifecycle[Run active-item lifecycle governance drift checks]' \\
+            '--check-stale-blockers[Include stale blocker-pattern diagnostics in lifecycle checks]' \\
             '--check-files[Run linked-file and orphaned-file checks]' \\
             '--scan-mode[Select file candidate scan mode for --check-files]:(default tracked-all tracked-all-strict)' \\
             '--include-pm-internals[Include PM storage internals in tracked-all candidate scans]' \\
@@ -818,6 +820,8 @@ complete -c pm -n '__fish_seen_subcommand_from close' -l force -d 'Force overrid
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-metadata -d 'Run metadata completeness checks'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l metadata-profile -d 'Select metadata validation profile for --check-metadata' -r -a 'core strict custom'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-resolution -d 'Run closed-item resolution metadata checks'
+complete -c pm -n '__fish_seen_subcommand_from validate' -l check-lifecycle -d 'Run active-item lifecycle governance drift checks'
+complete -c pm -n '__fish_seen_subcommand_from validate' -l check-stale-blockers -d 'Include stale blocker-pattern diagnostics in lifecycle checks'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-files -d 'Run linked-file and orphaned-file checks'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l scan-mode -d 'Select file candidate scan mode for --check-files' -r -a 'default tracked-all tracked-all-strict'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l include-pm-internals -d 'Include PM storage internals in tracked-all candidate scans'

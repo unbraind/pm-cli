@@ -6,12 +6,15 @@ status: closed
 priority: 0
 tags[4]: coverage,governance,pm-cli,quality
 created_at: "2026-04-05T18:47:05.895Z"
-updated_at: "2026-04-05T19:29:47.015Z"
+updated_at: "2026-04-05T22:44:41.622Z"
 deadline: "2026-04-26T18:47:05.895Z"
 author: codex-agent
 estimated_minutes: 600
 acceptance_criteria: node scripts/run-tests.mjs coverage passes with lines/branches/functions/statements all at 100% under enforced thresholds; regressions remain green; coverage policy docs and changelog are updated.
 parent: pm-gt8u
+resolution: Resolution metadata backfilled during governance normalization; implementation evidence is already captured in linked comments and artifacts.
+expected_result: Closed item includes explicit resolution/expected_result/actual_result metadata for deterministic validation and audit workflows.
+actual_result: Resolution fields were previously missing and are now backfilled as part of governance hardening.
 comments[2]{created_at,author,text}:
   "2026-04-05T18:47:05.895Z",codex-agent,"Duplicate-check evidence: pm context --limit 20; pm list-open --limit 200; pm list-in-progress --limit 200; pm search 'coverage threshold baseline below 100' --limit 30; pm search '100% coverage' --limit 30; pm list-blocked --limit 120 --json. Net-new scope because no active open item tracks repository-wide return to strict 100% coverage gate."
   "2026-04-05T19:29:10.121Z",codex-agent,"Coverage campaign complete for this cycle: vitest coverage gate now enforces 100/100/100/100 thresholds; release-readiness runtime assertion updated for strict threshold tokens; full repository regression matrix remains green via node scripts/run-tests.mjs coverage and pnpm typecheck."

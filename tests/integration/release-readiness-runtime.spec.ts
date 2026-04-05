@@ -239,6 +239,8 @@ const REQUIRED_VALIDATE_FLAGS = [
   "--check-metadata",
   "--metadata-profile",
   "--check-resolution",
+  "--check-lifecycle",
+  "--check-stale-blockers",
   "--check-files",
   "--check-command-references",
   "--scan-mode",
@@ -699,7 +701,7 @@ describe("release readiness runtime coverage", () => {
       const validateHelp = context.runCli(["validate", "--help"]);
       expect(validateHelp.code).toBe(0);
       expect(validateHelp.stdout).toContain("Usage: pm validate [options]");
-      expect(validateHelp.stdout).toContain("standalone metadata, resolution, files, linked-command reference, and");
+      expect(validateHelp.stdout).toContain("Run standalone metadata, resolution, lifecycle, files, linked-command reference,");
       for (const flag of REQUIRED_VALIDATE_FLAGS) {
         expect(validateHelp.stdout).toContain(flag);
       }

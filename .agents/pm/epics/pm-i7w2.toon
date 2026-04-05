@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[6]: calendar,dependabot,github,pm-cli,recurrence,security
 created_at: "2026-04-03T17:22:39.406Z"
-updated_at: "2026-04-04T21:32:05.959Z"
+updated_at: "2026-04-05T22:45:41.748Z"
 deadline: "2026-04-13T17:22:39.406Z"
 author: codex-agent
 estimated_minutes: 360
@@ -40,7 +40,7 @@ regression: true
 customer_impact: users and maintainers benefit from safer dependency and CI health
 comments[1]{created_at,author,text}:
   "2026-04-03T17:45:22.794Z",codex-agent,"Implemented dependency/workflow remediations, cross-platform CI fixes, and weekly recurring findings-review event. Verification evidence: pnpm audit --prod and pnpm audit report 0 vulnerabilities; node scripts/run-tests.mjs test passed (70 files/789 tests); node scripts/run-tests.mjs coverage passed with global branch coverage 91.00%."
-files[12]{path,scope,note}:
+files[11]{path,scope,note}:
   .github/workflows/ci.yml,project,gh-findings-remediation-change
   .github/workflows/nightly.yml,project,gh-findings-remediation-change
   .github/workflows/release.yml,project,gh-findings-remediation-change
@@ -50,7 +50,6 @@ files[12]{path,scope,note}:
   tests/integration/ci-workflow-contract.spec.ts,project,gh-findings-remediation-change
   tests/integration/cli.integration.spec.ts,project,gh-findings-remediation-change
   tests/integration/run-tests-script.integration.spec.ts,project,gh-findings-remediation-change
-  tests/unit/install-command.spec.ts,project,gh-findings-remediation-change
   tests/unit/search-command.spec.ts,project,gh-findings-remediation-change
   tests/unit/test-command.spec.ts,project,gh-findings-remediation-change
 tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:

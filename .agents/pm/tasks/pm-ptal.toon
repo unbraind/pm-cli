@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:status",code,pm-cli
 created_at: "2026-04-01T10:47:04.830Z"
-updated_at: "2026-04-04T21:38:30.006Z"
+updated_at: "2026-04-05T22:46:04.199Z"
 deadline: "2026-04-03T10:47:04.830Z"
 assignee: codex-agent
 author: codex-agent
@@ -50,15 +50,13 @@ notes[1]{created_at,author,text}:
   "2026-04-01T10:47:04.830Z",codex-agent,Preserve canonical persisted status while accepting alias inputs.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:22:58.267Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[8]{path,scope,note}:
-  src/cli/commands/beads.ts,project,beads import status alias normalization
+files[6]{path,scope,note}:
   src/cli/commands/calendar.ts,project,calendar status filter alias support
   src/cli/commands/create.ts,project,create status parsing uses normalizeStatusInput
   src/cli/commands/test-all.ts,project,test-all status filter alias support
   src/cli/commands/update.ts,project,update status parsing uses normalizeStatusInput
   src/core/item/item-format.ts,project,item parse normalization to canonical status
   src/core/item/status.ts,project,new shared status normalization utility
-  src/extensions/builtins/todos/import-export.ts,project,todos import status alias normalization
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,status normalization unit regression
 docs[1]{path,scope,note}:

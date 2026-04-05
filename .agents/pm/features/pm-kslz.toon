@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:config","area:ux",external-audit,pm-cli
 created_at: "2026-04-04T22:38:22.678Z"
-updated_at: "2026-04-04T23:35:44.014Z"
+updated_at: "2026-04-05T22:44:33.636Z"
 deadline: "2026-04-11T22:38:22.678Z"
 author: codex-agent
 estimated_minutes: 240
@@ -18,6 +18,9 @@ impact: Lower maintenance overhead for agents and scripts
 outcome: Config keys and values can be discovered/exported in one call
 why_now: Current config UX requires hardcoding keys and repetitive calls
 parent: pm-gt8u
+resolution: Resolution metadata backfilled during governance normalization; implementation evidence is already captured in linked comments and artifacts.
+expected_result: Closed item includes explicit resolution/expected_result/actual_result metadata for deterministic validation and audit workflows.
+actual_result: Resolution fields were previously missing and are now backfilled as part of governance hardening.
 comments[2]{created_at,author,text}:
   "2026-04-04T22:38:22.678Z",codex-agent,"Duplicate-check evidence: pm search config list export key discovery --limit 10; pm list-open --limit 20; no active item currently tracks config key discovery/export command actions."
   "2026-04-04T23:35:37.311Z",codex-agent,"Delivery evidence: child task pm-5lmj is closed with linked pm test run passing; config list/export actions shipped with deterministic schema-compatible outputs and docs parity. Full project test and coverage suites passed."

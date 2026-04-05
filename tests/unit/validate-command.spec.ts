@@ -88,6 +88,7 @@ describe("runValidate", () => {
       expect(result.checks.map((entry) => entry.name)).toEqual([
         "metadata",
         "resolution",
+        "lifecycle",
         "files",
         "command_references",
         "history_drift",
@@ -102,6 +103,98 @@ describe("runValidate", () => {
       expect(result.checks).toHaveLength(1);
       expect(result.checks[0]?.name).toBe("command_references");
       expect(result.checks[0]?.status).toBe("ok");
+    });
+  });
+
+  it("supports lifecycle-only scoped checks", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, "validate-lifecycle-only");
+      const result = await runValidate({ checkLifecycle: true }, { path: context.pmPath });
+      expect(result.checks).toHaveLength(1);
+      expect(result.checks[0]?.name).toBe("lifecycle");
+      expect(result.checks[0]?.status).toBe("ok");
+      const lifecycleCheck = checkByName(result, "lifecycle");
+      const details = lifecycleCheck.details as { stale_blocker_checks_enabled: boolean };
+      expect(details.stale_blocker_checks_enabled).toBe(false);
+    });
+  });
+
+  it("reports lifecycle drift for active closure-like metadata and terminal parents", async () => {
+    await withTempPmPath(async (context) => {
+      const parentId = createTask(context, "validate-lifecycle-terminal-parent");
+      const childId = createTask(context, "validate-lifecycle-active-child");
+      await runClose(parentId, "done", {}, { path: context.pmPath });
+
+      const seeded = context.runCli(
+        [
+          "update",
+          childId,
+          "--json",
+          "--parent",
+          parentId,
+          "--resolution",
+          "Closed with implementation evidence captured for lifecycle validation.",
+          "--actual-result",
+          "Work completed and recorded with linked artifacts for lifecycle validation.",
+          "--message",
+          "Seed lifecycle drift fields",
+        ],
+        { expectJson: true },
+      );
+      expect(seeded.code).toBe(0);
+
+      const result = await runValidate({ checkLifecycle: true }, { path: context.pmPath });
+      expect(result.ok).toBe(false);
+      expect(result.warnings).toContain("validate_lifecycle_active_closure_like_metadata:1");
+      expect(result.warnings).toContain("validate_lifecycle_active_terminal_parent:1");
+      const lifecycleCheck = checkByName(result, "lifecycle");
+      expect(lifecycleCheck.status).toBe("warn");
+      const details = lifecycleCheck.details as {
+        active_closure_like_metadata_items: number;
+        active_terminal_parent_items: number;
+        active_closure_like_metadata_rows: string[];
+        active_terminal_parent_rows: string[];
+      };
+      expect(details.active_closure_like_metadata_items).toBe(1);
+      expect(details.active_terminal_parent_items).toBe(1);
+      expect(details.active_closure_like_metadata_rows[0]).toContain(childId);
+      expect(details.active_terminal_parent_rows[0]).toContain(childId);
+      expect(details.active_terminal_parent_rows[0]).toContain(parentId);
+    });
+  });
+
+  it("supports optional stale blocker diagnostics in lifecycle checks", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "validate-lifecycle-stale-blockers");
+      const seeded = context.runCli(
+        [
+          "update",
+          id,
+          "--json",
+          "--blocked-by",
+          "pm-stale-blocker",
+          "--blocked-reason",
+          "No active blocker currently; this is stale context for lifecycle diagnostics.",
+          "--message",
+          "Seed stale blocker metadata",
+        ],
+        { expectJson: true },
+      );
+      expect(seeded.code).toBe(0);
+
+      const result = await runValidate({ checkStaleBlockers: true }, { path: context.pmPath });
+      expect(result.ok).toBe(false);
+      expect(result.warnings).toContain("validate_lifecycle_stale_blockers:1");
+      const lifecycleCheck = checkByName(result, "lifecycle");
+      expect(lifecycleCheck.status).toBe("warn");
+      const details = lifecycleCheck.details as {
+        stale_blocker_checks_enabled: boolean;
+        stale_blocker_items: number;
+        stale_blocker_rows: string[];
+      };
+      expect(details.stale_blocker_checks_enabled).toBe(true);
+      expect(details.stale_blocker_items).toBe(1);
+      expect(details.stale_blocker_rows[0]).toContain(id);
     });
   });
 

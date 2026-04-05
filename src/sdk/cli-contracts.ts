@@ -919,6 +919,8 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   checkMetadata: { type: "boolean" },
   metadataProfile: { type: "string", enum: ["core", "strict", "custom"] },
   checkResolution: { type: "boolean" },
+  checkLifecycle: { type: "boolean" },
+  checkStaleBlockers: { type: "boolean" },
   checkFiles: { type: "boolean" },
   strictDirectories: { type: "boolean" },
   scanMode: { type: "string", enum: ["default", "tracked-all", "tracked-all-strict"] },
@@ -1122,6 +1124,8 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
       "checkMetadata",
       "metadataProfile",
       "checkResolution",
+      "checkLifecycle",
+      "checkStaleBlockers",
       "checkFiles",
       "scanMode",
       "includePmInternals",
@@ -1325,6 +1329,12 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   checkResolution: {
     description: "Run closed-item resolution metadata checks.",
+  },
+  checkLifecycle: {
+    description: "Run active-item lifecycle governance drift checks.",
+  },
+  checkStaleBlockers: {
+    description: "Include stale blocker-pattern diagnostics in lifecycle checks.",
   },
   checkFiles: {
     description: "Run linked-file and orphaned-file checks.",

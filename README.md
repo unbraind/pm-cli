@@ -30,7 +30,7 @@
 - Dependency topology inspection via `pm deps --format tree|graph`
 - Deterministic `--tag` completion suggestions from tracked item metadata
 - Additive large-list controls via `--offset` pagination and opt-in JSON streaming (`--stream` with `--json`)
-- Standalone `pm validate` command for metadata, resolution, linked-file, and history-drift audits
+- Standalone `pm validate` command for metadata, resolution, lifecycle, linked-file, linked-command reference, and history-drift audits
 - Opt-in non-interactive progress output for long-running operations (`pm test`, `pm test-all`, `pm reindex` with `--progress`)
 - Managed background linked-test orchestration (`pm test --run --background`, `pm test-all --background`, and `pm test-runs list|status|logs|stop|resume`)
 - Settings-gated item-level test result tracking (`pm config ... test-result-tracking --policy enabled|disabled`)
@@ -240,11 +240,13 @@ The vectorization ledger is also refreshed during `pm reindex --mode semantic|hy
 
 `pm validate` provides a dedicated audit surface for project metadata quality and integrity checks:
 
-- Runs all validation checks by default (`metadata`, `resolution`, `files`, `history_drift`).
+- Runs all validation checks by default (`metadata`, `resolution`, `lifecycle`, `files`, `command_references`, `history_drift`).
 - Runs linked-command PM reference checks by default (`command_references`) to catch stale `pm-<id>` references before execution-time failures.
-- Supports scoped checks with `--check-metadata`, `--check-resolution`, `--check-files`, `--check-command-references`, and `--check-history-drift`.
+- Supports scoped checks with `--check-metadata`, `--check-resolution`, `--check-lifecycle`, `--check-stale-blockers`, `--check-files`, `--check-command-references`, and `--check-history-drift`.
 - `--check-metadata` supports `--metadata-profile core|strict|custom` for deterministic required-field policy selection.
 - `--metadata-profile custom` reads `settings.validation.metadata_required_fields`; if the configured list is empty, validation falls back to core requirements and emits `validate_metadata_custom_profile_missing_required_fields:0`.
+- `--check-lifecycle` audits active-item governance drift for terminal-parent lineage and closure-like metadata on non-terminal items.
+- `--check-stale-blockers` adds optional blocker-consistency diagnostics to lifecycle checks, surfacing stale `blocked_by`/`blocked_reason` patterns without enabling those heuristics by default.
 - `--check-files` supports `--scan-mode default|tracked-all|tracked-all-strict`; tracked modes use git-tracked candidates when available.
 - `tracked-all` excludes PM internals by default for higher-signal orphaned results; pass `--include-pm-internals` for full internal-audit scans.
 - `tracked-all-strict` forces full tracked coverage (including PM internals) and bypasses internal exclusion filtering.

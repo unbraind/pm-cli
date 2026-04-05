@@ -17,7 +17,7 @@ import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter, ValidateMetadataProfile, ValidateMetadataRequiredField } from "../../types/index.js";
 import { extractReferencedPmItemIdsFromCommand } from "./test.js";
 
-type ValidateCheckName = "metadata" | "resolution" | "files" | "command_references" | "history_drift";
+type ValidateCheckName = "metadata" | "resolution" | "lifecycle" | "files" | "command_references" | "history_drift";
 type ValidateStatus = "ok" | "warn";
 type ValidateFileScanMode = "default" | "tracked-all" | "tracked-all-strict";
 type ItemWithBody = Awaited<ReturnType<typeof listAllFrontMatterWithBody>>[number];
@@ -39,6 +39,13 @@ const RESOLUTION_FIELD_KEYS = ["resolution", "expected_result", "actual_result"]
 type ResolutionFieldKey = (typeof RESOLUTION_FIELD_KEYS)[number];
 const VALIDATE_FILE_SCAN_MODES = ["default", "tracked-all", "tracked-all-strict"] as const;
 const VALIDATE_METADATA_PROFILE_VALUES = ["core", "strict", "custom"] as const;
+const TERMINAL_STATUSES = new Set(["closed", "canceled"]);
+const STALE_BLOCKER_REASON_PATTERNS = ["no active blocker", "work is closed", "work completed", "ready for planned execution sequencing"] as const;
+const CLOSURE_LIKE_METADATA_FIELD_PATTERNS = {
+  blocked_reason: ["work is closed", "no active blocker because work is closed"],
+  resolution: ["closed with implementation evidence", "closed with verification evidence", "work completed and recorded", "work is closed"],
+  actual_result: ["work completed and recorded", "work completed", "closed and recorded"],
+} as const;
 const CORE_METADATA_REQUIRED_FIELDS = ["author", "acceptance_criteria", "estimated_minutes", "close_reason"] as const;
 const STRICT_METADATA_REQUIRED_FIELDS = [
   ...CORE_METADATA_REQUIRED_FIELDS,
@@ -116,6 +123,8 @@ const execFileAsync = promisify(execFile);
 export interface ValidateCommandOptions {
   checkMetadata?: boolean;
   checkResolution?: boolean;
+  checkLifecycle?: boolean;
+  checkStaleBlockers?: boolean;
   checkFiles?: boolean;
   includePmInternals?: boolean;
   checkHistoryDrift?: boolean;
@@ -152,6 +161,18 @@ function toNonEmptyString(value: unknown): string | undefined {
   }
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function toMeaningfulString(value: unknown): string | undefined {
+  const normalized = toNonEmptyString(value);
+  if (!normalized) {
+    return undefined;
+  }
+  const lowered = normalized.toLowerCase();
+  if (lowered === "none" || lowered === "null" || lowered === "n/a" || lowered === "na") {
+    return undefined;
+  }
+  return normalized;
 }
 
 interface ValidateMetadataPolicy {
@@ -479,6 +500,9 @@ function resolveRequestedChecks(options: ValidateCommandOptions): Set<ValidateCh
   if (options.checkResolution) {
     requested.add("resolution");
   }
+  if (options.checkLifecycle || options.checkStaleBlockers) {
+    requested.add("lifecycle");
+  }
   if (options.checkFiles) {
     requested.add("files");
   }
@@ -491,6 +515,7 @@ function resolveRequestedChecks(options: ValidateCommandOptions): Set<ValidateCh
   if (requested.size === 0) {
     requested.add("metadata");
     requested.add("resolution");
+    requested.add("lifecycle");
     requested.add("files");
     requested.add("command_references");
     requested.add("history_drift");
@@ -582,6 +607,136 @@ function buildResolutionCheck(items: ItemWithBody[]): { check: ValidateCheck; wa
         missing_resolution_rows_truncated: summarizedRows.truncated,
         missing_resolution_remediation_hints: summarizedHints.values,
         missing_resolution_remediation_hints_truncated: summarizedHints.truncated,
+      },
+    },
+    warnings,
+  };
+}
+
+function buildLifecycleCheck(
+  items: ItemWithBody[],
+  includeStaleBlockers: boolean,
+): { check: ValidateCheck; warnings: string[] } {
+  const itemsById = new Map(items.map((item) => [item.id, item]));
+  const activeItems = items.filter((item) => !TERMINAL_STATUSES.has(item.status));
+  const closureLikeRows: Array<{ id: string; fields: string[] }> = [];
+  const terminalParentRows: Array<{ id: string; parent_id: string; parent_status: string }> = [];
+  const staleBlockerRows: Array<{ id: string; status: string; reasons: string[] }> = [];
+
+  for (const item of activeItems) {
+    const closureLikeFields = Object.entries(CLOSURE_LIKE_METADATA_FIELD_PATTERNS)
+      .filter(([field, patterns]) => {
+        const value = toMeaningfulString(item[field as keyof ItemWithBody]);
+        if (!value) {
+          return false;
+        }
+        const normalized = value.toLowerCase();
+        return patterns.some((pattern) => normalized.includes(pattern));
+      })
+      .map(([field]) => field)
+      .sort((left, right) => left.localeCompare(right));
+
+    if (closureLikeFields.length > 0) {
+      closureLikeRows.push({
+        id: item.id,
+        fields: closureLikeFields,
+      });
+    }
+
+    const parentId = toMeaningfulString(item.parent);
+    if (parentId) {
+      const parent = itemsById.get(parentId);
+      if (parent && TERMINAL_STATUSES.has(parent.status)) {
+        terminalParentRows.push({
+          id: item.id,
+          parent_id: parent.id,
+          parent_status: parent.status,
+        });
+      }
+    }
+
+    if (includeStaleBlockers) {
+      const blockedBy = toMeaningfulString(item.blocked_by);
+      const blockedReason = toMeaningfulString(item.blocked_reason);
+      const blockedReasonNormalized = blockedReason?.toLowerCase();
+      const reasons: string[] = [];
+
+      if (item.status !== "blocked") {
+        if (blockedBy) {
+          reasons.push("non_blocked_status_has_blocked_by");
+        }
+        if (blockedReason) {
+          reasons.push("non_blocked_status_has_blocked_reason");
+        }
+      } else {
+        if (!blockedBy && !blockedReason) {
+          reasons.push("blocked_status_missing_blocker_context");
+        }
+        if (blockedReasonNormalized?.includes("no active blocker")) {
+          reasons.push("blocked_status_reason_reports_no_active_blocker");
+        }
+        if (
+          blockedReasonNormalized &&
+          STALE_BLOCKER_REASON_PATTERNS.some((pattern) => blockedReasonNormalized.includes(pattern))
+        ) {
+          reasons.push("blocked_status_reason_matches_stale_pattern");
+        }
+      }
+
+      if (reasons.length > 0) {
+        staleBlockerRows.push({
+          id: item.id,
+          status: item.status,
+          reasons: [...new Set(reasons)].sort((left, right) => left.localeCompare(right)),
+        });
+      }
+    }
+  }
+
+  closureLikeRows.sort((left, right) => left.id.localeCompare(right.id));
+  terminalParentRows.sort(
+    (left, right) => left.id.localeCompare(right.id) || left.parent_id.localeCompare(right.parent_id),
+  );
+  staleBlockerRows.sort((left, right) => left.id.localeCompare(right.id));
+
+  const warnings: string[] = [];
+  if (closureLikeRows.length > 0) {
+    warnings.push(`validate_lifecycle_active_closure_like_metadata:${closureLikeRows.length}`);
+  }
+  if (terminalParentRows.length > 0) {
+    warnings.push(`validate_lifecycle_active_terminal_parent:${terminalParentRows.length}`);
+  }
+  if (includeStaleBlockers && staleBlockerRows.length > 0) {
+    warnings.push(`validate_lifecycle_stale_blockers:${staleBlockerRows.length}`);
+  }
+
+  const summarizedClosureLikeRows = summarizeList(
+    closureLikeRows.map((row) => `${row.id}:${row.fields.join(",")}`),
+  );
+  const summarizedTerminalParentRows = summarizeList(
+    terminalParentRows.map((row) => `${row.id}:${row.parent_id}:${row.parent_status}`),
+  );
+  const summarizedStaleBlockerRows = summarizeList(
+    staleBlockerRows.map((row) => `${row.id}:${row.status}:${row.reasons.join(",")}`),
+  );
+
+  return {
+    check: {
+      name: "lifecycle",
+      status: warnings.length === 0 ? "ok" : "warn",
+      details: {
+        checked_active_items: activeItems.length,
+        active_closure_like_metadata_items: closureLikeRows.length,
+        active_closure_like_metadata_rows: summarizedClosureLikeRows.values,
+        active_closure_like_metadata_rows_truncated: summarizedClosureLikeRows.truncated,
+        active_terminal_parent_items: terminalParentRows.length,
+        active_terminal_parent_rows: summarizedTerminalParentRows.values,
+        active_terminal_parent_rows_truncated: summarizedTerminalParentRows.truncated,
+        stale_blocker_checks_enabled: includeStaleBlockers,
+        stale_blocker_items: staleBlockerRows.length,
+        stale_blocker_rows: summarizedStaleBlockerRows.values,
+        stale_blocker_rows_truncated: summarizedStaleBlockerRows.truncated,
+        stale_blocker_reason_patterns: [...STALE_BLOCKER_REASON_PATTERNS],
       },
     },
     warnings,
@@ -885,6 +1040,11 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
     const resolutionCheck = buildResolutionCheck(items);
     checks.push(resolutionCheck.check);
     warnings.push(...resolutionCheck.warnings);
+  }
+  if (requestedChecks.has("lifecycle")) {
+    const lifecycleCheck = buildLifecycleCheck(items, Boolean(options.checkStaleBlockers));
+    checks.push(lifecycleCheck.check);
+    warnings.push(...lifecycleCheck.warnings);
   }
   if (requestedChecks.has("files")) {
     const filesCheck = await buildFilesCheck(items, workspaceRoot, pmRoot, fileScanMode, Boolean(options.includePmInternals));

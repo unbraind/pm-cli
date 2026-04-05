@@ -2,13 +2,12 @@ id: pm-ice4
 title: Implement list offset pagination and JSON stream mode
 description: "Extend list command family with offset and stream flags, update completion/contracts/tests, and preserve default output compatibility."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[4]: "area:list","area:tests",external-audit,pm-cli
 created_at: "2026-04-03T18:07:21.138Z"
-updated_at: "2026-04-05T20:39:57.093Z"
+updated_at: "2026-04-05T22:42:40.800Z"
 deadline: "2026-04-08T18:07:21.138Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: list/list-* accept offset and stream controls; default output remains unchanged; tests and docs are updated.
@@ -43,10 +42,11 @@ regression: true
 customer_impact: Large projects can automate list processing safely
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-a4z3,parent,"2026-04-03T18:07:21.138Z",codex-agent,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-03T18:07:21.138Z",codex-agent,Task created for list offset and stream implementation.
   "2026-04-03T18:19:35.713Z",codex-agent,"Implemented list offset pagination and opt-in JSON stream mode with --stream guard requiring --json. Added completion and contract parity plus unit/integration coverage. Evidence: node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/cli.integration.spec.ts passed (123/123)."
   "2026-04-05T20:39:57.093Z",codex-agent,Duplicate-check evidence refreshed; reusing canonical list offset/stream implementation task for docs/examples parity updates (no duplicate item created).
+  "2026-04-05T22:42:38.917Z",codex-agent,"Normalization decision: implementation + tests/docs evidence indicates this task is complete; closing to align lifecycle with documented completion and remove active drift."
 notes[1]{created_at,author,text}:
   "2026-04-03T18:07:21.138Z",codex-agent,Keep stdout contract stable unless stream is explicitly requested.
 files[8]{path,scope,note}:
@@ -63,4 +63,5 @@ tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,4200,null,null,null,null,null,null,null,null,null,null,null,list offset-stream targeted regression
 docs[1]{path,scope,note}:
   README.md,project,user-facing list output options
+close_reason: List offset/stream task is complete and already evidenced; item should be closed.
 body: Implements feature pm-a4z3 with additive flags and regression coverage.

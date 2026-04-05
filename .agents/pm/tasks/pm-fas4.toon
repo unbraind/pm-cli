@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:stdin","area:terminal",code,compatibility,pm-cli
 created_at: "2026-04-01T11:59:45.450Z"
-updated_at: "2026-04-04T21:48:38.686Z"
+updated_at: "2026-04-05T22:45:39.028Z"
 deadline: "2026-04-08T11:59:45.450Z"
 assignee: cursor-agent
 author: cursor-agent
@@ -50,8 +50,7 @@ notes[1]{created_at,author,text}:
   "2026-04-01T11:59:45.450Z",cursor-agent,Mirror shared stdin token semantics in beads import stdin handling.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:35:06.889Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[4]{path,scope,note}:
-  src/cli/commands/beads.ts,project,beads stdin guard
+files[3]{path,scope,note}:
   src/core/item/parse.ts,project,shared stdin token utility
   tests/unit/beads-command.spec.ts,project,TTY fail-fast stdin regression
   tests/unit/parse-utils.spec.ts,project,stdin token guidance assertion

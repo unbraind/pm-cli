@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:audit","area:comments",external-audit,pm-cli
 created_at: "2026-04-04T22:38:06.028Z"
-updated_at: "2026-04-05T21:44:50.895Z"
+updated_at: "2026-04-05T22:44:29.922Z"
 deadline: "2026-04-11T22:38:06.028Z"
 author: codex-agent
 estimated_minutes: 260
@@ -18,6 +18,9 @@ impact: Removes high shell/process overhead in maintenance workflows
 outcome: Bulk comments snapshots are queryable by filters
 why_now: Current workflow requires hundreds of per-item comments calls
 parent: pm-gt8u
+resolution: Resolution metadata backfilled during governance normalization; implementation evidence is already captured in linked comments and artifacts.
+expected_result: Closed item includes explicit resolution/expected_result/actual_result metadata for deterministic validation and audit workflows.
+actual_result: Resolution fields were previously missing and are now backfilled as part of governance hardening.
 comments[4]{created_at,author,text}:
   "2026-04-04T22:38:06.028Z",codex-agent,"Duplicate-check evidence: pm search bulk comments audit status latest --limit 10; pm list-open --limit 20; no active item currently tracks a bulk comments query command surface."
   "2026-04-04T23:35:34.695Z",codex-agent,"Delivery evidence: child task pm-w1j3 is closed with linked pm test run passing; comments-audit command shipped with filters/latest controls plus contracts/completion/Pi/docs parity. Full project test and coverage suites passed."

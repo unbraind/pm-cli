@@ -3535,10 +3535,12 @@ program
 
 program
   .command("validate")
-  .description("Run standalone metadata, resolution, files, linked-command reference, and history drift validation checks.")
+  .description("Run standalone metadata, resolution, lifecycle, files, linked-command reference, and history drift validation checks.")
   .option("--check-metadata", "Run metadata completeness checks")
   .option("--metadata-profile <value>", "Select metadata validation profile for --check-metadata (core|strict|custom)")
   .option("--check-resolution", "Run closed-item resolution metadata checks")
+  .option("--check-lifecycle", "Run active-item lifecycle governance drift checks")
+  .option("--check-stale-blockers", "Include stale blocker-pattern diagnostics in lifecycle checks")
   .option("--check-files", "Run linked-file and orphaned-file checks")
   .option("--check-command-references", "Run linked-command PM-ID reference checks")
   .option("--scan-mode <value>", "Select file candidate scan mode for --check-files (default|tracked-all|tracked-all-strict)")
@@ -3554,6 +3556,8 @@ program
         checkMetadata: Boolean(options.checkMetadata),
         metadataProfile: typeof options.metadataProfile === "string" ? options.metadataProfile : undefined,
         checkResolution: Boolean(options.checkResolution),
+        checkLifecycle: Boolean(options.checkLifecycle),
+        checkStaleBlockers: Boolean(options.checkStaleBlockers),
         checkFiles: Boolean(options.checkFiles),
         checkCommandReferences: Boolean(options.checkCommandReferences),
         scanMode: typeof options.scanMode === "string" ? options.scanMode : undefined,

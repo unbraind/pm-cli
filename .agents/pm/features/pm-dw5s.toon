@@ -6,9 +6,8 @@ status: in_progress
 priority: 1
 tags[4]: governance,metadata,pm-cli,validation
 created_at: "2026-04-04T21:55:14.472Z"
-updated_at: "2026-04-05T21:44:33.714Z"
+updated_at: "2026-04-05T23:22:25.412Z"
 deadline: "2026-04-18T21:55:14.472Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: "pm validate can detect configured low-signal metadata patterns, report affected item IDs with rule names, and optionally fail CI gates when quality thresholds are exceeded."
@@ -33,7 +32,7 @@ affected_version: 2026.3.12
 component: validate-metadata-quality
 regression: false
 customer_impact: Teams gain earlier detection of tracker quality drift and lower remediation cost.
-comments[7]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-04-04T21:55:14.472Z",codex-agent,"Duplicate-check evidence: pm search 'validate placeholder metadata blocked_reason unblock_note repro_steps' --limit 20; pm search 'External audit follow-up: validation and large-output ergonomics' --limit 20; pm list-open --limit 20. Net-new because existing validation items focus on structural checks,not semantic low-signal metadata detection."
   "2026-04-05T03:08:05.985Z",codex-agent,"Scope extension for external issue #4: add default-on remediation command templates for missing resolution metadata in pm validate output details."
   "2026-04-05T03:26:56.486Z",codex-agent,"Progress: added default-on resolution remediation hints in validate output details. Resolution check now emits deterministic pm update <id> command templates for missing resolution/expected_result/actual_result fields (additive detail fields only, warning tokens unchanged), so both TOON and JSON outputs include actionable remediation by default. Verification: node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/integration/cli.integration.spec.ts passed."
@@ -41,9 +40,12 @@ comments[7]{created_at,author,text}:
   "2026-04-05T20:39:53.229Z",codex-agent,Duplicate-check evidence refreshed; reusing canonical validate metadata lineage for strict profile/configurable required-field expansion (no duplicate item created).
   "2026-04-05T21:00:37.808Z",codex-agent,"Progress: added validate metadata profiles (core|strict|custom), settings-backed custom required-field policy, --metadata-profile CLI override, and new config keys metadata-validation-profile + metadata-required-fields with list/get/export/set support. Added completion/contracts/Pi wrapper parity and targeted unit/integration coverage. Verification: node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/config-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts passed."
   "2026-04-05T21:44:33.714Z",codex-agent,"Regression follow-up: updated settings-store deterministic serialization expectation to include validation.metadata_profile and validation.metadata_required_fields so full-suite verification aligns with metadata-profile settings expansion."
+  "2026-04-05T23:05:10.066Z",codex-agent,"Implemented lifecycle governance drift checks in pm validate: new default lifecycle check flags active closure-like metadata and active items with terminal parents, plus optional stale blocker diagnostics behind --check-stale-blockers. Wired CLI/contracts/completion/Pi parity and updated docs (README/ARCHITECTURE/PRD). Verification: node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts passed (191/191)."
+  "2026-04-05T23:06:15.406Z",codex-agent,"Backlog curation: created net-new child task pm-urxb (Make lifecycle validate patterns configurable) under pm-dw5s after duplicate-check sweep (pm context/search/list-open/list-in-progress) confirmed no existing settings-backed pattern-policy task."
+  "2026-04-05T23:22:04.619Z",codex-agent,"Verification evidence (release pass): pm test pm-dw5s --run --progress passed all 3 linked suites; pnpm build passed; node scripts/run-tests.mjs test passed (69 files / 921 tests); node scripts/run-tests.mjs coverage passed (100/100/100/100). Governance baseline remains clean: pm validate --check-metadata --check-resolution --check-files --check-command-references --check-history-drift --scan-mode tracked-all => ok=true,warnings=0; pm health --json => ok=true."
 notes[1]{created_at,author,text}:
   "2026-04-04T21:55:14.472Z",codex-agent,Checks should be configurable and avoid false positives by supporting per-rule opt-outs and rule versioning.
-files[14]{path,scope,note}:
+files[16]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,pi-wrapper-validate-metadata-profile-forwarding
   src/cli/commands/completion.ts,project,validate-metadata-profile-completion-flags
   src/cli/commands/config.ts,project,config-keys-for-metadata-validation-profile-and-required-fields
@@ -58,9 +60,16 @@ files[14]{path,scope,note}:
   tests/unit/config-command.spec.ts,project,config-metadata-policy-regressions
   tests/unit/validate-command.spec.ts,project,metadata-profile-custom-strict-regressions
   tests/unit/settings-store.spec.ts,project,validation-settings-key-order-regression
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  tests/integration/cli.integration.spec.ts,project,validate-lifecycle-integration-regression
+  tests/unit/pi-agent-extension.spec.ts,project,validate-lifecycle-pi-wrapper-contract-parity
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,metadata quality rule coverage
+  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,validate-lifecycle-guardrails-regression-suite
   node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/config-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,validate-profile-and-config-policy-regression-suite
-docs[1]{path,scope,note}:
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mnmdo246-is70zr,test,passed,"2026-04-05T23:06:42.979Z","2026-04-05T23:13:37.206Z","2026-04-05T23:13:37.206Z",null,null,3,0,0,null,null,null
+docs[3]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,validate-lifecycle-architecture-notes
   PRD.md,project,validation contract extension
+  README.md,project,validate-lifecycle-user-facing-contracts
 body: "Feature adds machine-checkable guardrails for low-signal fields (generic blocker text, generic unblock notes, placeholder repro steps, empty bodies) and emits actionable remediation output."

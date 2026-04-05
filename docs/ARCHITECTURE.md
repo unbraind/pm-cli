@@ -53,7 +53,7 @@ src/
       restore.ts                 pm restore
       stats.ts                   pm stats
       health.ts                  pm health
-      validate.ts                pm validate (metadata/resolution/files/history drift checks)
+      validate.ts                pm validate (metadata/resolution/lifecycle/files/command-reference/history drift checks)
       gc.ts                      pm gc
       contracts.ts               pm contracts (machine-readable contracts/schema surface)
       config.ts                  pm config
@@ -136,7 +136,7 @@ The same registry drives:
 - shell completion flag/command surfaces in `src/cli/commands/completion.ts`
 - Pi wrapper action enum, tool `inputSchema`, and CLI arg mapping in `.pi/extensions/pm-cli/index.ts`
 - runtime `pm contracts` payload generation for action/command/schema introspection
-- additive command surfaces such as `templates-*` actions, extension lifecycle actions (`extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-doctor`, `extension-adopt`, `extension-adopt-all`, `extension-activate`, `extension-deactivate`), `history --diff/--verify`, files/docs path hygiene flags (`--add-glob`, `--migrate`, `--append-stable`, `--validate-paths`, `--audit`), `validate --scan-mode/--include-pm-internals`, `create --create-mode`, `comments --allow-audit-comment`, and `deps --format`
+- additive command surfaces such as `templates-*` actions, extension lifecycle actions (`extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-doctor`, `extension-adopt`, `extension-adopt-all`, `extension-activate`, `extension-deactivate`), `history --diff/--verify`, files/docs path hygiene flags (`--add-glob`, `--migrate`, `--append-stable`, `--validate-paths`, `--audit`), validate governance/file drift flags (`--check-lifecycle`, `--check-stale-blockers`, `--scan-mode`, `--include-pm-internals`), `create --create-mode`, `comments --allow-audit-comment`, and `deps --format`
 
 This keeps human CLI UX and machine-facing contracts aligned while preserving additive/backward-compatible evolution.
 
@@ -253,7 +253,7 @@ When `update --type` changes an item's resolved type folder, mutation logic perf
 - `pm create` log-seed repeatables (`--comment`, `--note`, `--learning`) now enforce explicit key boundaries (`author`, `created_at`, `text`) and reject parsed extra keys with usage guidance so unquoted key:value-like comma continuations cannot silently truncate seeded narrative text.
 - `pm deps --format tree|graph` provides read-only dependency traversal from stored front matter, with deterministic ordering, cycle markers, and missing-node reporting.
 - `pm list` / `pm list-*` support additive `--offset` pagination and JSON-only `--stream` line-delimited output for large datasets.
-- `pm validate` runs standalone repository checks (`metadata`, `resolution`, `files`, `command_references`, `history_drift`), supports metadata policy selection via `--metadata-profile core|strict|custom`, supports file candidate selection via `--scan-mode default|tracked-all|tracked-all-strict`, supports additive internal-audit coverage with `--include-pm-internals`, and returns deterministic filtered + raw file scan metrics, structured `excluded_by_reason` summaries, plus stale PM-id command-reference diagnostics.
+- `pm validate` runs standalone repository checks (`metadata`, `resolution`, `lifecycle`, `files`, `command_references`, `history_drift`), supports metadata policy selection via `--metadata-profile core|strict|custom`, supports lifecycle-governance drift targeting via `--check-lifecycle` plus optional stale-blocker heuristics via `--check-stale-blockers`, supports file candidate selection via `--scan-mode default|tracked-all|tracked-all-strict`, supports additive internal-audit coverage with `--include-pm-internals`, and returns deterministic filtered + raw file scan metrics, structured `excluded_by_reason` summaries, plus stale PM-id command-reference diagnostics.
 
 ## Calendar Pipeline
 

@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: calendar,dependabot,github,operations,recurring
 created_at: "2026-04-03T17:33:17.602Z"
-updated_at: "2026-04-04T21:40:12.655Z"
+updated_at: "2026-04-05T22:43:27.509Z"
 events[1]:
   - start_at: "2026-04-10T09:00:00.000Z"
     end_at: "2026-04-10T09:30:00.000Z"
@@ -26,7 +26,6 @@ value: Creates a proactive maintenance loop
 impact: Reduces delayed security and dependency remediation
 outcome: Weekly checks keep findings inventory current
 why_now: User requested a fully functional recurring review workflow
-parent: pm-i7w2
 reviewer: maintainer-review
 risk: low
 confidence: high
@@ -46,10 +45,11 @@ fixed_version: vnext
 component: calendar-recurring-review
 regression: false
 customer_impact: Maintainers can catch and remediate findings quickly
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-03T17:33:17.602Z",codex-agent,Created recurring operational task for weekly GitHub findings review.
   "2026-04-03T17:45:39.395Z",codex-agent,"Verified recurring event persistence and expansion: pm calendar agenda/week show weekly Friday occurrences starting 2026-04-10 at 09:00Z."
   "2026-04-04T12:02:45.922Z",codex-agent,"Governance metadata pass: assigned owner explicitly to preserve active-work ownership consistency."
+  "2026-04-05T22:43:20.272Z",codex-agent,"Normalization decision: recurring weekly operations task remains active but parent epic pm-i7w2 is closed; parent cleared to keep lineage valid without forcing unrelated epic reopen."
 notes[1]{created_at,author,text}:
   "2026-04-03T17:33:17.602Z",codex-agent,Each run should dedupe against existing pm items before creating new ones.
 files[1]{path,scope,note}:

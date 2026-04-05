@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions-hooks",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:02:11.494Z"
-updated_at: "2026-04-04T21:46:45.043Z"
+updated_at: "2026-04-05T22:45:59.920Z"
 deadline: "2026-03-13T23:02:11.494Z"
 assignee: steve
 author: steve
@@ -72,11 +72,10 @@ notes[1]{created_at,author,text}:
   "2026-04-01T20:33:56.484Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:33:57.891Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[27]{path,scope,note}:
+files[25]{path,scope,note}:
   PRD.md,project,align hook lifecycle milestone wording with search onRead call-site expansion
   README.md,project,docs-first afterCommand failure-path contract clarification
   src/cli/commands/activity.ts,project,activity command onRead hook dispatch
-  src/cli/commands/beads.ts,project,dispatch onRead/onWrite hooks for beads import source/item/history files
   src/cli/commands/gc.ts,project,dispatch onRead/onWrite hooks for cache gc paths
   src/cli/commands/health.ts,project,dispatch onRead hooks for required directory checks
   src/cli/commands/history.ts,project,history command onRead hook dispatch
@@ -88,7 +87,6 @@ files[27]{path,scope,note}:
   src/core/extensions/loader.ts,project,extension runtime and activation pipeline
   src/core/store/item-store.ts,project,invoke onRead/onWrite hook call sites
   src/core/store/settings.ts,project,settings read-write hook dispatch
-  src/extensions/builtins/todos/import-export.ts,project,dispatch onRead/onWrite hooks for todos import/export file operations
   tests/integration/cli.integration.spec.ts,project,integration coverage for command hook lifecycle execution
   tests/unit/beads-command.spec.ts,project,regression coverage for beads hook call-site dispatch
   tests/unit/extension-loader.spec.ts,project,hook registration and activation failure tests

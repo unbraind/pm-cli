@@ -129,6 +129,8 @@ export interface PmToolParameters {
   checkMetadata?: boolean;
   metadataProfile?: string;
   checkResolution?: boolean;
+  checkLifecycle?: boolean;
+  checkStaleBlockers?: boolean;
   checkFiles?: boolean;
   strictDirectories?: boolean;
   scanMode?: string;
@@ -754,6 +756,12 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       pushOption(args, "--metadata-profile", params.metadataProfile);
       if (params.checkResolution) {
         args.push("--check-resolution");
+      }
+      if (params.checkLifecycle) {
+        args.push("--check-lifecycle");
+      }
+      if (params.checkStaleBlockers) {
+        args.push("--check-stale-blockers");
       }
       if (params.checkFiles) {
         args.push("--check-files");

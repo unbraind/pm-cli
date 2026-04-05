@@ -2,16 +2,24 @@ id: pm-5dia
 title: Add extension adopt workflow for unmanaged extensions
 description: Introduce a lightweight adoption path so existing unmanaged project/global extensions can be registered as managed without reinstalling.
 type: Task
-status: in_progress
+status: closed
 priority: 1
 tags[4]: adoption,extensions,external-audit,pm-cli
 created_at: "2026-04-05T01:12:30.369Z"
-updated_at: "2026-04-05T20:49:15.233Z"
-assignee: codex-agent
+updated_at: "2026-04-05T22:44:23.080Z"
 author: codex-agent
+estimated_minutes: 300
 acceptance_criteria: "pm extension supports adopt for existing unmanaged extensions, writes deterministic managed metadata including source/ref/provenance fields when available, and extension doctor/manage surfaces reflect managed update-check eligibility."
 parent: pm-gt8u
-comments[9]{created_at,author,text}:
+reviewer: maintainer-review
+risk: medium
+confidence: high
+sprint: governance-followups
+release: vnext
+resolution: Resolution metadata backfilled during governance normalization; implementation evidence is already captured in linked comments and artifacts.
+expected_result: Closed item includes explicit resolution/expected_result/actual_result metadata for deterministic validation and audit workflows.
+actual_result: Resolution fields were previously missing and are now backfilled as part of governance hardening.
+comments[10]{created_at,author,text}:
   "2026-04-05T01:12:30.369Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'extension adopt unmanaged managed metadata' --limit 10; pm search 'extension manage skipped_unmanaged' --limit 10; pm list-open --limit 80; pm list-in-progress --limit 80. Net-new because existing extension diagnostics/management items cover doctor/manage status semantics but not adopt-without-reinstall workflow."
   "2026-04-05T02:18:03.973Z",codex-agent,"Implemented extension adopt end-to-end (CLI/contracts/Pi/completion/help/docs) and added adoption regressions including already-managed path. Evidence: node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/extension-command-github.spec.ts tests/integration/help-runtime.spec.ts passed; node scripts/run-tests.mjs coverage passed with branch coverage 91.01%; pnpm build passed; repro probe confirms pm extension --help exposes --adopt/--doctor."
   "2026-04-05T03:08:02.560Z",codex-agent,"Reopened for external issue #3 ergonomic follow-up: add bulk unmanaged extension adoption flow (--adopt-all) while preserving existing --adopt behavior."
@@ -21,6 +29,7 @@ comments[9]{created_at,author,text}:
   "2026-04-05T19:29:08.460Z",codex-agent,"Completed managed-state remediation shortcut implementation: manage/doctor now support fix-managed-state adoption flow while preserving default non-mutating behavior. Verification: extension command regressions, integration checks, full coverage, and typecheck passed."
   "2026-04-05T20:39:52.496Z",codex-agent,Duplicate-check evidence refreshed; reusing canonical managed-state adoption lineage for remediation shortcut parity (no duplicate item created).
   "2026-04-05T20:49:15.233Z",codex-agent,"Validation evidence: managed-state remediation path remains first-class while warning semantics are refined. Health/manage/doctor now keep actionable partial-coverage warnings for action-required unmanaged extensions and informational posture for expected bundled-style unmanaged entries."
+  "2026-04-05T22:41:55.625Z",codex-agent,"Normalization decision: item contains complete implementation + verification evidence for adopt/adopt-all/fix-managed-state workflow; closing to remove active-state drift and closed-parent mismatch."
 files[7]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,Pi wrapper action mapping for extension-adopt
   src/cli/commands/completion.ts,project,shell completion parity for extension --adopt
@@ -37,4 +46,5 @@ docs[4]{path,scope,note}:
   docs/EXTENSIONS.md,project,lifecycle semantics for adopt and coverage warnings
   PRD.md,project,extension adopt and doctor contract updates
   README.md,project,extension adopt and update-health coverage docs
+close_reason: Extension adopt lifecycle scope is complete with verification evidence recorded; keeping open created lifecycle drift.
 body: Implement pm extension --adopt <name> (--project|--global) to write managed metadata/provenance for already-installed extensions and unblock update checks.

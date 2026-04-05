@@ -549,6 +549,8 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(schemaProperty(validateSchema, "includePmInternals").type).toBe("boolean");
     expect(schemaProperty(validateSchema, "strictExit").type).toBe("boolean");
     expect(schemaProperty(validateSchema, "failOnWarn").type).toBe("boolean");
+    expect(schemaProperty(validateSchema, "checkLifecycle").type).toBe("boolean");
+    expect(schemaProperty(validateSchema, "checkStaleBlockers").type).toBe("boolean");
     expect(schemaProperty(validateSchema, "checkCommandReferences").type).toBe("boolean");
 
     const healthSchema = schemaForAction(tool.parameters as Record<string, unknown>, "health");
@@ -833,12 +835,16 @@ describe("Pi agent extension wrapper for pm", () => {
         includePmInternals: true,
         strictExit: true,
         failOnWarn: true,
+        checkLifecycle: true,
+        checkStaleBlockers: true,
         checkHistoryDrift: true,
         checkCommandReferences: true,
       }),
     ).toEqual([
       "--json",
       "validate",
+      "--check-lifecycle",
+      "--check-stale-blockers",
       "--check-files",
       "--scan-mode",
       "tracked-all",

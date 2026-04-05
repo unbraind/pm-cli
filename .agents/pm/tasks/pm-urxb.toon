@@ -1,0 +1,50 @@
+id: pm-urxb
+title: Make lifecycle validate patterns configurable
+description: Add settings-backed lifecycle validation pattern controls so closure-like and stale-blocker heuristics can be tuned per project without code changes.
+type: Task
+status: open
+priority: 2
+tags[4]: governance,lifecycle,pm-cli,validation
+created_at: "2026-04-05T23:06:03.204Z"
+updated_at: "2026-04-05T23:06:03.204Z"
+deadline: "2026-04-19T23:06:03.204Z"
+assignee: codex-agent
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: "pm validate lifecycle checks read configurable pattern lists from settings with deterministic fallback defaults, expose pattern-source metadata in details, and retain backward-compatible warning tokens unless policy explicitly changes behavior."
+definition_of_ready: Current lifecycle validation baseline is merged and pattern tuning requirements are documented.
+order: 3
+goal: Governance operations by default
+objective: Reduce false positives and improve lifecycle validation portability
+value: Projects can tune lifecycle heuristics without patching CLI code
+impact: Improves validation signal quality across heterogeneous workflows
+outcome: "Lifecycle validation becomes configurable, deterministic, and easier to adopt"
+why_now: Today’s lifecycle hardening shipped static heuristics; configurable policy prevents future drift/false-positive churn.
+parent: pm-dw5s
+reviewer: maintainer-review
+risk: medium
+confidence: medium
+sprint: governance-followups
+release: vnext
+reporter: codex-agent
+severity: medium
+environment: linux
+repro_steps: Run pm validate --check-lifecycle against projects with different blocker/resolution wording and observe static pattern limitations.
+affected_version: 2026.3.12
+fixed_version: target-vnext
+component: validate-lifecycle
+regression: false
+customer_impact: Maintainers get tunable lifecycle diagnostics with less manual suppression.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-dw5s,parent,"2026-04-05T23:06:03.204Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-05T23:06:03.204Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'validate lifecycle stale blocker configurable patterns' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because existing lifecycle guardrails ship static heuristics but no settings-backed pattern policy surface."
+notes[1]{created_at,author,text}:
+  "2026-04-05T23:06:03.204Z",codex-agent,Implement deterministic pattern-source reporting (default vs settings override) and preserve warning token stability by default.
+files[1]{path,scope,note}:
+  src/cli/commands/validate.ts,project,planned lifecycle-pattern policy support
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,lifecycle-pattern-policy-regression
+docs[1]{path,scope,note}:
+  README.md,project,planned lifecycle-pattern policy docs
+body: "Current lifecycle checks rely on static phrase lists. Add configurable pattern policy keys with safe defaults, deterministic diagnostics, and clear source reporting in validate details."

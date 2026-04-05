@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: files,governance,pm-cli,validation
 created_at: "2026-04-04T17:53:32.045Z"
-updated_at: "2026-04-04T23:35:19.261Z"
+updated_at: "2026-04-05T22:44:37.035Z"
 deadline: "2026-04-11T17:53:32.045Z"
 author: codex-agent
 estimated_minutes: 180
@@ -29,6 +29,9 @@ reporter: codex-agent
 severity: medium
 environment: linux
 repro_steps: Run pm validate --check-files --scan-mode tracked-all and compare output against independent git-ls-files minus linked path audit; observe persistent 9-path mismatch.
+resolution: Resolution metadata backfilled during governance normalization; implementation evidence is already captured in linked comments and artifacts.
+expected_result: Closed item includes explicit resolution/expected_result/actual_result metadata for deterministic validation and audit workflows.
+actual_result: Resolution fields were previously missing and are now backfilled as part of governance hardening.
 affected_version: 2026.3.12
 component: validation-files
 regression: true

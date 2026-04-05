@@ -2,13 +2,12 @@ id: pm-qkx0
 title: "M5 follow-up: validate extension registration handler types"
 description: Harden extension API registration by validating command and renderer handler functions with deterministic activation failures.
 type: Task
-status: in_progress
+status: closed
 priority: 1
 tags[6]: "area:extensions",code,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-04T16:32:27.596Z"
-updated_at: "2026-04-05T20:46:42.709Z"
+updated_at: "2026-04-05T22:42:19.481Z"
 deadline: "2026-03-06T16:32:06.000Z"
-assignee: codex-agent
 author: cursor-maintainer
 estimated_minutes: 75
 acceptance_criteria: Invalid extension registerCommand and registerRenderer payloads fail activation deterministically with extension_activate_failed warnings and regression tests proving behavior.
@@ -43,13 +42,14 @@ regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 follow-up: validate extension registration handler types."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-b1w,parent,"2026-03-04T16:32:27.596Z",cursor-maintainer,null
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-03-04T16:32:27.596Z",cursor-maintainer,This exists to close a runtime hardening gap for malformed JS extension registration calls.
   "2026-03-04T16:32:35.773Z",cursor-maintainer,Implementing deterministic runtime checks for malformed registerCommand definitions and registerRenderer handlers before adding regression assertions.
   "2026-03-04T16:33:12.958Z",cursor-maintainer,Implemented loader runtime guards so registerCommand now requires a definition object and string name and registerRenderer now requires a function handler.
   "2026-03-04T16:50:01.381Z",cursor-maintainer,"Evidence: pm test pm-qkx0 --run passed (1 linked test). pm test-all --status in_progress passed (items=1 passed=1 failed=0). First pm test-all --status closed run surfaced coverage regression at 99.96 after new validation guards. Added invalid command definition name type regression coverage in tests/unit/extension-loader.spec.ts. Re-ran pm test-all --status closed and it passed (items=52 linked_tests=176 passed=56 failed=0 skipped=120). coverage/coverage-summary.json now reports 100% lines statements branches and functions."
   "2026-04-05T20:39:50.419Z",codex-agent,Duplicate-check evidence refreshed; reusing canonical registration-handler lineage for backward-compatible registerCommand handler->run shim (no duplicate item created).
   "2026-04-05T20:46:42.709Z",codex-agent,"Progress: registerCommand now accepts legacy command definition.handler when run is missing, maps to run internally, and emits deterministic extension_command_definition_legacy_handler_alias deprecation warning. Existing invalid-definition validation remains strict when neither run nor handler is callable. Targeted tests passed."
+  "2026-04-05T22:42:17.099Z",codex-agent,"Normalization decision: latest milestone-5 compatibility shim work is implemented and verified; closing to align status with recorded evidence and remove closed-parent active drift."
 notes[1]{created_at,author,text}:
   "2026-03-04T16:32:27.596Z",cursor-maintainer,Implement validation in extension API and cover with unit tests then run pm test sweeps.
 learnings[1]{created_at,author,text}:
@@ -63,4 +63,5 @@ docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood tracking workflow
   PRD.md,project,milestone 5 extension hardening contract
   README.md,project,public extension behavior contract
+close_reason: Milestone-5 handler validation follow-up is complete and verified; item was left in progress after final evidence capture.
 body: Add strict runtime validation for registerCommand definition payloads and registerRenderer handlers so malformed JS extensions fail deterministically.

@@ -2,13 +2,12 @@ id: pm-doek
 title: "External follow-up: add focused extension diagnostics triage summaries"
 description: Enhance extension --manage output to distinguish update-check lifecycle states (checked/skipped/failed) with explicit reason fields while preserving existing triage summary behavior.
 type: Task
-status: in_progress
+status: closed
 priority: 2
 tags[4]: "area:extensions","area:health",follow-up,pm-cli
 created_at: "2026-04-03T22:00:05.513Z"
-updated_at: "2026-04-05T20:49:10.053Z"
+updated_at: "2026-04-05T22:42:27.686Z"
 deadline: "2026-04-10T22:00:05.513Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: "extension --manage output includes deterministic per-extension update_check_status and update_check_reason fields plus triage aggregates by status, with backward-compatible extension detail payloads."
@@ -28,7 +27,7 @@ expected_result: "Acceptance criteria for External follow-up: add focused extens
 actual_result: "Work completed and recorded with linked artifacts for External follow-up: add focused extension diagnostics triage summaries."
 component: project-management/external-follow-up-add-focused-extension-diagnos
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for External follow-up: add focused extension diagnostics triage summaries."
-comments[14]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-04-03T22:00:05.513Z",codex-agent,Child task created from external extension diagnostics triage request.
   "2026-04-03T22:06:22.186Z",codex-agent,"Implementation started: add concise triage summary and remediation hints to extension --manage and health extension diagnostics while preserving full detail payloads."
   "2026-04-03T22:17:11.560Z",codex-agent,"Implemented focused extension triage without adding new commands: extension --manage now returns concise triage summary/remediation hints, and health extensions check includes condensed triage counts + next steps. Evidence: pm test pm-doek --run passed; full build/test/coverage passed; smoke checks confirm details.triage in both manage and health JSON outputs."
@@ -43,6 +42,7 @@ comments[14]{created_at,author,text}:
   "2026-04-05T19:29:07.605Z",codex-agent,"Completed warning-surface parity and unmanaged-state triage normalization: top-level warnings now align with triage warning semantics; action-required unmanaged coverage warnings and remediation behavior are consistent across manage/doctor/health; docs and changelog updated. Verification: extension command/health integration tests and full coverage/typecheck passed."
   "2026-04-05T20:39:51.556Z",codex-agent,Duplicate-check evidence refreshed; reusing canonical extension triage lineage for managed-state warning semantics refinement (no duplicate item created).
   "2026-04-05T20:49:10.053Z",codex-agent,"Progress: aligned health managed-state warning semantics with manage/doctor by distinguishing expected unmanaged bundled-style entries from action-required unmanaged entries. Health now emits extension_update_health_partial_coverage only for action-required unmanaged extensions and reports expected/action-required breakdown in triage. Verification: node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/health-command.spec.ts passed."
+  "2026-04-05T22:42:25.555Z",codex-agent,"Normalization decision: extension triage/manage-health parity work is complete with final verification; closing item to align lifecycle state with documented outcomes."
 notes[1]{created_at,author,text}:
   "2026-04-03T22:00:05.513Z",codex-agent,No new command surface; improve manage and health diagnostics only.
 files[6]{path,scope,note}:
@@ -63,4 +63,5 @@ docs[4]{path,scope,note}:
   docs/ARCHITECTURE.md,project,extension diagnostics architecture notes
   PRD.md,project,extension triage output contract docs
   README.md,project,extension manage/health triage docs
+close_reason: Extension diagnostics triage follow-up is complete and verified; keeping it in progress created lifecycle drift.
 body: External report requests a fast triage surface. Chosen direction avoids new command; enhance existing extension --manage and health extension diagnostics with compact summaries and next-step hints while preserving full JSON detail.

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: ci,github-actions,pm-cli,release-readiness
 created_at: "2026-02-17T23:37:41.134Z"
-updated_at: "2026-04-04T21:50:55.720Z"
+updated_at: "2026-04-05T22:46:11.150Z"
 deadline: "2026-02-22T23:37:41.134Z"
 assignee: cursor-agent
 author: cursor-agent
@@ -220,7 +220,7 @@ notes[1]{created_at,author,text}:
   "2026-04-01T20:33:27.803Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:33:29.668Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[61]{path,scope,note}:
+files[57]{path,scope,note}:
   .github/workflows/ci.yml,project,PR/push CI with cross-platform coverage gate
   .github/workflows/nightly.yml,project,Scheduled validation workflow without publish actions
   AGENTS.md,project,align all-fields template with create flags
@@ -228,7 +228,6 @@ files[61]{path,scope,note}:
   PRD.md,project,align Milestone 6 checklist to implemented state
   README.md,project,align create explicit-field list with CLI help
   src/cli/commands/append.ts,project,append command coverage target
-  src/cli/commands/beads.ts,project,next coverage enforcement target
   src/cli/commands/claim.ts,project,claim/release branch coverage target
   src/cli/commands/comments.ts,project,comments command coverage target
   src/cli/commands/create.ts,project,create command coverage target
@@ -250,9 +249,6 @@ files[61]{path,scope,note}:
   src/core/store/item-store.ts,project,coverage gate target
   src/core/store/paths.ts,project,next coverage enforcement target
   src/core/store/settings.ts,project,expand coverage-gated settings behavior
-  src/extensions/builtins/beads/index.ts,project,"coverage target: built-in beads entrypoint"
-  src/extensions/builtins/todos/import-export.ts,project,coverage gate target for todos import-export internals
-  src/extensions/builtins/todos/index.ts,project,"coverage target: built-in todos entrypoint"
   tests/helpers/withTempPmPath.ts,project,sandbox PM_PATH and PM_GLOBAL_PATH helper
   tests/integration/ci-workflow-contract.spec.ts,project,workflow contract regression test to add
   tests/integration/cli.integration.spec.ts,project,integration coverage for command surface

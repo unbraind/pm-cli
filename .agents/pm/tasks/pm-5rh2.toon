@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[9]: "area:core","area:docs","area:extensions-pi",code,doc,"milestone:next",pm-cli,"priority:0",tests
 created_at: "2026-03-05T08:56:51.061Z"
-updated_at: "2026-04-04T21:45:13.162Z"
+updated_at: "2026-04-05T22:45:27.127Z"
 deadline: "2026-03-06T08:56:51.061Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -52,10 +52,9 @@ notes[1]{created_at,author,text}:
   "2026-03-05T08:56:51.061Z",maintainer-agent,"Plan: migrate schema and commands then docs and tests then pm item cleanup."
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:31:08.005Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[21]{path,scope,note}:
+files[19]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,Pi wrapper parameter migration
   package.json,project,publish path updated to project-scoped Pi extension
-  src/cli/commands/beads.ts,project,beads assignee mapping
   src/cli/commands/claim.ts,project,claim and release assignee behavior
   src/cli/commands/close.ts,project,clear assignee on close
   src/cli/commands/create.ts,project,create assignee field
@@ -67,7 +66,6 @@ files[21]{path,scope,note}:
   src/core/shared/constants.ts,project,front-matter key order and settings defaults
   src/core/store/item-store.ts,project,assignee ownership checks
   src/core/store/settings.ts,project,remove session settings model
-  src/extensions/builtins/todos/import-export.ts,project,todos import-export assignee migration
   src/types.ts,project,ownership schema migration
   tests/integration/cli.integration.spec.ts,project,integration lifecycle assignee flow
   tests/integration/help-runtime.spec.ts,project,readme quickstart assignee flow

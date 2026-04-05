@@ -304,6 +304,95 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(resolutionCheck?.details.missing_resolution_items).toBe(1);
       expect(resolutionCheck?.details.missing_resolution_remediation_hints?.[0]).toContain(`pm update ${id}`);
 
+      const lifecycleSeed = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Validate lifecycle integration seed",
+          "--description",
+          "Seed item for lifecycle governance drift assertions.",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,validate,lifecycle",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "10",
+          "--ac",
+          "Lifecycle validate integration is verified",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create lifecycle integration seed",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(lifecycleSeed.code).toBe(0);
+      const lifecycleId = (lifecycleSeed.json as { item: { id: string } }).item.id;
+      const lifecycleDrift = context.runCli(
+        [
+          "update",
+          lifecycleId,
+          "--json",
+          "--parent",
+          id,
+          "--resolution",
+          "Closed with implementation evidence captured for integration lifecycle checks.",
+          "--actual-result",
+          "Work completed and recorded with linked artifacts for integration lifecycle checks.",
+          "--message",
+          "Seed lifecycle drift metadata",
+        ],
+        { expectJson: true },
+      );
+      expect(lifecycleDrift.code).toBe(0);
+
+      const lifecycleValidate = context.runCli(["validate", "--check-lifecycle", "--json"], { expectJson: true });
+      expect(lifecycleValidate.code).toBe(0);
+      const lifecyclePayload = lifecycleValidate.json as {
+        ok: boolean;
+        warnings: string[];
+        checks: Array<{
+          name: string;
+          status: string;
+          details: {
+            active_closure_like_metadata_items?: number;
+            active_terminal_parent_items?: number;
+          };
+        }>;
+      };
+      expect(lifecyclePayload.ok).toBe(false);
+      expect(lifecyclePayload.warnings).toContain("validate_lifecycle_active_closure_like_metadata:1");
+      expect(lifecyclePayload.warnings).toContain("validate_lifecycle_active_terminal_parent:1");
+      const lifecycleCheck = lifecyclePayload.checks.find((check) => check.name === "lifecycle");
+      expect(lifecycleCheck?.status).toBe("warn");
+      expect(lifecycleCheck?.details.active_closure_like_metadata_items).toBe(1);
+      expect(lifecycleCheck?.details.active_terminal_parent_items).toBe(1);
+
       const strictExitValidate = context.runCli(["validate", "--check-resolution", "--strict-exit", "--json"], { expectJson: true });
       expect(strictExitValidate.code).toBe(1);
       expect((strictExitValidate.json as { ok: boolean }).ok).toBe(false);

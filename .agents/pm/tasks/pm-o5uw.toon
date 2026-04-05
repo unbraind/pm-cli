@@ -2,13 +2,12 @@ id: pm-o5uw
 title: Add AGENTS rule to check existing pm items before creating new ones
 description: Update AGENTS.md to require agents to search existing pm items before creating a new item so duplicate tracker entries are not introduced.
 type: Task
-status: blocked
+status: closed
 priority: 1
 tags[3]: agents,docs,pm-hygiene
 created_at: "2026-03-12T22:26:40.371Z"
-updated_at: "2026-04-04T21:53:14.696Z"
+updated_at: "2026-04-05T22:42:51.509Z"
 deadline: "2026-03-26T22:26:40.371Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 20
 acceptance_criteria: AGENTS.md clearly instructs agents to search existing pm items before creating a new item and to avoid duplicate pm items.
@@ -41,9 +40,10 @@ fixed_version: target-vnext
 component: documentation
 regression: true
 customer_impact: Reduces duplicate tracker entries for contributors and agents
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-03-12T22:26:40.371Z",codex-agent,Search existing pm items first before creating a new one.
   "2026-03-12T22:29:10.653Z",codex-agent,"Updated AGENTS Step A to require searching existing pm items before create. Evidence: pm test pm-o5uw --run passed the linked secret scan. Broader node scripts/run-tests.mjs coverage failed in existing README and help contract tests after the earlier README rewrite, so this item remains open for visibility."
+  "2026-04-05T22:42:49.925Z",codex-agent,"Normalization decision: AGENTS duplicate-check rule has been implemented and evidenced; closing blocked legacy status left over from historical coverage context."
 notes[1]{created_at,author,text}:
   "2026-03-12T22:26:40.371Z",codex-agent,Place the rule near the workflow entry point so agents see it before create actions.
 learnings[1]{created_at,author,text}:
@@ -54,4 +54,5 @@ tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   node scripts/check-secrets.mjs,null,project,240,null,null,null,null,null,null,null,null,null,null,null,publish-safety scan before push
 docs[1]{path,scope,note}:
   README.md,project,metadata-audit-documentation-context
+close_reason: AGENTS duplicate-prevention rule work is complete and documented; blocking state is no longer accurate.
 body: Clarify the workflow so agents must search or list for an existing relevant pm item before they create a new one.

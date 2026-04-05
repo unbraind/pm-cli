@@ -6,8 +6,8 @@ status: blocked
 priority: 1
 tags[3]: "area:context",implementation,pm-cli
 created_at: "2026-04-01T14:10:51.504Z"
-updated_at: "2026-04-04T21:53:13.015Z"
-deadline: "2026-04-05T14:10:51.504Z"
+updated_at: "2026-04-05T22:46:23.552Z"
+deadline: "2026-04-12T22:46:23.551Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 360
@@ -43,33 +43,26 @@ regression: true
 customer_impact: Users and agents get faster context snapshots
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-iyqf,parent,"2026-04-01T14:10:51.504Z",codex-agent,null
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-01T14:10:51.504Z",codex-agent,Implementation task created and ready for claim.
   "2026-04-01T14:26:43.067Z",codex-agent,"Implemented pm context/ctx end-to-end: new command module, CLI wiring/help, completion parity, Pi wrapper action mapping, unit/integration/release-readiness tests, and docs (README/PRD/ARCHITECTURE/AGENTS/CHANGELOG). Verification: pnpm build passed; node scripts/run-tests.mjs test passed (63 files / 661 tests); targeted changed-suite regression passed (5 files / 131 tests). Coverage command still fails on existing global 100% thresholds across broader repo (lines 97.64, branches 95.34, functions 98.24, statements 97.32), but context command behavior and all related suites are passing."
+  "2026-04-05T22:43:38.081Z",codex-agent,"Normalization decision: removed stale governance backfill links that now point to deleted legacy install/beads/todos/builtins paths. These stale entries generated validate missing_linked_paths noise and obscured actionable linkage."
+  "2026-04-05T22:46:20.828Z",codex-agent,"Normalization decision: deadline refreshed because item remains intentionally blocked by upstream coverage-baseline gate; prior deadline was stale and created misleading overdue triage noise."
 notes[1]{created_at,author,text}:
   "2026-04-01T14:10:51.504Z",codex-agent,Will track files tests docs and verification evidence before close.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:14:49.670Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[21]{path,scope,note}:
+files[12]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,pi wrapper context action
-  src/cli/commands/beads.ts,project,governance-link-backfill
   src/cli/commands/completion.ts,project,shell completion parity
   src/cli/commands/context.ts,project,core command implementation
   src/cli/commands/index.ts,project,command exports
-  src/cli/commands/install.ts,project,governance-link-backfill
-  src/cli/commands/todos.ts,project,governance-link-backfill
   src/cli/help-content.ts,project,context help bundle
   src/cli/main.ts,project,command registration and format handling
-  src/core/extensions/builtins.ts,project,governance-link-backfill
-  src/extensions/builtins/beads/index.ts,project,governance-link-backfill
-  src/extensions/builtins/todos/import-export.ts,project,governance-link-backfill
-  src/extensions/builtins/todos/index.ts,project,governance-link-backfill
   tests/integration/cli.integration.spec.ts,project,context integration behavior
   tests/integration/release-readiness-runtime.spec.ts,project,runtime contract coverage
   tests/unit/completion-command.spec.ts,project,completion context assertions
   tests/unit/context-command.spec.ts,project,context unit coverage
-  tests/unit/extensions-builtins.spec.ts,project,governance-link-backfill
-  tests/unit/install-command.spec.ts,project,governance-link-backfill
   tests/unit/pi-agent-extension.spec.ts,project,wrapper context mapping assertions
   vitest.config.ts,project,coverage include update
 tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:

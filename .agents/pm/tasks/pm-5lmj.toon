@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:config",external-audit,implementation,pm-cli
 created_at: "2026-04-04T22:38:30.684Z"
-updated_at: "2026-04-04T23:35:17.281Z"
+updated_at: "2026-04-05T22:44:26.753Z"
 deadline: "2026-04-10T22:38:30.684Z"
 author: codex-agent
 estimated_minutes: 220
@@ -18,6 +18,9 @@ impact: Reduces brittle integrations
 outcome: Config key inventory and snapshot export are first-class
 why_now: Integrations currently require hardcoded keys and multiple get calls
 parent: pm-kslz
+resolution: Resolution metadata backfilled during governance normalization; implementation evidence is already captured in linked comments and artifacts.
+expected_result: Closed item includes explicit resolution/expected_result/actual_result metadata for deterministic validation and audit workflows.
+actual_result: Resolution fields were previously missing and are now backfilled as part of governance hardening.
 comments[3]{created_at,author,text}:
   "2026-04-04T22:38:30.684Z",codex-agent,Task created for direct config list/export implementation and schema/help parity updates.
   "2026-04-04T23:13:20.770Z",codex-agent,"Implemented config list/export support: runConfig now accepts list/export actions with key metadata and resolved snapshot values, main command args updated for optional key, and completion/contracts/Pi mappings updated for action parity. Added config and Pi regression coverage. Evidence: node scripts/run-tests.mjs test -- tests/unit/config-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts passed."

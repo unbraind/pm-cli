@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:extensions-todos",code,docs,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-08T13:57:37.636Z"
-updated_at: "2026-04-04T21:48:12.872Z"
+updated_at: "2026-04-05T22:45:35.589Z"
 deadline: "2026-03-09T13:56:50.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -57,10 +57,9 @@ notes[1]{created_at,author,text}:
   "2026-03-08T13:57:37.636Z",maintainer-agent,Plan update docs first then hydrate missing fields in todos import and add round trip regression coverage.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:34:52.001Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[4]{path,scope,note}:
+files[3]{path,scope,note}:
   PRD.md,project,todos extension parity contract wording
   README.md,project,public todos extension wording
-  src/extensions/builtins/todos/import-export.ts,project,todos import normalization gap
   tests/unit/todos-extension.spec.ts,project,round trip parity regression coverage
 tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full sandboxed coverage gate
