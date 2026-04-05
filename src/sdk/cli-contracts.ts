@@ -105,6 +105,7 @@ export const PM_TOOL_ACTIONS = [
   "extension-explore",
   "extension-manage",
   "extension-doctor",
+  "extension-adopt",
   "extension-activate",
   "extension-deactivate",
   "create",
@@ -391,6 +392,8 @@ export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--check-files" },
   { flag: "--scan-mode" },
   { flag: "--include-pm-internals" },
+  { flag: "--strict-exit" },
+  { flag: "--fail-on-warn" },
   { flag: "--check-history-drift" },
   { flag: "--check-command-references" },
 ];
@@ -566,6 +569,8 @@ export const CONTRACTS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--action" },
   { flag: "--command" },
   { flag: "--schema-only" },
+  { flag: "--runtime-only" },
+  { flag: "--active-only" },
 ];
 
 export function toCompletionFlagString(flagContracts: CliFlagContract[], includeGlobal = true): string {
@@ -797,6 +802,8 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   contractAction: { type: "string" },
   command: { type: "string" },
   schemaOnly: { type: "boolean" },
+  runtimeOnly: { type: "boolean" },
+  activeOnly: { type: "boolean" },
   configAction: { type: "string", enum: ["get", "set", "list", "export"] },
   key: { type: "string" },
   title: { type: "string" },
@@ -885,6 +892,8 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   strictDirectories: { type: "boolean" },
   scanMode: { type: "string", enum: ["default", "tracked-all", "tracked-all-strict"] },
   includePmInternals: { type: "boolean" },
+  strictExit: { type: "boolean" },
+  failOnWarn: { type: "boolean" },
   checkHistoryDrift: { type: "boolean" },
   checkCommandReferences: { type: "boolean" },
   allowAuditComment: { type: "boolean" },
@@ -977,6 +986,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   "extension-explore": { optional: ["scope"] },
   "extension-manage": { optional: ["scope"] },
   "extension-doctor": { optional: ["scope", "detail"] },
+  "extension-adopt": { required: ["target"], optional: ["scope", "github", "ref"] },
   "extension-activate": { required: ["target"], optional: ["scope"] },
   "extension-deactivate": { required: ["target"], optional: ["scope"] },
   create: {
@@ -1080,12 +1090,14 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
       "checkFiles",
       "scanMode",
       "includePmInternals",
+      "strictExit",
+      "failOnWarn",
       "checkHistoryDrift",
       "checkCommandReferences",
     ],
   },
   gc: {},
-  contracts: { optional: ["contractAction", "command", "schemaOnly"] },
+  contracts: { optional: ["contractAction", "command", "schemaOnly", "runtimeOnly", "activeOnly"] },
   completion: { required: ["shell"] },
   "templates-save": {
     required: ["template"],
@@ -1272,6 +1284,12 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   includePmInternals: {
     description: "Include PM storage internals in tracked-all candidate scans.",
   },
+  strictExit: {
+    description: "Return non-zero exit when validate warnings are present (ok=false).",
+  },
+  failOnWarn: {
+    description: "Alias for strictExit in validate action payloads.",
+  },
   checkHistoryDrift: {
     description: "Run item/history hash drift checks.",
   },
@@ -1313,6 +1331,12 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   schemaOnly: {
     description: "When true, contracts action omits command flag and alias surfaces.",
+  },
+  runtimeOnly: {
+    description: "When true, contracts action only includes actions invocable in the current runtime.",
+  },
+  activeOnly: {
+    description: "Alias for runtimeOnly in contracts action payloads.",
   },
 };
 

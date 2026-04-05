@@ -609,6 +609,8 @@ describe("runValidate", () => {
         scan_mode_requested: string;
         scan_mode_applied: string;
         strict_tracked_all_mode: boolean;
+        strict_mode_forces_pm_internals: boolean;
+        strict_mode_forces_pm_internals_notice: string | null;
         include_pm_internals: boolean;
         include_pm_internals_requested: boolean;
         candidate_total_raw: number;
@@ -620,12 +622,15 @@ describe("runValidate", () => {
       expect(strictDetails.scan_mode_requested).toBe("tracked-all-strict");
       expect(strictDetails.scan_mode_applied).toBe("tracked-all-strict");
       expect(strictDetails.strict_tracked_all_mode).toBe(true);
+      expect(strictDetails.strict_mode_forces_pm_internals).toBe(true);
+      expect(strictDetails.strict_mode_forces_pm_internals_notice).toContain("force-enables PM internals");
       expect(strictDetails.include_pm_internals_requested).toBe(false);
       expect(strictDetails.include_pm_internals).toBe(true);
       expect(strictDetails.candidate_total_raw).toBe(2);
       expect(strictDetails.candidate_total).toBe(2);
       expect(strictDetails.pm_internal_excluded_count).toBe(0);
       expect(strictDetails.excluded_by_reason).toEqual({});
+      expect(strictResult.warnings).toContain("validate_files_tracked_all_strict_forces_pm_internals");
     });
   });
 

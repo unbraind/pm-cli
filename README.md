@@ -15,7 +15,7 @@
 - Layered command help: compact default (`Intent` + one example) and deep explainability via `--explain`
 - Machine-readable help payloads via `pm <command> --help --json` (also `pm help <command> --json`)
 - Structured diagnostics with machine-readable JSON error envelopes when `--json` is active
-- Dedicated machine contract surface via `pm contracts` (`--action`, `--command`, `--schema-only`)
+- Dedicated machine contract surface via `pm contracts` (`--action`, `--command`, `--schema-only`, `--runtime-only`, `--active-only`)
 - Sparse TOON default output that omits null/undefined/empty fields for token-efficient agent workflows
 - Agent-friendly calendar views (`pm calendar` / `pm cal`) with markdown default output
 - Agent-first context snapshot command (`pm context` / `pm ctx`) for critical work + agenda triage
@@ -50,6 +50,7 @@ Compatibility policy for command contracts:
 - Pi tool schema now uses strict action-scoped branches (schema v4); callers should send only action-relevant fields.
 - `--json` remains the full machine payload; default TOON remains sparse/token-efficient.
 - `pm contracts --json` is the canonical runtime contract introspection surface for agents.
+- Contract payloads include runtime action availability metadata (`action_availability`) and optional runtime-filtered views (`--runtime-only`, `--active-only`) so automation can avoid non-invocable actions.
 
 ## Item Storage Formats
 
@@ -244,8 +245,10 @@ The vectorization ledger is also refreshed during `pm reindex --mode semantic|hy
 - `--check-files` supports `--scan-mode default|tracked-all|tracked-all-strict`; tracked modes use git-tracked candidates when available.
 - `tracked-all` excludes PM internals by default for higher-signal orphaned results; pass `--include-pm-internals` for full internal-audit scans.
 - `tracked-all-strict` forces full tracked coverage (including PM internals) and bypasses internal exclusion filtering.
+- `tracked-all-strict` emits explicit strict-coverage visibility fields in file-check details (`strict_mode_forces_pm_internals`, `strict_mode_forces_pm_internals_notice`) and warning `validate_files_tracked_all_strict_forces_pm_internals` when internals were force-enabled.
 - File-check details report filtered candidate counts (`candidate_total`, `candidate_scanned`) plus raw pre-filter counts (`candidate_total_raw`, `candidate_scanned_raw`), `pm_internal_excluded_count`, and structured `excluded_by_reason` summaries when paths are filtered.
 - Command-reference details report referenced PM IDs and stale-reference rows; stale rows emit `validate_command_references_stale_pm_ids:<count>` warnings.
+- `--strict-exit` (alias `--fail-on-warn`) returns non-zero exit (`1`) when validation warnings are present (`ok=false`).
 - Returns deterministic TOON/JSON output suitable for review or automation pipelines.
 - Output writers treat broken pipes (`EPIPE`) as expected shell behavior, so early-terminating pipelines do not emit unhandled Node stack traces.
 
@@ -538,7 +541,8 @@ When `--type` is missing, usage output now includes:
 - why `--type` is required
 - allowed values from the active runtime type registry
 - concrete `pm create` examples (including custom-type usage)
-- deterministic aggregation when multiple required options are missing for the selected type (single response, stable flag ordering)
+- deterministic aggregation when multiple required create flags and required `--type-option` keys are missing for the selected type (single response, stable flag ordering)
+- a type-specific "next valid example" command in structured error guidance to accelerate one-shot fixes
 
 For `pm create --help` and `pm update --help`, add `--type <value>` to render type-aware policy details (required/disabled/hidden option lists) and type-option schema details (required marker, allowed values, aliases, description) from active settings/extensions.
 
@@ -548,7 +552,7 @@ For `pm create --help` and `pm update --help`, add `--type <value>` to render ty
 
 - Default help is compact and token-efficient (`Intent` + one high-signal example).
 - Add `--explain` to any `--help` invocation to render deeper rationale, multiple examples, and tips.
-- `pm help` and `pm help <command>` are success paths (exit code `0`) with no trailing usage envelope.
+- `pm help` and `pm help <command>` are success paths (exit code `0`) for known command paths; unavailable-command help requests emit explicit `unknown command '<name>'` guidance and return usage exit (`2`).
 - `pm <command> --help --json` and `pm help <command> --json` emit deterministic machine-readable help payloads.
 - Usage/runtime errors use one canonical guidance model:
   - text mode: structured sections (`What happened`, `What is required`, `Why`, `Examples`, optional `Next steps`)
@@ -621,7 +625,7 @@ Use `--no-extensions` to force core-only behavior for a single invocation.
 
 ## Extension Lifecycle Manager (`pm extension`)
 
-Use `pm extension` to install, inspect, activate, deactivate, and remove custom extensions in project or global scope.
+Use `pm extension` to install, adopt, inspect, manage, activate, deactivate, and remove custom extensions in project or global scope.
 
 Lifecycle actions (exactly one per call):
 
@@ -629,6 +633,8 @@ Lifecycle actions (exactly one per call):
 - `--uninstall`
 - `--explore`
 - `--manage`
+- `--doctor`
+- `--adopt`
 - `--activate`
 - `--deactivate`
 
@@ -673,8 +679,9 @@ Activation and health behavior:
 - Install auto-activates the extension in selected scope settings.
 - Deactivate/activate toggle `extensions.disabled[]`/`extensions.enabled[]` in settings.
 - `pm extension --explore` lists discovered extensions and active status.
-- `pm extension --manage` refreshes GitHub-managed update metadata, persists it to scope-local `.managed-extensions.json`, and includes explicit per-extension `update_check_status`/`update_check_reason` fields (`checked`, `failed`, `skipped_unmanaged`, `skipped_non_github`, `not_checked`) plus triage status totals/remediation hints.
-- `pm extension --doctor` (or `pm extension doctor`) provides consolidated extension diagnostics with normalized warning codes, canonical load roots, active-vs-loaded consistency diagnostics, remediation hints, and optional deep output via `--detail deep`.
+- `pm extension --adopt` records an existing unmanaged extension into managed state (local or GitHub provenance metadata) without reinstalling extension files.
+- `pm extension --manage` refreshes GitHub-managed update metadata, persists it to scope-local `.managed-extensions.json`, and includes explicit per-extension `update_check_status`/`update_check_reason` fields (`checked`, `failed`, `skipped_unmanaged`, `skipped_non_github`, `not_checked`) plus triage status totals/remediation hints and update-health coverage diagnostics (`update_health_coverage`, `warning_codes`).
+- `pm extension --doctor` (or `pm extension doctor`) provides consolidated extension diagnostics with normalized warning codes, canonical load roots, active-vs-loaded consistency diagnostics, update-health coverage signals, remediation hints, and optional deep output via `--detail deep`.
 - `pm health` includes managed extension state diagnostics plus a condensed extension triage block for quick load/activation/migration issue triage across project and global roots.
 
 Use `pm extension --help` for compact guidance or `pm extension --help --explain` for expanded examples/tips.

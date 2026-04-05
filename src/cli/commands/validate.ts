@@ -430,6 +430,7 @@ async function buildFilesCheck(
   const uniqueMissingLinkedPaths = [...new Set(missingLinkedPaths)].sort((left, right) => left.localeCompare(right));
   const fileCandidates = await collectProjectFileCandidates(workspaceRoot, fileScanMode);
   const strictTrackedAllMode = fileScanMode === "tracked-all-strict";
+  const strictModeForcesPmInternals = strictTrackedAllMode && !includePmInternals;
   const includePmInternalsEffective = includePmInternals || strictTrackedAllMode;
   const pmInternalCandidatePrefixes = includePmInternalsEffective ? [] : resolvePmInternalCandidatePrefixes(pmRoot, workspaceRoot);
   const excludedPmInternalPaths =
@@ -452,6 +453,9 @@ async function buildFilesCheck(
   }
   const orphanedFiles = candidateFiles.filter((candidate) => !linkedProjectPaths.has(candidate));
   const warnings: string[] = [];
+  if (strictModeForcesPmInternals) {
+    warnings.push("validate_files_tracked_all_strict_forces_pm_internals");
+  }
   if (uniqueMissingLinkedPaths.length > 0) {
     warnings.push(`validate_files_missing_linked_paths:${uniqueMissingLinkedPaths.length}`);
   }
@@ -470,6 +474,10 @@ async function buildFilesCheck(
         scan_mode_requested: fileCandidates.requestedMode,
         scan_mode_applied: fileCandidates.appliedMode,
         strict_tracked_all_mode: strictTrackedAllMode,
+        strict_mode_forces_pm_internals: strictModeForcesPmInternals,
+        strict_mode_forces_pm_internals_notice: strictModeForcesPmInternals
+          ? "tracked-all-strict force-enables PM internals; pass --include-pm-internals to make inclusion explicit."
+          : null,
         candidate_scan_source: fileCandidates.source,
         include_pm_internals: includePmInternalsEffective,
         include_pm_internals_requested: includePmInternals,

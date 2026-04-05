@@ -36,6 +36,7 @@ Pass exactly one action flag:
 - `--explore`
 - `--manage`
 - `--doctor`
+- `--adopt`
 - `--activate`
 - `--deactivate`
 
@@ -108,11 +109,13 @@ Lifecycle semantics:
 - Activate/deactivate updates `settings.extensions.enabled[]` / `settings.extensions.disabled[]`.
 - Explore returns discovered extensions + active/managed status.
 - Manage performs GitHub update checks (`git ls-remote`) for managed GitHub entries and persists update metadata (`last_update_check_at`, `last_update_remote_commit`, `update_available`, `update_error`).
+- Adopt records an already-installed unmanaged extension into managed state metadata without reinstalling files (supports local source metadata or explicit GitHub provenance via `--gh`/`--github` and optional `--ref`).
 - Explore/manage extension rows include explicit update-check fields:
   - `update_check_status`: `checked`, `failed`, `skipped_unmanaged`, `skipped_non_github`, or `not_checked`
   - `update_check_reason`: deterministic reason/code for that status (for example `up_to_date`, `update_available`, `extension_not_managed`, or the update failure text)
-- Manage triage includes `update_check_status_totals` and `update_check_failed_total` for operator-friendly rollups.
-- Doctor consolidates diagnostics into summary/deep modes (`--detail summary|deep`) with normalized warning codes, canonical extension load roots, consistency diagnostics for active-vs-loaded project extensions, and remediation hints (`pm extension --doctor` or `pm extension doctor`).
+- Manage triage includes `update_check_status_totals`, `update_check_failed_total`, and update-health coverage signals (`update_health_coverage`, `update_health_partial`) for operator-friendly rollups.
+- Manage/doctor warning-code rollups include `extension_update_health_partial_coverage` when unmanaged extensions reduce update-check coverage.
+- Doctor consolidates diagnostics into summary/deep modes (`--detail summary|deep`) with normalized warning codes, canonical extension load roots, consistency diagnostics for active-vs-loaded project extensions, update-health coverage telemetry, and remediation hints (`pm extension --doctor` or `pm extension doctor`).
 
 ### Health integration
 

@@ -609,7 +609,8 @@ Default output note:
 Help and error UX note:
 
 - Command help should default to compact token-efficient guidance (`Intent` + one high-signal example) and support an explicit deep-help surface via `--explain`.
-- `pm help` and `pm help <command>` should remain deterministic success flows; `--help --json` should emit machine-readable help payloads instead of text help.
+- `pm help` and `pm help <command>` should remain deterministic success flows for known command paths; unavailable-command help requests should emit explicit `unknown command '<name>'` guidance with usage exit semantics.
+- `--help --json` should emit machine-readable help payloads instead of text help.
 - Usage and runtime errors should be rendered from one canonical guidance model:
   - text mode: structured sections for what happened, what is required, why, examples, and optional next steps
   - `--json` mode: machine-readable envelope (`type`, `code`, `title`, `detail`, `required`, `exit_code`, optional `why/examples/next_steps`)
@@ -626,7 +627,7 @@ Help and error UX note:
 ### 11.3 Core commands (required for v0.1 release-ready scope)
 
 - `pm init [<PREFIX>]`
-- `pm extension [target] --install|--uninstall|--explore|--manage|--activate|--deactivate [--project|--local|--global] [--gh|--github <owner/repo[/path]>] [--ref <ref>]`
+- `pm extension [target] --install|--uninstall|--explore|--manage|--doctor|--adopt|--activate|--deactivate [--project|--local|--global] [--gh|--github <owner/repo[/path]>] [--ref <ref>]`
 - `pm list`
 - `pm list-all`
 - `pm list-draft`
@@ -764,7 +765,8 @@ Help and error guidance:
 
 - `pm create --help` / `pm update --help` accept `--type <value>` to render policy-aware required/disabled/hidden option summaries plus type-option schema details (required marker, allowed values, aliases, description).
 - Missing `--type` usage errors include rationale, active allowed values, and custom-type examples.
-- Type-governed create validation aggregates all missing required options into one deterministic usage error payload (stable flag ordering) instead of iterative one-at-a-time failures.
+- Type-governed create validation aggregates all missing required create options and required `--type-option` keys into one deterministic usage error payload (stable flag ordering) instead of iterative one-at-a-time failures.
+- Aggregated create/type-option validation guidance includes a deterministic type-specific "next valid example" command for one-shot remediation.
 - Commander usage errors are normalized into a single structured guidance payload (duplicate default commander stderr messaging is not emitted).
 - Runtime `PmCliError` paths should surface structured guidance while preserving canonical exit-code mapping, with machine-readable JSON error envelopes when `--json` is active.
 
@@ -860,13 +862,13 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 
 - Existing CLI command paths and aliases remain valid.
 - Pi tool input validation uses strict action-scoped schema branches (schema v4) with per-action required fields and `additionalProperties: false`.
-- `pm contracts` provides deterministic runtime contract introspection (`--action`, `--command`, `--schema-only`) for agent callers.
+- `pm contracts` provides deterministic runtime contract introspection (`--action`, `--command`, `--schema-only`, `--runtime-only`, `--active-only`) for agent callers, including action availability metadata (`action_availability`) with invocability/provider diagnostics.
 - Command output remains deterministic; `--json` exposes full machine payloads and JSON error envelopes.
 
 | Command | Key inputs | Output object |
 | --- | --- | --- |
 | `pm init [PREFIX]` | optional prefix, `--path` | `{ ok, path, settings, created_dirs, warnings }` |
-| `pm extension [target] --install\|--uninstall\|--explore\|--manage\|--doctor\|--activate\|--deactivate` | exactly one lifecycle action, optional `target` (required for install/uninstall/activate/deactivate; `doctor` supports `pm extension doctor` target syntax), scope flags (`--project` default, `--local` alias, `--global`), install source selectors (`target`, `--gh`, `--github`, optional `--ref`), bundled aliases (`beads`, `todos`), doctor detail mode (`--detail summary\|deep`) | `{ ok, action, scope, roots, warnings, details }` where `details` is action-specific and `explore/manage` include per-extension `update_check_status`/`update_check_reason` plus `triage` status totals + remediation hints while `doctor` includes consolidated summary/deep diagnostics |
+| `pm extension [target] --install\|--uninstall\|--explore\|--manage\|--doctor\|--adopt\|--activate\|--deactivate` | exactly one lifecycle action, optional `target` (required for install/uninstall/activate/deactivate/adopt; `doctor` supports `pm extension doctor` target syntax), scope flags (`--project` default, `--local` alias, `--global`), install/adopt source selectors (`target`, `--gh`, `--github`, optional `--ref`), bundled aliases (`beads`, `todos`), doctor detail mode (`--detail summary\|deep`) | `{ ok, action, scope, roots, warnings, details }` where `details` is action-specific: `explore/manage` include per-extension `update_check_status`/`update_check_reason`; `manage`/`doctor` include triage rollups (`warning_codes`, `update_health_coverage`, `update_health_partial`, `update_check_status_totals`, remediation); `adopt` reports adoption result/provenance (`adopted`, `already_managed?`, `source`) without reinstalling extension files |
 | `pm list` | optional filter flags (including `--include-body`, `--offset`, and JSON-only `--stream`); excludes terminal statuses (`closed`, `canceled`) by default | `{ items, count, filters, now }` (or streamed newline-delimited rows when `--json --stream`) |
 | `pm list-all` | optional filter flags (including `--include-body`, `--offset`, and JSON-only `--stream`); includes all statuses including terminal | `{ items, count, filters, now }` (or streamed newline-delimited rows when `--json --stream`) |
 | `pm list-draft` | optional type/tag/priority/deadline/assignee/sprint/release/include-body/offset filters plus JSON-only stream mode | `{ items, count, filters, now }` (or streamed newline-delimited rows when `--json --stream`) |
@@ -903,10 +905,10 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | `pm test-runs list|status|logs|stop|resume` | list/status/log/stop/resume lifecycle control for managed background test runs (`logs` supports `--stream stdout|stderr|both` and `--tail`; `stop` supports `--force`) | list: `{ runs, count, filters }`; status: `{ run, health }`; logs: `{ run, stream, tail, stdout, stderr }`; stop: `{ run, signal_sent }`; resume: `{ resumed_from, run }` |
 | `pm stats` | none | `{ totals, by_type, by_status, generated_at }` |
 | `pm health` | none (runs settings/directories/extensions/storage plus integrity, history-drift, and vectorization diagnostics); supports `--strict-directories` to treat optional built-in item-type directories as required warning/failure conditions | `{ ok, checks, warnings, generated_at }` with extension diagnostics including condensed `details.triage` and directory check details (`required`, `optional`, `missing_required`, `missing_optional`) |
-| `pm validate` | optional scoped checks (`--check-metadata`, `--check-resolution`, `--check-files`, `--check-command-references`, `--check-history-drift`; default all checks); file checks accept `--scan-mode default|tracked-all|tracked-all-strict` plus `--include-pm-internals` opt-in and report filtered + raw candidate metrics (`candidate_total`, `candidate_scanned`, `candidate_total_raw`, `candidate_scanned_raw`) plus structured exclusion summaries (`excluded_by_reason`) | `{ ok, checks, warnings, generated_at }` |
+| `pm validate` | optional scoped checks (`--check-metadata`, `--check-resolution`, `--check-files`, `--check-command-references`, `--check-history-drift`; default all checks); file checks accept `--scan-mode default|tracked-all|tracked-all-strict` plus `--include-pm-internals` opt-in and report filtered + raw candidate metrics (`candidate_total`, `candidate_scanned`, `candidate_total_raw`, `candidate_scanned_raw`) plus structured exclusion summaries (`excluded_by_reason`); strict warning exits via `--strict-exit` (alias `--fail-on-warn`) | `{ ok, checks, warnings, generated_at }` where tracked-all-strict visibility includes explicit file-check detail flags (`strict_mode_forces_pm_internals`, `strict_mode_forces_pm_internals_notice`) and warning token `validate_files_tracked_all_strict_forces_pm_internals` when strict mode force-enables PM internals |
 | `pm config <project\|global> <get\|set\|list\|export> [key]` | scope + action; `get/set` require key, `list/export` reject key; policy/format/criterion flags apply where relevant | `get/set`: existing key-specific result shape; `list`: `{ scope, keys, count, settings_path, changed, warnings? }`; `export`: `{ scope, values, settings_path, changed, warnings? }` |
 | `pm gc` | none | `{ ok, removed, retained, warnings, generated_at }` |
-| `pm contracts [--action <value>] [--command <value>] [--schema-only]` | optional action/command filters and schema-only mode for machine contract introspection | `{ schema_version, schema_id, selected, actions, commands, schema, command_flags?, commander_aliases? }` |
+| `pm contracts [--action <value>] [--command <value>] [--schema-only] [--runtime-only|--active-only]` | optional action/command filters, schema-only mode, and runtime invocability filtering for machine contract introspection | `{ schema_version, schema_id, selected, actions, action_availability, commands, schema, command_flags?, commander_aliases? }` |
 | `pm docs <ID> --add/--add-glob/--remove/--migrate/--validate-paths/--audit` | id + doc refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`); optional glob expansion via repeatable `--add-glob` (plain glob or `pattern=<glob>,scope=<scope>,note=<text>`); optional additive linked-path hygiene (`--migrate from=<old>,to=<new>`, path existence validation, cross-item audit) | `{ id, docs, changed, count, migrations_applied, validation, audit }` |
 | `pm deps <ID> --format tree|graph` | id + optional output selector (`tree` default, `graph` for node/edge projection) | `{ id, format, node_count, edge_count, missing_count, tree? graph? }` |
 | `pm history <ID> --limit/--diff/--verify` | id + optional limit + additive diagnostics (`--diff` changed-field patch summaries, `--verify` hash-chain/current-hash verification) | `{ id, history, count, limit, diff, verify }` |
@@ -1090,13 +1092,14 @@ Implemented baseline:
 
 Lifecycle manager command:
 
-- `pm extension` is the canonical extension lifecycle command surface for install/uninstall/explore/manage/doctor/activate/deactivate.
+- `pm extension` is the canonical extension lifecycle command surface for install/uninstall/explore/manage/doctor/adopt/activate/deactivate.
 - Scope selection: `--project` (default), `--local` (alias of project), `--global`.
 - Install sources: local directory, GitHub HTTPS URL, `github.com/<owner>/<repo>[/path]`, or `--gh/--github <owner>/<repo>[/path]` with optional `--ref`.
 - GitHub subpath resolution probes deterministic default extension roots (`.agents/pm/extensions`, `.custom/pm-extensions`, `.custom/pm-extension`) when shorthand inputs do not include full paths.
 - Scope-local managed state is persisted in `<extension-root>/.managed-extensions.json` and includes source metadata plus update-check status.
 - `pm extension --manage` performs GitHub remote update checks for managed GitHub entries, persists latest check metadata, and returns deterministic per-extension `update_check_status`/`update_check_reason` fields plus `details.triage` status totals/remediation hints.
-- `pm extension --doctor` (or `pm extension doctor`) returns consolidated diagnostics with summary/deep modes (`--detail summary|deep`), normalized warning codes, canonical load roots, active-vs-loaded project consistency diagnostics, and remediation hints.
+- `pm extension --adopt <name>` records existing unmanaged installs into managed state metadata (local or GitHub provenance via `--gh/--github` and optional `--ref`) without reinstalling files.
+- `pm extension --doctor` (or `pm extension doctor`) returns consolidated diagnostics with summary/deep modes (`--detail summary|deep`), normalized warning codes, canonical load roots, active-vs-loaded project consistency diagnostics, update-health coverage signals (`update_health_coverage`, `update_health_partial`), and remediation hints.
 - `pm health` extension diagnostics include managed-state summaries/warnings for both project and global scope plus condensed `details.triage` counts/remediation for load, activation, and migration issues.
 
 ### 14.2 Load order and precedence
@@ -1277,7 +1280,7 @@ Current baseline status (release-hardening):
 - Implemented as a Pi agent extension source module at `.pi/extensions/pm-cli/index.ts` (outside the `pm` CLI command surface).
 - Registers one Pi tool named `pm` via Pi's extension API (`registerTool`) and maps `action` + command-shaped fields to `pm` CLI invocations.
 - Tool action enums and parameter JSON Schema are sourced from the shared command contract registry (`src/sdk/cli-contracts.ts`) to avoid drift with core CLI/completion surfaces.
-- Action dispatch currently covers the full v0.1 command-aligned set (`init`, `config`, `create`, `list`, `list-all`, `list-draft`, `list-open`, `list-in-progress`, `list-blocked`, `list-closed`, `list-canceled`, `calendar`, `context`, `get`, `search`, `reindex`, `history`, `activity`, `restore`, `update`, `close`, `delete`, `append`, `comments`, `notes`, `learnings`, `files`, `docs`, `deps`, `test`, `test-all`, `stats`, `health`, `validate`, `gc`, `completion`, `templates-save`, `templates-list`, `templates-show`, `claim`, `release`) plus extension lifecycle actions (`extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-doctor`, `extension-activate`, `extension-deactivate`), extension action aliases (`beads-import`, `todos-import`, `todos-export`), and workflow presets (`start-task`, `pause-task`, `close-task`).
+- Action dispatch currently covers the full v0.1 command-aligned set (`init`, `config`, `create`, `list`, `list-all`, `list-draft`, `list-open`, `list-in-progress`, `list-blocked`, `list-closed`, `list-canceled`, `calendar`, `context`, `get`, `search`, `reindex`, `history`, `activity`, `restore`, `update`, `close`, `delete`, `append`, `comments`, `notes`, `learnings`, `files`, `docs`, `deps`, `test`, `test-all`, `stats`, `health`, `validate`, `gc`, `completion`, `templates-save`, `templates-list`, `templates-show`, `claim`, `release`) plus extension lifecycle actions (`extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-doctor`, `extension-adopt`, `extension-activate`, `extension-deactivate`), extension action aliases (`beads-import`, `todos-import`, `todos-export`), and workflow presets (`start-task`, `pause-task`, `close-task`).
 - Invocation fallback order is deterministic for distribution resilience: attempt `pm` first, then fallback to packaged `node <package-root>/dist/cli.js` when `pm` is unavailable.
 
 - Expose one tool `pm`.
@@ -1287,7 +1290,8 @@ Current baseline status (release-hardening):
   - completion parity field `shell` (`action=completion` -> `pm completion <shell>`)
   - search-specific parity fields including `mode` and `includeLinked` (`--include-linked`)
   - list/runtime parity fields including `offset` and `progress` where command surfaces support those flags
-  - close/validate parity fields including `validateClose`, `checkMetadata`, `checkResolution`, `checkFiles`, `scanMode`, `includePmInternals`, and `checkHistoryDrift`
+  - close/validate parity fields including `validateClose`, `checkMetadata`, `checkResolution`, `checkFiles`, `scanMode`, `includePmInternals`, `strictExit`, `failOnWarn`, and `checkHistoryDrift`
+  - contracts parity fields including `schemaOnly`, `runtimeOnly`, and `activeOnly`
   - claim/release metadata parity fields including `author`, `message`, and `force` (`--author`, `--message`, `--force`)
   - create/update scalar parity fields using camelCase wrapper parameters that forward to the canonical CLI flags for planning/workflow metadata (`parent`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blockedBy`, `blockedReason`, `unblockNote`, `definitionOfReady`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `whyNow`, `closeReason`) and issue metadata (`reporter`, `severity`, `environment`, `reproSteps`, `resolution`, `expectedResult`, `actualResult`, `affectedVersion`, `fixedVersion`, `component`, `regression`, `customerImpact`)
   - explicit empty-string passthrough for empty-allowed CLI flags (for example `--description ""` and `--body ""`)

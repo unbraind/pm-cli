@@ -130,7 +130,7 @@ describe("generateBashScript", () => {
   it("includes validate scan-mode flag in bash completion", () => {
     const script = generateBashScript();
     expect(script).toContain(
-      "--check-metadata --check-resolution --check-files --scan-mode --include-pm-internals --check-history-drift --check-command-references",
+      "--check-metadata --check-resolution --check-files --scan-mode --include-pm-internals --strict-exit --fail-on-warn --check-history-drift --check-command-references",
     );
   });
 
@@ -363,6 +363,8 @@ describe("generateFishScript", () => {
     expect(script).toContain("-l action");
     expect(script).toContain("-l command");
     expect(script).toContain("-l schema-only");
+    expect(script).toContain("-l runtime-only");
+    expect(script).toContain("-l active-only");
   });
 
   it("includes completion shell argument completions", () => {
@@ -379,6 +381,7 @@ describe("generateFishScript", () => {
     expect(script).toContain("-l explore");
     expect(script).toContain("-l manage");
     expect(script).toContain("-l doctor");
+    expect(script).toContain("-l adopt");
     expect(script).toContain("-l activate");
     expect(script).toContain("-l deactivate");
     expect(script).toContain("-l gh");

@@ -232,6 +232,8 @@ const REQUIRED_VALIDATE_FLAGS = [
   "--check-command-references",
   "--scan-mode",
   "--include-pm-internals",
+  "--strict-exit",
+  "--fail-on-warn",
   "--check-history-drift",
 ];
 const REQUIRED_DELETE_FLAGS = ["--author", "--message", "--force"];
@@ -446,6 +448,7 @@ describe("release readiness runtime coverage", () => {
       expect(help.stdout).toContain("--explore");
       expect(help.stdout).toContain("--manage");
       expect(help.stdout).toContain("--doctor");
+      expect(help.stdout).toContain("--adopt");
       expect(help.stdout).toContain("--activate");
       expect(help.stdout).toContain("--deactivate");
       expect(help.stdout).toContain("--project");

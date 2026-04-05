@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:tests","area:validation",external-audit,pm-cli
 created_at: "2026-04-03T18:07:42.651Z"
-updated_at: "2026-04-04T21:40:16.183Z"
+updated_at: "2026-04-05T02:19:01.427Z"
 deadline: "2026-04-08T18:07:42.651Z"
 author: codex-agent
 estimated_minutes: 210
@@ -42,10 +42,12 @@ regression: true
 customer_impact: Improves reliability of historical records and audit workflows
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-gtdx,parent,"2026-04-03T18:07:42.651Z",codex-agent,null
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-04-03T18:07:42.651Z",codex-agent,Task created for implementation of validate command and close validation modes.
   "2026-04-03T18:55:47.266Z",codex-agent,"Implemented standalone pm validate plus pm close --validate-close (warn/strict), wired completion/help/contracts/Pi parity, and added integration/unit coverage including full validate branch-gate tests."
   "2026-04-03T18:55:47.832Z",codex-agent,"Evidence: node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/validate-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts passed (31/31)."
+  "2026-04-05T01:12:16.602Z",codex-agent,"Reopened for Issue 6 follow-up: add validate fail mode flags so automation can opt into non-zero exit when validate result ok=false while preserving default compatibility."
+  "2026-04-05T02:18:54.642Z",codex-agent,"Issue 6 follow-up completed: pm validate now supports non-default warning-fail exits via --strict-exit and --fail-on-warn while keeping default behavior compatible. Evidence: node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/integration/cli.integration.spec.ts passed; repro probes show status=1 for both strict-exit and fail-on-warn in tracked-all-strict mode; node scripts/run-tests.mjs coverage passed (branch 91.01%); pnpm build passed."
 notes[1]{created_at,author,text}:
   "2026-04-03T18:07:42.651Z",codex-agent,Re-use existing health/integrity logic where possible to reduce drift.
 files[13]{path,scope,note}:
@@ -65,7 +67,10 @@ files[13]{path,scope,note}:
 tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/health-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,validate and close behavior regression suite
   node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/validate-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,validate-close and validate command regressions
-docs[1]{path,scope,note}:
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,unreleased validate strict-exit notes
   docs/ARCHITECTURE.md,project,validation command architecture notes
-close_reason: "Implemented validate command, close-time validation modes, and regression coverage"
+  PRD.md,project,validate strict warning-exit contract updates
+  README.md,project,validate strict-exit/fail-on-warn behavior docs
+close_reason: validate strict warning-fail flags are implemented and regression-tested
 body: Implements feature pm-gtdx with additive command surfaces and compatibility-safe close validation.

@@ -518,11 +518,19 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(extensionActivateSchema.required).toEqual(expect.arrayContaining(["action", "target"]));
     expect(schemaProperty(extensionActivateSchema, "scope").enum).toEqual(["project", "global"]);
 
+    const extensionAdoptSchema = schemaForAction(tool.parameters as Record<string, unknown>, "extension-adopt");
+    expect(extensionAdoptSchema.required).toEqual(expect.arrayContaining(["action", "target"]));
+    expect(schemaProperty(extensionAdoptSchema, "scope").enum).toEqual(["project", "global"]);
+    expect(schemaProperty(extensionAdoptSchema, "github").type).toBe("string");
+    expect(schemaProperty(extensionAdoptSchema, "ref").type).toBe("string");
+
     const validateSchema = schemaForAction(tool.parameters as Record<string, unknown>, "validate");
     expect(validateSchema.required).toEqual(["action"]);
     expect(schemaProperty(validateSchema, "checkFiles").type).toBe("boolean");
     expect(schemaProperty(validateSchema, "scanMode").enum).toEqual(["default", "tracked-all", "tracked-all-strict"]);
     expect(schemaProperty(validateSchema, "includePmInternals").type).toBe("boolean");
+    expect(schemaProperty(validateSchema, "strictExit").type).toBe("boolean");
+    expect(schemaProperty(validateSchema, "failOnWarn").type).toBe("boolean");
     expect(schemaProperty(validateSchema, "checkCommandReferences").type).toBe("boolean");
 
     const calendarSchema = schemaForAction(tool.parameters as Record<string, unknown>, "calendar");
@@ -578,6 +586,8 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(schemaProperty(contractsSchema, "contractAction").type).toBe("string");
     expect(schemaProperty(contractsSchema, "command").type).toBe("string");
     expect(schemaProperty(contractsSchema, "schemaOnly").type).toBe("boolean");
+    expect(schemaProperty(contractsSchema, "runtimeOnly").type).toBe("boolean");
+    expect(schemaProperty(contractsSchema, "activeOnly").type).toBe("boolean");
 
     const testAllSchema = schemaForAction(tool.parameters as Record<string, unknown>, "test-all");
     expect(schemaProperty(testAllSchema, "timeout").anyOf).toEqual(
@@ -733,6 +743,26 @@ describe("Pi agent extension wrapper for pm", () => {
 
     expect(
       buildPmCliArgs({
+        action: "extension-adopt",
+        target: "sample-ext",
+        scope: "project",
+        github: "owner/repo/sample-ext",
+        ref: "main",
+      }),
+    ).toEqual([
+      "--json",
+      "extension",
+      "--adopt",
+      "sample-ext",
+      "--project",
+      "--github",
+      "owner/repo/sample-ext",
+      "--ref",
+      "main",
+    ]);
+
+    expect(
+      buildPmCliArgs({
         action: "extension-deactivate",
         target: "sample-ext",
         scope: "global",
@@ -745,6 +775,8 @@ describe("Pi agent extension wrapper for pm", () => {
         checkFiles: true,
         scanMode: "tracked-all",
         includePmInternals: true,
+        strictExit: true,
+        failOnWarn: true,
         checkHistoryDrift: true,
         checkCommandReferences: true,
       }),
@@ -755,6 +787,8 @@ describe("Pi agent extension wrapper for pm", () => {
       "--scan-mode",
       "tracked-all",
       "--include-pm-internals",
+      "--strict-exit",
+      "--fail-on-warn",
       "--check-history-drift",
       "--check-command-references",
     ]);
@@ -1142,8 +1176,20 @@ describe("Pi agent extension wrapper for pm", () => {
         contractAction: "create",
         command: "create",
         schemaOnly: true,
+        runtimeOnly: true,
+        activeOnly: true,
       }),
-    ).toEqual(["--json", "contracts", "--action", "create", "--command", "create", "--schema-only"]);
+    ).toEqual([
+      "--json",
+      "contracts",
+      "--action",
+      "create",
+      "--command",
+      "create",
+      "--schema-only",
+      "--runtime-only",
+      "--active-only",
+    ]);
 
     expect(
       buildPmCliArgs({

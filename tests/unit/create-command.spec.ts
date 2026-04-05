@@ -1471,6 +1471,57 @@ describe("runCreate", () => {
     });
   });
 
+  it("aggregates missing required create and type-option requirements with next valid example guidance", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        item_types?: { definitions?: Array<Record<string, unknown>> };
+      };
+      settings.item_types = {
+        definitions: [
+          {
+            name: "Asset",
+            folder: "assets",
+            required_create_fields: [],
+            required_create_repeatables: [],
+            command_option_policies: [{ command: "create", option: "message", required: true }],
+            options: [{ key: "category", values: ["feature", "maintenance"], required: true }],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            type: "Asset",
+            message: undefined,
+            typeOption: undefined,
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toThrow('Missing required options --message, --type-option category=<value> for type "Asset"');
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            type: "Asset",
+            message: undefined,
+            typeOption: undefined,
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: {
+          code: "missing_required_option",
+          examples: [expect.stringContaining("--type-option category=feature")],
+          nextSteps: [expect.stringContaining("pm create --help --type Asset")],
+        },
+      });
+    });
+  });
+
   it("rejects create policies that make an option required and disabled", async () => {
     await withTempPmPath(async (context) => {
       const settingsPath = path.join(context.pmPath, "settings.json");

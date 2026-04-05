@@ -40,6 +40,8 @@ export interface PmToolParameters {
   contractAction?: string;
   command?: string;
   schemaOnly?: boolean;
+  runtimeOnly?: boolean;
+  activeOnly?: boolean;
   configAction?: string;
   key?: string;
   title?: string;
@@ -125,6 +127,8 @@ export interface PmToolParameters {
   strictDirectories?: boolean;
   scanMode?: string;
   includePmInternals?: boolean;
+  strictExit?: boolean;
+  failOnWarn?: boolean;
   checkHistoryDrift?: boolean;
   checkCommandReferences?: boolean;
   diff?: boolean;
@@ -436,6 +440,12 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       addExtensionScopeFlag(args, params);
       pushOption(args, "--detail", params.detail);
       return args;
+    case "extension-adopt":
+      args.push("extension", "--adopt", requireString(params.target, "target", action));
+      addExtensionScopeFlag(args, params);
+      pushOption(args, "--github", params.github);
+      pushOption(args, "--ref", params.ref);
+      return args;
     case "extension-activate":
       args.push("extension", "--activate", requireString(params.target, "target", action));
       addExtensionScopeFlag(args, params);
@@ -708,6 +718,12 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       if (params.includePmInternals) {
         args.push("--include-pm-internals");
       }
+      if (params.strictExit) {
+        args.push("--strict-exit");
+      }
+      if (params.failOnWarn) {
+        args.push("--fail-on-warn");
+      }
       if (params.checkHistoryDrift) {
         args.push("--check-history-drift");
       }
@@ -721,6 +737,12 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       pushOption(args, "--command", params.command);
       if (params.schemaOnly) {
         args.push("--schema-only");
+      }
+      if (params.runtimeOnly) {
+        args.push("--runtime-only");
+      }
+      if (params.activeOnly) {
+        args.push("--active-only");
       }
       return args;
     case "completion":

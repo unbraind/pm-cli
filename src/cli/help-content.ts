@@ -127,6 +127,8 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm extension --doctor --project",
       "pm extension --doctor --global --detail deep",
       "pm extension doctor --detail deep",
+      "pm extension --adopt sample-ext --project",
+      "pm extension --adopt sample-ext --project --gh owner/repo/path --ref main",
       "pm extension --activate sample-ext --project",
       "pm extension --deactivate sample-ext --project",
       "pm extension --uninstall sample-ext --global",
@@ -136,6 +138,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "Bundled aliases beads and todos resolve to package-shipped extension sources.",
       "Use --gh/--github shorthand for GitHub sources and --ref to pin a branch, tag, or ref.",
       "Install updates settings activation state automatically unless extension allowlist mode is unchanged.",
+      "Use --adopt to register existing unmanaged installs as managed without reinstalling.",
       "Use --manage for concise triage summaries and remediation-oriented diagnostics alongside full extension details.",
       "Use --doctor for consolidated diagnostics with warning codes, remediation hints, and optional deep detail payloads.",
     ],
@@ -325,8 +328,9 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm validate",
       "pm validate --check-resolution --json",
       "pm validate --check-files --scan-mode tracked-all",
+      "pm validate --check-files --scan-mode tracked-all-strict --include-pm-internals",
       "pm validate --check-command-references",
-      "pm validate --check-files --scan-mode tracked-all --include-pm-internals",
+      "pm validate --check-resolution --fail-on-warn --json",
     ],
   },
   gc: {
@@ -351,7 +355,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   contracts: {
     why: "Exposes machine-readable CLI command and tool schema contracts for agent integrations.",
-    examples: ["pm contracts", "pm contracts --action create", "pm contracts --schema-only"],
+    examples: ["pm contracts", "pm contracts --runtime-only", "pm contracts --action create", "pm contracts --schema-only"],
   },
 };
 

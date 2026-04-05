@@ -1,6 +1,10 @@
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { activateExtensions, loadExtensions } from "../../core/extensions/index.js";
+import { pathExists } from "../../core/fs/fs-utils.js";
+import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
+import { readSettings } from "../../core/store/settings.js";
 import {
   CALENDAR_COMMANDER_STRING_OPTION_CONTRACTS,
   CALENDAR_FLAG_CONTRACTS,
@@ -34,6 +38,7 @@ export interface ContractsCommandOptions {
   action?: string;
   command?: string;
   schemaOnly?: boolean;
+  runtimeOnly?: boolean;
 }
 
 interface CommandFlagSurface {
@@ -48,12 +53,30 @@ export interface ContractsResult {
     action: string | null;
     command: string | null;
     schema_only: boolean;
+    runtime_only: boolean;
   };
   actions: string[];
+  action_availability: ContractsActionAvailability[];
   commands: string[];
   schema: Record<string, unknown>;
   command_flags?: CommandFlagSurface[];
   commander_aliases?: Record<string, CommanderOptionAliasContract[]>;
+}
+
+type PmToolAction = (typeof PM_TOOL_ACTIONS)[number];
+
+export interface ContractsActionAvailability {
+  action: string;
+  invocable: boolean;
+  available: boolean;
+  requires_extension: boolean;
+  provider: "core" | "extension";
+  disabled_reason: string | null;
+}
+
+interface RuntimeExtensionActionProbe {
+  handlers: Set<string>;
+  disabledReason: string | null;
 }
 
 const LIST_COMMAND_NAMES = new Set([
@@ -66,6 +89,12 @@ const LIST_COMMAND_NAMES = new Set([
   "list-closed",
   "list-canceled",
 ]);
+
+const EXTENSION_ACTION_COMMAND_PATHS: Partial<Record<PmToolAction, string>> = {
+  "beads-import": "beads import",
+  "todos-import": "todos import",
+  "todos-export": "todos export",
+};
 
 function normalizeToken(value: string | undefined): string | undefined {
   if (typeof value !== "string") {
@@ -102,6 +131,109 @@ function filterSchemaByAction(schema: Record<string, unknown>, action: string | 
   return {
     ...schema,
     oneOf: filtered,
+  };
+}
+
+function filterSchemaByActions(schema: Record<string, unknown>, actions: ReadonlySet<string>): Record<string, unknown> {
+  const branches = extractActionBranches(schema);
+  const filtered = branches.filter((entry) => {
+    const properties = entry.properties;
+    if (typeof properties !== "object" || properties === null) {
+      return false;
+    }
+    const actionProperty = (properties as Record<string, unknown>).action;
+    if (typeof actionProperty !== "object" || actionProperty === null) {
+      return false;
+    }
+    const actionConst = (actionProperty as { const?: unknown }).const;
+    return typeof actionConst === "string" && actions.has(actionConst);
+  });
+  return {
+    ...schema,
+    oneOf: filtered,
+  };
+}
+
+function normalizeCommandPath(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((entry) => entry.length > 0)
+    .join(" ");
+}
+
+async function resolveRuntimeExtensionActionProbe(global: GlobalOptions): Promise<RuntimeExtensionActionProbe> {
+  if (global.noExtensions) {
+    return {
+      handlers: new Set<string>(),
+      disabledReason: "extensions_disabled",
+    };
+  }
+
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  if (!(await pathExists(getSettingsPath(pmRoot)))) {
+    return {
+      handlers: new Set<string>(),
+      disabledReason: null,
+    };
+  }
+
+  try {
+    const settings = await readSettings(pmRoot);
+    const loadResult = await loadExtensions({
+      pmRoot,
+      settings,
+      cwd: process.cwd(),
+      noExtensions: false,
+    });
+    const activationResult = await activateExtensions({
+      ...loadResult,
+      loaded: loadResult.loaded,
+    });
+    const handlers = new Set<string>(
+      activationResult.commands.handlers.map((entry) => normalizeCommandPath(entry.command)),
+    );
+    return {
+      handlers,
+      disabledReason: null,
+    };
+  } catch {
+    return {
+      handlers: new Set<string>(),
+      disabledReason: "extension_runtime_probe_failed",
+    };
+  }
+}
+
+function resolveActionAvailability(action: string, runtimeProbe: RuntimeExtensionActionProbe): ContractsActionAvailability {
+  const extensionCommandPath = EXTENSION_ACTION_COMMAND_PATHS[action as PmToolAction];
+  if (!extensionCommandPath) {
+    return {
+      action,
+      invocable: true,
+      available: true,
+      requires_extension: false,
+      provider: "core",
+      disabled_reason: null,
+    };
+  }
+
+  const normalizedCommandPath = normalizeCommandPath(extensionCommandPath);
+  const extensionCommandAvailable = runtimeProbe.handlers.has(normalizedCommandPath);
+  const invocable = runtimeProbe.disabledReason === null && extensionCommandAvailable;
+  let disabledReason: string | null = null;
+  if (!invocable) {
+    disabledReason = runtimeProbe.disabledReason ?? "extension_command_not_registered";
+  }
+
+  return {
+    action,
+    invocable,
+    available: invocable,
+    requires_extension: true,
+    provider: "extension",
+    disabled_reason: disabledReason,
   };
 }
 
@@ -167,10 +299,11 @@ function buildCommanderAliasSurface(): Record<string, CommanderOptionAliasContra
   };
 }
 
-export async function runContracts(options: ContractsCommandOptions, _global: GlobalOptions): Promise<ContractsResult> {
+export async function runContracts(options: ContractsCommandOptions, global: GlobalOptions): Promise<ContractsResult> {
   const selectedAction = normalizeToken(options.action);
   const selectedCommand = normalizeToken(options.command);
   const schemaOnly = options.schemaOnly === true;
+  const runtimeOnly = options.runtimeOnly === true;
 
   if (selectedAction && !PM_TOOL_ACTIONS.includes(selectedAction as (typeof PM_TOOL_ACTIONS)[number])) {
     throw new PmCliError(`Unknown action: "${options.action}".`, EXIT_CODE.USAGE);
@@ -179,9 +312,18 @@ export async function runContracts(options: ContractsCommandOptions, _global: Gl
     throw new PmCliError(`Unknown command: "${options.command}".`, EXIT_CODE.USAGE);
   }
 
+  const runtimeProbe = await resolveRuntimeExtensionActionProbe(global);
   const schema = PM_TOOL_PARAMETERS_SCHEMA as Record<string, unknown>;
-  const filteredSchema = filterSchemaByAction(schema, selectedAction);
-  const actions = selectedAction ? [selectedAction] : [...PM_TOOL_ACTIONS];
+  const allActionAvailability = (selectedAction ? [selectedAction] : [...PM_TOOL_ACTIONS]).map((action) =>
+    resolveActionAvailability(action, runtimeProbe),
+  );
+  const actionAvailability =
+    runtimeOnly && !selectedAction ? allActionAvailability.filter((entry) => entry.invocable) : allActionAvailability;
+  const actions = actionAvailability.map((entry) => entry.action);
+  let filteredSchema = filterSchemaByAction(schema, selectedAction);
+  if (runtimeOnly && !selectedAction) {
+    filteredSchema = filterSchemaByActions(filteredSchema, new Set(actions));
+  }
   const commands = selectedCommand ? [selectedCommand] : [...PM_CORE_COMMAND_NAMES];
 
   const result: ContractsResult = {
@@ -191,8 +333,10 @@ export async function runContracts(options: ContractsCommandOptions, _global: Gl
       action: selectedAction ?? null,
       command: selectedCommand ?? null,
       schema_only: schemaOnly,
+      runtime_only: runtimeOnly,
     },
     actions,
+    action_availability: actionAvailability,
     commands,
     schema: filteredSchema,
   };

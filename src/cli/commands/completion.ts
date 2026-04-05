@@ -108,7 +108,7 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen("--criterion --format --policy --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    extension)",
-    `      COMPREPLY=(${compgen("--install --uninstall --explore --manage --doctor --activate --deactivate --project --local --global --gh --github --ref --detail --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--install --uninstall --explore --manage --doctor --adopt --activate --deactivate --project --local --global --gh --github --ref --detail --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    comments)",
     `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-comment --force --json --quiet --path --no-extensions --profile --help")})`,
@@ -138,7 +138,7 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen("list status logs stop resume --status --limit --stream --tail --force --author --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    validate)",
-    `      COMPREPLY=(${compgen("--check-metadata --check-resolution --check-files --scan-mode --include-pm-internals --check-history-drift --check-command-references --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--check-metadata --check-resolution --check-files --scan-mode --include-pm-internals --strict-exit --fail-on-warn --check-history-drift --check-command-references --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    health)",
     `      COMPREPLY=(${compgen(HEALTH_FLAGS)})`,
@@ -150,7 +150,7 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen("--limit --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    contracts)",
-    `      COMPREPLY=(${compgen("--action --command --schema-only --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--action --command --schema-only --runtime-only --active-only --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    close)",
     `      COMPREPLY=(${compgen("--author --message --validate-close --force --json --quiet --path --no-extensions --profile --help")})`,
@@ -388,6 +388,8 @@ _pm() {
             '--action[Filter schema by tool action]:action' \\
             '--command[Filter command flag contracts]:command' \\
             '--schema-only[Return schema-only payload]' \\
+            '--runtime-only[Include only actions invocable in the current runtime]' \\
+            '--active-only[Alias for --runtime-only]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -491,6 +493,8 @@ _pm() {
             '--check-files[Run linked-file and orphaned-file checks]' \\
             '--scan-mode[Select file candidate scan mode for --check-files]:(default tracked-all tracked-all-strict)' \\
             '--include-pm-internals[Include PM storage internals in tracked-all candidate scans]' \\
+            '--strict-exit[Return non-zero exit when validation warnings are present]' \\
+            '--fail-on-warn[Alias for --strict-exit]' \\
             '--check-history-drift[Run item/history hash drift checks]' \\
             '--check-command-references[Run linked-command PM-ID reference checks]' \\
             '--json[Output JSON]' \\
@@ -519,6 +523,7 @@ _pm() {
             '--explore[List discovered extensions for selected scope]' \\
             '--manage[List managed extensions with update metadata]' \\
             '--doctor[Run consolidated extension diagnostics (summary/deep)]' \\
+            '--adopt[Adopt an unmanaged extension into managed metadata]' \\
             '--activate[Activate extension in selected scope settings]' \\
             '--deactivate[Deactivate extension in selected scope settings]' \\
             '--project[Use project extension scope (default)]' \\
@@ -725,6 +730,8 @@ complete -c pm -n '__fish_seen_subcommand_from activity' -l limit -d 'Max activi
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l action -d 'Filter schema by tool action' -r
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l command -d 'Filter command flag contracts' -r
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l schema-only -d 'Return schema-only payload'
+complete -c pm -n '__fish_seen_subcommand_from contracts' -l runtime-only -d 'Include only actions invocable in the current runtime'
+complete -c pm -n '__fish_seen_subcommand_from contracts' -l active-only -d 'Alias for --runtime-only'
 complete -c pm -n '__fish_seen_subcommand_from deps' -l format -d 'Output format' -r -a 'tree graph'
 
 # comments / notes / learnings flags
@@ -787,6 +794,8 @@ complete -c pm -n '__fish_seen_subcommand_from validate' -l check-resolution -d 
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-files -d 'Run linked-file and orphaned-file checks'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l scan-mode -d 'Select file candidate scan mode for --check-files' -r -a 'default tracked-all tracked-all-strict'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l include-pm-internals -d 'Include PM storage internals in tracked-all candidate scans'
+complete -c pm -n '__fish_seen_subcommand_from validate' -l strict-exit -d 'Return non-zero exit when validation warnings are present'
+complete -c pm -n '__fish_seen_subcommand_from validate' -l fail-on-warn -d 'Alias for --strict-exit'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-history-drift -d 'Run item/history hash drift checks'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-command-references -d 'Run linked-command PM-ID reference checks'
 complete -c pm -n '__fish_seen_subcommand_from config' -l criterion -d 'Definition-of-Done criterion (repeatable for set)' -r
@@ -811,6 +820,7 @@ complete -c pm -n '__fish_seen_subcommand_from extension' -l uninstall -d 'Unins
 complete -c pm -n '__fish_seen_subcommand_from extension' -l explore -d 'List discovered extensions for selected scope'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l manage -d 'List managed extensions with update metadata'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l doctor -d 'Run consolidated extension diagnostics'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l adopt -d 'Adopt an unmanaged extension into managed metadata'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l activate -d 'Activate extension in selected scope settings'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l deactivate -d 'Deactivate extension in selected scope settings'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l project -d 'Use project extension scope'

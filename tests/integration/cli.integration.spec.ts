@@ -295,6 +295,14 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const resolutionCheck = payload.checks.find((check) => check.name === "resolution");
       expect(resolutionCheck?.status).toBe("warn");
       expect(resolutionCheck?.details.missing_resolution_items).toBe(1);
+
+      const strictExitValidate = context.runCli(["validate", "--check-resolution", "--strict-exit", "--json"], { expectJson: true });
+      expect(strictExitValidate.code).toBe(1);
+      expect((strictExitValidate.json as { ok: boolean }).ok).toBe(false);
+
+      const failOnWarnValidate = context.runCli(["validate", "--check-resolution", "--fail-on-warn", "--json"], { expectJson: true });
+      expect(failOnWarnValidate.code).toBe(1);
+      expect((failOnWarnValidate.json as { ok: boolean }).ok).toBe(false);
     });
   });
 

@@ -26,7 +26,7 @@ const BUNDLED_EXTENSION_ALIASES: Record<string, string> = {
   todos: "todos",
 };
 
-export type ExtensionCommandAction = "install" | "uninstall" | "explore" | "manage" | "doctor" | "activate" | "deactivate";
+export type ExtensionCommandAction = "install" | "uninstall" | "explore" | "manage" | "doctor" | "adopt" | "activate" | "deactivate";
 export type ExtensionScope = "project" | "global";
 
 export interface ExtensionCommandOptions {
@@ -35,6 +35,7 @@ export interface ExtensionCommandOptions {
   explore?: boolean;
   manage?: boolean;
   doctor?: boolean;
+  adopt?: boolean;
   activate?: boolean;
   deactivate?: boolean;
   project?: boolean;
@@ -180,10 +181,13 @@ export interface ExtensionCommandResult {
 interface ExtensionTriageSummary {
   status: "ok" | "warn";
   warning_count: number;
+  warning_codes: string[];
   total_extensions: number;
   managed_total: number;
   active_total: number;
   update_available_total: number;
+  update_health_coverage: "full" | "partial";
+  update_health_partial: boolean;
   update_check_status_totals: Record<ExtensionUpdateCheckStatus, number>;
   update_check_failed_total: number;
   top_warnings: string[];
@@ -539,6 +543,7 @@ function resolveAction(target: string | undefined, options: ExtensionCommandOpti
     options.explore ? "explore" : null,
     options.manage ? "manage" : null,
     options.doctor ? "doctor" : null,
+    options.adopt ? "adopt" : null,
     options.activate ? "activate" : null,
     options.deactivate ? "deactivate" : null,
   ].filter((value): value is ExtensionCommandAction => value !== null);
@@ -547,7 +552,7 @@ function resolveAction(target: string | undefined, options: ExtensionCommandOpti
       return "doctor";
     }
     throw new PmCliError(
-      'One action flag is required. Use one of: --install, --uninstall, --explore, --manage, --doctor, --activate, --deactivate.',
+      'One action flag is required. Use one of: --install, --uninstall, --explore, --manage, --doctor, --adopt, --activate, --deactivate.',
       EXIT_CODE.USAGE,
     );
   }
@@ -1058,6 +1063,17 @@ function buildExtensionTriageSummary(
   const updateCheckFailedTotal = updateCheckStatusTotals.failed;
   const skippedUnmanagedTotal = updateCheckStatusTotals.skipped_unmanaged;
   const skippedNonGithubTotal = updateCheckStatusTotals.skipped_non_github;
+  const updateHealthPartial = skippedUnmanagedTotal > 0;
+  const updateHealthCoverage = updateHealthPartial ? "partial" : "full";
+  const partialCoverageWarnings = updateHealthPartial
+    ? [`extension_update_health_partial_coverage:skipped_unmanaged:${skippedUnmanagedTotal}`]
+    : [];
+  const effectiveWarnings = [...new Set([...normalizedWarnings, ...partialCoverageWarnings])].sort((left, right) =>
+    left.localeCompare(right),
+  );
+  const warningCodes = [...new Set(effectiveWarnings.map((value) => warningCode(value)))].sort((left, right) =>
+    left.localeCompare(right),
+  );
   const scopeFlag = scope === "global" ? "--global" : "--project";
   const remediation: string[] = [];
   if (normalizedWarnings.length > 0) {
@@ -1072,7 +1088,9 @@ function buildExtensionTriageSummary(
     }
   }
   if (skippedUnmanagedTotal > 0) {
-    remediation.push(`Unmanaged extensions are skipped by update checks. Install/manage them via pm extension --install ${scopeFlag} <source>.`);
+    remediation.push(
+      `Update-check coverage is partial because unmanaged extensions are skipped. Adopt existing installs via pm extension --adopt <name> ${scopeFlag} (or reinstall via pm extension --install ${scopeFlag} <source>).`,
+    );
   }
   if (skippedNonGithubTotal > 0) {
     remediation.push(`Non-GitHub managed extensions are skipped by update checks. Use doctor output for non-update diagnostics.`);
@@ -1084,15 +1102,18 @@ function buildExtensionTriageSummary(
     remediation.push(`No immediate action required. Re-run pm extension --manage ${scopeFlag} after extension changes.`);
   }
   return {
-    status: normalizedWarnings.length === 0 ? "ok" : "warn",
-    warning_count: normalizedWarnings.length,
+    status: effectiveWarnings.length === 0 ? "ok" : "warn",
+    warning_count: effectiveWarnings.length,
+    warning_codes: warningCodes,
     total_extensions: extensions.length,
     managed_total: managedTotal,
     active_total: activeTotal,
     update_available_total: updateAvailableTotal,
+    update_health_coverage: updateHealthCoverage,
+    update_health_partial: updateHealthPartial,
     update_check_status_totals: updateCheckStatusTotals,
     update_check_failed_total: updateCheckFailedTotal,
-    top_warnings: normalizedWarnings.slice(0, 8),
+    top_warnings: effectiveWarnings.slice(0, 8),
     remediation,
   };
 }
@@ -1298,6 +1319,97 @@ export async function runExtension(
     }
   }
 
+  if (action === "adopt") {
+    const extensionTarget = requireTarget(normalizedTarget, action);
+    const githubOption = resolveGithubOption(options);
+    const settings = await readSettings(resolvedRoots.settings_root);
+    const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
+    warnings.push(...managedStateRead.warnings);
+    const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
+    warnings.push(...installed.warnings);
+    const normalizedLookup = normalizeExtensionNameForMatch(extensionTarget);
+    const candidate =
+      installed.extensions.find((entry) => normalizeExtensionNameForMatch(entry.name) === normalizedLookup) ??
+      installed.extensions.find((entry) => normalizeExtensionNameForMatch(entry.directory) === normalizedLookup);
+    if (!candidate) {
+      throw new PmCliError(`Installed extension "${extensionTarget}" was not found in ${scope} scope.`, EXIT_CODE.NOT_FOUND);
+    }
+    if (candidate.managed) {
+      return withResult({
+        adopted: false,
+        already_managed: true,
+        extension: {
+          name: candidate.name,
+          directory: candidate.directory,
+        },
+      });
+    }
+
+    const extensionDirectory = path.join(resolvedRoots.selected_root, candidate.directory);
+    const validated = await validateExtensionDirectory(extensionDirectory);
+    const now = nowIso();
+    const sourceRecord: ManagedExtensionSource =
+      githubOption === undefined
+        ? {
+            kind: "local",
+            input: extensionTarget,
+            location: extensionDirectory,
+          }
+        : (() => {
+            const parsed = parseExtensionInstallSource(githubOption, {
+              forceGithub: true,
+              ref: options.ref,
+            });
+            if (parsed.kind !== "github") {
+              throw new PmCliError(`Invalid GitHub shorthand "${githubOption}".`, EXIT_CODE.USAGE);
+            }
+            return {
+              kind: "github",
+              input: parsed.input,
+              location: parsed.subpath ?? ".",
+              repository: parsed.repository,
+              owner: parsed.owner,
+              repo: parsed.repo,
+              ref: parsed.ref,
+              subpath: parsed.subpath,
+            };
+          })();
+    const managedState = upsertManagedEntry(managedStateRead.state, {
+      name: validated.manifest.name,
+      directory: candidate.directory,
+      scope,
+      manifest_version: validated.manifest.version,
+      manifest_entry: validated.manifest.entry,
+      capabilities: [...validated.manifest.capabilities],
+      installed_at: now,
+      updated_at: now,
+      source: sourceRecord,
+    });
+    await writeManagedExtensionState(resolvedRoots.selected_root, managedState);
+    const refreshedInstalled = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedState);
+    warnings.push(...refreshedInstalled.warnings);
+    const refreshedEntry =
+      refreshedInstalled.extensions.find(
+        (entry) => normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(validated.manifest.name),
+      ) ??
+      refreshedInstalled.extensions.find(
+        (entry) => normalizeExtensionNameForMatch(entry.directory) === normalizeExtensionNameForMatch(candidate.directory),
+      );
+
+    return withResult({
+      adopted: true,
+      extension: {
+        name: validated.manifest.name,
+        directory: candidate.directory,
+        version: validated.manifest.version,
+        entry: validated.manifest.entry,
+      },
+      source: sourceRecord,
+      update_check_status: refreshedEntry?.update_check_status ?? null,
+      update_check_reason: refreshedEntry?.update_check_reason ?? null,
+    });
+  }
+
   if (action === "uninstall") {
     const extensionTarget = requireTarget(normalizedTarget, action);
     const settings = await readSettings(resolvedRoots.settings_root);
@@ -1413,10 +1525,8 @@ export async function runExtension(
     warnings.push(...updateCheckWarnings);
 
     const normalizedWarnings = [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
-    const warningCodes = [...new Set(normalizedWarnings.map((value) => warningCode(value)))].sort((left, right) =>
-      left.localeCompare(right),
-    );
     const triage = buildExtensionTriageSummary(scope, normalizedWarnings, installed.extensions);
+    const warningCodes = triage.warning_codes;
     const remediation = [
       ...new Set(
         [
@@ -1432,14 +1542,16 @@ export async function runExtension(
     ];
 
     const summary = {
-      status: normalizedWarnings.length === 0 ? "ok" : "warn",
+      status: triage.status,
       scope,
-      warning_count: normalizedWarnings.length,
+      warning_count: triage.warning_count,
       warning_codes: warningCodes,
       total_extensions: installed.extensions.length,
       managed_total: installed.extensions.filter((entry) => entry.managed).length,
       active_total: installed.extensions.filter((entry) => entry.active).length,
       update_available_total: installed.extensions.filter((entry) => entry.update_available === true).length,
+      update_health_coverage: triage.update_health_coverage,
+      update_health_partial: triage.update_health_partial,
       update_check_failed_total: installed.extensions.filter((entry) => entry.update_check_status === "failed").length,
       load_failure_count: loadResult.failed.length,
       activation_failure_count: activationResult.failed.length,

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:docs",code,pm-cli
 created_at: "2026-03-31T23:48:39.334Z"
-updated_at: "2026-04-04T21:38:00.501Z"
+updated_at: "2026-04-05T02:20:00.973Z"
 deadline: "2026-04-13T11:57:36.591Z"
 author: codex-agent
 estimated_minutes: 140
@@ -42,7 +42,7 @@ regression: true
 customer_impact: Clearer help and fewer failed command retries
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-b3id,parent,"2026-03-31T23:48:39.334Z",codex-agent,null
-comments[7]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-03-31T23:48:39.334Z",codex-agent,Task created for required option UX improvements.
   "2026-04-01T00:28:01.016Z",codex-agent,"Improved missing --type usage guidance with rationale, active allowed values, and examples; updated user-facing docs for custom types/options."
   "2026-04-01T00:28:02.169Z",codex-agent,"Evidence: node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/unit/create-command.spec.ts passed."
@@ -50,6 +50,8 @@ comments[7]{created_at,author,text}:
   "2026-04-03T11:59:26.609Z",codex-agent,"Wave1 scope: implement aggregated missing-required-option reporting with no change to create success-path semantics or exit codes."
   "2026-04-03T12:29:09.195Z",codex-agent,"Implemented deterministic aggregation for missing create required options in src/cli/commands/create.ts (single usage failure listing all missing flags in stable order) and plural-aware parsing in src/cli/error-guidance.ts so JSON/text guidance envelopes remain structured for both singular and plural cases. Evidence: pm test pm-bzyr --run passed (46 tests + 30 tests); pnpm build passed; node scripts/run-tests.mjs test passed (64 files, 722 tests); node scripts/run-tests.mjs coverage passed (94.44% stmts, 91.42% branch, 96.19% funcs, 94.73% lines)."
   "2026-04-03T14:47:14.745Z",codex-agent,"External audit follow-up dedup mapping: this closed task already covers aggregated missing required create options and guidance improvements. No duplicate task will be created."
+  "2026-04-05T01:12:19.794Z",codex-agent,"Reopened for Issue 5 follow-up: create validation guidance should emit type-specific next valid examples and include compact required core+type option hints in a single remediation response."
+  "2026-04-05T02:19:48.986Z",codex-agent,"Issue 5 follow-up completed: create validation now aggregates missing required core flags and required type-option keys in one deterministic error response and emits type-specific next valid examples. Evidence: node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/integration/help-runtime.spec.ts passed; node scripts/run-tests.mjs coverage passed (branch 91.01%); pnpm build passed."
 notes[2]{created_at,author,text}:
   "2026-03-31T23:48:39.334Z",codex-agent,Maintain exit code compatibility while adding guidance.
   "2026-04-03T11:59:49.660Z",codex-agent,"Mandatory closure checklist: (1) run linked targeted tests via pm test <id> --run; (2) run pnpm build; (3) run node scripts/run-tests.mjs test; (4) run node scripts/run-tests.mjs coverage; (5) update touched docs (README/PRD/AGENTS/CHANGELOG/ARCHITECTURE as applicable); (6) add pm comment with concrete evidence/results; (7) close + release item before commit/push."
@@ -71,5 +73,5 @@ docs[3]{path,scope,note}:
   CHANGELOG.md,project,unreleased issue1 notes
   PRD.md,project,create validation contract
   README.md,project,usage examples and guidance
-close_reason: "Wave1 Issue1 complete: create required-option failures now aggregate deterministically and guidance supports singular/plural payloads with docs/tests parity"
+close_reason: create guidance now aggregates required flags/type-options with deterministic next examples
 body: Improves user-facing guidance for required options while preserving current exit-code behavior and contract tests.

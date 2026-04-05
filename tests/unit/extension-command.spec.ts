@@ -357,6 +357,151 @@ describe("extension command runtime", () => {
           },
         },
       });
+      const triage = manage.details.triage as {
+        status: string;
+        warning_count: number;
+        warning_codes: string[];
+        update_health_coverage: string;
+        update_health_partial: boolean;
+      };
+      expect(triage.status).toBe("warn");
+      expect(triage.warning_count).toBeGreaterThanOrEqual(1);
+      expect(triage.warning_codes).toContain("extension_update_health_partial_coverage");
+      expect(triage.update_health_coverage).toBe("partial");
+      expect(triage.update_health_partial).toBe(true);
+    });
+  });
+
+  it("adopts existing unmanaged extensions into managed local metadata without reinstalling", async () => {
+    await withTempPmPath(async (context) => {
+      const unmanagedDir = path.join(context.pmPath, "extensions", "manual-adopt");
+      await mkdir(unmanagedDir, { recursive: true });
+      await writeFile(
+        path.join(unmanagedDir, "manifest.json"),
+        JSON.stringify(
+          {
+            name: "manual-adopt",
+            version: "1.0.0",
+            entry: "index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(path.join(unmanagedDir, "index.js"), "export default { activate() {} };", "utf8");
+
+      const adopt = await runExtension("manual-adopt", { adopt: true, project: true }, { path: context.pmPath });
+      expect(adopt.action).toBe("adopt");
+      expect(adopt.details).toMatchObject({
+        adopted: true,
+        extension: {
+          name: "manual-adopt",
+        },
+        source: {
+          kind: "local",
+        },
+        update_check_status: "skipped_non_github",
+      });
+
+      const managedState = await readManagedExtensionState(path.join(context.pmPath, "extensions"));
+      expect(managedState.state.entries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: "manual-adopt",
+            source: expect.objectContaining({
+              kind: "local",
+            }),
+          }),
+        ]),
+      );
+    });
+  });
+
+  it("returns already_managed when adopt targets a managed extension", async () => {
+    await withTempPmPath(async (context) => {
+      const unmanagedDir = path.join(context.pmPath, "extensions", "manual-adopt-repeat");
+      await mkdir(unmanagedDir, { recursive: true });
+      await writeFile(
+        path.join(unmanagedDir, "manifest.json"),
+        JSON.stringify(
+          {
+            name: "manual-adopt-repeat",
+            version: "1.0.0",
+            entry: "index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(path.join(unmanagedDir, "index.js"), "export default { activate() {} };", "utf8");
+
+      await runExtension("manual-adopt-repeat", { adopt: true, project: true }, { path: context.pmPath });
+      const secondAdopt = await runExtension("manual-adopt-repeat", { adopt: true, project: true }, { path: context.pmPath });
+      expect(secondAdopt.details).toMatchObject({
+        adopted: false,
+        already_managed: true,
+        extension: {
+          name: "manual-adopt-repeat",
+        },
+      });
+    });
+  });
+
+  it("supports GitHub provenance metadata when adopting unmanaged extensions", async () => {
+    await withTempPmPath(async (context) => {
+      const unmanagedDir = path.join(context.pmPath, "extensions", "manual-adopt-gh");
+      await mkdir(unmanagedDir, { recursive: true });
+      await writeFile(
+        path.join(unmanagedDir, "manifest.json"),
+        JSON.stringify(
+          {
+            name: "manual-adopt-gh",
+            version: "1.0.0",
+            entry: "index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(path.join(unmanagedDir, "index.js"), "export default { activate() {} };", "utf8");
+
+      const adopt = await runExtension(
+        "manual-adopt-gh",
+        { adopt: true, project: true, gh: "owner/repo/path", ref: "main" },
+        { path: context.pmPath },
+      );
+      expect(adopt.details).toMatchObject({
+        adopted: true,
+        source: {
+          kind: "github",
+          owner: "owner",
+          repo: "repo",
+          ref: "main",
+          subpath: "path",
+        },
+      });
+
+      const managedState = await readManagedExtensionState(path.join(context.pmPath, "extensions"));
+      expect(managedState.state.entries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: "manual-adopt-gh",
+            source: expect.objectContaining({
+              kind: "github",
+              owner: "owner",
+              repo: "repo",
+              ref: "main",
+              subpath: "path",
+            }),
+          }),
+        ]),
+      );
     });
   });
 
@@ -478,6 +623,9 @@ describe("extension command runtime", () => {
       exitCode: EXIT_CODE.USAGE,
     });
     await expect(runExtension(undefined, { uninstall: true }, { path: ".agents/pm" })).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+    await expect(runExtension(undefined, { adopt: true }, { path: ".agents/pm" })).rejects.toMatchObject({
       exitCode: EXIT_CODE.USAGE,
     });
     await expect(runExtension(undefined, { activate: true }, { path: ".agents/pm" })).rejects.toMatchObject({
@@ -658,12 +806,14 @@ describe("extension command runtime", () => {
           "extension_manifest_invalid:project:invalid-schema",
         ]),
       );
-      expect(result.details).toMatchObject({
-        triage: {
-          status: "warn",
-          warning_count: 3,
-        },
-      });
+      const triage = result.details.triage as {
+        status: string;
+        warning_count: number;
+        warning_codes: string[];
+      };
+      expect(triage.status).toBe("warn");
+      expect(triage.warning_count).toBeGreaterThanOrEqual(3);
+      expect(triage.warning_codes).toContain("extension_update_health_partial_coverage");
     });
   });
 

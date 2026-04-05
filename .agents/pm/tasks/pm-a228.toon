@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:files","area:validation",follow-up,pm-cli
 created_at: "2026-04-03T21:59:58.425Z"
-updated_at: "2026-04-04T21:40:28.590Z"
+updated_at: "2026-04-05T02:18:43.421Z"
 deadline: "2026-04-10T21:59:58.425Z"
 author: codex-agent
 estimated_minutes: 220
@@ -27,11 +27,14 @@ expected_result: "Acceptance criteria for External follow-up: reduce tracked-all
 actual_result: "Work completed and recorded with linked artifacts for External follow-up: reduce tracked-all orphaned noise from PM internals."
 component: project-management/external-follow-up-reduce-tracked-all-orphaned-n
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for External follow-up: reduce tracked-all orphaned noise from PM internals."
-comments[4]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-04-03T21:59:58.425Z",codex-agent,Child task created from tracked-all orphaned-path signal-quality report.
   "2026-04-03T22:03:12.315Z",codex-agent,"Implementation started: add default tracked-all exclusion for PM internals plus explicit opt-in include flag with contracts/completion/Pi parity."
   "2026-04-03T22:17:03.821Z",codex-agent,"Implemented tracked-all PM-internal filtering: default scans exclude PM internals for higher-signal orphaned results; --include-pm-internals restores full internal audit coverage. Added completion/contracts/Pi parity and regressions. Evidence: pm test pm-a228 --run passed; full build/test/coverage passed; smoke check shows include_pm_internals=false with .agents paths excluded by default and include=true reintroduces them."
   "2026-04-04T08:22:49.105Z",codex-agent,"External Audit 2026-04-04 mapping: external Issue 4 ID pm-e5z1 is not present in this tracker. Canonical local coverage remains pm-j371/pm-a228 (tracked-all default PM-internal exclusion plus include opt-in) with closed verified evidence; no duplicate item created."
+  "2026-04-05T01:12:15.779Z",codex-agent,"Reopened for Issue 1 follow-up: strict tracked-all mode still force-enables include_pm_internals implicitly. This cycle will add explicit surfaced warning/help-contract clarity without regressing tracked-all compatibility."
+  "2026-04-05T02:18:28.579Z",codex-agent,"Issue 1 follow-up completed: tracked-all-strict now surfaces explicit force-internal visibility ( + notice) and warning token , preserving compatibility while making implicit inclusion auditable. Evidence: node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/integration/cli.integration.spec.ts passed; validate repro probe shows strict_mode_forces_pm_internals=true with warning token present; node scripts/run-tests.mjs coverage passed (branch 91.01%); pnpm build passed."
+  "2026-04-05T02:18:43.421Z",codex-agent,"Correction: Issue 1 follow-up completed with explicit strict tracked-all visibility fields (`strict_mode_forces_pm_internals`, `strict_mode_forces_pm_internals_notice`) and warning token `validate_files_tracked_all_strict_forces_pm_internals`, preserving compatibility while making implicit inclusion auditable. Evidence: node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/integration/cli.integration.spec.ts passed; validate repro probe reports strict_mode_forces_pm_internals=true with warning token present; node scripts/run-tests.mjs coverage passed (branch 91.01%); pnpm build passed."
 notes[1]{created_at,author,text}:
   "2026-04-03T21:59:58.425Z",codex-agent,Implement as additive behavior to avoid breaking existing users.
 files[9]{path,scope,note}:
@@ -51,5 +54,5 @@ docs[4]{path,scope,note}:
   docs/ARCHITECTURE.md,project,validate filtered/raw candidate metrics docs
   PRD.md,project,validate scan-mode and option contract docs
   README.md,project,validate scan-mode and internal include docs
-close_reason: tracked-all validation now excludes PM internals by default with explicit include option and parity coverage.
+close_reason: tracked-all-strict internal inclusion semantics are now explicit and regression-tested
 body: External report reproduction in this repo shows orphaned_paths_count dominated by .agents/pm/** entries under tracked-all mode. Implement additive filtering that preserves existing behavior for explicit internal-audit use cases.

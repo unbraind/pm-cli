@@ -839,7 +839,7 @@ function requireCreateOptionByType(
   typeDefinition: ResolvedItemTypeDefinition,
   options: CreateCommandOptions,
   createMode: CreateMode,
-): void {
+): string[] {
   const typeName = typeDefinition.name;
   const scalarValues: Record<string, unknown> = {
     title: options.title,
@@ -934,14 +934,92 @@ function requireCreateOptionByType(
   }
 
   const missingRequiredOptions = policyState.required.filter((required) => !hasOptionValue(required));
-  if (missingRequiredOptions.length > 0) {
-    const missingFlags = [...new Set(missingRequiredOptions.map((required) => commandOptionFlagLabel("create", required)))]
-      .sort((left, right) => left.localeCompare(right));
-    if (missingFlags.length === 1) {
-      throw new PmCliError(`Missing required option ${missingFlags[0]} for type "${typeName}"`, EXIT_CODE.USAGE);
+  return [...new Set(missingRequiredOptions.map((required) => commandOptionFlagLabel("create", required)))].sort((left, right) =>
+    left.localeCompare(right),
+  );
+}
+
+const MISSING_REQUIRED_TYPE_OPTION_PATTERN = /^Missing required type option "([^"]+)" for type "([^"]+)"$/;
+
+function collectMissingRequiredTypeOptionKeys(errors: string[], typeName: string): string[] {
+  const missingKeys: string[] = [];
+  for (const error of errors) {
+    const match = error.match(MISSING_REQUIRED_TYPE_OPTION_PATTERN);
+    if (!match) {
+      continue;
     }
-    throw new PmCliError(`Missing required options ${missingFlags.join(", ")} for type "${typeName}"`, EXIT_CODE.USAGE);
+    if (match[2] !== typeName) {
+      continue;
+    }
+    missingKeys.push(match[1]);
   }
+  return [...new Set(missingKeys)].sort((left, right) => left.localeCompare(right));
+}
+
+function filterNonMissingTypeOptionErrors(errors: string[], typeName: string): string[] {
+  return errors.filter((error) => {
+    const match = error.match(MISSING_REQUIRED_TYPE_OPTION_PATTERN);
+    return !match || match[2] !== typeName;
+  });
+}
+
+function typeOptionExampleValue(typeDefinition: ResolvedItemTypeDefinition, key: string): string {
+  const optionDefinition = typeDefinition.options.find((option) => option.key === key);
+  const firstAllowed = optionDefinition?.values[0];
+  if (typeof firstAllowed === "string" && firstAllowed.trim().length > 0) {
+    return firstAllowed;
+  }
+  return "<value>";
+}
+
+function createExampleTokensForFlag(flag: string, typeName: string): string[] {
+  switch (flag) {
+    case "--title":
+      return ["--title", `"${typeName} example title"`];
+    case "--description":
+      return ["--description", `"${typeName} example description"`];
+    case "--type":
+      return ["--type", typeName];
+    case "--status":
+      return ["--status", "open"];
+    case "--priority":
+      return ["--priority", "1"];
+    case "--message":
+      return ["--message", `"Create ${typeName} item"`];
+    case "--dep":
+    case "--comment":
+    case "--note":
+    case "--learning":
+    case "--file":
+    case "--test":
+    case "--doc":
+      return [flag, "none"];
+    default:
+      return [flag, "\"<value>\""];
+  }
+}
+
+function buildTypeSpecificCreateExample(
+  typeDefinition: ResolvedItemTypeDefinition,
+  missingCreateFlags: string[],
+  missingTypeOptionKeys: string[],
+): string {
+  const tokens = ["pm", "create", "--title", `"${typeDefinition.name} example title"`, "--description", `"${typeDefinition.name} example description"`, "--type", typeDefinition.name];
+  const optionalRecommendationFlags = ["--status", "--priority", "--message"];
+  const orderedFlags = [...new Set([...optionalRecommendationFlags, ...missingCreateFlags])];
+  const includedFlags = new Set<string>(["--title", "--description", "--type"]);
+  for (const flag of orderedFlags) {
+    if (includedFlags.has(flag)) {
+      continue;
+    }
+    tokens.push(...createExampleTokensForFlag(flag, typeDefinition.name));
+    includedFlags.add(flag);
+  }
+  for (const key of missingTypeOptionKeys) {
+    const value = typeOptionExampleValue(typeDefinition, key);
+    tokens.push("--type-option", `${key}=${value}`);
+  }
+  return tokens.join(" ");
 }
 
 function requireStringOption(value: string | undefined, flag: string): string {
@@ -1019,7 +1097,8 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     throw new PmCliError(`Invalid type value "${resolvedOptions.type}"`, EXIT_CODE.USAGE);
   }
   const createMode = resolveCreateMode(resolvedOptions.createMode);
-  requireCreateOptionByType(typeDefinition, resolvedOptions, createMode);
+  const type = typeDefinition.name;
+  const missingRequiredCreateFlags = requireCreateOptionByType(typeDefinition, resolvedOptions, createMode);
   const nowValue = nowIso();
   const author = selectAuthor(resolvedOptions.author, settings.author_default);
   const explicitUnsets: string[] = [];
@@ -1044,6 +1123,35 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   if (events.explicitEmpty) explicitUnsets.push("events");
   const typeOptions = parseTypeOptions(resolvedOptions.typeOption);
   if (typeOptions.explicitEmpty) explicitUnsets.push("type_options");
+  const validatedTypeOptions = validateTypeOptions(type, typeOptions.values, typeRegistry);
+  const missingRequiredTypeOptionKeys = collectMissingRequiredTypeOptionKeys(validatedTypeOptions.errors, type);
+  const missingRequiredTypeOptionFlags = missingRequiredTypeOptionKeys.map((key) => `--type-option ${key}=<value>`);
+  const combinedMissingFlags = [...new Set([...missingRequiredCreateFlags, ...missingRequiredTypeOptionFlags])].sort((left, right) =>
+    left.localeCompare(right),
+  );
+  if (combinedMissingFlags.length > 0) {
+    const nextValidExample = buildTypeSpecificCreateExample(typeDefinition, missingRequiredCreateFlags, missingRequiredTypeOptionKeys);
+    const errorMessage =
+      combinedMissingFlags.length === 1
+        ? `Missing required option ${combinedMissingFlags[0]} for type "${type}"`
+        : `Missing required options ${combinedMissingFlags.join(", ")} for type "${type}"`;
+    throw new PmCliError(errorMessage, EXIT_CODE.USAGE, {
+      code: "missing_required_option",
+      required: `Provide all required create options and type options for type "${type}" in one invocation.`,
+      examples: [nextValidExample],
+      nextSteps: [`Run "pm create --help --type ${type}" for type-aware required option guidance.`],
+    });
+  }
+  const nonMissingTypeOptionErrors = filterNonMissingTypeOptionErrors(validatedTypeOptions.errors, type);
+  if (nonMissingTypeOptionErrors.length > 0) {
+    const nextValidExample = buildTypeSpecificCreateExample(typeDefinition, [], []);
+    throw new PmCliError(nonMissingTypeOptionErrors.join("; "), EXIT_CODE.USAGE, {
+      code: "invalid_argument_value",
+      required: `Provide valid --type-option key/value pairs for type "${type}".`,
+      examples: [nextValidExample],
+      nextSteps: [`Run "pm create --help --type ${type}" to review allowed type-option keys and values.`],
+    });
+  }
 
   const scalarExplicitUnsetCandidates: ReadonlyArray<readonly [string | undefined, string]> = [
     [resolvedOptions.deadline, "deadline"],
@@ -1089,7 +1197,6 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   }
 
   const id = await generateItemId(pmRoot, settings.id_prefix);
-  const type = typeDefinition.name;
   const status = resolvedOptions.status !== undefined ? parseStatusValue(resolvedOptions.status) : "open";
   const priority = resolvedOptions.priority !== undefined ? ensurePriority(resolvedOptions.priority) : 2;
   const tags = resolvedOptions.tags !== undefined ? parseTags(resolvedOptions.tags) : [];
@@ -1180,10 +1287,6 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const regression = regressionRaw !== undefined ? parseRegressionInput(regressionRaw) : undefined;
   const customerImpact =
     resolvedOptions.customerImpact !== undefined ? parseOptionalString(resolvedOptions.customerImpact) : undefined;
-  const validatedTypeOptions = validateTypeOptions(type, typeOptions.values, typeRegistry);
-  if (validatedTypeOptions.errors.length > 0) {
-    throw new PmCliError(validatedTypeOptions.errors.join("; "), EXIT_CODE.USAGE);
-  }
   const title = requireStringOption(resolvedOptions.title, "--title");
   const description = requireStringOption(resolvedOptions.description, "--description");
   const body = resolvedOptions.body ?? "";

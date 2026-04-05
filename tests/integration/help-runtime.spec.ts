@@ -37,6 +37,25 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
+  it("returns non-zero unknown-command guidance for unavailable command help paths", async () => {
+    await withTempPmPath(async (context) => {
+      const textHelp = context.runCli(["beads", "--help"]);
+      expect(textHelp.code).toBe(2);
+      expect(textHelp.stderr).toContain("Unknown command beads");
+
+      const jsonHelp = context.runCli(["beads", "--help", "--json"]);
+      expect(jsonHelp.code).toBe(2);
+      const envelope = JSON.parse(jsonHelp.stderr) as {
+        code: string;
+        title: string;
+        exit_code: number;
+      };
+      expect(envelope.code).toBe("unknown_command");
+      expect(envelope.title).toContain("Unknown command beads");
+      expect(envelope.exit_code).toBe(2);
+    });
+  });
+
   it("renders machine-readable help payloads for --help --json and help --json", async () => {
     await withTempPmPath(async (context) => {
       const directJsonHelp = context.runCli(["create", "--help", "--json"], { expectJson: true });

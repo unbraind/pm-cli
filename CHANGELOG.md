@@ -42,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added type-aware help policy sections for `pm create --help` / `pm update --help` when `--type <value>` is supplied, including required/disabled/hidden option summaries from active settings/extensions.
 - Added type-option schema surfacing in type-aware help (`pm create --help --type <value>` / `pm update --help --type <value>`) including required markers, allowed values, aliases, and option descriptions.
 - Added extension-first command routing for deterministic core-command replacement when extension handlers register matching command paths.
-- Added `pm extension` lifecycle management command with mutually-exclusive actions: `--install`, `--uninstall`, `--explore`, `--manage`, `--activate`, and `--deactivate`.
+- Added `pm extension` lifecycle management command with mutually-exclusive actions: `--install`, `--uninstall`, `--explore`, `--manage`, `--doctor`, `--adopt`, `--activate`, and `--deactivate`.
 - Added extension install source normalization for local paths plus GitHub URL/shorthand forms (`https://github.com/...`, `github.com/...`, `--gh/--github owner/repo[/path]`) with optional `--ref` support.
 - Added scope-local managed extension state (`<extensions-root>/.managed-extensions.json`) with deterministic metadata for source, install/update timestamps, and GitHub update checks.
 - Added `pm extension --doctor` (and `pm extension doctor` shorthand) with consolidated extension diagnostics, normalized warning-code summaries, remediation hints, and optional deep diagnostics via `--detail deep`.
@@ -65,7 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added history-only restore recovery so `pm restore` can recreate missing/deleted item files when the corresponding history stream exists.
 - Added first-class `pm notes` and `pm learnings` commands with parity to `pm comments` (`<id> [text]`, `--add`, `--limit`, `--author`, `--message`, `--force`) including structured/stdin payload parsing.
 - Added command-surface parity updates for `notes`/`learnings` across help narratives, shell completion scripts, command-aware output summaries, and Pi wrapper action routing.
-- Added CLI/Pi shared contract parity for extension lifecycle actions (`extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-activate`, `extension-deactivate`) and their schema parameters (`target`, `scope`, `github`, `ref`).
+- Added CLI/Pi shared contract parity for extension lifecycle actions (`extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-doctor`, `extension-adopt`, `extension-activate`, `extension-deactivate`) and their schema parameters (`target`, `scope`, `github`, `ref`).
 - Added integration regressions for repeated `pm files --add` / `pm docs --add` mutation flows to keep linked-artifact add workflows stable across subsequent command invocations.
 - Added targeted guidance for unsupported `pm update --file` / `pm update --doc` usage, with actionable examples that route users to `pm files` / `pm docs`.
 - Added dependency mutation support on existing items through `pm update`: repeatable `--dep` add/clear (`none`) semantics plus repeatable `--dep-remove`/`--dep_remove` selector removals, with parity across help/completion/contracts/Pi wrapper surfaces.
@@ -74,6 +74,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added standalone `pm validate` command with deterministic check payloads for metadata completeness, closed-item resolution fields, linked-file/orphaned-file hygiene, and item/history drift.
 - Added `pm validate --scan-mode default|tracked-all` for file-check candidate selection, including explicit `candidate_total`/`candidate_scanned` reporting while preserving compatibility fields.
 - Added `pm validate --scan-mode tracked-all-strict` plus structured file-check exclusion reporting (`excluded_by_reason`) so tracked coverage behavior is explicit and machine-readable.
+- Added explicit tracked-all-strict force-inclusion visibility in `pm validate` file-check details (`strict_mode_forces_pm_internals`, `strict_mode_forces_pm_internals_notice`) plus warning token `validate_files_tracked_all_strict_forces_pm_internals`.
+- Added `pm validate --strict-exit` (alias `--fail-on-warn`) to return non-zero exit (`1`) when validation warnings are present (`ok=false`).
+- Added `pm contracts --runtime-only` (alias `--active-only`) and runtime action availability metadata (`action_availability`) so machine callers can filter to invocable actions in current runtime conditions.
+- Added extension lifecycle adopt action (`pm extension --adopt`) to register existing unmanaged installs into managed state metadata without reinstalling extension files (with optional GitHub provenance via `--gh/--github` + `--ref`).
+- Added extension triage update-health diagnostics (`update_health_coverage`, `update_health_partial`) and normalized warning-code surfacing (`warning_codes`, including `extension_update_health_partial_coverage`) for `pm extension --manage` / `pm extension --doctor`.
 - Added `pm close --validate-close [warn|strict]` for additive close-time resolution-field validation (`resolution`, `expected_result`, `actual_result`) with warning-first default behavior.
 - Added `pm files --append-stable` for minimal-diff file-link appends that preserve existing link order and reduce history patch churn during large audits.
 - Added `pm create --create-mode strict|progressive` so strict remains default while governance workflows can use staged progressive creation.
@@ -111,7 +116,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pm create` log-seed repeatables (`--comment`, `--note`, `--learning`) now reject parsed unsupported keys to prevent silent narrative truncation when unquoted comma segments resemble key/value tokens; guidance now explicitly routes punctuation-heavy text to quoted `text=...`, markdown key/value input, or stdin token usage.
 - Type validation/filtering/completion now resolve from the runtime registry across create/update/list/search/calendar/completion/init/health/storage paths while preserving built-in defaults when no custom type config exists.
 - Commander required-option UX for missing `--type` now includes rationale, active allowed values, and concrete fix examples.
-- Type-governed `pm create` required-option failures now aggregate all missing required flags into one deterministic usage error payload instead of iterative one-at-a-time failures.
+- Type-governed `pm create` required-option failures now aggregate all missing required create flags plus required type-option keys into one deterministic usage error payload and include a deterministic type-specific "next valid example" command.
+- Unavailable-command help requests (`pm <unknown> --help`) now emit explicit `unknown command` guidance and usage exit status (`2`) instead of successful help-path exits.
 - Dynamic extension command help now supports `registerFlags` policy metadata (`required`, `enabled`, `visible`) with additive markers and hidden-flag suppression.
 - Dynamic extension flags can now declare `type` / `value_type` metadata (`string`/`number`/`boolean`) for deterministic loose-option coercion on matching command paths.
 - Search and reindex semantic execution now supports extension provider/adapter primary paths with deterministic fallback to built-in provider/vector configuration when available.
@@ -134,7 +140,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pm create`/`pm update` now validate missing `--parent` references using warning-first defaults (`validation_warning:parent_reference_missing:<id>`) with optional strict rejection mode (`strict_error`).
 - CLI contracts and Pi wrapper action/schema mapping now include additive `templates-*` actions, `create --template`, `history --diff/--verify`, and files/docs linked-path hygiene flags.
 - CLI contracts, shell completion, and Pi wrapper action/parameter mappings now include additive parity for `validate`, `close --validate-close`, list `--offset/--stream`, and long-run `--progress` controls.
-- `pm validate --check-files --scan-mode tracked-all` now excludes PM-internal storage files by default, adds `--include-pm-internals` for explicit internal-audit scans, and reports filtered/raw candidate counts (`candidate_total*`, `candidate_scanned*`, `pm_internal_excluded_count`).
+- `pm validate --check-files --scan-mode tracked-all` now excludes PM-internal storage files by default, adds `--include-pm-internals` for explicit internal-audit scans, and reports filtered/raw candidate counts (`candidate_total*`, `candidate_scanned*`, `pm_internal_excluded_count`); `tracked-all-strict` now also reports explicit force-inclusion visibility/warnings.
 - `pm extension --manage` and `pm health` extension diagnostics now include condensed `details.triage` summaries with prioritized counts and remediation-oriented next steps alongside full detailed payloads.
 - CLI/contracts/completion/Pi wrapper parity now includes linked-test runtime env controls (`--env-set`, `--env-clear`, `--shared-host-safe`) and `pm validate --check-command-references`.
 

@@ -2,12 +2,13 @@ id: pm-gt8u
 title: External issue report remediation 2026-04-05
 description: Implement external issue report follow-ups with additive compatibility-safe changes and no duplicate tracking records.
 type: Epic
-status: closed
+status: open
 priority: 0
 tags[7]: "area:comments","area:config","area:extensions","area:health","area:validation",external-audit,pm-cli
 created_at: "2026-04-04T22:37:40.141Z"
-updated_at: "2026-04-04T23:35:45.347Z"
+updated_at: "2026-04-05T01:11:24.097Z"
 deadline: "2026-04-14T22:37:40.141Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 480
 acceptance_criteria: All five issue-report workstreams are implemented or explicitly mapped to reused lineage with passing verification and docs parity.
@@ -17,10 +18,11 @@ value: Improves governance automation reliability and operator diagnostics
 impact: Reduces false negatives and audit overhead
 outcome: Issue report gaps are fully remediated
 why_now: Current report highlights additive improvements needed for cross-project reliability
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-04T22:37:40.141Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search health missing directory strict-directories optional directories --limit 10; pm search bulk comments audit status latest --limit 10; pm search config list export key discovery --limit 10; pm search tracked-all strict exclusion reasons --limit 10; pm search extension manage update check status skipped unmanaged --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new umbrella scope required for this execution cycle."
   "2026-04-04T22:39:21.310Z",codex-agent,"Lineage mapping: net-new features/tasks created for health (pm-2i0i/pm-t7xl), comments audit (pm-ayyt/pm-w1j3), and config discovery/export (pm-kslz/pm-5lmj). Reused existing lineage without duplication for validate tracked-all via pm-m9tv and extension-manage via reopened pm-doek."
   "2026-04-04T23:35:38.906Z",codex-agent,"Delivery evidence: all five workstreams complete (health pm-2i0i/pm-t7xl, comments pm-ayyt/pm-w1j3, config pm-kslz/pm-5lmj, validate pm-m9tv, extension pm-doek). Linked pm tests passed for each scoped item; full build/test/coverage passed; docs updated (README/PRD/ARCHITECTURE/EXTENSIONS/CHANGELOG)."
+  "2026-04-05T01:11:24.097Z",codex-agent,"Reopened for new 8-issue audit follow-up. Duplicate-check evidence rerun: context/list-open/list-in-progress plus targeted searches for strict-exit, runtime-only contracts, help exit semantics, extension adopt, and type-specific guidance. Reusing canonical closed lineage (pm-a228, pm-bzyr, pm-hjrr, pm-9ajy, pm-j162, pm-k6ml) and creating net-new item only for extension adopt workflow."
 notes[1]{created_at,author,text}:
   "2026-04-04T22:37:40.141Z",codex-agent,Reuse existing lineage for tracked-all and extension-manage deltas; create only net-new child scopes for health/comments/config.
 docs[5]{path,scope,note}:
@@ -29,5 +31,4 @@ docs[5]{path,scope,note}:
   docs/EXTENSIONS.md,project,extension-manage-status-updates
   PRD.md,project,canonical-command-contract-updates
   README.md,project,user-facing-command-updates
-close_reason: "All five external issue-report remediation workstreams are complete, tested, and documented with closed child records."
 body: "Coordinates remediation for health optional directories, bulk comments audit query, config discovery/export, tracked-all strict/exclusion diagnostics, and extension manage update-check status semantics."

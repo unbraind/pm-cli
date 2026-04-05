@@ -2112,12 +2112,13 @@ program
 
 program
   .command("extension")
-  .argument("[target]", "Extension source (install) or extension name (activate/deactivate/uninstall)")
+.argument("[target]", "Extension source (install) or extension name (adopt/activate/deactivate/uninstall)")
   .option("--install", "Install extension from local path or GitHub source")
   .option("--uninstall", "Uninstall an installed extension")
   .option("--explore", "List discovered extensions in selected scope")
   .option("--manage", "List managed extensions with update-check metadata")
   .option("--doctor", "Run consolidated extension diagnostics (summary/deep modes)")
+.option("--adopt", "Adopt an existing unmanaged extension into managed metadata")
   .option("--activate", "Activate an extension in selected scope settings")
   .option("--deactivate", "Deactivate an extension in selected scope settings")
   .option("--project", "Use project extension scope (default)")
@@ -2139,6 +2140,7 @@ program
         explore: options.explore === true,
         manage: options.manage === true,
         doctor: options.doctor === true,
+        adopt: options.adopt === true,
         activate: options.activate === true,
         deactivate: options.deactivate === true,
         project: options.project === true,
@@ -3458,6 +3460,8 @@ program
   .option("--check-command-references", "Run linked-command PM-ID reference checks")
   .option("--scan-mode <value>", "Select file candidate scan mode for --check-files (default|tracked-all|tracked-all-strict)")
   .option("--include-pm-internals", "Include PM storage internals in tracked-all candidate scans")
+  .option("--strict-exit", "Return non-zero exit when validation warnings are present (ok=false)")
+  .option("--fail-on-warn", "Alias for --strict-exit")
   .option("--check-history-drift", "Run item/history hash drift checks")
   .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
@@ -3475,6 +3479,10 @@ program
       globalOptions,
     );
     printResult(result, globalOptions);
+    const strictExit = Boolean(options.strictExit) || Boolean(options.failOnWarn);
+    if (strictExit && !result.ok) {
+      process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+    }
     if (globalOptions.profile) {
       printError(`profile:command=validate took_ms=${Date.now() - startedAt}`);
     }
@@ -3499,6 +3507,8 @@ program
   .option("--action <value>", "Filter tool schema branches to a specific action")
   .option("--command <value>", "Filter command-flag contracts to one command")
   .option("--schema-only", "Return schema-focused output only")
+  .option("--runtime-only", "Include only actions invocable in the current runtime")
+  .option("--active-only", "Alias for --runtime-only")
   .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -3507,6 +3517,7 @@ program
         action: typeof options.action === "string" ? options.action : undefined,
         command: typeof options.command === "string" ? options.command : undefined,
         schemaOnly: Boolean(options.schemaOnly),
+        runtimeOnly: Boolean(options.runtimeOnly) || Boolean(options.activeOnly),
       },
       globalOptions,
     );
@@ -3594,6 +3605,34 @@ interface CommanderUsageContext {
   allowedTypes: string;
 }
 
+function resolveChildCommandByToken(parent: Command, token: string): Command | undefined {
+  const normalizedToken = token.trim().toLowerCase();
+  return parent.commands.find((candidate) => {
+    if (candidate.name().trim().toLowerCase() === normalizedToken) {
+      return true;
+    }
+    const aliases = typeof candidate.aliases === "function" ? candidate.aliases() : [];
+    return aliases.some((alias) => alias.trim().toLowerCase() === normalizedToken);
+  });
+}
+
+function isKnownHelpCommandPath(root: Command, commandPathTokens: string[]): boolean {
+  if (commandPathTokens.length === 0) {
+    return true;
+  }
+  let current = root;
+  let matchedAny = false;
+  for (const token of commandPathTokens) {
+    const next = resolveChildCommandByToken(current, token);
+    if (!next) {
+      return matchedAny;
+    }
+    matchedAny = true;
+    current = next;
+  }
+  return matchedAny;
+}
+
 async function resolveCommanderUsageContext(error: unknown): Promise<CommanderUsageContext> {
   const rawMessage = typeof error === "object" && error !== null ? (error as { message?: string }).message : undefined;
   const message = rawMessage ?? "Invalid command usage";
@@ -3677,6 +3716,18 @@ async function main(): Promise<void> {
       const isHelpDisplayCode =
         code === "commander.helpDisplayed" || code === "commander.help" || code === "commander.helpCommand";
       if (isHelpDisplayCode || rawMessage.includes("(outputHelp)")) {
+        const helpRequest = parseBootstrapHelpRequest(process.argv.slice(2));
+        if (helpRequest.requested && !isKnownHelpCommandPath(program, helpRequest.commandPathTokens)) {
+          const unknownToken = helpRequest.commandPathTokens[0] ?? parseBootstrapCommandName(process.argv.slice(2)) ?? "<command>";
+          const unknownMessage = `unknown command '${unknownToken}'`;
+          if (jsonErrors) {
+            printError(await formatCommanderUsageJson({ message: unknownMessage }));
+          } else {
+            printError(await formatCommanderUsageMessage({ message: unknownMessage }));
+          }
+          process.exitCode = EXIT_CODE.USAGE;
+          return;
+        }
         process.exitCode = EXIT_CODE.SUCCESS;
         return;
       }
