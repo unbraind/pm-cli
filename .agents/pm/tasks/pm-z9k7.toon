@@ -41,8 +41,8 @@ files[4]{path,scope,note}:
   src/cli/commands/config.ts,project,test-result-tracking config get/set policy
   src/core/shared/constants.ts,project,testing defaults and front-matter ordering
   src/core/store/settings.ts,project,settings schema merge and serialization for testing block
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/shared-constants-errors.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,settings and constants tracking policy coverage
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/shared-constants-errors.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,settings and constants tracking policy coverage
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-all-local-mnkrqfdt-hjxetp,test-all,passed,"2026-04-04T20:11:49.984Z","2026-04-04T20:16:28.102Z","2026-04-04T20:16:28.102Z",null,null,0,0,0,1,0,null
   test-local-mnkrz8x3-b1sw6r,test,passed,"2026-04-04T20:18:35.501Z","2026-04-04T20:18:41.511Z","2026-04-04T20:18:41.511Z",null,null,1,0,0,null,null,null

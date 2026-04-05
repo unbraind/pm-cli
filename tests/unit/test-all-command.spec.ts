@@ -436,6 +436,39 @@ describe("runTestAll", () => {
     });
   });
 
+  it("treats per-test pm_context_mode metadata as part of dedupe identity", async () => {
+    await withTempPmPath(async (context) => {
+      const firstId = createTaskWithTests(context, {
+        title: "PM Context Schema",
+        status: "open",
+        testEntries: ["command=node --version,scope=project"],
+      });
+      const secondId = createTaskWithTests(context, {
+        title: "PM Context Tracker",
+        status: "open",
+        testEntries: ["command=node --version,scope=project"],
+      });
+
+      await overwriteTaskTests(context, firstId, [{ command: "node --version", scope: "project", pm_context_mode: "schema" }]);
+      await overwriteTaskTests(context, secondId, [
+        { command: "node --version", scope: "project", pm_context_mode: "tracker" },
+      ]);
+
+      const result = await runTestAll({ status: "open", timeout: "20" }, { path: context.pmPath });
+      expect(result.totals.items).toBe(2);
+      expect(result.totals.linked_tests).toBe(2);
+      expect(result.passed).toBe(2);
+      expect(result.skipped).toBe(0);
+
+      const runResults = result.results.flatMap((entry) => entry.run_results);
+      const contextModes = runResults
+        .map((entry) => entry.execution_context?.pm_context_mode)
+        .filter((value): value is string => typeof value === "string")
+        .sort((left, right) => left.localeCompare(right));
+      expect(contextModes).toEqual(["schema", "tracker"]);
+    });
+  });
+
   it("deduplicates timeout-variant duplicate commands using the maximum timeout", async () => {
     await withTempPmPath(async (context) => {
       const slowDuplicateCommand =

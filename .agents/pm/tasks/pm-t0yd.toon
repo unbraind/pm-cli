@@ -54,8 +54,8 @@ files[3]{path,scope,note}:
   src/core/extensions/item-fields.ts,project,runtime item-field defaults and validation
   src/core/item/item-format.ts,project,preserve extension front-matter keys
   src/core/store/item-store.ts,project,item field validation and persistence
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/item-store.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,item field runtime regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/item-store.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,item field runtime regression
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,item field runtime behavior
 close_reason: registerItemFields runtime defaulting/validation wired into create/update flows with tests passing.

@@ -94,7 +94,7 @@ describe("core/output/output", () => {
     expect(stderrSpy).toHaveBeenCalledWith("boom\n");
   });
 
-  it("suppresses synchronous stdout EPIPE and sets a non-zero exit code", () => {
+  it("suppresses synchronous stdout EPIPE and preserves success exit semantics", () => {
     const previousExitCode = process.exitCode;
     process.exitCode = undefined;
     const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => {
@@ -105,7 +105,7 @@ describe("core/output/output", () => {
 
     expect(() => printResult({ ok: true }, { json: true })).not.toThrow();
     expect(stdoutSpy).toHaveBeenCalled();
-    expect(process.exitCode).toBe(EXIT_CODE.GENERIC_FAILURE);
+    expect(process.exitCode).toBe(EXIT_CODE.SUCCESS);
 
     process.exitCode = previousExitCode;
   });
@@ -124,6 +124,56 @@ describe("core/output/output", () => {
     expect(process.exitCode).toBe(EXIT_CODE.GENERIC_FAILURE);
 
     process.exitCode = previousExitCode;
+  });
+
+  it("does not override an existing non-zero exit code for stdout EPIPE", () => {
+    const previousExitCode = process.exitCode;
+    process.exitCode = EXIT_CODE.USAGE;
+    const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => {
+      const error = new Error("write EPIPE") as Error & { code?: string };
+      error.code = "EPIPE";
+      throw error;
+    });
+
+    expect(() => printResult({ ok: true }, { json: true })).not.toThrow();
+    expect(stdoutSpy).toHaveBeenCalled();
+    expect(process.exitCode).toBe(EXIT_CODE.USAGE);
+
+    process.exitCode = previousExitCode;
+  });
+
+  it("does not override an existing non-zero exit code for stderr EPIPE", () => {
+    const previousExitCode = process.exitCode;
+    process.exitCode = EXIT_CODE.USAGE;
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => {
+      const error = new Error("write EPIPE") as Error & { code?: string };
+      error.code = "EPIPE";
+      throw error;
+    });
+
+    expect(() => printError("boom")).not.toThrow();
+    expect(stderrSpy).toHaveBeenCalled();
+    expect(process.exitCode).toBe(EXIT_CODE.USAGE);
+
+    process.exitCode = previousExitCode;
+  });
+
+  it("rethrows non-EPIPE stdout stream errors", () => {
+    const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => {
+      throw new Error("write failed");
+    });
+
+    expect(() => printResult({ ok: true }, { json: true })).toThrow("write failed");
+    expect(stdoutSpy).toHaveBeenCalled();
+  });
+
+  it("rethrows non-EPIPE stderr stream errors", () => {
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => {
+      throw new Error("write failed");
+    });
+
+    expect(() => printError("boom")).toThrow("write failed");
+    expect(stderrSpy).toHaveBeenCalled();
   });
 
   it("applies active command overrides before rendering", () => {

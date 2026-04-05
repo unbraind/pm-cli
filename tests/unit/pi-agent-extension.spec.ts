@@ -524,6 +524,10 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(schemaProperty(extensionAdoptSchema, "github").type).toBe("string");
     expect(schemaProperty(extensionAdoptSchema, "ref").type).toBe("string");
 
+    const extensionAdoptAllSchema = schemaForAction(tool.parameters as Record<string, unknown>, "extension-adopt-all");
+    expect(extensionAdoptAllSchema.required).toEqual(["action"]);
+    expect(schemaProperty(extensionAdoptAllSchema, "scope").enum).toEqual(["project", "global"]);
+
     const validateSchema = schemaForAction(tool.parameters as Record<string, unknown>, "validate");
     expect(validateSchema.required).toEqual(["action"]);
     expect(schemaProperty(validateSchema, "checkFiles").type).toBe("boolean");
@@ -603,7 +607,7 @@ describe("Pi agent extension wrapper for pm", () => {
       items: { type: "string" },
     });
     expect(schemaProperty(testAllSchema, "sharedHostSafe").type).toBe("boolean");
-    expect(schemaProperty(testAllSchema, "pmContext").enum).toEqual(["schema", "tracker"]);
+    expect(schemaProperty(testAllSchema, "pmContext").enum).toEqual(["schema", "tracker", "auto"]);
     expect(schemaProperty(testAllSchema, "failOnContextMismatch").type).toBe("boolean");
     expect(schemaProperty(testAllSchema, "failOnSkipped").type).toBe("boolean");
     expect(schemaProperty(testAllSchema, "requireAssertionsForPm").type).toBe("boolean");
@@ -760,6 +764,13 @@ describe("Pi agent extension wrapper for pm", () => {
       "--ref",
       "main",
     ]);
+
+    expect(
+      buildPmCliArgs({
+        action: "extension-adopt-all",
+        scope: "global",
+      }),
+    ).toEqual(["--json", "extension", "--adopt-all", "--global"]);
 
     expect(
       buildPmCliArgs({

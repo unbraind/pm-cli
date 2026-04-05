@@ -36,8 +36,8 @@ comments[2]{created_at,author,text}:
   "2026-04-04T20:22:26.236Z",codex-agent,"Release verification completed: pnpm build, node scripts/run-tests.mjs coverage, pm test-all --status in_progress --timeout 7200 --progress, and pm validate checks executed with passing test gates."
 notes[1]{created_at,author,text}:
   "2026-04-04T19:07:27.270Z",codex-agent,Final gate after implementation/docs/contracts updates are complete.
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,release verification full coverage
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,release verification full coverage
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-all-local-mnkrqfdt-hjxetp,test-all,passed,"2026-04-04T20:11:49.984Z","2026-04-04T20:11:50.020Z","2026-04-04T20:11:50.020Z",null,null,0,0,0,1,0,null
   test-local-mnks3q4z-es52a4,test,passed,"2026-04-04T20:19:44.193Z","2026-04-04T20:22:10.451Z","2026-04-04T20:22:10.451Z",null,null,1,0,0,null,null,null

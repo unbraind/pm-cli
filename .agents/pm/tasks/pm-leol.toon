@@ -56,8 +56,8 @@ files[5]{path,scope,note}:
   src/core/lock/lock.ts,project,lock override wiring
   src/core/output/output.ts,project,output override wiring
   src/core/store/item-store.ts,project,item-store override wiring
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/unit/extension-loader.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,service override end-to-end coverage
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/unit/extension-loader.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,service override end-to-end coverage
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,service override architecture
 close_reason: Phase 2 implementation and verification complete

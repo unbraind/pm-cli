@@ -65,9 +65,9 @@ files[18]{path,scope,note}:
   tests/unit/sdk-index.spec.ts,project,orphan-link audit coverage
   tests/unit/search-cache-nonerror.spec.ts,project,orphan-link audit coverage
   tsconfig.json,project,orphan-link audit coverage
-tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  pm list-all --limit 1000 --json,null,project,900,null,null,null,null,null,null,null,null,null,null,full inventory reproducibility snapshot
-  pm validate --check-resolution --check-history-drift --json,null,project,900,null,null,null,null,null,null,null,null,null,null,tracker closure/history integrity audit
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  pm list-all --limit 1000 --json,null,project,900,null,null,null,null,null,null,null,null,null,null,null,full inventory reproducibility snapshot
+  pm validate --check-resolution --check-history-drift --json,null,project,900,null,null,null,null,null,null,null,null,null,null,null,tracker closure/history integrity audit
 docs[4]{path,scope,note}:
   AGENTS.md,project,governance workflow source-of-truth
   docs/ARCHITECTURE.md,project,runtime/capability architecture references

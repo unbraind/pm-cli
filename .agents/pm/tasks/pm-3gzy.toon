@@ -50,8 +50,8 @@ files[3]{path,scope,note}:
   tests/unit/error-guidance.spec.ts,project,verification command and regression suite
   tests/unit/extension-command-github.spec.ts,project,mocked GitHub installer path coverage
   tests/unit/extension-command.spec.ts,project,extended branch/function coverage for extension manager runtime
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,sandboxed full coverage gate
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,sandboxed full coverage gate
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,release-facing changelog evidence
 close_reason: "Verification complete: build/test/coverage passed and rollout changes are committed and pushed."

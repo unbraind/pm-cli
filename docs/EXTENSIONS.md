@@ -19,7 +19,7 @@ This preserves extension-defined schema behavior (including custom item type val
 
 Linked-test runtime controls are additive: run-level `--env-set`/`--env-clear`/`--shared-host-safe` flags and per-linked-test metadata directives (`env_set`, `env_clear`, `shared_host_safe`) apply before sandbox-protected `PM_PATH`/`PM_GLOBAL_PATH` overrides.
 
-PM-command linked tests can opt into tracker-data parity via `--pm-context tracker` (default `schema` keeps isolated tracker data while still seeding settings/extensions). In default `schema` mode, PM tracker-read linked commands fail on context mismatch by default; strict guards remain available for other PM command shapes via `--fail-on-context-mismatch` plus `--fail-on-skipped` and `--require-assertions-for-pm`. Per-run `execution_context` metadata includes resolved roots, item counts, mismatch signal, and PM tracker-read classification.
+PM-command linked tests can opt into tracker-data parity via `--pm-context tracker` (default `schema` keeps isolated tracker data while still seeding settings/extensions). `--pm-context auto` automatically routes PM tracker-read commands through tracker-seeded context while keeping other commands in schema context. Per-linked-test metadata can override run-level mode with `pm_context_mode=schema|tracker|auto`. In default `schema` mode, PM tracker-read linked commands fail on context mismatch by default; strict guards remain available for other PM command shapes via `--fail-on-context-mismatch` plus `--fail-on-skipped` and `--require-assertions-for-pm`. Per-run `execution_context` metadata includes resolved roots, item counts, mismatch signal, and PM tracker-read classification.
 
 Linked-test assertion metadata is optional and additive (`assert_stdout_contains`, `assert_stdout_regex`, `assert_stderr_contains`, `assert_stderr_regex`, `assert_stdout_min_lines`, `assert_json_field_equals`, `assert_json_field_gte`).
 
@@ -37,6 +37,7 @@ Pass exactly one action flag:
 - `--manage`
 - `--doctor`
 - `--adopt`
+- `--adopt-all`
 - `--activate`
 - `--deactivate`
 
@@ -110,6 +111,7 @@ Lifecycle semantics:
 - Explore returns discovered extensions + active/managed status.
 - Manage performs GitHub update checks (`git ls-remote`) for managed GitHub entries and persists update metadata (`last_update_check_at`, `last_update_remote_commit`, `update_available`, `update_error`).
 - Adopt records an already-installed unmanaged extension into managed state metadata without reinstalling files (supports local source metadata or explicit GitHub provenance via `--gh`/`--github` and optional `--ref`).
+- Adopt-all bulk-records all unmanaged installed extensions in selected scope into managed state metadata without reinstalling files.
 - Explore/manage extension rows include explicit update-check fields:
   - `update_check_status`: `checked`, `failed`, `skipped_unmanaged`, `skipped_non_github`, or `not_checked`
   - `update_check_reason`: deterministic reason/code for that status (for example `up_to_date`, `update_available`, `extension_not_managed`, or the update failure text)
@@ -125,6 +127,7 @@ Lifecycle semantics:
 - managed entry count
 - managed entry summaries
 - managed-state read/schema warnings
+- update-coverage parity warnings (`extension_update_health_partial_coverage`) when loaded extensions are unmanaged and update checks are partial
 - For focused extension triage, use `pm extension --doctor` for consolidated diagnostics without traversing full health payloads.
 
 ## Manifest
@@ -638,6 +641,6 @@ Current wrapper parity includes:
 - `action: "calendar"` for `pm calendar` / `pm cal` (`view`, `date`, `from`, `to`, `past`, `type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`, `format`)
 - `create`/`update` reminder forwarding via repeatable `reminder` values (`at=<iso|relative>,text=<text>`)
 - `create`/`update` custom type-option forwarding via repeatable `typeOption` values
-- extension lifecycle forwarding via `extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-doctor`, `extension-activate`, and `extension-deactivate` actions (`target`, `scope`, `github`, `ref`, `detail`)
+- extension lifecycle forwarding via `extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-doctor`, `extension-adopt`, `extension-adopt-all`, `extension-activate`, and `extension-deactivate` actions (`target`, `scope`, `github`, `ref`, `detail`)
 
 See [AGENTS.md](../AGENTS.md) section 9 for full usage details.

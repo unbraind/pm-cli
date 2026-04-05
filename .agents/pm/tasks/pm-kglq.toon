@@ -59,8 +59,8 @@ files[4]{path,scope,note}:
   src/cli/main.ts,project,calendar output switch logic
   src/core/output/command-aware.ts,project,calendar summary highlights for agents
   tests/unit/calendar-command.spec.ts,project,output precedence tests
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/output.spec.ts tests/unit/calendar-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,output behavior coverage
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/output.spec.ts tests/unit/calendar-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,output behavior coverage
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-all-local-mnktqphw-natg7c,test-all,passed,"2026-04-04T21:08:02.324Z","2026-04-04T21:10:32.449Z","2026-04-04T21:10:32.449Z",null,null,1,0,0,1,1,null
 docs[4]{path,scope,note}:

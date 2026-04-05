@@ -51,8 +51,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:23:28.925Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/core/extensions/loader.ts,project,registration plumbing and runtime hooks
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/search-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,registration runtime regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/search-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,registration runtime regression
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,registration runtime contract
 close_reason: All feature B tasks (B1-B3) are complete with runtime wiring and linked tests passing.

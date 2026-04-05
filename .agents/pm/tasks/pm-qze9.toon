@@ -58,8 +58,8 @@ files[4]{path,scope,note}:
   src/cli/commands/completion.ts,project,calendar command and reminder flag completion surface
   tests/unit/completion-command.spec.ts,project,completion regressions for calendar and reminder flags
   tests/unit/pi-agent-extension.spec.ts,project,wrapper schema and arg mapping tests
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,integration surface tests
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,integration surface tests
 docs[1]{path,scope,note}:
   docs/EXTENSIONS.md,project,pi wrapper/command surface reference
 close_reason: Completion and Pi wrapper calendar/reminder integration shipped with passing tests.

@@ -56,8 +56,8 @@ files[5]{path,scope,note}:
   docs/EXTENSIONS.md,project,extension interactions with help and renderer envelope
   PRD.md,project,product contract updates for guidance and output envelope
   README.md,project,Primary user docs
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,Doc/runtime contract checks
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,Doc/runtime contract checks
 docs[1]{path,scope,note}:
   PRD.md,project,Command contract source
 close_reason: "Docs contracts updated for help, error guidance, and command-aware output behavior."

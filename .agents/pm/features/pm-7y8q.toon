@@ -46,8 +46,8 @@ notes[1]{created_at,author,text}:
   "2026-04-03T09:34:08.462Z",codex-agent,Will update help bundle examples and completion lists where implicit.
 files[1]{path,scope,note}:
   src/cli/help-content.ts,project,rich help guidance
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/unit/completion-command.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,help and completion parity checks
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/unit/completion-command.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,help and completion parity checks
 docs[1]{path,scope,note}:
   README.md,project,user-facing command guidance
 close_reason: "Feature delivered: comments force guidance parity across help/completion/docs surfaces with passing runtime contracts."

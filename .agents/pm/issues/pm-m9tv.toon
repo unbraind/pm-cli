@@ -50,9 +50,9 @@ files[6]{path,scope,note}:
   src/cli/main.ts,project,validate-scan-mode-wiring
   src/sdk/cli-contracts.ts,project,validate-strict-mode-contract
   tests/unit/validate-command.spec.ts,project,tracked-all-strict-regression
-tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,validation regression target
-  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,tracked-all-strict-targeted
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,validation regression target
+  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,tracked-all-strict-targeted
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mnkyxs57-52h2jl,test,passed,"2026-04-04T23:32:40.426Z","2026-04-04T23:33:30.427Z","2026-04-04T23:33:30.427Z",null,null,2,0,0,null,null,null
 docs[1]{path,scope,note}:

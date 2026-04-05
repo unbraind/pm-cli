@@ -37,9 +37,9 @@ learnings[1]{created_at,author,text}:
   "2026-04-03T20:57:13.509Z",codex-agent,Run dedupe scans before every governance create workflow to avoid duplicate tracking items.
 files[1]{path,scope,note}:
   src/cli/commands/validate.ts,project,initial unresolved scope anchor
-tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,full coverage gate pass
-  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,full regression baseline
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full coverage gate pass
+  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full regression baseline
 docs[5]{path,scope,note}:
   AGENTS.md,project,agent workflow guidance for new flags
   CHANGELOG.md,project,unreleased additive feature entries

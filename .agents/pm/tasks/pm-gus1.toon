@@ -50,8 +50,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:32:18.563Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,add pm list integration test
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,300,null,null,null,null,null,null,null,null,null,null,full coverage gate
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,300,null,null,null,null,null,null,null,null,null,null,null,full coverage gate
 docs[1]{path,scope,note}:
   PRD.md,project,section 12 determinism requirements
 close_reason: "Integration test for pm list active-only behavior added and verified. 536/536 tests pass, 100% coverage maintained."

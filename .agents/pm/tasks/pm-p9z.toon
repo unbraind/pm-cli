@@ -64,10 +64,10 @@ files[7]{path,scope,note}:
   src/sdk/cli-contracts.ts,project,history diff/verify contract parameters
   tests/unit/determinism.spec.ts,project,deterministic patch and hash assertions
   tests/unit/history-activity-command.spec.ts,project,diff/verify regression coverage
-tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,full coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,targeted patch determinism coverage
-  node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts tests/integration/cli.integration.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,issue8 diff verify regressions
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,targeted patch determinism coverage
+  node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts tests/integration/cli.integration.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,null,issue8 diff verify regressions
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow and test safety rules
   PRD.md,project,authoritative history patch requirements

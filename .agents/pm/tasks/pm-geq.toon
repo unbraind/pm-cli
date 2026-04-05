@@ -73,10 +73,10 @@ files[10]{path,scope,note}:
   tests/unit/extension-loader.spec.ts,project,unit coverage for command and renderer registration
   tests/unit/extensions-runtime.spec.ts,project,runtime wrapper coverage for active command and renderer override registries
   tests/unit/output.spec.ts,project,coverage for renderer and command-result override formatting behavior
-tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,null,null,null,null,null,null,null,full sandboxed coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,integration override behavior regression
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,targeted extension API regression
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,full sandboxed coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,integration override behavior regression
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,targeted extension API regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow and test safety protocol
   PRD.md,project,governing spec for extension API and milestones

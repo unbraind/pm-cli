@@ -63,8 +63,8 @@ files[10]{path,scope,note}:
   tests/unit/settings-store.spec.ts,project,deterministic settings serialization coverage
   tests/unit/shared-constants-errors.spec.ts,project,constants regression for builtin types
   tests/unit/stats-command.spec.ts,project,stats by_type builtin coverage
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/shared-constants-errors.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,settings contract regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/shared-constants-errors.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,settings contract regression
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-all-local-mnktqphw-natg7c,test-all,passed,"2026-04-04T21:08:02.324Z","2026-04-04T21:10:37.961Z","2026-04-04T21:10:37.961Z",null,null,1,0,0,1,1,null
 docs[4]{path,scope,note}:

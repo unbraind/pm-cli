@@ -108,7 +108,7 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen("--criterion --format --policy --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    extension)",
-    `      COMPREPLY=(${compgen("--install --uninstall --explore --manage --doctor --adopt --activate --deactivate --project --local --global --gh --github --ref --detail --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--install --uninstall --explore --manage --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    comments)",
     `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-comment --force --json --quiet --path --no-extensions --profile --help")})`,
@@ -431,7 +431,7 @@ _pm() {
             '--env-set[Set linked-test runtime environment values]:entry' \\
             '--env-clear[Clear linked-test runtime environment values]:name' \\
             '--shared-host-safe[Apply shared-host-safe runtime defaults]' \\
-            '--pm-context[PM linked-test context mode]:(schema tracker)' \\
+            '--pm-context[PM linked-test context mode]:(schema tracker auto)' \\
             '--fail-on-context-mismatch[Fail when context item counts mismatch]' \\
             '--fail-on-skipped[Treat skipped linked tests as dependency failures]' \\
             '--require-assertions-for-pm[Require assertions for linked PM command tests]' \\
@@ -450,7 +450,7 @@ _pm() {
             '--env-set[Set linked-test runtime environment values]:entry' \\
             '--env-clear[Clear linked-test runtime environment values]:name' \\
             '--shared-host-safe[Apply shared-host-safe runtime defaults]' \\
-            '--pm-context[PM linked-test context mode]:(schema tracker)' \\
+            '--pm-context[PM linked-test context mode]:(schema tracker auto)' \\
             '--fail-on-context-mismatch[Fail when context item counts mismatch]' \\
             '--fail-on-skipped[Treat skipped linked tests as dependency failures]' \\
             '--require-assertions-for-pm[Require assertions for linked PM command tests]' \\
@@ -524,6 +524,7 @@ _pm() {
             '--manage[List managed extensions with update metadata]' \\
             '--doctor[Run consolidated extension diagnostics (summary/deep)]' \\
             '--adopt[Adopt an unmanaged extension into managed metadata]' \\
+            '--adopt-all[Adopt all unmanaged extensions into managed metadata]' \\
             '--activate[Activate extension in selected scope settings]' \\
             '--deactivate[Deactivate extension in selected scope settings]' \\
             '--project[Use project extension scope (default)]' \\
@@ -752,7 +753,7 @@ complete -c pm -n '__fish_seen_subcommand_from test' -l progress -d 'Emit linked
 complete -c pm -n '__fish_seen_subcommand_from test' -l env-set -d 'Set linked-test runtime environment values' -r
 complete -c pm -n '__fish_seen_subcommand_from test' -l env-clear -d 'Clear linked-test runtime environment values' -r
 complete -c pm -n '__fish_seen_subcommand_from test' -l shared-host-safe -d 'Apply shared-host-safe runtime defaults'
-complete -c pm -n '__fish_seen_subcommand_from test' -l pm-context -d 'PM linked-test context mode' -r -a 'schema tracker'
+complete -c pm -n '__fish_seen_subcommand_from test' -l pm-context -d 'PM linked-test context mode' -r -a 'schema tracker auto'
 complete -c pm -n '__fish_seen_subcommand_from test' -l fail-on-context-mismatch -d 'Fail when context item counts mismatch'
 complete -c pm -n '__fish_seen_subcommand_from test' -l fail-on-skipped -d 'Treat skipped linked tests as dependency failures'
 complete -c pm -n '__fish_seen_subcommand_from test' -l require-assertions-for-pm -d 'Require assertions for linked PM command tests'
@@ -768,7 +769,7 @@ complete -c pm -n '__fish_seen_subcommand_from test-all' -l progress -d 'Emit li
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l env-set -d 'Set linked-test runtime environment values' -r
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l env-clear -d 'Clear linked-test runtime environment values' -r
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l shared-host-safe -d 'Apply shared-host-safe runtime defaults'
-complete -c pm -n '__fish_seen_subcommand_from test-all' -l pm-context -d 'PM linked-test context mode' -r -a 'schema tracker'
+complete -c pm -n '__fish_seen_subcommand_from test-all' -l pm-context -d 'PM linked-test context mode' -r -a 'schema tracker auto'
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l fail-on-context-mismatch -d 'Fail when context item counts mismatch'
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l fail-on-skipped -d 'Treat skipped linked tests as dependency failures'
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l require-assertions-for-pm -d 'Require assertions for linked PM command tests'
@@ -821,6 +822,7 @@ complete -c pm -n '__fish_seen_subcommand_from extension' -l explore -d 'List di
 complete -c pm -n '__fish_seen_subcommand_from extension' -l manage -d 'List managed extensions with update metadata'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l doctor -d 'Run consolidated extension diagnostics'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l adopt -d 'Adopt an unmanaged extension into managed metadata'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l adopt-all -d 'Adopt all unmanaged extensions into managed metadata'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l activate -d 'Activate extension in selected scope settings'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l deactivate -d 'Deactivate extension in selected scope settings'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l project -d 'Use project extension scope'

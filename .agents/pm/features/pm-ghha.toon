@@ -47,8 +47,8 @@ notes[1]{created_at,author,text}:
   "2026-04-02T11:44:56.845Z",codex-agent,"Tasks split runtime,contracts/tests,and docs/release evidence."
 files[1]{path,scope,note}:
   src/cli/commands/update.ts,project,update body runtime surface
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,update body regression coverage
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,update body regression coverage
 docs[1]{path,scope,note}:
   PRD.md,project,update body contract and lifecycle docs
 close_reason: All feature tasks are closed and verification suites passed.

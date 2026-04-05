@@ -69,10 +69,10 @@ files[15]{path,scope,note}:
   tests/unit/pi-agent-extension.spec.ts,project,delete action mapping coverage
   tests/unit/structure-exports.spec.ts,project,assert delete export
   vitest.config.ts,project,coverage include for new modules
-tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,full sandboxed coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/delete-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-contract.spec.ts tests/integration/help-readme-contract.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,targeted delete and contract regression
-  pnpm build,null,project,300,null,null,null,null,null,null,null,null,null,null,typescript build
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full sandboxed coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/delete-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-contract.spec.ts tests/integration/help-readme-contract.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,null,targeted delete and contract regression
+  pnpm build,null,project,300,null,null,null,null,null,null,null,null,null,null,null,typescript build
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow rules
   PRD.md,project,governing spec

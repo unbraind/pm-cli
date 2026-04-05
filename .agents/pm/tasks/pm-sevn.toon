@@ -58,8 +58,8 @@ files[7]{path,scope,note}:
   tests/integration/help-runtime.spec.ts,project,runtime help coverage
   tests/integration/release-readiness-runtime.spec.ts,project,main release-readiness runtime suite
   tests/unit/create-command.spec.ts,project,README label cleanup
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/integration/help-runtime.spec.ts tests/unit/create-command.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,runtime and pm-data regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/integration/help-runtime.spec.ts tests/unit/create-command.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,runtime and pm-data regression
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,test suite description cleanup
 close_reason: Runtime help/readiness enforcement now uses pm data and runtime checks instead of README/PRD/AGENTS contracts; linked regression and full 100% coverage passed.

@@ -382,6 +382,7 @@ describe("generateFishScript", () => {
     expect(script).toContain("-l manage");
     expect(script).toContain("-l doctor");
     expect(script).toContain("-l adopt");
+    expect(script).toContain("-l adopt-all");
     expect(script).toContain("-l activate");
     expect(script).toContain("-l deactivate");
     expect(script).toContain("-l gh");

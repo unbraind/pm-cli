@@ -115,7 +115,8 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     ],
   },
   extension: {
-    why: "Installs, explores, manages, diagnoses, and activates/deactivates custom extensions across project or global scope.",
+    why:
+      "Installs, explores, manages, diagnoses, adopts (single or bulk), and activates/deactivates custom extensions across project or global scope.",
     examples: [
       "pm extension --install beads --project",
       "pm extension --install todos --global",
@@ -128,6 +129,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm extension --doctor --global --detail deep",
       "pm extension doctor --detail deep",
       "pm extension --adopt sample-ext --project",
+      "pm extension --adopt-all --project",
       "pm extension --adopt sample-ext --project --gh owner/repo/path --ref main",
       "pm extension --activate sample-ext --project",
       "pm extension --deactivate sample-ext --project",
@@ -138,7 +140,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "Bundled aliases beads and todos resolve to package-shipped extension sources.",
       "Use --gh/--github shorthand for GitHub sources and --ref to pin a branch, tag, or ref.",
       "Install updates settings activation state automatically unless extension allowlist mode is unchanged.",
-      "Use --adopt to register existing unmanaged installs as managed without reinstalling.",
+      "Use --adopt for single-extension adoption and --adopt-all to bulk-register unmanaged installs as managed without reinstalling.",
       "Use --manage for concise triage summaries and remediation-oriented diagnostics alongside full extension details.",
       "Use --doctor for consolidated diagnostics with warning codes, remediation hints, and optional deep detail payloads.",
     ],
@@ -291,7 +293,9 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     examples: [
       'pm test pm-a1b2 --add "command=node scripts/run-tests.mjs test -- tests/unit/output.spec.ts,scope=project,timeout_seconds=2400"',
       'pm test pm-a1b2 --add "command=pm list-all --type Task --limit 200,scope=project,assert_stdout_contains=count:,assert_stdout_regex=count:\\s+\\d+"',
+      'pm test pm-a1b2 --add "command=pm list-all --type Task --limit 200,scope=project,pm_context_mode=auto"',
       "pm test pm-a1b2 --run --timeout 2400 --env-set PORT=0 --env-clear PLAYWRIGHT_BASE_URL --shared-host-safe --pm-context tracker --fail-on-context-mismatch --fail-on-skipped",
+      "pm test pm-a1b2 --run --timeout 2400 --pm-context auto",
       "pm test pm-a1b2 --run --background --timeout 2400 --progress",
     ],
   },
@@ -301,6 +305,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm test-all --status in_progress --timeout 2400",
       "pm test-all --status closed --timeout 3600 --progress --env-set PORT=0 --shared-host-safe --fail-on-skipped",
       "pm test-all --status in_progress --pm-context tracker --fail-on-context-mismatch --require-assertions-for-pm",
+      "pm test-all --status in_progress --pm-context auto --fail-on-context-mismatch",
       "pm test-all --status in_progress --background --timeout 3600",
     ],
   },
@@ -323,7 +328,8 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     examples: ["pm health", "pm health --json"],
   },
   validate: {
-    why: "Runs standalone metadata, resolution, linked-file, linked-command reference, and history drift checks.",
+    why:
+      "Runs standalone metadata, resolution, linked-file, linked-command reference, and history drift checks with default remediation hints for resolution gaps.",
     examples: [
       "pm validate",
       "pm validate --check-resolution --json",
@@ -332,6 +338,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm validate --check-command-references",
       "pm validate --check-resolution --fail-on-warn --json",
     ],
+    tips: ["Resolution-gap warnings include default `pm update <id> ...` remediation hint templates in check details."],
   },
   gc: {
     why: "Cleans optional cache artifacts to keep local tracker state tidy.",

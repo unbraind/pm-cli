@@ -56,8 +56,8 @@ files[4]{path,scope,note}:
   docs/ARCHITECTURE.md,project,runtime architecture updates
   docs/EXTENSIONS.md,project,phase2 contract docs
   README.md,project,user-facing capability summary
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,full coverage closure
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full coverage closure
 docs[1]{path,scope,note}:
   SECURITY.md,project,trusted-default operational guidance
 close_reason: Phase 2 feature scope complete and verified

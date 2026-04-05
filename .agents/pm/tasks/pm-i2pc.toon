@@ -42,8 +42,8 @@ files[5]{path,scope,note}:
   src/core/item/item-format.ts,project,test_runs normalization and deterministic ordering
   src/core/test/item-test-run-tracking.ts,project,bounded tracked run summary persistence
   src/types.ts,project,item test run summary and settings typing
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,item summary persistence regressions
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,item summary persistence regressions
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-all-local-mnkrqfdt-hjxetp,test-all,passed,"2026-04-04T20:11:49.984Z","2026-04-04T20:16:28.090Z","2026-04-04T20:16:28.090Z",null,null,0,0,0,1,0,null
   test-local-mnkrzvnh-15x5zl,test,passed,"2026-04-04T20:18:41.773Z","2026-04-04T20:19:10.973Z","2026-04-04T20:19:10.973Z",null,null,1,0,0,null,null,null

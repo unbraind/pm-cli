@@ -98,6 +98,7 @@ export interface LinkedTest {
   path?: string;
   scope: LinkScope;
   timeout_seconds?: number;
+  pm_context_mode?: "schema" | "tracker" | "auto";
   env_set?: Record<string, string>;
   env_clear?: string[];
   shared_host_safe?: boolean;

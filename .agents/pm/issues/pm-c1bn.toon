@@ -48,8 +48,8 @@ files[3]{path,scope,note}:
   src/cli/main.ts,project,test command exit semantics
   tests/integration/cli.integration.spec.ts,project,pm-test-exit-code-integration-coverage
   tests/integration/release-readiness-runtime.spec.ts,project,release-runtime-exit-code-coverage
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,exit-code regression coverage
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,exit-code regression coverage
 docs[2]{path,scope,note}:
   PRD.md,project,exit-code-contract-update
   README.md,project,document test command exit behavior

@@ -68,9 +68,9 @@ files[19]{path,scope,note}:
   tests/unit/item-format-validation.spec.ts,project,Structured metadata and dependency source_kind coverage
   tests/unit/item-store.spec.ts,project,Store coverage for imported metadata persistence
   tests/unit/shared-constants-errors.spec.ts,project,Dependency kind validation coverage
-tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  "node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t \"imports Beads JSONL records through the beads import CLI command\"",null,project,900,null,null,null,null,null,null,null,null,null,null,CLI-level beads import integration regression
-  node scripts/run-tests.mjs test -- tests/unit/beads-command.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/list-command.spec.ts tests/unit/search-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,Focused unit regression set for beads import and timestamp comparisons
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t \"imports Beads JSONL records through the beads import CLI command\"",null,project,900,null,null,null,null,null,null,null,null,null,null,null,CLI-level beads import integration regression
+  node scripts/run-tests.mjs test -- tests/unit/beads-command.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/list-command.spec.ts tests/unit/search-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,Focused unit regression set for beads import and timestamp comparisons
 docs[2]{path,scope,note}:
   PRD.md,project,Beads import contract updates
   README.md,project,User-facing beads import behavior and safety notes

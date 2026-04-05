@@ -26,7 +26,16 @@ const BUNDLED_EXTENSION_ALIASES: Record<string, string> = {
   todos: "todos",
 };
 
-export type ExtensionCommandAction = "install" | "uninstall" | "explore" | "manage" | "doctor" | "adopt" | "activate" | "deactivate";
+export type ExtensionCommandAction =
+  | "install"
+  | "uninstall"
+  | "explore"
+  | "manage"
+  | "doctor"
+  | "adopt"
+  | "adopt-all"
+  | "activate"
+  | "deactivate";
 export type ExtensionScope = "project" | "global";
 
 export interface ExtensionCommandOptions {
@@ -36,6 +45,7 @@ export interface ExtensionCommandOptions {
   manage?: boolean;
   doctor?: boolean;
   adopt?: boolean;
+  adoptAll?: boolean;
   activate?: boolean;
   deactivate?: boolean;
   project?: boolean;
@@ -544,6 +554,7 @@ function resolveAction(target: string | undefined, options: ExtensionCommandOpti
     options.manage ? "manage" : null,
     options.doctor ? "doctor" : null,
     options.adopt ? "adopt" : null,
+    options.adoptAll ? "adopt-all" : null,
     options.activate ? "activate" : null,
     options.deactivate ? "deactivate" : null,
   ].filter((value): value is ExtensionCommandAction => value !== null);
@@ -552,7 +563,7 @@ function resolveAction(target: string | undefined, options: ExtensionCommandOpti
       return "doctor";
     }
     throw new PmCliError(
-      'One action flag is required. Use one of: --install, --uninstall, --explore, --manage, --doctor, --adopt, --activate, --deactivate.',
+      "One action flag is required. Use one of: --install, --uninstall, --explore, --manage, --doctor, --adopt, --adopt-all, --activate, --deactivate.",
       EXIT_CODE.USAGE,
     );
   }
@@ -1089,7 +1100,7 @@ function buildExtensionTriageSummary(
   }
   if (skippedUnmanagedTotal > 0) {
     remediation.push(
-      `Update-check coverage is partial because unmanaged extensions are skipped. Adopt existing installs via pm extension --adopt <name> ${scopeFlag} (or reinstall via pm extension --install ${scopeFlag} <source>).`,
+      `Update-check coverage is partial because unmanaged extensions are skipped. Adopt existing installs via pm extension --adopt-all ${scopeFlag} (or pm extension --adopt <name> ${scopeFlag}, or reinstall via pm extension --install ${scopeFlag} <source>).`,
     );
   }
   if (skippedNonGithubTotal > 0) {
@@ -1317,6 +1328,96 @@ export async function runExtension(
         await resolvedSource.cleanup();
       }
     }
+  }
+
+  if (action === "adopt-all") {
+    if (normalizedTarget !== undefined) {
+      throw new PmCliError('Action "adopt-all" does not accept a target argument.', EXIT_CODE.USAGE);
+    }
+    const githubOption = resolveGithubOption(options);
+    if (githubOption !== undefined || (typeof options.ref === "string" && options.ref.trim().length > 0)) {
+      throw new PmCliError('Action "adopt-all" does not accept --gh/--github/--ref options.', EXIT_CODE.USAGE);
+    }
+    const settings = await readSettings(resolvedRoots.settings_root);
+    const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
+    warnings.push(...managedStateRead.warnings);
+    const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
+    warnings.push(...installed.warnings);
+    const unmanagedCandidates = installed.extensions.filter((entry) => !entry.managed);
+
+    let managedState = managedStateRead.state;
+    const adoptedEntries: Array<{
+      name: string;
+      directory: string;
+      version: string;
+      entry: string;
+      source: ManagedExtensionSource;
+    }> = [];
+    const sortedCandidates = [...unmanagedCandidates].sort((left, right) => {
+      const byName = left.name.localeCompare(right.name);
+      if (byName !== 0) return byName;
+      return left.directory.localeCompare(right.directory);
+    });
+    for (const candidate of sortedCandidates) {
+      const extensionDirectory = path.join(resolvedRoots.selected_root, candidate.directory);
+      const validated = await validateExtensionDirectory(extensionDirectory);
+      const now = nowIso();
+      const sourceRecord: ManagedExtensionSource = {
+        kind: "local",
+        input: candidate.name,
+        location: extensionDirectory,
+      };
+      managedState = upsertManagedEntry(managedState, {
+        name: validated.manifest.name,
+        directory: candidate.directory,
+        scope,
+        manifest_version: validated.manifest.version,
+        manifest_entry: validated.manifest.entry,
+        capabilities: [...validated.manifest.capabilities],
+        installed_at: now,
+        updated_at: now,
+        source: sourceRecord,
+      });
+      adoptedEntries.push({
+        name: validated.manifest.name,
+        directory: candidate.directory,
+        version: validated.manifest.version,
+        entry: validated.manifest.entry,
+        source: sourceRecord,
+      });
+    }
+    if (adoptedEntries.length > 0) {
+      await writeManagedExtensionState(resolvedRoots.selected_root, managedState);
+    }
+    const refreshedInstalled = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedState);
+    warnings.push(...refreshedInstalled.warnings);
+    const triage = buildExtensionTriageSummary(scope, warnings, refreshedInstalled.extensions);
+    const adoptedDetails = adoptedEntries.map((entry) => {
+      const refreshedEntry =
+        refreshedInstalled.extensions.find(
+          (candidate) =>
+            normalizeExtensionNameForMatch(candidate.name) === normalizeExtensionNameForMatch(entry.name) &&
+            normalizeExtensionNameForMatch(candidate.directory) === normalizeExtensionNameForMatch(entry.directory),
+        ) ??
+        refreshedInstalled.extensions.find(
+          (candidate) => normalizeExtensionNameForMatch(candidate.directory) === normalizeExtensionNameForMatch(entry.directory),
+        );
+      return {
+        ...entry,
+        update_check_status: refreshedEntry?.update_check_status ?? null,
+        update_check_reason: refreshedEntry?.update_check_reason ?? null,
+      };
+    });
+    return withResult({
+      adopted_all: adoptedDetails.length > 0,
+      adopted_count: adoptedDetails.length,
+      already_managed_count: installed.extensions.length - unmanagedCandidates.length,
+      extensions: adoptedDetails,
+      triage,
+      warning_codes: triage.warning_codes,
+      update_health_partial: triage.update_health_partial,
+      update_health_coverage: triage.update_health_coverage,
+    });
   }
 
   if (action === "adopt") {

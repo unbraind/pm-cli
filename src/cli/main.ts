@@ -99,7 +99,7 @@ import {
 import { refreshSearchArtifactsForMutation } from "../core/search/cache.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
-import { printError, printResult } from "../core/output/output.js";
+import { printError, printResult, writeStdout } from "../core/output/output.js";
 import { migrateItemFilesToFormat } from "../core/store/item-format-migration.js";
 import { listAllFrontMatter } from "../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
@@ -808,7 +808,7 @@ async function maybeRenderBootstrapJsonHelp(rootProgram: Command, argv: string[]
   }
   if (!bootstrapGlobal.quiet) {
     const payload = buildJsonHelpPayload(rootProgram, targetCommand, argv, helpRequest.commandPathTokens);
-    process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+    writeStdout(`${JSON.stringify(payload, null, 2)}\n`);
   }
   process.exitCode = EXIT_CODE.SUCCESS;
   return true;
@@ -1829,11 +1829,15 @@ function printListJsonStream(commandName: string, result: ListCommandResult, glo
   if (warnings.length > 0) {
     metaPayload.warnings = warnings;
   }
-  process.stdout.write(`${JSON.stringify(metaPayload)}\n`);
-  for (const item of result.items) {
-    process.stdout.write(`${JSON.stringify({ type: "item", command: commandName, item })}\n`);
+  if (!writeStdout(`${JSON.stringify(metaPayload)}\n`)) {
+    return;
   }
-  process.stdout.write(`${JSON.stringify({ type: "end", command: commandName, count: result.count })}\n`);
+  for (const item of result.items) {
+    if (!writeStdout(`${JSON.stringify({ type: "item", command: commandName, item })}\n`)) {
+      return;
+    }
+  }
+  writeStdout(`${JSON.stringify({ type: "end", command: commandName, count: result.count })}\n`);
 }
 
 function normalizeSearchOptions(options: Record<string, unknown>): Record<string, string | boolean | undefined> {
@@ -1935,7 +1939,7 @@ program
   .allowUnknownOption(false)
   .configureOutput({
     writeOut: (str) => {
-      process.stdout.write(str);
+      writeStdout(str);
     },
     // Commander errors are rendered in our own catch path.
     writeErr: () => {},
@@ -2119,6 +2123,7 @@ program
   .option("--manage", "List managed extensions with update-check metadata")
   .option("--doctor", "Run consolidated extension diagnostics (summary/deep modes)")
 .option("--adopt", "Adopt an existing unmanaged extension into managed metadata")
+  .option("--adopt-all", "Adopt all unmanaged extensions into managed metadata")
   .option("--activate", "Activate an extension in selected scope settings")
   .option("--deactivate", "Deactivate an extension in selected scope settings")
   .option("--project", "Use project extension scope (default)")
@@ -2141,6 +2146,7 @@ program
         manage: options.manage === true,
         doctor: options.doctor === true,
         adopt: options.adopt === true,
+        adoptAll: options.adoptAll === true,
         activate: options.activate === true,
         deactivate: options.deactivate === true,
         project: options.project === true,
@@ -2517,7 +2523,7 @@ function registerCalendarCommand(): void {
       const outputFormat = resolveCalendarOutputFormat(normalized, globalOptions);
       if (outputFormat === "markdown") {
         if (!globalOptions.quiet) {
-          process.stdout.write(`${renderCalendarMarkdown(result)}\n`);
+          writeStdout(`${renderCalendarMarkdown(result)}\n`);
         }
       } else {
         printResult(result, {
@@ -2558,7 +2564,7 @@ function registerContextCommand(): void {
       const outputFormat = resolveContextOutputFormat(normalized, globalOptions);
       if (outputFormat === "markdown") {
         if (!globalOptions.quiet) {
-          process.stdout.write(`${renderContextMarkdown(result)}\n`);
+          writeStdout(`${renderContextMarkdown(result)}\n`);
         }
       } else {
         printResult(result, {
@@ -3178,7 +3184,7 @@ program
   .option("--env-set <value>", "Set environment variable(s) for linked-test runs (KEY=VALUE, repeatable)", collect)
   .option("--env-clear <value>", "Clear environment variable(s) for linked-test runs (NAME, repeatable)", collect)
   .option("--shared-host-safe", "Apply additive shared-host-safe runtime defaults for linked-test runs")
-  .option("--pm-context <mode>", "PM linked-test context mode: schema|tracker (default: schema)")
+  .option("--pm-context <mode>", "PM linked-test context mode: schema|tracker|auto (default: schema)")
   .option("--fail-on-context-mismatch", "Fail linked PM commands when context item counts differ")
   .option("--fail-on-skipped", "Treat skipped linked tests as dependency failures")
   .option("--require-assertions-for-pm", "Require assertion metadata for linked PM command tests")
@@ -3262,7 +3268,7 @@ program
   .option("--env-set <value>", "Set environment variable(s) for linked-test runs (KEY=VALUE, repeatable)", collect)
   .option("--env-clear <value>", "Clear environment variable(s) for linked-test runs (NAME, repeatable)", collect)
   .option("--shared-host-safe", "Apply additive shared-host-safe runtime defaults for linked-test runs")
-  .option("--pm-context <mode>", "PM linked-test context mode: schema|tracker (default: schema)")
+  .option("--pm-context <mode>", "PM linked-test context mode: schema|tracker|auto (default: schema)")
   .option("--fail-on-context-mismatch", "Fail linked PM commands when context item counts differ")
   .option("--fail-on-skipped", "Treat skipped linked tests as dependency failures")
   .option("--require-assertions-for-pm", "Require assertion metadata for linked PM command tests")
@@ -3590,7 +3596,7 @@ program
     if (globalOptions.json) {
       printResult(result, globalOptions);
     } else if (!globalOptions.quiet) {
-      process.stdout.write(`${result.script}\n`);
+      writeStdout(`${result.script}\n`);
     }
     if (globalOptions.profile) {
       printError(`profile:command=completion took_ms=0`);

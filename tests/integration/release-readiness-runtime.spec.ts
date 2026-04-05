@@ -369,7 +369,7 @@ describe("release readiness runtime coverage", () => {
     });
   });
 
-  it("suppresses unhandled EPIPE stack traces in piped JSON workflows", async () => {
+  it("treats stdout EPIPE as success and suppresses unhandled stack traces", async () => {
     await withTempPmPath(async (context) => {
       const createResult = context.runCli(
         [
@@ -433,7 +433,7 @@ describe("release readiness runtime coverage", () => {
           encoding: "utf8",
         },
       );
-      expect(pipedResult.status).toBe(1);
+      expect(pipedResult.status).toBe(0);
       expect(pipedResult.stderr).not.toContain("Unhandled 'error' event");
       expect(pipedResult.stderr).not.toContain("Error: write EPIPE");
     });

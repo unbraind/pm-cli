@@ -76,10 +76,10 @@ files[14]{path,scope,note}:
   tests/unit/structure-exports.spec.ts,project,Module boundary export checks
   tests/unit/test-all-command.spec.ts,project,runTestAll branch coverage
   vitest.config.ts,project,Vitest coverage gate configuration
-tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,360,null,null,null,null,null,null,null,null,null,null,full 100 percent coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,integration verification for test-all exit code
-  node scripts/run-tests.mjs test -- tests/unit/test-all-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,unit regression for sandbox-linked test execution
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,360,null,null,null,null,null,null,null,null,null,null,null,full 100 percent coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,integration verification for test-all exit code
+  node scripts/run-tests.mjs test -- tests/unit/test-all-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,unit regression for sandbox-linked test execution
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood and validation workflow
   PRD.md,project,authoritative exit-code contract

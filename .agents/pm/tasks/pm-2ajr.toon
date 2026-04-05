@@ -45,7 +45,7 @@ files[4]{path,scope,note}:
   src/cli/commands/validate.ts,project,command reference validation check
   src/cli/main.ts,project,new validate flag wiring
   src/sdk/cli-contracts.ts,project,validate flag schemas
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,validate command reference diagnostics
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,validate command reference diagnostics
 close_reason: default-on command-reference validation implemented and verified
 body: "Scope context: Issue3 Task: Default-on validate command reference check\n\nExecution intent: This task is tracked under pm-br88 with component linked-test-runtime.\n\nCompletion signal: pm validate includes command_references check in default check set and reports stale PM-id reference diagnostics.\n\nGovernance intent: Linked test reliability. Maintain linked files/tests/docs and evidence comments so future agents can reuse this record as authoritative context."

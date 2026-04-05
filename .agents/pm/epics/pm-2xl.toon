@@ -54,9 +54,9 @@ files[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow compliance
   PRD.md,project,milestone 0 completion source
   README.md,project,command surface parity check
-tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,full sandboxed coverage gate
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,release-readiness integration contract
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full sandboxed coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,release-readiness integration contract
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow and evidence protocol
   PRD.md,project,authoritative milestone checklist

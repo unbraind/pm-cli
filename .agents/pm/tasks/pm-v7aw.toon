@@ -50,9 +50,9 @@ files[12]{path,scope,note}:
   tests/unit/completion-command.spec.ts,project,create-mode completion test coverage
   tests/unit/create-command.spec.ts,project,create-mode strict/progressive unit coverage
   tests/unit/pi-agent-extension.spec.ts,project,pi create-mode flag mapping coverage
-tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,issue4 targeted suite
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,Issue4 targeted regression suite
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,null,issue4 targeted suite
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,Issue4 targeted regression suite
 docs[1]{path,scope,note}:
   PRD.md,project,create policy mode contract docs
 close_reason: "Implemented additive create-mode strict|progressive path, documented behavior, and verified via full build/test/coverage/smoke."

@@ -16,6 +16,7 @@ interface NodeLikeError {
 }
 
 let streamErrorHandlersInstalled = false;
+type OutputStreamTarget = "stdout" | "stderr";
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -25,10 +26,31 @@ function isBrokenPipeError(error: unknown): boolean {
   return typeof error === "object" && error !== null && (error as NodeLikeError).code === "EPIPE";
 }
 
-function markBrokenPipeExitCode(): void {
+function markStdoutBrokenPipeExitCode(): void {
+  if (process.exitCode === undefined || process.exitCode === EXIT_CODE.SUCCESS) {
+    process.exitCode = EXIT_CODE.SUCCESS;
+  }
+}
+
+function markStderrBrokenPipeExitCode(): void {
   if (process.exitCode === undefined || process.exitCode === EXIT_CODE.SUCCESS) {
     process.exitCode = EXIT_CODE.GENERIC_FAILURE;
   }
+}
+
+function markBrokenPipeExitCode(target: OutputStreamTarget): void {
+  if (target === "stdout") {
+    markStdoutBrokenPipeExitCode();
+    return;
+  }
+  markStderrBrokenPipeExitCode();
+}
+
+function handleUnhandledStreamError(error: unknown): void {
+  const unhandled = error instanceof Error ? error : new Error(String(error));
+  setImmediate(() => {
+    throw unhandled;
+  });
 }
 
 function installStreamErrorHandlers(): void {
@@ -36,18 +58,46 @@ function installStreamErrorHandlers(): void {
     return;
   }
   streamErrorHandlersInstalled = true;
-  const handleStreamError = (error: unknown): void => {
+  process.stdout.on("error", (error: unknown) => {
     if (isBrokenPipeError(error)) {
-      markBrokenPipeExitCode();
+      markBrokenPipeExitCode("stdout");
       return;
     }
-    const unhandled = error instanceof Error ? error : new Error(String(error));
-    setImmediate(() => {
-      throw unhandled;
-    });
-  };
-  process.stdout.on("error", handleStreamError);
-  process.stderr.on("error", handleStreamError);
+    handleUnhandledStreamError(error);
+  });
+  process.stderr.on("error", (error: unknown) => {
+    if (isBrokenPipeError(error)) {
+      markBrokenPipeExitCode("stderr");
+      return;
+    }
+    handleUnhandledStreamError(error);
+  });
+}
+
+function writeToStream(target: OutputStreamTarget, text: string): boolean {
+  installStreamErrorHandlers();
+  try {
+    if (target === "stdout") {
+      process.stdout.write(text);
+    } else {
+      process.stderr.write(text);
+    }
+    return true;
+  } catch (error: unknown) {
+    if (isBrokenPipeError(error)) {
+      markBrokenPipeExitCode(target);
+      return false;
+    }
+    throw error;
+  }
+}
+
+export function writeStdout(text: string): boolean {
+  return writeToStream("stdout", text);
+}
+
+export function writeStderr(text: string): boolean {
+  return writeToStream("stderr", text);
 }
 
 function renderScalar(value: unknown): string {
@@ -159,16 +209,7 @@ export function printResult(result: unknown, options: OutputOptions): void {
   if (options.quiet) {
     return;
   }
-  installStreamErrorHandlers();
-  try {
-    process.stdout.write(rendered);
-  } catch (error: unknown) {
-    if (isBrokenPipeError(error)) {
-      markBrokenPipeExitCode();
-      return;
-    }
-    throw error;
-  }
+  writeStdout(rendered);
 }
 
 export function printError(message: string): void {
@@ -176,14 +217,5 @@ export function printError(message: string): void {
     message,
   });
   const rendered = override.handled && typeof override.result === "string" ? override.result : message;
-  installStreamErrorHandlers();
-  try {
-    process.stderr.write(rendered.endsWith("\n") ? rendered : `${rendered}\n`);
-  } catch (error: unknown) {
-    if (isBrokenPipeError(error)) {
-      markBrokenPipeExitCode();
-      return;
-    }
-    throw error;
-  }
+  writeStderr(rendered.endsWith("\n") ? rendered : `${rendered}\n`);
 }

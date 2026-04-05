@@ -32,8 +32,8 @@ files[7]{path,scope,note}:
   src/core/shared/constants.ts,project,required-vs-optional-directory-classification
   src/sdk/cli-contracts.ts,project,health-option-contract
   tests/unit/health-command.spec.ts,project,health-optional-dir-regression
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,health-optional-dir-targeted
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,health-optional-dir-targeted
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mnkyw8bf-1e9e7v,test,passed,"2026-04-04T23:32:02.729Z","2026-04-04T23:32:18.075Z","2026-04-04T23:32:18.075Z",null,null,1,0,0,null,null,null
 close_reason: Implemented health optional-directory defaults with strict mode and verified linked/full test coverage.

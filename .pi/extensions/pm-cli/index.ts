@@ -446,6 +446,10 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       pushOption(args, "--github", params.github);
       pushOption(args, "--ref", params.ref);
       return args;
+    case "extension-adopt-all":
+      args.push("extension", "--adopt-all");
+      addExtensionScopeFlag(args, params);
+      return args;
     case "extension-activate":
       args.push("extension", "--activate", requireString(params.target, "target", action));
       addExtensionScopeFlag(args, params);

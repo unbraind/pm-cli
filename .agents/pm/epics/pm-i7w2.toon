@@ -53,9 +53,9 @@ files[12]{path,scope,note}:
   tests/unit/install-command.spec.ts,project,gh-findings-remediation-change
   tests/unit/search-command.spec.ts,project,gh-findings-remediation-change
   tests/unit/test-command.spec.ts,project,gh-findings-remediation-change
-tests[3]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,coverage-gate
-  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,full-regression
-  pnpm exec vitest run tests/unit/install-command.spec.ts tests/integration/cli.integration.spec.ts tests/unit/search-command.spec.ts tests/unit/test-command.spec.ts tests/integration/run-tests-script.integration.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,targeted-cross-platform
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,coverage-gate
+  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full-regression
+  pnpm exec vitest run tests/unit/install-command.spec.ts tests/integration/cli.integration.spec.ts tests/unit/search-command.spec.ts tests/unit/test-command.spec.ts tests/integration/run-tests-script.integration.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,targeted-cross-platform
 close_reason: Planned remediation completed and verified; recurring weekly review task remains open for ongoing monitoring.
 body: Umbrella remediation item for current GitHub findings plus recurring weekly review workflow.

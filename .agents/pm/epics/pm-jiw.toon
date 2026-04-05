@@ -55,8 +55,8 @@ files[3]{path,scope,note}:
   .github/workflows/ci.yml,project,CI release gate matrix
   package.json,project,build and coverage scripts for release gates
   scripts/run-tests.mjs,project,sandbox-safe regression runner
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,null,null,null,null,null,null,null,full coverage gate in sandbox
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,full coverage gate in sandbox
 docs[3]{path,scope,note}:
   AGENTS.md,project,dogfood workflow and verification protocol
   PRD.md,project,authoritative release criteria

@@ -28,6 +28,8 @@ import { PmCliError } from "../shared/errors.js";
 import { orderObject } from "../shared/serialization.js";
 import { compareTimestampStrings, isTimestampLiteral } from "../shared/time.js";
 
+const LINKED_TEST_PM_CONTEXT_MODE_VALUES = new Set(["schema", "tracker", "auto"]);
+
 function normalizePathValue(value: string): string {
   return value.replaceAll("\\", "/");
 }
@@ -508,6 +510,13 @@ function sortTests(values: LinkedTest[] | undefined): LinkedTest[] | undefined {
       path: value.path ? normalizePathValue(value.path) : undefined,
       scope: value.scope,
       timeout_seconds: value.timeout_seconds,
+      pm_context_mode: (() => {
+        const normalized = value.pm_context_mode?.trim().toLowerCase();
+        if (!normalized || !LINKED_TEST_PM_CONTEXT_MODE_VALUES.has(normalized)) {
+          return undefined;
+        }
+        return normalized as LinkedTest["pm_context_mode"];
+      })(),
       env_set: value.env_set
         ? Object.fromEntries(
             Object.entries(value.env_set)
@@ -575,6 +584,8 @@ function sortTests(values: LinkedTest[] | undefined): LinkedTest[] | undefined {
       if (byCommand !== 0) return byCommand;
       const byTimeout = (a.timeout_seconds ?? 0) - (b.timeout_seconds ?? 0);
       if (byTimeout !== 0) return byTimeout;
+      const byPmContext = (a.pm_context_mode ?? "").localeCompare(b.pm_context_mode ?? "");
+      if (byPmContext !== 0) return byPmContext;
       const bySharedHostSafe = Number(Boolean(a.shared_host_safe)) - Number(Boolean(b.shared_host_safe));
       if (bySharedHostSafe !== 0) return bySharedHostSafe;
       const byEnvClear = JSON.stringify(a.env_clear ?? []).localeCompare(JSON.stringify(b.env_clear ?? []));

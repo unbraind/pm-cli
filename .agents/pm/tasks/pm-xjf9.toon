@@ -50,8 +50,8 @@ notes[1]{created_at,author,text}:
   "2026-04-04T21:28:06.939Z",codex-agent,"This run applies PMBOK,ISO 21502,Scrum commitment clarity,and DORA-oriented delivery evidence conventions to tracker metadata quality."
 files[1]{path,scope,note}:
   AGENTS.md,project,governance operating rules
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  pm validate --check-metadata --check-resolution --check-command-references --check-history-drift --json,null,project,1200,null,null,null,null,null,null,null,null,null,null,core governance checks excluding known files false-positive path
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  pm validate --check-metadata --check-resolution --check-command-references --check-history-drift --json,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,core governance checks excluding known files false-positive path
 test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mnkvhlcz-2b5noj,test,failed,"2026-04-04T21:56:56.271Z","2026-04-04T21:56:56.291Z","2026-04-04T21:56:56.291Z",null,null,0,1,0,null,null,null
   test-local-mnkvhxe0-b9l4ej,test,failed,"2026-04-04T21:57:11.391Z","2026-04-04T21:57:11.880Z","2026-04-04T21:57:11.880Z",null,null,0,1,0,null,null,null

@@ -389,6 +389,11 @@ describe("runTest", () => {
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
+      await expect(
+        runTest(id, { add: ["command=node --version,scope=project,pm_context_mode=invalid"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
       await expect(runTest(id, { remove: ["   "] }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
@@ -429,7 +434,7 @@ describe("runTest", () => {
         id,
         {
           add: [
-            "command=node --version,scope=project,path=tests/path-metadata.spec.ts,assert_stdout_contains=v,assert_stdout_regex=v\\\\d+,assert_stderr_contains=warn,assert_stderr_regex=warn,assert_stdout_min_lines=0,assert_json_field_equals=status=ok,assert_json_field_gte=count=1",
+            "command=node --version,scope=project,path=tests/path-metadata.spec.ts,pm_context_mode=auto,assert_stdout_contains=v,assert_stdout_regex=v\\\\d+,assert_stderr_contains=warn,assert_stderr_regex=warn,assert_stdout_min_lines=0,assert_json_field_equals=status=ok,assert_json_field_gte=count=1",
           ],
           message: "seed assertion metadata",
         },
@@ -444,6 +449,7 @@ describe("runTest", () => {
         assert_stdout_min_lines: 0,
         assert_json_field_equals: { status: "ok" },
         assert_json_field_gte: { count: 1 },
+        pm_context_mode: "auto",
       });
 
       const removedByPath = await runTest(
@@ -771,6 +777,7 @@ describe("runTest", () => {
           add: [
             "command=node --version,scope=project,timeout=2.9,note=version",
             "command=node --version,scope=project,timeout_seconds=2,note=duplicate",
+            "command=node --version,scope=project,timeout_seconds=2,pm_context_mode=tracker,note=tracker-variant",
             "command=node -e \"process.stdout.write('path-metadata-token')\",path=tests/example.spec.ts,note=implicit project scope",
           ],
           message: "add linked tests",
@@ -779,10 +786,15 @@ describe("runTest", () => {
       );
 
       expect(added.changed).toBe(true);
-      expect(added.count).toBe(2);
-      const commandEntry = added.tests.find((entry) => entry.command === "node --version");
+      expect(added.count).toBe(3);
+      const commandEntry = added.tests.find((entry) => entry.command === "node --version" && !entry.pm_context_mode);
       expect(commandEntry?.scope).toBe("project");
       expect(commandEntry?.timeout_seconds).toBe(2);
+      const trackerContextCommandEntry = added.tests.find(
+        (entry) => entry.command === "node --version" && entry.pm_context_mode === "tracker",
+      );
+      expect(trackerContextCommandEntry?.scope).toBe("project");
+      expect(trackerContextCommandEntry?.timeout_seconds).toBe(2);
       const pathEntry = added.tests.find((entry) => entry.path === "tests/example.spec.ts");
       expect(pathEntry?.scope).toBe("project");
 
@@ -795,7 +807,7 @@ describe("runTest", () => {
         { path: context.pmPath },
       );
       expect(noOpRemoval.changed).toBe(true);
-      expect(noOpRemoval.count).toBe(2);
+      expect(noOpRemoval.count).toBe(3);
 
       const removed = await runTest(
         id,
@@ -1109,6 +1121,60 @@ describe("runTest", () => {
       expect(trackerMode.run_results[0]?.status).toBe("passed");
       expect(trackerMode.run_results[0]?.execution_context?.pm_context_mode).toBe("tracker");
       expect(trackerMode.run_results[0]?.execution_context?.mismatch_detected).toBe(false);
+
+      const autoMode = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "30",
+          pmContext: "auto",
+          failOnContextMismatch: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(autoMode.run_results[0]?.status).toBe("passed");
+      expect(autoMode.run_results[0]?.execution_context?.pm_context_mode).toBe("tracker");
+      expect(autoMode.run_results[0]?.execution_context?.mismatch_detected).toBe(false);
+
+      await overwriteTaskTests(context, id, [
+        {
+          command: "node dist/cli.js list-all --type Task --limit 200 --json",
+          scope: "project",
+          pm_context_mode: "tracker",
+        },
+      ]);
+      const perTestTracker = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "30",
+        },
+        { path: context.pmPath },
+      );
+      expect(perTestTracker.run_results[0]?.status).toBe("passed");
+      expect(perTestTracker.run_results[0]?.execution_context?.pm_context_mode).toBe("tracker");
+      expect(perTestTracker.run_results[0]?.execution_context?.mismatch_detected).toBe(false);
+
+      await overwriteTaskTests(context, id, [
+        {
+          command: "node dist/cli.js list-all --type Task --limit 200 --json",
+          scope: "project",
+          pm_context_mode: "schema",
+        },
+      ]);
+      const perTestSchemaOverride = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "30",
+          pmContext: "tracker",
+        },
+        { path: context.pmPath },
+      );
+      expect(perTestSchemaOverride.run_results[0]?.status).toBe("failed");
+      expect(perTestSchemaOverride.run_results[0]?.execution_context?.pm_context_mode).toBe("schema");
+      expect(perTestSchemaOverride.run_results[0]?.execution_context?.mismatch_detected).toBe(true);
+      expect(perTestSchemaOverride.run_results[0]?.error ?? "").toContain("context mismatch");
     });
   });
 

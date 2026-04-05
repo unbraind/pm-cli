@@ -24,8 +24,9 @@ const DEFAULT_LINKED_TEST_HEARTBEAT_INTERVAL_MS = 10000;
 const MAX_LINKED_TEST_COMMAND_LABEL_LENGTH = 120;
 const LINKED_TEST_PROTECTED_ENV_KEYS = new Set(["PM_PATH", "PM_GLOBAL_PATH", "FORCE_COLOR"]);
 const LINKED_TEST_ENV_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
-const PM_CONTEXT_MODE_VALUES = ["schema", "tracker"] as const;
+const PM_CONTEXT_MODE_VALUES = ["schema", "tracker", "auto"] as const;
 type LinkedTestPmContextMode = (typeof PM_CONTEXT_MODE_VALUES)[number];
+type ResolvedLinkedTestPmContextMode = Exclude<LinkedTestPmContextMode, "auto">;
 const LINKED_TEST_TRACKER_DIRS_TO_SKIP = new Set(["locks", "extensions"]);
 const LINKED_TEST_ITEM_COUNT_DIRS_TO_SKIP = new Set(["history", "index", "search", "extensions", "locks"]);
 const LINKED_TEST_INFRA_COLLISION_PATTERNS = [
@@ -398,6 +399,23 @@ function parseLinkedTestAssertionGteMap(raw: string | undefined, optionName: str
   return Object.keys(values).length > 0 ? values : undefined;
 }
 
+function parseLinkedTestContextModeValue(
+  raw: string | undefined,
+  optionName: string,
+): LinkedTest["pm_context_mode"] | undefined {
+  if (!raw || raw.trim().length === 0) {
+    return undefined;
+  }
+  const normalized = raw.trim().toLowerCase();
+  if ((PM_CONTEXT_MODE_VALUES as readonly string[]).includes(normalized)) {
+    return normalized as LinkedTest["pm_context_mode"];
+  }
+  throw new PmCliError(
+    `${optionName} pm_context_mode must be one of: ${PM_CONTEXT_MODE_VALUES.join(", ")}`,
+    EXIT_CODE.USAGE,
+  );
+}
+
 function parsePmContextMode(raw: string | undefined): LinkedTestPmContextMode {
   if (!raw) {
     return "schema";
@@ -410,6 +428,26 @@ function parsePmContextMode(raw: string | undefined): LinkedTestPmContextMode {
     `Invalid --pm-context value "${raw}". Expected one of: ${PM_CONTEXT_MODE_VALUES.join(", ")}`,
     EXIT_CODE.USAGE,
   );
+}
+
+function resolveLinkedTestRequestedContextMode(
+  linkedTest: LinkedTest,
+  runLevelMode: LinkedTestPmContextMode,
+): LinkedTestPmContextMode {
+  if (typeof linkedTest.pm_context_mode !== "string" || linkedTest.pm_context_mode.trim().length === 0) {
+    return runLevelMode;
+  }
+  return parsePmContextMode(linkedTest.pm_context_mode);
+}
+
+function resolveLinkedTestEffectiveContextMode(
+  requestedMode: LinkedTestPmContextMode,
+  isPmTrackerReadCommand: boolean,
+): ResolvedLinkedTestPmContextMode {
+  if (requestedMode === "auto") {
+    return isPmTrackerReadCommand ? "tracker" : "schema";
+  }
+  return requestedMode;
 }
 
 function hasLinkedTestAssertions(linkedTest: LinkedTest): boolean {
@@ -932,12 +970,14 @@ function parseAddEntries(raw: string[] | undefined): LinkedTest[] {
       timeoutRaw === undefined ? undefined : Math.floor(parseOptionalNumber(timeoutRaw, "timeout_seconds"));
     const envSet = parseLinkedTestEnvSetValue(kv.env_set?.trim(), "--add");
     const envClear = parseLinkedTestEnvClearValue(kv.env_clear?.trim(), "--add");
+    const pmContextMode = parseLinkedTestContextModeValue(kv.pm_context_mode?.trim(), "--add");
     const sharedHostSafe = parseLinkedTestBooleanValue(kv.shared_host_safe?.trim(), "--add", "shared_host_safe");
     return {
       command,
       path: filePath,
       scope: ensureScope(kv.scope),
       timeout_seconds: timeoutSeconds,
+      pm_context_mode: pmContextMode,
       env_set: envSet,
       env_clear: envClear,
       shared_host_safe: sharedHostSafe,
@@ -1632,53 +1672,66 @@ export async function runLinkedTests(
 ): Promise<TestRunResult[]> {
   const results: TestRunResult[] = [];
   const sandboxRoot = await mkdtemp(path.join(tmpdir(), "pm-linked-test-"));
-  const sandboxPmPath = path.join(sandboxRoot, "project", ".agents", "pm");
-  const sandboxGlobalPath = path.join(sandboxRoot, "global");
-  const pmContextMode = parsePmContextMode(options?.pmContext);
+  const schemaSandboxPmPath = path.join(sandboxRoot, "schema", "project", ".agents", "pm");
+  const schemaSandboxGlobalPath = path.join(sandboxRoot, "schema", "global");
+  const trackerSandboxPmPath = path.join(sandboxRoot, "tracker", "project", ".agents", "pm");
+  const trackerSandboxGlobalPath = path.join(sandboxRoot, "tracker", "global");
+  const runLevelPmContextMode = parsePmContextMode(options?.pmContext);
   const progressMode: LinkedTestProgressMode = options?.progress === true ? "always" : "auto";
   const runtimeDirectives = resolveRuntimeDirectives(options?.envSet, options?.envClear, options?.sharedHostSafe);
   let sourceProjectItemCount = 0;
   let sourceGlobalItemCount = 0;
-  let sandboxProjectItemCount = 0;
-  let sandboxGlobalItemCount = 0;
+  let schemaSandboxProjectItemCount = 0;
+  let schemaSandboxGlobalItemCount = 0;
+  let trackerSandboxProjectItemCount = 0;
+  let trackerSandboxGlobalItemCount = 0;
   const sourceRoots = options?.sourceRoots;
   const projectExtensionsSeeded = Boolean(sourceRoots);
   const globalExtensionsSeeded = Boolean(sourceRoots);
 
   try {
-    await runInit(undefined, { path: sandboxPmPath });
-    await runInit(undefined, { path: sandboxGlobalPath });
+    await runInit(undefined, { path: schemaSandboxPmPath });
+    await runInit(undefined, { path: schemaSandboxGlobalPath });
+    await runInit(undefined, { path: trackerSandboxPmPath });
+    await runInit(undefined, { path: trackerSandboxGlobalPath });
     if (sourceRoots) {
-      await seedLinkedTestSandbox(sandboxPmPath, sandboxGlobalPath, sourceRoots);
-      if (pmContextMode === "tracker") {
-        await seedLinkedTestTrackerData(sourceRoots.projectPmRoot, sandboxPmPath);
-        await seedLinkedTestTrackerData(sourceRoots.globalPmRoot, sandboxGlobalPath);
-      }
+      await seedLinkedTestSandbox(schemaSandboxPmPath, schemaSandboxGlobalPath, sourceRoots);
+      await seedLinkedTestSandbox(trackerSandboxPmPath, trackerSandboxGlobalPath, sourceRoots);
+      await seedLinkedTestTrackerData(sourceRoots.projectPmRoot, trackerSandboxPmPath);
+      await seedLinkedTestTrackerData(sourceRoots.globalPmRoot, trackerSandboxGlobalPath);
       sourceProjectItemCount = await countLinkedTestItemFiles(sourceRoots.projectPmRoot);
       sourceGlobalItemCount = await countLinkedTestItemFiles(sourceRoots.globalPmRoot);
     }
-    sandboxProjectItemCount = await countLinkedTestItemFiles(sandboxPmPath);
-    sandboxGlobalItemCount = await countLinkedTestItemFiles(sandboxGlobalPath);
+    schemaSandboxProjectItemCount = await countLinkedTestItemFiles(schemaSandboxPmPath);
+    schemaSandboxGlobalItemCount = await countLinkedTestItemFiles(schemaSandboxGlobalPath);
+    trackerSandboxProjectItemCount = await countLinkedTestItemFiles(trackerSandboxPmPath);
+    trackerSandboxGlobalItemCount = await countLinkedTestItemFiles(trackerSandboxGlobalPath);
 
     const buildExecutionContext = (
-      command: string | undefined,
+      isPmCommand: boolean,
+      isPmTrackerReadCommand: boolean,
+      effectivePmContextMode: ResolvedLinkedTestPmContextMode,
     ): NonNullable<TestRunResult["execution_context"]> => {
-      const isPmCommand = typeof command === "string" && command.length > 0 ? commandInvokesPmCli(command) : false;
-      const isPmTrackerReadCommand =
-        isPmCommand && typeof command === "string" && command.length > 0 ? commandInvokesPmTrackerReadCommand(command) : false;
-      const mismatchDetected = isPmCommand && sourceProjectItemCount !== sandboxProjectItemCount;
+      const selectedSandboxProjectPmPath = effectivePmContextMode === "tracker" ? trackerSandboxPmPath : schemaSandboxPmPath;
+      const selectedSandboxGlobalPmPath =
+        effectivePmContextMode === "tracker" ? trackerSandboxGlobalPath : schemaSandboxGlobalPath;
+      const selectedSandboxProjectItemCount =
+        effectivePmContextMode === "tracker" ? trackerSandboxProjectItemCount : schemaSandboxProjectItemCount;
+      const selectedSandboxGlobalItemCount =
+        effectivePmContextMode === "tracker" ? trackerSandboxGlobalItemCount : schemaSandboxGlobalItemCount;
+      const mismatchDetected = isPmCommand && sourceProjectItemCount !== selectedSandboxProjectItemCount;
       return {
-        pm_context_mode: pmContextMode,
+        pm_context_mode: effectivePmContextMode,
         is_pm_command: isPmCommand,
         is_pm_tracker_read_command: isPmTrackerReadCommand,
         source_project_pm_path: sourceRoots?.projectPmRoot ?? "",
-        sandbox_project_pm_path: sandboxPmPath,
+        sandbox_project_pm_path: selectedSandboxProjectPmPath,
         source_global_pm_path: sourceRoots?.globalPmRoot ?? "",
-        sandbox_global_pm_path: sandboxGlobalPath,
+        sandbox_global_pm_path: selectedSandboxGlobalPmPath,
         source_project_item_count: sourceProjectItemCount,
-        sandbox_project_item_count: sandboxProjectItemCount,
+        sandbox_project_item_count: selectedSandboxProjectItemCount,
         source_global_item_count: sourceGlobalItemCount,
-        sandbox_global_item_count: sandboxGlobalItemCount,
+        sandbox_global_item_count: selectedSandboxGlobalItemCount,
         mismatch_detected: mismatchDetected,
         project_extensions_seeded: projectExtensionsSeeded,
         global_extensions_seeded: globalExtensionsSeeded,
@@ -1687,7 +1740,17 @@ export async function runLinkedTests(
 
     for (let index = 0; index < tests.length; index += 1) {
       const linkedTest = tests[index];
-      const executionContext = buildExecutionContext(linkedTest.command);
+      const isPmCommand =
+        typeof linkedTest.command === "string" && linkedTest.command.length > 0
+          ? commandInvokesPmCli(linkedTest.command)
+          : false;
+      const isPmTrackerReadCommand =
+        isPmCommand && typeof linkedTest.command === "string" && linkedTest.command.length > 0
+          ? commandInvokesPmTrackerReadCommand(linkedTest.command)
+          : false;
+      const requestedPmContextMode = resolveLinkedTestRequestedContextMode(linkedTest, runLevelPmContextMode);
+      const effectivePmContextMode = resolveLinkedTestEffectiveContextMode(requestedPmContextMode, isPmTrackerReadCommand);
+      const executionContext = buildExecutionContext(isPmCommand, isPmTrackerReadCommand, effectivePmContextMode);
       if (!linkedTest.command) {
         results.push({
           command: linkedTest.command,
@@ -1756,8 +1819,8 @@ export async function runLinkedTests(
         applySharedHostSafeDefaults(executionEnv);
       }
       executionEnv.FORCE_COLOR = "0";
-      executionEnv.PM_PATH = sandboxPmPath;
-      executionEnv.PM_GLOBAL_PATH = sandboxGlobalPath;
+      executionEnv.PM_PATH = executionContext.sandbox_project_pm_path;
+      executionEnv.PM_GLOBAL_PATH = executionContext.sandbox_global_pm_path;
       const execution = await runLinkedTestCommand(
         linkedTest.command,
         timeoutMs,
@@ -1848,7 +1911,11 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
         const next = [...(document.front_matter.tests ?? [])];
         for (const add of adds) {
           const exists = next.some(
-            (entry) => entry.command === add.command && entry.path === add.path && entry.scope === add.scope,
+            (entry) =>
+              entry.command === add.command &&
+              entry.path === add.path &&
+              entry.scope === add.scope &&
+              entry.pm_context_mode === add.pm_context_mode,
           );
           if (!exists) {
             next.push(add);

@@ -282,36 +282,36 @@ files[61]{path,scope,note}:
   tests/unit/todos-extension.spec.ts,project,branch coverage for todos import-export internals
   tests/unit/update-command.spec.ts,project,unit coverage for runUpdate branch matrix
   vitest.config.ts,project,coverage thresholds and scope
-tests[29]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,300,null,null,null,null,null,null,null,null,null,null,Coverage and test gate in sandbox
-  node scripts/run-tests.mjs test,null,project,300,null,null,null,null,null,null,null,null,null,null,sandboxed regression run
-  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,workflow contract regression test
-  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,todos extension-only integration regression
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,release baseline contract regression
-  node scripts/run-tests.mjs test -- tests/unit/beads-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,targeted beads command regression
-  node scripts/run-tests.mjs test -- tests/unit/builtin-extension-entrypoints.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,targeted built-in entrypoint unit tests
-  node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,claim-release unit regression
-  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,targeted comments command regression
-  node scripts/run-tests.mjs test -- tests/unit/core-item-lock-coverage.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,targeted lock/item-format coverage regression
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,targeted create command regression
-  node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,targeted shared-time branch regression
-  node scripts/run-tests.mjs test -- tests/unit/extensions-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,targeted extension runtime wrapper regression
-  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,targeted files/docs unit regression
-  node scripts/run-tests.mjs test -- tests/unit/fs-utils.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,targeted fs-utils regression
-  node scripts/run-tests.mjs test -- tests/unit/get-append-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,targeted get/append regression
-  node scripts/run-tests.mjs test -- tests/unit/item-store.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,targeted item-store regression
-  node scripts/run-tests.mjs test -- tests/unit/output.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,targeted output module regression
-  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,targeted settings branch coverage
-  node scripts/run-tests.mjs test -- tests/unit/shared-constants-errors.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,targeted shared module unit test
-  node scripts/run-tests.mjs test -- tests/unit/store-paths.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,targeted store paths unit regression
-  node scripts/run-tests.mjs test -- tests/unit/structure-exports.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,targeted structure exports regression
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,targeted test command regression
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,Sandbox-safe guard regression
-  node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,targeted todos internals regression
-  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,targeted update command regression
-  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,Compile gate for CI parity
-  pnpm typecheck,null,project,180,null,null,null,null,null,null,null,null,null,null,Static type validation
-  null,tests/unit/init-command.spec.ts,project,null,null,null,null,null,null,null,null,null,null,null,targeted init branch coverage
+tests[29]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,300,null,null,null,null,null,null,null,null,null,null,null,Coverage and test gate in sandbox
+  node scripts/run-tests.mjs test,null,project,300,null,null,null,null,null,null,null,null,null,null,null,sandboxed regression run
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,workflow contract regression test
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,todos extension-only integration regression
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-contract.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,release baseline contract regression
+  node scripts/run-tests.mjs test -- tests/unit/beads-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted beads command regression
+  node scripts/run-tests.mjs test -- tests/unit/builtin-extension-entrypoints.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted built-in entrypoint unit tests
+  node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,claim-release unit regression
+  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted comments command regression
+  node scripts/run-tests.mjs test -- tests/unit/core-item-lock-coverage.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,targeted lock/item-format coverage regression
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted create command regression
+  node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted shared-time branch regression
+  node scripts/run-tests.mjs test -- tests/unit/extensions-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted extension runtime wrapper regression
+  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted files/docs unit regression
+  node scripts/run-tests.mjs test -- tests/unit/fs-utils.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,targeted fs-utils regression
+  node scripts/run-tests.mjs test -- tests/unit/get-append-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted get/append regression
+  node scripts/run-tests.mjs test -- tests/unit/item-store.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted item-store regression
+  node scripts/run-tests.mjs test -- tests/unit/output.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted output module regression
+  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,targeted settings branch coverage
+  node scripts/run-tests.mjs test -- tests/unit/shared-constants-errors.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,targeted shared module unit test
+  node scripts/run-tests.mjs test -- tests/unit/store-paths.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted store paths unit regression
+  node scripts/run-tests.mjs test -- tests/unit/structure-exports.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted structure exports regression
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted test command regression
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/integration/release-readiness-contract.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,Sandbox-safe guard regression
+  node scripts/run-tests.mjs test -- tests/unit/todos-extension.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted todos internals regression
+  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted update command regression
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,Compile gate for CI parity
+  pnpm typecheck,null,project,180,null,null,null,null,null,null,null,null,null,null,null,Static type validation
+  null,tests/unit/init-command.spec.ts,project,null,null,null,null,null,null,null,null,null,null,null,null,targeted init branch coverage
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow contract
   PRD.md,project,governing spec

@@ -54,11 +54,11 @@ learnings[1]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/core/output/command-aware.ts,project,Command-aware output envelope builder
   src/core/output/output.ts,project,Primary output renderer
-tests[4]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,4800,null,null,null,null,null,null,null,null,null,null,coverage baseline after TOON refactor
-  node scripts/run-tests.mjs test,null,project,3600,null,null,null,null,null,null,null,null,null,null,full unit+integration regression sweep
-  node scripts/run-tests.mjs test -- tests/unit/output.spec.ts tests/integration/cli.integration.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,targeted sparse TOON regression
-  node scripts/run-tests.mjs test -- tests/unit/output.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,Output regressions
+tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,4800,null,null,null,null,null,null,null,null,null,null,null,coverage baseline after TOON refactor
+  node scripts/run-tests.mjs test,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,full unit+integration regression sweep
+  node scripts/run-tests.mjs test -- tests/unit/output.spec.ts tests/integration/cli.integration.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,targeted sparse TOON regression
+  node scripts/run-tests.mjs test -- tests/unit/output.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,Output regressions
 docs[5]{path,scope,note}:
   CHANGELOG.md,project,record sparse TOON behavior change
   docs/ARCHITECTURE.md,project,update output pipeline architecture notes

@@ -567,13 +567,19 @@ describe("runHealth", () => {
 
       const health = await runHealth({ path: context.pmPath });
       expect(health.ok).toBe(false);
-      expect(health.warnings).toEqual(["extension_load_failed:project:boom-ext"]);
+      expect(health.warnings).toEqual([
+        "extension_load_failed:project:boom-ext",
+        "extension_update_health_partial_coverage:skipped_unmanaged:2",
+      ]);
 
       const extensionCheck = health.checks.find((check) => check.name === "extensions");
       expect(extensionCheck?.status).toBe("warn");
       expect(extensionCheck?.details).toMatchObject({
         disabled_by_flag: false,
-        warnings: ["extension_load_failed:project:boom-ext"],
+        warnings: [
+          "extension_load_failed:project:boom-ext",
+          "extension_update_health_partial_coverage:skipped_unmanaged:2",
+        ],
         failed: [
           expect.objectContaining({
             layer: "project",
@@ -582,7 +588,7 @@ describe("runHealth", () => {
         ],
         triage: {
           status: "warn",
-          warning_count: 1,
+          warning_count: 2,
           load_failure_count: 1,
           activation_failure_count: 0,
         },
@@ -651,17 +657,23 @@ describe("runHealth", () => {
 
       const health = await runHealth({ path: context.pmPath });
       expect(health.ok).toBe(false);
-      expect(health.warnings).toEqual(["extension_activate_failed:project:activate-boom-ext"]);
+      expect(health.warnings).toEqual([
+        "extension_activate_failed:project:activate-boom-ext",
+        "extension_update_health_partial_coverage:skipped_unmanaged:2",
+      ]);
 
       const extensionCheck = health.checks.find((check) => check.name === "extensions");
       expect(extensionCheck?.status).toBe("warn");
       expect(extensionCheck?.details).toMatchObject({
         disabled_by_flag: false,
         failed: [],
-        warnings: ["extension_activate_failed:project:activate-boom-ext"],
+        warnings: [
+          "extension_activate_failed:project:activate-boom-ext",
+          "extension_update_health_partial_coverage:skipped_unmanaged:2",
+        ],
         triage: {
           status: "warn",
-          warning_count: 1,
+          warning_count: 2,
           load_failure_count: 0,
           activation_failure_count: 1,
         },
@@ -795,6 +807,7 @@ describe("runHealth", () => {
         "extension_migration_pending:project:a-ext:migration-002",
         "extension_migration_pending:project:a-ext:zzz-migrate",
         "extension_migration_pending:project:b-ext:bbb-migrate",
+        "extension_update_health_partial_coverage:skipped_unmanaged:3",
       ]);
 
       const extensionCheck = health.checks.find((check) => check.name === "extensions");
@@ -806,6 +819,7 @@ describe("runHealth", () => {
           "extension_migration_pending:project:a-ext:migration-002",
           "extension_migration_pending:project:a-ext:zzz-migrate",
           "extension_migration_pending:project:b-ext:bbb-migrate",
+          "extension_update_health_partial_coverage:skipped_unmanaged:3",
         ],
         activation: {
           migration_status: {
@@ -898,6 +912,7 @@ describe("runHealth", () => {
       expect(health.warnings).toEqual([
         "extension_migration_failed:project:fallback-ext:failed-message",
         "extension_migration_pending:project:fallback-ext:migration-001",
+        "extension_update_health_partial_coverage:skipped_unmanaged:1",
       ]);
 
       const extensionCheck = health.checks.find((check) => check.name === "extensions");

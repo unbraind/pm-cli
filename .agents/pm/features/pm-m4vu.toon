@@ -46,8 +46,8 @@ notes[1]{created_at,author,text}:
   "2026-04-03T09:33:47.173Z",codex-agent,Will change update runtime plus schema/contract/help/completion/wrapper surfaces.
 files[1]{path,scope,note}:
   src/cli/commands/update.ts,project,primary runtime logic
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,targeted update regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,targeted update regression
 docs[1]{path,scope,note}:
   PRD.md,project,status and close_reason contract
 close_reason: "Feature delivered: update close_reason flag support and reopen auto-clear behavior with docs/contracts/tests parity."

@@ -36,8 +36,8 @@ notes[1]{created_at,author,text}:
   "2026-04-03T15:41:49.872Z",codex-agent,Track follow-up as controlled-breaking workstream focused on agent-first machine surfaces.
 files[1]{path,scope,note}:
   src/cli/main.ts,project,command routing and help/error dispatch
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,full regression baseline
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full regression baseline
 docs[1]{path,scope,note}:
   README.md,project,user-facing behavior contract
 close_reason: "Epic scope complete: agent-first CLI UX v3 follow-up implemented and verified."

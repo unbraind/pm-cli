@@ -106,6 +106,7 @@ export const PM_TOOL_ACTIONS = [
   "extension-manage",
   "extension-doctor",
   "extension-adopt",
+  "extension-adopt-all",
   "extension-activate",
   "extension-deactivate",
   "create",
@@ -878,7 +879,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   envClear: { type: "array", items: { type: "string" } },
   sharedHostSafe: { type: "boolean" },
   detail: { type: "string", enum: ["summary", "deep"] },
-  pmContext: { type: "string", enum: ["schema", "tracker"] },
+  pmContext: { type: "string", enum: ["schema", "tracker", "auto"] },
   failOnContextMismatch: { type: "boolean" },
   failOnSkipped: { type: "boolean" },
   requireAssertionsForPm: { type: "boolean" },
@@ -987,6 +988,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   "extension-manage": { optional: ["scope"] },
   "extension-doctor": { optional: ["scope", "detail"] },
   "extension-adopt": { required: ["target"], optional: ["scope", "github", "ref"] },
+  "extension-adopt-all": { optional: ["scope"] },
   "extension-activate": { required: ["target"], optional: ["scope"] },
   "extension-deactivate": { required: ["target"], optional: ["scope"] },
   create: {
@@ -1237,8 +1239,9 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     description: "Apply additive shared-host-safe runtime defaults during linked-test execution.",
   },
   pmContext: {
-    description: "PM linked-test context mode (schema keeps isolated tracker data; tracker seeds source tracker data).",
-    examples: ["schema", "tracker"],
+    description:
+      "PM linked-test context mode (schema keeps isolated tracker data; tracker seeds source tracker data; auto uses tracker for PM tracker-read linked commands).",
+    examples: ["schema", "tracker", "auto"],
   },
   failOnContextMismatch: {
     description: "Fail linked PM command runs when source and sandbox tracker item counts differ.",

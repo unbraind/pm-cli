@@ -36,6 +36,7 @@ const FILE_SCAN_ROOT_FILES = [
 ] as const;
 const DIRECTORY_IGNORE_SET = new Set(["node_modules", ".git", ".cursor", ".agents", "dist", "coverage"]);
 const RESOLUTION_FIELD_KEYS = ["resolution", "expected_result", "actual_result"] as const;
+type ResolutionFieldKey = (typeof RESOLUTION_FIELD_KEYS)[number];
 const VALIDATE_FILE_SCAN_MODES = ["default", "tracked-all", "tracked-all-strict"] as const;
 const GIT_LS_FILES_MAX_BUFFER = 32 * 1024 * 1024;
 const execFileAsync = promisify(execFile);
@@ -268,6 +269,25 @@ function summarizeList(values: string[], limit = 200): { values: string[]; trunc
   /* c8 ignore stop */
 }
 
+const RESOLUTION_REMEDIATION_FLAG_BY_FIELD: Record<ResolutionFieldKey, string> = {
+  resolution: "--resolution",
+  expected_result: "--expected-result",
+  actual_result: "--actual-result",
+};
+
+const RESOLUTION_REMEDIATION_PLACEHOLDER_BY_FIELD: Record<ResolutionFieldKey, string> = {
+  resolution: "Describe how this item was resolved",
+  expected_result: "Describe the expected result",
+  actual_result: "Describe the actual result",
+};
+
+function buildResolutionRemediationCommand(row: { id: string; missing_fields: ResolutionFieldKey[] }): string {
+  const fieldArguments = row.missing_fields
+    .map((field) => `${RESOLUTION_REMEDIATION_FLAG_BY_FIELD[field]} \"${RESOLUTION_REMEDIATION_PLACEHOLDER_BY_FIELD[field]}\"`)
+    .join(" ");
+  return `pm update ${row.id} ${fieldArguments} --message \"Backfill resolution metadata\"`;
+}
+
 function resolveRequestedChecks(options: ValidateCommandOptions): Set<ValidateCheckName> {
   const requested = new Set<ValidateCheckName>();
   if (options.checkMetadata) {
@@ -363,7 +383,7 @@ function buildMetadataCheck(items: ItemWithBody[]): { check: ValidateCheck; warn
 
 function buildResolutionCheck(items: ItemWithBody[]): { check: ValidateCheck; warnings: string[] } {
   const closedItems = items.filter((item) => item.status === "closed");
-  const missingResolutionRows: Array<{ id: string; missing_fields: string[] }> = [];
+  const missingResolutionRows: Array<{ id: string; missing_fields: ResolutionFieldKey[] }> = [];
 
   for (const item of closedItems) {
     const missingFields = RESOLUTION_FIELD_KEYS.filter((field) => !toNonEmptyString(item[field]));
@@ -379,6 +399,8 @@ function buildResolutionCheck(items: ItemWithBody[]): { check: ValidateCheck; wa
   const warnings =
     missingResolutionRows.length > 0 ? [`validate_resolution_missing_fields:${missingResolutionRows.length}`] : [];
   const summarizedRows = summarizeList(missingResolutionRows.map((row) => `${row.id}:${row.missing_fields.join(",")}`));
+  const remediationHints = missingResolutionRows.map((row) => buildResolutionRemediationCommand(row));
+  const summarizedHints = summarizeList(remediationHints);
   return {
     check: {
       name: "resolution",
@@ -388,6 +410,8 @@ function buildResolutionCheck(items: ItemWithBody[]): { check: ValidateCheck; wa
         missing_resolution_items: missingResolutionRows.length,
         missing_resolution_rows: summarizedRows.values,
         missing_resolution_rows_truncated: summarizedRows.truncated,
+        missing_resolution_remediation_hints: summarizedHints.values,
+        missing_resolution_remediation_hints_truncated: summarizedHints.truncated,
       },
     },
     warnings,

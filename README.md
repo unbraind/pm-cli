@@ -248,9 +248,10 @@ The vectorization ledger is also refreshed during `pm reindex --mode semantic|hy
 - `tracked-all-strict` emits explicit strict-coverage visibility fields in file-check details (`strict_mode_forces_pm_internals`, `strict_mode_forces_pm_internals_notice`) and warning `validate_files_tracked_all_strict_forces_pm_internals` when internals were force-enabled.
 - File-check details report filtered candidate counts (`candidate_total`, `candidate_scanned`) plus raw pre-filter counts (`candidate_total_raw`, `candidate_scanned_raw`), `pm_internal_excluded_count`, and structured `excluded_by_reason` summaries when paths are filtered.
 - Command-reference details report referenced PM IDs and stale-reference rows; stale rows emit `validate_command_references_stale_pm_ids:<count>` warnings.
+- Resolution-check details now include default remediation hint templates (`pm update <id> ...`) for missing `resolution`/`expected_result`/`actual_result` fields.
 - `--strict-exit` (alias `--fail-on-warn`) returns non-zero exit (`1`) when validation warnings are present (`ok=false`).
 - Returns deterministic TOON/JSON output suitable for review or automation pipelines.
-- Output writers treat broken pipes (`EPIPE`) as expected shell behavior, so early-terminating pipelines do not emit unhandled Node stack traces.
+- Output writers treat broken pipes (`EPIPE`) as expected shell behavior: stdout `EPIPE` exits successfully (for pipeline-friendly reads) while stderr `EPIPE` remains non-zero.
 
 ## Missing History Stream Policy
 
@@ -432,14 +433,14 @@ For `pm create` log-seed flags (`--comment`, `--note`, `--learning`), only `auth
 - `pm update` intentionally does not accept `--file` or `--doc`; command guidance points to `pm files` / `pm docs`.
 - `pm test <ID> --add` intentionally enforces sandbox-safe, runnable command entries. Every new linked test must include `command=...`; optional `path=...` is metadata-only context.
 - `pm create --test` follows the same policy: `command=...` is required, optional `path=...` can annotate command scope.
-- Linked test entries also support optional per-entry runtime directives and assertions: `env_set=KEY=VALUE;KEY2=VALUE2`, `env_clear=KEY1;KEY2`, `shared_host_safe=true|false`, `assert_stdout_contains=...`, `assert_stdout_regex=...`, `assert_stderr_contains=...`, `assert_stderr_regex=...`, `assert_stdout_min_lines=<int>`, `assert_json_field_equals=path=value`, `assert_json_field_gte=path=<number>`.
+- Linked test entries also support optional per-entry runtime directives/assertions plus context override metadata: `env_set=KEY=VALUE;KEY2=VALUE2`, `env_clear=KEY1;KEY2`, `shared_host_safe=true|false`, `pm_context_mode=schema|tracker|auto`, `assert_stdout_contains=...`, `assert_stdout_regex=...`, `assert_stderr_contains=...`, `assert_stderr_regex=...`, `assert_stdout_min_lines=<int>`, `assert_json_field_equals=path=value`, `assert_json_field_gte=path=<number>`.
 - `pm test <ID> --run` / `pm test-all` execute in temporary sandbox roots but seed project/global `settings.json` and `extensions/` directories from source roots so extension-defined type behavior matches direct workspace commands.
-- `pm test <ID> --run` / `pm test-all` support additive run-level runtime controls: repeatable `--env-set KEY=VALUE`, repeatable `--env-clear NAME`, `--shared-host-safe` (ephemeral/shared-host-friendly defaults such as `PORT=0` when unset), `--pm-context schema|tracker`, `--fail-on-context-mismatch`, `--fail-on-skipped`, and `--require-assertions-for-pm`.
+- `pm test <ID> --run` / `pm test-all` support additive run-level runtime controls: repeatable `--env-set KEY=VALUE`, repeatable `--env-clear NAME`, `--shared-host-safe` (ephemeral/shared-host-friendly defaults such as `PORT=0` when unset), `--pm-context schema|tracker|auto`, `--fail-on-context-mismatch`, `--fail-on-skipped`, and `--require-assertions-for-pm`.
 - `pm test <ID> --run --background` and `pm test-all --background` start managed background runs and return run metadata immediately.
 - `pm test-runs list|status|logs|stop|resume` provides background lifecycle management, log tailing, health snapshots, and stop/resume controls.
 - Background run dedupe prevents parallel duplicate execution when an equivalent active run fingerprint already exists.
 - Linked-test `run_results` include `execution_context` metadata (context mode, PM roots, item counts, mismatch signal, extension seeding state, PM tracker-read classification) so PM-command parity is explicit in machine-readable output.
-- In default `--pm-context schema` mode, PM tracker-read linked commands (for example `list*`, `get`, `search`, `stats`, `test-all`) fail on dataset mismatch by default; use `--pm-context tracker` to run against seeded tracker data.
+- In default `--pm-context schema` mode, PM tracker-read linked commands (for example `list*`, `get`, `search`, `stats`, `test-all`) fail on dataset mismatch by default; use `--pm-context auto` for automatic tracker-read routing or `--pm-context tracker` for full tracker-mode execution.
 - `pm test <ID> --run` and `pm test-all` emit heartbeat/progress lines to stderr in interactive terminals during long-running linked commands, and support explicit non-interactive progress output via `--progress`.
 - Linked test timeout handling uses deterministic process termination (including force-kill fallback) and reports explicit timeout/maxBuffer diagnostics in `run_results`.
 - Failed linked test `run_results` now include `failure_category` (for example `infra_collision` vs `assertion_failure`) and `pm test-all` totals include aggregated `failure_categories` counts for triage.
@@ -680,9 +681,10 @@ Activation and health behavior:
 - Deactivate/activate toggle `extensions.disabled[]`/`extensions.enabled[]` in settings.
 - `pm extension --explore` lists discovered extensions and active status.
 - `pm extension --adopt` records an existing unmanaged extension into managed state (local or GitHub provenance metadata) without reinstalling extension files.
+- `pm extension --adopt-all` bulk-adopts all unmanaged extensions in the selected scope without reinstalling files.
 - `pm extension --manage` refreshes GitHub-managed update metadata, persists it to scope-local `.managed-extensions.json`, and includes explicit per-extension `update_check_status`/`update_check_reason` fields (`checked`, `failed`, `skipped_unmanaged`, `skipped_non_github`, `not_checked`) plus triage status totals/remediation hints and update-health coverage diagnostics (`update_health_coverage`, `warning_codes`).
 - `pm extension --doctor` (or `pm extension doctor`) provides consolidated extension diagnostics with normalized warning codes, canonical load roots, active-vs-loaded consistency diagnostics, update-health coverage signals, remediation hints, and optional deep output via `--detail deep`.
-- `pm health` includes managed extension state diagnostics plus a condensed extension triage block for quick load/activation/migration issue triage across project and global roots.
+- `pm health` includes managed extension state diagnostics plus a condensed extension triage block for quick load/activation/migration issue triage across project/global roots, including `extension_update_health_partial_coverage` parity when unmanaged loaded extensions reduce update-check coverage.
 
 Use `pm extension --help` for compact guidance or `pm extension --help --explain` for expanded examples/tips.
 

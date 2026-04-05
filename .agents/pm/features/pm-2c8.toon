@@ -158,12 +158,12 @@ files[61]{path,scope,note}:
   tests/unit/list-sort-branches.spec.ts,project,mock compatibility for core store boundary migration
   tests/unit/runtime-registrations.spec.ts,project,wrapper parity contract coverage
   vitest.config.ts,project,coverage include paths updated to cli command implementations
-tests[5]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node dist/cli.js --help,null,project,60,null,null,null,null,null,null,null,null,null,null,Command surface smoke check
-  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,sandboxed coverage gate
-  node scripts/run-tests.mjs test,null,project,600,null,null,null,null,null,null,null,null,null,null,sandboxed unit/integration suite
-  node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,targeted claim command regression
-  pnpm build,null,project,180,null,null,null,null,null,null,null,null,null,null,Compile after structure refactor
+tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node dist/cli.js --help,null,project,60,null,null,null,null,null,null,null,null,null,null,null,Command surface smoke check
+  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,sandboxed coverage gate
+  node scripts/run-tests.mjs test,null,project,600,null,null,null,null,null,null,null,null,null,null,null,sandboxed unit/integration suite
+  node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,targeted claim command regression
+  pnpm build,null,project,180,null,null,null,null,null,null,null,null,null,null,null,Compile after structure refactor
 docs[3]{path,scope,note}:
   AGENTS.md,project,agent workflow and dogfood protocol
   PRD.md,project,governing spec

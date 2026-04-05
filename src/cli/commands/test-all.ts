@@ -107,6 +107,11 @@ function normalizeEnvClearSignature(value: LinkedTest["env_clear"]): string {
   return JSON.stringify([...value].sort((left, right) => left.localeCompare(right)));
 }
 
+function normalizePmContextModeSignature(value: LinkedTest["pm_context_mode"]): string {
+  const normalized = value?.trim().toLowerCase();
+  return normalized && normalized.length > 0 ? normalized : "none";
+}
+
 function normalizeAssertionSignature(test: LinkedTest): string {
   const normalized = {
     assert_stdout_contains: [...new Set(test.assert_stdout_contains ?? [])].sort((left, right) => left.localeCompare(right)),
@@ -129,9 +134,10 @@ function buildLinkedTestKey(test: LinkedTest): string {
   if (command && command.length > 0) {
     const envSet = normalizeEnvSetSignature(test.env_set);
     const envClear = normalizeEnvClearSignature(test.env_clear);
+    const pmContextMode = normalizePmContextModeSignature(test.pm_context_mode);
     const sharedHostSafe = test.shared_host_safe === true ? "true" : "false";
     const assertions = normalizeAssertionSignature(test);
-    return `command:${test.scope}:${normalizeCommand(command)}:${envSet}:${envClear}:${sharedHostSafe}:${assertions}`;
+    return `command:${test.scope}:${normalizeCommand(command)}:${envSet}:${envClear}:${pmContextMode}:${sharedHostSafe}:${assertions}`;
   }
   const linkedPath = test.path?.trim() ?? "";
   return `path:${test.scope}:${linkedPath}`;

@@ -58,9 +58,9 @@ files[5]{path,scope,note}:
   tests/unit/parse-utils.spec.ts,project,stdin token guidance regression
   tests/unit/test-all-command.spec.ts,project,deterministic-timeout-termination-in-test-all
   tests/unit/test-command.spec.ts,project,subprocess runtime behavior
-tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/parse-utils.spec.ts tests/unit/beads-command.spec.ts tests/unit/test-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,3000,null,null,null,null,null,null,null,null,null,null,terminal compatibility regression suite
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,expanded-runtime-regressions-with-integration-contracts
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/parse-utils.spec.ts tests/unit/beads-command.spec.ts tests/unit/test-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,3000,null,null,null,null,null,null,null,null,null,null,null,terminal compatibility regression suite
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,null,expanded-runtime-regressions-with-integration-contracts
 docs[1]{path,scope,note}:
   CONTRIBUTING.md,project,test guidance
 close_reason: terminal regressions expanded for heartbeat and stubborn timeout paths

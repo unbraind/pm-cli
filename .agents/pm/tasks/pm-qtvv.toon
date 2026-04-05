@@ -50,8 +50,8 @@ files[4]{path,scope,note}:
   src/cli/commands/test.ts,project,runLinkedTests and seeding helpers
   tests/unit/test-all-command.spec.ts,project,extension parity runTestAll regression
   tests/unit/test-command.spec.ts,project,extension parity runTest regression
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,sandbox parity verification
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,sandbox parity verification
 docs[2]{path,scope,note}:
   docs/EXTENSIONS.md,project,document linked-test sandbox parity
   PRD.md,project,runtime contract updates

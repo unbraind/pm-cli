@@ -505,6 +505,79 @@ describe("extension command runtime", () => {
     });
   });
 
+  it("adopts all unmanaged extensions in one deterministic operation", async () => {
+    await withTempPmPath(async (context) => {
+      const firstUnmanagedDir = path.join(context.pmPath, "extensions", "manual-adopt-all-a");
+      const secondUnmanagedDir = path.join(context.pmPath, "extensions", "manual-adopt-all-b");
+      await mkdir(firstUnmanagedDir, { recursive: true });
+      await mkdir(secondUnmanagedDir, { recursive: true });
+      await writeFile(
+        path.join(firstUnmanagedDir, "manifest.json"),
+        JSON.stringify(
+          {
+            name: "manual-adopt-all-a",
+            version: "1.0.0",
+            entry: "index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(
+        path.join(secondUnmanagedDir, "manifest.json"),
+        JSON.stringify(
+          {
+            name: "manual-adopt-all-b",
+            version: "1.0.0",
+            entry: "index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(path.join(firstUnmanagedDir, "index.js"), "export default { activate() {} };", "utf8");
+      await writeFile(path.join(secondUnmanagedDir, "index.js"), "export default { activate() {} };", "utf8");
+
+      const manageBefore = await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath });
+      const triageBefore = manageBefore.details.triage as { update_health_partial?: unknown };
+      expect(triageBefore.update_health_partial).toBe(true);
+
+      const adoptAll = await runExtension(undefined, { adoptAll: true, project: true }, { path: context.pmPath });
+      expect(adoptAll.action).toBe("adopt-all");
+      expect(adoptAll.details).toMatchObject({
+        adopted_all: true,
+        adopted_count: 2,
+        already_managed_count: 0,
+        warning_codes: expect.any(Array),
+        update_health_partial: false,
+        update_health_coverage: "full",
+      });
+      expect((adoptAll.details.extensions as Array<Record<string, unknown>>).map((entry) => entry.name)).toEqual([
+        "manual-adopt-all-a",
+        "manual-adopt-all-b",
+      ]);
+
+      const managedState = await readManagedExtensionState(path.join(context.pmPath, "extensions"));
+      expect(managedState.state.entries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: "manual-adopt-all-a", source: expect.objectContaining({ kind: "local" }) }),
+          expect.objectContaining({ name: "manual-adopt-all-b", source: expect.objectContaining({ kind: "local" }) }),
+        ]),
+      );
+
+      const adoptAllNoOp = await runExtension(undefined, { adoptAll: true, project: true }, { path: context.pmPath });
+      expect(adoptAllNoOp.details).toMatchObject({
+        adopted_all: false,
+        adopted_count: 0,
+        already_managed_count: 2,
+      });
+    });
+  });
+
   it("runs extension doctor in summary/deep modes and supports doctor subcommand target syntax", async () => {
     await withTempPmPath(async (context) => {
       const sourceDir = path.join(context.tempRoot, "doctor-source-ext");
@@ -626,6 +699,15 @@ describe("extension command runtime", () => {
       exitCode: EXIT_CODE.USAGE,
     });
     await expect(runExtension(undefined, { adopt: true }, { path: ".agents/pm" })).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+    await expect(runExtension("manual-ext", { adoptAll: true }, { path: ".agents/pm" })).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+    await expect(runExtension(undefined, { adoptAll: true, gh: "owner/repo/ext" }, { path: ".agents/pm" })).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+    await expect(runExtension(undefined, { adoptAll: true, ref: "main" }, { path: ".agents/pm" })).rejects.toMatchObject({
       exitCode: EXIT_CODE.USAGE,
     });
     await expect(runExtension(undefined, { activate: true }, { path: ".agents/pm" })).rejects.toMatchObject({

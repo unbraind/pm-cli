@@ -57,8 +57,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-01T20:26:01.173Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[1]{path,scope,note}:
   src/cli/commands/list.ts,project,list result and filter changes
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,unit coverage for list behavior
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,unit coverage for list behavior
 docs[1]{path,scope,note}:
   PRD.md,project,list filter and output contract
 close_reason: Delivered opt-in include-body support for all list variants with passing regression tests and docs updates.

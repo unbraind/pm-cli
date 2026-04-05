@@ -52,8 +52,8 @@ files[5]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,integration add path metadata with command
   tests/unit/create-command.spec.ts,project,path-only create seed rejection coverage
   tests/unit/test-command.spec.ts,project,path-only add rejection and legacy skip coverage
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/test-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,parser behavior regressions
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/test-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,parser behavior regressions
 docs[1]{path,scope,note}:
   README.md,project,linked-test command-required policy update
 close_reason: linked-test mutation parser now requires command metadata while preserving legacy runtime skip safety

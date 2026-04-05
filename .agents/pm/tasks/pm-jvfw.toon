@@ -57,9 +57,9 @@ files[4]{path,scope,note}:
   README.md,project,public extension runtime baseline
   src/core/extensions/loader.ts,project,registration plumbing baseline
   tests/unit/extension-loader.spec.ts,project,runtime wiring regression coverage
-tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,5400,null,null,null,null,null,null,null,null,null,null,coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,targeted extension loader regression
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,5400,null,null,null,null,null,null,null,null,null,null,null,coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,targeted extension loader regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,maintainer workflow contract
   PRD.md,project,authoritative roadmap contract

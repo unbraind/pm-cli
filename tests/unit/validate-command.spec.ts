@@ -270,9 +270,15 @@ describe("runValidate", () => {
       const details = resolutionCheck.details as {
         checked_closed_items: number;
         missing_resolution_items: number;
+        missing_resolution_remediation_hints: string[];
       };
       expect(details.checked_closed_items).toBe(1);
       expect(details.missing_resolution_items).toBe(1);
+      expect(details.missing_resolution_remediation_hints).toHaveLength(1);
+      expect(details.missing_resolution_remediation_hints[0]).toContain(`pm update ${id}`);
+      expect(details.missing_resolution_remediation_hints[0]).toContain("--resolution");
+      expect(details.missing_resolution_remediation_hints[0]).toContain("--expected-result");
+      expect(details.missing_resolution_remediation_hints[0]).toContain("--actual-result");
     });
   });
 
@@ -303,8 +309,12 @@ describe("runValidate", () => {
       expect(result.warnings).toEqual([]);
       const resolutionCheck = checkByName(result, "resolution");
       expect(resolutionCheck.status).toBe("ok");
-      const details = resolutionCheck.details as { missing_resolution_items: number };
+      const details = resolutionCheck.details as {
+        missing_resolution_items: number;
+        missing_resolution_remediation_hints: string[];
+      };
       expect(details.missing_resolution_items).toBe(0);
+      expect(details.missing_resolution_remediation_hints).toEqual([]);
     });
   });
 

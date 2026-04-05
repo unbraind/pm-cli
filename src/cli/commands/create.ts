@@ -298,6 +298,7 @@ function parseFiles(raw: string[] | undefined): { values: LinkedFile[] | undefin
 
 const LINKED_TEST_PROTECTED_ENV_KEYS = new Set(["PM_PATH", "PM_GLOBAL_PATH", "FORCE_COLOR"]);
 const LINKED_TEST_ENV_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const LINKED_TEST_PM_CONTEXT_MODE_VALUES = ["schema", "tracker", "auto"] as const;
 
 function parseLinkedTestEnvSet(raw: string | undefined, optionName: string): Record<string, string> | undefined {
   const normalized = parseOptionalString(raw);
@@ -366,6 +367,24 @@ function parseLinkedTestBoolean(raw: string | undefined, optionName: string, fie
     return false;
   }
   throw new PmCliError(`${optionName} ${fieldLabel} must be one of true|false|1|0|yes|no`, EXIT_CODE.USAGE);
+}
+
+function parseLinkedTestContextMode(
+  raw: string | undefined,
+  optionName: string,
+): LinkedTest["pm_context_mode"] | undefined {
+  const normalized = parseOptionalString(raw);
+  if (!normalized || isNoneToken(normalized)) {
+    return undefined;
+  }
+  const value = normalized.trim().toLowerCase();
+  if ((LINKED_TEST_PM_CONTEXT_MODE_VALUES as readonly string[]).includes(value)) {
+    return value as LinkedTest["pm_context_mode"];
+  }
+  throw new PmCliError(
+    `${optionName} pm_context_mode must be one of: ${LINKED_TEST_PM_CONTEXT_MODE_VALUES.join(", ")}`,
+    EXIT_CODE.USAGE,
+  );
 }
 
 function parseLinkedTestStringList(raw: string | undefined): string[] | undefined {
@@ -500,6 +519,7 @@ function parseTests(raw: string[] | undefined): { values: LinkedTest[] | undefin
       path: filePath,
       scope: ensureEnumValue(kv.scope ?? "project", SCOPE_VALUES, "test scope"),
       timeout_seconds: timeoutRaw ? parseOptionalNumber(timeoutRaw, "timeout_seconds") : undefined,
+      pm_context_mode: parseLinkedTestContextMode(kv.pm_context_mode, "--test"),
       env_set: parseLinkedTestEnvSet(kv.env_set, "--test"),
       env_clear: parseLinkedTestEnvClear(kv.env_clear, "--test"),
       shared_host_safe: parseLinkedTestBoolean(kv.shared_host_safe, "--test", "shared_host_safe"),

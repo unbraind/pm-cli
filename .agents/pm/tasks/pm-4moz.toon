@@ -42,8 +42,8 @@ files[5]{path,scope,note}:
   src/cli/help-content.ts,project,help text for background lifecycle commands
   src/core/output/command-aware.ts,project,command summaries and next steps for test-runs
   src/sdk/cli-contracts.ts,project,tool action schema and background flags
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,contract parity and include-list alignment
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,contract parity and include-list alignment
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-all-local-mnkrqfdt-hjxetp,test-all,passed,"2026-04-04T20:11:49.984Z","2026-04-04T20:11:50.005Z","2026-04-04T20:11:50.005Z",null,null,0,0,0,1,0,null
   test-local-mnks0l35-5ofo7z,test,passed,"2026-04-04T20:19:11.249Z","2026-04-04T20:19:43.937Z","2026-04-04T20:19:43.937Z",null,null,1,0,0,null,null,null

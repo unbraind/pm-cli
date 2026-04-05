@@ -37,8 +37,8 @@ learnings[1]{created_at,author,text}:
   "2026-04-03T20:57:52.280Z",codex-agent,Low-risk append-only governance operations can have narrower ownership exceptions than field mutations.
 files[1]{path,scope,note}:
   src/core/store/item-store.ts,project,ownership conflict enforcement entrypoint
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,comments ownership regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,comments ownership regression
 docs[1]{path,scope,note}:
   README.md,project,comments ownership behavior docs
 close_reason: "Child task pm-8k10 completed: comments allow-audit-comment append-only path implemented with ownership guard safety and full verification pass."

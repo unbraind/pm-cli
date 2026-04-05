@@ -288,13 +288,21 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const payload = validateResult.json as {
         ok: boolean;
         warnings: string[];
-        checks: Array<{ name: string; status: string; details: { missing_resolution_items?: number } }>;
+        checks: Array<{
+          name: string;
+          status: string;
+          details: {
+            missing_resolution_items?: number;
+            missing_resolution_remediation_hints?: string[];
+          };
+        }>;
       };
       expect(payload.ok).toBe(false);
       expect(payload.warnings).toContain("validate_resolution_missing_fields:1");
       const resolutionCheck = payload.checks.find((check) => check.name === "resolution");
       expect(resolutionCheck?.status).toBe("warn");
       expect(resolutionCheck?.details.missing_resolution_items).toBe(1);
+      expect(resolutionCheck?.details.missing_resolution_remediation_hints?.[0]).toContain(`pm update ${id}`);
 
       const strictExitValidate = context.runCli(["validate", "--check-resolution", "--strict-exit", "--json"], { expectJson: true });
       expect(strictExitValidate.code).toBe(1);

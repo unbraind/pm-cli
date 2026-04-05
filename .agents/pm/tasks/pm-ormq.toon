@@ -40,8 +40,8 @@ files[3]{path,scope,note}:
   src/cli/commands/index.ts,project,test-runs command exports
   src/cli/commands/test-runs.ts,project,start list status logs stop resume surfaces
   src/cli/main.ts,project,background flags and command registration
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,background option regression coverage
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,background option regression coverage
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-all-local-mnkrqfdt-hjxetp,test-all,passed,"2026-04-04T20:11:49.984Z","2026-04-04T20:16:28.097Z","2026-04-04T20:16:28.097Z",null,null,0,0,0,1,0,null
   test-local-mnkrz42y-a77a5c,test,passed,"2026-04-04T20:18:07.241Z","2026-04-04T20:18:35.242Z","2026-04-04T20:18:35.242Z",null,null,1,0,0,null,null,null

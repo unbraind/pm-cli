@@ -56,9 +56,9 @@ files[4]{path,scope,note}:
   README.md,project,Document unknown-capability diagnostics
   src/core/extensions/loader.ts,project,Add unknown-capability diagnostic generation
   tests/unit/extension-loader.spec.ts,project,Add unknown-capability warning regression
-tests[2]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,240,null,null,null,null,null,null,null,null,null,null,Coverage gate
-  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,Loader discovery regression
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,240,null,null,null,null,null,null,null,null,null,null,null,Coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,Loader discovery regression
 docs[3]{path,scope,note}:
   AGENTS.md,project,Agent workflow policy
   PRD.md,project,Document unknown-capability diagnostics

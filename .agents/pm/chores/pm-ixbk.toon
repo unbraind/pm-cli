@@ -54,8 +54,8 @@ files[5]{path,scope,note}:
   .github/ISSUE_TEMPLATE/feature-request.yml,project,new file
   .github/PULL_REQUEST_TEMPLATE.md,project,new file
   package.json,project,add repository bugs homepage author fields
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,300,null,null,null,null,null,null,null,null,null,null,full coverage gate
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,300,null,null,null,null,null,null,null,null,null,null,null,full coverage gate
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,document new community files
   README.md,project,no change needed - metadata is in package.json

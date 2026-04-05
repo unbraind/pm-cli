@@ -42,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added type-aware help policy sections for `pm create --help` / `pm update --help` when `--type <value>` is supplied, including required/disabled/hidden option summaries from active settings/extensions.
 - Added type-option schema surfacing in type-aware help (`pm create --help --type <value>` / `pm update --help --type <value>`) including required markers, allowed values, aliases, and option descriptions.
 - Added extension-first command routing for deterministic core-command replacement when extension handlers register matching command paths.
-- Added `pm extension` lifecycle management command with mutually-exclusive actions: `--install`, `--uninstall`, `--explore`, `--manage`, `--doctor`, `--adopt`, `--activate`, and `--deactivate`.
+- Added `pm extension` lifecycle management command with mutually-exclusive actions: `--install`, `--uninstall`, `--explore`, `--manage`, `--doctor`, `--adopt`, `--adopt-all`, `--activate`, and `--deactivate`.
 - Added extension install source normalization for local paths plus GitHub URL/shorthand forms (`https://github.com/...`, `github.com/...`, `--gh/--github owner/repo[/path]`) with optional `--ref` support.
 - Added scope-local managed extension state (`<extensions-root>/.managed-extensions.json`) with deterministic metadata for source, install/update timestamps, and GitHub update checks.
 - Added `pm extension --doctor` (and `pm extension doctor` shorthand) with consolidated extension diagnostics, normalized warning-code summaries, remediation hints, and optional deep diagnostics via `--detail deep`.
@@ -65,7 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added history-only restore recovery so `pm restore` can recreate missing/deleted item files when the corresponding history stream exists.
 - Added first-class `pm notes` and `pm learnings` commands with parity to `pm comments` (`<id> [text]`, `--add`, `--limit`, `--author`, `--message`, `--force`) including structured/stdin payload parsing.
 - Added command-surface parity updates for `notes`/`learnings` across help narratives, shell completion scripts, command-aware output summaries, and Pi wrapper action routing.
-- Added CLI/Pi shared contract parity for extension lifecycle actions (`extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-doctor`, `extension-adopt`, `extension-activate`, `extension-deactivate`) and their schema parameters (`target`, `scope`, `github`, `ref`).
+- Added CLI/Pi shared contract parity for extension lifecycle actions (`extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-doctor`, `extension-adopt`, `extension-adopt-all`, `extension-activate`, `extension-deactivate`) and their schema parameters (`target`, `scope`, `github`, `ref`).
 - Added integration regressions for repeated `pm files --add` / `pm docs --add` mutation flows to keep linked-artifact add workflows stable across subsequent command invocations.
 - Added targeted guidance for unsupported `pm update --file` / `pm update --doc` usage, with actionable examples that route users to `pm files` / `pm docs`.
 - Added dependency mutation support on existing items through `pm update`: repeatable `--dep` add/clear (`none`) semantics plus repeatable `--dep-remove`/`--dep_remove` selector removals, with parity across help/completion/contracts/Pi wrapper surfaces.
@@ -78,7 +78,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `pm validate --strict-exit` (alias `--fail-on-warn`) to return non-zero exit (`1`) when validation warnings are present (`ok=false`).
 - Added `pm contracts --runtime-only` (alias `--active-only`) and runtime action availability metadata (`action_availability`) so machine callers can filter to invocable actions in current runtime conditions.
 - Added extension lifecycle adopt action (`pm extension --adopt`) to register existing unmanaged installs into managed state metadata without reinstalling extension files (with optional GitHub provenance via `--gh/--github` + `--ref`).
+- Added extension lifecycle bulk adopt action (`pm extension --adopt-all`) to register all unmanaged installs in selected scope into managed state metadata without reinstalling extension files.
 - Added extension triage update-health diagnostics (`update_health_coverage`, `update_health_partial`) and normalized warning-code surfacing (`warning_codes`, including `extension_update_health_partial_coverage`) for `pm extension --manage` / `pm extension --doctor`.
+- Added health parity warning surfacing for extension update-check partial coverage (`extension_update_health_partial_coverage`) so `pm health` mirrors extension triage visibility when unmanaged loaded extensions reduce coverage.
 - Added `pm close --validate-close [warn|strict]` for additive close-time resolution-field validation (`resolution`, `expected_result`, `actual_result`) with warning-first default behavior.
 - Added `pm files --append-stable` for minimal-diff file-link appends that preserve existing link order and reduce history patch churn during large audits.
 - Added `pm create --create-mode strict|progressive` so strict remains default while governance workflows can use staged progressive creation.
@@ -91,10 +93,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added explicit `--progress` flag support to `pm test`, `pm test-all`, and `pm reindex` so non-interactive runs can opt into deterministic stderr progress visibility.
 - Added additive linked-test runtime environment controls: repeatable `--env-set` / `--env-clear` and `--shared-host-safe` on `pm test --run` and `pm test-all`.
 - Added per-linked-test runtime directives in linked test metadata (`env_set`, `env_clear`, `shared_host_safe`) for deterministic command-level execution control.
-- Added linked-test PM-context and strict-governance controls: `--pm-context schema|tracker`, `--fail-on-context-mismatch`, `--fail-on-skipped`, and `--require-assertions-for-pm` on `pm test --run` and `pm test-all`.
+- Added linked-test PM-context and strict-governance controls: `--pm-context schema|tracker|auto`, `--fail-on-context-mismatch`, `--fail-on-skipped`, and `--require-assertions-for-pm` on `pm test --run` and `pm test-all`.
+- Added linked-test PM-context auto-routing (`--pm-context auto`) and per-linked-test context override metadata (`pm_context_mode=schema|tracker|auto`) for mixed-mode linked test execution.
 - Added linked-test assertion metadata support (`assert_stdout_contains`, `assert_stdout_regex`, `assert_stderr_contains`, `assert_stderr_regex`, `assert_stdout_min_lines`, `assert_json_field_equals`, `assert_json_field_gte`) with deterministic assertion-failure classification and per-run `execution_context` telemetry in `run_results`.
 - Added structured linked-test failure classification in `run_results` (`failure_category`) and aggregated `failure_categories` totals in `pm test`/`pm test-all` results for triage (`infra_collision` vs `assertion_failure` and related categories).
 - Added standalone `pm validate` linked command-reference diagnostics (`command_references`) with default-on stale PM-id detection and dedicated warning token (`validate_command_references_stale_pm_ids:<count>`).
+- Added default-on resolution remediation command hints in `pm validate` details for missing resolution metadata (`resolution`, `expected_result`, `actual_result`).
 
 ### Changed
 - Removed the `pm install` command surface; extension lifecycle installs now flow through `pm extension` only.
@@ -127,7 +131,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Date/deadline parsing now accepts month-relative offsets (`+6m`) and normalized date-string variants (for example `2026-03-31T13-59` and `20260331T135900Z`) across deadline, reminder, event, list/search filter, and calendar date inputs while preserving canonical ISO persistence.
 - `pm beads import --file -` now fails fast when stdin is an interactive TTY and returns explicit piped-input/EOF guidance instead of waiting for manual stream termination.
 - CLI top-level error handling now preserves canonical exit-code mapping via graceful `process.exitCode` semantics to reduce buffered output truncation risk in emulated terminal environments.
-- Output rendering now treats stdout/stderr broken-pipe writes (`EPIPE`) as expected pipeline behavior, suppressing unhandled Node stack traces while preserving non-EPIPE failure semantics.
+- Output rendering now treats broken-pipe writes (`EPIPE`) as expected pipeline behavior with stream-specific exit semantics: stdout `EPIPE` preserves success exits for early-terminated read pipelines, stderr `EPIPE` remains non-zero, and unhandled Node stack traces are suppressed.
 - Linked test runtime execution now uses shell-compatible spawn orchestration, closes child stdin for non-interactive runs, emits interactive stderr heartbeat progress for long-running commands, and applies deterministic timeout/maxBuffer diagnostics with force-kill fallback for stubborn subprocess trees.
 - History-touching commands now enforce `settings.history.missing_stream` consistently across read/diagnostic paths (`history`, `activity`, `stats`, `health`) and existing-item mutation/restore flows.
 - Linked-test sandbox runs now seed project/global `settings.json` and `extensions/` directories into temporary sandbox roots so extension-defined type/filter behavior matches direct workspace commands.

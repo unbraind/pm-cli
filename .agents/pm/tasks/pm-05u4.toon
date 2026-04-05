@@ -49,8 +49,8 @@ files[3]{path,scope,note}:
   src/core/store/item-store.ts,project,ownership conflict check
   tests/integration/cli.integration.spec.ts,project,claim-takeover behavior
   tests/unit/claim-command.spec.ts,project,claim-takeover behavior
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,claim semantics regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,claim semantics regression
 docs[1]{path,scope,note}:
   PRD.md,project,ownership model policy updates
 close_reason: Implemented claim takeover without force for non-terminal items and verified preserved terminal/lock protections.

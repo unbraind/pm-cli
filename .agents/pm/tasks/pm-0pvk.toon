@@ -66,8 +66,8 @@ files[13]{path,scope,note}:
   tests/unit/get-append-command.spec.ts,project,append stdin regression
   tests/unit/test-command.spec.ts,project,test command markdown and stdin regressions
   tests/unit/update-command.spec.ts,project,update type-option and stdin repeatable regressions
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/files-docs-command.spec.ts tests/unit/test-command.spec.ts tests/unit/get-append-command.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,null,project,480,null,null,null,null,null,null,null,null,null,null,command-surface resilient parsing regression suite
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/files-docs-command.spec.ts tests/unit/test-command.spec.ts tests/unit/get-append-command.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,null,project,480,null,null,null,null,null,null,null,null,null,null,null,command-surface resilient parsing regression suite
 docs[1]{path,scope,note}:
   README.md,project,metadata-audit-documentation-context
 close_reason: Mutation command surfaces now consume resilient entry formats with regression suite passing.

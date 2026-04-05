@@ -65,17 +65,35 @@ interface MigrationStatusSummary {
 interface ExtensionHealthTriageSummary {
   status: "ok" | "warn";
   warning_count: number;
+  warning_codes: string[];
   load_failure_count: number;
   activation_failure_count: number;
   migration_failed_count: number;
   migration_pending_count: number;
   managed_state_warning_count: number;
   managed_extension_entries_count: number;
+  unmanaged_loaded_extension_count: number;
+  unmanaged_loaded_extensions: string[];
+  update_health_coverage: "full" | "partial";
+  update_health_partial: boolean;
   top_warnings: string[];
   remediation: string[];
 }
 
 type ItemWithBody = Awaited<ReturnType<typeof listAllFrontMatterWithBody>>[number];
+
+function warningCode(value: string): string {
+  const normalized = value.trim();
+  const separator = normalized.indexOf(":");
+  if (separator === -1) {
+    return normalized;
+  }
+  return normalized.slice(0, separator);
+}
+
+function normalizeExtensionNameForMatch(value: string): string {
+  return value.trim().toLowerCase();
+}
 
 async function isDirectory(targetPath: string): Promise<boolean> {
   try {
@@ -405,8 +423,14 @@ function buildExtensionHealthTriageSummary(
   migrationStatus: MigrationStatusSummary,
   managedStateWarningCount: number,
   managedExtensionEntriesCount: number,
+  unmanagedLoadedExtensions: string[],
 ): ExtensionHealthTriageSummary {
   const normalizedWarnings = [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
+  const warningCodes = [...new Set(normalizedWarnings.map((value) => warningCode(value)))].sort((left, right) =>
+    left.localeCompare(right),
+  );
+  const updateHealthPartial = unmanagedLoadedExtensions.length > 0;
+  const updateHealthCoverage = updateHealthPartial ? "partial" : "full";
   const remediation: string[] = [];
   if (loadFailureCount > 0) {
     remediation.push("Run pm extension --explore --project and pm extension --explore --global to inspect load failures.");
@@ -420,18 +444,28 @@ function buildExtensionHealthTriageSummary(
   if (managedStateWarningCount > 0) {
     remediation.push("Run pm extension --manage --project and pm extension --manage --global to refresh managed-state diagnostics.");
   }
+  if (updateHealthPartial) {
+    remediation.push(
+      "Update-check coverage is partial because loaded extensions are unmanaged. Adopt existing installs via pm extension --adopt-all --project/--global or pm extension --adopt <name>.",
+    );
+  }
   if (remediation.length === 0) {
     remediation.push("No immediate action required. Re-run pm health after extension configuration changes.");
   }
   return {
     status: normalizedWarnings.length === 0 ? "ok" : "warn",
     warning_count: normalizedWarnings.length,
+    warning_codes: warningCodes,
     load_failure_count: loadFailureCount,
     activation_failure_count: activationFailureCount,
     migration_failed_count: migrationStatus.failed_count,
     migration_pending_count: migrationStatus.pending_count,
     managed_state_warning_count: managedStateWarningCount,
     managed_extension_entries_count: managedExtensionEntriesCount,
+    unmanaged_loaded_extension_count: unmanagedLoadedExtensions.length,
+    unmanaged_loaded_extensions: unmanagedLoadedExtensions,
+    update_health_coverage: updateHealthCoverage,
+    update_health_partial: updateHealthPartial,
     top_warnings: normalizedWarnings.slice(0, 8),
     remediation,
   };
@@ -484,12 +518,31 @@ async function buildExtensionCheck(
       },
     },
   };
+  const managedProjectNames = new Set(
+    projectManagedState.state.entries.map((entry) => normalizeExtensionNameForMatch(entry.name)),
+  );
+  const managedGlobalNames = new Set(globalManagedState.state.entries.map((entry) => normalizeExtensionNameForMatch(entry.name)));
+  const unmanagedLoadedExtensions = [
+    ...new Set(
+      loadResult.loaded
+        .filter((entry) => {
+          const managedNames = entry.layer === "project" ? managedProjectNames : managedGlobalNames;
+          return !managedNames.has(normalizeExtensionNameForMatch(entry.name));
+        })
+        .map((entry) => `${entry.layer}:${entry.name}`),
+    ),
+  ].sort((left, right) => left.localeCompare(right));
+  const updateCoverageWarnings =
+    unmanagedLoadedExtensions.length > 0
+      ? [`extension_update_health_partial_coverage:skipped_unmanaged:${unmanagedLoadedExtensions.length}`]
+      : [];
   const extensionWarnings = [
     ...loadResult.warnings,
     ...activationDetails.warnings,
     ...migrationStatus.warnings,
     ...projectManagedState.warnings,
     ...globalManagedState.warnings,
+    ...updateCoverageWarnings,
   ];
   const extensionTriage = buildExtensionHealthTriageSummary(
     extensionWarnings,
@@ -498,6 +551,7 @@ async function buildExtensionCheck(
     migrationStatus.summary,
     projectManagedState.warnings.length + globalManagedState.warnings.length,
     projectManagedState.state.entries.length + globalManagedState.state.entries.length,
+    unmanagedLoadedExtensions,
   );
 
   return {

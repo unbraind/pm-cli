@@ -76,11 +76,11 @@ files[22]{path,scope,note}:
   tests/unit/settings-store.spec.ts,project,settings key-order contract includes validation block
   tests/unit/shared-constants-errors.spec.ts,project,key order contract coverage
   tests/unit/update-command.spec.ts,project,update command coverage for optional scalar fields
-tests[4]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,coverage gate
-  node scripts/run-tests.mjs test,null,project,2400,null,null,null,null,null,null,null,null,null,null,sandbox-safe full regression
-  node scripts/run-tests.mjs test -- tests/unit/config-command.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,pm-2p6q targeted regression matrix
-  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,issue14 sprint release validation regressions
+tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,coverage gate
+  node scripts/run-tests.mjs test,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,sandbox-safe full regression
+  node scripts/run-tests.mjs test -- tests/unit/config-command.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,pm-2p6q targeted regression matrix
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,null,issue14 sprint release validation regressions
 docs[4]{path,scope,note}:
   AGENTS.md,project,maintainer workflow contract
   CHANGELOG.md,project,unreleased sprint/release policy behavior + rollout notes

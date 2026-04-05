@@ -39,8 +39,8 @@ notes[1]{created_at,author,text}:
   "2026-04-04T21:55:27.146Z",codex-agent,Design should separate planning and execution phases and require explicit operator confirmation before any forced mutation batch.
 files[1]{path,scope,note}:
   src/cli/error-guidance.ts,project,ownership conflict and override UX anchor
-tests[1]{command,path,scope,timeout_seconds,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,ownership workflow regression baseline
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,ownership workflow regression baseline
 docs[1]{path,scope,note}:
   AGENTS.md,project,policy constraints for approved ownership overrides
 body: Feature targets large tracker maintenance workflows where many items are assigned to different owners and manual force-update loops create operational overhead.
