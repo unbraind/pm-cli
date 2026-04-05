@@ -3,6 +3,12 @@ import path from "node:path";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { activateExtensions, getActiveExtensionRegistrations, loadExtensions, runActiveOnReadHooks } from "../../core/extensions/index.js";
+import {
+  KNOWN_EXTENSION_CAPABILITIES,
+  parseUnknownExtensionCapabilityWarning,
+  type LoadedExtension,
+  type UnknownExtensionCapabilityWarningDetails,
+} from "../../core/extensions/loader.js";
 import { hashDocument } from "../../core/history/history.js";
 import { enforceHistoryStreamPolicyForItems } from "../../core/history/history-stream-policy.js";
 import {
@@ -12,7 +18,6 @@ import {
 import { resolveEmbeddingProviders } from "../../core/search/providers.js";
 import { resolveSettingsWithSemanticRuntimeDefaults } from "../../core/search/semantic-defaults.js";
 import { resolveVectorStores } from "../../core/search/vector-stores.js";
-import type { LoadedExtension } from "../../core/extensions/loader.js";
 import { EXIT_CODE, PM_CORE_REQUIRED_SUBDIRS, PM_OPTIONAL_TYPE_SUBDIRS } from "../../core/shared/constants.js";
 import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -76,6 +81,7 @@ interface ExtensionHealthTriageSummary {
   unmanaged_loaded_extensions: string[];
   update_health_coverage: "full" | "partial";
   update_health_partial: boolean;
+  unknown_capability_count: number;
   top_warnings: string[];
   remediation: string[];
 }
@@ -89,6 +95,24 @@ function warningCode(value: string): string {
     return normalized;
   }
   return normalized.slice(0, separator);
+}
+
+function collectUnknownCapabilityGuidance(warnings: string[]): UnknownExtensionCapabilityWarningDetails[] {
+  const seen = new Set<string>();
+  const guidance: UnknownExtensionCapabilityWarningDetails[] = [];
+  for (const warning of warnings) {
+    const parsed = parseUnknownExtensionCapabilityWarning(warning);
+    if (!parsed) {
+      continue;
+    }
+    const key = `${parsed.layer}:${parsed.name}:${parsed.capability}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    guidance.push(parsed);
+  }
+  return guidance;
 }
 
 function normalizeExtensionNameForMatch(value: string): string {
@@ -429,6 +453,7 @@ function buildExtensionHealthTriageSummary(
   const warningCodes = [...new Set(normalizedWarnings.map((value) => warningCode(value)))].sort((left, right) =>
     left.localeCompare(right),
   );
+  const unknownCapabilityCount = normalizedWarnings.filter((warning) => warning.startsWith("extension_capability_unknown:")).length;
   const updateHealthPartial = unmanagedLoadedExtensions.length > 0;
   const updateHealthCoverage = updateHealthPartial ? "partial" : "full";
   const remediation: string[] = [];
@@ -443,6 +468,12 @@ function buildExtensionHealthTriageSummary(
   }
   if (managedStateWarningCount > 0) {
     remediation.push("Run pm extension --manage --project and pm extension --manage --global to refresh managed-state diagnostics.");
+  }
+  if (unknownCapabilityCount > 0) {
+    remediation.push(
+      `Unknown extension capabilities detected. Allowed capabilities: ${KNOWN_EXTENSION_CAPABILITIES.join(", ")}. ` +
+        "Review extension_capability_unknown warning details for suggested replacements.",
+    );
   }
   if (updateHealthPartial) {
     remediation.push(
@@ -466,6 +497,7 @@ function buildExtensionHealthTriageSummary(
     unmanaged_loaded_extensions: unmanagedLoadedExtensions,
     update_health_coverage: updateHealthCoverage,
     update_health_partial: updateHealthPartial,
+    unknown_capability_count: unknownCapabilityCount,
     top_warnings: normalizedWarnings.slice(0, 8),
     remediation,
   };
@@ -544,6 +576,7 @@ async function buildExtensionCheck(
     ...globalManagedState.warnings,
     ...updateCoverageWarnings,
   ];
+  const capabilityGuidance = collectUnknownCapabilityGuidance(extensionWarnings);
   const extensionTriage = buildExtensionHealthTriageSummary(
     extensionWarnings,
     loadResult.failed.length,
@@ -564,6 +597,7 @@ async function buildExtensionCheck(
         warnings: extensionWarnings,
         activation: activationDetails,
         triage: extensionTriage,
+        capability_guidance: capabilityGuidance,
       } as Record<string, unknown>,
     },
     warnings: extensionWarnings,

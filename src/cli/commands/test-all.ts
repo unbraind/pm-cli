@@ -24,6 +24,7 @@ export interface TestAllCommandOptions {
   pmContext?: string;
   failOnContextMismatch?: boolean;
   failOnSkipped?: boolean;
+  failOnEmptyTestRun?: boolean;
   requireAssertionsForPm?: boolean;
 }
 
@@ -270,6 +271,7 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
             sharedHostSafe: options.sharedHostSafe,
             pmContext: options.pmContext,
             failOnContextMismatch: options.failOnContextMismatch,
+            failOnEmptyTestRun: options.failOnEmptyTestRun,
             requireAssertionsForPm: options.requireAssertionsForPm,
           })
         : [];

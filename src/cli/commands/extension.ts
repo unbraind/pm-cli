@@ -4,9 +4,14 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import type { ExtensionManifest } from "../../core/extensions/loader.js";
 import { activateExtensions, loadExtensions } from "../../core/extensions/index.js";
-import { resolveExtensionRoots } from "../../core/extensions/loader.js";
+import {
+  KNOWN_EXTENSION_CAPABILITIES,
+  parseUnknownExtensionCapabilityWarning,
+  resolveExtensionRoots,
+  type ExtensionManifest,
+  type UnknownExtensionCapabilityWarningDetails,
+} from "../../core/extensions/loader.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -37,6 +42,7 @@ export type ExtensionCommandAction =
   | "activate"
   | "deactivate";
 export type ExtensionScope = "project" | "global";
+export type ExtensionActivationStatus = "ok" | "failed" | "not_loaded" | "unknown";
 
 export interface ExtensionCommandOptions {
   install?: boolean;
@@ -44,6 +50,8 @@ export interface ExtensionCommandOptions {
   explore?: boolean;
   manage?: boolean;
   doctor?: boolean;
+  strictExit?: boolean;
+  failOnWarn?: boolean;
   adopt?: boolean;
   adoptAll?: boolean;
   activate?: boolean;
@@ -163,7 +171,11 @@ export interface ManagedExtensionSummary {
   version: string;
   entry: string;
   scope: ExtensionScope;
+  // Backward-compatible alias for configured enabled state. Prefer `enabled`.
   active: boolean;
+  enabled: boolean;
+  runtime_active: boolean | null;
+  activation_status: ExtensionActivationStatus;
   managed: boolean;
   source?: ManagedExtensionSource;
   update_available?: boolean | null;
@@ -194,6 +206,7 @@ interface ExtensionTriageSummary {
   warning_codes: string[];
   total_extensions: number;
   managed_total: number;
+  enabled_total: number;
   active_total: number;
   update_available_total: number;
   update_health_coverage: "full" | "partial";
@@ -893,13 +906,17 @@ async function listInstalledExtensions(
       warnings.push(`extension_manifest_missing:${scope}:${directoryName}`);
       const managedEntry = managedByDirectory.get(normalizeExtensionNameForMatch(directoryName));
       const updateCheck = resolveUpdateCheckResolution(managedEntry);
+      const enabled = managedEntry ? isExtensionEnabled(settings, managedEntry.name) : false;
       summaries.push({
         name: managedEntry?.name ?? directoryName,
         directory: directoryName,
         version: managedEntry?.manifest_version ?? "unknown",
         entry: managedEntry?.manifest_entry ?? "unknown",
         scope,
-        active: managedEntry ? isExtensionEnabled(settings, managedEntry.name) : false,
+        active: enabled,
+        enabled,
+        runtime_active: null,
+        activation_status: "unknown",
         managed: Boolean(managedEntry),
         source: managedEntry?.source,
         update_available: managedEntry?.update_available,
@@ -928,13 +945,17 @@ async function listInstalledExtensions(
       managedByName.get(normalizeExtensionNameForMatch(manifest.name)) ??
       managedByDirectory.get(normalizeExtensionNameForMatch(directoryName));
     const updateCheck = resolveUpdateCheckResolution(managedEntry);
+    const enabled = isExtensionEnabled(settings, manifest.name);
     summaries.push({
       name: manifest.name,
       directory: directoryName,
       version: manifest.version,
       entry: manifest.entry,
       scope,
-      active: isExtensionEnabled(settings, manifest.name),
+      active: enabled,
+      enabled,
+      runtime_active: null,
+      activation_status: "unknown",
       managed: Boolean(managedEntry),
       source: managedEntry?.source,
       update_available: managedEntry?.update_available,
@@ -949,6 +970,49 @@ async function listInstalledExtensions(
     extensions: summaries.sort((left, right) => left.name.localeCompare(right.name)),
     warnings: warnings.sort((left, right) => left.localeCompare(right)),
   };
+}
+
+function applyDoctorRuntimeActivationState(
+  extensions: ManagedExtensionSummary[],
+  loadResult: Awaited<ReturnType<typeof loadExtensions>>,
+  activationResult: Awaited<ReturnType<typeof activateExtensions>>,
+): ManagedExtensionSummary[] {
+  const loadedNames = new Set(loadResult.loaded.map((entry) => normalizeExtensionNameForMatch(entry.name)));
+  const loadFailedNames = new Set(loadResult.failed.map((entry) => normalizeExtensionNameForMatch(entry.name)));
+  const activationFailedNames = new Set(activationResult.failed.map((entry) => normalizeExtensionNameForMatch(entry.name)));
+
+  return extensions.map((entry) => {
+    if (!entry.enabled) {
+      return {
+        ...entry,
+        runtime_active: false,
+        activation_status: "not_loaded",
+      };
+    }
+
+    const normalizedName = normalizeExtensionNameForMatch(entry.name);
+    if (loadFailedNames.has(normalizedName) || activationFailedNames.has(normalizedName)) {
+      return {
+        ...entry,
+        runtime_active: false,
+        activation_status: "failed",
+      };
+    }
+
+    if (loadedNames.has(normalizedName)) {
+      return {
+        ...entry,
+        runtime_active: true,
+        activation_status: "ok",
+      };
+    }
+
+    return {
+      ...entry,
+      runtime_active: false,
+      activation_status: "not_loaded",
+    };
+  });
 }
 
 interface GithubUpdateStatus {
@@ -1059,6 +1123,7 @@ function buildExtensionTriageSummary(
 ): ExtensionTriageSummary {
   const normalizedWarnings = [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
   const managedTotal = extensions.filter((entry) => entry.managed).length;
+  const enabledTotal = extensions.filter((entry) => entry.enabled).length;
   const activeTotal = extensions.filter((entry) => entry.active).length;
   const updateAvailableTotal = extensions.filter((entry) => entry.update_available === true).length;
   const updateCheckStatusTotals: Record<ExtensionUpdateCheckStatus, number> = {
@@ -1091,6 +1156,12 @@ function buildExtensionTriageSummary(
     if (normalizedWarnings.some((warning) => warning.startsWith("extension_manifest_"))) {
       remediation.push(`Run pm extension --explore ${scopeFlag} to inspect discovered manifests and directories.`);
     }
+    if (normalizedWarnings.some((warning) => warning.startsWith("extension_capability_unknown:"))) {
+      remediation.push(
+        `Unknown extension capabilities detected. Allowed capabilities: ${KNOWN_EXTENSION_CAPABILITIES.join(", ")}. ` +
+          "Review extension_capability_unknown warning details for suggested replacements.",
+      );
+    }
     if (updateCheckFailedTotal > 0) {
       remediation.push(`Run pm extension --manage ${scopeFlag} after validating network and repository access.`);
     }
@@ -1118,6 +1189,7 @@ function buildExtensionTriageSummary(
     warning_codes: warningCodes,
     total_extensions: extensions.length,
     managed_total: managedTotal,
+    enabled_total: enabledTotal,
     active_total: activeTotal,
     update_available_total: updateAvailableTotal,
     update_health_coverage: updateHealthCoverage,
@@ -1147,6 +1219,24 @@ function warningCode(value: string): string {
     return normalized;
   }
   return normalized.slice(0, separator);
+}
+
+function collectUnknownCapabilityGuidance(warnings: string[]): UnknownExtensionCapabilityWarningDetails[] {
+  const seen = new Set<string>();
+  const guidance: UnknownExtensionCapabilityWarningDetails[] = [];
+  for (const warning of warnings) {
+    const parsed = parseUnknownExtensionCapabilityWarning(warning);
+    if (!parsed) {
+      continue;
+    }
+    const key = `${parsed.layer}:${parsed.name}:${parsed.capability}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    guidance.push(parsed);
+  }
+  return guidance;
 }
 
 function buildDoctorConsistencySummary(
@@ -1219,6 +1309,9 @@ export async function runExtension(
   global: GlobalOptions,
 ): Promise<ExtensionCommandResult> {
   const action = resolveAction(target, options);
+  if ((options.strictExit === true || options.failOnWarn === true) && action !== "doctor") {
+    throw new PmCliError("--strict-exit and --fail-on-warn are only valid with --doctor.", EXIT_CODE.USAGE);
+  }
   const normalizedTarget = action === "doctor" && target?.trim().toLowerCase() === "doctor" ? undefined : target;
   const scope = resolveScope(options);
   const resolvedRoots = resolveExtensionRootsForScope(scope, global);
@@ -1612,9 +1705,10 @@ export async function runExtension(
     });
     warnings.push(...loadResult.warnings);
     warnings.push(...activationResult.warnings);
+    const runtimeInstalledExtensions = applyDoctorRuntimeActivationState(installed.extensions, loadResult, activationResult);
     const doctorConsistency = buildDoctorConsistencySummary(
       scope,
-      installed.extensions,
+      runtimeInstalledExtensions,
       loadResult.loaded.map((entry) => ({ layer: entry.layer, name: entry.name })),
       loadResult.failed.map((entry) => ({ name: entry.name })),
       loadResult.disabled_by_flag,
@@ -1626,7 +1720,8 @@ export async function runExtension(
     warnings.push(...updateCheckWarnings);
 
     const normalizedWarnings = [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
-    const triage = buildExtensionTriageSummary(scope, normalizedWarnings, installed.extensions);
+    const capabilityGuidance = collectUnknownCapabilityGuidance(normalizedWarnings);
+    const triage = buildExtensionTriageSummary(scope, normalizedWarnings, runtimeInstalledExtensions);
     const warningCodes = triage.warning_codes;
     const remediation = [
       ...new Set(
@@ -1647,15 +1742,26 @@ export async function runExtension(
       scope,
       warning_count: triage.warning_count,
       warning_codes: warningCodes,
-      total_extensions: installed.extensions.length,
-      managed_total: installed.extensions.filter((entry) => entry.managed).length,
-      active_total: installed.extensions.filter((entry) => entry.active).length,
-      update_available_total: installed.extensions.filter((entry) => entry.update_available === true).length,
+      total_extensions: runtimeInstalledExtensions.length,
+      managed_total: runtimeInstalledExtensions.filter((entry) => entry.managed).length,
+      enabled_total: runtimeInstalledExtensions.filter((entry) => entry.enabled).length,
+      active_total: runtimeInstalledExtensions.filter((entry) => entry.active).length,
+      runtime_active_total: runtimeInstalledExtensions.filter((entry) => entry.runtime_active === true).length,
+      activation_status_totals: {
+        ok: runtimeInstalledExtensions.filter((entry) => entry.activation_status === "ok").length,
+        failed: runtimeInstalledExtensions.filter((entry) => entry.activation_status === "failed").length,
+        not_loaded: runtimeInstalledExtensions.filter((entry) => entry.activation_status === "not_loaded").length,
+        unknown: runtimeInstalledExtensions.filter((entry) => entry.activation_status === "unknown").length,
+      },
+      unknown_capability_count: capabilityGuidance.length,
+      update_available_total: runtimeInstalledExtensions.filter((entry) => entry.update_available === true).length,
       update_health_coverage: triage.update_health_coverage,
       update_health_partial: triage.update_health_partial,
-      update_check_failed_total: installed.extensions.filter((entry) => entry.update_check_status === "failed").length,
+      update_check_failed_total: runtimeInstalledExtensions.filter((entry) => entry.update_check_status === "failed").length,
       load_failure_count: loadResult.failed.length,
       activation_failure_count: activationResult.failed.length,
+      blocking_failure_count: loadResult.failed.length + activationResult.failed.length,
+      has_blocking_failures: loadResult.failed.length + activationResult.failed.length > 0,
       consistency_warning_count: doctorConsistency.warnings.length,
       remediation,
     };
@@ -1664,17 +1770,19 @@ export async function runExtension(
       mode: detailMode,
       summary,
       triage,
+      capability_guidance: capabilityGuidance,
     };
     if (detailMode === "deep") {
       details.deep = {
         warnings: normalizedWarnings,
         warning_codes: warningCodes,
+        capability_guidance: capabilityGuidance,
         managed_state: {
           path: managedStateRead.path,
           count: managedStateRead.state.entries.length,
           entries: managedStateRead.state.entries,
         },
-        installed_extensions: installed.extensions,
+        installed_extensions: runtimeInstalledExtensions,
         load: {
           roots: loadResult.roots,
           warnings: loadResult.warnings,
@@ -1748,6 +1856,7 @@ export async function runExtension(
     return withResult({
       total: refreshedInstalled.extensions.length,
       managed_total: refreshedInstalled.extensions.filter((entry) => entry.managed).length,
+      enabled_total: refreshedInstalled.extensions.filter((entry) => entry.enabled).length,
       active_total: refreshedInstalled.extensions.filter((entry) => entry.active).length,
       extensions: refreshedInstalled.extensions,
       triage,

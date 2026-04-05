@@ -139,6 +139,7 @@ export interface TestCommandOptions {
   pmContext?: string;
   failOnContextMismatch?: boolean;
   failOnSkipped?: boolean;
+  failOnEmptyTestRun?: boolean;
   requireAssertionsForPm?: boolean;
   author?: string;
   message?: string;
@@ -148,6 +149,7 @@ export interface TestCommandOptions {
 export type LinkedTestFailureCategory =
   | "infra_collision"
   | "assertion_failure"
+  | "empty_run"
   | "timeout"
   | "max_buffer"
   | "spawn_error"
@@ -1317,6 +1319,7 @@ function createEmptyFailureCategoryCounts(): Record<LinkedTestFailureCategory, n
   return {
     infra_collision: 0,
     assertion_failure: 0,
+    empty_run: 0,
     timeout: 0,
     max_buffer: 0,
     spawn_error: 0,
@@ -1656,6 +1659,24 @@ function evaluateLinkedTestAssertions(linkedTest: LinkedTest, stdout: string, st
   return failures;
 }
 
+const EMPTY_LINKED_TEST_RUN_PATTERNS: Array<{ code: string; regex: RegExp }> = [
+  { code: "no_projects_matched_filters", regex: /\bNo projects matched the filters\b/i },
+  { code: "no_test_files_found", regex: /\bNo test files found\b/i },
+  { code: "no_tests_found", regex: /\bNo tests found\b/i },
+  { code: "no_matching_tests", regex: /\bNo matching tests?\b/i },
+  { code: "collected_zero_items", regex: /\bcollected 0 items?\b/i },
+];
+
+function detectEmptyLinkedTestRun(stdout: string, stderr: string): string | null {
+  const combined = `${stdout}\n${stderr}`;
+  for (const pattern of EMPTY_LINKED_TEST_RUN_PATTERNS) {
+    if (pattern.regex.test(combined)) {
+      return pattern.code;
+    }
+  }
+  return null;
+}
+
 export async function runLinkedTests(
   tests: LinkedTest[],
   defaultTimeoutSeconds: number | undefined,
@@ -1667,6 +1688,7 @@ export async function runLinkedTests(
     sharedHostSafe?: boolean;
     pmContext?: string;
     failOnContextMismatch?: boolean;
+    failOnEmptyTestRun?: boolean;
     requireAssertionsForPm?: boolean;
   },
 ): Promise<TestRunResult[]> {
@@ -1835,6 +1857,25 @@ export async function runLinkedTests(
       );
       const passed = execution.exitCode === 0 && !execution.timedOut && !execution.maxBufferExceeded;
       if (passed) {
+        if (options?.failOnEmptyTestRun === true) {
+          const emptyRunSignal = detectEmptyLinkedTestRun(execution.stdout, execution.stderr);
+          if (emptyRunSignal) {
+            results.push({
+              command: linkedTest.command,
+              path: linkedTest.path,
+              status: "failed",
+              exit_code: 1,
+              failure_category: "empty_run",
+              execution_context: executionContext,
+              stdout: execution.stdout,
+              stderr: execution.stderr,
+              error:
+                `Linked test reported an empty test run (${emptyRunSignal}) while --fail-on-empty-test-run is enabled. ` +
+                "Update test selection or disable --fail-on-empty-test-run for this run.",
+            });
+            continue;
+          }
+        }
         const assertionFailures = evaluateLinkedTestAssertions(linkedTest, execution.stdout, execution.stderr);
         if (assertionFailures.length > 0) {
           results.push({
@@ -1957,10 +1998,11 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
     options.pmContext !== undefined ||
     options.failOnContextMismatch === true ||
     options.failOnSkipped === true ||
+    options.failOnEmptyTestRun === true ||
     options.requireAssertionsForPm === true;
   if (hasRuntimeDirectiveFlags && options.run !== true) {
     throw new PmCliError(
-      "--env-set, --env-clear, --shared-host-safe, --pm-context, --fail-on-context-mismatch, --fail-on-skipped, and --require-assertions-for-pm require --run",
+      "--env-set, --env-clear, --shared-host-safe, --pm-context, --fail-on-context-mismatch, --fail-on-skipped, --fail-on-empty-test-run, and --require-assertions-for-pm require --run",
       EXIT_CODE.USAGE,
     );
   }
@@ -1974,6 +2016,7 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
         sharedHostSafe: options.sharedHostSafe,
         pmContext: pmContextMode,
         failOnContextMismatch: options.failOnContextMismatch,
+        failOnEmptyTestRun: options.failOnEmptyTestRun,
         requireAssertionsForPm: options.requireAssertionsForPm,
         sourceRoots: {
           projectPmRoot: pmRoot,

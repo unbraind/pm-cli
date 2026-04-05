@@ -74,6 +74,17 @@ describe("extension command runtime", () => {
     expect(() => parseExtensionInstallSource("github.com/only-owner")).toThrowError(/Invalid GitHub source/);
   });
 
+  it("rejects strict doctor flags when --doctor is not selected", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runExtension(undefined, { manage: true, project: true, strictExit: true }, { path: context.pmPath }),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runExtension(undefined, { explore: true, project: true, failOnWarn: true }, { path: context.pmPath }),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+    });
+  });
+
   it("installs bundled beads and todos aliases via extension install", async () => {
     await withTempPmPath(async (context) => {
       const beadsInstall = await runExtension("beads", { install: true, project: true }, { path: context.pmPath });
@@ -233,7 +244,16 @@ describe("extension command runtime", () => {
       const explore = await runExtension(undefined, { explore: true, project: true }, { path: context.pmPath });
       const exploreExtensions = (explore.details.extensions as Array<Record<string, unknown>>) ?? [];
       expect(exploreExtensions).toEqual(
-        expect.arrayContaining([expect.objectContaining({ name: "sample-ext", active: true, managed: true })]),
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: "sample-ext",
+            active: true,
+            enabled: true,
+            runtime_active: null,
+            activation_status: "unknown",
+            managed: true,
+          }),
+        ]),
       );
       expect(explore.details).toMatchObject({
         triage: {
@@ -241,6 +261,7 @@ describe("extension command runtime", () => {
           warning_count: 0,
           total_extensions: 1,
           managed_total: 1,
+          enabled_total: 1,
           active_total: 1,
         },
       });
@@ -265,6 +286,10 @@ describe("extension command runtime", () => {
         expect.arrayContaining([
           expect.objectContaining({
             name: "sample-ext",
+            active: true,
+            enabled: true,
+            runtime_active: null,
+            activation_status: "unknown",
             update_check_status: "skipped_non_github",
             update_check_reason: "managed_source_kind_local",
           }),
@@ -273,10 +298,12 @@ describe("extension command runtime", () => {
       expect(manage.details).toMatchObject({
         total: 1,
         managed_total: 1,
+        enabled_total: 1,
         active_total: 1,
         triage: {
           status: "ok",
           warning_count: 0,
+          enabled_total: 1,
           update_check_status_totals: {
             skipped_non_github: 1,
           },
@@ -670,6 +697,8 @@ describe("extension command runtime", () => {
         status: string;
         warning_count: number;
         warning_codes: string[];
+        blocking_failure_count: number;
+        has_blocking_failures: boolean;
         remediation: string[];
       };
       const deep = doctor.details.deep as { warning_codes?: unknown };
@@ -679,10 +708,95 @@ describe("extension command runtime", () => {
       expect(summary.warning_codes).toEqual(
         expect.arrayContaining(["extension_manifest_invalid_json", "extension_manifest_missing"]),
       );
+      expect(summary.blocking_failure_count).toBe(0);
+      expect(summary.has_blocking_failures).toBe(false);
       expect(summary.remediation).toEqual(
         expect.arrayContaining([expect.stringContaining("pm extension --explore --project")]),
       );
       expect(Array.isArray(deep.warning_codes)).toBe(true);
+    });
+  });
+
+  it("surfaces unknown capability guidance in doctor diagnostics", async () => {
+    await withTempPmPath(async (context) => {
+      const extensionsRoot = path.join(context.pmPath, "extensions");
+      await mkdir(path.join(extensionsRoot, "unknown-capability"), { recursive: true });
+      await writeFile(
+        path.join(extensionsRoot, "unknown-capability", "manifest.json"),
+        `${JSON.stringify(
+          {
+            name: "unknown-capability-ext",
+            version: "1.0.0",
+            entry: "./index.js",
+            capabilities: ["service"],
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+      await writeFile(path.join(extensionsRoot, "unknown-capability", "index.js"), "export default { activate() {} };\n", "utf8");
+
+      const doctor = await runExtension(undefined, { doctor: true, project: true, detail: "deep" }, { path: context.pmPath });
+      const summary = doctor.details.summary as {
+        warning_codes: string[];
+        unknown_capability_count: number;
+        remediation: string[];
+      };
+      const capabilityGuidance = doctor.details.capability_guidance as Array<Record<string, unknown>>;
+      const deep = doctor.details.deep as { warnings?: string[]; capability_guidance?: Array<Record<string, unknown>> };
+
+      expect(summary.warning_codes).toContain("extension_capability_unknown");
+      expect(summary.unknown_capability_count).toBeGreaterThanOrEqual(1);
+      expect(summary.remediation.some((entry) => entry.includes("Allowed capabilities"))).toBe(true);
+      expect(capabilityGuidance).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            layer: "project",
+            name: "unknown-capability-ext",
+            capability: "service",
+            suggested_capability: "services",
+          }),
+        ]),
+      );
+      expect((capabilityGuidance[0]?.allowed_capabilities as string[]) ?? []).toContain("services");
+      expect(deep.warnings?.some((warning) => warning.includes("suggested=services"))).toBe(true);
+      expect((deep.capability_guidance ?? []).length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  it("surfaces doctor load failures in summary warnings", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceDir = path.join(context.tempRoot, "doctor-broken-load-source");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(
+        path.join(sourceDir, "manifest.json"),
+        `${JSON.stringify(
+          {
+            name: "doctor-broken-load-ext",
+            version: "1.0.0",
+            entry: "./index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+      await writeFile(path.join(sourceDir, "index.js"), "export default { activate() {} };\n", "utf8");
+      await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
+
+      const installedEntryPath = path.join(context.pmPath, "extensions", "doctor-broken-load-ext", "index.js");
+      await writeFile(installedEntryPath, "throw new Error('load boom');\n", "utf8");
+
+      const doctor = await runExtension(undefined, { doctor: true, project: true, detail: "deep" }, { path: context.pmPath });
+      const summary = doctor.details.summary as {
+        load_failure_count: number;
+        blocking_failure_count: number;
+      };
+
+      expect(summary.load_failure_count).toBeGreaterThanOrEqual(1);
+      expect(summary.blocking_failure_count).toBeGreaterThanOrEqual(1);
     });
   });
 

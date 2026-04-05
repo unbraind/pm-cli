@@ -66,6 +66,8 @@ node scripts/run-tests.mjs coverage
 
 The runner creates a temporary sandbox and sets `PM_PATH` and `PM_GLOBAL_PATH` so tests never touch repository planning data.
 
+When validating linked-test automation behavior, include guard-flag coverage for `--fail-on-skipped`, `--fail-on-empty-test-run`, and `--require-assertions-for-pm`.
+
 ## Terminal Compatibility Checks
 
 When changing stdin, output, exit handling, or linked test execution, run targeted terminal-compatibility regressions before full-suite validation:

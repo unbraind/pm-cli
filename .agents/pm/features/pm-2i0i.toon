@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:directories","area:health",external-audit,pm-cli
 created_at: "2026-04-04T22:37:49.756Z"
-updated_at: "2026-04-04T23:35:40.317Z"
+updated_at: "2026-04-05T17:57:17.576Z"
 deadline: "2026-04-11T22:37:49.756Z"
 author: codex-agent
 estimated_minutes: 240
@@ -18,10 +18,33 @@ impact: Avoids noisy automation failures
 outcome: Optional directory gaps no longer fail default health
 why_now: Reported behavior currently marks healthy trackers as failed
 parent: pm-gt8u
-comments[2]{created_at,author,text}:
+resolution: Added strict health exit options with compatibility-safe default behavior.
+expected_result: Health can return non-zero in strict mode when warnings make ok=false.
+actual_result: Implemented --strict-exit/--fail-on-warn with docs/contracts/completion/Pi/test coverage.
+comments[5]{created_at,author,text}:
   "2026-04-04T22:37:49.756Z",codex-agent,"Duplicate-check evidence: pm search health missing directory strict-directories optional directories --limit 10; pm list-open --limit 20; no active item currently tracks optional-directory strictness semantics for pm health."
   "2026-04-04T23:35:32.836Z",codex-agent,"Delivery evidence: child task pm-t7xl is closed with linked pm test run passing; implementation includes health optional-directory defaults + --strict-directories and docs/contracts parity. Full project test and coverage suites passed."
+  "2026-04-05T17:04:20.485Z",codex-agent,"Scope mapped here for Issue #1: add health strict-exit/fail-on-warn automation behavior. Duplicate-check evidence confirms no open item already tracking health non-zero strict mode beyond this canonical feature lineage."
+  "2026-04-05T17:10:22.169Z",codex-agent,"Implemented health strict-exit/fail-on-warn behavior with CLI/contracts/completion/Pi parity. Verification: node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts and node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts both passed."
+  "2026-04-05T17:56:37.825Z",codex-agent,"Evidence: full verification passed via node scripts/run-tests.mjs coverage (895 tests, branches 91.01%) and pnpm build; strict health exit behavior and docs/contracts/completion/pi updates are implemented."
 notes[1]{created_at,author,text}:
   "2026-04-04T22:37:49.756Z",codex-agent,Implement with additive strict flag and preserve existing compatibility for users who want strict enforcement.
-close_reason: Feature completed via closed child task pm-t7xl with full verification and docs parity.
-body: Implements issue-report remediation for false-negative health status caused by missing optional directories (events/reminders/milestones/meetings).
+files[8]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,health strict-exit Pi wrapper parity
+  src/cli/commands/completion.ts,project,health strict-exit completion parity
+  src/cli/main.ts,project,health strict-exit CLI wiring
+  src/sdk/cli-contracts.ts,project,health strict-exit contracts parity
+  tests/integration/cli.integration.spec.ts,project,health strict-exit integration exit-code checks
+  tests/integration/release-readiness-runtime.spec.ts,project,health strict-exit help parity checks
+  tests/unit/completion-command.spec.ts,project,health strict-exit completion tests
+  tests/unit/pi-agent-extension.spec.ts,project,health strict-exit Pi wrapper tests
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,health strict-exit integration regressions
+  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,health strict-exit unit regressions
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,health strict-exit release notes
+  docs/ARCHITECTURE.md,project,health strict-exit architecture notes
+  PRD.md,project,health strict-exit contract docs
+  README.md,project,health strict-exit docs
+close_reason: Strict health exit behavior implemented and verified with full coverage/build.
+body: "Implements issue-report remediation for false-negative health status caused by missing optional directories (events/reminders/milestones/meetings).\n\nFollow-up scope: add pm health --strict-exit / --fail-on-warn behavior so automation can enforce non-zero exits when health warnings produce ok=false, while preserving default backward-compatible exit semantics."

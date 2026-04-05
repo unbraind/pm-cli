@@ -134,6 +134,21 @@ describe("generateBashScript", () => {
     );
   });
 
+  it("includes strict health flags in bash completion", () => {
+    const script = generateBashScript();
+    expect(script).toContain("--strict-directories --strict-exit --fail-on-warn --json --quiet --path --no-extensions --profile --help");
+  });
+
+  it("includes extension doctor strict flags in bash completion", () => {
+    const script = generateBashScript();
+    expect(script).toContain("--doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --strict-exit --fail-on-warn");
+  });
+
+  it("includes fail-on-empty-test-run in bash test completions", () => {
+    const script = generateBashScript();
+    expect(script).toContain("--fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm");
+  });
+
   it("includes calendar-specific flags", () => {
     const script = generateBashScript();
     expect(script).toContain("calendar|cal");
@@ -276,6 +291,24 @@ describe("generateZshScript", () => {
     expect(script).toContain("markdown toon json");
   });
 
+  it("includes strict health flags in zsh completion", () => {
+    const script = generateZshScript();
+    expect(script).toContain("--strict-directories[Treat optional item-type directories as required failures]");
+    expect(script).toContain("--strict-exit[Return non-zero exit when health warnings are present]");
+    expect(script).toContain("--fail-on-warn[Alias for --strict-exit]");
+  });
+
+  it("includes extension doctor strict flags in zsh completion", () => {
+    const script = generateZshScript();
+    expect(script).toContain("--strict-exit[Return non-zero exit when doctor warnings are present]");
+    expect(script).toContain("--fail-on-warn[Alias for --strict-exit (doctor)]");
+  });
+
+  it("includes fail-on-empty-test-run in zsh test completions", () => {
+    const script = generateZshScript();
+    expect(script).toContain("--fail-on-empty-test-run[Treat empty linked-test selections as failures]");
+  });
+
   it("includes deterministic tag choices for zsh --tag flags", () => {
     const script = generateZshScript(["Task"], ["beta", "alpha", "alpha"]);
     expect(script).toContain("--tag[Filter by tag]:(alpha beta)");
@@ -389,6 +422,23 @@ describe("generateFishScript", () => {
     expect(script).toContain("-l github");
     expect(script).toContain("-l ref");
     expect(script).toContain("-l detail");
+    expect(script).toContain("-l strict-exit");
+    expect(script).toContain("-l fail-on-warn");
+  });
+
+  it("includes strict health flags in fish completion", () => {
+    const script = generateFishScript();
+    expect(script).toContain("__fish_seen_subcommand_from health");
+    expect(script).toContain("-l strict-directories");
+    expect(script).toContain("-l strict-exit");
+    expect(script).toContain("-l fail-on-warn");
+  });
+
+  it("includes fail-on-empty-test-run in fish test completions", () => {
+    const script = generateFishScript();
+    expect(script).toContain("__fish_seen_subcommand_from test");
+    expect(script).toContain("-l fail-on-empty-test-run");
+    expect(script).toContain("__fish_seen_subcommand_from test-all");
   });
 
   it("includes __pm_no_subcommand helper function", () => {

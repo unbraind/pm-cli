@@ -108,7 +108,7 @@ Lifecycle semantics:
 - Install copies/clones into the selected extension root, validates `manifest.json` and `entry`, updates managed state, and activates the extension in settings.
 - Uninstall removes extension files, removes managed-state entry, and clears settings references.
 - Activate/deactivate updates `settings.extensions.enabled[]` / `settings.extensions.disabled[]`.
-- Explore returns discovered extensions + active/managed status.
+- Explore returns discovered extensions + compatibility/runtime status fields (`active`, `enabled`, `runtime_active`, `activation_status`) and managed state.
 - Manage performs GitHub update checks (`git ls-remote`) for managed GitHub entries and persists update metadata (`last_update_check_at`, `last_update_remote_commit`, `update_available`, `update_error`).
 - Adopt records an already-installed unmanaged extension into managed state metadata without reinstalling files (supports local source metadata or explicit GitHub provenance via `--gh`/`--github` and optional `--ref`).
 - Adopt-all bulk-records all unmanaged installed extensions in selected scope into managed state metadata without reinstalling files.
@@ -117,7 +117,7 @@ Lifecycle semantics:
   - `update_check_reason`: deterministic reason/code for that status (for example `up_to_date`, `update_available`, `extension_not_managed`, or the update failure text)
 - Manage triage includes `update_check_status_totals`, `update_check_failed_total`, and update-health coverage signals (`update_health_coverage`, `update_health_partial`) for operator-friendly rollups.
 - Manage/doctor warning-code rollups include `extension_update_health_partial_coverage` when unmanaged extensions reduce update-check coverage.
-- Doctor consolidates diagnostics into summary/deep modes (`--detail summary|deep`) with normalized warning codes, canonical extension load roots, consistency diagnostics for active-vs-loaded project extensions, update-health coverage telemetry, and remediation hints (`pm extension --doctor` or `pm extension doctor`).
+- Doctor consolidates diagnostics into summary/deep modes (`--detail summary|deep`) with normalized warning codes, canonical extension load roots, consistency diagnostics for active-vs-loaded project extensions, update-health coverage telemetry, remediation hints, strict warning exits (`--strict-exit`, alias `--fail-on-warn`), blocking-failure indicators (`blocking_failure_count`, `has_blocking_failures`), and capability guidance metadata (`pm extension --doctor` or `pm extension doctor`).
 
 ### Health integration
 
@@ -156,7 +156,7 @@ Every extension directory must contain a `manifest.json`:
 
 - `entry` must resolve inside the extension directory (no path traversal).
 - `capabilities` declares what the extension will register. API calls that exceed declared capabilities fail activation deterministically.
-- Unknown capability names are silently ignored for gating but emit discovery diagnostics.
+- Unknown capability names are ignored for gating but emit discovery diagnostics that include allowed-capability lists and nearest-match suggestions when confidence is high.
 
 ## Extension Module
 
@@ -556,7 +556,7 @@ api.hooks.onIndex((ctx) => {
 - `extension_load_failed:<layer>:<name>` — manifest parse or module import error
 - `extension_activate_failed:<layer>:<name>` — exception in `activate()`
 - `extension_entry_outside_extension:<layer>:<name>` — entry path escapes directory
-- `extension_capability_unknown:<layer>:<name>:<capability>` — unknown capability in manifest
+- `extension_capability_unknown:<layer>:<name>:<capability>:allowed=<csv>:suggested=<capability|none>` — unknown capability in manifest with inline guidance
 - collision warnings when multiple extensions target the same command/parser/preflight/service/renderer key (last registration wins)
 
 Use `pm health --json` to parse diagnostics programmatically.
@@ -641,6 +641,6 @@ Current wrapper parity includes:
 - `action: "calendar"` for `pm calendar` / `pm cal` (`view`, `date`, `from`, `to`, `past`, `type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`, `format`)
 - `create`/`update` reminder forwarding via repeatable `reminder` values (`at=<iso|relative>,text=<text>`)
 - `create`/`update` custom type-option forwarding via repeatable `typeOption` values
-- extension lifecycle forwarding via `extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-doctor`, `extension-adopt`, `extension-adopt-all`, `extension-activate`, and `extension-deactivate` actions (`target`, `scope`, `github`, `ref`, `detail`)
+- extension lifecycle forwarding via `extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-doctor`, `extension-adopt`, `extension-adopt-all`, `extension-activate`, and `extension-deactivate` actions (`target`, `scope`, `github`, `ref`, `detail`, `strictExit`, `failOnWarn`)
 
 See [AGENTS.md](../AGENTS.md) section 9 for full usage details.

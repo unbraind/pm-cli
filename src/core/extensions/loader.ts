@@ -7,7 +7,7 @@ import type { PmSettings } from "../../types/index.js";
 import type { GlobalOptions } from "../shared/command-types.js";
 
 const DEFAULT_EXTENSION_PRIORITY = 100;
-const KNOWN_EXTENSION_CAPABILITIES = [
+export const KNOWN_EXTENSION_CAPABILITIES = [
   "commands",
   "renderers",
   "hooks",
@@ -456,6 +456,95 @@ function collectUnknownExtensionCapabilities(capabilities: readonly string[]): s
   return capabilities.filter((capability) => !isKnownExtensionCapability(capability));
 }
 
+function levenshteinDistance(left: string, right: string): number {
+  if (left === right) {
+    return 0;
+  }
+  if (left.length === 0) {
+    return right.length;
+  }
+  if (right.length === 0) {
+    return left.length;
+  }
+  const previous = new Array<number>(right.length + 1);
+  const current = new Array<number>(right.length + 1);
+  for (let j = 0; j <= right.length; j += 1) {
+    previous[j] = j;
+  }
+  for (let i = 1; i <= left.length; i += 1) {
+    current[0] = i;
+    for (let j = 1; j <= right.length; j += 1) {
+      const substitutionCost = left[i - 1] === right[j - 1] ? 0 : 1;
+      current[j] = Math.min(
+        previous[j] + 1,
+        current[j - 1] + 1,
+        previous[j - 1] + substitutionCost,
+      );
+    }
+    for (let j = 0; j <= right.length; j += 1) {
+      previous[j] = current[j];
+    }
+  }
+  return previous[right.length] ?? left.length;
+}
+
+function suggestKnownExtensionCapability(capability: string): string | null {
+  const normalized = capability.trim().toLowerCase();
+  if (normalized.length === 0) {
+    return null;
+  }
+  let bestMatch: string | null = null;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const candidate of KNOWN_EXTENSION_CAPABILITIES) {
+    const distance = levenshteinDistance(normalized, candidate);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestMatch = candidate;
+    }
+  }
+  const maxDistance = Math.max(1, Math.floor(normalized.length * 0.34));
+  return bestMatch !== null && bestDistance <= maxDistance ? bestMatch : null;
+}
+
+function formatUnknownExtensionCapabilityWarning(layer: ExtensionLayer, name: string, capability: string): string {
+  const allowed = KNOWN_EXTENSION_CAPABILITIES.join(",");
+  const suggested = suggestKnownExtensionCapability(capability) ?? "none";
+  return `extension_capability_unknown:${layer}:${name}:${capability}:allowed=${allowed}:suggested=${suggested}`;
+}
+
+export interface UnknownExtensionCapabilityWarningDetails {
+  layer: ExtensionLayer;
+  name: string;
+  capability: string;
+  allowed_capabilities: string[];
+  suggested_capability?: string;
+}
+
+export function parseUnknownExtensionCapabilityWarning(
+  warning: string,
+): UnknownExtensionCapabilityWarningDetails | null {
+  const match = /^extension_capability_unknown:(global|project):([^:]+):([^:]+):allowed=([^:]+):suggested=([^:]+)$/.exec(
+    warning.trim(),
+  );
+  if (!match) {
+    return null;
+  }
+  const [, layerRaw, name, capability, allowedRaw, suggestedRaw] = match;
+  const layer = layerRaw as ExtensionLayer;
+  const allowed_capabilities = allowedRaw
+    .split(",")
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+  const suggested_capability = suggestedRaw === "none" ? undefined : suggestedRaw;
+  return {
+    layer,
+    name,
+    capability,
+    allowed_capabilities,
+    suggested_capability,
+  };
+}
+
 function parseManifest(raw: unknown): ExtensionManifest | null {
   if (typeof raw !== "object" || raw === null) {
     return null;
@@ -731,7 +820,7 @@ async function scanExtensionDirectory(
   const enabledForLoad = shouldEnable(manifest.name, enabled, disabled);
   const extensionWarnings: string[] = [];
   for (const capability of collectUnknownExtensionCapabilities(manifest.capabilities)) {
-    extensionWarnings.push(`extension_capability_unknown:${layer}:${manifest.name}:${capability}`);
+    extensionWarnings.push(formatUnknownExtensionCapabilityWarning(layer, manifest.name, capability));
   }
   if (!entryWithinDirectory) {
     extensionWarnings.push(`extension_entry_outside_extension:${layer}:${manifest.name}`);

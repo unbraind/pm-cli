@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: exit-codes,external-audit,linked-tests,pm-cli
 created_at: "2026-04-04T18:16:15.038Z"
-updated_at: "2026-04-04T21:56:12.028Z"
+updated_at: "2026-04-05T17:57:21.389Z"
 deadline: "2026-04-14T18:16:15.038Z"
 author: codex-agent
 estimated_minutes: 180
@@ -29,9 +29,9 @@ reporter: codex-agent
 severity: high
 environment: linux
 repro_steps: Run pm test <id> --run with fail-on-context-mismatch and observe failed run_results with process exit code 0.
-resolution: Closed with implementation and verification evidence preserved in linked artifacts and comments.
-expected_result: Failed linked tests produce dependency-failed process exit code.
-actual_result: run_results can contain failed entries while process exits successfully.
+resolution: Implemented linked-test empty-run strict guardrails and failure categorization.
+expected_result: Strict mode should fail successful-empty test selections to avoid false confidence.
+actual_result: "Added --fail-on-empty-test-run to test/test-all with pattern detection and empty_run reporting, validated by tests."
 affected_version: 2026.3.12
 fixed_version: target-vnext
 component: linked-test-runtime
@@ -39,19 +39,35 @@ regression: true
 customer_impact: CI and scripts may proceed despite known linked-test failures.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-siz,related,"2026-04-04T18:16:15.038Z",codex-agent,null
-comments[2]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-04-04T18:16:15.038Z",codex-agent,Duplicate-check evidence node dist/cli.js context --limit 10 --json; node dist/cli.js search pm test run exit code linked test failure --limit 10 --json; node dist/cli.js list-open --limit 20 --json; node dist/cli.js list-in-progress --limit 20 --json. Net-new because no active item specifically tracks pm test run non-zero exit behavior when run_results contain failed entries.
   "2026-04-04T18:31:14.715Z",codex-agent,"Implemented pm test --run dependency-failed exit propagation when any run_results entry fails and added integration/runtime coverage. Evidence: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts plus explicit exit-code repro (expected 5 observed)."
+  "2026-04-05T17:04:22.329Z",codex-agent,"Scope extended here for Issue #4 follow-up: fail-on-empty-test-run guardrails for linked-test executions that return exit 0 without executing tests. Duplicate-check evidence confirms no separate open issue already tracks this exact empty-run false-pass behavior."
+  "2026-04-05T17:31:53.619Z",codex-agent,"Implemented fail-on-empty-test-run guardrails for pm test --run and pm test-all: successful command executions that match high-confidence empty-run signals (including 'No projects matched the filters') now fail when the guard flag is enabled. Added CLI/contracts/completion/Pi parity plus new empty_run failure category reporting. Verification: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts and node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts passed."
+  "2026-04-05T17:56:39.494Z",codex-agent,"Evidence: full verification passed via node scripts/run-tests.mjs coverage (895 tests, branches 91.01%) and pnpm build; fail-on-empty-test-run guardrails shipped with additional safe-output and JSON path edge-case coverage."
 notes[1]{created_at,author,text}:
   "2026-04-04T18:16:15.038Z",codex-agent,Implement CLI test command exit-code parity with test-all dependency-failed behavior.
-files[3]{path,scope,note}:
+files[12]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,fail-on-empty-test-run Pi wrapper parity
+  src/cli/commands/completion.ts,project,fail-on-empty-test-run completion parity
+  src/cli/commands/test-all.ts,project,test-all empty-run guard passthrough
+  src/cli/commands/test.ts,project,empty-run detection and linked-test failure category handling
   src/cli/main.ts,project,test command exit semantics
+  src/sdk/cli-contracts.ts,project,fail-on-empty-test-run contracts parity
   tests/integration/cli.integration.spec.ts,project,pm-test-exit-code-integration-coverage
   tests/integration/release-readiness-runtime.spec.ts,project,release-runtime-exit-code-coverage
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  tests/unit/completion-command.spec.ts,project,fail-on-empty-test-run completion tests
+  tests/unit/pi-agent-extension.spec.ts,project,fail-on-empty-test-run Pi schema and args coverage
+  tests/unit/test-all-command.spec.ts,project,test-all fail-on-empty-test-run unit coverage
+  tests/unit/test-command.spec.ts,project,fail-on-empty-test-run unit coverage
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,exit-code regression coverage
-docs[2]{path,scope,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,fail-on-empty-test-run unit regressions
+docs[5]{path,scope,note}:
+  CHANGELOG.md,project,fail-on-empty-test-run release notes
+  CONTRIBUTING.md,project,linked-test guardrail contributor guidance
+  docs/ARCHITECTURE.md,project,linked-test guardrail architecture notes
   PRD.md,project,exit-code-contract-update
   README.md,project,document test command exit behavior
-close_reason: pm test run exit semantics now fail CI correctly
-body: "Regression follow-up for external issue report: pm test --run currently reports failed run_results while process exit code remains zero."
+close_reason: "Linked-test empty-run guardrails implemented and verified, preventing false-pass runs in strict mode."
+body: "Regression follow-up for external issue report: pm test --run currently reports failed run_results while process exit code remains zero.\n\nFollow-up scope: add fail-on-empty-test-run guardrails for pm test --run and pm test-all so empty-selection runner outputs (e.g. no projects matched) can be treated as deterministic failures instead of false passes."

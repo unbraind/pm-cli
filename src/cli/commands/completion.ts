@@ -108,7 +108,7 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen("--criterion --format --policy --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    extension)",
-    `      COMPREPLY=(${compgen("--install --uninstall --explore --manage --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--install --uninstall --explore --manage --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --strict-exit --fail-on-warn --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    comments)",
     `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-comment --force --json --quiet --path --no-extensions --profile --help")})`,
@@ -129,10 +129,10 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen("--format --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    test)",
-    `      COMPREPLY=(${compgen("--add --remove --run --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --fail-on-context-mismatch --fail-on-skipped --require-assertions-for-pm --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --remove --run --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    test-all)",
-    `      COMPREPLY=(${compgen("--status --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --fail-on-context-mismatch --fail-on-skipped --require-assertions-for-pm --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--status --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    test-runs)",
     `      COMPREPLY=(${compgen("list status logs stop resume --status --limit --stream --tail --force --author --json --quiet --path --no-extensions --profile --help")})`,
@@ -434,6 +434,7 @@ _pm() {
             '--pm-context[PM linked-test context mode]:(schema tracker auto)' \\
             '--fail-on-context-mismatch[Fail when context item counts mismatch]' \\
             '--fail-on-skipped[Treat skipped linked tests as dependency failures]' \\
+            '--fail-on-empty-test-run[Treat empty linked-test selections as failures]' \\
             '--require-assertions-for-pm[Require assertions for linked PM command tests]' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
@@ -453,6 +454,7 @@ _pm() {
             '--pm-context[PM linked-test context mode]:(schema tracker auto)' \\
             '--fail-on-context-mismatch[Fail when context item counts mismatch]' \\
             '--fail-on-skipped[Treat skipped linked tests as dependency failures]' \\
+            '--fail-on-empty-test-run[Treat empty linked-test selections as failures]' \\
             '--require-assertions-for-pm[Require assertions for linked PM command tests]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -503,6 +505,8 @@ _pm() {
         health)
           _arguments \\
             '--strict-directories[Treat optional item-type directories as required failures]' \\
+            '--strict-exit[Return non-zero exit when health warnings are present]' \\
+            '--fail-on-warn[Alias for --strict-exit]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -534,6 +538,8 @@ _pm() {
             '--github[Alias for --gh]:github_spec' \\
             '--ref[Git ref/branch/tag for GitHub source]:git_ref' \\
             '--detail[Detail mode for extension diagnostics]:detail_mode:(summary deep)' \\
+            '--strict-exit[Return non-zero exit when doctor warnings are present]' \\
+            '--fail-on-warn[Alias for --strict-exit (doctor)]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]' \\
             '*:target_or_name:_files -/'
@@ -756,6 +762,7 @@ complete -c pm -n '__fish_seen_subcommand_from test' -l shared-host-safe -d 'App
 complete -c pm -n '__fish_seen_subcommand_from test' -l pm-context -d 'PM linked-test context mode' -r -a 'schema tracker auto'
 complete -c pm -n '__fish_seen_subcommand_from test' -l fail-on-context-mismatch -d 'Fail when context item counts mismatch'
 complete -c pm -n '__fish_seen_subcommand_from test' -l fail-on-skipped -d 'Treat skipped linked tests as dependency failures'
+complete -c pm -n '__fish_seen_subcommand_from test' -l fail-on-empty-test-run -d 'Treat empty linked-test selections as failures'
 complete -c pm -n '__fish_seen_subcommand_from test' -l require-assertions-for-pm -d 'Require assertions for linked PM command tests'
 complete -c pm -n '__fish_seen_subcommand_from test' -l author -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from test' -l message -d 'History message' -r
@@ -772,6 +779,7 @@ complete -c pm -n '__fish_seen_subcommand_from test-all' -l shared-host-safe -d 
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l pm-context -d 'PM linked-test context mode' -r -a 'schema tracker auto'
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l fail-on-context-mismatch -d 'Fail when context item counts mismatch'
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l fail-on-skipped -d 'Treat skipped linked tests as dependency failures'
+complete -c pm -n '__fish_seen_subcommand_from test-all' -l fail-on-empty-test-run -d 'Treat empty linked-test selections as failures'
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l require-assertions-for-pm -d 'Require assertions for linked PM command tests'
 
 # test-runs flags
@@ -803,6 +811,8 @@ complete -c pm -n '__fish_seen_subcommand_from config' -l criterion -d 'Definiti
 complete -c pm -n '__fish_seen_subcommand_from config' -l format -d 'Item format for item-format key' -r -a 'toon json_markdown'
 complete -c pm -n '__fish_seen_subcommand_from config' -l policy -d 'Policy value for supported policy keys' -r
 complete -c pm -n '__fish_seen_subcommand_from health' -l strict-directories -d 'Treat optional item-type directories as required failures'
+complete -c pm -n '__fish_seen_subcommand_from health' -l strict-exit -d 'Return non-zero exit when health warnings are present'
+complete -c pm -n '__fish_seen_subcommand_from health' -l fail-on-warn -d 'Alias for --strict-exit'
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l status -d 'Filter by item status' -r -a 'draft open in_progress blocked closed canceled'
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l type -d 'Filter by item type' -r -a '${typeChoices}'
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l assignee -d 'Filter by assignee (none for unassigned)' -r
@@ -831,7 +841,9 @@ complete -c pm -n '__fish_seen_subcommand_from extension' -l global -d 'Use glob
 complete -c pm -n '__fish_seen_subcommand_from extension' -l gh -d 'GitHub shorthand owner/repo/path' -r
 complete -c pm -n '__fish_seen_subcommand_from extension' -l github -d 'Alias for --gh' -r
 complete -c pm -n '__fish_seen_subcommand_from extension' -l ref -d 'Git ref/branch/tag for GitHub source' -r
-complete -c pm -n '__fish_seen_subcommand_from extension' -l detail -d 'Detail mode for extension diagnostics' -r -a 'summary deep'`;
+complete -c pm -n '__fish_seen_subcommand_from extension' -l detail -d 'Detail mode for extension diagnostics' -r -a 'summary deep'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l strict-exit -d 'Return non-zero exit when doctor warnings are present'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l fail-on-warn -d 'Alias for --strict-exit (doctor)'`;
 }
 
 const SETUP_HINTS: Record<CompletionShell, string> = {

@@ -221,7 +221,11 @@ describe("extension loader", () => {
         pmRoot: context.pmPath,
         settings,
       });
-      expect(discovery.warnings).toEqual(["extension_capability_unknown:project:unknown-capability-ext:future-capability"]);
+      expect(discovery.warnings).toEqual([
+        expect.stringContaining("extension_capability_unknown:project:unknown-capability-ext:future-capability"),
+      ]);
+      expect(discovery.warnings[0]).toContain("allowed=commands,renderers,hooks,schema,importers,search,parser,preflight,services");
+      expect(discovery.warnings[0]).toContain("suggested=none");
       expect(discovery.effective).toEqual([
         expect.objectContaining({
           name: "unknown-capability-ext",
@@ -233,9 +237,39 @@ describe("extension loader", () => {
         pmRoot: context.pmPath,
         settings,
       });
-      expect(loaded.warnings).toEqual(["extension_capability_unknown:project:unknown-capability-ext:future-capability"]);
+      expect(loaded.warnings).toEqual([
+        expect.stringContaining("extension_capability_unknown:project:unknown-capability-ext:future-capability"),
+      ]);
+      expect(loaded.warnings[0]).toContain("allowed=commands,renderers,hooks,schema,importers,search,parser,preflight,services");
+      expect(loaded.warnings[0]).toContain("suggested=none");
       expect(loaded.loaded.map((entry) => entry.name)).toEqual(["unknown-capability-ext"]);
       expect(loaded.failed).toEqual([]);
+    });
+  });
+
+  it("includes nearest-match suggestions for unknown capabilities when confidence is high", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      await createExtension(
+        roots.project,
+        "suggested-capability",
+        {
+          name: "suggested-capability-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["service"],
+        },
+        "export default { ok: true };\n",
+      );
+
+      const settings = await loadSettings(context);
+      const discovery = await discoverExtensions({
+        pmRoot: context.pmPath,
+        settings,
+      });
+      expect(discovery.warnings).toHaveLength(1);
+      expect(discovery.warnings[0]).toContain("extension_capability_unknown:project:suggested-capability-ext:service");
+      expect(discovery.warnings[0]).toContain("suggested=services");
     });
   });
 

@@ -311,6 +311,15 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const failOnWarnValidate = context.runCli(["validate", "--check-resolution", "--fail-on-warn", "--json"], { expectJson: true });
       expect(failOnWarnValidate.code).toBe(1);
       expect((failOnWarnValidate.json as { ok: boolean }).ok).toBe(false);
+
+      await rm(path.join(context.pmPath, "events"), { recursive: true, force: true });
+      const strictExitHealth = context.runCli(["health", "--strict-directories", "--strict-exit", "--json"], { expectJson: true });
+      expect(strictExitHealth.code).toBe(1);
+      expect((strictExitHealth.json as { ok: boolean }).ok).toBe(false);
+
+      const failOnWarnHealth = context.runCli(["health", "--strict-directories", "--fail-on-warn", "--json"], { expectJson: true });
+      expect(failOnWarnHealth.code).toBe(1);
+      expect((failOnWarnHealth.json as { ok: boolean }).ok).toBe(false);
     });
   });
 
@@ -355,8 +364,18 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         details: {
           total: 1,
           managed_total: 1,
+          enabled_total: 1,
           active_total: 1,
-          extensions: [expect.objectContaining({ name: "integration-local-ext", managed: true, active: true })],
+          extensions: [
+            expect.objectContaining({
+              name: "integration-local-ext",
+              managed: true,
+              active: true,
+              enabled: true,
+              runtime_active: null,
+              activation_status: "unknown",
+            }),
+          ],
         },
       });
 
@@ -385,7 +404,17 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         details: {
           total: 1,
           managed_total: 1,
-          extensions: [expect.objectContaining({ name: "integration-local-ext", managed: true })],
+          enabled_total: 1,
+          extensions: [
+            expect.objectContaining({
+              name: "integration-local-ext",
+              managed: true,
+              active: true,
+              enabled: true,
+              runtime_active: null,
+              activation_status: "unknown",
+            }),
+          ],
         },
       });
 
@@ -409,6 +438,82 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           managed_total: 0,
         },
       });
+    });
+  });
+
+  it("supports strict doctor exits and blocking-failure summary indicators", async () => {
+    await withTempPmPath(async (context) => {
+      const extensionDir = path.join(context.pmPath, "extensions", "doctor-failing-ext");
+      await mkdir(extensionDir, { recursive: true });
+      await writeFile(
+        path.join(extensionDir, "manifest.json"),
+        JSON.stringify(
+          {
+            name: "doctor-failing-ext",
+            version: "1.0.0",
+            entry: "index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(
+        path.join(extensionDir, "index.js"),
+        [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerCommand({",
+          "      name: 'doctor failing command',",
+          "      run: undefined",
+          "    });",
+          "  }",
+          "};",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const doctor = context.runCli(["extension", "--doctor", "--project", "--detail", "summary", "--json"], { expectJson: true });
+      expect(doctor.code).toBe(0);
+      const doctorSummary = (doctor.json as { details: { summary: Record<string, unknown> } }).details.summary;
+      expect(typeof doctorSummary.activation_failure_count).toBe("number");
+      expect((doctorSummary.activation_failure_count as number) > 0).toBe(true);
+      expect(typeof doctorSummary.blocking_failure_count).toBe("number");
+      expect((doctorSummary.blocking_failure_count as number) > 0).toBe(true);
+      expect(doctorSummary.has_blocking_failures).toBe(true);
+      expect(typeof doctorSummary.runtime_active_total).toBe("number");
+      const activationStatusTotals = doctorSummary.activation_status_totals as Record<string, unknown>;
+      expect(typeof activationStatusTotals.failed).toBe("number");
+      expect((activationStatusTotals.failed as number) > 0).toBe(true);
+
+      const doctorDeep = context.runCli(["extension", "--doctor", "--project", "--detail", "deep", "--json"], { expectJson: true });
+      expect(doctorDeep.code).toBe(0);
+      const deepInstalled = ((doctorDeep.json as { details: { deep: { installed_extensions: Array<Record<string, unknown>> } } }).details.deep
+        .installed_extensions ?? []) as Array<Record<string, unknown>>;
+      const failingExtension = deepInstalled.find((entry) => entry.name === "doctor-failing-ext");
+      expect(failingExtension).toBeTruthy();
+      expect(failingExtension).toMatchObject({
+        active: true,
+        enabled: true,
+        runtime_active: false,
+        activation_status: "failed",
+      });
+
+      const strictDoctor = context.runCli(
+        ["extension", "--doctor", "--project", "--detail", "summary", "--strict-exit", "--json"],
+        { expectJson: true },
+      );
+      expect(strictDoctor.code).toBe(1);
+      expect(((strictDoctor.json as { details: { summary: { status: string } } }).details.summary.status)).toBe("warn");
+
+      const failOnWarnDoctor = context.runCli(
+        ["extension", "--doctor", "--project", "--detail", "summary", "--fail-on-warn", "--json"],
+        { expectJson: true },
+      );
+      expect(failOnWarnDoctor.code).toBe(1);
+      expect(((failOnWarnDoctor.json as { details: { summary: { status: string } } }).details.summary.status)).toBe("warn");
     });
   });
 
@@ -4370,6 +4475,91 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       };
       expect(runTestsJson.run_results.some((entry) => entry.status === "failed")).toBe(true);
       expect((runTestsJson.failure_categories.assertion_failure ?? 0) >= 1).toBe(true);
+    });
+  });
+
+  it("returns dependency-failed exit code when fail-on-empty-test-run detects empty linked-test selections", async () => {
+    await withTempPmPath(async (context) => {
+      const createEmptySelection = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Empty selection test command item",
+          "--description",
+          "Validates fail-on-empty-test-run guardrails for test and test-all",
+          "--type",
+          "Task",
+          "--status",
+          "in_progress",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,test",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "10",
+          "--acceptance-criteria",
+          "test and test-all fail when empty selection guard is enabled",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create empty-selection item",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "command=node -e \"console.log('No projects matched the filters')\",scope=project,timeout=30",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(createEmptySelection.code).toBe(0);
+      const itemId = (createEmptySelection.json as { item: { id: string } }).item.id;
+
+      const baselineRun = context.runCli(["test", itemId, "--json", "--run", "--timeout", "30"], { expectJson: true });
+      expect(baselineRun.code).toBe(0);
+      expect((baselineRun.json as { run_results: Array<{ status: string }> }).run_results[0]?.status).toBe("passed");
+
+      const guardedRun = context.runCli(
+        ["test", itemId, "--json", "--run", "--timeout", "30", "--fail-on-empty-test-run"],
+        { expectJson: true },
+      );
+      expect(guardedRun.code).toBe(5);
+      const guardedRunJson = guardedRun.json as {
+        run_results: Array<{ status: string; failure_category?: string }>;
+        failure_categories: { empty_run?: number };
+      };
+      expect(guardedRunJson.run_results[0]?.status).toBe("failed");
+      expect(guardedRunJson.run_results[0]?.failure_category).toBe("empty_run");
+      expect((guardedRunJson.failure_categories.empty_run ?? 0) >= 1).toBe(true);
+
+      const guardedAll = context.runCli(
+        ["test-all", "--json", "--status", "in-progress", "--timeout", "30", "--fail-on-empty-test-run"],
+        { expectJson: true },
+      );
+      expect(guardedAll.code).toBe(5);
+      const guardedAllJson = guardedAll.json as {
+        failed: number;
+        results: Array<{ run_results: Array<{ failure_category?: string }> }>;
+      };
+      expect(guardedAllJson.failed).toBeGreaterThanOrEqual(1);
+      expect(
+        guardedAllJson.results.some((entry) => entry.run_results.some((result) => result.failure_category === "empty_run")),
+      ).toBe(true);
     });
   });
 

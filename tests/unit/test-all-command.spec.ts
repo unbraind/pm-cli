@@ -664,6 +664,24 @@ describe("runTestAll", () => {
     });
   });
 
+  it("fails empty linked-test runs when fail-on-empty-test-run is enabled", async () => {
+    await withTempPmPath(async (context) => {
+      createTaskWithTests(context, {
+        title: "Fail On Empty Test-All Aggregate",
+        status: "open",
+        testEntries: ["command=node -e \"console.log('No projects matched the filters')\",scope=project"],
+      });
+
+      const baseline = await runTestAll({ status: "open", timeout: "20" }, { path: context.pmPath });
+      expect(baseline.failed).toBe(0);
+
+      const guarded = await runTestAll({ status: "open", timeout: "20", failOnEmptyTestRun: true }, { path: context.pmPath });
+      expect(guarded.failed).toBeGreaterThanOrEqual(1);
+      const runResults = guarded.results.flatMap((entry) => entry.run_results);
+      expect(runResults.some((entry) => entry.failure_category === "empty_run")).toBe(true);
+    });
+  });
+
   it("supports PM context mismatch guards and PM assertion policy in test-all", async () => {
     await withTempPmPath(async (context) => {
       createTaskWithTests(context, {

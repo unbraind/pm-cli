@@ -119,6 +119,7 @@ export interface PmToolParameters {
   pmContext?: string;
   failOnContextMismatch?: boolean;
   failOnSkipped?: boolean;
+  failOnEmptyTestRun?: boolean;
   requireAssertionsForPm?: boolean;
   validateClose?: string;
   checkMetadata?: boolean;
@@ -439,6 +440,12 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       args.push("extension", "--doctor");
       addExtensionScopeFlag(args, params);
       pushOption(args, "--detail", params.detail);
+      if (params.strictExit) {
+        args.push("--strict-exit");
+      }
+      if (params.failOnWarn) {
+        args.push("--fail-on-warn");
+      }
       return args;
     case "extension-adopt":
       args.push("extension", "--adopt", requireString(params.target, "target", action));
@@ -643,6 +650,9 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       if (params.failOnSkipped) {
         args.push("--fail-on-skipped");
       }
+      if (params.failOnEmptyTestRun) {
+        args.push("--fail-on-empty-test-run");
+      }
       if (params.requireAssertionsForPm) {
         args.push("--require-assertions-for-pm");
       }
@@ -669,6 +679,9 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       }
       if (params.failOnSkipped) {
         args.push("--fail-on-skipped");
+      }
+      if (params.failOnEmptyTestRun) {
+        args.push("--fail-on-empty-test-run");
       }
       if (params.requireAssertionsForPm) {
         args.push("--require-assertions-for-pm");
@@ -705,6 +718,12 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       args.push("health");
       if (params.strictDirectories) {
         args.push("--strict-directories");
+      }
+      if (params.strictExit) {
+        args.push("--strict-exit");
+      }
+      if (params.failOnWarn) {
+        args.push("--fail-on-warn");
       }
       return args;
     case "validate":

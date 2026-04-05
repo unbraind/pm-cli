@@ -356,6 +356,7 @@ export const TEST_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--pm-context" },
   { flag: "--fail-on-context-mismatch" },
   { flag: "--fail-on-skipped" },
+  { flag: "--fail-on-empty-test-run" },
   { flag: "--require-assertions-for-pm" },
   { flag: "--author" },
   { flag: "--message" },
@@ -373,6 +374,7 @@ export const TEST_ALL_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--pm-context" },
   { flag: "--fail-on-context-mismatch" },
   { flag: "--fail-on-skipped" },
+  { flag: "--fail-on-empty-test-run" },
   { flag: "--require-assertions-for-pm" },
 ];
 
@@ -385,7 +387,11 @@ export const TEST_RUNS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--author" },
 ];
 
-export const HEALTH_FLAG_CONTRACTS: CliFlagContract[] = [{ flag: "--strict-directories" }];
+export const HEALTH_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--strict-directories" },
+  { flag: "--strict-exit" },
+  { flag: "--fail-on-warn" },
+];
 
 export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--check-metadata" },
@@ -882,6 +888,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   pmContext: { type: "string", enum: ["schema", "tracker", "auto"] },
   failOnContextMismatch: { type: "boolean" },
   failOnSkipped: { type: "boolean" },
+  failOnEmptyTestRun: { type: "boolean" },
   requireAssertionsForPm: { type: "boolean" },
   diff: { type: "boolean" },
   verify: { type: "boolean" },
@@ -986,7 +993,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   "extension-uninstall": { required: ["target"], optional: ["scope"] },
   "extension-explore": { optional: ["scope"] },
   "extension-manage": { optional: ["scope"] },
-  "extension-doctor": { optional: ["scope", "detail"] },
+  "extension-doctor": { optional: ["scope", "detail", "strictExit", "failOnWarn"] },
   "extension-adopt": { required: ["target"], optional: ["scope", "github", "ref"] },
   "extension-adopt-all": { optional: ["scope"] },
   "extension-activate": { required: ["target"], optional: ["scope"] },
@@ -1046,6 +1053,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
       "pmContext",
       "failOnContextMismatch",
       "failOnSkipped",
+      "failOnEmptyTestRun",
       "requireAssertionsForPm",
       ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
     ],
@@ -1062,6 +1070,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
       "pmContext",
       "failOnContextMismatch",
       "failOnSkipped",
+      "failOnEmptyTestRun",
       "requireAssertionsForPm",
     ],
   },
@@ -1084,7 +1093,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
     optional: ["author"],
   },
   stats: {},
-  health: { optional: ["strictDirectories"] },
+  health: { optional: ["strictDirectories", "strictExit", "failOnWarn"] },
   validate: {
     optional: [
       "checkMetadata",
@@ -1249,6 +1258,9 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   failOnSkipped: {
     description: "Treat skipped linked tests as dependency-failed policy violations.",
   },
+  failOnEmptyTestRun: {
+    description: "Treat successful linked-test commands that report zero executed tests as failures.",
+  },
   requireAssertionsForPm: {
     description: "Require assertion metadata for linked PM command test entries during run execution.",
   },
@@ -1288,10 +1300,10 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     description: "Include PM storage internals in tracked-all candidate scans.",
   },
   strictExit: {
-    description: "Return non-zero exit when validate warnings are present (ok=false).",
+    description: "Return non-zero exit when health/validate/extension-doctor warnings are present (ok=false).",
   },
   failOnWarn: {
-    description: "Alias for strictExit in validate action payloads.",
+    description: "Alias for strictExit in health/validate/extension-doctor action payloads.",
   },
   checkHistoryDrift: {
     description: "Run item/history hash drift checks.",

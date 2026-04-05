@@ -222,6 +222,7 @@ pm reindex --mode hybrid
   - reports `missing_required` and `missing_optional` separately in check details
   - treats missing optional built-in type directories (`events`, `reminders`, `milestones`, `meetings`) as informational by default
   - supports `--strict-directories` to treat missing optional directories as health warnings/failures
+  - supports `--strict-exit` (alias `--fail-on-warn`) to return non-zero exit (`1`) when health warnings are present (`ok=false`)
 - `integrity`
   - scans item and history files for merge-conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`)
   - reports invalid item parses and invalid JSONL lines in history streams with deterministic warning codes
@@ -435,7 +436,7 @@ For `pm create` log-seed flags (`--comment`, `--note`, `--learning`), only `auth
 - `pm create --test` follows the same policy: `command=...` is required, optional `path=...` can annotate command scope.
 - Linked test entries also support optional per-entry runtime directives/assertions plus context override metadata: `env_set=KEY=VALUE;KEY2=VALUE2`, `env_clear=KEY1;KEY2`, `shared_host_safe=true|false`, `pm_context_mode=schema|tracker|auto`, `assert_stdout_contains=...`, `assert_stdout_regex=...`, `assert_stderr_contains=...`, `assert_stderr_regex=...`, `assert_stdout_min_lines=<int>`, `assert_json_field_equals=path=value`, `assert_json_field_gte=path=<number>`.
 - `pm test <ID> --run` / `pm test-all` execute in temporary sandbox roots but seed project/global `settings.json` and `extensions/` directories from source roots so extension-defined type behavior matches direct workspace commands.
-- `pm test <ID> --run` / `pm test-all` support additive run-level runtime controls: repeatable `--env-set KEY=VALUE`, repeatable `--env-clear NAME`, `--shared-host-safe` (ephemeral/shared-host-friendly defaults such as `PORT=0` when unset), `--pm-context schema|tracker|auto`, `--fail-on-context-mismatch`, `--fail-on-skipped`, and `--require-assertions-for-pm`.
+- `pm test <ID> --run` / `pm test-all` support additive run-level runtime controls: repeatable `--env-set KEY=VALUE`, repeatable `--env-clear NAME`, `--shared-host-safe` (ephemeral/shared-host-friendly defaults such as `PORT=0` when unset), `--pm-context schema|tracker|auto`, `--fail-on-context-mismatch`, `--fail-on-skipped`, `--fail-on-empty-test-run`, and `--require-assertions-for-pm`.
 - `pm test <ID> --run --background` and `pm test-all --background` start managed background runs and return run metadata immediately.
 - `pm test-runs list|status|logs|stop|resume` provides background lifecycle management, log tailing, health snapshots, and stop/resume controls.
 - Background run dedupe prevents parallel duplicate execution when an equivalent active run fingerprint already exists.
@@ -679,12 +680,13 @@ Activation and health behavior:
 
 - Install auto-activates the extension in selected scope settings.
 - Deactivate/activate toggle `extensions.disabled[]`/`extensions.enabled[]` in settings.
-- `pm extension --explore` lists discovered extensions and active status.
+- `pm extension --explore` lists discovered extensions and compatibility/runtime status fields (`active` compatibility alias, `enabled`, `runtime_active`, `activation_status`).
 - `pm extension --adopt` records an existing unmanaged extension into managed state (local or GitHub provenance metadata) without reinstalling extension files.
 - `pm extension --adopt-all` bulk-adopts all unmanaged extensions in the selected scope without reinstalling files.
 - `pm extension --manage` refreshes GitHub-managed update metadata, persists it to scope-local `.managed-extensions.json`, and includes explicit per-extension `update_check_status`/`update_check_reason` fields (`checked`, `failed`, `skipped_unmanaged`, `skipped_non_github`, `not_checked`) plus triage status totals/remediation hints and update-health coverage diagnostics (`update_health_coverage`, `warning_codes`).
-- `pm extension --doctor` (or `pm extension doctor`) provides consolidated extension diagnostics with normalized warning codes, canonical load roots, active-vs-loaded consistency diagnostics, update-health coverage signals, remediation hints, and optional deep output via `--detail deep`.
+- `pm extension --doctor` (or `pm extension doctor`) provides consolidated extension diagnostics with normalized warning codes, canonical load roots, active-vs-loaded consistency diagnostics, update-health coverage signals, remediation hints, optional strict exit gating (`--strict-exit`, alias `--fail-on-warn`), machine-usable blocking indicators (`blocking_failure_count`, `has_blocking_failures`), and optional deep output via `--detail deep`.
 - `pm health` includes managed extension state diagnostics plus a condensed extension triage block for quick load/activation/migration issue triage across project/global roots, including `extension_update_health_partial_coverage` parity when unmanaged loaded extensions reduce update-check coverage.
+- Unknown manifest capabilities emit `extension_capability_unknown` diagnostics with inline allowed-capability lists plus nearest-match suggestions when confidence is high.
 
 Use `pm extension --help` for compact guidance or `pm extension --help --explain` for expanded examples/tips.
 

@@ -6,9 +6,8 @@ status: closed
 priority: 1
 tags[7]: "area:extensions",code,docs,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-06T09:42:43.394Z"
-updated_at: "2026-04-04T21:47:53.986Z"
+updated_at: "2026-04-05T17:57:22.944Z"
 deadline: "2026-03-08T09:42:43.394Z"
-assignee: cursor-maintainer
 author: cursor-maintainer
 estimated_minutes: 60
 acceptance_criteria: discover/load surfaces deterministic extension_capability_unknown diagnostics for unknown manifest capability names; known capability enforcement behavior remains intact; README/PRD are aligned; linked tests and regression suite pass with 100% coverage.
@@ -33,9 +32,9 @@ reporter: cursor-maintainer
 severity: low
 environment: "Project workspace execution context for M5 hardening: unknown extension capability diagnostics (pm CLI + Node/pnpm toolchain)."
 repro_steps: "Review linked files/tests/docs for pm-hzh6 (M5 hardening: unknown extension capability diagnostics); run linked verification via pm test pm-hzh6 --run when available; compare observed behavior with acceptance criteria and capture results in comments."
-resolution: "Closed with implementation evidence captured for M5 hardening: unknown extension capability diagnostics."
-expected_result: "Acceptance criteria for M5 hardening: unknown extension capability diagnostics are satisfied with reproducible verification evidence."
-actual_result: "Work completed and recorded with linked artifacts for M5 hardening: unknown extension capability diagnostics."
+resolution: Hardened unknown capability diagnostics with inline guidance and nearest-match suggestions.
+expected_result: Unknown capability warnings should include allowed capability list and actionable suggestions.
+actual_result: Warnings now include allowed/suggested metadata and health/doctor surfaces provide capability guidance details.
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
 component: project-management/m5-hardening-unknown-extension-capability-diagno
@@ -43,25 +42,35 @@ regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 hardening: unknown extension capability diagnostics."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-mwwp,related,"2026-03-06T09:42:43.394Z",cursor-maintainer,null
-comments[3]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-03-06T09:42:43.394Z",cursor-maintainer,Unknown capability names should be explicit diagnostics instead of silent no-ops.
   "2026-03-06T09:42:57.987Z",cursor-maintainer,"Planned changeset: update PRD/README capability contract to specify unknown-capability diagnostics, then implement deterministic extension_capability_unknown warnings in loader discovery and add regression assertions."
   "2026-03-06T09:57:36.333Z",cursor-maintainer,"Implemented docs-first hardening for unknown manifest capability names: PRD.md + README.md now specify deterministic extension_capability_unknown diagnostics; loader discovery now emits extension_capability_unknown:<layer>:<name>:<capability> warnings while preserving load/activation isolation; tests/unit/extension-loader.spec.ts now asserts unknown-capability warnings and non-blocking load behavior. Verification: pm test pm-hzh6 --run --timeout 7200 --json => linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status in_progress --timeout 7200 --json => items=1 linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status closed --timeout 7200 --json => items=85 linked_tests=255 passed=62 failed=0 skipped=193. Coverage evidence remains 100% lines/branches/functions/statements from linked coverage run."
+  "2026-04-05T17:04:23.312Z",codex-agent,"Scope extended here for Issue #5 follow-up (warnings-only): improve unknown capability guidance with allowed-capability lists and nearest-match suggestions; no new extension lint command in this change set per approved scope. Duplicate-check evidence confirms this remains the canonical capability-diagnostics lineage."
+  "2026-04-05T17:36:39.917Z",codex-agent,"Implemented warnings-only capability guidance hardening: unknown capability warnings now include allowed capability lists and nearest-match suggestions when confidence is high, and health/doctor surfaces include capability_guidance metadata plus remediation text referencing allowed capabilities. Verification: node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/extension-command.spec.ts tests/unit/health-command.spec.ts passed."
+  "2026-04-05T17:56:40.284Z",codex-agent,"Evidence: full verification passed via node scripts/run-tests.mjs coverage (895 tests, branches 91.01%) and pnpm build; unknown capability warnings now include allowed list + nearest-match guidance and are surfaced in health/doctor outputs."
 notes[1]{created_at,author,text}:
   "2026-03-06T09:42:43.394Z",cursor-maintainer,Docs-first update then loader warning implementation then regression tests and coverage.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:34:31.764Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[4]{path,scope,note}:
+files[8]{path,scope,note}:
   PRD.md,project,Specify unknown capability diagnostics
   README.md,project,Document unknown-capability diagnostics
+  src/cli/commands/extension.ts,project,doctor capability guidance surfacing
+  src/cli/commands/health.ts,project,health capability guidance surfacing
   src/core/extensions/loader.ts,project,Add unknown-capability diagnostic generation
+  tests/unit/extension-command.spec.ts,project,doctor capability guidance tests
   tests/unit/extension-loader.spec.ts,project,Add unknown-capability warning regression
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  tests/unit/health-command.spec.ts,project,health capability guidance tests
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs coverage,null,project,240,null,null,null,null,null,null,null,null,null,null,null,Coverage gate
   node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,Loader discovery regression
-docs[3]{path,scope,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/extension-command.spec.ts tests/unit/health-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,capability guidance warnings-only regressions
+docs[5]{path,scope,note}:
   AGENTS.md,project,Agent workflow policy
+  CHANGELOG.md,project,capability guidance release notes
+  docs/EXTENSIONS.md,project,unknown capability guidance docs
   PRD.md,project,Document unknown-capability diagnostics
   README.md,project,Public extension diagnostics contract
-close_reason: "Completed planned scope for M5 hardening: unknown extension capability diagnostics and preserved verification context for future changes."
-body: "Context: extension manifests now enforce declared known capabilities but unknown capability names are silently ignored. Approach: add deterministic discovery-time diagnostics for unknown capability names, document behavior, and cover with unit tests while keeping runtime failure isolation unchanged."
+close_reason: "Unknown capability diagnostics now include allowed/suggested guidance and surfaced metadata, verified by full coverage/build."
+body: "Context: extension manifests now enforce declared known capabilities but unknown capability names are silently ignored. Approach: add deterministic discovery-time diagnostics for unknown capability names, document behavior, and cover with unit tests while keeping runtime failure isolation unchanged.\n\nFollow-up scope: improve extension capability diagnostics with explicit allowed capability lists and nearest-match suggestions in health/doctor details (warnings-only scope; no new extension lint command in this change set)."

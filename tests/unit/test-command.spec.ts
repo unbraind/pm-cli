@@ -418,6 +418,9 @@ describe("runTest", () => {
       await expect(runTest(id, { failOnSkipped: true }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
+      await expect(runTest(id, { failOnEmptyTestRun: true }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
       await expect(runTest(id, { requireAssertionsForPm: true }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
@@ -603,11 +606,13 @@ describe("runTest", () => {
       { status: "passed", command: "node --version" },
       { status: "failed", command: "node -e \"process.exit(1)\"", failure_category: "assertion_failure" },
       { status: "failed", command: "node -e \"process.exit(1)\"", failure_category: "assertion_failure" },
+      { status: "failed", command: "node -e \"console.log('No tests found')\"", failure_category: "empty_run" },
       { status: "failed", command: "node -e \"setTimeout(() => {}, 1)\"", failure_category: "timeout" },
       { status: "failed", command: "node -e \"setTimeout(() => {}, 1)\"" },
       { status: "skipped", command: "pm test-all", error: "skipped recursive" },
     ]);
     expect(counts.assertion_failure).toBe(2);
+    expect(counts.empty_run).toBe(1);
     expect(counts.timeout).toBe(1);
     expect(counts.infra_collision).toBe(0);
   });
@@ -1323,6 +1328,32 @@ describe("runTest", () => {
 
       await overwriteTaskTests(context, id, [
         {
+          command: "node -e \"process.stdout.write(JSON.stringify({items:[{value:2}]}))\"",
+          scope: "project",
+          assert_json_field_equals: {
+            "[]": "1",
+          },
+          assert_json_field_gte: {
+            "items[2].value": 1,
+          },
+        },
+      ]);
+      const invalidPathSyntax = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "20",
+        },
+        { path: context.pmPath },
+      );
+      expect(invalidPathSyntax.run_results[0]?.status).toBe("failed");
+      expect(invalidPathSyntax.run_results[0]?.error ?? "").toContain('assert_json_field_equals missing path "[]"');
+      expect(invalidPathSyntax.run_results[0]?.error ?? "").toContain(
+        'assert_json_field_gte missing path "items[2].value"',
+      );
+
+      await overwriteTaskTests(context, id, [
+        {
           command: "node -e \"process.stdout.write('plain')\"",
           scope: "project",
           assert_stdout_regex: ["["],
@@ -1356,6 +1387,65 @@ describe("runTest", () => {
       );
       expect(run.run_results[0]?.status).toBe("skipped");
       expect(run.fail_on_skipped_triggered).toBe(true);
+    });
+  });
+
+  it("fails empty linked-test runs when fail-on-empty-test-run is enabled", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "linked-test-fail-on-empty-run");
+      await runTest(
+        id,
+        {
+          add: ["command=node -e \"console.log('No projects matched the filters')\",scope=project"],
+          message: "seed empty-run detector command",
+        },
+        { path: context.pmPath },
+      );
+
+      const runWithoutGuard = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "20",
+        },
+        { path: context.pmPath },
+      );
+      expect(runWithoutGuard.run_results[0]?.status).toBe("passed");
+
+      const runWithGuard = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "20",
+          failOnEmptyTestRun: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(runWithGuard.run_results[0]?.status).toBe("failed");
+      expect(runWithGuard.run_results[0]?.failure_category).toBe("empty_run");
+      expect(runWithGuard.run_results[0]?.error ?? "").toContain("empty test run");
+      expect(runWithGuard.failure_categories.empty_run).toBe(1);
+
+      const safeId = createTask(context, "linked-test-fail-on-empty-run-safe-output");
+      await runTest(
+        safeId,
+        {
+          add: ['command=node -e "console.log(\'executed tests: 1\')",scope=project'],
+          message: "seed non-empty-run output",
+        },
+        { path: context.pmPath },
+      );
+      const safeRunWithGuard = await runTest(
+        safeId,
+        {
+          run: true,
+          timeout: "20",
+          failOnEmptyTestRun: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(safeRunWithGuard.run_results[0]?.status).toBe("passed");
+      expect(safeRunWithGuard.failure_categories.empty_run).toBe(0);
     });
   });
 

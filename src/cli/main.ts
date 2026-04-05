@@ -190,6 +190,7 @@ function buildBackgroundTestCommandArgs(id: string, options: Record<string, unkn
   pushOptionalValueFlag(args, "--pm-context", options.pmContext);
   pushOptionalBooleanFlag(args, "--fail-on-context-mismatch", options.failOnContextMismatch);
   pushOptionalBooleanFlag(args, "--fail-on-skipped", options.failOnSkipped);
+  pushOptionalBooleanFlag(args, "--fail-on-empty-test-run", options.failOnEmptyTestRun);
   pushOptionalBooleanFlag(args, "--require-assertions-for-pm", options.requireAssertionsForPm);
   pushOptionalValueFlag(args, "--author", options.author);
   pushOptionalValueFlag(args, "--message", options.message);
@@ -207,6 +208,7 @@ function buildBackgroundTestAllCommandArgs(options: Record<string, unknown>): st
   pushOptionalValueFlag(args, "--pm-context", options.pmContext);
   pushOptionalBooleanFlag(args, "--fail-on-context-mismatch", options.failOnContextMismatch);
   pushOptionalBooleanFlag(args, "--fail-on-skipped", options.failOnSkipped);
+  pushOptionalBooleanFlag(args, "--fail-on-empty-test-run", options.failOnEmptyTestRun);
   pushOptionalBooleanFlag(args, "--require-assertions-for-pm", options.requireAssertionsForPm);
   return args;
 }
@@ -2133,6 +2135,8 @@ program
   .option("--github <owner/repo[/path]>", "Alias for --gh")
   .option("--ref <ref>", "Git ref/branch/tag for GitHub install sources")
   .option("--detail <mode>", "Detail mode for extension diagnostics (summary|deep)")
+  .option("--strict-exit", "Return non-zero exit when doctor warnings are present (ok=false)")
+  .option("--fail-on-warn", "Alias for --strict-exit (doctor)")
   .description("Manage extension lifecycle operations for project or global scope.")
   .action(async (target: string | undefined, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
@@ -2156,10 +2160,22 @@ program
         github: typeof options.github === "string" ? options.github : undefined,
         ref: typeof options.ref === "string" ? options.ref : undefined,
         detail: typeof options.detail === "string" ? options.detail : undefined,
+        strictExit: Boolean(options.strictExit),
+        failOnWarn: Boolean(options.failOnWarn),
       },
       globalOptions,
     );
     printResult(result, globalOptions);
+    const strictExit = Boolean(options.strictExit) || Boolean(options.failOnWarn);
+    if (result.action === "doctor" && strictExit) {
+      const detailsRecord = result.details as Record<string, unknown>;
+      const summary = (detailsRecord.summary ?? null) as Record<string, unknown> | null;
+      const summaryStatus = summary && typeof summary.status === "string" ? summary.status : undefined;
+      const shouldFail = summaryStatus ? summaryStatus !== "ok" : result.warnings.length > 0;
+      if (shouldFail) {
+        process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+      }
+    }
     if (globalOptions.profile) {
       printError(`profile:command=extension took_ms=${Date.now() - startedAt}`);
     }
@@ -3187,6 +3203,10 @@ program
   .option("--pm-context <mode>", "PM linked-test context mode: schema|tracker|auto (default: schema)")
   .option("--fail-on-context-mismatch", "Fail linked PM commands when context item counts differ")
   .option("--fail-on-skipped", "Treat skipped linked tests as dependency failures")
+  .option(
+    "--fail-on-empty-test-run",
+    "Treat successful linked-test commands that report zero executed tests as failures",
+  )
   .option("--require-assertions-for-pm", "Require assertion metadata for linked PM command tests")
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
@@ -3239,6 +3259,7 @@ program
         pmContext: typeof options.pmContext === "string" ? options.pmContext : undefined,
         failOnContextMismatch: Boolean(options.failOnContextMismatch),
         failOnSkipped: Boolean(options.failOnSkipped),
+        failOnEmptyTestRun: Boolean(options.failOnEmptyTestRun),
         requireAssertionsForPm: Boolean(options.requireAssertionsForPm),
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
@@ -3271,6 +3292,10 @@ program
   .option("--pm-context <mode>", "PM linked-test context mode: schema|tracker|auto (default: schema)")
   .option("--fail-on-context-mismatch", "Fail linked PM commands when context item counts differ")
   .option("--fail-on-skipped", "Treat skipped linked tests as dependency failures")
+  .option(
+    "--fail-on-empty-test-run",
+    "Treat successful linked-test commands that report zero executed tests as failures",
+  )
   .option("--require-assertions-for-pm", "Require assertion metadata for linked PM command tests")
   .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
@@ -3303,6 +3328,7 @@ program
         pmContext: typeof options.pmContext === "string" ? options.pmContext : undefined,
         failOnContextMismatch: Boolean(options.failOnContextMismatch),
         failOnSkipped: Boolean(options.failOnSkipped),
+        failOnEmptyTestRun: Boolean(options.failOnEmptyTestRun),
         requireAssertionsForPm: Boolean(options.requireAssertionsForPm),
       },
       globalOptions,
@@ -3445,6 +3471,8 @@ program
   .command("health")
   .description("Show project tracker health checks.")
   .option("--strict-directories", "Treat optional item-type directories as required failures")
+  .option("--strict-exit", "Return non-zero exit when health warnings are present (ok=false)")
+  .option("--fail-on-warn", "Alias for --strict-exit")
   .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -3452,6 +3480,10 @@ program
       strictDirectories: Boolean(options.strictDirectories),
     });
     printResult(result, globalOptions);
+    const strictExit = Boolean(options.strictExit) || Boolean(options.failOnWarn);
+    if (strictExit && !result.ok) {
+      process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+    }
     if (globalOptions.profile) {
       printError(`profile:command=health took_ms=${Date.now() - startedAt}`);
     }

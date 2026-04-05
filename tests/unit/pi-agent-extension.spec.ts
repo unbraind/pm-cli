@@ -528,6 +528,13 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(extensionAdoptAllSchema.required).toEqual(["action"]);
     expect(schemaProperty(extensionAdoptAllSchema, "scope").enum).toEqual(["project", "global"]);
 
+    const extensionDoctorSchema = schemaForAction(tool.parameters as Record<string, unknown>, "extension-doctor");
+    expect(extensionDoctorSchema.required).toEqual(["action"]);
+    expect(schemaProperty(extensionDoctorSchema, "scope").enum).toEqual(["project", "global"]);
+    expect(schemaProperty(extensionDoctorSchema, "detail").enum).toEqual(["summary", "deep"]);
+    expect(schemaProperty(extensionDoctorSchema, "strictExit").type).toBe("boolean");
+    expect(schemaProperty(extensionDoctorSchema, "failOnWarn").type).toBe("boolean");
+
     const validateSchema = schemaForAction(tool.parameters as Record<string, unknown>, "validate");
     expect(validateSchema.required).toEqual(["action"]);
     expect(schemaProperty(validateSchema, "checkFiles").type).toBe("boolean");
@@ -536,6 +543,12 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(schemaProperty(validateSchema, "strictExit").type).toBe("boolean");
     expect(schemaProperty(validateSchema, "failOnWarn").type).toBe("boolean");
     expect(schemaProperty(validateSchema, "checkCommandReferences").type).toBe("boolean");
+
+    const healthSchema = schemaForAction(tool.parameters as Record<string, unknown>, "health");
+    expect(healthSchema.required).toEqual(["action"]);
+    expect(schemaProperty(healthSchema, "strictDirectories").type).toBe("boolean");
+    expect(schemaProperty(healthSchema, "strictExit").type).toBe("boolean");
+    expect(schemaProperty(healthSchema, "failOnWarn").type).toBe("boolean");
 
     const calendarSchema = schemaForAction(tool.parameters as Record<string, unknown>, "calendar");
     expect(schemaProperty(calendarSchema, "view").type).toBe("string");
@@ -593,6 +606,9 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(schemaProperty(contractsSchema, "runtimeOnly").type).toBe("boolean");
     expect(schemaProperty(contractsSchema, "activeOnly").type).toBe("boolean");
 
+    const testSchema = schemaForAction(tool.parameters as Record<string, unknown>, "test");
+    expect(schemaProperty(testSchema, "failOnEmptyTestRun").type).toBe("boolean");
+
     const testAllSchema = schemaForAction(tool.parameters as Record<string, unknown>, "test-all");
     expect(schemaProperty(testAllSchema, "timeout").anyOf).toEqual(
       expect.arrayContaining([{ type: "string" }, { type: "number" }]),
@@ -610,6 +626,7 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(schemaProperty(testAllSchema, "pmContext").enum).toEqual(["schema", "tracker", "auto"]);
     expect(schemaProperty(testAllSchema, "failOnContextMismatch").type).toBe("boolean");
     expect(schemaProperty(testAllSchema, "failOnSkipped").type).toBe("boolean");
+    expect(schemaProperty(testAllSchema, "failOnEmptyTestRun").type).toBe("boolean");
     expect(schemaProperty(testAllSchema, "requireAssertionsForPm").type).toBe("boolean");
 
     const beadsImportSchema = schemaForAction(tool.parameters as Record<string, unknown>, "beads-import");
@@ -734,8 +751,10 @@ describe("Pi agent extension wrapper for pm", () => {
         action: "extension-doctor",
         scope: "project",
         detail: "deep",
+        strictExit: true,
+        failOnWarn: true,
       }),
-    ).toEqual(["--json", "extension", "--doctor", "--project", "--detail", "deep"]);
+    ).toEqual(["--json", "extension", "--doctor", "--project", "--detail", "deep", "--strict-exit", "--fail-on-warn"]);
 
     expect(
       buildPmCliArgs({
@@ -803,6 +822,15 @@ describe("Pi agent extension wrapper for pm", () => {
       "--check-history-drift",
       "--check-command-references",
     ]);
+
+    expect(
+      buildPmCliArgs({
+        action: "health",
+        strictDirectories: true,
+        strictExit: true,
+        failOnWarn: true,
+      }),
+    ).toEqual(["--json", "health", "--strict-directories", "--strict-exit", "--fail-on-warn"]);
 
     expect(
       buildPmCliArgs({
@@ -1126,6 +1154,7 @@ describe("Pi agent extension wrapper for pm", () => {
         pmContext: "tracker",
         failOnContextMismatch: true,
         failOnSkipped: true,
+        failOnEmptyTestRun: true,
         requireAssertionsForPm: true,
       }),
     ).toEqual([
@@ -1146,6 +1175,7 @@ describe("Pi agent extension wrapper for pm", () => {
       "tracker",
       "--fail-on-context-mismatch",
       "--fail-on-skipped",
+      "--fail-on-empty-test-run",
       "--require-assertions-for-pm",
     ]);
 
@@ -1160,6 +1190,7 @@ describe("Pi agent extension wrapper for pm", () => {
         pmContext: "tracker",
         failOnContextMismatch: true,
         failOnSkipped: true,
+        failOnEmptyTestRun: true,
         requireAssertionsForPm: true,
       }),
     ).toEqual([
@@ -1178,6 +1209,7 @@ describe("Pi agent extension wrapper for pm", () => {
       "tracker",
       "--fail-on-context-mismatch",
       "--fail-on-skipped",
+      "--fail-on-empty-test-run",
       "--require-assertions-for-pm",
     ]);
 

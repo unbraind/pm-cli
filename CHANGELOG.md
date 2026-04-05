@@ -80,6 +80,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added extension lifecycle adopt action (`pm extension --adopt`) to register existing unmanaged installs into managed state metadata without reinstalling extension files (with optional GitHub provenance via `--gh/--github` + `--ref`).
 - Added extension lifecycle bulk adopt action (`pm extension --adopt-all`) to register all unmanaged installs in selected scope into managed state metadata without reinstalling extension files.
 - Added extension triage update-health diagnostics (`update_health_coverage`, `update_health_partial`) and normalized warning-code surfacing (`warning_codes`, including `extension_update_health_partial_coverage`) for `pm extension --manage` / `pm extension --doctor`.
+- Added strict warning exit controls for extension diagnostics (`pm extension --doctor --strict-exit`, alias `--fail-on-warn`) plus machine-usable blocking-failure indicators (`blocking_failure_count`, `has_blocking_failures`).
+- Added explicit extension state semantics in extension listings/diagnostics (`active` compatibility alias, `enabled`, `runtime_active`, `activation_status`) so configured-vs-runtime status is unambiguous.
+- Added unknown capability guidance hardening: `extension_capability_unknown` warnings now include inline allowed capability lists and nearest-match suggestions when confidence is high, and health/doctor payloads include `capability_guidance` metadata.
 - Added health parity warning surfacing for extension update-check partial coverage (`extension_update_health_partial_coverage`) so `pm health` mirrors extension triage visibility when unmanaged loaded extensions reduce coverage.
 - Added `pm close --validate-close [warn|strict]` for additive close-time resolution-field validation (`resolution`, `expected_result`, `actual_result`) with warning-first default behavior.
 - Added `pm files --append-stable` for minimal-diff file-link appends that preserve existing link order and reduce history patch churn during large audits.
@@ -88,12 +91,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `pm comments-audit` for bulk latest-comment snapshots across status/type/assignee-filtered item sets (`--limit-items`, `--latest`) to support governance audit workflows.
 - Added `--offset` pagination and JSON-only `--stream` output mode for `pm list` and all `pm list-*` command families to improve large-result processing ergonomics.
 - Added additive `pm health --strict-directories` behavior with required-vs-optional directory diagnostics (`missing_required`, `missing_optional`) so optional built-in item-type directory gaps do not fail default health runs.
+- Added strict warning exit controls for health diagnostics (`pm health --strict-exit`, alias `--fail-on-warn`) for CI-friendly non-zero health gating.
 - Added `pm config <project|global> list` and `pm config <project|global> export` for config-key discovery and one-shot resolved snapshot export.
 - Added explicit extension manage update-check reporting with per-extension `update_check_status` / `update_check_reason` fields and triage `update_check_status_totals`.
 - Added explicit `--progress` flag support to `pm test`, `pm test-all`, and `pm reindex` so non-interactive runs can opt into deterministic stderr progress visibility.
 - Added additive linked-test runtime environment controls: repeatable `--env-set` / `--env-clear` and `--shared-host-safe` on `pm test --run` and `pm test-all`.
 - Added per-linked-test runtime directives in linked test metadata (`env_set`, `env_clear`, `shared_host_safe`) for deterministic command-level execution control.
-- Added linked-test PM-context and strict-governance controls: `--pm-context schema|tracker|auto`, `--fail-on-context-mismatch`, `--fail-on-skipped`, and `--require-assertions-for-pm` on `pm test --run` and `pm test-all`.
+- Added linked-test PM-context and strict-governance controls: `--pm-context schema|tracker|auto`, `--fail-on-context-mismatch`, `--fail-on-skipped`, `--fail-on-empty-test-run`, and `--require-assertions-for-pm` on `pm test --run` and `pm test-all`.
 - Added linked-test PM-context auto-routing (`--pm-context auto`) and per-linked-test context override metadata (`pm_context_mode=schema|tracker|auto`) for mixed-mode linked test execution.
 - Added linked-test assertion metadata support (`assert_stdout_contains`, `assert_stdout_regex`, `assert_stderr_contains`, `assert_stderr_regex`, `assert_stdout_min_lines`, `assert_json_field_equals`, `assert_json_field_gte`) with deterministic assertion-failure classification and per-run `execution_context` telemetry in `run_results`.
 - Added structured linked-test failure classification in `run_results` (`failure_category`) and aggregated `failure_categories` totals in `pm test`/`pm test-all` results for triage (`infra_collision` vs `assertion_failure` and related categories).

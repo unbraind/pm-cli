@@ -214,6 +214,7 @@ const REQUIRED_TEST_FLAGS = [
   "--pm-context",
   "--fail-on-context-mismatch",
   "--fail-on-skipped",
+  "--fail-on-empty-test-run",
   "--require-assertions-for-pm",
   "--author",
   "--message",
@@ -236,6 +237,7 @@ const REQUIRED_VALIDATE_FLAGS = [
   "--fail-on-warn",
   "--check-history-drift",
 ];
+const REQUIRED_HEALTH_FLAGS = ["--strict-directories", "--strict-exit", "--fail-on-warn"];
 const REQUIRED_DELETE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_APPEND_FLAGS = ["--body", "--author", "--message", "--force"];
 const REQUIRED_DEPS_FLAGS = ["--format"];
@@ -458,6 +460,8 @@ describe("release readiness runtime coverage", () => {
       expect(help.stdout).toContain("--github");
       expect(help.stdout).toContain("--ref");
       expect(help.stdout).toContain("--detail");
+      expect(help.stdout).toContain("--strict-exit");
+      expect(help.stdout).toContain("--fail-on-warn");
     });
   });
 
@@ -680,6 +684,13 @@ describe("release readiness runtime coverage", () => {
       expect(validateHelp.stdout).toContain("standalone metadata, resolution, files, linked-command reference, and");
       for (const flag of REQUIRED_VALIDATE_FLAGS) {
         expect(validateHelp.stdout).toContain(flag);
+      }
+
+      const healthHelp = context.runCli(["health", "--help"]);
+      expect(healthHelp.code).toBe(0);
+      expect(healthHelp.stdout).toContain("Usage: pm health [options]");
+      for (const flag of REQUIRED_HEALTH_FLAGS) {
+        expect(healthHelp.stdout).toContain(flag);
       }
     });
   });

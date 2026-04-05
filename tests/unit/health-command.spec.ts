@@ -875,6 +875,56 @@ describe("runHealth", () => {
     });
   });
 
+  it("includes allowed capability guidance and nearest-match suggestions for unknown capabilities", async () => {
+    await withTempPmPath(async (context) => {
+      const projectExtensionsRoot = path.join(context.pmPath, "extensions");
+      await mkdir(path.join(projectExtensionsRoot, "unknown-capability"), { recursive: true });
+      await writeFile(
+        path.join(projectExtensionsRoot, "unknown-capability", "manifest.json"),
+        `${JSON.stringify(
+          {
+            name: "unknown-capability-ext",
+            version: "1.0.0",
+            entry: "./index.js",
+            capabilities: ["service"],
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+      await writeFile(path.join(projectExtensionsRoot, "unknown-capability", "index.js"), "export default { activate() {} };\n", "utf8");
+
+      const health = await runHealth({ path: context.pmPath });
+      expect(health.ok).toBe(false);
+      const capabilityWarning = health.warnings.find((warning) =>
+        warning.startsWith("extension_capability_unknown:project:unknown-capability-ext:service"),
+      );
+      expect(capabilityWarning).toBeDefined();
+      expect(capabilityWarning).toContain("allowed=commands,renderers,hooks,schema,importers,search,parser,preflight,services");
+      expect(capabilityWarning).toContain("suggested=services");
+
+      const extensionCheck = health.checks.find((check) => check.name === "extensions");
+      const details = extensionCheck?.details as {
+        capability_guidance?: Array<Record<string, unknown>>;
+        triage?: { unknown_capability_count?: number; remediation?: string[] };
+      };
+      expect(details.capability_guidance).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            layer: "project",
+            name: "unknown-capability-ext",
+            capability: "service",
+            suggested_capability: "services",
+          }),
+        ]),
+      );
+      expect((details.capability_guidance?.[0]?.allowed_capabilities as string[]) ?? []).toContain("services");
+      expect(details.triage?.unknown_capability_count).toBeGreaterThanOrEqual(1);
+      expect((details.triage?.remediation ?? []).some((entry) => entry.includes("Allowed capabilities"))).toBe(true);
+    });
+  });
+
   it("normalizes blank migration metadata and falls back to message reason", async () => {
     await withTempPmPath(async (context) => {
       const projectExtensionsRoot = path.join(context.pmPath, "extensions");
