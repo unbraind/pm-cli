@@ -82,6 +82,15 @@ describe("extension command runtime", () => {
       await expect(
         runExtension(undefined, { explore: true, project: true, failOnWarn: true }, { path: context.pmPath }),
       ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runExtension(undefined, { manage: true, project: true, trace: true }, { path: context.pmPath }),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runExtension(undefined, { doctor: true, project: true, runtimeProbe: true }, { path: context.pmPath }),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runExtension(undefined, { explore: true, project: true, fixManagedState: true }, { path: context.pmPath }),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
     });
   });
 
@@ -396,6 +405,124 @@ describe("extension command runtime", () => {
       expect(triage.warning_codes).toContain("extension_update_health_partial_coverage");
       expect(triage.update_health_coverage).toBe("partial");
       expect(triage.update_health_partial).toBe(true);
+      expect(manage.warnings).toEqual(expect.arrayContaining(["extension_update_health_partial_coverage:skipped_unmanaged:1"]));
+    });
+  });
+
+  it("treats bundled-style unmanaged extensions as informational by default", async () => {
+    await withTempPmPath(async (context) => {
+      const unmanagedDir = path.join(context.pmPath, "extensions", "builtin-informational");
+      await mkdir(unmanagedDir, { recursive: true });
+      await writeFile(
+        path.join(unmanagedDir, "manifest.json"),
+        JSON.stringify(
+          {
+            name: "builtin-informational-ext",
+            version: "1.0.0",
+            entry: "index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(path.join(unmanagedDir, "index.js"), "export default { activate() {} };", "utf8");
+
+      const manage = await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath });
+      const triage = manage.details.triage as {
+        update_health_partial: boolean;
+        unmanaged_expected_extension_count: number;
+        unmanaged_action_required_extension_count: number;
+      };
+      expect(triage.update_health_partial).toBe(false);
+      expect(triage.unmanaged_expected_extension_count).toBe(1);
+      expect(triage.unmanaged_action_required_extension_count).toBe(0);
+      expect(manage.warnings.some((warning) => warning.startsWith("extension_update_health_partial_coverage:"))).toBe(false);
+    });
+  });
+
+  it("adopts unmanaged extensions via manage --fix-managed-state", async () => {
+    await withTempPmPath(async (context) => {
+      const unmanagedDir = path.join(context.pmPath, "extensions", "manual-fix-managed");
+      await mkdir(unmanagedDir, { recursive: true });
+      await writeFile(
+        path.join(unmanagedDir, "manifest.json"),
+        JSON.stringify(
+          {
+            name: "manual-fix-managed",
+            version: "1.0.0",
+            entry: "index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(path.join(unmanagedDir, "index.js"), "export default { activate() {} };", "utf8");
+
+      const manage = await runExtension(
+        undefined,
+        { manage: true, project: true, fixManagedState: true },
+        { path: context.pmPath },
+      );
+      const managedStateFix = manage.details.managed_state_fix as {
+        requested: boolean;
+        applied: boolean;
+        adopted_count: number;
+        adopted_extensions: string[];
+      };
+      const triage = manage.details.triage as { update_health_partial: boolean };
+      const extensions = (manage.details.extensions as Array<Record<string, unknown>>) ?? [];
+      expect(managedStateFix).toMatchObject({
+        requested: true,
+        applied: true,
+        adopted_count: 1,
+      });
+      expect(managedStateFix.adopted_extensions).toContain("manual-fix-managed");
+      expect(triage.update_health_partial).toBe(false);
+      expect(extensions).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: "manual-fix-managed",
+            managed: true,
+            update_check_status: "skipped_non_github",
+          }),
+        ]),
+      );
+    });
+  });
+
+  it("keeps top-level warnings aligned with triage warning semantics for manage and doctor", async () => {
+    await withTempPmPath(async (context) => {
+      const unmanagedDir = path.join(context.pmPath, "extensions", "manual-parity");
+      await mkdir(unmanagedDir, { recursive: true });
+      await writeFile(
+        path.join(unmanagedDir, "manifest.json"),
+        JSON.stringify(
+          {
+            name: "manual-parity",
+            version: "1.0.0",
+            entry: "index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(path.join(unmanagedDir, "index.js"), "export default { activate() {} };", "utf8");
+
+      const manage = await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath });
+      const manageTriage = manage.details.triage as { warning_codes: string[] };
+      expect(manageTriage.warning_codes).toContain("extension_update_health_partial_coverage");
+      expect(manage.warnings).toEqual(expect.arrayContaining(["extension_update_health_partial_coverage:skipped_unmanaged:1"]));
+
+      const doctor = await runExtension(undefined, { doctor: true, project: true, detail: "summary" }, { path: context.pmPath });
+      const doctorTriage = doctor.details.triage as { warning_codes: string[] };
+      expect(doctorTriage.warning_codes).toContain("extension_update_health_partial_coverage");
+      expect(doctor.warnings).toEqual(expect.arrayContaining(["extension_update_health_partial_coverage:skipped_unmanaged:1"]));
     });
   });
 
@@ -670,6 +797,11 @@ describe("extension command runtime", () => {
       await expect(runExtension(undefined, { doctor: true, detail: "verbose" }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
+      await expect(
+        runExtension(undefined, { doctor: true, detail: "summary", trace: true }, { path: context.pmPath }),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 
@@ -741,14 +873,26 @@ describe("extension command runtime", () => {
       const summary = doctor.details.summary as {
         warning_codes: string[];
         unknown_capability_count: number;
+        capability_contract_version: number;
         remediation: string[];
       };
+      const capabilityContract = doctor.details.capability_contract as {
+        version?: number;
+        legacy_aliases?: Record<string, string>;
+      };
       const capabilityGuidance = doctor.details.capability_guidance as Array<Record<string, unknown>>;
-      const deep = doctor.details.deep as { warnings?: string[]; capability_guidance?: Array<Record<string, unknown>> };
+      const deep = doctor.details.deep as {
+        warnings?: string[];
+        capability_contract?: { version?: number };
+        capability_guidance?: Array<Record<string, unknown>>;
+      };
 
       expect(summary.warning_codes).toContain("extension_capability_unknown");
       expect(summary.unknown_capability_count).toBeGreaterThanOrEqual(1);
+      expect(summary.capability_contract_version).toBeGreaterThanOrEqual(1);
       expect(summary.remediation.some((entry) => entry.includes("Allowed capabilities"))).toBe(true);
+      expect(capabilityContract.version).toBe(summary.capability_contract_version);
+      expect(capabilityContract.legacy_aliases?.migration).toBe("schema");
       expect(capabilityGuidance).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
@@ -756,12 +900,50 @@ describe("extension command runtime", () => {
             name: "unknown-capability-ext",
             capability: "service",
             suggested_capability: "services",
+            suggestion_source: "nearest_match",
           }),
         ]),
       );
       expect((capabilityGuidance[0]?.allowed_capabilities as string[]) ?? []).toContain("services");
+      expect(typeof capabilityGuidance[0]?.capability_contract_version).toBe("number");
       expect(deep.warnings?.some((warning) => warning.includes("suggested=services"))).toBe(true);
+      expect(deep.capability_contract?.version).toBe(summary.capability_contract_version);
       expect((deep.capability_guidance ?? []).length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  it("surfaces legacy capability alias guidance in doctor diagnostics", async () => {
+    await withTempPmPath(async (context) => {
+      const extensionsRoot = path.join(context.pmPath, "extensions");
+      await mkdir(path.join(extensionsRoot, "legacy-capability"), { recursive: true });
+      await writeFile(
+        path.join(extensionsRoot, "legacy-capability", "manifest.json"),
+        `${JSON.stringify(
+          {
+            name: "legacy-capability-ext",
+            version: "1.0.0",
+            entry: "./index.js",
+            capabilities: ["migration"],
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+      await writeFile(path.join(extensionsRoot, "legacy-capability", "index.js"), "export default { activate() {} };\n", "utf8");
+
+      const doctor = await runExtension(undefined, { doctor: true, project: true, detail: "deep" }, { path: context.pmPath });
+      const guidance = doctor.details.capability_guidance as Array<Record<string, unknown>>;
+      expect(guidance).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            capability: "migration",
+            suggested_capability: "schema",
+            suggestion_source: "legacy_alias",
+            legacy_alias_target: "schema",
+          }),
+        ]),
+      );
     });
   });
 
@@ -797,6 +979,104 @@ describe("extension command runtime", () => {
 
       expect(summary.load_failure_count).toBeGreaterThanOrEqual(1);
       expect(summary.blocking_failure_count).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  it("adopts unmanaged extensions when doctor --fix-managed-state is requested", async () => {
+    await withTempPmPath(async (context) => {
+      const unmanagedDir = path.join(context.pmPath, "extensions", "doctor-fix-managed");
+      await mkdir(unmanagedDir, { recursive: true });
+      await writeFile(
+        path.join(unmanagedDir, "manifest.json"),
+        `${JSON.stringify(
+          {
+            name: "doctor-fix-managed",
+            version: "1.0.0",
+            entry: "index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+      await writeFile(path.join(unmanagedDir, "index.js"), "export default { activate() {} };", "utf8");
+
+      const doctor = await runExtension(
+        undefined,
+        { doctor: true, project: true, detail: "summary", fixManagedState: true },
+        { path: context.pmPath },
+      );
+      const managedStateFix = doctor.details.managed_state_fix as {
+        requested: boolean;
+        applied: boolean;
+        adopted_count: number;
+      };
+      const triage = doctor.details.triage as { update_health_partial: boolean };
+      expect(managedStateFix).toMatchObject({
+        requested: true,
+        applied: true,
+        adopted_count: 1,
+      });
+      expect(triage.update_health_partial).toBe(false);
+    });
+  });
+
+  it("includes actionable registerCommand traces when doctor --trace is enabled", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceDir = path.join(context.tempRoot, "doctor-trace-source");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(
+        path.join(sourceDir, "manifest.json"),
+        `${JSON.stringify(
+          {
+            name: "doctor-trace-ext",
+            version: "1.0.0",
+            entry: "./index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(sourceDir, "index.js"),
+        [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerCommand({ name: 'trace broken command' });",
+          "  },",
+          "};",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
+
+      const doctor = await runExtension(
+        undefined,
+        { doctor: true, project: true, detail: "deep", trace: true },
+        { path: context.pmPath },
+      );
+      const summary = doctor.details.summary as { trace_enabled?: boolean };
+      const deep = doctor.details.deep as {
+        activation?: { failed?: Array<Record<string, unknown>> };
+        trace?: { activation_failures?: Array<Record<string, unknown>> };
+      };
+      expect(summary.trace_enabled).toBe(true);
+      expect(deep.trace?.activation_failures).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: "doctor-trace-ext",
+            method: "registerCommand",
+            command: "trace broken command",
+          }),
+        ]),
+      );
+      expect(deep.trace?.activation_failures?.[0]?.expected_schema).toBe("{ name: string; run: (context) => unknown; }");
+      expect(typeof deep.trace?.activation_failures?.[0]?.registration_index).toBe("number");
+      expect(deep.activation?.failed?.[0]?.error).toContain("registerCommand requires a command definition run handler");
     });
   });
 
@@ -1048,6 +1328,70 @@ describe("extension command runtime", () => {
 
       const uninstall = await runExtension("global-scope-ext", { uninstall: true, global: true }, { path: context.pmPath });
       expect(uninstall.details).toMatchObject({ removed: true });
+    });
+  });
+
+  it("runs opt-in runtime probe for manage parity without changing default manage semantics", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceDir = path.join(context.tempRoot, "runtime-probe-source");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(
+        path.join(sourceDir, "manifest.json"),
+        JSON.stringify(
+          {
+            name: "runtime-probe-ext",
+            version: "1.0.0",
+            entry: "index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(
+        path.join(sourceDir, "index.js"),
+        "export default { activate() { throw new Error('runtime probe activation failure'); } };",
+        "utf8",
+      );
+      await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
+
+      const manageDefault = await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath });
+      const defaultExtensions = (manageDefault.details.extensions as Array<Record<string, unknown>>) ?? [];
+      expect(defaultExtensions).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: "runtime-probe-ext",
+            runtime_active: null,
+            activation_status: "unknown",
+          }),
+        ]),
+      );
+      expect(manageDefault.details.runtime_probe).toMatchObject({
+        requested: false,
+        executed: false,
+      });
+
+      const manageProbe = await runExtension(
+        undefined,
+        { manage: true, project: true, runtimeProbe: true },
+        { path: context.pmPath },
+      );
+      const probeExtensions = (manageProbe.details.extensions as Array<Record<string, unknown>>) ?? [];
+      expect(probeExtensions).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: "runtime-probe-ext",
+            runtime_active: false,
+            activation_status: "failed",
+          }),
+        ]),
+      );
+      expect(manageProbe.details.runtime_probe).toMatchObject({
+        requested: true,
+        executed: true,
+      });
+      expect(manageProbe.warnings).toEqual(expect.arrayContaining(["extension_activate_failed:project:runtime-probe-ext"]));
     });
   });
 

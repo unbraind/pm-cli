@@ -358,12 +358,12 @@ Project-local extensions override global by default. Runtime dispatch is extensi
 
 Lifecycle manager command architecture:
 
-- `src/cli/commands/extension.ts` implements `pm extension` actions (`install`, `uninstall`, `explore`, `manage`, `doctor`, `adopt`, `adopt-all`, `activate`, `deactivate`) with deterministic validation, mutually-exclusive action routing, doctor-only strict warning exit controls (`--strict-exit`, alias `--fail-on-warn`), and explicit extension state semantics (`active` compatibility alias + `enabled`/`runtime_active`/`activation_status`).
+- `src/cli/commands/extension.ts` implements `pm extension` actions (`install`, `uninstall`, `explore`, `manage`, `doctor`, `adopt`, `adopt-all`, `activate`, `deactivate`) with deterministic validation, mutually-exclusive action routing, doctor-only strict warning exit controls (`--strict-exit`, alias `--fail-on-warn`), optional doctor trace payloads (`--trace` with `--detail deep`), manage runtime parity probes (`--runtime-probe`), optional managed-state remediation (`--fix-managed-state`), and explicit extension state semantics (`active` compatibility alias + `enabled`/`runtime_active`/`activation_status`).
 - Install sources support local directories, GitHub HTTPS URLs, `github.com/<owner>/<repo>[/path]`, and forced shorthand via `--gh/--github`.
 - Scope-local managed state is persisted at `<extensions-root>/.managed-extensions.json` for deterministic source metadata, install/update timestamps, and update-check status.
-- `--manage` executes GitHub remote checks (`git ls-remote`) for managed GitHub entries, updates managed-state metadata, and emits deterministic per-extension `update_check_status`/`update_check_reason` fields plus `details.triage` status totals/remediation hints.
+- `--manage` executes GitHub remote checks (`git ls-remote`) for managed GitHub entries, updates managed-state metadata, and emits deterministic per-extension `update_check_status`/`update_check_reason` fields plus `details.triage` status totals/remediation hints. With `--runtime-probe`, manage performs doctor-like runtime activation probes and annotates runtime probe execution metadata.
 - `--adopt-all` bulk-adopts unmanaged scope extensions into managed-state metadata without reinstalling files.
-- Health diagnostics include managed extension summaries/warnings for both project and global extension roots and a condensed `details.triage` surface for load/activation/migration triage, including update-coverage parity warning codes (`extension_update_health_partial_coverage`) and capability guidance metadata for unknown manifest capabilities.
+- Health diagnostics include managed extension summaries/warnings for both project and global extension roots and a condensed `details.triage` surface for load/activation/migration triage, including update-coverage parity warning codes (`extension_update_health_partial_coverage`) when unmanaged extensions are action-required, capability guidance metadata, and machine-readable capability contract metadata for unknown manifest capabilities.
 
 Extension Host V2 adds three additional override planes:
 

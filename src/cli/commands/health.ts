@@ -4,6 +4,7 @@ import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { activateExtensions, getActiveExtensionRegistrations, loadExtensions, runActiveOnReadHooks } from "../../core/extensions/index.js";
 import {
+  EXTENSION_CAPABILITY_CONTRACT,
   KNOWN_EXTENSION_CAPABILITIES,
   parseUnknownExtensionCapabilityWarning,
   type LoadedExtension,
@@ -113,6 +114,18 @@ function collectUnknownCapabilityGuidance(warnings: string[]): UnknownExtensionC
     guidance.push(parsed);
   }
   return guidance;
+}
+
+function buildCapabilityContractMetadata(): {
+  version: number;
+  capabilities: string[];
+  legacy_aliases: Record<string, string>;
+} {
+  return {
+    version: EXTENSION_CAPABILITY_CONTRACT.version,
+    capabilities: [...EXTENSION_CAPABILITY_CONTRACT.capabilities],
+    legacy_aliases: { ...EXTENSION_CAPABILITY_CONTRACT.legacy_aliases },
+  };
 }
 
 function normalizeExtensionNameForMatch(value: string): string {
@@ -577,6 +590,7 @@ async function buildExtensionCheck(
     ...updateCoverageWarnings,
   ];
   const capabilityGuidance = collectUnknownCapabilityGuidance(extensionWarnings);
+  const capabilityContract = buildCapabilityContractMetadata();
   const extensionTriage = buildExtensionHealthTriageSummary(
     extensionWarnings,
     loadResult.failed.length,
@@ -597,6 +611,7 @@ async function buildExtensionCheck(
         warnings: extensionWarnings,
         activation: activationDetails,
         triage: extensionTriage,
+        capability_contract: capabilityContract,
         capability_guidance: capabilityGuidance,
       } as Record<string, unknown>,
     },

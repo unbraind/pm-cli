@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","area:health",follow-up,pm-cli
 created_at: "2026-04-03T22:00:05.513Z"
-updated_at: "2026-04-05T03:47:36.350Z"
+updated_at: "2026-04-05T19:29:33.333Z"
 deadline: "2026-04-10T22:00:05.513Z"
 author: codex-agent
 estimated_minutes: 240
@@ -27,7 +27,7 @@ expected_result: "Acceptance criteria for External follow-up: add focused extens
 actual_result: "Work completed and recorded with linked artifacts for External follow-up: add focused extension diagnostics triage summaries."
 component: project-management/external-follow-up-add-focused-extension-diagnos
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for External follow-up: add focused extension diagnostics triage summaries."
-comments[10]{created_at,author,text}:
+comments[12]{created_at,author,text}:
   "2026-04-03T22:00:05.513Z",codex-agent,Child task created from external extension diagnostics triage request.
   "2026-04-03T22:06:22.186Z",codex-agent,"Implementation started: add concise triage summary and remediation hints to extension --manage and health extension diagnostics while preserving full detail payloads."
   "2026-04-03T22:17:11.560Z",codex-agent,"Implemented focused extension triage without adding new commands: extension --manage now returns concise triage summary/remediation hints, and health extensions check includes condensed triage counts + next steps. Evidence: pm test pm-doek --run passed; full build/test/coverage passed; smoke checks confirm details.triage in both manage and health JSON outputs."
@@ -38,6 +38,8 @@ comments[10]{created_at,author,text}:
   "2026-04-05T03:07:58.682Z",codex-agent,"Reopened for external issue #3 follow-up: ensure pm health surfaces extension_update_health_partial_coverage parity with extension manage/doctor warning surfaces."
   "2026-04-05T03:23:50.177Z",codex-agent,"Progress: pm health extension check now surfaces update-coverage partial warnings when loaded extensions are unmanaged (extension_update_health_partial_coverage:*), and extension triage now includes explicit warning_codes/update_health_coverage/update_health_partial/unmanaged_loaded_extension metadata for parity with extension doctor/manage visibility."
   "2026-04-05T03:46:57.842Z",codex-agent,Surfaced extension_update_health_partial_coverage parity in pm health extension diagnostics and warnings; smoke checked pm health --json now reports partial coverage warning.
+  "2026-04-05T18:46:19.722Z",codex-agent,"Reopened to normalize top-level warnings vs triage aggregates across extension manage/doctor, and to add informational-vs-actionable unmanaged-state semantics with optional remediation shortcut path."
+  "2026-04-05T19:29:07.605Z",codex-agent,"Completed warning-surface parity and unmanaged-state triage normalization: top-level warnings now align with triage warning semantics; action-required unmanaged coverage warnings and remediation behavior are consistent across manage/doctor/health; docs and changelog updated. Verification: extension command/health integration tests and full coverage/typecheck passed."
 notes[1]{created_at,author,text}:
   "2026-04-03T22:00:05.513Z",codex-agent,No new command surface; improve manage and health diagnostics only.
 files[6]{path,scope,note}:
@@ -57,5 +59,5 @@ docs[4]{path,scope,note}:
   docs/ARCHITECTURE.md,project,extension diagnostics architecture notes
   PRD.md,project,extension triage output contract docs
   README.md,project,extension manage/health triage docs
-close_reason: Health warning parity for extension update coverage implemented.
+close_reason: warning parity and managed-state triage normalization completed
 body: External report requests a fast triage surface. Chosen direction avoids new command; enhance existing extension --manage and health extension diagnostics with compact summaries and next-step hints while preserving full JSON detail.

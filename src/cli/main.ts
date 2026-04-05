@@ -2135,6 +2135,9 @@ program
   .option("--github <owner/repo[/path]>", "Alias for --gh")
   .option("--ref <ref>", "Git ref/branch/tag for GitHub install sources")
   .option("--detail <mode>", "Detail mode for extension diagnostics (summary|deep)")
+  .option("--trace", "Include actionable registration traces in doctor deep diagnostics")
+  .option("--runtime-probe", "Opt-in runtime activation probe for manage output parity")
+  .option("--fix-managed-state", "Adopt unmanaged extensions before diagnostics/update checks")
   .option("--strict-exit", "Return non-zero exit when doctor warnings are present (ok=false)")
   .option("--fail-on-warn", "Alias for --strict-exit (doctor)")
   .description("Manage extension lifecycle operations for project or global scope.")
@@ -2160,6 +2163,9 @@ program
         github: typeof options.github === "string" ? options.github : undefined,
         ref: typeof options.ref === "string" ? options.ref : undefined,
         detail: typeof options.detail === "string" ? options.detail : undefined,
+        trace: options.trace === true,
+        runtimeProbe: options.runtimeProbe === true,
+        fixManagedState: options.fixManagedState === true,
         strictExit: Boolean(options.strictExit),
         failOnWarn: Boolean(options.failOnWarn),
       },

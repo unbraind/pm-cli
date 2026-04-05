@@ -6,16 +6,18 @@ status: closed
 priority: 1
 tags[4]: adoption,extensions,external-audit,pm-cli
 created_at: "2026-04-05T01:12:30.369Z"
-updated_at: "2026-04-05T03:47:37.681Z"
+updated_at: "2026-04-05T19:29:37.384Z"
 author: codex-agent
 acceptance_criteria: "pm extension supports adopt for existing unmanaged extensions, writes deterministic managed metadata including source/ref/provenance fields when available, and extension doctor/manage surfaces reflect managed update-check eligibility."
 parent: pm-gt8u
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-04-05T01:12:30.369Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'extension adopt unmanaged managed metadata' --limit 10; pm search 'extension manage skipped_unmanaged' --limit 10; pm list-open --limit 80; pm list-in-progress --limit 80. Net-new because existing extension diagnostics/management items cover doctor/manage status semantics but not adopt-without-reinstall workflow."
   "2026-04-05T02:18:03.973Z",codex-agent,"Implemented extension adopt end-to-end (CLI/contracts/Pi/completion/help/docs) and added adoption regressions including already-managed path. Evidence: node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/extension-command-github.spec.ts tests/integration/help-runtime.spec.ts passed; node scripts/run-tests.mjs coverage passed with branch coverage 91.01%; pnpm build passed; repro probe confirms pm extension --help exposes --adopt/--doctor."
   "2026-04-05T03:08:02.560Z",codex-agent,"Reopened for external issue #3 ergonomic follow-up: add bulk unmanaged extension adoption flow (--adopt-all) while preserving existing --adopt behavior."
   "2026-04-05T03:23:51.529Z",codex-agent,"Progress: implemented bulk unmanaged adoption via pm extension --adopt-all with deterministic bulk record creation, no-target/no-source-option validation, and parity wiring across CLI, completion, SDK contracts, and Pi wrapper. Added unit coverage for adopt-all lifecycle and validation guards."
   "2026-04-05T03:46:58.712Z",codex-agent,"Added pm extension --adopt-all bulk adoption flow with argument guards, deterministic adoption summary, completion/contracts/Pi wiring, and tests."
+  "2026-04-05T18:46:23.824Z",codex-agent,Reopened to provide explicit fix-managed-state remediation flow for unmanaged extensions in diagnostics commands while preserving default non-mutating behavior.
+  "2026-04-05T19:29:08.460Z",codex-agent,"Completed managed-state remediation shortcut implementation: manage/doctor now support fix-managed-state adoption flow while preserving default non-mutating behavior. Verification: extension command regressions, integration checks, full coverage, and typecheck passed."
 files[7]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,Pi wrapper action mapping for extension-adopt
   src/cli/commands/completion.ts,project,shell completion parity for extension --adopt
@@ -31,5 +33,5 @@ docs[4]{path,scope,note}:
   docs/EXTENSIONS.md,project,lifecycle semantics for adopt and coverage warnings
   PRD.md,project,extension adopt and doctor contract updates
   README.md,project,extension adopt and update-health coverage docs
-close_reason: Bulk unmanaged extension adoption flow implemented.
+close_reason: fix-managed-state remediation path delivered
 body: Implement pm extension --adopt <name> (--project|--global) to write managed metadata/provenance for already-installed extensions and unblock update checks.

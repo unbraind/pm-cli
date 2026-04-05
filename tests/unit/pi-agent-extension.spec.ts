@@ -528,10 +528,17 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(extensionAdoptAllSchema.required).toEqual(["action"]);
     expect(schemaProperty(extensionAdoptAllSchema, "scope").enum).toEqual(["project", "global"]);
 
+    const extensionManageSchema = schemaForAction(tool.parameters as Record<string, unknown>, "extension-manage");
+    expect(extensionManageSchema.required).toEqual(["action"]);
+    expect(schemaProperty(extensionManageSchema, "runtimeProbe").type).toBe("boolean");
+    expect(schemaProperty(extensionManageSchema, "fixManagedState").type).toBe("boolean");
+
     const extensionDoctorSchema = schemaForAction(tool.parameters as Record<string, unknown>, "extension-doctor");
     expect(extensionDoctorSchema.required).toEqual(["action"]);
     expect(schemaProperty(extensionDoctorSchema, "scope").enum).toEqual(["project", "global"]);
     expect(schemaProperty(extensionDoctorSchema, "detail").enum).toEqual(["summary", "deep"]);
+    expect(schemaProperty(extensionDoctorSchema, "trace").type).toBe("boolean");
+    expect(schemaProperty(extensionDoctorSchema, "fixManagedState").type).toBe("boolean");
     expect(schemaProperty(extensionDoctorSchema, "strictExit").type).toBe("boolean");
     expect(schemaProperty(extensionDoctorSchema, "failOnWarn").type).toBe("boolean");
 
@@ -748,6 +755,15 @@ describe("Pi agent extension wrapper for pm", () => {
 
     expect(
       buildPmCliArgs({
+        action: "extension-manage",
+        scope: "project",
+        runtimeProbe: true,
+        fixManagedState: true,
+      }),
+    ).toEqual(["--json", "extension", "--manage", "--project", "--runtime-probe", "--fix-managed-state"]);
+
+    expect(
+      buildPmCliArgs({
         action: "extension-doctor",
         scope: "project",
         detail: "deep",
@@ -755,6 +771,16 @@ describe("Pi agent extension wrapper for pm", () => {
         failOnWarn: true,
       }),
     ).toEqual(["--json", "extension", "--doctor", "--project", "--detail", "deep", "--strict-exit", "--fail-on-warn"]);
+
+    expect(
+      buildPmCliArgs({
+        action: "extension-doctor",
+        scope: "project",
+        detail: "deep",
+        trace: true,
+        fixManagedState: true,
+      }),
+    ).toEqual(["--json", "extension", "--doctor", "--project", "--detail", "deep", "--trace", "--fix-managed-state"]);
 
     expect(
       buildPmCliArgs({

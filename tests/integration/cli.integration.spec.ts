@@ -501,6 +501,46 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         activation_status: "failed",
       });
 
+      const doctorTrace = context.runCli(
+        ["extension", "--doctor", "--project", "--detail", "deep", "--trace", "--json"],
+        { expectJson: true },
+      );
+      expect(doctorTrace.code).toBe(0);
+      const doctorTraceFailures = (
+        ((doctorTrace.json as { details: { deep?: { trace?: { activation_failures?: Array<Record<string, unknown>> } } } }).details.deep
+          ?.trace?.activation_failures ?? []) as Array<Record<string, unknown>>
+      );
+      expect(doctorTraceFailures.length).toBeGreaterThan(0);
+      expect(doctorTraceFailures[0]?.method).toBe("registerCommand");
+      expect(typeof doctorTraceFailures[0]?.registration_index).toBe("number");
+
+      const manageDefault = context.runCli(["extension", "--manage", "--project", "--json"], { expectJson: true });
+      expect(manageDefault.code).toBe(0);
+      const manageDefaultExtensions = (
+        ((manageDefault.json as { details: { extensions?: Array<Record<string, unknown>> } }).details.extensions ?? []) as Array<
+          Record<string, unknown>
+        >
+      );
+      const manageDefaultEntry = manageDefaultExtensions.find((entry) => entry.name === "doctor-failing-ext");
+      expect(manageDefaultEntry?.runtime_active ?? null).toBeNull();
+      expect(manageDefaultEntry?.activation_status).toBe("unknown");
+
+      const manageProbe = context.runCli(["extension", "--manage", "--project", "--runtime-probe", "--json"], { expectJson: true });
+      expect(manageProbe.code).toBe(0);
+      const manageProbeExtensions = (
+        ((manageProbe.json as { details: { extensions?: Array<Record<string, unknown>> } }).details.extensions ?? []) as Array<
+          Record<string, unknown>
+        >
+      );
+      const manageProbeEntry = manageProbeExtensions.find((entry) => entry.name === "doctor-failing-ext");
+      expect(manageProbeEntry).toMatchObject({
+        runtime_active: false,
+        activation_status: "failed",
+      });
+      expect(((manageProbe.json as { details: { runtime_probe?: Record<string, unknown> } }).details.runtime_probe ?? {}).executed).toBe(
+        true,
+      );
+
       const strictDoctor = context.runCli(
         ["extension", "--doctor", "--project", "--detail", "summary", "--strict-exit", "--json"],
         { expectJson: true },

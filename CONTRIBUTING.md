@@ -125,7 +125,9 @@ Dispatch behavior is extension-first for registered command handlers: matching e
 
 Only register capabilities that are listed in your manifest's `capabilities` array. Registration outside declared capabilities fails extension activation deterministically.
 
-Run `pm health` to inspect extension load/activation status and migration summaries.
+Run `pm health` to inspect extension load/activation status, capability guidance/contract metadata, and migration summaries.
+Use `pm extension --doctor --detail deep --trace` when triaging activation failures, and `pm extension --manage --runtime-probe` when you need opt-in runtime parity in manage output.
+When unmanaged extension state is expected to be managed, use `pm extension --doctor --fix-managed-state` or `pm extension --manage --fix-managed-state` before re-running diagnostics.
 
 ## Pull Requests
 

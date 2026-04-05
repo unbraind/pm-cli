@@ -885,6 +885,9 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   envClear: { type: "array", items: { type: "string" } },
   sharedHostSafe: { type: "boolean" },
   detail: { type: "string", enum: ["summary", "deep"] },
+  trace: { type: "boolean" },
+  runtimeProbe: { type: "boolean" },
+  fixManagedState: { type: "boolean" },
   pmContext: { type: "string", enum: ["schema", "tracker", "auto"] },
   failOnContextMismatch: { type: "boolean" },
   failOnSkipped: { type: "boolean" },
@@ -992,8 +995,8 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   },
   "extension-uninstall": { required: ["target"], optional: ["scope"] },
   "extension-explore": { optional: ["scope"] },
-  "extension-manage": { optional: ["scope"] },
-  "extension-doctor": { optional: ["scope", "detail", "strictExit", "failOnWarn"] },
+  "extension-manage": { optional: ["scope", "runtimeProbe", "fixManagedState"] },
+  "extension-doctor": { optional: ["scope", "detail", "trace", "fixManagedState", "strictExit", "failOnWarn"] },
   "extension-adopt": { required: ["target"], optional: ["scope", "github", "ref"] },
   "extension-adopt-all": { optional: ["scope"] },
   "extension-activate": { required: ["target"], optional: ["scope"] },
@@ -1141,6 +1144,15 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   detail: {
     description: "Detail mode for commands that support concise and deep diagnostics.",
     examples: ["summary", "deep"],
+  },
+  trace: {
+    description: "When true for extension-doctor, include actionable registration traces in deep diagnostics.",
+  },
+  runtimeProbe: {
+    description: "When true for extension-manage, run a doctor-like runtime activation probe for parity fields.",
+  },
+  fixManagedState: {
+    description: "When true for extension-manage/extension-doctor, adopt unmanaged extensions before diagnostics/update checks.",
   },
   target: {
     description: "Positional target argument for the selected action (ID, source, or extension name).",

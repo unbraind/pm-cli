@@ -273,6 +273,36 @@ describe("extension loader", () => {
     });
   });
 
+  it("maps legacy capability aliases to schema suggestions", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      await createExtension(
+        roots.project,
+        "legacy-capability-alias",
+        {
+          name: "legacy-capability-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["migration", "validation"],
+        },
+        "export default { ok: true };\n",
+      );
+
+      const settings = await loadSettings(context);
+      const discovery = await discoverExtensions({
+        pmRoot: context.pmPath,
+        settings,
+      });
+      expect(discovery.warnings).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining("extension_capability_unknown:project:legacy-capability-ext:migration"),
+          expect.stringContaining("extension_capability_unknown:project:legacy-capability-ext:validation"),
+        ]),
+      );
+      expect(discovery.warnings.every((warning) => warning.includes("suggested=schema"))).toBe(true);
+    });
+  });
+
   it("applies deterministic same-name tie breaks within a layer", async () => {
     await withTempPmPath(async (context) => {
       const roots = resolveExtensionRoots(context.pmPath);

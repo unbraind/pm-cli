@@ -19,6 +19,16 @@ export const KNOWN_EXTENSION_CAPABILITIES = [
   "services",
 ] as const;
 type ExtensionCapability = (typeof KNOWN_EXTENSION_CAPABILITIES)[number];
+export const EXTENSION_CAPABILITY_CONTRACT_VERSION = 2;
+export const EXTENSION_CAPABILITY_LEGACY_ALIASES: Readonly<Record<string, ExtensionCapability>> = Object.freeze({
+  migration: "schema",
+  validation: "schema",
+});
+export const EXTENSION_CAPABILITY_CONTRACT = Object.freeze({
+  version: EXTENSION_CAPABILITY_CONTRACT_VERSION,
+  capabilities: [...KNOWN_EXTENSION_CAPABILITIES],
+  legacy_aliases: { ...EXTENSION_CAPABILITY_LEGACY_ALIASES },
+});
 
 export type ExtensionLayer = "global" | "project";
 type ExtensionStatus = "ok" | "warn";
@@ -394,6 +404,16 @@ export interface FailedExtensionActivation {
   name: string;
   entry_path: string;
   error: string;
+  trace?: ExtensionActivationFailureTrace;
+}
+
+export interface ExtensionActivationFailureTrace {
+  method: string;
+  registration_index: number;
+  command?: string;
+  expected_schema: string;
+  received?: unknown;
+  hint?: string;
 }
 
 export interface ExtensionActivationResult {
@@ -456,6 +476,14 @@ function collectUnknownExtensionCapabilities(capabilities: readonly string[]): s
   return capabilities.filter((capability) => !isKnownExtensionCapability(capability));
 }
 
+function resolveLegacyExtensionCapabilityAlias(capability: string): ExtensionCapability | null {
+  const normalized = capability.trim().toLowerCase();
+  if (normalized.length === 0) {
+    return null;
+  }
+  return EXTENSION_CAPABILITY_LEGACY_ALIASES[normalized] ?? null;
+}
+
 function levenshteinDistance(left: string, right: string): number {
   if (left === right) {
     return 0;
@@ -493,6 +521,10 @@ function suggestKnownExtensionCapability(capability: string): string | null {
   if (normalized.length === 0) {
     return null;
   }
+  const legacyAlias = resolveLegacyExtensionCapabilityAlias(normalized);
+  if (legacyAlias) {
+    return legacyAlias;
+  }
   let bestMatch: string | null = null;
   let bestDistance = Number.POSITIVE_INFINITY;
   for (const candidate of KNOWN_EXTENSION_CAPABILITIES) {
@@ -517,7 +549,10 @@ export interface UnknownExtensionCapabilityWarningDetails {
   name: string;
   capability: string;
   allowed_capabilities: string[];
+  capability_contract_version: number;
   suggested_capability?: string;
+  suggestion_source?: "legacy_alias" | "nearest_match";
+  legacy_alias_target?: string;
 }
 
 export function parseUnknownExtensionCapabilityWarning(
@@ -535,13 +570,23 @@ export function parseUnknownExtensionCapabilityWarning(
     .split(",")
     .map((value) => value.trim())
     .filter((value) => value.length > 0);
-  const suggested_capability = suggestedRaw === "none" ? undefined : suggestedRaw;
+  const legacyAlias = resolveLegacyExtensionCapabilityAlias(capability);
+  const suggestedFromWarning = suggestedRaw === "none" ? undefined : suggestedRaw;
+  const suggested_capability = suggestedFromWarning ?? legacyAlias ?? undefined;
+  const suggestion_source = suggested_capability
+    ? legacyAlias === suggested_capability
+      ? "legacy_alias"
+      : "nearest_match"
+    : undefined;
   return {
     layer,
     name,
     capability,
     allowed_capabilities,
+    capability_contract_version: EXTENSION_CAPABILITY_CONTRACT_VERSION,
     suggested_capability,
+    suggestion_source,
+    legacy_alias_target: legacyAlias ?? undefined,
   };
 }
 
@@ -1096,6 +1141,30 @@ function cloneRuntimeRegistrationValue(value: unknown): unknown {
   return value;
 }
 
+const EXTENSION_REGISTRATION_TRACE_SYMBOL = Symbol("extension_registration_trace");
+
+type RegistrationTraceCarrier = Error & {
+  [EXTENSION_REGISTRATION_TRACE_SYMBOL]?: ExtensionActivationFailureTrace;
+};
+
+function createRegistrationValidationError(message: string, trace: ExtensionActivationFailureTrace): TypeError {
+  const error = new TypeError(message) as RegistrationTraceCarrier;
+  Object.defineProperty(error, EXTENSION_REGISTRATION_TRACE_SYMBOL, {
+    value: trace,
+    enumerable: false,
+    configurable: false,
+    writable: false,
+  });
+  return error;
+}
+
+function extractRegistrationValidationTrace(error: unknown): ExtensionActivationFailureTrace | undefined {
+  if (!(error instanceof Error)) {
+    return undefined;
+  }
+  return (error as RegistrationTraceCarrier)[EXTENSION_REGISTRATION_TRACE_SYMBOL];
+}
+
 function normalizeRegistrationRecord(name: string, value: unknown): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new TypeError(`${name} requires an object definition`);
@@ -1325,15 +1394,49 @@ function createExtensionApi(
   renderers: ExtensionRendererRegistry,
   registrations: ExtensionRegistrationRegistry,
 ): ExtensionApi {
+  const registerCommandTrace = (
+    mode: "override" | "definition",
+    command: string | undefined,
+    expectedSchema: string,
+    received: unknown,
+    hint?: string,
+  ): ExtensionActivationFailureTrace => ({
+    method: "registerCommand",
+    registration_index: mode === "override" ? commands.overrides.length : commands.handlers.length,
+    command,
+    expected_schema: expectedSchema,
+    received: sanitizeRegistrationValue(received),
+    hint,
+  });
+
   const registerCommand = (commandOrDefinition: string | CommandDefinition, override?: CommandOverride): void => {
     assertExtensionCapability(extension, "commands", "registerCommand");
     if (typeof commandOrDefinition === "string") {
       const normalizedCommand = normalizeCommandName(commandOrDefinition);
       if (normalizedCommand.length === 0) {
-        throw new TypeError("registerCommand requires a non-empty command name");
+        throw createRegistrationValidationError(
+          "registerCommand requires a non-empty command name",
+          registerCommandTrace(
+            "override",
+            commandOrDefinition,
+            'registerCommand("<command>", (context) => unknown)',
+            commandOrDefinition,
+            "Provide a non-empty command path as the first argument.",
+          ),
+        );
       }
       if (typeof override !== "function") {
-        throw new TypeError("registerCommand requires an override function when command name is provided");
+        const trace = registerCommandTrace(
+          "override",
+          normalizedCommand,
+          'registerCommand("<command>", (context) => unknown)',
+          { command: commandOrDefinition, override },
+          "Provide a function as the second registerCommand argument.",
+        );
+        throw createRegistrationValidationError(
+          `registerCommand requires an override function when command name is provided (command="${normalizedCommand}", registration_index=${trace.registration_index})`,
+          trace,
+        );
       }
       commands.overrides.push({
         layer: extension.layer,
@@ -1345,18 +1448,55 @@ function createExtensionApi(
     }
 
     if (typeof commandOrDefinition !== "object" || commandOrDefinition === null) {
-      throw new TypeError("registerCommand requires a command definition object");
+      throw createRegistrationValidationError(
+        "registerCommand requires a command definition object",
+        registerCommandTrace(
+          "definition",
+          undefined,
+          "{ name: string; run: (context) => unknown; }",
+          commandOrDefinition,
+          "Use registerCommand({ name: \"command path\", run: (context) => ... }).",
+        ),
+      );
     }
     if (typeof commandOrDefinition.name !== "string") {
-      throw new TypeError("registerCommand requires a command definition name");
+      throw createRegistrationValidationError(
+        "registerCommand requires a command definition name",
+        registerCommandTrace(
+          "definition",
+          undefined,
+          "{ name: string; run: (context) => unknown; }",
+          commandOrDefinition,
+          "Set command definition.name to a non-empty string command path.",
+        ),
+      );
     }
 
     const normalizedCommand = normalizeCommandName(commandOrDefinition.name);
     if (normalizedCommand.length === 0) {
-      throw new TypeError("registerCommand requires a non-empty command definition name");
+      throw createRegistrationValidationError(
+        "registerCommand requires a non-empty command definition name",
+        registerCommandTrace(
+          "definition",
+          commandOrDefinition.name,
+          "{ name: string; run: (context) => unknown; }",
+          commandOrDefinition,
+          "Ensure command definition.name contains a non-empty command path.",
+        ),
+      );
     }
     if (typeof commandOrDefinition.run !== "function") {
-      throw new TypeError("registerCommand requires a command definition run handler");
+      const trace = registerCommandTrace(
+        "definition",
+        normalizedCommand,
+        "{ name: string; run: (context) => unknown; }",
+        commandOrDefinition,
+        "Define command definition.run as a function.",
+      );
+      throw createRegistrationValidationError(
+        `registerCommand requires a command definition run handler (command="${normalizedCommand}", registration_index=${trace.registration_index})`,
+        trace,
+      );
     }
     commands.handlers.push({
       layer: extension.layer,
@@ -1794,11 +1934,13 @@ export async function activateExtensions(loadResult: ExtensionLoadResult): Promi
       await activatable.activate(createExtensionApi(extension, hooks, commands, parsers, preflight, services, renderers, registrations));
     } catch (error: unknown) {
       warnings.push(`extension_activate_failed:${extension.layer}:${extension.name}`);
+      const trace = extractRegistrationValidationTrace(error);
       failed.push({
         layer: extension.layer,
         name: extension.name,
         entry_path: extension.entry_path,
         error: formatUnknownError(error),
+        trace,
       });
     }
   }

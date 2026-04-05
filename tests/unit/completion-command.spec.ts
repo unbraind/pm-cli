@@ -141,7 +141,9 @@ describe("generateBashScript", () => {
 
   it("includes extension doctor strict flags in bash completion", () => {
     const script = generateBashScript();
-    expect(script).toContain("--doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --strict-exit --fail-on-warn");
+    expect(script).toContain(
+      "--doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --trace --runtime-probe --fix-managed-state --strict-exit --fail-on-warn",
+    );
   });
 
   it("includes fail-on-empty-test-run in bash test completions", () => {
@@ -300,6 +302,9 @@ describe("generateZshScript", () => {
 
   it("includes extension doctor strict flags in zsh completion", () => {
     const script = generateZshScript();
+    expect(script).toContain("--trace[Include registration traces in doctor deep diagnostics]");
+    expect(script).toContain("--runtime-probe[Opt-in runtime activation probe for manage output]");
+    expect(script).toContain("--fix-managed-state[Adopt unmanaged extensions before diagnostics/update checks]");
     expect(script).toContain("--strict-exit[Return non-zero exit when doctor warnings are present]");
     expect(script).toContain("--fail-on-warn[Alias for --strict-exit (doctor)]");
   });
@@ -422,6 +427,9 @@ describe("generateFishScript", () => {
     expect(script).toContain("-l github");
     expect(script).toContain("-l ref");
     expect(script).toContain("-l detail");
+    expect(script).toContain("-l trace");
+    expect(script).toContain("-l runtime-probe");
+    expect(script).toContain("-l fix-managed-state");
     expect(script).toContain("-l strict-exit");
     expect(script).toContain("-l fail-on-warn");
   });

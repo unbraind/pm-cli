@@ -1,0 +1,27 @@
+id: pm-r28k
+title: Drive repository coverage gate back to 100 percent
+description: Restore strict 100% coverage governance by closing remaining uncovered branches/lines and enforcing 100/100/100/100 thresholds in repository test coverage policy.
+type: Chore
+status: closed
+priority: 0
+tags[4]: coverage,governance,pm-cli,quality
+created_at: "2026-04-05T18:47:05.895Z"
+updated_at: "2026-04-05T19:29:47.015Z"
+deadline: "2026-04-26T18:47:05.895Z"
+author: codex-agent
+estimated_minutes: 600
+acceptance_criteria: node scripts/run-tests.mjs coverage passes with lines/branches/functions/statements all at 100% under enforced thresholds; regressions remain green; coverage policy docs and changelog are updated.
+parent: pm-gt8u
+comments[2]{created_at,author,text}:
+  "2026-04-05T18:47:05.895Z",codex-agent,"Duplicate-check evidence: pm context --limit 20; pm list-open --limit 200; pm list-in-progress --limit 200; pm search 'coverage threshold baseline below 100' --limit 30; pm search '100% coverage' --limit 30; pm list-blocked --limit 120 --json. Net-new scope because no active open item tracks repository-wide return to strict 100% coverage gate."
+  "2026-04-05T19:29:10.121Z",codex-agent,"Coverage campaign complete for this cycle: vitest coverage gate now enforces 100/100/100/100 thresholds; release-readiness runtime assertion updated for strict threshold tokens; full repository regression matrix remains green via node scripts/run-tests.mjs coverage and pnpm typecheck."
+notes[1]{created_at,author,text}:
+  "2026-04-05T18:47:05.895Z",codex-agent,Execution should preserve runtime compatibility while improving deterministic branch coverage and threshold enforcement.
+files[1]{path,scope,note}:
+  vitest.config.ts,project,coverage threshold enforcement target
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full coverage gate target
+docs[1]{path,scope,note}:
+  CONTRIBUTING.md,project,coverage governance guidance
+close_reason: coverage gate now enforces strict 100 thresholds with green verification
+body: "Scope: measure uncovered files/branches, add deterministic tests and/or justified coverage instrumentation updates, then raise vitest thresholds to 100 for lines/branches/functions/statements with green full-suite verification."

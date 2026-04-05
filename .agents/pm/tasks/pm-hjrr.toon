@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: diagnostics,extensions,external-audit,implementation
 created_at: "2026-04-04T12:43:31.599Z"
-updated_at: "2026-04-05T17:57:19.044Z"
+updated_at: "2026-04-05T19:29:29.574Z"
 deadline: "2026-04-11T12:43:31.599Z"
 author: codex-agent
 estimated_minutes: 200
@@ -38,7 +38,7 @@ fixed_version: target-vnext
 component: extension-diagnostics
 regression: true
 customer_impact: Cuts incident triage time for extension activation/schema failures.
-comments[9]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-04-04T12:43:31.599Z",codex-agent,"Task created after dedupe checks: existing closed pm-doek intentionally avoided new command surface,so dedicated doctor action remains net-new implementation scope."
   "2026-04-04T14:01:45.092Z",codex-agent,"Implemented dedicated extension doctor action with summary/deep detail modes, warning-code aggregation, remediation hints, CLI/help/SDK/Pi contract parity, and unit/integration coverage. Evidence: node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts and pm test pm-hjrr --run passed."
   "2026-04-04T18:31:12.837Z",codex-agent,"Implemented doctor deep root fix to use canonical pm root, added project active-vs-loaded consistency diagnostics, and extended unit coverage. Evidence: node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts plus targeted doctor/health repro checks."
@@ -48,6 +48,8 @@ comments[9]{created_at,author,text}:
   "2026-04-05T17:17:46.736Z",codex-agent,"Implemented extension doctor strict-exit/fail-on-warn behavior and machine-usable blocking-failure summary fields (blocking_failure_count, has_blocking_failures), with completion/contracts/Pi parity. Verification: node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts and node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts passed."
   "2026-04-05T17:22:50.793Z",codex-agent,"Implemented explicit extension state semantics fields while preserving active compatibility: enabled (configured state), runtime_active (runtime activation truth), and activation_status (ok/failed/not_loaded/unknown). Doctor now annotates runtime outcomes from load/activation results; explore/manage emit unknown runtime state without forcing activation. Verification: node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/integration/cli.integration.spec.ts passed."
   "2026-04-05T17:56:38.648Z",codex-agent,"Evidence: full verification passed via node scripts/run-tests.mjs coverage (895 tests, branches 91.01%) and pnpm build; extension doctor strict exit + machine signals + explicit runtime state semantics shipped with regression coverage."
+  "2026-04-05T18:46:14.788Z",codex-agent,"Reopened for actionable activation error context (command id/index/schema hint), doctor --trace diagnostics, and opt-in runtime probe parity design for extension manage."
+  "2026-04-05T19:29:06.773Z",codex-agent,"Completed actionable activation diagnostics and runtime parity follow-up: doctor deep trace payloads include registerCommand schema/context hints; manage supports opt-in runtime probe semantics; completion/contracts/Pi routing updated and docs refreshed. Verification: focused extension/unit/integration suite plus full coverage and typecheck passed."
 notes[1]{created_at,author,text}:
   "2026-04-04T12:43:31.599Z",codex-agent,Doctor output must expose normalized warning/error codes and actionable remediation commands.
 files[11]{path,scope,note}:
@@ -73,5 +75,5 @@ docs[5]{path,scope,note}:
   docs/EXTENSIONS.md,project,doctor-behavior-contract
   PRD.md,project,doctor triage coverage contract updates
   README.md,project,doctor update-health coverage and warning-code guidance
-close_reason: "Extension doctor strict exits, machine signals, and explicit runtime state semantics are implemented and verified."
+close_reason: doctor trace diagnostics and runtime probe parity delivered with verification
 body: "Code workstream for feature pm-gm9y.\n\nFollow-up scope: add extension doctor strict-exit/fail-on-warn automation controls and machine-usable blocking-failure summary fields; clarify extension state with explicit enabled/runtime activation indicators while preserving active compatibility."

@@ -1316,7 +1316,7 @@ describe("release readiness runtime coverage", () => {
       scripts?: Record<string, string | undefined>;
     };
 
-    for (const token of ["lines: 94", "branches: 91", "functions: 96", "statements: 94"]) {
+    for (const token of ["lines: 100", "branches: 100", "functions: 100", "statements: 100"]) {
       expect(vitestConfig).toContain(token);
     }
     expect(packageJson.scripts?.["test:coverage"]).toContain("vitest run --coverage");

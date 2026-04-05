@@ -84,6 +84,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added explicit extension state semantics in extension listings/diagnostics (`active` compatibility alias, `enabled`, `runtime_active`, `activation_status`) so configured-vs-runtime status is unambiguous.
 - Added unknown capability guidance hardening: `extension_capability_unknown` warnings now include inline allowed capability lists and nearest-match suggestions when confidence is high, and health/doctor payloads include `capability_guidance` metadata.
 - Added health parity warning surfacing for extension update-check partial coverage (`extension_update_health_partial_coverage`) so `pm health` mirrors extension triage visibility when unmanaged loaded extensions reduce coverage.
+- Added extension capability contract metadata publishing for diagnostics consumers (`capability_contract.version`, `capability_contract.capabilities`, `capability_contract.legacy_aliases`) plus legacy alias guidance (`migration`/`validation` -> `schema`) in unknown-capability diagnostics.
+- Added extension diagnostics/runtime controls: `pm extension --doctor --detail deep --trace`, `pm extension --manage --runtime-probe`, and `--fix-managed-state` support for `manage`/`doctor`, with parity wiring across CLI contracts, shell completion, and Pi wrapper arguments.
 - Added `pm close --validate-close [warn|strict]` for additive close-time resolution-field validation (`resolution`, `expected_result`, `actual_result`) with warning-first default behavior.
 - Added `pm files --append-stable` for minimal-diff file-link appends that preserve existing link order and reduce history patch churn during large audits.
 - Added `pm create --create-mode strict|progressive` so strict remains default while governance workflows can use staged progressive creation.
@@ -150,6 +152,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI contracts, shell completion, and Pi wrapper action/parameter mappings now include additive parity for `validate`, `close --validate-close`, list `--offset/--stream`, and long-run `--progress` controls.
 - `pm validate --check-files --scan-mode tracked-all` now excludes PM-internal storage files by default, adds `--include-pm-internals` for explicit internal-audit scans, and reports filtered/raw candidate counts (`candidate_total*`, `candidate_scanned*`, `pm_internal_excluded_count`); `tracked-all-strict` now also reports explicit force-inclusion visibility/warnings.
 - `pm extension --manage` and `pm health` extension diagnostics now include condensed `details.triage` summaries with prioritized counts and remediation-oriented next steps alongside full detailed payloads.
+- `pm extension --manage`/`pm extension --doctor` warning surfaces are now normalized so top-level `warnings` align with triage warning codes/counts, and update-health partial coverage warnings only trigger when unmanaged extensions are action-required.
+- `pm extension --manage` keeps compatibility-safe default runtime state reporting (`runtime_active`/`activation_status` unchanged) unless `--runtime-probe` is explicitly requested.
+- Extension activation validation failures now carry structured registration trace metadata that deep doctor trace mode can surface for actionable remediation.
 - CLI/contracts/completion/Pi wrapper parity now includes linked-test runtime env controls (`--env-set`, `--env-clear`, `--shared-host-safe`) and `pm validate --check-command-references`.
 
 ## [2026.3.12] - 2026-03-12

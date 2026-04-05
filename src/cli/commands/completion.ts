@@ -108,7 +108,7 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen("--criterion --format --policy --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    extension)",
-    `      COMPREPLY=(${compgen("--install --uninstall --explore --manage --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --strict-exit --fail-on-warn --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--install --uninstall --explore --manage --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --trace --runtime-probe --fix-managed-state --strict-exit --fail-on-warn --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    comments)",
     `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-comment --force --json --quiet --path --no-extensions --profile --help")})`,
@@ -538,6 +538,9 @@ _pm() {
             '--github[Alias for --gh]:github_spec' \\
             '--ref[Git ref/branch/tag for GitHub source]:git_ref' \\
             '--detail[Detail mode for extension diagnostics]:detail_mode:(summary deep)' \\
+            '--trace[Include registration traces in doctor deep diagnostics]' \\
+            '--runtime-probe[Opt-in runtime activation probe for manage output]' \\
+            '--fix-managed-state[Adopt unmanaged extensions before diagnostics/update checks]' \\
             '--strict-exit[Return non-zero exit when doctor warnings are present]' \\
             '--fail-on-warn[Alias for --strict-exit (doctor)]' \\
             '--json[Output JSON]' \\
@@ -842,6 +845,9 @@ complete -c pm -n '__fish_seen_subcommand_from extension' -l gh -d 'GitHub short
 complete -c pm -n '__fish_seen_subcommand_from extension' -l github -d 'Alias for --gh' -r
 complete -c pm -n '__fish_seen_subcommand_from extension' -l ref -d 'Git ref/branch/tag for GitHub source' -r
 complete -c pm -n '__fish_seen_subcommand_from extension' -l detail -d 'Detail mode for extension diagnostics' -r -a 'summary deep'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l trace -d 'Include registration traces in doctor deep diagnostics'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l runtime-probe -d 'Opt-in runtime activation probe for manage output'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l fix-managed-state -d 'Adopt unmanaged extensions before diagnostics/update checks'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l strict-exit -d 'Return non-zero exit when doctor warnings are present'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l fail-on-warn -d 'Alias for --strict-exit (doctor)'`;
 }

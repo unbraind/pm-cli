@@ -116,6 +116,9 @@ export interface PmToolParameters {
   envClear?: string[];
   sharedHostSafe?: boolean;
   detail?: string;
+  trace?: boolean;
+  runtimeProbe?: boolean;
+  fixManagedState?: boolean;
   pmContext?: string;
   failOnContextMismatch?: boolean;
   failOnSkipped?: boolean;
@@ -435,11 +438,23 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
     case "extension-manage":
       args.push("extension", "--manage");
       addExtensionScopeFlag(args, params);
+      if (params.runtimeProbe) {
+        args.push("--runtime-probe");
+      }
+      if (params.fixManagedState) {
+        args.push("--fix-managed-state");
+      }
       return args;
     case "extension-doctor":
       args.push("extension", "--doctor");
       addExtensionScopeFlag(args, params);
       pushOption(args, "--detail", params.detail);
+      if (params.trace) {
+        args.push("--trace");
+      }
+      if (params.fixManagedState) {
+        args.push("--fix-managed-state");
+      }
       if (params.strictExit) {
         args.push("--strict-exit");
       }
