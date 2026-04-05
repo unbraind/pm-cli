@@ -707,6 +707,50 @@ describe("runHealth", () => {
     });
   });
 
+  it("treats bundled-style unmanaged extensions as informational for update-health coverage", async () => {
+    await withTempPmPath(async (context) => {
+      const bundledStyleDir = path.join(context.pmPath, "extensions", "beads");
+      await mkdir(bundledStyleDir, { recursive: true });
+      await writeFile(
+        path.join(bundledStyleDir, "manifest.json"),
+        `${JSON.stringify(
+          {
+            name: "custom-beads-like-ext",
+            version: "1.0.0",
+            entry: "index.js",
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+      await writeFile(path.join(bundledStyleDir, "index.js"), "export default { activate() {} };\n", "utf8");
+
+      const health = await runHealth({ path: context.pmPath });
+      expect(health.warnings.some((warning) => warning.startsWith("extension_update_health_partial_coverage:"))).toBe(false);
+
+      const extensionCheck = health.checks.find((check) => check.name === "extensions");
+      const triage = (extensionCheck?.details as {
+        triage?: {
+          update_health_coverage: string;
+          update_health_partial: boolean;
+          unmanaged_loaded_extension_count: number;
+          unmanaged_expected_extension_count: number;
+          unmanaged_action_required_extension_count: number;
+          remediation: string[];
+        };
+      }).triage;
+      expect(triage).toMatchObject({
+        update_health_coverage: "full",
+        update_health_partial: false,
+        unmanaged_loaded_extension_count: 1,
+        unmanaged_expected_extension_count: 1,
+        unmanaged_action_required_extension_count: 0,
+      });
+      expect((triage?.remediation ?? []).some((entry) => entry.includes("treated as informational"))).toBe(true);
+    });
+  });
+
   it("reports applied pending and failed extension migrations in health diagnostics", async () => {
     await withTempPmPath(async (context) => {
       const projectExtensionsRoot = path.join(context.pmPath, "extensions");

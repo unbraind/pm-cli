@@ -10,6 +10,7 @@ export interface CommentsAuditOptions {
   assignee?: string;
   limitItems?: string;
   latest?: string;
+  fullHistory?: boolean;
 }
 
 export interface CommentsAuditEntry {
@@ -31,10 +32,30 @@ export interface CommentsAuditResult {
     type: string | null;
     assignee: string | null;
     limit_items: number | null;
-    latest: number;
+    latest: number | null;
+    full_history: boolean;
   };
+  export: {
+    mode: "latest" | "full_history";
+    row_count: number | null;
+  };
+  rows?: CommentsAuditHistoryRow[];
   now: string;
   warnings?: string[];
+}
+
+export interface CommentsAuditHistoryRow {
+  item_id: string;
+  item_title: string;
+  item_type: string;
+  item_status: ItemStatus;
+  item_assignee: string | null;
+  item_updated_at: string;
+  comment_index: number;
+  comment_count: number;
+  created_at: string;
+  author: string;
+  text: string;
 }
 
 function parseStatus(raw: string | undefined): ItemStatus | undefined {
@@ -66,9 +87,37 @@ function limitComments(values: Comment[], latest: number): Comment[] {
   return values.slice(Math.max(0, values.length - latest));
 }
 
+function toHistoryRows(items: CommentsAuditEntry[]): CommentsAuditHistoryRow[] {
+  const rows: CommentsAuditHistoryRow[] = [];
+  for (const item of items) {
+    for (let index = 0; index < item.comments.length; index += 1) {
+      const comment = item.comments[index];
+      rows.push({
+        item_id: item.id,
+        item_title: item.title,
+        item_type: item.type,
+        item_status: item.status,
+        item_assignee: item.assignee,
+        item_updated_at: item.updated_at,
+        comment_index: index,
+        comment_count: item.comment_count,
+        created_at: comment.created_at,
+        author: comment.author,
+        text: comment.text,
+      });
+    }
+  }
+  return rows;
+}
+
 export async function runCommentsAudit(options: CommentsAuditOptions, global: GlobalOptions): Promise<CommentsAuditResult> {
   const status = parseStatus(options.status);
-  const latest = parseNonNegativeInteger(options.latest, "--latest") ?? 1;
+  const fullHistory = options.fullHistory === true;
+  const latestParsed = parseNonNegativeInteger(options.latest, "--latest");
+  if (fullHistory && latestParsed !== undefined) {
+    throw new PmCliError("--full-history cannot be combined with --latest", EXIT_CODE.USAGE);
+  }
+  const latest = fullHistory ? undefined : latestParsed ?? 1;
   const limitItems = parseNonNegativeInteger(options.limitItems, "--limit-items");
 
   const listed = await runList(
@@ -91,9 +140,10 @@ export async function runCommentsAudit(options: CommentsAuditOptions, global: Gl
       assignee: item.assignee ?? null,
       updated_at: item.updated_at,
       comment_count: comments.length,
-      comments: limitComments(comments, latest),
+      comments: latest === undefined ? comments : limitComments(comments, latest),
     };
   });
+  const rows = fullHistory ? toHistoryRows(items) : undefined;
 
   return {
     items,
@@ -103,8 +153,14 @@ export async function runCommentsAudit(options: CommentsAuditOptions, global: Gl
       type: options.type ?? null,
       assignee: options.assignee ?? null,
       limit_items: limitItems ?? null,
-      latest,
+      latest: latest ?? null,
+      full_history: fullHistory,
     },
+    export: {
+      mode: fullHistory ? "full_history" : "latest",
+      row_count: rows?.length ?? null,
+    },
+    ...(rows ? { rows } : {}),
     now: listed.now,
     ...(listed.warnings && listed.warnings.length > 0 ? { warnings: listed.warnings } : {}),
   };

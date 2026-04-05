@@ -2,11 +2,11 @@ id: pm-y76e
 title: "Ship1: Full verification, closure evidence, commit, and push"
 description: "Run complete build/test/coverage verification, record evidence across linked PM items, then finalize with commit and push."
 type: Task
-status: closed
+status: in_progress
 priority: 1
 tags[4]: "area:release","area:tests",evidence,pm-cli
 created_at: "2026-04-01T12:40:12.308Z"
-updated_at: "2026-04-04T21:39:04.348Z"
+updated_at: "2026-04-05T21:45:15.455Z"
 deadline: "2026-04-08T12:40:12.308Z"
 assignee: codex-agent
 author: codex-agent
@@ -43,15 +43,16 @@ regression: true
 customer_impact: Ensures safe rollout with complete validation evidence
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-i0iy,parent,"2026-04-01T12:40:12.308Z",codex-agent,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-01T12:40:12.308Z",codex-agent,Task maps directly to plan todo verify-ship.
   "2026-04-01T12:55:44.641Z",codex-agent,"Verification evidence: pnpm build passed; node scripts/run-tests.mjs test passed (61 files, 642 tests); node scripts/run-tests.mjs coverage executed and failed global 100% thresholds at lines=97.99 branches=96.24 functions=98.38 statements=97.8 (existing broad-suite gate)."
   "2026-04-01T12:57:07.100Z",codex-agent,"Final ship evidence: committed as c2bc2b6 and pushed to origin/main. Full sandboxed test suite passed (642 tests). Coverage command executed and remained below global 100% gate (lines 97.99, branches 96.24, functions 98.38, statements 97.8)."
+  "2026-04-05T21:45:15.455Z",codex-agent,"Verification evidence (current cycle): pnpm build passed; node scripts/run-tests.mjs test passed (69 files, 918 tests); node scripts/run-tests.mjs coverage passed with global 100% statements/branches/functions/lines. Included follow-up fix for settings-store validation-key ordering expectation discovered in initial full-suite run."
 notes[1]{created_at,author,text}:
   "2026-04-01T12:40:12.308Z",codex-agent,Must use sandbox-safe test commands and record pass/fail evidence before close.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:22:13.090Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[8]{path,scope,note}:
+files[15]{path,scope,note}:
   CHANGELOG.md,project,Release notes evidence
   README.md,project,user-facing guidance contracts
   src/cli/error-guidance.ts,project,structured error guidance renderer
@@ -60,9 +61,17 @@ files[8]{path,scope,note}:
   src/core/output/command-aware.ts,project,command-aware summary/highlight/next-step builders
   src/core/output/output.ts,project,command-aware envelope integration
   tests/integration/help-runtime.spec.ts,project,help and usage guidance regression
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  PRD.md,project,release-prd-contract-alignment
+  docs/ARCHITECTURE.md,project,architecture-contract-sync
+  docs/EXTENSIONS.md,project,extension-compatibility-docs
+  CONTRIBUTING.md,project,tracked-all-and-metadata-validation-guidance
+  src/cli/commands/comments-audit.ts,project,full-history-export-runtime
+  src/sdk/cli-contracts.ts,project,comments-audit-and-validate-contract-parity
+  tests/unit/settings-store.spec.ts,project,full-suite-regression-expectation-fix
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,Coverage gate
+  node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full-suite-regression-pass-69-files
+  pnpm build,null,project,900,null,null,null,null,null,null,null,null,null,null,null,release-build-gate
 docs[1]{path,scope,note}:
   AGENTS.md,project,Closure protocol
-close_reason: Build and full tests verified; commit c2bc2b6 pushed to origin/main with recorded coverage gate outcome.
 body: "Implements plan todo: verify-ship"

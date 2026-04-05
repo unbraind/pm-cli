@@ -114,7 +114,7 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-comment --force --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    comments-audit)",
-    `      COMPREPLY=(${compgen("--status --type --assignee --limit-items --latest --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--status --type --assignee --limit-items --full-history --latest --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    notes|learnings)",
     `      COMPREPLY=(${compgen("--add --limit --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
@@ -138,7 +138,7 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen("list status logs stop resume --status --limit --stream --tail --force --author --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    validate)",
-    `      COMPREPLY=(${compgen("--check-metadata --check-resolution --check-files --scan-mode --include-pm-internals --strict-exit --fail-on-warn --check-history-drift --check-command-references --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--check-metadata --metadata-profile --check-resolution --check-files --scan-mode --include-pm-internals --strict-exit --fail-on-warn --check-history-drift --check-command-references --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    health)",
     `      COMPREPLY=(${compgen(HEALTH_FLAGS)})`,
@@ -213,7 +213,7 @@ _pm_commands() {
     'delete:Delete an item and record the change'
     'append:Append text to an item body'
     'comments:List or add comments for an item'
-    'comments-audit:Audit latest comments across filtered items'
+    'comments-audit:Audit latest comments or full history across filtered items'
     'notes:List or add notes for an item'
     'learnings:List or add learnings for an item'
     'files:Manage linked files'
@@ -302,6 +302,12 @@ _pm() {
             '(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)' \\
             '--type[Item type]:(${typeChoices})' \\
             '--tags[Comma-separated tags]:tags' \\
+            '--comment[Comment seed author=<value>,created_at=<iso|now>,text=<value> (none to clear)]:comment' \\
+            '--note[Note seed author=<value>,created_at=<iso|now>,text=<value> (none to clear)]:note' \\
+            '--learning[Learning seed author=<value>,created_at=<iso|now>,text=<value> (none to clear)]:learning' \\
+            '--file[Linked file path=<value>,scope=<project|global>,note=<text> (none to clear)]:file' \\
+            '--test[Linked test command=<value>,path=<value>,scope=<project|global> (none to clear)]:test' \\
+            '--doc[Linked doc path=<value>,scope=<project|global>,note=<text> (none to clear)]:doc' \\
             '--reminder[Reminder entry at=<iso|relative>,text=<text> (none to clear)]:reminder' \\
             '--event[Event entry start=<iso|relative>,end=<iso|relative>,recur_* (none to clear)]:event' \\
             '--type-option[Type option key=value or key=<name>,value=<value> (none to clear)]:type_option' \\
@@ -491,6 +497,7 @@ _pm() {
         validate)
           _arguments \\
             '--check-metadata[Run metadata completeness checks]' \\
+            '--metadata-profile[Select metadata validation profile for --check-metadata]:(core strict custom)' \\
             '--check-resolution[Run closed-item resolution metadata checks]' \\
             '--check-files[Run linked-file and orphaned-file checks]' \\
             '--scan-mode[Select file candidate scan mode for --check-files]:(default tracked-all tracked-all-strict)' \\
@@ -516,6 +523,7 @@ _pm() {
             '--type[Filter by item type]:(${typeChoices})' \\
             '--assignee[Filter by assignee (none for unassigned)]:assignee' \\
             '--limit-items[Limit returned item count]:number' \\
+            '--full-history[Export full comment history rows and ignore --latest]' \\
             '--latest[Return latest n comments per item]:number' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -617,7 +625,7 @@ complete -c pm -n __pm_no_subcommand -a close         -d 'Close an item with a r
 complete -c pm -n __pm_no_subcommand -a delete        -d 'Delete an item and record the change'
 complete -c pm -n __pm_no_subcommand -a append        -d 'Append text to an item body'
 complete -c pm -n __pm_no_subcommand -a comments      -d 'List or add comments for an item'
-complete -c pm -n __pm_no_subcommand -a comments-audit -d 'Audit latest comments across filtered items'
+complete -c pm -n __pm_no_subcommand -a comments-audit -d 'Audit latest comments or full history across filtered items'
 complete -c pm -n __pm_no_subcommand -a notes         -d 'List or add notes for an item'
 complete -c pm -n __pm_no_subcommand -a learnings     -d 'List or add learnings for an item'
 complete -c pm -n __pm_no_subcommand -a files         -d 'Manage linked files'
@@ -679,6 +687,12 @@ complete -c pm -n '__fish_seen_subcommand_from update' -s s -l status           
 complete -c pm -n '__fish_seen_subcommand_from update' -l close-reason            -d 'Set close reason (none to clear)' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -s p -l priority           -d 'Priority (0-4)' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from update' -l type                    -d 'Item type' -r -a '${typeChoices}'
+complete -c pm -n '__fish_seen_subcommand_from update' -l comment                 -d 'Comment seed author=<value>,created_at=<iso|now>,text=<value> (none to clear)' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l note                    -d 'Note seed author=<value>,created_at=<iso|now>,text=<value> (none to clear)' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l learning                -d 'Learning seed author=<value>,created_at=<iso|now>,text=<value> (none to clear)' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l file                    -d 'Linked file path=<value>,scope=<project|global>,note=<text> (none to clear)' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l test                    -d 'Linked test command=<value>,path=<value>,scope=<project|global> (none to clear)' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l doc                     -d 'Linked doc path=<value>,scope=<project|global>,note=<text> (none to clear)' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l reminder                -d 'Reminder entry at=<iso|relative>,text=<text> (none to clear)' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l event                   -d 'Event entry start=<iso|relative>,end=<iso|relative>,recur_* (none to clear)' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l type-option             -d 'Type option key=value or key=<name>,value=<value> (none to clear)' -r
@@ -802,6 +816,7 @@ complete -c pm -n '__fish_seen_subcommand_from close' -l force -d 'Force overrid
 
 # validate flags
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-metadata -d 'Run metadata completeness checks'
+complete -c pm -n '__fish_seen_subcommand_from validate' -l metadata-profile -d 'Select metadata validation profile for --check-metadata' -r -a 'core strict custom'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-resolution -d 'Run closed-item resolution metadata checks'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-files -d 'Run linked-file and orphaned-file checks'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l scan-mode -d 'Select file candidate scan mode for --check-files' -r -a 'default tracked-all tracked-all-strict'
@@ -820,6 +835,7 @@ complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l status -d 'Fil
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l type -d 'Filter by item type' -r -a '${typeChoices}'
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l assignee -d 'Filter by assignee (none for unassigned)' -r
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l limit-items -d 'Limit returned item count' -r
+complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l full-history -d 'Export full comment history rows and ignore --latest'
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l latest -d 'Return latest n comments per item' -r
 
 # completion shell argument

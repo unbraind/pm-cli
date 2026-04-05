@@ -67,11 +67,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added command-surface parity updates for `notes`/`learnings` across help narratives, shell completion scripts, command-aware output summaries, and Pi wrapper action routing.
 - Added CLI/Pi shared contract parity for extension lifecycle actions (`extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-doctor`, `extension-adopt`, `extension-adopt-all`, `extension-activate`, `extension-deactivate`) and their schema parameters (`target`, `scope`, `github`, `ref`).
 - Added integration regressions for repeated `pm files --add` / `pm docs --add` mutation flows to keep linked-artifact add workflows stable across subsequent command invocations.
-- Added targeted guidance for unsupported `pm update --file` / `pm update --doc` usage, with actionable examples that route users to `pm files` / `pm docs`.
+- Added transactional linked/log mutation support on `pm update` via repeatable `--comment`, `--note`, `--learning`, `--file`, `--test`, and `--doc` flags (including deterministic `none` clear semantics) so metadata + linked surfaces can be updated in one mutation.
 - Added dependency mutation support on existing items through `pm update`: repeatable `--dep` add/clear (`none`) semantics plus repeatable `--dep-remove`/`--dep_remove` selector removals, with parity across help/completion/contracts/Pi wrapper surfaces.
 - Added read-only dependency visualization command `pm deps` with deterministic `tree` (default) and `graph` projections, including cycle-safe traversal and missing-node reporting.
 - Added `pm update --close-reason` / `--close_reason` support so callers can explicitly set or clear `close_reason` (`none` clears) without using `pm close`.
 - Added standalone `pm validate` command with deterministic check payloads for metadata completeness, closed-item resolution fields, linked-file/orphaned-file hygiene, and item/history drift.
+- Added metadata-profile validation policy controls (`core|strict|custom`) for `pm validate --check-metadata`, plus config surfaces `metadata-validation-profile` and `metadata-required-fields` for settings-backed required-field governance.
 - Added `pm validate --scan-mode default|tracked-all` for file-check candidate selection, including explicit `candidate_total`/`candidate_scanned` reporting while preserving compatibility fields.
 - Added `pm validate --scan-mode tracked-all-strict` plus structured file-check exclusion reporting (`excluded_by_reason`) so tracked coverage behavior is explicit and machine-readable.
 - Added explicit tracked-all-strict force-inclusion visibility in `pm validate` file-check details (`strict_mode_forces_pm_internals`, `strict_mode_forces_pm_internals_notice`) plus warning token `validate_files_tracked_all_strict_forces_pm_internals`.
@@ -90,7 +91,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `pm files --append-stable` for minimal-diff file-link appends that preserve existing link order and reduce history patch churn during large audits.
 - Added `pm create --create-mode strict|progressive` so strict remains default while governance workflows can use staged progressive creation.
 - Added `pm comments --allow-audit-comment` to permit append-only audit comments on items owned by other assignees without broad ownership override semantics.
-- Added `pm comments-audit` for bulk latest-comment snapshots across status/type/assignee-filtered item sets (`--limit-items`, `--latest`) to support governance audit workflows.
+- Added `pm comments-audit` full-history export mode (`--full-history`) with mutually-exclusive latest controls, explicit export metadata (`filters.full_history`, `export.mode`, `export.row_count`), and NDJSON-friendly `rows[]` payload support.
+- Added compatibility-safe extension manifest/command migration aids: legacy capability aliases (`migration`/`validation`) now remap to `schema` with `extension_capability_legacy_alias`, and legacy command-definition `handler` aliases map to `run` with `extension_command_definition_legacy_handler_alias`.
 - Added `--offset` pagination and JSON-only `--stream` output mode for `pm list` and all `pm list-*` command families to improve large-result processing ergonomics.
 - Added additive `pm health --strict-directories` behavior with required-vs-optional directory diagnostics (`missing_required`, `missing_optional`) so optional built-in item-type directory gaps do not fail default health runs.
 - Added strict warning exit controls for health diagnostics (`pm health --strict-exit`, alias `--fail-on-warn`) for CI-friendly non-zero health gating.

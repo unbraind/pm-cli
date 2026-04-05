@@ -107,6 +107,12 @@ describe("generateBashScript", () => {
     expect(script).toContain("--author");
     expect(script).toContain("--dep");
     expect(script).toContain("--dep-remove");
+    expect(script).toContain("--comment");
+    expect(script).toContain("--note");
+    expect(script).toContain("--learning");
+    expect(script).toContain("--file");
+    expect(script).toContain("--test");
+    expect(script).toContain("--doc");
     expect(script).toContain("--reminder");
     expect(script).toContain("--event");
   });
@@ -115,6 +121,7 @@ describe("generateBashScript", () => {
     const script = generateBashScript();
     expect(script).toContain("--add --limit --author --message --force");
     expect(script).toContain("--allow-audit-comment");
+    expect(script).toContain("--status --type --assignee --limit-items --full-history --latest");
   });
 
   it("includes files/docs add-glob flag in bash completion", () => {
@@ -130,7 +137,7 @@ describe("generateBashScript", () => {
   it("includes validate scan-mode flag in bash completion", () => {
     const script = generateBashScript();
     expect(script).toContain(
-      "--check-metadata --check-resolution --check-files --scan-mode --include-pm-internals --strict-exit --fail-on-warn --check-history-drift --check-command-references",
+      "--check-metadata --metadata-profile --check-resolution --check-files --scan-mode --include-pm-internals --strict-exit --fail-on-warn --check-history-drift --check-command-references",
     );
   });
 

@@ -60,6 +60,20 @@ export const SPRINT_RELEASE_FORMAT_POLICY_VALUES = ["warn", "strict_error"] as c
 export type SprintReleaseFormatPolicy = (typeof SPRINT_RELEASE_FORMAT_POLICY_VALUES)[number];
 export const PARENT_REFERENCE_POLICY_VALUES = ["warn", "strict_error"] as const;
 export type ParentReferencePolicy = (typeof PARENT_REFERENCE_POLICY_VALUES)[number];
+export const VALIDATE_METADATA_PROFILE_VALUES = ["core", "strict", "custom"] as const;
+export type ValidateMetadataProfile = (typeof VALIDATE_METADATA_PROFILE_VALUES)[number];
+export const VALIDATE_METADATA_REQUIRED_FIELD_VALUES = [
+  "author",
+  "acceptance_criteria",
+  "estimated_minutes",
+  "close_reason",
+  "reviewer",
+  "risk",
+  "confidence",
+  "sprint",
+  "release",
+] as const;
+export type ValidateMetadataRequiredField = (typeof VALIDATE_METADATA_REQUIRED_FIELD_VALUES)[number];
 
 export const RECURRENCE_FREQUENCY_VALUES = ["daily", "weekly", "monthly", "yearly"] as const;
 export type RecurrenceFrequency = (typeof RECURRENCE_FREQUENCY_VALUES)[number];
@@ -289,6 +303,8 @@ export interface PmSettings {
   validation: {
     sprint_release_format: SprintReleaseFormatPolicy;
     parent_reference: ParentReferencePolicy;
+    metadata_profile: ValidateMetadataProfile;
+    metadata_required_fields: ValidateMetadataRequiredField[];
   };
   workflow: {
     definition_of_done: string[];

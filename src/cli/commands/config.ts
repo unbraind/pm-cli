@@ -13,7 +13,13 @@ import {
   resolvePmRoot,
 } from "../../core/store/paths.js";
 import { readSettingsWithMetadata, writeSettings } from "../../core/store/settings.js";
-import type { ItemFormat, ParentReferencePolicy, SprintReleaseFormatPolicy } from "../../types/index.js";
+import type {
+  ItemFormat,
+  ParentReferencePolicy,
+  SprintReleaseFormatPolicy,
+  ValidateMetadataProfile,
+  ValidateMetadataRequiredField,
+} from "../../types/index.js";
 
 const CONFIG_SCOPE_VALUES = ["project", "global"] as const;
 type ConfigScope = (typeof CONFIG_SCOPE_VALUES)[number];
@@ -29,6 +35,10 @@ const CONFIG_KEY_VALUES = [
   "sprint_release_format_policy",
   "parent-reference-policy",
   "parent_reference_policy",
+  "metadata-validation-profile",
+  "metadata_validation_profile",
+  "metadata-required-fields",
+  "metadata_required_fields",
   "test-result-tracking",
   "test_result_tracking",
 ] as const;
@@ -39,6 +49,8 @@ type ConfigKey =
   | "history_missing_stream_policy"
   | "sprint_release_format_policy"
   | "parent_reference_policy"
+  | "metadata_validation_profile"
+  | "metadata_required_fields"
   | "test_result_tracking";
 type HistoryMissingStreamPolicy = "auto_create" | "strict_error";
 type TestResultTrackingPolicy = "enabled" | "disabled";
@@ -48,6 +60,7 @@ type ConfigValue =
   | HistoryMissingStreamPolicy
   | SprintReleaseFormatPolicy
   | ParentReferencePolicy
+  | ValidateMetadataProfile
   | TestResultTrackingPolicy;
 
 interface ConfigKeyDescriptor {
@@ -70,7 +83,12 @@ export interface ConfigResult {
   key?: ConfigKey;
   criteria?: string[];
   format?: ItemFormat;
-  policy?: HistoryMissingStreamPolicy | SprintReleaseFormatPolicy | ParentReferencePolicy | TestResultTrackingPolicy;
+  policy?:
+    | HistoryMissingStreamPolicy
+    | SprintReleaseFormatPolicy
+    | ParentReferencePolicy
+    | ValidateMetadataProfile
+    | TestResultTrackingPolicy;
   keys?: ConfigKeyDescriptor[];
   values?: Record<ConfigKey, ConfigValue>;
   count?: number;
@@ -93,6 +111,8 @@ const CONFIG_KEY_ALIASES: Record<ConfigKey, string[]> = {
   history_missing_stream_policy: ["history-missing-stream-policy", "history_missing_stream_policy"],
   sprint_release_format_policy: ["sprint-release-format-policy", "sprint_release_format_policy"],
   parent_reference_policy: ["parent-reference-policy", "parent_reference_policy"],
+  metadata_validation_profile: ["metadata-validation-profile", "metadata_validation_profile"],
+  metadata_required_fields: ["metadata-required-fields", "metadata_required_fields"],
   test_result_tracking: ["test-result-tracking", "test_result_tracking"],
 };
 
@@ -102,6 +122,8 @@ const CONFIG_KEY_SUMMARIES: Record<ConfigKey, string> = {
   history_missing_stream_policy: "Missing history stream handling policy.",
   sprint_release_format_policy: "Sprint/release format validation policy.",
   parent_reference_policy: "Parent reference validation policy.",
+  metadata_validation_profile: "Validate metadata profile policy (core|strict|custom).",
+  metadata_required_fields: "Validate custom metadata required-fields list.",
   test_result_tracking: "Item-level linked test result persistence policy.",
 };
 
@@ -135,6 +157,12 @@ function normalizeKey(value: string): ConfigKey {
     }
     if (value === "parent-reference-policy" || value === "parent_reference_policy") {
       return "parent_reference_policy";
+    }
+    if (value === "metadata-validation-profile" || value === "metadata_validation_profile") {
+      return "metadata_validation_profile";
+    }
+    if (value === "metadata-required-fields" || value === "metadata_required_fields") {
+      return "metadata_required_fields";
     }
     if (value === "test-result-tracking" || value === "test_result_tracking") {
       return "test_result_tracking";
@@ -187,6 +215,76 @@ function normalizeTestResultTrackingPolicy(value: string | undefined): TestResul
   );
 }
 
+function normalizeValidateMetadataProfile(value: string | undefined): ValidateMetadataProfile {
+  const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
+  if (normalized === "core" || normalized === "strict" || normalized === "custom") {
+    return normalized;
+  }
+  throw new PmCliError(
+    "Config set metadata-validation-profile requires --policy with one of: core, strict, custom",
+    EXIT_CODE.USAGE,
+  );
+}
+
+const METADATA_REQUIRED_FIELD_ALIAS_MAP: Record<string, ValidateMetadataRequiredField> = {
+  author: "author",
+  acceptance_criteria: "acceptance_criteria",
+  "acceptance-criteria": "acceptance_criteria",
+  estimated_minutes: "estimated_minutes",
+  "estimated-minutes": "estimated_minutes",
+  estimate: "estimated_minutes",
+  close_reason: "close_reason",
+  "close-reason": "close_reason",
+  reviewer: "reviewer",
+  risk: "risk",
+  confidence: "confidence",
+  sprint: "sprint",
+  release: "release",
+};
+const METADATA_REQUIRED_FIELD_OPTIONS = [
+  "author",
+  "acceptance_criteria",
+  "estimated_minutes",
+  "close_reason",
+  "reviewer",
+  "risk",
+  "confidence",
+  "sprint",
+  "release",
+] as const;
+
+function normalizeMetadataRequiredFields(values: string[] | undefined): ValidateMetadataRequiredField[] {
+  const normalized = [...new Set((values ?? []).map((value) => value.trim()).filter((value) => value.length > 0))];
+  if (normalized.length === 0) {
+    throw new PmCliError(
+      "Config set metadata-required-fields requires at least one --criterion value (or --criterion none to clear)",
+      EXIT_CODE.USAGE,
+    );
+  }
+  const lowered = normalized.map((value) => value.toLowerCase().replaceAll("-", "_"));
+  const hasNone = lowered.includes("none");
+  if (hasNone && lowered.length > 1) {
+    throw new PmCliError(
+      "Config set metadata-required-fields accepts --criterion none only as a standalone clear directive",
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (hasNone) {
+    return [];
+  }
+  const unsupported = lowered.filter((value) => METADATA_REQUIRED_FIELD_ALIAS_MAP[value] === undefined);
+  if (unsupported.length > 0) {
+    throw new PmCliError(
+      `Config set metadata-required-fields received unsupported values: ${unsupported.join(", ")}. ` +
+        `Supported values: ${METADATA_REQUIRED_FIELD_OPTIONS.join(", ")}`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  return [...new Set(lowered.map((value) => METADATA_REQUIRED_FIELD_ALIAS_MAP[value] as ValidateMetadataRequiredField))].sort(
+    (left, right) => left.localeCompare(right),
+  );
+}
+
 function normalizeWarnings(values: string[]): string[] {
   return [...new Set(values)].sort((left, right) => left.localeCompare(right));
 }
@@ -211,6 +309,8 @@ function readConfigValue(settings: {
   validation: {
     sprint_release_format: SprintReleaseFormatPolicy;
     parent_reference: ParentReferencePolicy;
+    metadata_profile: ValidateMetadataProfile;
+    metadata_required_fields: ValidateMetadataRequiredField[];
   };
   testing: { record_results_to_items: boolean };
 }, key: ConfigKey): ConfigValue {
@@ -225,6 +325,12 @@ function readConfigValue(settings: {
   }
   if (key === "parent_reference_policy") {
     return settings.validation.parent_reference;
+  }
+  if (key === "metadata_validation_profile") {
+    return settings.validation.metadata_profile;
+  }
+  if (key === "metadata_required_fields") {
+    return [...settings.validation.metadata_required_fields];
   }
   if (key === "test_result_tracking") {
     return settings.testing.record_results_to_items ? "enabled" : "disabled";
@@ -273,9 +379,12 @@ export async function runConfig(
     const keys = (Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]).map((candidate) => ({
       key: candidate,
       aliases: CONFIG_KEY_ALIASES[candidate],
-      value_kind: candidate === "definition_of_done" ? ("string_array" as const) : ("enum" as const),
+      value_kind:
+        candidate === "definition_of_done" || candidate === "metadata_required_fields"
+          ? ("string_array" as const)
+          : ("enum" as const),
       set_flags:
-        candidate === "definition_of_done"
+        candidate === "definition_of_done" || candidate === "metadata_required_fields"
           ? ["--criterion"]
           : candidate === "item_format"
             ? ["--format"]
@@ -302,6 +411,8 @@ export async function runConfig(
       history_missing_stream_policy: readConfigValue(settings, "history_missing_stream_policy"),
       sprint_release_format_policy: readConfigValue(settings, "sprint_release_format_policy"),
       parent_reference_policy: readConfigValue(settings, "parent_reference_policy"),
+      metadata_validation_profile: readConfigValue(settings, "metadata_validation_profile"),
+      metadata_required_fields: readConfigValue(settings, "metadata_required_fields"),
       test_result_tracking: readConfigValue(settings, "test_result_tracking"),
     } satisfies Record<ConfigKey, ConfigValue>;
     return withWarnings(
@@ -352,6 +463,24 @@ export async function runConfig(
         scope,
         key,
         policy: settings.validation.parent_reference,
+        settings_path: target.settingsPath,
+        changed: false,
+      }, warnings);
+    }
+    if (key === "metadata_validation_profile") {
+      return withWarnings({
+        scope,
+        key,
+        policy: settings.validation.metadata_profile,
+        settings_path: target.settingsPath,
+        changed: false,
+      }, warnings);
+    }
+    if (key === "metadata_required_fields") {
+      return withWarnings({
+        scope,
+        key,
+        criteria: [...settings.validation.metadata_required_fields],
         settings_path: target.settingsPath,
         changed: false,
       }, warnings);
@@ -453,6 +582,40 @@ export async function runConfig(
       scope,
       key,
       policy: settings.validation.parent_reference,
+      settings_path: target.settingsPath,
+      changed,
+    }, warnings);
+  }
+
+  if (key === "metadata_validation_profile") {
+    const nextPolicy = normalizeValidateMetadataProfile(options.policy);
+    const changed = settings.validation.metadata_profile !== nextPolicy;
+    settings.validation.metadata_profile = nextPolicy;
+    if (changed) {
+      await writeSettings(target.pmRoot, settings, "config:set:metadata_validation_profile");
+    }
+    return withWarnings({
+      scope,
+      key,
+      policy: settings.validation.metadata_profile,
+      settings_path: target.settingsPath,
+      changed,
+    }, warnings);
+  }
+
+  if (key === "metadata_required_fields") {
+    const nextCriteria = normalizeMetadataRequiredFields(options.criterion);
+    const changed =
+      nextCriteria.length !== settings.validation.metadata_required_fields.length ||
+      nextCriteria.some((value, index) => value !== settings.validation.metadata_required_fields[index]);
+    settings.validation.metadata_required_fields = nextCriteria;
+    if (changed) {
+      await writeSettings(target.pmRoot, settings, "config:set:metadata_required_fields");
+    }
+    return withWarnings({
+      scope,
+      key,
+      criteria: [...settings.validation.metadata_required_fields],
       settings_path: target.settingsPath,
       changed,
     }, warnings);

@@ -257,6 +257,115 @@ describe("runValidate", () => {
     });
   });
 
+  it("supports strict metadata profile requirements", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, "validate-metadata-strict-profile");
+      const result = await runValidate({ checkMetadata: true, metadataProfile: "strict" }, { path: context.pmPath });
+      expect(result.ok).toBe(false);
+      expect(result.warnings).toContain("validate_metadata_missing_reviewer:1");
+      expect(result.warnings).toContain("validate_metadata_missing_risk:1");
+      expect(result.warnings).toContain("validate_metadata_missing_confidence:1");
+      expect(result.warnings).toContain("validate_metadata_missing_sprint:1");
+      expect(result.warnings).toContain("validate_metadata_missing_release:1");
+      const metadataCheck = checkByName(result, "metadata");
+      const details = metadataCheck.details as {
+        metadata_profile: string;
+        required_fields: string[];
+      };
+      expect(details.metadata_profile).toBe("strict");
+      expect(details.required_fields).toEqual(
+        expect.arrayContaining(["author", "acceptance_criteria", "estimated_minutes", "close_reason", "reviewer", "risk", "confidence", "sprint", "release"]),
+      );
+    });
+  });
+
+  it("uses custom metadata profile required fields from settings", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, "validate-metadata-custom-profile");
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        validation: { metadata_profile: string; metadata_required_fields: string[] };
+      };
+      settings.validation.metadata_profile = "custom";
+      settings.validation.metadata_required_fields = ["sprint", "release"];
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const result = await runValidate({ checkMetadata: true }, { path: context.pmPath });
+      expect(result.ok).toBe(false);
+      expect(result.warnings).toContain("validate_metadata_missing_sprint:1");
+      expect(result.warnings).toContain("validate_metadata_missing_release:1");
+      expect(result.warnings.some((warning) => warning.startsWith("validate_metadata_missing_reviewer:"))).toBe(false);
+
+      const metadataCheck = checkByName(result, "metadata");
+      const details = metadataCheck.details as {
+        metadata_profile: string;
+        required_fields: string[];
+        metadata_profile_fallback_to_core: boolean;
+      };
+      expect(details.metadata_profile).toBe("custom");
+      expect(details.required_fields).toEqual(["release", "sprint"]);
+      expect(details.metadata_profile_fallback_to_core).toBe(false);
+    });
+  });
+
+  it("falls back to core metadata fields when custom profile has no required-fields configured", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, "validate-metadata-custom-empty");
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        validation: { metadata_profile: string; metadata_required_fields: string[] };
+      };
+      settings.validation.metadata_profile = "custom";
+      settings.validation.metadata_required_fields = [];
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const result = await runValidate({ checkMetadata: true }, { path: context.pmPath });
+      expect(result.ok).toBe(false);
+      expect(result.warnings).toContain("validate_metadata_custom_profile_missing_required_fields:0");
+
+      const metadataCheck = checkByName(result, "metadata");
+      const details = metadataCheck.details as {
+        metadata_profile: string;
+        metadata_profile_fallback_to_core: boolean;
+        required_fields: string[];
+      };
+      expect(details.metadata_profile).toBe("custom");
+      expect(details.metadata_profile_fallback_to_core).toBe(true);
+      expect(details.required_fields).toEqual(["author", "acceptance_criteria", "estimated_minutes", "close_reason"]);
+    });
+  });
+
+  it("lets --metadata-profile override configured settings profile", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, "validate-metadata-profile-override");
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        validation: { metadata_profile: string };
+      };
+      settings.validation.metadata_profile = "strict";
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const result = await runValidate({ checkMetadata: true, metadataProfile: "core" }, { path: context.pmPath });
+      expect(result.ok).toBe(true);
+      expect(result.warnings).toEqual([]);
+      const metadataCheck = checkByName(result, "metadata");
+      const details = metadataCheck.details as { metadata_profile: string; metadata_profile_source: string };
+      expect(details.metadata_profile).toBe("core");
+      expect(details.metadata_profile_source).toBe("option");
+    });
+  });
+
+  it("rejects unknown --metadata-profile values", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, "validate-metadata-profile-invalid");
+      await expect(runValidate({ checkMetadata: true, metadataProfile: "invalid" }, { path: context.pmPath })).rejects.toMatchObject<
+        PmCliError
+      >({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
   it("reports closed items missing resolution metadata", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "validate-resolution-gap");

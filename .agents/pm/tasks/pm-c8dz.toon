@@ -6,9 +6,8 @@ status: closed
 priority: 1
 tags[4]: "area:contracts","area:docs",external-audit,pm-cli
 created_at: "2026-04-01T16:23:05.310Z"
-updated_at: "2026-04-04T21:48:57.140Z"
+updated_at: "2026-04-05T21:45:01.402Z"
 deadline: "2026-04-06T16:23:05.310Z"
-assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 120
 acceptance_criteria: "All required docs are updated with accurate command and policy behavior, including issue mapping notes for already-resolved findings."
@@ -45,22 +44,28 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-c465,blocks,"2026-04-01T16:23:05.310Z",cursor-agent,null
   pm-e0ab,blocks,"2026-04-01T16:23:05.310Z",cursor-agent,null
   pm-my6o,parent,"2026-04-01T16:23:05.310Z",cursor-agent,null
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-01T16:23:05.310Z",cursor-agent,Task created for plan docs-contract-sync scope.
   "2026-04-01T16:43:11.766Z",cursor-agent,"Synced README/PRD/AGENTS/ARCHITECTURE/CHANGELOG with notes/learnings command parity and clarified Issue2/3/6 behavior (sandbox-safe test policy, list --include-body, update --file/--doc guidance)."
+  "2026-04-05T21:44:22.982Z",codex-agent,"Progress: synced docs/contracts for current remediation cycle across README, PRD, ARCHITECTURE, EXTENSIONS, CONTRIBUTING, and CHANGELOG. Updated transactional update flags, metadata profile policy, comments-audit full-history export contract, extension legacy alias/handler compatibility notes, and tracked-all guidance."
+  "2026-04-05T21:45:00.129Z",codex-agent,"Final evidence: docs/contracts sync verified with pnpm build, full test suite (69 files, 918 tests), and full coverage gate (100% statements/branches/functions/lines)."
 notes[1]{created_at,author,text}:
   "2026-04-01T16:23:05.310Z",cursor-agent,Will update README/PRD/AGENTS/ARCHITECTURE/CHANGELOG in one coherent pass.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:36:14.358Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[5]{path,scope,note}:
+files[7]{path,scope,note}:
   AGENTS.md,project,updated maintainer workflow guidance for notes/learnings and update boundaries
   CHANGELOG.md,project,captured unreleased docs and contract updates
   docs/ARCHITECTURE.md,project,added notes/learnings command modules and mutation boundary note
   PRD.md,project,updated command contract and policy semantics
   README.md,project,documented notes/learnings and linked artifact policy
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  CONTRIBUTING.md,project,validation-and-tracked-all-regression-guidance
+  docs/EXTENSIONS.md,project,legacy-alias-and-handler-compatibility-docs
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,coverage-gate-after-doc-sync
   node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,metadata-audit-baseline-regression
+  pnpm build,null,project,900,null,null,null,null,null,null,null,null,null,null,null,docs-sync-build-sanity
 docs[1]{path,scope,note}:
   README.md,project,metadata-audit-documentation-context
-close_reason: Docs and contract sync completed for audit remediation scope.
+close_reason: Docs/contracts synchronized for current external remediation deltas with full verification evidence
 body: Keeps user and maintainer contracts aligned with runtime changes and audit mappings.

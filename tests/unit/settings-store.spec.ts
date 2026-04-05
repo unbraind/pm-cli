@@ -144,7 +144,12 @@ describe("core/store/settings", () => {
       expectOrderedObjectKeys(parsed.locks, ["ttl_seconds"]);
       expectOrderedObjectKeys(parsed.output, ["default_format"]);
       expectOrderedObjectKeys(parsed.history, ["missing_stream"]);
-      expectOrderedObjectKeys(parsed.validation, ["sprint_release_format", "parent_reference"]);
+      expectOrderedObjectKeys(parsed.validation, [
+        "sprint_release_format",
+        "parent_reference",
+        "metadata_profile",
+        "metadata_required_fields",
+      ]);
       expectOrderedObjectKeys(parsed.workflow, ["definition_of_done"]);
       expectOrderedObjectKeys(parsed.testing, ["record_results_to_items"]);
       expectOrderedObjectKeys(parsed.item_types, ["definitions"]);

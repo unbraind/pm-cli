@@ -25,7 +25,18 @@ import { applyRegisteredItemFieldDefaultsAndValidation } from "../../core/extens
 import { locateItem, mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import type { CalendarEvent, Dependency, ItemStatus, RecurrenceRule, Reminder } from "../../types/index.js";
+import type {
+  CalendarEvent,
+  Comment,
+  Dependency,
+  ItemStatus,
+  LinkedDoc,
+  LinkedFile,
+  LinkedTest,
+  LogNote,
+  RecurrenceRule,
+  Reminder,
+} from "../../types/index.js";
 import {
   CONFIDENCE_TEXT_VALUES,
   DEPENDENCY_KIND_VALUES,
@@ -34,6 +45,7 @@ import {
   RECURRENCE_WEEKDAY_VALUES,
   RISK_VALUES,
 } from "../../types/index.js";
+import { parseDocs, parseFiles, parseLogSeed, parseTests } from "./create.js";
 
 export interface UpdateCommandOptions {
   title?: string;
@@ -83,6 +95,12 @@ export interface UpdateCommandOptions {
   customerImpact?: string;
   dep?: string[];
   depRemove?: string[];
+  comment?: string[];
+  note?: string[];
+  learning?: string[];
+  file?: string[];
+  test?: string[];
+  doc?: string[];
   reminder?: string[];
   event?: string[];
   typeOption?: string[];
@@ -469,6 +487,18 @@ function dependencyKey(value: Pick<Dependency, "id" | "kind" | "source_kind">): 
   return `${value.id}::${value.kind}::${value.source_kind ?? ""}`;
 }
 
+function fileKey(value: Pick<LinkedFile, "path" | "scope">): string {
+  return `${value.path}::${value.scope}`;
+}
+
+function docKey(value: Pick<LinkedDoc, "path" | "scope">): string {
+  return `${value.path}::${value.scope}`;
+}
+
+function testKey(value: Pick<LinkedTest, "command" | "path" | "scope" | "pm_context_mode">): string {
+  return `${value.command}::${value.path ?? ""}::${value.scope}::${value.pm_context_mode ?? ""}`;
+}
+
 function matchesDependencySelector(value: Dependency, selector: DependencyRemovalSelector): boolean {
   if (value.id !== selector.id) {
     return false;
@@ -553,6 +583,12 @@ function collectProvidedUpdatePolicyOptions(options: UpdateCommandOptions): Set<
   mark("customerImpact", options.customerImpact !== undefined);
   mark("dep", options.dep !== undefined);
   mark("depRemove", options.depRemove !== undefined);
+  mark("comment", options.comment !== undefined);
+  mark("note", options.note !== undefined);
+  mark("learning", options.learning !== undefined);
+  mark("file", options.file !== undefined);
+  mark("test", options.test !== undefined);
+  mark("doc", options.doc !== undefined);
   mark("reminder", options.reminder !== undefined);
   mark("event", options.event !== undefined);
   mark("typeOption", options.typeOption !== undefined);
@@ -597,6 +633,12 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     body: await stdinResolver.resolveValue(options.body, "--body"),
     dep: await stdinResolver.resolveList(options.dep, "--dep"),
     depRemove: await stdinResolver.resolveList(options.depRemove, "--dep-remove"),
+    comment: await stdinResolver.resolveList(options.comment, "--comment"),
+    note: await stdinResolver.resolveList(options.note, "--note"),
+    learning: await stdinResolver.resolveList(options.learning, "--learning"),
+    file: await stdinResolver.resolveList(options.file, "--file"),
+    test: await stdinResolver.resolveList(options.test, "--test"),
+    doc: await stdinResolver.resolveList(options.doc, "--doc"),
     reminder: await stdinResolver.resolveList(options.reminder, "--reminder"),
     event: await stdinResolver.resolveList(options.event, "--event"),
     typeOption: await stdinResolver.resolveList(options.typeOption, "--type-option"),
@@ -611,8 +653,15 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   const sprintReleasePolicy = settings.validation.sprint_release_format;
   const author = toAuthor(options.author, settings.author_default);
   const nowValue = new Date();
-  const dependencyUpdates = parseDependencyAdditions(options.dep, settings.id_prefix, nowValue.toISOString());
+  const nowIso = nowValue.toISOString();
+  const dependencyUpdates = parseDependencyAdditions(options.dep, settings.id_prefix, nowIso);
   const dependencyRemovals = parseDependencyRemovals(options.depRemove, settings.id_prefix);
+  const commentUpdates = parseLogSeed("--comment", options.comment, nowIso, author);
+  const noteUpdates = parseLogSeed("--note", options.note, nowIso, author);
+  const learningUpdates = parseLogSeed("--learning", options.learning, nowIso, author);
+  const fileUpdates = parseFiles(options.file);
+  const testUpdates = parseTests(options.test);
+  const docUpdates = parseDocs(options.doc);
   const parentReferenceWarnings: string[] = [];
   let resolvedParentValue: string | undefined;
   if (options.parent !== undefined && !isNoneToken(options.parent)) {
@@ -675,6 +724,12 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     options.customerImpact !== undefined,
     options.dep !== undefined,
     options.depRemove !== undefined,
+    options.comment !== undefined,
+    options.note !== undefined,
+    options.learning !== undefined,
+    options.file !== undefined,
+    options.test !== undefined,
+    options.doc !== undefined,
     options.reminder !== undefined,
     options.event !== undefined,
     options.typeOption !== undefined,
@@ -819,6 +874,84 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
           document.front_matter.dependencies = nextDependencies;
         }
         changedFields.push("dependencies");
+      }
+      if (options.comment !== undefined) {
+        if (commentUpdates.explicitEmpty || !commentUpdates.values || commentUpdates.values.length === 0) {
+          delete document.front_matter.comments;
+        } else {
+          document.front_matter.comments = [...(document.front_matter.comments ?? []), ...(commentUpdates.values as Comment[])];
+        }
+        changedFields.push("comments");
+      }
+      if (options.note !== undefined) {
+        if (noteUpdates.explicitEmpty || !noteUpdates.values || noteUpdates.values.length === 0) {
+          delete document.front_matter.notes;
+        } else {
+          document.front_matter.notes = [...(document.front_matter.notes ?? []), ...(noteUpdates.values as LogNote[])];
+        }
+        changedFields.push("notes");
+      }
+      if (options.learning !== undefined) {
+        if (learningUpdates.explicitEmpty || !learningUpdates.values || learningUpdates.values.length === 0) {
+          delete document.front_matter.learnings;
+        } else {
+          document.front_matter.learnings = [...(document.front_matter.learnings ?? []), ...(learningUpdates.values as LogNote[])];
+        }
+        changedFields.push("learnings");
+      }
+      if (options.file !== undefined) {
+        if (fileUpdates.explicitEmpty || !fileUpdates.values || fileUpdates.values.length === 0) {
+          delete document.front_matter.files;
+        } else {
+          const nextFiles = [...(document.front_matter.files ?? [])];
+          const seen = new Set(nextFiles.map((entry) => fileKey(entry)));
+          for (const entry of fileUpdates.values) {
+            const key = fileKey(entry);
+            if (seen.has(key)) {
+              continue;
+            }
+            nextFiles.push(entry);
+            seen.add(key);
+          }
+          document.front_matter.files = nextFiles;
+        }
+        changedFields.push("files");
+      }
+      if (options.test !== undefined) {
+        if (testUpdates.explicitEmpty || !testUpdates.values || testUpdates.values.length === 0) {
+          delete document.front_matter.tests;
+        } else {
+          const nextTests = [...(document.front_matter.tests ?? [])];
+          const seen = new Set(nextTests.map((entry) => testKey(entry)));
+          for (const entry of testUpdates.values) {
+            const key = testKey(entry);
+            if (seen.has(key)) {
+              continue;
+            }
+            nextTests.push(entry);
+            seen.add(key);
+          }
+          document.front_matter.tests = nextTests;
+        }
+        changedFields.push("tests");
+      }
+      if (options.doc !== undefined) {
+        if (docUpdates.explicitEmpty || !docUpdates.values || docUpdates.values.length === 0) {
+          delete document.front_matter.docs;
+        } else {
+          const nextDocs = [...(document.front_matter.docs ?? [])];
+          const seen = new Set(nextDocs.map((entry) => docKey(entry)));
+          for (const entry of docUpdates.values) {
+            const key = docKey(entry);
+            if (seen.has(key)) {
+              continue;
+            }
+            nextDocs.push(entry);
+            seen.add(key);
+          }
+          document.front_matter.docs = nextDocs;
+        }
+        changedFields.push("docs");
       }
       if (options.tags !== undefined) {
         document.front_matter.tags = parseTags(options.tags);

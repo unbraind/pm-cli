@@ -6,6 +6,7 @@ import { activateExtensions, getActiveExtensionRegistrations, loadExtensions, ru
 import {
   EXTENSION_CAPABILITY_CONTRACT,
   KNOWN_EXTENSION_CAPABILITIES,
+  parseLegacyExtensionCapabilityAliasWarning,
   parseUnknownExtensionCapabilityWarning,
   type LoadedExtension,
   type UnknownExtensionCapabilityWarningDetails,
@@ -80,6 +81,10 @@ interface ExtensionHealthTriageSummary {
   managed_extension_entries_count: number;
   unmanaged_loaded_extension_count: number;
   unmanaged_loaded_extensions: string[];
+  unmanaged_expected_extension_count: number;
+  unmanaged_expected_extensions: string[];
+  unmanaged_action_required_extension_count: number;
+  unmanaged_action_required_extensions: string[];
   update_health_coverage: "full" | "partial";
   update_health_partial: boolean;
   unknown_capability_count: number;
@@ -102,16 +107,21 @@ function collectUnknownCapabilityGuidance(warnings: string[]): UnknownExtensionC
   const seen = new Set<string>();
   const guidance: UnknownExtensionCapabilityWarningDetails[] = [];
   for (const warning of warnings) {
-    const parsed = parseUnknownExtensionCapabilityWarning(warning);
-    if (!parsed) {
-      continue;
+    const parsedDetails = (() => {
+      const unknownWarning = parseUnknownExtensionCapabilityWarning(warning);
+      if (unknownWarning) {
+        return [unknownWarning];
+      }
+      return parseLegacyExtensionCapabilityAliasWarning(warning);
+    })();
+    for (const parsed of parsedDetails) {
+      const key = `${parsed.layer}:${parsed.name}:${parsed.capability}`;
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      guidance.push(parsed);
     }
-    const key = `${parsed.layer}:${parsed.name}:${parsed.capability}`;
-    if (seen.has(key)) {
-      continue;
-    }
-    seen.add(key);
-    guidance.push(parsed);
   }
   return guidance;
 }
@@ -130,6 +140,15 @@ function buildCapabilityContractMetadata(): {
 
 function normalizeExtensionNameForMatch(value: string): string {
   return value.trim().toLowerCase();
+}
+
+function isExpectedUnmanagedExtension(name: string, directory: string): boolean {
+  const normalizedName = normalizeExtensionNameForMatch(name);
+  const normalizedDirectory = normalizeExtensionNameForMatch(directory);
+  if (normalizedName.startsWith("builtin-")) {
+    return true;
+  }
+  return normalizedDirectory === "beads" || normalizedDirectory === "todos";
 }
 
 async function isDirectory(targetPath: string): Promise<boolean> {
@@ -461,13 +480,15 @@ function buildExtensionHealthTriageSummary(
   managedStateWarningCount: number,
   managedExtensionEntriesCount: number,
   unmanagedLoadedExtensions: string[],
+  unmanagedExpectedExtensions: string[],
+  unmanagedActionRequiredExtensions: string[],
 ): ExtensionHealthTriageSummary {
   const normalizedWarnings = [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
   const warningCodes = [...new Set(normalizedWarnings.map((value) => warningCode(value)))].sort((left, right) =>
     left.localeCompare(right),
   );
   const unknownCapabilityCount = normalizedWarnings.filter((warning) => warning.startsWith("extension_capability_unknown:")).length;
-  const updateHealthPartial = unmanagedLoadedExtensions.length > 0;
+  const updateHealthPartial = unmanagedActionRequiredExtensions.length > 0;
   const updateHealthCoverage = updateHealthPartial ? "partial" : "full";
   const remediation: string[] = [];
   if (loadFailureCount > 0) {
@@ -488,9 +509,25 @@ function buildExtensionHealthTriageSummary(
         "Review extension_capability_unknown warning details for suggested replacements.",
     );
   }
+  if (normalizedWarnings.some((warning) => warning.startsWith("extension_capability_legacy_alias:"))) {
+    remediation.push(
+      "Legacy extension capability aliases were auto-remapped to canonical capabilities. " +
+        "Update manifests to canonical names (migration/validation -> schema).",
+    );
+  }
+  if (normalizedWarnings.some((warning) => warning.startsWith("extension_command_definition_legacy_handler_alias:"))) {
+    remediation.push(
+      "Extension command definitions using legacy handler were auto-remapped. " +
+        "Update command definitions to use run: (context) => ... for forward compatibility.",
+    );
+  }
   if (updateHealthPartial) {
     remediation.push(
-      "Update-check coverage is partial because loaded extensions are unmanaged. Adopt existing installs via pm extension --adopt-all --project/--global or pm extension --adopt <name>.",
+      "Update-check coverage is partial because unmanaged extensions need adoption. Adopt existing installs via pm extension --manage --project/--global --fix-managed-state, pm extension --adopt-all --project/--global, or pm extension --adopt <name>.",
+    );
+  } else if (unmanagedLoadedExtensions.length > 0) {
+    remediation.push(
+      "Loaded unmanaged extensions are currently treated as informational. Use pm extension --manage --project/--global --fix-managed-state to adopt them for update checks.",
     );
   }
   if (remediation.length === 0) {
@@ -508,6 +545,10 @@ function buildExtensionHealthTriageSummary(
     managed_extension_entries_count: managedExtensionEntriesCount,
     unmanaged_loaded_extension_count: unmanagedLoadedExtensions.length,
     unmanaged_loaded_extensions: unmanagedLoadedExtensions,
+    unmanaged_expected_extension_count: unmanagedExpectedExtensions.length,
+    unmanaged_expected_extensions: unmanagedExpectedExtensions,
+    unmanaged_action_required_extension_count: unmanagedActionRequiredExtensions.length,
+    unmanaged_action_required_extensions: unmanagedActionRequiredExtensions,
     update_health_coverage: updateHealthCoverage,
     update_health_partial: updateHealthPartial,
     unknown_capability_count: unknownCapabilityCount,
@@ -567,19 +608,41 @@ async function buildExtensionCheck(
     projectManagedState.state.entries.map((entry) => normalizeExtensionNameForMatch(entry.name)),
   );
   const managedGlobalNames = new Set(globalManagedState.state.entries.map((entry) => normalizeExtensionNameForMatch(entry.name)));
-  const unmanagedLoadedExtensions = [
-    ...new Set(
+  const unmanagedLoadedEntries = [
+    ...new Map(
       loadResult.loaded
         .filter((entry) => {
           const managedNames = entry.layer === "project" ? managedProjectNames : managedGlobalNames;
           return !managedNames.has(normalizeExtensionNameForMatch(entry.name));
         })
-        .map((entry) => `${entry.layer}:${entry.name}`),
-    ),
-  ].sort((left, right) => left.localeCompare(right));
+        .map((entry) => [
+          `${entry.layer}:${entry.name}`,
+          {
+            layer: entry.layer,
+            name: entry.name,
+            directory: entry.directory,
+          },
+        ]),
+    ).values(),
+  ].sort((left, right) => {
+    const leftKey = `${left.layer}:${left.name}`;
+    const rightKey = `${right.layer}:${right.name}`;
+    return leftKey.localeCompare(rightKey);
+  });
+  const unmanagedLoadedExtensions = unmanagedLoadedEntries
+    .map((entry) => `${entry.layer}:${entry.name}`)
+    .sort((left, right) => left.localeCompare(right));
+  const unmanagedExpectedExtensions = unmanagedLoadedEntries
+    .filter((entry) => isExpectedUnmanagedExtension(entry.name, entry.directory))
+    .map((entry) => `${entry.layer}:${entry.name}`)
+    .sort((left, right) => left.localeCompare(right));
+  const unmanagedActionRequiredExtensions = unmanagedLoadedEntries
+    .filter((entry) => !isExpectedUnmanagedExtension(entry.name, entry.directory))
+    .map((entry) => `${entry.layer}:${entry.name}`)
+    .sort((left, right) => left.localeCompare(right));
   const updateCoverageWarnings =
-    unmanagedLoadedExtensions.length > 0
-      ? [`extension_update_health_partial_coverage:skipped_unmanaged:${unmanagedLoadedExtensions.length}`]
+    unmanagedActionRequiredExtensions.length > 0
+      ? [`extension_update_health_partial_coverage:skipped_unmanaged:${unmanagedActionRequiredExtensions.length}`]
       : [];
   const extensionWarnings = [
     ...loadResult.warnings,
@@ -599,6 +662,8 @@ async function buildExtensionCheck(
     projectManagedState.warnings.length + globalManagedState.warnings.length,
     projectManagedState.state.entries.length + globalManagedState.state.entries.length,
     unmanagedLoadedExtensions,
+    unmanagedExpectedExtensions,
+    unmanagedActionRequiredExtensions,
   );
 
   return {

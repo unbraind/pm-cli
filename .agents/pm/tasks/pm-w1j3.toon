@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:comments",external-audit,implementation,pm-cli
 created_at: "2026-04-04T22:38:14.047Z"
-updated_at: "2026-04-04T23:35:15.093Z"
+updated_at: "2026-04-05T21:44:41.209Z"
 deadline: "2026-04-10T22:38:14.047Z"
 author: codex-agent
 estimated_minutes: 240
@@ -18,22 +18,28 @@ impact: Cuts runtime and complexity for governance sweeps
 outcome: Operators can audit comments in one command
 why_now: Current serial per-item approach is too expensive for medium/large trackers
 parent: pm-ayyt
-comments[3]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-04-04T22:38:14.047Z",codex-agent,Task created for direct implementation of comments-audit command and integration parity updates.
   "2026-04-04T22:48:16.609Z",codex-agent,"Implemented additive comments-audit surface with status/type/assignee filters, --limit-items, and --latest snapshots. Wired main/completion/contracts/Pi and added runCommentsAudit unit coverage. Evidence: node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts passed."
   "2026-04-04T23:34:59.203Z",codex-agent,"Final evidence: comments-audit command implemented with status/type/assignee filters plus --limit-items/--latest, with command wiring/contracts/completion/Pi parity and docs updates. Verification passed: linked test run via pm test pm-w1j3 --run, full node scripts/run-tests.mjs test, and node scripts/run-tests.mjs coverage."
+  "2026-04-05T20:39:54.744Z",codex-agent,Duplicate-check evidence refreshed; reusing canonical implementation task for comments-audit full-history export mode (no duplicate item created).
+  "2026-04-05T21:24:35.667Z",codex-agent,"Progress: added comments-audit --full-history export mode with latest-conflict validation, CLI/completion/contracts/Pi parity, and targeted regression coverage (comments/unit completion + runtime help). Verification: node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts passed."
+  "2026-04-05T21:44:39.779Z",codex-agent,"Final evidence: full-history comments audit export is shipped with --full-history/--latest conflict guard, contract/completion/Pi parity, and NDJSON-friendly rows payload. Verification includes targeted regressions plus full repository test+coverage pass at 100/100/100/100."
 notes[1]{created_at,author,text}:
   "2026-04-04T22:38:14.047Z",codex-agent,Planned files include new command module plus main/completion/contracts/Pi and comments command tests.
-files[6]{path,scope,note}:
+files[8]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,pi-comments-audit-mapping
   src/cli/commands/comments-audit.ts,project,bulk-comments-audit-command
   src/cli/commands/completion.ts,project,comments-audit-completion
   src/cli/main.ts,project,comments-audit-command-wiring
   src/sdk/cli-contracts.ts,project,comments-audit-contract
   tests/unit/comments-command.spec.ts,project,comments-audit-regression
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  tests/unit/completion-command.spec.ts,project,completion-flag-coverage-for-full-history
+  tests/integration/release-readiness-runtime.spec.ts,project,comments-audit-help-flag-parity-regression
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,comments-audit-targeted
+  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full-history-contract-and-help-regression
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mnkywjwz-pmp61j,test,passed,"2026-04-04T23:32:18.348Z","2026-04-04T23:32:33.108Z","2026-04-04T23:32:33.108Z",null,null,1,0,0,null,null,null
-close_reason: Implemented comments-audit bulk query surface and verified linked/full test coverage.
+close_reason: comments-audit full-history export implemented and fully verified
 body: "Execution task for feature pm-ayyt covering command implementation, output schema, and docs/tests parity."

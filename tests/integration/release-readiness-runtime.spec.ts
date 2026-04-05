@@ -174,7 +174,15 @@ const REQUIRED_UPDATE_FLAGS = [
   "--assignee",
   "--dep",
   "--dep-remove",
+  "--comment",
+  "--note",
+  "--learning",
+  "--file",
+  "--test",
+  "--doc",
   "--reminder",
+  "--event",
+  "--type-option",
   "--author",
   "--message",
   "--force",
@@ -221,6 +229,7 @@ const REQUIRED_TEST_FLAGS = [
   "--force",
 ];
 const REQUIRED_COMMENTS_FLAGS = ["--add", "--limit", "--author", "--message", "--allow-audit-comment", "--force"];
+const REQUIRED_COMMENTS_AUDIT_FLAGS = ["--status", "--type", "--assignee", "--limit-items", "--full-history", "--latest"];
 const REQUIRED_NOTES_FLAGS = ["--add", "--limit", "--author", "--message", "--force"];
 const REQUIRED_LEARNINGS_FLAGS = ["--add", "--limit", "--author", "--message", "--force"];
 const REQUIRED_CLAIM_RELEASE_FLAGS = ["--author", "--message", "--force"];
@@ -228,6 +237,7 @@ const REQUIRED_RESTORE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_CLOSE_FLAGS = ["--author", "--message", "--validate-close", "--force"];
 const REQUIRED_VALIDATE_FLAGS = [
   "--check-metadata",
+  "--metadata-profile",
   "--check-resolution",
   "--check-files",
   "--check-command-references",
@@ -609,6 +619,14 @@ describe("release readiness runtime coverage", () => {
       }
       expect(commentsHelp.stdout).toContain("Usage: pm comments [options] <id> [text]");
       expect(commentsHelp.stdout).not.toContain("Add one comment entry (default: [])");
+
+      const commentsAuditHelp = context.runCli(["comments-audit", "--help"]);
+      expect(commentsAuditHelp.code).toBe(0);
+      for (const flag of REQUIRED_COMMENTS_AUDIT_FLAGS) {
+        expect(commentsAuditHelp.stdout).toContain(flag);
+      }
+      expect(commentsAuditHelp.stdout).toContain("Usage: pm comments-audit [options]");
+      expect(commentsAuditHelp.stdout).toContain("Audit latest comments or full comment history across filtered items.");
 
       const notesHelp = context.runCli(["notes", "--help"]);
       expect(notesHelp.code).toBe(0);

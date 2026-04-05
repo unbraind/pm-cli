@@ -262,6 +262,11 @@ describe("runComments", () => {
       expect(auditOpen.filters).toMatchObject({
         status: "open",
         latest: 1,
+        full_history: false,
+      });
+      expect(auditOpen.export).toMatchObject({
+        mode: "latest",
+        row_count: null,
       });
       expect(auditOpen.items.some((entry) => entry.id === closedId)).toBe(false);
       expect(auditOpen.items.find((entry) => entry.id === openId)?.comments.map((entry) => entry.text)).toEqual(["open-second"]);
@@ -274,6 +279,38 @@ describe("runComments", () => {
     });
   });
 
+  it("exports full comment history rows when --full-history is enabled", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-audit-full-history");
+      await runComments(id, { add: "history-first", author: "audit-a" }, { path: context.pmPath });
+      await runComments(id, { add: "history-second", author: "audit-b" }, { path: context.pmPath });
+
+      const fullHistory = await runCommentsAudit(
+        {
+          status: "open",
+          limitItems: "1",
+          fullHistory: true,
+        },
+        { path: context.pmPath },
+      );
+
+      expect(fullHistory.filters).toMatchObject({
+        status: "open",
+        limit_items: 1,
+        latest: null,
+        full_history: true,
+      });
+      expect(fullHistory.export).toMatchObject({
+        mode: "full_history",
+        row_count: 2,
+      });
+      expect(fullHistory.items[0]?.comments.map((entry) => entry.text)).toEqual(["history-first", "history-second"]);
+      expect(fullHistory.rows?.map((row) => row.text)).toEqual(["history-first", "history-second"]);
+      expect(fullHistory.rows?.map((row) => row.comment_index)).toEqual([0, 1]);
+      expect(fullHistory.rows?.every((row) => row.item_id === id)).toBe(true);
+    });
+  });
+
   it("validates comments-audit filter values", async () => {
     await withTempPmPath(async (context) => {
       await expect(runCommentsAudit({ status: "not-a-status" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
@@ -283,6 +320,9 @@ describe("runComments", () => {
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(runCommentsAudit({ limitItems: "1.5" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runCommentsAudit({ fullHistory: true, latest: "1" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
     });

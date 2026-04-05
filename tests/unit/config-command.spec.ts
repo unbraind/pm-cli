@@ -66,13 +66,15 @@ describe("runConfig", () => {
 
       const result = await runConfig("project", "list", undefined, {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot });
       expect(result.changed).toBe(false);
-      expect(result.count).toBe(6);
+      expect(result.count).toBe(8);
       expect(result.keys?.map((entry) => entry.key)).toEqual([
         "definition_of_done",
         "item_format",
         "history_missing_stream_policy",
         "sprint_release_format_policy",
         "parent_reference_policy",
+        "metadata_validation_profile",
+        "metadata_required_fields",
         "test_result_tracking",
       ]);
       expect(result.keys?.find((entry) => entry.key === "definition_of_done")?.value).toEqual(["tests pass"]);
@@ -96,6 +98,8 @@ describe("runConfig", () => {
         history_missing_stream_policy: "auto_create",
         sprint_release_format_policy: "warn",
         parent_reference_policy: "strict_error",
+        metadata_validation_profile: "core",
+        metadata_required_fields: [],
         test_result_tracking: "disabled",
       });
     });
@@ -497,6 +501,156 @@ describe("runConfig", () => {
           "set",
           "parent_reference_policy",
           { policy: "auto_create" },
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
+  it("gets and sets metadata-validation profile policy", async () => {
+    await withTempRoot(async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      const getDefault = await runConfig(
+        "project",
+        "get",
+        "metadata-validation-profile",
+        {},
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(getDefault.key).toBe("metadata_validation_profile");
+      expect(getDefault.policy).toBe("core");
+      expect(getDefault.changed).toBe(false);
+
+      const setStrict = await runConfig(
+        "project",
+        "set",
+        "metadata_validation_profile",
+        { policy: "strict" },
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(setStrict.policy).toBe("strict");
+      expect(setStrict.changed).toBe(true);
+
+      const setStrictAgain = await runConfig(
+        "project",
+        "set",
+        "metadata-validation-profile",
+        { policy: "strict" },
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(setStrictAgain.policy).toBe("strict");
+      expect(setStrictAgain.changed).toBe(false);
+    });
+  });
+
+  it("requires supported --policy values when setting metadata-validation profile", async () => {
+    await withTempRoot(async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      await expect(
+        runConfig(
+          "project",
+          "set",
+          "metadata-validation-profile",
+          {},
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+
+      await expect(
+        runConfig(
+          "project",
+          "set",
+          "metadata_validation_profile",
+          { policy: "warn" },
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
+  it("gets and sets metadata-required fields list", async () => {
+    await withTempRoot(async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      const getDefault = await runConfig(
+        "project",
+        "get",
+        "metadata-required-fields",
+        {},
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(getDefault.key).toBe("metadata_required_fields");
+      expect(getDefault.criteria).toEqual([]);
+      expect(getDefault.changed).toBe(false);
+
+      const setFields = await runConfig(
+        "project",
+        "set",
+        "metadata_required_fields",
+        { criterion: ["release", "sprint", "release"] },
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(setFields.criteria).toEqual(["release", "sprint"]);
+      expect(setFields.changed).toBe(true);
+
+      const clearFields = await runConfig(
+        "project",
+        "set",
+        "metadata-required-fields",
+        { criterion: ["none"] },
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(clearFields.criteria).toEqual([]);
+      expect(clearFields.changed).toBe(true);
+    });
+  });
+
+  it("validates metadata-required fields criteria values", async () => {
+    await withTempRoot(async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      await expect(
+        runConfig(
+          "project",
+          "set",
+          "metadata-required-fields",
+          {},
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+
+      await expect(
+        runConfig(
+          "project",
+          "set",
+          "metadata_required_fields",
+          { criterion: ["none", "sprint"] },
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+
+      await expect(
+        runConfig(
+          "project",
+          "set",
+          "metadata-required-fields",
+          { criterion: ["unknown_field"] },
           { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
         ),
       ).rejects.toMatchObject<PmCliError>({

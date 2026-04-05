@@ -243,6 +243,8 @@ The vectorization ledger is also refreshed during `pm reindex --mode semantic|hy
 - Runs all validation checks by default (`metadata`, `resolution`, `files`, `history_drift`).
 - Runs linked-command PM reference checks by default (`command_references`) to catch stale `pm-<id>` references before execution-time failures.
 - Supports scoped checks with `--check-metadata`, `--check-resolution`, `--check-files`, `--check-command-references`, and `--check-history-drift`.
+- `--check-metadata` supports `--metadata-profile core|strict|custom` for deterministic required-field policy selection.
+- `--metadata-profile custom` reads `settings.validation.metadata_required_fields`; if the configured list is empty, validation falls back to core requirements and emits `validate_metadata_custom_profile_missing_required_fields:0`.
 - `--check-files` supports `--scan-mode default|tracked-all|tracked-all-strict`; tracked modes use git-tracked candidates when available.
 - `tracked-all` excludes PM internals by default for higher-signal orphaned results; pass `--include-pm-internals` for full internal-audit scans.
 - `tracked-all-strict` forces full tracked coverage (including PM internals) and bypasses internal exclusion filtering.
@@ -307,6 +309,34 @@ Configure policy with:
 pm config project set parent-reference-policy --policy warn
 pm config project set parent-reference-policy --policy strict_error
 pm config project get parent-reference-policy --json
+```
+
+## Metadata Validation Profile Policy
+
+`settings.validation.metadata_profile` controls default required-field behavior for `pm validate --check-metadata`:
+
+- `core` (default)
+  - requires baseline governance fields (`author`, `acceptance_criteria`, `estimated_minutes`, `close_reason` for closed items)
+- `strict`
+  - extends core checks with additional governance fields (`reviewer`, `risk`, `confidence`, `sprint`, `release`)
+- `custom`
+  - uses `settings.validation.metadata_required_fields` as the required field set (falls back to core + warning when empty)
+
+Configure policy with:
+
+```bash
+pm config project set metadata-validation-profile --policy core
+pm config project set metadata-validation-profile --policy strict
+pm config project set metadata-validation-profile --policy custom
+pm config project get metadata-validation-profile --json
+```
+
+Configure custom required fields with:
+
+```bash
+pm config project set metadata-required-fields --criterion sprint --criterion release
+pm config project set metadata-required-fields --criterion none
+pm config project get metadata-required-fields --json
 ```
 
 ## Test Result Tracking Policy
@@ -417,6 +447,9 @@ pm deps pm-a1b2 --format graph --json
 
 # Bulk governance snapshots for latest comments across matching items
 pm comments-audit --status in_progress --latest 1 --limit-items 20 --json
+
+# Full-history export rows for NDJSON-friendly downstream processing
+pm comments-audit --status in_progress --full-history --limit-items 20 --json
 ```
 
 `none` semantics are unchanged for explicit clears in repeatable fields (`--file none`, `--comment none`, etc.).
@@ -431,7 +464,8 @@ For `pm create` log-seed flags (`--comment`, `--note`, `--learning`), only `auth
 - Use `pm update <ID> --body <value>` to replace an item's body content (including empty-string backfills); use `pm append <ID> --body <value>` for additive narrative updates.
 - Dependency links on existing items are now mutated through `pm update` (`--dep` to add entries or clear with `none`, `--dep-remove`/`--dep_remove` to remove selectors).
 - Use `pm deps <ID> --format tree|graph` for deterministic read-only dependency visualization.
-- `pm update` intentionally does not accept `--file` or `--doc`; command guidance points to `pm files` / `pm docs`.
+- `pm update` supports transactional linked mutations in one lock/history operation via repeatable `--comment`, `--note`, `--learning`, `--file`, `--test`, and `--doc` flags.
+- Dedicated commands (`pm comments|notes|learnings|files|test|docs`) remain available for focused single-surface edits.
 - `pm test <ID> --add` intentionally enforces sandbox-safe, runnable command entries. Every new linked test must include `command=...`; optional `path=...` is metadata-only context.
 - `pm create --test` follows the same policy: `command=...` is required, optional `path=...` can annotate command scope.
 - Linked test entries also support optional per-entry runtime directives/assertions plus context override metadata: `env_set=KEY=VALUE;KEY2=VALUE2`, `env_clear=KEY1;KEY2`, `shared_host_safe=true|false`, `pm_context_mode=schema|tracker|auto`, `assert_stdout_contains=...`, `assert_stdout_regex=...`, `assert_stderr_contains=...`, `assert_stderr_regex=...`, `assert_stdout_min_lines=<int>`, `assert_json_field_equals=path=value`, `assert_json_field_gte=path=<number>`.
@@ -685,8 +719,9 @@ Activation and health behavior:
 - `pm extension --adopt-all` bulk-adopts all unmanaged extensions in the selected scope without reinstalling files.
 - `pm extension --manage` refreshes GitHub-managed update metadata, persists it to scope-local `.managed-extensions.json`, and includes explicit per-extension `update_check_status`/`update_check_reason` fields (`checked`, `failed`, `skipped_unmanaged`, `skipped_non_github`, `not_checked`) plus triage status totals/remediation hints and update-health coverage diagnostics (`update_health_coverage`, `warning_codes`). `--runtime-probe` opt-in runs doctor-equivalent runtime activation checks for manage output parity. `--fix-managed-state` can adopt unmanaged extensions before update checks.
 - `pm extension --doctor` (or `pm extension doctor`) provides consolidated extension diagnostics with normalized warning codes, canonical load roots, active-vs-loaded consistency diagnostics, update-health coverage signals, remediation hints, optional strict exit gating (`--strict-exit`, alias `--fail-on-warn`), machine-usable blocking indicators (`blocking_failure_count`, `has_blocking_failures`), and optional deep output via `--detail deep`. `--trace` (deep mode) includes actionable registration traces and expected-schema hints for activation failures. `--fix-managed-state` can adopt unmanaged extensions before diagnostics.
-- `pm health` includes managed extension state diagnostics plus a condensed extension triage block for quick load/activation/migration issue triage across project/global roots, including `extension_update_health_partial_coverage` parity when unmanaged loaded extensions reduce update-check coverage.
+- `pm health` includes managed extension state diagnostics plus a condensed extension triage block for quick load/activation/migration issue triage across project/global roots, including `extension_update_health_partial_coverage` only when unmanaged loaded extensions are action-required for update-check coverage.
 - Unknown manifest capabilities emit `extension_capability_unknown` diagnostics with inline allowed-capability lists, nearest-match suggestions, and legacy alias guidance (`migration`/`validation` -> `schema`). Health/doctor payloads include machine-readable capability contract metadata (`details.capability_contract`) and parsed guidance entries (`details.capability_guidance`).
+- Legacy extension command definitions using `handler` remain compatible and map to `run`, with deterministic warning `extension_command_definition_legacy_handler_alias` for migration visibility.
 
 Use `pm extension --help` for compact guidance or `pm extension --help --explain` for expanded examples/tips.
 

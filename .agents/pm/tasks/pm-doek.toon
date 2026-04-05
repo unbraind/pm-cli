@@ -2,12 +2,13 @@ id: pm-doek
 title: "External follow-up: add focused extension diagnostics triage summaries"
 description: Enhance extension --manage output to distinguish update-check lifecycle states (checked/skipped/failed) with explicit reason fields while preserving existing triage summary behavior.
 type: Task
-status: closed
+status: in_progress
 priority: 2
 tags[4]: "area:extensions","area:health",follow-up,pm-cli
 created_at: "2026-04-03T22:00:05.513Z"
-updated_at: "2026-04-05T19:29:33.333Z"
+updated_at: "2026-04-05T20:49:10.053Z"
 deadline: "2026-04-10T22:00:05.513Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: "extension --manage output includes deterministic per-extension update_check_status and update_check_reason fields plus triage aggregates by status, with backward-compatible extension detail payloads."
@@ -27,7 +28,7 @@ expected_result: "Acceptance criteria for External follow-up: add focused extens
 actual_result: "Work completed and recorded with linked artifacts for External follow-up: add focused extension diagnostics triage summaries."
 component: project-management/external-follow-up-add-focused-extension-diagnos
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for External follow-up: add focused extension diagnostics triage summaries."
-comments[12]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-04-03T22:00:05.513Z",codex-agent,Child task created from external extension diagnostics triage request.
   "2026-04-03T22:06:22.186Z",codex-agent,"Implementation started: add concise triage summary and remediation hints to extension --manage and health extension diagnostics while preserving full detail payloads."
   "2026-04-03T22:17:11.560Z",codex-agent,"Implemented focused extension triage without adding new commands: extension --manage now returns concise triage summary/remediation hints, and health extensions check includes condensed triage counts + next steps. Evidence: pm test pm-doek --run passed; full build/test/coverage passed; smoke checks confirm details.triage in both manage and health JSON outputs."
@@ -40,6 +41,8 @@ comments[12]{created_at,author,text}:
   "2026-04-05T03:46:57.842Z",codex-agent,Surfaced extension_update_health_partial_coverage parity in pm health extension diagnostics and warnings; smoke checked pm health --json now reports partial coverage warning.
   "2026-04-05T18:46:19.722Z",codex-agent,"Reopened to normalize top-level warnings vs triage aggregates across extension manage/doctor, and to add informational-vs-actionable unmanaged-state semantics with optional remediation shortcut path."
   "2026-04-05T19:29:07.605Z",codex-agent,"Completed warning-surface parity and unmanaged-state triage normalization: top-level warnings now align with triage warning semantics; action-required unmanaged coverage warnings and remediation behavior are consistent across manage/doctor/health; docs and changelog updated. Verification: extension command/health integration tests and full coverage/typecheck passed."
+  "2026-04-05T20:39:51.556Z",codex-agent,Duplicate-check evidence refreshed; reusing canonical extension triage lineage for managed-state warning semantics refinement (no duplicate item created).
+  "2026-04-05T20:49:10.053Z",codex-agent,"Progress: aligned health managed-state warning semantics with manage/doctor by distinguishing expected unmanaged bundled-style entries from action-required unmanaged entries. Health now emits extension_update_health_partial_coverage only for action-required unmanaged extensions and reports expected/action-required breakdown in triage. Verification: node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/health-command.spec.ts passed."
 notes[1]{created_at,author,text}:
   "2026-04-03T22:00:05.513Z",codex-agent,No new command surface; improve manage and health diagnostics only.
 files[6]{path,scope,note}:
@@ -49,8 +52,9 @@ files[6]{path,scope,note}:
   src/sdk/cli-contracts.ts,project,extension-manage-status-contract
   tests/unit/extension-command.spec.ts,project,manage/explore triage regression tests
   tests/unit/health-command.spec.ts,project,health extension triage regression tests
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,extension-manage-status-targeted
+  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/health-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,managed-state-warning-semantics-regression
   node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/health-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,null,extension triage diagnostics regressions
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mnkyz155-94kzvs,test,passed,"2026-04-04T23:33:30.903Z","2026-04-04T23:34:28.745Z","2026-04-04T23:34:28.745Z",null,null,2,0,0,null,null,null
@@ -59,5 +63,4 @@ docs[4]{path,scope,note}:
   docs/ARCHITECTURE.md,project,extension diagnostics architecture notes
   PRD.md,project,extension triage output contract docs
   README.md,project,extension manage/health triage docs
-close_reason: warning parity and managed-state triage normalization completed
 body: External report requests a fast triage surface. Chosen direction avoids new command; enhance existing extension --manage and health extension diagnostics with compact summaries and next-step hints while preserving full JSON detail.

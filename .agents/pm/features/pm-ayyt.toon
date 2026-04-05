@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:audit","area:comments",external-audit,pm-cli
 created_at: "2026-04-04T22:38:06.028Z"
-updated_at: "2026-04-04T23:35:42.527Z"
+updated_at: "2026-04-05T21:44:50.895Z"
 deadline: "2026-04-11T22:38:06.028Z"
 author: codex-agent
 estimated_minutes: 260
@@ -18,10 +18,12 @@ impact: Removes high shell/process overhead in maintenance workflows
 outcome: Bulk comments snapshots are queryable by filters
 why_now: Current workflow requires hundreds of per-item comments calls
 parent: pm-gt8u
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-04T22:38:06.028Z",codex-agent,"Duplicate-check evidence: pm search bulk comments audit status latest --limit 10; pm list-open --limit 20; no active item currently tracks a bulk comments query command surface."
   "2026-04-04T23:35:34.695Z",codex-agent,"Delivery evidence: child task pm-w1j3 is closed with linked pm test run passing; comments-audit command shipped with filters/latest controls plus contracts/completion/Pi/docs parity. Full project test and coverage suites passed."
+  "2026-04-05T20:39:54.000Z",codex-agent,Duplicate-check evidence refreshed; reusing canonical comments-audit feature lineage for full-history export mode (no duplicate item created).
+  "2026-04-05T21:44:48.482Z",codex-agent,"Feature closure evidence: child task pm-w1j3 now includes full-history export mode, NDJSON-friendly rows contract, and verified cross-surface parity (CLI/completion/contracts/Pi) with full repo test+coverage gates passing at 100%."
 notes[1]{created_at,author,text}:
   "2026-04-04T22:38:06.028Z",codex-agent,Keep pm comments single-item semantics unchanged and add an additive audit command.
-close_reason: Feature completed via closed child task pm-w1j3 with full verification and docs parity.
+close_reason: Bulk comments audit surface now includes latest and full-history export modes with verified parity
 body: Net-new capability for governance workflows that need comment visibility across many items in one deterministic command.

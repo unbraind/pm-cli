@@ -1783,6 +1783,12 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
     customerImpact: readUpdateString("customerImpact"),
     dep: readUpdateList("dep"),
     depRemove: readUpdateList("depRemove"),
+    comment: readUpdateList("comment"),
+    note: readUpdateList("note"),
+    learning: readUpdateList("learning"),
+    file: readUpdateList("file"),
+    test: readUpdateList("test"),
+    doc: readUpdateList("doc"),
     reminder: readUpdateList("reminder"),
     event: readUpdateList("event"),
     typeOption: readUpdateList("typeOption"),
@@ -2809,6 +2815,36 @@ program
   )
   .option("--dep_remove <value>", "Alias for --dep-remove", collect)
   .option(
+    "--comment <value>",
+    "Append comment seed author=<value>,created_at=<iso|now>,text=<value> (also accepts markdown pairs and - for stdin; repeatable; use none to clear all comments)",
+    collect,
+  )
+  .option(
+    "--note <value>",
+    "Append note seed author=<value>,created_at=<iso|now>,text=<value> (also accepts markdown pairs and - for stdin; repeatable; use none to clear all notes)",
+    collect,
+  )
+  .option(
+    "--learning <value>",
+    "Append learning seed author=<value>,created_at=<iso|now>,text=<value> (also accepts markdown pairs and - for stdin; repeatable; use none to clear all learnings)",
+    collect,
+  )
+  .option(
+    "--file <value>",
+    "Append linked file path=<value>,scope=<project|global>,note=<text> (also accepts markdown pairs and - for stdin; repeatable; use none to clear all files)",
+    collect,
+  )
+  .option(
+    "--test <value>",
+    "Append linked test command=<value>,path=<value>,scope=<project|global>,timeout_seconds=<n>,pm_context_mode=<schema|tracker|auto> (also accepts markdown pairs and - for stdin; repeatable; use none to clear all tests)",
+    collect,
+  )
+  .option(
+    "--doc <value>",
+    "Append linked doc path=<value>,scope=<project|global>,note=<text> (also accepts markdown pairs and - for stdin; repeatable; use none to clear all docs)",
+    collect,
+  )
+  .option(
     "--reminder <value>",
     "Set reminders at=<iso|relative>,text=<text> (also accepts markdown pairs and - for stdin; repeatable; use none to clear)",
     collect,
@@ -2972,8 +3008,9 @@ program
   .option("--type <value>", "Filter by item type")
   .option("--assignee <value>", "Filter by assignee (use none for unassigned)")
   .option("--limit-items <n>", "Limit returned item count")
+  .option("--full-history", "Export full comment history rows and ignore --latest")
   .option("--latest <n>", "Return latest n comments per item (default: 1)")
-  .description("Audit latest comments across filtered items.")
+  .description("Audit latest comments or full comment history across filtered items.")
   .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -2983,6 +3020,7 @@ program
         type: typeof options.type === "string" ? options.type : undefined,
         assignee: typeof options.assignee === "string" ? options.assignee : undefined,
         limitItems: typeof options.limitItems === "string" ? options.limitItems : undefined,
+        fullHistory: options.fullHistory === true,
         latest: typeof options.latest === "string" ? options.latest : undefined,
       },
       globalOptions,
@@ -3499,6 +3537,7 @@ program
   .command("validate")
   .description("Run standalone metadata, resolution, files, linked-command reference, and history drift validation checks.")
   .option("--check-metadata", "Run metadata completeness checks")
+  .option("--metadata-profile <value>", "Select metadata validation profile for --check-metadata (core|strict|custom)")
   .option("--check-resolution", "Run closed-item resolution metadata checks")
   .option("--check-files", "Run linked-file and orphaned-file checks")
   .option("--check-command-references", "Run linked-command PM-ID reference checks")
@@ -3513,6 +3552,7 @@ program
     const result = await runValidate(
       {
         checkMetadata: Boolean(options.checkMetadata),
+        metadataProfile: typeof options.metadataProfile === "string" ? options.metadataProfile : undefined,
         checkResolution: Boolean(options.checkResolution),
         checkFiles: Boolean(options.checkFiles),
         checkCommandReferences: Boolean(options.checkCommandReferences),

@@ -234,7 +234,7 @@ Every item mutation follows this sequence:
 If step 7 or 8 fails, the item file is rolled back (if write succeeded) before returning failure.
 
 When `update --type` changes an item's resolved type folder, mutation logic performs a safe file move to the target folder and rolls back on failure.
-Linked arrays (`comments`, `notes`, `learnings`, `files`, `tests`, `docs`) are intentionally mutated through dedicated command paths (`pm comments`, `pm notes`, `pm learnings`, `pm files`, `pm test`, `pm docs`) rather than generic `pm update` flags.
+`pm update` now supports transactional linked/log collection mutations (`--comment`, `--note`, `--learning`, `--file`, `--test`, `--doc`) so metadata and linked surfaces can be updated under one lock/history entry. Dedicated commands (`pm comments|notes|learnings|files|test|docs`) remain available for focused single-surface operations.
 
 ### Additive Diagnostics and Path Hygiene
 
@@ -253,7 +253,7 @@ Linked arrays (`comments`, `notes`, `learnings`, `files`, `tests`, `docs`) are i
 - `pm create` log-seed repeatables (`--comment`, `--note`, `--learning`) now enforce explicit key boundaries (`author`, `created_at`, `text`) and reject parsed extra keys with usage guidance so unquoted key:value-like comma continuations cannot silently truncate seeded narrative text.
 - `pm deps --format tree|graph` provides read-only dependency traversal from stored front matter, with deterministic ordering, cycle markers, and missing-node reporting.
 - `pm list` / `pm list-*` support additive `--offset` pagination and JSON-only `--stream` line-delimited output for large datasets.
-- `pm validate` runs standalone repository checks (`metadata`, `resolution`, `files`, `command_references`, `history_drift`), supports file candidate selection via `--scan-mode default|tracked-all|tracked-all-strict`, supports additive internal-audit coverage with `--include-pm-internals`, and returns deterministic filtered + raw file scan metrics, structured `excluded_by_reason` summaries, plus stale PM-id command-reference diagnostics.
+- `pm validate` runs standalone repository checks (`metadata`, `resolution`, `files`, `command_references`, `history_drift`), supports metadata policy selection via `--metadata-profile core|strict|custom`, supports file candidate selection via `--scan-mode default|tracked-all|tracked-all-strict`, supports additive internal-audit coverage with `--include-pm-internals`, and returns deterministic filtered + raw file scan metrics, structured `excluded_by_reason` summaries, plus stale PM-id command-reference diagnostics.
 
 ## Calendar Pipeline
 

@@ -273,7 +273,7 @@ describe("extension loader", () => {
     });
   });
 
-  it("maps legacy capability aliases to schema suggestions", async () => {
+  it("remaps legacy capability aliases and emits a consolidated warning", async () => {
     await withTempPmPath(async (context) => {
       const roots = resolveExtensionRoots(context.pmPath);
       await createExtension(
@@ -293,13 +293,12 @@ describe("extension loader", () => {
         pmRoot: context.pmPath,
         settings,
       });
-      expect(discovery.warnings).toEqual(
-        expect.arrayContaining([
-          expect.stringContaining("extension_capability_unknown:project:legacy-capability-ext:migration"),
-          expect.stringContaining("extension_capability_unknown:project:legacy-capability-ext:validation"),
-        ]),
-      );
-      expect(discovery.warnings.every((warning) => warning.includes("suggested=schema"))).toBe(true);
+      expect(discovery.warnings).toEqual([
+        "extension_capability_legacy_alias:project:legacy-capability-ext:aliases=migration>schema,validation>schema",
+      ]);
+      expect(discovery.warnings.some((warning) => warning.startsWith("extension_capability_unknown:"))).toBe(false);
+      const loaded = await loadExtensions({ pmRoot: context.pmPath, settings });
+      expect(loaded.loaded[0]?.capabilities).toEqual(["schema"]);
     });
   });
 
@@ -1272,6 +1271,82 @@ describe("extension loader", () => {
       handled: true,
       result: {
         source: "handler",
+        command: "todos export",
+        folder: ".pi/todos",
+      },
+      warnings: [],
+    });
+  });
+
+  it("accepts legacy command-definition handler aliases with deprecation warning", async () => {
+    const activation = await activateExtensions({
+      disabled_by_flag: false,
+      roots: {
+        global: "/tmp/global",
+        project: "/tmp/project",
+      },
+      configured_enabled: [],
+      configured_disabled: [],
+      discovered: [],
+      effective: [],
+      warnings: [],
+      loaded: [
+        {
+          layer: "project",
+          directory: "legacy-command-definition-handler",
+          manifest_path: "/tmp/project/legacy-command-definition-handler/manifest.json",
+          name: "legacy-command-definition-handler",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          priority: 10,
+          entry_path: "/tmp/project/legacy-command-definition-handler/index.mjs",
+          capabilities: ["commands"],
+          module: {
+            activate(api: {
+              registerCommand: (
+                definition: {
+                  name: string;
+                  handler: (context: { command: string; options: Record<string, unknown> }) => unknown;
+                },
+              ) => void;
+            }) {
+              api.registerCommand({
+                name: "todos export",
+                handler: (context) => ({
+                  source: "legacy-handler-alias",
+                  command: context.command,
+                  folder: context.options.folder,
+                }),
+              });
+            },
+          },
+        },
+      ],
+      failed: [],
+    });
+
+    expect(activation.failed).toEqual([]);
+    expect(activation.command_handler_count).toBe(1);
+    expect(activation.warnings).toEqual([
+      "extension_command_definition_legacy_handler_alias:project:legacy-command-definition-handler:todos export",
+    ]);
+
+    const handlerResult = await runCommandHandler(activation.commands, {
+      command: "todos export",
+      args: ["--folder", ".pi/todos"],
+      options: { folder: ".pi/todos" },
+      global: {
+        json: false,
+        quiet: false,
+        noExtensions: false,
+        profile: false,
+      },
+      pm_root: "/tmp/project",
+    });
+    expect(handlerResult).toEqual({
+      handled: true,
+      result: {
+        source: "legacy-handler-alias",
         command: "todos export",
         folder: ".pi/todos",
       },

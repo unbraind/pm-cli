@@ -160,6 +160,7 @@ Every extension directory must contain a `manifest.json`:
 - `entry` must resolve inside the extension directory (no path traversal).
 - `capabilities` declares what the extension will register. API calls that exceed declared capabilities fail activation deterministically.
 - Unknown capability names are ignored for gating but emit discovery diagnostics that include allowed-capability lists and nearest-match suggestions when confidence is high.
+- Legacy manifest capability aliases `migration` and `validation` are remapped to `schema` and emit consolidated warning `extension_capability_legacy_alias` so compatibility remains additive while migration intent stays visible.
 
 ## Extension Module
 
@@ -200,6 +201,8 @@ api.registerCommand({
 ```
 
 If the command path matches a core command (for example `list-open`), the extension handler runs first and the core action is skipped. Command names are canonicalized (trimmed, lowercased, repeated whitespace collapsed). Handlers receive cloned snapshots so mutation cannot leak into caller state.
+
+For backward compatibility, command definitions that still use `handler` are accepted and mapped to `run`, with warning `extension_command_definition_legacy_handler_alias` to guide migration.
 
 **Override existing core command result:**
 
@@ -560,6 +563,8 @@ api.hooks.onIndex((ctx) => {
 - `extension_activate_failed:<layer>:<name>` — exception in `activate()`
 - `extension_entry_outside_extension:<layer>:<name>` — entry path escapes directory
 - `extension_capability_unknown:<layer>:<name>:<capability>:allowed=<csv>:suggested=<capability|none>` — unknown capability in manifest with inline guidance (including legacy alias replacements where applicable)
+- `extension_capability_legacy_alias:<layer>:<name>:aliases=<csv>` — legacy manifest capability aliases were remapped (for example `migration`/`validation` -> `schema`)
+- `extension_command_definition_legacy_handler_alias:<layer>:<name>:<command>` — command definition used legacy `handler` key; runtime mapped it to `run`
 - collision warnings when multiple extensions target the same command/parser/preflight/service/renderer key (last registration wins)
 
 `pm health` and `pm extension --doctor` also surface machine-readable capability contract metadata in diagnostics payloads:

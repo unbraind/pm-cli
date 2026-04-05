@@ -910,6 +910,107 @@ describe("runUpdate", () => {
     });
   });
 
+  it("supports transactional linked collection mutations in a single update", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-transactional-annotate");
+
+      const result = await runUpdate(
+        id,
+        {
+          description: "update description and append linked collections",
+          comment: ["text=comment from update transaction"],
+          note: ["text=note from update transaction"],
+          learning: ["text=learning from update transaction"],
+          file: ["path=src/cli/main.ts,scope=project,note=update transaction file"],
+          test: ["command=node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,scope=project"],
+          doc: ["path=README.md,scope=project,note=update transaction doc"],
+          author: "transaction-owner",
+          message: "update metadata and linked collections transactionally",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.changed_fields).toEqual(
+        expect.arrayContaining(["description", "comments", "notes", "learnings", "files", "tests", "docs"]),
+      );
+      const item = result.item as {
+        description?: string;
+        comments?: Array<{ text: string }>;
+        notes?: Array<{ text: string }>;
+        learnings?: Array<{ text: string }>;
+        files?: Array<{ path: string; scope: string }>;
+        tests?: Array<{ command: string; scope: string }>;
+        docs?: Array<{ path: string; scope: string }>;
+      };
+      expect(item.description).toBe("update description and append linked collections");
+      expect(item.comments?.at(-1)?.text).toBe("comment from update transaction");
+      expect(item.notes?.at(-1)?.text).toBe("note from update transaction");
+      expect(item.learnings?.at(-1)?.text).toBe("learning from update transaction");
+      expect(item.files).toEqual(expect.arrayContaining([expect.objectContaining({ path: "src/cli/main.ts", scope: "project" })]));
+      expect(item.tests).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            command: "node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts",
+            scope: "project",
+          }),
+        ]),
+      );
+      expect(item.docs).toEqual(expect.arrayContaining([expect.objectContaining({ path: "README.md", scope: "project" })]));
+
+      const history = context.runCli(["history", id, "--json"], { expectJson: true });
+      expect(history.code).toBe(0);
+      const updateOps = (history.json as { history: Array<{ op: string; message?: string }> }).history.filter(
+        (entry) => entry.op === "update",
+      );
+      expect(updateOps).toHaveLength(1);
+      expect(updateOps[0]?.message).toBe("update metadata and linked collections transactionally");
+    });
+  });
+
+  it("clears transactional linked collections with explicit none", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-transactional-clear");
+      await runUpdate(
+        id,
+        {
+          comment: ["text=seed comment"],
+          note: ["text=seed note"],
+          learning: ["text=seed learning"],
+          file: ["path=src/cli/main.ts,scope=project"],
+          test: ["command=node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,scope=project"],
+          doc: ["path=README.md,scope=project"],
+          message: "seed transactional linked collections",
+        },
+        { path: context.pmPath },
+      );
+
+      const cleared = await runUpdate(
+        id,
+        {
+          comment: ["none"],
+          note: ["none"],
+          learning: ["none"],
+          file: ["none"],
+          test: ["none"],
+          doc: ["none"],
+          message: "clear transactional linked collections",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(cleared.changed_fields).toEqual(
+        expect.arrayContaining(["comments", "notes", "learnings", "files", "tests", "docs"]),
+      );
+      const item = cleared.item as Record<string, unknown>;
+      expect(item.comments).toBeUndefined();
+      expect(item.notes).toBeUndefined();
+      expect(item.learnings).toBeUndefined();
+      expect(item.files).toBeUndefined();
+      expect(item.tests).toBeUndefined();
+      expect(item.docs).toBeUndefined();
+    });
+  });
+
   it("validates dependency mutation payloads", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-invalid-dependencies");
@@ -949,6 +1050,26 @@ describe("runUpdate", () => {
           id,
           {
             depRemove: ["kind=blocks"],
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          {
+            comment: ["none", "text=mixed comment payload"],
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          {
+            file: ["none", "path=README.md,scope=project"],
           },
           { path: context.pmPath },
         ),

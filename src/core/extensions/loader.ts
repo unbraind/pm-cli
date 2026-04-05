@@ -39,6 +39,7 @@ export interface ExtensionManifest {
   entry: string;
   priority: number;
   capabilities: string[];
+  legacy_capability_aliases?: LegacyExtensionCapabilityAliasMapping[];
 }
 
 export interface ExtensionDiagnostic {
@@ -227,7 +228,8 @@ export interface ServiceOverrideContext {
 
 export interface CommandDefinition {
   name: string;
-  run: CommandHandler;
+  run?: CommandHandler;
+  handler?: CommandHandler;
 }
 
 export type FlagDefinition = Record<string, unknown>;
@@ -462,6 +464,11 @@ interface ScannedExtensionDirectory {
   candidate: ExtensionCandidate | null;
 }
 
+export interface LegacyExtensionCapabilityAliasMapping {
+  alias: string;
+  target: ExtensionCapability;
+}
+
 function normalizeNames(values: string[]): string[] {
   return [...new Set(values.map((value) => value.trim()).filter((value) => value.length > 0))].sort((a, b) =>
     a.localeCompare(b),
@@ -482,6 +489,34 @@ function resolveLegacyExtensionCapabilityAlias(capability: string): ExtensionCap
     return null;
   }
   return EXTENSION_CAPABILITY_LEGACY_ALIASES[normalized] ?? null;
+}
+
+function normalizeManifestCapabilities(rawCapabilities: readonly string[]): {
+  capabilities: string[];
+  legacy_aliases: LegacyExtensionCapabilityAliasMapping[];
+} {
+  const normalizedCapabilities = normalizeNames([...rawCapabilities].map((value) => value.toLowerCase()));
+  const remappedCapabilities: string[] = [];
+  const legacyAliases: LegacyExtensionCapabilityAliasMapping[] = [];
+  for (const capability of normalizedCapabilities) {
+    const legacyAliasTarget = resolveLegacyExtensionCapabilityAlias(capability);
+    if (legacyAliasTarget) {
+      remappedCapabilities.push(legacyAliasTarget);
+      legacyAliases.push({
+        alias: capability,
+        target: legacyAliasTarget,
+      });
+      continue;
+    }
+    remappedCapabilities.push(capability);
+  }
+  const dedupedLegacyAliases = [...new Map(legacyAliases.map((entry) => [`${entry.alias}>${entry.target}`, entry])).values()].sort(
+    (left, right) => left.alias.localeCompare(right.alias),
+  );
+  return {
+    capabilities: normalizeNames(remappedCapabilities),
+    legacy_aliases: dedupedLegacyAliases,
+  };
 }
 
 function levenshteinDistance(left: string, right: string): number {
@@ -544,6 +579,15 @@ function formatUnknownExtensionCapabilityWarning(layer: ExtensionLayer, name: st
   return `extension_capability_unknown:${layer}:${name}:${capability}:allowed=${allowed}:suggested=${suggested}`;
 }
 
+function formatLegacyExtensionCapabilityAliasWarning(
+  layer: ExtensionLayer,
+  name: string,
+  aliases: readonly LegacyExtensionCapabilityAliasMapping[],
+): string {
+  const aliasesToken = aliases.map((entry) => `${entry.alias}>${entry.target}`).join(",");
+  return `extension_capability_legacy_alias:${layer}:${name}:aliases=${aliasesToken}`;
+}
+
 export interface UnknownExtensionCapabilityWarningDetails {
   layer: ExtensionLayer;
   name: string;
@@ -590,6 +634,36 @@ export function parseUnknownExtensionCapabilityWarning(
   };
 }
 
+export function parseLegacyExtensionCapabilityAliasWarning(warning: string): UnknownExtensionCapabilityWarningDetails[] {
+  const match = /^extension_capability_legacy_alias:(global|project):([^:]+):aliases=(.+)$/.exec(warning.trim());
+  if (!match) {
+    return [];
+  }
+  const [, layerRaw, name, aliasesRaw] = match;
+  const layer = layerRaw as ExtensionLayer;
+  const allowedCapabilities = [...KNOWN_EXTENSION_CAPABILITIES];
+  const parsed: UnknownExtensionCapabilityWarningDetails[] = [];
+  for (const token of aliasesRaw.split(",")) {
+    const [rawAlias, rawTarget] = token.split(">");
+    const alias = rawAlias?.trim();
+    const target = rawTarget?.trim().toLowerCase();
+    if (!alias || !target || !isKnownExtensionCapability(target)) {
+      continue;
+    }
+    parsed.push({
+      layer,
+      name,
+      capability: alias,
+      allowed_capabilities: allowedCapabilities,
+      capability_contract_version: EXTENSION_CAPABILITY_CONTRACT_VERSION,
+      suggested_capability: target,
+      suggestion_source: "legacy_alias",
+      legacy_alias_target: target,
+    });
+  }
+  return parsed;
+}
+
 function parseManifest(raw: unknown): ExtensionManifest | null {
   if (typeof raw !== "object" || raw === null) {
     return null;
@@ -615,11 +689,14 @@ function parseManifest(raw: unknown): ExtensionManifest | null {
   }
 
   let capabilities: string[] = [];
+  let legacyCapabilityAliases: LegacyExtensionCapabilityAliasMapping[] = [];
   if ("capabilities" in candidate && candidate.capabilities !== undefined && candidate.capabilities !== null) {
     if (!Array.isArray(candidate.capabilities) || candidate.capabilities.some((value) => typeof value !== "string")) {
       return null;
     }
-    capabilities = normalizeNames((candidate.capabilities as string[]).map((value) => value.toLowerCase()));
+    const normalizedCapabilities = normalizeManifestCapabilities(candidate.capabilities as string[]);
+    capabilities = normalizedCapabilities.capabilities;
+    legacyCapabilityAliases = normalizedCapabilities.legacy_aliases;
   }
 
   return {
@@ -628,6 +705,7 @@ function parseManifest(raw: unknown): ExtensionManifest | null {
     entry: candidate.entry.trim(),
     priority,
     capabilities,
+    legacy_capability_aliases: legacyCapabilityAliases.length > 0 ? legacyCapabilityAliases : undefined,
   };
 }
 
@@ -864,6 +942,11 @@ async function scanExtensionDirectory(
       : entryWithinDirectoryByPath;
   const enabledForLoad = shouldEnable(manifest.name, enabled, disabled);
   const extensionWarnings: string[] = [];
+  if (Array.isArray(manifest.legacy_capability_aliases) && manifest.legacy_capability_aliases.length > 0) {
+    extensionWarnings.push(
+      formatLegacyExtensionCapabilityAliasWarning(layer, manifest.name, manifest.legacy_capability_aliases),
+    );
+  }
   for (const capability of collectUnknownExtensionCapabilities(manifest.capabilities)) {
     extensionWarnings.push(formatUnknownExtensionCapabilityWarning(layer, manifest.name, capability));
   }
@@ -1393,6 +1476,7 @@ function createExtensionApi(
   services: ExtensionServiceRegistry,
   renderers: ExtensionRendererRegistry,
   registrations: ExtensionRegistrationRegistry,
+  activationWarnings: string[],
 ): ExtensionApi {
   const registerCommandTrace = (
     mode: "override" | "definition",
@@ -1485,7 +1569,15 @@ function createExtensionApi(
         ),
       );
     }
-    if (typeof commandOrDefinition.run !== "function") {
+    const runHandler = typeof commandOrDefinition.run === "function" ? commandOrDefinition.run : undefined;
+    const legacyHandler = typeof commandOrDefinition.handler === "function" ? commandOrDefinition.handler : undefined;
+    if (!runHandler && legacyHandler) {
+      activationWarnings.push(
+        `extension_command_definition_legacy_handler_alias:${extension.layer}:${extension.name}:${normalizedCommand}`,
+      );
+    }
+    const resolvedHandler = runHandler ?? legacyHandler;
+    if (typeof resolvedHandler !== "function") {
       const trace = registerCommandTrace(
         "definition",
         normalizedCommand,
@@ -1502,7 +1594,7 @@ function createExtensionApi(
       layer: extension.layer,
       name: extension.name,
       command: normalizedCommand,
-      run: commandOrDefinition.run,
+      run: resolvedHandler,
     });
   };
   const registerParser = (command: string, override: ParserOverride): void => {
@@ -1931,7 +2023,9 @@ export async function activateExtensions(loadResult: ExtensionLoadResult): Promi
     }
 
     try {
-      await activatable.activate(createExtensionApi(extension, hooks, commands, parsers, preflight, services, renderers, registrations));
+      await activatable.activate(
+        createExtensionApi(extension, hooks, commands, parsers, preflight, services, renderers, registrations, warnings),
+      );
     } catch (error: unknown) {
       warnings.push(`extension_activate_failed:${extension.layer}:${extension.name}`);
       const trace = extractRegistrationValidationTrace(error);

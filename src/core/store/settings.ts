@@ -9,6 +9,7 @@ import type {
   ItemTypeDefinition,
   ItemTypeOptionDefinition,
   PmSettings,
+  ValidateMetadataRequiredField,
 } from "../../types/index.js";
 
 const itemTypeOptionSchema = z.object({
@@ -57,6 +58,8 @@ const settingsSchema = z.object({
     .object({
       sprint_release_format: z.union([z.literal("warn"), z.literal("strict_error")]),
       parent_reference: z.union([z.literal("warn"), z.literal("strict_error")]).optional(),
+      metadata_profile: z.union([z.literal("core"), z.literal("strict"), z.literal("custom")]).optional(),
+      metadata_required_fields: z.array(z.string()).optional(),
     })
     .optional(),
   workflow: z
@@ -147,6 +150,25 @@ function hasExplicitItemFormat(raw: unknown): boolean {
 function normalizeStringList(values: string[] | undefined): string[] {
   return [...new Set((values ?? []).map((value) => value.trim()).filter((value) => value.length > 0))].sort((left, right) =>
     left.localeCompare(right),
+  );
+}
+
+function normalizeValidationMetadataRequiredFields(values: string[] | undefined): ValidateMetadataRequiredField[] {
+  const normalized = [...new Set((values ?? []).map((value) => value.trim().toLowerCase().replaceAll("-", "_")))]
+    .filter((value) => value.length > 0)
+    .sort((left, right) => left.localeCompare(right));
+  return normalized.filter((value): value is ValidateMetadataRequiredField =>
+    [
+      "author",
+      "acceptance_criteria",
+      "estimated_minutes",
+      "close_reason",
+      "reviewer",
+      "risk",
+      "confidence",
+      "sprint",
+      "release",
+    ].includes(value),
   );
 }
 
@@ -251,7 +273,12 @@ function mergeSettings(raw: unknown): PmSettings {
     locks: { ...defaults.locks, ...settings.locks },
     output: { ...defaults.output, ...settings.output },
     history: { ...defaults.history, ...(settings.history ?? {}) },
-    validation: { ...defaults.validation, ...(settings.validation ?? {}) },
+    validation: {
+      ...defaults.validation,
+      ...(settings.validation ?? {}),
+      metadata_profile: settings.validation?.metadata_profile ?? defaults.validation.metadata_profile,
+      metadata_required_fields: normalizeValidationMetadataRequiredFields(settings.validation?.metadata_required_fields),
+    },
     workflow: {
       definition_of_done: [...(settings.workflow?.definition_of_done ?? defaults.workflow.definition_of_done)],
     },

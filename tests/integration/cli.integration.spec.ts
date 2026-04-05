@@ -2453,7 +2453,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
-  it("guides users to files/docs commands for update --file/--doc usage", async () => {
+  it("supports transactional update mutations for linked files/docs/tests and log collections", async () => {
     await withTempPmPath(async (context) => {
       const createResult = context.runCli(
         [
@@ -2505,17 +2505,90 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(createResult.code).toBe(0);
       const id = (createResult.json as { item: { id: string } }).item.id;
 
-      const updateWithFile = context.runCli(["update", id, "--file", "path=src/cli/main.ts"]);
-      expect(updateWithFile.code).toBe(2);
-      expect(updateWithFile.stderr).toContain("Unsupported option --file for update");
-      expect(updateWithFile.stderr).toContain("pm files");
-      expect(updateWithFile.stderr).toContain("pm docs");
+      const updateTransactional = context.runCli(
+        [
+          "update",
+          id,
+          "--json",
+          "--description",
+          "Transactional annotate update",
+          "--comment",
+          "text=integration comment",
+          "--note",
+          "text=integration note",
+          "--learning",
+          "text=integration learning",
+          "--file",
+          "path=src/cli/main.ts,scope=project,note=integration linked file",
+          "--test",
+          "command=node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,scope=project",
+          "--doc",
+          "path=README.md,scope=project,note=integration linked doc",
+          "--author",
+          "integration-test",
+          "--message",
+          "Transactional update annotate",
+        ],
+        { expectJson: true },
+      );
+      expect(updateTransactional.code).toBe(0);
+      const updateJson = updateTransactional.json as {
+        changed_fields: string[];
+        item: {
+          comments?: Array<{ text: string }>;
+          notes?: Array<{ text: string }>;
+          learnings?: Array<{ text: string }>;
+          files?: Array<{ path: string }>;
+          tests?: Array<{ command: string }>;
+          docs?: Array<{ path: string }>;
+        };
+      };
+      expect(updateJson.changed_fields).toEqual(
+        expect.arrayContaining(["comments", "notes", "learnings", "files", "tests", "docs"]),
+      );
+      expect(updateJson.item.comments?.at(-1)?.text).toBe("integration comment");
+      expect(updateJson.item.notes?.at(-1)?.text).toBe("integration note");
+      expect(updateJson.item.learnings?.at(-1)?.text).toBe("integration learning");
+      expect(updateJson.item.files?.some((entry) => entry.path === "src/cli/main.ts")).toBe(true);
+      expect(
+        updateJson.item.tests?.some(
+          (entry) => entry.command === "node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts",
+        ),
+      ).toBe(true);
+      expect(updateJson.item.docs?.some((entry) => entry.path === "README.md")).toBe(true);
 
-      const updateWithDoc = context.runCli(["update", id, "--doc", "path=README.md"]);
-      expect(updateWithDoc.code).toBe(2);
-      expect(updateWithDoc.stderr).toContain("Unsupported option --doc for update");
-      expect(updateWithDoc.stderr).toContain("pm files");
-      expect(updateWithDoc.stderr).toContain("pm docs");
+      const clearTransactional = context.runCli(
+        [
+          "update",
+          id,
+          "--json",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+          "--author",
+          "integration-test",
+          "--message",
+          "Clear transactional update annotate",
+        ],
+        { expectJson: true },
+      );
+      expect(clearTransactional.code).toBe(0);
+      const clearedJson = clearTransactional.json as { item: Record<string, unknown> };
+      expect(clearedJson.item.comments).toBeUndefined();
+      expect(clearedJson.item.notes).toBeUndefined();
+      expect(clearedJson.item.learnings).toBeUndefined();
+      expect(clearedJson.item.files).toBeUndefined();
+      expect(clearedJson.item.tests).toBeUndefined();
+      expect(clearedJson.item.docs).toBeUndefined();
     });
   });
 

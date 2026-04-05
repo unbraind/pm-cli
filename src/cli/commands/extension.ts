@@ -8,6 +8,7 @@ import { activateExtensions, loadExtensions } from "../../core/extensions/index.
 import {
   EXTENSION_CAPABILITY_CONTRACT,
   KNOWN_EXTENSION_CAPABILITIES,
+  parseLegacyExtensionCapabilityAliasWarning,
   parseUnknownExtensionCapabilityWarning,
   resolveExtensionRoots,
   type ExtensionManifest,
@@ -1255,6 +1256,18 @@ function buildExtensionTriageSummary(
           "Review extension_capability_unknown warning details for suggested replacements.",
       );
     }
+    if (normalizedWarnings.some((warning) => warning.startsWith("extension_capability_legacy_alias:"))) {
+      remediation.push(
+        "Legacy extension capability aliases were auto-remapped to canonical capabilities. " +
+          "Update manifests to canonical names (migration/validation -> schema).",
+      );
+    }
+    if (normalizedWarnings.some((warning) => warning.startsWith("extension_command_definition_legacy_handler_alias:"))) {
+      remediation.push(
+        "Extension command definitions using legacy handler were auto-remapped. " +
+          "Update command definitions to use run: (context) => ... for forward compatibility.",
+      );
+    }
     if (updateCheckFailedTotal > 0) {
       remediation.push(`Run pm extension --manage ${scopeFlag} after validating network and repository access.`);
     }
@@ -1331,16 +1344,21 @@ function collectUnknownCapabilityGuidance(warnings: string[]): UnknownExtensionC
   const seen = new Set<string>();
   const guidance: UnknownExtensionCapabilityWarningDetails[] = [];
   for (const warning of warnings) {
-    const parsed = parseUnknownExtensionCapabilityWarning(warning);
-    if (!parsed) {
-      continue;
+    const parsedDetails = (() => {
+      const unknownWarning = parseUnknownExtensionCapabilityWarning(warning);
+      if (unknownWarning) {
+        return [unknownWarning];
+      }
+      return parseLegacyExtensionCapabilityAliasWarning(warning);
+    })();
+    for (const parsed of parsedDetails) {
+      const key = `${parsed.layer}:${parsed.name}:${parsed.capability}`;
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      guidance.push(parsed);
     }
-    const key = `${parsed.layer}:${parsed.name}:${parsed.capability}`;
-    if (seen.has(key)) {
-      continue;
-    }
-    seen.add(key);
-    guidance.push(parsed);
   }
   return guidance;
 }

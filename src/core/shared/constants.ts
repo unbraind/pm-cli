@@ -118,6 +118,8 @@ export const SETTINGS_DEFAULTS: PmSettings = {
   validation: {
     sprint_release_format: "warn",
     parent_reference: "warn",
+    metadata_profile: "core",
+    metadata_required_fields: [],
   },
   workflow: {
     definition_of_done: [],

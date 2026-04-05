@@ -526,7 +526,31 @@ Scope: this policy applies to read/diagnostic paths (`history`, `activity`, `sta
 
 Conforming value pattern: `^[A-Za-z0-9][A-Za-z0-9._/-]*$` (max 64 characters, no spaces).
 
-### 9.6 Test-result tracking policy
+### 9.6 Metadata validation profile policy
+
+`settings.validation.metadata_profile` controls default required-field behavior for `pm validate --check-metadata`:
+
+- `core` (default): baseline required fields (`author`, `acceptance_criteria`, `estimated_minutes`, and `close_reason` for closed items).
+- `strict`: extends core with additional governance fields (`reviewer`, `risk`, `confidence`, `sprint`, `release`).
+- `custom`: uses `settings.validation.metadata_required_fields` as the required field set.
+
+`settings.validation.metadata_required_fields` accepts deterministic required-field selectors:
+
+- `author`
+- `acceptance_criteria`
+- `estimated_minutes`
+- `close_reason`
+- `reviewer`
+- `risk`
+- `confidence`
+- `sprint`
+- `release`
+
+If `metadata_profile=custom` and `metadata_required_fields` is empty, runtime falls back to core required fields and emits warning `validate_metadata_custom_profile_missing_required_fields:0`.
+
+`pm validate --metadata-profile <core|strict|custom>` can override configured profile per invocation.
+
+### 9.7 Test-result tracking policy
 
 `settings.testing.record_results_to_items` controls whether linked-test executions append bounded `test_runs` summaries to item front matter:
 
@@ -816,6 +840,12 @@ Mutating `update` (v0.1 baseline):
 - `--message`
 - `--dep` (repeatable add format `id=<id>,kind=<...>,author=<a?>,created_at=<iso|now>,source_kind=<value?>`; `none` clears all dependencies)
 - `--dep-remove`, `--dep_remove` (repeatable selector remove by `id` or `id=<id>,kind=<kind?>,source_kind=<value?>`)
+- `--comment` (repeatable log seed format `author=<a>,created_at=<iso|now>,text=<t>`; `none` clears comments)
+- `--note` (repeatable log seed format `author=<a>,created_at=<iso|now>,text=<t>`; `none` clears notes)
+- `--learning` (repeatable log seed format `author=<a>,created_at=<iso|now>,text=<t>`; `none` clears learnings)
+- `--file` (repeatable linked-file format `path=<p>,scope=<project|global>,note=<n?>`; `none` clears files)
+- `--test` (repeatable linked-test format `command=<c>,path=<p?>,scope=<project|global>,timeout_seconds=<n?>,...`; `none` clears tests)
+- `--doc` (repeatable linked-doc format `path=<p>,scope=<project|global>,note=<n?>`; `none` clears docs)
 - `--reminder` (repeatable `at=<iso|date|relative>,text=<text>`; `none` clears)
 - `--event` (repeatable event metadata format; `none` clears)
 - `--type-option`, `--type_option` (repeatable type option metadata; `none` clears)
@@ -889,14 +919,14 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | `pm templates save <NAME> ...` | template name + create-compatible option payload (subset of create flags, including repeatable entries) | `{ name, path, template, saved_at }` |
 | `pm templates list` | optional output controls (`--json`/TOON) | `{ templates, count }` |
 | `pm templates show <NAME>` | template name | `{ name, template }` |
-| `pm update <ID> ...` | id + patch-like flags (`--status closed` is rejected; use `pm close <ID> <TEXT>`; `--close-reason`/`--close_reason` explicitly set/clear `close_reason`; reopening from `closed` to a non-terminal status auto-clears stale `close_reason` unless explicit `--close-reason` is provided; body replacement is supported via `--body`/`-b`; dependencies are mutable via `--dep` / `--dep-remove`; linked artifact flags like `--file`/`--doc` are intentionally unsupported on update and routed to dedicated commands) | `{ item, changed_fields, warnings }` |
+| `pm update <ID> ...` | id + patch-like flags (`--status closed` is rejected; use `pm close <ID> <TEXT>`; `--close-reason`/`--close_reason` explicitly set/clear `close_reason`; reopening from `closed` to a non-terminal status auto-clears stale `close_reason` unless explicit `--close-reason` is provided; body replacement is supported via `--body`/`-b`; dependencies are mutable via `--dep` / `--dep-remove`; repeatable transactional linked/log flags `--comment`/`--note`/`--learning`/`--file`/`--test`/`--doc` are supported on update with `none` clear semantics) | `{ item, changed_fields, warnings }` |
 | `pm delete <ID>` | id + optional `--author`/`--message`/`--force` | `{ item, changed_fields, warnings }` |
 | `pm close <ID> <TEXT>` | id + close reason text + optional `--author/--message/--force/--validate-close [warn|strict]` | `{ item, changed_fields, warnings }` |
 | `pm append <ID> --body` | id + appended markdown (`--body -` reads piped stdin) | `{ item, appended, changed_fields }` |
 | `pm claim <ID>` | id, optional `--author`/`--message`/`--force` (`--force` required for terminal/lock override paths; non-terminal assignee takeover does not require force) | `{ item, claimed_by, previous_assignee, forced }` |
 | `pm release <ID>` | id, optional `--author`/`--message`/`--force` | `{ item, released_by, previous_assignee, forced }` |
 | `pm comments <ID> [TEXT] --add/--limit` | id + optional positional comment text shorthand + comment text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`); optional mutation metadata flags `--author`/`--message`/`--force`; additive ownership-safe audit path `--allow-audit-comment` for non-owner append-only comments | `{ id, comments, count }` |
-| `pm comments-audit` | optional governance filters (`--status`, `--type`, `--assignee`, `--limit-items`, `--latest`) for latest comment snapshots across matching items | `{ items, count, filters, now, warnings? }` where each item includes `comment_count` and `comments` limited to latest `n` entries |
+| `pm comments-audit` | optional governance filters (`--status`, `--type`, `--assignee`, `--limit-items`) plus latest/full-history export mode controls (`--latest`, `--full-history`; mutually exclusive) | `{ items, count, filters, export, now, warnings? }` where `filters.full_history` and `export.mode` indicate latest vs full-history behavior; in full-history mode, `rows[]` includes flat per-comment export entries for NDJSON-friendly downstream processing |
 | `pm notes <ID> [TEXT] --add/--limit` | id + optional positional note text shorthand + note text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`) | `{ id, notes, count }` |
 | `pm learnings <ID> [TEXT] --add/--limit` | id + optional positional learning text shorthand + learning text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`) | `{ id, learnings, count }` |
 | `pm files <ID> --add/--add-glob/--remove/--migrate/--append-stable/--validate-paths/--audit/--list` | id + file refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`); optional glob expansion via repeatable `--add-glob` (plain glob or `pattern=<glob>,scope=<scope>,note=<text>`); optional additive linked-path hygiene (`--migrate from=<old>,to=<new>`, path existence validation, cross-item audit, non-mutating list); optional `--append-stable` avoids full-array resorting and appends new links while preserving current order | `{ id, files, changed, count, migrations_applied, validation, audit }` |
@@ -905,7 +935,7 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | `pm test-runs list|status|logs|stop|resume` | list/status/log/stop/resume lifecycle control for managed background test runs (`logs` supports `--stream stdout|stderr|both` and `--tail`; `stop` supports `--force`) | list: `{ runs, count, filters }`; status: `{ run, health }`; logs: `{ run, stream, tail, stdout, stderr }`; stop: `{ run, signal_sent }`; resume: `{ resumed_from, run }` |
 | `pm stats` | none | `{ totals, by_type, by_status, generated_at }` |
 | `pm health` | none (runs settings/directories/extensions/storage plus integrity, history-drift, and vectorization diagnostics); supports `--strict-directories` to treat optional built-in item-type directories as required warning/failure conditions and strict warning exits (`--strict-exit`, alias `--fail-on-warn`) | `{ ok, checks, warnings, generated_at }` with extension diagnostics including condensed `details.triage`, capability guidance metadata, and directory check details (`required`, `optional`, `missing_required`, `missing_optional`) |
-| `pm validate` | optional scoped checks (`--check-metadata`, `--check-resolution`, `--check-files`, `--check-command-references`, `--check-history-drift`; default all checks); file checks accept `--scan-mode default|tracked-all|tracked-all-strict` plus `--include-pm-internals` opt-in and report filtered + raw candidate metrics (`candidate_total`, `candidate_scanned`, `candidate_total_raw`, `candidate_scanned_raw`) plus structured exclusion summaries (`excluded_by_reason`); resolution checks include default remediation command templates for missing resolution fields; strict warning exits via `--strict-exit` (alias `--fail-on-warn`) | `{ ok, checks, warnings, generated_at }` where tracked-all-strict visibility includes explicit file-check detail flags (`strict_mode_forces_pm_internals`, `strict_mode_forces_pm_internals_notice`) and warning token `validate_files_tracked_all_strict_forces_pm_internals` when strict mode force-enables PM internals |
+| `pm validate` | optional scoped checks (`--check-metadata`, `--check-resolution`, `--check-files`, `--check-command-references`, `--check-history-drift`; default all checks); metadata checks accept `--metadata-profile core|strict|custom`; file checks accept `--scan-mode default|tracked-all|tracked-all-strict` plus `--include-pm-internals` opt-in and report filtered + raw candidate metrics (`candidate_total`, `candidate_scanned`, `candidate_total_raw`, `candidate_scanned_raw`) plus structured exclusion summaries (`excluded_by_reason`); resolution checks include default remediation command templates for missing resolution fields; strict warning exits via `--strict-exit` (alias `--fail-on-warn`) | `{ ok, checks, warnings, generated_at }` where metadata details include profile/source/fallback visibility fields and tracked-all-strict visibility includes explicit file-check detail flags (`strict_mode_forces_pm_internals`, `strict_mode_forces_pm_internals_notice`) plus warning token `validate_files_tracked_all_strict_forces_pm_internals` when strict mode force-enables PM internals |
 | `pm config <project\|global> <get\|set\|list\|export> [key]` | scope + action; `get/set` require key, `list/export` reject key; policy/format/criterion flags apply where relevant | `get/set`: existing key-specific result shape; `list`: `{ scope, keys, count, settings_path, changed, warnings? }`; `export`: `{ scope, values, settings_path, changed, warnings? }` |
 | `pm gc` | none | `{ ok, removed, retained, warnings, generated_at }` |
 | `pm contracts [--action <value>] [--command <value>] [--schema-only] [--runtime-only|--active-only]` | optional action/command filters, schema-only mode, and runtime invocability filtering for machine contract introspection | `{ schema_version, schema_id, selected, actions, action_availability, commands, schema, command_flags?, commander_aliases? }` |

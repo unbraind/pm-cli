@@ -242,7 +242,7 @@ function parseDependencies(
   return { values, explicitEmpty: false };
 }
 
-function parseLogSeed(
+export function parseLogSeed(
   optionName: "--comment" | "--note" | "--learning",
   raw: string[] | undefined,
   nowValue: string,
@@ -274,7 +274,7 @@ function parseLogSeed(
   return { values, explicitEmpty: false };
 }
 
-function parseFiles(raw: string[] | undefined): { values: LinkedFile[] | undefined; explicitEmpty: boolean } {
+export function parseFiles(raw: string[] | undefined): { values: LinkedFile[] | undefined; explicitEmpty: boolean } {
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
   if (raw.some((entry) => isNoneToken(entry))) {
     if (raw.length > 1) {
@@ -493,7 +493,7 @@ function parseLinkedTestAssertionGteMap(raw: string | undefined, optionName: str
   return Object.keys(values).length > 0 ? values : undefined;
 }
 
-function parseTests(raw: string[] | undefined): { values: LinkedTest[] | undefined; explicitEmpty: boolean } {
+export function parseTests(raw: string[] | undefined): { values: LinkedTest[] | undefined; explicitEmpty: boolean } {
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
   if (raw.some((entry) => isNoneToken(entry))) {
     if (raw.length > 1) {
@@ -536,7 +536,7 @@ function parseTests(raw: string[] | undefined): { values: LinkedTest[] | undefin
   return { values, explicitEmpty: false };
 }
 
-function parseDocs(raw: string[] | undefined): { values: LinkedDoc[] | undefined; explicitEmpty: boolean } {
+export function parseDocs(raw: string[] | undefined): { values: LinkedDoc[] | undefined; explicitEmpty: boolean } {
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
   if (raw.some((entry) => isNoneToken(entry))) {
     if (raw.length > 1) {

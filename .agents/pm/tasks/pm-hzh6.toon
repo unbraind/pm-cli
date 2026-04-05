@@ -2,12 +2,13 @@ id: pm-hzh6
 title: "M5 hardening: unknown extension capability diagnostics"
 description: Add deterministic unknown-capability diagnostics during extension discovery while preserving capability gating and activation isolation.
 type: Task
-status: closed
+status: in_progress
 priority: 1
 tags[7]: "area:extensions",code,docs,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-06T09:42:43.394Z"
-updated_at: "2026-04-05T19:29:26.136Z"
+updated_at: "2026-04-05T20:46:36.702Z"
 deadline: "2026-03-08T09:42:43.394Z"
+assignee: codex-agent
 author: cursor-maintainer
 estimated_minutes: 60
 acceptance_criteria: discover/load surfaces deterministic extension_capability_unknown diagnostics for unknown manifest capability names; known capability enforcement behavior remains intact; README/PRD are aligned; linked tests and regression suite pass with 100% coverage.
@@ -42,7 +43,7 @@ regression: true
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for M5 hardening: unknown extension capability diagnostics."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-mwwp,related,"2026-03-06T09:42:43.394Z",cursor-maintainer,null
-comments[8]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-03-06T09:42:43.394Z",cursor-maintainer,Unknown capability names should be explicit diagnostics instead of silent no-ops.
   "2026-03-06T09:42:57.987Z",cursor-maintainer,"Planned changeset: update PRD/README capability contract to specify unknown-capability diagnostics, then implement deterministic extension_capability_unknown warnings in loader discovery and add regression assertions."
   "2026-03-06T09:57:36.333Z",cursor-maintainer,"Implemented docs-first hardening for unknown manifest capability names: PRD.md + README.md now specify deterministic extension_capability_unknown diagnostics; loader discovery now emits extension_capability_unknown:<layer>:<name>:<capability> warnings while preserving load/activation isolation; tests/unit/extension-loader.spec.ts now asserts unknown-capability warnings and non-blocking load behavior. Verification: pm test pm-hzh6 --run --timeout 7200 --json => linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status in_progress --timeout 7200 --json => items=1 linked_tests=2 passed=2 failed=0 skipped=0; pm test-all --status closed --timeout 7200 --json => items=85 linked_tests=255 passed=62 failed=0 skipped=193. Coverage evidence remains 100% lines/branches/functions/statements from linked coverage run."
@@ -51,6 +52,8 @@ comments[8]{created_at,author,text}:
   "2026-04-05T17:56:40.284Z",codex-agent,"Evidence: full verification passed via node scripts/run-tests.mjs coverage (895 tests, branches 91.01%) and pnpm build; unknown capability warnings now include allowed list + nearest-match guidance and are surfaced in health/doctor outputs."
   "2026-04-05T18:46:10.787Z",codex-agent,Reopened for legacy capability alias/deprecation mapping and machine-readable capability contract metadata (version + alias map) in doctor/health diagnostics while preserving warning compatibility.
   "2026-04-05T19:29:05.878Z",codex-agent,"Completed capability contract remediation: legacy alias mapping (migration/validation -> schema), capability contract metadata surfaced in health/doctor, and docs synchronized across README/EXTENSIONS/ARCHITECTURE/PRD/CONTRIBUTING/CHANGELOG. Verification: node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/extension-command.spec.ts tests/unit/health-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts; node scripts/run-tests.mjs coverage; pnpm typecheck."
+  "2026-04-05T20:39:49.181Z",codex-agent,Duplicate-check evidence refreshed; reusing canonical capability diagnostics lineage for alias-remap warning-noise remediation (no duplicate item created).
+  "2026-04-05T20:46:36.702Z",codex-agent,"Progress: implemented legacy manifest capability alias remap (migration/validation -> schema) with consolidated extension_capability_legacy_alias warning, preserved unknown-capability diagnostics for truly unknown values, and updated doctor/health capability guidance parsing/remediation. Verification: node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/extension-command.spec.ts tests/unit/health-command.spec.ts passed."
 notes[1]{created_at,author,text}:
   "2026-03-06T09:42:43.394Z",cursor-maintainer,Docs-first update then loader warning implementation then regression tests and coverage.
 learnings[1]{created_at,author,text}:
@@ -74,5 +77,4 @@ docs[5]{path,scope,note}:
   docs/EXTENSIONS.md,project,unknown capability guidance docs
   PRD.md,project,Document unknown-capability diagnostics
   README.md,project,Public extension diagnostics contract
-close_reason: capability contract alias guidance shipped with docs and regression evidence
 body: "Context: extension manifests now enforce declared known capabilities but unknown capability names are silently ignored. Approach: add deterministic discovery-time diagnostics for unknown capability names, document behavior, and cover with unit tests while keeping runtime failure isolation unchanged.\n\nFollow-up scope: improve extension capability diagnostics with explicit allowed capability lists and nearest-match suggestions in health/doctor details (warnings-only scope; no new extension lint command in this change set)."

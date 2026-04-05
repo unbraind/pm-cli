@@ -68,6 +68,12 @@ The runner creates a temporary sandbox and sets `PM_PATH` and `PM_GLOBAL_PATH` s
 
 When validating linked-test automation behavior, include guard-flag coverage for `--fail-on-skipped`, `--fail-on-empty-test-run`, and `--require-assertions-for-pm`.
 
+When changing validation behavior, include targeted checks for:
+
+- `pm validate --check-metadata --metadata-profile core|strict|custom`
+- `pm validate --check-files --scan-mode tracked-all`
+- `pm validate --check-files --scan-mode tracked-all-strict`
+
 ## Terminal Compatibility Checks
 
 When changing stdin, output, exit handling, or linked test execution, run targeted terminal-compatibility regressions before full-suite validation:
@@ -104,7 +110,7 @@ For deeper context on implementation and extension development:
 
 The `api` object provides:
 
-- `api.registerCommand({ name, run })` — add or override command handlers.
+- `api.registerCommand({ name, run })` — add or override command handlers (`handler` remains backward-compatible but emits migration warning; prefer `run`).
 - `api.registerRenderer(format, renderer)` — override `toon`/`json` output.
 - `api.registerImporter(name, importer)` — adds `<name> import` command path.
 - `api.registerExporter(name, exporter)` — adds `<name> export` command path.

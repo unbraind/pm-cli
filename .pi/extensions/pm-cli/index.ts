@@ -106,6 +106,7 @@ export interface PmToolParameters {
   limit?: NumericFlagInput;
   offset?: NumericFlagInput;
   limitItems?: NumericFlagInput;
+  fullHistory?: boolean;
   latest?: NumericFlagInput;
   progress?: boolean;
   background?: boolean;
@@ -126,6 +127,7 @@ export interface PmToolParameters {
   requireAssertionsForPm?: boolean;
   validateClose?: string;
   checkMetadata?: boolean;
+  metadataProfile?: string;
   checkResolution?: boolean;
   checkFiles?: boolean;
   strictDirectories?: boolean;
@@ -590,6 +592,9 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       pushOption(args, "--type", params.type);
       pushOption(args, "--assignee", params.assignee);
       pushOption(args, "--limit-items", params.limitItems ?? params.limit);
+      if (params.fullHistory) {
+        args.push("--full-history");
+      }
       pushOption(args, "--latest", params.latest);
       return args;
     case "notes":
@@ -746,6 +751,7 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       if (params.checkMetadata) {
         args.push("--check-metadata");
       }
+      pushOption(args, "--metadata-profile", params.metadataProfile);
       if (params.checkResolution) {
         args.push("--check-resolution");
       }

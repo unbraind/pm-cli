@@ -263,6 +263,12 @@ export const PI_UPDATE_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "assignee", flag: "--assignee" },
   { param: "dep", flag: "--dep", repeatableOrNone: true },
   { param: "depRemove", flag: "--dep-remove", repeatable: true },
+  { param: "comment", flag: "--comment", repeatableOrNone: true },
+  { param: "note", flag: "--note", repeatableOrNone: true },
+  { param: "learning", flag: "--learning", repeatableOrNone: true },
+  { param: "linkedFile", flag: "--file", repeatableOrNone: true },
+  { param: "linkedTest", flag: "--test", repeatableOrNone: true },
+  { param: "doc", flag: "--doc", repeatableOrNone: true },
   { param: "reminder", flag: "--reminder", repeatable: true },
   { param: "event", flag: "--event", repeatable: true },
   { param: "typeOption", flag: "--type-option", repeatable: true },
@@ -518,6 +524,12 @@ export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--dep" },
   { flag: "--dep-remove" },
   { flag: "--dep_remove" },
+  { flag: "--comment" },
+  { flag: "--note" },
+  { flag: "--learning" },
+  { flag: "--file" },
+  { flag: "--test" },
+  { flag: "--doc" },
   { flag: "--reminder" },
   { flag: "--event" },
   { flag: "--type-option" },
@@ -702,6 +714,12 @@ export const UPDATE_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContr
 export const UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
   { target: "dep", keys: ["dep"] },
   { target: "depRemove", keys: ["depRemove", "dep_remove"] },
+  { target: "comment", keys: ["comment"] },
+  { target: "note", keys: ["note"] },
+  { target: "learning", keys: ["learning"] },
+  { target: "file", keys: ["file"] },
+  { target: "test", keys: ["test"] },
+  { target: "doc", keys: ["doc"] },
   { target: "reminder", keys: ["reminder"] },
   { target: "event", keys: ["event"] },
   { target: "typeOption", keys: ["typeOption", "type_option"] },
@@ -874,6 +892,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   deadlineAfter: { type: "string" },
   limit: { anyOf: [{ type: "string" }, { type: "number" }] },
   limitItems: { anyOf: [{ type: "string" }, { type: "number" }] },
+  fullHistory: { type: "boolean" },
   latest: { anyOf: [{ type: "string" }, { type: "number" }] },
   offset: { anyOf: [{ type: "string" }, { type: "number" }] },
   progress: { type: "boolean" },
@@ -898,6 +917,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   timeout: { anyOf: [{ type: "string" }, { type: "number" }] },
   validateClose: { type: "string", enum: ["warn", "strict"] },
   checkMetadata: { type: "boolean" },
+  metadataProfile: { type: "string", enum: ["core", "strict", "custom"] },
   checkResolution: { type: "boolean" },
   checkFiles: { type: "boolean" },
   strictDirectories: { type: "boolean" },
@@ -1029,7 +1049,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   delete: { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   append: { required: ["id", "body"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   comments: { required: ["id"], optional: ["text", "add", "limit", "allowAuditComment", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
-  "comments-audit": { optional: ["status", "type", "assignee", "limitItems", "latest"] },
+  "comments-audit": { optional: ["status", "type", "assignee", "limitItems", "fullHistory", "latest"] },
   notes: { required: ["id"], optional: ["text", "add", "limit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   learnings: { required: ["id"], optional: ["text", "add", "limit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   files: {
@@ -1100,6 +1120,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   validate: {
     optional: [
       "checkMetadata",
+      "metadataProfile",
       "checkResolution",
       "checkFiles",
       "scanMode",
@@ -1284,6 +1305,9 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     description: "Maximum number of filtered items to include in comments-audit output.",
     examples: [10, "25"],
   },
+  fullHistory: {
+    description: "When true for comments-audit, export full per-item comment history rows and ignore latest-snapshot truncation.",
+  },
   latest: {
     description: "Number of most recent comments to include per item in comments-audit output.",
     examples: [1, "3"],
@@ -1294,6 +1318,10 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   checkMetadata: {
     description: "Run metadata completeness checks.",
+  },
+  metadataProfile: {
+    description: "Select metadata validation profile for --check-metadata.",
+    examples: ["core", "strict", "custom"],
   },
   checkResolution: {
     description: "Run closed-item resolution metadata checks.",

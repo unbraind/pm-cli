@@ -14,7 +14,7 @@ import { nowIso } from "../../core/shared/time.js";
 import { listAllFrontMatterWithBody } from "../../core/store/item-store.js";
 import { getHistoryPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import type { ItemFrontMatter } from "../../types/index.js";
+import type { ItemFrontMatter, ValidateMetadataProfile, ValidateMetadataRequiredField } from "../../types/index.js";
 import { extractReferencedPmItemIdsFromCommand } from "./test.js";
 
 type ValidateCheckName = "metadata" | "resolution" | "files" | "command_references" | "history_drift";
@@ -38,6 +38,78 @@ const DIRECTORY_IGNORE_SET = new Set(["node_modules", ".git", ".cursor", ".agent
 const RESOLUTION_FIELD_KEYS = ["resolution", "expected_result", "actual_result"] as const;
 type ResolutionFieldKey = (typeof RESOLUTION_FIELD_KEYS)[number];
 const VALIDATE_FILE_SCAN_MODES = ["default", "tracked-all", "tracked-all-strict"] as const;
+const VALIDATE_METADATA_PROFILE_VALUES = ["core", "strict", "custom"] as const;
+const CORE_METADATA_REQUIRED_FIELDS = ["author", "acceptance_criteria", "estimated_minutes", "close_reason"] as const;
+const STRICT_METADATA_REQUIRED_FIELDS = [
+  ...CORE_METADATA_REQUIRED_FIELDS,
+  "reviewer",
+  "risk",
+  "confidence",
+  "sprint",
+  "release",
+] as const;
+const SUPPORTED_METADATA_REQUIRED_FIELDS = [
+  ...new Set([...STRICT_METADATA_REQUIRED_FIELDS]),
+] as ValidateMetadataRequiredField[];
+const METADATA_REQUIRED_FIELD_ALIASES: Record<string, ValidateMetadataRequiredField> = {
+  author: "author",
+  acceptance_criteria: "acceptance_criteria",
+  "acceptance-criteria": "acceptance_criteria",
+  estimated_minutes: "estimated_minutes",
+  "estimated-minutes": "estimated_minutes",
+  estimate: "estimated_minutes",
+  close_reason: "close_reason",
+  "close-reason": "close_reason",
+  reviewer: "reviewer",
+  risk: "risk",
+  confidence: "confidence",
+  sprint: "sprint",
+  release: "release",
+};
+const METADATA_WARNING_TOKEN_BY_FIELD: Record<ValidateMetadataRequiredField, string> = {
+  author: "validate_metadata_missing_author",
+  acceptance_criteria: "validate_metadata_missing_acceptance_criteria",
+  estimated_minutes: "validate_metadata_missing_estimate",
+  close_reason: "validate_metadata_missing_close_reason",
+  reviewer: "validate_metadata_missing_reviewer",
+  risk: "validate_metadata_missing_risk",
+  confidence: "validate_metadata_missing_confidence",
+  sprint: "validate_metadata_missing_sprint",
+  release: "validate_metadata_missing_release",
+};
+const METADATA_COUNT_KEY_BY_FIELD: Record<ValidateMetadataRequiredField, string> = {
+  author: "missing_author",
+  acceptance_criteria: "missing_acceptance_criteria",
+  estimated_minutes: "missing_estimated_minutes",
+  close_reason: "closed_missing_close_reason",
+  reviewer: "missing_reviewer",
+  risk: "missing_risk",
+  confidence: "missing_confidence",
+  sprint: "missing_sprint",
+  release: "missing_release",
+};
+const METADATA_ITEM_IDS_KEY_BY_FIELD: Record<ValidateMetadataRequiredField, string> = {
+  author: "missing_author_item_ids",
+  acceptance_criteria: "missing_acceptance_criteria_item_ids",
+  estimated_minutes: "missing_estimated_minutes_item_ids",
+  close_reason: "closed_missing_close_reason_item_ids",
+  reviewer: "missing_reviewer_item_ids",
+  risk: "missing_risk_item_ids",
+  confidence: "missing_confidence_item_ids",
+  sprint: "missing_sprint_item_ids",
+  release: "missing_release_item_ids",
+};
+const METADATA_TRUNCATED_KEY_BY_FIELD: Record<ValidateMetadataRequiredField, string> = {
+  author: "missing_author_truncated",
+  acceptance_criteria: "missing_acceptance_criteria_truncated",
+  estimated_minutes: "missing_estimated_minutes_truncated",
+  close_reason: "closed_missing_close_reason_truncated",
+  reviewer: "missing_reviewer_truncated",
+  risk: "missing_risk_truncated",
+  confidence: "missing_confidence_truncated",
+  sprint: "missing_sprint_truncated",
+  release: "missing_release_truncated",
+};
 const GIT_LS_FILES_MAX_BUFFER = 32 * 1024 * 1024;
 const execFileAsync = promisify(execFile);
 
@@ -49,6 +121,7 @@ export interface ValidateCommandOptions {
   checkHistoryDrift?: boolean;
   checkCommandReferences?: boolean;
   scanMode?: string;
+  metadataProfile?: string;
 }
 
 export interface ValidateCheck {
@@ -79,6 +152,116 @@ function toNonEmptyString(value: unknown): string | undefined {
   }
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : undefined;
+}
+
+interface ValidateMetadataPolicy {
+  profile: ValidateMetadataProfile;
+  profile_source: "default" | "settings" | "option";
+  required_fields: ValidateMetadataRequiredField[];
+  configured_custom_fields: ValidateMetadataRequiredField[];
+  fallback_to_core: boolean;
+  warnings: string[];
+}
+
+function resolveValidateMetadataProfile(value: string | undefined): ValidateMetadataProfile {
+  const normalized = value?.trim().toLowerCase();
+  if (!normalized || normalized.length === 0) {
+    return "core";
+  }
+  if ((VALIDATE_METADATA_PROFILE_VALUES as readonly string[]).includes(normalized)) {
+    return normalized as ValidateMetadataProfile;
+  }
+  throw new PmCliError(
+    `Unknown --metadata-profile value "${value}". Supported values: ${VALIDATE_METADATA_PROFILE_VALUES.join(", ")}.`,
+    EXIT_CODE.USAGE,
+  );
+}
+
+function normalizeMetadataRequiredFieldsFromSettings(
+  values: readonly ValidateMetadataRequiredField[] | undefined,
+): ValidateMetadataRequiredField[] {
+  const normalized = [...new Set((values ?? []).map((value) => value.trim().toLowerCase().replaceAll("-", "_")))];
+  return normalized
+    .map((value) => METADATA_REQUIRED_FIELD_ALIASES[value])
+    .filter((value): value is ValidateMetadataRequiredField => value !== undefined)
+    .sort((left, right) => left.localeCompare(right));
+}
+
+function resolveValidateMetadataPolicy(
+  profile: ValidateMetadataProfile,
+  profileSource: "default" | "settings" | "option",
+  configuredCustomFields: readonly ValidateMetadataRequiredField[],
+): ValidateMetadataPolicy {
+  const normalizedCustomFields = normalizeMetadataRequiredFieldsFromSettings(configuredCustomFields);
+  if (profile === "core") {
+    return {
+      profile,
+      profile_source: profileSource,
+      required_fields: [...CORE_METADATA_REQUIRED_FIELDS],
+      configured_custom_fields: normalizedCustomFields,
+      fallback_to_core: false,
+      warnings: [],
+    };
+  }
+  if (profile === "strict") {
+    return {
+      profile,
+      profile_source: profileSource,
+      required_fields: [...STRICT_METADATA_REQUIRED_FIELDS],
+      configured_custom_fields: normalizedCustomFields,
+      fallback_to_core: false,
+      warnings: [],
+    };
+  }
+  if (normalizedCustomFields.length > 0) {
+    return {
+      profile,
+      profile_source: profileSource,
+      required_fields: normalizedCustomFields,
+      configured_custom_fields: normalizedCustomFields,
+      fallback_to_core: false,
+      warnings: [],
+    };
+  }
+  return {
+    profile,
+    profile_source: profileSource,
+    required_fields: [...CORE_METADATA_REQUIRED_FIELDS],
+    configured_custom_fields: normalizedCustomFields,
+    fallback_to_core: true,
+    warnings: ["validate_metadata_custom_profile_missing_required_fields:0"],
+  };
+}
+
+function isMetadataFieldMissing(item: ItemWithBody, field: ValidateMetadataRequiredField): boolean {
+  if (field === "author") {
+    return !toNonEmptyString(item.author);
+  }
+  if (field === "acceptance_criteria") {
+    return !toNonEmptyString(item.acceptance_criteria);
+  }
+  if (field === "estimated_minutes") {
+    return !Number.isFinite(item.estimated_minutes);
+  }
+  if (field === "close_reason") {
+    return item.status === "closed" && !toNonEmptyString(item.close_reason);
+  }
+  if (field === "reviewer") {
+    return !toNonEmptyString(item.reviewer);
+  }
+  if (field === "risk") {
+    return !toNonEmptyString(item.risk);
+  }
+  if (field === "confidence") {
+    if (typeof item.confidence === "number") {
+      return !Number.isFinite(item.confidence);
+    }
+    return !toNonEmptyString(item.confidence);
+  }
+  if (field === "sprint") {
+    return !toNonEmptyString(item.sprint);
+  }
+  return !toNonEmptyString(item.release);
 }
 
 function resolveFileScanMode(scanMode: string | undefined): ValidateFileScanMode {
@@ -315,67 +498,54 @@ function resolveRequestedChecks(options: ValidateCommandOptions): Set<ValidateCh
   return requested;
 }
 
-function buildMetadataCheck(items: ItemWithBody[]): { check: ValidateCheck; warnings: string[] } {
-  const missingAuthor: string[] = [];
-  const missingAcceptanceCriteria: string[] = [];
-  const missingEstimate: string[] = [];
-  const missingCloseReason: string[] = [];
+function buildMetadataCheck(items: ItemWithBody[], metadataPolicy: ValidateMetadataPolicy): { check: ValidateCheck; warnings: string[] } {
+  const missingByField = Object.fromEntries(
+    SUPPORTED_METADATA_REQUIRED_FIELDS.map((field) => [field, [] as string[]]),
+  ) as Record<ValidateMetadataRequiredField, string[]>;
 
   for (const item of items) {
-    if (!toNonEmptyString(item.author)) {
-      missingAuthor.push(item.id);
-    }
-    if (!toNonEmptyString(item.acceptance_criteria)) {
-      missingAcceptanceCriteria.push(item.id);
-    }
-    if (!Number.isFinite(item.estimated_minutes)) {
-      missingEstimate.push(item.id);
-    }
-    if (item.status === "closed" && !toNonEmptyString(item.close_reason)) {
-      missingCloseReason.push(item.id);
+    for (const field of SUPPORTED_METADATA_REQUIRED_FIELDS) {
+      if (!isMetadataFieldMissing(item, field)) {
+        continue;
+      }
+      missingByField[field].push(item.id);
     }
   }
 
-  const warningTokens: string[] = [];
-  if (missingAuthor.length > 0) {
-    warningTokens.push(`validate_metadata_missing_author:${missingAuthor.length}`);
-  }
-  if (missingAcceptanceCriteria.length > 0) {
-    warningTokens.push(`validate_metadata_missing_acceptance_criteria:${missingAcceptanceCriteria.length}`);
-  }
-  if (missingEstimate.length > 0) {
-    warningTokens.push(`validate_metadata_missing_estimate:${missingEstimate.length}`);
-  }
-  if (missingCloseReason.length > 0) {
-    warningTokens.push(`validate_metadata_missing_close_reason:${missingCloseReason.length}`);
+  const warningTokens = [...metadataPolicy.warnings];
+  for (const field of metadataPolicy.required_fields) {
+    const missingItems = missingByField[field];
+    if (missingItems.length === 0) {
+      continue;
+    }
+    warningTokens.push(`${METADATA_WARNING_TOKEN_BY_FIELD[field]}:${missingItems.length}`);
   }
 
-  const summarizedMissingAuthor = summarizeList(missingAuthor);
-  const summarizedMissingAcceptance = summarizeList(missingAcceptanceCriteria);
-  const summarizedMissingEstimate = summarizeList(missingEstimate);
-  const summarizedMissingCloseReason = summarizeList(missingCloseReason);
+  const counts = Object.fromEntries(
+    SUPPORTED_METADATA_REQUIRED_FIELDS.map((field) => [METADATA_COUNT_KEY_BY_FIELD[field], missingByField[field].length]),
+  );
+  const details: Record<string, unknown> = {
+    checked_items: items.length,
+    metadata_profile: metadataPolicy.profile,
+    metadata_profile_source: metadataPolicy.profile_source,
+    metadata_profile_fallback_to_core: metadataPolicy.fallback_to_core,
+    required_fields: [...metadataPolicy.required_fields],
+    configured_custom_required_fields: [...metadataPolicy.configured_custom_fields],
+    supported_required_fields: [...SUPPORTED_METADATA_REQUIRED_FIELDS],
+    counts,
+  };
+
+  for (const field of SUPPORTED_METADATA_REQUIRED_FIELDS) {
+    const summarized = summarizeList(missingByField[field]);
+    details[METADATA_ITEM_IDS_KEY_BY_FIELD[field]] = summarized.values;
+    details[METADATA_TRUNCATED_KEY_BY_FIELD[field]] = summarized.truncated;
+  }
 
   return {
     check: {
       name: "metadata",
       status: warningTokens.length === 0 ? "ok" : "warn",
-      details: {
-        checked_items: items.length,
-        counts: {
-          missing_author: missingAuthor.length,
-          missing_acceptance_criteria: missingAcceptanceCriteria.length,
-          missing_estimated_minutes: missingEstimate.length,
-          closed_missing_close_reason: missingCloseReason.length,
-        },
-        missing_author_item_ids: summarizedMissingAuthor.values,
-        missing_author_truncated: summarizedMissingAuthor.truncated,
-        missing_acceptance_criteria_item_ids: summarizedMissingAcceptance.values,
-        missing_acceptance_criteria_truncated: summarizedMissingAcceptance.truncated,
-        missing_estimated_minutes_item_ids: summarizedMissingEstimate.values,
-        missing_estimated_minutes_truncated: summarizedMissingEstimate.truncated,
-        closed_missing_close_reason_item_ids: summarizedMissingCloseReason.values,
-        closed_missing_close_reason_truncated: summarizedMissingCloseReason.truncated,
-      },
+      details,
     },
     warnings: warningTokens,
   };
@@ -691,13 +861,23 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
   const itemReadWarnings: string[] = [];
   const items = await listAllFrontMatterWithBody(pmRoot, settings.item_format, typeRegistry.type_to_folder, itemReadWarnings);
   const requestedChecks = resolveRequestedChecks(options);
+  const metadataProfileSource: "default" | "settings" | "option" =
+    typeof options.metadataProfile === "string" ? "option" : "settings";
+  const metadataProfile = resolveValidateMetadataProfile(
+    typeof options.metadataProfile === "string" ? options.metadataProfile : settings.validation.metadata_profile,
+  );
+  const metadataPolicy = resolveValidateMetadataPolicy(
+    metadataProfile,
+    metadataProfileSource,
+    settings.validation.metadata_required_fields,
+  );
   const fileScanMode = resolveFileScanMode(options.scanMode);
   const workspaceRoot = resolveWorkspaceRoot(pmRoot);
   const checks: ValidateCheck[] = [];
   const warnings = [...new Set(itemReadWarnings)];
 
   if (requestedChecks.has("metadata")) {
-    const metadataCheck = buildMetadataCheck(items);
+    const metadataCheck = buildMetadataCheck(items, metadataPolicy);
     checks.push(metadataCheck.check);
     warnings.push(...metadataCheck.warnings);
   }
