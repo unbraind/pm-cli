@@ -2,13 +2,12 @@ id: pm-y76e
 title: "Ship1: Full verification, closure evidence, commit, and push"
 description: "Run complete build/test/coverage verification, record evidence across linked PM items, then finalize with commit and push."
 type: Task
-status: in_progress
+status: closed
 priority: 1
 tags[4]: "area:release","area:tests",evidence,pm-cli
 created_at: "2026-04-01T12:40:12.308Z"
-updated_at: "2026-04-05T21:45:15.455Z"
+updated_at: "2026-04-05T21:45:59.814Z"
 deadline: "2026-04-08T12:40:12.308Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 120
 acceptance_criteria: Build/tests/coverage are run and documented; linked PM items have closure evidence; final commit and push completed.
@@ -43,11 +42,12 @@ regression: true
 customer_impact: Ensures safe rollout with complete validation evidence
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-i0iy,parent,"2026-04-01T12:40:12.308Z",codex-agent,null
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-04-01T12:40:12.308Z",codex-agent,Task maps directly to plan todo verify-ship.
   "2026-04-01T12:55:44.641Z",codex-agent,"Verification evidence: pnpm build passed; node scripts/run-tests.mjs test passed (61 files, 642 tests); node scripts/run-tests.mjs coverage executed and failed global 100% thresholds at lines=97.99 branches=96.24 functions=98.38 statements=97.8 (existing broad-suite gate)."
   "2026-04-01T12:57:07.100Z",codex-agent,"Final ship evidence: committed as c2bc2b6 and pushed to origin/main. Full sandboxed test suite passed (642 tests). Coverage command executed and remained below global 100% gate (lines 97.99, branches 96.24, functions 98.38, statements 97.8)."
   "2026-04-05T21:45:15.455Z",codex-agent,"Verification evidence (current cycle): pnpm build passed; node scripts/run-tests.mjs test passed (69 files, 918 tests); node scripts/run-tests.mjs coverage passed with global 100% statements/branches/functions/lines. Included follow-up fix for settings-store validation-key ordering expectation discovered in initial full-suite run."
+  "2026-04-05T21:45:57.729Z",codex-agent,"Final ship evidence: commit b25c163 pushed to origin/main after full verification gates (pnpm build + full tests + full coverage at 100%)."
 notes[1]{created_at,author,text}:
   "2026-04-01T12:40:12.308Z",codex-agent,Must use sandbox-safe test commands and record pass/fail evidence before close.
 learnings[1]{created_at,author,text}:
@@ -74,4 +74,5 @@ tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   pnpm build,null,project,900,null,null,null,null,null,null,null,null,null,null,null,release-build-gate
 docs[1]{path,scope,note}:
   AGENTS.md,project,Closure protocol
+close_reason: "Full verification, commit, and push completed for external remediation cycle"
 body: "Implements plan todo: verify-ship"
