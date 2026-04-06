@@ -49,7 +49,7 @@ export interface CommentsAuditResult {
   };
   export: {
     mode: "latest" | "full_history";
-    row_count: number | null;
+    row_count: number;
   };
   rows?: CommentsAuditHistoryRow[];
   now: string;
@@ -162,6 +162,7 @@ export async function runCommentsAudit(options: CommentsAuditOptions, global: Gl
     };
   });
   const rows = fullHistory ? toHistoryRows(items) : undefined;
+  const latestRowCount = items.reduce((sum, entry) => sum + entry.comments.length, 0);
 
   return {
     items,
@@ -182,7 +183,7 @@ export async function runCommentsAudit(options: CommentsAuditOptions, global: Gl
     },
     export: {
       mode: fullHistory ? "full_history" : "latest",
-      row_count: rows?.length ?? null,
+      row_count: fullHistory ? rows?.length ?? 0 : latestRowCount,
     },
     ...(rows ? { rows } : {}),
     now: listed.now,

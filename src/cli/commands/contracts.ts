@@ -11,11 +11,17 @@ import { commandOptionFlagLabel, resolveCommandOptionPolicyState, resolveItemTyp
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import {
+  ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS,
+  ACTIVITY_FLAG_CONTRACTS,
   AGGREGATE_FLAG_CONTRACTS,
+  APPEND_FLAG_CONTRACTS,
   CALENDAR_COMMANDER_STRING_OPTION_CONTRACTS,
   CALENDAR_FLAG_CONTRACTS,
+  CLAIM_FLAG_CONTRACTS,
+  CLOSE_TASK_FLAG_CONTRACTS,
   COMMENTS_AUDIT_FLAG_CONTRACTS,
   CLOSE_FLAG_CONTRACTS,
+  COMPLETION_FLAG_CONTRACTS,
   CONTRACTS_FLAG_CONTRACTS,
   CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS,
   CONTEXT_FLAG_CONTRACTS,
@@ -32,13 +38,17 @@ import {
   PM_TOOL_ACTIONS,
   PM_TOOL_PARAMETERS_SCHEMA,
   REINDEX_FLAG_CONTRACTS,
+  RELEASE_FLAG_CONTRACTS,
   SEARCH_COMMANDER_STRING_OPTION_CONTRACTS,
   SEARCH_FLAG_CONTRACTS,
+  START_TASK_FLAG_CONTRACTS,
+  PAUSE_TASK_FLAG_CONTRACTS,
   TEST_ALL_FLAG_CONTRACTS,
   TEST_FLAG_CONTRACTS,
   UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
   UPDATE_COMMANDER_STRING_OPTION_CONTRACTS,
   UPDATE_FLAG_CONTRACTS,
+  UPDATE_MANY_FLAG_CONTRACTS,
   VALIDATE_FLAG_CONTRACTS,
   type CliFlagContract,
   type CommanderOptionAliasContract,
@@ -48,6 +58,8 @@ export interface ContractsCommandOptions {
   action?: string;
   command?: string;
   schemaOnly?: boolean;
+  flagsOnly?: boolean;
+  availabilityOnly?: boolean;
   runtimeOnly?: boolean;
 }
 
@@ -68,12 +80,15 @@ export interface ContractsResult {
     action: string | null;
     command: string | null;
     schema_only: boolean;
+    flags_only: boolean;
+    availability_only: boolean;
     runtime_only: boolean;
+    command_scoped: boolean;
   };
-  actions: string[];
-  action_availability: ContractsActionAvailability[];
+  actions?: string[];
+  action_availability?: ContractsActionAvailability[];
   commands: string[];
-  schema: Record<string, unknown>;
+  schema?: Record<string, unknown>;
   command_flags?: CommandFlagSurface[];
   commander_aliases?: Record<string, CommanderOptionAliasContract[]>;
   extension_commands?: ExtensionCommandContract[];
@@ -88,6 +103,8 @@ export interface ContractsActionAvailability {
   requires_extension: boolean;
   provider: "core" | "extension";
   disabled_reason: string | null;
+  command_path: string | null;
+  cli_exposed: boolean;
 }
 
 interface RuntimeExtensionActionProbe {
@@ -133,6 +150,37 @@ const EXTENSION_ACTION_COMMAND_PATHS: Partial<Record<PmToolAction, string>> = {
   "todos-import": "todos import",
   "todos-export": "todos export",
 };
+
+function resolveActionCommandPath(action: PmToolAction): string | null {
+  const extensionCommandPath = EXTENSION_ACTION_COMMAND_PATHS[action];
+  if (extensionCommandPath) {
+    return normalizeCommandPath(extensionCommandPath);
+  }
+  if (PM_CORE_COMMAND_NAMES.includes(action as (typeof PM_CORE_COMMAND_NAMES)[number])) {
+    return normalizeCommandPath(action);
+  }
+  if (action.startsWith("extension-")) {
+    return normalizeCommandPath(`extension ${action.slice("extension-".length)}`);
+  }
+  if (action.startsWith("test-runs-")) {
+    return normalizeCommandPath(`test-runs ${action.slice("test-runs-".length)}`);
+  }
+  if (action.startsWith("templates-")) {
+    return normalizeCommandPath(`templates ${action.slice("templates-".length)}`);
+  }
+  return null;
+}
+
+function actionDescriptorMatchesSelectedCommand(descriptor: ActionContractDescriptor, selectedCommand: string): boolean {
+  if (descriptor.command_path === null) {
+    return false;
+  }
+  const commandPath = normalizeCommandPath(descriptor.command_path);
+  if (commandPath === selectedCommand) {
+    return true;
+  }
+  return commandPath.startsWith(`${selectedCommand} `);
+}
 
 function normalizeToken(value: string | undefined): string | undefined {
   if (typeof value !== "string") {
@@ -519,11 +567,12 @@ function collectActionContractDescriptors(extensionContracts: ExtensionCommandCo
   const descriptors = new Map<string, ActionContractDescriptor>();
   for (const action of PM_TOOL_ACTIONS) {
     const extensionCommandPath = EXTENSION_ACTION_COMMAND_PATHS[action as PmToolAction];
+    const commandPath = resolveActionCommandPath(action as PmToolAction);
     descriptors.set(action, {
       action,
       provider: extensionCommandPath ? "extension" : "core",
       requires_extension: extensionCommandPath !== undefined,
-      command_path: extensionCommandPath ? normalizeCommandPath(extensionCommandPath) : null,
+      command_path: commandPath,
     });
   }
   for (const contract of extensionContracts) {
@@ -552,6 +601,8 @@ function resolveActionAvailability(
       requires_extension: false,
       provider: "core",
       disabled_reason: null,
+      command_path: descriptor.command_path,
+      cli_exposed: descriptor.command_path !== null,
     };
   }
 
@@ -565,6 +616,8 @@ function resolveActionAvailability(
     requires_extension: true,
     provider: "extension",
     disabled_reason: invocable ? null : runtimeProbe.disabledReason ?? "extension_command_not_registered",
+    command_path: descriptor.command_path,
+    cli_exposed: extensionCommandAvailable,
   };
 }
 
@@ -574,6 +627,9 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   }
   if (command === "update") {
     return UPDATE_FLAG_CONTRACTS;
+  }
+  if (command === "update-many") {
+    return UPDATE_MANY_FLAG_CONTRACTS;
   }
   if (command === "calendar" || command === "cal") {
     return CALENDAR_FLAG_CONTRACTS;
@@ -599,6 +655,24 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   if (command === "close") {
     return CLOSE_FLAG_CONTRACTS;
   }
+  if (command === "append") {
+    return APPEND_FLAG_CONTRACTS;
+  }
+  if (command === "claim") {
+    return CLAIM_FLAG_CONTRACTS;
+  }
+  if (command === "release") {
+    return RELEASE_FLAG_CONTRACTS;
+  }
+  if (command === "start-task") {
+    return START_TASK_FLAG_CONTRACTS;
+  }
+  if (command === "pause-task") {
+    return PAUSE_TASK_FLAG_CONTRACTS;
+  }
+  if (command === "close-task") {
+    return CLOSE_TASK_FLAG_CONTRACTS;
+  }
   if (command === "test") {
     return TEST_FLAG_CONTRACTS;
   }
@@ -616,6 +690,12 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   }
   if (command === "contracts") {
     return CONTRACTS_FLAG_CONTRACTS;
+  }
+  if (command === "completion") {
+    return COMPLETION_FLAG_CONTRACTS;
+  }
+  if (command === "activity") {
+    return ACTIVITY_FLAG_CONTRACTS;
   }
   if (LIST_COMMAND_NAMES.has(command)) {
     return LIST_FILTER_FLAG_CONTRACTS;
@@ -673,6 +753,7 @@ function buildCommanderAliasSurface(): Record<string, CommanderOptionAliasContra
     search_string_options: SEARCH_COMMANDER_STRING_OPTION_CONTRACTS,
     calendar_string_options: CALENDAR_COMMANDER_STRING_OPTION_CONTRACTS,
     context_string_options: CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS,
+    activity_string_options: ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS,
   };
 }
 
@@ -768,7 +849,13 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
   const selectedAction = normalizeToken(options.action);
   const selectedCommand = normalizeToken(options.command);
   const schemaOnly = options.schemaOnly === true;
+  const flagsOnly = options.flagsOnly === true;
+  const availabilityOnly = options.availabilityOnly === true;
   const runtimeOnly = options.runtimeOnly === true;
+  const projectionFlagsEnabled = [schemaOnly, flagsOnly, availabilityOnly].filter((value) => value).length;
+  if (projectionFlagsEnabled > 1) {
+    throw new PmCliError("Choose only one projection flag: --schema-only, --flags-only, or --availability-only.", EXIT_CODE.USAGE);
+  }
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   let settings = structuredClone(SETTINGS_DEFAULTS);
   try {
@@ -794,6 +881,19 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
   const commandNames = new Set(commandCatalog);
   if (selectedCommand && !commandNames.has(selectedCommand)) {
     throw new PmCliError(`Unknown command: "${options.command}".`, EXIT_CODE.USAGE);
+  }
+  const commandScopedDescriptors = selectedCommand
+    ? actionDescriptors.filter((descriptor) => actionDescriptorMatchesSelectedCommand(descriptor, selectedCommand))
+    : actionDescriptors;
+  if (
+    selectedCommand &&
+    selectedAction &&
+    !commandScopedDescriptors.some((descriptor) => descriptor.action === selectedAction)
+  ) {
+    throw new PmCliError(
+      `Action "${options.action}" is not mapped to command "${options.command}" in contracts output.`,
+      EXIT_CODE.USAGE,
+    );
   }
 
   const schema = PM_TOOL_PARAMETERS_SCHEMA as Record<string, unknown>;
@@ -826,19 +926,29 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
       : schema;
 
   const scopedActionDescriptors = selectedAction
-    ? actionDescriptors.filter((descriptor) => descriptor.action === selectedAction)
-    : actionDescriptors;
+    ? commandScopedDescriptors.filter((descriptor) => descriptor.action === selectedAction)
+    : commandScopedDescriptors;
   const allActionAvailability = scopedActionDescriptors.map((descriptor) =>
     resolveActionAvailability(descriptor, runtimeProbe),
   );
   const actionAvailability =
     runtimeOnly && !selectedAction ? allActionAvailability.filter((entry) => entry.invocable) : allActionAvailability;
   const actions = actionAvailability.map((entry) => entry.action);
-  let filteredSchema = filterSchemaByAction(mergedSchema, selectedAction);
+  let filteredSchema = selectedAction
+    ? filterSchemaByAction(mergedSchema, selectedAction)
+    : selectedCommand
+      ? filterSchemaByActions(
+          mergedSchema,
+          new Set(scopedActionDescriptors.map((descriptor) => descriptor.action)),
+        )
+      : mergedSchema;
   if (runtimeOnly && !selectedAction) {
     filteredSchema = filterSchemaByActions(filteredSchema, new Set(actions));
   }
-  filteredSchema = attachCreateRequiredOptionContracts(filteredSchema, createRequiredOptionContracts);
+  const includeSchemaSurface = !flagsOnly && !availabilityOnly;
+  if (includeSchemaSurface) {
+    filteredSchema = attachCreateRequiredOptionContracts(filteredSchema, createRequiredOptionContracts);
+  }
   const commands = selectedCommand ? [selectedCommand] : commandCatalog;
   const extensionCommandContracts = selectedCommand
     ? extensionContracts.filter((entry) => entry.command === selectedCommand)
@@ -851,17 +961,29 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
       action: selectedAction ?? null,
       command: selectedCommand ?? null,
       schema_only: schemaOnly,
+      flags_only: flagsOnly,
+      availability_only: availabilityOnly,
       runtime_only: runtimeOnly,
+      command_scoped: selectedCommand !== undefined,
     },
-    actions,
-    action_availability: actionAvailability,
     commands,
-    schema: filteredSchema,
-    extension_commands: extensionCommandContracts,
   };
 
-  if (!schemaOnly) {
+  if (!flagsOnly) {
+    result.actions = actions;
+    result.action_availability = actionAvailability;
+  }
+
+  if (includeSchemaSurface) {
+    result.schema = filteredSchema;
+    result.extension_commands = extensionCommandContracts;
+  }
+
+  if (!schemaOnly && !availabilityOnly) {
     result.command_flags = buildCommandFlagSurface(commands, extensionFlagMap);
+  }
+
+  if (!schemaOnly && !flagsOnly && !availabilityOnly) {
     result.commander_aliases = buildCommanderAliasSurface();
   }
 

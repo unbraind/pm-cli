@@ -2,6 +2,7 @@ import { fileURLToPath } from "node:url";
 import {
   PM_TOOL_ACTIONS as SHARED_PM_TOOL_ACTIONS,
   PM_TOOL_PARAMETERS_SCHEMA as SHARED_PM_TOOL_PARAMETERS_SCHEMA,
+  PI_ACTIVITY_OPTION_CONTRACTS,
   PI_AGGREGATE_OPTION_CONTRACTS,
   PI_CALENDAR_OPTION_CONTRACTS,
   PI_CONTEXT_OPTION_CONTRACTS,
@@ -42,6 +43,8 @@ export interface PmToolParameters {
   contractAction?: string;
   command?: string;
   schemaOnly?: boolean;
+  flagsOnly?: boolean;
+  availabilityOnly?: boolean;
   runtimeOnly?: boolean;
   activeOnly?: boolean;
   configAction?: string;
@@ -97,6 +100,8 @@ export interface PmToolParameters {
   from?: string;
   to?: string;
   past?: boolean;
+  fullPeriod?: boolean;
+  op?: string;
   include?: string;
   recurrenceLookaheadDays?: NumericFlagInput;
   recurrenceLookbackDays?: NumericFlagInput;
@@ -118,7 +123,7 @@ export interface PmToolParameters {
   progress?: boolean;
   background?: boolean;
   runId?: string;
-  stream?: string;
+  stream?: string | boolean;
   tail?: NumericFlagInput;
   envSet?: string[];
   envClear?: string[];
@@ -153,6 +158,7 @@ export interface PmToolParameters {
   verify?: boolean;
   timeout?: NumericFlagInput;
   allowAuditComment?: boolean;
+  allowAuditUpdate?: boolean;
   allowAuditRelease?: boolean;
   force?: boolean;
   run?: boolean;
@@ -161,6 +167,7 @@ export interface PmToolParameters {
   groupBy?: string;
   threshold?: NumericFlagInput;
   shell?: string;
+  eagerTags?: boolean;
   file?: string;
   preserveSourceIds?: boolean;
   folder?: string;
@@ -559,6 +566,9 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       if (params.past) {
         args.push("--past");
       }
+      if (params.fullPeriod) {
+        args.push("--full-period");
+      }
       pushContractedFlags(args, params, calendarRemainder);
       return args;
     case "context":
@@ -609,7 +619,12 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       return args;
     case "activity":
       args.push("activity");
-      pushOption(args, "--limit", params.limit);
+      pushContractedFlags(args, params, PI_ACTIVITY_OPTION_CONTRACTS);
+      if (params.stream === true) {
+        args.push("--stream");
+      } else if (typeof params.stream === "string" && params.stream.trim().length > 0) {
+        args.push("--stream", params.stream.trim());
+      }
       return args;
     case "restore":
       args.push("restore", requireString(params.id, "id", action), requireString(params.target, "target", action));
@@ -784,7 +799,7 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       return args;
     case "test-runs-logs":
       args.push("test-runs", "logs", requireString(params.runId, "runId", action));
-      pushOption(args, "--stream", params.stream);
+      pushOption(args, "--stream", typeof params.stream === "string" ? params.stream : undefined);
       pushOption(args, "--tail", params.tail);
       return args;
     case "test-runs-stop":
@@ -864,6 +879,12 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       if (params.schemaOnly) {
         args.push("--schema-only");
       }
+      if (params.flagsOnly) {
+        args.push("--flags-only");
+      }
+      if (params.availabilityOnly) {
+        args.push("--availability-only");
+      }
       if (params.runtimeOnly) {
         args.push("--runtime-only");
       }
@@ -873,6 +894,9 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       return args;
     case "completion":
       args.push("completion", requireString(params.shell, "shell", action));
+      if (params.eagerTags) {
+        args.push("--eager-tags");
+      }
       return args;
     case "templates-save": {
       args.push("templates", "save", requireString(params.template, "template", action));

@@ -2,13 +2,22 @@ id: pm-o7be
 title: PM CLI 2026-04-06 audit findings remediation
 description: "Track and deliver six external audit findings for CLI UX, extension discoverability/contracts, and search output ergonomics."
 type: Epic
-status: closed
+status: open
 priority: 1
 tags[6]: 2026-04-06,agent-ux,extensions,external-audit,pm-cli,search
 created_at: "2026-04-06T09:48:14.630Z"
-updated_at: "2026-04-06T11:22:00.398Z"
+updated_at: "2026-04-06T18:46:21.986Z"
+assignee: codex-agent
 author: codex-agent
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-06T09:48:14.630Z",codex-agent,"Duplicate-check evidence commands run: pm context --limit 10; pm search for each finding keyword; pm list-open --limit 20; pm list-in-progress --limit 20; pm list-blocked --limit 20. Net-new because no active item directly tracks this six-finding remediation scope."
-close_reason: all six 2026-04-06 audit findings remediated and verified
+  "2026-04-06T16:45:36.156Z",codex-agent,"13-issue remediation lineage bootstrap: reused and reopened as canonical external-audit parent after duplicate-check sweep (pm context --limit 10; pm search '2026-04-06 audit findings remediation' --limit 10; pm search 'comments-audit full-history latest row_count latest 0' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20). Planned child scopes under this epic: lifecycle CLI aliases/discoverability, runtime-aware unknown-command guidance, completion contract-driven parity/lazy tags, contracts command narrowing+projection modes, calendar full-period contract wording, and activity filtering/streaming enhancements."
+  "2026-04-06T16:48:15.848Z",codex-agent,"Child task seeding for 13-issue remediation complete under this epic: pm-3www (lifecycle CLI aliases), pm-a01m (runtime-aware unknown-command examples), pm-xhot (contract-driven completion flags), pm-6qnu (lazy dynamic tag completion), pm-xlzl (breaking contracts --command narrowing plus projection modes), pm-euh6 (calendar full-period contract), pm-0g7a (activity filtering and stream mode)."
+  "2026-04-06T18:46:21.986Z",codex-agent,"Docs-sync + verification evidence: updated README/PRD/docs/ARCHITECTURE/CHANGELOG/AGENTS for allow-audit-update, update-many, lifecycle aliases, contracts narrowing/projections, completion lazy/eager tags, calendar full-period, and activity filters/streaming. Verification gates: pm --version, node -v, pnpm -v, pnpm build, node scripts/run-tests.mjs test (74 files / 980 tests passed), node scripts/run-tests.mjs coverage (100% statements/branches/functions/lines)."
+docs[5]{path,scope,note}:
+  AGENTS.md,project,Agent workflow guidance parity for new commands
+  CHANGELOG.md,project,Unreleased entries for remediation wave
+  docs/ARCHITECTURE.md,project,Architecture updates for update-many/contracts/completion/activity
+  PRD.md,project,Command contract and command-surface updates
+  README.md,project,Remediation wave CLI behavior docs
 body: ""

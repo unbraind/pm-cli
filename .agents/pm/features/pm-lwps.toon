@@ -2,13 +2,12 @@ id: pm-lwps
 title: Add governance batch-mutation mode with explicit ownership override planning
 description: "Provide a safe orchestration mode for governance operations that precomputes required ownership overrides, surfaces approval-ready plans, and executes deterministic batches with per-item audit traces."
 type: Feature
-status: in_progress
+status: closed
 priority: 2
 tags[4]: automation,governance,ownership,pm-cli
 created_at: "2026-04-04T21:55:27.146Z"
-updated_at: "2026-04-05T21:14:11.811Z"
+updated_at: "2026-04-06T18:48:01.209Z"
 deadline: "2026-04-25T21:55:27.146Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 300
 acceptance_criteria: "A governance batch mode can generate an override plan (dry-run), list affected assignees/items, require explicit confirmation, and execute scoped mutations with clear per-item audit output."
@@ -33,10 +32,13 @@ affected_version: 2026.3.12
 component: governance-batch-ownership
 regression: false
 customer_impact: Maintainers can execute approved governance maintenance faster with explicit safety evidence.
-comments[3]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-04-04T21:55:27.146Z",codex-agent,"Duplicate-check evidence: pm search 'ownership conflict force audit override workflow' --limit 20; pm search 'ownership-safe batch mutation mode governance override' --limit 20; pm list-open --limit 20. Net-new because current items improve guidance only; no feature currently provides plan+execute batch ownership override workflow for governance operations."
   "2026-04-05T20:39:58.011Z",codex-agent,Duplicate-check evidence refreshed; existing open feature reused as canonical parent for transactional annotate/batch mutation implementation (no duplicate item created).
   "2026-04-05T21:14:11.811Z",codex-agent,"Progress: implemented transactional update surface for metadata + comments/notes/learnings/files/tests/docs using additive --comment/--note/--learning/--file/--test/--doc flags on pm update, with explicit none-clearing semantics and single-mutation changed_fields tracking. Verification: pnpm vitest tests/unit/update-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts passed; pnpm build passed; pnpm vitest tests/integration/cli.integration.spec.ts -t 'supports transactional update mutations for linked files/docs/tests and log collections' passed; pnpm vitest tests/integration/release-readiness-runtime.spec.ts -t 'keeps update help aligned with required flags and aliases' passed."
+  "2026-04-06T16:45:39.185Z",codex-agent,"Lineage note for current remediation wave: pm-lwps stays canonical feature parent for ownership-safe mutation controls and bulk governance update execution semantics. Upcoming child tasks will extend this feature with scoped --allow-audit-update and update-many dry-run/checkpoint/rollback behavior."
+  "2026-04-06T16:48:17.210Z",codex-agent,"Child task seeding complete under pm-lwps for current wave: pm-umhv (scoped --allow-audit-update metadata override) and pm-lf6s (pm update-many with dry-run and rollback checkpoints)."
+  "2026-04-06T18:47:57.790Z",codex-agent,"Feature complete: governance batch-mutation capability now ships through pm update-many (dry-run/checkpoint/rollback) plus scoped non-owner metadata override via --allow-audit-update, with contracts/help/completion/Pi/docs parity and full verification gates passing."
 notes[1]{created_at,author,text}:
   "2026-04-04T21:55:27.146Z",codex-agent,Design should separate planning and execution phases and require explicit operator confirmation before any forced mutation batch.
 files[11]{path,scope,note}:
@@ -57,4 +59,5 @@ tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,null,transactional-update-unit-regression
 docs[1]{path,scope,note}:
   AGENTS.md,project,policy constraints for approved ownership overrides
+close_reason: governance batch mutation and scoped ownership override delivered with passing verification
 body: Feature targets large tracker maintenance workflows where many items are assigned to different owners and manual force-update loops create operational overhead.

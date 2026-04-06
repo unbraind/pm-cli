@@ -1,7 +1,11 @@
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import {
+  ACTIVITY_FLAG_CONTRACTS,
+  APPEND_FLAG_CONTRACTS,
   CALENDAR_FLAG_CONTRACTS,
+  COMPLETION_FLAG_CONTRACTS,
+  CONTRACTS_FLAG_CONTRACTS,
   CONTEXT_FLAG_CONTRACTS,
   CREATE_FLAG_CONTRACTS,
   DEPS_FLAG_CONTRACTS,
@@ -11,6 +15,7 @@ import {
   PM_CORE_COMMAND_NAMES,
   SEARCH_FLAG_CONTRACTS,
   UPDATE_FLAG_CONTRACTS,
+  UPDATE_MANY_FLAG_CONTRACTS,
   toCompletionFlagString,
 } from "../../sdk/cli-contracts.js";
 import { BUILTIN_ITEM_TYPE_VALUES } from "../../types/index.js";
@@ -28,15 +33,22 @@ const DEFAULT_ITEM_TYPES = [...BUILTIN_ITEM_TYPE_VALUES];
 
 const ALL_COMMANDS = [...PM_CORE_COMMAND_NAMES];
 const LIST_FLAGS = toCompletionFlagString(LIST_FILTER_FLAG_CONTRACTS);
+const APPEND_FLAGS = toCompletionFlagString(APPEND_FLAG_CONTRACTS);
 const CREATE_FLAGS = toCompletionFlagString(CREATE_FLAG_CONTRACTS);
 const UPDATE_FLAGS = toCompletionFlagString(UPDATE_FLAG_CONTRACTS);
+const UPDATE_MANY_FLAGS = toCompletionFlagString(UPDATE_MANY_FLAG_CONTRACTS);
+const ACTIVITY_FLAGS = toCompletionFlagString(ACTIVITY_FLAG_CONTRACTS);
 const CALENDAR_FLAGS = toCompletionFlagString(CALENDAR_FLAG_CONTRACTS);
 const CONTEXT_FLAGS = toCompletionFlagString(CONTEXT_FLAG_CONTRACTS);
 const DEPS_FLAGS = toCompletionFlagString(DEPS_FLAG_CONTRACTS);
 const SEARCH_FLAGS = toCompletionFlagString(SEARCH_FLAG_CONTRACTS);
 const HEALTH_FLAGS = toCompletionFlagString(HEALTH_FLAG_CONTRACTS);
+const CONTRACTS_FLAGS = toCompletionFlagString(CONTRACTS_FLAG_CONTRACTS);
+const COMPLETION_FLAGS = toCompletionFlagString(COMPLETION_FLAG_CONTRACTS);
+const COMPLETION_SHELL_CHOICES = `${COMPLETION_FLAGS} bash zsh fish`;
 
 const MUTATION_FLAGS = "--author --message --force --json --quiet --path --no-extensions --profile --help";
+const CLOSE_MUTATION_FLAGS = "--author --message --validate-close --force --json --quiet --path --no-extensions --profile --help";
 const RELEASE_MUTATION_FLAGS = "--allow-audit-release --author --message --force --json --quiet --path --no-extensions --profile --help";
 
 const GLOBAL_FLAGS = GLOBAL_FLAG_CONTRACTS.flatMap((entry) => [entry.short, entry.flag])
@@ -49,10 +61,15 @@ function joinCompletionValues(values: string[]): string {
     .join(" ");
 }
 
-export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tags: string[] = []): string {
+export function generateBashScript(
+  itemTypes: string[] = DEFAULT_ITEM_TYPES,
+  tags: string[] = [],
+  eagerTagExpansion = false,
+): string {
   const cmds = ALL_COMMANDS.join(" ");
   const typeValues = itemTypes.join(" ");
   const tagValues = joinCompletionValues(tags);
+  const useEagerTagExpansion = eagerTagExpansion || tags.length > 0;
   // Note: "${...}" inside regular (non-template) strings are literal characters,
   // not JS interpolation. Only backtick template literals interpolate ${...}.
   const compgen = (flags: string): string => `$(compgen -W "${flags}" -- "$cur")`;
@@ -78,10 +95,29 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     "    return 0",
     "  fi",
     "",
-    '  if [[ "$prev" == "--tag" ]]; then',
-    `    COMPREPLY=(${compgen(tagValues)})`,
-    "    return 0",
-    "  fi",
+    ...(useEagerTagExpansion
+      ? [
+          '  if [[ "$prev" == "--tag" ]]; then',
+          `    COMPREPLY=(${compgen(tagValues)})`,
+          "    return 0",
+          "  fi",
+        ]
+      : [
+          '  if [[ "$prev" == "--tag" ]]; then',
+          '    local now ttl cache_ts tag_values',
+          '    now="$(date +%s 2>/dev/null || echo 0)"',
+          '    ttl="${PM_COMPLETION_TAG_TTL:-120}"',
+          '    cache_ts="${PM_COMPLETION_TAG_CACHE_TS:-0}"',
+          '    tag_values="${PM_COMPLETION_TAG_CACHE:-}"',
+          '    if [[ -z "$tag_values" || "$now" -eq 0 || $((now - cache_ts)) -ge "$ttl" ]]; then',
+          '      tag_values="$(pm completion-tags 2>/dev/null)"',
+          '      PM_COMPLETION_TAG_CACHE="$tag_values"',
+          '      PM_COMPLETION_TAG_CACHE_TS="$now"',
+          "    fi",
+          '    COMPREPLY=($(compgen -W "$tag_values" -- "$cur"))',
+          "    return 0",
+          "  fi",
+        ]),
     "",
     '  local cmd="${COMP_WORDS[1]}"',
     "",
@@ -100,6 +136,9 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     "      ;;",
     "    update)",
     `      COMPREPLY=(${compgen(UPDATE_FLAGS)})`,
+    "      ;;",
+    "    update-many)",
+    `      COMPREPLY=(${compgen(UPDATE_MANY_FLAGS)})`,
     "      ;;",
     "    calendar|cal)",
       `      COMPREPLY=(${compgen(CALENDAR_FLAGS)})`,
@@ -134,6 +173,9 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     "    docs)",
     `      COMPREPLY=(${compgen("--add --add-glob --remove --migrate --validate-paths --audit --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
+    "    append)",
+    `      COMPREPLY=(${compgen(APPEND_FLAGS)})`,
+    "      ;;",
     "    deps)",
     `      COMPREPLY=(${compgen(DEPS_FLAGS)})`,
     "      ;;",
@@ -156,22 +198,22 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen("--limit --diff --verify --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    activity)",
-    `      COMPREPLY=(${compgen("--limit --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen(ACTIVITY_FLAGS)})`,
     "      ;;",
     "    contracts)",
-    `      COMPREPLY=(${compgen("--action --command --schema-only --runtime-only --active-only --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen(CONTRACTS_FLAGS)})`,
     "      ;;",
-    "    close)",
-    `      COMPREPLY=(${compgen("--author --message --validate-close --force --json --quiet --path --no-extensions --profile --help")})`,
+    "    close|close-task)",
+    `      COMPREPLY=(${compgen(CLOSE_MUTATION_FLAGS)})`,
     "      ;;",
     "    release)",
     `      COMPREPLY=(${compgen(RELEASE_MUTATION_FLAGS)})`,
     "      ;;",
-    "    claim|delete|append|restore)",
+    "    claim|delete|restore|start-task|pause-task)",
     `      COMPREPLY=(${compgen(MUTATION_FLAGS)})`,
     "      ;;",
     "    completion)",
-    `      COMPREPLY=(${compgen("bash zsh fish")})`,
+    `      COMPREPLY=(${compgen(COMPLETION_SHELL_CHOICES)})`,
     "      ;;",
     "    templates)",
     `      COMPREPLY=(${compgen("save list show")})`,
@@ -187,10 +229,33 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
   ].join("\n");
 }
 
-export function generateZshScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tags: string[] = []): string {
+export function generateZshScript(
+  itemTypes: string[] = DEFAULT_ITEM_TYPES,
+  tags: string[] = [],
+  eagerTagExpansion = false,
+): string {
   const cmds = ALL_COMMANDS.map((c) => `'${c}'`).join(" ");
   const typeChoices = itemTypes.join(" ");
   const tagChoices = joinCompletionValues(tags);
+  const useEagerTagExpansion = eagerTagExpansion || tags.length > 0;
+  const zshTagChoices = useEagerTagExpansion ? tagChoices : '${(f)"$(_pm_tag_choices)"}';
+  const dynamicTagResolver = useEagerTagExpansion
+    ? ""
+    : `
+_pm_tag_choices() {
+  local now ttl cache_ts
+  now=\${EPOCHSECONDS:-0}
+  ttl=\${PM_COMPLETION_TAG_TTL:-120}
+  cache_ts=\${PM_COMPLETION_TAG_CACHE_TS:-0}
+  if [[ -n "\${PM_COMPLETION_TAG_CACHE:-}" && "$now" -ne 0 && $((now - cache_ts)) -lt "$ttl" ]]; then
+    print -r -- "$PM_COMPLETION_TAG_CACHE"
+    return
+  fi
+  PM_COMPLETION_TAG_CACHE="$(pm completion-tags 2>/dev/null)"
+  PM_COMPLETION_TAG_CACHE_TS="$now"
+  print -r -- "$PM_COMPLETION_TAG_CACHE"
+}
+`;
   return `#compdef pm
 # zsh completion for pm
 # Source this file or add 'eval "$(pm completion zsh)"' to ~/.zshrc
@@ -223,6 +288,7 @@ _pm_commands() {
     'activity:Show recent activity across items'
     'restore:Restore an item to an earlier state'
     'update:Update item fields and metadata'
+    'update-many:Bulk-update matched items with dry-run and rollback checkpoints'
     'close:Close an item with a required reason'
     'delete:Delete an item and record the change'
     'append:Append text to an item body'
@@ -243,12 +309,16 @@ _pm_commands() {
     'contracts:Show machine-readable command and schema contracts'
     'claim:Claim an item for active work'
     'release:Release the active claim for an item'
+    'start-task:Lifecycle alias to claim and set in_progress'
+    'pause-task:Lifecycle alias to reopen and release claim'
+    'close-task:Lifecycle alias to close and release claim'
     'templates:Manage reusable create templates'
     'completion:Generate shell completion'
     'help:Display help for a command'
   )
   _describe 'command' commands
 }
+${dynamicTagResolver}
 
 _pm() {
   local context state line
@@ -269,7 +339,7 @@ _pm() {
         list|list-all|list-draft|list-open|list-in-progress|list-blocked|list-closed|list-canceled)
           _arguments \\
             '--type[Filter by item type]:(${typeChoices})' \\
-            '--tag[Filter by tag]:(${tagChoices})' \\
+            '--tag[Filter by tag]:(${zshTagChoices})' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
             '--deadline-before[Filter by deadline upper bound (ISO/date string or relative)]:date' \\
             '--deadline-after[Filter by deadline lower bound (ISO/date string or relative)]:date' \\
@@ -296,7 +366,7 @@ _pm() {
             '--include-unparented[Include unparented rows when grouping by parent]' \\
             '--status[Filter by status]:(draft open in_progress blocked closed canceled)' \\
             '--type[Filter by item type]:(${typeChoices})' \\
-            '--tag[Filter by tag]:(${tagChoices})' \\
+            '--tag[Filter by tag]:(${zshTagChoices})' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
             '--deadline-before[Filter by deadline upper bound (ISO/date string or relative)]:date' \\
             '--deadline-after[Filter by deadline lower bound (ISO/date string or relative)]:date' \\
@@ -315,7 +385,7 @@ _pm() {
             '--threshold[Fuzzy mode token similarity threshold between 0 and 1]:number' \\
             '--status[Filter by status]:(draft open in_progress blocked closed canceled)' \\
             '--type[Filter by item type]:(${typeChoices})' \\
-            '--tag[Filter by tag]:(${tagChoices})' \\
+            '--tag[Filter by tag]:(${zshTagChoices})' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
             '--deadline-before[Filter by deadline upper bound (ISO/date string or relative)]:date' \\
             '--deadline-after[Filter by deadline lower bound (ISO/date string or relative)]:date' \\
@@ -390,6 +460,69 @@ _pm() {
             '--clear-reminders[Clear reminders]' \\
             '--clear-events[Clear events]' \\
             '--clear-type-options[Clear type options]' \\
+            '--allow-audit-update[Allow non-owner metadata-only audit updates without requiring --force]' \\
+            '--author[Mutation author]:author' \\
+            '--message[History message]:message' \\
+            '--force[Force override]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        update-many)
+          _arguments \\
+            '--filter-status[Filter by status before applying updates]:(draft open in_progress blocked closed canceled)' \\
+            '--filter-type[Filter by type before applying updates]:(${typeChoices})' \\
+            '--filter-tag[Filter by tag before applying updates]:(${zshTagChoices})' \\
+            '--filter-priority[Filter by priority before applying updates]:(0 1 2 3 4)' \\
+            '--filter-deadline-before[Filter by deadline upper bound]:deadline' \\
+            '--filter-deadline-after[Filter by deadline lower bound]:deadline' \\
+            '--filter-assignee[Filter by assignee before applying updates]:assignee' \\
+            '--filter-assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
+            '--filter-parent[Filter by parent item ID]:parent' \\
+            '--filter-sprint[Filter by sprint]:sprint' \\
+            '--filter-release[Filter by release]:release' \\
+            '--limit[Limit matched item count]:number' \\
+            '--offset[Skip first n matched rows]:number' \\
+            '--dry-run[Preview updates without mutating]' \\
+            '--rollback[Rollback checkpoint ID]:checkpoint_id' \\
+            '--no-checkpoint[Disable checkpoint creation during apply mode]' \\
+            '(-t --title)'{-t,--title}'[Item title]:title' \\
+            '(-d --description)'{-d,--description}'[Item description]:description' \\
+            '(-b --body)'{-b,--body}'[Item body]:body' \\
+            '(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)' \\
+            '--type[Item type]:(${typeChoices})' \\
+            '--tags[Comma-separated tags]:tags' \\
+            '--deadline[Deadline (ISO/date string or relative +6h/+1d/+2w/+6m)]:deadline' \\
+            '--estimate[Estimated minutes]:minutes' \\
+            '--acceptance-criteria[Acceptance criteria]:criteria' \\
+            '--definition-of-ready[Definition of ready]:definition_of_ready' \\
+            '--order[Planning order/rank]:order' \\
+            '--goal[Goal identifier]:goal' \\
+            '--objective[Objective identifier]:objective' \\
+            '--value[Business value summary]:value' \\
+            '--impact[Business impact summary]:impact' \\
+            '--outcome[Expected outcome summary]:outcome' \\
+            '--why-now[Why-now rationale]:why_now' \\
+            '--reviewer[Reviewer]:reviewer' \\
+            '--risk[Risk level]:risk' \\
+            '--confidence[Confidence level]:confidence' \\
+            '--sprint[Sprint identifier]:sprint' \\
+            '--release[Release identifier]:release' \\
+            '--reporter[Issue reporter]:reporter' \\
+            '--severity[Issue severity]:severity' \\
+            '--environment[Issue environment context]:environment' \\
+            '--repro-steps[Issue reproduction steps]:repro_steps' \\
+            '--resolution[Issue resolution summary]:resolution' \\
+            '--expected-result[Issue expected behavior]:expected_result' \\
+            '--actual-result[Issue observed behavior]:actual_result' \\
+            '--affected-version[Affected version identifier]:affected_version' \\
+            '--fixed-version[Fixed version identifier]:fixed_version' \\
+            '--component[Issue component ownership]:component' \\
+            '--regression[Regression marker true|false|1|0]:regression' \\
+            '--customer-impact[Customer impact summary]:customer_impact' \\
+            '--type-option[Type option key=value or key=<name>,value=<value>]:type_option' \\
+            '--unset[Clear scalar metadata field by name]:field' \\
+            '--clear-type-options[Clear type options]' \\
+            '--allow-audit-update[Allow non-owner metadata-only audit updates without requiring --force]' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
@@ -403,8 +536,9 @@ _pm() {
             '--from[Agenda lower bound (ISO/date string or relative)]:date' \\
             '--to[Agenda upper bound (ISO/date string or relative)]:date' \\
             '--past[Include past entries]' \\
+            '--full-period[Include full anchored day/week/month period]' \\
             '--type[Filter by type]:(${typeChoices})' \\
-            '--tag[Filter by tag]:(${tagChoices})' \\
+            '--tag[Filter by tag]:(${zshTagChoices})' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
             '--status[Filter by status]:(draft open in_progress blocked closed canceled)' \\
             '--assignee[Filter by assignee]:assignee' \\
@@ -427,7 +561,7 @@ _pm() {
             '--to[Agenda upper bound (ISO/date string or relative)]:date' \\
             '--past[Include past entries in bounded windows]' \\
             '--type[Filter by type]:(${typeChoices})' \\
-            '--tag[Filter by tag]:(${tagChoices})' \\
+            '--tag[Filter by tag]:(${zshTagChoices})' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
             '--assignee[Filter by assignee]:assignee' \\
             '--assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
@@ -444,7 +578,7 @@ _pm() {
             '--include-linked[Include linked content in scoring]' \\
             '--limit[Max results]:number' \\
             '--type[Filter by type]:(${typeChoices})' \\
-            '--tag[Filter by tag]:(${tagChoices})' \\
+            '--tag[Filter by tag]:(${zshTagChoices})' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -466,15 +600,23 @@ _pm() {
           ;;
         activity)
           _arguments \\
+            '--id[Filter by item ID]:id' \\
+            '--op[Filter by history operation]:op' \\
+            '--author[Filter by history author]:author' \\
+            '--from[Lower timestamp bound (ISO/date string or relative)]:date' \\
+            '--to[Upper timestamp bound (ISO/date string or relative)]:date' \\
             '--limit[Max entries]:number' \\
+            '--stream[Emit line-delimited JSON rows]:mode' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
         contracts)
           _arguments \\
             '--action[Filter schema by tool action]:action' \\
-            '--command[Filter command flag contracts]:command' \\
+            '--command[Scope output to one command (narrow-by-default)]:command' \\
             '--schema-only[Return schema-only payload]' \\
+            '--flags-only[Return command flag contracts only]' \\
+            '--availability-only[Return action availability only]' \\
             '--runtime-only[Include only actions invocable in the current runtime]' \\
             '--active-only[Alias for --runtime-only]' \\
             '--json[Output JSON]' \\
@@ -579,11 +721,36 @@ _pm() {
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
+        claim)
+          _arguments \\
+            '--author[Mutation author]:author' \\
+            '--message[History message]:message' \\
+            '--force[Force override]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
         release)
           _arguments \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--allow-audit-release[Allow non-owner release handoffs without requiring --force]' \\
+            '--force[Force override]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        start-task|pause-task)
+          _arguments \\
+            '--author[Mutation author]:author' \\
+            '--message[History message]:message' \\
+            '--force[Force override]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        close-task)
+          _arguments \\
+            '--author[Mutation author]:author' \\
+            '--message[History message]:message' \\
+            '--validate-close[Validate closure metadata mode]:(warn strict)' \\
             '--force[Force override]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -620,7 +787,7 @@ _pm() {
           _arguments \\
             '--status[Filter by item status]:status:(draft open in_progress blocked closed canceled)' \\
             '--type[Filter by item type]:(${typeChoices})' \\
-            '--tag[Filter by tag]:(${tagChoices})' \\
+            '--tag[Filter by tag]:(${zshTagChoices})' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
             '--parent[Filter by parent item ID]:parent_id' \\
             '--sprint[Filter by sprint]:sprint' \\
@@ -628,8 +795,8 @@ _pm() {
             '--assignee[Filter by assignee]:assignee' \\
             '--assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
             '--limit-items[Limit returned item count]:number' \\
-            '--full-history[Export full comment history rows and ignore --latest]' \\
-            '--latest[Return latest n comments per item]:number' \\
+            '--full-history[Export full comment history rows (cannot be combined with --latest)]' \\
+            '--latest[Return latest n comments per item (0 for summary-only rows)]:number' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -662,7 +829,9 @@ _pm() {
             '*:target_or_name:_files -/'
           ;;
         completion)
-          _arguments '1:shell:(bash zsh fish)'
+          _arguments \\
+            '--eager-tags[Embed current tracker tags directly in script output]' \\
+            '1:shell:(bash zsh fish)'
           ;;
         templates)
           local -a templates_cmds
@@ -677,11 +846,42 @@ _pm() {
 compdef _pm pm`;
 }
 
-export function generateFishScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tags: string[] = []): string {
+export function generateFishScript(
+  itemTypes: string[] = DEFAULT_ITEM_TYPES,
+  tags: string[] = [],
+  eagerTagExpansion = false,
+): string {
   const listCmds = ALL_COMMANDS.filter((command) => command === "list" || command.startsWith("list-")).join(" ");
   const noSubcommandList = ALL_COMMANDS.join(" ");
   const typeChoices = itemTypes.join(" ");
   const tagChoices = joinCompletionValues(tags);
+  const useEagerTagExpansion = eagerTagExpansion || tags.length > 0;
+  const fishTagChoices = useEagerTagExpansion ? `'${tagChoices}'` : "'(__pm_tag_choices)'";
+  const dynamicTagResolver = useEagerTagExpansion
+    ? ""
+    : `
+function __pm_tag_choices
+  set -l now (date +%s ^/dev/null)
+  if test -z "$now"
+    set now 0
+  end
+  set -l ttl 120
+  if set -q PM_COMPLETION_TAG_TTL
+    set ttl $PM_COMPLETION_TAG_TTL
+  end
+  if set -q PM_COMPLETION_TAG_CACHE; and set -q PM_COMPLETION_TAG_CACHE_TS
+    set -l age (math "$now - $PM_COMPLETION_TAG_CACHE_TS")
+    if test $age -lt $ttl
+      printf '%s\n' $PM_COMPLETION_TAG_CACHE
+      return
+    end
+  end
+  set -l resolved (pm completion-tags ^/dev/null)
+  set -gx PM_COMPLETION_TAG_CACHE $resolved
+  set -gx PM_COMPLETION_TAG_CACHE_TS $now
+  printf '%s\n' $resolved
+end
+`;
   return `# Fish shell completion for pm
 # Save to ~/.config/fish/completions/pm.fish
 # or run: pm completion fish > ~/.config/fish/completions/pm.fish
@@ -702,6 +902,7 @@ complete -c pm -s h -l help -d 'Display help'
 function __pm_no_subcommand
   not __fish_seen_subcommand_from ${noSubcommandList}
 end
+${dynamicTagResolver}
 
 # Subcommands
 complete -c pm -n __pm_no_subcommand -a init          -d 'Initialize pm storage for the current workspace'
@@ -729,6 +930,7 @@ complete -c pm -n __pm_no_subcommand -a history       -d 'Show item history entr
 complete -c pm -n __pm_no_subcommand -a activity      -d 'Show recent activity across items'
 complete -c pm -n __pm_no_subcommand -a restore       -d 'Restore an item to an earlier state'
 complete -c pm -n __pm_no_subcommand -a update        -d 'Update item fields and metadata'
+complete -c pm -n __pm_no_subcommand -a update-many   -d 'Bulk-update matched items with dry-run and rollback checkpoints'
 complete -c pm -n __pm_no_subcommand -a close         -d 'Close an item with a required reason'
 complete -c pm -n __pm_no_subcommand -a delete        -d 'Delete an item and record the change'
 complete -c pm -n __pm_no_subcommand -a append        -d 'Append text to an item body'
@@ -749,13 +951,16 @@ complete -c pm -n __pm_no_subcommand -a gc            -d 'Clean optional cache a
 complete -c pm -n __pm_no_subcommand -a contracts     -d 'Show machine-readable command and schema contracts'
 complete -c pm -n __pm_no_subcommand -a claim         -d 'Claim an item for active work'
 complete -c pm -n __pm_no_subcommand -a release       -d 'Release the active claim for an item'
+complete -c pm -n __pm_no_subcommand -a start-task    -d 'Lifecycle alias to claim and set in-progress'
+complete -c pm -n __pm_no_subcommand -a pause-task    -d 'Lifecycle alias to reopen and release claim'
+complete -c pm -n __pm_no_subcommand -a close-task    -d 'Lifecycle alias to close and release claim'
 complete -c pm -n __pm_no_subcommand -a templates     -d 'Manage reusable create templates'
 complete -c pm -n __pm_no_subcommand -a completion    -d 'Generate shell completion'
 
 # list* flags
 for list_cmd in ${listCmds}
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l type     -d 'Filter by item type' -r -a '${typeChoices}'
-  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l tag      -d 'Filter by tag' -r -a '${tagChoices}'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l tag      -d 'Filter by tag' -r -a ${fishTagChoices}
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l priority -d 'Filter by priority' -r -a '0 1 2 3 4'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l assignee -d 'Filter by assignee' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
@@ -779,7 +984,7 @@ complete -c pm -n '__fish_seen_subcommand_from aggregate' -l count -d 'Return gr
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l include-unparented -d 'Include unparented rows when grouping by parent'
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l status -d 'Filter by status' -r -a 'draft open in_progress blocked closed canceled'
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l type -d 'Filter by item type' -r -a '${typeChoices}'
-complete -c pm -n '__fish_seen_subcommand_from aggregate' -l tag -d 'Filter by tag' -r -a '${tagChoices}'
+complete -c pm -n '__fish_seen_subcommand_from aggregate' -l tag -d 'Filter by tag' -r -a ${fishTagChoices}
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l priority -d 'Filter by priority' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l deadline-before -d 'Filter by deadline upper bound (ISO/date string or relative)' -r
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l deadline-after -d 'Filter by deadline lower bound (ISO/date string or relative)' -r
@@ -795,7 +1000,7 @@ complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l limit -d 'Limit 
 complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l threshold -d 'Fuzzy mode token similarity threshold between 0 and 1' -r
 complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l status -d 'Filter by status' -r -a 'draft open in_progress blocked closed canceled'
 complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l type -d 'Filter by item type' -r -a '${typeChoices}'
-complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l tag -d 'Filter by tag' -r -a '${tagChoices}'
+complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l tag -d 'Filter by tag' -r -a ${fishTagChoices}
 complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l priority -d 'Filter by priority' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l deadline-before -d 'Filter by deadline upper bound (ISO/date string or relative)' -r
 complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l deadline-after -d 'Filter by deadline lower bound (ISO/date string or relative)' -r
@@ -863,16 +1068,76 @@ complete -c pm -n '__fish_seen_subcommand_from update' -l clear-docs            
 complete -c pm -n '__fish_seen_subcommand_from update' -l clear-reminders         -d 'Clear reminders'
 complete -c pm -n '__fish_seen_subcommand_from update' -l clear-events            -d 'Clear events'
 complete -c pm -n '__fish_seen_subcommand_from update' -l clear-type-options      -d 'Clear type options'
+complete -c pm -n '__fish_seen_subcommand_from update' -l allow-audit-update      -d 'Allow non-owner metadata-only audit updates without requiring --force'
 complete -c pm -n '__fish_seen_subcommand_from update' -l author                  -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l message                 -d 'History message' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l force                   -d 'Force override'
+
+# update-many flags
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-status           -d 'Filter by status before applying updates' -r -a 'draft open in_progress blocked closed canceled'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-type             -d 'Filter by type before applying updates' -r -a '${typeChoices}'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-tag              -d 'Filter by tag before applying updates' -r -a ${fishTagChoices}
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-priority         -d 'Filter by priority before applying updates' -r -a '0 1 2 3 4'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-deadline-before  -d 'Filter by deadline upper bound' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-deadline-after   -d 'Filter by deadline lower bound' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-assignee         -d 'Filter by assignee before applying updates' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-assignee-filter  -d 'Filter assignee presence' -r -a 'assigned unassigned'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-parent           -d 'Filter by parent item ID' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-sprint           -d 'Filter by sprint before applying updates' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-release          -d 'Filter by release before applying updates' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l limit                   -d 'Limit matched item count' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l offset                  -d 'Skip first n matched rows' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l dry-run                 -d 'Preview updates without mutating'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l rollback                -d 'Rollback checkpoint ID' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l no-checkpoint           -d 'Disable checkpoint creation during apply mode'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -s t -l title              -d 'Item title' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -s d -l description        -d 'Item description' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -s b -l body               -d 'Item body' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -s p -l priority           -d 'Priority (0-4)' -r -a '0 1 2 3 4'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l type                    -d 'Item type' -r -a '${typeChoices}'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l tags                    -d 'Comma-separated tags' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l deadline                -d 'Deadline (ISO/date string or relative)' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l estimate                -d 'Estimated minutes' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l acceptance-criteria     -d 'Acceptance criteria' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l definition-of-ready     -d 'Definition of ready' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l order                   -d 'Planning order/rank' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l goal                    -d 'Goal identifier' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l objective               -d 'Objective identifier' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l value                   -d 'Business value summary' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l impact                  -d 'Business impact summary' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l outcome                 -d 'Expected outcome summary' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l why-now                 -d 'Why-now rationale' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l reviewer                -d 'Reviewer' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l risk                    -d 'Risk level' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l confidence              -d 'Confidence level' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l sprint                  -d 'Sprint identifier' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l release                 -d 'Release identifier' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l reporter                -d 'Issue reporter' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l severity                -d 'Issue severity' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l environment             -d 'Issue environment context' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l repro-steps             -d 'Issue reproduction steps' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l resolution              -d 'Issue resolution summary' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l expected-result         -d 'Issue expected behavior' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l actual-result           -d 'Issue observed behavior' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l affected-version        -d 'Affected version identifier' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l fixed-version           -d 'Fixed version identifier' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l component               -d 'Issue component ownership' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l regression              -d 'Regression marker true|false|1|0' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l customer-impact         -d 'Customer impact summary' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l type-option             -d 'Type option key=value or key=<name>,value=<value>' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l unset                   -d 'Clear scalar metadata field by name' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-type-options      -d 'Clear type options'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l allow-audit-update      -d 'Allow non-owner metadata-only audit updates without requiring --force'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l author                  -d 'Mutation author' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l message                 -d 'History message' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l force                   -d 'Force override'
 
 # search flags
 complete -c pm -n '__fish_seen_subcommand_from search' -l mode          -d 'Search mode' -r -a 'keyword semantic hybrid'
 complete -c pm -n '__fish_seen_subcommand_from search' -l include-linked -d 'Include linked content in scoring'
 complete -c pm -n '__fish_seen_subcommand_from search' -l limit          -d 'Max results' -r
 complete -c pm -n '__fish_seen_subcommand_from search' -l type           -d 'Filter by type' -r -a '${typeChoices}'
-complete -c pm -n '__fish_seen_subcommand_from search' -l tag            -d 'Filter by tag' -r -a '${tagChoices}'
+complete -c pm -n '__fish_seen_subcommand_from search' -l tag            -d 'Filter by tag' -r -a ${fishTagChoices}
 complete -c pm -n '__fish_seen_subcommand_from search' -l priority       -d 'Filter by priority' -r -a '0 1 2 3 4'
 
 # calendar flags
@@ -881,8 +1146,9 @@ complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l date      -d 'An
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l from      -d 'Agenda lower bound (ISO/date string or relative)' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l to        -d 'Agenda upper bound (ISO/date string or relative)' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l past      -d 'Include past entries'
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l full-period -d 'Include full anchored day/week/month period'
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l type      -d 'Filter by type' -r -a '${typeChoices}'
-complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l tag       -d 'Filter by tag' -r -a '${tagChoices}'
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l tag       -d 'Filter by tag' -r -a ${fishTagChoices}
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l priority  -d 'Filter by priority' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l status    -d 'Filter by status' -r -a 'draft open in_progress blocked closed canceled'
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l assignee  -d 'Filter by assignee' -r
@@ -902,7 +1168,7 @@ complete -c pm -n '__fish_seen_subcommand_from context ctx' -l from      -d 'Age
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l to        -d 'Agenda upper bound (ISO/date string or relative)' -r
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l past      -d 'Include past entries in bounded windows'
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l type      -d 'Filter by type' -r -a '${typeChoices}'
-complete -c pm -n '__fish_seen_subcommand_from context ctx' -l tag       -d 'Filter by tag' -r -a '${tagChoices}'
+complete -c pm -n '__fish_seen_subcommand_from context ctx' -l tag       -d 'Filter by tag' -r -a ${fishTagChoices}
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l priority  -d 'Filter by priority' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l assignee  -d 'Filter by assignee' -r
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
@@ -919,10 +1185,18 @@ complete -c pm -n '__fish_seen_subcommand_from reindex' -l progress -d 'Emit pro
 complete -c pm -n '__fish_seen_subcommand_from history'  -l limit -d 'Max history entries' -r
 complete -c pm -n '__fish_seen_subcommand_from history'  -l diff -d 'Include changed-field patch summary'
 complete -c pm -n '__fish_seen_subcommand_from history'  -l verify -d 'Verify history hash chain and replay integrity'
+complete -c pm -n '__fish_seen_subcommand_from activity' -l id -d 'Filter by item ID' -r
+complete -c pm -n '__fish_seen_subcommand_from activity' -l op -d 'Filter by history operation' -r
+complete -c pm -n '__fish_seen_subcommand_from activity' -l author -d 'Filter by history author' -r
+complete -c pm -n '__fish_seen_subcommand_from activity' -l from -d 'Lower timestamp bound (ISO/date string or relative)' -r
+complete -c pm -n '__fish_seen_subcommand_from activity' -l to -d 'Upper timestamp bound (ISO/date string or relative)' -r
 complete -c pm -n '__fish_seen_subcommand_from activity' -l limit -d 'Max activity entries' -r
+complete -c pm -n '__fish_seen_subcommand_from activity' -l stream -d 'Emit line-delimited JSON rows'
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l action -d 'Filter schema by tool action' -r
-complete -c pm -n '__fish_seen_subcommand_from contracts' -l command -d 'Filter command flag contracts' -r
+complete -c pm -n '__fish_seen_subcommand_from contracts' -l command -d 'Scope output to one command (narrow-by-default)' -r
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l schema-only -d 'Return schema-only payload'
+complete -c pm -n '__fish_seen_subcommand_from contracts' -l flags-only -d 'Return command flag contracts only'
+complete -c pm -n '__fish_seen_subcommand_from contracts' -l availability-only -d 'Return action availability only'
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l runtime-only -d 'Include only actions invocable in the current runtime'
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l active-only -d 'Alias for --runtime-only'
 complete -c pm -n '__fish_seen_subcommand_from deps' -l format -d 'Output format' -r -a 'tree graph'
@@ -980,11 +1254,17 @@ complete -c pm -n '__fish_seen_subcommand_from test-runs' -l tail -d 'Tail numbe
 complete -c pm -n '__fish_seen_subcommand_from test-runs' -l force -d 'Force-stop run with SIGKILL'
 complete -c pm -n '__fish_seen_subcommand_from test-runs' -l author -d 'Resume author' -r
 
+# append flags
+complete -c pm -n '__fish_seen_subcommand_from append' -s b -l body -d 'Item body' -r
+complete -c pm -n '__fish_seen_subcommand_from append' -l author -d 'Mutation author' -r
+complete -c pm -n '__fish_seen_subcommand_from append' -l message -d 'History message' -r
+complete -c pm -n '__fish_seen_subcommand_from append' -l force -d 'Force override'
+
 # close flags
-complete -c pm -n '__fish_seen_subcommand_from close' -l author -d 'Mutation author' -r
-complete -c pm -n '__fish_seen_subcommand_from close' -l message -d 'History message' -r
-complete -c pm -n '__fish_seen_subcommand_from close' -l validate-close -d 'Validate closure metadata mode' -r -a 'warn strict'
-complete -c pm -n '__fish_seen_subcommand_from close' -l force -d 'Force override'
+complete -c pm -n '__fish_seen_subcommand_from claim release start-task pause-task close close-task' -l author -d 'Mutation author' -r
+complete -c pm -n '__fish_seen_subcommand_from claim release start-task pause-task close close-task' -l message -d 'History message' -r
+complete -c pm -n '__fish_seen_subcommand_from claim release start-task pause-task close close-task' -l force -d 'Force override'
+complete -c pm -n '__fish_seen_subcommand_from close close-task' -l validate-close -d 'Validate closure metadata mode' -r -a 'warn strict'
 complete -c pm -n '__fish_seen_subcommand_from release' -l allow-audit-release -d 'Allow non-owner release handoffs without requiring --force'
 
 # validate flags
@@ -1012,7 +1292,7 @@ complete -c pm -n '__fish_seen_subcommand_from health' -l strict-exit -d 'Return
 complete -c pm -n '__fish_seen_subcommand_from health' -l fail-on-warn -d 'Alias for --strict-exit'
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l status -d 'Filter by item status' -r -a 'draft open in_progress blocked closed canceled'
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l type -d 'Filter by item type' -r -a '${typeChoices}'
-complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l tag -d 'Filter by tag' -r -a '${tagChoices}'
+complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l tag -d 'Filter by tag' -r -a ${fishTagChoices}
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l priority -d 'Filter by priority' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l parent -d 'Filter by parent item ID' -r
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l sprint -d 'Filter by sprint' -r
@@ -1020,10 +1300,11 @@ complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l release -d 'Fi
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l assignee -d 'Filter by assignee' -r
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l limit-items -d 'Limit returned item count' -r
-complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l full-history -d 'Export full comment history rows and ignore --latest'
-complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l latest -d 'Return latest n comments per item' -r
+complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l full-history -d 'Export full comment history rows (cannot be combined with --latest)'
+complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l latest -d 'Return latest n comments per item (0 for summary-only rows)' -r
 
 # completion shell argument
+complete -c pm -n '__fish_seen_subcommand_from completion' -l eager-tags -d 'Embed current tracker tags directly in script output'
 complete -c pm -n '__fish_seen_subcommand_from completion' -a 'bash zsh fish' -d 'Shell type'
 
 # templates subcommands
@@ -1060,7 +1341,12 @@ const SETUP_HINTS: Record<CompletionShell, string> = {
   fish: "Run: pm completion fish > ~/.config/fish/completions/pm.fish",
 };
 
-export function runCompletion(shell: string, itemTypes: string[] = DEFAULT_ITEM_TYPES, tags: string[] = []): CompletionResult {
+export function runCompletion(
+  shell: string,
+  itemTypes: string[] = DEFAULT_ITEM_TYPES,
+  tags: string[] = [],
+  eagerTagExpansion = false,
+): CompletionResult {
   const normalized = shell.trim().toLowerCase();
   if (!VALID_SHELLS.includes(normalized as CompletionShell)) {
     throw new PmCliError(
@@ -1071,11 +1357,11 @@ export function runCompletion(shell: string, itemTypes: string[] = DEFAULT_ITEM_
   const validShell = normalized as CompletionShell;
   let script: string;
   if (validShell === "bash") {
-    script = generateBashScript(itemTypes, tags);
+    script = generateBashScript(itemTypes, tags, eagerTagExpansion);
   } else if (validShell === "zsh") {
-    script = generateZshScript(itemTypes, tags);
+    script = generateZshScript(itemTypes, tags, eagerTagExpansion);
   } else {
-    script = generateFishScript(itemTypes, tags);
+    script = generateFishScript(itemTypes, tags, eagerTagExpansion);
   }
   return {
     shell: validShell,

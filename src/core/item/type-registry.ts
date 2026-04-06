@@ -135,6 +135,7 @@ const UPDATE_COMMAND_OPTION_KEYS = [
   "reminder",
   "event",
   "typeOption",
+  "allowAuditUpdate",
   "force",
 ] as const;
 
@@ -181,6 +182,8 @@ const CREATE_COMMAND_OPTION_ALIASES: Record<string, string> = {
 
 const UPDATE_COMMAND_OPTION_ALIASES: Record<string, string> = {
   ...SHARED_COMMAND_OPTION_ALIASES,
+  "allow-audit-update": "allowAuditUpdate",
+  allow_audit_update: "allowAuditUpdate",
 };
 
 const CREATE_COMMAND_OPTION_FLAG_LABELS: Record<string, string> = {
@@ -289,6 +292,7 @@ const UPDATE_COMMAND_OPTION_FLAG_LABELS: Record<string, string> = {
   reminder: "--reminder",
   event: "--event",
   typeOption: "--type-option",
+  allowAuditUpdate: "--allow-audit-update",
   author: "--author",
   message: "--message",
   force: "--force",

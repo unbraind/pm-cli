@@ -24,6 +24,7 @@ export interface CalendarOptions {
   from?: string;
   to?: string;
   past?: boolean;
+  fullPeriod?: boolean;
   limit?: string;
   type?: string;
   tag?: string;
@@ -76,6 +77,9 @@ export interface CalendarResult {
   range: {
     start: string | null;
     end: string | null;
+    period_start: string | null;
+    period_end: string | null;
+    full_period: boolean;
     past: boolean;
     from: string | null;
     to: string | null;
@@ -91,6 +95,7 @@ export interface CalendarResult {
     release: string | null;
     limit: string | null;
     include: string | null;
+    full_period: string | null;
     recurrence_lookahead_days: string | null;
     recurrence_lookback_days: string | null;
     occurrence_limit: string | null;
@@ -662,9 +667,21 @@ function includeEventInWindow(event: CalendarEvent, start: string | undefined, e
   return true;
 }
 
-function buildRange(view: CalendarView, options: CalendarOptions, nowValue: string): { anchor: string; start?: string; end?: string } {
+function buildRange(
+  view: CalendarView,
+  options: CalendarOptions,
+  nowValue: string,
+): {
+  anchor: string;
+  start?: string;
+  end?: string;
+  periodStart?: string;
+  periodEnd?: string;
+  fullPeriod: boolean;
+} {
   const anchor = options.date ? resolveIsoOrRelative(options.date, new Date(nowValue)) : nowValue;
   const includePast = options.past === true;
+  const fullPeriodRequested = options.fullPeriod === true;
 
   const from = options.from ? resolveIsoOrRelative(options.from, new Date(nowValue)) : undefined;
   const to = options.to ? resolveIsoOrRelative(options.to, new Date(nowValue)) : undefined;
@@ -677,40 +694,57 @@ function buildRange(view: CalendarView, options: CalendarOptions, nowValue: stri
   }
 
   if (view === "agenda") {
+    if (fullPeriodRequested) {
+      throw new PmCliError("--full-period is only supported for --view day|week|month", EXIT_CODE.USAGE);
+    }
     const start = from ?? (options.date ? anchor : includePast ? undefined : nowValue);
     return {
       anchor,
       start,
       end: to,
+      fullPeriod: false,
     };
   }
 
   if (view === "day") {
     const dayStart = startOfUtcDay(anchor);
-    const start = includePast ? dayStart : maxTimestamp(dayStart, nowValue);
+    const fullPeriod = includePast || fullPeriodRequested;
+    const start = fullPeriod ? dayStart : maxTimestamp(dayStart, nowValue);
     return {
       anchor,
       start,
       end: addUtcDays(dayStart, 1),
+      periodStart: dayStart,
+      periodEnd: addUtcDays(dayStart, 1),
+      fullPeriod,
     };
   }
 
   if (view === "week") {
     const weekStart = startOfUtcWeekMonday(anchor);
-    const start = includePast ? weekStart : maxTimestamp(weekStart, nowValue);
+    const fullPeriod = includePast || fullPeriodRequested;
+    const start = fullPeriod ? weekStart : maxTimestamp(weekStart, nowValue);
     return {
       anchor,
       start,
       end: addUtcDays(weekStart, 7),
+      periodStart: weekStart,
+      periodEnd: addUtcDays(weekStart, 7),
+      fullPeriod,
     };
   }
 
   const monthStart = startOfUtcMonth(anchor);
-  const start = includePast ? monthStart : maxTimestamp(monthStart, nowValue);
+  const monthEnd = startOfNextUtcMonth(anchor);
+  const fullPeriod = includePast || fullPeriodRequested;
+  const start = fullPeriod ? monthStart : maxTimestamp(monthStart, nowValue);
   return {
     anchor,
     start,
-    end: startOfNextUtcMonth(anchor),
+    end: monthEnd,
+    periodStart: monthStart,
+    periodEnd: monthEnd,
+    fullPeriod,
   };
 }
 
@@ -847,6 +881,10 @@ export function renderCalendarMarkdown(result: CalendarResult): string {
   lines.push("");
   lines.push(`- now: ${result.now}`);
   lines.push(`- window: ${formatWindow(result.range)}`);
+  if (result.range.period_start && result.range.period_end) {
+    lines.push(`- period: ${result.range.period_start} -> ${result.range.period_end}`);
+    lines.push(`- period-mode: ${result.range.full_period ? "full-period" : "active-window"}`);
+  }
   lines.push(
     `- events: ${result.summary.events} (deadlines: ${result.summary.deadlines}, reminders: ${result.summary.reminders}, scheduled: ${result.summary.scheduled})`,
   );
@@ -923,6 +961,9 @@ export async function runCalendar(options: CalendarOptions, global: GlobalOption
     range: {
       start: rangeBounds.start ?? null,
       end: rangeBounds.end ?? null,
+      period_start: rangeBounds.periodStart ?? null,
+      period_end: rangeBounds.periodEnd ?? null,
+      full_period: rangeBounds.fullPeriod,
       past: options.past === true,
       from: options.from ?? null,
       to: options.to ?? null,
@@ -938,6 +979,7 @@ export async function runCalendar(options: CalendarOptions, global: GlobalOption
       release: options.release ?? null,
       limit: options.limit ?? null,
       include: options.include ?? null,
+      full_period: options.fullPeriod === true ? "true" : null,
       recurrence_lookahead_days: options.recurrenceLookaheadDays ?? null,
       recurrence_lookback_days: options.recurrenceLookbackDays ?? null,
       occurrence_limit: options.occurrenceLimit ?? null,

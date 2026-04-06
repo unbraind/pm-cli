@@ -32,13 +32,13 @@ describe("contracts command runtime", () => {
     expect(result.schema_version).toBe("4.0.0");
     expect(result.schema_id).toContain("tool-parameters-v4");
     expect(result.selected.runtime_only).toBe(false);
-    expect(result.actions).toContain("contracts");
-    expect(result.actions).toContain("aggregate");
-    expect(result.actions).toContain("dedupe-audit");
+    expect(result.actions ?? []).toContain("contracts");
+    expect(result.actions ?? []).toContain("aggregate");
+    expect(result.actions ?? []).toContain("dedupe-audit");
     expect(result.commands).toContain("contracts");
     expect(result.commands).toContain("aggregate");
     expect(result.commands).toContain("dedupe-audit");
-    expect(result.action_availability.some((entry) => entry.action === "create" && entry.invocable)).toBe(true);
+    expect((result.action_availability ?? []).some((entry) => entry.action === "create" && entry.invocable)).toBe(true);
     expect(result.command_flags?.some((entry) => entry.command === "contracts")).toBe(true);
     expect(result.command_flags?.find((entry) => entry.command === "aggregate")?.flags).toEqual(
       expect.arrayContaining([expect.objectContaining({ flag: "--group-by" }), expect.objectContaining({ flag: "--count" })]),
@@ -62,7 +62,7 @@ describe("contracts command runtime", () => {
     expect(result.selected.schema_only).toBe(true);
     expect(result.selected.runtime_only).toBe(false);
     expect(result.command_flags).toBeUndefined();
-    const oneOf = (result.schema.oneOf ?? []) as Array<{ properties?: { action?: { const?: string } } }>;
+    const oneOf = (result.schema?.oneOf ?? []) as Array<{ properties?: { action?: { const?: string } } }>;
     expect(oneOf).toHaveLength(1);
     expect(oneOf[0]?.properties?.action?.const).toBe("create");
     const createRequiredContracts = (oneOf[0] as Record<string, unknown>)["x-create-required-options"] as
@@ -97,9 +97,9 @@ describe("contracts command runtime", () => {
       },
     );
     expect(result.selected.runtime_only).toBe(true);
-    expect(result.actions).not.toContain("beads-import");
-    expect(result.actions).toContain("validate");
-    expect(result.action_availability.every((entry) => entry.invocable)).toBe(true);
+    expect(result.actions ?? []).not.toContain("beads-import");
+    expect(result.actions ?? []).toContain("validate");
+    expect((result.action_availability ?? []).every((entry) => entry.invocable)).toBe(true);
 
     const fullResult = await runContracts(
       {},
@@ -108,7 +108,7 @@ describe("contracts command runtime", () => {
         noExtensions: true,
       },
     );
-    const beadsAvailability = fullResult.action_availability.find((entry) => entry.action === "beads-import");
+    const beadsAvailability = (fullResult.action_availability ?? []).find((entry) => entry.action === "beads-import");
     expect(beadsAvailability).toMatchObject({
       action: "beads-import",
       requires_extension: true,
@@ -116,7 +116,101 @@ describe("contracts command runtime", () => {
       invocable: false,
       available: false,
       disabled_reason: "extensions_disabled",
+      command_path: "beads import",
+      cli_exposed: false,
     });
+  });
+
+  it("narrows action and schema scope by command filter by default", async () => {
+    const result = await runContracts({ command: "list", runtimeOnly: true }, GLOBAL_OPTIONS);
+    expect(result.selected.command).toBe("list");
+    expect(result.selected.command_scoped).toBe(true);
+    expect(result.actions).toEqual(["list"]);
+    expect(result.action_availability).toEqual([
+      expect.objectContaining({
+        action: "list",
+        command_path: "list",
+        cli_exposed: true,
+      }),
+    ]);
+    expect(result.commands).toEqual(["list"]);
+    const oneOf = (result.schema?.oneOf ?? []) as Array<{ properties?: { action?: { const?: string } } }>;
+    expect(oneOf).toHaveLength(1);
+    expect(oneOf[0]?.properties?.action?.const).toBe("list");
+  });
+
+  it("supports lightweight flags-only and availability-only projections", async () => {
+    const flagsOnly = await runContracts({ command: "update", flagsOnly: true }, GLOBAL_OPTIONS);
+    expect(flagsOnly.selected.flags_only).toBe(true);
+    expect(flagsOnly.selected.availability_only).toBe(false);
+    expect(flagsOnly.command_flags?.map((entry) => entry.command)).toEqual(["update"]);
+    expect(flagsOnly.schema).toBeUndefined();
+    expect(flagsOnly.actions).toBeUndefined();
+    expect(flagsOnly.action_availability).toBeUndefined();
+    expect(flagsOnly.commander_aliases).toBeUndefined();
+
+    const appendFlags = await runContracts({ command: "append", flagsOnly: true }, GLOBAL_OPTIONS);
+    expect(appendFlags.command_flags?.[0]?.flags).toEqual(
+      expect.arrayContaining([expect.objectContaining({ flag: "--body" })]),
+    );
+
+    const completionFlags = await runContracts({ command: "completion", flagsOnly: true }, GLOBAL_OPTIONS);
+    expect(completionFlags.command_flags?.[0]?.flags).toEqual(
+      expect.arrayContaining([expect.objectContaining({ flag: "--eager-tags" })]),
+    );
+
+    const calendarFlags = await runContracts({ command: "calendar", flagsOnly: true }, GLOBAL_OPTIONS);
+    expect(calendarFlags.command_flags?.[0]?.flags).toEqual(
+      expect.arrayContaining([expect.objectContaining({ flag: "--full-period" })]),
+    );
+
+    const activityFlags = await runContracts({ command: "activity", flagsOnly: true }, GLOBAL_OPTIONS);
+    expect(activityFlags.command_flags?.[0]?.flags).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ flag: "--id" }),
+        expect.objectContaining({ flag: "--op" }),
+        expect.objectContaining({ flag: "--author" }),
+        expect.objectContaining({ flag: "--from" }),
+        expect.objectContaining({ flag: "--to" }),
+        expect.objectContaining({ flag: "--stream" }),
+      ]),
+    );
+
+    const availabilityOnly = await runContracts({ command: "update", availabilityOnly: true }, GLOBAL_OPTIONS);
+    expect(availabilityOnly.selected.flags_only).toBe(false);
+    expect(availabilityOnly.selected.availability_only).toBe(true);
+    expect(availabilityOnly.actions).toEqual(["update"]);
+    expect(availabilityOnly.action_availability).toEqual([
+      expect.objectContaining({
+        action: "update",
+        command_path: "update",
+        cli_exposed: true,
+      }),
+    ]);
+    expect(availabilityOnly.schema).toBeUndefined();
+    expect(availabilityOnly.command_flags).toBeUndefined();
+    expect(availabilityOnly.commander_aliases).toBeUndefined();
+  });
+
+  it("rejects conflicting contracts projection flags", async () => {
+    await expect(runContracts({ schemaOnly: true, flagsOnly: true }, GLOBAL_OPTIONS)).rejects.toMatchObject<PmCliError>({
+      exitCode: EXIT_CODE.USAGE,
+    });
+    await expect(runContracts({ flagsOnly: true, availabilityOnly: true }, GLOBAL_OPTIONS)).rejects.toMatchObject<PmCliError>({
+      exitCode: EXIT_CODE.USAGE,
+    });
+  });
+
+  it("reports lifecycle action command-path discoverability metadata", async () => {
+    const result = await runContracts({ action: "start-task" }, GLOBAL_OPTIONS);
+    expect(result.actions).toEqual(["start-task"]);
+    expect(result.action_availability).toEqual([
+      expect.objectContaining({
+        action: "start-task",
+        command_path: "start-task",
+        cli_exposed: true,
+      }),
+    ]);
   });
 
   it("keeps selected actions visible in runtime-only mode", async () => {
@@ -140,9 +234,11 @@ describe("contracts command runtime", () => {
         requires_extension: true,
         provider: "extension",
         disabled_reason: "extensions_disabled",
+        command_path: "beads import",
+        cli_exposed: false,
       },
     ]);
-    const oneOf = (result.schema.oneOf ?? []) as Array<{ properties?: { action?: { const?: string } } }>;
+    const oneOf = (result.schema?.oneOf ?? []) as Array<{ properties?: { action?: { const?: string } } }>;
     expect(oneOf).toHaveLength(1);
     expect(oneOf[0]?.properties?.action?.const).toBe("beads-import");
   });
@@ -161,7 +257,7 @@ describe("contracts command runtime", () => {
         },
       );
 
-      const beadsAvailability = result.action_availability.find((entry) => entry.action === "beads-import");
+      const beadsAvailability = (result.action_availability ?? []).find((entry) => entry.action === "beads-import");
       expect(beadsAvailability).toMatchObject({
         action: "beads-import",
         invocable: false,
@@ -169,6 +265,8 @@ describe("contracts command runtime", () => {
         requires_extension: true,
         provider: "extension",
         disabled_reason: "extension_runtime_probe_failed",
+        command_path: "beads import",
+        cli_exposed: false,
       });
     });
   });
@@ -285,7 +383,7 @@ describe("contracts command runtime", () => {
         }),
       ]);
 
-      const oneOf = (result.schema.oneOf ?? []) as Array<{
+      const oneOf = (result.schema?.oneOf ?? []) as Array<{
         properties?: {
           action?: { const?: string };
           assetId?: unknown;

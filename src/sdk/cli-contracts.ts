@@ -73,6 +73,7 @@ export const PM_CORE_COMMAND_NAMES = [
   "activity",
   "restore",
   "update",
+  "update-many",
   "close",
   "delete",
   "append",
@@ -93,6 +94,9 @@ export const PM_CORE_COMMAND_NAMES = [
   "contracts",
   "claim",
   "release",
+  "start-task",
+  "pause-task",
+  "close-task",
   "templates",
   "completion",
   "help",
@@ -297,6 +301,7 @@ export const PI_CREATE_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "clearReminders", flag: "--clear-reminders" },
   { param: "clearEvents", flag: "--clear-events" },
   { param: "clearTypeOptions", flag: "--clear-type-options" },
+  { param: "allowAuditUpdate", flag: "--allow-audit-update" },
 ];
 
 export const PI_UPDATE_OPTION_CONTRACTS: PiOptionFlagContract[] = [
@@ -358,6 +363,15 @@ export const PI_CALENDAR_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "occurrenceLimit", flag: "--occurrence-limit" },
   { param: "limit", flag: "--limit" },
   { param: "format", flag: "--format" },
+];
+
+export const PI_ACTIVITY_OPTION_CONTRACTS: PiOptionFlagContract[] = [
+  { param: "id", flag: "--id" },
+  { param: "op", flag: "--op" },
+  { param: "author", flag: "--author" },
+  { param: "from", flag: "--from" },
+  { param: "to", flag: "--to" },
+  { param: "limit", flag: "--limit" },
 ];
 
 export const PI_CONTEXT_OPTION_CONTRACTS: PiOptionFlagContract[] = [
@@ -477,6 +491,45 @@ export const REINDEX_FLAG_CONTRACTS: CliFlagContract[] = [
 ];
 
 export const CLOSE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--author" },
+  { flag: "--message" },
+  { flag: "--validate-close" },
+  { flag: "--force" },
+];
+
+export const APPEND_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--body", short: "-b" },
+  { flag: "--author" },
+  { flag: "--message" },
+  { flag: "--force" },
+];
+
+export const CLAIM_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--author" },
+  { flag: "--message" },
+  { flag: "--force" },
+];
+
+export const RELEASE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--author" },
+  { flag: "--message" },
+  { flag: "--allow-audit-release" },
+  { flag: "--force" },
+];
+
+export const START_TASK_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--author" },
+  { flag: "--message" },
+  { flag: "--force" },
+];
+
+export const PAUSE_TASK_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--author" },
+  { flag: "--message" },
+  { flag: "--force" },
+];
+
+export const CLOSE_TASK_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--author" },
   { flag: "--message" },
   { flag: "--validate-close" },
@@ -694,6 +747,74 @@ export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--clear-reminders" },
   { flag: "--clear-events" },
   { flag: "--clear-type-options" },
+  { flag: "--allow-audit-update" },
+  { flag: "--allow_audit_update" },
+  { flag: "--force" },
+];
+
+export const UPDATE_MANY_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--filter-status" },
+  { flag: "--filter-type" },
+  { flag: "--filter-tag" },
+  { flag: "--filter-priority" },
+  { flag: "--filter-deadline-before" },
+  { flag: "--filter-deadline-after" },
+  { flag: "--filter-assignee" },
+  { flag: "--filter-assignee-filter" },
+  { flag: "--filter-assignee_filter" },
+  { flag: "--filter-parent" },
+  { flag: "--filter-sprint" },
+  { flag: "--filter-release" },
+  { flag: "--limit" },
+  { flag: "--offset" },
+  { flag: "--dry-run" },
+  { flag: "--rollback" },
+  { flag: "--no-checkpoint" },
+  { short: "-t", flag: "--title" },
+  { short: "-d", flag: "--description" },
+  { short: "-b", flag: "--body" },
+  { short: "-p", flag: "--priority" },
+  { flag: "--type" },
+  { flag: "--tags" },
+  { flag: "--deadline" },
+  { flag: "--estimate" },
+  { flag: "--estimated-minutes" },
+  { flag: "--acceptance-criteria" },
+  { flag: "--ac" },
+  { flag: "--definition-of-ready" },
+  { flag: "--order" },
+  { flag: "--rank" },
+  { flag: "--goal" },
+  { flag: "--objective" },
+  { flag: "--value" },
+  { flag: "--impact" },
+  { flag: "--outcome" },
+  { flag: "--why-now" },
+  { flag: "--reviewer" },
+  { flag: "--risk" },
+  { flag: "--confidence" },
+  { flag: "--sprint" },
+  { flag: "--release" },
+  { flag: "--reporter" },
+  { flag: "--severity" },
+  { flag: "--environment" },
+  { flag: "--repro-steps" },
+  { flag: "--resolution" },
+  { flag: "--expected-result" },
+  { flag: "--actual-result" },
+  { flag: "--affected-version" },
+  { flag: "--fixed-version" },
+  { flag: "--component" },
+  { flag: "--regression" },
+  { flag: "--customer-impact" },
+  { flag: "--type-option" },
+  { flag: "--type_option" },
+  { flag: "--unset" },
+  { flag: "--clear-type-options" },
+  { flag: "--allow-audit-update" },
+  { flag: "--allow_audit_update" },
+  { flag: "--author" },
+  { flag: "--message" },
   { flag: "--force" },
 ];
 
@@ -703,6 +824,8 @@ export const CALENDAR_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--from" },
   { flag: "--to" },
   { flag: "--past" },
+  { flag: "--full-period" },
+  { flag: "--full_period" },
   { flag: "--type" },
   { flag: "--tag" },
   { flag: "--priority" },
@@ -718,6 +841,16 @@ export const CALENDAR_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--occurrence-limit" },
   { flag: "--limit" },
   { flag: "--format" },
+];
+
+export const ACTIVITY_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--id" },
+  { flag: "--op" },
+  { flag: "--author" },
+  { flag: "--from" },
+  { flag: "--to" },
+  { flag: "--limit" },
+  { flag: "--stream" },
 ];
 
 export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -762,8 +895,14 @@ export const CONTRACTS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--action" },
   { flag: "--command" },
   { flag: "--schema-only" },
+  { flag: "--flags-only" },
+  { flag: "--availability-only" },
   { flag: "--runtime-only" },
   { flag: "--active-only" },
+];
+
+export const COMPLETION_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--eager-tags" },
 ];
 
 export function toCompletionFlagString(flagContracts: CliFlagContract[], includeGlobal = true): string {
@@ -966,6 +1105,15 @@ export const CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasCont
   { target: "format", keys: ["format"] },
 ];
 
+export const ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
+  { target: "id", keys: ["id"] },
+  { target: "op", keys: ["op"] },
+  { target: "author", keys: ["author"] },
+  { target: "from", keys: ["from"] },
+  { target: "to", keys: ["to"] },
+  { target: "limit", keys: ["limit"] },
+];
+
 export function readFirstStringFromCommanderOptions(
   options: Record<string, unknown>,
   contract: CommanderOptionAliasContract,
@@ -1013,8 +1161,11 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   contractAction: { type: "string" },
   command: { type: "string" },
   schemaOnly: { type: "boolean" },
+  flagsOnly: { type: "boolean" },
+  availabilityOnly: { type: "boolean" },
   runtimeOnly: { type: "boolean" },
   activeOnly: { type: "boolean" },
+  eagerTags: { type: "boolean" },
   configAction: { type: "string", enum: ["get", "set", "list", "export"] },
   key: { type: "string" },
   title: { type: "string" },
@@ -1067,6 +1218,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
     type: "string",
     enum: ["keyword", "semantic", "hybrid", "title_exact", "title_fuzzy", "parent_scope"],
   },
+  op: { type: "string" },
   compact: { type: "boolean" },
   full: { type: "boolean" },
   view: { type: "string", enum: ["agenda", "day", "week", "month"] },
@@ -1074,6 +1226,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   from: { type: "string" },
   to: { type: "string" },
   past: { type: "boolean" },
+  fullPeriod: { type: "boolean" },
   include: { type: "string" },
   recurrenceLookaheadDays: { anyOf: [{ type: "string" }, { type: "number" }] },
   recurrenceLookbackDays: { anyOf: [{ type: "string" }, { type: "number" }] },
@@ -1091,7 +1244,9 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   progress: { type: "boolean" },
   background: { type: "boolean" },
   runId: { type: "string" },
-  stream: { type: "string", enum: ["stdout", "stderr", "both"] },
+  stream: {
+    anyOf: [{ type: "boolean" }, { type: "string", enum: ["stdout", "stderr", "both", "rows", "ndjson", "jsonl"] }],
+  },
   tail: { anyOf: [{ type: "string" }, { type: "number" }] },
   envSet: { type: "array", items: { type: "string" } },
   envClear: { type: "array", items: { type: "string" } },
@@ -1126,6 +1281,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   checkHistoryDrift: { type: "boolean" },
   checkCommandReferences: { type: "boolean" },
   allowAuditComment: { type: "boolean" },
+  allowAuditUpdate: { type: "boolean" },
   allowAuditRelease: { type: "boolean" },
   force: { type: "boolean" },
   run: { type: "boolean" },
@@ -1204,11 +1360,17 @@ const UPDATE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
 const CALENDAR_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...PI_CALENDAR_OPTION_CONTRACTS.map((entry) => entry.param),
   "past",
+  "fullPeriod",
 ]);
 
 const CONTEXT_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...PI_CONTEXT_OPTION_CONTRACTS.map((entry) => entry.param),
   "past",
+]);
+
+const ACTIVITY_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
+  ...PI_ACTIVITY_OPTION_CONTRACTS.map((entry) => entry.param),
+  "stream",
 ]);
 
 const LIST_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
@@ -1275,7 +1437,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   },
   reindex: { optional: ["mode", "progress"] },
   history: { required: ["id"], optional: ["limit", "diff", "verify"] },
-  activity: { optional: ["limit"] },
+  activity: { optional: ACTIVITY_CONTRACT_PARAMETER_KEYS },
   restore: { required: ["id", "target"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   update: { required: ["id"], optional: UPDATE_CONTRACT_PARAMETER_KEYS },
   close: { required: ["id", "text"], optional: ["validateClose", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
@@ -1382,8 +1544,8 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
     ],
   },
   gc: {},
-  contracts: { optional: ["contractAction", "command", "schemaOnly", "runtimeOnly", "activeOnly"] },
-  completion: { required: ["shell"] },
+  contracts: { optional: ["contractAction", "command", "schemaOnly", "flagsOnly", "availabilityOnly", "runtimeOnly", "activeOnly"] },
+  completion: { required: ["shell"], optional: ["eagerTags"] },
   "templates-save": {
     required: ["template"],
     optional: CREATE_CONTRACT_PARAMETER_KEYS,
@@ -1570,6 +1732,13 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
       "Mode selector for search/reindex (keyword|semantic|hybrid) and dedupe-audit (title_exact|title_fuzzy|parent_scope).",
     examples: ["keyword", "hybrid", "title_exact"],
   },
+  op: {
+    description: "History operation filter for activity output.",
+    examples: ["create", "update", "close", "update_audit"],
+  },
+  fullPeriod: {
+    description: "For day/week/month calendar views, include the full anchored period instead of clipping the start to now.",
+  },
   progress: {
     description: "Emit progress diagnostics to stderr for long-running operations.",
   },
@@ -1613,11 +1782,11 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     examples: [10, "25"],
   },
   fullHistory: {
-    description: "When true for comments-audit, export full per-item comment history rows and ignore latest-snapshot truncation.",
+    description: "When true for comments-audit, export full per-item comment history rows; cannot be combined with latest.",
   },
   latest: {
-    description: "Number of most recent comments to include per item in comments-audit output.",
-    examples: [1, "3"],
+    description: "Number of most recent comments to include per item in comments-audit output (use 0 for summary-only item rows).",
+    examples: [0, 1, "3"],
   },
   validateClose: {
     description: 'Close-time metadata validation mode ("warn" or "strict").',
@@ -1676,6 +1845,9 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   allowAuditComment: {
     description: "Allow non-owner append-only comment audits without requiring --force.",
   },
+  allowAuditUpdate: {
+    description: "Allow non-owner metadata-only update audits without requiring --force.",
+  },
   allowAuditRelease: {
     description: "Allow non-owner release handoffs that clear assignee metadata without requiring --force.",
   },
@@ -1687,8 +1859,9 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     description: "When true for files action, preserve existing linked-file order and append new links without full-array resorting.",
   },
   stream: {
-    description: "Background run log stream selector.",
-    examples: ["stderr", "stdout", "both"],
+    description:
+      "Stream selector: test-runs logs accepts stdout|stderr|both; activity accepts boolean/rows|ndjson|jsonl for line-delimited output.",
+    examples: ["stderr", "stdout", "both", "rows", "ndjson", "jsonl", true],
   },
   tail: {
     description: "Number of lines to tail for background run logs.",
@@ -1745,16 +1918,25 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     description: "Shell target for completion generation.",
     examples: ["bash"],
   },
+  eagerTags: {
+    description: "When true for completion, eagerly embed current tracker tags into generated scripts (legacy mode).",
+  },
   contractAction: {
     description: "Filter contracts schema to one tool action.",
     examples: ["create", "update"],
   },
   command: {
-    description: "Filter command-level flag contracts to one CLI command name.",
-    examples: ["create", "search"],
+    description: "Scope contracts output to one CLI command name; action/schema surfaces narrow by default.",
+    examples: ["create", "search", "list"],
   },
   schemaOnly: {
-    description: "When true, contracts action omits command flag and alias surfaces.",
+    description: "When true, contracts action returns schema-focused payloads (mutually exclusive with flagsOnly/availabilityOnly).",
+  },
+  flagsOnly: {
+    description: "When true, contracts action returns only command flag surface payloads (mutually exclusive projection mode).",
+  },
+  availabilityOnly: {
+    description: "When true, contracts action returns only action availability payloads (mutually exclusive projection mode).",
   },
   runtimeOnly: {
     description: "When true, contracts action only includes actions invocable in the current runtime.",

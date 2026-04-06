@@ -71,6 +71,7 @@ export interface UpdateCommandOptions {
   author?: string;
   message?: string;
   force?: boolean;
+  allowAuditUpdate?: boolean;
   assignee?: string;
   parent?: string;
   reviewer?: string;
@@ -122,6 +123,7 @@ export interface UpdateResult {
   item: Record<string, unknown>;
   changed_fields: string[];
   warnings: string[];
+  audit_update?: boolean;
 }
 
 const LEGACY_NONE_TOKENS = new Set(["none", "null"]);
@@ -265,6 +267,24 @@ const UPDATE_UNSET_SUPPORTED_CANONICAL_FIELDS = UPDATE_UNSET_FIELD_DEFINITIONS.m
   .sort((left, right) => left.localeCompare(right))
   .join(", ");
 
+const AUDIT_UPDATE_DISALLOWED_UNSET_FRONT_MATTER_KEYS = new Set<string>([
+  "close_reason",
+  "assignee",
+  "parent",
+  "blocked_by",
+  "blocked_reason",
+  "unblock_note",
+  "dependencies",
+  "comments",
+  "notes",
+  "learnings",
+  "files",
+  "tests",
+  "docs",
+  "reminders",
+  "events",
+]);
+
 function toAuthor(candidate: string | undefined, defaultAuthor: string): string {
   const resolved = candidate ?? process.env.PM_AUTHOR ?? defaultAuthor;
   const trimmed = resolved.trim();
@@ -328,6 +348,107 @@ function parseUpdateUnsetTargets(raw: string[] | undefined): { frontMatterKeys: 
   }
 
   return { frontMatterKeys, optionKeys };
+}
+
+function enforceAllowAuditUpdateScope(options: UpdateCommandOptions, clearFrontMatterKeys: Set<string>): void {
+  if (options.allowAuditUpdate !== true) {
+    return;
+  }
+  const disallowedFlags: string[] = [];
+  if (options.status !== undefined) {
+    disallowedFlags.push("--status");
+  }
+  if (options.closeReason !== undefined) {
+    disallowedFlags.push("--close-reason");
+  }
+  if (options.assignee !== undefined) {
+    disallowedFlags.push("--assignee");
+  }
+  if (options.parent !== undefined) {
+    disallowedFlags.push("--parent");
+  }
+  if (options.blockedBy !== undefined) {
+    disallowedFlags.push("--blocked-by");
+  }
+  if (options.blockedReason !== undefined) {
+    disallowedFlags.push("--blocked-reason");
+  }
+  if (options.unblockNote !== undefined) {
+    disallowedFlags.push("--unblock-note");
+  }
+  if (options.dep !== undefined) {
+    disallowedFlags.push("--dep");
+  }
+  if (options.depRemove !== undefined) {
+    disallowedFlags.push("--dep-remove");
+  }
+  if (options.replaceDeps === true) {
+    disallowedFlags.push("--replace-deps");
+  }
+  if (options.comment !== undefined) {
+    disallowedFlags.push("--comment");
+  }
+  if (options.note !== undefined) {
+    disallowedFlags.push("--note");
+  }
+  if (options.learning !== undefined) {
+    disallowedFlags.push("--learning");
+  }
+  if (options.file !== undefined) {
+    disallowedFlags.push("--file");
+  }
+  if (options.test !== undefined) {
+    disallowedFlags.push("--test");
+  }
+  if (options.doc !== undefined) {
+    disallowedFlags.push("--doc");
+  }
+  if (options.reminder !== undefined) {
+    disallowedFlags.push("--reminder");
+  }
+  if (options.event !== undefined) {
+    disallowedFlags.push("--event");
+  }
+  if (options.clearDeps === true) {
+    disallowedFlags.push("--clear-deps");
+  }
+  if (options.clearComments === true) {
+    disallowedFlags.push("--clear-comments");
+  }
+  if (options.clearNotes === true) {
+    disallowedFlags.push("--clear-notes");
+  }
+  if (options.clearLearnings === true) {
+    disallowedFlags.push("--clear-learnings");
+  }
+  if (options.clearFiles === true) {
+    disallowedFlags.push("--clear-files");
+  }
+  if (options.clearTests === true) {
+    disallowedFlags.push("--clear-tests");
+  }
+  if (options.clearDocs === true) {
+    disallowedFlags.push("--clear-docs");
+  }
+  if (options.clearReminders === true) {
+    disallowedFlags.push("--clear-reminders");
+  }
+  if (options.clearEvents === true) {
+    disallowedFlags.push("--clear-events");
+  }
+
+  const disallowedUnset = [...clearFrontMatterKeys]
+    .filter((field) => AUDIT_UPDATE_DISALLOWED_UNSET_FRONT_MATTER_KEYS.has(field))
+    .sort((left, right) => left.localeCompare(right))
+    .map((field) => `--unset ${field.replaceAll("_", "-")}`);
+  disallowedFlags.push(...disallowedUnset);
+
+  if (disallowedFlags.length > 0) {
+    throw new PmCliError(
+      `--allow-audit-update only supports non-lifecycle metadata fields. Remove restricted options: ${disallowedFlags.join(", ")}`,
+      EXIT_CODE.USAGE,
+    );
+  }
 }
 
 function ensureEnum<T extends string>(value: string, allowed: readonly T[], label: string): T {
@@ -781,6 +902,7 @@ function collectProvidedUpdatePolicyOptions(options: UpdateCommandOptions): Set<
   mark("event", options.event !== undefined);
   mark("typeOption", options.typeOption !== undefined);
   mark("force", options.force === true);
+  mark("allowAuditUpdate", options.allowAuditUpdate === true);
   mark("dep", options.clearDeps === true);
   mark("comment", options.clearComments === true);
   mark("note", options.clearNotes === true);
@@ -968,6 +1090,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     clearOptionKeys.add(definition.optionKey);
     clearFrontMatterKeys.add(definition.frontMatterKey);
   }
+  enforceAllowAuditUpdateScope(options, clearFrontMatterKeys);
 
   const scalarOptionPresence: Record<string, boolean> = {
     tags: options.tags !== undefined,
@@ -1168,10 +1291,11 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     settings,
     typeToFolder: typeRegistry.type_to_folder,
     id,
-    op: "update",
+    op: options.allowAuditUpdate === true ? "update_audit" : "update",
     author,
     message: options.message,
     force: options.force,
+    bypassAssigneeConflict: options.allowAuditUpdate === true,
     mutate(document) {
       const changedFields: string[] = [];
       const warnings: string[] = [];
@@ -1683,5 +1807,6 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     item: result.item as unknown as Record<string, unknown>,
     changed_fields: result.changedFields,
     warnings: [...parentReferenceWarnings, ...result.warnings],
+    ...(options.allowAuditUpdate === true ? { audit_update: true } : {}),
   };
 }

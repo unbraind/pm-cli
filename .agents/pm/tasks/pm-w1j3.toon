@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:comments",external-audit,implementation,pm-cli
 created_at: "2026-04-04T22:38:14.047Z"
-updated_at: "2026-04-05T22:44:47.104Z"
+updated_at: "2026-04-06T18:47:21.277Z"
 deadline: "2026-04-10T22:38:14.047Z"
 author: codex-agent
 estimated_minutes: 240
@@ -21,28 +21,33 @@ parent: pm-ayyt
 resolution: Resolution metadata backfilled during governance normalization; implementation evidence is already captured in linked comments and artifacts.
 expected_result: Closed item includes explicit resolution/expected_result/actual_result metadata for deterministic validation and audit workflows.
 actual_result: Resolution fields were previously missing and are now backfilled as part of governance hardening.
-comments[6]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-04-04T22:38:14.047Z",codex-agent,Task created for direct implementation of comments-audit command and integration parity updates.
   "2026-04-04T22:48:16.609Z",codex-agent,"Implemented additive comments-audit surface with status/type/assignee filters, --limit-items, and --latest snapshots. Wired main/completion/contracts/Pi and added runCommentsAudit unit coverage. Evidence: node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts passed."
   "2026-04-04T23:34:59.203Z",codex-agent,"Final evidence: comments-audit command implemented with status/type/assignee filters plus --limit-items/--latest, with command wiring/contracts/completion/Pi parity and docs updates. Verification passed: linked test run via pm test pm-w1j3 --run, full node scripts/run-tests.mjs test, and node scripts/run-tests.mjs coverage."
   "2026-04-05T20:39:54.744Z",codex-agent,Duplicate-check evidence refreshed; reusing canonical implementation task for comments-audit full-history export mode (no duplicate item created).
   "2026-04-05T21:24:35.667Z",codex-agent,"Progress: added comments-audit --full-history export mode with latest-conflict validation, CLI/completion/contracts/Pi parity, and targeted regression coverage (comments/unit completion + runtime help). Verification: node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts passed."
   "2026-04-05T21:44:39.779Z",codex-agent,"Final evidence: full-history comments audit export is shipped with --full-history/--latest conflict guard, contract/completion/Pi parity, and NDJSON-friendly rows payload. Verification includes targeted regressions plus full repository test+coverage pass at 100/100/100/100."
+  "2026-04-06T16:46:36.539Z",codex-agent,"Reopened for 13-issue remediation wave after duplicate-check sweep (pm context --limit 10; pm list-open --limit 30; pm list-in-progress --limit 30; pm search 'comments-audit full-history latest row_count latest 0' --limit 10). Follow-up scope: keep --full-history/--latest exclusivity, align help/contracts/docs wording accordingly, make export.row_count deterministic numeric across modes, and define --latest 0 as explicit summary-only behavior with tests."
+  "2026-04-06T17:19:29.337Z",codex-agent,"Progress: comments-audit hardening now keeps --full-history and --latest mutually exclusive across runtime/help/contracts/completion wording, makes export.row_count deterministic in latest/full_history modes, and formalizes --latest 0 as summary-only (items returned with comment_count but empty comments arrays). Verification: node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts passed."
+  "2026-04-06T18:47:15.234Z",codex-agent,"Completed comments-audit semantics hardening: latest/full-history exclusivity guidance, deterministic export metadata, and valid --latest 0 summary-only behavior. Help/contracts/tests/docs were synchronized across CLI and Pi surfaces. Verification: pnpm build; node scripts/run-tests.mjs test; node scripts/run-tests.mjs coverage."
 notes[1]{created_at,author,text}:
   "2026-04-04T22:38:14.047Z",codex-agent,Planned files include new command module plus main/completion/contracts/Pi and comments command tests.
-files[8]{path,scope,note}:
+files[9]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,pi-comments-audit-mapping
   src/cli/commands/comments-audit.ts,project,bulk-comments-audit-command
   src/cli/commands/completion.ts,project,comments-audit-completion
+  src/cli/help-content.ts,project,comments-audit-exclusivity-and-latest-zero-help-guidance
   src/cli/main.ts,project,comments-audit-command-wiring
   src/sdk/cli-contracts.ts,project,comments-audit-contract
+  tests/integration/release-readiness-runtime.spec.ts,project,comments-audit-help-flag-parity-regression
   tests/unit/comments-command.spec.ts,project,comments-audit-regression
   tests/unit/completion-command.spec.ts,project,completion-flag-coverage-for-full-history
-  tests/integration/release-readiness-runtime.spec.ts,project,comments-audit-help-flag-parity-regression
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,comments-audit-targeted
   node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full-history-contract-and-help-regression
+  node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,comments-audit-row-count-and-exclusivity-regression
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mnkywjwz-pmp61j,test,passed,"2026-04-04T23:32:18.348Z","2026-04-04T23:32:33.108Z","2026-04-04T23:32:33.108Z",null,null,1,0,0,null,null,null
-close_reason: comments-audit full-history export implemented and fully verified
+close_reason: comments-audit semantics and export determinism finalized with passing verification
 body: "Execution task for feature pm-ayyt covering command implementation, output schema, and docs/tests parity."

@@ -1,0 +1,37 @@
+id: pm-0g7a
+title: Add activity filtering and stream mode for large program automation
+description: Extend pm activity with id operation author and time-window filters plus optional stream output mode for automation workloads.
+type: Task
+status: closed
+priority: 1
+tags[4]: activity,external-audit,pm-cli,tracking
+created_at: "2026-04-06T16:48:05.699Z"
+updated_at: "2026-04-06T18:26:07.704Z"
+author: codex-agent
+acceptance_criteria: pm activity supports --id --op --author --from --to filters and optional stream mode with deterministic ordering and contract/documentation parity.
+parent: pm-o7be
+comments[2]{created_at,author,text}:
+  "2026-04-06T16:48:05.699Z",codex-agent,Duplicate-check evidence used pm context pm search and open or in-progress lists. Net-new scope under pm-o7be for activity filtering and automation stream behavior.
+  "2026-04-06T18:25:50.309Z",codex-agent,"Implemented activity scaling controls: --id, --op, --author, --from, --to filters in runActivity with deterministic descending sort preserved and inclusive-from/exclusive-to window semantics. Added optional activity stream mode via --stream [rows|ndjson|jsonl] requiring --json, emitting meta/entry/end NDJSON rows for automation parity with list stream UX. Updated command wiring, contracts flags/aliases, shell completion, help examples, and Pi wrapper mapping (including stream + filter arguments). Verification: node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/unit/history-activity-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts (208/208 passed)."
+files[13]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,Pi wrapper parity for activity filters/stream and calendar fullPeriod
+  src/cli/commands/activity.ts,project,add id/op/author/time-window filters with deterministic activity ordering
+  src/cli/commands/completion.ts,project,activity completion updates for filter and stream flags
+  src/cli/commands/contracts.ts,project,activity command flags surfaced via contracts --flags-only
+  src/cli/help-content.ts,project,activity help examples for filtering and stream automation
+  src/cli/main.ts,project,activity command options normalization and JSON stream mode wiring
+  src/sdk/cli-contracts.ts,project,activity option/flag schema contracts and stream parameter metadata
+  tests/integration/cli.integration.spec.ts,project,activity stream integration and --json enforcement coverage
+  tests/integration/release-readiness-runtime.spec.ts,project,activity help/runtime parity assertions
+  tests/unit/completion-command.spec.ts,project,activity completion flag regression checks
+  tests/unit/contracts-command.spec.ts,project,flags-only coverage for activity command surface
+  tests/unit/history-activity-command.spec.ts,project,activity filter validation and deterministic window coverage
+  tests/unit/pi-agent-extension.spec.ts,project,Pi schema/args parity for activity filters and stream
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/unit/history-activity-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,activity filters/stream mode regression sweep with contracts and wrapper parity
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mnnithap-gb69xy,test,passed,"2026-04-06T18:22:03.164Z","2026-04-06T18:25:34.417Z","2026-04-06T18:25:34.417Z",null,null,1,0,0,null,null,null
+docs[1]{path,scope,note}:
+  src/cli/help-content.ts,project,activity filter/stream examples and automation guidance
+close_reason: activity filtering and JSON stream mode implemented with deterministic automation outputs
+body: ""

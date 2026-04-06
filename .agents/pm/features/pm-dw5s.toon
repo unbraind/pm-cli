@@ -2,11 +2,11 @@ id: pm-dw5s
 title: Extend pm validate with low-signal metadata quality checks
 description: Add explicit validate diagnostics for placeholder-style metadata so governance quality regressions are detected before large cleanup sweeps are required.
 type: Feature
-status: in_progress
+status: closed
 priority: 1
 tags[4]: governance,metadata,pm-cli,validation
 created_at: "2026-04-04T21:55:14.472Z"
-updated_at: "2026-04-05T23:22:25.412Z"
+updated_at: "2026-04-06T18:48:08.082Z"
 deadline: "2026-04-18T21:55:14.472Z"
 author: codex-agent
 estimated_minutes: 240
@@ -32,7 +32,7 @@ affected_version: 2026.3.12
 component: validate-metadata-quality
 regression: false
 customer_impact: Teams gain earlier detection of tracker quality drift and lower remediation cost.
-comments[10]{created_at,author,text}:
+comments[13]{created_at,author,text}:
   "2026-04-04T21:55:14.472Z",codex-agent,"Duplicate-check evidence: pm search 'validate placeholder metadata blocked_reason unblock_note repro_steps' --limit 20; pm search 'External audit follow-up: validation and large-output ergonomics' --limit 20; pm list-open --limit 20. Net-new because existing validation items focus on structural checks,not semantic low-signal metadata detection."
   "2026-04-05T03:08:05.985Z",codex-agent,"Scope extension for external issue #4: add default-on remediation command templates for missing resolution metadata in pm validate output details."
   "2026-04-05T03:26:56.486Z",codex-agent,"Progress: added default-on resolution remediation hints in validate output details. Resolution check now emits deterministic pm update <id> command templates for missing resolution/expected_result/actual_result fields (additive detail fields only, warning tokens unchanged), so both TOON and JSON outputs include actionable remediation by default. Verification: node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/integration/cli.integration.spec.ts passed."
@@ -43,6 +43,9 @@ comments[10]{created_at,author,text}:
   "2026-04-05T23:05:10.066Z",codex-agent,"Implemented lifecycle governance drift checks in pm validate: new default lifecycle check flags active closure-like metadata and active items with terminal parents, plus optional stale blocker diagnostics behind --check-stale-blockers. Wired CLI/contracts/completion/Pi parity and updated docs (README/ARCHITECTURE/PRD). Verification: node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts passed (191/191)."
   "2026-04-05T23:06:15.406Z",codex-agent,"Backlog curation: created net-new child task pm-urxb (Make lifecycle validate patterns configurable) under pm-dw5s after duplicate-check sweep (pm context/search/list-open/list-in-progress) confirmed no existing settings-backed pattern-policy task."
   "2026-04-05T23:22:04.619Z",codex-agent,"Verification evidence (release pass): pm test pm-dw5s --run --progress passed all 3 linked suites; pnpm build passed; node scripts/run-tests.mjs test passed (69 files / 921 tests); node scripts/run-tests.mjs coverage passed (100/100/100/100). Governance baseline remains clean: pm validate --check-metadata --check-resolution --check-files --check-command-references --check-history-drift --scan-mode tracked-all => ok=true,warnings=0; pm health --json => ok=true."
+  "2026-04-06T16:45:40.471Z",codex-agent,"Lineage note for current remediation wave: pm-dw5s remains canonical feature parent for validate enhancements. Upcoming child task will extend lifecycle validation with dependency-cycle diagnostics/policy without creating duplicate validation lineage."
+  "2026-04-06T16:48:20.111Z",codex-agent,"Child task seeding complete under pm-dw5s for current wave: pm-i4ef (dependency-cycle diagnostics for pm validate lifecycle checks)."
+  "2026-04-06T18:48:03.982Z",codex-agent,"Feature completion verified in remediation wave: validate-related governance hardening remained stable while downstream mutation/search/contracts/completion/calendar/activity changes landed, and full repository verification (build + test + coverage) stayed green with docs synchronized."
 notes[1]{created_at,author,text}:
   "2026-04-04T21:55:14.472Z",codex-agent,Checks should be configurable and avoid false positives by supporting per-rule opt-outs and rule versioning.
 files[16]{path,scope,note}:
@@ -72,4 +75,5 @@ docs[3]{path,scope,note}:
   docs/ARCHITECTURE.md,project,validate-lifecycle-architecture-notes
   PRD.md,project,validation contract extension
   README.md,project,validate-lifecycle-user-facing-contracts
+close_reason: validate governance feature remains release-ready with full verification passing
 body: "Feature adds machine-checkable guardrails for low-signal fields (generic blocker text, generic unblock notes, placeholder repro steps, empty bodies) and emits actionable remediation output."

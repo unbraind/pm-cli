@@ -1,0 +1,30 @@
+id: pm-lf6s
+title: Implement pm update-many with dry-run checkpoints and rollback
+description: Add a native bulk metadata mutation workflow with deterministic filtering preview and rollback checkpoint support.
+type: Task
+status: closed
+priority: 1
+tags[4]: automation,governance,pm-cli,update
+created_at: "2026-04-06T16:47:17.517Z"
+updated_at: "2026-04-06T18:46:53.700Z"
+author: codex-agent
+acceptance_criteria: pm update-many supports filter-driven selection dry-run diff output deterministic apply execution and checkpoint-based rollback with per-item result accounting.
+parent: pm-lwps
+comments[4]{created_at,author,text}:
+  "2026-04-06T16:47:17.517Z",codex-agent,Duplicate-check evidence used pm context pm search and open or in-progress lists. Net-new scope under pm-lwps for first-class update-many workflow with rollback semantics.
+  "2026-04-06T17:08:53.092Z",codex-agent,"Progress: shipped new pm update-many command with filter selectors, deterministic dry-run item diff preview, checkpoint file creation, apply execution summaries, and --rollback restore workflow. Rollback uses captured target updated_at values per item to replay precise restores and emits per-item restored or failed rows."
+  "2026-04-06T17:08:56.969Z",codex-agent,"Verification evidence: node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/unit/update-many-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts passed (140 tests)."
+  "2026-04-06T18:46:48.573Z",codex-agent,"Delivered native update-many flow: filter-targeted bulk updates, deterministic dry-run planning, checkpoint capture, rollback-by-checkpoint-id, and per-item row accounting. Wired main command surface/exports/contracts/tests, plus docs updates in README/PRD/ARCHITECTURE/CHANGELOG/AGENTS. Verification: pnpm build; node scripts/run-tests.mjs test; node scripts/run-tests.mjs coverage."
+files[8]{path,scope,note}:
+  src/cli/commands/completion.ts,project,completion-surface-for-update-many
+  src/cli/commands/contracts.ts,project,contracts-command-core-flag-surface-for-update-many
+  src/cli/commands/index.ts,project,command-export-surface-for-update-many
+  src/cli/commands/update-many.ts,project,bulk-update-planning-apply-rollback-checkpoint
+  src/cli/main.ts,project,update-many-cli-command-wiring
+  src/sdk/cli-contracts.ts,project,command-and-flag-contract-surface-for-update-many
+  tests/integration/release-readiness-runtime.spec.ts,project,coverage-include-allowlist-update-for-new-command-module
+  tests/unit/update-many-command.spec.ts,project,bulk-update-dry-run-apply-rollback-regressions
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/update-many-command.spec.ts tests/unit/update-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,bulk-update-dry-run-checkpoint-rollback-regression
+close_reason: update-many bulk workflow shipped with dry-run checkpoints rollback and passing verification
+body: ""

@@ -591,6 +591,7 @@ describe("Pi agent extension wrapper for pm", () => {
     const calendarSchema = schemaForAction(tool.parameters as Record<string, unknown>, "calendar");
     expect(schemaProperty(calendarSchema, "view").type).toBe("string");
     expect(schemaProperty(calendarSchema, "past").type).toBe("boolean");
+    expect(schemaProperty(calendarSchema, "fullPeriod").type).toBe("boolean");
     expect(schemaProperty(calendarSchema, "include").type).toBe("string");
     expect(schemaProperty(calendarSchema, "recurrenceLookaheadDays").anyOf).toEqual(
       expect.arrayContaining([{ type: "string" }, { type: "number" }]),
@@ -600,6 +601,19 @@ describe("Pi agent extension wrapper for pm", () => {
     );
     expect(schemaProperty(calendarSchema, "occurrenceLimit").anyOf).toEqual(
       expect.arrayContaining([{ type: "string" }, { type: "number" }]),
+    );
+
+    const activitySchema = schemaForAction(tool.parameters as Record<string, unknown>, "activity");
+    expect(schemaProperty(activitySchema, "id").type).toBe("string");
+    expect(schemaProperty(activitySchema, "op").type).toBe("string");
+    expect(schemaProperty(activitySchema, "author").type).toBe("string");
+    expect(schemaProperty(activitySchema, "from").type).toBe("string");
+    expect(schemaProperty(activitySchema, "to").type).toBe("string");
+    expect(schemaProperty(activitySchema, "limit").anyOf).toEqual(
+      expect.arrayContaining([{ type: "string" }, { type: "number" }]),
+    );
+    expect(schemaProperty(activitySchema, "stream").anyOf).toEqual(
+      expect.arrayContaining([expect.objectContaining({ type: "boolean" }), expect.objectContaining({ type: "string" })]),
     );
 
     const createSchema = schemaForAction(tool.parameters as Record<string, unknown>, "create");
@@ -635,12 +649,15 @@ describe("Pi agent extension wrapper for pm", () => {
     const completionSchema = schemaForAction(tool.parameters as Record<string, unknown>, "completion");
     expect(completionSchema.required).toEqual(expect.arrayContaining(["action", "shell"]));
     expect(schemaProperty(completionSchema, "shell").type).toBe("string");
+    expect(schemaProperty(completionSchema, "eagerTags").type).toBe("boolean");
 
     const contractsSchema = schemaForAction(tool.parameters as Record<string, unknown>, "contracts");
     expect(contractsSchema.required).toEqual(["action"]);
     expect(schemaProperty(contractsSchema, "contractAction").type).toBe("string");
     expect(schemaProperty(contractsSchema, "command").type).toBe("string");
     expect(schemaProperty(contractsSchema, "schemaOnly").type).toBe("boolean");
+    expect(schemaProperty(contractsSchema, "flagsOnly").type).toBe("boolean");
+    expect(schemaProperty(contractsSchema, "availabilityOnly").type).toBe("boolean");
     expect(schemaProperty(contractsSchema, "runtimeOnly").type).toBe("boolean");
     expect(schemaProperty(contractsSchema, "activeOnly").type).toBe("boolean");
 
@@ -1010,6 +1027,7 @@ describe("Pi agent extension wrapper for pm", () => {
         from: "2026-03-01T00:00:00.000Z",
         to: "2026-03-08T00:00:00.000Z",
         past: true,
+        fullPeriod: true,
         type: "Task",
         tag: "pi",
         priority: "1",
@@ -1036,6 +1054,7 @@ describe("Pi agent extension wrapper for pm", () => {
       "--to",
       "2026-03-08T00:00:00.000Z",
       "--past",
+      "--full-period",
       "--type",
       "Task",
       "--tag",
@@ -1062,6 +1081,36 @@ describe("Pi agent extension wrapper for pm", () => {
       "20",
       "--format",
       "markdown",
+    ]);
+
+    expect(
+      buildPmCliArgs({
+        action: "activity",
+        id: "pm-a1b2",
+        op: "update",
+        author: "pi-bot",
+        from: "2026-03-01T00:00:00.000Z",
+        to: "2026-03-08T00:00:00.000Z",
+        limit: "50",
+        stream: "rows",
+      }),
+    ).toEqual([
+      "--json",
+      "activity",
+      "--id",
+      "pm-a1b2",
+      "--op",
+      "update",
+      "--author",
+      "pi-bot",
+      "--from",
+      "2026-03-01T00:00:00.000Z",
+      "--to",
+      "2026-03-08T00:00:00.000Z",
+      "--limit",
+      "50",
+      "--stream",
+      "rows",
     ]);
 
     expect(
@@ -1417,6 +1466,8 @@ describe("Pi agent extension wrapper for pm", () => {
         contractAction: "create",
         command: "create",
         schemaOnly: true,
+        flagsOnly: true,
+        availabilityOnly: true,
         runtimeOnly: true,
         activeOnly: true,
       }),
@@ -1428,6 +1479,8 @@ describe("Pi agent extension wrapper for pm", () => {
       "--command",
       "create",
       "--schema-only",
+      "--flags-only",
+      "--availability-only",
       "--runtime-only",
       "--active-only",
     ]);
@@ -1438,6 +1491,14 @@ describe("Pi agent extension wrapper for pm", () => {
         shell: "fish",
       }),
     ).toEqual(["--json", "completion", "fish"]);
+
+    expect(
+      buildPmCliArgs({
+        action: "completion",
+        shell: "bash",
+        eagerTags: true,
+      }),
+    ).toEqual(["--json", "completion", "bash", "--eager-tags"]);
 
     expect(
       buildPmCliArgs({

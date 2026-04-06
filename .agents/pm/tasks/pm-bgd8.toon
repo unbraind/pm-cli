@@ -1,0 +1,25 @@
+id: pm-bgd8
+title: Harden mutation-triggered vector refresh coverage across write paths
+description: Verify every write command triggers targeted search artifact refresh and patch any mutation paths that skip vector cache maintenance.
+type: Task
+status: closed
+priority: 1
+tags[4]: governance,health,pm-cli,search
+created_at: "2026-04-06T16:47:20.415Z"
+updated_at: "2026-04-06T18:47:11.579Z"
+author: codex-agent
+acceptance_criteria: All mutation command paths trigger search artifact invalidation and targeted semantic refresh for touched items; pm health behavior remains stale-targeted by default and docs explain refresh policy clearly.
+parent: pm-5rjn
+comments[5]{created_at,author,text}:
+  "2026-04-06T16:47:20.415Z",codex-agent,Duplicate-check evidence used pm context pm search and open or in-progress lists. Net-new scope under pm-5rjn for full write-path vector refresh coverage hardening.
+  "2026-04-06T17:13:16.366Z",codex-agent,"Progress: audited mutation-triggered cache invalidation wiring across CLI commands and hardened run-tracking paths. pm test now refreshes search artifacts when --run executes (to cover test_result_tracking item mutations) and pm test-all now refreshes using all touched item IDs after run aggregation."
+  "2026-04-06T17:13:17.527Z",codex-agent,"Health policy remains compatibility-safe: pm health default behavior continues to refresh stale vectors unless disabled via --check-only or --no-refresh. Added release-readiness static guard to keep test run-tracking refresh wiring from regressing."
+  "2026-04-06T17:13:19.140Z",codex-agent,"Verification evidence: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/integration/release-readiness-runtime.spec.ts passed (83 tests)."
+  "2026-04-06T18:47:06.630Z",codex-agent,"Hardened mutation-triggered search refresh coverage by ensuring test run-tracking and test-all mutation paths invalidate caches with touched item IDs while preserving default health stale-targeted refresh behavior. Added regression coverage and docs sync notes. Verification: pnpm build; node scripts/run-tests.mjs test; node scripts/run-tests.mjs coverage."
+files[2]{path,scope,note}:
+  src/cli/main.ts,project,mutation-refresh-coverage-for-test-and-test-all-run-tracking
+  tests/integration/release-readiness-runtime.spec.ts,project,static-regression-guard-for-test-run-refresh-wiring
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,run-tracking-refresh-coverage-regression
+close_reason: mutation refresh coverage hardened across test run paths with full verification
+body: ""

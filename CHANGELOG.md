@@ -100,6 +100,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `pm create --create-mode strict|progressive` so strict remains default while governance workflows can use staged progressive creation.
 - Added `pm comments --allow-audit-comment` to permit append-only audit comments on items owned by other assignees without broad ownership override semantics.
 - Added `pm comments-audit` full-history export mode (`--full-history`) with mutually-exclusive latest controls, explicit export metadata (`filters.full_history`, `export.mode`, `export.row_count`), and NDJSON-friendly `rows[]` payload support.
+- Added ownership-safe non-owner metadata update mode on `pm update` via `--allow-audit-update` / `--allow_audit_update`, with explicit lifecycle/ownership/linkage guardrails.
+- Added `pm update-many` bulk mutation workflow with deterministic filter targeting, `--dry-run` planning, checkpoint capture, and `--rollback <checkpoint-id>` restore support.
+- Added task lifecycle alias commands: `pm start-task`, `pm pause-task`, and `pm close-task` for discoverable claim/update/close/release workflows.
+- Added `pm contracts` projection flags `--flags-only` and `--availability-only` for lightweight machine-readable output selection.
+- Added completion mode controls: `pm completion --eager-tags` for embedded tag expansion and hidden `pm completion-tags` helper command for default lazy tag lookup.
+- Added `pm calendar --full-period` for anchored day/week/month windows without now-clipping.
+- Added `pm activity` timeline filters (`--id`, `--op`, `--author`, `--from`, `--to`) and JSON line stream mode (`--stream [rows|ndjson|jsonl]`).
 - Added compatibility-safe extension manifest/command migration aids: legacy capability aliases (`migration`/`validation`) now remap to `schema` with `extension_capability_legacy_alias`, and legacy command-definition `handler` aliases map to `run` with `extension_command_definition_legacy_handler_alias`.
 - Added `--offset` pagination and JSON-only `--stream` output mode for `pm list` and all `pm list-*` command families to improve large-result processing ergonomics.
 - Added additive `pm health --strict-directories` behavior with required-vs-optional directory diagnostics (`missing_required`, `missing_optional`) so optional built-in item-type directory gaps do not fail default health runs.
@@ -138,6 +145,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Default `list*` output remains front-matter-only; `body` projection is now explicit and opt-in via `--include-body` to preserve lightweight list payloads.
 - Calendar command output now defaults to markdown for agent/human readability while preserving explicit `--format toon|json|markdown` and global `--json` overrides; all other commands keep existing TOON-default behavior.
 - Calendar markdown summaries now include scheduled-event counts and event rendering includes recurring/location metadata where present.
+- `pm comments-audit` now treats `--latest 0` as a valid summary-only export mode with deterministic `export.row_count = 0` semantics.
+- `pm comments-audit --latest` and `--full-history` now enforce explicit mutual exclusivity in guidance/help output.
+- `pm contracts --command <name>` now scopes action/command/availability output to the selected command by default (intentional breaking change); use no `--command` filter for full corpus output.
+- Mutation-triggered search cache invalidation now covers linked-test run-tracking paths (`pm test --run`, `pm test-all`) and lifecycle alias mutation flows.
 - Calendar JSON/markdown summaries now expose deterministic aggregate breakdowns (`by_kind`, `by_type`, `by_status`, `recurring_events`) and markdown event lines now include richer metadata tokens (item type, recurrence rule, end-time projection, timezone/location, and description context).
 - Command-aware output summaries now consume the canonical calendar `summary.events` structure (instead of stale `summary.total`) and emit richer calendar highlight telemetry (`events`, `deadlines`, `reminders`, `scheduled`, `view`).
 - Mutation parsing errors for entry-style flags now include actionable format guidance and explicit stdin-token usage hints to reduce malformed-input retries.

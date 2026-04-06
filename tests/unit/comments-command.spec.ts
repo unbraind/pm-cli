@@ -271,7 +271,7 @@ describe("runComments", () => {
       });
       expect(auditOpen.export).toMatchObject({
         mode: "latest",
-        row_count: null,
+        row_count: 1,
       });
       expect(auditOpen.items.some((entry) => entry.id === closedId)).toBe(false);
       expect(auditOpen.items.find((entry) => entry.id === openId)?.comments.map((entry) => entry.text)).toEqual(["open-second"]);
@@ -313,6 +313,37 @@ describe("runComments", () => {
       expect(fullHistory.rows?.map((row) => row.text)).toEqual(["history-first", "history-second"]);
       expect(fullHistory.rows?.map((row) => row.comment_index)).toEqual([0, 1]);
       expect(fullHistory.rows?.every((row) => row.item_id === id)).toBe(true);
+    });
+  });
+
+  it("supports --latest 0 summary-only comments-audit snapshots", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-audit-latest-zero");
+      await runComments(id, { add: "summary-first", author: "audit-a" }, { path: context.pmPath });
+      await runComments(id, { add: "summary-second", author: "audit-b" }, { path: context.pmPath });
+
+      const summaryOnly = await runCommentsAudit(
+        {
+          status: "open",
+          latest: "0",
+          limitItems: "1",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(summaryOnly.filters).toMatchObject({
+        status: "open",
+        latest: 0,
+        full_history: false,
+      });
+      expect(summaryOnly.export).toMatchObject({
+        mode: "latest",
+        row_count: 0,
+      });
+      expect(summaryOnly.items[0]?.id).toBe(id);
+      expect(summaryOnly.items[0]?.comment_count).toBe(2);
+      expect(summaryOnly.items[0]?.comments).toEqual([]);
+      expect(summaryOnly.rows).toBeUndefined();
     });
   });
 
@@ -400,6 +431,7 @@ describe("runComments", () => {
       });
       await expect(runCommentsAudit({ fullHistory: true, latest: "1" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
+        message: "--full-history cannot be combined with --latest",
       });
     });
   });

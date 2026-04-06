@@ -52,6 +52,7 @@ import {
   runTemplatesSave,
   runTemplatesShow,
   runUpdate,
+  runUpdateMany,
   runValidate,
   type CalendarOptions,
   type ContextOptions,
@@ -123,6 +124,7 @@ import {
 } from "./error-guidance.js";
 import {
   CALENDAR_COMMANDER_STRING_OPTION_CONTRACTS,
+  ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS,
   CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS,
   CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
   CREATE_COMMANDER_STRING_OPTION_CONTRACTS,
@@ -2132,6 +2134,8 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
     author: readUpdateString("author"),
     message: readUpdateString("message"),
     force: Boolean(commandOptions.force),
+    allowAuditUpdate:
+      commandOptions.allowAuditUpdate === true || commandOptions.allow_audit_update === true ? true : undefined,
     assignee: readUpdateString("assignee"),
     parent: readUpdateString("parent"),
     reviewer: readUpdateString("reviewer"),
@@ -2279,6 +2283,48 @@ function printListJsonStream(commandName: string, result: ListCommandResult, glo
   writeStdout(`${JSON.stringify({ type: "end", command: commandName, count: result.count })}\n`);
 }
 
+type ActivityCommandResult = Awaited<ReturnType<typeof runActivity>>;
+
+function printActivityJsonStream(
+  result: ActivityCommandResult,
+  options: {
+    id?: string;
+    op?: string;
+    author?: string;
+    from?: string;
+    to?: string;
+    limit?: string;
+  },
+  globalOptions: GlobalOptions,
+): void {
+  setActiveCommandResult(result);
+  if (globalOptions.quiet) {
+    return;
+  }
+  const metaPayload = {
+    type: "meta",
+    command: "activity",
+    count: result.count,
+    filters: {
+      id: options.id ?? null,
+      op: options.op ?? null,
+      author: options.author ?? null,
+      from: options.from ?? null,
+      to: options.to ?? null,
+      limit: options.limit ?? null,
+    },
+  };
+  if (!writeStdout(`${JSON.stringify(metaPayload)}\n`)) {
+    return;
+  }
+  for (const entry of result.activity) {
+    if (!writeStdout(`${JSON.stringify({ type: "entry", command: "activity", entry })}\n`)) {
+      return;
+    }
+  }
+  writeStdout(`${JSON.stringify({ type: "end", command: "activity", count: result.count })}\n`);
+}
+
 function normalizeSearchOptions(options: Record<string, unknown>): Record<string, string | boolean | undefined> {
   const readSearchString = (target: string): string | undefined =>
     readFirstStringFromCommanderOptions(
@@ -2333,6 +2379,7 @@ function normalizeCalendarOptions(options: Record<string, unknown>): CalendarOpt
     from: readCalendarString("from"),
     to: readCalendarString("to"),
     past: options.past === true ? true : undefined,
+    fullPeriod: options.fullPeriod === true || options.full_period === true ? true : undefined,
     limit: readCalendarString("limit"),
     type: readCalendarString("type"),
     tag: readCalendarString("tag"),
@@ -2348,6 +2395,60 @@ function normalizeCalendarOptions(options: Record<string, unknown>): CalendarOpt
     occurrenceLimit: readCalendarString("occurrenceLimit"),
     format: readCalendarString("format"),
   };
+}
+
+function normalizeActivityOptions(options: Record<string, unknown>): {
+  id?: string;
+  op?: string;
+  author?: string;
+  from?: string;
+  to?: string;
+  limit?: string;
+} {
+  const readActivityString = (target: string): string | undefined =>
+    readFirstStringFromCommanderOptions(
+      options,
+      ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
+        target,
+        keys: [target],
+      },
+    );
+  return {
+    id: readActivityString("id"),
+    op: readActivityString("op"),
+    author: readActivityString("author"),
+    from: readActivityString("from"),
+    to: readActivityString("to"),
+    limit: readActivityString("limit"),
+  };
+}
+
+function resolveActivityStreamMode(raw: unknown): boolean {
+  if (raw === true) {
+    return true;
+  }
+  if (raw === false || raw === undefined || raw === null) {
+    return false;
+  }
+  if (typeof raw === "string") {
+    const normalized = raw.trim().toLowerCase();
+    if (
+      normalized.length === 0 ||
+      normalized === "rows" ||
+      normalized === "ndjson" ||
+      normalized === "jsonl" ||
+      normalized === "true" ||
+      normalized === "1" ||
+      normalized === "yes" ||
+      normalized === "on"
+    ) {
+      return true;
+    }
+    if (normalized === "false" || normalized === "off" || normalized === "none" || normalized === "0") {
+      return false;
+    }
+  }
+  throw new PmCliError("Activity --stream accepts rows|ndjson|jsonl (or no value)", EXIT_CODE.USAGE);
 }
 
 function normalizeContextOptions(options: Record<string, unknown>): ContextOptions {
@@ -3164,6 +3265,8 @@ function registerCalendarCommand(): void {
     .option("--from <value>", "Agenda lower bound (ISO/date string or relative)")
     .option("--to <value>", "Agenda upper bound (ISO/date string or relative)")
     .option("--past", "Include past entries in the selected view")
+    .option("--full-period", "For day/week/month views, include the full anchored period without now-clipping")
+    .option("--full_period", "Alias for --full-period")
     .option("--type <value>", "Filter by item type")
     .option("--tag <value>", "Filter by tag")
     .option("--priority <value>", "Filter by priority")
@@ -3339,18 +3442,28 @@ program
 
 program
   .command("activity")
+  .option("--id <value>", "Filter by item ID")
+  .option("--op <value>", "Filter by history operation")
+  .option("--author <value>", "Filter by history author")
+  .option("--from <value>", "Lower timestamp bound (ISO/date string or relative)")
+  .option("--to <value>", "Upper timestamp bound (ISO/date string or relative)")
   .option("--limit <n>", "Return only the latest n activity entries")
+  .option("--stream [mode]", "Emit line-delimited JSON rows (requires --json). Optional mode: rows|ndjson|jsonl")
   .description("Show recent activity across items.")
   .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
-    const result = await runActivity(
-      {
-        limit: typeof options.limit === "string" ? options.limit : undefined,
-      },
-      globalOptions,
-    );
-    printResult(result, globalOptions);
+    const normalized = normalizeActivityOptions(options);
+    const result = await runActivity(normalized, globalOptions);
+    const streamMode = resolveActivityStreamMode(options.stream);
+    if (streamMode && !globalOptions.json) {
+      throw new PmCliError("--stream requires --json output mode.", EXIT_CODE.USAGE);
+    }
+    if (streamMode) {
+      printActivityJsonStream(result, normalized, globalOptions);
+    } else {
+      printResult(result, globalOptions);
+    }
     if (globalOptions.profile) {
       printError(`profile:command=activity took_ms=${Date.now() - startedAt}`);
     }
@@ -3516,6 +3629,8 @@ program
   .option("--clear-reminders", "Clear reminders")
   .option("--clear-events", "Clear events")
   .option("--clear-type-options", "Clear type options")
+  .option("--allow-audit-update", "Allow non-owner metadata-only audit updates without requiring --force")
+  .option("--allow_audit_update", "Alias for --allow-audit-update")
   .option("--force", "Force ownership override")
   .action(async (id: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
@@ -3525,6 +3640,121 @@ program
     printResult(result, globalOptions);
     if (globalOptions.profile) {
       printError(`profile:command=update took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+program
+  .command("update-many")
+  .description("Bulk-update matched items with dry-run plans and rollback checkpoints.")
+  .option("--filter-status <value>", "Filter by status before applying updates")
+  .option("--filter-type <value>", "Filter by item type before applying updates")
+  .option("--filter-tag <value>", "Filter by tag before applying updates")
+  .option("--filter-priority <value>", "Filter by priority before applying updates")
+  .option("--filter-deadline-before <value>", "Filter by deadline upper bound before applying updates")
+  .option("--filter-deadline-after <value>", "Filter by deadline lower bound before applying updates")
+  .option("--filter-assignee <value>", "Filter by assignee before applying updates")
+  .option("--filter-assignee-filter <value>", "Filter assignee presence: assigned|unassigned before applying updates")
+  .option("--filter-assignee_filter <value>", "Alias for --filter-assignee-filter")
+  .option("--filter-parent <value>", "Filter by parent item ID before applying updates")
+  .option("--filter-sprint <value>", "Filter by sprint before applying updates")
+  .option("--filter-release <value>", "Filter by release before applying updates")
+  .option("--limit <n>", "Limit matched item count before apply/preview")
+  .option("--offset <n>", "Skip first n matched rows before apply/preview")
+  .option("--dry-run", "Preview per-item diffs and checkpoint intent without mutating")
+  .option("--rollback <value>", "Rollback a prior update-many checkpoint ID")
+  .option("--no-checkpoint", "Disable checkpoint creation during apply mode")
+  .option("--title, -t <value>", "Set title")
+  .option("--description, -d <value>", "Set description")
+  .option("--body, -b <value>", "Set body (allow empty string)")
+  .option("--priority, -p <value>", "Set priority")
+  .option("--type <value>", "Set type")
+  .option("--tags <value>", "Set comma-separated tags")
+  .option("--deadline <value>", "Set deadline (ISO/date string or relative)")
+  .option("--estimate, --estimated-minutes <value>", "Set estimated minutes")
+  .option("--estimated_minutes <value>", "Alias for --estimated-minutes")
+  .option("--acceptance-criteria <value>", "Set acceptance criteria")
+  .option("--acceptance_criteria <value>", "Alias for --acceptance-criteria")
+  .option("--ac <value>", "Alias for --acceptance-criteria")
+  .option("--definition-of-ready <value>", "Set definition of ready")
+  .option("--definition_of_ready <value>", "Alias for --definition-of-ready")
+  .option("--order <value>", "Set planning order/rank integer")
+  .option("--rank <value>", "Alias for --order")
+  .option("--goal <value>", "Set goal identifier")
+  .option("--objective <value>", "Set objective identifier")
+  .option("--value <value>", "Set business value summary")
+  .option("--impact <value>", "Set business impact summary")
+  .option("--outcome <value>", "Set expected outcome summary")
+  .option("--why-now <value>", "Set why-now rationale")
+  .option("--why_now <value>", "Alias for --why-now")
+  .option("--reviewer <value>", "Set reviewer")
+  .option("--risk <value>", "Set risk level")
+  .option("--confidence <value>", "Set confidence level")
+  .option("--sprint <value>", "Set sprint identifier")
+  .option("--release <value>", "Set release identifier")
+  .option("--reporter <value>", "Set issue reporter")
+  .option("--severity <value>", "Set issue severity")
+  .option("--environment <value>", "Set issue environment context")
+  .option("--repro-steps <value>", "Set issue reproduction steps")
+  .option("--repro_steps <value>", "Alias for --repro-steps")
+  .option("--resolution <value>", "Set issue resolution summary")
+  .option("--expected-result <value>", "Set issue expected behavior")
+  .option("--expected_result <value>", "Alias for --expected-result")
+  .option("--actual-result <value>", "Set issue observed behavior")
+  .option("--actual_result <value>", "Alias for --actual-result")
+  .option("--affected-version <value>", "Set affected version identifier")
+  .option("--affected_version <value>", "Alias for --affected-version")
+  .option("--fixed-version <value>", "Set fixed version identifier")
+  .option("--fixed_version <value>", "Alias for --fixed-version")
+  .option("--component <value>", "Set issue component ownership")
+  .option("--regression <value>", "Set regression marker: true|false|1|0")
+  .option("--customer-impact <value>", "Set customer impact summary")
+  .option("--customer_impact <value>", "Alias for --customer-impact")
+  .option("--type-option <value>", "Set type options key=value (repeatable)", collect)
+  .option("--type_option <value>", "Alias for --type-option", collect)
+  .option("--unset <field>", "Clear scalar metadata field by name (repeatable)", collect)
+  .option("--clear-type-options", "Clear type options")
+  .option("--allow-audit-update", "Allow non-owner metadata-only audit updates without requiring --force")
+  .option("--allow_audit_update", "Alias for --allow-audit-update")
+  .option("--author <value>", "Mutation author")
+  .option("--message <value>", "Mutation message")
+  .option("--force", "Force ownership override")
+  .action(async (options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const result = await runUpdateMany(
+      {
+        status: typeof options.filterStatus === "string" ? options.filterStatus : undefined,
+        list: {
+          type: typeof options.filterType === "string" ? options.filterType : undefined,
+          tag: typeof options.filterTag === "string" ? options.filterTag : undefined,
+          priority: typeof options.filterPriority === "string" ? options.filterPriority : undefined,
+          deadlineBefore: typeof options.filterDeadlineBefore === "string" ? options.filterDeadlineBefore : undefined,
+          deadlineAfter: typeof options.filterDeadlineAfter === "string" ? options.filterDeadlineAfter : undefined,
+          assignee: typeof options.filterAssignee === "string" ? options.filterAssignee : undefined,
+          assigneeFilter:
+            typeof options.filterAssigneeFilter === "string"
+              ? options.filterAssigneeFilter
+              : typeof options.filterAssignee_filter === "string"
+                ? options.filterAssignee_filter
+                : undefined,
+          parent: typeof options.filterParent === "string" ? options.filterParent : undefined,
+          sprint: typeof options.filterSprint === "string" ? options.filterSprint : undefined,
+          release: typeof options.filterRelease === "string" ? options.filterRelease : undefined,
+          limit: typeof options.limit === "string" ? options.limit : undefined,
+          offset: typeof options.offset === "string" ? options.offset : undefined,
+          includeBody: true,
+        },
+        update: normalizeUpdateOptions(options),
+        dryRun: options.dryRun === true ? true : undefined,
+        rollback: typeof options.rollback === "string" ? options.rollback : undefined,
+        checkpoint: options.checkpoint === false ? false : undefined,
+      },
+      globalOptions,
+    );
+    await invalidateSearchCachesForMutation(globalOptions, result);
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=update-many took_ms=${Date.now() - startedAt}`);
     }
   });
 
@@ -3671,8 +3901,8 @@ program
   .option("--assignee-filter <value>", "Filter assignee presence: assigned|unassigned")
   .option("--assignee_filter <value>", "Alias for --assignee-filter")
   .option("--limit-items <n>", "Limit returned item count")
-  .option("--full-history", "Export full comment history rows and ignore --latest")
-  .option("--latest <n>", "Return latest n comments per item (default: 1)")
+  .option("--full-history", "Export full comment history rows (cannot be combined with --latest)")
+  .option("--latest <n>", "Return latest n comments per item (default: 1, use 0 for summary-only rows)")
   .description("Audit latest comments or full comment history across filtered items.")
   .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
@@ -3986,7 +4216,7 @@ program
       },
       globalOptions,
     );
-    if (addValues.length > 0 || removeValues.length > 0) {
+    if (addValues.length > 0 || removeValues.length > 0 || options.run === true) {
       await invalidateSearchCachesForMutation(globalOptions, result);
     }
     printResult(result, globalOptions);
@@ -4052,6 +4282,9 @@ program
       },
       globalOptions,
     );
+    await invalidateSearchCachesForMutation(globalOptions, {
+      ids: result.results.map((entry) => entry.id),
+    });
     printResult(result, globalOptions);
     if (result.failed > 0 || result.fail_on_skipped_triggered === true) {
       process.exitCode = EXIT_CODE.DEPENDENCY_FAILED;
@@ -4274,8 +4507,10 @@ program
   .command("contracts")
   .description("Show machine-readable command and schema contracts for agents.")
   .option("--action <value>", "Filter tool schema branches to a specific action")
-  .option("--command <value>", "Filter command-flag contracts to one command")
+  .option("--command <value>", "Scope contracts output to one CLI command (narrow-by-default)")
   .option("--schema-only", "Return schema-focused output only")
+  .option("--flags-only", "Return command flag contracts only")
+  .option("--availability-only", "Return action availability surface only")
   .option("--runtime-only", "Include only actions invocable in the current runtime")
   .option("--active-only", "Alias for --runtime-only")
   .action(async (options: Record<string, unknown>, command) => {
@@ -4286,6 +4521,8 @@ program
         action: typeof options.action === "string" ? options.action : undefined,
         command: typeof options.command === "string" ? options.command : undefined,
         schemaOnly: Boolean(options.schemaOnly),
+        flagsOnly: Boolean(options.flagsOnly),
+        availabilityOnly: Boolean(options.availabilityOnly),
         runtimeOnly: Boolean(options.runtimeOnly) || Boolean(options.activeOnly),
       },
       globalOptions,
@@ -4341,23 +4578,153 @@ program
   });
 
 program
+  .command("start-task")
+  .argument("<id>", "Item id")
+  .option("--author <value>", "Mutation author")
+  .option("--message <value>", "History message")
+  .option("--force", "Force ownership or terminal override when required")
+  .description("Lifecycle alias: claim an item and move it to in_progress.")
+  .action(async (id: string, options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const force = Boolean(options.force);
+    const mutationOptions = {
+      author: typeof options.author === "string" ? options.author : undefined,
+      message: typeof options.message === "string" ? options.message : undefined,
+    };
+    const claimResult = await runClaim(id, force, globalOptions, mutationOptions);
+    await invalidateSearchCachesForMutation(globalOptions, claimResult);
+    const updateResult = await runUpdate(
+      id,
+      {
+        ...mutationOptions,
+        status: "in_progress",
+        force,
+      },
+      globalOptions,
+    );
+    await invalidateSearchCachesForMutation(globalOptions, updateResult);
+    printResult(
+      {
+        id,
+        action: "start_task",
+        claim: claimResult,
+        update: updateResult,
+      },
+      globalOptions,
+    );
+    if (globalOptions.profile) {
+      printError(`profile:command=start-task took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+program
+  .command("pause-task")
+  .argument("<id>", "Item id")
+  .option("--author <value>", "Mutation author")
+  .option("--message <value>", "History message")
+  .option("--force", "Force ownership override when required")
+  .description("Lifecycle alias: move an item to open and release its claim.")
+  .action(async (id: string, options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const force = Boolean(options.force);
+    const mutationOptions = {
+      author: typeof options.author === "string" ? options.author : undefined,
+      message: typeof options.message === "string" ? options.message : undefined,
+    };
+    const updateResult = await runUpdate(
+      id,
+      {
+        ...mutationOptions,
+        status: "open",
+        force,
+      },
+      globalOptions,
+    );
+    await invalidateSearchCachesForMutation(globalOptions, updateResult);
+    const releaseResult = await runRelease(id, force, globalOptions, mutationOptions);
+    await invalidateSearchCachesForMutation(globalOptions, releaseResult);
+    printResult(
+      {
+        id,
+        action: "pause_task",
+        update: updateResult,
+        release: releaseResult,
+      },
+      globalOptions,
+    );
+    if (globalOptions.profile) {
+      printError(`profile:command=pause-task took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+program
+  .command("close-task")
+  .argument("<id>", "Item id")
+  .argument("<reason>", "Close reason text")
+  .option("--author <value>", "Mutation author")
+  .option("--message <value>", "History message")
+  .option("--validate-close <value>", "Close-time validation mode: warn|strict")
+  .option("--force", "Force ownership or terminal override when required")
+  .description("Lifecycle alias: close an item with reason and release assignment metadata.")
+  .action(async (id: string, reason: string, options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const force = Boolean(options.force);
+    const mutationOptions = {
+      author: typeof options.author === "string" ? options.author : undefined,
+      message: typeof options.message === "string" ? options.message : undefined,
+    };
+    const closeResult = await runClose(
+      id,
+      reason,
+      {
+        ...mutationOptions,
+        validateClose: typeof options.validateClose === "string" ? options.validateClose : undefined,
+        force,
+      },
+      globalOptions,
+    );
+    await invalidateSearchCachesForMutation(globalOptions, closeResult);
+    const releaseResult = await runRelease(id, force, globalOptions, mutationOptions);
+    await invalidateSearchCachesForMutation(globalOptions, releaseResult);
+    printResult(
+      {
+        id,
+        action: "close_task",
+        close: closeResult,
+        release: releaseResult,
+      },
+      globalOptions,
+    );
+    if (globalOptions.profile) {
+      printError(`profile:command=close-task took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+program
   .command("completion")
   .argument("<shell>", "Shell type: bash, zsh, or fish")
+  .option("--eager-tags", "Embed current tracker tags directly in generated scripts (legacy eager mode)")
   .description("Generate shell completion for pm.")
-  .action(async (shell: string, _options: Record<string, unknown>, command) => {
+  .action(async (shell: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
     let completionTypes: string[] | undefined;
     let completionTags: string[] | undefined;
+    const eagerTags = Boolean(options.eagerTags);
     if (await pathExists(getSettingsPath(pmRoot))) {
       const settings = await readSettings(pmRoot);
       const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
       completionTypes = typeRegistry.types;
-      const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
-      completionTags = [...new Set(items.flatMap((item) => item.tags ?? []).map((tag) => tag.trim()).filter((tag) => tag.length > 0))]
-        .sort((left, right) => left.localeCompare(right));
+      if (eagerTags) {
+        const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
+        completionTags = [...new Set(items.flatMap((item) => item.tags ?? []).map((tag) => tag.trim()).filter((tag) => tag.length > 0))]
+          .sort((left, right) => left.localeCompare(right));
+      }
     }
-    const result = runCompletion(shell, completionTypes, completionTags);
+    const result = runCompletion(shell, completionTypes, completionTags ?? [], eagerTags);
     if (globalOptions.json) {
       printResult(result, globalOptions);
     } else if (!globalOptions.quiet) {
@@ -4365,6 +4732,41 @@ program
     }
     if (globalOptions.profile) {
       printError(`profile:command=completion took_ms=0`);
+    }
+  });
+
+program
+  .command("completion-tags", { hidden: true })
+  .description("Internal dynamic completion tag source.")
+  .action(async (_options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
+    let tags: string[] = [];
+    if (await pathExists(getSettingsPath(pmRoot))) {
+      const settings = await readSettings(pmRoot);
+      const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+      const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
+      tags = [...new Set(items.flatMap((item) => item.tags ?? []).map((tag) => tag.trim()).filter((tag) => tag.length > 0))].sort((left, right) =>
+        left.localeCompare(right),
+      );
+    }
+    if (globalOptions.json) {
+      printResult(
+        {
+          tags,
+          count: tags.length,
+        },
+        globalOptions,
+      );
+    } else if (!globalOptions.quiet) {
+      writeStdout(tags.join("\n"));
+      if (tags.length > 0) {
+        writeStdout("\n");
+      }
+    }
+    if (globalOptions.profile) {
+      printError(`profile:command=completion-tags took_ms=${Date.now() - startedAt}`);
     }
   });
 

@@ -259,6 +259,8 @@ pm config project set test-result-tracking --policy enabled
 pm list-open --type Task --priority 0 --fields id,title,parent,type --sort priority --order asc --limit 5
 pm claim pm-a1b2
 pm update pm-a1b2 --status in_progress --description "Implement restore replay"
+pm update pm-a1b2 --description "Audit metadata clarification" --allow-audit-update --author "audit-maintainer"
+pm update-many --filter-status open --filter-tag governance --status in_progress --dry-run --json
 pm update pm-a1b2 --body "Restore replay scope and acceptance details."
 pm update pm-a1b2 --reminder "at=+1d,text=Follow up on restore replay tests"
 pm files pm-a1b2 --add path=src/history.ts,scope=project,note="restore implementation"
@@ -270,7 +272,13 @@ pm learnings pm-a1b2 --add "Use sandbox runner for linked test commands to prese
 pm deps pm-a1b2 --format tree
 pm aggregate --group-by parent,type --count --status open --json
 pm dedupe-audit --mode parent_scope --limit 20 --json
-pm calendar --view agenda --assignee codex-agent --format markdown
+pm calendar --view week --date 2026-04-06 --full-period --include deadlines,events --format markdown
+pm activity --id pm-a1b2 --op update --author codex-agent --from -7d --to now --limit 100
+pm activity --json --stream rows --limit 200
+pm start-task pm-a1b2 --author codex-agent --message "Start implementation"
+pm pause-task pm-a1b2 --author codex-agent --message "Pause for dependency unblock"
+pm close-task pm-a1b2 "All acceptance criteria met" --author codex-agent --message "Close and handoff"
+pm contracts --command update --flags-only --json
 pm test pm-a1b2 --run --progress
 pm health --check-only
 pm validate --check-resolution --check-history-drift
@@ -299,7 +307,7 @@ Reference implementation source lives at `.pi/extensions/pm-cli/index.ts` as a P
 `pm install` has been removed; install bundled managed runtime extensions via `pm extension --install beads|todos` (or explicit `.agents/pm/extensions/<name>` paths) when needed.
 Load the Pi wrapper in Pi with `pi -e ./.pi/extensions/pm-cli/index.ts` (or copy it into your Pi extensions directory).
 Use `action: "completion"` with `shell: "bash"|"zsh"|"fish"` to forward to `pm completion <shell>`.
-Use `action: "calendar"` for date-centric event views (`view`, `date`, `from`, `to`, `past`, `type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`, `format`).
+Use `action: "calendar"` for date-centric event views (`view`, `date`, `from`, `to`, `past`, `fullPeriod`, `type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`, `format`).
 Use `action: "aggregate"` for grouped decomposition checks (`groupBy`, `count`, `includeUnparented`, list-style filters).
 Use `action: "dedupe-audit"` for duplicate corpus checks (`mode`, `threshold`, `limit`, list-style filters).
 Use `action: "validate"` with optional check toggles (`checkMetadata`, `checkResolution`, `checkFiles`, `checkHistoryDrift`) and optional `scanMode` (`default|tracked-all`) for standalone audit workflows.
@@ -307,7 +315,10 @@ Use `action: "extension-doctor"` for consolidated extension diagnostics with opt
 For `list*` wrapper actions, use projection/sort controls (`compact`, `fields`, `sort`, `order`) plus `includeBody` when body projection is needed.
 For `comments-audit`, use governance filters (`parent`, `tag`, `sprint`, `release`, `priority`) in addition to status/type/assignee filters.
 For `health`, use vector refresh controls (`checkOnly`, `noRefresh`, `refreshVectors`) while keeping strict flags available (`strictDirectories`, `strictExit`, `failOnWarn`).
-For `create` and `update`, use camelCase wrapper parameters for the canonical CLI scalar fields such as `parent`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blockedBy`, `blockedReason`, `unblockNote`, `definitionOfReady`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `whyNow`, `reporter`, `severity`, `environment`, `reproSteps`, `resolution`, `expectedResult`, `actualResult`, `affectedVersion`, `fixedVersion`, `component`, `regression`, and `customerImpact`; use `createMode` (`strict|progressive`) when staged creation is needed, `appendStable` for minimal-diff file-link appends, `allowAuditComment` for additive non-owner comment writes, repeatable `reminder` values for persistent reminders (`at=<iso|relative>,text=<text>`), and repeatable `typeOption` values for custom type metadata.
+For `create` and `update`, use camelCase wrapper parameters for the canonical CLI scalar fields such as `parent`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blockedBy`, `blockedReason`, `unblockNote`, `definitionOfReady`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `whyNow`, `reporter`, `severity`, `environment`, `reproSteps`, `resolution`, `expectedResult`, `actualResult`, `affectedVersion`, `fixedVersion`, `component`, `regression`, and `customerImpact`; use `createMode` (`strict|progressive`) when staged creation is needed, `appendStable` for minimal-diff file-link appends, `allowAuditUpdate` for ownership-safe metadata-only non-owner updates, `allowAuditComment` for additive non-owner comment writes, repeatable `reminder` values for persistent reminders (`at=<iso|relative>,text=<text>`), and repeatable `typeOption` values for custom type metadata.
+For `contracts`, use projection controls (`flagsOnly`, `availabilityOnly`) when you need narrow machine-readable payloads; with `command` selected, contract output is command-scoped by default.
+For `completion`, use `eagerTags` only when embedding static tags in generated scripts is required; default generated scripts resolve tags lazily at runtime.
+For `activity`, use `id`, `op`, `author`, `from`, `to`, `limit`, and `stream` (`rows|ndjson|jsonl` or boolean true) for deterministic timeline filtering/export.
 For `test` and `test-all`, prefer explicit runtime parity/strictness parameters when needed: `pmContext` (`schema|tracker`), `failOnContextMismatch`, `failOnSkipped`, and `requireAssertionsForPm`.
 
 ### Example: list open tasks

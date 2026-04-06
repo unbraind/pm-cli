@@ -89,6 +89,17 @@ describe("runHistory and runActivity", () => {
       await expect(runActivity({ limit: "not-a-number" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
+      await expect(
+        runActivity(
+          {
+            from: "2026-04-10T10:00:00.000Z",
+            to: "2026-04-10T10:00:00.000Z",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 
@@ -369,6 +380,65 @@ describe("runHistory and runActivity", () => {
             ];
 
       expect(activity.activity.map((entry) => ({ id: entry.id, op: entry.op }))).toEqual(expectedOrder);
+    });
+  });
+
+  it("supports id/op/author/time-window filters for activity queries", async () => {
+    await withTempPmPath(async (context) => {
+      const firstId = createItem(context, "Activity Filter One");
+      const secondId = createItem(context, "Activity Filter Two");
+      const historyDir = path.join(context.pmPath, "history");
+
+      await writeFile(
+        path.join(historyDir, `${firstId}.jsonl`),
+        `${JSON.stringify({
+          ts: "2026-01-01T00:00:00.000Z",
+          author: "author-a",
+          op: "create",
+          patch: [],
+          before_hash: "before-1",
+          after_hash: "after-1",
+        })}\n${JSON.stringify({
+          ts: "2026-01-02T00:00:00.000Z",
+          author: "author-b",
+          op: "update",
+          patch: [],
+          before_hash: "before-2",
+          after_hash: "after-2",
+        })}\n`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(historyDir, `${secondId}.jsonl`),
+        `${JSON.stringify({
+          ts: "2026-01-03T00:00:00.000Z",
+          author: "author-c",
+          op: "close",
+          patch: [],
+          before_hash: "before-3",
+          after_hash: "after-3",
+        })}\n`,
+        "utf8",
+      );
+
+      const byId = await runActivity({ id: firstId }, { path: context.pmPath });
+      expect(byId.count).toBe(2);
+      expect(byId.activity.every((entry) => entry.id === firstId)).toBe(true);
+
+      const byOp = await runActivity({ op: "update" }, { path: context.pmPath });
+      expect(byOp.activity.map((entry) => entry.op)).toEqual(["update"]);
+
+      const byAuthor = await runActivity({ author: "author-c" }, { path: context.pmPath });
+      expect(byAuthor.activity.map((entry) => entry.author)).toEqual(["author-c"]);
+
+      const byWindow = await runActivity(
+        {
+          from: "2026-01-02T00:00:00.000Z",
+          to: "2026-01-03T00:00:00.000Z",
+        },
+        { path: context.pmPath },
+      );
+      expect(byWindow.activity.map((entry) => entry.ts)).toEqual(["2026-01-02T00:00:00.000Z"]);
     });
   });
 });

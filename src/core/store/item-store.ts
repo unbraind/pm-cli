@@ -210,7 +210,8 @@ export async function mutateItem(params: {
     const assigned = document.front_matter.assignee?.trim();
     const bypassAssigneeConflict =
       params.op === "claim" ||
-      ((params.op === "comment_add" || params.op === "release") && params.bypassAssigneeConflict === true);
+      ((params.op === "comment_add" || params.op === "release" || params.op === "update" || params.op === "update_audit") &&
+        params.bypassAssigneeConflict === true);
     if (assigned && assigned !== params.author && !params.force && !bypassAssigneeConflict) {
       throw new PmCliError(
         `Item ${located.id} is assigned to ${assigned}. Use --force to override.`,

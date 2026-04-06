@@ -7,6 +7,7 @@ import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { compareTimestampStrings, nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
 import { listAllFrontMatter } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -14,6 +15,11 @@ import { readHistoryEntries } from "./history.js";
 import type { HistoryEntry } from "../../types/index.js";
 
 export interface ActivityCommandOptions {
+  id?: string;
+  op?: string;
+  author?: string;
+  from?: string;
+  to?: string;
   limit?: string;
 }
 
@@ -34,6 +40,34 @@ function parseLimit(raw: string | undefined): number | undefined {
     throw new PmCliError("Invalid --limit value", EXIT_CODE.USAGE);
   }
   return Math.floor(parsed);
+}
+
+function parseNonEmptyFilter(raw: string | undefined, flagLabel: string): string | undefined {
+  if (raw === undefined) return undefined;
+  const normalized = raw.trim();
+  if (normalized.length === 0) {
+    throw new PmCliError(`${flagLabel} must not be empty`, EXIT_CODE.USAGE);
+  }
+  return normalized;
+}
+
+function parseRangeBound(raw: string | undefined, nowValue: string): string | undefined {
+  if (raw === undefined) return undefined;
+  const normalized = raw.trim();
+  if (normalized.length === 0) {
+    throw new PmCliError("Activity time bounds must not be empty", EXIT_CODE.USAGE);
+  }
+  return resolveIsoOrRelative(normalized, new Date(nowValue));
+}
+
+function includeByTimeWindow(entry: ActivityEntry, from: string | undefined, to: string | undefined): boolean {
+  if (from && compareTimestampStrings(entry.ts, from) < 0) {
+    return false;
+  }
+  if (to && compareTimestampStrings(entry.ts, to) >= 0) {
+    return false;
+  }
+  return true;
 }
 
 function limitEntries<T>(values: T[], limit: number | undefined): T[] {
@@ -71,6 +105,15 @@ export async function runActivity(options: ActivityCommandOptions, global: Globa
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
 
+  const nowValue = nowIso();
+  const idFilter = parseNonEmptyFilter(options.id, "Activity --id");
+  const opFilter = parseNonEmptyFilter(options.op, "Activity --op");
+  const authorFilter = parseNonEmptyFilter(options.author, "Activity --author");
+  const fromBound = parseRangeBound(options.from, nowValue);
+  const toBound = parseRangeBound(options.to, nowValue);
+  if (fromBound && toBound && compareTimestampStrings(fromBound, toBound) >= 0) {
+    throw new PmCliError("Activity --from must be before --to", EXIT_CODE.USAGE);
+  }
   const limit = parseLimit(options.limit);
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
@@ -91,11 +134,26 @@ export async function runActivity(options: ActivityCommandOptions, global: Globa
   const combined: ActivityEntry[] = [];
   for (const file of historyFiles) {
     const id = file.slice(0, -".jsonl".length);
+    if (idFilter && id !== idFilter) {
+      continue;
+    }
     const entries = await readHistoryEntries(path.join(historyDir, file), id);
     for (const entry of entries) {
-      combined.push({
+      if (opFilter && entry.op !== opFilter) {
+        continue;
+      }
+      if (authorFilter && entry.author !== authorFilter) {
+        continue;
+      }
+      const candidate: ActivityEntry = {
         id,
         ...entry,
+      };
+      if (!includeByTimeWindow(candidate, fromBound, toBound)) {
+        continue;
+      }
+      combined.push({
+        ...candidate,
       });
     }
   }

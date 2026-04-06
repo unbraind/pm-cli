@@ -816,18 +816,21 @@ describe("calendar command module", () => {
       );
       expect(futureDayWithoutPast.range.start).toBe("2099-01-01T00:00:00.000Z");
       expect(futureDayWithoutPast.range.end).toBe("2099-01-02T00:00:00.000Z");
+      expect(futureDayWithoutPast.range.full_period).toBe(false);
 
       const dayWithPast = await runCalendar(
         { view: "day", date: "2000-01-01T00:00:00.000Z", past: true },
         { path: context.pmPath },
       );
       expect(dayWithPast.summary.events).toBe(2);
+      expect(dayWithPast.range.full_period).toBe(true);
 
       const weekWithPast = await runCalendar(
         { view: "week", date: "2000-01-01T00:00:00.000Z", past: true },
         { path: context.pmPath },
       );
       expect(weekWithPast.summary.events).toBe(2);
+      expect(weekWithPast.range.full_period).toBe(true);
 
       const weekWithoutPast = await runCalendar(
         { view: "week", date: "2000-01-01T00:00:00.000Z" },
@@ -840,12 +843,37 @@ describe("calendar command module", () => {
         { path: context.pmPath },
       );
       expect(monthWithPast.summary.events).toBe(3);
+      expect(monthWithPast.range.full_period).toBe(true);
 
       const monthWithoutPast = await runCalendar(
         { view: "month", date: "2000-01-01T00:00:00.000Z" },
         { path: context.pmPath },
       );
       expect(monthWithoutPast.summary.events).toBe(0);
+
+      const dayWithFullPeriod = await runCalendar(
+        { view: "day", date: "2000-01-01T00:00:00.000Z", fullPeriod: true },
+        { path: context.pmPath },
+      );
+      expect(dayWithFullPeriod.summary.events).toBe(2);
+      expect(dayWithFullPeriod.range.full_period).toBe(true);
+      expect(dayWithFullPeriod.range.period_start).toBe("2000-01-01T00:00:00.000Z");
+      expect(dayWithFullPeriod.range.period_end).toBe("2000-01-02T00:00:00.000Z");
+      expect(renderCalendarMarkdown(dayWithFullPeriod)).toContain("period-mode: full-period");
+
+      const weekWithFullPeriod = await runCalendar(
+        { view: "week", date: "2000-01-01T00:00:00.000Z", fullPeriod: true },
+        { path: context.pmPath },
+      );
+      expect(weekWithFullPeriod.summary.events).toBe(2);
+      expect(weekWithFullPeriod.range.full_period).toBe(true);
+
+      const monthWithFullPeriod = await runCalendar(
+        { view: "month", date: "2000-01-01T00:00:00.000Z", fullPeriod: true },
+        { path: context.pmPath },
+      );
+      expect(monthWithFullPeriod.summary.events).toBe(3);
+      expect(monthWithFullPeriod.range.full_period).toBe(true);
     });
   });
 
@@ -983,6 +1011,7 @@ describe("calendar command module", () => {
         { view: "agenda", limit: "-1" },
         { view: "agenda", include: "deadlines|unknown" },
         { view: "agenda", include: " , | " },
+        { view: "agenda", fullPeriod: true },
         { view: "agenda", recurrenceLookaheadDays: "-3" },
         { view: "agenda", recurrenceLookbackDays: "-2" },
         { view: "agenda", occurrenceLimit: "0" },

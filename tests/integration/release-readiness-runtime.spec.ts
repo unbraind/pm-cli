@@ -129,6 +129,9 @@ const CORE_COMMANDS = [
   "contracts",
   "claim",
   "release",
+  "start-task",
+  "pause-task",
+  "close-task",
   "completion",
 ];
 
@@ -261,6 +264,8 @@ const REQUIRED_CALENDAR_FLAGS = [
   "--from",
   "--to",
   "--past",
+  "--full-period",
+  "--full_period",
   "--type",
   "--tag",
   "--priority",
@@ -275,6 +280,8 @@ const REQUIRED_CALENDAR_FLAGS = [
   "--limit",
   "--format",
 ];
+
+const REQUIRED_ACTIVITY_FLAGS = ["--id", "--op", "--author", "--from", "--to", "--limit", "--stream"];
 
 const REQUIRED_CONTEXT_FLAGS = [
   "--date",
@@ -613,6 +620,17 @@ describe("release readiness runtime coverage", () => {
       }
       expect(help.stdout).toContain("markdown|toon|json");
       expect(help.stdout).toContain("token-efficient project context snapshot");
+    });
+  });
+
+  it("keeps activity help aligned with filtering and stream flags", async () => {
+    await withTempPmPath(async (context) => {
+      const help = context.runCli(["activity", "--help"]);
+      expect(help.code).toBe(0);
+      for (const flag of REQUIRED_ACTIVITY_FLAGS) {
+        expect(help.stdout).toContain(flag);
+      }
+      expect(help.stdout).toContain("line-delimited JSON rows");
     });
   });
 
@@ -1392,6 +1410,7 @@ describe("release readiness runtime coverage", () => {
       "src/cli/commands/dedupe-audit.ts",
       "src/cli/commands/templates.ts",
       "src/cli/commands/test-runs.ts",
+      "src/cli/commands/update-many.ts",
       "src/cli/error-guidance.ts",
       "src/cli/help-content.ts",
       "src/cli/main.ts",
@@ -1403,6 +1422,12 @@ describe("release readiness runtime coverage", () => {
       "src/core/test/item-test-run-tracking.ts",
       "src/sdk/cli-contracts.ts",
     ]);
+  });
+
+  it("keeps mutation-triggered search refresh wiring for test run-tracking paths", async () => {
+    const mainSource = await readRepoText("src/cli/main.ts");
+    expect(mainSource).toContain("addValues.length > 0 || removeValues.length > 0 || options.run === true");
+    expect(mainSource).toContain("ids: result.results.map((entry) => entry.id)");
   });
 
   it("keeps release governance docs present with expected baseline markers", async () => {

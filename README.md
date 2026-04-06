@@ -52,6 +52,9 @@ Compatibility policy for command contracts:
 - `--json` remains machine-contract stable; search projection defaults are command-specific (`pm search` defaults to compact rows unless `--full` is requested).
 - `pm contracts --json` is the canonical runtime contract introspection surface for agents, including active extension command/action metadata.
 - Contract payloads include runtime action availability metadata (`action_availability`) and optional runtime-filtered views (`--runtime-only`, `--active-only`) so automation can avoid non-invocable actions.
+- `pm contracts --command <name>` now scopes output to the selected command by default (intentional breaking change for lower-noise machine payloads); omit `--command` for full contract corpus output.
+- `pm contracts` supports lightweight projection modes for automation pipelines: `--flags-only` (command flag surface) and `--availability-only` (runtime invocability metadata); the projection flags are mutually exclusive.
+- `pm completion` now defaults to lazy tag expansion through runtime `pm completion-tags` lookup in generated scripts; pass `--eager-tags` to embed static tags in the script (legacy eager mode).
 
 ## Item Storage Formats
 
@@ -258,6 +261,29 @@ pm list-open --sort priority --order desc --limit 20
 
 Projection flags are mutually exclusive for list-family commands (`--compact`, `--fields`, `--include-body` remains additive for body projection).
 
+## Ownership-Safe Metadata Updates and Bulk Mutation
+
+Governance workflows now include explicit non-owner metadata mutation and bulk update planning surfaces:
+
+- `pm update --allow-audit-update` allows non-owner metadata updates without broad `--force` semantics.
+- `--allow-audit-update` is intentionally scoped: lifecycle/ownership/linkage mutations remain disallowed in this mode (for example assignee/parent and other lifecycle-governing fields).
+- `pm update-many` provides native bulk mutation with deterministic filter targeting, dry-run planning, optional checkpoint capture, and rollback.
+- `pm update-many --rollback <checkpoint-id>` restores every item in a prior checkpoint (ownership-safe restore path included).
+
+```bash
+# Ownership-safe metadata audit update (non-owner, metadata-only scope)
+pm update pm-a1b2 --description "Clarified acceptance boundaries" --allow-audit-update --author audit-maintainer
+
+# Bulk apply mode with deterministic targeting
+pm update-many --filter-status open --filter-tag governance --status in_progress --author maintainer --message "Governance sweep"
+
+# Dry-run planning mode (no mutations)
+pm update-many --filter-status in_progress --priority 1 --deadline +2d --dry-run --json
+
+# Roll back a previously captured checkpoint
+pm update-many --rollback 20260406T102455Z-7xq9 --author maintainer --message "Rollback governance batch"
+```
+
 ## Duplicate and Decomposition Audits
 
 Governance workflows now have dedicated audit commands:
@@ -449,6 +475,20 @@ pm history pm-a1b2 --verify --json
 
 `pm restore` also supports history-only recovery when an item file is missing or deleted but its history stream still exists.
 
+## Activity Timeline Filters and Streaming
+
+`pm activity` now supports deterministic timeline slicing plus JSON line streaming for downstream automation:
+
+- Filters: `--id`, `--op`, `--author`, `--from`, `--to`, `--limit`
+- Time bounds accept ISO/date/relative inputs (`--from -7d --to now`, etc.)
+- `--stream` is JSON-only and emits line-delimited payloads (`rows`, `ndjson`, `jsonl`)
+- boolean-style stream enablement is accepted (`--stream`, `--stream true`, `--stream 1`)
+
+```bash
+pm activity --id pm-a1b2 --op update --author codex-agent --from -7d --to now --limit 100
+pm activity --json --stream rows --from -1d --limit 200
+```
+
 ## Deadline and Date Inputs
 
 - Date/time inputs used by `--deadline`, `--deadline-before`, `--deadline-after`, calendar `--date/--from/--to`, reminders, and events accept:
@@ -464,6 +504,14 @@ pm history pm-a1b2 --verify --json
 - Persisted item data and command output remain canonical (`in_progress`) for deterministic storage and filtering.
 - `pm update --close-reason <text>` sets `close_reason` explicitly; `pm update --unset close-reason` clears it.
 - When `pm update --status` reopens an item from `closed` to a non-terminal status, stale `close_reason` is auto-cleared unless `--close-reason` is explicitly provided in that update call.
+
+Task lifecycle aliases provide discoverable one-step workflows:
+
+- `pm start-task <id>`: claim + move to `in_progress`
+- `pm pause-task <id>`: move to `open` + release claim
+- `pm close-task <id> "<reason>"`: close + release claim metadata
+
+These aliases preserve canonical mutation history entries and accept standard mutation controls (`--author`, `--message`, `--force`; `close-task` also accepts `--validate-close`).
 
 ## Resilient Entry Input Formats
 
@@ -518,7 +566,12 @@ pm comments-audit --status in_progress --parent pm-epic01 --tag governance --lat
 
 # Full-history export rows for NDJSON-friendly downstream processing
 pm comments-audit --status in_progress --sprint sprint-12 --release v0.2 --priority 1 --full-history --limit-items 20 --json
+
+# Summary-only item rows (no comment rows) for scoped inventory checks
+pm comments-audit --status in_progress --latest 0 --limit-items 20 --json
 ```
+
+`pm comments-audit --latest` and `--full-history` are intentionally mutually exclusive. `--latest 0` is valid and returns deterministic summary rows with `export.row_count = 0`.
 
 Use explicit clear flags for repeatable fields (`--clear-files`, `--clear-comments`, `--clear-docs`, etc.) and `--unset <field>` for scalar clears.
 
@@ -885,6 +938,7 @@ pm update pm-a1b2 --clear-events
   - `--occurrence-limit <n>` (per recurring event; `>= 1`)
 - Past toggles and range controls:
   - `--past` includes past events in bounded views
+  - `--full-period` keeps day/week/month windows anchored to full period boundaries (without now-clipping)
   - `--from` / `--to` supported on `agenda`
   - `--date` anchors day/week/month calculations
 - Shared filters: `--type`, `--tag`, `--priority`, `--status`, `--assignee`, `--assignee-filter assigned|unassigned`, `--sprint`, `--release`, `--limit`
@@ -894,6 +948,7 @@ Examples:
 ```bash
 pm calendar
 pm cal --view week --date +2d --past
+pm calendar --view week --date 2026-04-06 --full-period --include deadlines,events
 pm calendar --view agenda --from 2026-04-01T00:00:00.000Z --to 2026-04-08T00:00:00.000Z --assignee alex
 pm calendar --view agenda --include events --recurrence-lookahead-days 30 --occurrence-limit 50
 pm calendar --view month --tag release --format json

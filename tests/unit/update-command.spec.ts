@@ -68,6 +68,13 @@ function latestUpdateAuthor(context: TempPmContext, id: string): string | undefi
   return [...entries].reverse().find((entry) => entry.op === "update")?.author;
 }
 
+function latestUpdateOperation(context: TempPmContext, id: string): string | undefined {
+  const history = context.runCli(["history", id, "--json"], { expectJson: true });
+  expect(history.code).toBe(0);
+  const entries = (history.json as { history: Array<{ op: string }> }).history;
+  return [...entries].reverse().find((entry) => entry.op.startsWith("update"))?.op;
+}
+
 describe("runUpdate", () => {
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-update-not-init-"));
@@ -1363,6 +1370,44 @@ describe("runUpdate", () => {
 
       const item = forced.item as Record<string, unknown>;
       expect(item.description).toBe("forced update");
+    });
+  });
+
+  it("allows non-owner metadata updates with --allow-audit-update", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-audit-override", { assignee: "foreign-assignee" });
+      const result = await runUpdate(
+        id,
+        {
+          description: "audited metadata update",
+          allowAuditUpdate: true,
+          message: "audit override metadata sync",
+        },
+        { path: context.pmPath },
+      );
+      expect((result.item as Record<string, unknown>).description).toBe("audited metadata update");
+      expect(result.audit_update).toBe(true);
+      expect(latestUpdateOperation(context, id)).toBe("update_audit");
+    });
+  });
+
+  it("rejects lifecycle and ownership fields when --allow-audit-update is used", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-audit-scope-guard", { assignee: "foreign-assignee" });
+      await expect(
+        runUpdate(
+          id,
+          {
+            allowAuditUpdate: true,
+            status: "blocked",
+            message: "attempt lifecycle mutation via audit mode",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--status"),
+      });
     });
   });
 

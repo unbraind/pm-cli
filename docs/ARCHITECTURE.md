@@ -28,7 +28,8 @@ src/
       create.ts                  pm create (full schema flag surface)
       templates.ts               pm templates save/list/show
       get.ts                     pm get
-      update.ts                  pm update
+      update.ts                  pm update (including ownership-safe metadata audits via --allow-audit-update)
+      update-many.ts             pm update-many (bulk apply/dry-run/rollback checkpoint workflow)
       append.ts                  pm append
       close.ts                   pm close (includes optional close-time validation mode)
       delete.ts                  pm delete
@@ -51,7 +52,7 @@ src/
       search.ts                  pm search (keyword / semantic / hybrid)
       reindex.ts                 pm reindex (optional forced progress visibility)
       history.ts                 pm history
-      activity.ts                pm activity
+      activity.ts                pm activity (timeline filters + JSON stream mode)
       restore.ts                 pm restore
       stats.ts                   pm stats
       health.ts                  pm health
@@ -60,7 +61,7 @@ src/
       contracts.ts               pm contracts (machine-readable contracts/schema surface)
       config.ts                  pm config
       extension.ts               pm extension lifecycle manager (install/uninstall/explore/manage/activate/deactivate)
-      completion.ts              pm completion
+      completion.ts              pm completion (lazy/eager tag completion modes)
       beads.ts                   Beads import runtime used by bundled managed extension
       todos.ts                   Todos import/export runtime used by bundled managed extension
       index.ts                   barrel re-export
@@ -139,9 +140,9 @@ The same registry drives:
 - Pi wrapper action enum, tool `inputSchema`, and CLI arg mapping in `.pi/extensions/pm-cli/index.ts`
 - runtime `pm contracts` payload generation for action/command/schema introspection
 - runtime schema augmentation for active extension commands/actions (including extension source metadata and extension-defined flag surfaces)
-- additive command surfaces such as `templates-*` actions, extension lifecycle actions (`extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-doctor`, `extension-adopt`, `extension-adopt-all`, `extension-activate`, `extension-deactivate`), `history --diff/--verify`, files/docs path hygiene flags (`--add-glob`, `--migrate`, `--append-stable`, `--validate-paths`, `--audit`), validate governance/file drift flags (`--check-lifecycle`, `--check-stale-blockers`, `--scan-mode`, `--include-pm-internals`), list projection/sort controls (`--compact`, `--fields`, `--sort`, `--order`), `aggregate`/`dedupe-audit` action surfaces, comments-audit governance filters (`--parent`, `--tag`, `--sprint`, `--release`, `--priority`), health vector refresh controls (`--check-only`, `--no-refresh`, `--refresh-vectors`), `create --create-mode`, `comments --allow-audit-comment`, `release --allow-audit-release`, `update --replace-deps`, richer `deps` traversal controls, and `contracts` create-required metadata projections
+- additive command surfaces such as `templates-*` actions, extension lifecycle actions (`extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-doctor`, `extension-adopt`, `extension-adopt-all`, `extension-activate`, `extension-deactivate`), `history --diff/--verify`, files/docs path hygiene flags (`--add-glob`, `--migrate`, `--append-stable`, `--validate-paths`, `--audit`), validate governance/file drift flags (`--check-lifecycle`, `--check-stale-blockers`, `--scan-mode`, `--include-pm-internals`), list projection/sort controls (`--compact`, `--fields`, `--sort`, `--order`), `aggregate`/`dedupe-audit` action surfaces, comments-audit governance filters and export controls (`--parent`, `--tag`, `--sprint`, `--release`, `--priority`, `--latest`, `--full-history`), lifecycle aliases (`start-task`, `pause-task`, `close-task`), bulk mutation (`update-many`) and ownership-safe audit update controls (`update --allow-audit-update`), health vector refresh controls (`--check-only`, `--no-refresh`, `--refresh-vectors`), contracts projections (`--flags-only`, `--availability-only`), completion mode controls (`--eager-tags` + lazy `completion-tags` path), calendar period control (`--full-period`), activity filtering/stream controls (`--id`, `--op`, `--author`, `--from`, `--to`, `--stream`), `create --create-mode`, `comments --allow-audit-comment`, `release --allow-audit-release`, `update --replace-deps`, richer `deps` traversal controls, and `contracts` create-required metadata projections
 
-This keeps human CLI UX and machine-facing contracts aligned while preserving additive/backward-compatible evolution.
+This keeps human CLI UX and machine-facing contracts aligned while preserving mostly additive evolution; the intentional compatibility exception is `pm contracts --command` narrow-by-default scoping for lower-noise machine payloads.
 
 ## Item Storage
 
@@ -257,6 +258,9 @@ When `update --type` changes an item's resolved type folder, mutation logic perf
 - `pm create` log-seed repeatables (`--comment`, `--note`, `--learning`) now enforce explicit key boundaries (`author`, `created_at`, `text`) and reject parsed extra keys with usage guidance so unquoted key:value-like comma continuations cannot silently truncate seeded narrative text.
 - `pm deps --format tree|graph --max-depth <n> --collapse none|repeated --summary` provides read-only dependency traversal from stored front matter, with deterministic ordering, cycle markers, missing-node reporting, and governance-friendly bounded projections.
 - `pm update --replace-deps` enables one-shot atomic dependency replacement without separate clear/add mutations.
+- `pm update --allow-audit-update` provides ownership-safe non-owner metadata mutation mode with explicit lifecycle/ownership guardrails.
+- `pm update-many` adds native bulk mutation orchestration with deterministic filter targeting, dry-run planning, checkpoint capture, and rollback-by-checkpoint-id flow.
+- Lifecycle aliases (`pm start-task`, `pm pause-task`, `pm close-task`) compose claim/update/close/release primitives into discoverable single commands while preserving canonical history entries.
 - `pm get` now returns `claim_state` metadata (active assignee plus latest claim/release history context) for ownership-aware automation.
 - `pm list` / `pm list-*` support additive projection (`--compact`, `--fields`, `--include-body`), configurable sorting (`--sort`, `--order`), `--offset` pagination, and JSON-only `--stream` line-delimited output for large datasets.
 - `pm aggregate` provides grouped child-count projections (currently `--group-by parent,type --count`) for governance decomposition checks.
@@ -285,11 +289,12 @@ Pipeline:
    - `agenda` (default, optional `--from`/`--to`)
    - `day`, `week`, `month` (anchored by `--date`)
    - `--past` toggles lower-bound behavior for bounded views
+   - `--full-period` (day/week/month only) keeps full anchored-period lower bounds instead of now-clipping
 7. Sort events deterministically by timestamp, priority, item id, event kind, event title, then reminder text.
 8. Bucket events by UTC date and compute summary counts (`events`, `items`, `deadlines`, `reminders`, `scheduled`) plus deterministic aggregate breakdowns (`by_kind`, `by_type`, `by_status`, `recurring_events`).
 9. Render markdown event rows with deterministic detail tokens (item type, recurrence markers/rules, end-time derivation, timezone/location metadata, and description context when present).
 
-Output behavior is command-specific: `pm calendar` defaults to markdown for agent/human readability while keeping explicit `--format`/`--json` overrides. Global TOON defaults for other commands are unchanged.
+Output behavior is command-specific: `pm calendar` defaults to markdown for agent/human readability while keeping explicit `--format`/`--json` overrides. Calendar range payloads include `period_start`/`period_end` and `full_period` metadata for deterministic downstream interpretation. Global TOON defaults for other commands are unchanged.
 
 ## Context Pipeline
 
@@ -306,6 +311,21 @@ Pipeline:
 5. Run `calendar` logic in agenda mode with shared filters and context window controls (`--date`, `--from`, `--to`, `--past`).
 6. Filter agenda projection to non-terminal items and summarize deadlines/reminders/events counts.
 7. Return deterministic context payload (`output_default`, `window`, `filters`, `summary`, focus sections, and agenda section) with TOON default output and optional `--format`/`--json` overrides.
+
+## Activity Pipeline
+
+`pm activity` is a read-only history projection command for timeline inspection and automation export.
+
+Pipeline:
+
+1. Resolve PM root and enumerate history stream files.
+2. Parse history records in deterministic timestamp order.
+3. Apply optional filters (`--id`, `--op`, `--author`, `--from`, `--to`) before row materialization.
+4. Validate time-window bounds (`--from <= --to`) and return usage errors deterministically on invalid windows.
+5. Apply `--limit` to bounded result sets.
+6. Render either:
+   - standard payload `{ activity, count, limit, filters }`, or
+   - JSON stream mode (`--json --stream [rows|ndjson|jsonl]`) with deterministic `meta` then `entry` records.
 
 ## Terminal and Process I/O Compatibility
 

@@ -226,7 +226,12 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     examples: [
       "pm calendar",
       "pm calendar --view agenda --from +0d --to +7d --assignee codex-agent",
+      "pm calendar --view week --date 2026-04-06 --full-period --include deadlines,events",
       "pm calendar --view month --tag release --format json",
+    ],
+    tips: [
+      "Day/week/month views are anchored period windows; default mode clips the start to now unless --past or --full-period is set.",
+      "--full-period applies only to day/week/month views and makes the effective window match the full anchored period boundaries.",
     ],
   },
   context: {
@@ -263,7 +268,12 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   activity: {
     why: "Reviews recent tracker-wide activity across items.",
-    examples: ["pm activity --limit 50"],
+    examples: [
+      "pm activity --limit 50",
+      "pm activity --id pm-a1b2 --op update --author codex-agent --from -7d --to now",
+      "pm activity --json --stream rows --limit 200",
+    ],
+    tips: ["Use --stream with --json for line-delimited automation output; --from is inclusive and --to is exclusive."],
   },
   restore: {
     why: "Restores an item to a prior timestamp/version with history replay safety.",
@@ -298,9 +308,11 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Audits latest comments or full history rows across filtered item sets.",
     examples: [
       "pm comments-audit --status open --latest 1",
+      "pm comments-audit --status open --latest 0",
       "pm comments-audit --parent pm-feature01 --tag governance --sprint sprint-12 --release vnext --priority 0",
       "pm comments-audit --full-history --limit-items 50",
     ],
+    tips: ["Use either --latest or --full-history (not both). --latest 0 returns item summaries without comment rows."],
   },
   notes: {
     why: "Adds or reviews durable implementation notes linked to an item.",
@@ -390,13 +402,34 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     ],
     tips: ["Use --allow-audit-release for non-owner handoffs that only clear assignee metadata."],
   },
+  "start-task": {
+    why: "Lifecycle alias that claims an item and sets status to in_progress.",
+    examples: ['pm start-task pm-a1b2 --author "codex-agent" --message "Start implementation"'],
+  },
+  "pause-task": {
+    why: "Lifecycle alias that sets status to open and releases active assignment.",
+    examples: ['pm pause-task pm-a1b2 --author "codex-agent" --message "Pause for dependency unblock"'],
+  },
+  "close-task": {
+    why: "Lifecycle alias that closes with reason text and clears assignment metadata.",
+    examples: ['pm close-task pm-a1b2 "All acceptance criteria met" --author "codex-agent" --message "Close and handoff"'],
+  },
   completion: {
     why: "Generates shell completion scripts for faster and more reliable command entry.",
-    examples: ["pm completion bash", "pm completion zsh", "pm completion fish"],
+    examples: ["pm completion bash", "pm completion zsh", "pm completion fish", "pm completion bash --eager-tags"],
+    tips: ["Default scripts resolve tag suggestions lazily at completion time; use --eager-tags to embed current tags directly."],
   },
   contracts: {
     why: "Exposes machine-readable CLI command and tool schema contracts for agent integrations.",
-    examples: ["pm contracts", "pm contracts --runtime-only", "pm contracts --action create", "pm contracts --schema-only"],
+    examples: [
+      "pm contracts",
+      "pm contracts --command list --runtime-only",
+      "pm contracts --command update --flags-only",
+      "pm contracts --availability-only --runtime-only",
+      "pm contracts --action create",
+      "pm contracts --schema-only",
+    ],
+    tips: ["Use --command to narrow actions/schema to one CLI surface; combine with --flags-only or --availability-only for lighter payloads."],
   },
 };
 

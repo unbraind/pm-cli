@@ -673,9 +673,13 @@ Help and error UX note:
 - `pm templates list`
 - `pm templates show <NAME>`
 - `pm update <ID>`
+- `pm update-many`
 - `pm append <ID>`
 - `pm claim <ID>`
 - `pm release <ID>`
+- `pm start-task <ID>`
+- `pm pause-task <ID>`
+- `pm close-task <ID> <TEXT>`
 - `pm delete <ID>`
 - `pm comments <ID> [TEXT]`
 - `pm comments-audit`
@@ -713,6 +717,7 @@ Help and error UX note:
 - `pm todos import [--folder <path>]`
 - `pm todos export [--folder <path>]`
 - `pm completion <bash|zsh|fish>`
+- `pm completion-tags` (internal helper command used by generated completion scripts)
 
 Roadmap commands (post-v0.1, tracked but not release blockers):
 
@@ -841,6 +846,7 @@ Mutating `update` (v0.1 baseline):
 - `--why-now`, `--why_now`
 - `--author`
 - `--message`
+- `--allow-audit-update`, `--allow_audit_update` (ownership-safe non-owner metadata update mode; intentionally disallows lifecycle/ownership/linkage field mutations in this mode)
 - `--dep` (repeatable add format `id=<id>,kind=<...>,author=<a?>,created_at=<iso|now>,source_kind=<value?>`; use `--clear-deps` to clear all dependencies)
 - `--dep-remove`, `--dep_remove` (repeatable selector remove by `id` or `id=<id>,kind=<kind?>,source_kind=<value?>`)
 - `--comment` (repeatable log seed format `author=<a>,created_at=<iso|now>,text=<t>`; use `--clear-comments` to clear comments)
@@ -859,6 +865,17 @@ Mutating `update` (v0.1 baseline):
 - `--status closed` is not supported; callers must use `pm close <ID> <TEXT>` so `close_reason` is always captured.
 - `--close-reason`, `--close_reason` support explicit close-reason set; clear with `--unset close-reason`.
 - Reopen transition safety: moving from `closed` to a non-terminal status via `--status` auto-clears stale `close_reason` unless `--close-reason` is explicitly provided on that update call.
+
+`pm update-many` (bulk mutation with native checkpoint lifecycle):
+
+- Targeting filters: `--filter-status`, `--filter-type`, `--filter-tag`, `--filter-priority`, `--filter-parent`, `--filter-deadline-before`, `--filter-deadline-after`, `--filter-assignee`, `--filter-assignee-filter`, `--filter-sprint`, `--filter-release`
+- Paging scope controls: `--limit`, `--offset`
+- Apply payload: same scalar/unset mutation surface as `pm update` (including `--allow-audit-update`)
+- Workflow controls:
+  - `--dry-run` (preview planned per-item changes without mutation)
+  - `--rollback <checkpoint-id>` (restore a prior checkpoint snapshot)
+  - `--no-checkpoint` (disable apply-mode checkpoint capture)
+- Safety rule: `--rollback` is exclusive with mutation payload flags.
 
 List/search filters:
 
@@ -879,6 +896,14 @@ List/search filters:
 - `--compact` / `--fields <csv>` (`list*` projection controls; mutually exclusive)
 - `--sort <priority|deadline|updated_at|created_at|title|parent>` + `--order <asc|desc>` (`list*` deterministic sort controls; `--order` requires `--sort`)
 - `--compact` / `--full` / `--fields <csv>` (`search` only; mutually exclusive projection controls, default compact)
+
+Command-specific query and contract flags:
+
+- `pm comments-audit`: `--latest <n>` (`0` allowed for summary-only rows), `--full-history` (mutually exclusive with `--latest`)
+- `pm calendar`: `--full-period` (day/week/month full anchored window; invalid for agenda)
+- `pm activity`: `--id`, `--op`, `--author`, `--from`, `--to`, `--stream [rows|ndjson|jsonl]` (`--stream` requires `--json`)
+- `pm contracts`: `--flags-only`, `--availability-only` (mutually exclusive), command-scoped default behavior when `--command` is provided
+- `pm completion`: `--eager-tags` (legacy eager embedding; default generated scripts use lazy runtime tag lookup via `pm completion-tags`)
 
 Mutation safety:
 
@@ -901,6 +926,8 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 - Existing CLI command paths and aliases remain valid.
 - Pi tool input validation uses strict action-scoped schema branches (schema v4) with per-action required fields and `additionalProperties: false`.
 - `pm contracts` provides deterministic runtime contract introspection (`--action`, `--command`, `--schema-only`, `--runtime-only`, `--active-only`) for agent callers, including action availability metadata (`action_availability`) with invocability/provider diagnostics and additive extension command/action schema inclusion (`extension_commands`).
+- Intentional compatibility exception: `pm contracts --command <name>` now narrows command/action/availability output to that selected command by default to reduce machine payload noise (omit `--command` for full corpus output).
+- `pm contracts --flags-only` and `pm contracts --availability-only` provide mutually exclusive lightweight projections for machine consumers.
 - Command output remains deterministic; `--json` exposes command-contract machine payloads and JSON error envelopes.
 
 | Command | Key inputs | Output object |
@@ -920,7 +947,7 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | `pm get <ID>` | normalized id | `{ item, body, linked: { files, tests, docs }, claim_state }` where `claim_state` includes current assignee plus latest claim/release history context |
 | `pm search <keywords...>` | keyword query tokens + optional mode/include-linked/compact/full/fields/limit filters | `{ query, mode, items, count, filters, projection, now }` |
 | `pm reindex` | optional `--mode` (`keyword|semantic|hybrid` baseline) and additive `--progress` stderr visibility | `{ ok, mode, total_items, artifacts, warnings, generated_at }` |
-| `pm calendar` / `pm cal` | `--view agenda|day|week|month`, `--date`, `--from`/`--to` (agenda), `--past`, list-like filters (`type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`), source controls (`--include`), and recurrence bounds (`--recurrence-lookahead-days`, `--recurrence-lookback-days`, `--occurrence-limit`) | `{ view, output_default, now, anchor, range, filters, summary, events, days }` where `summary` includes deterministic aggregate breakdown fields (`by_kind`, `by_type`, `by_status`, `recurring_events`) and markdown output includes rich event detail tokens by default |
+| `pm calendar` / `pm cal` | `--view agenda|day|week|month`, `--date`, `--from`/`--to` (agenda), `--past`, `--full-period` (day/week/month only), list-like filters (`type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`), source controls (`--include`), and recurrence bounds (`--recurrence-lookahead-days`, `--recurrence-lookback-days`, `--occurrence-limit`) | `{ view, output_default, now, anchor, range, filters, summary, events, days }` where `range` includes period metadata (`period_start`, `period_end`, `full_period`), `summary` includes deterministic aggregate breakdown fields (`by_kind`, `by_type`, `by_status`, `recurring_events`), and markdown output includes rich event detail tokens by default |
 | `pm context` / `pm ctx` | `--date`, `--from`/`--to`, `--past`, list-like filters (`type`, `tag`, `priority`, `assignee`, `sprint`, `release`, `limit`), `--format` | `{ output_default, now, window, filters, summary, high_level, low_level, blocked_fallback, agenda }` (defaults to TOON unless `--format` or `--json` override) |
 | `pm beads import [--file <path\|->] [--preserve-source-ids]` | optional Beads JSONL source path (`.beads/issues.jsonl` auto-discovered first, then `issues.jsonl`; implicit `sync_base.jsonl` fallback is refused as unsafe; `--file -` requires piped stdin and fails fast on interactive TTY stdin) | `{ ok, source, imported, skipped, ids, warnings }` |
 | `pm todos import --folder <path?>` | optional todos markdown source folder (defaults to `.pi/todos`); preserves canonical optional `ItemFrontMatter` metadata when present and applies deterministic defaults for missing PM fields | `{ ok, folder, imported, skipped, ids, warnings }` |
@@ -929,14 +956,18 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | `pm templates save <NAME> ...` | template name + create-compatible option payload (subset of create flags, including repeatable entries) | `{ name, path, template, saved_at }` |
 | `pm templates list` | optional output controls (`--json`/TOON) | `{ templates, count }` |
 | `pm templates show <NAME>` | template name | `{ name, template }` |
-| `pm update <ID> ...` | id + patch-like flags (`--status closed` is rejected; use `pm close <ID> <TEXT>`; `--close-reason`/`--close_reason` explicitly set `close_reason`; `--unset close-reason` clears it; reopening from `closed` to a non-terminal status auto-clears stale `close_reason` unless explicit `--close-reason` is provided; body replacement is supported via `--body`/`-b`; dependencies are mutable via `--dep` / `--dep-remove` / `--clear-deps` / `--replace-deps` (atomic replacement mode); repeatable transactional linked/log flags `--comment`/`--note`/`--learning`/`--file`/`--test`/`--doc` are supported on update with explicit `--clear-*` semantics) | `{ item, changed_fields, warnings }` |
+| `pm update <ID> ...` | id + patch-like flags (`--status closed` is rejected; use `pm close <ID> <TEXT>`; `--close-reason`/`--close_reason` explicitly set `close_reason`; `--unset close-reason` clears it; reopening from `closed` to a non-terminal status auto-clears stale `close_reason` unless explicit `--close-reason` is provided; body replacement is supported via `--body`/`-b`; dependencies are mutable via `--dep` / `--dep-remove` / `--clear-deps` / `--replace-deps` (atomic replacement mode); repeatable transactional linked/log flags `--comment`/`--note`/`--learning`/`--file`/`--test`/`--doc` are supported on update with explicit `--clear-*` semantics; `--allow-audit-update` enables ownership-safe non-owner metadata updates only) | `{ item, changed_fields, warnings, audit_update? }` |
+| `pm update-many` | bulk update orchestration with selection filters (`--filter-*` family), update payload parity with scalar update flags/unsets, and workflow controls (`--dry-run`, `--rollback <checkpoint-id>`, `--no-checkpoint`) | apply: `{ mode, matched_count, dry_run, ids, updated_count, skipped_count, failed_count, checkpoint?, rows }`; dry-run: `{ mode, matched_count, dry_run, ids, filters, planned_update_options, item_plans }`; rollback: `{ mode, matched_count, dry_run, ids, rollback_checkpoint_id, restored_count, failed_count, rows }` |
 | `pm delete <ID>` | id + optional `--author`/`--message`/`--force` | `{ item, changed_fields, warnings }` |
 | `pm close <ID> <TEXT>` | id + close reason text + optional `--author/--message/--force/--validate-close [warn|strict]` | `{ item, changed_fields, warnings }` |
 | `pm append <ID> --body` | id + appended markdown (`--body -` reads piped stdin) | `{ item, appended, changed_fields }` |
 | `pm claim <ID>` | id, optional `--author`/`--message`/`--force` (`--force` required for terminal/lock override paths; non-terminal assignee takeover does not require force) | `{ item, claimed_by, previous_assignee, forced }` |
 | `pm release <ID>` | id, optional `--author`/`--message`/`--allow-audit-release`/`--force` | `{ item, released_by, previous_assignee, audit_release, forced }` |
+| `pm start-task <ID>` | lifecycle alias command (`claim` + `update --status in_progress`) with optional `--author`, `--message`, `--force` | `{ id, action: "start_task", claim, update }` |
+| `pm pause-task <ID>` | lifecycle alias command (`update --status open` + `release`) with optional `--author`, `--message`, `--force` | `{ id, action: "pause_task", update, release }` |
+| `pm close-task <ID> <TEXT>` | lifecycle alias command (`close` + `release`) with optional `--author`, `--message`, `--validate-close`, `--force` | `{ id, action: "close_task", close, release }` |
 | `pm comments <ID> [TEXT] --add/--limit` | id + optional positional comment text shorthand + comment text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`); optional mutation metadata flags `--author`/`--message`/`--force`; additive ownership-safe audit path `--allow-audit-comment` for non-owner append-only comments | `{ id, comments, count }` |
-| `pm comments-audit` | optional governance filters (`--status`, `--type`, `--assignee`, `--assignee-filter`, `--parent`, `--tag`, `--sprint`, `--release`, `--priority`, `--limit-items`) plus latest/full-history export mode controls (`--latest`, `--full-history`; mutually exclusive) | `{ items, count, filters, export, now, warnings? }` where `filters.full_history` and `export.mode` indicate latest vs full-history behavior; in full-history mode, `rows[]` includes flat per-comment export entries for NDJSON-friendly downstream processing |
+| `pm comments-audit` | optional governance filters (`--status`, `--type`, `--assignee`, `--assignee-filter`, `--parent`, `--tag`, `--sprint`, `--release`, `--priority`, `--limit-items`) plus latest/full-history export mode controls (`--latest`, `--full-history`; mutually exclusive, `--latest 0` allowed for summary-only rows) | `{ items, count, filters, export, now, warnings? }` where `filters.full_history` and `export.mode` indicate latest vs full-history behavior; `export.row_count` is deterministic (`0` in summary-only latest mode); in full-history mode, `rows[]` includes flat per-comment export entries for NDJSON-friendly downstream processing |
 | `pm notes <ID> [TEXT] --add/--limit` | id + optional positional note text shorthand + note text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`) | `{ id, notes, count }` |
 | `pm learnings <ID> [TEXT] --add/--limit` | id + optional positional learning text shorthand + learning text/limit (`--add` accepts plain text, `text=<value>`, markdown `text: <value>`, or stdin token `-`; positional `TEXT` is shorthand for `--add <TEXT>`) | `{ id, learnings, count }` |
 | `pm files <ID> --add/--add-glob/--remove/--migrate/--append-stable/--validate-paths/--audit/--list` | id + file refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`); optional glob expansion via repeatable `--add-glob` (plain glob or `pattern=<glob>,scope=<scope>,note=<text>`); optional additive linked-path hygiene (`--migrate from=<old>,to=<new>`, path existence validation, cross-item audit, non-mutating list); optional `--append-stable` avoids full-array resorting and appends new links while preserving current order | `{ id, files, changed, count, migrations_applied, validation, audit }` |
@@ -948,13 +979,14 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | `pm validate` | optional scoped checks (`--check-metadata`, `--check-resolution`, `--check-lifecycle`, `--check-stale-blockers`, `--check-files`, `--check-command-references`, `--check-history-drift`; default all checks); metadata checks accept `--metadata-profile core|strict|custom`; lifecycle checks surface active closure-like metadata and active items whose parents are terminal, with optional stale blocker heuristics when `--check-stale-blockers` is enabled; file checks accept `--scan-mode default|tracked-all|tracked-all-strict` plus `--include-pm-internals` opt-in and report filtered + raw candidate metrics (`candidate_total`, `candidate_scanned`, `candidate_total_raw`, `candidate_scanned_raw`) plus structured exclusion summaries (`excluded_by_reason`); resolution checks include default remediation command templates for missing resolution fields; strict warning exits via `--strict-exit` (alias `--fail-on-warn`) | `{ ok, checks, warnings, generated_at }` where metadata details include profile/source/fallback visibility fields, lifecycle details include deterministic per-category row summaries, and tracked-all-strict visibility includes explicit file-check detail flags (`strict_mode_forces_pm_internals`, `strict_mode_forces_pm_internals_notice`) plus warning token `validate_files_tracked_all_strict_forces_pm_internals` when strict mode force-enables PM internals |
 | `pm config <project\|global> <get\|set\|list\|export> [key]` | scope + action; `get/set` require key, `list/export` reject key; policy/format/criterion flags apply where relevant | `get/set`: existing key-specific result shape; `list`: `{ scope, keys, count, settings_path, changed, warnings? }`; `export`: `{ scope, values, settings_path, changed, warnings? }` |
 | `pm gc` | none | `{ ok, removed, retained, warnings, generated_at }` |
-| `pm contracts [--action <value>] [--command <value>] [--schema-only] [--runtime-only|--active-only]` | optional action/command filters, schema-only mode, and runtime invocability filtering for machine contract introspection | `{ schema_version, schema_id, selected, actions, action_availability, commands, schema, extension_commands, command_flags?, commander_aliases? }` |
+| `pm contracts [--action <value>] [--command <value>] [--schema-only] [--runtime-only|--active-only] [--flags-only|--availability-only]` | optional action/command filters, schema-only mode, runtime invocability filtering, and lightweight projection modes; when `--command` is provided, command/action/availability output is narrowed to that selected command by default | `{ schema_version, schema_id, selected, actions?, action_availability?, commands?, schema?, extension_commands?, command_flags?, commander_aliases?, command_path?, cli_exposed? }` |
 | `pm docs <ID> --add/--add-glob/--remove/--migrate/--validate-paths/--audit` | id + doc refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`); optional glob expansion via repeatable `--add-glob` (plain glob or `pattern=<glob>,scope=<scope>,note=<text>`); optional additive linked-path hygiene (`--migrate from=<old>,to=<new>`, path existence validation, cross-item audit) | `{ id, docs, changed, count, migrations_applied, validation, audit }` |
 | `pm deps <ID> --format tree|graph` | id + optional output selector (`tree` default, `graph` for node/edge projection), traversal controls (`--max-depth`), repeat-collapse mode (`--collapse none|repeated`), and count-only summary mode (`--summary`) | `{ id, format, node_count, edge_count, missing_count, tree? graph? }` |
 | `pm history <ID> --limit/--diff/--verify` | id + optional limit + additive diagnostics (`--diff` changed-field patch summaries, `--verify` hash-chain/current-hash verification) | `{ id, history, count, limit, diff, verify }` |
-| `pm activity --limit` | optional limit | `{ activity, count, limit }` |
+| `pm activity --limit` | optional limit plus filters (`--id`, `--op`, `--author`, `--from`, `--to`) and JSON-only stream mode (`--stream [rows|ndjson|jsonl]`) | standard: `{ activity, count, limit, filters }`; stream: line-delimited JSON entries with deterministic `meta` and `entry` records |
 | `pm restore <ID> <TIMESTAMP\|VERSION>` | id + restore target + optional `--author/--message/--force` | `{ item, restored_from, changed_fields, warnings }` |
-| `pm completion <shell>` | `bash`, `zsh`, or `fish`; non-JSON output is the raw script suitable for eval or pipe; JSON output is `{ shell, script, setup_hint }`; generated scripts include deterministic `--tag` suggestions derived from tracked item metadata | `{ shell, script, setup_hint }` |
+| `pm completion <shell>` | `bash`, `zsh`, or `fish`; supports `--eager-tags` to embed static tag completions; default script mode uses lazy runtime tag lookup via `pm completion-tags`; non-JSON output is the raw script suitable for eval or pipe; JSON output is `{ shell, script, setup_hint }` | `{ shell, script, setup_hint }` |
+| `pm completion-tags` | internal helper command returning current tag values for completion script lazy lookup | `{ tags, count }` |
 
 List command row projection:
 
@@ -982,7 +1014,7 @@ Examples:
 - `get`:
   - `{ item, body, linked: { files, tests, docs } }`
 - `create/update/delete`:
-  - `{ item, changed_fields, warnings }`
+  - `{ item, changed_fields, warnings }` (`update` may also include `audit_update` when `--allow-audit-update` is active)
 - `append`:
   - `{ item, appended, changed_fields }`
 - `test-all`:

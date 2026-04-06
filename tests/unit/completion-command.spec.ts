@@ -61,6 +61,9 @@ describe("generateBashScript", () => {
       "contracts",
       "claim",
       "release",
+      "start-task",
+      "pause-task",
+      "close-task",
       "completion",
       "config",
     ]) {
@@ -116,6 +119,16 @@ describe("generateBashScript", () => {
     expect(script).toContain("--doc");
     expect(script).toContain("--reminder");
     expect(script).toContain("--event");
+  });
+
+  it("includes append required --body flag from command contracts", () => {
+    const bashScript = generateBashScript();
+    expect(bashScript).toContain("append)");
+    expect(bashScript).toContain("--body");
+
+    const fishScript = generateFishScript();
+    expect(fishScript).toContain("__fish_seen_subcommand_from append");
+    expect(fishScript).toContain("-l body");
   });
 
   it("includes release audit handoff flag", () => {
@@ -183,9 +196,21 @@ describe("generateBashScript", () => {
     expect(script).toContain("--from");
     expect(script).toContain("--to");
     expect(script).toContain("--past");
+    expect(script).toContain("--full-period");
     expect(script).toContain("--include");
     expect(script).toContain("--occurrence-limit");
     expect(script).toContain("--format");
+  });
+
+  it("includes activity filtering and stream flags", () => {
+    const script = generateBashScript();
+    expect(script).toContain("activity)");
+    expect(script).toContain("--id");
+    expect(script).toContain("--op");
+    expect(script).toContain("--author");
+    expect(script).toContain("--from");
+    expect(script).toContain("--to");
+    expect(script).toContain("--stream");
   });
 
   it("includes search-specific flags", () => {
@@ -200,6 +225,22 @@ describe("generateBashScript", () => {
     expect(script).toContain('"alpha beta"');
   });
 
+  it("uses lazy dynamic tag completion by default and supports eager mode", () => {
+    const lazyBash = generateBashScript();
+    expect(lazyBash).toContain("pm completion-tags");
+
+    const eagerBash = generateBashScript(["Task"], [], true);
+    expect(eagerBash).not.toContain("pm completion-tags");
+
+    const lazyZsh = generateZshScript();
+    expect(lazyZsh).toContain("_pm_tag_choices()");
+    expect(lazyZsh).toContain("pm completion-tags");
+
+    const lazyFish = generateFishScript();
+    expect(lazyFish).toContain("function __pm_tag_choices");
+    expect(lazyFish).toContain("pm completion-tags");
+  });
+
   it("includes context-specific flags", () => {
     const script = generateBashScript();
     expect(script).toContain("context|ctx");
@@ -211,7 +252,7 @@ describe("generateBashScript", () => {
 
   it("includes shell names for completion sub-completion", () => {
     const script = generateBashScript();
-    expect(script).toContain('"bash zsh fish"');
+    expect(script).toContain("bash zsh fish");
   });
 
   it("uses valid bash syntax patterns", () => {
@@ -252,6 +293,9 @@ describe("generateZshScript", () => {
     expect(script).toContain("create:Create a new project management item");
     expect(script).toContain("completion:Generate shell completion");
     expect(script).toContain("contracts:Show machine-readable command and schema contracts");
+    expect(script).toContain("start-task:Lifecycle alias to claim and set in_progress");
+    expect(script).toContain("pause-task:Lifecycle alias to reopen and release claim");
+    expect(script).toContain("close-task:Lifecycle alias to close and release claim");
     expect(script).toContain("calendar:Show calendar views for deadlines and reminders");
     expect(script).toContain("cal:Alias for calendar");
     expect(script).toContain("context:Show a token-efficient project context snapshot");
@@ -302,6 +346,7 @@ describe("generateZshScript", () => {
     expect(script).toContain("calendar|cal");
     expect(script).toContain("--view");
     expect(script).toContain("--past");
+    expect(script).toContain("--full-period");
     expect(script).toContain("--format");
     expect(script).toContain("--reminder");
     expect(script).toContain("--event");
@@ -426,6 +471,8 @@ describe("generateFishScript", () => {
     expect(script).toContain("-l action");
     expect(script).toContain("-l command");
     expect(script).toContain("-l schema-only");
+    expect(script).toContain("-l flags-only");
+    expect(script).toContain("-l availability-only");
     expect(script).toContain("-l runtime-only");
     expect(script).toContain("-l active-only");
   });
@@ -433,6 +480,7 @@ describe("generateFishScript", () => {
   it("includes completion shell argument completions", () => {
     const script = generateFishScript();
     expect(script).toContain("__fish_seen_subcommand_from completion");
+    expect(script).toContain("-l eager-tags");
     expect(script).toContain("bash zsh fish");
   });
 
@@ -503,6 +551,7 @@ describe("generateFishScript", () => {
     expect(script).toContain("__fish_seen_subcommand_from calendar cal");
     expect(script).toContain("-l view");
     expect(script).toContain("-l past");
+    expect(script).toContain("-l full-period");
     expect(script).toContain("-l include");
     expect(script).toContain("-l occurrence-limit");
     expect(script).toContain("-l format");

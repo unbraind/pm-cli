@@ -221,6 +221,76 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("supports activity stream mode with filter metadata and enforces --json", async () => {
+    await withTempPmPath(async (context) => {
+      const createArgs = [
+        "create",
+        "--json",
+        "--title",
+        "Stream activity seed item",
+        "--description",
+        "Seed item for activity stream mode assertions",
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--priority",
+        "1",
+        "--tags",
+        "integration,activity-stream",
+        "--body",
+        "",
+        "--deadline",
+        "none",
+        "--estimate",
+        "10",
+        "--ac",
+        "Activity stream mode is verified",
+        "--author",
+        "integration-test",
+        "--message",
+        "Seed for activity stream assertions",
+        "--assignee",
+        "none",
+        "--dep",
+        "none",
+        "--comment",
+        "none",
+        "--note",
+        "none",
+        "--learning",
+        "none",
+        "--file",
+        "none",
+        "--test",
+        "none",
+        "--doc",
+        "none",
+      ];
+      const createResult = context.runCli(createArgs, { expectJson: true });
+      expect(createResult.code).toBe(0);
+
+      const streamResult = context.runCli(["activity", "--json", "--stream", "rows", "--limit", "1"]);
+      expect(streamResult.code).toBe(0);
+      const lines = streamResult.stdout
+        .trim()
+        .split("\n")
+        .filter((line) => line.trim().length > 0)
+        .map((line) => JSON.parse(line) as { type: string; [key: string]: unknown });
+      expect(lines.length).toBeGreaterThanOrEqual(3);
+      expect(lines[0]?.type).toBe("meta");
+      expect(lines[0]?.filters).toMatchObject({
+        limit: "1",
+      });
+      expect(lines.some((entry) => entry.type === "entry")).toBe(true);
+      expect(lines.at(-1)?.type).toBe("end");
+
+      const invalidStreamResult = context.runCli(["activity", "--stream"]);
+      expect(invalidStreamResult.code).toBe(2);
+      expect(invalidStreamResult.stderr).toContain("--stream requires --json output mode.");
+    });
+  });
+
   it("supports close validation modes and standalone validate command", async () => {
     await withTempPmPath(async (context) => {
       const createResult = context.runCli(
