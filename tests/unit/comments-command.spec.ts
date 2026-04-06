@@ -273,6 +273,31 @@ describe("runComments", () => {
         mode: "latest",
         row_count: 1,
       });
+      expect(auditOpen.summary).toMatchObject({
+        totals: {
+          items_scanned: 1,
+          items_with_comments: 1,
+          zero_comment_items: 0,
+          comments_total: 2,
+          comments_exported: 1,
+        },
+        coverage: {
+          items_with_comments_ratio: 1,
+          items_with_comments_percent: 100,
+        },
+      });
+      expect(auditOpen.summary.by_type).toEqual([
+        expect.objectContaining({
+          type: "Task",
+          items_scanned: 1,
+          items_with_comments: 1,
+          zero_comment_items: 0,
+          comments_total: 2,
+          comments_exported: 1,
+          items_with_comments_ratio: 1,
+          items_with_comments_percent: 100,
+        }),
+      ]);
       expect(auditOpen.items.some((entry) => entry.id === closedId)).toBe(false);
       expect(auditOpen.items.find((entry) => entry.id === openId)?.comments.map((entry) => entry.text)).toEqual(["open-second"]);
 
@@ -281,6 +306,13 @@ describe("runComments", () => {
       expect(auditClosed.items[0]?.id).toBe(closedId);
       expect(auditClosed.items[0]?.comments.map((entry) => entry.text)).toEqual(["closed-only"]);
       expect(auditClosed.items[0]?.comment_count).toBe(1);
+      expect(auditClosed.summary.totals).toMatchObject({
+        items_scanned: 1,
+        items_with_comments: 1,
+        zero_comment_items: 0,
+        comments_total: 1,
+        comments_exported: 1,
+      });
     });
   });
 
@@ -313,6 +345,19 @@ describe("runComments", () => {
       expect(fullHistory.rows?.map((row) => row.text)).toEqual(["history-first", "history-second"]);
       expect(fullHistory.rows?.map((row) => row.comment_index)).toEqual([0, 1]);
       expect(fullHistory.rows?.every((row) => row.item_id === id)).toBe(true);
+      expect(fullHistory.summary).toMatchObject({
+        totals: {
+          items_scanned: 1,
+          items_with_comments: 1,
+          zero_comment_items: 0,
+          comments_total: 2,
+          comments_exported: 2,
+        },
+        coverage: {
+          items_with_comments_ratio: 1,
+          items_with_comments_percent: 100,
+        },
+      });
     });
   });
 
@@ -344,6 +389,15 @@ describe("runComments", () => {
       expect(summaryOnly.items[0]?.comment_count).toBe(2);
       expect(summaryOnly.items[0]?.comments).toEqual([]);
       expect(summaryOnly.rows).toBeUndefined();
+      expect(summaryOnly.summary).toMatchObject({
+        totals: {
+          items_scanned: 1,
+          items_with_comments: 1,
+          zero_comment_items: 0,
+          comments_total: 2,
+          comments_exported: 0,
+        },
+      });
     });
   });
 

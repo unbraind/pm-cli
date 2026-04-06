@@ -19,32 +19,43 @@ import {
   CALENDAR_FLAG_CONTRACTS,
   CLAIM_FLAG_CONTRACTS,
   CLOSE_TASK_FLAG_CONTRACTS,
+  COMMENTS_FLAG_CONTRACTS,
   COMMENTS_AUDIT_FLAG_CONTRACTS,
   CLOSE_FLAG_CONTRACTS,
   COMPLETION_FLAG_CONTRACTS,
+  CONFIG_FLAG_CONTRACTS,
   CONTRACTS_FLAG_CONTRACTS,
   CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS,
   CONTEXT_FLAG_CONTRACTS,
   CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
   CREATE_COMMANDER_STRING_OPTION_CONTRACTS,
   CREATE_FLAG_CONTRACTS,
+  DELETE_FLAG_CONTRACTS,
   DEPS_FLAG_CONTRACTS,
   DEDUPE_AUDIT_FLAG_CONTRACTS,
+  DOCS_FLAG_CONTRACTS,
+  EXTENSION_FLAG_CONTRACTS,
+  FILES_FLAG_CONTRACTS,
   GLOBAL_FLAG_CONTRACTS,
   HEALTH_FLAG_CONTRACTS,
+  HISTORY_FLAG_CONTRACTS,
+  LEARNINGS_FLAG_CONTRACTS,
   LIST_COMMANDER_STRING_OPTION_CONTRACTS,
   LIST_FILTER_FLAG_CONTRACTS,
+  NOTES_FLAG_CONTRACTS,
   PM_CORE_COMMAND_NAMES,
   PM_TOOL_ACTIONS,
   PM_TOOL_PARAMETERS_SCHEMA,
   REINDEX_FLAG_CONTRACTS,
   RELEASE_FLAG_CONTRACTS,
+  RESTORE_FLAG_CONTRACTS,
   SEARCH_COMMANDER_STRING_OPTION_CONTRACTS,
   SEARCH_FLAG_CONTRACTS,
   START_TASK_FLAG_CONTRACTS,
   PAUSE_TASK_FLAG_CONTRACTS,
   TEST_ALL_FLAG_CONTRACTS,
   TEST_FLAG_CONTRACTS,
+  TEST_RUNS_FLAG_CONTRACTS,
   UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
   UPDATE_COMMANDER_STRING_OPTION_CONTRACTS,
   UPDATE_FLAG_CONTRACTS,
@@ -180,6 +191,33 @@ function actionDescriptorMatchesSelectedCommand(descriptor: ActionContractDescri
     return true;
   }
   return commandPath.startsWith(`${selectedCommand} `);
+}
+
+function resolveScopedCommandsFromActionDescriptors(
+  descriptors: ActionContractDescriptor[],
+  commandCatalog: string[],
+): string[] {
+  const commandSet = new Set(commandCatalog);
+  const scoped = new Set<string>();
+  for (const descriptor of descriptors) {
+    if (!descriptor.command_path) {
+      continue;
+    }
+    const commandPath = normalizeCommandPath(descriptor.command_path);
+    const tokens = commandPath.split(" ").filter((entry) => entry.length > 0);
+    if (tokens.length === 0) {
+      continue;
+    }
+    for (let end = tokens.length; end > 0; end -= 1) {
+      const candidate = tokens.slice(0, end).join(" ");
+      if (!commandSet.has(candidate)) {
+        continue;
+      }
+      scoped.add(candidate);
+      break;
+    }
+  }
+  return [...scoped].sort((left, right) => left.localeCompare(right));
 }
 
 function normalizeToken(value: string | undefined): string | undefined {
@@ -622,6 +660,12 @@ function resolveActionAvailability(
 }
 
 function resolveCoreCommandFlags(command: string): CliFlagContract[] {
+  if (command === "config") {
+    return CONFIG_FLAG_CONTRACTS;
+  }
+  if (command === "extension") {
+    return EXTENSION_FLAG_CONTRACTS;
+  }
   if (command === "create") {
     return CREATE_FLAG_CONTRACTS;
   }
@@ -652,6 +696,15 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   if (command === "reindex") {
     return REINDEX_FLAG_CONTRACTS;
   }
+  if (command === "history") {
+    return HISTORY_FLAG_CONTRACTS;
+  }
+  if (command === "restore") {
+    return RESTORE_FLAG_CONTRACTS;
+  }
+  if (command === "delete") {
+    return DELETE_FLAG_CONTRACTS;
+  }
   if (command === "close") {
     return CLOSE_FLAG_CONTRACTS;
   }
@@ -673,11 +726,29 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   if (command === "close-task") {
     return CLOSE_TASK_FLAG_CONTRACTS;
   }
+  if (command === "comments") {
+    return COMMENTS_FLAG_CONTRACTS;
+  }
+  if (command === "notes") {
+    return NOTES_FLAG_CONTRACTS;
+  }
+  if (command === "learnings") {
+    return LEARNINGS_FLAG_CONTRACTS;
+  }
+  if (command === "files") {
+    return FILES_FLAG_CONTRACTS;
+  }
+  if (command === "docs") {
+    return DOCS_FLAG_CONTRACTS;
+  }
   if (command === "test") {
     return TEST_FLAG_CONTRACTS;
   }
   if (command === "test-all") {
     return TEST_ALL_FLAG_CONTRACTS;
+  }
+  if (command === "test-runs") {
+    return TEST_RUNS_FLAG_CONTRACTS;
   }
   if (command === "validate") {
     return VALIDATE_FLAG_CONTRACTS;
@@ -949,9 +1020,16 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
   if (includeSchemaSurface) {
     filteredSchema = attachCreateRequiredOptionContracts(filteredSchema, createRequiredOptionContracts);
   }
-  const commands = selectedCommand ? [selectedCommand] : commandCatalog;
+  const commands =
+    selectedCommand !== undefined
+      ? [selectedCommand]
+      : selectedAction
+        ? resolveScopedCommandsFromActionDescriptors(scopedActionDescriptors, commandCatalog)
+        : commandCatalog;
   const extensionCommandContracts = selectedCommand
     ? extensionContracts.filter((entry) => entry.command === selectedCommand)
+    : selectedAction
+      ? extensionContracts.filter((entry) => commands.includes(normalizeCommandPath(entry.command)))
     : extensionContracts;
 
   const result: ContractsResult = {

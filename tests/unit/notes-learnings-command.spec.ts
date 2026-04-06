@@ -218,6 +218,41 @@ describe.each(TARGETS)("run%s", (target) => {
     });
   });
 
+  it("supports append-only audit bypass on assignee conflicts", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, `${target.name}-assignee-conflict`);
+      const claim = context.runCli(["claim", id, "--author", "owner-a", "--message", "claim for ownership test", "--json"], {
+        expectJson: true,
+      });
+      expect(claim.code).toBe(0);
+
+      await expect(
+        target.run(
+          id,
+          {
+            add: "blocked append",
+            author: "owner-b",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.CONFLICT,
+      });
+
+      const bypassed = await target.run(
+        id,
+        {
+          add: "audit append",
+          author: "owner-b",
+          allowAuditComment: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(extractEntries(target, bypassed).at(-1)?.text).toBe("audit append");
+      expect(extractEntries(target, bypassed).at(-1)?.author).toBe("owner-b");
+    });
+  });
+
   it("accepts stdin token for add payload", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, `${target.name}-stdin-token`);

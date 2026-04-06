@@ -176,6 +176,30 @@ describe("contracts command runtime", () => {
       ]),
     );
 
+    const commandFlagParityChecks: Array<{ command: string; flags: string[] }> = [
+      { command: "comments", flags: ["--add", "--allow-audit-comment"] },
+      { command: "notes", flags: ["--add", "--limit", "--author", "--message", "--allow-audit-comment", "--force"] },
+      { command: "learnings", flags: ["--add", "--limit", "--author", "--message", "--allow-audit-comment", "--force"] },
+      { command: "files", flags: ["--add", "--add-glob", "--append-stable", "--validate-paths", "--audit"] },
+      { command: "docs", flags: ["--add", "--add-glob", "--validate-paths", "--audit"] },
+      { command: "history", flags: ["--limit", "--diff", "--verify"] },
+      { command: "config", flags: ["--criterion", "--clear-criteria", "--format", "--policy"] },
+      { command: "restore", flags: ["--author", "--message", "--force"] },
+      { command: "delete", flags: ["--author", "--message", "--force"] },
+      { command: "extension", flags: ["--install", "--doctor", "--runtime-probe", "--strict-exit"] },
+      { command: "test-runs", flags: ["--status", "--limit", "--stream", "--tail", "--force", "--author"] },
+      {
+        command: "validate",
+        flags: ["--check-metadata", "--metadata-profile", "--check-lifecycle", "--check-stale-blockers"],
+      },
+    ];
+    for (const check of commandFlagParityChecks) {
+      const parityResult = await runContracts({ command: check.command, flagsOnly: true }, GLOBAL_OPTIONS);
+      expect(parityResult.command_flags?.[0]?.flags).toEqual(
+        expect.arrayContaining(check.flags.map((flag) => expect.objectContaining({ flag }))),
+      );
+    }
+
     const availabilityOnly = await runContracts({ command: "update", availabilityOnly: true }, GLOBAL_OPTIONS);
     expect(availabilityOnly.selected.flags_only).toBe(false);
     expect(availabilityOnly.selected.availability_only).toBe(true);
@@ -190,6 +214,22 @@ describe("contracts command runtime", () => {
     expect(availabilityOnly.schema).toBeUndefined();
     expect(availabilityOnly.command_flags).toBeUndefined();
     expect(availabilityOnly.commander_aliases).toBeUndefined();
+  });
+
+  it("scopes command_flags by action when no command filter is provided", async () => {
+    const commentsAction = await runContracts({ action: "comments", flagsOnly: true }, GLOBAL_OPTIONS);
+    expect(commentsAction.commands).toEqual(["comments"]);
+    expect(commentsAction.command_flags?.map((entry) => entry.command)).toEqual(["comments"]);
+    expect(commentsAction.command_flags?.[0]?.flags).toEqual(
+      expect.arrayContaining([expect.objectContaining({ flag: "--allow-audit-comment" })]),
+    );
+
+    const testRunsListAction = await runContracts({ action: "test-runs-list", flagsOnly: true }, GLOBAL_OPTIONS);
+    expect(testRunsListAction.commands).toEqual(["test-runs"]);
+    expect(testRunsListAction.command_flags?.map((entry) => entry.command)).toEqual(["test-runs"]);
+    expect(testRunsListAction.command_flags?.[0]?.flags).toEqual(
+      expect.arrayContaining([expect.objectContaining({ flag: "--status" }), expect.objectContaining({ flag: "--tail" })]),
+    );
   });
 
   it("rejects conflicting contracts projection flags", async () => {

@@ -464,6 +464,27 @@ function hasLinkedTestAssertions(linkedTest: LinkedTest): boolean {
   );
 }
 
+function buildPmContextMismatchHint(params: {
+  executionContext: NonNullable<TestRunResult["execution_context"]>;
+  runLevelPmContextMode: LinkedTestPmContextMode;
+  linkedOverridePmContextMode: LinkedTestPmContextMode | undefined;
+}): string {
+  const { executionContext, runLevelPmContextMode, linkedOverridePmContextMode } = params;
+  if (!executionContext.is_pm_tracker_read_command || !executionContext.mismatch_detected) {
+    return "";
+  }
+  if (runLevelPmContextMode === "tracker" && linkedOverridePmContextMode === "schema") {
+    return (
+      " Linked test metadata pm_context_mode=schema overrides run-level --pm-context tracker." +
+      " Set pm_context_mode=tracker (or auto) on the linked test, or remove the override, to run against seeded tracker data."
+    );
+  }
+  if (executionContext.pm_context_mode === "schema") {
+    return " Use --pm-context tracker to run PM tracker-read commands against seeded tracker data.";
+  }
+  return "";
+}
+
 function mergeEnvSetDirectives(entries: string[] | undefined, optionName: string): Record<string, string> {
   const merged: Record<string, string> = {};
   if (!entries) {
@@ -1762,6 +1783,10 @@ export async function runLinkedTests(
 
     for (let index = 0; index < tests.length; index += 1) {
       const linkedTest = tests[index];
+      const linkedOverridePmContextMode =
+        typeof linkedTest.pm_context_mode === "string" && linkedTest.pm_context_mode.trim().length > 0
+          ? parsePmContextMode(linkedTest.pm_context_mode)
+          : undefined;
       const isPmCommand =
         typeof linkedTest.command === "string" && linkedTest.command.length > 0
           ? commandInvokesPmCli(linkedTest.command)
@@ -1801,9 +1826,11 @@ export async function runLinkedTests(
       const failOnMismatchByFlag =
         options?.failOnContextMismatch === true && executionContext.is_pm_command && executionContext.mismatch_detected;
       if (failOnMismatchByDefault || failOnMismatchByFlag) {
-        const mismatchHint = failOnMismatchByDefault && !failOnMismatchByFlag
-          ? " Use --pm-context tracker to run PM tracker-read commands against seeded tracker data."
-          : "";
+        const mismatchHint = buildPmContextMismatchHint({
+          executionContext,
+          runLevelPmContextMode,
+          linkedOverridePmContextMode,
+        });
         results.push({
           command: linkedTest.command,
           path: linkedTest.path,

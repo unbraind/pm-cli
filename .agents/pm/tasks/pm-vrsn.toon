@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: context-parity,external-audit,implementation,linked-tests
 created_at: "2026-04-04T12:43:04.119Z"
-updated_at: "2026-04-05T03:47:34.624Z"
+updated_at: "2026-04-06T20:11:22.678Z"
 deadline: "2026-04-11T12:43:04.119Z"
 author: codex-agent
 estimated_minutes: 220
@@ -18,7 +18,7 @@ value: Improves future change velocity by making Implement PM-context parity mod
 impact: Reduces ambiguity and handoff risk for future work touching Implement PM-context parity mode and mismatch metadata for linked tests.
 outcome: This record can be used as canonical context when modifying Implement PM-context parity mode and mismatch metadata for linked tests.
 why_now: Historical decisions for Implement PM-context parity mode and mismatch metadata for linked tests need durable context for future maintenance and audits.
-parent: pm-8izv
+parent: pm-o7be
 reviewer: maintainer-review
 risk: medium
 confidence: high
@@ -40,13 +40,15 @@ regression: true
 customer_impact: Improves trust in PM-command governance evidence from linked runs.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-6pij,related,"2026-04-04T12:43:04.119Z",codex-agent,null
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-04-04T12:43:04.119Z",codex-agent,Task created after dedupe checks found no active implementation item for PM dataset parity controls and mismatch-fail behavior.
   "2026-04-04T14:01:37.286Z",codex-agent,"Implemented --pm-context schema|tracker runtime controls, execution_context telemetry, and --fail-on-context-mismatch guardrails across test/test-all surfaces. Evidence: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts and pm test pm-vrsn --run --pm-context tracker --fail-on-context-mismatch passed."
   "2026-04-04T18:31:13.935Z",codex-agent,"Implemented default schema-mode mismatch failure for PM tracker-read linked commands, added execution_context tracker-read classification, and updated unit coverage. Evidence: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts plus schema/tracker repro runs."
   "2026-04-05T03:07:54.624Z",codex-agent,"Reopened for external issue #2 follow-up: add --pm-context auto plus per-linked-test pm_context_mode override metadata, with deterministic mixed-mode execution behavior."
   "2026-04-05T03:17:41.503Z",codex-agent,"Progress: implemented linked-test PM context auto mode plus per-linked-test pm_context_mode override end-to-end. Changes include run-level schema|tracker|auto parsing, per-test pm_context_mode parsing for test --add and create --test, mixed-mode execution isolation using dedicated schema/tracker sandboxes in runLinkedTests, add-dedupe parity for pm_context_mode in test mutation, and test-all dedupe-key inclusion for pm_context_mode. Updated surfaces: src/cli/commands/test.ts, src/cli/commands/test-all.ts, src/types.ts, src/cli/commands/create.ts, src/core/item/item-format.ts, src/cli/main.ts, src/cli/commands/completion.ts, src/sdk/cli-contracts.ts, and unit coverage updates. Verification: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/pi-agent-extension.spec.ts passed."
   "2026-04-05T03:46:56.969Z",codex-agent,Implemented pm-context auto mode and per-linked-test pm_context_mode override across parse/normalize/run/dedupe paths; verified auto mode routes tracker-read linked command to tracker with mismatch_detected=false.
+  "2026-04-06T19:39:59.214Z",codex-agent,Duplicate-check evidence refreshed via pm context/list/search sweep. Reusing this task for linked-test pm-context mismatch diagnostics precision so per-test pm_context_mode override precedence is explained accurately.
+  "2026-04-06T19:50:24.879Z",codex-agent,"Progress: refined linked-test context mismatch diagnostics so tracker-read mismatches now explain override precedence when run-level --pm-context tracker is superseded by per-linked-test pm_context_mode=schema. Added regression assertion in tests/unit/test-command.spec.ts and verified with node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts."
 notes[1]{created_at,author,text}:
   "2026-04-04T12:43:04.119Z",codex-agent,Keep default mode backward compatible; all strict behavior must be opt-in.
 files[8]{path,scope,note}:
@@ -65,5 +67,5 @@ docs[4]{path,scope,note}:
   docs/ARCHITECTURE.md,project,runtime-behavior-update
   PRD.md,project,runtime-contract-update
   README.md,project,linked-test-schema-default-note
-close_reason: Linked-test pm context auto-routing and per-test override shipped.
+close_reason: Linked-test PM-context mismatch guidance refinement implemented and verified.
 body: Code workstream for feature pm-8izv and issue pm-6pij.

@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added command-flag contract parity coverage for `pm contracts --flags-only` across core command families (`comments`, `notes`, `learnings`, `files`, `docs`, `history`, `config`, `restore`, `delete`, `extension`, `test-runs`, `validate`) plus action-scoped `command_flags` projection when filtering with `--action` and no explicit `--command`.
+- Added additive governance `summary` metrics to `pm comments-audit` output (`totals`, coverage ratio/percent, and `by_type`) while preserving existing export payloads.
+- Added append-only ownership-safe audit bypass parity for `pm notes` and `pm learnings` via `--allow-audit-comment`, including ownership-conflict guidance, completion surfaces, contracts, and Pi wrapper action mapping.
+- Added non-silent bare `pm test-runs` behavior so the root command defaults to list output when no subcommand is supplied.
+- Added refined linked-test PM-context mismatch diagnostics that explicitly explain per-test `pm_context_mode` override precedence over run-level `--pm-context` values.
 - Added `pm update --replace-deps` atomic dependency replacement mode so existing dependency sets can be replaced in one mutation/history entry.
 - Added ownership ergonomics enhancements: `pm release --allow-audit-release` for non-owner handoffs that only clear assignee metadata, plus `pm get` `claim_state` metadata with current assignee and latest claim/release history context.
 - Added `pm contracts --schema-only --action create` `x-create-required-options` metadata so machine consumers can resolve effective create required options per type and create mode.
@@ -129,6 +134,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added runtime extension command/action schema inclusion in `pm contracts` output (`extension_commands`, merged action availability/schema branches, extension-sourced command flag metadata).
 
 ### Changed
+- Updated command-by-command documentation parity across `README.md`, `PRD.md`, `docs/ARCHITECTURE.md`, and `AGENTS.md` to reflect contracts projection behavior, `comments-audit` summary metrics, `notes`/`learnings` audit bypass parity, root `test-runs` list behavior, and PM-context mismatch guidance.
 - Removed the `pm install` command surface; extension lifecycle installs now flow through `pm extension` only.
 - `pm beads import`, `pm todos import`, and `pm todos export` are now extension-discovered command paths that appear only after corresponding bundled extensions are installed and active.
 - Commander option normalization, shell completion flag generation, and Pi wrapper action/schema/arg mapping now consume the shared command contract registry to reduce cross-surface drift.

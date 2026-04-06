@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:comments",external-audit,implementation,pm-cli
 created_at: "2026-04-04T22:38:14.047Z"
-updated_at: "2026-04-06T18:47:21.277Z"
+updated_at: "2026-04-06T20:11:17.486Z"
 deadline: "2026-04-10T22:38:14.047Z"
 author: codex-agent
 estimated_minutes: 240
@@ -17,11 +17,11 @@ value: Efficient comment history audits
 impact: Cuts runtime and complexity for governance sweeps
 outcome: Operators can audit comments in one command
 why_now: Current serial per-item approach is too expensive for medium/large trackers
-parent: pm-ayyt
+parent: pm-o7be
 resolution: Resolution metadata backfilled during governance normalization; implementation evidence is already captured in linked comments and artifacts.
 expected_result: Closed item includes explicit resolution/expected_result/actual_result metadata for deterministic validation and audit workflows.
 actual_result: Resolution fields were previously missing and are now backfilled as part of governance hardening.
-comments[9]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-04-04T22:38:14.047Z",codex-agent,Task created for direct implementation of comments-audit command and integration parity updates.
   "2026-04-04T22:48:16.609Z",codex-agent,"Implemented additive comments-audit surface with status/type/assignee filters, --limit-items, and --latest snapshots. Wired main/completion/contracts/Pi and added runCommentsAudit unit coverage. Evidence: node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts passed."
   "2026-04-04T23:34:59.203Z",codex-agent,"Final evidence: comments-audit command implemented with status/type/assignee filters plus --limit-items/--latest, with command wiring/contracts/completion/Pi parity and docs updates. Verification passed: linked test run via pm test pm-w1j3 --run, full node scripts/run-tests.mjs test, and node scripts/run-tests.mjs coverage."
@@ -31,6 +31,8 @@ comments[9]{created_at,author,text}:
   "2026-04-06T16:46:36.539Z",codex-agent,"Reopened for 13-issue remediation wave after duplicate-check sweep (pm context --limit 10; pm list-open --limit 30; pm list-in-progress --limit 30; pm search 'comments-audit full-history latest row_count latest 0' --limit 10). Follow-up scope: keep --full-history/--latest exclusivity, align help/contracts/docs wording accordingly, make export.row_count deterministic numeric across modes, and define --latest 0 as explicit summary-only behavior with tests."
   "2026-04-06T17:19:29.337Z",codex-agent,"Progress: comments-audit hardening now keeps --full-history and --latest mutually exclusive across runtime/help/contracts/completion wording, makes export.row_count deterministic in latest/full_history modes, and formalizes --latest 0 as summary-only (items returned with comment_count but empty comments arrays). Verification: node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts passed."
   "2026-04-06T18:47:15.234Z",codex-agent,"Completed comments-audit semantics hardening: latest/full-history exclusivity guidance, deterministic export metadata, and valid --latest 0 summary-only behavior. Help/contracts/tests/docs were synchronized across CLI and Pi surfaces. Verification: pnpm build; node scripts/run-tests.mjs test; node scripts/run-tests.mjs coverage."
+  "2026-04-06T19:39:55.029Z",codex-agent,"Duplicate-check evidence refreshed via pm context/list/search sweep. Reusing this task for additive comments-audit top-level governance summary metrics (totals, zero-comment counts, coverage, by-type breakdown) with deterministic output and regression coverage."
+  "2026-04-06T19:47:10.357Z",codex-agent,"Progress: added additive top-level comments-audit summary metrics (totals, coverage ratio/percent, and by-type breakdown) while preserving existing items/filters/export/rows payloads. Added deterministic regression assertions for latest/full-history/latest-zero modes in tests/unit/comments-command.spec.ts and verified with node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts."
 notes[1]{created_at,author,text}:
   "2026-04-04T22:38:14.047Z",codex-agent,Planned files include new command module plus main/completion/contracts/Pi and comments command tests.
 files[9]{path,scope,note}:
@@ -49,5 +51,5 @@ tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,comments-audit-row-count-and-exclusivity-regression
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mnkywjwz-pmp61j,test,passed,"2026-04-04T23:32:18.348Z","2026-04-04T23:32:33.108Z","2026-04-04T23:32:33.108Z",null,null,1,0,0,null,null,null
-close_reason: comments-audit semantics and export determinism finalized with passing verification
+close_reason: comments-audit summary metrics and filter/export behaviors implemented and verified.
 body: "Execution task for feature pm-ayyt covering command implementation, output schema, and docs/tests parity."

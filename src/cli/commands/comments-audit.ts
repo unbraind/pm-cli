@@ -33,6 +33,7 @@ export interface CommentsAuditEntry {
 export interface CommentsAuditResult {
   items: CommentsAuditEntry[];
   count: number;
+  summary: CommentsAuditSummary;
   filters: {
     status: ItemStatus | null;
     type: string | null;
@@ -54,6 +55,32 @@ export interface CommentsAuditResult {
   rows?: CommentsAuditHistoryRow[];
   now: string;
   warnings?: string[];
+}
+
+export interface CommentsAuditSummary {
+  totals: {
+    items_scanned: number;
+    items_with_comments: number;
+    zero_comment_items: number;
+    comments_total: number;
+    comments_exported: number;
+  };
+  coverage: {
+    items_with_comments_ratio: number;
+    items_with_comments_percent: number;
+  };
+  by_type: CommentsAuditTypeSummary[];
+}
+
+export interface CommentsAuditTypeSummary {
+  type: string;
+  items_scanned: number;
+  items_with_comments: number;
+  zero_comment_items: number;
+  comments_total: number;
+  comments_exported: number;
+  items_with_comments_ratio: number;
+  items_with_comments_percent: number;
 }
 
 export interface CommentsAuditHistoryRow {
@@ -122,6 +149,83 @@ function toHistoryRows(items: CommentsAuditEntry[]): CommentsAuditHistoryRow[] {
   return rows;
 }
 
+function ratioPercent(numerator: number, denominator: number): { ratio: number; percent: number } {
+  if (denominator <= 0) {
+    return {
+      ratio: 0,
+      percent: 0,
+    };
+  }
+  const ratio = numerator / denominator;
+  return {
+    ratio: Number(ratio.toFixed(4)),
+    percent: Number((ratio * 100).toFixed(2)),
+  };
+}
+
+function buildCommentsAuditSummary(items: CommentsAuditEntry[]): CommentsAuditSummary {
+  const itemsScanned = items.length;
+  const itemsWithComments = items.filter((entry) => entry.comment_count > 0).length;
+  const zeroCommentItems = itemsScanned - itemsWithComments;
+  const commentsTotal = items.reduce((sum, entry) => sum + entry.comment_count, 0);
+  const commentsExported = items.reduce((sum, entry) => sum + entry.comments.length, 0);
+  const overallCoverage = ratioPercent(itemsWithComments, itemsScanned);
+  const byTypeAccumulator = new Map<
+    string,
+    {
+      items_scanned: number;
+      items_with_comments: number;
+      comments_total: number;
+      comments_exported: number;
+    }
+  >();
+  for (const item of items) {
+    const entry = byTypeAccumulator.get(item.type) ?? {
+      items_scanned: 0,
+      items_with_comments: 0,
+      comments_total: 0,
+      comments_exported: 0,
+    };
+    entry.items_scanned += 1;
+    if (item.comment_count > 0) {
+      entry.items_with_comments += 1;
+    }
+    entry.comments_total += item.comment_count;
+    entry.comments_exported += item.comments.length;
+    byTypeAccumulator.set(item.type, entry);
+  }
+  const byType: CommentsAuditTypeSummary[] = [...byTypeAccumulator.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([type, stats]) => {
+      const zeroCount = stats.items_scanned - stats.items_with_comments;
+      const coverage = ratioPercent(stats.items_with_comments, stats.items_scanned);
+      return {
+        type,
+        items_scanned: stats.items_scanned,
+        items_with_comments: stats.items_with_comments,
+        zero_comment_items: zeroCount,
+        comments_total: stats.comments_total,
+        comments_exported: stats.comments_exported,
+        items_with_comments_ratio: coverage.ratio,
+        items_with_comments_percent: coverage.percent,
+      };
+    });
+  return {
+    totals: {
+      items_scanned: itemsScanned,
+      items_with_comments: itemsWithComments,
+      zero_comment_items: zeroCommentItems,
+      comments_total: commentsTotal,
+      comments_exported: commentsExported,
+    },
+    coverage: {
+      items_with_comments_ratio: overallCoverage.ratio,
+      items_with_comments_percent: overallCoverage.percent,
+    },
+    by_type: byType,
+  };
+}
+
 export async function runCommentsAudit(options: CommentsAuditOptions, global: GlobalOptions): Promise<CommentsAuditResult> {
   const status = parseStatus(options.status);
   const fullHistory = options.fullHistory === true;
@@ -167,6 +271,7 @@ export async function runCommentsAudit(options: CommentsAuditOptions, global: Gl
   return {
     items,
     count: items.length,
+    summary: buildCommentsAuditSummary(items),
     filters: {
       status: status ?? null,
       type: options.type ?? null,

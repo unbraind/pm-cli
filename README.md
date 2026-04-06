@@ -33,7 +33,7 @@
 - Governance-focused corpus analysis commands: `pm aggregate` grouped counts and `pm dedupe-audit` duplicate clustering
 - Standalone `pm validate` command for metadata, resolution, lifecycle, linked-file, linked-command reference, and history-drift audits
 - Opt-in non-interactive progress output for long-running operations (`pm test`, `pm test-all`, `pm reindex` with `--progress`)
-- Managed background linked-test orchestration (`pm test --run --background`, `pm test-all --background`, and `pm test-runs list|status|logs|stop|resume`)
+- Managed background linked-test orchestration (`pm test --run --background`, `pm test-all --background`, and `pm test-runs` lifecycle controls; bare `pm test-runs` defaults to list output)
 - Settings-gated item-level test result tracking (`pm config ... test-result-tracking --policy enabled|disabled`)
 - Optional search and extension support for more advanced setups
 
@@ -54,6 +54,7 @@ Compatibility policy for command contracts:
 - Contract payloads include runtime action availability metadata (`action_availability`) and optional runtime-filtered views (`--runtime-only`, `--active-only`) so automation can avoid non-invocable actions.
 - `pm contracts --command <name>` now scopes output to the selected command by default (intentional breaking change for lower-noise machine payloads); omit `--command` for full contract corpus output.
 - `pm contracts` supports lightweight projection modes for automation pipelines: `--flags-only` (command flag surface) and `--availability-only` (runtime invocability metadata); the projection flags are mutually exclusive.
+- When `--action` is provided without `--command`, `pm contracts --flags-only` now scopes `command_flags` to the action-mapped command surface (for example `test-runs-list` resolves to `test-runs`).
 - `pm completion` now defaults to lazy tag expansion through runtime `pm completion-tags` lookup in generated scripts; pass `--eager-tags` to embed static tags in the script (legacy eager mode).
 
 ## Item Storage Formats
@@ -545,7 +546,9 @@ pm comments pm-a1b2 --add "audit note from governance review" --author "audit-ma
 # Notes and learnings support the same positional/--add shorthand
 pm notes pm-a1b2 "implementation context captured from shorthand positional text"
 pm notes pm-a1b2 --add "text: parser fallback rationale"
+pm notes pm-a1b2 --add "audit note from governance review" --author "audit-maintainer" --allow-audit-comment
 pm learnings pm-a1b2 --add "text: always run linked tests through the sandbox runner"
+pm learnings pm-a1b2 --add "audit learning from governance review" --author "audit-maintainer" --allow-audit-comment
 
 # Pipe markdown payload via stdin with "-"
 printf '%s\n' 'path: docs/ARCHITECTURE.md' 'scope: project' 'note: piped update' | pm files pm-a1b2 --add -
@@ -571,7 +574,7 @@ pm comments-audit --status in_progress --sprint sprint-12 --release v0.2 --prior
 pm comments-audit --status in_progress --latest 0 --limit-items 20 --json
 ```
 
-`pm comments-audit --latest` and `--full-history` are intentionally mutually exclusive. `--latest 0` is valid and returns deterministic summary rows with `export.row_count = 0`.
+`pm comments-audit --latest` and `--full-history` are intentionally mutually exclusive. `--latest 0` is valid and returns deterministic summary rows with `export.row_count = 0`. All modes now include additive top-level `summary` metrics (`totals`, coverage ratio/percent, and `by_type` breakdown) without changing existing `items`/`filters`/`export` payloads.
 
 Use explicit clear flags for repeatable fields (`--clear-files`, `--clear-comments`, `--clear-docs`, etc.) and `--unset <field>` for scalar clears.
 
@@ -593,10 +596,11 @@ For `pm create` log-seed flags (`--comment`, `--note`, `--learning`), only `auth
 - `pm test <ID> --run` / `pm test-all` execute in temporary sandbox roots but seed project/global `settings.json` and `extensions/` directories from source roots so extension-defined type behavior matches direct workspace commands.
 - `pm test <ID> --run` / `pm test-all` support additive run-level runtime controls: repeatable `--env-set KEY=VALUE`, repeatable `--env-clear NAME`, `--shared-host-safe` (ephemeral/shared-host-friendly defaults such as `PORT=0` when unset), `--pm-context schema|tracker|auto`, `--fail-on-context-mismatch`, `--fail-on-skipped`, `--fail-on-empty-test-run`, and `--require-assertions-for-pm`.
 - `pm test <ID> --run --background` and `pm test-all --background` start managed background runs and return run metadata immediately.
-- `pm test-runs list|status|logs|stop|resume` provides background lifecycle management, log tailing, health snapshots, and stop/resume controls.
+- `pm test-runs` (no subcommand) defaults to `list` output; `pm test-runs list|status|logs|stop|resume` provides explicit background lifecycle management, log tailing, health snapshots, and stop/resume controls.
 - Background run dedupe prevents parallel duplicate execution when an equivalent active run fingerprint already exists.
 - Linked-test `run_results` include `execution_context` metadata (context mode, PM roots, item counts, mismatch signal, extension seeding state, PM tracker-read classification) so PM-command parity is explicit in machine-readable output.
 - In default `--pm-context schema` mode, PM tracker-read linked commands (for example `list*`, `get`, `search`, `stats`, `test-all`) fail on dataset mismatch by default; use `--pm-context auto` for automatic tracker-read routing or `--pm-context tracker` for full tracker-mode execution.
+- If run-level `--pm-context tracker` is set but a linked test entry pins `pm_context_mode=schema`, mismatch diagnostics explicitly call out that per-test override precedence and recommend changing/removing that override.
 - `pm test <ID> --run` and `pm test-all` emit heartbeat/progress lines to stderr in interactive terminals during long-running linked commands, and support explicit non-interactive progress output via `--progress`.
 - Linked test timeout handling uses deterministic process termination (including force-kill fallback) and reports explicit timeout/maxBuffer diagnostics in `run_results`.
 - Failed linked test `run_results` now include `failure_category` (for example `infra_collision` vs `assertion_failure`) and `pm test-all` totals include aggregated `failure_categories` counts for triage.

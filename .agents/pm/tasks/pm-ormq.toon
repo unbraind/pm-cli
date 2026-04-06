@@ -6,12 +6,12 @@ status: closed
 priority: 1
 tags[4]: background-runtime,linked-tests,pm-cli,test-runs
 created_at: "2026-04-04T19:06:35.921Z"
-updated_at: "2026-04-04T21:56:18.202Z"
+updated_at: "2026-04-06T20:11:20.273Z"
 deadline: "2026-04-13T19:06:35.921Z"
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: pm test and pm test-all accept --background and return run metadata; pm test-runs list/status/logs/stop/resume commands are available with deterministic output contracts.
-parent: pm-bi0z
+parent: pm-o7be
 reviewer: maintainer-review
 risk: medium
 confidence: medium
@@ -31,9 +31,11 @@ regression: true
 customer_impact: Agents can run and monitor tests asynchronously.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-bi0z,parent,"2026-04-04T19:06:35.921Z",codex-agent,null
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-04T19:06:35.921Z",codex-agent,"Duplicate-check evidence: no active command-path item exposes background lifecycle commands for linked tests; this task scopes command wiring only."
   "2026-04-04T20:22:20.333Z",codex-agent,Implemented --background wiring for pm test/test-all and new test-runs list/status/logs/stop/resume command surface; linked test regression suite passed (55 tests).
+  "2026-04-06T19:39:57.090Z",codex-agent,Duplicate-check evidence refreshed via pm context/list/search sweep. Reusing this task for pm test-runs root command non-silent behavior (default list/help) plus runtime regression coverage; no new duplicate task created.
+  "2026-04-06T19:48:48.844Z",codex-agent,"Progress: wired root test-runs command to default to runTestRunsList when no subcommand is provided, making pm test-runs non-silent and deterministic. Added integration regression coverage in tests/integration/release-readiness-runtime.spec.ts (bare test-runs returns list payload) and verified via node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts."
 notes[1]{created_at,author,text}:
   "2026-04-04T19:06:35.921Z",codex-agent,"Includes main.ts wiring,command option parsing,and runtime handler invocation."
 files[3]{path,scope,note}:
@@ -45,5 +47,5 @@ tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-all-local-mnkrqfdt-hjxetp,test-all,passed,"2026-04-04T20:11:49.984Z","2026-04-04T20:16:28.097Z","2026-04-04T20:16:28.097Z",null,null,0,0,0,1,0,null
   test-local-mnkrz42y-a77a5c,test,passed,"2026-04-04T20:18:07.241Z","2026-04-04T20:18:35.242Z","2026-04-04T20:18:35.242Z",null,null,1,0,0,null,null,null
-close_reason: background command wiring completed; regression tests passed
+close_reason: Bare test-runs default-list behavior and test-runs surface parity implemented and verified.
 body: Implements command wiring and runtime command surface for background test orchestration.

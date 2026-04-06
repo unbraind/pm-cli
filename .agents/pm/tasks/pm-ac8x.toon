@@ -6,9 +6,8 @@ status: closed
 priority: 1
 tags[4]: "area:release","area:tests",external-audit,pm-cli
 created_at: "2026-04-01T16:23:05.363Z"
-updated_at: "2026-04-05T22:43:59.001Z"
+updated_at: "2026-04-06T20:10:55.178Z"
 deadline: "2026-04-07T16:23:05.363Z"
-assignee: cursor-agent
 author: cursor-agent
 estimated_minutes: 140
 acceptance_criteria: "Build and test sweeps are run, PM evidence is recorded on affected items, and changes are committed/pushed once verified."
@@ -20,15 +19,12 @@ value: Ensures confidence before release
 impact: Minimizes regressions for current users
 outcome: Audited changes are fully validated and traceable
 why_now: Plan requires end-to-end verification and release evidence
-parent: pm-my6o
+parent: pm-o7be
 reviewer: maintainer-review
 risk: medium
 confidence: high
 sprint: audit-remediation
 release: vnext
-blocked_by: pm-c465
-blocked_reason: Run full verification and release evidence for audit remediation has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments.
-unblock_note: "If Run full verification and release evidence for audit remediation is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 reporter: cursor-agent
 severity: low
 environment: Project workspace execution context for Run full verification and release evidence for audit remediation (pm CLI + Node/pnpm toolchain).
@@ -45,15 +41,21 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-c465,blocks,"2026-04-01T16:23:05.363Z",cursor-agent,null
   pm-e0ab,blocks,"2026-04-01T16:23:05.363Z",cursor-agent,null
   pm-my6o,parent,"2026-04-01T16:23:05.363Z",cursor-agent,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-01T16:23:05.363Z",cursor-agent,Task created for final verification/closure workflow.
   "2026-04-01T17:02:33.194Z",cursor-agent,"Verification results: pnpm build passed; targeted suites passed (141/141); full suites passed (690/690). Coverage command fails thresholds at 97.36/95.01/98.12/97.07 in this branch and 97.32/95.02/98.10/97.02 on origin/main baseline, confirming pre-existing gate mismatch. pm test-all hangs in current workspace context and was terminated after >2-5 minutes with no output."
   "2026-04-05T22:43:55.888Z",codex-agent,"Normalization decision: removing stale dependency link to missing item pm-y50x to restore dependency graph integrity (the target no longer exists in tracker)."
-notes[1]{created_at,author,text}:
+  "2026-04-06T20:10:48.311Z",codex-agent,"Verification matrix 2026-04-06: pnpm build passed; targeted remediation suites passed (108/108); full sandboxed suite passed (984/984); coverage run passed with 100/100/100/100; runtime repro checks passed for contracts action-scoped flags-only command mapping, bare test-runs list output, comments-audit summary metrics, and notes help/flag parity for --allow-audit-comment."
+notes[2]{created_at,author,text}:
   "2026-04-01T16:23:05.363Z",cursor-agent,Includes pm test-all evidence and final commit/push after green checks.
+  "2026-04-06T20:10:50.560Z",codex-agent,Full verification rerun executed after docs parity edits to ensure behavior + docs consistency before release commit/push.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:36:28.450Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[1]{path,scope,note}:
+files[5]{path,scope,note}:
+  AGENTS.md,project,docs-parity-verification-release
+  CHANGELOG.md,project,docs-parity-verification-release
+  docs/ARCHITECTURE.md,project,docs-parity-verification-release
+  PRD.md,project,docs-parity-verification-release
   README.md,project,metadata-audit-linked-context
 tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,coverage gate validation (known baseline failure on origin/main)
@@ -61,5 +63,5 @@ tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   node scripts/run-tests.mjs test -- tests/unit/notes-learnings-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/cli.integration.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,targeted remediation suites
 docs[1]{path,scope,note}:
   README.md,project,metadata-audit-documentation-context
-close_reason: Verification sweeps executed with full passing tests; coverage threshold mismatch confirmed pre-existing on origin/main baseline.
+close_reason: Final verification matrix rerun passed after remediation/docs updates; ready for commit and push.
 body: "Final gate task for plan completion, including PM evidence logging and repository commit/push."

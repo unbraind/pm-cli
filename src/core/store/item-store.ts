@@ -210,7 +210,14 @@ export async function mutateItem(params: {
     const assigned = document.front_matter.assignee?.trim();
     const bypassAssigneeConflict =
       params.op === "claim" ||
-      ((params.op === "comment_add" || params.op === "release" || params.op === "update" || params.op === "update_audit") &&
+      ((
+        params.op === "comment_add" ||
+        params.op === "note_add" ||
+        params.op === "learning_add" ||
+        params.op === "release" ||
+        params.op === "update" ||
+        params.op === "update_audit"
+      ) &&
         params.bypassAssigneeConflict === true);
     if (assigned && assigned !== params.author && !params.force && !bypassAssigneeConflict) {
       throw new PmCliError(

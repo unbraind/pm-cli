@@ -6,14 +6,16 @@ status: closed
 priority: 1
 tags[4]: contracts,external-audit,pm-cli,schema
 created_at: "2026-04-06T16:48:01.694Z"
-updated_at: "2026-04-06T18:47:40.636Z"
+updated_at: "2026-04-06T20:11:15.650Z"
 author: codex-agent
 acceptance_criteria: contracts --command defaults to narrow scoped payloads without full global action maps and supports explicit --flags-only and --availability-only projection modes with docs and tests updated.
 parent: pm-o7be
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-04-06T16:48:01.694Z",codex-agent,Duplicate-check evidence used pm context pm search and open or in-progress lists. Net-new scope under pm-o7be for approved breaking contracts command scoping behavior.
   "2026-04-06T17:37:52.714Z",codex-agent,"Progress: implemented approved breaking contracts scoping so --command now narrows action/schema surfaces by default, added lightweight --flags-only and --availability-only projection modes, and enriched action availability metadata with command_path + cli_exposed discoverability fields. Wired CLI/SDK/completion/Pi parity and regression coverage. Verification: node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/task-lifecycle-aliases.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/help-runtime.spec.ts passed."
   "2026-04-06T18:47:36.533Z",codex-agent,"Implemented approved breaking contracts behavior: --command now narrows output by default, with explicit --flags-only and --availability-only projections, command_path/cli_exposed metadata, and synchronized help/contracts/Pi/completion/docs coverage. Verification: pnpm build; node scripts/run-tests.mjs test; node scripts/run-tests.mjs coverage."
+  "2026-04-06T19:39:51.677Z",codex-agent,"Duplicate-check evidence refreshed via pm context --limit 10, pm list-open --limit 20, pm list-in-progress --limit 20, pm list-blocked --limit 20, and targeted pm search queries. Reusing this canonical task for contracts flag-surface parity plus --action-scoped command_flags follow-up; no duplicate item created."
+  "2026-04-06T19:45:40.767Z",codex-agent,"Progress: implemented command-flag parity mappings for previously global-only command families (comments/notes/learnings/files/docs/history/config/restore/delete/extension/test-runs), added validate metadata/lifecycle/stale-blocker flag contracts, and scoped contracts --flags-only command_flags by selected --action (including sub-actions resolving to root commands like test-runs-list -> test-runs). Added regression assertions in tests/unit/contracts-command.spec.ts and verified with node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts plus runtime smoke checks for validate/notes/action-scoped outputs."
 files[9]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,pi-contracts-projection-flag-parity
   src/cli/commands/completion.ts,project,contracts-projection-flag-completion-surface
@@ -26,5 +28,5 @@ files[9]{path,scope,note}:
   tests/unit/pi-agent-extension.spec.ts,project,pi-args-and-schema-projection-flag-coverage
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/task-lifecycle-aliases.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/help-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,contracts-command-scope-and-projection-regression
-close_reason: contracts command narrowing and projection modes shipped with docs and tests
+close_reason: Contracts flags parity and action-scoping fixes implemented with regression coverage.
 body: ""

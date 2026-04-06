@@ -122,6 +122,7 @@ const CORE_COMMANDS = [
   "deps",
   "test",
   "test-all",
+  "test-runs",
   "stats",
   "health",
   "validate",
@@ -234,8 +235,8 @@ const REQUIRED_TEST_FLAGS = [
 ];
 const REQUIRED_COMMENTS_FLAGS = ["--add", "--limit", "--author", "--message", "--allow-audit-comment", "--force"];
 const REQUIRED_COMMENTS_AUDIT_FLAGS = ["--status", "--type", "--assignee", "--limit-items", "--full-history", "--latest"];
-const REQUIRED_NOTES_FLAGS = ["--add", "--limit", "--author", "--message", "--force"];
-const REQUIRED_LEARNINGS_FLAGS = ["--add", "--limit", "--author", "--message", "--force"];
+const REQUIRED_NOTES_FLAGS = ["--add", "--limit", "--author", "--message", "--allow-audit-comment", "--force"];
+const REQUIRED_LEARNINGS_FLAGS = ["--add", "--limit", "--author", "--message", "--allow-audit-comment", "--force"];
 const REQUIRED_CLAIM_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_RELEASE_FLAGS = ["--author", "--message", "--allow-audit-release", "--force"];
 const REQUIRED_RESTORE_FLAGS = ["--author", "--message", "--force"];
@@ -761,6 +762,20 @@ describe("release readiness runtime coverage", () => {
       for (const flag of REQUIRED_HEALTH_FLAGS) {
         expect(healthHelp.stdout).toContain(flag);
       }
+    });
+  });
+
+  it("defaults bare test-runs command to list output", async () => {
+    await withTempPmPath(async (context) => {
+      const result = context.runCli(["test-runs", "--json"], { expectJson: true });
+      expect(result.code).toBe(0);
+      expect(result.stdout.trim().length).toBeGreaterThan(0);
+      expect(result.stderr.trim()).toBe("");
+      expect(result.json).toMatchObject({
+        runs: [],
+        count: 0,
+        filters: {},
+      });
     });
   });
 

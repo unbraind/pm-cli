@@ -1180,6 +1180,9 @@ describe("runTest", () => {
       expect(perTestSchemaOverride.run_results[0]?.execution_context?.pm_context_mode).toBe("schema");
       expect(perTestSchemaOverride.run_results[0]?.execution_context?.mismatch_detected).toBe(true);
       expect(perTestSchemaOverride.run_results[0]?.error ?? "").toContain("context mismatch");
+      expect(perTestSchemaOverride.run_results[0]?.error ?? "").toContain(
+        "pm_context_mode=schema overrides run-level --pm-context tracker",
+      );
     });
   });
 

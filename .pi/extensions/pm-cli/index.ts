@@ -678,12 +678,18 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       args.push("notes", requireString(params.id, "id", action));
       pushOption(args, "--add", params.text ?? params.add?.[0]);
       pushOption(args, "--limit", params.limit);
+      if (params.allowAuditComment) {
+        args.push("--allow-audit-comment");
+      }
       addAuthorMessageForceFlags(args, params);
       return args;
     case "learnings":
       args.push("learnings", requireString(params.id, "id", action));
       pushOption(args, "--add", params.text ?? params.add?.[0]);
       pushOption(args, "--limit", params.limit);
+      if (params.allowAuditComment) {
+        args.push("--allow-audit-comment");
+      }
       addAuthorMessageForceFlags(args, params);
       return args;
     case "files":

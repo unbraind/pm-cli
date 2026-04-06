@@ -146,7 +146,7 @@ describe("generateBashScript", () => {
 
   it("includes comments mutation metadata flags in bash completion", () => {
     const script = generateBashScript();
-    expect(script).toContain("--add --limit --author --message --force");
+    expect(script).toContain("--add --limit --author --message --allow-audit-comment --force");
     expect(script).toContain("--allow-audit-comment");
     expect(script).toContain(
       "--status --type --tag --priority --parent --sprint --release --assignee --assignee-filter --limit-items --full-history --latest",

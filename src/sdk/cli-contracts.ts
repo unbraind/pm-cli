@@ -485,6 +485,95 @@ export const COMMENTS_AUDIT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--latest" },
 ];
 
+export const COMMENTS_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--add" },
+  { flag: "--limit" },
+  { flag: "--author" },
+  { flag: "--message" },
+  { flag: "--allow-audit-comment" },
+  { flag: "--force" },
+];
+
+export const NOTES_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--add" },
+  { flag: "--limit" },
+  { flag: "--author" },
+  { flag: "--message" },
+  { flag: "--allow-audit-comment" },
+  { flag: "--force" },
+];
+
+export const LEARNINGS_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--add" },
+  { flag: "--limit" },
+  { flag: "--author" },
+  { flag: "--message" },
+  { flag: "--allow-audit-comment" },
+  { flag: "--force" },
+];
+
+export const FILES_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--add" },
+  { flag: "--add-glob" },
+  { flag: "--remove" },
+  { flag: "--migrate" },
+  { flag: "--append-stable" },
+  { flag: "--validate-paths" },
+  { flag: "--audit" },
+  { flag: "--author" },
+  { flag: "--message" },
+  { flag: "--force" },
+];
+
+export const DOCS_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--add" },
+  { flag: "--add-glob" },
+  { flag: "--remove" },
+  { flag: "--migrate" },
+  { flag: "--validate-paths" },
+  { flag: "--audit" },
+  { flag: "--author" },
+  { flag: "--message" },
+  { flag: "--force" },
+];
+
+export const HISTORY_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--limit" },
+  { flag: "--diff" },
+  { flag: "--verify" },
+];
+
+export const CONFIG_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--criterion" },
+  { flag: "--clear-criteria" },
+  { flag: "--format" },
+  { flag: "--policy" },
+];
+
+export const EXTENSION_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--install" },
+  { flag: "--uninstall" },
+  { flag: "--explore" },
+  { flag: "--manage" },
+  { flag: "--doctor" },
+  { flag: "--adopt" },
+  { flag: "--adopt-all" },
+  { flag: "--activate" },
+  { flag: "--deactivate" },
+  { flag: "--project" },
+  { flag: "--local" },
+  { flag: "--global" },
+  { flag: "--gh" },
+  { flag: "--github" },
+  { flag: "--ref" },
+  { flag: "--detail" },
+  { flag: "--trace" },
+  { flag: "--runtime-probe" },
+  { flag: "--fix-managed-state" },
+  { flag: "--strict-exit" },
+  { flag: "--fail-on-warn" },
+];
+
 export const REINDEX_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--mode" },
   { flag: "--progress" },
@@ -505,6 +594,18 @@ export const APPEND_FLAG_CONTRACTS: CliFlagContract[] = [
 ];
 
 export const CLAIM_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--author" },
+  { flag: "--message" },
+  { flag: "--force" },
+];
+
+export const RESTORE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--author" },
+  { flag: "--message" },
+  { flag: "--force" },
+];
+
+export const DELETE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--author" },
   { flag: "--message" },
   { flag: "--force" },
@@ -591,7 +692,10 @@ export const HEALTH_FLAG_CONTRACTS: CliFlagContract[] = [
 
 export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--check-metadata" },
+  { flag: "--metadata-profile" },
   { flag: "--check-resolution" },
+  { flag: "--check-lifecycle" },
+  { flag: "--check-stale-blockers" },
   { flag: "--check-files" },
   { flag: "--scan-mode" },
   { flag: "--include-pm-internals" },
@@ -1460,8 +1564,8 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
       "latest",
     ],
   },
-  notes: { required: ["id"], optional: ["text", "add", "limit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
-  learnings: { required: ["id"], optional: ["text", "add", "limit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
+  notes: { required: ["id"], optional: ["text", "add", "limit", "allowAuditComment", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
+  learnings: { required: ["id"], optional: ["text", "add", "limit", "allowAuditComment", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   files: {
     required: ["id"],
     optional: ["add", "addGlob", "remove", "migrate", "appendStable", "validatePaths", "audit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
@@ -1843,7 +1947,7 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     description: "Run linked-command PM-ID reference checks.",
   },
   allowAuditComment: {
-    description: "Allow non-owner append-only comment audits without requiring --force.",
+    description: "Allow non-owner append-only comment/note/learning audits without requiring --force.",
   },
   allowAuditUpdate: {
     description: "Allow non-owner metadata-only update audits without requiring --force.",

@@ -3938,6 +3938,7 @@ program
   .option("--limit <n>", "Return only latest n notes")
   .option("--author [value]", "Note author (optional; falls back to PM_AUTHOR/settings)")
   .option("--message <value>", "History message")
+  .option("--allow-audit-comment", "Allow non-owner append-only note audits without requiring --force")
   .option("--force", "Force ownership override")
   .description("List or add notes for an item.")
   .action(async (id: string, text: string | undefined, options: Record<string, unknown>, command) => {
@@ -3956,6 +3957,7 @@ program
         limit: typeof options.limit === "string" ? options.limit : undefined,
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
+        allowAuditComment: Boolean(options.allowAuditComment),
         force: Boolean(options.force),
       },
       globalOptions,
@@ -3977,6 +3979,7 @@ program
   .option("--limit <n>", "Return only latest n learnings")
   .option("--author [value]", "Learning author (optional; falls back to PM_AUTHOR/settings)")
   .option("--message <value>", "History message")
+  .option("--allow-audit-comment", "Allow non-owner append-only learning audits without requiring --force")
   .option("--force", "Force ownership override")
   .description("List or add learnings for an item.")
   .action(async (id: string, text: string | undefined, options: Record<string, unknown>, command) => {
@@ -3995,6 +3998,7 @@ program
         limit: typeof options.limit === "string" ? options.limit : undefined,
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
+        allowAuditComment: Boolean(options.allowAuditComment),
         force: Boolean(options.force),
       },
       globalOptions,
@@ -4294,7 +4298,18 @@ program
     }
   });
 
-const testRunsCommand = program.command("test-runs").description("Manage background linked-test runs.");
+const testRunsCommand = program
+  .command("test-runs")
+  .description("Manage background linked-test runs.")
+  .action(async (_options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const result = await runTestRunsList({}, globalOptions);
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=test-runs took_ms=${Date.now() - startedAt}`);
+    }
+  });
 
 testRunsCommand
   .command("list")

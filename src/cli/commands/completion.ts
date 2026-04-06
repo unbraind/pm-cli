@@ -165,7 +165,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--status --type --tag --priority --parent --sprint --release --assignee --assignee-filter --limit-items --full-history --latest --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    notes|learnings)",
-    `      COMPREPLY=(${compgen("--add --limit --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-comment --force --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    files)",
     `      COMPREPLY=(${compgen("--add --add-glob --remove --migrate --append-stable --validate-paths --audit --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
@@ -639,6 +639,7 @@ _pm() {
             '--limit[Return only latest n entries]:number' \\
             '--author[Entry author (falls back to PM_AUTHOR/settings)]:author' \\
             '--message[History message]:message' \\
+            '--allow-audit-comment[Allow non-owner append-only comment/note/learning audits without requiring --force]' \\
             '--force[Force override]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -1209,8 +1210,8 @@ complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l add 
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l limit -d 'Return only latest n entries' -r
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l author -d 'Entry author' -r
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l message -d 'History message' -r
+complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l allow-audit-comment -d 'Allow non-owner append-only comment/note/learning audits without requiring --force'
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l force -d 'Force override'
-complete -c pm -n '__fish_seen_subcommand_from comments' -l allow-audit-comment -d 'Allow non-owner append-only comment audits without requiring --force'
 
 # test flags
 complete -c pm -n '__fish_seen_subcommand_from test' -l add -d 'Add linked test entry' -r
