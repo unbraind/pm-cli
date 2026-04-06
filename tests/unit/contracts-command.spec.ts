@@ -33,11 +33,21 @@ describe("contracts command runtime", () => {
     expect(result.schema_id).toContain("tool-parameters-v4");
     expect(result.selected.runtime_only).toBe(false);
     expect(result.actions).toContain("contracts");
+    expect(result.actions).toContain("aggregate");
+    expect(result.actions).toContain("dedupe-audit");
     expect(result.commands).toContain("contracts");
+    expect(result.commands).toContain("aggregate");
+    expect(result.commands).toContain("dedupe-audit");
     expect(result.action_availability.some((entry) => entry.action === "create" && entry.invocable)).toBe(true);
     expect(result.command_flags?.some((entry) => entry.command === "contracts")).toBe(true);
+    expect(result.command_flags?.find((entry) => entry.command === "aggregate")?.flags).toEqual(
+      expect.arrayContaining([expect.objectContaining({ flag: "--group-by" }), expect.objectContaining({ flag: "--count" })]),
+    );
     expect(result.commander_aliases).toBeDefined();
     expect(result.commander_aliases?.create_string_options.length).toBeGreaterThan(0);
+    expect(result.commander_aliases?.list_string_options).toEqual(
+      expect.arrayContaining([expect.objectContaining({ target: "fields" }), expect.objectContaining({ target: "sort" })]),
+    );
   });
 
   it("supports schema-only mode with action filtering", async () => {

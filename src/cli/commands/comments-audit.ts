@@ -7,6 +7,11 @@ import { runList } from "./list.js";
 export interface CommentsAuditOptions {
   status?: string;
   type?: string;
+  tag?: string;
+  priority?: string;
+  parent?: string;
+  sprint?: string;
+  release?: string;
   assignee?: string;
   assigneeFilter?: string;
   limitItems?: string;
@@ -31,6 +36,11 @@ export interface CommentsAuditResult {
   filters: {
     status: ItemStatus | null;
     type: string | null;
+    tag: string | null;
+    priority: number | null;
+    parent: string | null;
+    sprint: string | null;
+    release: string | null;
     assignee: string | null;
     assignee_filter: string | null;
     limit_items: number | null;
@@ -126,6 +136,11 @@ export async function runCommentsAudit(options: CommentsAuditOptions, global: Gl
     status,
     {
       type: options.type,
+      tag: options.tag,
+      priority: options.priority,
+      parent: options.parent,
+      sprint: options.sprint,
+      release: options.release,
       assignee: options.assignee,
       assigneeFilter: options.assigneeFilter,
       limit: limitItems === undefined ? undefined : String(limitItems),
@@ -154,6 +169,11 @@ export async function runCommentsAudit(options: CommentsAuditOptions, global: Gl
     filters: {
       status: status ?? null,
       type: options.type ?? null,
+      tag: options.tag ?? null,
+      priority: options.priority === undefined ? null : Number(options.priority),
+      parent: options.parent ?? null,
+      sprint: options.sprint ?? null,
+      release: options.release ?? null,
       assignee: options.assignee ?? null,
       assignee_filter: options.assigneeFilter ?? null,
       limit_items: limitItems ?? null,

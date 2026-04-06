@@ -60,6 +60,8 @@ export const PM_CORE_COMMAND_NAMES = [
   "list-blocked",
   "list-closed",
   "list-canceled",
+  "aggregate",
+  "dedupe-audit",
   "calendar",
   "cal",
   "context",
@@ -117,6 +119,8 @@ export const PM_TOOL_ACTIONS = [
   "list-blocked",
   "list-closed",
   "list-canceled",
+  "aggregate",
+  "dedupe-audit",
   "calendar",
   "context",
   "get",
@@ -177,6 +181,41 @@ export const PI_LIST_FILTER_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "release", flag: "--release" },
   { param: "limit", flag: "--limit" },
   { param: "offset", flag: "--offset" },
+  { param: "fields", flag: "--fields" },
+  { param: "sort", flag: "--sort" },
+  { param: "order", flag: "--order" },
+];
+
+export const PI_AGGREGATE_OPTION_CONTRACTS: PiOptionFlagContract[] = [
+  { param: "groupBy", flag: "--group-by" },
+  { param: "status", flag: "--status" },
+  { param: "type", flag: "--type" },
+  { param: "tag", flag: "--tag" },
+  { param: "priority", flag: "--priority" },
+  { param: "deadlineBefore", flag: "--deadline-before" },
+  { param: "deadlineAfter", flag: "--deadline-after" },
+  { param: "assignee", flag: "--assignee" },
+  { param: "assigneeFilter", flag: "--assignee-filter" },
+  { param: "parent", flag: "--parent" },
+  { param: "sprint", flag: "--sprint" },
+  { param: "release", flag: "--release" },
+];
+
+export const PI_DEDUPE_AUDIT_OPTION_CONTRACTS: PiOptionFlagContract[] = [
+  { param: "mode", flag: "--mode" },
+  { param: "limit", flag: "--limit" },
+  { param: "threshold", flag: "--threshold" },
+  { param: "status", flag: "--status" },
+  { param: "type", flag: "--type" },
+  { param: "tag", flag: "--tag" },
+  { param: "priority", flag: "--priority" },
+  { param: "deadlineBefore", flag: "--deadline-before" },
+  { param: "deadlineAfter", flag: "--deadline-after" },
+  { param: "assignee", flag: "--assignee" },
+  { param: "assigneeFilter", flag: "--assignee-filter" },
+  { param: "parent", flag: "--parent" },
+  { param: "sprint", flag: "--sprint" },
+  { param: "release", flag: "--release" },
 ];
 
 export const PI_SEARCH_FILTER_OPTION_CONTRACTS: PiOptionFlagContract[] = [
@@ -363,8 +402,65 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--release" },
   { flag: "--limit" },
   { flag: "--offset" },
+  { flag: "--compact" },
+  { flag: "--fields" },
+  { flag: "--sort" },
+  { flag: "--order" },
   { flag: "--include-body" },
   { flag: "--stream" },
+];
+
+export const AGGREGATE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--group-by" },
+  { flag: "--count" },
+  { flag: "--include-unparented" },
+  { flag: "--include_unparented" },
+  { flag: "--status" },
+  { flag: "--type" },
+  { flag: "--tag" },
+  { flag: "--priority" },
+  { flag: "--deadline-before" },
+  { flag: "--deadline-after" },
+  { flag: "--assignee" },
+  { flag: "--assignee-filter" },
+  { flag: "--assignee_filter" },
+  { flag: "--parent" },
+  { flag: "--sprint" },
+  { flag: "--release" },
+];
+
+export const DEDUPE_AUDIT_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--mode" },
+  { flag: "--limit" },
+  { flag: "--threshold" },
+  { flag: "--status" },
+  { flag: "--type" },
+  { flag: "--tag" },
+  { flag: "--priority" },
+  { flag: "--deadline-before" },
+  { flag: "--deadline-after" },
+  { flag: "--assignee" },
+  { flag: "--assignee-filter" },
+  { flag: "--assignee_filter" },
+  { flag: "--parent" },
+  { flag: "--sprint" },
+  { flag: "--release" },
+];
+
+export const COMMENTS_AUDIT_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--status" },
+  { flag: "--type" },
+  { flag: "--assignee" },
+  { flag: "--assignee-filter" },
+  { flag: "--assignee_filter" },
+  { flag: "--parent" },
+  { flag: "--tag" },
+  { flag: "--sprint" },
+  { flag: "--release" },
+  { flag: "--priority" },
+  { flag: "--limit-items" },
+  { flag: "--full-history" },
+  { flag: "--latest" },
 ];
 
 export const REINDEX_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -427,6 +523,9 @@ export const HEALTH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--strict-directories" },
   { flag: "--strict-exit" },
   { flag: "--fail-on-warn" },
+  { flag: "--check-only" },
+  { flag: "--no-refresh" },
+  { flag: "--refresh-vectors" },
 ];
 
 export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -799,6 +898,9 @@ export const LIST_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContrac
   { target: "release", keys: ["release"] },
   { target: "limit", keys: ["limit"] },
   { target: "offset", keys: ["offset"] },
+  { target: "fields", keys: ["fields"] },
+  { target: "sort", keys: ["sort"] },
+  { target: "order", keys: ["order"] },
 ];
 
 export const SEARCH_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
@@ -889,6 +991,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   query: { type: "string" },
   keywords: { type: "string" },
   fields: { type: "string" },
+  sort: { type: "string", enum: ["priority", "deadline", "updated_at", "created_at", "title", "parent"] },
   prefix: { type: "string" },
   scope: { type: "string", enum: ["project", "global"] },
   contractAction: { type: "string" },
@@ -944,7 +1047,10 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   impact: { type: "string" },
   outcome: { type: "string" },
   whyNow: { type: "string" },
-  mode: { type: "string", enum: ["keyword", "semantic", "hybrid"] },
+  mode: {
+    type: "string",
+    enum: ["keyword", "semantic", "hybrid", "title_exact", "title_fuzzy", "parent_scope"],
+  },
   compact: { type: "boolean" },
   full: { type: "boolean" },
   view: { type: "string", enum: ["agenda", "day", "week", "month"] },
@@ -957,6 +1063,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   recurrenceLookbackDays: { anyOf: [{ type: "string" }, { type: "number" }] },
   occurrenceLimit: { anyOf: [{ type: "string" }, { type: "number" }] },
   includeLinked: { type: "boolean" },
+  includeBody: { type: "boolean" },
   tag: { type: "string" },
   deadlineBefore: { type: "string" },
   deadlineAfter: { type: "string" },
@@ -993,6 +1100,9 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   checkStaleBlockers: { type: "boolean" },
   checkFiles: { type: "boolean" },
   strictDirectories: { type: "boolean" },
+  checkOnly: { type: "boolean" },
+  noRefresh: { type: "boolean" },
+  refreshVectors: { type: "boolean" },
   scanMode: { type: "string", enum: ["default", "tracked-all", "tracked-all-strict"] },
   includePmInternals: { type: "boolean" },
   strictExit: { type: "boolean" },
@@ -1002,6 +1112,8 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   allowAuditComment: { type: "boolean" },
   force: { type: "boolean" },
   run: { type: "boolean" },
+  count: { type: "boolean" },
+  includeUnparented: { type: "boolean" },
   shell: { type: "string", enum: ["bash", "zsh", "fish"] },
   file: { type: "string" },
   preserveSourceIds: { type: "boolean" },
@@ -1038,6 +1150,8 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   clearTypeOptions: { type: "boolean" },
   criterion: { type: "array", items: { type: "string" } },
   clearCriteria: { type: "boolean" },
+  groupBy: { type: "string" },
+  threshold: { anyOf: [{ type: "string" }, { type: "number" }] },
   format: { type: "string" },
   policy: { type: "string" },
 };
@@ -1076,7 +1190,17 @@ const CONTEXT_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   "past",
 ]);
 
-const LIST_CONTRACT_PARAMETER_KEYS = toSchemaKeyList(PI_LIST_FILTER_OPTION_CONTRACTS.map((entry) => entry.param));
+const LIST_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
+  ...PI_LIST_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
+  "includeBody",
+  "compact",
+]);
+const AGGREGATE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
+  ...PI_AGGREGATE_OPTION_CONTRACTS.map((entry) => entry.param),
+  "count",
+  "includeUnparented",
+]);
+const DEDUPE_AUDIT_CONTRACT_PARAMETER_KEYS = toSchemaKeyList(PI_DEDUPE_AUDIT_OPTION_CONTRACTS.map((entry) => entry.param));
 const SEARCH_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   "query",
   "keywords",
@@ -1119,6 +1243,8 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   "list-blocked": { optional: LIST_CONTRACT_PARAMETER_KEYS },
   "list-closed": { optional: LIST_CONTRACT_PARAMETER_KEYS },
   "list-canceled": { optional: LIST_CONTRACT_PARAMETER_KEYS },
+  aggregate: { optional: AGGREGATE_CONTRACT_PARAMETER_KEYS },
+  "dedupe-audit": { optional: DEDUPE_AUDIT_CONTRACT_PARAMETER_KEYS },
   calendar: { optional: CALENDAR_CONTRACT_PARAMETER_KEYS },
   context: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
   get: { required: ["id"] },
@@ -1135,7 +1261,22 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   delete: { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   append: { required: ["id", "body"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   comments: { required: ["id"], optional: ["text", "add", "limit", "allowAuditComment", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
-  "comments-audit": { optional: ["status", "type", "assignee", "assigneeFilter", "limitItems", "fullHistory", "latest"] },
+  "comments-audit": {
+    optional: [
+      "status",
+      "type",
+      "assignee",
+      "assigneeFilter",
+      "parent",
+      "tag",
+      "sprint",
+      "release",
+      "priority",
+      "limitItems",
+      "fullHistory",
+      "latest",
+    ],
+  },
   notes: { required: ["id"], optional: ["text", "add", "limit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   learnings: { required: ["id"], optional: ["text", "add", "limit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   files: {
@@ -1202,7 +1343,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
     optional: ["author"],
   },
   stats: {},
-  health: { optional: ["strictDirectories", "strictExit", "failOnWarn"] },
+  health: { optional: ["strictDirectories", "strictExit", "failOnWarn", "checkOnly", "noRefresh", "refreshVectors"] },
   validate: {
     optional: [
       "checkMetadata",
@@ -1321,6 +1462,14 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     description: "Priority value in range 0..4.",
     examples: [0, 1, "2"],
   },
+  order: {
+    description: "Planning order/rank value for create/update, or sort direction (asc|desc) for list-family sorting.",
+    examples: [0, 1, "2", "asc", "desc"],
+  },
+  sort: {
+    description: "List-family sort field selector.",
+    examples: ["priority", "deadline", "updated_at", "created_at", "title", "parent"],
+  },
   tags: {
     description: "Comma-delimited tag list.",
     examples: ["pm-cli,agent-ux"],
@@ -1393,8 +1542,9 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     description: "When true for config set metadata-required-fields, clear the criteria list.",
   },
   mode: {
-    description: "Search/reindex mode selector.",
-    examples: ["keyword", "hybrid"],
+    description:
+      "Mode selector for search/reindex (keyword|semantic|hybrid) and dedupe-audit (title_exact|title_fuzzy|parent_scope).",
+    examples: ["keyword", "hybrid", "title_exact"],
   },
   progress: {
     description: "Emit progress diagnostics to stderr for long-running operations.",
@@ -1471,6 +1621,15 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   strictDirectories: {
     description: "Treat optional item-type directories as required health failures.",
   },
+  checkOnly: {
+    description: "For health action, run read-only diagnostics without refreshing vectors.",
+  },
+  noRefresh: {
+    description: "For health action, skip vector refresh while still running checks.",
+  },
+  refreshVectors: {
+    description: "For health action, explicitly refresh stale vectors.",
+  },
   scanMode: {
     description: "Select file candidate scan mode for --check-files.",
     examples: ["default", "tracked-all", "tracked-all-strict"],
@@ -1517,15 +1676,32 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   includeLinked: {
     description: "Include readable linked docs/files/tests content in keyword and hybrid lexical scoring.",
   },
+  includeBody: {
+    description: "When true for list-family actions, include item body text in projected rows.",
+  },
   compact: {
-    description: "Render compact search hit projection output.",
+    description: "Render compact projection output for search and list-family actions.",
   },
   full: {
     description: "Render full nested search hit payload output.",
   },
   fields: {
-    description: "Comma-separated custom search hit fields for projection output.",
-    examples: ["id,title,score,matched_fields"],
+    description: "Comma-separated projection fields for search or list-family outputs.",
+    examples: ["id,title,score,matched_fields", "id,title,parent,type"],
+  },
+  groupBy: {
+    description: "Comma-separated aggregate grouping fields.",
+    examples: ["parent,type"],
+  },
+  count: {
+    description: "Enable grouped count output for aggregate action.",
+  },
+  includeUnparented: {
+    description: "Include unparented rows when aggregate grouping includes parent.",
+  },
+  threshold: {
+    description: "Dedupe-audit fuzzy title similarity threshold between 0 and 1.",
+    examples: [0.5, "0.75"],
   },
   shell: {
     description: "Shell target for completion generation.",

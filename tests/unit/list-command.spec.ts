@@ -409,4 +409,106 @@ describe("runList", () => {
       expect(parentMiss.filters.parent).toBe("pm-missing-parent");
     });
   });
+
+  it("supports compact and custom field projections", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, {
+        title: "Projection Target",
+        status: "open",
+        priority: "1",
+        tags: "projection,list",
+        deadline: "+1d",
+      });
+
+      const compact = await runList(undefined, { compact: true }, { path: context.pmPath });
+      expect(compact.projection).toEqual({
+        mode: "compact",
+        fields: ["id", "title", "status", "type", "priority", "parent", "updated_at"],
+      });
+      const compactItem = compact.items[0] as unknown as Record<string, unknown>;
+      expect(Object.keys(compactItem)).toEqual(["id", "title", "status", "type", "priority", "parent", "updated_at"]);
+      expect(compactItem.id).toBe(id);
+
+      const fields = await runList(undefined, { fields: "id,title,parent" }, { path: context.pmPath });
+      expect(fields.projection).toEqual({
+        mode: "fields",
+        fields: ["id", "title", "parent"],
+      });
+      const fieldItem = fields.items[0] as unknown as Record<string, unknown>;
+      expect(Object.keys(fieldItem)).toEqual(["id", "title", "parent"]);
+      expect(fieldItem.id).toBe(id);
+      expect(fieldItem.title).toBe("Projection Target");
+    });
+  });
+
+  it("supports configurable list sorting and ordering", async () => {
+    await withTempPmPath(async (context) => {
+      createItem(context, {
+        title: "Bravo",
+        status: "open",
+        priority: "2",
+        tags: "sort,list",
+        deadline: "+2d",
+      });
+      createItem(context, {
+        title: "Alpha",
+        status: "open",
+        priority: "0",
+        tags: "sort,list",
+        deadline: "none",
+      });
+      createItem(context, {
+        title: "Charlie",
+        status: "open",
+        priority: "1",
+        tags: "sort,list",
+        deadline: "+1d",
+      });
+
+      const byTitleAsc = await runList(undefined, { sort: "title", order: "asc" }, { path: context.pmPath });
+      expect(byTitleAsc.sorting).toEqual({
+        sort: "title",
+        order: "asc",
+      });
+      expect(byTitleAsc.items.map((item) => item.title)).toEqual(["Alpha", "Bravo", "Charlie"]);
+
+      const byPriorityDesc = await runList(undefined, { sort: "priority", order: "desc" }, { path: context.pmPath });
+      expect(byPriorityDesc.sorting).toEqual({
+        sort: "priority",
+        order: "desc",
+      });
+      expect(byPriorityDesc.items.map((item) => item.priority)).toEqual([2, 1, 0]);
+
+      const byDeadlineAsc = await runList(undefined, { sort: "deadline", order: "asc" }, { path: context.pmPath });
+      expect(byDeadlineAsc.items.map((item) => item.title)).toEqual(["Charlie", "Bravo", "Alpha"]);
+    });
+  });
+
+  it("validates projection and sort option combinations", async () => {
+    await withTempPmPath(async (context) => {
+      createItem(context, {
+        title: "Validation target",
+        status: "open",
+        priority: "1",
+        tags: "validation,list",
+        deadline: "+1d",
+      });
+
+      await expect(runList(undefined, { compact: true, fields: "id" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runList(undefined, { fields: "   " }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runList(undefined, { order: "asc" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runList(undefined, { sort: "unknown" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runList(undefined, { sort: "title", order: "sideways" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
 });

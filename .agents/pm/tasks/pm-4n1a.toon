@@ -1,0 +1,34 @@
+id: pm-4n1a
+title: Implement pm dedupe-audit command modes and merge suggestions
+description: "Ship pm dedupe-audit with title_exact, title_fuzzy, and parent_scope modes, deterministic duplicate clusters, and machine-readable merge suggestions."
+type: Task
+status: closed
+priority: 1
+tags[4]: dedupe,external-audit,pm-cli,query-surfaces
+created_at: "2026-04-06T12:40:35.234Z"
+updated_at: "2026-04-06T13:28:34.410Z"
+author: codex-agent
+acceptance_criteria: "pm dedupe-audit returns deterministic duplicate candidates in all three modes, includes merge suggestions in JSON output, and is covered by unit/integration/help/completion/contracts tests."
+parent: pm-7lum
+comments[2]{created_at,author,text}:
+  "2026-04-06T12:40:35.234Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'duplicate dedupe audit' --limit 20; pm search 'automate duplicate-cluster detection and canonical mapping report' --limit 10; pm list-open --limit 50; pm list-in-progress --limit 50. Reusing open parent pm-7lum and creating only this implementation task because no active child task currently tracks command-level dedupe-audit delivery."
+  "2026-04-06T13:28:30.651Z",codex-agent,"Implemented pm dedupe-audit with title_exact/title_fuzzy/parent_scope clustering, deterministic merge suggestions, contracts/Pi wrapper parity, and documentation updates. Verification: node scripts/run-tests.mjs test -- tests/unit/dedupe-audit-command.spec.ts tests/integration/aggregate-dedupe.integration.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts; pnpm build; node scripts/run-tests.mjs test; node scripts/run-tests.mjs coverage."
+notes[1]{created_at,author,text}:
+  "2026-04-06T12:40:35.234Z",codex-agent,Favor reusable title normalization/tokenization utilities and keep heuristics deterministic.
+files[5]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,Pi wrapper mapping for dedupe action
+  src/cli/commands/dedupe-audit.ts,project,dedupe command implementation
+  src/cli/main.ts,project,dedupe command registration and options
+  src/core/shared/text-normalization.ts,project,shared title tokenization and similarity
+  src/sdk/cli-contracts.ts,project,contracts and schema parity updates
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/dedupe-audit-command.spec.ts tests/integration/aggregate-dedupe.integration.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,dedupe command targeted suites
+  node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,contracts wrapper parity suites
+docs[5]{path,scope,note}:
+  AGENTS.md,project,agent command-reference updates
+  CHANGELOG.md,project,release notes entry
+  docs/ARCHITECTURE.md,project,architecture command map updates
+  PRD.md,project,command contract updates
+  README.md,project,dedupe audit docs
+close_reason: dedupe-audit modes shipped with deterministic merge suggestions and full verification evidence
+body: ""

@@ -209,6 +209,11 @@ describe("runComments", () => {
         PmCliError
       >({
         exitCode: EXIT_CODE.CONFLICT,
+        context: expect.objectContaining({
+          code: "ownership_conflict",
+          required: expect.stringContaining("--allow-audit-comment"),
+          nextSteps: expect.arrayContaining([expect.stringContaining("--allow-audit-comment")]),
+        }),
       });
 
       const allowed = await runComments(
@@ -308,6 +313,77 @@ describe("runComments", () => {
       expect(fullHistory.rows?.map((row) => row.text)).toEqual(["history-first", "history-second"]);
       expect(fullHistory.rows?.map((row) => row.comment_index)).toEqual([0, 1]);
       expect(fullHistory.rows?.every((row) => row.item_id === id)).toBe(true);
+    });
+  });
+
+  it("supports parent/tag/sprint/release/priority filters for comments-audit", async () => {
+    await withTempPmPath(async (context) => {
+      const parentId = createTask(context, "comments-audit-parent");
+      const updateParent = context.runCli(
+        [
+          "update",
+          parentId,
+          "--json",
+          "--sprint",
+          "sprint-parent",
+          "--release",
+          "v-parent",
+          "--message",
+          "set parent metadata",
+          "--author",
+          "seed-author",
+        ],
+        { expectJson: true },
+      );
+      expect(updateParent.code).toBe(0);
+
+      const childId = createTask(context, "comments-audit-child");
+      const updateChild = context.runCli(
+        [
+          "update",
+          childId,
+          "--json",
+          "--parent",
+          parentId,
+          "--tags",
+          "comments,unit,child-scope",
+          "--priority",
+          "0",
+          "--sprint",
+          "sprint-a",
+          "--release",
+          "v1",
+          "--message",
+          "set child metadata",
+          "--author",
+          "seed-author",
+        ],
+        { expectJson: true },
+      );
+      expect(updateChild.code).toBe(0);
+
+      await runComments(childId, { add: "scoped comment", author: "audit-a" }, { path: context.pmPath });
+
+      const filtered = await runCommentsAudit(
+        {
+          parent: parentId,
+          tag: "child-scope",
+          sprint: "sprint-a",
+          release: "v1",
+          priority: "0",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(filtered.count).toBe(1);
+      expect(filtered.items[0]?.id).toBe(childId);
+      expect(filtered.filters).toMatchObject({
+        parent: parentId,
+        tag: "child-scope",
+        sprint: "sprint-a",
+        release: "v1",
+        priority: 0,
+      });
     });
   });
 

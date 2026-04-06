@@ -1013,7 +1013,7 @@ describe("release readiness runtime coverage", () => {
 
       const listResult = context.runCli(["list-open", "--limit", "20", "--json"], { expectJson: true });
       expect(listResult.code).toBe(0);
-      expectTopLevelKeyOrder(listResult.json, ["items", "count", "filters", "now"]);
+      expectTopLevelKeyOrder(listResult.json, ["items", "count", "filters", "projection", "sorting", "now"]);
 
       const calendarResult = context.runCli(["calendar", "--json", "--view", "agenda", "--limit", "20"], { expectJson: true });
       expect(calendarResult.code).toBe(0);
@@ -1349,7 +1349,9 @@ describe("release readiness runtime coverage", () => {
     const uncoveredFiles = sourceFiles.filter((filePath) => !matchesAnyPattern(filePath, includePatterns));
     expect(uncoveredFiles.sort((left, right) => left.localeCompare(right))).toEqual([
       "src/cli.ts",
+      "src/cli/commands/aggregate.ts",
       "src/cli/commands/comments-audit.ts",
+      "src/cli/commands/dedupe-audit.ts",
       "src/cli/commands/templates.ts",
       "src/cli/commands/test-runs.ts",
       "src/cli/error-guidance.ts",
@@ -1358,6 +1360,7 @@ describe("release readiness runtime coverage", () => {
       "src/core/item/parent-reference-policy.ts",
       "src/core/item/type-registry.ts",
       "src/core/output/command-aware.ts",
+      "src/core/shared/text-normalization.ts",
       "src/core/test/background-runs.ts",
       "src/core/test/item-test-run-tracking.ts",
       "src/sdk/cli-contracts.ts",

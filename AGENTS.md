@@ -255,7 +255,7 @@ Quick start loop:
 ```bash
 pm config project set definition-of-done --criterion "tests pass" --criterion "linked files/tests/docs present"
 pm config project set test-result-tracking --policy enabled
-pm list-open --type Task --priority 0 --limit 5
+pm list-open --type Task --priority 0 --fields id,title,parent,type --sort priority --order asc --limit 5
 pm claim pm-a1b2
 pm update pm-a1b2 --status in_progress --description "Implement restore replay"
 pm update pm-a1b2 --body "Restore replay scope and acceptance details."
@@ -267,8 +267,11 @@ pm comments pm-a1b2 "Restore replay implemented with hash checks"
 pm notes pm-a1b2 --add "Replay path now guards missing history streams before write"
 pm learnings pm-a1b2 --add "Use sandbox runner for linked test commands to preserve PM_PATH safety"
 pm deps pm-a1b2 --format tree
+pm aggregate --group-by parent,type --count --status open --json
+pm dedupe-audit --mode parent_scope --limit 20 --json
 pm calendar --view agenda --assignee codex-agent --format markdown
 pm test pm-a1b2 --run --progress
+pm health --check-only
 pm validate --check-resolution --check-history-drift
 node scripts/run-tests.mjs coverage
 pm close pm-a1b2 "history replay tests passed; restore emits restore history event" --validate-close warn --author "..." --message "Close: history replay tests passed; restore emits restore history event"
@@ -296,8 +299,13 @@ Reference implementation source lives at `.pi/extensions/pm-cli/index.ts` as a P
 Load the Pi wrapper in Pi with `pi -e ./.pi/extensions/pm-cli/index.ts` (or copy it into your Pi extensions directory).
 Use `action: "completion"` with `shell: "bash"|"zsh"|"fish"` to forward to `pm completion <shell>`.
 Use `action: "calendar"` for date-centric event views (`view`, `date`, `from`, `to`, `past`, `type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`, `format`).
+Use `action: "aggregate"` for grouped decomposition checks (`groupBy`, `count`, `includeUnparented`, list-style filters).
+Use `action: "dedupe-audit"` for duplicate corpus checks (`mode`, `threshold`, `limit`, list-style filters).
 Use `action: "validate"` with optional check toggles (`checkMetadata`, `checkResolution`, `checkFiles`, `checkHistoryDrift`) and optional `scanMode` (`default|tracked-all`) for standalone audit workflows.
 Use `action: "extension-doctor"` for consolidated extension diagnostics with optional `scope` and `detail` (`summary|deep`).
+For `list*` wrapper actions, use projection/sort controls (`compact`, `fields`, `sort`, `order`) plus `includeBody` when body projection is needed.
+For `comments-audit`, use governance filters (`parent`, `tag`, `sprint`, `release`, `priority`) in addition to status/type/assignee filters.
+For `health`, use vector refresh controls (`checkOnly`, `noRefresh`, `refreshVectors`) while keeping strict flags available (`strictDirectories`, `strictExit`, `failOnWarn`).
 For `create` and `update`, use camelCase wrapper parameters for the canonical CLI scalar fields such as `parent`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blockedBy`, `blockedReason`, `unblockNote`, `definitionOfReady`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `whyNow`, `reporter`, `severity`, `environment`, `reproSteps`, `resolution`, `expectedResult`, `actualResult`, `affectedVersion`, `fixedVersion`, `component`, `regression`, and `customerImpact`; use `createMode` (`strict|progressive`) when staged creation is needed, `appendStable` for minimal-diff file-link appends, `allowAuditComment` for additive non-owner comment writes, repeatable `reminder` values for persistent reminders (`at=<iso|relative>,text=<text>`), and repeatable `typeOption` values for custom type metadata.
 For `test` and `test-all`, prefer explicit runtime parity/strictness parameters when needed: `pmContext` (`schema|tracker`), `failOnContextMismatch`, `failOnSkipped`, and `requireAssertionsForPm`.
 

@@ -26,6 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added merge-conflict marker detection in item and history parsing paths with actionable remediation guidance.
 - Added `pm health` `integrity` diagnostics for conflict markers and parse/JSONL anomalies with deterministic warning codes.
 - `list*` commands now accept `--include-body` to project item `body` into each returned row when needed for metadata completeness analysis.
+- Added `pm aggregate` grouped child-count governance queries (`--group-by parent,type --count`, optional `--include-unparented`) with list-style filters.
+- Added `pm dedupe-audit` duplicate corpus checks with `title_exact`, `title_fuzzy`, and `parent_scope` modes plus machine-readable merge suggestions.
+- Added list-family projection and ordering controls: `--compact`, `--fields <csv>`, `--sort <priority|deadline|updated_at|created_at|title|parent>`, and `--order <asc|desc>`.
+- Added expanded `pm comments-audit` governance filters: `--parent`, `--tag`, `--sprint`, `--release`, and `--priority`.
+- Added `pm health` vector refresh intent controls: `--check-only`, `--no-refresh`, and `--refresh-vectors` (default targeted refresh behavior is unchanged).
 - Added persistent item reminders via repeatable `--reminder at=<iso|relative>,text=<text>` support on `pm create` and `pm update` (including explicit `--clear-reminders` semantics).
 - Added `pm update --body` / `-b` support (including stdin token `--body -`) so existing items can backfill or replace body content with standard update history/lock semantics.
 - Added `pm calendar` (alias: `pm cal`) with deterministic `agenda` (default), `day`, `week`, and `month` views across deadlines and reminders, plus `--past` and range/filter options.
@@ -117,6 +122,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed the `pm install` command surface; extension lifecycle installs now flow through `pm extension` only.
 - `pm beads import`, `pm todos import`, and `pm todos export` are now extension-discovered command paths that appear only after corresponding bundled extensions are installed and active.
 - Commander option normalization, shell completion flag generation, and Pi wrapper action/schema/arg mapping now consume the shared command contract registry to reduce cross-surface drift.
+- Ownership-conflict guidance for `pm comments --add` now recommends `--allow-audit-comment` before `--force` for append-only audit workflows.
 - `pm search` now defaults to compact projection for both TOON and JSON output unless callers request `--full` or explicit `--fields`.
 - `pm get` missing-item guidance now uses deterministic recovery examples (`pm list-open --limit 20`, `pm search "<keyword>" --limit 10`) instead of echoing invalid IDs.
 - `pm help` and `pm help <command>` now exit successfully without trailing invalid-usage envelopes.

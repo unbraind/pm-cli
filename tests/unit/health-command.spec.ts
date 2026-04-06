@@ -379,6 +379,101 @@ describe("runHealth", () => {
     });
   });
 
+  it("supports read-only vectorization checks via --check-only/--no-refresh semantics", async () => {
+    await withTempPmPath(async (context) => {
+      const itemId = createSeedItem(context);
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
+      await writeSettings(context.pmPath, settings);
+
+      const originalFetch = globalThis.fetch;
+      const fetchCalls: string[] = [];
+      globalThis.fetch = (async (url: unknown) => {
+        fetchCalls.push(String(url));
+        throw new Error("fetch should not be called when refresh is disabled");
+      }) as typeof globalThis.fetch;
+
+      try {
+        const checkOnly = await runHealth(
+          { path: context.pmPath },
+          {
+            checkOnly: true,
+          },
+        );
+        expect(checkOnly.ok).toBe(false);
+        const checkOnlyVectorization = checkOnly.checks.find((check) => check.name === "vectorization");
+        expect(checkOnlyVectorization?.details).toMatchObject({
+          semantic_runtime_available: true,
+          stale_items_before: [itemId],
+          stale_items_after: [itemId],
+          refresh_attempted: false,
+          refresh_skipped_reason: "refresh_disabled",
+          refresh_policy: {
+            enabled: false,
+            check_only: true,
+            no_refresh: true,
+            refresh_vectors: false,
+          },
+        });
+
+        const noRefresh = await runHealth(
+          { path: context.pmPath },
+          {
+            noRefresh: true,
+          },
+        );
+        expect(noRefresh.ok).toBe(false);
+        const noRefreshVectorization = noRefresh.checks.find((check) => check.name === "vectorization");
+        expect(noRefreshVectorization?.details).toMatchObject({
+          semantic_runtime_available: true,
+          stale_items_before: [itemId],
+          stale_items_after: [itemId],
+          refresh_attempted: false,
+          refresh_skipped_reason: "refresh_disabled",
+          refresh_policy: {
+            enabled: false,
+            check_only: false,
+            no_refresh: true,
+            refresh_vectors: false,
+          },
+        });
+        expect(fetchCalls).toEqual([]);
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+  });
+
+  it("rejects conflicting vector refresh policy flags", async () => {
+    await withTempPmPath(async (context) => {
+      createSeedItem(context);
+      await expect(
+        runHealth(
+          { path: context.pmPath },
+          {
+            checkOnly: true,
+            refreshVectors: true,
+          },
+        ),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runHealth(
+          { path: context.pmPath },
+          {
+            noRefresh: true,
+            refreshVectors: true,
+          },
+        ),
+      ).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
   it("warns when targeted vectorization refresh fails and stale items remain", async () => {
     await withTempPmPath(async (context) => {
       const itemId = createSeedItem(context);

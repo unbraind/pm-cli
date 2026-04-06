@@ -29,7 +29,8 @@
 - Linked path hygiene for files/docs (`--add-glob`, `--migrate`, `--validate-paths`, `--audit`)
 - Dependency topology inspection via `pm deps --format tree|graph`
 - Deterministic `--tag` completion suggestions from tracked item metadata
-- Additive large-list controls via `--offset` pagination and opt-in JSON streaming (`--stream` with `--json`)
+- Additive large-list controls via projection (`--compact` / `--fields`), configurable sorting (`--sort` + `--order`), pagination (`--offset`), and opt-in JSON streaming (`--stream` with `--json`)
+- Governance-focused corpus analysis commands: `pm aggregate` grouped counts and `pm dedupe-audit` duplicate clustering
 - Standalone `pm validate` command for metadata, resolution, lifecycle, linked-file, linked-command reference, and history-drift audits
 - Opt-in non-interactive progress output for long-running operations (`pm test`, `pm test-all`, `pm reindex` with `--progress`)
 - Managed background linked-test orchestration (`pm test --run --background`, `pm test-all --background`, and `pm test-runs list|status|logs|stop|resume`)
@@ -237,6 +238,41 @@ pm list-open --parent pm-epic01 --limit 20
 pm list-in-progress --parent pm-feature02 --json
 ```
 
+## List Projection and Sorting
+
+List-family commands support explicit projection and deterministic sort controls:
+
+```bash
+# Compact default projection fields for list rows
+pm list-open --compact --limit 20
+
+# Custom projected fields
+pm list-all --fields id,title,parent,type --limit 50
+
+# Configurable sort field + order
+pm list-open --sort deadline --order asc --limit 20
+pm list-open --sort priority --order desc --limit 20
+```
+
+Projection flags are mutually exclusive for list-family commands (`--compact`, `--fields`, `--include-body` remains additive for body projection).
+
+## Duplicate and Decomposition Audits
+
+Governance workflows now have dedicated audit commands:
+
+```bash
+# Group child counts by parent/type for decomposition checks
+pm aggregate --group-by parent,type --count --status open --json
+
+# Include rows that do not have a parent when grouping by parent
+pm aggregate --group-by parent,type --count --include-unparented --json
+
+# Detect likely duplicates by exact title, fuzzy title, or parent-scoped title collisions
+pm dedupe-audit --mode title_exact --limit 25 --json
+pm dedupe-audit --mode title_fuzzy --threshold 0.75 --limit 25 --json
+pm dedupe-audit --mode parent_scope --limit 25 --json
+```
+
 ## Health Drift, Integrity, and Vectorization Checks
 
 `pm health` includes deterministic checks for item/history integrity and semantic vector freshness:
@@ -255,8 +291,11 @@ pm list-in-progress --parent pm-feature02 --json
   - reports missing history streams, unreadable/corrupt history streams, and hash mismatches
 - `vectorization`
   - compares current item `updated_at` values against a local vectorization ledger at `search/vectorization-status.json`
-  - identifies stale/missing vector entries and performs targeted semantic refresh for stale item IDs when semantic runtime is available
+  - identifies stale/missing vector entries and (by default) performs targeted semantic refresh for stale item IDs when semantic runtime is available
   - avoids forcing a full rebuild (`pm reindex`) for routine health checks
+  - supports explicit refresh policy controls:
+    - `--check-only` / `--no-refresh` for read-only diagnostics
+    - `--refresh-vectors` to force refresh intent explicitly
 
 The vectorization ledger is also refreshed during `pm reindex --mode semantic|hybrid` to keep health diagnostics aligned with the latest indexed corpus.
 
@@ -472,10 +511,10 @@ pm deps pm-a1b2 --format tree
 pm deps pm-a1b2 --format graph --json
 
 # Bulk governance snapshots for latest comments across matching items
-pm comments-audit --status in_progress --latest 1 --limit-items 20 --json
+pm comments-audit --status in_progress --parent pm-epic01 --tag governance --latest 1 --limit-items 20 --json
 
 # Full-history export rows for NDJSON-friendly downstream processing
-pm comments-audit --status in_progress --full-history --limit-items 20 --json
+pm comments-audit --status in_progress --sprint sprint-12 --release v0.2 --priority 1 --full-history --limit-items 20 --json
 ```
 
 Use explicit clear flags for repeatable fields (`--clear-files`, `--clear-comments`, `--clear-docs`, etc.) and `--unset <field>` for scalar clears.
@@ -506,7 +545,7 @@ For `pm create` log-seed flags (`--comment`, `--note`, `--learning`), only `auth
 - Linked test timeout handling uses deterministic process termination (including force-kill fallback) and reports explicit timeout/maxBuffer diagnostics in `run_results`.
 - Failed linked test `run_results` now include `failure_category` (for example `infra_collision` vs `assertion_failure`) and `pm test-all` totals include aggregated `failure_categories` counts for triage.
 - `pm test <ID> --run` now returns dependency-failed exit code (`5`) when any linked test run result fails (matching `pm test-all` failure gating behavior).
-- `pm list` / `pm list-*` return front-matter rows by default; pass `--include-body` when body projection is needed, `--offset <n>` for pagination, and `--stream` (with `--json`) for newline-delimited item streaming.
+- `pm list` / `pm list-*` return front-matter rows by default; pass `--compact` or `--fields <csv>` for projection control, `--sort <field> --order <asc|desc>` for deterministic ordering, `--include-body` when body projection is needed, `--offset <n>` for pagination, and `--stream` (with `--json`) for newline-delimited item streaming.
 
 ## Terminal Compatibility
 

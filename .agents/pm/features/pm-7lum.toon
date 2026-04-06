@@ -2,13 +2,12 @@ id: pm-7lum
 title: Automate duplicate-cluster detection and canonical mapping report
 description: "Add a deterministic command/reporting workflow that groups similar pm items, proposes canonical records, and emits supersession mappings before mutation."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[4]: dedupe,governance,pm-cli,reporting
 created_at: "2026-04-04T17:53:51.723Z"
-updated_at: "2026-04-05T22:43:18.232Z"
+updated_at: "2026-04-06T13:29:20.179Z"
 deadline: "2026-04-18T17:53:51.723Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: "A deterministic command or report output groups duplicate candidates, identifies canonical item candidates, and produces auditable mapping output that can be reviewed before any mutation operations."
@@ -36,15 +35,24 @@ regression: false
 customer_impact: Maintainers get faster and safer duplicate management for large trackers.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-wtsp,discovered_from,"2026-04-04T17:53:51.723Z",codex-agent,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-04T17:53:51.723Z",codex-agent,Duplicate-check evidence pm context --limit 10; pm search duplicate cluster consolidation automation --limit 20; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because no dedicated automation feature exists for duplicate-cluster reporting.
   "2026-04-05T22:43:14.897Z",codex-agent,"Normalization decision: this open dedupe-automation feature remains active and is reparented from closed governance epic pm-wtsp to active governance epic pm-5rjn to restore active lineage integrity."
+  "2026-04-06T13:29:17.557Z",codex-agent,"Delivered deterministic duplicate-cluster workflow via pm dedupe-audit (title_exact/title_fuzzy/parent_scope) with machine-readable merge suggestions and shared normalization utilities. Child implementation task pm-4n1a is closed with verification evidence; full-suite verification passed (pnpm build, node scripts/run-tests.mjs test, node scripts/run-tests.mjs coverage)."
 notes[1]{created_at,author,text}:
   "2026-04-04T17:53:51.723Z",codex-agent,Initial governance pass required custom scripts for similarity clustering and canonical mapping across 9 duplicate families.
-files[1]{path,scope,note}:
+files[4]{path,scope,note}:
+  src/cli/commands/dedupe-audit.ts,project,dedupe cluster reporting command
   src/cli/commands/search.ts,project,existing similarity/search surface for extension
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  src/core/shared/text-normalization.ts,project,shared token similarity utilities
+  src/sdk/cli-contracts.ts,project,contracts parity for dedupe action
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/dedupe-audit-command.spec.ts tests/integration/aggregate-dedupe.integration.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/contracts-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,dedupe feature + contracts parity coverage
   node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,search/reporting regression baseline
-docs[1]{path,scope,note}:
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,feature changelog entry
   docs/ARCHITECTURE.md,project,future dedupe report workflow design
+  PRD.md,project,command contract matrix row
+  README.md,project,dedupe-audit user documentation
+close_reason: duplicate-cluster detection and canonical mapping report shipped and verified
 body: "Current deduplication requires ad-hoc scripting. This feature will provide repeatable cluster generation for near-duplicate titles (run loops, alert families, repetitive trackers), canonical selection hints, and safe preview output for maintainers before applying close_reason mappings."

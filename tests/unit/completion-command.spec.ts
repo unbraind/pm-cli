@@ -121,7 +121,9 @@ describe("generateBashScript", () => {
     const script = generateBashScript();
     expect(script).toContain("--add --limit --author --message --force");
     expect(script).toContain("--allow-audit-comment");
-    expect(script).toContain("--status --type --assignee --assignee-filter --limit-items --full-history --latest");
+    expect(script).toContain(
+      "--status --type --tag --priority --parent --sprint --release --assignee --assignee-filter --limit-items --full-history --latest",
+    );
   });
 
   it("includes files/docs add-glob flag in bash completion", () => {
@@ -143,7 +145,9 @@ describe("generateBashScript", () => {
 
   it("includes strict health flags in bash completion", () => {
     const script = generateBashScript();
-    expect(script).toContain("--strict-directories --strict-exit --fail-on-warn --json --quiet --path --no-extensions --profile --help");
+    expect(script).toContain(
+      "--strict-directories --strict-exit --fail-on-warn --check-only --no-refresh --refresh-vectors --json --quiet --path --no-extensions --profile --help",
+    );
   });
 
   it("includes extension doctor strict flags in bash completion", () => {

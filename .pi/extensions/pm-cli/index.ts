@@ -2,9 +2,11 @@ import { fileURLToPath } from "node:url";
 import {
   PM_TOOL_ACTIONS as SHARED_PM_TOOL_ACTIONS,
   PM_TOOL_PARAMETERS_SCHEMA as SHARED_PM_TOOL_PARAMETERS_SCHEMA,
+  PI_AGGREGATE_OPTION_CONTRACTS,
   PI_CALENDAR_OPTION_CONTRACTS,
   PI_CONTEXT_OPTION_CONTRACTS,
   PI_CREATE_OPTION_CONTRACTS,
+  PI_DEDUPE_AUDIT_OPTION_CONTRACTS,
   PI_LIST_FILTER_OPTION_CONTRACTS,
   PI_SEARCH_FILTER_OPTION_CONTRACTS,
   PI_SHARED_CREATE_UPDATE_OPTION_CONTRACTS,
@@ -100,9 +102,11 @@ export interface PmToolParameters {
   recurrenceLookbackDays?: NumericFlagInput;
   occurrenceLimit?: NumericFlagInput;
   includeLinked?: boolean;
+  includeBody?: boolean;
   compact?: boolean;
   full?: boolean;
   fields?: string;
+  sort?: string;
   tag?: string;
   deadlineBefore?: string;
   deadlineAfter?: string;
@@ -136,6 +140,9 @@ export interface PmToolParameters {
   checkStaleBlockers?: boolean;
   checkFiles?: boolean;
   strictDirectories?: boolean;
+  checkOnly?: boolean;
+  noRefresh?: boolean;
+  refreshVectors?: boolean;
   scanMode?: string;
   includePmInternals?: boolean;
   strictExit?: boolean;
@@ -148,6 +155,10 @@ export interface PmToolParameters {
   allowAuditComment?: boolean;
   force?: boolean;
   run?: boolean;
+  count?: boolean;
+  includeUnparented?: boolean;
+  groupBy?: string;
+  threshold?: NumericFlagInput;
   shell?: string;
   file?: string;
   preserveSourceIds?: boolean;
@@ -286,6 +297,26 @@ function requireString(value: string | undefined, name: string, action: PmToolAc
 
 function addListFilters(args: string[], params: PmToolParameters): void {
   pushContractedFlags(args, params, PI_LIST_FILTER_OPTION_CONTRACTS);
+  if (params.compact) {
+    args.push("--compact");
+  }
+  if (params.includeBody) {
+    args.push("--include-body");
+  }
+}
+
+function addAggregateFilters(args: string[], params: PmToolParameters): void {
+  pushContractedFlags(args, params, PI_AGGREGATE_OPTION_CONTRACTS);
+  if (params.count) {
+    args.push("--count");
+  }
+  if (params.includeUnparented) {
+    args.push("--include-unparented");
+  }
+}
+
+function addDedupeAuditFilters(args: string[], params: PmToolParameters): void {
+  pushContractedFlags(args, params, PI_DEDUPE_AUDIT_OPTION_CONTRACTS);
 }
 
 function addCreateFlags(args: string[], params: PmToolParameters): void {
@@ -500,6 +531,14 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       args.push(action);
       addListFilters(args, params);
       return args;
+    case "aggregate":
+      args.push("aggregate");
+      addAggregateFilters(args, params);
+      return args;
+    case "dedupe-audit":
+      args.push("dedupe-audit");
+      addDedupeAuditFilters(args, params);
+      return args;
     case "calendar":
       args.push("calendar");
       const calendarAnchors = PI_CALENDAR_OPTION_CONTRACTS.filter((entry) =>
@@ -600,6 +639,12 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       pushOption(args, "--status", params.status);
       pushOption(args, "--type", params.type);
       pushOption(args, "--assignee", params.assignee);
+      pushOption(args, "--assignee-filter", params.assigneeFilter);
+      pushOption(args, "--parent", params.parent);
+      pushOption(args, "--tag", params.tag);
+      pushOption(args, "--sprint", params.sprint);
+      pushOption(args, "--release", params.release);
+      pushOption(args, "--priority", params.priority);
       pushOption(args, "--limit-items", params.limitItems ?? params.limit);
       if (params.fullHistory) {
         args.push("--full-history");
@@ -753,6 +798,15 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       }
       if (params.failOnWarn) {
         args.push("--fail-on-warn");
+      }
+      if (params.checkOnly) {
+        args.push("--check-only");
+      }
+      if (params.noRefresh) {
+        args.push("--no-refresh");
+      }
+      if (params.refreshVectors) {
+        args.push("--refresh-vectors");
       }
       return args;
     case "validate":

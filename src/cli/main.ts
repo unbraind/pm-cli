@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Command } from "commander";
 import {
+  runAggregate,
   runAppend,
   runActivity,
   runCalendar,
@@ -16,6 +17,7 @@ import {
   runContracts,
   runCreate,
   runDelete,
+  runDedupeAudit,
   runDeps,
   runDocs,
   runExtension,
@@ -54,6 +56,8 @@ import {
   type CalendarOptions,
   type ContextOptions,
   type CreateCommandOptions,
+  type AggregateOptions,
+  type DedupeAuditOptions,
   type ListOptions,
   runContext,
 } from "./commands/index.js";
@@ -2175,29 +2179,73 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
   };
 }
 
+function readListOptionString(options: Record<string, unknown>, target: string): string | undefined {
+  return readFirstStringFromCommanderOptions(
+    options,
+    LIST_COMMANDER_STRING_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
+      target,
+      keys: [target],
+    },
+  );
+}
+
 function normalizeListOptions(options: Record<string, unknown>): ListOptions {
-  const readListString = (target: string): string | undefined =>
-    readFirstStringFromCommanderOptions(
-      options,
-      LIST_COMMANDER_STRING_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
-        target,
-        keys: [target],
-      },
-    );
   return {
-    type: readListString("type"),
-    tag: readListString("tag"),
-    priority: readListString("priority"),
-    deadlineBefore: readListString("deadlineBefore"),
-    deadlineAfter: readListString("deadlineAfter"),
-    assignee: readListString("assignee"),
-    assigneeFilter: readListString("assigneeFilter"),
-    parent: readListString("parent"),
-    sprint: readListString("sprint"),
-    release: readListString("release"),
-    limit: readListString("limit"),
-    offset: readListString("offset"),
+    type: readListOptionString(options, "type"),
+    tag: readListOptionString(options, "tag"),
+    priority: readListOptionString(options, "priority"),
+    deadlineBefore: readListOptionString(options, "deadlineBefore"),
+    deadlineAfter: readListOptionString(options, "deadlineAfter"),
+    assignee: readListOptionString(options, "assignee"),
+    assigneeFilter: readListOptionString(options, "assigneeFilter"),
+    parent: readListOptionString(options, "parent"),
+    sprint: readListOptionString(options, "sprint"),
+    release: readListOptionString(options, "release"),
+    limit: readListOptionString(options, "limit"),
+    offset: readListOptionString(options, "offset"),
     includeBody: options.includeBody === true ? true : undefined,
+    compact: options.compact === true ? true : undefined,
+    fields: readListOptionString(options, "fields"),
+    sort: readListOptionString(options, "sort"),
+    order: readListOptionString(options, "order"),
+  };
+}
+
+function normalizeAggregateOptions(options: Record<string, unknown>): AggregateOptions {
+  return {
+    groupBy: typeof options.groupBy === "string" ? options.groupBy : undefined,
+    count: options.count === true,
+    includeUnparented: options.includeUnparented === true || options.include_unparented === true,
+    status: typeof options.status === "string" ? options.status : undefined,
+    type: readListOptionString(options, "type"),
+    tag: readListOptionString(options, "tag"),
+    priority: readListOptionString(options, "priority"),
+    deadlineBefore: readListOptionString(options, "deadlineBefore"),
+    deadlineAfter: readListOptionString(options, "deadlineAfter"),
+    assignee: readListOptionString(options, "assignee"),
+    assigneeFilter: readListOptionString(options, "assigneeFilter"),
+    parent: readListOptionString(options, "parent"),
+    sprint: readListOptionString(options, "sprint"),
+    release: readListOptionString(options, "release"),
+  };
+}
+
+function normalizeDedupeAuditOptions(options: Record<string, unknown>): DedupeAuditOptions {
+  return {
+    mode: typeof options.mode === "string" ? options.mode : undefined,
+    status: typeof options.status === "string" ? options.status : undefined,
+    type: readListOptionString(options, "type"),
+    tag: readListOptionString(options, "tag"),
+    priority: readListOptionString(options, "priority"),
+    deadlineBefore: readListOptionString(options, "deadlineBefore"),
+    deadlineAfter: readListOptionString(options, "deadlineAfter"),
+    assignee: readListOptionString(options, "assignee"),
+    assigneeFilter: readListOptionString(options, "assigneeFilter"),
+    parent: readListOptionString(options, "parent"),
+    sprint: readListOptionString(options, "sprint"),
+    release: readListOptionString(options, "release"),
+    limit: readListOptionString(options, "limit"),
+    threshold: typeof options.threshold === "string" ? options.threshold : undefined,
   };
 }
 
@@ -2904,6 +2952,10 @@ function registerListCommand(name: string, description: string, status?: ItemSta
     .option("--limit <n>", "Limit returned item count")
     .option("--offset <n>", "Skip the first n matching rows before limit is applied")
     .option("--include-body", "Include item body in each returned list row")
+    .option("--compact", "Render compact list projection fields")
+    .option("--fields <value>", "Render custom comma-separated list fields")
+    .option("--sort <value>", "Sort field: priority|deadline|updated_at|created_at|title|parent")
+    .option("--order <value>", "Sort order: asc|desc (requires --sort)")
     .option("--stream", "Emit line-delimited JSON rows (requires --json)")
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
@@ -2934,6 +2986,63 @@ registerListCommand("list-in-progress", "List in-progress items with optional fi
 registerListCommand("list-blocked", "List blocked items with optional filters.", "blocked");
 registerListCommand("list-closed", "List closed items with optional filters.", "closed");
 registerListCommand("list-canceled", "List canceled items with optional filters.", "canceled");
+
+program
+  .command("aggregate")
+  .description("Aggregate grouped item counts for governance queries.")
+  .option("--group-by <value>", "Comma-separated group-by fields (supported: parent,type)")
+  .option("--count", "Return grouped counts")
+  .option("--include-unparented", "Include unparented rows when grouping by parent")
+  .option("--include_unparented", "Alias for --include-unparented")
+  .option("--status <value>", "Filter by item status")
+  .option("--type <value>", "Filter by item type")
+  .option("--tag <value>", "Filter by tag")
+  .option("--priority <value>", "Filter by priority")
+  .option("--deadline-before <value>", "Filter by deadline upper bound (ISO/date string or relative)")
+  .option("--deadline-after <value>", "Filter by deadline lower bound (ISO/date string or relative)")
+  .option("--assignee <value>", "Filter by assignee")
+  .option("--assignee-filter <value>", "Filter assignee presence: assigned|unassigned")
+  .option("--assignee_filter <value>", "Alias for --assignee-filter")
+  .option("--parent <value>", "Filter by parent item ID")
+  .option("--sprint <value>", "Filter by sprint")
+  .option("--release <value>", "Filter by release")
+  .action(async (options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const result = await runAggregate(normalizeAggregateOptions(options), globalOptions);
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=aggregate took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+program
+  .command("dedupe-audit")
+  .description("Audit potential duplicate items with exact, fuzzy, or parent-scoped matching.")
+  .option("--mode <value>", "Dedupe mode: title_exact|title_fuzzy|parent_scope")
+  .option("--limit <n>", "Limit returned duplicate clusters")
+  .option("--threshold <value>", "Fuzzy mode token similarity threshold between 0 and 1")
+  .option("--status <value>", "Filter by item status")
+  .option("--type <value>", "Filter by item type")
+  .option("--tag <value>", "Filter by tag")
+  .option("--priority <value>", "Filter by priority")
+  .option("--deadline-before <value>", "Filter by deadline upper bound (ISO/date string or relative)")
+  .option("--deadline-after <value>", "Filter by deadline lower bound (ISO/date string or relative)")
+  .option("--assignee <value>", "Filter by assignee")
+  .option("--assignee-filter <value>", "Filter assignee presence: assigned|unassigned")
+  .option("--assignee_filter <value>", "Alias for --assignee-filter")
+  .option("--parent <value>", "Filter by parent item ID")
+  .option("--sprint <value>", "Filter by sprint")
+  .option("--release <value>", "Filter by release")
+  .action(async (options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const result = await runDedupeAudit(normalizeDedupeAuditOptions(options), globalOptions);
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=dedupe-audit took_ms=${Date.now() - startedAt}`);
+    }
+  });
 
 function registerCalendarCommand(): void {
   program
@@ -3442,6 +3551,11 @@ program
   .command("comments-audit")
   .option("--status <value>", "Filter by item status")
   .option("--type <value>", "Filter by item type")
+  .option("--tag <value>", "Filter by tag")
+  .option("--priority <value>", "Filter by priority")
+  .option("--parent <value>", "Filter by parent item ID")
+  .option("--sprint <value>", "Filter by sprint")
+  .option("--release <value>", "Filter by release")
   .option("--assignee <value>", "Filter by assignee")
   .option("--assignee-filter <value>", "Filter assignee presence: assigned|unassigned")
   .option("--assignee_filter <value>", "Alias for --assignee-filter")
@@ -3456,6 +3570,11 @@ program
       {
         status: typeof options.status === "string" ? options.status : undefined,
         type: typeof options.type === "string" ? options.type : undefined,
+        tag: typeof options.tag === "string" ? options.tag : undefined,
+        priority: typeof options.priority === "string" ? options.priority : undefined,
+        parent: typeof options.parent === "string" ? options.parent : undefined,
+        sprint: typeof options.sprint === "string" ? options.sprint : undefined,
+        release: typeof options.release === "string" ? options.release : undefined,
         assignee: typeof options.assignee === "string" ? options.assignee : undefined,
         assigneeFilter: typeof options.assigneeFilter === "string" ? options.assigneeFilter : undefined,
         limitItems: typeof options.limitItems === "string" ? options.limitItems : undefined,
@@ -3954,6 +4073,9 @@ program
   .command("health")
   .description("Show project tracker health checks.")
   .option("--strict-directories", "Treat optional item-type directories as required failures")
+  .option("--check-only", "Run read-only health diagnostics without refreshing vectors")
+  .option("--no-refresh", "Disable automatic vector refresh attempts during health checks")
+  .option("--refresh-vectors", "Explicitly enable vector refresh attempts during health checks")
   .option("--strict-exit", "Return non-zero exit when health warnings are present (ok=false)")
   .option("--fail-on-warn", "Alias for --strict-exit")
   .action(async (options: Record<string, unknown>, command) => {
@@ -3961,6 +4083,9 @@ program
     const startedAt = Date.now();
     const result = await runHealth(globalOptions, {
       strictDirectories: Boolean(options.strictDirectories),
+      checkOnly: Boolean(options.checkOnly),
+      noRefresh: Boolean(options.noRefresh),
+      refreshVectors: Boolean(options.refreshVectors),
     });
     printResult(result, globalOptions);
     const strictExit = Boolean(options.strictExit) || Boolean(options.failOnWarn);

@@ -24,15 +24,42 @@ export interface ListOptions {
   limit?: string;
   offset?: string;
   includeBody?: boolean;
+  compact?: boolean;
+  fields?: string;
+  sort?: string;
+  order?: string;
   excludeTerminal?: boolean;
 }
 
 export type ListedItem = ItemFrontMatter | (ItemFrontMatter & { body: string });
 
+type ListProjectionMode = "full" | "compact" | "fields";
+
+interface ListProjectionConfig {
+  mode: ListProjectionMode;
+  fields: string[];
+}
+
+export const LIST_SORT_FIELDS = ["priority", "deadline", "updated_at", "created_at", "title", "parent"] as const;
+export type ListSortField = (typeof LIST_SORT_FIELDS)[number];
+
+export const LIST_SORT_ORDER_VALUES = ["asc", "desc"] as const;
+export type ListSortOrder = (typeof LIST_SORT_ORDER_VALUES)[number];
+
+const DEFAULT_COMPACT_LIST_FIELDS = ["id", "title", "status", "type", "priority", "parent", "updated_at"] as const;
+
 export interface ListResult {
   items: ListedItem[];
   count: number;
   filters: Record<string, unknown>;
+  projection: {
+    mode: ListProjectionMode;
+    fields: string[] | null;
+  };
+  sorting: {
+    sort: ListSortField | "default";
+    order: ListSortOrder;
+  };
   now: string;
   warnings?: string[];
 }
@@ -41,19 +68,25 @@ function isTerminal(status: ItemStatus): boolean {
   return status === "closed" || status === "canceled";
 }
 
-function sortItems(items: ListedItem[]): ListedItem[] {
-  return [...items].sort((a, b) => {
-    const aTerminal = isTerminal(a.status);
-    const bTerminal = isTerminal(b.status);
-    if (aTerminal !== bTerminal) {
-      return aTerminal ? 1 : -1;
-    }
-    const byPriority = a.priority - b.priority;
-    if (byPriority !== 0) return byPriority;
-    const byUpdated = compareTimestampStrings(b.updated_at, a.updated_at);
-    if (byUpdated !== 0) return byUpdated;
-    return a.id.localeCompare(b.id);
-  });
+function compareDefaultSort(left: ListedItem, right: ListedItem): number {
+  const leftTerminal = isTerminal(left.status);
+  const rightTerminal = isTerminal(right.status);
+  if (leftTerminal !== rightTerminal) {
+    return leftTerminal ? 1 : -1;
+  }
+  const byPriority = left.priority - right.priority;
+  if (byPriority !== 0) {
+    return byPriority;
+  }
+  const byUpdated = compareTimestampStrings(right.updated_at, left.updated_at);
+  if (byUpdated !== 0) {
+    return byUpdated;
+  }
+  return left.id.localeCompare(right.id);
+}
+
+function sortItemsDefault(items: ListedItem[]): ListedItem[] {
+  return [...items].sort(compareDefaultSort);
 }
 
 function parsePriority(raw: string | undefined): number | undefined {
@@ -95,6 +128,67 @@ function parseOffset(raw: string | undefined): number | undefined {
     throw new PmCliError("Offset filter must be a non-negative integer", EXIT_CODE.USAGE);
   }
   return parsed;
+}
+
+function parseFieldSelectors(raw: string | undefined): string[] | undefined {
+  if (raw === undefined) {
+    return undefined;
+  }
+  const selectors = raw
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  if (selectors.length === 0) {
+    throw new PmCliError("List --fields requires a comma-separated list of field names", EXIT_CODE.USAGE);
+  }
+  return [...new Set(selectors)];
+}
+
+function parseProjectionConfig(options: ListOptions): ListProjectionConfig {
+  const compactRequested = options.compact === true;
+  const fieldSelectors = parseFieldSelectors(options.fields);
+  const enabledModes = Number(compactRequested) + Number(fieldSelectors !== undefined);
+  if (enabledModes > 1) {
+    throw new PmCliError("List projection options are mutually exclusive. Use one of --compact or --fields.", EXIT_CODE.USAGE);
+  }
+  if (compactRequested) {
+    return {
+      mode: "compact",
+      fields: [...DEFAULT_COMPACT_LIST_FIELDS],
+    };
+  }
+  if (fieldSelectors) {
+    return {
+      mode: "fields",
+      fields: fieldSelectors,
+    };
+  }
+  return {
+    mode: "full",
+    fields: [],
+  };
+}
+
+function parseSortField(raw: string | undefined): ListSortField | undefined {
+  if (raw === undefined) {
+    return undefined;
+  }
+  const normalized = raw.trim().toLowerCase();
+  if (!LIST_SORT_FIELDS.includes(normalized as ListSortField)) {
+    throw new PmCliError(`Sort field must be one of ${LIST_SORT_FIELDS.join("|")}`, EXIT_CODE.USAGE);
+  }
+  return normalized as ListSortField;
+}
+
+function parseSortOrder(raw: string | undefined): ListSortOrder | undefined {
+  if (raw === undefined) {
+    return undefined;
+  }
+  const normalized = raw.trim().toLowerCase();
+  if (!LIST_SORT_ORDER_VALUES.includes(normalized as ListSortOrder)) {
+    throw new PmCliError(`Sort order must be one of ${LIST_SORT_ORDER_VALUES.join("|")}`, EXIT_CODE.USAGE);
+  }
+  return normalized as ListSortOrder;
 }
 
 function parseAssigneeFilter(raw: string | undefined): "assigned" | "unassigned" | undefined {
@@ -158,6 +252,98 @@ function applyFilters(
   });
 }
 
+function compareNullableString(left: string | null, right: string | null): number {
+  if (left === right) {
+    return 0;
+  }
+  if (left === null) {
+    return 1;
+  }
+  if (right === null) {
+    return -1;
+  }
+  return left.localeCompare(right);
+}
+
+function compareNullableTimestamp(left: string | null, right: string | null): number {
+  if (left === right) {
+    return 0;
+  }
+  if (left === null) {
+    return 1;
+  }
+  if (right === null) {
+    return -1;
+  }
+  return compareTimestampStrings(left, right);
+}
+
+function compareBySortField(left: ListedItem, right: ListedItem, field: ListSortField): number {
+  switch (field) {
+    case "priority":
+      return left.priority - right.priority;
+    case "deadline":
+      return compareNullableTimestamp(left.deadline ?? null, right.deadline ?? null);
+    case "updated_at":
+      return compareTimestampStrings(left.updated_at, right.updated_at);
+    case "created_at":
+      return compareTimestampStrings(left.created_at, right.created_at);
+    case "title":
+      return left.title.localeCompare(right.title);
+    case "parent":
+      return compareNullableString(left.parent ?? null, right.parent ?? null);
+    default:
+      return 0;
+  }
+}
+
+function sortItems(items: ListedItem[], sortField: ListSortField | undefined, sortOrder: ListSortOrder): ListedItem[] {
+  if (!sortField) {
+    return sortItemsDefault(items);
+  }
+  return [...items].sort((left, right) => {
+    const byField = compareBySortField(left, right, sortField);
+    if (byField !== 0) {
+      return sortOrder === "desc" ? -byField : byField;
+    }
+    const fallback = compareDefaultSort(left, right);
+    return sortOrder === "desc" ? -fallback : fallback;
+  });
+}
+
+function readListFieldValue(item: ListedItem, field: string): unknown {
+  const normalized = field.trim();
+  if (normalized.length === 0) {
+    return null;
+  }
+  if (normalized.startsWith("item.")) {
+    const nestedKey = normalized.slice("item.".length);
+    if (nestedKey.length === 0) {
+      return null;
+    }
+    const itemRecord = item as unknown as Record<string, unknown>;
+    return itemRecord[nestedKey] ?? null;
+  }
+  const itemRecord = item as unknown as Record<string, unknown>;
+  if (Object.prototype.hasOwnProperty.call(itemRecord, normalized)) {
+    return itemRecord[normalized] ?? null;
+  }
+  return null;
+}
+
+function projectListItems(items: ListedItem[], projection: ListProjectionConfig): ListedItem[] {
+  if (projection.mode === "full") {
+    return items;
+  }
+  return items.map((item) => {
+    const projected: Record<string, unknown> = {};
+    for (const field of projection.fields) {
+      projected[field] = readListFieldValue(item, field);
+    }
+    return projected as unknown as ListedItem;
+  });
+}
+
 export async function runList(status: ItemStatus | undefined, options: ListOptions, global: GlobalOptions): Promise<ListResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
@@ -169,16 +355,24 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
   const items = options.includeBody
     ? await listAllFrontMatterWithBody(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings)
     : await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings);
+  const projection = parseProjectionConfig(options);
+  const sortField = parseSortField(options.sort);
+  const sortOrder = parseSortOrder(options.order) ?? "asc";
+  if (!sortField && options.order !== undefined) {
+    throw new PmCliError("List --order requires --sort", EXIT_CODE.USAGE);
+  }
   const filtered = applyFilters(items, status, options, typeRegistry);
-  const sorted = sortItems(filtered);
+  const sorted = sortItems(filtered, sortField, sortOrder);
   const limit = parseLimit(options.limit);
   const offset = parseOffset(options.offset) ?? 0;
   const limited = limit === undefined ? sorted.slice(offset) : sorted.slice(offset, offset + limit);
+  const projected = projectListItems(limited, projection);
   const now = nowIso();
   const warnings = [...new Set(listWarnings)].sort((left, right) => left.localeCompare(right));
+  const projectionFields = projection.mode === "full" ? null : [...projection.fields];
   return {
-    items: limited,
-    count: limited.length,
+    items: projected,
+    count: projected.length,
     filters: {
       status: status ?? null,
       type: options.type ?? null,
@@ -194,6 +388,19 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
       limit: options.limit ?? null,
       offset: options.offset ?? null,
       include_body: options.includeBody ?? null,
+      compact: options.compact ?? null,
+      fields: options.fields ?? null,
+      sort: sortField ?? null,
+      order: sortField ? sortOrder : null,
+      projection: projection.mode,
+    },
+    projection: {
+      mode: projection.mode,
+      fields: projectionFields,
+    },
+    sorting: {
+      sort: sortField ?? "default",
+      order: sortField ? sortOrder : "asc",
     },
     now,
     ...(warnings.length > 0 ? { warnings } : {}),

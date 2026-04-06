@@ -96,26 +96,48 @@ export async function runComments(id: string, options: CommentsCommandOptions, g
     throw new PmCliError("--add text cannot be empty", EXIT_CODE.USAGE);
   }
 
-  const result = await mutateItem({
-    pmRoot,
-    settings,
-    id,
-    op: "comment_add",
-    author,
-    message: options.message,
-    force: options.force,
-    bypassAssigneeConflict: Boolean(options.allowAuditComment),
-    mutate(document) {
-      const comments = document.front_matter.comments ?? [];
-      comments.push({
-        created_at: nowIso(),
-        author,
-        text,
+  let result: Awaited<ReturnType<typeof mutateItem>>;
+  try {
+    result = await mutateItem({
+      pmRoot,
+      settings,
+      id,
+      op: "comment_add",
+      author,
+      message: options.message,
+      force: options.force,
+      bypassAssigneeConflict: Boolean(options.allowAuditComment),
+      mutate(document) {
+        const comments = document.front_matter.comments ?? [];
+        comments.push({
+          created_at: nowIso(),
+          author,
+          text,
+        });
+        document.front_matter.comments = comments;
+        return { changedFields: ["comments"] };
+      },
+    });
+  } catch (error: unknown) {
+    if (
+      error instanceof PmCliError &&
+      error.exitCode === EXIT_CODE.CONFLICT &&
+      error.message.includes("is assigned to") &&
+      error.message.includes("Use --force to override")
+    ) {
+      throw new PmCliError(error.message, error.exitCode, {
+        code: "ownership_conflict",
+        required:
+          "For append-only comment audits on another owner's item, prefer --allow-audit-comment before considering --force.",
+        examples: ['pm comments pm-a1b2 --add "audit note" --author "reviewer" --allow-audit-comment'],
+        nextSteps: [
+          "Retry with --allow-audit-comment for append-only audits that do not mutate item metadata beyond comments.",
+          "Use --force only when an ownership override is explicitly approved.",
+        ],
       });
-      document.front_matter.comments = comments;
-      return { changedFields: ["comments"] };
-    },
-  });
+    }
+    throw error;
+  }
 
   const comments = limitComments(result.item.comments as Comment[], limit);
   return {

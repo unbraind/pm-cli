@@ -2835,6 +2835,54 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(listOpenJson.items.map((item) => item.priority)).toEqual([0, 1]);
       expect(listOpenJson.items[0]).not.toHaveProperty("body");
 
+      const listOpenCompact = context.runCli(
+        ["list-open", "--json", "--type", "Task", "--compact", "--sort", "title", "--order", "asc"],
+        { expectJson: true },
+      );
+      expect(listOpenCompact.code).toBe(0);
+      const listOpenCompactJson = listOpenCompact.json as {
+        projection: { mode: string; fields: string[] | null };
+        sorting: { sort: string; order: string };
+        items: Array<Record<string, unknown>>;
+      };
+      expect(listOpenCompactJson.projection).toEqual({
+        mode: "compact",
+        fields: ["id", "title", "status", "type", "priority", "parent", "updated_at"],
+      });
+      expect(listOpenCompactJson.sorting).toEqual({
+        sort: "title",
+        order: "asc",
+      });
+      expect(Object.keys(listOpenCompactJson.items[0] ?? {})).toEqual([
+        "id",
+        "title",
+        "status",
+        "type",
+        "priority",
+        "parent",
+        "updated_at",
+      ]);
+
+      const listOpenFields = context.runCli(
+        ["list-open", "--json", "--type", "Task", "--fields", "id,title,parent", "--sort", "priority", "--order", "desc"],
+        { expectJson: true },
+      );
+      expect(listOpenFields.code).toBe(0);
+      const listOpenFieldsJson = listOpenFields.json as {
+        projection: { mode: string; fields: string[] | null };
+        sorting: { sort: string; order: string };
+        items: Array<Record<string, unknown>>;
+      };
+      expect(listOpenFieldsJson.projection).toEqual({
+        mode: "fields",
+        fields: ["id", "title", "parent"],
+      });
+      expect(listOpenFieldsJson.sorting).toEqual({
+        sort: "priority",
+        order: "desc",
+      });
+      expect(Object.keys(listOpenFieldsJson.items[0] ?? {})).toEqual(["id", "title", "parent"]);
+
       const listInProgress = context.runCli(["list-in-progress", "--json", "--type", "Task"], { expectJson: true });
       expect(listInProgress.code).toBe(0);
       const listInProgressJson = listInProgress.json as { count: number; items: Array<{ status: string }> };

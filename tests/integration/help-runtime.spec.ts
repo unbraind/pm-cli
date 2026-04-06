@@ -342,6 +342,14 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
       const blocked = context.runCli(["comments", id, "--add", "audit note", "--author", "owner-b", "--json"]);
       expect(blocked.code).toBe(4);
+      const blockedEnvelope = JSON.parse(blocked.stderr) as {
+        code: string;
+        required: string;
+        next_steps?: string[];
+      };
+      expect(blockedEnvelope.code).toBe("ownership_conflict");
+      expect(blockedEnvelope.required).toContain("--allow-audit-comment");
+      expect(blockedEnvelope.next_steps?.some((step) => step.includes("--allow-audit-comment"))).toBe(true);
 
       const allowed = context.runCli(
         ["comments", id, "--add", "audit note", "--author", "owner-b", "--allow-audit-comment", "--json"],

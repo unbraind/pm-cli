@@ -86,6 +86,12 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     "    list|list-all|list-draft|list-open|list-in-progress|list-blocked|list-closed|list-canceled)",
     `      COMPREPLY=(${compgen(LIST_FLAGS)})`,
     "      ;;",
+    "    aggregate)",
+    `      COMPREPLY=(${compgen("--group-by --count --include-unparented --status --type --tag --priority --deadline-before --deadline-after --assignee --assignee-filter --parent --sprint --release --json --quiet --path --no-extensions --profile --help")})`,
+    "      ;;",
+    "    dedupe-audit)",
+    `      COMPREPLY=(${compgen("--mode --limit --threshold --status --type --tag --priority --deadline-before --deadline-after --assignee --assignee-filter --parent --sprint --release --json --quiet --path --no-extensions --profile --help")})`,
+    "      ;;",
     "    create)",
     `      COMPREPLY=(${compgen(CREATE_FLAGS)})`,
     "      ;;",
@@ -114,7 +120,7 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-comment --force --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    comments-audit)",
-    `      COMPREPLY=(${compgen("--status --type --assignee --assignee-filter --limit-items --full-history --latest --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--status --type --tag --priority --parent --sprint --release --assignee --assignee-filter --limit-items --full-history --latest --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    notes|learnings)",
     `      COMPREPLY=(${compgen("--add --limit --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
@@ -198,6 +204,8 @@ _pm_commands() {
     'list-blocked:List blocked items with optional filters'
     'list-closed:List closed items with optional filters'
     'list-canceled:List canceled items with optional filters'
+    'aggregate:Aggregate grouped item counts for governance queries'
+    'dedupe-audit:Audit potential duplicate items and emit merge suggestions'
     'calendar:Show calendar views for deadlines and reminders'
     'cal:Alias for calendar'
     'context:Show a token-efficient project context snapshot'
@@ -266,10 +274,52 @@ _pm() {
             '--limit[Limit returned item count]:number' \\
             '--offset[Skip the first n matching rows before limit]:number' \\
             '--include-body[Include item body in each returned list row]' \\
+            '--compact[Render compact list projection fields]' \\
+            '--fields[Render custom comma-separated list fields]:fields' \\
+            '--sort[Sort field]:(priority deadline updated_at created_at title parent)' \\
+            '--order[Sort order (requires --sort)]:(asc desc)' \\
             '--stream[Emit line-delimited JSON rows (requires --json)]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]' \\
             '--path[Override PM path]:path:_files -/'
+          ;;
+        aggregate)
+          _arguments \\
+            '--group-by[Comma-separated group-by fields (supported: parent,type)]:fields' \\
+            '--count[Return grouped counts]' \\
+            '--include-unparented[Include unparented rows when grouping by parent]' \\
+            '--status[Filter by status]:(draft open in_progress blocked closed canceled)' \\
+            '--type[Filter by item type]:(${typeChoices})' \\
+            '--tag[Filter by tag]:(${tagChoices})' \\
+            '--priority[Filter by priority]:(0 1 2 3 4)' \\
+            '--deadline-before[Filter by deadline upper bound (ISO/date string or relative)]:date' \\
+            '--deadline-after[Filter by deadline lower bound (ISO/date string or relative)]:date' \\
+            '--assignee[Filter by assignee]:assignee' \\
+            '--assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
+            '--parent[Filter by parent item ID]:parent_id' \\
+            '--sprint[Filter by sprint]:sprint' \\
+            '--release[Filter by release]:release' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        dedupe-audit)
+          _arguments \\
+            '--mode[Dedupe mode]:(title_exact title_fuzzy parent_scope)' \\
+            '--limit[Limit returned duplicate clusters]:number' \\
+            '--threshold[Fuzzy mode token similarity threshold between 0 and 1]:number' \\
+            '--status[Filter by status]:(draft open in_progress blocked closed canceled)' \\
+            '--type[Filter by item type]:(${typeChoices})' \\
+            '--tag[Filter by tag]:(${tagChoices})' \\
+            '--priority[Filter by priority]:(0 1 2 3 4)' \\
+            '--deadline-before[Filter by deadline upper bound (ISO/date string or relative)]:date' \\
+            '--deadline-after[Filter by deadline lower bound (ISO/date string or relative)]:date' \\
+            '--assignee[Filter by assignee]:assignee' \\
+            '--assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
+            '--parent[Filter by parent item ID]:parent_id' \\
+            '--sprint[Filter by sprint]:sprint' \\
+            '--release[Filter by release]:release' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
           ;;
         create)
           _arguments \\
@@ -540,6 +590,9 @@ _pm() {
         health)
           _arguments \\
             '--strict-directories[Treat optional item-type directories as required failures]' \\
+            '--check-only[Run read-only health diagnostics without refreshing vectors]' \\
+            '--no-refresh[Disable automatic vector refresh attempts during health checks]' \\
+            '--refresh-vectors[Explicitly enable vector refresh attempts during health checks]' \\
             '--strict-exit[Return non-zero exit when health warnings are present]' \\
             '--fail-on-warn[Alias for --strict-exit]' \\
             '--json[Output JSON]' \\
@@ -549,6 +602,11 @@ _pm() {
           _arguments \\
             '--status[Filter by item status]:status:(draft open in_progress blocked closed canceled)' \\
             '--type[Filter by item type]:(${typeChoices})' \\
+            '--tag[Filter by tag]:(${tagChoices})' \\
+            '--priority[Filter by priority]:(0 1 2 3 4)' \\
+            '--parent[Filter by parent item ID]:parent_id' \\
+            '--sprint[Filter by sprint]:sprint' \\
+            '--release[Filter by release]:release' \\
             '--assignee[Filter by assignee]:assignee' \\
             '--assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
             '--limit-items[Limit returned item count]:number' \\
@@ -639,6 +697,8 @@ complete -c pm -n __pm_no_subcommand -a list-in-progress -d 'List in-progress it
 complete -c pm -n __pm_no_subcommand -a list-blocked  -d 'List blocked items with optional filters'
 complete -c pm -n __pm_no_subcommand -a list-closed   -d 'List closed items with optional filters'
 complete -c pm -n __pm_no_subcommand -a list-canceled -d 'List canceled items with optional filters'
+complete -c pm -n __pm_no_subcommand -a aggregate     -d 'Aggregate grouped item counts for governance queries'
+complete -c pm -n __pm_no_subcommand -a dedupe-audit  -d 'Audit potential duplicate items and emit merge suggestions'
 complete -c pm -n __pm_no_subcommand -a calendar      -d 'Show deadline/reminder calendar views'
 complete -c pm -n __pm_no_subcommand -a cal           -d 'Alias for calendar'
 complete -c pm -n __pm_no_subcommand -a context       -d 'Show a token-efficient project context snapshot'
@@ -685,10 +745,46 @@ for list_cmd in ${listCmds}
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l limit    -d 'Limit returned item count' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l offset   -d 'Skip the first n matching rows before limit' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l include-body -d 'Include item body in each returned list row'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l compact -d 'Render compact list projection fields'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l fields -d 'Render custom comma-separated list fields' -r
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l sort -d 'Sort field' -r -a 'priority deadline updated_at created_at title parent'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l order -d 'Sort order (requires --sort)' -r -a 'asc desc'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l stream -d 'Emit line-delimited JSON rows (requires --json)'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l deadline-before -d 'Filter by deadline upper bound (ISO/date string or relative)' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l deadline-after  -d 'Filter by deadline lower bound (ISO/date string or relative)' -r
 end
+
+# aggregate flags
+complete -c pm -n '__fish_seen_subcommand_from aggregate' -l group-by -d 'Comma-separated group-by fields (supported: parent,type)' -r
+complete -c pm -n '__fish_seen_subcommand_from aggregate' -l count -d 'Return grouped counts'
+complete -c pm -n '__fish_seen_subcommand_from aggregate' -l include-unparented -d 'Include unparented rows when grouping by parent'
+complete -c pm -n '__fish_seen_subcommand_from aggregate' -l status -d 'Filter by status' -r -a 'draft open in_progress blocked closed canceled'
+complete -c pm -n '__fish_seen_subcommand_from aggregate' -l type -d 'Filter by item type' -r -a '${typeChoices}'
+complete -c pm -n '__fish_seen_subcommand_from aggregate' -l tag -d 'Filter by tag' -r -a '${tagChoices}'
+complete -c pm -n '__fish_seen_subcommand_from aggregate' -l priority -d 'Filter by priority' -r -a '0 1 2 3 4'
+complete -c pm -n '__fish_seen_subcommand_from aggregate' -l deadline-before -d 'Filter by deadline upper bound (ISO/date string or relative)' -r
+complete -c pm -n '__fish_seen_subcommand_from aggregate' -l deadline-after -d 'Filter by deadline lower bound (ISO/date string or relative)' -r
+complete -c pm -n '__fish_seen_subcommand_from aggregate' -l assignee -d 'Filter by assignee' -r
+complete -c pm -n '__fish_seen_subcommand_from aggregate' -l assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
+complete -c pm -n '__fish_seen_subcommand_from aggregate' -l parent -d 'Filter by parent item ID' -r
+complete -c pm -n '__fish_seen_subcommand_from aggregate' -l sprint -d 'Filter by sprint' -r
+complete -c pm -n '__fish_seen_subcommand_from aggregate' -l release -d 'Filter by release' -r
+
+# dedupe-audit flags
+complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l mode -d 'Dedupe mode' -r -a 'title_exact title_fuzzy parent_scope'
+complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l limit -d 'Limit returned duplicate clusters' -r
+complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l threshold -d 'Fuzzy mode token similarity threshold between 0 and 1' -r
+complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l status -d 'Filter by status' -r -a 'draft open in_progress blocked closed canceled'
+complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l type -d 'Filter by item type' -r -a '${typeChoices}'
+complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l tag -d 'Filter by tag' -r -a '${tagChoices}'
+complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l priority -d 'Filter by priority' -r -a '0 1 2 3 4'
+complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l deadline-before -d 'Filter by deadline upper bound (ISO/date string or relative)' -r
+complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l deadline-after -d 'Filter by deadline lower bound (ISO/date string or relative)' -r
+complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l assignee -d 'Filter by assignee' -r
+complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
+complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l parent -d 'Filter by parent item ID' -r
+complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l sprint -d 'Filter by sprint' -r
+complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l release -d 'Filter by release' -r
 
 # create flags
 complete -c pm -n '__fish_seen_subcommand_from create' -s t -l title              -d 'Item title' -r
@@ -886,10 +982,18 @@ complete -c pm -n '__fish_seen_subcommand_from config' -l clear-criteria -d 'Cle
 complete -c pm -n '__fish_seen_subcommand_from config' -l format -d 'Item format for item-format key' -r -a 'toon json_markdown'
 complete -c pm -n '__fish_seen_subcommand_from config' -l policy -d 'Policy value for supported policy keys' -r
 complete -c pm -n '__fish_seen_subcommand_from health' -l strict-directories -d 'Treat optional item-type directories as required failures'
+complete -c pm -n '__fish_seen_subcommand_from health' -l check-only -d 'Run read-only health diagnostics without refreshing vectors'
+complete -c pm -n '__fish_seen_subcommand_from health' -l no-refresh -d 'Disable automatic vector refresh attempts during health checks'
+complete -c pm -n '__fish_seen_subcommand_from health' -l refresh-vectors -d 'Explicitly enable vector refresh attempts during health checks'
 complete -c pm -n '__fish_seen_subcommand_from health' -l strict-exit -d 'Return non-zero exit when health warnings are present'
 complete -c pm -n '__fish_seen_subcommand_from health' -l fail-on-warn -d 'Alias for --strict-exit'
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l status -d 'Filter by item status' -r -a 'draft open in_progress blocked closed canceled'
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l type -d 'Filter by item type' -r -a '${typeChoices}'
+complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l tag -d 'Filter by tag' -r -a '${tagChoices}'
+complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l priority -d 'Filter by priority' -r -a '0 1 2 3 4'
+complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l parent -d 'Filter by parent item ID' -r
+complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l sprint -d 'Filter by sprint' -r
+complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l release -d 'Filter by release' -r
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l assignee -d 'Filter by assignee' -r
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l limit-items -d 'Limit returned item count' -r

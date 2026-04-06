@@ -25,6 +25,7 @@ import { parseItemDocument } from "../../core/item/item-format.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { tokenizeAlphaNumeric } from "../../core/shared/text-normalization.js";
 import { compareTimestampStrings, nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
 import { listAllFrontMatter } from "../../core/store/item-store.js";
 import { getSettingsPath, resolveGlobalPmRoot, resolvePmRoot, getItemPath } from "../../core/store/paths.js";
@@ -264,10 +265,7 @@ function countOccurrences(haystack: string, needle: string): number {
 }
 
 function tokenizeForExactTokenMatch(value: string): string[] {
-  return value
-    .toLowerCase()
-    .split(/[^a-z0-9]+/)
-    .filter((token) => token.length > 0);
+  return tokenizeAlphaNumeric(value);
 }
 
 function collectLinkedPaths(item: ItemFrontMatter): Array<{ scope: "project" | "global"; path: string }> {

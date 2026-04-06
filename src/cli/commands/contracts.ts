@@ -10,8 +10,10 @@ import { pathExists } from "../../core/fs/fs-utils.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import {
+  AGGREGATE_FLAG_CONTRACTS,
   CALENDAR_COMMANDER_STRING_OPTION_CONTRACTS,
   CALENDAR_FLAG_CONTRACTS,
+  COMMENTS_AUDIT_FLAG_CONTRACTS,
   CLOSE_FLAG_CONTRACTS,
   CONTRACTS_FLAG_CONTRACTS,
   CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS,
@@ -19,7 +21,9 @@ import {
   CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
   CREATE_COMMANDER_STRING_OPTION_CONTRACTS,
   CREATE_FLAG_CONTRACTS,
+  DEDUPE_AUDIT_FLAG_CONTRACTS,
   GLOBAL_FLAG_CONTRACTS,
+  HEALTH_FLAG_CONTRACTS,
   LIST_COMMANDER_STRING_OPTION_CONTRACTS,
   LIST_FILTER_FLAG_CONTRACTS,
   PM_CORE_COMMAND_NAMES,
@@ -578,6 +582,12 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   if (command === "search") {
     return SEARCH_FLAG_CONTRACTS;
   }
+  if (command === "aggregate") {
+    return AGGREGATE_FLAG_CONTRACTS;
+  }
+  if (command === "dedupe-audit") {
+    return DEDUPE_AUDIT_FLAG_CONTRACTS;
+  }
   if (command === "reindex") {
     return REINDEX_FLAG_CONTRACTS;
   }
@@ -592,6 +602,12 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   }
   if (command === "validate") {
     return VALIDATE_FLAG_CONTRACTS;
+  }
+  if (command === "comments-audit") {
+    return COMMENTS_AUDIT_FLAG_CONTRACTS;
+  }
+  if (command === "health") {
+    return HEALTH_FLAG_CONTRACTS;
   }
   if (command === "contracts") {
     return CONTRACTS_FLAG_CONTRACTS;

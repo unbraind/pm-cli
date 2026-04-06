@@ -34,7 +34,9 @@ src/
       delete.ts                  pm delete
       claim.ts                   pm claim / release
       release.ts                 (re-exports from claim.ts)
-      list.ts                    pm list (active-only: excludes closed/canceled) / list-all / list-* commands with offset + JSON stream controls
+      list.ts                    pm list (active-only: excludes closed/canceled) / list-all / list-* commands with projection, sorting, offset, and JSON stream controls
+      aggregate.ts               pm aggregate (grouped child-count governance queries)
+      dedupe-audit.ts            pm dedupe-audit (exact/fuzzy/parent-scoped duplicate clustering)
       calendar.ts                pm calendar / pm cal (agenda/day/week/month views)
       context.ts                 pm context / pm ctx (critical work + agenda snapshot)
       comments.ts                pm comments
@@ -137,7 +139,7 @@ The same registry drives:
 - Pi wrapper action enum, tool `inputSchema`, and CLI arg mapping in `.pi/extensions/pm-cli/index.ts`
 - runtime `pm contracts` payload generation for action/command/schema introspection
 - runtime schema augmentation for active extension commands/actions (including extension source metadata and extension-defined flag surfaces)
-- additive command surfaces such as `templates-*` actions, extension lifecycle actions (`extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-doctor`, `extension-adopt`, `extension-adopt-all`, `extension-activate`, `extension-deactivate`), `history --diff/--verify`, files/docs path hygiene flags (`--add-glob`, `--migrate`, `--append-stable`, `--validate-paths`, `--audit`), validate governance/file drift flags (`--check-lifecycle`, `--check-stale-blockers`, `--scan-mode`, `--include-pm-internals`), `create --create-mode`, `comments --allow-audit-comment`, and `deps --format`
+- additive command surfaces such as `templates-*` actions, extension lifecycle actions (`extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-doctor`, `extension-adopt`, `extension-adopt-all`, `extension-activate`, `extension-deactivate`), `history --diff/--verify`, files/docs path hygiene flags (`--add-glob`, `--migrate`, `--append-stable`, `--validate-paths`, `--audit`), validate governance/file drift flags (`--check-lifecycle`, `--check-stale-blockers`, `--scan-mode`, `--include-pm-internals`), list projection/sort controls (`--compact`, `--fields`, `--sort`, `--order`), `aggregate`/`dedupe-audit` action surfaces, comments-audit governance filters (`--parent`, `--tag`, `--sprint`, `--release`, `--priority`), health vector refresh controls (`--check-only`, `--no-refresh`, `--refresh-vectors`), `create --create-mode`, `comments --allow-audit-comment`, and `deps --format`
 
 This keeps human CLI UX and machine-facing contracts aligned while preserving additive/backward-compatible evolution.
 
@@ -253,7 +255,9 @@ When `update --type` changes an item's resolved type folder, mutation logic perf
 - `pm create --create-mode strict|progressive` keeps strict mode as default while enabling staged progressive creation for governance triage workflows.
 - `pm create` log-seed repeatables (`--comment`, `--note`, `--learning`) now enforce explicit key boundaries (`author`, `created_at`, `text`) and reject parsed extra keys with usage guidance so unquoted key:value-like comma continuations cannot silently truncate seeded narrative text.
 - `pm deps --format tree|graph` provides read-only dependency traversal from stored front matter, with deterministic ordering, cycle markers, and missing-node reporting.
-- `pm list` / `pm list-*` support additive `--offset` pagination and JSON-only `--stream` line-delimited output for large datasets.
+- `pm list` / `pm list-*` support additive projection (`--compact`, `--fields`, `--include-body`), configurable sorting (`--sort`, `--order`), `--offset` pagination, and JSON-only `--stream` line-delimited output for large datasets.
+- `pm aggregate` provides grouped child-count projections (currently `--group-by parent,type --count`) for governance decomposition checks.
+- `pm dedupe-audit` provides exact-title, fuzzy-title, and parent-scoped duplicate cluster detection with machine-readable merge suggestions.
 - `pm validate` runs standalone repository checks (`metadata`, `resolution`, `lifecycle`, `files`, `command_references`, `history_drift`), supports metadata policy selection via `--metadata-profile core|strict|custom`, supports lifecycle-governance drift targeting via `--check-lifecycle` plus optional stale-blocker heuristics via `--check-stale-blockers`, supports file candidate selection via `--scan-mode default|tracked-all|tracked-all-strict`, supports additive internal-audit coverage with `--include-pm-internals`, and returns deterministic filtered + raw file scan metrics, structured `excluded_by_reason` summaries, plus stale PM-id command-reference diagnostics.
 
 ## Calendar Pipeline
@@ -415,7 +419,7 @@ Health-time integrity and semantic/vector diagnostics:
 - `pm health` runs an `integrity` check that scans item/history files for merge-conflict markers and parse/JSONL anomalies.
 - `pm health` now runs a `history_drift` check that compares each current item's canonical hash to the latest history `after_hash`.
 - `pm health` also runs a `vectorization` check that compares current item `updated_at` values to `search/vectorization-status.json`.
-- When stale IDs are detected and semantic runtime is available, `pm health` triggers targeted semantic refresh for stale IDs only (not a full reindex).
+- When stale IDs are detected and semantic runtime is available, `pm health` defaults to targeted semantic refresh for stale IDs only (not a full reindex), while `--check-only`/`--no-refresh` keep diagnostics read-only and `--refresh-vectors` makes refresh intent explicit.
 - `pm reindex --mode semantic|hybrid` rewrites the vectorization-status ledger for the full indexed corpus, keeping health diagnostics and index state aligned.
 
 Extension runtime can supply equivalents for both sides of semantic execution:

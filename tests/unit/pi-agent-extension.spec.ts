@@ -497,6 +497,33 @@ describe("Pi agent extension wrapper for pm", () => {
 
     const listOpenSchema = schemaForAction(tool.parameters as Record<string, unknown>, "list-open");
     expect(schemaProperty(listOpenSchema, "parent").type).toBe("string");
+    expect(schemaProperty(listOpenSchema, "compact").type).toBe("boolean");
+    expect(schemaProperty(listOpenSchema, "includeBody").type).toBe("boolean");
+    expect(schemaProperty(listOpenSchema, "fields").type).toBe("string");
+    expect(schemaProperty(listOpenSchema, "sort").enum).toEqual([
+      "priority",
+      "deadline",
+      "updated_at",
+      "created_at",
+      "title",
+      "parent",
+    ]);
+
+    const aggregateSchema = schemaForAction(tool.parameters as Record<string, unknown>, "aggregate");
+    expect(aggregateSchema.required).toEqual(["action"]);
+    expect(schemaProperty(aggregateSchema, "groupBy").type).toBe("string");
+    expect(schemaProperty(aggregateSchema, "count").type).toBe("boolean");
+    expect(schemaProperty(aggregateSchema, "includeUnparented").type).toBe("boolean");
+    expect(schemaProperty(aggregateSchema, "status").type).toBe("string");
+
+    const dedupeSchema = schemaForAction(tool.parameters as Record<string, unknown>, "dedupe-audit");
+    expect(dedupeSchema.required).toEqual(["action"]);
+    expect(schemaProperty(dedupeSchema, "mode").enum).toEqual(
+      expect.arrayContaining(["title_exact", "title_fuzzy", "parent_scope"]),
+    );
+    expect(schemaProperty(dedupeSchema, "threshold").anyOf).toEqual(
+      expect.arrayContaining([{ type: "string" }, { type: "number" }]),
+    );
 
     const extensionInstallSchema = schemaForAction(tool.parameters as Record<string, unknown>, "extension-install");
     expect(extensionInstallSchema.required).toEqual(["action"]);
@@ -551,6 +578,9 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(schemaProperty(healthSchema, "strictDirectories").type).toBe("boolean");
     expect(schemaProperty(healthSchema, "strictExit").type).toBe("boolean");
     expect(schemaProperty(healthSchema, "failOnWarn").type).toBe("boolean");
+    expect(schemaProperty(healthSchema, "checkOnly").type).toBe("boolean");
+    expect(schemaProperty(healthSchema, "noRefresh").type).toBe("boolean");
+    expect(schemaProperty(healthSchema, "refreshVectors").type).toBe("boolean");
 
     const calendarSchema = schemaForAction(tool.parameters as Record<string, unknown>, "calendar");
     expect(schemaProperty(calendarSchema, "view").type).toBe("string");
@@ -714,6 +744,59 @@ describe("Pi agent extension wrapper for pm", () => {
 
     expect(
       buildPmCliArgs({
+        action: "list-open",
+        compact: true,
+        includeBody: true,
+        fields: "id,title,parent,type",
+        sort: "deadline",
+        order: "asc",
+      }),
+    ).toEqual([
+      "--json",
+      "list-open",
+      "--fields",
+      "id,title,parent,type",
+      "--sort",
+      "deadline",
+      "--order",
+      "asc",
+      "--compact",
+      "--include-body",
+    ]);
+
+    expect(
+      buildPmCliArgs({
+        action: "aggregate",
+        groupBy: "parent,type",
+        count: true,
+        includeUnparented: true,
+        status: "open",
+        type: "Feature",
+      }),
+    ).toEqual([
+      "--json",
+      "aggregate",
+      "--group-by",
+      "parent,type",
+      "--status",
+      "open",
+      "--type",
+      "Feature",
+      "--count",
+      "--include-unparented",
+    ]);
+
+    expect(
+      buildPmCliArgs({
+        action: "dedupe-audit",
+        mode: "title_fuzzy",
+        threshold: 0.8,
+        status: "open",
+      }),
+    ).toEqual(["--json", "dedupe-audit", "--mode", "title_fuzzy", "--threshold", "0.8", "--status", "open"]);
+
+    expect(
+      buildPmCliArgs({
         action: "extension-install",
         target: "github.com/unbraind/pm-cli/pi",
         scope: "project",
@@ -859,6 +942,59 @@ describe("Pi agent extension wrapper for pm", () => {
         failOnWarn: true,
       }),
     ).toEqual(["--json", "health", "--strict-directories", "--strict-exit", "--fail-on-warn"]);
+
+    expect(
+      buildPmCliArgs({
+        action: "health",
+        checkOnly: true,
+        noRefresh: true,
+        refreshVectors: true,
+      }),
+    ).toEqual(["--json", "health", "--check-only", "--no-refresh", "--refresh-vectors"]);
+
+    expect(
+      buildPmCliArgs({
+        action: "comments-audit",
+        status: "open",
+        type: "Task",
+        assignee: "pi-bot",
+        assigneeFilter: "assigned",
+        parent: "pm-epic01",
+        tag: "pi",
+        sprint: "sprint-7",
+        release: "vnext",
+        priority: 1,
+        limitItems: 5,
+        fullHistory: true,
+        latest: 2,
+      }),
+    ).toEqual([
+      "--json",
+      "comments-audit",
+      "--status",
+      "open",
+      "--type",
+      "Task",
+      "--assignee",
+      "pi-bot",
+      "--assignee-filter",
+      "assigned",
+      "--parent",
+      "pm-epic01",
+      "--tag",
+      "pi",
+      "--sprint",
+      "sprint-7",
+      "--release",
+      "vnext",
+      "--priority",
+      "1",
+      "--limit-items",
+      "5",
+      "--full-history",
+      "--latest",
+      "2",
+    ]);
 
     expect(
       buildPmCliArgs({

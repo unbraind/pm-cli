@@ -169,7 +169,12 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   list: {
     why: "Lists active items with deterministic filtering and ordering.",
-    examples: ["pm list --limit 20", "pm list --type Task --priority 0 --tag release --assignee codex-agent"],
+    examples: [
+      "pm list --limit 20",
+      "pm list --type Task --priority 0 --tag release --assignee codex-agent",
+      "pm list --compact --sort deadline --order asc",
+      "pm list --fields id,title,parent,type --sort parent --order asc",
+    ],
   },
   "list-all": {
     why: "Lists all item states (including terminal states) when you need full visibility.",
@@ -198,6 +203,23 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   "list-draft": {
     why: "Finds incompletely defined items that need refinement before execution.",
     examples: ["pm list-draft --limit 20"],
+  },
+  aggregate: {
+    why: "Runs grouped aggregation queries for governance checks such as child-count validation by parent and type.",
+    examples: [
+      "pm aggregate --group-by parent,type --count",
+      "pm aggregate --group-by parent,type --count --status open --parent pm-feature01",
+    ],
+    tips: ["Current aggregate mode is grouped counts only, so pass --count explicitly."],
+  },
+  "dedupe-audit": {
+    why: "Audits potential duplicate items and emits deterministic merge suggestions before any mutation.",
+    examples: [
+      "pm dedupe-audit --mode title_exact",
+      "pm dedupe-audit --mode title_fuzzy --threshold 0.8 --limit 20",
+      "pm dedupe-audit --mode parent_scope --status open",
+    ],
+    tips: ["Use title_exact for strict collisions, title_fuzzy for near-duplicates, and parent_scope for child-level collisions."],
   },
   calendar: {
     why: "Provides deadline/reminder/event scheduling views for planning and coordination.",
@@ -272,6 +294,14 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     ],
     tips: ["Use --force when adding comments to items currently assigned to a different owner."],
   },
+  "comments-audit": {
+    why: "Audits latest comments or full history rows across filtered item sets.",
+    examples: [
+      "pm comments-audit --status open --latest 1",
+      "pm comments-audit --parent pm-feature01 --tag governance --sprint sprint-12 --release vnext --priority 0",
+      "pm comments-audit --full-history --limit-items 50",
+    ],
+  },
   notes: {
     why: "Adds or reviews durable implementation notes linked to an item.",
     examples: ['pm notes pm-a1b2 --add "Investigated parser edge case and documented fallback logic."', "pm notes pm-a1b2 --limit 10"],
@@ -325,7 +355,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   health: {
     why: "Validates tracker/runtime health including extension triage, migration, and integrity diagnostics.",
-    examples: ["pm health", "pm health --json"],
+    examples: ["pm health", "pm health --json", "pm health --check-only", "pm health --no-refresh", "pm health --refresh-vectors"],
   },
   validate: {
     why:

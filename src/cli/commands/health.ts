@@ -50,6 +50,9 @@ export interface HealthResult {
 
 export interface RunHealthOptions {
   strictDirectories?: boolean;
+  checkOnly?: boolean;
+  noRefresh?: boolean;
+  refreshVectors?: boolean;
 }
 
 interface MigrationStatusEntry {
@@ -780,6 +783,12 @@ async function buildVectorizationCheck(
   pmRoot: string,
   settings: PmSettings,
   items: ItemWithBody[],
+  refreshPolicy: {
+    enabled: boolean;
+    checkOnly: boolean;
+    noRefresh: boolean;
+    refreshVectors: boolean;
+  },
 ): Promise<{ check: HealthCheck; warnings: string[] }> {
   const runtimeDefaults = resolveSettingsWithSemanticRuntimeDefaults(settings);
   const providerResolution = resolveEmbeddingProviders(runtimeDefaults.settings);
@@ -792,7 +801,7 @@ async function buildVectorizationCheck(
     skipped: [],
     warnings: [],
   };
-  if (semanticRuntimeAvailable && staleBefore.length > 0) {
+  if (refreshPolicy.enabled && semanticRuntimeAvailable && staleBefore.length > 0) {
     refreshResult = await refreshSemanticEmbeddingsForMutatedItems(pmRoot, staleBefore, {
       settings: runtimeDefaults.settings,
       apply_runtime_defaults: false,
@@ -820,12 +829,26 @@ async function buildVectorizationCheck(
         semantic_runtime_available: semanticRuntimeAvailable,
         compatibility_mode_auto_defaults: runtimeDefaults.auto_ollama_defaults_applied,
         auto_ollama_defaults_applied: runtimeDefaults.auto_ollama_defaults_applied,
+        refresh_policy: {
+          enabled: refreshPolicy.enabled,
+          check_only: refreshPolicy.checkOnly,
+          no_refresh: refreshPolicy.noRefresh,
+          refresh_vectors: refreshPolicy.refreshVectors,
+        },
         provider_active: providerResolution.active?.name ?? null,
         vector_store_active: vectorStoreResolution.active?.name ?? null,
         items: items.length,
         ledger_entries_before: Object.keys(ledgerBefore.entries).length,
         stale_items_before: staleBefore,
-        refresh_attempted: staleBefore.length > 0 && semanticRuntimeAvailable,
+        refresh_attempted: refreshPolicy.enabled && staleBefore.length > 0 && semanticRuntimeAvailable,
+        refresh_skipped_reason:
+          refreshPolicy.enabled && semanticRuntimeAvailable && staleBefore.length > 0
+            ? null
+            : !refreshPolicy.enabled
+              ? "refresh_disabled"
+              : !semanticRuntimeAvailable
+                ? "semantic_runtime_unavailable"
+                : "no_stale_items",
         refresh_result: refreshResult,
         ledger_entries_after: Object.keys(ledgerAfter.entries).length,
         stale_items_after: staleAfter,
@@ -846,6 +869,29 @@ function validateSettingsValues(settings: PmSettings): string[] {
   return warnings;
 }
 
+function resolveVectorRefreshPolicy(options: RunHealthOptions): {
+  enabled: boolean;
+  checkOnly: boolean;
+  noRefresh: boolean;
+  refreshVectors: boolean;
+} {
+  const checkOnly = options.checkOnly === true;
+  const noRefresh = options.noRefresh === true || checkOnly;
+  const refreshVectors = options.refreshVectors === true;
+  if (refreshVectors && checkOnly) {
+    throw new PmCliError("--check-only cannot be combined with --refresh-vectors", EXIT_CODE.USAGE);
+  }
+  if (refreshVectors && options.noRefresh === true) {
+    throw new PmCliError("--no-refresh cannot be combined with --refresh-vectors", EXIT_CODE.USAGE);
+  }
+  return {
+    enabled: refreshVectors || !noRefresh,
+    checkOnly,
+    noRefresh,
+    refreshVectors,
+  };
+}
+
 export async function runHealth(global: GlobalOptions, options: RunHealthOptions = {}): Promise<HealthResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const settingsPath = getSettingsPath(pmRoot);
@@ -857,6 +903,7 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
   const normalizedSettingsReadWarnings = [...new Set(settingsReadWarnings)];
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const strictDirectories = options.strictDirectories === true;
+  const refreshPolicy = resolveVectorRefreshPolicy(options);
   const optionalBuiltinDirs = new Set<string>(PM_OPTIONAL_TYPE_SUBDIRS.filter((entry) => entry.length > 0));
   const requiredDirSet = new Set<string>(PM_CORE_REQUIRED_SUBDIRS.filter((entry) => entry.length > 0));
   const optionalDirSet = new Set<string>();
@@ -904,7 +951,7 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
   const historySummary = await countHistoryStreams(pmRoot);
   const integrityCheck = await buildIntegrityCheck(pmRoot, typeRegistry.type_to_folder);
   const historyDriftCheck = await buildHistoryDriftCheck(pmRoot, items);
-  const vectorizationCheck = await buildVectorizationCheck(pmRoot, settings, items);
+  const vectorizationCheck = await buildVectorizationCheck(pmRoot, settings, items, refreshPolicy);
 
   const checks: HealthCheck[] = [
     {

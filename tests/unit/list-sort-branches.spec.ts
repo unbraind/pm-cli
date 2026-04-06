@@ -159,4 +159,107 @@ describe("runList sorting branches", () => {
     const result = await runList(undefined, {}, { path: "/tmp/pm-list-sort" });
     expect(result.items.map((item) => item.id)).toEqual(["pm-open-second", "pm-terminal-first"]);
   });
+
+  it("covers configurable sort field and order branches", async () => {
+    const { runList } = await import("../../src/cli/commands/list.js");
+    const byPriorityDesc = await runList(undefined, { sort: "priority", order: "desc" }, { path: "/tmp/pm-list-sort" });
+    expect(byPriorityDesc.items.map((item) => item.priority)).toEqual([3, 3, 1, 1, 0, 0]);
+
+    const byTitleAsc = await runList(undefined, { sort: "title", order: "asc" }, { path: "/tmp/pm-list-sort" });
+    expect(byTitleAsc.items.map((item) => item.title)).toEqual([
+      "priority-wins",
+      "same-time-id-a",
+      "same-time-id-b",
+      "terminal-item",
+      "updated-new",
+      "updated-old",
+    ]);
+  });
+
+  it("covers nullable deadline and parent sort branches", async () => {
+    listAllFrontMatterMock.mockResolvedValueOnce([
+      {
+        id: "pm-parent-a",
+        title: "parent-a",
+        description: "",
+        type: "Task",
+        status: "open",
+        priority: 1,
+        tags: [],
+        parent: "pm-aaa",
+        deadline: "2026-02-19T00:00:00.000Z",
+        created_at: "2026-02-18T00:00:00.000Z",
+        updated_at: "2026-02-18T00:00:00.000Z",
+      },
+      {
+        id: "pm-parent-null",
+        title: "parent-null",
+        description: "",
+        type: "Task",
+        status: "open",
+        priority: 1,
+        tags: [],
+        deadline: undefined,
+        created_at: "2026-02-18T00:00:00.000Z",
+        updated_at: "2026-02-18T00:00:00.000Z",
+      },
+      {
+        id: "pm-parent-b",
+        title: "parent-b",
+        description: "",
+        type: "Task",
+        status: "open",
+        priority: 1,
+        tags: [],
+        parent: "pm-bbb",
+        deadline: "2026-02-20T00:00:00.000Z",
+        created_at: "2026-02-18T00:00:00.000Z",
+        updated_at: "2026-02-18T00:00:00.000Z",
+      },
+    ]);
+
+    const { runList } = await import("../../src/cli/commands/list.js");
+    const byDeadlineAsc = await runList(undefined, { sort: "deadline", order: "asc" }, { path: "/tmp/pm-list-sort" });
+    expect(byDeadlineAsc.items.map((item) => item.id)).toEqual(["pm-parent-a", "pm-parent-b", "pm-parent-null"]);
+
+    listAllFrontMatterMock.mockResolvedValueOnce([
+      {
+        id: "pm-parent-a",
+        title: "parent-a",
+        description: "",
+        type: "Task",
+        status: "open",
+        priority: 1,
+        tags: [],
+        parent: "pm-aaa",
+        created_at: "2026-02-18T00:00:00.000Z",
+        updated_at: "2026-02-18T00:00:00.000Z",
+      },
+      {
+        id: "pm-parent-null",
+        title: "parent-null",
+        description: "",
+        type: "Task",
+        status: "open",
+        priority: 1,
+        tags: [],
+        created_at: "2026-02-18T00:00:00.000Z",
+        updated_at: "2026-02-18T00:00:00.000Z",
+      },
+      {
+        id: "pm-parent-b",
+        title: "parent-b",
+        description: "",
+        type: "Task",
+        status: "open",
+        priority: 1,
+        tags: [],
+        parent: "pm-bbb",
+        created_at: "2026-02-18T00:00:00.000Z",
+        updated_at: "2026-02-18T00:00:00.000Z",
+      },
+    ]);
+    const byParentAsc = await runList(undefined, { sort: "parent", order: "asc" }, { path: "/tmp/pm-list-sort" });
+    expect(byParentAsc.items.map((item) => item.id)).toEqual(["pm-parent-a", "pm-parent-b", "pm-parent-null"]);
+  });
 });
