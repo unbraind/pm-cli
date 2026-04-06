@@ -65,6 +65,25 @@ describe("contracts command runtime", () => {
     const oneOf = (result.schema.oneOf ?? []) as Array<{ properties?: { action?: { const?: string } } }>;
     expect(oneOf).toHaveLength(1);
     expect(oneOf[0]?.properties?.action?.const).toBe("create");
+    const createRequiredContracts = (oneOf[0] as Record<string, unknown>)["x-create-required-options"] as
+      | {
+          default_create_mode?: string;
+          by_create_mode?: {
+            strict?: { by_type?: Record<string, { required_flags?: string[] }> };
+            progressive?: { by_type?: Record<string, { required_flags?: string[] }> };
+          };
+        }
+      | undefined;
+    expect(createRequiredContracts?.default_create_mode).toBe("strict");
+    expect(createRequiredContracts?.by_create_mode?.strict?.by_type?.Task?.required_flags).toEqual(
+      expect.arrayContaining(["--title", "--description", "--type", "--status", "--priority", "--message", "--dep", "--comment", "--doc"]),
+    );
+    expect(createRequiredContracts?.by_create_mode?.progressive?.by_type?.Task?.required_flags).toEqual(
+      expect.arrayContaining(["--title", "--description", "--type"]),
+    );
+    expect(createRequiredContracts?.by_create_mode?.progressive?.by_type?.Task?.required_flags).not.toEqual(
+      expect.arrayContaining(["--dep", "--comment", "--doc"]),
+    );
   });
 
   it("supports runtime-only filtering and reports extension-action availability", async () => {

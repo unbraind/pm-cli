@@ -1,0 +1,30 @@
+id: pm-tixl
+title: Implement atomic dependency replacement mode for pm update
+description: Allow replacing dependencies in one mutation while preserving deterministic validation and audit clarity.
+type: Task
+status: closed
+priority: 1
+tags[4]: dependencies,external-audit,pm-cli,update
+created_at: "2026-04-06T14:39:14.605Z"
+updated_at: "2026-04-06T15:42:16.773Z"
+author: codex-agent
+acceptance_criteria: "pm update can atomically replace dependencies with one command path, while preserving existing clear/add behavior and backward compatibility."
+parent: pm-lwps
+resolution: Added --replace-deps path that atomically replaces dependencies in one update mutation with deterministic validation.
+expected_result: Operators can replace dependency sets in one command without two-step clear/add history noise.
+actual_result: pm update now supports --replace-deps with guardrails and parity across CLI/contracts/completion/Pi plus regression coverage.
+comments[3]{created_at,author,text}:
+  "2026-04-06T14:39:14.605Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'update clear-deps dep atomic replace dependencies' --limit 20; pm search 'atomic dependency replacement mode' --limit 20; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because no active child task under pm-lwps tracks one-step dependency replacement semantics for pm update."
+  "2026-04-06T14:39:41.542Z",codex-agent,"Execution started under seven-issue hardening plan: this net-new child tracks atomic dependency replacement mode implementation, tests, docs, and parity surfaces."
+  "2026-04-06T15:40:50.575Z",codex-agent,"Implemented pm update --replace-deps for one-step atomic dependency replacement. Added guardrails (--replace-deps requires --dep, disallows --dep-remove combination, preserves clear/add semantics), wired CLI/contracts/Pi parity, and validated via targeted and full test+coverage gates."
+files[6]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,Pi update mapping for --replace-deps
+  src/cli/commands/update.ts,project,atomic dependency replacement validation and mutation logic
+  src/cli/main.ts,project,"--replace-deps CLI wiring"
+  src/sdk/cli-contracts.ts,project,replaceDeps schema and contracts parity
+  tests/integration/cli.integration.spec.ts,project,integration coverage for replace-deps flow
+  tests/unit/update-command.spec.ts,project,unit regressions for replace-deps behavior
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/integration/cli.integration.spec.ts -t 'supports dependency add/remove mutations through update flags',null,project,3600,null,null,null,null,null,null,null,null,null,null,null,update replace-deps regression coverage
+close_reason: pm update now supports atomic dependency replacement
+body: ""

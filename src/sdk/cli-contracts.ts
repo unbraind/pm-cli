@@ -316,6 +316,7 @@ export const PI_UPDATE_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "assignee", flag: "--assignee" },
   { param: "dep", flag: "--dep", repeatable: true },
   { param: "depRemove", flag: "--dep-remove", repeatable: true },
+  { param: "replaceDeps", flag: "--replace-deps" },
   { param: "comment", flag: "--comment", repeatable: true },
   { param: "note", flag: "--note", repeatable: true },
   { param: "learning", flag: "--learning", repeatable: true },
@@ -372,6 +373,13 @@ export const PI_CONTEXT_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "release", flag: "--release" },
   { param: "limit", flag: "--limit" },
   { param: "format", flag: "--format" },
+];
+
+export const PI_DEPS_OPTION_CONTRACTS: PiOptionFlagContract[] = [
+  { param: "format", flag: "--format" },
+  { param: "maxDepth", flag: "--max-depth" },
+  { param: "collapse", flag: "--collapse" },
+  { param: "summary", flag: "--summary" },
 ];
 
 export const SUBCOMMAND_GLOBAL_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -664,6 +672,7 @@ export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--dep" },
   { flag: "--dep-remove" },
   { flag: "--dep_remove" },
+  { flag: "--replace-deps" },
   { flag: "--comment" },
   { flag: "--note" },
   { flag: "--learning" },
@@ -726,6 +735,13 @@ export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--release" },
   { flag: "--limit" },
   { flag: "--format" },
+];
+
+export const DEPS_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--format" },
+  { flag: "--max-depth" },
+  { flag: "--collapse" },
+  { flag: "--summary" },
 ];
 
 export const SEARCH_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -1110,10 +1126,14 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   checkHistoryDrift: { type: "boolean" },
   checkCommandReferences: { type: "boolean" },
   allowAuditComment: { type: "boolean" },
+  allowAuditRelease: { type: "boolean" },
   force: { type: "boolean" },
   run: { type: "boolean" },
   count: { type: "boolean" },
   includeUnparented: { type: "boolean" },
+  maxDepth: { anyOf: [{ type: "string" }, { type: "number" }] },
+  collapse: { type: "string", enum: ["none", "repeated"] },
+  summary: { type: "boolean" },
   shell: { type: "string", enum: ["bash", "zsh", "fish"] },
   file: { type: "string" },
   preserveSourceIds: { type: "boolean" },
@@ -1128,6 +1148,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   audit: { type: "boolean" },
   dep: { type: "array", items: { type: "string" } },
   depRemove: { type: "array", items: { type: "string" } },
+  replaceDeps: { type: "boolean" },
   comment: { type: "array", items: { type: "string" } },
   note: { type: "array", items: { type: "string" } },
   learning: { type: "array", items: { type: "string" } },
@@ -1287,7 +1308,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
     required: ["id"],
     optional: ["add", "addGlob", "remove", "migrate", "validatePaths", "audit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
   },
-  deps: { required: ["id"], optional: ["format"] },
+  deps: { required: ["id"], optional: ["format", "maxDepth", "collapse", "summary"] },
   test: {
     required: ["id"],
     optional: [
@@ -1370,7 +1391,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   "templates-list": {},
   "templates-show": { required: ["template"] },
   claim: { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
-  release: { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
+  release: { required: ["id"], optional: ["allowAuditRelease", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   "beads-import": { optional: ["file", "author", "message", "preserveSourceIds"] },
   "todos-import": { optional: ["folder", "author", "message"] },
   "todos-export": { optional: ["folder"] },
@@ -1510,6 +1531,9 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   clearDeps: {
     description: "When true, clear linked dependencies.",
+  },
+  replaceDeps: {
+    description: "When true for update, atomically replace dependencies with the supplied --dep values.",
   },
   clearComments: {
     description: "When true, clear item comments.",
@@ -1652,6 +1676,9 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   allowAuditComment: {
     description: "Allow non-owner append-only comment audits without requiring --force.",
   },
+  allowAuditRelease: {
+    description: "Allow non-owner release handoffs that clear assignee metadata without requiring --force.",
+  },
   preserveSourceIds: {
     description: "Preserve explicit source IDs during Beads imports instead of normalizing to tracker prefix.",
     examples: [true],
@@ -1698,6 +1725,17 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   includeUnparented: {
     description: "Include unparented rows when aggregate grouping includes parent.",
+  },
+  maxDepth: {
+    description: "Maximum dependency traversal depth for deps action (0 keeps only the root node).",
+    examples: [0, 1, "2"],
+  },
+  collapse: {
+    description: 'Dependency tree collapse mode for deps action ("none" or "repeated").',
+    examples: ["none", "repeated"],
+  },
+  summary: {
+    description: "When true for deps action, return counts only without full tree/graph payloads.",
   },
   threshold: {
     description: "Dedupe-audit fuzzy title similarity threshold between 0 and 1.",

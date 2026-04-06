@@ -108,6 +108,7 @@ Use append-style updates:
 
 - `pm comments <ID> "Implemented lock retry path"` (or `--add "..."` for structured/stdin forms)
 - use `pm comments <ID> ... --allow-audit-comment` for append-only audit notes on items assigned to another owner
+- use `pm release <ID> ... --allow-audit-release` for non-owner handoffs that only clear assignee metadata
 - reserve `pm comments <ID> ... --force` for coordinated ownership-override paths beyond append-only audit comments
 - `pm update <ID> --status in_progress`
 - `pm append <ID> --body "Detailed implementation notes..."`

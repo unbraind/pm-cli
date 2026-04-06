@@ -135,6 +135,7 @@ describe("runClaim/runRelease", () => {
       const id = createTask(context, { title: "release-unassigned", status: "open" });
       const result = await runRelease(id, false, { path: context.pmPath });
       expect(result.previous_assignee).toBeNull();
+      expect(result.audit_release).toBe(false);
       expect(result.forced).toBe(false);
       expect(result.item.assignee).toBeUndefined();
     });
@@ -149,6 +150,7 @@ describe("runClaim/runRelease", () => {
       });
       const currentResult = await runRelease(current, false, { path: context.pmPath });
       expect(currentResult.previous_assignee).toBe("test-author");
+      expect(currentResult.audit_release).toBe(false);
       expect(currentResult.forced).toBe(false);
       expect(currentResult.item.assignee).toBeUndefined();
 
@@ -163,8 +165,42 @@ describe("runClaim/runRelease", () => {
 
       const forced = await runRelease(foreign, true, { path: context.pmPath });
       expect(forced.previous_assignee).toBe("other-author");
+      expect(forced.audit_release).toBe(false);
       expect(forced.forced).toBe(true);
       expect(forced.item.assignee).toBeUndefined();
+    });
+  });
+
+  it("supports audited non-owner release handoffs without force", async () => {
+    await withTempPmPath(async (context) => {
+      const foreign = createTask(context, {
+        title: "release-audit-foreign-assignee",
+        status: "open",
+        assignee: "other-author",
+      });
+
+      const audited = await runRelease(
+        foreign,
+        false,
+        { path: context.pmPath },
+        {
+          author: "audit-reviewer",
+          message: "audit release handoff",
+          allowAuditRelease: true,
+        },
+      );
+      expect(audited.previous_assignee).toBe("other-author");
+      expect(audited.audit_release).toBe(true);
+      expect(audited.forced).toBe(false);
+      expect(audited.item.assignee).toBeUndefined();
+    });
+  });
+
+  it("rethrows non-ownership release errors unchanged", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(runRelease("pm-missing-id", false, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.NOT_FOUND,
+      });
     });
   });
 

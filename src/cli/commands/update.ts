@@ -95,6 +95,7 @@ export interface UpdateCommandOptions {
   customerImpact?: string;
   dep?: string[];
   depRemove?: string[];
+  replaceDeps?: boolean;
   comment?: string[];
   note?: string[];
   learning?: string[];
@@ -769,6 +770,7 @@ function collectProvidedUpdatePolicyOptions(options: UpdateCommandOptions): Set<
   mark("customerImpact", options.customerImpact !== undefined);
   mark("dep", options.dep !== undefined);
   mark("depRemove", options.depRemove !== undefined);
+  mark("dep", options.replaceDeps === true);
   mark("comment", options.comment !== undefined);
   mark("note", options.note !== undefined);
   mark("learning", options.learning !== undefined);
@@ -866,7 +868,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     frontMatterKey: string;
   }> = [
     {
-      enabled: options.clearDeps,
+      enabled: options.clearDeps || options.replaceDeps,
       optionKey: "dep",
       clearFlag: "--clear-deps",
       valueFlag: "--dep",
@@ -946,11 +948,21 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
       frontMatterKey: "type_options",
     },
   ];
+  if (options.replaceDeps === true && (options.dep === undefined || options.dep.length === 0)) {
+    throw new PmCliError("--replace-deps requires at least one --dep entry", EXIT_CODE.USAGE);
+  }
+  if (options.replaceDeps === true && options.depRemove !== undefined && options.depRemove.length > 0) {
+    throw new PmCliError("--replace-deps cannot be combined with --dep-remove", EXIT_CODE.USAGE);
+  }
   for (const definition of clearCollectionDefinitions) {
     if (!definition.enabled) {
       continue;
     }
-    if (definition.values && definition.values.length > 0) {
+    if (
+      definition.values &&
+      definition.values.length > 0 &&
+      !(definition.optionKey === "dep" && options.replaceDeps === true)
+    ) {
       throw new PmCliError(`Cannot combine ${definition.clearFlag} with ${definition.valueFlag}`, EXIT_CODE.USAGE);
     }
     clearOptionKeys.add(definition.optionKey);
@@ -1121,6 +1133,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     options.customerImpact !== undefined,
     options.dep !== undefined,
     options.depRemove !== undefined,
+    options.replaceDeps === true,
     options.comment !== undefined,
     options.note !== undefined,
     options.learning !== undefined,

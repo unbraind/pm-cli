@@ -118,25 +118,25 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why:
       "Installs, explores, manages, diagnoses, adopts (single or bulk), and activates/deactivates custom extensions across project or global scope.",
     examples: [
-      "pm extension --install beads --project",
-      "pm extension --install todos --global",
-      "pm extension --install .agents/pm/extensions/sample --project",
-      "pm extension --install https://github.com/unbraind/pm-cli/tree/main/.agents/pm/extensions/pi --global",
-      "pm extension --install --gh unbraind/pm-cli/pi --project",
-      "pm extension --explore --project",
-      "pm extension --manage --global",
-      "pm extension --doctor --project",
-      "pm extension --doctor --global --detail deep",
+      "pm extension install beads --project",
+      "pm extension install todos --global",
+      "pm extension install .agents/pm/extensions/sample --project",
+      "pm extension install https://github.com/unbraind/pm-cli/tree/main/.agents/pm/extensions/pi --global",
+      "pm extension install --gh unbraind/pm-cli/pi --project",
+      "pm extension explore --project",
+      "pm extension manage --global",
       "pm extension doctor --detail deep",
-      "pm extension --adopt sample-ext --project",
-      "pm extension --adopt-all --project",
-      "pm extension --adopt sample-ext --project --gh owner/repo/path --ref main",
-      "pm extension --activate sample-ext --project",
-      "pm extension --deactivate sample-ext --project",
-      "pm extension --uninstall sample-ext --global",
+      "pm extension adopt sample-ext --project",
+      "pm extension adopt-all --project",
+      "pm extension adopt sample-ext --project --gh owner/repo/path --ref main",
+      "pm extension activate sample-ext --project",
+      "pm extension deactivate sample-ext --project",
+      "pm extension uninstall sample-ext --global",
+      "pm extension --install beads --project",
     ],
     tips: [
-      "Action flags are mutually exclusive; pass exactly one lifecycle action per invocation.",
+      "Prefer explicit subcommands (install/uninstall/explore/manage/doctor/adopt/adopt-all/activate/deactivate) for discoverability.",
+      "Legacy lifecycle flags remain supported as backward-compatible aliases.",
       "Bundled aliases beads and todos resolve to package-shipped extension sources.",
       "Use --gh/--github shorthand for GitHub sources and --ref to pin a branch, tag, or ref.",
       "Install updates settings activation state automatically unless extension allowlist mode is unchanged.",
@@ -148,8 +148,8 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   create: {
     why: "Creates a new planning item with deterministic metadata and history.",
     examples: [
-      'pm create --title "Harden lock flow" --description "Improve stale lock handling" --type Task --status open --priority 1 --message "Create lock hardening task" --dep none --comment none --note none --learning none --file none --test none --doc none',
-      'pm create --title "Asset: Hero model" --description "Track playable model asset" --type Asset --status open --priority 1 --message "Create asset item" --type-option category=Character --dep none --comment none --note none --learning none --file none --test none --doc none',
+      'pm create --title "Harden lock flow" --description "Improve stale lock handling" --type Task --status open --priority 1 --message "Create lock hardening task" --create-mode progressive',
+      'pm create --title "Asset: Hero model" --description "Track playable model asset" --type Asset --status open --priority 1 --message "Create asset item" --type-option category=Character --dep "id=pm-epic01,kind=parent,author=codex-agent,created_at=now" --comment "author=codex-agent,created_at=now,text=Why this asset item exists." --note "author=codex-agent,created_at=now,text=Initial implementation note." --learning "author=codex-agent,created_at=now,text=Durable lesson placeholder." --file "path=src/assets/hero.glb,scope=project,note=tracked asset" --test "command=node scripts/run-tests.mjs test,scope=project,timeout_seconds=240" --doc "path=README.md,scope=project,note=asset docs"',
     ],
     tips: ["Use --type <value> to load type-aware policy guidance in --help output."],
   },
@@ -157,8 +157,8 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Mutates existing item fields while preserving history and lock safety.",
     examples: [
       'pm update pm-a1b2 --status in_progress --message "Start implementation"',
-      'pm update pm-a1b2 --close-reason none --message "Clear stale close reason after reopen"',
-      'pm update pm-a1b2 --assignee none --deadline +2d --message "Replan ownership and deadline"',
+      'pm update pm-a1b2 --unset close-reason --message "Clear stale close reason after reopen"',
+      'pm update pm-a1b2 --unset assignee --deadline +2d --message "Replan ownership and deadline"',
       'pm update pm-a1b2 --body "Backfilled body text for legacy item" --message "Normalize missing body"',
     ],
     tips: [
@@ -384,7 +384,11 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   release: {
     why: "Releases an active claim when paused, handed off, or completed.",
-    examples: ['pm release pm-a1b2 --author "codex-agent" --message "Release after closure"'],
+    examples: [
+      'pm release pm-a1b2 --author "codex-agent" --message "Release after closure"',
+      'pm release pm-a1b2 --allow-audit-release --author "reviewer" --message "Audit handoff release"',
+    ],
+    tips: ["Use --allow-audit-release for non-owner handoffs that only clear assignee metadata."],
   },
   completion: {
     why: "Generates shell completion scripts for faster and more reliable command entry.",
@@ -398,7 +402,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
 
 export const ROOT_HELP_BUNDLE: HelpBundle = {
   why: "Provides deterministic project management workflows for humans and coding agents.",
-  examples: ["pm init", "pm list-open --limit 10", 'pm create --title "..." --description "..." --type Task --status open --priority 1 --message "..." --dep none --comment none --note none --learning none --file none --test none --doc none'],
+  examples: ["pm init", "pm list-open --limit 10", 'pm create --title "..." --description "..." --type Task --status open --priority 1 --message "..." --create-mode progressive'],
   tips: [
     "Use <command> --help for command-specific guidance and examples.",
     "Use --json for machine parsing and integration flows.",

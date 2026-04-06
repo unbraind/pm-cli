@@ -6,25 +6,38 @@ status: closed
 priority: 0
 tags[5]: breaking-change,governance,implementation,none-token,pm-cli
 created_at: "2026-04-05T23:51:54.215Z"
-updated_at: "2026-04-06T01:24:52.087Z"
+updated_at: "2026-04-06T15:41:54.546Z"
 author: codex-agent
 acceptance_criteria: Legacy none/null command inputs fail with usage errors; explicit clear/unassigned flags work across supported commands; strict create required fields/repeatables reject clear directives; full tests and coverage pass with docs/contracts parity.
 parent: pm-rl4e
 resolution: Removed none/null sentinel semantics and enforced explicit clear/unassigned APIs across create/update/filter/query surfaces.
 expected_result: Legacy none/null inputs are rejected with usage errors while explicit --unset/--clear-* and --assignee-filter workflows succeed with docs/contracts parity.
 actual_result: "Implemented and verified: legacy none/null inputs now fail deterministically; explicit clear/unassigned semantics work; docs/contracts/wrapper/tests aligned."
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-04-05T23:51:54.215Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search \"none token semantics commands\" --limit 10; pm search \"unassigned filter assignee none\" --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new as the execution task for feature pm-rl4e; no open/in_progress task currently tracks implementation/verification rollout end-to-end."
   "2026-04-05T23:52:15.556Z",codex-agent,"Kickoff: implementing immediate-breaking none/null semantic removal across create/update/filter/query/contracts/docs/tests. Execution order follows plan todos: clear APIs, strict required-create gates, unassigned filters, contracts/wrapper parity, docs/completion/help migration, and full verification."
   "2026-04-06T01:23:25.350Z",codex-agent,"Implemented immediate-breaking none/null removal rollout end-to-end: explicit --unset and --clear-* command semantics, strict create required-option meaningful-value enforcement, assignee-filter unassigned support across list/calendar/context/comments-audit, and contracts/wrapper/help/completion/docs parity updates. Final docs sweep updated AGENTS.md, PRD.md, CHANGELOG.md, and docs/ARCHITECTURE.md to remove legacy none-token guidance. Verification evidence: pnpm build passed; node scripts/run-tests.mjs test passed (69 files, 921 tests); node scripts/run-tests.mjs coverage passed with 100% statements/branches/functions/lines."
+  "2026-04-06T14:39:35.524Z",codex-agent,"Seven-issue hardening follow-up kickoff: duplicate-check evidence refreshed via pm context --limit 10; pm search \"none token create help aggregate deps extension contracts update clear-deps release claim\" --limit 20; pm list-open --limit 20; pm list-in-progress --limit 20; pm list-blocked --limit 20. Reusing canonical item for create/help none-token guidance drift remediation."
+  "2026-04-06T15:41:44.438Z",codex-agent,Removed stale none-token examples from help/error/next-step surfaces and replaced them with explicit progressive mode and concrete repeatable payload guidance. Completed docs sweep (README/AGENTS/PRD/ARCHITECTURE/CHANGELOG) and validated via targeted suites plus full build/test/coverage.
 notes[1]{created_at,author,text}:
   "2026-04-06T01:23:35.625Z",codex-agent,"Migration pattern: remove sentinel-token parsing first, then enforce explicit clear contracts at option-parsing boundaries to keep error guidance deterministic and prevent silent coercions."
 learnings[1]{created_at,author,text}:
   "2026-04-06T01:23:38.110Z",codex-agent,"For breaking input-contract removals, a temporary test-argument normalizer in test helpers can preserve suite momentum while production paths hard-reject legacy tokens."
+files[8]{path,scope,note}:
+  AGENTS.md,project,audit release handoff guidance for release command
+  CHANGELOG.md,project,unreleased entries for seven-issue hardening
+  docs/ARCHITECTURE.md,project,additive command surface updates
+  PRD.md,project,command semantics updated for release/get/update/deps
+  README.md,project,docs updated for replace-deps and claim-state guidance
+  src/cli/error-guidance.ts,project,required-option examples migrated away from none sentinels
+  src/cli/help-content.ts,project,removed stale none-token examples and added explicit progressive/clear guidance
+  src/core/output/command-aware.ts,project,next-step examples use progressive mode instead of none tokens
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/completion-command.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,help/error/next-step and docs-facing regressions
 docs[4]{path,scope,note}:
   AGENTS.md,project,none-token migration guidance updates
   CHANGELOG.md,project,unreleased entries aligned to explicit clear flags
   docs/ARCHITECTURE.md,project,reminder/event clear semantics updated
   PRD.md,project,explicit unset/clear semantics documented
-close_reason: none/null token semantics removed; explicit unset/clear APIs and unassigned filters shipped with docs/contracts/test parity
+close_reason: create/help none-token drift fixed with explicit progressive guidance and docs parity
 body: "Implementation task for pm-rl4e. Includes PM tracking updates, code changes, docs, tests, verification, and release-ready evidence."

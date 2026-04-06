@@ -107,6 +107,7 @@ describe("generateBashScript", () => {
     expect(script).toContain("--author");
     expect(script).toContain("--dep");
     expect(script).toContain("--dep-remove");
+    expect(script).toContain("--replace-deps");
     expect(script).toContain("--comment");
     expect(script).toContain("--note");
     expect(script).toContain("--learning");
@@ -115,6 +116,19 @@ describe("generateBashScript", () => {
     expect(script).toContain("--doc");
     expect(script).toContain("--reminder");
     expect(script).toContain("--event");
+  });
+
+  it("includes release audit handoff flag", () => {
+    const script = generateBashScript();
+    expect(script).toContain("--allow-audit-release");
+  });
+
+  it("includes deps ergonomics flags", () => {
+    const script = generateBashScript();
+    expect(script).toContain("--format");
+    expect(script).toContain("--max-depth");
+    expect(script).toContain("--collapse");
+    expect(script).toContain("--summary");
   });
 
   it("includes comments mutation metadata flags in bash completion", () => {

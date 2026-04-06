@@ -194,6 +194,50 @@ describe("runAggregate", () => {
     });
   });
 
+  it("emits only requested group dimensions for type-only grouping", async () => {
+    await withTempPmPath(async (context) => {
+      const parentId = createItem(context, {
+        title: "Type Group Parent",
+        type: "Feature",
+        status: "open",
+      });
+      createItem(context, {
+        title: "Type Group Child Task",
+        type: "Task",
+        status: "open",
+        parent: parentId,
+      });
+      createItem(context, {
+        title: "Type Group Unparented Task",
+        type: "Task",
+        status: "open",
+      });
+
+      const result = await runAggregate(
+        {
+          groupBy: "type",
+          count: true,
+          type: "Task",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.filters.group_by).toEqual(["type"]);
+      expect(result.count).toBe(1);
+      expect(result.groups).toEqual([
+        {
+          group: {
+            type: "Task",
+          },
+          count: 2,
+        },
+      ]);
+      expect(Object.keys(result.groups[0]!.group)).toEqual(["type"]);
+      expect(result.totals.items_skipped_unparented).toBe(0);
+      expect(result.totals.items_grouped).toBe(2);
+    });
+  });
+
   it("validates required and supported options", async () => {
     await withTempPmPath(async (context) => {
       await expect(runAggregate({ groupBy: "parent,type" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({

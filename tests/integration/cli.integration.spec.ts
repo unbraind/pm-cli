@@ -1781,6 +1781,32 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         },
       ]);
 
+      const replaceResult = context.runCli(
+        [
+          "update",
+          createdId,
+          "--json",
+          "--replace-deps",
+          "--dep",
+          "id=dep-gamma,kind=blocks,created_at=2026-03-03T00:00:00.000Z",
+          "--author",
+          "integration-test",
+          "--message",
+          "Replace dependencies atomically",
+        ],
+        { expectJson: true },
+      );
+      expect(replaceResult.code).toBe(0);
+      const replacedDependencies = (replaceResult.json as { item: { dependencies?: Array<Record<string, unknown>> } }).item
+        .dependencies;
+      expect(replacedDependencies).toEqual([
+        {
+          id: "pm-dep-gamma",
+          kind: "blocks",
+          created_at: "2026-03-03T00:00:00.000Z",
+        },
+      ]);
+
       const clearResult = context.runCli(
         [
           "update",
@@ -4600,6 +4626,82 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       );
       expect(otherAssignee.status).toBe(4);
       expect(otherAssignee.stderr).toContain("assigned to");
+    });
+  });
+
+  it("supports audited non-owner release handoffs without force", async () => {
+    await withTempPmPath(async (context) => {
+      const createResult = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Release audit handoff item",
+          "--description",
+          "Validate release audit handoff semantics",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,release,audit",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "20",
+          "--acceptance-criteria",
+          "Release audit handoff succeeds without force",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create release audit seed",
+          "--assignee",
+          "owner-a",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(createResult.code).toBe(0);
+      const id = (createResult.json as { item: { id: string } }).item.id;
+
+      const releaseConflict = context.runCli(["release", id, "--author", "owner-b"]);
+      expect(releaseConflict.code).toBe(4);
+      expect(releaseConflict.stderr).toContain("assigned to");
+
+      const auditedRelease = context.runCli(
+        ["release", id, "--json", "--author", "owner-b", "--allow-audit-release", "--message", "audit handoff release"],
+        { expectJson: true },
+      );
+      expect(auditedRelease.code).toBe(0);
+      const auditedReleaseJson = auditedRelease.json as {
+        item: { assignee?: string };
+        released_by: string;
+        previous_assignee: string | null;
+        audit_release: boolean;
+        forced: boolean;
+      };
+      expect(auditedReleaseJson.released_by).toBe("owner-b");
+      expect(auditedReleaseJson.previous_assignee).toBe("owner-a");
+      expect(auditedReleaseJson.audit_release).toBe(true);
+      expect(auditedReleaseJson.forced).toBe(false);
+      expect(auditedReleaseJson.item.assignee).toBeUndefined();
     });
   });
 

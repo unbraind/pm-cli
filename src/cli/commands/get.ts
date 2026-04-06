@@ -5,9 +5,30 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { locateItem, readLocatedItem } from "../../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
+import { getHistoryPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter, LinkedDoc, LinkedFile, LinkedTest } from "../../types/index.js";
+import { readHistoryEntries } from "./history.js";
+
+interface ClaimHistoryContext {
+  ts: string;
+  author: string;
+  message: string | null;
+}
+
+interface ClaimHistoryEntry {
+  op: string;
+  ts: string;
+  author: string;
+  message?: string;
+}
+
+interface ClaimStateContext {
+  claimed: boolean;
+  assignee: string | null;
+  last_claim: ClaimHistoryContext | null;
+  last_release: ClaimHistoryContext | null;
+}
 
 export interface GetResult {
   item: ItemFrontMatter;
@@ -16,6 +37,33 @@ export interface GetResult {
     files: LinkedFile[];
     tests: LinkedTest[];
     docs: LinkedDoc[];
+  };
+  claim_state: ClaimStateContext;
+}
+
+function toClaimHistoryContext(
+  entry: ClaimHistoryEntry,
+): ClaimHistoryContext {
+  return {
+    ts: entry.ts,
+    author: entry.author,
+    message: entry.message ?? null,
+  };
+}
+
+function resolveClaimStateContext(
+  assigneeValue: string | undefined,
+  history: ClaimHistoryEntry[],
+): ClaimStateContext {
+  const assignee = assigneeValue?.trim();
+  const normalizedAssignee = assignee && assignee.length > 0 ? assignee : null;
+  const lastClaim = [...history].reverse().find((entry) => entry.op === "claim");
+  const lastRelease = [...history].reverse().find((entry) => entry.op === "release");
+  return {
+    claimed: normalizedAssignee !== null,
+    assignee: normalizedAssignee,
+    last_claim: lastClaim ? toClaimHistoryContext(lastClaim) : null,
+    last_release: lastRelease ? toClaimHistoryContext(lastRelease) : null,
   };
 }
 
@@ -31,6 +79,13 @@ export async function runGet(id: string, global: GlobalOptions): Promise<GetResu
     throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
   }
   const loaded = await readLocatedItem(located);
+  const historyPath = getHistoryPath(pmRoot, located.id);
+  let history: ClaimHistoryEntry[] = [];
+  try {
+    history = await readHistoryEntries(historyPath, located.id);
+  } catch {
+    history = [];
+  }
   return {
     item: loaded.document.front_matter,
     body: loaded.document.body,
@@ -39,5 +94,6 @@ export async function runGet(id: string, global: GlobalOptions): Promise<GetResu
       tests: loaded.document.front_matter.tests ?? [],
       docs: loaded.document.front_matter.docs ?? [],
     },
+    claim_state: resolveClaimStateContext(loaded.document.front_matter.assignee, history),
   };
 }

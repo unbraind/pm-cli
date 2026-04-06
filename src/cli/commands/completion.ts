@@ -4,6 +4,7 @@ import {
   CALENDAR_FLAG_CONTRACTS,
   CONTEXT_FLAG_CONTRACTS,
   CREATE_FLAG_CONTRACTS,
+  DEPS_FLAG_CONTRACTS,
   GLOBAL_FLAG_CONTRACTS,
   HEALTH_FLAG_CONTRACTS,
   LIST_FILTER_FLAG_CONTRACTS,
@@ -31,10 +32,12 @@ const CREATE_FLAGS = toCompletionFlagString(CREATE_FLAG_CONTRACTS);
 const UPDATE_FLAGS = toCompletionFlagString(UPDATE_FLAG_CONTRACTS);
 const CALENDAR_FLAGS = toCompletionFlagString(CALENDAR_FLAG_CONTRACTS);
 const CONTEXT_FLAGS = toCompletionFlagString(CONTEXT_FLAG_CONTRACTS);
+const DEPS_FLAGS = toCompletionFlagString(DEPS_FLAG_CONTRACTS);
 const SEARCH_FLAGS = toCompletionFlagString(SEARCH_FLAG_CONTRACTS);
 const HEALTH_FLAGS = toCompletionFlagString(HEALTH_FLAG_CONTRACTS);
 
 const MUTATION_FLAGS = "--author --message --force --json --quiet --path --no-extensions --profile --help";
+const RELEASE_MUTATION_FLAGS = "--allow-audit-release --author --message --force --json --quiet --path --no-extensions --profile --help";
 
 const GLOBAL_FLAGS = GLOBAL_FLAG_CONTRACTS.flatMap((entry) => [entry.short, entry.flag])
   .filter((value): value is string => Boolean(value))
@@ -114,7 +117,7 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen("--criterion --clear-criteria --format --policy --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    extension)",
-    `      COMPREPLY=(${compgen("--install --uninstall --explore --manage --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --trace --runtime-probe --fix-managed-state --strict-exit --fail-on-warn --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("install uninstall explore manage doctor adopt adopt-all activate deactivate --install --uninstall --explore --manage --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --trace --runtime-probe --fix-managed-state --strict-exit --fail-on-warn --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    comments)",
     `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-comment --force --json --quiet --path --no-extensions --profile --help")})`,
@@ -132,7 +135,7 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen("--add --add-glob --remove --migrate --validate-paths --audit --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    deps)",
-    `      COMPREPLY=(${compgen("--format --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen(DEPS_FLAGS)})`,
     "      ;;",
     "    test)",
     `      COMPREPLY=(${compgen("--add --remove --run --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
@@ -161,7 +164,10 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     "    close)",
     `      COMPREPLY=(${compgen("--author --message --validate-close --force --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
-    "    claim|release|delete|append|restore)",
+    "    release)",
+    `      COMPREPLY=(${compgen(RELEASE_MUTATION_FLAGS)})`,
+    "      ;;",
+    "    claim|delete|append|restore)",
     `      COMPREPLY=(${compgen(MUTATION_FLAGS)})`,
     "      ;;",
     "    completion)",
@@ -498,6 +504,9 @@ _pm() {
         deps)
           _arguments \\
             '--format[Output format]:(tree graph)' \\
+            '--max-depth[Maximum traversal depth (0 keeps root only)]:depth' \\
+            '--collapse[Collapse mode]:(none repeated)' \\
+            '--summary[Return counts only without tree/graph payload]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -570,6 +579,15 @@ _pm() {
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
+        release)
+          _arguments \\
+            '--author[Mutation author]:author' \\
+            '--message[History message]:message' \\
+            '--allow-audit-release[Allow non-owner release handoffs without requiring --force]' \\
+            '--force[Force override]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
         validate)
           _arguments \\
             '--check-metadata[Run metadata completeness checks]' \\
@@ -617,6 +635,7 @@ _pm() {
           ;;
         extension)
           _arguments \\
+            '1:extension_action:(install uninstall explore manage doctor adopt adopt-all activate deactivate)' \\
             '--install[Install extension from local path or GitHub source]' \\
             '--uninstall[Uninstall extension by name]' \\
             '--explore[List discovered extensions for selected scope]' \\
@@ -907,6 +926,9 @@ complete -c pm -n '__fish_seen_subcommand_from contracts' -l schema-only -d 'Ret
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l runtime-only -d 'Include only actions invocable in the current runtime'
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l active-only -d 'Alias for --runtime-only'
 complete -c pm -n '__fish_seen_subcommand_from deps' -l format -d 'Output format' -r -a 'tree graph'
+complete -c pm -n '__fish_seen_subcommand_from deps' -l max-depth -d 'Maximum traversal depth (0 keeps root only)' -r
+complete -c pm -n '__fish_seen_subcommand_from deps' -l collapse -d 'Collapse mode' -r -a 'none repeated'
+complete -c pm -n '__fish_seen_subcommand_from deps' -l summary -d 'Return counts only without tree/graph payload'
 
 # comments / notes / learnings flags
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l add -d 'Add one entry (text=<value> or plain text)' -r
@@ -963,6 +985,7 @@ complete -c pm -n '__fish_seen_subcommand_from close' -l author -d 'Mutation aut
 complete -c pm -n '__fish_seen_subcommand_from close' -l message -d 'History message' -r
 complete -c pm -n '__fish_seen_subcommand_from close' -l validate-close -d 'Validate closure metadata mode' -r -a 'warn strict'
 complete -c pm -n '__fish_seen_subcommand_from close' -l force -d 'Force override'
+complete -c pm -n '__fish_seen_subcommand_from release' -l allow-audit-release -d 'Allow non-owner release handoffs without requiring --force'
 
 # validate flags
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-metadata -d 'Run metadata completeness checks'
@@ -1007,6 +1030,7 @@ complete -c pm -n '__fish_seen_subcommand_from completion' -a 'bash zsh fish' -d
 complete -c pm -n '__fish_seen_subcommand_from templates' -a 'save list show' -d 'Templates command'
 
 # extension lifecycle flags
+complete -c pm -n '__fish_seen_subcommand_from extension' -a 'install uninstall explore manage doctor adopt adopt-all activate deactivate' -d 'Extension action subcommand'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l install -d 'Install extension from local path or GitHub source'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l uninstall -d 'Uninstall extension by name'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l explore -d 'List discovered extensions for selected scope'

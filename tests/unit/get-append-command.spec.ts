@@ -128,6 +128,90 @@ describe("runGet and runAppend", () => {
     });
   });
 
+  it("surfaces claim state metadata with latest claim/release context", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, {
+        title: "get-claim-state",
+        body: "claim metadata body",
+      });
+
+      const initial = await runGet(id, { path: context.pmPath });
+      expect(initial.claim_state).toEqual({
+        claimed: false,
+        assignee: null,
+        last_claim: null,
+        last_release: null,
+      });
+
+      const claim = context.runCli(["claim", id, "--json", "--author", "owner-a", "--message", "claim metadata context"], {
+        expectJson: true,
+      });
+      expect(claim.code).toBe(0);
+
+      const afterClaim = await runGet(id, { path: context.pmPath });
+      expect(afterClaim.claim_state.claimed).toBe(true);
+      expect(afterClaim.claim_state.assignee).toBe("owner-a");
+      expect(afterClaim.claim_state.last_claim?.author).toBe("owner-a");
+      expect(afterClaim.claim_state.last_release).toBeNull();
+
+      const release = context.runCli(
+        ["release", id, "--json", "--author", "audit-reviewer", "--allow-audit-release", "--message", "release metadata context"],
+        { expectJson: true },
+      );
+      expect(release.code).toBe(0);
+
+      const afterRelease = await runGet(id, { path: context.pmPath });
+      expect(afterRelease.claim_state.claimed).toBe(false);
+      expect(afterRelease.claim_state.assignee).toBeNull();
+      expect(afterRelease.claim_state.last_claim?.author).toBe("owner-a");
+      expect(afterRelease.claim_state.last_release?.author).toBe("audit-reviewer");
+    });
+  });
+
+  it("falls back to empty claim history when history entries cannot be decoded", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, {
+        title: "get-history-decode-fallback",
+        body: "claim metadata fallback body",
+      });
+
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      await writeFile(historyPath, "{not valid jsonl}\n", "utf8");
+
+      const result = await runGet(id, { path: context.pmPath });
+      expect(result.item.id).toBe(id);
+      expect(result.claim_state).toEqual({
+        claimed: false,
+        assignee: null,
+        last_claim: null,
+        last_release: null,
+      });
+    });
+  });
+
+  it("normalizes missing claim/release history messages to null", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, {
+        title: "get-claim-state-message-null",
+        body: "claim metadata null message body",
+      });
+
+      const claim = context.runCli(["claim", id, "--json", "--author", "owner-a"], {
+        expectJson: true,
+      });
+      expect(claim.code).toBe(0);
+
+      const release = context.runCli(["release", id, "--json", "--author", "owner-a"], {
+        expectJson: true,
+      });
+      expect(release.code).toBe(0);
+
+      const result = await runGet(id, { path: context.pmPath });
+      expect(result.claim_state.last_claim?.message).toBeNull();
+      expect(result.claim_state.last_release?.message).toBeNull();
+    });
+  });
+
   it("returns not found for unknown ids", async () => {
     await withTempPmPath(async (context) => {
       await expect(runGet("pm-does-not-exist", { path: context.pmPath })).rejects.toMatchObject<PmCliError>({

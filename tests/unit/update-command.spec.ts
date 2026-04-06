@@ -909,6 +909,42 @@ describe("runUpdate", () => {
     });
   });
 
+  it("supports atomic dependency replacement with --replace-deps", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-replace-dependencies");
+      await runUpdate(
+        id,
+        {
+          dep: [
+            "id=dep-alpha,kind=blocks,created_at=2026-03-01T00:00:00.000Z",
+            "id=dep-beta,kind=related,created_at=2026-03-02T00:00:00.000Z",
+          ],
+          message: "seed dependencies before replacement",
+        },
+        { path: context.pmPath },
+      );
+
+      const replaced = await runUpdate(
+        id,
+        {
+          replaceDeps: true,
+          dep: ["id=dep-gamma,kind=related,created_at=2026-03-03T00:00:00.000Z"],
+          message: "replace dependencies atomically",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(replaced.changed_fields).toContain("dependencies");
+      expect((replaced.item as { dependencies?: Array<Record<string, unknown>> }).dependencies).toEqual([
+        {
+          id: "pm-dep-gamma",
+          kind: "related",
+          created_at: "2026-03-03T00:00:00.000Z",
+        },
+      ]);
+    });
+  });
+
   it("supports transactional linked collection mutations in a single update", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-transactional-annotate");
@@ -1049,6 +1085,39 @@ describe("runUpdate", () => {
           id,
           {
             depRemove: ["kind=blocks"],
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          {
+            clearDeps: true,
+            dep: ["id=dep-clear,kind=blocks"],
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          {
+            replaceDeps: true,
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          {
+            replaceDeps: true,
+            dep: ["id=dep-replaced,kind=blocks"],
+            depRemove: ["dep-replaced"],
           },
           { path: context.pmPath },
         ),

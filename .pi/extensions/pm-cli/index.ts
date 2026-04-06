@@ -153,6 +153,7 @@ export interface PmToolParameters {
   verify?: boolean;
   timeout?: NumericFlagInput;
   allowAuditComment?: boolean;
+  allowAuditRelease?: boolean;
   force?: boolean;
   run?: boolean;
   count?: boolean;
@@ -173,6 +174,7 @@ export interface PmToolParameters {
   audit?: boolean;
   dep?: string[];
   depRemove?: string[];
+  replaceDeps?: boolean;
   comment?: string[];
   note?: string[];
   learning?: string[];
@@ -196,6 +198,9 @@ export interface PmToolParameters {
   criterion?: string[];
   clearCriteria?: boolean;
   format?: string;
+  maxDepth?: NumericFlagInput;
+  collapse?: string;
+  summary?: boolean;
   policy?: string;
 }
 
@@ -333,6 +338,9 @@ function addUpdateFlags(args: string[], params: PmToolParameters): void {
   pushContractedFlags(args, params, scalarContracts);
   addSharedCreateUpdateFlags(args, params);
   pushContractedFlags(args, params, repeatableContracts);
+  if (params.replaceDeps) {
+    args.push("--replace-deps");
+  }
   if (params.force) {
     args.push("--force");
   }
@@ -697,6 +705,11 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
     case "deps":
       args.push("deps", requireString(params.id, "id", action));
       pushOption(args, "--format", params.format);
+      pushOption(args, "--max-depth", params.maxDepth);
+      pushOption(args, "--collapse", params.collapse);
+      if (params.summary) {
+        args.push("--summary");
+      }
       return args;
     case "test":
       args.push("test", requireString(params.id, "id", action));
@@ -874,8 +887,14 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       args.push("templates", "show", requireString(params.template, "template", action));
       return args;
     case "claim":
+      args.push(action, requireString(params.id, "id", action));
+      addAuthorMessageForceFlags(args, params);
+      return args;
     case "release":
       args.push(action, requireString(params.id, "id", action));
+      if (params.allowAuditRelease) {
+        args.push("--allow-audit-release");
+      }
       addAuthorMessageForceFlags(args, params);
       return args;
     case "start-task":

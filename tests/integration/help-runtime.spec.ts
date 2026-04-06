@@ -361,6 +361,52 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
+  it("supports --allow-audit-release for non-owner release handoffs", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(
+        [
+          "create",
+          "--title",
+          "Audit release seed",
+          "--description",
+          "Seed item for audit release policy checks",
+          "--type",
+          "Task",
+          "--create-mode",
+          "progressive",
+          "--assignee",
+          "owner-a",
+          "--author",
+          "owner-a",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(created.code).toBe(0);
+      const id = (created.json as { item: { id: string } }).item.id;
+
+      const blocked = context.runCli(["release", id, "--author", "owner-b", "--json"]);
+      expect(blocked.code).toBe(4);
+      const blockedEnvelope = JSON.parse(blocked.stderr) as {
+        code: string;
+        required: string;
+        next_steps?: string[];
+      };
+      expect(blockedEnvelope.code).toBe("ownership_conflict");
+      expect(blockedEnvelope.required).toContain("--allow-audit-release");
+      expect(blockedEnvelope.next_steps?.some((step) => step.includes("--allow-audit-release"))).toBe(true);
+
+      const allowed = context.runCli(["release", id, "--author", "owner-b", "--allow-audit-release", "--json"], {
+        expectJson: true,
+      });
+      expect(allowed.code).toBe(0);
+      const payload = allowed.json as { item: { assignee?: string }; released_by: string; audit_release: boolean };
+      expect(payload.released_by).toBe("owner-b");
+      expect(payload.audit_release).toBe(true);
+      expect(payload.item.assignee).toBeUndefined();
+    });
+  });
+
   it("renders ownership conflict guidance with explicit force-usage scenarios", async () => {
     await withTempPmPath(async (context) => {
       const createResult = context.runCli(

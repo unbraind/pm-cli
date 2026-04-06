@@ -159,7 +159,9 @@ Claim behavior note:
 
 - `pm claim <ID>` can take over non-terminal items even when currently assigned to someone else.
 - Use `--force` for claim/release only when overriding terminal-state or lock conflicts.
+- For non-owner release handoffs that only clear assignee metadata, prefer `pm release <ID> --allow-audit-release --author <you>` before `--force`.
 - For ownership-conflict mutations, `--force` is intended for coordinated PM audits, lead-maintainer metadata corrections, or explicit ownership handoff cleanup.
+- `pm get <ID> --json` now includes `claim_state` with current assignee plus latest claim/release history context.
 
 Create policy mode note:
 
@@ -506,6 +508,7 @@ printf '%s\n' 'at: +1d' 'text: reminder from piped stdin' | pm update pm-a1b2 --
 printf '%s\n' 'Backfilled body from stdin token' | pm update pm-a1b2 --body -
 pm update pm-a1b2 --dep "id=pm-b3c4,kind=blocks,author=alex-maintainer,created_at=now"
 pm update pm-a1b2 --dep-remove "pm-b3c4"
+pm update pm-a1b2 --replace-deps --dep "id=pm-c7d8,kind=related,author=alex-maintainer,created_at=now"
 pm update pm-a1b2 --clear-deps
 pm deps pm-a1b2 --format tree
 pm deps pm-a1b2 --format graph --json
@@ -527,7 +530,7 @@ For `pm create` log-seed flags (`--comment`, `--note`, `--learning`), only `auth
   - `pm files <ID> --add/--add-glob/--remove`
   - `pm docs <ID> --add/--add-glob/--remove`
 - Use `pm update <ID> --body <value>` to replace an item's body content (including empty-string backfills); use `pm append <ID> --body <value>` for additive narrative updates.
-- Dependency links on existing items are now mutated through `pm update` (`--dep` to add entries, `--clear-deps` to clear all, and `--dep-remove`/`--dep_remove` to remove selectors).
+- Dependency links on existing items are now mutated through `pm update` (`--dep` to add entries, `--clear-deps` to clear all, `--replace-deps` for one-shot atomic replacement, and `--dep-remove`/`--dep_remove` to remove selectors).
 - Use `pm deps <ID> --format tree|graph` for deterministic read-only dependency visualization.
 - `pm update` supports transactional linked mutations in one lock/history operation via repeatable `--comment`, `--note`, `--learning`, `--file`, `--test`, and `--doc` flags.
 - Dedicated commands (`pm comments|notes|learnings|files|test|docs`) remain available for focused single-surface edits.

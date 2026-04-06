@@ -2156,6 +2156,7 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
     customerImpact: readUpdateString("customerImpact"),
     dep: readUpdateList("dep"),
     depRemove: readUpdateList("depRemove"),
+    replaceDeps: commandOptions.replaceDeps === true ? true : undefined,
     comment: readUpdateList("comment"),
     note: readUpdateList("note"),
     learning: readUpdateList("learning"),
@@ -2574,15 +2575,89 @@ program
     }
   });
 
-program
+type ExtensionSubcommandAction =
+  | "install"
+  | "uninstall"
+  | "explore"
+  | "manage"
+  | "doctor"
+  | "adopt"
+  | "adopt-all"
+  | "activate"
+  | "deactivate";
+
+function normalizeExtensionOptions(
+  options: Record<string, unknown>,
+  forcedAction?: ExtensionSubcommandAction,
+): Record<string, unknown> {
+  const isForcedAction = (action: ExtensionSubcommandAction): boolean => forcedAction === action;
+  return {
+    install: isForcedAction("install") || options.install === true,
+    uninstall: isForcedAction("uninstall") || options.uninstall === true,
+    explore: isForcedAction("explore") || options.explore === true,
+    manage: isForcedAction("manage") || options.manage === true,
+    doctor: isForcedAction("doctor") || options.doctor === true,
+    adopt: isForcedAction("adopt") || options.adopt === true,
+    adoptAll: isForcedAction("adopt-all") || options.adoptAll === true,
+    activate: isForcedAction("activate") || options.activate === true,
+    deactivate: isForcedAction("deactivate") || options.deactivate === true,
+    project: options.project === true,
+    local: options.local === true,
+    global: options.global === true,
+    gh: typeof options.gh === "string" ? options.gh : undefined,
+    github: typeof options.github === "string" ? options.github : undefined,
+    ref: typeof options.ref === "string" ? options.ref : undefined,
+    detail: typeof options.detail === "string" ? options.detail : undefined,
+    trace: options.trace === true,
+    runtimeProbe: options.runtimeProbe === true,
+    fixManagedState: options.fixManagedState === true,
+    strictExit: Boolean(options.strictExit),
+    failOnWarn: Boolean(options.failOnWarn),
+  };
+}
+
+async function executeExtensionCommand(
+  target: string | undefined,
+  options: Record<string, unknown>,
+  command: Command,
+  forcedAction?: ExtensionSubcommandAction,
+): Promise<void> {
+  const globalOptions = getGlobalOptions(command);
+  const startedAt = Date.now();
+  const normalizedOptions = normalizeExtensionOptions(options, forcedAction);
+  const result = await runExtension(target, normalizedOptions, globalOptions);
+  printResult(result, globalOptions);
+  const strictExit = Boolean(normalizedOptions.strictExit) || Boolean(normalizedOptions.failOnWarn);
+  if (result.action === "doctor" && strictExit) {
+    const detailsRecord = result.details as Record<string, unknown>;
+    const summary = (detailsRecord.summary ?? null) as Record<string, unknown> | null;
+    const summaryStatus = summary && typeof summary.status === "string" ? summary.status : undefined;
+    const shouldFail = summaryStatus ? summaryStatus !== "ok" : result.warnings.length > 0;
+    if (shouldFail) {
+      process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+    }
+  }
+  if (globalOptions.profile) {
+    printError(`profile:command=extension took_ms=${Date.now() - startedAt}`);
+  }
+}
+
+function addExtensionScopeOptions<T extends Command>(command: T): T {
+  return command
+    .option("--project", "Use project extension scope (default)")
+    .option("--local", "Alias for --project")
+    .option("--global", "Use global extension scope");
+}
+
+const extensionCommand = program
   .command("extension")
-.argument("[target]", "Extension source (install) or extension name (adopt/activate/deactivate/uninstall)")
+  .argument("[target]", "Extension source (install) or extension name (adopt/activate/deactivate/uninstall)")
   .option("--install", "Install extension from local path or GitHub source")
   .option("--uninstall", "Uninstall an installed extension")
   .option("--explore", "List discovered extensions in selected scope")
   .option("--manage", "List managed extensions with update-check metadata")
   .option("--doctor", "Run consolidated extension diagnostics (summary/deep modes)")
-.option("--adopt", "Adopt an existing unmanaged extension into managed metadata")
+  .option("--adopt", "Adopt an existing unmanaged extension into managed metadata")
   .option("--adopt-all", "Adopt all unmanaged extensions into managed metadata")
   .option("--activate", "Activate an extension in selected scope settings")
   .option("--deactivate", "Deactivate an extension in selected scope settings")
@@ -2600,50 +2675,85 @@ program
   .option("--fail-on-warn", "Alias for --strict-exit (doctor)")
   .description("Manage extension lifecycle operations for project or global scope.")
   .action(async (target: string | undefined, options: Record<string, unknown>, command) => {
-    const globalOptions = getGlobalOptions(command);
-    const startedAt = Date.now();
-    const result = await runExtension(
-      target,
-      {
-        install: options.install === true,
-        uninstall: options.uninstall === true,
-        explore: options.explore === true,
-        manage: options.manage === true,
-        doctor: options.doctor === true,
-        adopt: options.adopt === true,
-        adoptAll: options.adoptAll === true,
-        activate: options.activate === true,
-        deactivate: options.deactivate === true,
-        project: options.project === true,
-        local: options.local === true,
-        global: options.global === true,
-        gh: typeof options.gh === "string" ? options.gh : undefined,
-        github: typeof options.github === "string" ? options.github : undefined,
-        ref: typeof options.ref === "string" ? options.ref : undefined,
-        detail: typeof options.detail === "string" ? options.detail : undefined,
-        trace: options.trace === true,
-        runtimeProbe: options.runtimeProbe === true,
-        fixManagedState: options.fixManagedState === true,
-        strictExit: Boolean(options.strictExit),
-        failOnWarn: Boolean(options.failOnWarn),
-      },
-      globalOptions,
-    );
-    printResult(result, globalOptions);
-    const strictExit = Boolean(options.strictExit) || Boolean(options.failOnWarn);
-    if (result.action === "doctor" && strictExit) {
-      const detailsRecord = result.details as Record<string, unknown>;
-      const summary = (detailsRecord.summary ?? null) as Record<string, unknown> | null;
-      const summaryStatus = summary && typeof summary.status === "string" ? summary.status : undefined;
-      const shouldFail = summaryStatus ? summaryStatus !== "ok" : result.warnings.length > 0;
-      if (shouldFail) {
-        process.exitCode = EXIT_CODE.GENERIC_FAILURE;
-      }
-    }
-    if (globalOptions.profile) {
-      printError(`profile:command=extension took_ms=${Date.now() - startedAt}`);
-    }
+    await executeExtensionCommand(target, options, command);
   });
+
+addExtensionScopeOptions(
+  extensionCommand
+    .command("install")
+    .argument("[target]", "Extension source (local path or GitHub source)")
+    .option("--gh <owner/repo[/path]>", "Install from GitHub shorthand source")
+    .option("--github <owner/repo[/path]>", "Alias for --gh")
+    .option("--ref <ref>", "Git ref/branch/tag for GitHub install sources")
+    .description("Install extension from local path or GitHub source."),
+).action(async (target: string | undefined, options: Record<string, unknown>, command) => {
+  await executeExtensionCommand(target, options, command, "install");
+});
+
+addExtensionScopeOptions(
+  extensionCommand.command("uninstall").argument("<target>", "Extension name").description("Uninstall an installed extension."),
+).action(async (target: string, options: Record<string, unknown>, command) => {
+  await executeExtensionCommand(target, options, command, "uninstall");
+});
+
+addExtensionScopeOptions(extensionCommand.command("explore").description("List discovered extensions in selected scope.")).action(
+  async (options: Record<string, unknown>, command) => {
+    await executeExtensionCommand(undefined, options, command, "explore");
+  },
+);
+
+addExtensionScopeOptions(
+  extensionCommand
+    .command("manage")
+    .option("--runtime-probe", "Opt-in runtime activation probe for manage output parity")
+    .option("--fix-managed-state", "Adopt unmanaged extensions before diagnostics/update checks")
+    .description("List managed extensions with update-check metadata."),
+).action(async (options: Record<string, unknown>, command) => {
+  await executeExtensionCommand(undefined, options, command, "manage");
+});
+
+addExtensionScopeOptions(
+  extensionCommand
+    .command("doctor")
+    .option("--detail <mode>", "Detail mode for extension diagnostics (summary|deep)")
+    .option("--trace", "Include actionable registration traces in doctor deep diagnostics")
+    .option("--fix-managed-state", "Adopt unmanaged extensions before diagnostics/update checks")
+    .option("--strict-exit", "Return non-zero exit when doctor warnings are present (ok=false)")
+    .option("--fail-on-warn", "Alias for --strict-exit (doctor)")
+    .description("Run consolidated extension diagnostics (summary/deep modes)."),
+).action(async (options: Record<string, unknown>, command) => {
+  await executeExtensionCommand(undefined, options, command, "doctor");
+});
+
+addExtensionScopeOptions(
+  extensionCommand
+    .command("adopt")
+    .argument("<target>", "Extension name")
+    .option("--gh <owner/repo[/path]>", "GitHub provenance shorthand for adopted extension")
+    .option("--github <owner/repo[/path]>", "Alias for --gh")
+    .option("--ref <ref>", "Git ref/branch/tag for GitHub shorthand source")
+    .description("Adopt an existing unmanaged extension into managed metadata."),
+).action(async (target: string, options: Record<string, unknown>, command) => {
+  await executeExtensionCommand(target, options, command, "adopt");
+});
+
+addExtensionScopeOptions(
+  extensionCommand.command("adopt-all").description("Adopt all unmanaged extensions into managed metadata."),
+).action(async (options: Record<string, unknown>, command) => {
+  await executeExtensionCommand(undefined, options, command, "adopt-all");
+});
+
+addExtensionScopeOptions(
+  extensionCommand.command("activate").argument("<target>", "Extension name").description("Activate an extension in selected scope settings."),
+).action(async (target: string, options: Record<string, unknown>, command) => {
+  await executeExtensionCommand(target, options, command, "activate");
+});
+
+addExtensionScopeOptions(
+  extensionCommand.command("deactivate").argument("<target>", "Extension name").description("Deactivate an extension in selected scope settings."),
+).action(async (target: string, options: Record<string, unknown>, command) => {
+  await executeExtensionCommand(target, options, command, "deactivate");
+});
 
 const templatesCommand = program.command("templates").description("Manage reusable create templates.");
 
@@ -3348,6 +3458,7 @@ program
     collect,
   )
   .option("--dep_remove <value>", "Alias for --dep-remove", collect)
+  .option("--replace-deps", "Atomically replace dependency entries with the provided --dep values")
   .option(
     "--comment <value>",
     "Append comment seed author=<value>,created_at=<iso|now>,text=<value> (also accepts markdown pairs and - for stdin; repeatable)",
@@ -3769,6 +3880,9 @@ program
   .command("deps")
   .argument("<id>", "Item id")
   .option("--format <value>", "Output format (tree or graph)", "tree")
+  .option("--max-depth <value>", "Maximum dependency traversal depth (0 keeps only the root)")
+  .option("--collapse <value>", "Collapse mode (none or repeated)", "none")
+  .option("--summary", "Return counts only without full tree/graph payload")
   .description("Show dependency relationships for an item.")
   .action(async (id: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
@@ -3777,6 +3891,9 @@ program
       id,
       {
         format: typeof options.format === "string" ? options.format : undefined,
+        maxDepth: typeof options.maxDepth === "string" ? options.maxDepth : undefined,
+        collapse: typeof options.collapse === "string" ? options.collapse : undefined,
+        summary: options.summary === true,
       },
       globalOptions,
     );
@@ -4205,6 +4322,7 @@ program
   .argument("<id>", "Item id")
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
+  .option("--allow-audit-release", "Allow non-owner release handoffs without requiring --force")
   .option("--force", "Force release override")
   .description("Release an item's active claim.")
   .action(async (id: string, options: Record<string, unknown>, command) => {
@@ -4213,6 +4331,7 @@ program
     const result = await runRelease(id, Boolean(options.force), globalOptions, {
       author: typeof options.author === "string" ? options.author : undefined,
       message: typeof options.message === "string" ? options.message : undefined,
+      allowAuditRelease: options.allowAuditRelease === true,
     });
     await invalidateSearchCachesForMutation(globalOptions, result);
     printResult(result, globalOptions);

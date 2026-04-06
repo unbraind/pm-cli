@@ -174,6 +174,7 @@ const REQUIRED_UPDATE_FLAGS = [
   "--assignee",
   "--dep",
   "--dep-remove",
+  "--replace-deps",
   "--comment",
   "--note",
   "--learning",
@@ -232,7 +233,8 @@ const REQUIRED_COMMENTS_FLAGS = ["--add", "--limit", "--author", "--message", "-
 const REQUIRED_COMMENTS_AUDIT_FLAGS = ["--status", "--type", "--assignee", "--limit-items", "--full-history", "--latest"];
 const REQUIRED_NOTES_FLAGS = ["--add", "--limit", "--author", "--message", "--force"];
 const REQUIRED_LEARNINGS_FLAGS = ["--add", "--limit", "--author", "--message", "--force"];
-const REQUIRED_CLAIM_RELEASE_FLAGS = ["--author", "--message", "--force"];
+const REQUIRED_CLAIM_FLAGS = ["--author", "--message", "--force"];
+const REQUIRED_RELEASE_FLAGS = ["--author", "--message", "--allow-audit-release", "--force"];
 const REQUIRED_RESTORE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_CLOSE_FLAGS = ["--author", "--message", "--validate-close", "--force"];
 const REQUIRED_VALIDATE_FLAGS = [
@@ -252,7 +254,7 @@ const REQUIRED_VALIDATE_FLAGS = [
 const REQUIRED_HEALTH_FLAGS = ["--strict-directories", "--strict-exit", "--fail-on-warn"];
 const REQUIRED_DELETE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_APPEND_FLAGS = ["--body", "--author", "--message", "--force"];
-const REQUIRED_DEPS_FLAGS = ["--format"];
+const REQUIRED_DEPS_FLAGS = ["--format", "--max-depth", "--collapse", "--summary"];
 const REQUIRED_CALENDAR_FLAGS = [
   "--view",
   "--date",
@@ -321,6 +323,26 @@ describe("release readiness runtime coverage", () => {
       const todosHelp = context.runCli(["todos", "--help"]);
       expect(todosHelp.code).toBe(0);
       expectHelpContainsCommands(todosHelp.stdout, ["import", "export"]);
+    });
+  });
+
+  it("supports extension subcommands with legacy lifecycle-flag compatibility", async () => {
+    await withTempPmPath(async (context) => {
+      const subcommandExplore = context.runCli(["extension", "explore", "--project", "--json"], { expectJson: true });
+      expect(subcommandExplore.code).toBe(0);
+      expect((subcommandExplore.json as { action?: string }).action).toBe("explore");
+
+      const legacyExplore = context.runCli(["extension", "--explore", "--project", "--json"], { expectJson: true });
+      expect(legacyExplore.code).toBe(0);
+      expect((legacyExplore.json as { action?: string }).action).toBe("explore");
+
+      const subcommandInstall = context.runCli(["extension", "install", "beads", "--project", "--json"], { expectJson: true });
+      expect(subcommandInstall.code).toBe(0);
+      expect((subcommandInstall.json as { action?: string }).action).toBe("install");
+
+      const legacyInstall = context.runCli(["extension", "--install", "todos", "--project", "--json"], { expectJson: true });
+      expect(legacyInstall.code).toBe(0);
+      expect((legacyInstall.json as { action?: string }).action).toBe("install");
     });
   });
 
@@ -457,6 +479,15 @@ describe("release readiness runtime coverage", () => {
     await withTempPmPath(async (context) => {
       const help = context.runCli(["extension", "--help"]);
       expect(help.code).toBe(0);
+      expect(help.stdout).toContain("install [options] [target]");
+      expect(help.stdout).toContain("uninstall [options] <target>");
+      expect(help.stdout).toContain("explore");
+      expect(help.stdout).toContain("manage");
+      expect(help.stdout).toContain("doctor");
+      expect(help.stdout).toContain("adopt [options] <target>");
+      expect(help.stdout).toContain("adopt-all");
+      expect(help.stdout).toContain("activate [options] <target>");
+      expect(help.stdout).toContain("deactivate [options] <target>");
       expect(help.stdout).toContain("--install");
       expect(help.stdout).toContain("--uninstall");
       expect(help.stdout).toContain("--explore");
@@ -652,13 +683,13 @@ describe("release readiness runtime coverage", () => {
     await withTempPmPath(async (context) => {
       const claimHelp = context.runCli(["claim", "--help"]);
       expect(claimHelp.code).toBe(0);
-      for (const flag of REQUIRED_CLAIM_RELEASE_FLAGS) {
+      for (const flag of REQUIRED_CLAIM_FLAGS) {
         expect(claimHelp.stdout).toContain(flag);
       }
 
       const releaseHelp = context.runCli(["release", "--help"]);
       expect(releaseHelp.code).toBe(0);
-      for (const flag of REQUIRED_CLAIM_RELEASE_FLAGS) {
+      for (const flag of REQUIRED_RELEASE_FLAGS) {
         expect(releaseHelp.stdout).toContain(flag);
       }
     });
@@ -952,7 +983,7 @@ describe("release readiness runtime coverage", () => {
         { expectJson: true },
       );
       expect(releaseResult.code).toBe(0);
-      expectTopLevelKeyOrder(releaseResult.json, ["item", "released_by", "previous_assignee", "forced"]);
+      expectTopLevelKeyOrder(releaseResult.json, ["item", "released_by", "previous_assignee", "audit_release", "forced"]);
 
       const appendResult = context.runCli(
         ["append", createdId, "--body", "runtime payload", "--author", "test-author", "--message", "append", "--json"],
@@ -1007,6 +1038,13 @@ describe("release readiness runtime coverage", () => {
       expect(depsGraphResult.code).toBe(0);
       expectTopLevelKeyOrder(depsGraphResult.json, ["id", "format", "node_count", "edge_count", "missing_count", "graph"]);
 
+      const depsSummaryResult = context.runCli(
+        ["deps", createdId, "--max-depth", "0", "--collapse", "repeated", "--summary", "--json"],
+        { expectJson: true },
+      );
+      expect(depsSummaryResult.code).toBe(0);
+      expectTopLevelKeyOrder(depsSummaryResult.json, ["id", "format", "node_count", "edge_count", "missing_count"]);
+
       const testResult = context.runCli(["test", createdId, "--json"], { expectJson: true });
       expect(testResult.code).toBe(0);
       expectTopLevelKeyOrder(testResult.json, ["id", "tests", "run_results", "failure_categories", "changed", "count"]);
@@ -1044,7 +1082,7 @@ describe("release readiness runtime coverage", () => {
 
       const getResult = context.runCli(["get", createdId, "--json"], { expectJson: true });
       expect(getResult.code).toBe(0);
-      expectTopLevelKeyOrder(getResult.json, ["item", "body", "linked"]);
+      expectTopLevelKeyOrder(getResult.json, ["item", "body", "linked", "claim_state"]);
 
       const reindexResult = context.runCli(["reindex", "--mode", "keyword", "--json"], { expectJson: true });
       expect(reindexResult.code).toBe(0);

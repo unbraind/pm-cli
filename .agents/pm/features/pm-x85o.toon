@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:cli","area:dependencies","area:visualization",external-audit,pm-cli
 created_at: "2026-04-03T14:48:19.923Z"
-updated_at: "2026-04-04T21:33:51.956Z"
+updated_at: "2026-04-06T15:41:56.918Z"
 deadline: "2026-04-13T14:48:19.923Z"
 author: codex-agent
 estimated_minutes: 240
@@ -29,10 +29,12 @@ component: project-management/add-dependency-visualization-command-pm-deps
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Add dependency visualization command (pm deps).
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-zdec,related,"2026-04-03T14:48:19.923Z",codex-agent,null
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-04-03T14:48:19.923Z",codex-agent,Feature builds on existing dependency mutation support by adding deterministic read-only visualization.
   "2026-04-03T15:05:28.830Z",codex-agent,"Implemented pm deps command with deterministic tree/graph traversal, cycle-safe recursion, and missing-node reporting; wired CLI/completion/sdk/Pi surfaces and added unit+integration regressions. Evidence: node scripts/run-tests.mjs test -- tests/unit/deps-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/cli.integration.spec.ts passed (126/126)."
   "2026-04-03T15:22:27.350Z",codex-agent,"Final verification complete: unit/integration deps suites passed plus full repo gates (build/test/coverage). Sandbox smoke checks confirmed pm deps --help plus tree/graph JSON output surfaces."
+  "2026-04-06T14:39:37.982Z",codex-agent,"Seven-issue hardening follow-up kickoff: duplicate-check evidence refreshed via pm search \"deps tree max depth collapse summary\" --limit 10 plus global context/list sweeps; reusing this feature for deps ergonomics controls."
+  "2026-04-06T15:40:08.570Z",codex-agent,"Added deps ergonomics controls for dense graphs: --max-depth, --collapse none|repeated, and --summary counts-only mode. Wired CLI/contracts/completion/Pi parity and added unit regressions; validated in targeted suites and full test+coverage runs."
 notes[1]{created_at,author,text}:
   "2026-04-03T14:48:19.923Z",codex-agent,"Will add new command module,CLI wiring,wrapper/schema parity,and tests."
 files[10]{path,scope,note}:
@@ -46,9 +48,10 @@ files[10]{path,scope,note}:
   tests/unit/completion-command.spec.ts,project,deps command completion regression assertions
   tests/unit/deps-command.spec.ts,project,unit coverage for tree graph and cycle behavior
   tests/unit/pi-agent-extension.spec.ts,project,deps action argument mapping regression
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/deps-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,deps ergonomics plus parity surfaces
   node scripts/run-tests.mjs test -- tests/unit/deps-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,deps runtime + wrapper + completion regression suite
 docs[1]{path,scope,note}:
   README.md,project,pm deps user-facing command documentation
-close_reason: "pm deps tree/graph visualization is implemented with cycle-safe traversal and validated through linked tests, full suite, and smoke checks."
+close_reason: deps tree ergonomics controls shipped with parity across surfaces
 body: Net-new read-only command to visualize dependency topology from existing item metadata.

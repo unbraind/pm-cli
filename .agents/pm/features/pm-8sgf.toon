@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:ownership","area:ux",external-audit,pm-cli
 created_at: "2026-04-03T14:48:03.782Z"
-updated_at: "2026-04-04T21:33:48.767Z"
+updated_at: "2026-04-06T15:42:00.330Z"
 deadline: "2026-04-13T14:48:03.782Z"
 author: codex-agent
 estimated_minutes: 120
@@ -29,18 +29,32 @@ component: project-management/clarify-ownership-conflict-guidance-for-force-ov
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Clarify ownership conflict guidance for force overrides.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-w9w4,related,"2026-04-03T14:48:03.782Z",codex-agent,null
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-04-03T14:48:03.782Z",codex-agent,Feature targets message clarity and keeps existing ownership enforcement behavior.
   "2026-04-03T14:50:20.546Z",codex-agent,"Implemented ownership conflict guidance scenarios with explicit force-usage next steps in CLI error guidance and added runtime integration assertions. Evidence: node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts passed (7/7)."
   "2026-04-03T15:22:23.117Z",codex-agent,"Final verification complete: pnpm build passed; node scripts/run-tests.mjs test passed (66 files, 755 tests); node scripts/run-tests.mjs coverage passed at 94.47/91.18/96.46/94.73 (stmts/branch/funcs/lines)."
+  "2026-04-06T14:39:40.391Z",codex-agent,"Seven-issue hardening follow-up kickoff: duplicate-check evidence refreshed via pm search \"claim release ergonomics non-owner audited release get claim metadata\" --limit 20 plus global sweeps; reusing this feature for claim-state metadata and audited non-owner release semantics."
+  "2026-04-06T15:41:23.419Z",codex-agent,"Implemented claim/release UX hardening: pm get now emits claim_state (claimed, assignee, last_claim, last_release), and pm release supports --allow-audit-release for non-owner append-only handoffs without --force. Added output/help/error/completion parity and unit/integration/full coverage verification."
 notes[1]{created_at,author,text}:
   "2026-04-03T14:48:03.782Z",codex-agent,Will update error-guidance path and runtime tests only.
-files[2]{path,scope,note}:
+files[13]{path,scope,note}:
+  src/cli/commands/claim.ts,project,audited non-owner release handoff mode
+  src/cli/commands/completion.ts,project,completion support for allow-audit-release
+  src/cli/commands/get.ts,project,claim_state metadata in get payload
   src/cli/error-guidance.ts,project,ownership conflict guidance scenarios
+  src/cli/help-content.ts,project,release help examples for audit handoffs
+  src/cli/main.ts,project,release flag wiring for --allow-audit-release
+  src/core/output/command-aware.ts,project,claim-state highlights and next-step guidance
+  src/core/store/item-store.ts,project,release bypass assignee conflict support for audit mode
+  tests/integration/cli.integration.spec.ts,project,integration audit release handoff flow
   tests/integration/help-runtime.spec.ts,project,runtime assertions for ownership guidance
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  tests/integration/release-readiness-runtime.spec.ts,project,release and get JSON ordering parity
+  tests/unit/claim-command.spec.ts,project,unit coverage for audit release and fallback branches
+  tests/unit/get-append-command.spec.ts,project,unit coverage for claim_state history contexts
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,ownership guidance regression
+  node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts tests/unit/get-append-command.spec.ts tests/integration/cli.integration.spec.ts -t 'supports audited non-owner release handoffs without force',null,project,3600,null,null,null,null,null,null,null,null,null,null,null,claim/release ergonomics regression coverage
 docs[1]{path,scope,note}:
   AGENTS.md,project,ownership override guidance policy
-close_reason: Ownership conflict guidance now includes explicit force-usage scenarios and linked runtime regressions/full verification passed.
+close_reason: claim/release ergonomics improved with claim_state and audit release mode
 body: "Net-new scope from external report: guidance clarity only (no ownership rule changes)."

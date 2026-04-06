@@ -11,9 +11,14 @@ import type { Dependency, ItemFrontMatter, ItemStatus, ItemType } from "../../ty
 
 export const DEPS_FORMAT_VALUES = ["tree", "graph"] as const;
 export type DepsFormat = (typeof DEPS_FORMAT_VALUES)[number];
+export const DEPS_COLLAPSE_VALUES = ["none", "repeated"] as const;
+export type DepsCollapseMode = (typeof DEPS_COLLAPSE_VALUES)[number];
 
 export interface DepsCommandOptions {
   format?: string;
+  maxDepth?: string | number;
+  collapse?: string;
+  summary?: boolean;
 }
 
 interface IndexedItem {
@@ -32,6 +37,8 @@ export interface DepsTreeNode {
   via?: string;
   missing: boolean;
   cycle: boolean;
+  truncated?: boolean;
+  collapsed?: boolean;
   dependencies: DepsTreeNode[];
 }
 
@@ -74,6 +81,25 @@ function parseFormat(raw: string | undefined): DepsFormat {
   throw new PmCliError(`Invalid --format value "${raw}". Use "tree" or "graph".`, EXIT_CODE.USAGE);
 }
 
+function parseMaxDepth(raw: string | number | undefined): number | undefined {
+  if (raw === undefined) {
+    return undefined;
+  }
+  const normalized = typeof raw === "number" ? raw : Number(raw.trim());
+  if (!Number.isInteger(normalized) || normalized < 0) {
+    throw new PmCliError(`Invalid --max-depth value "${raw}". Use a non-negative integer.`, EXIT_CODE.USAGE);
+  }
+  return normalized;
+}
+
+function parseCollapse(raw: string | undefined): DepsCollapseMode {
+  const candidate = raw?.trim().toLowerCase() ?? "none";
+  if ((DEPS_COLLAPSE_VALUES as readonly string[]).includes(candidate)) {
+    return candidate as DepsCollapseMode;
+  }
+  throw new PmCliError(`Invalid --collapse value "${raw}". Use "none" or "repeated".`, EXIT_CODE.USAGE);
+}
+
 function normalizeDependencies(dependencies: Dependency[] | undefined): Dependency[] {
   if (!dependencies || dependencies.length === 0) {
     return [];
@@ -109,6 +135,10 @@ function toTreeNode(
   id: string,
   index: Map<string, IndexedItem>,
   lineage: Set<string>,
+  maxDepth: number | undefined,
+  collapse: DepsCollapseMode,
+  expanded: Set<string>,
+  depth = 0,
   via?: string,
 ): DepsTreeNode {
   const item = index.get(id);
@@ -125,9 +155,24 @@ function toTreeNode(
   if (!item || baseNode.cycle) {
     return baseNode;
   }
+  if (maxDepth !== undefined && depth >= maxDepth) {
+    if (item.dependencies.length > 0) {
+      baseNode.truncated = true;
+    }
+    return baseNode;
+  }
+  if (collapse === "repeated" && expanded.has(id)) {
+    baseNode.collapsed = true;
+    return baseNode;
+  }
+  if (collapse === "repeated") {
+    expanded.add(id);
+  }
   const nextLineage = new Set(lineage);
   nextLineage.add(id);
-  baseNode.dependencies = item.dependencies.map((dependency) => toTreeNode(dependency.id, index, nextLineage, dependency.kind));
+  baseNode.dependencies = item.dependencies.map((dependency) =>
+    toTreeNode(dependency.id, index, nextLineage, maxDepth, collapse, expanded, depth + 1, dependency.kind),
+  );
   return baseNode;
 }
 
@@ -212,6 +257,9 @@ export async function runDeps(id: string, options: DepsCommandOptions, global: G
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
   const format = parseFormat(options.format);
+  const maxDepth = parseMaxDepth(options.maxDepth);
+  const collapse = parseCollapse(options.collapse);
+  const summaryOnly = options.summary === true;
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
@@ -220,7 +268,7 @@ export async function runDeps(id: string, options: DepsCommandOptions, global: G
     throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
   }
 
-  const tree = toTreeNode(id, index, new Set<string>());
+  const tree = toTreeNode(id, index, new Set<string>(), maxDepth, collapse, new Set<string>());
   const graph = toGraph(tree);
   const baseResult = {
     id,
@@ -229,6 +277,9 @@ export async function runDeps(id: string, options: DepsCommandOptions, global: G
     edge_count: graph.edges.length,
     missing_count: graph.missing_ids.length,
   };
+  if (summaryOnly) {
+    return baseResult;
+  }
   if (format === "tree") {
     return {
       ...baseResult,

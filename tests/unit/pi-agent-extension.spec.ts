@@ -373,6 +373,7 @@ describe("Pi agent extension wrapper for pm", () => {
       closeReason: "none",
       dep: ["id=pm-a1b3,kind=related"],
       depRemove: ["id=pm-a1b4,kind=blocks"],
+      replaceDeps: true,
     });
 
     expect(updateArgs).toEqual(
@@ -405,6 +406,7 @@ describe("Pi agent extension wrapper for pm", () => {
         "id=pm-a1b3,kind=related",
         "--dep-remove",
         "id=pm-a1b4,kind=blocks",
+        "--replace-deps",
       ]),
     );
   });
@@ -581,6 +583,10 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(schemaProperty(healthSchema, "checkOnly").type).toBe("boolean");
     expect(schemaProperty(healthSchema, "noRefresh").type).toBe("boolean");
     expect(schemaProperty(healthSchema, "refreshVectors").type).toBe("boolean");
+
+    const releaseSchema = schemaForAction(tool.parameters as Record<string, unknown>, "release");
+    expect(releaseSchema.required).toEqual(expect.arrayContaining(["action", "id"]));
+    expect(schemaProperty(releaseSchema, "allowAuditRelease").type).toBe("boolean");
 
     const calendarSchema = schemaForAction(tool.parameters as Record<string, unknown>, "calendar");
     expect(schemaProperty(calendarSchema, "view").type).toBe("string");
@@ -1201,12 +1207,14 @@ describe("Pi agent extension wrapper for pm", () => {
         id: "pm-a1b2",
         author: "pi-bot",
         message: "release item",
+        allowAuditRelease: true,
         force: true,
       }),
     ).toEqual([
       "--json",
       "release",
       "pm-a1b2",
+      "--allow-audit-release",
       "--author",
       "pi-bot",
       "--message",
@@ -1320,6 +1328,16 @@ describe("Pi agent extension wrapper for pm", () => {
         format: "graph",
       }),
     ).toEqual(["--json", "deps", "pm-a1b2", "--format", "graph"]);
+
+    expect(
+      buildPmCliArgs({
+        action: "deps",
+        id: "pm-a1b2",
+        maxDepth: "2",
+        collapse: "repeated",
+        summary: true,
+      }),
+    ).toEqual(["--json", "deps", "pm-a1b2", "--max-depth", "2", "--collapse", "repeated", "--summary"]);
 
     expect(
       buildPmCliArgs({

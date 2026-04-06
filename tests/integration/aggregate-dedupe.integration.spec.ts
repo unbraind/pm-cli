@@ -95,6 +95,28 @@ describe("aggregate and dedupe-audit CLI integration", () => {
           count: 1,
         },
       ]);
+
+      const typeOnlyAggregate = context.runCli(["aggregate", "--json", "--group-by", "type", "--count", "--type", "Task"], {
+        expectJson: true,
+      });
+      expect(typeOnlyAggregate.code).toBe(0);
+      const typeOnlyPayload = typeOnlyAggregate.json as {
+        count: number;
+        groups: Array<{ group: { type: string; parent?: string | null }; count: number }>;
+        filters: { group_by: string[]; count: boolean };
+      };
+      expect(typeOnlyPayload.filters.group_by).toEqual(["type"]);
+      expect(typeOnlyPayload.filters.count).toBe(true);
+      expect(typeOnlyPayload.count).toBe(1);
+      expect(typeOnlyPayload.groups).toEqual([
+        {
+          group: {
+            type: "Task",
+          },
+          count: 1,
+        },
+      ]);
+      expect(Object.prototype.hasOwnProperty.call(typeOnlyPayload.groups[0]!.group, "parent")).toBe(false);
     });
   });
 

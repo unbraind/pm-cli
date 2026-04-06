@@ -27,7 +27,7 @@ export interface AggregateOptions {
 }
 
 export interface AggregateRow {
-  group: Record<AggregateGroupField, string | null>;
+  group: Partial<Record<AggregateGroupField, string | null>>;
   count: number;
 }
 
@@ -103,7 +103,7 @@ function compareNullableString(left: string | null, right: string | null): numbe
   return left.localeCompare(right);
 }
 
-function buildGroupKey(groupBy: AggregateGroupField[], group: Record<AggregateGroupField, string | null>): string {
+function buildGroupKey(groupBy: AggregateGroupField[], group: Partial<Record<AggregateGroupField, string | null>>): string {
   return groupBy.map((field) => `${field}:${group[field] ?? "__null__"}`).join("|");
 }
 
@@ -113,7 +113,7 @@ function compareAggregateRows(
   groupBy: AggregateGroupField[],
 ): number {
   for (const field of groupBy) {
-    const byField = compareNullableString(left.group[field], right.group[field]);
+    const byField = compareNullableString(left.group[field] ?? null, right.group[field] ?? null);
     if (byField !== 0) {
       return byField;
     }
@@ -152,10 +152,14 @@ export async function runAggregate(options: AggregateOptions, global: GlobalOpti
   let groupedItemCount = 0;
 
   for (const item of listed.items) {
-    const group: Record<AggregateGroupField, string | null> = {
-      parent: item.parent ?? null,
-      type: item.type,
-    };
+    const group: Partial<Record<AggregateGroupField, string | null>> = {};
+    for (const field of groupBy) {
+      if (field === "parent") {
+        group.parent = item.parent ?? null;
+      } else if (field === "type") {
+        group.type = item.type;
+      }
+    }
     if (groupBy.includes("parent") && group.parent === null && !includeUnparented) {
       skippedUnparented += 1;
       continue;

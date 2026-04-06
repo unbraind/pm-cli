@@ -6,10 +6,25 @@ status: closed
 priority: 1
 tags[5]: contracts,extensions,external-audit,help,pm-cli
 created_at: "2026-04-06T09:48:52.264Z"
-updated_at: "2026-04-06T11:21:57.452Z"
+updated_at: "2026-04-06T15:42:32.532Z"
 author: codex-agent
 parent: pm-o7be
-comments[1]{created_at,author,text}:
+resolution: Added extension action subcommands with legacy-flag compatibility and exposed type-aware create required options in contracts schema metadata.
+expected_result: Operators can discover extension workflows via explicit subcommands and machine contracts expose effective create requirements per type/mode.
+actual_result: extension install/uninstall/etc subcommands shipped with backward-compatible flags; contracts include x-create-required-options strict/progressive metadata and tests pass.
+comments[3]{created_at,author,text}:
   "2026-04-06T09:48:52.264Z",codex-agent,"Duplicate-check evidence: dedupe command set run immediately before create and no open/in_progress/blocked duplicate found for this scope."
-close_reason: extension help/contracts runtime remediation complete
+  "2026-04-06T14:39:39.155Z",codex-agent,"Seven-issue hardening follow-up kickoff: duplicate-check evidence refreshed via pm search \"extension subcommand help discoverability\" --limit 10 and pm search \"contracts schema-only action create required dep comment note learning file test doc\" --limit 10 plus global sweeps; reusing this feature for extension subcommands + contracts create-required parity."
+  "2026-04-06T15:40:30.741Z",codex-agent,"Implemented extension action subcommands (install/uninstall/explore/manage/doctor/adopt/adopt-all/activate/deactivate) while keeping legacy lifecycle flags backward compatible. Added contracts x-create-required-options metadata for type-aware create requirements (strict/progressive), refreshed help examples, and verified with targeted/runtime/full test+coverage gates."
+files[7]{path,scope,note}:
+  src/cli/commands/contracts.ts,project,create contract type-aware required options metadata
+  src/cli/help-content.ts,project,extension subcommand help discoverability and create guidance refresh
+  src/cli/main.ts,project,extension action subcommands with legacy flag compatibility
+  src/sdk/cli-contracts.ts,project,deps/release/update contract parity updates
+  tests/integration/help-runtime.spec.ts,project,extension help subcommand discoverability assertions
+  tests/integration/release-readiness-runtime.spec.ts,project,release-readiness help and JSON shape parity
+  tests/unit/contracts-command.spec.ts,project,contracts create-required metadata assertions
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,extension subcommand and contracts required-option parity
+close_reason: extension subcommands and contracts create-required metadata delivered
 body: ""

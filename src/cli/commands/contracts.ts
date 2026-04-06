@@ -1,12 +1,13 @@
-import { EXIT_CODE } from "../../core/shared/constants.js";
+import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { activateExtensions, loadExtensions } from "../../core/extensions/index.js";
+import { activateExtensions, getActiveExtensionRegistrations, loadExtensions } from "../../core/extensions/index.js";
 import type {
   RegisteredExtensionCommandDefinition,
   RegisteredExtensionFlagDefinitions,
 } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
+import { commandOptionFlagLabel, resolveCommandOptionPolicyState, resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import {
@@ -21,6 +22,7 @@ import {
   CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
   CREATE_COMMANDER_STRING_OPTION_CONTRACTS,
   CREATE_FLAG_CONTRACTS,
+  DEPS_FLAG_CONTRACTS,
   DEDUPE_AUDIT_FLAG_CONTRACTS,
   GLOBAL_FLAG_CONTRACTS,
   HEALTH_FLAG_CONTRACTS,
@@ -588,6 +590,9 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   if (command === "dedupe-audit") {
     return DEDUPE_AUDIT_FLAG_CONTRACTS;
   }
+  if (command === "deps") {
+    return DEPS_FLAG_CONTRACTS;
+  }
   if (command === "reindex") {
     return REINDEX_FLAG_CONTRACTS;
   }
@@ -671,11 +676,108 @@ function buildCommanderAliasSurface(): Record<string, CommanderOptionAliasContra
   };
 }
 
+function resolveCreateRequiredOptionContract(
+  typeDefinition: ReturnType<typeof resolveItemTypeRegistry>["by_type"][string],
+  createMode: "strict" | "progressive",
+): {
+  required_option_keys: string[];
+  required_flags: string[];
+  required_type_options: string[];
+  policy_errors: string[];
+} {
+  const baseRequiredOptions = new Set<string>(["title", "description", "type"]);
+  if (createMode === "strict") {
+    for (const field of typeDefinition.required_create_fields) {
+      baseRequiredOptions.add(field);
+    }
+    for (const field of typeDefinition.required_create_repeatables) {
+      baseRequiredOptions.add(field);
+    }
+  }
+  const policyState = resolveCommandOptionPolicyState(typeDefinition, "create", baseRequiredOptions);
+  const requiredOptionKeys = [...new Set(policyState.required)].sort((left, right) => left.localeCompare(right));
+  const requiredFlags = [...new Set(requiredOptionKeys.map((option) => commandOptionFlagLabel("create", option)))].sort((left, right) =>
+    left.localeCompare(right),
+  );
+  const requiredTypeOptions = [...new Set(typeDefinition.options.filter((option) => option.required === true).map((option) => option.key))].sort(
+    (left, right) => left.localeCompare(right),
+  );
+  return {
+    required_option_keys: requiredOptionKeys,
+    required_flags: requiredFlags,
+    required_type_options: requiredTypeOptions,
+    policy_errors: [...new Set(policyState.errors)].sort((left, right) => left.localeCompare(right)),
+  };
+}
+
+function buildCreateRequiredOptionContracts(typeRegistry: ReturnType<typeof resolveItemTypeRegistry>): Record<string, unknown> {
+  const byTypeStrict: Record<string, unknown> = {};
+  const byTypeProgressive: Record<string, unknown> = {};
+  for (const typeName of [...typeRegistry.types].sort((left, right) => left.localeCompare(right))) {
+    const typeDefinition = typeRegistry.by_type[typeName];
+    byTypeStrict[typeName] = resolveCreateRequiredOptionContract(typeDefinition, "strict");
+    byTypeProgressive[typeName] = resolveCreateRequiredOptionContract(typeDefinition, "progressive");
+  }
+  return {
+    default_create_mode: "strict",
+    by_create_mode: {
+      strict: {
+        by_type: byTypeStrict,
+      },
+      progressive: {
+        by_type: byTypeProgressive,
+      },
+    },
+  };
+}
+
+function attachCreateRequiredOptionContracts(schema: Record<string, unknown>, metadata: Record<string, unknown>): Record<string, unknown> {
+  const branches = extractActionBranches(schema);
+  if (branches.length === 0) {
+    return schema;
+  }
+  let touched = false;
+  const enrichedBranches = branches.map((branch) => {
+    const properties = branch.properties;
+    if (typeof properties !== "object" || properties === null) {
+      return branch;
+    }
+    const actionProperty = (properties as Record<string, unknown>).action;
+    if (typeof actionProperty !== "object" || actionProperty === null) {
+      return branch;
+    }
+    if ((actionProperty as { const?: unknown }).const !== "create") {
+      return branch;
+    }
+    touched = true;
+    return {
+      ...branch,
+      "x-create-required-options": metadata,
+    };
+  });
+  if (!touched) {
+    return schema;
+  }
+  return {
+    ...schema,
+    oneOf: enrichedBranches,
+  };
+}
+
 export async function runContracts(options: ContractsCommandOptions, global: GlobalOptions): Promise<ContractsResult> {
   const selectedAction = normalizeToken(options.action);
   const selectedCommand = normalizeToken(options.command);
   const schemaOnly = options.schemaOnly === true;
   const runtimeOnly = options.runtimeOnly === true;
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  let settings = structuredClone(SETTINGS_DEFAULTS);
+  try {
+    settings = await readSettings(pmRoot);
+  } catch {
+    settings = structuredClone(SETTINGS_DEFAULTS);
+  }
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const createRequiredOptionContracts = buildCreateRequiredOptionContracts(typeRegistry);
   const runtimeProbe = await resolveRuntimeExtensionActionProbe(global);
   const extensionContracts = collectExtensionCommandContracts(runtimeProbe);
   const extensionFlagMap = collectExtensionFlagContractsByCommand(runtimeProbe.flagRegistrations);
@@ -736,6 +838,7 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
   if (runtimeOnly && !selectedAction) {
     filteredSchema = filterSchemaByActions(filteredSchema, new Set(actions));
   }
+  filteredSchema = attachCreateRequiredOptionContracts(filteredSchema, createRequiredOptionContracts);
   const commands = selectedCommand ? [selectedCommand] : commandCatalog;
   const extensionCommandContracts = selectedCommand
     ? extensionContracts.filter((entry) => entry.command === selectedCommand)

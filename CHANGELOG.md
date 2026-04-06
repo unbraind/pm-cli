@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added `pm update --replace-deps` atomic dependency replacement mode so existing dependency sets can be replaced in one mutation/history entry.
+- Added ownership ergonomics enhancements: `pm release --allow-audit-release` for non-owner handoffs that only clear assignee metadata, plus `pm get` `claim_state` metadata with current assignee and latest claim/release history context.
+- Added `pm contracts --schema-only --action create` `x-create-required-options` metadata so machine consumers can resolve effective create required options per type and create mode.
 - Added managed background linked-test execution for `pm test --run --background` and `pm test-all --background`, including persistent run registry metadata, worker lifecycle orchestration, and duplicate-run fingerprint prevention.
 - Added `pm test-runs` lifecycle command surface (`list`, `status`, `logs`, `stop`, `resume`) for background run management with health/resource snapshots and tailed stdout/stderr inspection.
 - Added configurable test-result tracking policy at `settings.testing.record_results_to_items` with `pm config <project|global> get|set test-result-tracking --policy enabled|disabled`.

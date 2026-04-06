@@ -280,6 +280,15 @@ function resolveHighlights(command: string, result: unknown): string[] {
       highlights.push(`view=${record.view}`);
     }
   }
+  if (command === "get") {
+    const claimState = asRecord(record.claim_state);
+    if (claimState && typeof claimState.claimed === "boolean") {
+      highlights.push(`claimed=${claimState.claimed ? "true" : "false"}`);
+    }
+    if (claimState && typeof claimState.assignee === "string" && claimState.assignee.trim().length > 0) {
+      highlights.push(`assignee=${claimState.assignee.trim()}`);
+    }
+  }
   if (command.startsWith("test-runs")) {
     const run = asRecord(record.run);
     if (run && typeof run.id === "string") {
@@ -302,6 +311,7 @@ function resolveHighlights(command: string, result: unknown): string[] {
 }
 
 function resolveNextSteps(command: string, result: unknown): string[] {
+  const record = asRecord(result);
   const itemId = toItemId(result) ?? "pm-<id>";
   switch (command) {
     case "create":
@@ -350,12 +360,15 @@ function resolveNextSteps(command: string, result: unknown): string[] {
       return ["pm calendar --view agenda --from +0d --to +7d", "pm calendar --view month --format json"];
     case "init":
       return [
-        'pm create --title "Example" --description "..." --type Task --status open --priority 1 --message "Create initial item" --dep none --comment none --note none --learning none --file none --test none --doc none',
+        'pm create --title "Example" --description "..." --type Task --status open --priority 1 --message "Create initial item" --create-mode progressive',
       ];
     case "config":
       return ["pm config project get definition-of-done", "pm config project get item-format", "pm config project get test-result-tracking"];
     case "get":
       return [
+        ...(record && asRecord(record.claim_state)?.claimed === true
+          ? [`pm release ${itemId}`, `pm release ${itemId} --allow-audit-release --author "<auditor>"`]
+          : [`pm claim ${itemId}`]),
         `pm history ${itemId} --limit 20`,
         `pm comments ${itemId} --limit 10`,
         `pm notes ${itemId} --limit 10`,

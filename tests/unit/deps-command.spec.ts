@@ -72,6 +72,12 @@ describe("runDeps", () => {
       await expect(runDeps(id, { format: "diagram" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
+      await expect(runDeps(id, { maxDepth: "-1" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runDeps(id, { collapse: "all" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 
@@ -101,6 +107,69 @@ describe("runDeps", () => {
       expect(middleNode?.dependencies.map((entry) => `${entry.via}:${entry.id}`)).toEqual([`blocks:${leafId}`]);
       const missingNode = result.tree?.dependencies[1];
       expect(missingNode?.missing).toBe(true);
+    });
+  });
+
+  it("supports max-depth truncation for dense trees", async () => {
+    await withTempPmPath(async (context) => {
+      const leafId = createTask(context, "deps-depth-leaf");
+      const middleId = createTask(context, "deps-depth-middle", [
+        `id=${leafId},kind=blocks,author=test-author,created_at=now`,
+      ]);
+      const rootId = createTask(context, "deps-depth-root", [
+        `id=${middleId},kind=blocks,author=test-author,created_at=now`,
+      ]);
+
+      const result = await runDeps(rootId, { format: "tree", maxDepth: "1" }, { path: context.pmPath });
+      expect(result.format).toBe("tree");
+      expect(result.tree?.id).toBe(rootId);
+      expect(result.tree?.dependencies).toHaveLength(1);
+      expect(result.tree?.dependencies[0]?.id).toBe(middleId);
+      expect(result.tree?.dependencies[0]?.truncated).toBe(true);
+      expect(result.tree?.dependencies[0]?.dependencies).toEqual([]);
+      expect(result.node_count).toBe(2);
+      expect(result.edge_count).toBe(1);
+    });
+  });
+
+  it("collapses repeated subtrees when collapse mode is enabled", async () => {
+    await withTempPmPath(async (context) => {
+      const sharedLeafId = createTask(context, "deps-shared-leaf");
+      const leftId = createTask(context, "deps-left", [`id=${sharedLeafId},kind=related,author=test-author,created_at=now`]);
+      const rightId = createTask(context, "deps-right", [`id=${sharedLeafId},kind=related,author=test-author,created_at=now`]);
+      const rootId = createTask(context, "deps-repeat-root", [
+        `id=${leftId},kind=blocks,author=test-author,created_at=now`,
+        `id=${rightId},kind=blocks,author=test-author,created_at=now`,
+      ]);
+
+      const result = await runDeps(rootId, { format: "tree", collapse: "repeated" }, { path: context.pmPath });
+      const seenSharedLeafNodes: Array<{ collapsed?: boolean }> = [];
+      type VisitNode = { id: string; collapsed?: boolean; dependencies: VisitNode[] };
+      const visit = (node: VisitNode): void => {
+        if (node.id === sharedLeafId) {
+          seenSharedLeafNodes.push({ collapsed: node.collapsed });
+        }
+        for (const child of node.dependencies) {
+          visit(child);
+        }
+      };
+      if (result.tree) {
+        visit(result.tree as VisitNode);
+      }
+      expect(seenSharedLeafNodes).toHaveLength(2);
+      expect(seenSharedLeafNodes.filter((entry) => entry.collapsed === true)).toHaveLength(1);
+    });
+  });
+
+  it("supports summary mode without full tree/graph payloads", async () => {
+    await withTempPmPath(async (context) => {
+      const rootId = createTask(context, "deps-summary-root");
+      const result = await runDeps(rootId, { format: "tree", summary: true }, { path: context.pmPath });
+      expect(result.node_count).toBe(1);
+      expect(result.edge_count).toBe(0);
+      expect(result.missing_count).toBe(0);
+      expect(result.tree).toBeUndefined();
+      expect(result.graph).toBeUndefined();
     });
   });
 

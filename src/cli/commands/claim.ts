@@ -18,12 +18,17 @@ export interface ReleaseResult {
   item: Record<string, unknown>;
   released_by: string;
   previous_assignee: string | null;
+  audit_release: boolean;
   forced: boolean;
 }
 
 export interface ClaimMutationOptions {
   author?: string;
   message?: string;
+}
+
+export interface ReleaseMutationOptions extends ClaimMutationOptions {
+  allowAuditRelease?: boolean;
 }
 
 function isTerminal(status: ItemStatus): boolean {
@@ -80,7 +85,7 @@ export async function runRelease(
   id: string,
   force: boolean,
   global: GlobalOptions,
-  options: ClaimMutationOptions = {},
+  options: ReleaseMutationOptions = {},
 ): Promise<ReleaseResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
@@ -90,28 +95,51 @@ export async function runRelease(
   const author = resolveAuthor(options.author, settings.author_default);
   let previousAssignee: string | null = null;
 
-  const result = await mutateItem({
-    pmRoot,
-    settings,
-    id,
-    op: "release",
-    author,
-    message: options.message,
-    force,
-    mutate(document) {
-      previousAssignee = document.front_matter.assignee ?? null;
-      if (!previousAssignee) {
-        return { changedFields: [] };
-      }
-      delete document.front_matter.assignee;
-      return { changedFields: ["assignee"] };
-    },
-  });
+  let result: Awaited<ReturnType<typeof mutateItem>>;
+  try {
+    result = await mutateItem({
+      pmRoot,
+      settings,
+      id,
+      op: "release",
+      author,
+      message: options.message,
+      force,
+      bypassAssigneeConflict: Boolean(options.allowAuditRelease),
+      mutate(document) {
+        previousAssignee = document.front_matter.assignee ?? null;
+        if (!previousAssignee) {
+          return { changedFields: [] };
+        }
+        delete document.front_matter.assignee;
+        return { changedFields: ["assignee"] };
+      },
+    });
+  } catch (error: unknown) {
+    if (
+      error instanceof PmCliError &&
+      error.exitCode === EXIT_CODE.CONFLICT &&
+      error.message.includes("is assigned to") &&
+      error.message.includes("Use --force to override")
+    ) {
+      throw new PmCliError(error.message, error.exitCode, {
+        code: "ownership_conflict",
+        required: "For audited non-owner handoffs, prefer --allow-audit-release before considering --force.",
+        examples: ['pm release pm-a1b2 --author "reviewer" --allow-audit-release'],
+        nextSteps: [
+          "Use --allow-audit-release for append-only release handoffs that only clear assignee metadata.",
+          "Use --force only when an explicit override is approved for broader ownership conflicts.",
+        ],
+      });
+    }
+    throw error;
+  }
 
   return {
     item: result.item as unknown as Record<string, unknown>,
     released_by: author,
     previous_assignee: previousAssignee,
+    audit_release: options.allowAuditRelease === true,
     forced: force,
   };
 }
