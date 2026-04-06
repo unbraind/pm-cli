@@ -18,6 +18,7 @@ export interface ContextOptions {
   tag?: string;
   priority?: string;
   assignee?: string;
+  assigneeFilter?: string;
   sprint?: string;
   release?: string;
   limit?: string;
@@ -72,6 +73,7 @@ export interface ContextResult {
     tag: string | null;
     priority: string | null;
     assignee: string | null;
+    assignee_filter: string | null;
     sprint: string | null;
     release: string | null;
     limit: string | null;
@@ -214,7 +216,7 @@ function formatClock(timestamp: string): string {
 
 function formatFocusLine(item: ContextFocusItem): string {
   const orderToken = item.order === null ? "-" : String(item.order);
-  const deadlineToken = item.deadline ?? "none";
+  const deadlineToken = item.deadline ?? "-";
   return `${item.id} p${item.priority} ${item.status} ${item.type} order:${orderToken} deadline:${deadlineToken} ${item.title}`;
 }
 
@@ -290,6 +292,7 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
     tag: options.tag,
     priority: options.priority,
     assignee: options.assignee,
+    assigneeFilter: options.assigneeFilter,
     sprint: options.sprint,
     release: options.release,
     excludeTerminal: true,
@@ -322,6 +325,7 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
     tag: options.tag,
     priority: options.priority,
     assignee: options.assignee,
+    assigneeFilter: options.assigneeFilter,
     sprint: options.sprint,
     release: options.release,
     include: "all",
@@ -353,6 +357,7 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
       tag: options.tag ?? null,
       priority: options.priority ?? null,
       assignee: options.assignee ?? null,
+      assignee_filter: options.assigneeFilter ?? null,
       sprint: options.sprint ?? null,
       release: options.release ?? null,
       limit: options.limit ?? null,

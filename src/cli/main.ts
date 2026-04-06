@@ -1714,6 +1714,17 @@ function normalizeCreateOptions(
     reminder: readCreateList("reminder"),
     event: readCreateList("event"),
     typeOption: readCreateList("typeOption"),
+    unset: readCreateList("unset"),
+    clearDeps: commandOptions.clearDeps === true ? true : undefined,
+    clearComments: commandOptions.clearComments === true ? true : undefined,
+    clearNotes: commandOptions.clearNotes === true ? true : undefined,
+    clearLearnings: commandOptions.clearLearnings === true ? true : undefined,
+    clearFiles: commandOptions.clearFiles === true ? true : undefined,
+    clearTests: commandOptions.clearTests === true ? true : undefined,
+    clearDocs: commandOptions.clearDocs === true ? true : undefined,
+    clearReminders: commandOptions.clearReminders === true ? true : undefined,
+    clearEvents: commandOptions.clearEvents === true ? true : undefined,
+    clearTypeOptions: commandOptions.clearTypeOptions === true ? true : undefined,
   };
 }
 
@@ -1792,6 +1803,17 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
     reminder: readUpdateList("reminder"),
     event: readUpdateList("event"),
     typeOption: readUpdateList("typeOption"),
+    unset: readUpdateList("unset"),
+    clearDeps: commandOptions.clearDeps === true ? true : undefined,
+    clearComments: commandOptions.clearComments === true ? true : undefined,
+    clearNotes: commandOptions.clearNotes === true ? true : undefined,
+    clearLearnings: commandOptions.clearLearnings === true ? true : undefined,
+    clearFiles: commandOptions.clearFiles === true ? true : undefined,
+    clearTests: commandOptions.clearTests === true ? true : undefined,
+    clearDocs: commandOptions.clearDocs === true ? true : undefined,
+    clearReminders: commandOptions.clearReminders === true ? true : undefined,
+    clearEvents: commandOptions.clearEvents === true ? true : undefined,
+    clearTypeOptions: commandOptions.clearTypeOptions === true ? true : undefined,
   };
 }
 
@@ -1811,6 +1833,7 @@ function normalizeListOptions(options: Record<string, unknown>): ListOptions {
     deadlineBefore: readListString("deadlineBefore"),
     deadlineAfter: readListString("deadlineAfter"),
     assignee: readListString("assignee"),
+    assigneeFilter: readListString("assigneeFilter"),
     sprint: readListString("sprint"),
     release: readListString("release"),
     limit: readListString("limit"),
@@ -1890,6 +1913,7 @@ function normalizeCalendarOptions(options: Record<string, unknown>): CalendarOpt
     priority: readCalendarString("priority"),
     status: readCalendarString("status"),
     assignee: readCalendarString("assignee"),
+    assigneeFilter: readCalendarString("assigneeFilter"),
     sprint: readCalendarString("sprint"),
     release: readCalendarString("release"),
     include: readCalendarString("include"),
@@ -1918,6 +1942,7 @@ function normalizeContextOptions(options: Record<string, unknown>): ContextOptio
     tag: readContextString("tag"),
     priority: readContextString("priority"),
     assignee: readContextString("assignee"),
+    assigneeFilter: readContextString("assigneeFilter"),
     sprint: readContextString("sprint"),
     release: readContextString("release"),
     limit: readContextString("limit"),
@@ -2092,9 +2117,10 @@ program
   .argument("<action>", "Config action: get|set|list|export")
   .argument(
     "[key]",
-    "Config key for get|set: definition-of-done|item-format|history-missing-stream-policy|sprint-release-format-policy|parent-reference-policy|test-result-tracking",
+    "Config key for get|set: definition-of-done|item-format|history-missing-stream-policy|sprint-release-format-policy|parent-reference-policy|metadata-validation-profile|metadata-required-fields|test-result-tracking",
   )
-  .option("--criterion <text>", "Definition-of-Done criterion (repeatable for set)", collect)
+  .option("--criterion <text>", "Criteria value for definition-of-done or metadata-required-fields (repeatable for set)", collect)
+  .option("--clear-criteria", "Clear metadata-required-fields criteria list (set metadata-required-fields only)")
   .option("--format <value>", "Item format for item-format key: toon|json_markdown")
   .option(
     "--policy <value>",
@@ -2113,6 +2139,7 @@ program
         criterion: criteria,
         format: typeof options.format === "string" ? options.format : undefined,
         policy: typeof options.policy === "string" ? options.policy : undefined,
+        clearCriteria: options.clearCriteria === true,
       },
       globalOptions,
     );
@@ -2203,7 +2230,7 @@ templatesCommand
   .option("--type <value>", "Template default item type")
   .option("--status, -s <value>", "Template default item status")
   .option("--priority, -p <value>", "Template default priority 0..4")
-  .option("--tags <value>", "Template default comma-separated tags, or 'none'")
+  .option("--tags <value>", "Template default comma-separated tags")
   .option("--body, -b <value>", "Template default item markdown body")
   .option("--deadline <value>", "Template default deadline")
   .option("--estimate, --estimated-minutes <value>", "Template default estimated minutes")
@@ -2356,107 +2383,118 @@ program
   .option("--create_mode <value>", "Alias for --create-mode")
   .option("--status, -s <value>", "Item status")
   .option("--priority, -p <value>", "Priority 0..4")
-  .option("--tags <value>", "Comma-separated tags, or 'none'")
+  .option("--tags <value>", "Comma-separated tags")
   .option("--body, -b <value>", "Item markdown body (allow empty string)")
-  .option("--deadline <value>", "Deadline (ISO/date string or relative +6h/+1d/+2w/+6m, or none)")
-  .option("--estimate, --estimated-minutes <value>", "Estimated minutes, or none")
+  .option("--deadline <value>", "Deadline (ISO/date string or relative +6h/+1d/+2w/+6m)")
+  .option("--estimate, --estimated-minutes <value>", "Estimated minutes")
   .option("--estimated_minutes <value>", "Alias for --estimated-minutes")
   .option("--acceptance-criteria <value>", "Acceptance criteria (allow empty string)")
   .option("--acceptance_criteria <value>", "Alias for --acceptance-criteria")
   .option("--ac <value>", "Alias for --acceptance-criteria")
-  .option("--definition-of-ready <value>", "Definition of ready (allow empty string, or none)")
+  .option("--definition-of-ready <value>", "Definition of ready (allow empty string)")
   .option("--definition_of_ready <value>", "Alias for --definition-of-ready")
-  .option("--order <value>", "Planning order/rank integer, or none")
+  .option("--order <value>", "Planning order/rank integer")
   .option("--rank <value>", "Alias for --order")
-  .option("--goal <value>", "Goal identifier, or none")
-  .option("--objective <value>", "Objective identifier, or none")
-  .option("--value <value>", "Business value summary, or none")
-  .option("--impact <value>", "Business impact summary, or none")
-  .option("--outcome <value>", "Expected outcome summary, or none")
-  .option("--why-now <value>", "Why-now rationale, or none")
+  .option("--goal <value>", "Goal identifier")
+  .option("--objective <value>", "Objective identifier")
+  .option("--value <value>", "Business value summary")
+  .option("--impact <value>", "Business impact summary")
+  .option("--outcome <value>", "Expected outcome summary")
+  .option("--why-now <value>", "Why-now rationale")
   .option("--why_now <value>", "Alias for --why-now")
-  .option("--author <value>", "Mutation author, or none")
+  .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message (allow empty string)")
-  .option("--assignee <value>", "Item assignee, or none")
-  .option("--parent <value>", "Parent item ID, or none")
-  .option("--reviewer <value>", "Reviewer, or none")
-  .option("--risk <value>", "Risk level: low|med|medium|high|critical, or none (med persists as medium)")
-  .option("--confidence <value>", "Confidence level: 0..100|low|med|medium|high, or none (med persists as medium)")
-  .option("--sprint <value>", "Sprint identifier, or none")
-  .option("--release <value>", "Release identifier, or none")
-  .option("--blocked-by <value>", "Blocked-by item ID or reason, or none")
+  .option("--assignee <value>", "Item assignee")
+  .option("--parent <value>", "Parent item ID")
+  .option("--reviewer <value>", "Reviewer")
+  .option("--risk <value>", "Risk level: low|med|medium|high|critical (med persists as medium)")
+  .option("--confidence <value>", "Confidence level: 0..100|low|med|medium|high (med persists as medium)")
+  .option("--sprint <value>", "Sprint identifier")
+  .option("--release <value>", "Release identifier")
+  .option("--blocked-by <value>", "Blocked-by item ID or reason")
   .option("--blocked_by <value>", "Alias for --blocked-by")
-  .option("--blocked-reason <value>", "Blocked reason, or none")
+  .option("--blocked-reason <value>", "Blocked reason")
   .option("--blocked_reason <value>", "Alias for --blocked-reason")
-  .option("--unblock-note <value>", "Unblock rationale note, or none")
+  .option("--unblock-note <value>", "Unblock rationale note")
   .option("--unblock_note <value>", "Alias for --unblock-note")
-  .option("--reporter <value>", "Issue reporter, or none")
-  .option("--severity <value>", "Issue severity: low|med|medium|high|critical, or none (med persists as medium)")
-  .option("--environment <value>", "Issue environment context, or none")
-  .option("--repro-steps <value>", "Issue reproduction steps, or none")
+  .option("--reporter <value>", "Issue reporter")
+  .option("--severity <value>", "Issue severity: low|med|medium|high|critical (med persists as medium)")
+  .option("--environment <value>", "Issue environment context")
+  .option("--repro-steps <value>", "Issue reproduction steps")
   .option("--repro_steps <value>", "Alias for --repro-steps")
-  .option("--resolution <value>", "Issue resolution summary, or none")
-  .option("--expected-result <value>", "Issue expected behavior, or none")
+  .option("--resolution <value>", "Issue resolution summary")
+  .option("--expected-result <value>", "Issue expected behavior")
   .option("--expected_result <value>", "Alias for --expected-result")
-  .option("--actual-result <value>", "Issue observed behavior, or none")
+  .option("--actual-result <value>", "Issue observed behavior")
   .option("--actual_result <value>", "Alias for --actual-result")
-  .option("--affected-version <value>", "Affected version identifier, or none")
+  .option("--affected-version <value>", "Affected version identifier")
   .option("--affected_version <value>", "Alias for --affected-version")
-  .option("--fixed-version <value>", "Fixed version identifier, or none")
+  .option("--fixed-version <value>", "Fixed version identifier")
   .option("--fixed_version <value>", "Alias for --fixed-version")
-  .option("--component <value>", "Issue component ownership, or none")
-  .option("--regression <value>", "Regression marker: true|false|1|0, or none")
-  .option("--customer-impact <value>", "Customer impact summary, or none")
+  .option("--component <value>", "Issue component ownership")
+  .option("--regression <value>", "Regression marker: true|false|1|0")
+  .option("--customer-impact <value>", "Customer impact summary")
   .option("--customer_impact <value>", "Alias for --customer-impact")
   .option(
     "--dep <value>",
-    "Seed dependency entry (key=value CSV, markdown key:value lines, or - for stdin; repeatable; use none for explicit empty)",
+    "Seed dependency entry (key=value CSV, markdown key:value lines, or - for stdin; repeatable)",
     collect,
   )
   .option(
     "--type-option <value>",
-    "Type option key=value or key=<name>,value=<value> (also accepts key:value and markdown pairs; use - for stdin; repeatable; use none for explicit empty)",
+    "Type option key=value or key=<name>,value=<value> (also accepts key:value and markdown pairs; use - for stdin; repeatable)",
     collect,
   )
   .option("--type_option <value>", "Alias for --type-option", collect)
+  .option("--unset <field>", "Clear scalar metadata field by name (repeatable)", collect)
+  .option("--clear-deps", "Clear dependency entries")
+  .option("--clear-comments", "Clear comments")
+  .option("--clear-notes", "Clear notes")
+  .option("--clear-learnings", "Clear learnings")
+  .option("--clear-files", "Clear linked files")
+  .option("--clear-tests", "Clear linked tests")
+  .option("--clear-docs", "Clear linked docs")
+  .option("--clear-reminders", "Clear reminders")
+  .option("--clear-events", "Clear events")
+  .option("--clear-type-options", "Clear type options")
   .option(
     "--reminder <value>",
-    "Seed reminder entry at=<iso|relative>,text=<text> (also accepts markdown pairs and - for stdin; repeatable; use none for empty)",
+    "Seed reminder entry at=<iso|relative>,text=<text> (also accepts markdown pairs and - for stdin; repeatable)",
     collect,
   )
   .option(
     "--event <value>",
-    "Seed event entry start=<iso|relative>,end=<iso|relative>,title=<text>,all_day=<true|false>,recur_* fields (also accepts markdown pairs and - for stdin; repeatable; use none for empty)",
+    "Seed event entry start=<iso|relative>,end=<iso|relative>,title=<text>,all_day=<true|false>,recur_* fields (also accepts markdown pairs and - for stdin; repeatable)",
     collect,
   )
   .option(
     "--comment <value>",
-    "Seed comment entry (text=<value> CSV/markdown pairs or - for stdin; repeatable; use none for explicit empty)",
+    "Seed comment entry (text=<value> CSV/markdown pairs or - for stdin; repeatable)",
     collect,
   )
   .option(
     "--note <value>",
-    "Seed note entry (text=<value> CSV/markdown pairs or - for stdin; repeatable; use none for explicit empty)",
+    "Seed note entry (text=<value> CSV/markdown pairs or - for stdin; repeatable)",
     collect,
   )
   .option(
     "--learning <value>",
-    "Seed learning entry (text=<value> CSV/markdown pairs or - for stdin; repeatable; use none for explicit empty)",
+    "Seed learning entry (text=<value> CSV/markdown pairs or - for stdin; repeatable)",
     collect,
   )
   .option(
     "--file <value>",
-    "Seed linked file entry (CSV/markdown pairs or - for stdin; repeatable; use none for explicit empty)",
+    "Seed linked file entry (CSV/markdown pairs or - for stdin; repeatable)",
     collect,
   )
   .option(
     "--test <value>",
-    "Seed linked test entry (CSV/markdown pairs or - for stdin; repeatable; use none for explicit empty)",
+    "Seed linked test entry (CSV/markdown pairs or - for stdin; repeatable)",
     collect,
   )
   .option(
     "--doc <value>",
-    "Seed linked doc entry (CSV/markdown pairs or - for stdin; repeatable; use none for explicit empty)",
+    "Seed linked doc entry (CSV/markdown pairs or - for stdin; repeatable)",
     collect,
   )
   .action(async (options: Record<string, unknown>, command) => {
@@ -2480,7 +2518,9 @@ function registerListCommand(name: string, description: string, status?: ItemSta
     .option("--priority <value>", "Filter by priority")
     .option("--deadline-before <value>", "Filter by deadline upper bound (ISO/date string or relative)")
     .option("--deadline-after <value>", "Filter by deadline lower bound (ISO/date string or relative)")
-    .option("--assignee <value>", "Filter by assignee (use 'none' for unassigned)")
+    .option("--assignee <value>", "Filter by assignee")
+    .option("--assignee-filter <value>", "Filter assignee presence: assigned|unassigned")
+    .option("--assignee_filter <value>", "Alias for --assignee-filter")
     .option("--sprint <value>", "Filter by sprint")
     .option("--release <value>", "Filter by release")
     .option("--limit <n>", "Limit returned item count")
@@ -2531,7 +2571,9 @@ function registerCalendarCommand(): void {
     .option("--tag <value>", "Filter by tag")
     .option("--priority <value>", "Filter by priority")
     .option("--status <value>", "Filter by status")
-    .option("--assignee <value>", "Filter by assignee (use 'none' for unassigned)")
+    .option("--assignee <value>", "Filter by assignee")
+    .option("--assignee-filter <value>", "Filter assignee presence: assigned|unassigned")
+    .option("--assignee_filter <value>", "Alias for --assignee-filter")
     .option("--sprint <value>", "Filter by sprint")
     .option("--release <value>", "Filter by release")
     .option("--include <value>", "Include sources: deadlines|reminders|events|all (comma or | separated)")
@@ -2579,7 +2621,9 @@ function registerContextCommand(): void {
     .option("--type <value>", "Filter by item type")
     .option("--tag <value>", "Filter by tag")
     .option("--priority <value>", "Filter by priority")
-    .option("--assignee <value>", "Filter by assignee (use 'none' for unassigned)")
+    .option("--assignee <value>", "Filter by assignee")
+    .option("--assignee-filter <value>", "Filter assignee presence: assigned|unassigned")
+    .option("--assignee_filter <value>", "Alias for --assignee-filter")
     .option("--sprint <value>", "Filter by sprint")
     .option("--release <value>", "Filter by release")
     .option("--limit <n>", "Limit focus and agenda rows per section")
@@ -2748,64 +2792,64 @@ program
   .option("--description, -d <value>", "Set description")
   .option("--body, -b <value>", "Set body (allow empty string)")
   .option("--status, -s <value>", "Set status (use close command for closed)")
-  .option("--close-reason <value>", "Set close reason (or none)")
+  .option("--close-reason <value>", "Set close reason")
   .option("--close_reason <value>", "Alias for --close-reason")
   .option("--priority, -p <value>", "Set priority")
   .option("--type <value>", "Set type")
   .option("--tags <value>", "Set comma-separated tags")
-  .option("--deadline <value>", "Set deadline (ISO/date string or relative, or none)")
-  .option("--estimate, --estimated-minutes <value>", "Set estimated minutes (or none)")
+  .option("--deadline <value>", "Set deadline (ISO/date string or relative)")
+  .option("--estimate, --estimated-minutes <value>", "Set estimated minutes")
   .option("--estimated_minutes <value>", "Alias for --estimated-minutes")
-  .option("--acceptance-criteria <value>", "Set acceptance criteria (or none)")
+  .option("--acceptance-criteria <value>", "Set acceptance criteria")
   .option("--acceptance_criteria <value>", "Alias for --acceptance-criteria")
   .option("--ac <value>", "Alias for --acceptance-criteria")
-  .option("--definition-of-ready <value>", "Set definition of ready (or none)")
+  .option("--definition-of-ready <value>", "Set definition of ready")
   .option("--definition_of_ready <value>", "Alias for --definition-of-ready")
-  .option("--order <value>", "Set planning order/rank integer (or none)")
+  .option("--order <value>", "Set planning order/rank integer")
   .option("--rank <value>", "Alias for --order")
-  .option("--goal <value>", "Set goal identifier (or none)")
-  .option("--objective <value>", "Set objective identifier (or none)")
-  .option("--value <value>", "Set business value summary (or none)")
-  .option("--impact <value>", "Set business impact summary (or none)")
-  .option("--outcome <value>", "Set expected outcome summary (or none)")
-  .option("--why-now <value>", "Set why-now rationale (or none)")
+  .option("--goal <value>", "Set goal identifier")
+  .option("--objective <value>", "Set objective identifier")
+  .option("--value <value>", "Set business value summary")
+  .option("--impact <value>", "Set business impact summary")
+  .option("--outcome <value>", "Set expected outcome summary")
+  .option("--why-now <value>", "Set why-now rationale")
   .option("--why_now <value>", "Alias for --why-now")
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "Mutation message")
-  .option("--assignee <value>", "Set assignee (or none)")
-  .option("--parent <value>", "Set parent item ID (or none)")
-  .option("--reviewer <value>", "Set reviewer (or none)")
-  .option("--risk <value>", "Set risk level: low|med|medium|high|critical (or none; med persists as medium)")
-  .option("--confidence <value>", "Set confidence level: 0..100|low|med|medium|high (or none; med persists as medium)")
-  .option("--sprint <value>", "Set sprint identifier (or none)")
-  .option("--release <value>", "Set release identifier (or none)")
-  .option("--blocked-by <value>", "Set blocked-by item ID or reason (or none)")
+  .option("--assignee <value>", "Set assignee")
+  .option("--parent <value>", "Set parent item ID")
+  .option("--reviewer <value>", "Set reviewer")
+  .option("--risk <value>", "Set risk level: low|med|medium|high|critical (med persists as medium)")
+  .option("--confidence <value>", "Set confidence level: 0..100|low|med|medium|high (med persists as medium)")
+  .option("--sprint <value>", "Set sprint identifier")
+  .option("--release <value>", "Set release identifier")
+  .option("--blocked-by <value>", "Set blocked-by item ID or reason")
   .option("--blocked_by <value>", "Alias for --blocked-by")
-  .option("--blocked-reason <value>", "Set blocked reason (or none)")
+  .option("--blocked-reason <value>", "Set blocked reason")
   .option("--blocked_reason <value>", "Alias for --blocked-reason")
-  .option("--unblock-note <value>", "Set unblock rationale note (or none)")
+  .option("--unblock-note <value>", "Set unblock rationale note")
   .option("--unblock_note <value>", "Alias for --unblock-note")
-  .option("--reporter <value>", "Set issue reporter (or none)")
-  .option("--severity <value>", "Set issue severity: low|med|medium|high|critical (or none; med persists as medium)")
-  .option("--environment <value>", "Set issue environment context (or none)")
-  .option("--repro-steps <value>", "Set issue reproduction steps (or none)")
+  .option("--reporter <value>", "Set issue reporter")
+  .option("--severity <value>", "Set issue severity: low|med|medium|high|critical (med persists as medium)")
+  .option("--environment <value>", "Set issue environment context")
+  .option("--repro-steps <value>", "Set issue reproduction steps")
   .option("--repro_steps <value>", "Alias for --repro-steps")
-  .option("--resolution <value>", "Set issue resolution summary (or none)")
-  .option("--expected-result <value>", "Set issue expected behavior (or none)")
+  .option("--resolution <value>", "Set issue resolution summary")
+  .option("--expected-result <value>", "Set issue expected behavior")
   .option("--expected_result <value>", "Alias for --expected-result")
-  .option("--actual-result <value>", "Set issue observed behavior (or none)")
+  .option("--actual-result <value>", "Set issue observed behavior")
   .option("--actual_result <value>", "Alias for --actual-result")
-  .option("--affected-version <value>", "Set affected version identifier (or none)")
+  .option("--affected-version <value>", "Set affected version identifier")
   .option("--affected_version <value>", "Alias for --affected-version")
-  .option("--fixed-version <value>", "Set fixed version identifier (or none)")
+  .option("--fixed-version <value>", "Set fixed version identifier")
   .option("--fixed_version <value>", "Alias for --fixed-version")
-  .option("--component <value>", "Set issue component ownership (or none)")
-  .option("--regression <value>", "Set regression marker: true|false|1|0 (or none)")
-  .option("--customer-impact <value>", "Set customer impact summary (or none)")
+  .option("--component <value>", "Set issue component ownership")
+  .option("--regression <value>", "Set regression marker: true|false|1|0")
+  .option("--customer-impact <value>", "Set customer impact summary")
   .option("--customer_impact <value>", "Alias for --customer-impact")
   .option(
     "--dep <value>",
-    "Add dependency entries id=<id>,kind=<value>,author=<value>,created_at=<iso|now>,source_kind=<value> (repeatable; use none to clear all)",
+    "Add dependency entries id=<id>,kind=<value>,author=<value>,created_at=<iso|now>,source_kind=<value> (repeatable)",
     collect,
   )
   .option(
@@ -2816,50 +2860,61 @@ program
   .option("--dep_remove <value>", "Alias for --dep-remove", collect)
   .option(
     "--comment <value>",
-    "Append comment seed author=<value>,created_at=<iso|now>,text=<value> (also accepts markdown pairs and - for stdin; repeatable; use none to clear all comments)",
+    "Append comment seed author=<value>,created_at=<iso|now>,text=<value> (also accepts markdown pairs and - for stdin; repeatable)",
     collect,
   )
   .option(
     "--note <value>",
-    "Append note seed author=<value>,created_at=<iso|now>,text=<value> (also accepts markdown pairs and - for stdin; repeatable; use none to clear all notes)",
+    "Append note seed author=<value>,created_at=<iso|now>,text=<value> (also accepts markdown pairs and - for stdin; repeatable)",
     collect,
   )
   .option(
     "--learning <value>",
-    "Append learning seed author=<value>,created_at=<iso|now>,text=<value> (also accepts markdown pairs and - for stdin; repeatable; use none to clear all learnings)",
+    "Append learning seed author=<value>,created_at=<iso|now>,text=<value> (also accepts markdown pairs and - for stdin; repeatable)",
     collect,
   )
   .option(
     "--file <value>",
-    "Append linked file path=<value>,scope=<project|global>,note=<text> (also accepts markdown pairs and - for stdin; repeatable; use none to clear all files)",
+    "Append linked file path=<value>,scope=<project|global>,note=<text> (also accepts markdown pairs and - for stdin; repeatable)",
     collect,
   )
   .option(
     "--test <value>",
-    "Append linked test command=<value>,path=<value>,scope=<project|global>,timeout_seconds=<n>,pm_context_mode=<schema|tracker|auto> (also accepts markdown pairs and - for stdin; repeatable; use none to clear all tests)",
+    "Append linked test command=<value>,path=<value>,scope=<project|global>,timeout_seconds=<n>,pm_context_mode=<schema|tracker|auto> (also accepts markdown pairs and - for stdin; repeatable)",
     collect,
   )
   .option(
     "--doc <value>",
-    "Append linked doc path=<value>,scope=<project|global>,note=<text> (also accepts markdown pairs and - for stdin; repeatable; use none to clear all docs)",
+    "Append linked doc path=<value>,scope=<project|global>,note=<text> (also accepts markdown pairs and - for stdin; repeatable)",
     collect,
   )
   .option(
     "--reminder <value>",
-    "Set reminders at=<iso|relative>,text=<text> (also accepts markdown pairs and - for stdin; repeatable; use none to clear)",
+    "Set reminders at=<iso|relative>,text=<text> (also accepts markdown pairs and - for stdin; repeatable)",
     collect,
   )
   .option(
     "--event <value>",
-    "Set events start=<iso|relative>,end=<iso|relative>,title=<text>,all_day=<true|false>,recur_* fields (also accepts markdown pairs and - for stdin; repeatable; use none to clear)",
+    "Set events start=<iso|relative>,end=<iso|relative>,title=<text>,all_day=<true|false>,recur_* fields (also accepts markdown pairs and - for stdin; repeatable)",
     collect,
   )
   .option(
     "--type-option <value>",
-    "Set type options key=value or key=<name>,value=<value> (also accepts key:value and markdown pairs; use - for stdin; repeatable; use none to clear)",
+    "Set type options key=value or key=<name>,value=<value> (also accepts key:value and markdown pairs; use - for stdin; repeatable)",
     collect,
   )
   .option("--type_option <value>", "Alias for --type-option", collect)
+  .option("--unset <field>", "Clear scalar metadata field by name (repeatable)", collect)
+  .option("--clear-deps", "Clear dependency entries")
+  .option("--clear-comments", "Clear comments")
+  .option("--clear-notes", "Clear notes")
+  .option("--clear-learnings", "Clear learnings")
+  .option("--clear-files", "Clear linked files")
+  .option("--clear-tests", "Clear linked tests")
+  .option("--clear-docs", "Clear linked docs")
+  .option("--clear-reminders", "Clear reminders")
+  .option("--clear-events", "Clear events")
+  .option("--clear-type-options", "Clear type options")
   .option("--force", "Force ownership override")
   .action(async (id: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
@@ -3006,7 +3061,9 @@ program
   .command("comments-audit")
   .option("--status <value>", "Filter by item status")
   .option("--type <value>", "Filter by item type")
-  .option("--assignee <value>", "Filter by assignee (use none for unassigned)")
+  .option("--assignee <value>", "Filter by assignee")
+  .option("--assignee-filter <value>", "Filter assignee presence: assigned|unassigned")
+  .option("--assignee_filter <value>", "Alias for --assignee-filter")
   .option("--limit-items <n>", "Limit returned item count")
   .option("--full-history", "Export full comment history rows and ignore --latest")
   .option("--latest <n>", "Return latest n comments per item (default: 1)")
@@ -3019,6 +3076,7 @@ program
         status: typeof options.status === "string" ? options.status : undefined,
         type: typeof options.type === "string" ? options.type : undefined,
         assignee: typeof options.assignee === "string" ? options.assignee : undefined,
+        assigneeFilter: typeof options.assigneeFilter === "string" ? options.assigneeFilter : undefined,
         limitItems: typeof options.limitItems === "string" ? options.limitItems : undefined,
         fullHistory: options.fullHistory === true,
         latest: typeof options.latest === "string" ? options.latest : undefined,

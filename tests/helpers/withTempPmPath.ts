@@ -21,12 +21,177 @@ function distCliPath(): string {
   return path.resolve(process.cwd(), "dist/cli.js");
 }
 
+const LEGACY_NONE_TOKENS = new Set(["none", "null"]);
+
+const CREATE_VALUE_FLAG_TO_UNSET_FIELD: Readonly<Record<string, string | undefined>> = {
+  "--tags": "tags",
+  "--deadline": "deadline",
+  "--estimate": "estimate",
+  "--estimated-minutes": "estimate",
+  "--acceptance-criteria": "acceptance-criteria",
+  "--ac": "acceptance-criteria",
+  "--definition-of-ready": "definition-of-ready",
+  "--definition_of_ready": "definition-of-ready",
+  "--order": "order",
+  "--rank": "order",
+  "--goal": "goal",
+  "--objective": "objective",
+  "--value": "value",
+  "--impact": "impact",
+  "--outcome": "outcome",
+  "--why-now": "why-now",
+  "--why_now": "why-now",
+  "--author": "author",
+  "--assignee": "assignee",
+  "--parent": "parent",
+  "--reviewer": "reviewer",
+  "--risk": "risk",
+  "--confidence": "confidence",
+  "--sprint": "sprint",
+  "--release": "release",
+  "--blocked-by": "blocked-by",
+  "--blocked_by": "blocked-by",
+  "--blocked-reason": "blocked-reason",
+  "--blocked_reason": "blocked-reason",
+  "--unblock-note": "unblock-note",
+  "--unblock_note": "unblock-note",
+  "--reporter": "reporter",
+  "--severity": "severity",
+  "--environment": "environment",
+  "--repro-steps": "repro-steps",
+  "--repro_steps": "repro-steps",
+  "--resolution": "resolution",
+  "--expected-result": "expected-result",
+  "--expected_result": "expected-result",
+  "--actual-result": "actual-result",
+  "--actual_result": "actual-result",
+  "--affected-version": "affected-version",
+  "--affected_version": "affected-version",
+  "--fixed-version": "fixed-version",
+  "--fixed_version": "fixed-version",
+  "--component": "component",
+  "--regression": "regression",
+  "--customer-impact": "customer-impact",
+  "--customer_impact": "customer-impact",
+};
+
+const CREATE_REPEATABLE_CLEAR_FLAG: Readonly<Record<string, string | undefined>> = {
+  "--dep": "--clear-deps",
+  "--comment": "--clear-comments",
+  "--note": "--clear-notes",
+  "--learning": "--clear-learnings",
+  "--file": "--clear-files",
+  "--test": "--clear-tests",
+  "--doc": "--clear-docs",
+  "--reminder": "--clear-reminders",
+  "--event": "--clear-events",
+  "--type-option": "--clear-type-options",
+  "--type_option": "--clear-type-options",
+};
+
+const CREATE_VALUE_FLAGS = new Set([
+  ...Object.keys(CREATE_VALUE_FLAG_TO_UNSET_FIELD),
+  ...Object.keys(CREATE_REPEATABLE_CLEAR_FLAG),
+  "--title",
+  "--description",
+  "--type",
+  "--template",
+  "--create-mode",
+  "--create_mode",
+  "--status",
+  "--priority",
+  "--body",
+  "--message",
+  "--close-reason",
+  "--close_reason",
+  "--metadata-profile",
+  "--metadata_profile",
+]);
+
+function normalizeLegacyCreateArgsForTests(args: string[]): string[] {
+  const createIndex = args.indexOf("create");
+  if (createIndex < 0) {
+    return args;
+  }
+  if (createIndex > 0 && args.slice(0, createIndex).some((token) => !token.startsWith("-"))) {
+    return args;
+  }
+
+  const normalized: string[] = args.slice(0, createIndex + 1);
+  const unsetCandidates = new Set<string>();
+  const unsetWithConcreteValue = new Set<string>();
+  const clearCandidates = new Set<string>();
+  const clearWithConcreteValue = new Set<string>();
+  let sawLegacyNone = false;
+  let hasCreateMode = false;
+
+  for (let index = createIndex + 1; index < args.length; index += 1) {
+    const token = args[index];
+    if (!CREATE_VALUE_FLAGS.has(token)) {
+      normalized.push(token);
+      continue;
+    }
+    const next = args[index + 1];
+    if (next === undefined) {
+      normalized.push(token);
+      continue;
+    }
+    const nextNormalized = next.trim().toLowerCase();
+    const unsetField = CREATE_VALUE_FLAG_TO_UNSET_FIELD[token];
+    const clearFlag = CREATE_REPEATABLE_CLEAR_FLAG[token];
+    if (token === "--create-mode" || token === "--create_mode") {
+      hasCreateMode = true;
+    }
+    if (!LEGACY_NONE_TOKENS.has(nextNormalized)) {
+      normalized.push(token, next);
+      if (unsetField) {
+        unsetWithConcreteValue.add(unsetField);
+      }
+      if (clearFlag) {
+        clearWithConcreteValue.add(clearFlag);
+      }
+      index += 1;
+      continue;
+    }
+    sawLegacyNone = true;
+    if (unsetField) {
+      unsetCandidates.add(unsetField);
+    }
+    if (clearFlag) {
+      clearCandidates.add(clearFlag);
+    }
+    index += 1;
+  }
+
+  if (!sawLegacyNone) {
+    return args;
+  }
+
+  if (!hasCreateMode) {
+    normalized.push("--create-mode", "progressive");
+  }
+
+  for (const field of unsetCandidates) {
+    if (!unsetWithConcreteValue.has(field)) {
+      normalized.push("--unset", field);
+    }
+  }
+  for (const clearFlag of clearCandidates) {
+    if (!clearWithConcreteValue.has(clearFlag)) {
+      normalized.push(clearFlag);
+    }
+  }
+
+  return normalized;
+}
+
 function runNodeCli(
   env: NodeJS.ProcessEnv,
   args: string[],
   options?: { expectJson?: boolean; cwd?: string },
 ): CliRunResult {
-  const completed = spawnSync(process.execPath, [distCliPath(), ...args], {
+  const normalizedArgs = normalizeLegacyCreateArgsForTests(args);
+  const completed = spawnSync(process.execPath, [distCliPath(), ...normalizedArgs], {
     cwd: options?.cwd ?? process.cwd(),
     env,
     encoding: "utf8",

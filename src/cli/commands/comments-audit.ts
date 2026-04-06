@@ -8,6 +8,7 @@ export interface CommentsAuditOptions {
   status?: string;
   type?: string;
   assignee?: string;
+  assigneeFilter?: string;
   limitItems?: string;
   latest?: string;
   fullHistory?: boolean;
@@ -31,6 +32,7 @@ export interface CommentsAuditResult {
     status: ItemStatus | null;
     type: string | null;
     assignee: string | null;
+    assignee_filter: string | null;
     limit_items: number | null;
     latest: number | null;
     full_history: boolean;
@@ -125,6 +127,7 @@ export async function runCommentsAudit(options: CommentsAuditOptions, global: Gl
     {
       type: options.type,
       assignee: options.assignee,
+      assigneeFilter: options.assigneeFilter,
       limit: limitItems === undefined ? undefined : String(limitItems),
     },
     global,
@@ -152,6 +155,7 @@ export async function runCommentsAudit(options: CommentsAuditOptions, global: Gl
       status: status ?? null,
       type: options.type ?? null,
       assignee: options.assignee ?? null,
+      assignee_filter: options.assigneeFilter ?? null,
       limit_items: limitItems ?? null,
       latest: latest ?? null,
       full_history: fullHistory,

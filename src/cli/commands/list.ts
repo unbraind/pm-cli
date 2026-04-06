@@ -17,6 +17,7 @@ export interface ListOptions {
   deadlineBefore?: string;
   deadlineAfter?: string;
   assignee?: string;
+  assigneeFilter?: string;
   sprint?: string;
   release?: string;
   limit?: string;
@@ -95,6 +96,20 @@ function parseOffset(raw: string | undefined): number | undefined {
   return parsed;
 }
 
+function parseAssigneeFilter(raw: string | undefined): "assigned" | "unassigned" | undefined {
+  if (raw === undefined) {
+    return undefined;
+  }
+  const normalized = raw.trim().toLowerCase();
+  if (!normalized) {
+    throw new PmCliError("Assignee filter must be one of assigned|unassigned", EXIT_CODE.USAGE);
+  }
+  if (normalized !== "assigned" && normalized !== "unassigned") {
+    throw new PmCliError(`Invalid assignee filter "${raw}". Allowed: assigned|unassigned`, EXIT_CODE.USAGE);
+  }
+  return normalized;
+}
+
 function applyFilters(
   items: ListedItem[],
   status: ItemStatus | undefined,
@@ -107,8 +122,19 @@ function applyFilters(
   const deadlineBefore = parseDeadline(options.deadlineBefore);
   const deadlineAfter = parseDeadline(options.deadlineAfter);
   const assigneeFilter = options.assignee?.trim();
+  const assigneeModeFilter = parseAssigneeFilter(options.assigneeFilter);
   const sprintFilter = options.sprint?.trim();
   const releaseFilter = options.release?.trim();
+
+  if (assigneeFilter && (assigneeFilter.toLowerCase() === "none" || assigneeFilter.toLowerCase() === "null")) {
+    throw new PmCliError(
+      '--assignee no longer accepts "none" or "null". Use --assignee-filter unassigned.',
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (assigneeFilter !== undefined && assigneeModeFilter === "unassigned") {
+    throw new PmCliError("Cannot combine --assignee with --assignee-filter unassigned", EXIT_CODE.USAGE);
+  }
 
   return items.filter((item) => {
     if (status && item.status !== status) return false;
@@ -118,12 +144,10 @@ function applyFilters(
     if (priorityFilter !== undefined && item.priority !== priorityFilter) return false;
     if (deadlineBefore && (!item.deadline || compareTimestampStrings(item.deadline, deadlineBefore) > 0)) return false;
     if (deadlineAfter && (!item.deadline || compareTimestampStrings(item.deadline, deadlineAfter) < 0)) return false;
-    if (assigneeFilter !== undefined) {
-      if (assigneeFilter.toLowerCase() === "none") {
-        if (item.assignee) return false;
-      } else {
-        if (item.assignee !== assigneeFilter) return false;
-      }
+    if (assigneeModeFilter === "assigned" && !item.assignee) return false;
+    if (assigneeModeFilter === "unassigned" && item.assignee) return false;
+    if (assigneeFilter !== undefined && item.assignee !== assigneeFilter) {
+      return false;
     }
     if (sprintFilter !== undefined && item.sprint !== sprintFilter) return false;
     if (releaseFilter !== undefined && item.release !== releaseFilter) return false;
@@ -160,6 +184,7 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
       deadline_before: options.deadlineBefore ?? null,
       deadline_after: options.deadlineAfter ?? null,
       assignee: options.assignee ?? null,
+      assignee_filter: options.assigneeFilter ?? null,
       sprint: options.sprint ?? null,
       release: options.release ?? null,
       limit: options.limit ?? null,

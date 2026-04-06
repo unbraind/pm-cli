@@ -1,6 +1,5 @@
 import { PmCliError } from "../shared/errors.js";
 import { EXIT_CODE } from "../shared/constants.js";
-import { isNoneToken } from "../shared/time.js";
 
 const STDIN_TOKEN = "-";
 const CONTINUABLE_VALUE_KEYS = new Set([
@@ -26,7 +25,7 @@ const CONTINUABLE_VALUE_KEYS = new Set([
 ]);
 
 export function parseTags(raw: string): string[] {
-  if (isNoneToken(raw) || raw.trim() === "") {
+  if (raw.trim() === "") {
     return [];
   }
   const tags = raw

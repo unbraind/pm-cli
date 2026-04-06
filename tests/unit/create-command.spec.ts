@@ -452,59 +452,104 @@ describe("runCreate", () => {
     });
   });
 
-  it("supports explicit none semantics and records unset intent in history message", async () => {
+  it("supports explicit unset/clear semantics in progressive mode and records unset intent in history message", async () => {
     await withTempPmPath(async (context) => {
       const previousPmAuthor = process.env.PM_AUTHOR;
       process.env.PM_AUTHOR = "   ";
       try {
         const result = await runCreate(
           baseCreateOptions({
-            title: "create-none-semantics",
-            deadline: "none",
-            estimatedMinutes: "none",
-            acceptanceCriteria: "none",
-            definitionOfReady: "none",
-            order: "none",
-            rank: "none",
-            goal: "none",
-            objective: "none",
-            value: "none",
-            impact: "none",
-            outcome: "none",
-            whyNow: "none",
-            author: "none",
-            assignee: "none",
-            parent: "none",
-            reviewer: "none",
-            risk: "none",
-            confidence: "none",
-            sprint: "none",
-            release: "none",
-            blockedBy: "none",
-            blockedReason: "none",
-            unblockNote: "none",
-            reporter: "none",
-            severity: "none",
-            environment: "none",
-            reproSteps: "none",
-            resolution: "none",
-            expectedResult: "none",
-            actualResult: "none",
-            affectedVersion: "none",
-            fixedVersion: "none",
-            component: "none",
-            regression: "none",
-            customerImpact: "none",
-            reminder: ["none"],
-            event: ["none"],
-            message: "",
-            dep: ["none"],
-            comment: ["none"],
-            note: ["none"],
-            learning: ["none"],
-            file: ["none"],
-            test: ["none"],
-            doc: ["none"],
+            title: "create-unset-semantics",
+            createMode: "progressive",
+            deadline: undefined,
+            estimatedMinutes: undefined,
+            acceptanceCriteria: undefined,
+            definitionOfReady: undefined,
+            order: undefined,
+            rank: undefined,
+            goal: undefined,
+            objective: undefined,
+            value: undefined,
+            impact: undefined,
+            outcome: undefined,
+            whyNow: undefined,
+            author: undefined,
+            assignee: undefined,
+            parent: undefined,
+            reviewer: undefined,
+            risk: undefined,
+            confidence: undefined,
+            sprint: undefined,
+            release: undefined,
+            blockedBy: undefined,
+            blockedReason: undefined,
+            unblockNote: undefined,
+            reporter: undefined,
+            severity: undefined,
+            environment: undefined,
+            reproSteps: undefined,
+            resolution: undefined,
+            expectedResult: undefined,
+            actualResult: undefined,
+            affectedVersion: undefined,
+            fixedVersion: undefined,
+            component: undefined,
+            regression: undefined,
+            customerImpact: undefined,
+            reminder: undefined,
+            event: undefined,
+            dep: undefined,
+            comment: undefined,
+            note: undefined,
+            learning: undefined,
+            file: undefined,
+            test: undefined,
+            doc: undefined,
+            unset: [
+              "deadline",
+              "estimate",
+              "acceptance-criteria",
+              "definition-of-ready",
+              "order",
+              "goal",
+              "objective",
+              "value",
+              "impact",
+              "outcome",
+              "why-now",
+              "author",
+              "assignee",
+              "parent",
+              "reviewer",
+              "risk",
+              "confidence",
+              "sprint",
+              "release",
+              "blocked-by",
+              "blocked-reason",
+              "unblock-note",
+              "reporter",
+              "severity",
+              "environment",
+              "repro-steps",
+              "resolution",
+              "expected-result",
+              "actual-result",
+              "affected-version",
+              "fixed-version",
+              "component",
+              "regression",
+              "customer-impact",
+            ],
+            clearDeps: true,
+            clearComments: true,
+            clearNotes: true,
+            clearLearnings: true,
+            clearFiles: true,
+            clearTests: true,
+            clearDocs: true,
+            clearReminders: true,
+            clearEvents: true,
           }),
           { path: context.pmPath },
         );
@@ -551,7 +596,7 @@ describe("runCreate", () => {
         expect(result.item.docs).toBeUndefined();
         expect(result.item.reminders).toBeUndefined();
         expect(result.item.events).toBeUndefined();
-        expect(result.item.author).toBe("unknown");
+        expect(result.item.author).toBeUndefined();
 
         expect(result.changed_fields).toEqual(
           expect.arrayContaining([
@@ -615,12 +660,25 @@ describe("runCreate", () => {
     });
   });
 
-  it("resolves author from PM_AUTHOR and settings when explicit author is none", async () => {
+  it("enforces strict author clear policy and supports progressive author fallback", async () => {
     await withTempPmPath(async (context) => {
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            title: "create-strict-author-unset-rejected",
+            author: undefined,
+            unset: ["author"],
+            message: "strict unset author",
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toThrow("Strict create mode requires concrete values");
+
       const envAuthor = await runCreate(
         baseCreateOptions({
           title: "create-env-author",
-          author: "none",
+          createMode: "progressive",
+          author: undefined,
           message: "env fallback",
         }),
         { path: context.pmPath },
@@ -638,7 +696,8 @@ describe("runCreate", () => {
         const settingsAuthor = await runCreate(
           baseCreateOptions({
             title: "create-settings-author",
-            author: "none",
+            createMode: "progressive",
+            author: undefined,
             message: "settings fallback",
           }),
           { path: context.pmPath },

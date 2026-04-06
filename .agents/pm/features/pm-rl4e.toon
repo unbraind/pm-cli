@@ -1,0 +1,21 @@
+id: pm-rl4e
+title: Remove none token semantics across command surfaces
+description: "Replace none/null sentinel semantics with explicit clear and unassigned filters across all command paths, with strict required-create meaningful-value enforcement."
+type: Feature
+status: closed
+priority: 0
+tags[4]: breaking-change,governance,none-token,pm-cli
+created_at: "2026-04-05T23:50:28.375Z"
+updated_at: "2026-04-06T01:25:10.846Z"
+author: codex-agent
+acceptance_criteria: All none/null token usages are removed from command semantics; explicit clear/unassigned flags are available; strict create required options reject clear directives; docs/tests/contracts/wrapper are aligned.
+parent: pm-5rjn
+resolution: Delivered immediate-breaking migration from none/null sentinel behavior to explicit clear/unassigned semantics across command surfaces.
+expected_result: Feature rollout removes none/null command semantics and ships explicit clear/unassigned APIs with strict create governance and full verification evidence.
+actual_result: "Feature complete: none/null semantics removed; explicit clear/unassigned APIs, strict required-create checks, docs/contracts updates, and full regression+coverage verification all passed."
+comments[3]{created_at,author,text}:
+  "2026-04-05T23:50:28.375Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search \"remove none token item commands\" --limit 10; pm search \"explicit clear flags\" --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because no open/in_progress item currently tracks immediate-breaking removal of none/null token semantics across create/update/filter/query/contracts/docs/tests."
+  "2026-04-06T01:24:17.535Z",codex-agent,"Feature delivery complete via child task pm-d7id: none/null sentinel parsing removed, explicit --unset and --clear-* APIs enforced, unassigned filtering moved to --assignee-filter, contracts/Pi wrapper/completion/docs aligned. Final verification passed: pnpm build, node scripts/run-tests.mjs test (69 files, 921 tests), and node scripts/run-tests.mjs coverage (100% statements/branches/functions/lines)."
+  "2026-04-06T01:25:10.846Z",codex-agent,"Post-close governance check: pm validate --check-resolution --check-history-drift --json => ok=true, warnings=0, resolution missing rows=0, history drift count=0."
+close_reason: breaking none-token removal shipped with explicit clear/unassigned semantics and full verification
+body: "Immediate-breaking scope: remove none/null sentinel semantics in mutations, filters, help/completion/contracts, wrapper, docs, and tests. Replacement: explicit clear/unassigned flags and strict create quality behavior."

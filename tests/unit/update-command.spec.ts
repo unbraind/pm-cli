@@ -21,53 +21,41 @@ interface CreateTaskOptions {
 }
 
 function createTask(context: TempPmContext, title: string, options: CreateTaskOptions = {}): string {
-  const created = context.runCli(
-    [
-      "create",
-      "--json",
-      "--title",
-      title,
-      "--description",
-      `${title} description`,
-      "--type",
-      options.type ?? "Task",
-      "--status",
-      "open",
-      "--priority",
-      "1",
-      "--tags",
-      "update,unit",
-      "--body",
-      "",
-      "--deadline",
-      options.deadline ?? "2026-03-01T00:00:00.000Z",
-      "--estimate",
-      options.estimate ?? "30",
-      "--acceptance-criteria",
-      options.acceptanceCriteria ?? `${title} acceptance`,
-      "--author",
-      "seed-author",
-      "--message",
-      `Create ${title}`,
-      "--assignee",
-      options.assignee ?? "none",
-      "--dep",
-      "none",
-      "--comment",
-      "none",
-      "--note",
-      "none",
-      "--learning",
-      "none",
-      "--file",
-      "none",
-      "--test",
-      "none",
-      "--doc",
-      "none",
-    ],
-    { expectJson: true },
-  );
+  const args = [
+    "create",
+    "--json",
+    "--title",
+    title,
+    "--description",
+    `${title} description`,
+    "--type",
+    options.type ?? "Task",
+    "--create-mode",
+    "progressive",
+    "--status",
+    "open",
+    "--priority",
+    "1",
+    "--tags",
+    "update,unit",
+    "--body",
+    "",
+    "--deadline",
+    options.deadline ?? "2026-03-01T00:00:00.000Z",
+    "--estimate",
+    options.estimate ?? "30",
+    "--acceptance-criteria",
+    options.acceptanceCriteria ?? `${title} acceptance`,
+    "--author",
+    "seed-author",
+    "--message",
+    `Create ${title}`,
+  ];
+  if (options.assignee !== undefined) {
+    args.push("--assignee", options.assignee);
+  }
+
+  const created = context.runCli(args, { expectJson: true });
 
   expect(created.code).toBe(0);
   return (created.json as { item: { id: string } }).item.id;
@@ -257,7 +245,7 @@ describe("runUpdate", () => {
           event: [
             "start=2026-03-04T08:00:00.000Z,title=Daily defaults,recur_freq=daily",
             "start=2026-03-05T10:00:00.000Z,end=2026-03-05T11:00:00.000Z,title=Planning review,all_day=yes",
-            "start=2026-03-06T09:00:00.000Z,title=Recurring standup,all_day=false,recur_freq=weekly,recur_by_weekday=fri|mon|fri,recur_by_month_day=10|2,recur_exdates=2026-03-13T09:00:00.000Z|none|2026-03-06T09:00:00.000Z",
+            "start=2026-03-06T09:00:00.000Z,title=Recurring standup,all_day=false,recur_freq=weekly,recur_by_weekday=fri|mon|fri,recur_by_month_day=10|2,recur_exdates=2026-03-13T09:00:00.000Z|2026-03-06T09:00:00.000Z",
           ],
           author: " explicit-author ",
           message: "apply explicit update",
@@ -424,7 +412,7 @@ describe("runUpdate", () => {
     });
   });
 
-  it("supports explicit none-unset semantics and clears assignee for canceled status", async () => {
+  it("supports explicit unset/clear semantics and clears assignee for canceled status", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-unset-fields", { assignee: "active-owner" });
       const result = await runUpdate(
@@ -432,42 +420,43 @@ describe("runUpdate", () => {
         {
           description: "closed description",
           status: "canceled",
-          deadline: "none",
-          estimatedMinutes: "none",
-          acceptanceCriteria: "none",
-          definitionOfReady: "none",
-          order: "none",
-          rank: "none",
-          goal: "none",
-          objective: "none",
-          value: "none",
-          impact: "none",
-          outcome: "none",
-          whyNow: "none",
-          assignee: "none",
-          parent: "none",
-          reviewer: "none",
-          risk: "none",
-          confidence: "none",
-          sprint: "none",
-          release: "none",
-          blockedBy: "none",
-          blockedReason: "none",
-          unblockNote: "none",
-          reporter: "none",
-          severity: "none",
-          environment: "none",
-          reproSteps: "none",
-          resolution: "none",
-          expectedResult: "none",
-          actualResult: "none",
-          affectedVersion: "none",
-          fixedVersion: "none",
-          component: "none",
-          regression: "none",
-          customerImpact: "none",
-          reminder: ["none"],
-          event: ["none"],
+          unset: [
+            "deadline",
+            "estimate",
+            "acceptance-criteria",
+            "definition-of-ready",
+            "order",
+            "goal",
+            "objective",
+            "value",
+            "impact",
+            "outcome",
+            "why-now",
+            "assignee",
+            "parent",
+            "reviewer",
+            "risk",
+            "confidence",
+            "sprint",
+            "release",
+            "blocked-by",
+            "blocked-reason",
+            "unblock-note",
+            "reporter",
+            "severity",
+            "environment",
+            "repro-steps",
+            "resolution",
+            "expected-result",
+            "actual-result",
+            "affected-version",
+            "fixed-version",
+            "component",
+            "regression",
+            "customer-impact",
+          ],
+          clearReminders: true,
+          clearEvents: true,
           author: "active-owner",
           message: "cancel and clear optional fields",
         },
@@ -556,19 +545,29 @@ describe("runUpdate", () => {
     });
   });
 
-  it("clears assignee when assignee is blank whitespace", async () => {
+  it("rejects blank assignee values and requires --unset assignee", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-blank-assignee");
-      const result = await runUpdate(
+      await expect(
+        runUpdate(
+          id,
+          {
+            description: "clear assignee with whitespace",
+            assignee: "   ",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      const cleared = await runUpdate(
         id,
         {
-          description: "clear assignee with whitespace",
-          assignee: "   ",
+          description: "clear assignee with explicit unset",
+          unset: ["assignee"],
         },
         { path: context.pmPath },
       );
-
-      const item = result.item as Record<string, unknown>;
+      const item = cleared.item as Record<string, unknown>;
       expect(item.assignee).toBeUndefined();
     });
   });
@@ -617,7 +616,7 @@ describe("runUpdate", () => {
     });
   });
 
-  it("supports explicit close_reason set and clear via update flag", async () => {
+  it("supports explicit close_reason set and clear via unset flag", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-explicit-close-reason");
 
@@ -636,7 +635,7 @@ describe("runUpdate", () => {
       const clearedReason = await runUpdate(
         id,
         {
-          closeReason: "none",
+          unset: ["close-reason"],
           author: "test-author",
           message: "clear close reason explicitly",
         },
@@ -885,7 +884,7 @@ describe("runUpdate", () => {
     });
   });
 
-  it("supports clearing dependencies with dep none", async () => {
+  it("supports clearing dependencies with --clear-deps", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-clear-dependencies");
       await runUpdate(
@@ -900,7 +899,7 @@ describe("runUpdate", () => {
       const cleared = await runUpdate(
         id,
         {
-          dep: ["none"],
+          clearDeps: true,
           message: "clear dependency list",
         },
         { path: context.pmPath },
@@ -967,7 +966,7 @@ describe("runUpdate", () => {
     });
   });
 
-  it("clears transactional linked collections with explicit none", async () => {
+  it("clears transactional linked collections with explicit clear flags", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-transactional-clear");
       await runUpdate(
@@ -987,12 +986,12 @@ describe("runUpdate", () => {
       const cleared = await runUpdate(
         id,
         {
-          comment: ["none"],
-          note: ["none"],
-          learning: ["none"],
-          file: ["none"],
-          test: ["none"],
-          doc: ["none"],
+          clearComments: true,
+          clearNotes: true,
+          clearLearnings: true,
+          clearFiles: true,
+          clearTests: true,
+          clearDocs: true,
           message: "clear transactional linked collections",
         },
         { path: context.pmPath },
@@ -1146,23 +1145,7 @@ describe("runUpdate", () => {
       await expect(
         runUpdate(
           id,
-          { event: ["start=2026-03-03T12:00:00.000Z,title=none"] },
-          { path: context.pmPath },
-        ),
-      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
-
-      await expect(
-        runUpdate(
-          id,
           { event: ["start=2026-03-03T12:00:00.000Z,description=   "] },
-          { path: context.pmPath },
-        ),
-      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
-
-      await expect(
-        runUpdate(
-          id,
-          { event: ["start=2026-03-03T12:00:00.000Z,description=none"] },
           { path: context.pmPath },
         ),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
@@ -1178,23 +1161,7 @@ describe("runUpdate", () => {
       await expect(
         runUpdate(
           id,
-          { event: ["start=2026-03-03T12:00:00.000Z,location=none"] },
-          { path: context.pmPath },
-        ),
-      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
-
-      await expect(
-        runUpdate(
-          id,
           { event: ["start=2026-03-03T12:00:00.000Z,timezone=   "] },
-          { path: context.pmPath },
-        ),
-      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
-
-      await expect(
-        runUpdate(
-          id,
-          { event: ["start=2026-03-03T12:00:00.000Z,timezone=none"] },
           { path: context.pmPath },
         ),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });

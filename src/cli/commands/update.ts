@@ -19,7 +19,7 @@ import { normalizeStatusInput } from "../../core/item/status.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { isNoneToken, resolveIsoOrRelative } from "../../core/shared/time.js";
+import { resolveIsoOrRelative } from "../../core/shared/time.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { applyRegisteredItemFieldDefaultsAndValidation } from "../../core/extensions/item-fields.js";
 import { locateItem, mutateItem } from "../../core/store/item-store.js";
@@ -104,6 +104,17 @@ export interface UpdateCommandOptions {
   reminder?: string[];
   event?: string[];
   typeOption?: string[];
+  unset?: string[];
+  clearDeps?: boolean;
+  clearComments?: boolean;
+  clearNotes?: boolean;
+  clearLearnings?: boolean;
+  clearFiles?: boolean;
+  clearTests?: boolean;
+  clearDocs?: boolean;
+  clearReminders?: boolean;
+  clearEvents?: boolean;
+  clearTypeOptions?: boolean;
 }
 
 export interface UpdateResult {
@@ -112,10 +123,210 @@ export interface UpdateResult {
   warnings: string[];
 }
 
+const LEGACY_NONE_TOKENS = new Set(["none", "null"]);
+
+interface UpdateUnsetFieldDefinition {
+  optionKey: string;
+  frontMatterKey: string;
+}
+
+const UPDATE_UNSET_FIELD_DEFINITIONS: ReadonlyArray<{
+  canonical: string;
+  aliases: readonly string[];
+  optionKey: string;
+  frontMatterKey: string;
+}> = [
+  { canonical: "tags", aliases: ["tags"], optionKey: "tags", frontMatterKey: "tags" },
+  { canonical: "close-reason", aliases: ["close_reason", "close-reason"], optionKey: "closeReason", frontMatterKey: "close_reason" },
+  { canonical: "deadline", aliases: ["deadline"], optionKey: "deadline", frontMatterKey: "deadline" },
+  {
+    canonical: "estimate",
+    aliases: ["estimate", "estimated_minutes", "estimated-minutes"],
+    optionKey: "estimatedMinutes",
+    frontMatterKey: "estimated_minutes",
+  },
+  {
+    canonical: "acceptance-criteria",
+    aliases: ["acceptance_criteria", "acceptance-criteria", "ac"],
+    optionKey: "acceptanceCriteria",
+    frontMatterKey: "acceptance_criteria",
+  },
+  {
+    canonical: "definition-of-ready",
+    aliases: ["definition_of_ready", "definition-of-ready"],
+    optionKey: "definitionOfReady",
+    frontMatterKey: "definition_of_ready",
+  },
+  { canonical: "order", aliases: ["order", "rank"], optionKey: "order", frontMatterKey: "order" },
+  { canonical: "goal", aliases: ["goal"], optionKey: "goal", frontMatterKey: "goal" },
+  { canonical: "objective", aliases: ["objective"], optionKey: "objective", frontMatterKey: "objective" },
+  { canonical: "value", aliases: ["value"], optionKey: "value", frontMatterKey: "value" },
+  { canonical: "impact", aliases: ["impact"], optionKey: "impact", frontMatterKey: "impact" },
+  { canonical: "outcome", aliases: ["outcome"], optionKey: "outcome", frontMatterKey: "outcome" },
+  { canonical: "why-now", aliases: ["why_now", "why-now"], optionKey: "whyNow", frontMatterKey: "why_now" },
+  { canonical: "assignee", aliases: ["assignee"], optionKey: "assignee", frontMatterKey: "assignee" },
+  { canonical: "parent", aliases: ["parent"], optionKey: "parent", frontMatterKey: "parent" },
+  { canonical: "reviewer", aliases: ["reviewer"], optionKey: "reviewer", frontMatterKey: "reviewer" },
+  { canonical: "risk", aliases: ["risk"], optionKey: "risk", frontMatterKey: "risk" },
+  { canonical: "confidence", aliases: ["confidence"], optionKey: "confidence", frontMatterKey: "confidence" },
+  { canonical: "sprint", aliases: ["sprint"], optionKey: "sprint", frontMatterKey: "sprint" },
+  { canonical: "release", aliases: ["release"], optionKey: "release", frontMatterKey: "release" },
+  {
+    canonical: "blocked-by",
+    aliases: ["blocked_by", "blocked-by"],
+    optionKey: "blockedBy",
+    frontMatterKey: "blocked_by",
+  },
+  {
+    canonical: "blocked-reason",
+    aliases: ["blocked_reason", "blocked-reason"],
+    optionKey: "blockedReason",
+    frontMatterKey: "blocked_reason",
+  },
+  {
+    canonical: "unblock-note",
+    aliases: ["unblock_note", "unblock-note"],
+    optionKey: "unblockNote",
+    frontMatterKey: "unblock_note",
+  },
+  { canonical: "reporter", aliases: ["reporter"], optionKey: "reporter", frontMatterKey: "reporter" },
+  { canonical: "severity", aliases: ["severity"], optionKey: "severity", frontMatterKey: "severity" },
+  {
+    canonical: "environment",
+    aliases: ["environment"],
+    optionKey: "environment",
+    frontMatterKey: "environment",
+  },
+  {
+    canonical: "repro-steps",
+    aliases: ["repro_steps", "repro-steps"],
+    optionKey: "reproSteps",
+    frontMatterKey: "repro_steps",
+  },
+  {
+    canonical: "resolution",
+    aliases: ["resolution"],
+    optionKey: "resolution",
+    frontMatterKey: "resolution",
+  },
+  {
+    canonical: "expected-result",
+    aliases: ["expected_result", "expected-result"],
+    optionKey: "expectedResult",
+    frontMatterKey: "expected_result",
+  },
+  {
+    canonical: "actual-result",
+    aliases: ["actual_result", "actual-result"],
+    optionKey: "actualResult",
+    frontMatterKey: "actual_result",
+  },
+  {
+    canonical: "affected-version",
+    aliases: ["affected_version", "affected-version"],
+    optionKey: "affectedVersion",
+    frontMatterKey: "affected_version",
+  },
+  {
+    canonical: "fixed-version",
+    aliases: ["fixed_version", "fixed-version"],
+    optionKey: "fixedVersion",
+    frontMatterKey: "fixed_version",
+  },
+  { canonical: "component", aliases: ["component"], optionKey: "component", frontMatterKey: "component" },
+  { canonical: "regression", aliases: ["regression"], optionKey: "regression", frontMatterKey: "regression" },
+  {
+    canonical: "customer-impact",
+    aliases: ["customer_impact", "customer-impact"],
+    optionKey: "customerImpact",
+    frontMatterKey: "customer_impact",
+  },
+];
+
+const UPDATE_UNSET_ALIAS_MAP: Map<string, UpdateUnsetFieldDefinition> = (() => {
+  const map = new Map<string, UpdateUnsetFieldDefinition>();
+  for (const definition of UPDATE_UNSET_FIELD_DEFINITIONS) {
+    for (const alias of definition.aliases) {
+      map.set(alias, {
+        optionKey: definition.optionKey,
+        frontMatterKey: definition.frontMatterKey,
+      });
+    }
+  }
+  return map;
+})();
+
+const UPDATE_OPTION_KEY_TO_UNSET_CANONICAL = new Map<string, string>(
+  UPDATE_UNSET_FIELD_DEFINITIONS.map((definition) => [definition.optionKey, definition.canonical]),
+);
+
+const UPDATE_UNSET_SUPPORTED_CANONICAL_FIELDS = UPDATE_UNSET_FIELD_DEFINITIONS.map((definition) => definition.canonical)
+  .sort((left, right) => left.localeCompare(right))
+  .join(", ");
+
 function toAuthor(candidate: string | undefined, defaultAuthor: string): string {
   const resolved = candidate ?? process.env.PM_AUTHOR ?? defaultAuthor;
   const trimmed = resolved.trim();
   return trimmed || "unknown";
+}
+
+function isLegacyNoneToken(value: string | undefined): boolean {
+  if (value === undefined) {
+    return false;
+  }
+  return LEGACY_NONE_TOKENS.has(value.trim().toLowerCase());
+}
+
+function assertNoLegacyNoneToken(value: string | undefined, flag: string, replacementHint?: string): void {
+  if (!isLegacyNoneToken(value)) {
+    return;
+  }
+  const suffix = replacementHint ? ` ${replacementHint}` : "";
+  throw new PmCliError(`${flag} no longer accepts "none" or "null".${suffix}`.trim(), EXIT_CODE.USAGE);
+}
+
+function assertNoLegacyNoneTokens(values: string[] | undefined, flag: string, replacementHint?: string): void {
+  if (!values || values.length === 0) {
+    return;
+  }
+  const hasLegacyToken = values.some((value) => isLegacyNoneToken(value));
+  if (!hasLegacyToken) {
+    return;
+  }
+  const suffix = replacementHint ? ` ${replacementHint}` : "";
+  throw new PmCliError(`${flag} no longer accepts "none" or "null".${suffix}`.trim(), EXIT_CODE.USAGE);
+}
+
+function parseUpdateUnsetTargets(raw: string[] | undefined): { frontMatterKeys: Set<string>; optionKeys: Set<string> } {
+  const frontMatterKeys = new Set<string>();
+  const optionKeys = new Set<string>();
+  if (!raw || raw.length === 0) {
+    return { frontMatterKeys, optionKeys };
+  }
+
+  for (const entry of raw) {
+    const trimmed = entry.trim().toLowerCase();
+    if (!trimmed) {
+      throw new PmCliError("--unset values must not be empty", EXIT_CODE.USAGE);
+    }
+    if (isLegacyNoneToken(trimmed)) {
+      throw new PmCliError(
+        '--unset no longer accepts "none" or "null". Specify concrete field names such as --unset deadline',
+        EXIT_CODE.USAGE,
+      );
+    }
+    const definition = UPDATE_UNSET_ALIAS_MAP.get(trimmed);
+    if (!definition) {
+      throw new PmCliError(
+        `Unsupported --unset field "${entry}". Supported fields: ${UPDATE_UNSET_SUPPORTED_CANONICAL_FIELDS}`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    frontMatterKeys.add(definition.frontMatterKey);
+    optionKeys.add(definition.optionKey);
+  }
+
+  return { frontMatterKeys, optionKeys };
 }
 
 function ensureEnum<T extends string>(value: string, allowed: readonly T[], label: string): T {
@@ -178,7 +389,7 @@ function parseReminderEntries(raw: string[], nowValue: Date): Reminder[] {
     const kv = parseCsvKv(entry, "--reminder");
     const atRaw = kv.at?.trim();
     const textRaw = kv.text?.trim();
-    if (!atRaw || !textRaw || isNoneToken(atRaw) || isNoneToken(textRaw)) {
+    if (!atRaw || !textRaw) {
       throw new PmCliError("--reminder requires at=<iso|relative> and text=<value>", EXIT_CODE.USAGE);
     }
     return {
@@ -219,25 +430,25 @@ function parseRecurrenceRule(kv: Record<string, string>, startAt: string, nowVal
   const exdatesRaw = kv.recur_exdates?.trim();
 
   const recurrenceInputsProvided = [freqRaw, intervalRaw, countRaw, untilRaw, byWeekdayRaw, byMonthDayRaw, exdatesRaw].some(
-    (value) => value !== undefined && !isNoneToken(value),
+    (value) => value !== undefined,
   );
   if (!recurrenceInputsProvided) {
     return undefined;
   }
-  if (!freqRaw || isNoneToken(freqRaw)) {
+  if (!freqRaw) {
     throw new PmCliError("--event recurrence fields require recur_freq=<daily|weekly|monthly|yearly>", EXIT_CODE.USAGE);
   }
 
   const freq = ensureEnum(freqRaw.toLowerCase(), RECURRENCE_FREQUENCY_VALUES, "event recurrence frequency");
-  const interval = intervalRaw && !isNoneToken(intervalRaw) ? parseOptionalNumber(intervalRaw, "event recur_interval") : undefined;
+  const interval = intervalRaw ? parseOptionalNumber(intervalRaw, "event recur_interval") : undefined;
   if (interval !== undefined && (!Number.isInteger(interval) || interval < 1)) {
     throw new PmCliError("--event recur_interval must be an integer >= 1", EXIT_CODE.USAGE);
   }
-  const count = countRaw && !isNoneToken(countRaw) ? parseOptionalNumber(countRaw, "event recur_count") : undefined;
+  const count = countRaw ? parseOptionalNumber(countRaw, "event recur_count") : undefined;
   if (count !== undefined && (!Number.isInteger(count) || count < 1)) {
     throw new PmCliError("--event recur_count must be an integer >= 1", EXIT_CODE.USAGE);
   }
-  const until = untilRaw && !isNoneToken(untilRaw) ? resolveIsoOrRelative(untilRaw, nowValue) : undefined;
+  const until = untilRaw ? resolveIsoOrRelative(untilRaw, nowValue) : undefined;
   if (until && until < startAt) {
     throw new PmCliError("--event recur_until must be at or after start", EXIT_CODE.USAGE);
   }
@@ -245,7 +456,6 @@ function parseRecurrenceRule(kv: Record<string, string>, startAt: string, nowVal
   const byWeekday = Array.from(
     new Set(
       parseDelimitedList(byWeekdayRaw)
-        .filter((value) => !isNoneToken(value))
         .map((value) => ensureEnum(value.toLowerCase(), RECURRENCE_WEEKDAY_VALUES, "event weekday")),
     ),
   ).sort(
@@ -257,7 +467,6 @@ function parseRecurrenceRule(kv: Record<string, string>, startAt: string, nowVal
   const byMonthDay = Array.from(
     new Set(
       parseDelimitedList(byMonthDayRaw)
-        .filter((value) => !isNoneToken(value))
         .map((value) => {
           const day = parseOptionalNumber(value, "event recur_by_month_day");
           if (!Number.isInteger(day) || day < 1 || day > 31) {
@@ -270,9 +479,7 @@ function parseRecurrenceRule(kv: Record<string, string>, startAt: string, nowVal
 
   const exdates = Array.from(
     new Set(
-      parseDelimitedList(exdatesRaw)
-        .filter((value) => !isNoneToken(value))
-        .map((value) => resolveIsoOrRelative(value, nowValue)),
+      parseDelimitedList(exdatesRaw).map((value) => resolveIsoOrRelative(value, nowValue)),
     ),
   ).sort((left, right) => left.localeCompare(right));
 
@@ -291,12 +498,12 @@ function parseEventEntries(raw: string[], nowValue: Date): CalendarEvent[] {
   return raw.map((entry) => {
     const kv = parseCsvKv(entry, "--event");
     const startRaw = kv.start?.trim();
-    if (!startRaw || isNoneToken(startRaw)) {
+    if (!startRaw) {
       throw new PmCliError("--event requires start=<iso|relative>", EXIT_CODE.USAGE);
     }
     const startAt = resolveIsoOrRelative(startRaw, nowValue);
     const endRaw = kv.end?.trim();
-    const endAt = endRaw && !isNoneToken(endRaw) ? resolveIsoOrRelative(endRaw, nowValue) : undefined;
+    const endAt = endRaw ? resolveIsoOrRelative(endRaw, nowValue) : undefined;
     if (endAt && endAt <= startAt) {
       throw new PmCliError("--event end must be after start", EXIT_CODE.USAGE);
     }
@@ -305,18 +512,6 @@ function parseEventEntries(raw: string[], nowValue: Date): CalendarEvent[] {
     const descriptionRaw = kv.description;
     const locationRaw = kv.location;
     const timezoneRaw = kv.timezone;
-    if (titleRaw !== undefined && isNoneToken(titleRaw)) {
-      throw new PmCliError("--event title cannot be none", EXIT_CODE.USAGE);
-    }
-    if (descriptionRaw !== undefined && isNoneToken(descriptionRaw)) {
-      throw new PmCliError("--event description cannot be none", EXIT_CODE.USAGE);
-    }
-    if (locationRaw !== undefined && isNoneToken(locationRaw)) {
-      throw new PmCliError("--event location cannot be none", EXIT_CODE.USAGE);
-    }
-    if (timezoneRaw !== undefined && isNoneToken(timezoneRaw)) {
-      throw new PmCliError("--event timezone cannot be none", EXIT_CODE.USAGE);
-    }
 
     const title = titleRaw?.trim();
     const description = descriptionRaw?.trim();
@@ -344,7 +539,7 @@ function parseEventEntries(raw: string[], nowValue: Date): CalendarEvent[] {
       title,
       description,
       location,
-      all_day: allDayRaw && !isNoneToken(allDayRaw) ? parseEventBoolean(allDayRaw, "--event all_day") : undefined,
+      all_day: allDayRaw ? parseEventBoolean(allDayRaw, "--event all_day") : undefined,
       timezone,
       recurrence,
     };
@@ -394,7 +589,6 @@ function parseTypeOptionEntries(raw: string[]): Record<string, string> {
 }
 
 interface ParsedDependencyUpdates {
-  clear: boolean;
   additions: Dependency[];
 }
 
@@ -417,21 +611,15 @@ function parseDependencyCreatedAt(value: string | undefined, currentIso: string)
 
 function parseOptionalDependencyString(value: string | undefined): string | undefined {
   if (value === undefined) return undefined;
-  if (isNoneToken(value)) return undefined;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
 function parseDependencyAdditions(raw: string[] | undefined, prefix: string, nowIso: string): ParsedDependencyUpdates {
   if (!raw) {
-    return { clear: false, additions: [] };
+    return { additions: [] };
   }
-  if (raw.some((entry) => isNoneToken(entry))) {
-    if (raw.length > 1) {
-      throw new PmCliError("--dep cannot mix 'none' with dependency values", EXIT_CODE.USAGE);
-    }
-    return { clear: true, additions: [] };
-  }
+  assertNoLegacyNoneTokens(raw, "--dep", "Use --clear-deps to clear dependencies.");
   const additions: Dependency[] = raw.map((entry) => {
     const kv = parseCsvKv(entry, "--dep");
     const id = kv.id?.trim();
@@ -448,16 +636,14 @@ function parseDependencyAdditions(raw: string[] | undefined, prefix: string, now
       source_kind: sourceKind,
     };
   });
-  return { clear: false, additions };
+  return { additions };
 }
 
 function parseDependencyRemovals(raw: string[] | undefined, prefix: string): DependencyRemovalSelector[] {
   if (!raw) {
     return [];
   }
-  if (raw.some((entry) => isNoneToken(entry))) {
-    throw new PmCliError("--dep-remove does not accept 'none'. Omit the flag when no removals are needed.", EXIT_CODE.USAGE);
-  }
+  assertNoLegacyNoneTokens(raw, "--dep-remove");
   return raw.map((entry) => {
     const trimmed = entry.trim();
     if (!trimmed) {
@@ -593,6 +779,22 @@ function collectProvidedUpdatePolicyOptions(options: UpdateCommandOptions): Set<
   mark("event", options.event !== undefined);
   mark("typeOption", options.typeOption !== undefined);
   mark("force", options.force === true);
+  mark("dep", options.clearDeps === true);
+  mark("comment", options.clearComments === true);
+  mark("note", options.clearNotes === true);
+  mark("learning", options.clearLearnings === true);
+  mark("file", options.clearFiles === true);
+  mark("test", options.clearTests === true);
+  mark("doc", options.clearDocs === true);
+  mark("reminder", options.clearReminders === true);
+  mark("event", options.clearEvents === true);
+  mark("typeOption", options.clearTypeOptions === true);
+  if (options.unset && options.unset.length > 0) {
+    const unsetTargets = parseUpdateUnsetTargets(options.unset);
+    for (const optionKey of unsetTargets.optionKeys) {
+      mark(optionKey, true);
+    }
+  }
   return provided;
 }
 
@@ -651,6 +853,201 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const parentReferencePolicy = settings.validation.parent_reference;
   const sprintReleasePolicy = settings.validation.sprint_release_format;
+  const unsetTargets = parseUpdateUnsetTargets(options.unset);
+  const clearOptionKeys = new Set<string>(unsetTargets.optionKeys);
+  const clearFrontMatterKeys = new Set<string>(unsetTargets.frontMatterKeys);
+
+  const clearCollectionDefinitions: ReadonlyArray<{
+    enabled: boolean | undefined;
+    optionKey: string;
+    clearFlag: string;
+    valueFlag: string;
+    values: string[] | undefined;
+    frontMatterKey: string;
+  }> = [
+    {
+      enabled: options.clearDeps,
+      optionKey: "dep",
+      clearFlag: "--clear-deps",
+      valueFlag: "--dep",
+      values: options.dep,
+      frontMatterKey: "dependencies",
+    },
+    {
+      enabled: options.clearComments,
+      optionKey: "comment",
+      clearFlag: "--clear-comments",
+      valueFlag: "--comment",
+      values: options.comment,
+      frontMatterKey: "comments",
+    },
+    {
+      enabled: options.clearNotes,
+      optionKey: "note",
+      clearFlag: "--clear-notes",
+      valueFlag: "--note",
+      values: options.note,
+      frontMatterKey: "notes",
+    },
+    {
+      enabled: options.clearLearnings,
+      optionKey: "learning",
+      clearFlag: "--clear-learnings",
+      valueFlag: "--learning",
+      values: options.learning,
+      frontMatterKey: "learnings",
+    },
+    {
+      enabled: options.clearFiles,
+      optionKey: "file",
+      clearFlag: "--clear-files",
+      valueFlag: "--file",
+      values: options.file,
+      frontMatterKey: "files",
+    },
+    {
+      enabled: options.clearTests,
+      optionKey: "test",
+      clearFlag: "--clear-tests",
+      valueFlag: "--test",
+      values: options.test,
+      frontMatterKey: "tests",
+    },
+    {
+      enabled: options.clearDocs,
+      optionKey: "doc",
+      clearFlag: "--clear-docs",
+      valueFlag: "--doc",
+      values: options.doc,
+      frontMatterKey: "docs",
+    },
+    {
+      enabled: options.clearReminders,
+      optionKey: "reminder",
+      clearFlag: "--clear-reminders",
+      valueFlag: "--reminder",
+      values: options.reminder,
+      frontMatterKey: "reminders",
+    },
+    {
+      enabled: options.clearEvents,
+      optionKey: "event",
+      clearFlag: "--clear-events",
+      valueFlag: "--event",
+      values: options.event,
+      frontMatterKey: "events",
+    },
+    {
+      enabled: options.clearTypeOptions,
+      optionKey: "typeOption",
+      clearFlag: "--clear-type-options",
+      valueFlag: "--type-option",
+      values: options.typeOption,
+      frontMatterKey: "type_options",
+    },
+  ];
+  for (const definition of clearCollectionDefinitions) {
+    if (!definition.enabled) {
+      continue;
+    }
+    if (definition.values && definition.values.length > 0) {
+      throw new PmCliError(`Cannot combine ${definition.clearFlag} with ${definition.valueFlag}`, EXIT_CODE.USAGE);
+    }
+    clearOptionKeys.add(definition.optionKey);
+    clearFrontMatterKeys.add(definition.frontMatterKey);
+  }
+
+  const scalarOptionPresence: Record<string, boolean> = {
+    tags: options.tags !== undefined,
+    closeReason: options.closeReason !== undefined,
+    deadline: options.deadline !== undefined,
+    estimatedMinutes: options.estimatedMinutes !== undefined,
+    acceptanceCriteria: options.acceptanceCriteria !== undefined,
+    definitionOfReady: options.definitionOfReady !== undefined,
+    order: options.order !== undefined || options.rank !== undefined,
+    goal: options.goal !== undefined,
+    objective: options.objective !== undefined,
+    value: options.value !== undefined,
+    impact: options.impact !== undefined,
+    outcome: options.outcome !== undefined,
+    whyNow: options.whyNow !== undefined,
+    assignee: options.assignee !== undefined,
+    parent: options.parent !== undefined,
+    reviewer: options.reviewer !== undefined,
+    risk: options.risk !== undefined,
+    confidence: options.confidence !== undefined,
+    sprint: options.sprint !== undefined,
+    release: options.release !== undefined,
+    blockedBy: options.blockedBy !== undefined,
+    blockedReason: options.blockedReason !== undefined,
+    unblockNote: options.unblockNote !== undefined,
+    reporter: options.reporter !== undefined,
+    severity: options.severity !== undefined,
+    environment: options.environment !== undefined,
+    reproSteps: options.reproSteps !== undefined,
+    resolution: options.resolution !== undefined,
+    expectedResult: options.expectedResult !== undefined,
+    actualResult: options.actualResult !== undefined,
+    affectedVersion: options.affectedVersion !== undefined,
+    fixedVersion: options.fixedVersion !== undefined,
+    component: options.component !== undefined,
+    regression: options.regression !== undefined,
+    customerImpact: options.customerImpact !== undefined,
+  };
+  for (const [optionKey, hasValue] of Object.entries(scalarOptionPresence)) {
+    if (!hasValue || !unsetTargets.optionKeys.has(optionKey)) {
+      continue;
+    }
+    const unsetField = UPDATE_OPTION_KEY_TO_UNSET_CANONICAL.get(optionKey) ?? optionKey;
+    throw new PmCliError(
+      `Cannot combine --unset ${unsetField} with ${commandOptionFlagLabel("update", optionKey)}`,
+      EXIT_CODE.USAGE,
+    );
+  }
+
+  const assertNoLegacyScalarToken = (value: string | undefined, optionKey: string): void => {
+    const unsetField = UPDATE_OPTION_KEY_TO_UNSET_CANONICAL.get(optionKey);
+    const hint = unsetField ? `Use --unset ${unsetField} to clear this field.` : undefined;
+    assertNoLegacyNoneToken(value, commandOptionFlagLabel("update", optionKey), hint);
+  };
+  assertNoLegacyScalarToken(options.tags, "tags");
+  assertNoLegacyScalarToken(options.closeReason, "closeReason");
+  assertNoLegacyScalarToken(options.deadline, "deadline");
+  assertNoLegacyScalarToken(options.estimatedMinutes, "estimatedMinutes");
+  assertNoLegacyScalarToken(options.acceptanceCriteria, "acceptanceCriteria");
+  assertNoLegacyScalarToken(options.definitionOfReady, "definitionOfReady");
+  assertNoLegacyScalarToken(options.order ?? options.rank, "order");
+  assertNoLegacyScalarToken(options.goal, "goal");
+  assertNoLegacyScalarToken(options.objective, "objective");
+  assertNoLegacyScalarToken(options.value, "value");
+  assertNoLegacyScalarToken(options.impact, "impact");
+  assertNoLegacyScalarToken(options.outcome, "outcome");
+  assertNoLegacyScalarToken(options.whyNow, "whyNow");
+  assertNoLegacyScalarToken(options.assignee, "assignee");
+  assertNoLegacyScalarToken(options.parent, "parent");
+  assertNoLegacyScalarToken(options.reviewer, "reviewer");
+  assertNoLegacyScalarToken(options.risk, "risk");
+  assertNoLegacyScalarToken(options.confidence, "confidence");
+  assertNoLegacyScalarToken(options.sprint, "sprint");
+  assertNoLegacyScalarToken(options.release, "release");
+  assertNoLegacyScalarToken(options.blockedBy, "blockedBy");
+  assertNoLegacyScalarToken(options.blockedReason, "blockedReason");
+  assertNoLegacyScalarToken(options.unblockNote, "unblockNote");
+  assertNoLegacyScalarToken(options.reporter, "reporter");
+  assertNoLegacyScalarToken(options.severity, "severity");
+  assertNoLegacyScalarToken(options.environment, "environment");
+  assertNoLegacyScalarToken(options.reproSteps, "reproSteps");
+  assertNoLegacyScalarToken(options.resolution, "resolution");
+  assertNoLegacyScalarToken(options.expectedResult, "expectedResult");
+  assertNoLegacyScalarToken(options.actualResult, "actualResult");
+  assertNoLegacyScalarToken(options.affectedVersion, "affectedVersion");
+  assertNoLegacyScalarToken(options.fixedVersion, "fixedVersion");
+  assertNoLegacyScalarToken(options.component, "component");
+  assertNoLegacyScalarToken(options.regression, "regression");
+  assertNoLegacyScalarToken(options.customerImpact, "customerImpact");
+  assertNoLegacyNoneTokens(options.reminder, "--reminder", "Use --clear-reminders to clear reminders.");
+  assertNoLegacyNoneTokens(options.event, "--event", "Use --clear-events to clear linked events.");
+
   const author = toAuthor(options.author, settings.author_default);
   const nowValue = new Date();
   const nowIso = nowValue.toISOString();
@@ -664,7 +1061,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   const docUpdates = parseDocs(options.doc);
   const parentReferenceWarnings: string[] = [];
   let resolvedParentValue: string | undefined;
-  if (options.parent !== undefined && !isNoneToken(options.parent)) {
+  if (options.parent !== undefined && !unsetTargets.frontMatterKeys.has("parent")) {
     resolvedParentValue = normalizeParentReferenceValue(options.parent);
     const parentLocated = await locateItem(
       pmRoot,
@@ -733,6 +1130,17 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     options.reminder !== undefined,
     options.event !== undefined,
     options.typeOption !== undefined,
+    options.unset !== undefined && options.unset.length > 0,
+    options.clearDeps === true,
+    options.clearComments === true,
+    options.clearNotes === true,
+    options.clearLearnings === true,
+    options.clearFiles === true,
+    options.clearTests === true,
+    options.clearDocs === true,
+    options.clearReminders === true,
+    options.clearEvents === true,
+    options.clearTypeOptions === true,
   ].some(Boolean);
 
   if (!changedFlags) {
@@ -783,11 +1191,11 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         }
         changedFields.push("status");
       }
-      if (options.closeReason !== undefined) {
-        if (isNoneToken(options.closeReason)) {
+      if (options.closeReason !== undefined || clearFrontMatterKeys.has("close_reason")) {
+        if (clearFrontMatterKeys.has("close_reason")) {
           delete document.front_matter.close_reason;
         } else {
-          const closeReason = options.closeReason.trim();
+          const closeReason = options.closeReason!.trim();
           if (closeReason.length === 0) {
             throw new PmCliError("--close-reason must not be empty", EXIT_CODE.USAGE);
           }
@@ -808,9 +1216,6 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         changedFields.push("priority");
       }
       if (options.type !== undefined) {
-        if (isNoneToken(options.type)) {
-          throw new PmCliError("--type cannot be none", EXIT_CODE.USAGE);
-        }
         const resolvedTypeName = resolveTypeName(options.type, typeRegistry);
         if (!resolvedTypeName) {
           throw new PmCliError(
@@ -823,14 +1228,11 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         changedFields.push("type");
       }
       enforceUpdateOptionsByType(activeTypeName, options, typeRegistry);
-      if (options.typeOption !== undefined) {
-        if (options.typeOption.some((entry) => isNoneToken(entry))) {
-          if (options.typeOption.length > 1) {
-            throw new PmCliError("--type-option cannot mix 'none' with type option values", EXIT_CODE.USAGE);
-          }
+      if (options.typeOption !== undefined || clearFrontMatterKeys.has("type_options")) {
+        if (clearFrontMatterKeys.has("type_options")) {
           delete document.front_matter.type_options;
         } else {
-          const parsedTypeOptions = parseTypeOptionEntries(options.typeOption);
+          const parsedTypeOptions = parseTypeOptionEntries(options.typeOption!);
           const validation = validateTypeOptions(activeTypeName, parsedTypeOptions, typeRegistry);
           if (validation.errors.length > 0) {
             throw new PmCliError(validation.errors.join("; "), EXIT_CODE.USAGE);
@@ -842,17 +1244,15 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         const validation = validateTypeOptions(activeTypeName, document.front_matter.type_options, typeRegistry);
         if (validation.errors.length > 0) {
           throw new PmCliError(
-            `Current type options are incompatible with type "${activeTypeName}". ${validation.errors.join("; ")}. Provide --type-option none to clear them.`,
+            `Current type options are incompatible with type "${activeTypeName}". ${validation.errors.join("; ")}. Use --clear-type-options to clear them.`,
             EXIT_CODE.USAGE,
           );
         }
         document.front_matter.type_options = validation.normalized;
       }
-      if (options.dep !== undefined || options.depRemove !== undefined) {
-        let nextDependencies = [...(document.front_matter.dependencies ?? [])];
-        if (dependencyUpdates.clear) {
-          nextDependencies = [];
-        } else if (dependencyUpdates.additions.length > 0) {
+      if (options.dep !== undefined || options.depRemove !== undefined || clearFrontMatterKeys.has("dependencies")) {
+        let nextDependencies = clearFrontMatterKeys.has("dependencies") ? [] : [...(document.front_matter.dependencies ?? [])];
+        if (dependencyUpdates.additions.length > 0) {
           const seen = new Set(nextDependencies.map((entry) => dependencyKey(entry)));
           for (const addition of dependencyUpdates.additions) {
             const key = dependencyKey(addition);
@@ -875,32 +1275,32 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         }
         changedFields.push("dependencies");
       }
-      if (options.comment !== undefined) {
-        if (commentUpdates.explicitEmpty || !commentUpdates.values || commentUpdates.values.length === 0) {
+      if (options.comment !== undefined || clearFrontMatterKeys.has("comments")) {
+        if (clearFrontMatterKeys.has("comments") || !commentUpdates.values || commentUpdates.values.length === 0) {
           delete document.front_matter.comments;
         } else {
           document.front_matter.comments = [...(document.front_matter.comments ?? []), ...(commentUpdates.values as Comment[])];
         }
         changedFields.push("comments");
       }
-      if (options.note !== undefined) {
-        if (noteUpdates.explicitEmpty || !noteUpdates.values || noteUpdates.values.length === 0) {
+      if (options.note !== undefined || clearFrontMatterKeys.has("notes")) {
+        if (clearFrontMatterKeys.has("notes") || !noteUpdates.values || noteUpdates.values.length === 0) {
           delete document.front_matter.notes;
         } else {
           document.front_matter.notes = [...(document.front_matter.notes ?? []), ...(noteUpdates.values as LogNote[])];
         }
         changedFields.push("notes");
       }
-      if (options.learning !== undefined) {
-        if (learningUpdates.explicitEmpty || !learningUpdates.values || learningUpdates.values.length === 0) {
+      if (options.learning !== undefined || clearFrontMatterKeys.has("learnings")) {
+        if (clearFrontMatterKeys.has("learnings") || !learningUpdates.values || learningUpdates.values.length === 0) {
           delete document.front_matter.learnings;
         } else {
           document.front_matter.learnings = [...(document.front_matter.learnings ?? []), ...(learningUpdates.values as LogNote[])];
         }
         changedFields.push("learnings");
       }
-      if (options.file !== undefined) {
-        if (fileUpdates.explicitEmpty || !fileUpdates.values || fileUpdates.values.length === 0) {
+      if (options.file !== undefined || clearFrontMatterKeys.has("files")) {
+        if (clearFrontMatterKeys.has("files") || !fileUpdates.values || fileUpdates.values.length === 0) {
           delete document.front_matter.files;
         } else {
           const nextFiles = [...(document.front_matter.files ?? [])];
@@ -917,8 +1317,8 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         }
         changedFields.push("files");
       }
-      if (options.test !== undefined) {
-        if (testUpdates.explicitEmpty || !testUpdates.values || testUpdates.values.length === 0) {
+      if (options.test !== undefined || clearFrontMatterKeys.has("tests")) {
+        if (clearFrontMatterKeys.has("tests") || !testUpdates.values || testUpdates.values.length === 0) {
           delete document.front_matter.tests;
         } else {
           const nextTests = [...(document.front_matter.tests ?? [])];
@@ -935,8 +1335,8 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         }
         changedFields.push("tests");
       }
-      if (options.doc !== undefined) {
-        if (docUpdates.explicitEmpty || !docUpdates.values || docUpdates.values.length === 0) {
+      if (options.doc !== undefined || clearFrontMatterKeys.has("docs")) {
+        if (clearFrontMatterKeys.has("docs") || !docUpdates.values || docUpdates.values.length === 0) {
           delete document.front_matter.docs;
         } else {
           const nextDocs = [...(document.front_matter.docs ?? [])];
@@ -953,51 +1353,51 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         }
         changedFields.push("docs");
       }
-      if (options.tags !== undefined) {
-        document.front_matter.tags = parseTags(options.tags);
+      if (options.tags !== undefined || clearFrontMatterKeys.has("tags")) {
+        document.front_matter.tags = clearFrontMatterKeys.has("tags") ? [] : parseTags(options.tags!);
         changedFields.push("tags");
       }
-      if (options.deadline !== undefined) {
-        if (isNoneToken(options.deadline)) {
+      if (options.deadline !== undefined || clearFrontMatterKeys.has("deadline")) {
+        if (clearFrontMatterKeys.has("deadline")) {
           delete document.front_matter.deadline;
         } else {
-          document.front_matter.deadline = resolveIsoOrRelative(options.deadline);
+          document.front_matter.deadline = resolveIsoOrRelative(options.deadline!);
         }
         changedFields.push("deadline");
       }
-      if (options.estimatedMinutes !== undefined) {
-        if (isNoneToken(options.estimatedMinutes)) {
+      if (options.estimatedMinutes !== undefined || clearFrontMatterKeys.has("estimated_minutes")) {
+        if (clearFrontMatterKeys.has("estimated_minutes")) {
           delete document.front_matter.estimated_minutes;
         } else {
           document.front_matter.estimated_minutes = parseOptionalNumber(
-            options.estimatedMinutes,
+            options.estimatedMinutes!,
             "estimated-minutes",
           );
         }
         changedFields.push("estimated_minutes");
       }
-      if (options.acceptanceCriteria !== undefined) {
-        if (isNoneToken(options.acceptanceCriteria)) {
+      if (options.acceptanceCriteria !== undefined || clearFrontMatterKeys.has("acceptance_criteria")) {
+        if (clearFrontMatterKeys.has("acceptance_criteria")) {
           delete document.front_matter.acceptance_criteria;
         } else {
           document.front_matter.acceptance_criteria = options.acceptanceCriteria;
         }
         changedFields.push("acceptance_criteria");
       }
-      if (options.definitionOfReady !== undefined) {
-        if (isNoneToken(options.definitionOfReady)) {
+      if (options.definitionOfReady !== undefined || clearFrontMatterKeys.has("definition_of_ready")) {
+        if (clearFrontMatterKeys.has("definition_of_ready")) {
           delete document.front_matter.definition_of_ready;
         } else {
-          document.front_matter.definition_of_ready = options.definitionOfReady.trim();
+          document.front_matter.definition_of_ready = options.definitionOfReady!.trim();
         }
         changedFields.push("definition_of_ready");
       }
       const orderRaw = options.order ?? options.rank;
-      if (orderRaw !== undefined) {
-        if (isNoneToken(orderRaw)) {
+      if (orderRaw !== undefined || clearFrontMatterKeys.has("order")) {
+        if (clearFrontMatterKeys.has("order")) {
           delete document.front_matter.order;
         } else {
-          const parsedOrder = parseOptionalNumber(orderRaw, "order");
+          const parsedOrder = parseOptionalNumber(orderRaw!, "order");
           if (!Number.isInteger(parsedOrder)) {
             throw new PmCliError("Order must be an integer", EXIT_CODE.USAGE);
           }
@@ -1005,253 +1405,250 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         }
         changedFields.push("order");
       }
-      if (options.goal !== undefined) {
-        if (isNoneToken(options.goal)) {
+      if (options.goal !== undefined || clearFrontMatterKeys.has("goal")) {
+        if (clearFrontMatterKeys.has("goal")) {
           delete document.front_matter.goal;
         } else {
-          document.front_matter.goal = options.goal.trim();
+          document.front_matter.goal = options.goal!.trim();
         }
         changedFields.push("goal");
       }
-      if (options.objective !== undefined) {
-        if (isNoneToken(options.objective)) {
+      if (options.objective !== undefined || clearFrontMatterKeys.has("objective")) {
+        if (clearFrontMatterKeys.has("objective")) {
           delete document.front_matter.objective;
         } else {
-          document.front_matter.objective = options.objective.trim();
+          document.front_matter.objective = options.objective!.trim();
         }
         changedFields.push("objective");
       }
-      if (options.value !== undefined) {
-        if (isNoneToken(options.value)) {
+      if (options.value !== undefined || clearFrontMatterKeys.has("value")) {
+        if (clearFrontMatterKeys.has("value")) {
           delete document.front_matter.value;
         } else {
-          document.front_matter.value = options.value.trim();
+          document.front_matter.value = options.value!.trim();
         }
         changedFields.push("value");
       }
-      if (options.impact !== undefined) {
-        if (isNoneToken(options.impact)) {
+      if (options.impact !== undefined || clearFrontMatterKeys.has("impact")) {
+        if (clearFrontMatterKeys.has("impact")) {
           delete document.front_matter.impact;
         } else {
-          document.front_matter.impact = options.impact.trim();
+          document.front_matter.impact = options.impact!.trim();
         }
         changedFields.push("impact");
       }
-      if (options.outcome !== undefined) {
-        if (isNoneToken(options.outcome)) {
+      if (options.outcome !== undefined || clearFrontMatterKeys.has("outcome")) {
+        if (clearFrontMatterKeys.has("outcome")) {
           delete document.front_matter.outcome;
         } else {
-          document.front_matter.outcome = options.outcome.trim();
+          document.front_matter.outcome = options.outcome!.trim();
         }
         changedFields.push("outcome");
       }
-      if (options.whyNow !== undefined) {
-        if (isNoneToken(options.whyNow)) {
+      if (options.whyNow !== undefined || clearFrontMatterKeys.has("why_now")) {
+        if (clearFrontMatterKeys.has("why_now")) {
           delete document.front_matter.why_now;
         } else {
-          document.front_matter.why_now = options.whyNow.trim();
+          document.front_matter.why_now = options.whyNow!.trim();
         }
         changedFields.push("why_now");
       }
-      if (options.assignee !== undefined) {
-        if (isNoneToken(options.assignee) || options.assignee.trim() === "") {
+      if (options.assignee !== undefined || clearFrontMatterKeys.has("assignee")) {
+        if (clearFrontMatterKeys.has("assignee")) {
           delete document.front_matter.assignee;
         } else {
-          document.front_matter.assignee = options.assignee.trim();
+          if (options.assignee!.trim() === "") {
+            throw new PmCliError("--assignee must not be empty. Use --unset assignee to clear it.", EXIT_CODE.USAGE);
+          }
+          document.front_matter.assignee = options.assignee!.trim();
         }
         changedFields.push("assignee");
       }
-      if (options.parent !== undefined) {
-        if (isNoneToken(options.parent)) {
+      if (options.parent !== undefined || clearFrontMatterKeys.has("parent")) {
+        if (clearFrontMatterKeys.has("parent")) {
           delete document.front_matter.parent;
         } else {
           document.front_matter.parent = resolvedParentValue as string;
         }
         changedFields.push("parent");
       }
-      if (options.reviewer !== undefined) {
-        if (isNoneToken(options.reviewer)) {
+      if (options.reviewer !== undefined || clearFrontMatterKeys.has("reviewer")) {
+        if (clearFrontMatterKeys.has("reviewer")) {
           delete document.front_matter.reviewer;
         } else {
-          document.front_matter.reviewer = options.reviewer.trim();
+          document.front_matter.reviewer = options.reviewer!.trim();
         }
         changedFields.push("reviewer");
       }
-      if (options.risk !== undefined) {
-        if (isNoneToken(options.risk)) {
+      if (options.risk !== undefined || clearFrontMatterKeys.has("risk")) {
+        if (clearFrontMatterKeys.has("risk")) {
           delete document.front_matter.risk;
         } else {
-          document.front_matter.risk = ensureEnum(normalizeRiskInput(options.risk), RISK_VALUES, "risk");
+          document.front_matter.risk = ensureEnum(normalizeRiskInput(options.risk!), RISK_VALUES, "risk");
         }
         changedFields.push("risk");
       }
-      if (options.confidence !== undefined) {
-        if (isNoneToken(options.confidence)) {
+      if (options.confidence !== undefined || clearFrontMatterKeys.has("confidence")) {
+        if (clearFrontMatterKeys.has("confidence")) {
           delete document.front_matter.confidence;
         } else {
-          document.front_matter.confidence = parseConfidenceInput(options.confidence);
+          document.front_matter.confidence = parseConfidenceInput(options.confidence!);
         }
         changedFields.push("confidence");
       }
-      if (options.sprint !== undefined) {
-        if (isNoneToken(options.sprint)) {
+      if (options.sprint !== undefined || clearFrontMatterKeys.has("sprint")) {
+        if (clearFrontMatterKeys.has("sprint")) {
           delete document.front_matter.sprint;
         } else {
-          const sprintValidation = validateSprintOrReleaseValue("sprint", options.sprint, sprintReleasePolicy);
+          const sprintValidation = validateSprintOrReleaseValue("sprint", options.sprint!, sprintReleasePolicy);
           document.front_matter.sprint = sprintValidation.value;
           warnings.push(...sprintValidation.warnings);
         }
         changedFields.push("sprint");
       }
-      if (options.release !== undefined) {
-        if (isNoneToken(options.release)) {
+      if (options.release !== undefined || clearFrontMatterKeys.has("release")) {
+        if (clearFrontMatterKeys.has("release")) {
           delete document.front_matter.release;
         } else {
-          const releaseValidation = validateSprintOrReleaseValue("release", options.release, sprintReleasePolicy);
+          const releaseValidation = validateSprintOrReleaseValue("release", options.release!, sprintReleasePolicy);
           document.front_matter.release = releaseValidation.value;
           warnings.push(...releaseValidation.warnings);
         }
         changedFields.push("release");
       }
-      if (options.blockedBy !== undefined) {
-        if (isNoneToken(options.blockedBy)) {
+      if (options.blockedBy !== undefined || clearFrontMatterKeys.has("blocked_by")) {
+        if (clearFrontMatterKeys.has("blocked_by")) {
           delete document.front_matter.blocked_by;
         } else {
-          document.front_matter.blocked_by = options.blockedBy.trim();
+          document.front_matter.blocked_by = options.blockedBy!.trim();
         }
         changedFields.push("blocked_by");
       }
-      if (options.blockedReason !== undefined) {
-        if (isNoneToken(options.blockedReason)) {
+      if (options.blockedReason !== undefined || clearFrontMatterKeys.has("blocked_reason")) {
+        if (clearFrontMatterKeys.has("blocked_reason")) {
           delete document.front_matter.blocked_reason;
         } else {
-          document.front_matter.blocked_reason = options.blockedReason.trim();
+          document.front_matter.blocked_reason = options.blockedReason!.trim();
         }
         changedFields.push("blocked_reason");
       }
-      if (options.unblockNote !== undefined) {
-        if (isNoneToken(options.unblockNote)) {
+      if (options.unblockNote !== undefined || clearFrontMatterKeys.has("unblock_note")) {
+        if (clearFrontMatterKeys.has("unblock_note")) {
           delete document.front_matter.unblock_note;
         } else {
-          document.front_matter.unblock_note = options.unblockNote.trim();
+          document.front_matter.unblock_note = options.unblockNote!.trim();
         }
         changedFields.push("unblock_note");
       }
-      if (options.reporter !== undefined) {
-        if (isNoneToken(options.reporter)) {
+      if (options.reporter !== undefined || clearFrontMatterKeys.has("reporter")) {
+        if (clearFrontMatterKeys.has("reporter")) {
           delete document.front_matter.reporter;
         } else {
-          document.front_matter.reporter = options.reporter.trim();
+          document.front_matter.reporter = options.reporter!.trim();
         }
         changedFields.push("reporter");
       }
-      if (options.severity !== undefined) {
-        if (isNoneToken(options.severity)) {
+      if (options.severity !== undefined || clearFrontMatterKeys.has("severity")) {
+        if (clearFrontMatterKeys.has("severity")) {
           delete document.front_matter.severity;
         } else {
-          document.front_matter.severity = ensureEnum(normalizeSeverityInput(options.severity), ISSUE_SEVERITY_VALUES, "severity");
+          document.front_matter.severity = ensureEnum(normalizeSeverityInput(options.severity!), ISSUE_SEVERITY_VALUES, "severity");
         }
         changedFields.push("severity");
       }
-      if (options.environment !== undefined) {
-        if (isNoneToken(options.environment)) {
+      if (options.environment !== undefined || clearFrontMatterKeys.has("environment")) {
+        if (clearFrontMatterKeys.has("environment")) {
           delete document.front_matter.environment;
         } else {
-          document.front_matter.environment = options.environment.trim();
+          document.front_matter.environment = options.environment!.trim();
         }
         changedFields.push("environment");
       }
-      if (options.reproSteps !== undefined) {
-        if (isNoneToken(options.reproSteps)) {
+      if (options.reproSteps !== undefined || clearFrontMatterKeys.has("repro_steps")) {
+        if (clearFrontMatterKeys.has("repro_steps")) {
           delete document.front_matter.repro_steps;
         } else {
-          document.front_matter.repro_steps = options.reproSteps.trim();
+          document.front_matter.repro_steps = options.reproSteps!.trim();
         }
         changedFields.push("repro_steps");
       }
-      if (options.resolution !== undefined) {
-        if (isNoneToken(options.resolution)) {
+      if (options.resolution !== undefined || clearFrontMatterKeys.has("resolution")) {
+        if (clearFrontMatterKeys.has("resolution")) {
           delete document.front_matter.resolution;
         } else {
-          document.front_matter.resolution = options.resolution.trim();
+          document.front_matter.resolution = options.resolution!.trim();
         }
         changedFields.push("resolution");
       }
-      if (options.expectedResult !== undefined) {
-        if (isNoneToken(options.expectedResult)) {
+      if (options.expectedResult !== undefined || clearFrontMatterKeys.has("expected_result")) {
+        if (clearFrontMatterKeys.has("expected_result")) {
           delete document.front_matter.expected_result;
         } else {
-          document.front_matter.expected_result = options.expectedResult.trim();
+          document.front_matter.expected_result = options.expectedResult!.trim();
         }
         changedFields.push("expected_result");
       }
-      if (options.actualResult !== undefined) {
-        if (isNoneToken(options.actualResult)) {
+      if (options.actualResult !== undefined || clearFrontMatterKeys.has("actual_result")) {
+        if (clearFrontMatterKeys.has("actual_result")) {
           delete document.front_matter.actual_result;
         } else {
-          document.front_matter.actual_result = options.actualResult.trim();
+          document.front_matter.actual_result = options.actualResult!.trim();
         }
         changedFields.push("actual_result");
       }
-      if (options.affectedVersion !== undefined) {
-        if (isNoneToken(options.affectedVersion)) {
+      if (options.affectedVersion !== undefined || clearFrontMatterKeys.has("affected_version")) {
+        if (clearFrontMatterKeys.has("affected_version")) {
           delete document.front_matter.affected_version;
         } else {
-          document.front_matter.affected_version = options.affectedVersion.trim();
+          document.front_matter.affected_version = options.affectedVersion!.trim();
         }
         changedFields.push("affected_version");
       }
-      if (options.fixedVersion !== undefined) {
-        if (isNoneToken(options.fixedVersion)) {
+      if (options.fixedVersion !== undefined || clearFrontMatterKeys.has("fixed_version")) {
+        if (clearFrontMatterKeys.has("fixed_version")) {
           delete document.front_matter.fixed_version;
         } else {
-          document.front_matter.fixed_version = options.fixedVersion.trim();
+          document.front_matter.fixed_version = options.fixedVersion!.trim();
         }
         changedFields.push("fixed_version");
       }
-      if (options.component !== undefined) {
-        if (isNoneToken(options.component)) {
+      if (options.component !== undefined || clearFrontMatterKeys.has("component")) {
+        if (clearFrontMatterKeys.has("component")) {
           delete document.front_matter.component;
         } else {
-          document.front_matter.component = options.component.trim();
+          document.front_matter.component = options.component!.trim();
         }
         changedFields.push("component");
       }
-      if (options.regression !== undefined) {
-        if (isNoneToken(options.regression)) {
+      if (options.regression !== undefined || clearFrontMatterKeys.has("regression")) {
+        if (clearFrontMatterKeys.has("regression")) {
           delete document.front_matter.regression;
         } else {
-          document.front_matter.regression = parseRegressionInput(options.regression);
+          document.front_matter.regression = parseRegressionInput(options.regression!);
         }
         changedFields.push("regression");
       }
-      if (options.customerImpact !== undefined) {
-        if (isNoneToken(options.customerImpact)) {
+      if (options.customerImpact !== undefined || clearFrontMatterKeys.has("customer_impact")) {
+        if (clearFrontMatterKeys.has("customer_impact")) {
           delete document.front_matter.customer_impact;
         } else {
-          document.front_matter.customer_impact = options.customerImpact.trim();
+          document.front_matter.customer_impact = options.customerImpact!.trim();
         }
         changedFields.push("customer_impact");
       }
-      if (options.reminder !== undefined) {
-        if (options.reminder.some((entry) => isNoneToken(entry))) {
-          if (options.reminder.length > 1) {
-            throw new PmCliError("--reminder cannot mix 'none' with reminder values", EXIT_CODE.USAGE);
-          }
+      if (options.reminder !== undefined || clearFrontMatterKeys.has("reminders")) {
+        if (clearFrontMatterKeys.has("reminders")) {
           delete document.front_matter.reminders;
         } else {
-          document.front_matter.reminders = parseReminderEntries(options.reminder, nowValue);
+          document.front_matter.reminders = parseReminderEntries(options.reminder!, nowValue);
         }
         changedFields.push("reminders");
       }
-      if (options.event !== undefined) {
-        if (options.event.some((entry) => isNoneToken(entry))) {
-          if (options.event.length > 1) {
-            throw new PmCliError("--event cannot mix 'none' with event values", EXIT_CODE.USAGE);
-          }
+      if (options.event !== undefined || clearFrontMatterKeys.has("events")) {
+        if (clearFrontMatterKeys.has("events")) {
           delete document.front_matter.events;
         } else {
-          document.front_matter.events = parseEventEntries(options.event, nowValue);
+          document.front_matter.events = parseEventEntries(options.event!, nowValue);
         }
         changedFields.push("events");
       }

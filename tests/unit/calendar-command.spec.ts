@@ -37,6 +37,8 @@ function createCalendarItem(
     `${options.title} description`,
     "--type",
     options.type ?? "Task",
+    "--create-mode",
+    "progressive",
     "--status",
     options.status ?? "open",
     "--priority",
@@ -45,8 +47,6 @@ function createCalendarItem(
     options.tags ?? "calendar,unit",
     "--body",
     "",
-    "--deadline",
-    options.deadline ?? "none",
     "--estimate",
     "10",
     "--acceptance-criteria",
@@ -55,9 +55,13 @@ function createCalendarItem(
     "calendar-test",
     "--message",
     `Create ${options.title}`,
-    "--assignee",
-    options.assignee ?? "none",
   ];
+  if (options.deadline !== undefined) {
+    createArgs.push("--deadline", options.deadline);
+  }
+  if (options.assignee !== undefined) {
+    createArgs.push("--assignee", options.assignee);
+  }
   if (options.sprint) {
     createArgs.push("--sprint", options.sprint);
   }
@@ -70,7 +74,6 @@ function createCalendarItem(
   for (const event of options.events ?? []) {
     createArgs.push("--event", event);
   }
-  createArgs.push("--dep", "none", "--comment", "none", "--note", "none", "--learning", "none", "--file", "none", "--test", "none", "--doc", "none");
   const result = context.runCli(createArgs, { expectJson: true });
   expect(result.code).toBe(0);
   return (result.json as { item: { id: string } }).item.id;
@@ -738,7 +741,6 @@ describe("calendar command module", () => {
       });
       createCalendarItem(context, {
         title: "Unassigned calendar item",
-        assignee: "none",
         deadline: "2099-04-05T10:00:00.000Z",
       });
 
@@ -761,7 +763,7 @@ describe("calendar command module", () => {
           view: "agenda",
           from: "2099-04-05T00:00:00.000Z",
           to: "2099-04-06T00:00:00.000Z",
-          assignee: "none",
+          assigneeFilter: "unassigned",
         },
         { path: context.pmPath },
       );
@@ -786,7 +788,7 @@ describe("calendar command module", () => {
       );
       expect(agendaWithPast.range.start).toBeNull();
       expect(agendaWithPast.summary.events).toBe(0);
-      expect(renderCalendarMarkdown(agendaWithPast)).toContain("window: none -> none");
+      expect(renderCalendarMarkdown(agendaWithPast)).toContain("window: unbounded -> unbounded");
     });
   });
 

@@ -26,18 +26,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added merge-conflict marker detection in item and history parsing paths with actionable remediation guidance.
 - Added `pm health` `integrity` diagnostics for conflict markers and parse/JSONL anomalies with deterministic warning codes.
 - `list*` commands now accept `--include-body` to project item `body` into each returned row when needed for metadata completeness analysis.
-- Added persistent item reminders via repeatable `--reminder at=<iso|relative>,text=<text>` support on `pm create` and `pm update` (including deterministic `none` clearing semantics).
+- Added persistent item reminders via repeatable `--reminder at=<iso|relative>,text=<text>` support on `pm create` and `pm update` (including explicit `--clear-reminders` semantics).
 - Added `pm update --body` / `-b` support (including stdin token `--body -`) so existing items can backfill or replace body content with standard update history/lock semantics.
 - Added `pm calendar` (alias: `pm cal`) with deterministic `agenda` (default), `day`, `week`, and `month` views across deadlines and reminders, plus `--past` and range/filter options.
 - Added `pm context` (alias: `pm ctx`) as an agent-first project snapshot command that combines deterministic high-level/low-level active work focus with agenda/reminder context, including blocked fallback when active work is empty.
-- Added persistent item scheduled events via repeatable `--event` support on `pm create` and `pm update`, including one-off entries plus recurrence fields (`recur_freq`, `recur_interval`, `recur_count`, `recur_until`, `recur_by_weekday`, `recur_by_month_day`, `recur_exdates`) and deterministic `none` clearing semantics.
+- Added persistent item scheduled events via repeatable `--event` support on `pm create` and `pm update`, including one-off entries plus recurrence fields (`recur_freq`, `recur_interval`, `recur_count`, `recur_until`, `recur_by_weekday`, `recur_by_month_day`, `recur_exdates`) and explicit `--clear-events` semantics.
 - Added bounded recurring occurrence expansion to `pm calendar` so recurring item events are materialized into agenda/day/week/month windows.
 - Added calendar source and recurrence controls: `--include`, `--recurrence-lookahead-days`, `--recurrence-lookback-days`, and `--occurrence-limit`.
 - Added resilient entry parsing for mutation `--add` and create/update repeatable seed flags: CSV `key=value`, markdown-style `key: value`, and `-` stdin-token ingestion are now supported with deterministic normalization.
 - Added stdin token support for `pm append --body -` and structured comment ingestion for `pm comments --add` (plain text remains supported).
 - Added runtime-configurable item type registry support: `settings.item_types.definitions` plus extension `registerItemTypes(...)` registrations now drive allowed type values, aliases, per-type required create fields/repeatables, option schemas, and type folder routing.
 - Added calendar-native built-in item types: `Event`, `Reminder`, `Milestone`, and `Meeting` (with deterministic folder routing, completion defaults, and help/usage fallback guidance parity).
-- Added `--type-option` / `--type_option` support on `pm create` and `pm update` for validated per-type metadata (`key=value` or `key=<name>,value=<value>`, with `none` clear semantics).
+- Added `--type-option` / `--type_option` support on `pm create` and `pm update` for validated per-type metadata (`key=value` or `key=<name>,value=<value>`, with explicit `--clear-type-options` semantics).
 - Added per-type `command_option_policies` support (settings + extension item-type registrations) for `create`/`update` option-level `required`, `enabled`, and `visible` behavior controls.
 - Added type-aware help policy sections for `pm create --help` / `pm update --help` when `--type <value>` is supplied, including required/disabled/hidden option summaries from active settings/extensions.
 - Added type-option schema surfacing in type-aware help (`pm create --help --type <value>` / `pm update --help --type <value>`) including required markers, allowed values, aliases, and option descriptions.
@@ -67,10 +67,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added command-surface parity updates for `notes`/`learnings` across help narratives, shell completion scripts, command-aware output summaries, and Pi wrapper action routing.
 - Added CLI/Pi shared contract parity for extension lifecycle actions (`extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-doctor`, `extension-adopt`, `extension-adopt-all`, `extension-activate`, `extension-deactivate`) and their schema parameters (`target`, `scope`, `github`, `ref`).
 - Added integration regressions for repeated `pm files --add` / `pm docs --add` mutation flows to keep linked-artifact add workflows stable across subsequent command invocations.
-- Added transactional linked/log mutation support on `pm update` via repeatable `--comment`, `--note`, `--learning`, `--file`, `--test`, and `--doc` flags (including deterministic `none` clear semantics) so metadata + linked surfaces can be updated in one mutation.
-- Added dependency mutation support on existing items through `pm update`: repeatable `--dep` add/clear (`none`) semantics plus repeatable `--dep-remove`/`--dep_remove` selector removals, with parity across help/completion/contracts/Pi wrapper surfaces.
+- Added transactional linked/log mutation support on `pm update` via repeatable `--comment`, `--note`, `--learning`, `--file`, `--test`, and `--doc` flags (including explicit `--clear-comments|--clear-notes|--clear-learnings|--clear-files|--clear-tests|--clear-docs` semantics) so metadata + linked surfaces can be updated in one mutation.
+- Added dependency mutation support on existing items through `pm update`: repeatable `--dep` add plus explicit `--clear-deps` semantics and repeatable `--dep-remove`/`--dep_remove` selector removals, with parity across help/completion/contracts/Pi wrapper surfaces.
 - Added read-only dependency visualization command `pm deps` with deterministic `tree` (default) and `graph` projections, including cycle-safe traversal and missing-node reporting.
-- Added `pm update --close-reason` / `--close_reason` support so callers can explicitly set or clear `close_reason` (`none` clears) without using `pm close`.
+- Added `pm update --close-reason` / `--close_reason` support so callers can explicitly set `close_reason`, and clear it with `--unset close-reason`, without using `pm close`.
 - Added standalone `pm validate` command with deterministic check payloads for metadata completeness, closed-item resolution fields, linked-file/orphaned-file hygiene, and item/history drift.
 - Added metadata-profile validation policy controls (`core|strict|custom`) for `pm validate --check-metadata`, plus config surfaces `metadata-validation-profile` and `metadata-required-fields` for settings-backed required-field governance.
 - Added `pm validate --scan-mode default|tracked-all` for file-check candidate selection, including explicit `candidate_total`/`candidate_scanned` reporting while preserving compatibility fields.
@@ -206,7 +206,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Completion covers all subcommands, global flags, list filters (`--type`, `--assignee`, `--sprint`, `--release`, `--priority`, etc.), search modes, item types, statuses, priorities, and shell names.
 
 #### List Command Filters
-- `--assignee <value>` filter for all `list*` commands — exact match on `assignee` field; use `none` to filter for unassigned items.
+- `--assignee <value>` filter for all `list*` commands — exact match on `assignee` field; use `--assignee-filter unassigned` to filter for unassigned items.
 - `--sprint <value>` filter for all `list*` commands — exact match on `sprint` field.
 - `--release <value>` filter for all `list*` commands — exact match on `release` field.
 

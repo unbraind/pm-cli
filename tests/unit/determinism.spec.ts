@@ -7,12 +7,12 @@ import { canonicalDocument, parseItemDocument, serializeItemDocument } from "../
 import { normalizeItemId, normalizePrefix } from "../../src/id.js";
 import { parseCsvKv, parseOptionalNumber, parseTags } from "../../src/parse.js";
 import { orderObject, stableStringify } from "../../src/serialization.js";
-import { isNoneToken, resolveIsoOrRelative } from "../../src/time.js";
+import { resolveIsoOrRelative } from "../../src/time.js";
 
 describe("deterministic primitives", () => {
   it("normalizes tags and ids deterministically", () => {
     expect(parseTags("BETA, alpha,alpha , gamma")).toEqual(["alpha", "beta", "gamma"]);
-    expect(parseTags("none")).toEqual([]);
+    expect(parseTags("none")).toEqual(["none"]);
     expect(normalizePrefix("PM")).toBe("pm-");
     expect(normalizeItemId("#A1", "pm-")).toBe("pm-a1");
   });
@@ -24,10 +24,7 @@ describe("deterministic primitives", () => {
     expect(parsed.note).toBe("quoted value");
   });
 
-  it("handles none and deadline resolution", () => {
-    expect(isNoneToken(undefined)).toBe(false);
-    expect(isNoneToken("none")).toBe(true);
-    expect(isNoneToken(" null ")).toBe(true);
+  it("handles deadline resolution", () => {
     expect(() => parseOptionalNumber("not-a-number", "n")).toThrow();
     expect(() => resolveIsoOrRelative("bad-date")).toThrow();
 

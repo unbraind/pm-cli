@@ -168,7 +168,19 @@ export interface PmToolParameters {
   reminder?: string[];
   event?: string[];
   typeOption?: string[];
+  unset?: string[];
+  clearDeps?: boolean;
+  clearComments?: boolean;
+  clearNotes?: boolean;
+  clearLearnings?: boolean;
+  clearFiles?: boolean;
+  clearTests?: boolean;
+  clearDocs?: boolean;
+  clearReminders?: boolean;
+  clearEvents?: boolean;
+  clearTypeOptions?: boolean;
   criterion?: string[];
+  clearCriteria?: boolean;
   format?: string;
   policy?: string;
 }
@@ -246,25 +258,10 @@ function pushBooleanishOption(args: string[], flag: string, value: BooleanFlagIn
   pushOption(args, flag, value);
 }
 
-function pushRepeatableOrNone(args: string[], flag: string, values: string[] | undefined): void {
-  const validValues = Array.isArray(values) ? values.filter((value) => typeof value === "string" && value.length > 0) : [];
-  if (validValues.length === 0) {
-    args.push(flag, "none");
-    return;
-  }
-  for (const value of validValues) {
-    args.push(flag, value);
-  }
-}
-
 function pushContractedFlags(args: string[], params: PmToolParameters, contracts: PiOptionFlagContract[]): void {
   const paramValues = params as unknown as Record<string, unknown>;
   for (const contract of contracts) {
     const value = paramValues[contract.param];
-    if (contract.repeatableOrNone) {
-      pushRepeatableOrNone(args, contract.flag, Array.isArray(value) ? (value as string[]) : undefined);
-      continue;
-    }
     if (contract.repeatable) {
       pushRepeatable(args, contract.flag, Array.isArray(value) ? (value as string[]) : undefined);
       continue;
@@ -289,18 +286,16 @@ function addListFilters(args: string[], params: PmToolParameters): void {
 }
 
 function addCreateFlags(args: string[], params: PmToolParameters): void {
-  const scalarContracts = PI_CREATE_OPTION_CONTRACTS.filter((entry) => !entry.repeatable && !entry.repeatableOrNone);
-  const repeatableContracts = PI_CREATE_OPTION_CONTRACTS.filter((entry) => entry.repeatable || entry.repeatableOrNone);
+  const scalarContracts = PI_CREATE_OPTION_CONTRACTS.filter((entry) => !entry.repeatable);
+  const repeatableContracts = PI_CREATE_OPTION_CONTRACTS.filter((entry) => entry.repeatable);
   pushContractedFlags(args, params, scalarContracts);
-  const assignee = typeof params.assignee === "string" && params.assignee.length > 0 ? params.assignee : "none";
-  pushOption(args, "--assignee", assignee);
   addSharedCreateUpdateFlags(args, params);
   pushContractedFlags(args, params, repeatableContracts);
 }
 
 function addUpdateFlags(args: string[], params: PmToolParameters): void {
-  const scalarContracts = PI_UPDATE_OPTION_CONTRACTS.filter((entry) => !entry.repeatable && !entry.repeatableOrNone);
-  const repeatableContracts = PI_UPDATE_OPTION_CONTRACTS.filter((entry) => entry.repeatable || entry.repeatableOrNone);
+  const scalarContracts = PI_UPDATE_OPTION_CONTRACTS.filter((entry) => !entry.repeatable);
+  const repeatableContracts = PI_UPDATE_OPTION_CONTRACTS.filter((entry) => entry.repeatable);
   pushContractedFlags(args, params, scalarContracts);
   addSharedCreateUpdateFlags(args, params);
   pushContractedFlags(args, params, repeatableContracts);
@@ -415,6 +410,9 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
         }
       }
       pushRepeatable(args, "--criterion", params.criterion);
+      if (params.clearCriteria === true) {
+        args.push("--clear-criteria");
+      }
       pushOption(args, "--format", params.format);
       pushOption(args, "--policy", params.policy);
       return args;

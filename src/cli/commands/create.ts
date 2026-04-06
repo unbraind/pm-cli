@@ -23,7 +23,7 @@ import { acquireLock } from "../../core/lock/lock.js";
 import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { isNoneToken, nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
+import { nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
 import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../core/extensions/index.js";
 import { applyRegisteredItemFieldDefaultsAndValidation } from "../../core/extensions/item-fields.js";
 import { locateItem } from "../../core/store/item-store.js";
@@ -111,6 +111,17 @@ export interface CreateCommandOptions {
   typeOption?: string[];
   template?: string;
   createMode?: string;
+  unset?: string[];
+  clearDeps?: boolean;
+  clearComments?: boolean;
+  clearNotes?: boolean;
+  clearLearnings?: boolean;
+  clearFiles?: boolean;
+  clearTests?: boolean;
+  clearDocs?: boolean;
+  clearReminders?: boolean;
+  clearEvents?: boolean;
+  clearTypeOptions?: boolean;
 }
 
 export interface CreateResult {
@@ -122,6 +133,146 @@ export interface CreateResult {
 type CreateMode = "strict" | "progressive";
 const CREATE_MODE_VALUES = ["strict", "progressive"] as const;
 const LOG_SEED_ALLOWED_KEYS = new Set(["author", "created_at", "text"]);
+const LEGACY_NONE_TOKENS = new Set(["none", "null"]);
+
+interface CreateUnsetFieldDefinition {
+  optionKey: string;
+  frontMatterKey: string;
+}
+
+const CREATE_UNSET_FIELD_DEFINITIONS: ReadonlyArray<{
+  canonical: string;
+  aliases: readonly string[];
+  optionKey: string;
+  frontMatterKey: string;
+}> = [
+  { canonical: "tags", aliases: ["tags"], optionKey: "tags", frontMatterKey: "tags" },
+  { canonical: "deadline", aliases: ["deadline"], optionKey: "deadline", frontMatterKey: "deadline" },
+  {
+    canonical: "estimate",
+    aliases: ["estimate", "estimated_minutes", "estimated-minutes"],
+    optionKey: "estimatedMinutes",
+    frontMatterKey: "estimated_minutes",
+  },
+  {
+    canonical: "acceptance-criteria",
+    aliases: ["acceptance_criteria", "acceptance-criteria", "ac"],
+    optionKey: "acceptanceCriteria",
+    frontMatterKey: "acceptance_criteria",
+  },
+  {
+    canonical: "definition-of-ready",
+    aliases: ["definition_of_ready", "definition-of-ready"],
+    optionKey: "definitionOfReady",
+    frontMatterKey: "definition_of_ready",
+  },
+  { canonical: "order", aliases: ["order", "rank"], optionKey: "order", frontMatterKey: "order" },
+  { canonical: "goal", aliases: ["goal"], optionKey: "goal", frontMatterKey: "goal" },
+  { canonical: "objective", aliases: ["objective"], optionKey: "objective", frontMatterKey: "objective" },
+  { canonical: "value", aliases: ["value"], optionKey: "value", frontMatterKey: "value" },
+  { canonical: "impact", aliases: ["impact"], optionKey: "impact", frontMatterKey: "impact" },
+  { canonical: "outcome", aliases: ["outcome"], optionKey: "outcome", frontMatterKey: "outcome" },
+  { canonical: "why-now", aliases: ["why_now", "why-now"], optionKey: "whyNow", frontMatterKey: "why_now" },
+  { canonical: "author", aliases: ["author"], optionKey: "author", frontMatterKey: "author" },
+  { canonical: "assignee", aliases: ["assignee"], optionKey: "assignee", frontMatterKey: "assignee" },
+  { canonical: "parent", aliases: ["parent"], optionKey: "parent", frontMatterKey: "parent" },
+  { canonical: "reviewer", aliases: ["reviewer"], optionKey: "reviewer", frontMatterKey: "reviewer" },
+  { canonical: "risk", aliases: ["risk"], optionKey: "risk", frontMatterKey: "risk" },
+  { canonical: "confidence", aliases: ["confidence"], optionKey: "confidence", frontMatterKey: "confidence" },
+  { canonical: "sprint", aliases: ["sprint"], optionKey: "sprint", frontMatterKey: "sprint" },
+  { canonical: "release", aliases: ["release"], optionKey: "release", frontMatterKey: "release" },
+  {
+    canonical: "blocked-by",
+    aliases: ["blocked_by", "blocked-by"],
+    optionKey: "blockedBy",
+    frontMatterKey: "blocked_by",
+  },
+  {
+    canonical: "blocked-reason",
+    aliases: ["blocked_reason", "blocked-reason"],
+    optionKey: "blockedReason",
+    frontMatterKey: "blocked_reason",
+  },
+  {
+    canonical: "unblock-note",
+    aliases: ["unblock_note", "unblock-note"],
+    optionKey: "unblockNote",
+    frontMatterKey: "unblock_note",
+  },
+  { canonical: "reporter", aliases: ["reporter"], optionKey: "reporter", frontMatterKey: "reporter" },
+  { canonical: "severity", aliases: ["severity"], optionKey: "severity", frontMatterKey: "severity" },
+  {
+    canonical: "environment",
+    aliases: ["environment"],
+    optionKey: "environment",
+    frontMatterKey: "environment",
+  },
+  {
+    canonical: "repro-steps",
+    aliases: ["repro_steps", "repro-steps"],
+    optionKey: "reproSteps",
+    frontMatterKey: "repro_steps",
+  },
+  {
+    canonical: "resolution",
+    aliases: ["resolution"],
+    optionKey: "resolution",
+    frontMatterKey: "resolution",
+  },
+  {
+    canonical: "expected-result",
+    aliases: ["expected_result", "expected-result"],
+    optionKey: "expectedResult",
+    frontMatterKey: "expected_result",
+  },
+  {
+    canonical: "actual-result",
+    aliases: ["actual_result", "actual-result"],
+    optionKey: "actualResult",
+    frontMatterKey: "actual_result",
+  },
+  {
+    canonical: "affected-version",
+    aliases: ["affected_version", "affected-version"],
+    optionKey: "affectedVersion",
+    frontMatterKey: "affected_version",
+  },
+  {
+    canonical: "fixed-version",
+    aliases: ["fixed_version", "fixed-version"],
+    optionKey: "fixedVersion",
+    frontMatterKey: "fixed_version",
+  },
+  { canonical: "component", aliases: ["component"], optionKey: "component", frontMatterKey: "component" },
+  { canonical: "regression", aliases: ["regression"], optionKey: "regression", frontMatterKey: "regression" },
+  {
+    canonical: "customer-impact",
+    aliases: ["customer_impact", "customer-impact"],
+    optionKey: "customerImpact",
+    frontMatterKey: "customer_impact",
+  },
+];
+
+const CREATE_UNSET_ALIAS_MAP: Map<string, CreateUnsetFieldDefinition> = (() => {
+  const map = new Map<string, CreateUnsetFieldDefinition>();
+  for (const definition of CREATE_UNSET_FIELD_DEFINITIONS) {
+    for (const alias of definition.aliases) {
+      map.set(alias, {
+        optionKey: definition.optionKey,
+        frontMatterKey: definition.frontMatterKey,
+      });
+    }
+  }
+  return map;
+})();
+
+const CREATE_OPTION_KEY_TO_UNSET_CANONICAL = new Map<string, string>(
+  CREATE_UNSET_FIELD_DEFINITIONS.map((definition) => [definition.optionKey, definition.canonical]),
+);
+
+const CREATE_UNSET_SUPPORTED_CANONICAL_FIELDS = CREATE_UNSET_FIELD_DEFINITIONS.map((definition) => definition.canonical)
+  .sort((left, right) => left.localeCompare(right))
+  .join(", ");
 
 function buildInvalidLogSeedKeysMessage(
   optionName: "--comment" | "--note" | "--learning",
@@ -203,10 +354,68 @@ function parseCreatedAt(value: string | undefined, currentIso: string): string {
   return new Date(parsed).toISOString();
 }
 
+function isLegacyNoneToken(value: string | undefined): boolean {
+  if (value === undefined) {
+    return false;
+  }
+  return LEGACY_NONE_TOKENS.has(value.trim().toLowerCase());
+}
+
+function assertNoLegacyNoneToken(value: string | undefined, flag: string, replacementHint?: string): void {
+  if (!isLegacyNoneToken(value)) {
+    return;
+  }
+  const suffix = replacementHint ? ` ${replacementHint}` : "";
+  throw new PmCliError(`${flag} no longer accepts "none" or "null".${suffix}`.trim(), EXIT_CODE.USAGE);
+}
+
+function assertNoLegacyNoneTokens(values: string[] | undefined, flag: string, replacementHint?: string): void {
+  if (!values || values.length === 0) {
+    return;
+  }
+  const hasLegacyToken = values.some((value) => isLegacyNoneToken(value));
+  if (!hasLegacyToken) {
+    return;
+  }
+  const suffix = replacementHint ? ` ${replacementHint}` : "";
+  throw new PmCliError(`${flag} no longer accepts "none" or "null".${suffix}`.trim(), EXIT_CODE.USAGE);
+}
+
 function parseOptionalString(value: string | undefined): string | undefined {
   if (value === undefined) return undefined;
-  if (isNoneToken(value)) return undefined;
   return value;
+}
+
+function parseCreateUnsetTargets(raw: string[] | undefined): { frontMatterKeys: Set<string>; optionKeys: Set<string> } {
+  const frontMatterKeys = new Set<string>();
+  const optionKeys = new Set<string>();
+  if (!raw || raw.length === 0) {
+    return { frontMatterKeys, optionKeys };
+  }
+
+  for (const entry of raw) {
+    const trimmed = entry.trim().toLowerCase();
+    if (!trimmed) {
+      throw new PmCliError("--unset values must not be empty", EXIT_CODE.USAGE);
+    }
+    if (isLegacyNoneToken(trimmed)) {
+      throw new PmCliError(
+        '--unset no longer accepts "none" or "null". Specify concrete field names such as --unset deadline',
+        EXIT_CODE.USAGE,
+      );
+    }
+    const definition = CREATE_UNSET_ALIAS_MAP.get(trimmed);
+    if (!definition) {
+      throw new PmCliError(
+        `Unsupported --unset field "${entry}". Supported fields: ${CREATE_UNSET_SUPPORTED_CANONICAL_FIELDS}`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    frontMatterKeys.add(definition.frontMatterKey);
+    optionKeys.add(definition.optionKey);
+  }
+
+  return { frontMatterKeys, optionKeys };
 }
 
 function weekdayOrderIndex(value: (typeof RECURRENCE_WEEKDAY_VALUES)[number]): number {
@@ -219,12 +428,7 @@ function parseDependencies(
   prefix: string,
 ): { values: Dependency[] | undefined; explicitEmpty: boolean } {
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
-  if (raw.some((entry) => isNoneToken(entry))) {
-    if (raw.length > 1) {
-      throw new PmCliError("--dep cannot mix 'none' with dependency values", EXIT_CODE.USAGE);
-    }
-    return { values: undefined, explicitEmpty: true };
-  }
+  assertNoLegacyNoneTokens(raw, "--dep", "Use --clear-deps to clear dependencies.");
   const values: Dependency[] = raw.map((entry) => {
     const kv = parseCsvKv(entry, "--dep");
     const id = kv.id;
@@ -249,12 +453,13 @@ export function parseLogSeed(
   fallbackAuthor: string,
 ): { values: LogNote[] | Comment[] | undefined; explicitEmpty: boolean } {
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
-  if (raw.some((entry) => isNoneToken(entry))) {
-    if (raw.length > 1) {
-      throw new PmCliError(`${optionName} cannot mix 'none' with seed values`, EXIT_CODE.USAGE);
-    }
-    return { values: undefined, explicitEmpty: true };
-  }
+  const clearHint =
+    optionName === "--comment"
+      ? "Use --clear-comments to clear comments."
+      : optionName === "--note"
+        ? "Use --clear-notes to clear notes."
+        : "Use --clear-learnings to clear learnings.";
+  assertNoLegacyNoneTokens(raw, optionName, clearHint);
   const values = raw.map((entry) => {
     const kv = parseCsvKv(entry, optionName);
     const unsupportedKeys = Object.keys(kv).filter((key) => !LOG_SEED_ALLOWED_KEYS.has(key));
@@ -276,12 +481,7 @@ export function parseLogSeed(
 
 export function parseFiles(raw: string[] | undefined): { values: LinkedFile[] | undefined; explicitEmpty: boolean } {
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
-  if (raw.some((entry) => isNoneToken(entry))) {
-    if (raw.length > 1) {
-      throw new PmCliError("--file cannot mix 'none' with file values", EXIT_CODE.USAGE);
-    }
-    return { values: undefined, explicitEmpty: true };
-  }
+  assertNoLegacyNoneTokens(raw, "--file", "Use --clear-files to clear linked files.");
   const values = raw.map((entry) => {
     const kv = parseCsvKv(entry, "--file");
     if (!kv.path) {
@@ -302,7 +502,7 @@ const LINKED_TEST_PM_CONTEXT_MODE_VALUES = ["schema", "tracker", "auto"] as cons
 
 function parseLinkedTestEnvSet(raw: string | undefined, optionName: string): Record<string, string> | undefined {
   const normalized = parseOptionalString(raw);
-  if (!normalized || isNoneToken(normalized)) {
+  if (!normalized) {
     return undefined;
   }
   const assignments = normalized
@@ -336,7 +536,7 @@ function parseLinkedTestEnvSet(raw: string | undefined, optionName: string): Rec
 
 function parseLinkedTestEnvClear(raw: string | undefined, optionName: string): string[] | undefined {
   const normalized = parseOptionalString(raw);
-  if (!normalized || isNoneToken(normalized)) {
+  if (!normalized) {
     return undefined;
   }
   const keys = [...new Set(normalized.split(/[;,\n]/).map((entry) => entry.trim()).filter((entry) => entry.length > 0))];
@@ -356,7 +556,7 @@ function parseLinkedTestEnvClear(raw: string | undefined, optionName: string): s
 
 function parseLinkedTestBoolean(raw: string | undefined, optionName: string, fieldLabel: string): boolean | undefined {
   const normalized = parseOptionalString(raw);
-  if (!normalized || isNoneToken(normalized)) {
+  if (!normalized) {
     return undefined;
   }
   const value = normalized.trim().toLowerCase();
@@ -374,7 +574,7 @@ function parseLinkedTestContextMode(
   optionName: string,
 ): LinkedTest["pm_context_mode"] | undefined {
   const normalized = parseOptionalString(raw);
-  if (!normalized || isNoneToken(normalized)) {
+  if (!normalized) {
     return undefined;
   }
   const value = normalized.trim().toLowerCase();
@@ -389,7 +589,7 @@ function parseLinkedTestContextMode(
 
 function parseLinkedTestStringList(raw: string | undefined): string[] | undefined {
   const normalized = parseOptionalString(raw);
-  if (!normalized || isNoneToken(normalized)) {
+  if (!normalized) {
     return undefined;
   }
   const values = [...new Set(normalized.split(/[;\n]/).map((entry) => entry.trim()).filter((entry) => entry.length > 0))];
@@ -417,7 +617,7 @@ function parseLinkedTestRegexList(raw: string | undefined, optionName: string, f
 
 function parseLinkedTestMinLines(raw: string | undefined, optionName: string): number | undefined {
   const normalized = parseOptionalString(raw);
-  if (!normalized || isNoneToken(normalized)) {
+  if (!normalized) {
     return undefined;
   }
   const parsed = parseOptionalNumber(normalized, "assert_stdout_min_lines");
@@ -429,7 +629,7 @@ function parseLinkedTestMinLines(raw: string | undefined, optionName: string): n
 
 function parseLinkedTestAssertionEqualsMap(raw: string | undefined, optionName: string): Record<string, string> | undefined {
   const normalized = parseOptionalString(raw);
-  if (!normalized || isNoneToken(normalized)) {
+  if (!normalized) {
     return undefined;
   }
   const assignments = normalized
@@ -460,7 +660,7 @@ function parseLinkedTestAssertionEqualsMap(raw: string | undefined, optionName: 
 
 function parseLinkedTestAssertionGteMap(raw: string | undefined, optionName: string): Record<string, number> | undefined {
   const normalized = parseOptionalString(raw);
-  if (!normalized || isNoneToken(normalized)) {
+  if (!normalized) {
     return undefined;
   }
   const assignments = normalized
@@ -495,12 +695,7 @@ function parseLinkedTestAssertionGteMap(raw: string | undefined, optionName: str
 
 export function parseTests(raw: string[] | undefined): { values: LinkedTest[] | undefined; explicitEmpty: boolean } {
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
-  if (raw.some((entry) => isNoneToken(entry))) {
-    if (raw.length > 1) {
-      throw new PmCliError("--test cannot mix 'none' with test values", EXIT_CODE.USAGE);
-    }
-    return { values: undefined, explicitEmpty: true };
-  }
+  assertNoLegacyNoneTokens(raw, "--test", "Use --clear-tests to clear linked tests.");
   const values = raw.map((entry) => {
     const kv = parseCsvKv(entry, "--test");
     const command = parseOptionalString(kv.command);
@@ -538,12 +733,7 @@ export function parseTests(raw: string[] | undefined): { values: LinkedTest[] | 
 
 export function parseDocs(raw: string[] | undefined): { values: LinkedDoc[] | undefined; explicitEmpty: boolean } {
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
-  if (raw.some((entry) => isNoneToken(entry))) {
-    if (raw.length > 1) {
-      throw new PmCliError("--doc cannot mix 'none' with doc values", EXIT_CODE.USAGE);
-    }
-    return { values: undefined, explicitEmpty: true };
-  }
+  assertNoLegacyNoneTokens(raw, "--doc", "Use --clear-docs to clear linked docs.");
   const values = raw.map((entry) => {
     const kv = parseCsvKv(entry, "--doc");
     if (!kv.path) {
@@ -560,12 +750,7 @@ export function parseDocs(raw: string[] | undefined): { values: LinkedDoc[] | un
 
 function parseReminders(raw: string[] | undefined, nowValue: string): { values: Reminder[] | undefined; explicitEmpty: boolean } {
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
-  if (raw.some((entry) => isNoneToken(entry))) {
-    if (raw.length > 1) {
-      throw new PmCliError("--reminder cannot mix 'none' with reminder values", EXIT_CODE.USAGE);
-    }
-    return { values: undefined, explicitEmpty: true };
-  }
+  assertNoLegacyNoneTokens(raw, "--reminder", "Use --clear-reminders to clear reminders.");
   const values = raw.map((entry) => {
     const kv = parseCsvKv(entry, "--reminder");
     const atRaw = parseOptionalString(kv.at);
@@ -678,12 +863,7 @@ function parseRecurrenceRule(kv: Record<string, string>, startAt: string, nowVal
 
 function parseEvents(raw: string[] | undefined, nowValue: string): { values: CalendarEvent[] | undefined; explicitEmpty: boolean } {
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
-  if (raw.some((entry) => isNoneToken(entry))) {
-    if (raw.length > 1) {
-      throw new PmCliError("--event cannot mix 'none' with event values", EXIT_CODE.USAGE);
-    }
-    return { values: undefined, explicitEmpty: true };
-  }
+  assertNoLegacyNoneTokens(raw, "--event", "Use --clear-events to clear linked events.");
   const referenceDate = new Date(nowValue);
   const values = raw.map((entry) => {
     const kv = parseCsvKv(entry, "--event");
@@ -769,12 +949,7 @@ function parseTypeOptions(raw: string[] | undefined): { values: Record<string, s
   if (!raw || raw.length === 0) {
     return { values: undefined, explicitEmpty: false };
   }
-  if (raw.some((entry) => isNoneToken(entry))) {
-    if (raw.length > 1) {
-      throw new PmCliError("--type-option cannot mix 'none' with option values", EXIT_CODE.USAGE);
-    }
-    return { values: undefined, explicitEmpty: true };
-  }
+  assertNoLegacyNoneTokens(raw, "--type-option", "Use --clear-type-options to clear existing type options.");
   const values: Record<string, string> = {};
   for (const entry of raw) {
     const trimmedEntry = entry.trim();
@@ -859,6 +1034,7 @@ function requireCreateOptionByType(
   typeDefinition: ResolvedItemTypeDefinition,
   options: CreateCommandOptions,
   createMode: CreateMode,
+  clearOptionKeys: Set<string>,
 ): string[] {
   const typeName = typeDefinition.name;
   const scalarValues: Record<string, unknown> = {
@@ -928,6 +1104,7 @@ function requireCreateOptionByType(
     }
     return false;
   };
+  const hasOptionMutation = (optionKey: string): boolean => hasOptionValue(optionKey) || clearOptionKeys.has(optionKey);
 
   const baseRequiredOptions = new Set<string>(["title", "description", "type"]);
   if (createMode === "strict") {
@@ -945,9 +1122,22 @@ function requireCreateOptionByType(
   }
 
   for (const option of policyState.disabled) {
-    if (hasOptionValue(option)) {
+    if (hasOptionMutation(option)) {
       throw new PmCliError(
         `Option ${commandOptionFlagLabel("create", option)} is disabled for type "${typeName}" by command_option_policies`,
+        EXIT_CODE.USAGE,
+      );
+    }
+  }
+
+  if (createMode === "strict") {
+    const strictRequiredClears = policyState.required.filter((required) => clearOptionKeys.has(required));
+    if (strictRequiredClears.length > 0) {
+      const requiredFlags = [...new Set(strictRequiredClears.map((required) => commandOptionFlagLabel("create", required)))].sort(
+        (left, right) => left.localeCompare(right),
+      );
+      throw new PmCliError(
+        `Strict create mode requires concrete values for ${requiredFlags.join(", ")}; --unset/--clear-* directives cannot satisfy required options`,
         EXIT_CODE.USAGE,
       );
     }
@@ -1007,13 +1197,19 @@ function createExampleTokensForFlag(flag: string, typeName: string): string[] {
     case "--message":
       return ["--message", `"Create ${typeName} item"`];
     case "--dep":
+      return ["--dep", "\"id=pm-xxxx,kind=related,author=maintainer,created_at=now\""];
     case "--comment":
+      return ["--comment", "\"author=maintainer,created_at=now,text=Implementation context\""];
     case "--note":
+      return ["--note", "\"author=maintainer,created_at=now,text=Design note\""];
     case "--learning":
+      return ["--learning", "\"author=maintainer,created_at=now,text=Durable lesson\""];
     case "--file":
+      return ["--file", "\"path=src/example.ts,scope=project,note=implementation file\""];
     case "--test":
+      return ["--test", "\"command=node scripts/run-tests.mjs test,scope=project,timeout_seconds=240\""];
     case "--doc":
-      return [flag, "none"];
+      return ["--doc", "\"path=README.md,scope=project,note=reference doc\""];
     default:
       return [flag, "\"<value>\""];
   }
@@ -1094,10 +1290,11 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
 
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  if (resolvedOptions.template !== undefined && !isNoneToken(resolvedOptions.template)) {
+  assertNoLegacyNoneToken(resolvedOptions.template, "--template", "Omit --template to skip template usage.");
+  if (resolvedOptions.template !== undefined) {
     const templateName = resolvedOptions.template.trim();
     if (templateName.length === 0) {
-      throw new PmCliError("--template must not be empty. Use --template none to disable template usage.", EXIT_CODE.USAGE);
+      throw new PmCliError("--template must not be empty. Omit --template to disable template usage.", EXIT_CODE.USAGE);
     }
     const templateOptions = await loadCreateTemplateOptions(pmRoot, templateName);
     resolvedOptions = mergeCreateOptionsWithTemplate(templateOptions, resolvedOptions);
@@ -1118,31 +1315,213 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   }
   const createMode = resolveCreateMode(resolvedOptions.createMode);
   const type = typeDefinition.name;
-  const missingRequiredCreateFlags = requireCreateOptionByType(typeDefinition, resolvedOptions, createMode);
+  const unsetTargets = parseCreateUnsetTargets(resolvedOptions.unset);
+  const explicitUnsets = new Set<string>(unsetTargets.frontMatterKeys);
+  const clearOptionKeys = new Set<string>(unsetTargets.optionKeys);
+
+  const clearCollectionDefinitions: ReadonlyArray<{
+    enabled: boolean | undefined;
+    optionKey: string;
+    clearFlag: string;
+    valueFlag: string;
+    values: string[] | undefined;
+    frontMatterKey: string;
+  }> = [
+    {
+      enabled: resolvedOptions.clearDeps,
+      optionKey: "dep",
+      clearFlag: "--clear-deps",
+      valueFlag: "--dep",
+      values: resolvedOptions.dep,
+      frontMatterKey: "dependencies",
+    },
+    {
+      enabled: resolvedOptions.clearComments,
+      optionKey: "comment",
+      clearFlag: "--clear-comments",
+      valueFlag: "--comment",
+      values: resolvedOptions.comment,
+      frontMatterKey: "comments",
+    },
+    {
+      enabled: resolvedOptions.clearNotes,
+      optionKey: "note",
+      clearFlag: "--clear-notes",
+      valueFlag: "--note",
+      values: resolvedOptions.note,
+      frontMatterKey: "notes",
+    },
+    {
+      enabled: resolvedOptions.clearLearnings,
+      optionKey: "learning",
+      clearFlag: "--clear-learnings",
+      valueFlag: "--learning",
+      values: resolvedOptions.learning,
+      frontMatterKey: "learnings",
+    },
+    {
+      enabled: resolvedOptions.clearFiles,
+      optionKey: "file",
+      clearFlag: "--clear-files",
+      valueFlag: "--file",
+      values: resolvedOptions.file,
+      frontMatterKey: "files",
+    },
+    {
+      enabled: resolvedOptions.clearTests,
+      optionKey: "test",
+      clearFlag: "--clear-tests",
+      valueFlag: "--test",
+      values: resolvedOptions.test,
+      frontMatterKey: "tests",
+    },
+    {
+      enabled: resolvedOptions.clearDocs,
+      optionKey: "doc",
+      clearFlag: "--clear-docs",
+      valueFlag: "--doc",
+      values: resolvedOptions.doc,
+      frontMatterKey: "docs",
+    },
+    {
+      enabled: resolvedOptions.clearReminders,
+      optionKey: "reminder",
+      clearFlag: "--clear-reminders",
+      valueFlag: "--reminder",
+      values: resolvedOptions.reminder,
+      frontMatterKey: "reminders",
+    },
+    {
+      enabled: resolvedOptions.clearEvents,
+      optionKey: "event",
+      clearFlag: "--clear-events",
+      valueFlag: "--event",
+      values: resolvedOptions.event,
+      frontMatterKey: "events",
+    },
+    {
+      enabled: resolvedOptions.clearTypeOptions,
+      optionKey: "typeOption",
+      clearFlag: "--clear-type-options",
+      valueFlag: "--type-option",
+      values: resolvedOptions.typeOption,
+      frontMatterKey: "type_options",
+    },
+  ];
+  for (const definition of clearCollectionDefinitions) {
+    if (!definition.enabled) {
+      continue;
+    }
+    if (definition.values && definition.values.length > 0) {
+      throw new PmCliError(`Cannot combine ${definition.clearFlag} with ${definition.valueFlag}`, EXIT_CODE.USAGE);
+    }
+    explicitUnsets.add(definition.frontMatterKey);
+    clearOptionKeys.add(definition.optionKey);
+  }
+
+  const scalarOptionPresence: Record<string, boolean> = {
+    tags: resolvedOptions.tags !== undefined,
+    deadline: resolvedOptions.deadline !== undefined,
+    estimatedMinutes: resolvedOptions.estimatedMinutes !== undefined,
+    acceptanceCriteria: resolvedOptions.acceptanceCriteria !== undefined,
+    definitionOfReady: resolvedOptions.definitionOfReady !== undefined,
+    order: resolvedOptions.order !== undefined || resolvedOptions.rank !== undefined,
+    goal: resolvedOptions.goal !== undefined,
+    objective: resolvedOptions.objective !== undefined,
+    value: resolvedOptions.value !== undefined,
+    impact: resolvedOptions.impact !== undefined,
+    outcome: resolvedOptions.outcome !== undefined,
+    whyNow: resolvedOptions.whyNow !== undefined,
+    author: resolvedOptions.author !== undefined,
+    assignee: resolvedOptions.assignee !== undefined,
+    parent: resolvedOptions.parent !== undefined,
+    reviewer: resolvedOptions.reviewer !== undefined,
+    risk: resolvedOptions.risk !== undefined,
+    confidence: resolvedOptions.confidence !== undefined,
+    sprint: resolvedOptions.sprint !== undefined,
+    release: resolvedOptions.release !== undefined,
+    blockedBy: resolvedOptions.blockedBy !== undefined,
+    blockedReason: resolvedOptions.blockedReason !== undefined,
+    unblockNote: resolvedOptions.unblockNote !== undefined,
+    reporter: resolvedOptions.reporter !== undefined,
+    severity: resolvedOptions.severity !== undefined,
+    environment: resolvedOptions.environment !== undefined,
+    reproSteps: resolvedOptions.reproSteps !== undefined,
+    resolution: resolvedOptions.resolution !== undefined,
+    expectedResult: resolvedOptions.expectedResult !== undefined,
+    actualResult: resolvedOptions.actualResult !== undefined,
+    affectedVersion: resolvedOptions.affectedVersion !== undefined,
+    fixedVersion: resolvedOptions.fixedVersion !== undefined,
+    component: resolvedOptions.component !== undefined,
+    regression: resolvedOptions.regression !== undefined,
+    customerImpact: resolvedOptions.customerImpact !== undefined,
+  };
+  for (const [optionKey, hasValue] of Object.entries(scalarOptionPresence)) {
+    if (!hasValue || !unsetTargets.optionKeys.has(optionKey)) {
+      continue;
+    }
+    const unsetField = CREATE_OPTION_KEY_TO_UNSET_CANONICAL.get(optionKey) ?? optionKey;
+    throw new PmCliError(
+      `Cannot combine --unset ${unsetField} with ${commandOptionFlagLabel("create", optionKey)}`,
+      EXIT_CODE.USAGE,
+    );
+  }
+
+  const assertNoLegacyScalarToken = (value: string | undefined, optionKey: string): void => {
+    const unsetField = CREATE_OPTION_KEY_TO_UNSET_CANONICAL.get(optionKey);
+    const hint = unsetField ? `Use --unset ${unsetField} to clear this field.` : undefined;
+    assertNoLegacyNoneToken(value, commandOptionFlagLabel("create", optionKey), hint);
+  };
+  assertNoLegacyScalarToken(resolvedOptions.tags, "tags");
+  assertNoLegacyScalarToken(resolvedOptions.deadline, "deadline");
+  assertNoLegacyScalarToken(resolvedOptions.estimatedMinutes, "estimatedMinutes");
+  assertNoLegacyScalarToken(resolvedOptions.acceptanceCriteria, "acceptanceCriteria");
+  assertNoLegacyScalarToken(resolvedOptions.definitionOfReady, "definitionOfReady");
+  assertNoLegacyScalarToken(resolvedOptions.order ?? resolvedOptions.rank, "order");
+  assertNoLegacyScalarToken(resolvedOptions.goal, "goal");
+  assertNoLegacyScalarToken(resolvedOptions.objective, "objective");
+  assertNoLegacyScalarToken(resolvedOptions.value, "value");
+  assertNoLegacyScalarToken(resolvedOptions.impact, "impact");
+  assertNoLegacyScalarToken(resolvedOptions.outcome, "outcome");
+  assertNoLegacyScalarToken(resolvedOptions.whyNow, "whyNow");
+  assertNoLegacyScalarToken(resolvedOptions.author, "author");
+  assertNoLegacyScalarToken(resolvedOptions.assignee, "assignee");
+  assertNoLegacyScalarToken(resolvedOptions.parent, "parent");
+  assertNoLegacyScalarToken(resolvedOptions.reviewer, "reviewer");
+  assertNoLegacyScalarToken(resolvedOptions.risk, "risk");
+  assertNoLegacyScalarToken(resolvedOptions.confidence, "confidence");
+  assertNoLegacyScalarToken(resolvedOptions.sprint, "sprint");
+  assertNoLegacyScalarToken(resolvedOptions.release, "release");
+  assertNoLegacyScalarToken(resolvedOptions.blockedBy, "blockedBy");
+  assertNoLegacyScalarToken(resolvedOptions.blockedReason, "blockedReason");
+  assertNoLegacyScalarToken(resolvedOptions.unblockNote, "unblockNote");
+  assertNoLegacyScalarToken(resolvedOptions.reporter, "reporter");
+  assertNoLegacyScalarToken(resolvedOptions.severity, "severity");
+  assertNoLegacyScalarToken(resolvedOptions.environment, "environment");
+  assertNoLegacyScalarToken(resolvedOptions.reproSteps, "reproSteps");
+  assertNoLegacyScalarToken(resolvedOptions.resolution, "resolution");
+  assertNoLegacyScalarToken(resolvedOptions.expectedResult, "expectedResult");
+  assertNoLegacyScalarToken(resolvedOptions.actualResult, "actualResult");
+  assertNoLegacyScalarToken(resolvedOptions.affectedVersion, "affectedVersion");
+  assertNoLegacyScalarToken(resolvedOptions.fixedVersion, "fixedVersion");
+  assertNoLegacyScalarToken(resolvedOptions.component, "component");
+  assertNoLegacyScalarToken(resolvedOptions.regression, "regression");
+  assertNoLegacyScalarToken(resolvedOptions.customerImpact, "customerImpact");
+
+  const missingRequiredCreateFlags = requireCreateOptionByType(typeDefinition, resolvedOptions, createMode, clearOptionKeys);
   const nowValue = nowIso();
   const author = selectAuthor(resolvedOptions.author, settings.author_default);
-  const explicitUnsets: string[] = [];
 
   const dependencies = parseDependencies(resolvedOptions.dep, nowValue, settings.id_prefix);
-  if (dependencies.explicitEmpty) explicitUnsets.push("dependencies");
   const comments = parseLogSeed("--comment", resolvedOptions.comment, nowValue, author);
-  if (comments.explicitEmpty) explicitUnsets.push("comments");
   const notes = parseLogSeed("--note", resolvedOptions.note, nowValue, author);
-  if (notes.explicitEmpty) explicitUnsets.push("notes");
   const learnings = parseLogSeed("--learning", resolvedOptions.learning, nowValue, author);
-  if (learnings.explicitEmpty) explicitUnsets.push("learnings");
   const files = parseFiles(resolvedOptions.file);
-  if (files.explicitEmpty) explicitUnsets.push("files");
   const tests = parseTests(resolvedOptions.test);
-  if (tests.explicitEmpty) explicitUnsets.push("tests");
   const docs = parseDocs(resolvedOptions.doc);
-  if (docs.explicitEmpty) explicitUnsets.push("docs");
   const reminders = parseReminders(resolvedOptions.reminder, nowValue);
-  if (reminders.explicitEmpty) explicitUnsets.push("reminders");
   const events = parseEvents(resolvedOptions.event, nowValue);
-  if (events.explicitEmpty) explicitUnsets.push("events");
   const typeOptions = parseTypeOptions(resolvedOptions.typeOption);
-  if (typeOptions.explicitEmpty) explicitUnsets.push("type_options");
   const validatedTypeOptions = validateTypeOptions(type, typeOptions.values, typeRegistry);
   const missingRequiredTypeOptionKeys = collectMissingRequiredTypeOptionKeys(validatedTypeOptions.errors, type);
   const missingRequiredTypeOptionFlags = missingRequiredTypeOptionKeys.map((key) => `--type-option ${key}=<value>`);
@@ -1173,68 +1552,34 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     });
   }
 
-  const scalarExplicitUnsetCandidates: ReadonlyArray<readonly [string | undefined, string]> = [
-    [resolvedOptions.deadline, "deadline"],
-    [resolvedOptions.estimatedMinutes, "estimated_minutes"],
-    [resolvedOptions.acceptanceCriteria, "acceptance_criteria"],
-    [resolvedOptions.definitionOfReady, "definition_of_ready"],
-    [resolvedOptions.order, "order"],
-    [resolvedOptions.rank, "order"],
-    [resolvedOptions.goal, "goal"],
-    [resolvedOptions.objective, "objective"],
-    [resolvedOptions.value, "value"],
-    [resolvedOptions.impact, "impact"],
-    [resolvedOptions.outcome, "outcome"],
-    [resolvedOptions.whyNow, "why_now"],
-    [resolvedOptions.assignee, "assignee"],
-    [resolvedOptions.author, "author"],
-    [resolvedOptions.parent, "parent"],
-    [resolvedOptions.reviewer, "reviewer"],
-    [resolvedOptions.risk, "risk"],
-    [resolvedOptions.confidence, "confidence"],
-    [resolvedOptions.sprint, "sprint"],
-    [resolvedOptions.release, "release"],
-    [resolvedOptions.blockedBy, "blocked_by"],
-    [resolvedOptions.blockedReason, "blocked_reason"],
-    [resolvedOptions.unblockNote, "unblock_note"],
-    [resolvedOptions.reporter, "reporter"],
-    [resolvedOptions.severity, "severity"],
-    [resolvedOptions.environment, "environment"],
-    [resolvedOptions.reproSteps, "repro_steps"],
-    [resolvedOptions.resolution, "resolution"],
-    [resolvedOptions.expectedResult, "expected_result"],
-    [resolvedOptions.actualResult, "actual_result"],
-    [resolvedOptions.affectedVersion, "affected_version"],
-    [resolvedOptions.fixedVersion, "fixed_version"],
-    [resolvedOptions.component, "component"],
-    [resolvedOptions.regression, "regression"],
-    [resolvedOptions.customerImpact, "customer_impact"],
-  ];
-  for (const [value, key] of scalarExplicitUnsetCandidates) {
-    if (isNoneToken(value)) {
-      explicitUnsets.push(key);
-    }
-  }
-
   const id = await generateItemId(pmRoot, settings.id_prefix);
   const status = resolvedOptions.status !== undefined ? parseStatusValue(resolvedOptions.status) : "open";
   const priority = resolvedOptions.priority !== undefined ? ensurePriority(resolvedOptions.priority) : 2;
-  const tags = resolvedOptions.tags !== undefined ? parseTags(resolvedOptions.tags) : [];
+  const tags = unsetTargets.frontMatterKeys.has("tags")
+    ? []
+    : resolvedOptions.tags !== undefined
+      ? parseTags(resolvedOptions.tags)
+      : [];
 
-  const deadline =
-    resolvedOptions.deadline === undefined || isNoneToken(resolvedOptions.deadline)
+  const deadline = unsetTargets.frontMatterKeys.has("deadline")
+    ? undefined
+    : resolvedOptions.deadline === undefined
       ? undefined
       : resolveIsoOrRelative(resolvedOptions.deadline, new Date(nowValue));
-  const estimatedMinutes =
-    resolvedOptions.estimatedMinutes === undefined || isNoneToken(resolvedOptions.estimatedMinutes)
+  const estimatedMinutes = unsetTargets.frontMatterKeys.has("estimated_minutes")
+    ? undefined
+    : resolvedOptions.estimatedMinutes === undefined
       ? undefined
       : parseOptionalNumber(resolvedOptions.estimatedMinutes, "estimated-minutes");
-  const acceptanceCriteria =
-    resolvedOptions.acceptanceCriteria === undefined || isNoneToken(resolvedOptions.acceptanceCriteria)
+  const acceptanceCriteria = unsetTargets.frontMatterKeys.has("acceptance_criteria")
+    ? undefined
+    : resolvedOptions.acceptanceCriteria === undefined
       ? undefined
       : resolvedOptions.acceptanceCriteria;
   const definitionOfReady =
-    resolvedOptions.definitionOfReady !== undefined ? parseOptionalString(resolvedOptions.definitionOfReady) : undefined;
+    unsetTargets.frontMatterKeys.has("definition_of_ready") || resolvedOptions.definitionOfReady === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.definitionOfReady);
   if (
     resolvedOptions.order !== undefined &&
     resolvedOptions.rank !== undefined &&
@@ -1243,23 +1588,57 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     throw new PmCliError("--order and --rank must match when both are provided", EXIT_CODE.USAGE);
   }
   const orderRaw = resolvedOptions.order ?? resolvedOptions.rank;
-  const order = orderRaw === undefined || isNoneToken(orderRaw) ? undefined : parseOptionalNumber(orderRaw, "order");
+  const order =
+    unsetTargets.frontMatterKeys.has("order") || orderRaw === undefined ? undefined : parseOptionalNumber(orderRaw, "order");
   if (order !== undefined && !Number.isInteger(order)) {
     throw new PmCliError("Order must be an integer", EXIT_CODE.USAGE);
   }
-  const goal = resolvedOptions.goal !== undefined ? parseOptionalString(resolvedOptions.goal) : undefined;
-  const objective = resolvedOptions.objective !== undefined ? parseOptionalString(resolvedOptions.objective) : undefined;
-  const value = resolvedOptions.value !== undefined ? parseOptionalString(resolvedOptions.value) : undefined;
-  const impact = resolvedOptions.impact !== undefined ? parseOptionalString(resolvedOptions.impact) : undefined;
-  const outcome = resolvedOptions.outcome !== undefined ? parseOptionalString(resolvedOptions.outcome) : undefined;
-  const whyNow = resolvedOptions.whyNow !== undefined ? parseOptionalString(resolvedOptions.whyNow) : undefined;
-  const assignee = resolvedOptions.assignee !== undefined ? parseOptionalString(resolvedOptions.assignee) : undefined;
-  const authorValue = parseOptionalString(resolvedOptions.author) ?? author;
-  let parent = resolvedOptions.parent !== undefined ? parseOptionalString(resolvedOptions.parent) : undefined;
-  const reviewer = resolvedOptions.reviewer !== undefined ? parseOptionalString(resolvedOptions.reviewer) : undefined;
-  const riskRaw = resolvedOptions.risk !== undefined ? parseOptionalString(resolvedOptions.risk) : undefined;
+  const goal =
+    unsetTargets.frontMatterKeys.has("goal") || resolvedOptions.goal === undefined ? undefined : parseOptionalString(resolvedOptions.goal);
+  const objective =
+    unsetTargets.frontMatterKeys.has("objective") || resolvedOptions.objective === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.objective);
+  const value =
+    unsetTargets.frontMatterKeys.has("value") || resolvedOptions.value === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.value);
+  const impact =
+    unsetTargets.frontMatterKeys.has("impact") || resolvedOptions.impact === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.impact);
+  const outcome =
+    unsetTargets.frontMatterKeys.has("outcome") || resolvedOptions.outcome === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.outcome);
+  const whyNow =
+    unsetTargets.frontMatterKeys.has("why_now") || resolvedOptions.whyNow === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.whyNow);
+  const assignee =
+    unsetTargets.frontMatterKeys.has("assignee") || resolvedOptions.assignee === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.assignee);
+  const authorValue = unsetTargets.frontMatterKeys.has("author")
+    ? undefined
+    : parseOptionalString(resolvedOptions.author) ?? author;
+  let parent =
+    unsetTargets.frontMatterKeys.has("parent") || resolvedOptions.parent === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.parent);
+  const reviewer =
+    unsetTargets.frontMatterKeys.has("reviewer") || resolvedOptions.reviewer === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.reviewer);
+  const riskRaw =
+    unsetTargets.frontMatterKeys.has("risk") || resolvedOptions.risk === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.risk);
   const risk = riskRaw !== undefined ? ensureEnumValue(normalizeRiskInput(riskRaw), RISK_VALUES, "risk") : undefined;
-  const confidenceRaw = resolvedOptions.confidence !== undefined ? parseOptionalString(resolvedOptions.confidence) : undefined;
+  const confidenceRaw =
+    unsetTargets.frontMatterKeys.has("confidence") || resolvedOptions.confidence === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.confidence);
   const confidence = confidenceRaw !== undefined ? parseConfidenceInput(confidenceRaw) : undefined;
   const parentReferencePolicy = settings.validation.parent_reference;
   const sprintReleasePolicy = settings.validation.sprint_release_format;
@@ -1272,41 +1651,87 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
       validationWarnings.push(...validateMissingParentReference(normalizedParentId, parentReferencePolicy).warnings);
     }
   }
-  let sprint = resolvedOptions.sprint !== undefined ? parseOptionalString(resolvedOptions.sprint) : undefined;
+  let sprint =
+    unsetTargets.frontMatterKeys.has("sprint") || resolvedOptions.sprint === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.sprint);
   if (sprint !== undefined) {
     const sprintValidation = validateSprintOrReleaseValue("sprint", sprint, sprintReleasePolicy);
     sprint = sprintValidation.value;
     validationWarnings.push(...sprintValidation.warnings);
   }
-  let release = resolvedOptions.release !== undefined ? parseOptionalString(resolvedOptions.release) : undefined;
+  let release =
+    unsetTargets.frontMatterKeys.has("release") || resolvedOptions.release === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.release);
   if (release !== undefined) {
     const releaseValidation = validateSprintOrReleaseValue("release", release, sprintReleasePolicy);
     release = releaseValidation.value;
     validationWarnings.push(...releaseValidation.warnings);
   }
-  const blockedBy = resolvedOptions.blockedBy !== undefined ? parseOptionalString(resolvedOptions.blockedBy) : undefined;
+  const blockedBy =
+    unsetTargets.frontMatterKeys.has("blocked_by") || resolvedOptions.blockedBy === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.blockedBy);
   const blockedReason =
-    resolvedOptions.blockedReason !== undefined ? parseOptionalString(resolvedOptions.blockedReason) : undefined;
-  const unblockNote = resolvedOptions.unblockNote !== undefined ? parseOptionalString(resolvedOptions.unblockNote) : undefined;
-  const reporter = resolvedOptions.reporter !== undefined ? parseOptionalString(resolvedOptions.reporter) : undefined;
-  const severityRaw = resolvedOptions.severity !== undefined ? parseOptionalString(resolvedOptions.severity) : undefined;
+    unsetTargets.frontMatterKeys.has("blocked_reason") || resolvedOptions.blockedReason === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.blockedReason);
+  const unblockNote =
+    unsetTargets.frontMatterKeys.has("unblock_note") || resolvedOptions.unblockNote === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.unblockNote);
+  const reporter =
+    unsetTargets.frontMatterKeys.has("reporter") || resolvedOptions.reporter === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.reporter);
+  const severityRaw =
+    unsetTargets.frontMatterKeys.has("severity") || resolvedOptions.severity === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.severity);
   const severity =
     severityRaw !== undefined ? ensureEnumValue(normalizeSeverityInput(severityRaw), ISSUE_SEVERITY_VALUES, "severity") : undefined;
-  const environment = resolvedOptions.environment !== undefined ? parseOptionalString(resolvedOptions.environment) : undefined;
-  const reproSteps = resolvedOptions.reproSteps !== undefined ? parseOptionalString(resolvedOptions.reproSteps) : undefined;
-  const resolution = resolvedOptions.resolution !== undefined ? parseOptionalString(resolvedOptions.resolution) : undefined;
+  const environment =
+    unsetTargets.frontMatterKeys.has("environment") || resolvedOptions.environment === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.environment);
+  const reproSteps =
+    unsetTargets.frontMatterKeys.has("repro_steps") || resolvedOptions.reproSteps === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.reproSteps);
+  const resolution =
+    unsetTargets.frontMatterKeys.has("resolution") || resolvedOptions.resolution === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.resolution);
   const expectedResult =
-    resolvedOptions.expectedResult !== undefined ? parseOptionalString(resolvedOptions.expectedResult) : undefined;
-  const actualResult = resolvedOptions.actualResult !== undefined ? parseOptionalString(resolvedOptions.actualResult) : undefined;
+    unsetTargets.frontMatterKeys.has("expected_result") || resolvedOptions.expectedResult === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.expectedResult);
+  const actualResult =
+    unsetTargets.frontMatterKeys.has("actual_result") || resolvedOptions.actualResult === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.actualResult);
   const affectedVersion =
-    resolvedOptions.affectedVersion !== undefined ? parseOptionalString(resolvedOptions.affectedVersion) : undefined;
+    unsetTargets.frontMatterKeys.has("affected_version") || resolvedOptions.affectedVersion === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.affectedVersion);
   const fixedVersion =
-    resolvedOptions.fixedVersion !== undefined ? parseOptionalString(resolvedOptions.fixedVersion) : undefined;
-  const component = resolvedOptions.component !== undefined ? parseOptionalString(resolvedOptions.component) : undefined;
-  const regressionRaw = resolvedOptions.regression !== undefined ? parseOptionalString(resolvedOptions.regression) : undefined;
+    unsetTargets.frontMatterKeys.has("fixed_version") || resolvedOptions.fixedVersion === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.fixedVersion);
+  const component =
+    unsetTargets.frontMatterKeys.has("component") || resolvedOptions.component === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.component);
+  const regressionRaw =
+    unsetTargets.frontMatterKeys.has("regression") || resolvedOptions.regression === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.regression);
   const regression = regressionRaw !== undefined ? parseRegressionInput(regressionRaw) : undefined;
   const customerImpact =
-    resolvedOptions.customerImpact !== undefined ? parseOptionalString(resolvedOptions.customerImpact) : undefined;
+    unsetTargets.frontMatterKeys.has("customer_impact") || resolvedOptions.customerImpact === undefined
+      ? undefined
+      : parseOptionalString(resolvedOptions.customerImpact);
   const title = requireStringOption(resolvedOptions.title, "--title");
   const description = requireStringOption(resolvedOptions.description, "--description");
   const body = resolvedOptions.body ?? "";
@@ -1387,7 +1812,8 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const itemPath = getItemPath(pmRoot, type, id, settings.item_format, typeRegistry.type_to_folder);
   const historyPath = getHistoryPath(pmRoot, id);
   const lockRelease = await acquireLock(pmRoot, id, settings.locks.ttl_seconds, author);
-  const historyMessage = buildHistoryMessage(resolvedOptions.message, explicitUnsets);
+  const explicitUnsetKeys = [...explicitUnsets].sort((left, right) => left.localeCompare(right));
+  const historyMessage = buildHistoryMessage(resolvedOptions.message, explicitUnsetKeys);
   let hookWarnings: string[] = [];
 
   try {
@@ -1422,7 +1848,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     await lockRelease();
   }
 
-  const changedFields = buildChangedFields(frontMatter, explicitUnsets);
+  const changedFields = buildChangedFields(frontMatter, explicitUnsetKeys);
   const outputItem = structuredClone(frontMatter);
   return {
     item: outputItem,

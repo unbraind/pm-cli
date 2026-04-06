@@ -202,7 +202,7 @@ Scheduling metadata is persisted directly in item front matter:
 - `events?: Array<{ start_at: ISO timestamp; end_at?: ISO timestamp; title?: string; description?: string; location?: string; timezone?: string; all_day?: boolean; recurrence?: RecurrenceRule }>`
 - recurrence supports `freq`, `interval`, `count`, `until`, `by_weekday`, `by_month_day`, and `exdates`
 - event and recurrence arrays are normalized/sorted deterministically for stable serialization
-- `pm create` and `pm update` support repeatable `--reminder` and `--event` values (`none` clears)
+- `pm create` and `pm update` support repeatable `--reminder` and `--event` values with explicit clear flags (`--clear-reminders`, `--clear-events`)
 
 ### Parallel Git/Worktree Safety
 

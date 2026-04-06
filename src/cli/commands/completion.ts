@@ -105,7 +105,7 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen("--mode --progress --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    config)",
-    `      COMPREPLY=(${compgen("--criterion --format --policy --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--criterion --clear-criteria --format --policy --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    extension)",
     `      COMPREPLY=(${compgen("--install --uninstall --explore --manage --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --trace --runtime-probe --fix-managed-state --strict-exit --fail-on-warn --json --quiet --path --no-extensions --profile --help")})`,
@@ -114,7 +114,7 @@ export function generateBashScript(itemTypes: string[] = DEFAULT_ITEM_TYPES, tag
     `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-comment --force --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    comments-audit)",
-    `      COMPREPLY=(${compgen("--status --type --assignee --limit-items --full-history --latest --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--status --type --assignee --assignee-filter --limit-items --full-history --latest --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    notes|learnings)",
     `      COMPREPLY=(${compgen("--add --limit --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
@@ -259,7 +259,8 @@ _pm() {
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
             '--deadline-before[Filter by deadline upper bound (ISO/date string or relative)]:date' \\
             '--deadline-after[Filter by deadline lower bound (ISO/date string or relative)]:date' \\
-            '--assignee[Filter by assignee (use none for unassigned)]:assignee' \\
+            '--assignee[Filter by assignee]:assignee' \\
+            '--assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
             '--sprint[Filter by sprint]:sprint' \\
             '--release[Filter by release]:release' \\
             '--limit[Limit returned item count]:number' \\
@@ -286,9 +287,20 @@ _pm() {
             '--reminder[Reminder entry at=<iso|relative>,text=<text>]:reminder' \\
             '--event[Event entry start=<iso|relative>,end=<iso|relative>,recur_*]:event' \\
             '--type-option[Type option key=value or key=<name>,value=<value>]:type_option' \\
+            '--unset[Clear scalar metadata field by name]:field' \\
+            '--clear-deps[Clear dependency entries]' \\
+            '--clear-comments[Clear comments]' \\
+            '--clear-notes[Clear notes]' \\
+            '--clear-learnings[Clear learnings]' \\
+            '--clear-files[Clear linked files]' \\
+            '--clear-tests[Clear linked tests]' \\
+            '--clear-docs[Clear linked docs]' \\
+            '--clear-reminders[Clear reminders]' \\
+            '--clear-events[Clear events]' \\
+            '--clear-type-options[Clear type options]' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
-            '--assignee[Assignee (none to unset)]:assignee' \\
+            '--assignee[Assignee]:assignee' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -298,19 +310,30 @@ _pm() {
             '(-d --description)'{-d,--description}'[Item description]:description' \\
             '(-b --body)'{-b,--body}'[Item body]:body' \\
             '(-s --status)'{-s,--status}'[Item status]:(draft open in_progress blocked canceled)' \\
-            '--close-reason[Set close reason (none to clear)]:close_reason' \\
+            '--close-reason[Set close reason]:close_reason' \\
             '(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)' \\
             '--type[Item type]:(${typeChoices})' \\
             '--tags[Comma-separated tags]:tags' \\
-            '--comment[Comment seed author=<value>,created_at=<iso|now>,text=<value> (none to clear)]:comment' \\
-            '--note[Note seed author=<value>,created_at=<iso|now>,text=<value> (none to clear)]:note' \\
-            '--learning[Learning seed author=<value>,created_at=<iso|now>,text=<value> (none to clear)]:learning' \\
-            '--file[Linked file path=<value>,scope=<project|global>,note=<text> (none to clear)]:file' \\
-            '--test[Linked test command=<value>,path=<value>,scope=<project|global> (none to clear)]:test' \\
-            '--doc[Linked doc path=<value>,scope=<project|global>,note=<text> (none to clear)]:doc' \\
-            '--reminder[Reminder entry at=<iso|relative>,text=<text> (none to clear)]:reminder' \\
-            '--event[Event entry start=<iso|relative>,end=<iso|relative>,recur_* (none to clear)]:event' \\
-            '--type-option[Type option key=value or key=<name>,value=<value> (none to clear)]:type_option' \\
+            '--comment[Comment seed author=<value>,created_at=<iso|now>,text=<value>]:comment' \\
+            '--note[Note seed author=<value>,created_at=<iso|now>,text=<value>]:note' \\
+            '--learning[Learning seed author=<value>,created_at=<iso|now>,text=<value>]:learning' \\
+            '--file[Linked file path=<value>,scope=<project|global>,note=<text>]:file' \\
+            '--test[Linked test command=<value>,path=<value>,scope=<project|global>]:test' \\
+            '--doc[Linked doc path=<value>,scope=<project|global>,note=<text>]:doc' \\
+            '--reminder[Reminder entry at=<iso|relative>,text=<text>]:reminder' \\
+            '--event[Event entry start=<iso|relative>,end=<iso|relative>,recur_*]:event' \\
+            '--type-option[Type option key=value or key=<name>,value=<value>]:type_option' \\
+            '--unset[Clear scalar metadata field by name]:field' \\
+            '--clear-deps[Clear dependency entries]' \\
+            '--clear-comments[Clear comments]' \\
+            '--clear-notes[Clear notes]' \\
+            '--clear-learnings[Clear learnings]' \\
+            '--clear-files[Clear linked files]' \\
+            '--clear-tests[Clear linked tests]' \\
+            '--clear-docs[Clear linked docs]' \\
+            '--clear-reminders[Clear reminders]' \\
+            '--clear-events[Clear events]' \\
+            '--clear-type-options[Clear type options]' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
@@ -329,6 +352,7 @@ _pm() {
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
             '--status[Filter by status]:(draft open in_progress blocked closed canceled)' \\
             '--assignee[Filter by assignee]:assignee' \\
+            '--assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
             '--sprint[Filter by sprint]:sprint' \\
             '--release[Filter by release]:release' \\
             '--include[Include event sources]:(all deadlines reminders events)' \\
@@ -350,6 +374,7 @@ _pm() {
             '--tag[Filter by tag]:(${tagChoices})' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
             '--assignee[Filter by assignee]:assignee' \\
+            '--assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
             '--sprint[Filter by sprint]:sprint' \\
             '--release[Filter by release]:release' \\
             '--limit[Limit focus and agenda rows per section]:number' \\
@@ -479,7 +504,8 @@ _pm() {
           ;;
         config)
           _arguments \\
-            '--criterion[Definition-of-Done criterion (repeatable for set)]:criterion' \\
+            '--criterion[Criteria value for definition-of-done or metadata-required-fields (repeatable for set)]:criterion' \\
+            '--clear-criteria[Clear metadata-required-fields criteria list]' \\
             '--format[Item format for item-format key]:format:(toon json_markdown)' \\
             '--policy[Policy value for supported policy keys]:policy' \\
             '--json[Output JSON]' \\
@@ -523,7 +549,8 @@ _pm() {
           _arguments \\
             '--status[Filter by item status]:status:(draft open in_progress blocked closed canceled)' \\
             '--type[Filter by item type]:(${typeChoices})' \\
-            '--assignee[Filter by assignee (none for unassigned)]:assignee' \\
+            '--assignee[Filter by assignee]:assignee' \\
+            '--assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
             '--limit-items[Limit returned item count]:number' \\
             '--full-history[Export full comment history rows and ignore --latest]' \\
             '--latest[Return latest n comments per item]:number' \\
@@ -651,7 +678,8 @@ for list_cmd in ${listCmds}
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l type     -d 'Filter by item type' -r -a '${typeChoices}'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l tag      -d 'Filter by tag' -r -a '${tagChoices}'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l priority -d 'Filter by priority' -r -a '0 1 2 3 4'
-  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l assignee -d 'Filter by assignee (none for unassigned)' -r
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l assignee -d 'Filter by assignee' -r
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l sprint   -d 'Filter by sprint' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l release  -d 'Filter by release' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l limit    -d 'Limit returned item count' -r
@@ -679,25 +707,47 @@ complete -c pm -n '__fish_seen_subcommand_from create' -l event                 
 complete -c pm -n '__fish_seen_subcommand_from create' -l type-option             -d 'Type option key=value or key=<name>,value=<value>' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l author                  -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l message                 -d 'History message' -r
-complete -c pm -n '__fish_seen_subcommand_from create' -l assignee                -d 'Assignee (none to unset)' -r
+complete -c pm -n '__fish_seen_subcommand_from create' -l assignee                -d 'Assignee' -r
+complete -c pm -n '__fish_seen_subcommand_from create' -l unset                   -d 'Clear scalar metadata field by name' -r
+complete -c pm -n '__fish_seen_subcommand_from create' -l clear-deps              -d 'Clear dependency entries'
+complete -c pm -n '__fish_seen_subcommand_from create' -l clear-comments          -d 'Clear comments'
+complete -c pm -n '__fish_seen_subcommand_from create' -l clear-notes             -d 'Clear notes'
+complete -c pm -n '__fish_seen_subcommand_from create' -l clear-learnings         -d 'Clear learnings'
+complete -c pm -n '__fish_seen_subcommand_from create' -l clear-files             -d 'Clear linked files'
+complete -c pm -n '__fish_seen_subcommand_from create' -l clear-tests             -d 'Clear linked tests'
+complete -c pm -n '__fish_seen_subcommand_from create' -l clear-docs              -d 'Clear linked docs'
+complete -c pm -n '__fish_seen_subcommand_from create' -l clear-reminders         -d 'Clear reminders'
+complete -c pm -n '__fish_seen_subcommand_from create' -l clear-events            -d 'Clear events'
+complete -c pm -n '__fish_seen_subcommand_from create' -l clear-type-options      -d 'Clear type options'
 
 # update flags
 complete -c pm -n '__fish_seen_subcommand_from update' -s t -l title              -d 'Item title' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -s d -l description        -d 'Item description' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -s b -l body               -d 'Item body' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -s s -l status             -d 'Item status' -r -a 'draft open in_progress blocked canceled'
-complete -c pm -n '__fish_seen_subcommand_from update' -l close-reason            -d 'Set close reason (none to clear)' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l close-reason            -d 'Set close reason' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -s p -l priority           -d 'Priority (0-4)' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from update' -l type                    -d 'Item type' -r -a '${typeChoices}'
-complete -c pm -n '__fish_seen_subcommand_from update' -l comment                 -d 'Comment seed author=<value>,created_at=<iso|now>,text=<value> (none to clear)' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l note                    -d 'Note seed author=<value>,created_at=<iso|now>,text=<value> (none to clear)' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l learning                -d 'Learning seed author=<value>,created_at=<iso|now>,text=<value> (none to clear)' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l file                    -d 'Linked file path=<value>,scope=<project|global>,note=<text> (none to clear)' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l test                    -d 'Linked test command=<value>,path=<value>,scope=<project|global> (none to clear)' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l doc                     -d 'Linked doc path=<value>,scope=<project|global>,note=<text> (none to clear)' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l reminder                -d 'Reminder entry at=<iso|relative>,text=<text> (none to clear)' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l event                   -d 'Event entry start=<iso|relative>,end=<iso|relative>,recur_* (none to clear)' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l type-option             -d 'Type option key=value or key=<name>,value=<value> (none to clear)' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l comment                 -d 'Comment seed author=<value>,created_at=<iso|now>,text=<value>' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l note                    -d 'Note seed author=<value>,created_at=<iso|now>,text=<value>' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l learning                -d 'Learning seed author=<value>,created_at=<iso|now>,text=<value>' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l file                    -d 'Linked file path=<value>,scope=<project|global>,note=<text>' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l test                    -d 'Linked test command=<value>,path=<value>,scope=<project|global>' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l doc                     -d 'Linked doc path=<value>,scope=<project|global>,note=<text>' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l reminder                -d 'Reminder entry at=<iso|relative>,text=<text>' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l event                   -d 'Event entry start=<iso|relative>,end=<iso|relative>,recur_*' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l type-option             -d 'Type option key=value or key=<name>,value=<value>' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l unset                   -d 'Clear scalar metadata field by name' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l clear-deps              -d 'Clear dependency entries'
+complete -c pm -n '__fish_seen_subcommand_from update' -l clear-comments          -d 'Clear comments'
+complete -c pm -n '__fish_seen_subcommand_from update' -l clear-notes             -d 'Clear notes'
+complete -c pm -n '__fish_seen_subcommand_from update' -l clear-learnings         -d 'Clear learnings'
+complete -c pm -n '__fish_seen_subcommand_from update' -l clear-files             -d 'Clear linked files'
+complete -c pm -n '__fish_seen_subcommand_from update' -l clear-tests             -d 'Clear linked tests'
+complete -c pm -n '__fish_seen_subcommand_from update' -l clear-docs              -d 'Clear linked docs'
+complete -c pm -n '__fish_seen_subcommand_from update' -l clear-reminders         -d 'Clear reminders'
+complete -c pm -n '__fish_seen_subcommand_from update' -l clear-events            -d 'Clear events'
+complete -c pm -n '__fish_seen_subcommand_from update' -l clear-type-options      -d 'Clear type options'
 complete -c pm -n '__fish_seen_subcommand_from update' -l author                  -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l message                 -d 'History message' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l force                   -d 'Force override'
@@ -720,7 +770,8 @@ complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l type      -d 'Fi
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l tag       -d 'Filter by tag' -r -a '${tagChoices}'
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l priority  -d 'Filter by priority' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l status    -d 'Filter by status' -r -a 'draft open in_progress blocked closed canceled'
-complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l assignee  -d 'Filter by assignee (none for unassigned)' -r
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l assignee  -d 'Filter by assignee' -r
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l sprint    -d 'Filter by sprint' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l release   -d 'Filter by release' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l include   -d 'Include event sources' -r -a 'all deadlines reminders events'
@@ -738,7 +789,8 @@ complete -c pm -n '__fish_seen_subcommand_from context ctx' -l past      -d 'Inc
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l type      -d 'Filter by type' -r -a '${typeChoices}'
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l tag       -d 'Filter by tag' -r -a '${tagChoices}'
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l priority  -d 'Filter by priority' -r -a '0 1 2 3 4'
-complete -c pm -n '__fish_seen_subcommand_from context ctx' -l assignee  -d 'Filter by assignee (none for unassigned)' -r
+complete -c pm -n '__fish_seen_subcommand_from context ctx' -l assignee  -d 'Filter by assignee' -r
+complete -c pm -n '__fish_seen_subcommand_from context ctx' -l assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l sprint    -d 'Filter by sprint' -r
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l release   -d 'Filter by release' -r
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l limit     -d 'Limit focus and agenda rows per section' -r
@@ -829,7 +881,8 @@ complete -c pm -n '__fish_seen_subcommand_from validate' -l strict-exit -d 'Retu
 complete -c pm -n '__fish_seen_subcommand_from validate' -l fail-on-warn -d 'Alias for --strict-exit'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-history-drift -d 'Run item/history hash drift checks'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-command-references -d 'Run linked-command PM-ID reference checks'
-complete -c pm -n '__fish_seen_subcommand_from config' -l criterion -d 'Definition-of-Done criterion (repeatable for set)' -r
+complete -c pm -n '__fish_seen_subcommand_from config' -l criterion -d 'Criteria value for definition-of-done or metadata-required-fields (repeatable for set)' -r
+complete -c pm -n '__fish_seen_subcommand_from config' -l clear-criteria -d 'Clear metadata-required-fields criteria list'
 complete -c pm -n '__fish_seen_subcommand_from config' -l format -d 'Item format for item-format key' -r -a 'toon json_markdown'
 complete -c pm -n '__fish_seen_subcommand_from config' -l policy -d 'Policy value for supported policy keys' -r
 complete -c pm -n '__fish_seen_subcommand_from health' -l strict-directories -d 'Treat optional item-type directories as required failures'
@@ -837,7 +890,8 @@ complete -c pm -n '__fish_seen_subcommand_from health' -l strict-exit -d 'Return
 complete -c pm -n '__fish_seen_subcommand_from health' -l fail-on-warn -d 'Alias for --strict-exit'
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l status -d 'Filter by item status' -r -a 'draft open in_progress blocked closed canceled'
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l type -d 'Filter by item type' -r -a '${typeChoices}'
-complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l assignee -d 'Filter by assignee (none for unassigned)' -r
+complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l assignee -d 'Filter by assignee' -r
+complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l limit-items -d 'Limit returned item count' -r
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l full-history -d 'Export full comment history rows and ignore --latest'
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l latest -d 'Return latest n comments per item' -r

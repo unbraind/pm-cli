@@ -13,7 +13,6 @@ export interface PiOptionFlagContract {
   flag: string;
   allowEmpty?: boolean;
   repeatable?: boolean;
-  repeatableOrNone?: boolean;
   booleanish?: boolean;
 }
 
@@ -172,6 +171,7 @@ export const PI_LIST_FILTER_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "deadlineBefore", flag: "--deadline-before" },
   { param: "deadlineAfter", flag: "--deadline-after" },
   { param: "assignee", flag: "--assignee" },
+  { param: "assigneeFilter", flag: "--assignee-filter" },
   { param: "sprint", flag: "--sprint" },
   { param: "release", flag: "--release" },
   { param: "limit", flag: "--limit" },
@@ -234,16 +234,28 @@ export const PI_CREATE_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "acceptanceCriteria", flag: "--acceptance-criteria", allowEmpty: true },
   { param: "author", flag: "--author" },
   { param: "message", flag: "--message", allowEmpty: true },
+  { param: "assignee", flag: "--assignee" },
   { param: "reminder", flag: "--reminder", repeatable: true },
   { param: "event", flag: "--event", repeatable: true },
   { param: "typeOption", flag: "--type-option", repeatable: true },
-  { param: "dep", flag: "--dep", repeatableOrNone: true },
-  { param: "comment", flag: "--comment", repeatableOrNone: true },
-  { param: "note", flag: "--note", repeatableOrNone: true },
-  { param: "learning", flag: "--learning", repeatableOrNone: true },
-  { param: "linkedFile", flag: "--file", repeatableOrNone: true },
-  { param: "linkedTest", flag: "--test", repeatableOrNone: true },
-  { param: "doc", flag: "--doc", repeatableOrNone: true },
+  { param: "dep", flag: "--dep", repeatable: true },
+  { param: "comment", flag: "--comment", repeatable: true },
+  { param: "note", flag: "--note", repeatable: true },
+  { param: "learning", flag: "--learning", repeatable: true },
+  { param: "linkedFile", flag: "--file", repeatable: true },
+  { param: "linkedTest", flag: "--test", repeatable: true },
+  { param: "doc", flag: "--doc", repeatable: true },
+  { param: "unset", flag: "--unset", repeatable: true },
+  { param: "clearDeps", flag: "--clear-deps" },
+  { param: "clearComments", flag: "--clear-comments" },
+  { param: "clearNotes", flag: "--clear-notes" },
+  { param: "clearLearnings", flag: "--clear-learnings" },
+  { param: "clearFiles", flag: "--clear-files" },
+  { param: "clearTests", flag: "--clear-tests" },
+  { param: "clearDocs", flag: "--clear-docs" },
+  { param: "clearReminders", flag: "--clear-reminders" },
+  { param: "clearEvents", flag: "--clear-events" },
+  { param: "clearTypeOptions", flag: "--clear-type-options" },
 ];
 
 export const PI_UPDATE_OPTION_CONTRACTS: PiOptionFlagContract[] = [
@@ -261,17 +273,28 @@ export const PI_UPDATE_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "author", flag: "--author" },
   { param: "message", flag: "--message", allowEmpty: true },
   { param: "assignee", flag: "--assignee" },
-  { param: "dep", flag: "--dep", repeatableOrNone: true },
+  { param: "dep", flag: "--dep", repeatable: true },
   { param: "depRemove", flag: "--dep-remove", repeatable: true },
-  { param: "comment", flag: "--comment", repeatableOrNone: true },
-  { param: "note", flag: "--note", repeatableOrNone: true },
-  { param: "learning", flag: "--learning", repeatableOrNone: true },
-  { param: "linkedFile", flag: "--file", repeatableOrNone: true },
-  { param: "linkedTest", flag: "--test", repeatableOrNone: true },
-  { param: "doc", flag: "--doc", repeatableOrNone: true },
+  { param: "comment", flag: "--comment", repeatable: true },
+  { param: "note", flag: "--note", repeatable: true },
+  { param: "learning", flag: "--learning", repeatable: true },
+  { param: "linkedFile", flag: "--file", repeatable: true },
+  { param: "linkedTest", flag: "--test", repeatable: true },
+  { param: "doc", flag: "--doc", repeatable: true },
   { param: "reminder", flag: "--reminder", repeatable: true },
   { param: "event", flag: "--event", repeatable: true },
   { param: "typeOption", flag: "--type-option", repeatable: true },
+  { param: "unset", flag: "--unset", repeatable: true },
+  { param: "clearDeps", flag: "--clear-deps" },
+  { param: "clearComments", flag: "--clear-comments" },
+  { param: "clearNotes", flag: "--clear-notes" },
+  { param: "clearLearnings", flag: "--clear-learnings" },
+  { param: "clearFiles", flag: "--clear-files" },
+  { param: "clearTests", flag: "--clear-tests" },
+  { param: "clearDocs", flag: "--clear-docs" },
+  { param: "clearReminders", flag: "--clear-reminders" },
+  { param: "clearEvents", flag: "--clear-events" },
+  { param: "clearTypeOptions", flag: "--clear-type-options" },
 ];
 
 export const PI_CALENDAR_OPTION_CONTRACTS: PiOptionFlagContract[] = [
@@ -284,6 +307,7 @@ export const PI_CALENDAR_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "priority", flag: "--priority" },
   { param: "status", flag: "--status" },
   { param: "assignee", flag: "--assignee" },
+  { param: "assigneeFilter", flag: "--assignee-filter" },
   { param: "sprint", flag: "--sprint" },
   { param: "release", flag: "--release" },
   { param: "include", flag: "--include" },
@@ -302,6 +326,7 @@ export const PI_CONTEXT_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "tag", flag: "--tag" },
   { param: "priority", flag: "--priority" },
   { param: "assignee", flag: "--assignee" },
+  { param: "assigneeFilter", flag: "--assignee-filter" },
   { param: "sprint", flag: "--sprint" },
   { param: "release", flag: "--release" },
   { param: "limit", flag: "--limit" },
@@ -329,6 +354,8 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--deadline-before" },
   { flag: "--deadline-after" },
   { flag: "--assignee" },
+  { flag: "--assignee-filter" },
+  { flag: "--assignee_filter" },
   { flag: "--sprint" },
   { flag: "--release" },
   { flag: "--limit" },
@@ -471,6 +498,17 @@ export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--file" },
   { flag: "--test" },
   { flag: "--doc" },
+  { flag: "--unset" },
+  { flag: "--clear-deps" },
+  { flag: "--clear-comments" },
+  { flag: "--clear-notes" },
+  { flag: "--clear-learnings" },
+  { flag: "--clear-files" },
+  { flag: "--clear-tests" },
+  { flag: "--clear-docs" },
+  { flag: "--clear-reminders" },
+  { flag: "--clear-events" },
+  { flag: "--clear-type-options" },
 ];
 
 export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -534,6 +572,17 @@ export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--event" },
   { flag: "--type-option" },
   { flag: "--type_option" },
+  { flag: "--unset" },
+  { flag: "--clear-deps" },
+  { flag: "--clear-comments" },
+  { flag: "--clear-notes" },
+  { flag: "--clear-learnings" },
+  { flag: "--clear-files" },
+  { flag: "--clear-tests" },
+  { flag: "--clear-docs" },
+  { flag: "--clear-reminders" },
+  { flag: "--clear-events" },
+  { flag: "--clear-type-options" },
   { flag: "--force" },
 ];
 
@@ -548,6 +597,8 @@ export const CALENDAR_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--priority" },
   { flag: "--status" },
   { flag: "--assignee" },
+  { flag: "--assignee-filter" },
+  { flag: "--assignee_filter" },
   { flag: "--sprint" },
   { flag: "--release" },
   { flag: "--include" },
@@ -567,6 +618,8 @@ export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--tag" },
   { flag: "--priority" },
   { flag: "--assignee" },
+  { flag: "--assignee-filter" },
+  { flag: "--assignee_filter" },
   { flag: "--sprint" },
   { flag: "--release" },
   { flag: "--limit" },
@@ -662,6 +715,7 @@ export const CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS: CommanderOptionAliasC
   { target: "reminder", keys: ["reminder"] },
   { target: "event", keys: ["event"] },
   { target: "typeOption", keys: ["typeOption", "type_option"] },
+  { target: "unset", keys: ["unset"] },
 ];
 
 export const UPDATE_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
@@ -723,6 +777,7 @@ export const UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS: CommanderOptionAliasC
   { target: "reminder", keys: ["reminder"] },
   { target: "event", keys: ["event"] },
   { target: "typeOption", keys: ["typeOption", "type_option"] },
+  { target: "unset", keys: ["unset"] },
 ];
 
 export const LIST_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
@@ -732,6 +787,7 @@ export const LIST_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContrac
   { target: "deadlineBefore", keys: ["deadlineBefore"] },
   { target: "deadlineAfter", keys: ["deadlineAfter"] },
   { target: "assignee", keys: ["assignee"] },
+  { target: "assigneeFilter", keys: ["assigneeFilter", "assignee_filter"] },
   { target: "sprint", keys: ["sprint"] },
   { target: "release", keys: ["release"] },
   { target: "limit", keys: ["limit"] },
@@ -759,6 +815,7 @@ export const CALENDAR_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasCon
   { target: "priority", keys: ["priority"] },
   { target: "status", keys: ["status"] },
   { target: "assignee", keys: ["assignee"] },
+  { target: "assigneeFilter", keys: ["assigneeFilter", "assignee_filter"] },
   { target: "sprint", keys: ["sprint"] },
   { target: "release", keys: ["release"] },
   { target: "include", keys: ["include"] },
@@ -776,6 +833,7 @@ export const CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasCont
   { target: "tag", keys: ["tag"] },
   { target: "priority", keys: ["priority"] },
   { target: "assignee", keys: ["assignee"] },
+  { target: "assigneeFilter", keys: ["assigneeFilter", "assignee_filter"] },
   { target: "sprint", keys: ["sprint"] },
   { target: "release", keys: ["release"] },
   { target: "limit", keys: ["limit"] },
@@ -847,6 +905,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   author: { type: "string" },
   message: { type: "string" },
   assignee: { type: "string" },
+  assigneeFilter: { type: "string", enum: ["assigned", "unassigned"] },
   parent: { type: "string" },
   reviewer: { type: "string" },
   risk: { type: "string" },
@@ -955,7 +1014,19 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   reminder: { type: "array", items: { type: "string" } },
   event: { type: "array", items: { type: "string" } },
   typeOption: { type: "array", items: { type: "string" } },
+  unset: { type: "array", items: { type: "string" } },
+  clearDeps: { type: "boolean" },
+  clearComments: { type: "boolean" },
+  clearNotes: { type: "boolean" },
+  clearLearnings: { type: "boolean" },
+  clearFiles: { type: "boolean" },
+  clearTests: { type: "boolean" },
+  clearDocs: { type: "boolean" },
+  clearReminders: { type: "boolean" },
+  clearEvents: { type: "boolean" },
+  clearTypeOptions: { type: "boolean" },
   criterion: { type: "array", items: { type: "string" } },
+  clearCriteria: { type: "boolean" },
   format: { type: "string" },
   policy: { type: "string" },
 };
@@ -1009,7 +1080,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   init: { optional: ["prefix"] },
   config: {
     required: ["scope", "configAction"],
-    optional: ["key", "criterion", "format", "policy"],
+    optional: ["key", "criterion", "clearCriteria", "format", "policy"],
   },
   "extension-install": {
     optional: ["target", "github", "scope", "ref"],
@@ -1051,7 +1122,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   delete: { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   append: { required: ["id", "body"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   comments: { required: ["id"], optional: ["text", "add", "limit", "allowAuditComment", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
-  "comments-audit": { optional: ["status", "type", "assignee", "limitItems", "fullHistory", "latest"] },
+  "comments-audit": { optional: ["status", "type", "assignee", "assigneeFilter", "limitItems", "fullHistory", "latest"] },
   notes: { required: ["id"], optional: ["text", "add", "limit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   learnings: { required: ["id"], optional: ["text", "add", "limit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   files: {
@@ -1238,16 +1309,16 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     examples: [0, 1, "2"],
   },
   tags: {
-    description: "Comma-delimited tag list, or 'none' to clear when supported.",
+    description: "Comma-delimited tag list.",
     examples: ["pm-cli,agent-ux"],
   },
   deadline: {
-    description: "ISO/date timestamp or relative offset (+6h/+1d/+2w/+6m), or 'none' where supported.",
-    examples: ["2026-04-01T00:00:00.000Z", "+1d", "none"],
+    description: "ISO/date timestamp or relative offset (+6h/+1d/+2w/+6m).",
+    examples: ["2026-04-01T00:00:00.000Z", "+1d"],
   },
   estimate: {
-    description: "Estimated effort in minutes, or 'none' where supported.",
-    examples: [60, "120", "none"],
+    description: "Estimated effort in minutes.",
+    examples: [60, "120"],
   },
   acceptanceCriteria: {
     description: "Acceptance criteria text.",
@@ -1260,8 +1331,49 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     description: "History message for mutation audit trail.",
   },
   assignee: {
-    description: "Assignee identity or 'none' to unset.",
-    examples: ["codex-agent", "none"],
+    description: "Assignee identity.",
+    examples: ["codex-agent"],
+  },
+  assigneeFilter: {
+    description: "Assignee presence selector for list/calendar/context/comments-audit filters.",
+    examples: ["assigned", "unassigned"],
+  },
+  unset: {
+    description: "Repeatable list of front-matter fields to clear explicitly during create/update mutations.",
+    examples: [["deadline", "assignee"], ["close-reason"]],
+  },
+  clearDeps: {
+    description: "When true, clear linked dependencies.",
+  },
+  clearComments: {
+    description: "When true, clear item comments.",
+  },
+  clearNotes: {
+    description: "When true, clear item notes.",
+  },
+  clearLearnings: {
+    description: "When true, clear item learnings.",
+  },
+  clearFiles: {
+    description: "When true, clear linked files.",
+  },
+  clearTests: {
+    description: "When true, clear linked tests.",
+  },
+  clearDocs: {
+    description: "When true, clear linked docs.",
+  },
+  clearReminders: {
+    description: "When true, clear reminders.",
+  },
+  clearEvents: {
+    description: "When true, clear events.",
+  },
+  clearTypeOptions: {
+    description: "When true, clear type option metadata.",
+  },
+  clearCriteria: {
+    description: "When true for config set metadata-required-fields, clear the criteria list.",
   },
   mode: {
     description: "Search/reindex mode selector.",

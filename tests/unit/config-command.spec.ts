@@ -608,7 +608,7 @@ describe("runConfig", () => {
         "project",
         "set",
         "metadata-required-fields",
-        { criterion: ["none"] },
+        { clearCriteria: true },
         { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
       );
       expect(clearFields.criteria).toEqual([]);
@@ -638,7 +638,19 @@ describe("runConfig", () => {
           "project",
           "set",
           "metadata_required_fields",
-          { criterion: ["none", "sprint"] },
+          { clearCriteria: true, criterion: ["sprint"] },
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+
+      await expect(
+        runConfig(
+          "project",
+          "set",
+          "metadata_required_fields",
+          { criterion: ["none"] },
           { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
         ),
       ).rejects.toMatchObject<PmCliError>({

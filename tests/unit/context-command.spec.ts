@@ -45,7 +45,7 @@ function createContextItem(
     "--body",
     "",
     "--deadline",
-    options.deadline ?? "none",
+    options.deadline ?? "+1d",
     "--estimate",
     "15",
     "--acceptance-criteria",
@@ -55,24 +55,25 @@ function createContextItem(
     "--message",
     `Create ${options.title}`,
     "--assignee",
-    options.assignee ?? "none",
-    "--order",
-    options.order ?? "none",
+    options.assignee ?? "seed-assignee",
     "--dep",
-    "none",
+    "id=pm-seed-related,kind=related,author=context-test,created_at=now",
     "--comment",
-    "none",
+    "author=context-test,created_at=now,text=seed comment",
     "--note",
-    "none",
+    "author=context-test,created_at=now,text=seed note",
     "--learning",
-    "none",
+    "author=context-test,created_at=now,text=seed learning",
     "--file",
-    "none",
+    "path=README.md,scope=project,note=seed file",
     "--test",
-    "none",
+    "command=node dist/cli.js --version,scope=project,note=seed test",
     "--doc",
-    "none",
+    "path=README.md,scope=project,note=seed doc",
   ];
+  if (options.order !== undefined) {
+    args.push("--order", options.order);
+  }
   for (const reminder of options.reminders ?? []) {
     args.push("--reminder", reminder);
   }
@@ -123,7 +124,6 @@ describe("context command module", () => {
         status: "open",
         priority: "0",
         order: "3",
-        deadline: "none",
       });
       const taskOpen = createContextItem(context, {
         title: "Task open critical",
@@ -139,7 +139,6 @@ describe("context command module", () => {
         type: "Issue",
         status: "open",
         priority: "0",
-        order: "none",
         deadline: "2026-04-04T09:00:00.000Z",
       });
       createContextItem(context, {
@@ -282,7 +281,6 @@ describe("context command module", () => {
         type: "Feature",
         status: "open",
         priority: "1",
-        deadline: "none",
       });
 
       const result = await runContext(

@@ -116,7 +116,7 @@ Lifecycle rules:
 - `closed` and `canceled` are terminal unless explicitly restored or reopened.
 - `close` command must write `close_reason`.
 - `pm close <ID> <TEXT> --validate-close [warn|strict]` validates closure resolution metadata (`resolution`, `expected_result`, `actual_result`) in warning-first mode unless strict is explicitly requested.
-- `pm update <ID> --close-reason <TEXT>` explicitly sets `close_reason`; `--close-reason none` clears it.
+- `pm update <ID> --close-reason <TEXT>` explicitly sets `close_reason`; `pm update <ID> --unset close-reason` clears it.
 - When `pm update` reopens an item from `closed` to a non-terminal status, stale `close_reason` is auto-cleared unless `--close-reason` is explicitly supplied on that same mutation.
 - `claim` on terminal status fails unless explicitly overridden by `--force`.
 
@@ -386,8 +386,9 @@ Unset optional fields are omitted.
 - `test_runs` sorted by `recorded_at` asc, then `run_id` asc, then `kind` asc; retention is bounded to latest N entries per item.
 - `docs` sorted by `scope` asc, then `path` asc, then `note` asc.
 - Paths normalized to forward-slash logical form for storage while preserving OS-correct access at runtime.
-- For optional create/update fields, explicit unset intent is supported via sentinel values:
-  - scalar option value `none` (case-insensitive) means "unset/omit field"
+- For optional create/update fields, explicit clear intent is supported via dedicated flags:
+  - scalar fields use repeatable `--unset <field>` (for example `--unset deadline`, `--unset assignee`)
+  - repeatable collections use `--clear-*` flags (for example `--clear-deps`, `--clear-comments`)
   - these intents MUST be represented in `changed_fields` and history `message`.
 
 ### 7.4 Example item file
@@ -727,44 +728,44 @@ Mutating `create` (all schema fields MUST be passable explicitly):
 - `--priority`, `-p` (required in strict mode; defaults to `2` in progressive mode when omitted)
 - `--tags` (required in strict mode; defaults to empty list in progressive mode when omitted)
 - `--body`, `-b` (required in strict mode; defaults to empty body in progressive mode when omitted)
-- `--deadline` (explicit; accepts ISO/date strings, relative `+6h/+1d/+2w/+6m`, or none)
+- `--deadline` (explicit; accepts ISO/date strings or relative `+6h/+1d/+2w/+6m`)
 - `--estimate`, `--estimated-minutes`, `--estimated_minutes` (explicit; accepts `0`)
 - `--acceptance-criteria`, `--acceptance_criteria`, `--ac` (explicit; empty allowed)
 - `--author` (explicit; fallback `PM_AUTHOR`/settings allowed)
 - `--message` (explicit history message; empty allowed)
 - `--template` (optional; reusable defaults loaded from `pm templates save <NAME>`)
-- `--assignee` (explicit; use `none` to unset)
-- `--parent` (optional; item ID reference or `none`; missing-parent behavior controlled by `settings.validation.parent_reference`)
-- `--reviewer` (optional; or `none`)
-- `--risk` (optional; `low|med|medium|high|critical` or `none`; `med` persists as `medium`)
-- `--confidence` (optional; `0..100|low|med|medium|high` or `none`; `med` persists as `medium`)
-- `--sprint` (optional; or `none`; format policy controlled by `settings.validation.sprint_release_format`)
-- `--release` (optional; or `none`; format policy controlled by `settings.validation.sprint_release_format`)
-- `--blocked-by`, `--blocked_by` (optional; item ID or free-text, or `none`)
-- `--blocked-reason`, `--blocked_reason` (optional; or `none`)
-- `--unblock-note`, `--unblock_note` (optional; unblock rationale note, or `none`)
-- `--reporter` (optional; issue reporter, or `none`)
-- `--severity` (optional; `low|med|medium|high|critical`, or `none`; `med` persists as `medium`)
-- `--environment` (optional; issue environment context, or `none`)
-- `--repro-steps`, `--repro_steps` (optional; issue reproduction steps, or `none`)
-- `--resolution` (optional; issue resolution summary, or `none`)
-- `--expected-result`, `--expected_result` (optional; issue expected behavior, or `none`)
-- `--actual-result`, `--actual_result` (optional; issue observed behavior, or `none`)
-- `--affected-version`, `--affected_version` (optional; impacted version identifier, or `none`)
-- `--fixed-version`, `--fixed_version` (optional; fixed version identifier, or `none`)
-- `--component` (optional; owning component, or `none`)
-- `--regression` (optional; boolean `true|false|1|0`, or `none`)
-- `--customer-impact`, `--customer_impact` (optional; customer impact summary, or `none`)
-- `--definition-of-ready`, `--definition_of_ready` (optional; explicit empty allowed; use `none` to unset)
-- `--order`, `--rank` (optional; integer rank/order, or `none`)
-- `--goal` (optional; or `none`)
-- `--objective` (optional; or `none`)
-- `--value` (optional; or `none`)
-- `--impact` (optional; or `none`)
-- `--outcome` (optional; or `none`)
-- `--why-now`, `--why_now` (optional; or `none`)
+- `--assignee` (explicit; clear with `--unset assignee`)
+- `--parent` (optional; item ID reference; clear with `--unset parent`; missing-parent behavior controlled by `settings.validation.parent_reference`)
+- `--reviewer` (optional; clear with `--unset reviewer`)
+- `--risk` (optional; `low|med|medium|high|critical`; clear with `--unset risk`; `med` persists as `medium`)
+- `--confidence` (optional; `0..100|low|med|medium|high`; clear with `--unset confidence`; `med` persists as `medium`)
+- `--sprint` (optional; clear with `--unset sprint`; format policy controlled by `settings.validation.sprint_release_format`)
+- `--release` (optional; clear with `--unset release`; format policy controlled by `settings.validation.sprint_release_format`)
+- `--blocked-by`, `--blocked_by` (optional; item ID or free-text; clear with `--unset blocked-by`)
+- `--blocked-reason`, `--blocked_reason` (optional; clear with `--unset blocked-reason`)
+- `--unblock-note`, `--unblock_note` (optional; unblock rationale note; clear with `--unset unblock-note`)
+- `--reporter` (optional; issue reporter; clear with `--unset reporter`)
+- `--severity` (optional; `low|med|medium|high|critical`; clear with `--unset severity`; `med` persists as `medium`)
+- `--environment` (optional; issue environment context; clear with `--unset environment`)
+- `--repro-steps`, `--repro_steps` (optional; issue reproduction steps; clear with `--unset repro-steps`)
+- `--resolution` (optional; issue resolution summary; clear with `--unset resolution`)
+- `--expected-result`, `--expected_result` (optional; issue expected behavior; clear with `--unset expected-result`)
+- `--actual-result`, `--actual_result` (optional; issue observed behavior; clear with `--unset actual-result`)
+- `--affected-version`, `--affected_version` (optional; impacted version identifier; clear with `--unset affected-version`)
+- `--fixed-version`, `--fixed_version` (optional; fixed version identifier; clear with `--unset fixed-version`)
+- `--component` (optional; owning component; clear with `--unset component`)
+- `--regression` (optional; boolean `true|false|1|0`; clear with `--unset regression`)
+- `--customer-impact`, `--customer_impact` (optional; customer impact summary; clear with `--unset customer-impact`)
+- `--definition-of-ready`, `--definition_of_ready` (optional; explicit empty allowed; clear with `--unset definition-of-ready`)
+- `--order`, `--rank` (optional; integer rank/order; clear with `--unset order`)
+- `--goal` (optional; clear with `--unset goal`)
+- `--objective` (optional; clear with `--unset objective`)
+- `--value` (optional; clear with `--unset value`)
+- `--impact` (optional; clear with `--unset impact`)
+- `--outcome` (optional; clear with `--unset outcome`)
+- `--why-now`, `--why_now` (optional; clear with `--unset why-now`)
 
-Mutating `create` flags (repeatable; strict mode may require each at least once depending on type policy, while progressive mode allows staged omission; use `none` for explicit empty intent):
+Mutating `create` flags (repeatable; strict mode may require each at least once depending on type policy, while progressive mode allows staged omission; clear with explicit `--clear-*` flags):
 
 - `--dep` value format: `id=<id>,kind=<blocks|parent|child|parent_child|child_of|related|related_to|discovered_from|blocked_by|incident_from|epic|supersedes|task>,author=<a>,created_at=<iso|now>,source_kind=<value?>` (also accepts markdown `key: value` lines and stdin token `-`)
 - `--comment` value format: `author=<a>,created_at=<iso|now>,text=<t>` (also accepts markdown `key: value` lines and stdin token `-`)
@@ -774,8 +775,8 @@ Mutating `create` flags (repeatable; strict mode may require each at least once 
 - `--file` value format: `path=<p>,scope=<project|global>,note=<n?>` (also accepts markdown `key: value` lines and stdin token `-`)
 - `--test` value format: `command=<c>,path=<p?>,scope=<project|global>,timeout_seconds=<n?>,env_set=<KEY=VALUE;...?>,env_clear=<KEY;...?>,shared_host_safe=<bool?>,note=<n?>` (also accepts markdown `key: value` lines and stdin token `-`; `command` is required and `path` is optional metadata)
 - `--doc` value format: `path=<p>,scope=<project|global>,note=<n?>` (also accepts markdown `key: value` lines and stdin token `-`)
-- `--reminder` value format: `at=<iso|date|relative>,text=<text>` (also accepts markdown `key: value` lines and stdin token `-`; `none` for explicit clear)
-- `--type-option` / `--type_option` value format: `key=value`, `key:value`, or `key=<name>,value=<value>` (also accepts markdown `key: value` lines and stdin token `-`; `none` for explicit clear)
+- `--reminder` value format: `at=<iso|date|relative>,text=<text>` (also accepts markdown `key: value` lines and stdin token `-`; use `--clear-reminders` to clear)
+- `--type-option` / `--type_option` value format: `key=value`, `key:value`, or `key=<name>,value=<value>` (also accepts markdown `key: value` lines and stdin token `-`; use `--clear-type-options` to clear)
 
 Per-type option policy overrides (`settings.item_types.definitions[]` and extension `registerItemTypes(...)`):
 
@@ -838,23 +839,23 @@ Mutating `update` (v0.1 baseline):
 - `--why-now`, `--why_now`
 - `--author`
 - `--message`
-- `--dep` (repeatable add format `id=<id>,kind=<...>,author=<a?>,created_at=<iso|now>,source_kind=<value?>`; `none` clears all dependencies)
+- `--dep` (repeatable add format `id=<id>,kind=<...>,author=<a?>,created_at=<iso|now>,source_kind=<value?>`; use `--clear-deps` to clear all dependencies)
 - `--dep-remove`, `--dep_remove` (repeatable selector remove by `id` or `id=<id>,kind=<kind?>,source_kind=<value?>`)
-- `--comment` (repeatable log seed format `author=<a>,created_at=<iso|now>,text=<t>`; `none` clears comments)
-- `--note` (repeatable log seed format `author=<a>,created_at=<iso|now>,text=<t>`; `none` clears notes)
-- `--learning` (repeatable log seed format `author=<a>,created_at=<iso|now>,text=<t>`; `none` clears learnings)
-- `--file` (repeatable linked-file format `path=<p>,scope=<project|global>,note=<n?>`; `none` clears files)
-- `--test` (repeatable linked-test format `command=<c>,path=<p?>,scope=<project|global>,timeout_seconds=<n?>,...`; `none` clears tests)
-- `--doc` (repeatable linked-doc format `path=<p>,scope=<project|global>,note=<n?>`; `none` clears docs)
-- `--reminder` (repeatable `at=<iso|date|relative>,text=<text>`; `none` clears)
-- `--event` (repeatable event metadata format; `none` clears)
-- `--type-option`, `--type_option` (repeatable type option metadata; `none` clears)
+- `--comment` (repeatable log seed format `author=<a>,created_at=<iso|now>,text=<t>`; use `--clear-comments` to clear comments)
+- `--note` (repeatable log seed format `author=<a>,created_at=<iso|now>,text=<t>`; use `--clear-notes` to clear notes)
+- `--learning` (repeatable log seed format `author=<a>,created_at=<iso|now>,text=<t>`; use `--clear-learnings` to clear learnings)
+- `--file` (repeatable linked-file format `path=<p>,scope=<project|global>,note=<n?>`; use `--clear-files` to clear files)
+- `--test` (repeatable linked-test format `command=<c>,path=<p?>,scope=<project|global>,timeout_seconds=<n?>,...`; use `--clear-tests` to clear tests)
+- `--doc` (repeatable linked-doc format `path=<p>,scope=<project|global>,note=<n?>`; use `--clear-docs` to clear docs)
+- `--reminder` (repeatable `at=<iso|date|relative>,text=<text>`; use `--clear-reminders` to clear)
+- `--event` (repeatable event metadata format; use `--clear-events` to clear)
+- `--type-option`, `--type_option` (repeatable type option metadata; use `--clear-type-options` to clear)
 
 `pm update` status semantics:
 
 - `--status` supports all non-terminal values plus `canceled`.
 - `--status closed` is not supported; callers must use `pm close <ID> <TEXT>` so `close_reason` is always captured.
-- `--close-reason`, `--close_reason` support explicit close-reason set/clear (`none` clears).
+- `--close-reason`, `--close_reason` support explicit close-reason set; clear with `--unset close-reason`.
 - Reopen transition safety: moving from `closed` to a non-terminal status via `--status` auto-clears stale `close_reason` unless `--close-reason` is explicitly provided on that update call.
 
 List/search filters:
@@ -867,7 +868,8 @@ List/search filters:
 - `--stream` (`list*` commands; JSON-only newline-delimited item streaming)
 - `--deadline-before`
 - `--deadline-after`
-- `--assignee` (exact match on `assignee` field; use `none` to filter for unassigned items)
+- `--assignee` (exact match on `assignee` field)
+- `--assignee-filter assigned|unassigned` (assignee presence filter)
 - `--sprint` (exact match on `sprint` field)
 - `--release` (exact match on `release` field)
 - `--include-body` (list* only; when enabled, each returned item includes `body`; default list rows remain front-matter-only)
@@ -919,7 +921,7 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | `pm templates save <NAME> ...` | template name + create-compatible option payload (subset of create flags, including repeatable entries) | `{ name, path, template, saved_at }` |
 | `pm templates list` | optional output controls (`--json`/TOON) | `{ templates, count }` |
 | `pm templates show <NAME>` | template name | `{ name, template }` |
-| `pm update <ID> ...` | id + patch-like flags (`--status closed` is rejected; use `pm close <ID> <TEXT>`; `--close-reason`/`--close_reason` explicitly set/clear `close_reason`; reopening from `closed` to a non-terminal status auto-clears stale `close_reason` unless explicit `--close-reason` is provided; body replacement is supported via `--body`/`-b`; dependencies are mutable via `--dep` / `--dep-remove`; repeatable transactional linked/log flags `--comment`/`--note`/`--learning`/`--file`/`--test`/`--doc` are supported on update with `none` clear semantics) | `{ item, changed_fields, warnings }` |
+| `pm update <ID> ...` | id + patch-like flags (`--status closed` is rejected; use `pm close <ID> <TEXT>`; `--close-reason`/`--close_reason` explicitly set `close_reason`; `--unset close-reason` clears it; reopening from `closed` to a non-terminal status auto-clears stale `close_reason` unless explicit `--close-reason` is provided; body replacement is supported via `--body`/`-b`; dependencies are mutable via `--dep` / `--dep-remove` / `--clear-deps`; repeatable transactional linked/log flags `--comment`/`--note`/`--learning`/`--file`/`--test`/`--doc` are supported on update with explicit `--clear-*` semantics) | `{ item, changed_fields, warnings }` |
 | `pm delete <ID>` | id + optional `--author`/`--message`/`--force` | `{ item, changed_fields, warnings }` |
 | `pm close <ID> <TEXT>` | id + close reason text + optional `--author/--message/--force/--validate-close [warn|strict]` | `{ item, changed_fields, warnings }` |
 | `pm append <ID> --body` | id + appended markdown (`--body -` reads piped stdin) | `{ item, appended, changed_fields }` |
@@ -1514,7 +1516,7 @@ Required unit coverage areas:
 
 - Parser/serializer round-trip and key ordering determinism.
 - ID normalization/generation behavior.
-- Deadline and `none` token parsing.
+- Deadline parsing and explicit clear/unset validation behavior.
 - History patch + hash generation.
 - Lock conflict/stale-lock behavior.
 

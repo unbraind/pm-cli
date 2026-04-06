@@ -17,7 +17,7 @@ function createItem(context: TempPmContext, params: {
   sprint?: string;
   release?: string;
   body?: string;
-}): void {
+}): string {
   const args = [
     "create",
     "--json",
@@ -46,28 +46,31 @@ function createItem(context: TempPmContext, params: {
     "--message",
     `Create ${params.title}`,
     "--assignee",
-    params.assignee ?? "none",
-    "--sprint",
-    params.sprint ?? "none",
-    "--release",
-    params.release ?? "none",
+    params.assignee ?? "seed-assignee",
     "--dep",
-    "none",
+    "id=pm-seed-related,kind=related,author=seed-author,created_at=now",
     "--comment",
-    "none",
+    "author=seed-author,created_at=now,text=seed comment",
     "--note",
-    "none",
+    "author=seed-author,created_at=now,text=seed note",
     "--learning",
-    "none",
+    "author=seed-author,created_at=now,text=seed learning",
     "--file",
-    "none",
+    "path=README.md,scope=project,note=seed file",
     "--test",
-    "none",
+    "command=node dist/cli.js --version,scope=project,note=seed test",
     "--doc",
-    "none",
+    "path=README.md,scope=project,note=seed doc",
   ];
+  if (params.sprint !== undefined) {
+    args.push("--sprint", params.sprint);
+  }
+  if (params.release !== undefined) {
+    args.push("--release", params.release);
+  }
   const result = context.runCli(args, { expectJson: true });
   expect(result.code).toBe(0);
+  return (result.json as { item: { id: string } }).item.id;
 }
 
 describe("runList", () => {
@@ -270,7 +273,7 @@ describe("runList", () => {
     });
   });
 
-  it("applies assignee filter including none sentinel for unassigned", async () => {
+  it("applies assignee and assignee-filter semantics for assignment state", async () => {
     await withTempPmPath(async (context) => {
       createItem(context, {
         title: "Assigned Item",
@@ -280,22 +283,32 @@ describe("runList", () => {
         deadline: "+1d",
         assignee: "agent-a",
       });
-      createItem(context, {
+      const unassignedId = createItem(context, {
         title: "Unassigned Item",
         status: "open",
         priority: "2",
         tags: "test",
         deadline: "+1d",
       });
+      const unsetResult = context.runCli(
+        ["update", unassignedId, "--json", "--unset", "assignee", "--author", "seed-assignee"],
+        { expectJson: true },
+      );
+      expect(unsetResult.code).toBe(0);
 
       const byAssignee = await runList(undefined, { assignee: "agent-a" }, { path: context.pmPath });
       expect(byAssignee.count).toBe(1);
       expect(byAssignee.items[0].assignee).toBe("agent-a");
       expect(byAssignee.filters.assignee).toBe("agent-a");
 
-      const unassigned = await runList(undefined, { assignee: "none" }, { path: context.pmPath });
+      const unassigned = await runList(undefined, { assigneeFilter: "unassigned" }, { path: context.pmPath });
       expect(unassigned.count).toBe(1);
       expect(unassigned.items[0].title).toBe("Unassigned Item");
+      expect(unassigned.filters.assignee_filter).toBe("unassigned");
+
+      await expect(runList(undefined, { assignee: "none" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
 
       const noMatch = await runList(undefined, { assignee: "agent-z" }, { path: context.pmPath });
       expect(noMatch.count).toBe(0);

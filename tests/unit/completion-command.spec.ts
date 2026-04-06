@@ -121,7 +121,7 @@ describe("generateBashScript", () => {
     const script = generateBashScript();
     expect(script).toContain("--add --limit --author --message --force");
     expect(script).toContain("--allow-audit-comment");
-    expect(script).toContain("--status --type --assignee --limit-items --full-history --latest");
+    expect(script).toContain("--status --type --assignee --assignee-filter --limit-items --full-history --latest");
   });
 
   it("includes files/docs add-glob flag in bash completion", () => {

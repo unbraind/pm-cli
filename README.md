@@ -337,7 +337,7 @@ Configure custom required fields with:
 
 ```bash
 pm config project set metadata-required-fields --criterion sprint --criterion release
-pm config project set metadata-required-fields --criterion none
+pm config project set metadata-required-fields --clear-criteria
 pm config project get metadata-required-fields --json
 ```
 
@@ -397,7 +397,7 @@ pm history pm-a1b2 --verify --json
 - Canonical status values are: `draft`, `open`, `in_progress`, `blocked`, `closed`, `canceled`.
 - Status input flags also accept `in-progress` as an alias for `in_progress` (`pm create`, `pm update`, `pm calendar`, and `pm test-all`).
 - Persisted item data and command output remain canonical (`in_progress`) for deterministic storage and filtering.
-- `pm update --close-reason <text>` sets `close_reason` explicitly; `--close-reason none` clears it.
+- `pm update --close-reason <text>` sets `close_reason` explicitly; `pm update --unset close-reason` clears it.
 - When `pm update --status` reopens an item from `closed` to a non-terminal status, stale `close_reason` is auto-cleared unless `--close-reason` is explicitly provided in that update call.
 
 ## Resilient Entry Input Formats
@@ -443,7 +443,7 @@ printf '%s\n' 'at: +1d' 'text: reminder from piped stdin' | pm update pm-a1b2 --
 printf '%s\n' 'Backfilled body from stdin token' | pm update pm-a1b2 --body -
 pm update pm-a1b2 --dep "id=pm-b3c4,kind=blocks,author=alex-maintainer,created_at=now"
 pm update pm-a1b2 --dep-remove "pm-b3c4"
-pm update pm-a1b2 --dep none
+pm update pm-a1b2 --clear-deps
 pm deps pm-a1b2 --format tree
 pm deps pm-a1b2 --format graph --json
 
@@ -454,7 +454,7 @@ pm comments-audit --status in_progress --latest 1 --limit-items 20 --json
 pm comments-audit --status in_progress --full-history --limit-items 20 --json
 ```
 
-`none` semantics are unchanged for explicit clears in repeatable fields (`--file none`, `--comment none`, etc.).
+Use explicit clear flags for repeatable fields (`--clear-files`, `--clear-comments`, `--clear-docs`, etc.) and `--unset <field>` for scalar clears.
 
 For `pm create` log-seed flags (`--comment`, `--note`, `--learning`), only `author`, `created_at`, and `text` keys are accepted. Ambiguous unquoted payloads that introduce extra parsed keys (for example `text=hello,scope:project`) are rejected to prevent silent text truncation. Use quoted text (`text="hello,scope:project"`), markdown-style key/value input, or stdin token `-` for punctuation-heavy text.
 
@@ -464,7 +464,7 @@ For `pm create` log-seed flags (`--comment`, `--note`, `--learning`), only `auth
   - `pm files <ID> --add/--add-glob/--remove`
   - `pm docs <ID> --add/--add-glob/--remove`
 - Use `pm update <ID> --body <value>` to replace an item's body content (including empty-string backfills); use `pm append <ID> --body <value>` for additive narrative updates.
-- Dependency links on existing items are now mutated through `pm update` (`--dep` to add entries or clear with `none`, `--dep-remove`/`--dep_remove` to remove selectors).
+- Dependency links on existing items are now mutated through `pm update` (`--dep` to add entries, `--clear-deps` to clear all, and `--dep-remove`/`--dep_remove` to remove selectors).
 - Use `pm deps <ID> --format tree|graph` for deterministic read-only dependency visualization.
 - `pm update` supports transactional linked mutations in one lock/history operation via repeatable `--comment`, `--note`, `--learning`, `--file`, `--test`, and `--doc` flags.
 - Dedicated commands (`pm comments|notes|learnings|files|test|docs`) remain available for focused single-surface edits.
@@ -564,7 +564,7 @@ pm create \
 pm update pm-a1b2 --type-option category=Character --type-option pipeline=Rigging
 ```
 
-`--type-option` accepts `key=value`, `key:value`, and `key=<name>,value=<value>` formats (including markdown-style lines), can read stdin via `-`, and can be cleared with `none`.
+`--type-option` accepts `key=value`, `key:value`, and `key=<name>,value=<value>` formats (including markdown-style lines), can read stdin via `-`, and can be cleared with `--clear-type-options`.
 
 `command_option_policies` lets each type mark create/update options as:
 
@@ -735,7 +735,7 @@ Use `pm extension --help` for compact guidance or `pm extension --help --explain
 
 - `pm create` and `pm update` accept repeatable `--reminder` flags.
 - Reminder value format: `at=<iso|date|relative>,text=<text>`.
-- Use `none` to explicitly clear reminders in create/update flows.
+- Use `--clear-reminders` to clear reminders on create/update.
 
 Examples:
 
@@ -743,6 +743,7 @@ Examples:
 pm create \
   --title "Prepare release notes" \
   --description "Draft and review release notes for vnext." \
+  --create-mode progressive \
   --type Task \
   --status open \
   --priority 1 \
@@ -754,12 +755,10 @@ pm create \
   --estimate 45 \
   --acceptance-criteria "Release notes merged and linked." \
   --author "maintainer-agent" \
-  --message "Create release notes task with reminders" \
-  --assignee none \
-  --dep none --comment none --note none --learning none --file none --test none --doc none
+  --message "Create release notes task with reminders"
 
 pm update pm-a1b2 --reminder "at=+4h,text=Follow up with reviewer"
-pm update pm-a1b2 --reminder none
+pm update pm-a1b2 --clear-reminders
 ```
 
 ### Event fields on items
@@ -777,7 +776,7 @@ pm update pm-a1b2 --reminder none
   - `recur_by_weekday=<mon|tue|wed|thu|fri|sat|sun>` (pipe-delimited)
   - `recur_by_month_day=<1..31>` (pipe-delimited)
   - `recur_exdates=<iso|date|relative>` (pipe-delimited)
-- Use `none` to explicitly clear all events in create/update flows.
+- Use `--clear-events` to clear all events in create/update flows.
 
 Examples:
 
@@ -785,6 +784,7 @@ Examples:
 pm create \
   --title "Run release planning" \
   --description "Set recurring planning sync plus a one-off launch checkpoint." \
+  --create-mode progressive \
   --type Task \
   --status open \
   --priority 1 \
@@ -796,12 +796,10 @@ pm create \
   --estimate 30 \
   --acceptance-criteria "Calendar schedule is captured in item metadata." \
   --author "maintainer-agent" \
-  --message "Create calendar-rich planning task" \
-  --assignee none \
-  --dep none --comment none --note none --learning none --file none --test none --doc none
+  --message "Create calendar-rich planning task"
 
 pm update pm-a1b2 --event "start=+2d,title=Retro,recur_freq=monthly,recur_by_month_day=15"
-pm update pm-a1b2 --event none
+pm update pm-a1b2 --clear-events
 ```
 
 ### Calendar command (`pm calendar` / `pm cal`)
@@ -822,7 +820,7 @@ pm update pm-a1b2 --event none
   - `--past` includes past events in bounded views
   - `--from` / `--to` supported on `agenda`
   - `--date` anchors day/week/month calculations
-- Shared filters: `--type`, `--tag`, `--priority`, `--status`, `--assignee`, `--sprint`, `--release`, `--limit`
+- Shared filters: `--type`, `--tag`, `--priority`, `--status`, `--assignee`, `--assignee-filter assigned|unassigned`, `--sprint`, `--release`, `--limit`
 
 Examples:
 

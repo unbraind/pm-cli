@@ -30,6 +30,7 @@ export interface CalendarOptions {
   priority?: string;
   status?: string;
   assignee?: string;
+  assigneeFilter?: string;
   sprint?: string;
   release?: string;
   include?: string;
@@ -85,6 +86,7 @@ export interface CalendarResult {
     priority: string | null;
     status: string | null;
     assignee: string | null;
+    assignee_filter: string | null;
     sprint: string | null;
     release: string | null;
     limit: string | null;
@@ -228,6 +230,20 @@ function parseStatus(raw: string | undefined): ItemStatus | undefined {
   const normalized = normalizeStatusInput(raw);
   if (!normalized) {
     throw new PmCliError(`Calendar status filter must be one of ${STATUS_VALUES.join("|")}`, EXIT_CODE.USAGE);
+  }
+  return normalized;
+}
+
+function parseAssigneeFilter(raw: string | undefined): "assigned" | "unassigned" | undefined {
+  if (raw === undefined) {
+    return undefined;
+  }
+  const normalized = raw.trim().toLowerCase();
+  if (!normalized) {
+    throw new PmCliError("Calendar assignee filter must be one of assigned|unassigned", EXIT_CODE.USAGE);
+  }
+  if (normalized !== "assigned" && normalized !== "unassigned") {
+    throw new PmCliError(`Invalid calendar assignee filter "${raw}". Allowed: assigned|unassigned`, EXIT_CODE.USAGE);
   }
   return normalized;
 }
@@ -606,20 +622,29 @@ function filterItems(items: ItemFrontMatter[], options: CalendarOptions, typeReg
   const priorityFilter = parsePriority(options.priority);
   const statusFilter = parseStatus(options.status);
   const assigneeFilter = options.assignee?.trim();
+  const assigneeModeFilter = parseAssigneeFilter(options.assigneeFilter);
   const sprintFilter = options.sprint?.trim();
   const releaseFilter = options.release?.trim();
+
+  if (assigneeFilter && (assigneeFilter.toLowerCase() === "none" || assigneeFilter.toLowerCase() === "null")) {
+    throw new PmCliError(
+      '--assignee no longer accepts "none" or "null". Use --assignee-filter unassigned.',
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (assigneeFilter !== undefined && assigneeModeFilter === "unassigned") {
+    throw new PmCliError("Cannot combine --assignee with --assignee-filter unassigned", EXIT_CODE.USAGE);
+  }
 
   return items.filter((item) => {
     if (typeFilter && item.type !== typeFilter) return false;
     if (tagFilter && !item.tags.some((tag) => tag.trim().toLowerCase() === tagFilter)) return false;
     if (priorityFilter !== undefined && item.priority !== priorityFilter) return false;
     if (statusFilter && item.status !== statusFilter) return false;
-    if (assigneeFilter !== undefined) {
-      if (assigneeFilter.toLowerCase() === "none") {
-        if (item.assignee) return false;
-      } else if (item.assignee !== assigneeFilter) {
-        return false;
-      }
+    if (assigneeModeFilter === "assigned" && !item.assignee) return false;
+    if (assigneeModeFilter === "unassigned" && item.assignee) return false;
+    if (assigneeFilter !== undefined && item.assignee !== assigneeFilter) {
+      return false;
     }
     if (sprintFilter !== undefined && item.sprint !== sprintFilter) return false;
     if (releaseFilter !== undefined && item.release !== releaseFilter) return false;
@@ -746,8 +771,8 @@ function summarize(events: CalendarEvent[]): CalendarResult["summary"] {
 }
 
 function formatWindow(range: CalendarResult["range"]): string {
-  const start = range.start ?? "none";
-  const end = range.end ?? "none";
+  const start = range.start ?? "unbounded";
+  const end = range.end ?? "unbounded";
   return `${start} -> ${end}`;
 }
 
@@ -758,7 +783,7 @@ function formatClock(timestamp: string): string {
 function formatSummaryCountRecord(values: Record<string, number>): string {
   const entries = Object.entries(values);
   if (entries.length === 0) {
-    return "none";
+    return "empty";
   }
   return entries.map(([key, value]) => `${key}=${value}`).join(", ");
 }
@@ -908,6 +933,7 @@ export async function runCalendar(options: CalendarOptions, global: GlobalOption
       priority: options.priority ?? null,
       status: options.status ?? null,
       assignee: options.assignee ?? null,
+      assignee_filter: options.assigneeFilter ?? null,
       sprint: options.sprint ?? null,
       release: options.release ?? null,
       limit: options.limit ?? null,

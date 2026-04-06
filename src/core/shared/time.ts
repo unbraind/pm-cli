@@ -24,12 +24,6 @@ export function compareTimestampStrings(left: string, right: string): number {
   return left.localeCompare(right);
 }
 
-export function isNoneToken(input: string | undefined): boolean {
-  if (input === undefined) return false;
-  const normalized = input.trim().toLowerCase();
-  return normalized === "none" || normalized === "null";
-}
-
 function normalizeFraction(raw: string | undefined): string {
   if (!raw) return "";
   const digits = raw.slice(1);
@@ -133,7 +127,7 @@ export function resolveIsoOrRelative(
   const timestamp = parseTimestampWithFallbacks(trimmed);
   if (!Number.isFinite(timestamp)) {
     throw new PmCliError(
-      `Invalid deadline value "${input}". Use ISO/date string input, relative +6h/+1d/+2w/+6m, or none.`,
+      `Invalid deadline value "${input}". Use ISO/date string input or relative +6h/+1d/+2w/+6m.`,
       EXIT_CODE.USAGE,
     );
   }

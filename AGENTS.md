@@ -74,10 +74,10 @@ Populate metadata early:
 - `pm update <ID> --description "..."`
 - `pm update <ID> --acceptance-criteria/--ac "..."`
 - `pm update <ID> --body "..."` (replace body content for normalization/backfill; use `pm append --body` for additive notes)
-- `pm update <ID> --parent <ID|none>` to keep hierarchy deterministic for future linking
+- `pm update <ID> --parent <ID>` to keep hierarchy deterministic for future linking (clear with `pm update <ID> --unset parent`)
 - `pm update <ID> --estimate <minutes>`
 - `pm update <ID> --deadline +1d` (accepts ISO/date strings or relative `+6h/+1d/+2w/+6m`; resolved to ISO at write)
-- `pm update <ID> --close-reason <text|none>` for explicit close_reason set/clear; reopen transitions from `closed` to non-terminal status auto-clear stale close_reason unless explicitly overridden in that same update call
+- `pm update <ID> --close-reason <text>` for explicit close_reason set; clear with `pm update <ID> --unset close-reason` (reopen transitions from `closed` to non-terminal status auto-clear stale close_reason unless explicitly overridden in that same update call)
 - when team-level close-readiness policy changes, update Definition of Done criteria via:
   - `pm config project set definition-of-done --criterion "tests pass" --criterion "linked files/tests/docs present" --criterion "parent/dependency links complete" --criterion "duplicate check performed before create"`
 
@@ -322,33 +322,33 @@ For `test` and `test-all`, prefer explicit runtime parity/strictness parameters 
   "priority": 1,
   "tags": "extensions,core",
   "body": "",
-  "deadline": "none",
+  "deadline": "+14d",
   "estimate": 120,
   "acceptanceCriteria": "Loader applies deterministic precedence for core global and project extensions.",
   "author": "maintainer-agent",
   "message": "Create extension loader task",
-  "assignee": "none",
-  "parent": "none",
-  "reviewer": "none",
+  "assignee": "maintainer-agent",
+  "parent": "pm-epic01",
+  "reviewer": "maintainer-reviewer",
   "risk": "medium",
   "confidence": "high",
   "sprint": "maintainer-loop",
   "release": "v0.1",
-  "blockedBy": "none",
-  "blockedReason": "none",
-  "unblockNote": "none",
-  "reporter": "none",
-  "severity": "none",
-  "environment": "none",
-  "reproSteps": "none",
-  "resolution": "none",
-  "expectedResult": "none",
-  "actualResult": "none",
-  "affectedVersion": "none",
-  "fixedVersion": "none",
-  "component": "none",
-  "regression": "none",
-  "customerImpact": "none",
+  "blockedBy": "pm-arch-review",
+  "blockedReason": "Awaiting architecture sign-off",
+  "unblockNote": "Resume implementation once review notes are resolved",
+  "reporter": "maintainer-agent",
+  "severity": "medium",
+  "environment": "cli",
+  "reproSteps": "Create conflicting extension registrations across project/global scopes",
+  "resolution": "Apply deterministic precedence in extension loader bootstrap",
+  "expectedResult": "Loader applies project-over-global precedence deterministically",
+  "actualResult": "Registration order currently varies by load path",
+  "affectedVersion": "v0.1",
+  "fixedVersion": "v0.2",
+  "component": "extension-host",
+  "regression": "false",
+  "customerImpact": "Unpredictable extension behavior increases operator overhead",
   "definitionOfReady": "Extension loading behavior is clarified in docs.",
   "order": 1,
   "goal": "Release-hardening",
@@ -357,10 +357,10 @@ For `test` and `test-all`, prefer explicit runtime parity/strictness parameters 
   "impact": "Reduces configuration and precedence drift",
   "outcome": "Extension loader applies deterministic precedence",
   "whyNow": "Extension loading is foundational for the remaining roadmap",
-  "dep": ["none"],
+  "dep": ["id=pm-epic01,kind=parent,author=maintainer-agent,created_at=now"],
   "comment": ["author=maintainer-agent,created_at=now,text=Why this task exists align extension load precedence behavior."],
   "note": ["author=maintainer-agent,created_at=now,text=Initial implementation plan wire loader in runtime bootstrap."],
-  "learning": ["none"],
+  "learning": [],
   "linkedFile": ["path=src/core/extensions/loader.ts,scope=project,note=planned implementation file"],
   "linkedTest": ["command=node scripts/run-tests.mjs test,scope=project,timeout_seconds=240,note=sandbox-safe regression"],
   "doc": ["path=docs/ARCHITECTURE.md,scope=project,note=implementation reference"]
@@ -452,7 +452,7 @@ Rules:
 
 ### All-Flags Create Template (copy/paste)
 
-`pm create` strict mode (default / `--create-mode strict`) enforces every repeatable seed flag as explicit input; pass a concrete value or `none` for each of `--dep`, `--comment`, `--note`, `--learning`, `--file`, `--test`, and `--doc`.
+`pm create` strict mode (default / `--create-mode strict`) enforces every repeatable seed flag as explicit input; pass concrete values for each of `--dep`, `--comment`, `--note`, `--learning`, `--file`, `--test`, and `--doc` (use explicit `--clear-*` flags when intentionally empty).
 
 ```bash
 pm create \
@@ -466,38 +466,38 @@ pm create \
   --deadline +1d \
   --estimate 60 \
   --acceptance-criteria/--ac "..." \
-  --definition-of-ready/--definition_of_ready "none" \
-  --order/--rank none \
-  --goal none \
-  --objective none \
-  --value none \
-  --impact none \
-  --outcome none \
-  --why-now/--why_now none \
+  --unset definition-of-ready \
+  --unset order \
+  --unset goal \
+  --unset objective \
+  --unset value \
+  --unset impact \
+  --unset outcome \
+  --unset why-now \
   --author "..." \
   --message "..." \
-  --assignee none \
-  --parent none \
-  --reviewer none \
-  --risk none \
-  --confidence none \
-  --sprint none \
-  --release none \
-  --blocked-by none \
-  --blocked-reason none \
-  --unblock-note/--unblock_note none \
-  --reporter none \
-  --severity none \
-  --environment none \
-  --repro-steps none \
-  --resolution none \
-  --expected-result none \
-  --actual-result none \
-  --affected-version none \
-  --fixed-version none \
-  --component none \
-  --regression none \
-  --customer-impact none \
+  --unset assignee \
+  --unset parent \
+  --unset reviewer \
+  --unset risk \
+  --unset confidence \
+  --unset sprint \
+  --unset release \
+  --unset blocked-by \
+  --unset blocked-reason \
+  --unset unblock-note \
+  --unset reporter \
+  --unset severity \
+  --unset environment \
+  --unset repro-steps \
+  --unset resolution \
+  --unset expected-result \
+  --unset actual-result \
+  --unset affected-version \
+  --unset fixed-version \
+  --unset component \
+  --unset regression \
+  --unset customer-impact \
   --dep <DEP> \
   --comment <COMMENT> \
   --note <NOTE> \
@@ -510,7 +510,7 @@ pm create \
 Notes:
 
 - `--type` values come from the runtime type registry (built-ins plus `settings.item_types.definitions` and extension registrations).
-- Custom type metadata can be passed with repeatable `--type-option key=value` flags (or `none` to explicitly clear).
+- Custom type metadata can be passed with repeatable `--type-option key=value` flags (or `--clear-type-options` to explicitly clear).
 - For staged governance capture without placeholder repeatables, use `--create-mode progressive` and backfill required metadata before close.
 
 ### Epic Template With Comment + Note
@@ -527,26 +527,26 @@ pm create \
   --deadline +7d \
   --estimate 240 \
   --acceptance-criteria/--ac "..." \
-  --definition-of-ready/--definition_of_ready "none" \
-  --order/--rank none \
-  --goal none \
-  --objective none \
-  --value none \
-  --impact none \
-  --outcome none \
-  --why-now/--why_now none \
+  --unset definition-of-ready \
+  --unset order \
+  --unset goal \
+  --unset objective \
+  --unset value \
+  --unset impact \
+  --unset outcome \
+  --unset why-now \
   --author "..." \
   --message "MESSAGE" \
-  --assignee none \
-  --parent none \
-  --reviewer none \
-  --risk none \
-  --confidence none \
-  --sprint none \
-  --release none \
-  --blocked-by none \
-  --blocked-reason none \
-  --unblock-note/--unblock_note none \
+  --unset assignee \
+  --unset parent \
+  --unset reviewer \
+  --unset risk \
+  --unset confidence \
+  --unset sprint \
+  --unset release \
+  --unset blocked-by \
+  --unset blocked-reason \
+  --unset unblock-note \
   --dep "id=pm-xxxx,kind=blocks,author=...,created_at=now" \
   --comment "author=...,created_at=now,text=Why this epic exists." \
   --note "author=...,created_at=now,text=How success is measured." \

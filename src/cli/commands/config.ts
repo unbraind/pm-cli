@@ -76,6 +76,7 @@ export interface ConfigCommandOptions {
   criterion?: string[];
   format?: string;
   policy?: string;
+  clearCriteria?: boolean;
 }
 
 export interface ConfigResult {
@@ -253,25 +254,27 @@ const METADATA_REQUIRED_FIELD_OPTIONS = [
   "release",
 ] as const;
 
-function normalizeMetadataRequiredFields(values: string[] | undefined): ValidateMetadataRequiredField[] {
+function normalizeMetadataRequiredFields(
+  values: string[] | undefined,
+  clearCriteria: boolean | undefined,
+): ValidateMetadataRequiredField[] {
   const normalized = [...new Set((values ?? []).map((value) => value.trim()).filter((value) => value.length > 0))];
+  if (clearCriteria) {
+    if (normalized.length > 0) {
+      throw new PmCliError(
+        "Config set metadata-required-fields cannot combine --clear-criteria with --criterion values",
+        EXIT_CODE.USAGE,
+      );
+    }
+    return [];
+  }
   if (normalized.length === 0) {
     throw new PmCliError(
-      "Config set metadata-required-fields requires at least one --criterion value (or --criterion none to clear)",
+      "Config set metadata-required-fields requires at least one --criterion value (or --clear-criteria to clear)",
       EXIT_CODE.USAGE,
     );
   }
   const lowered = normalized.map((value) => value.toLowerCase().replaceAll("-", "_"));
-  const hasNone = lowered.includes("none");
-  if (hasNone && lowered.length > 1) {
-    throw new PmCliError(
-      "Config set metadata-required-fields accepts --criterion none only as a standalone clear directive",
-      EXIT_CODE.USAGE,
-    );
-  }
-  if (hasNone) {
-    return [];
-  }
   const unsupported = lowered.filter((value) => METADATA_REQUIRED_FIELD_ALIAS_MAP[value] === undefined);
   if (unsupported.length > 0) {
     throw new PmCliError(
@@ -384,8 +387,10 @@ export async function runConfig(
           ? ("string_array" as const)
           : ("enum" as const),
       set_flags:
-        candidate === "definition_of_done" || candidate === "metadata_required_fields"
+        candidate === "definition_of_done"
           ? ["--criterion"]
+          : candidate === "metadata_required_fields"
+            ? ["--criterion", "--clear-criteria"]
           : candidate === "item_format"
             ? ["--format"]
             : ["--policy"],
@@ -506,6 +511,9 @@ export async function runConfig(
   if (!key) {
     throw new PmCliError('Config action "set" requires <key>', EXIT_CODE.USAGE);
   }
+  if (options.clearCriteria === true && key !== "metadata_required_fields") {
+    throw new PmCliError("--clear-criteria is only supported with config set metadata-required-fields", EXIT_CODE.USAGE);
+  }
   if (key === "item_format") {
     const nextFormat = normalizeItemFormat(options.format);
     const changed = settings.item_format !== nextFormat || !metadata.has_explicit_item_format;
@@ -604,7 +612,7 @@ export async function runConfig(
   }
 
   if (key === "metadata_required_fields") {
-    const nextCriteria = normalizeMetadataRequiredFields(options.criterion);
+    const nextCriteria = normalizeMetadataRequiredFields(options.criterion, options.clearCriteria);
     const changed =
       nextCriteria.length !== settings.validation.metadata_required_fields.length ||
       nextCriteria.some((value, index) => value !== settings.validation.metadata_required_fields[index]);

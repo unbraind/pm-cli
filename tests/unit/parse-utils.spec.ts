@@ -7,9 +7,9 @@ afterEach(() => {
 });
 
 describe("core/item/parse", () => {
-  it("normalizes tags with none-token and empty-input handling", () => {
+  it("normalizes tags and preserves literal none tag text", () => {
     expect(parseTags("BETA, alpha, alpha")).toEqual(["alpha", "beta"]);
-    expect(parseTags(" none ")).toEqual([]);
+    expect(parseTags(" none ")).toEqual(["none"]);
     expect(parseTags("   ")).toEqual([]);
   });
 

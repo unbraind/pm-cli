@@ -125,12 +125,14 @@ describe("templates command flows", () => {
           description: "templated override description",
           type: "Task",
           template: "seeded-dependencies",
-          dep: ["none"],
+          dep: ["id=dep-override,kind=blocks,created_at=now"],
         },
         { path: context.pmPath },
       );
 
-      expect(created.item.dependencies).toBeUndefined();
+      expect(created.item.dependencies).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: "pm-dep-override", kind: "blocks" })]),
+      );
     });
   });
 
