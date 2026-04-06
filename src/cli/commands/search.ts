@@ -40,9 +40,29 @@ export interface SearchOptions {
   deadlineBefore?: string;
   deadlineAfter?: string;
   limit?: string;
+  compact?: boolean;
+  full?: boolean;
+  fields?: string;
 }
 
 type SearchMode = "keyword" | "semantic" | "hybrid";
+type SearchProjectionMode = "compact" | "full" | "fields";
+
+interface SearchProjectionConfig {
+  mode: SearchProjectionMode;
+  fields: string[];
+}
+
+const DEFAULT_COMPACT_SEARCH_FIELDS = [
+  "id",
+  "title",
+  "status",
+  "type",
+  "priority",
+  "updated_at",
+  "score",
+  "matched_fields",
+] as const;
 
 export interface SearchHit {
   item: ItemFrontMatter;
@@ -50,12 +70,18 @@ export interface SearchHit {
   matched_fields: string[];
 }
 
+export type SearchResultItem = SearchHit | Record<string, unknown>;
+
 export interface SearchResult {
   query: string;
   mode: SearchMode;
-  items: SearchHit[];
+  items: SearchResultItem[];
   count: number;
   filters: Record<string, unknown>;
+  projection: {
+    mode: SearchProjectionMode;
+    fields: string[] | null;
+  };
   now: string;
   warnings?: string[];
 }
@@ -147,6 +173,55 @@ function parseLimit(raw: string | undefined): number | undefined {
     throw new PmCliError("Limit filter must be a non-negative number", EXIT_CODE.USAGE);
   }
   return Math.floor(parsed);
+}
+
+function parseFieldSelectors(raw: string | undefined): string[] | undefined {
+  if (raw === undefined) {
+    return undefined;
+  }
+  const selectors = raw
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  if (selectors.length === 0) {
+    throw new PmCliError("Search --fields requires a comma-separated list of field names", EXIT_CODE.USAGE);
+  }
+  return [...new Set(selectors)];
+}
+
+function parseProjectionConfig(options: SearchOptions): SearchProjectionConfig {
+  const compactRequested = options.compact === true;
+  const fullRequested = options.full === true;
+  const fieldSelectors = parseFieldSelectors(options.fields);
+  const enabledModes = Number(compactRequested) + Number(fullRequested) + Number(fieldSelectors !== undefined);
+  if (enabledModes > 1) {
+    throw new PmCliError(
+      "Search projection options are mutually exclusive. Use one of --compact, --full, or --fields.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (compactRequested) {
+    return {
+      mode: "compact",
+      fields: [...DEFAULT_COMPACT_SEARCH_FIELDS],
+    };
+  }
+  if (fullRequested) {
+    return {
+      mode: "full",
+      fields: [],
+    };
+  }
+  if (fieldSelectors) {
+    return {
+      mode: "fields",
+      fields: fieldSelectors,
+    };
+  }
+  return {
+    mode: "full",
+    fields: [],
+  };
 }
 
 function parseTokens(query: string): string[] {
@@ -471,8 +546,10 @@ function emptySearchResult(
   includeLinked: boolean,
   scoreThreshold: number,
   hybridSemanticWeight: number,
+  projection: SearchProjectionConfig,
   warnings: string[],
 ): SearchResult {
+  const projectionFields = projection.mode === "full" ? null : [...projection.fields];
   return {
     query: query.trim(),
     mode,
@@ -489,6 +566,12 @@ function emptySearchResult(
       score_threshold: scoreThreshold,
       hybrid_semantic_weight: mode === "hybrid" ? hybridSemanticWeight : null,
       limit: options.limit ?? null,
+      projection: projection.mode,
+      fields: projectionFields,
+    },
+    projection: {
+      mode: projection.mode,
+      fields: projectionFields,
     },
     now: nowIso(),
     ...(warnings.length > 0 ? { warnings } : {}),
@@ -774,10 +857,54 @@ async function loadDocuments(
   };
 }
 
+function readSearchFieldValue(hit: SearchHit, field: string): unknown {
+  const normalized = field.trim();
+  if (normalized.length === 0) {
+    return null;
+  }
+  if (normalized === "score") {
+    return hit.score;
+  }
+  if (normalized === "matched_fields") {
+    return hit.matched_fields;
+  }
+  if (normalized.startsWith("item.")) {
+    const itemKey = normalized.slice("item.".length);
+    if (itemKey.length === 0) {
+      return null;
+    }
+    const itemRecord = hit.item as unknown as Record<string, unknown>;
+    return itemRecord[itemKey] ?? null;
+  }
+  const hitRecord = hit as unknown as Record<string, unknown>;
+  const itemRecord = hit.item as unknown as Record<string, unknown>;
+  if (Object.prototype.hasOwnProperty.call(itemRecord, normalized)) {
+    return itemRecord[normalized] ?? null;
+  }
+  if (Object.prototype.hasOwnProperty.call(hitRecord, normalized)) {
+    return hitRecord[normalized] ?? null;
+  }
+  return null;
+}
+
+function projectSearchHits(hits: SearchHit[], projection: SearchProjectionConfig): SearchResultItem[] {
+  if (projection.mode === "full") {
+    return hits;
+  }
+  return hits.map((hit) => {
+    const projected: Record<string, unknown> = {};
+    for (const field of projection.fields) {
+      projected[field] = readSearchFieldValue(hit, field);
+    }
+    return projected;
+  });
+}
+
 export async function runSearch(query: string, options: SearchOptions, global: GlobalOptions): Promise<SearchResult> {
   const includeLinked = parseIncludeLinked(options.includeLinked);
   const tokens = parseTokens(query);
   const limit = parseLimit(options.limit);
+  const projection = parseProjectionConfig(options);
   const modeWasExplicit = typeof options.mode === "string" && options.mode.trim().length > 0;
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
@@ -804,7 +931,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   const allDocuments = loadedDocuments.documents;
   const filteredDocuments = applyFilters(allDocuments, options, typeRegistry);
   if (effectiveMode === "keyword" && (filteredDocuments.length === 0 || limit === 0)) {
-    return emptySearchResult(query, effectiveMode, options, includeLinked, scoreThreshold, hybridSemanticWeight, warnings);
+    return emptySearchResult(query, effectiveMode, options, includeLinked, scoreThreshold, hybridSemanticWeight, projection, warnings);
   }
 
   const projectRoot = process.cwd();
@@ -827,7 +954,16 @@ export async function runSearch(query: string, options: SearchOptions, global: G
         requireSemanticDependencies(effectiveMode, providerResolution, vectorResolution, extensionVectorAdapter !== null);
       }
       if (filteredDocuments.length === 0 || limit === 0) {
-        return emptySearchResult(query, effectiveMode, options, includeLinked, scoreThreshold, hybridSemanticWeight, warnings);
+        return emptySearchResult(
+          query,
+          effectiveMode,
+          options,
+          includeLinked,
+          scoreThreshold,
+          hybridSemanticWeight,
+          projection,
+          warnings,
+        );
       }
       const filteredById = new Map(filteredDocuments.map((document) => [document.front_matter.id, document]));
       const canUseBuiltInSemantic =
@@ -890,12 +1026,14 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   const sorted = sortHits(thresholded);
   const resolvedLimit = effectiveMode === "keyword" ? limit : (limit ?? maxResults);
   const limited = resolvedLimit === undefined ? sorted : sorted.slice(0, resolvedLimit);
+  const projectedItems = projectSearchHits(limited, projection);
+  const projectionFields = projection.mode === "full" ? null : [...projection.fields];
 
   return {
     query: query.trim(),
     mode: effectiveMode,
-    items: limited,
-    count: limited.length,
+    items: projectedItems,
+    count: projectedItems.length,
     filters: {
       mode: effectiveMode,
       type: options.type ?? null,
@@ -907,6 +1045,12 @@ export async function runSearch(query: string, options: SearchOptions, global: G
       score_threshold: scoreThreshold,
       hybrid_semantic_weight: effectiveMode === "hybrid" ? hybridSemanticWeight : null,
       limit: options.limit ?? null,
+      projection: projection.mode,
+      fields: projectionFields,
+    },
+    projection: {
+      mode: projection.mode,
+      fields: projectionFields,
     },
     now: nowIso(),
     ...(warnings.length > 0 ? { warnings } : {}),

@@ -44,4 +44,14 @@ describe("pm cli error guidance context plumbing", () => {
     expect(text).toContain("Next steps:");
     expect(text).toContain("Run pm history <id> --verify and resolve conflicts.");
   });
+
+  it("returns deterministic item-not-found recovery examples without echoing invalid ids", () => {
+    const envelope = formatPmCliErrorForJson("Item pm-does-not-exist not found", 3);
+    expect(envelope.code).toBe("item_not_found");
+    expect(envelope.examples).toEqual([
+      "pm list-open --limit 20",
+      'pm search "<keyword>" --limit 10',
+    ]);
+    expect(envelope.examples?.some((example) => example.includes("pm-does-not-exist"))).toBe(false);
+  });
 });

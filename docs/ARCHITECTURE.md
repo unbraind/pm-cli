@@ -136,6 +136,7 @@ The same registry drives:
 - shell completion flag/command surfaces in `src/cli/commands/completion.ts`
 - Pi wrapper action enum, tool `inputSchema`, and CLI arg mapping in `.pi/extensions/pm-cli/index.ts`
 - runtime `pm contracts` payload generation for action/command/schema introspection
+- runtime schema augmentation for active extension commands/actions (including extension source metadata and extension-defined flag surfaces)
 - additive command surfaces such as `templates-*` actions, extension lifecycle actions (`extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-doctor`, `extension-adopt`, `extension-adopt-all`, `extension-activate`, `extension-deactivate`), `history --diff/--verify`, files/docs path hygiene flags (`--add-glob`, `--migrate`, `--append-stable`, `--validate-paths`, `--audit`), validate governance/file drift flags (`--check-lifecycle`, `--check-stale-blockers`, `--scan-mode`, `--include-pm-internals`), `create --create-mode`, `comments --allow-audit-comment`, and `deps --format`
 
 This keeps human CLI UX and machine-facing contracts aligned while preserving additive/backward-compatible evolution.
@@ -289,7 +290,7 @@ Output behavior is command-specific: `pm calendar` defaults to markdown for agen
 
 Pipeline:
 
-1. Run `list` logic with non-terminal filtering and optional shared filters (`type`, `tag`, `priority`, `assignee`, `sprint`, `release`).
+1. Run `list` logic with non-terminal filtering and optional shared filters (`type`, `tag`, `priority`, `parent`, `assignee`, `sprint`, `release`).
 2. Rank candidate items deterministically by status (`in_progress` before `open`), then priority, explicit `order`, deadline proximity, recency, and id tie-break.
 3. Split ranked active items into:
    - high-level focus (`Epic`, `Feature`)
@@ -316,9 +317,10 @@ Help and error UX is centralized to reduce per-command drift:
 
 1. `src/cli/help-content.ts` defines command-path help bundles (`why`, `examples`, optional `tips`) and attaches compact help by default (`Intent` + one example) with deep help enabled via `--explain`.
 2. `src/cli/main.ts` performs bootstrap routing for help paths so `pm help`/`pm help <command>` are deterministic success flows and `--help --json` emits machine-readable help payloads.
-3. `src/cli/error-guidance.ts` defines canonical guidance descriptors and renders either structured text sections or machine-readable JSON envelopes (`type`, `code`, `title`, `detail`, `required`, `exit_code`, optional remediation fields), with `PmCliError.context` overrides for precise runtime guidance.
-4. `src/cli/main.ts` routes commander usage failures and `PmCliError` failures through these renderers, emitting JSON diagnostics when `--json` is active.
-5. Commander native stderr writes are suppressed so the CLI emits a single high-signal guidance payload per failure path.
+3. Dynamic extension command descriptors (intent/action/examples/failure hints/arguments/flags) are merged into runtime help surfaces when available, with graceful fallback for legacy extensions that only register command handlers/flags.
+4. `src/cli/error-guidance.ts` defines canonical guidance descriptors and renders either structured text sections or machine-readable JSON envelopes (`type`, `code`, `title`, `detail`, `required`, `exit_code`, optional remediation fields), with `PmCliError.context` overrides for precise runtime guidance.
+5. `src/cli/main.ts` routes commander usage failures and `PmCliError` failures through these renderers, emitting JSON diagnostics when `--json` is active.
+6. Commander native stderr writes are suppressed so the CLI emits a single high-signal guidance payload per failure path.
 
 ## History and Restore
 
@@ -346,6 +348,9 @@ Extensions are Node.js modules with an `activate(api)` export. For package consu
 export function activate(api: ExtensionApi): void {
   api.registerCommand({
     name: "my command",
+    action: "my-command",
+    intent: "Short command intent shown in runtime help/contracts.",
+    examples: ["pm my command --limit 5"],
     run: async (context) => ({ ok: true, command: context.command }),
   });
   api.hooks.beforeCommand((ctx) => { /* ... */ });
@@ -374,6 +379,7 @@ Extension Host V2 adds three additional override planes:
 Runtime registration wiring now includes:
 
 - `registerFlags(...)` deterministic shape validation (`long`/`short` presence plus typed metadata) before dynamic help registration.
+- `registerCommand({ ... })` optional metadata (`action`, `description`, `intent`, `examples`, `failure_hints`, `arguments`, `flags`) is validated and stored for runtime help/contracts introspection.
 - `registerItemFields(...)` defaults/validation on create and update write paths.
 - `registerItemTypes(...)` deterministic schema validation for required type/policy/option fields before type-registry merge.
 - `registerMigration(...)` mandatory migration execution + write gating in command preflight.

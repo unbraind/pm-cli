@@ -100,6 +100,9 @@ export interface PmToolParameters {
   recurrenceLookbackDays?: NumericFlagInput;
   occurrenceLimit?: NumericFlagInput;
   includeLinked?: boolean;
+  compact?: boolean;
+  full?: boolean;
+  fields?: string;
   tag?: string;
   deadlineBefore?: string;
   deadlineAfter?: string;
@@ -531,6 +534,12 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       pushOption(args, "--mode", params.mode);
       if (params.includeLinked) {
         args.push("--include-linked");
+      }
+      if (params.compact) {
+        args.push("--compact");
+      }
+      if (params.full) {
+        args.push("--full");
       }
       pushContractedFlags(args, params, PI_SEARCH_FILTER_OPTION_CONTRACTS);
       return args;

@@ -1040,7 +1040,7 @@ describe("release readiness runtime coverage", () => {
         expectJson: true,
       });
       expect(searchResult.code).toBe(0);
-      expectTopLevelKeyOrder(searchResult.json, ["query", "mode", "items", "count", "filters", "now"]);
+      expectTopLevelKeyOrder(searchResult.json, ["query", "mode", "items", "count", "filters", "projection", "now"]);
 
       const getResult = context.runCli(["get", createdId, "--json"], { expectJson: true });
       expect(getResult.code).toBe(0);

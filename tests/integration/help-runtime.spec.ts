@@ -1,7 +1,19 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
+
+async function createProjectExtension(
+  pmPath: string,
+  directory: string,
+  manifest: Record<string, unknown>,
+  entrySource: string,
+): Promise<void> {
+  const extensionRoot = path.join(pmPath, "extensions", directory);
+  await mkdir(extensionRoot, { recursive: true });
+  await writeFile(path.join(extensionRoot, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+  await writeFile(path.join(extensionRoot, "index.mjs"), entrySource, "utf8");
+}
 
 describe("CLI help runtime coverage (sandboxed)", () => {
   it("describes top-level help as a universal extensible CLI", async () => {
@@ -114,6 +126,92 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(help.stdout.replaceAll(/\s+/g, " ").trim()).toContain(
         "Include readable linked docs/files/tests content in keyword and hybrid lexical scoring",
       );
+    });
+  });
+
+  it("surfaces extension command schema details in help output and JSON payloads", async () => {
+    await withTempPmPath(async (context) => {
+      await createProjectExtension(
+        context.pmPath,
+        "migrate-asset-help",
+        {
+          name: "migrate-asset-help",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["commands", "schema"],
+        },
+        [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerCommand({",
+          "      name: 'migrate-asset',",
+          "      action: 'migrate-asset',",
+          "      description: 'Migrate asset descriptors to the active schema.',",
+          "      intent: 'Validate and migrate asset descriptors before writing output.',",
+          "      examples: [",
+          "        'pm migrate-asset --source assets/source.json --target assets/output.json'",
+          "      ],",
+          "      failure_hints: [",
+          "        'Ensure --source points to a readable descriptor file.'",
+          "      ],",
+          "      arguments: [",
+          "        { name: 'assetId', required: false, description: 'Optional asset identifier override.' }",
+          "      ],",
+          "      flags: [",
+          "        { long: '--source', value_name: 'path', required: true, description: 'Source descriptor path.' },",
+          "        { long: '--target', value_name: 'path', description: 'Target descriptor path.' },",
+          "        { long: '--dry-run', description: 'Preview migration without writing output.' }",
+          "      ],",
+          "      run: (context) => ({ ok: true, command: context.command, options: context.options })",
+          "    });",
+          "  },",
+          "};",
+          "",
+        ].join("\n"),
+      );
+
+      const textHelp = context.runCli(["migrate-asset", "--help"]);
+      expect(textHelp.code).toBe(0);
+      expect(textHelp.stdout).toContain("Migrate asset descriptors to the active schema.");
+      expect(textHelp.stdout).toContain("[assetId]");
+      expect(textHelp.stdout).toContain("--source <path>");
+      expect(textHelp.stdout).toContain("--target <path>");
+      expect(textHelp.stdout).toContain("--dry-run");
+      expect(textHelp.stdout).toContain("Extension command metadata:");
+      expect(textHelp.stdout).toContain("Action contract: migrate-asset");
+      expect(textHelp.stdout).toContain("Common failure hints:");
+
+      const compactJsonHelp = context.runCli(["migrate-asset", "--help", "--json"], { expectJson: true });
+      expect(compactJsonHelp.code).toBe(0);
+      const compactPayload = compactJsonHelp.json as {
+        detail_mode: string;
+        intent: string;
+        examples: string[];
+        arguments: Array<{ name: string }>;
+        options: Array<{ long: string | null; value_name: string | null }>;
+      };
+      expect(compactPayload.detail_mode).toBe("compact");
+      expect(compactPayload.intent).toBe("Validate and migrate asset descriptors before writing output.");
+      expect(compactPayload.examples).toEqual(["pm migrate-asset --source assets/source.json --target assets/output.json"]);
+      expect(compactPayload.arguments).toEqual(
+        expect.arrayContaining([expect.objectContaining({ name: "assetId" })]),
+      );
+      expect(compactPayload.options).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ long: "--source", value_name: "path" }),
+          expect.objectContaining({ long: "--target", value_name: "path" }),
+          expect.objectContaining({ long: "--dry-run", value_name: null }),
+        ]),
+      );
+
+      const detailedJsonHelp = context.runCli(["migrate-asset", "--help", "--json", "--explain"], { expectJson: true });
+      expect(detailedJsonHelp.code).toBe(0);
+      const detailedPayload = detailedJsonHelp.json as {
+        detail_mode: string;
+        tips: string[];
+      };
+      expect(detailedPayload.detail_mode).toBe("detailed");
+      expect(detailedPayload.tips).toEqual(["Ensure --source points to a readable descriptor file."]);
     });
   });
 

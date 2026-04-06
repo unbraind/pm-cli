@@ -18,6 +18,7 @@ export interface ListOptions {
   deadlineAfter?: string;
   assignee?: string;
   assigneeFilter?: string;
+  parent?: string;
   sprint?: string;
   release?: string;
   limit?: string;
@@ -123,6 +124,7 @@ function applyFilters(
   const deadlineAfter = parseDeadline(options.deadlineAfter);
   const assigneeFilter = options.assignee?.trim();
   const assigneeModeFilter = parseAssigneeFilter(options.assigneeFilter);
+  const parentFilter = options.parent?.trim();
   const sprintFilter = options.sprint?.trim();
   const releaseFilter = options.release?.trim();
 
@@ -149,6 +151,7 @@ function applyFilters(
     if (assigneeFilter !== undefined && item.assignee !== assigneeFilter) {
       return false;
     }
+    if (parentFilter !== undefined && item.parent !== parentFilter) return false;
     if (sprintFilter !== undefined && item.sprint !== sprintFilter) return false;
     if (releaseFilter !== undefined && item.release !== releaseFilter) return false;
     return true;
@@ -185,6 +188,7 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
       deadline_after: options.deadlineAfter ?? null,
       assignee: options.assignee ?? null,
       assignee_filter: options.assigneeFilter ?? null,
+      parent: options.parent ?? null,
       sprint: options.sprint ?? null,
       release: options.release ?? null,
       limit: options.limit ?? null,

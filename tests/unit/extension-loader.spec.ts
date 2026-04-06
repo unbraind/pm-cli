@@ -1278,6 +1278,182 @@ describe("extension loader", () => {
     });
   });
 
+  it("records command-definition schema metadata and inline flag registrations", async () => {
+    const activation = await activateExtensions({
+      disabled_by_flag: false,
+      roots: {
+        global: "/tmp/global",
+        project: "/tmp/project",
+      },
+      configured_enabled: [],
+      configured_disabled: [],
+      discovered: [],
+      effective: [],
+      warnings: [],
+      loaded: [
+        {
+          layer: "project",
+          directory: "command-schema-metadata",
+          manifest_path: "/tmp/project/command-schema-metadata/manifest.json",
+          name: "command-schema-metadata",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          priority: 10,
+          entry_path: "/tmp/project/command-schema-metadata/index.mjs",
+          capabilities: ["commands", "schema"],
+          module: {
+            activate(api: {
+              registerCommand: (definition: {
+                name: string;
+                action?: string;
+                description?: string;
+                intent?: string;
+                examples?: string[];
+                failure_hints?: string[];
+                arguments?: Array<{
+                  name: string;
+                  required?: boolean;
+                  variadic?: boolean;
+                  description?: string;
+                }>;
+                flags?: Array<Record<string, unknown>>;
+                run: (context: { command: string; args: string[]; options: Record<string, unknown> }) => unknown;
+              }) => void;
+            }) {
+              api.registerCommand({
+                name: "migrate-asset",
+                action: "migrate-asset",
+                description: "Migrate asset descriptors between schema versions.",
+                intent: "Validate source descriptors and write migrated output.",
+                examples: [
+                  "pm migrate-asset --source assets/source.json --target assets/output.json",
+                  "pm migrate-asset A123 --dry-run",
+                ],
+                failure_hints: [
+                  "Ensure --source points to a readable file path.",
+                  "Use --dry-run before writing output.",
+                ],
+                arguments: [
+                  {
+                    name: "assetId",
+                    required: false,
+                    description: "Optional asset identifier override.",
+                  },
+                  {
+                    name: "tags",
+                    required: false,
+                    variadic: true,
+                    description: "Optional tags to annotate migration output.",
+                  },
+                ],
+                flags: [
+                  {
+                    long: "--source",
+                    value_name: "path",
+                    description: "Path to source descriptor payload.",
+                    required: true,
+                  },
+                  {
+                    long: "--dry-run",
+                    description: "Preview migration without writing changes.",
+                  },
+                ],
+                run: (context) => ({
+                  command: context.command,
+                  source: context.options.source,
+                  dryRun: context.options.dryRun,
+                  args: context.args,
+                }),
+              });
+            },
+          },
+        },
+      ],
+      failed: [],
+    });
+
+    expect(activation.failed).toEqual([]);
+    expect(activation.warnings).toEqual([]);
+    expect(activation.registration_counts).toMatchObject({
+      commands: 1,
+      flags: 2,
+    });
+    expect(activation.registrations.commands).toEqual([
+      {
+        layer: "project",
+        name: "command-schema-metadata",
+        command: "migrate-asset",
+        action: "migrate-asset",
+        description: "Migrate asset descriptors between schema versions.",
+        intent: "Validate source descriptors and write migrated output.",
+        examples: [
+          "pm migrate-asset --source assets/source.json --target assets/output.json",
+          "pm migrate-asset A123 --dry-run",
+        ],
+        failure_hints: [
+          "Ensure --source points to a readable file path.",
+          "Use --dry-run before writing output.",
+        ],
+        arguments: [
+          {
+            name: "assetId",
+            description: "Optional asset identifier override.",
+          },
+          {
+            name: "tags",
+            variadic: true,
+            description: "Optional tags to annotate migration output.",
+          },
+        ],
+      },
+    ]);
+    expect(activation.registrations.flags).toEqual([
+      {
+        layer: "project",
+        name: "command-schema-metadata",
+        target_command: "migrate-asset",
+        flags: [
+          {
+            long: "--source",
+            value_name: "path",
+            description: "Path to source descriptor payload.",
+            required: true,
+          },
+          {
+            long: "--dry-run",
+            description: "Preview migration without writing changes.",
+          },
+        ],
+      },
+    ]);
+
+    const handlerResult = await runCommandHandler(activation.commands, {
+      command: "migrate-asset",
+      args: ["A123", "--source", "assets/source.json", "--dry-run"],
+      options: {
+        source: "assets/source.json",
+        dryRun: true,
+      },
+      global: {
+        json: false,
+        quiet: false,
+        noExtensions: false,
+        profile: false,
+      },
+      pm_root: "/tmp/project",
+    });
+    expect(handlerResult).toEqual({
+      handled: true,
+      result: {
+        command: "migrate-asset",
+        source: "assets/source.json",
+        dryRun: true,
+        args: ["A123", "--source", "assets/source.json", "--dry-run"],
+      },
+      warnings: [],
+    });
+  });
+
   it("accepts legacy command-definition handler aliases with deprecation warning", async () => {
     const activation = await activateExtensions({
       disabled_by_flag: false,
@@ -1445,6 +1621,7 @@ describe("extension loader", () => {
     expect(activation.failed).toEqual([]);
     expect(activation.warnings).toEqual([]);
     expect(activation.registration_counts).toEqual({
+      commands: 0,
       flags: 1,
       item_fields: 1,
       migrations: 1,
@@ -1459,6 +1636,7 @@ describe("extension loader", () => {
       "beads jsonl import",
       "todos markdown export",
     ]);
+    expect(activation.registrations.commands).toEqual([]);
     expect(activation.registrations.flags).toEqual([
       {
         layer: "project",

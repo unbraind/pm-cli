@@ -1,0 +1,15 @@
+id: pm-4bhw
+title: Extension help and contracts runtime introspection
+description: Expose extension command metadata in help and contracts for agent-safe runtime introspection.
+type: Feature
+status: closed
+priority: 1
+tags[5]: contracts,extensions,external-audit,help,pm-cli
+created_at: "2026-04-06T09:48:52.264Z"
+updated_at: "2026-04-06T11:21:57.452Z"
+author: codex-agent
+parent: pm-o7be
+comments[1]{created_at,author,text}:
+  "2026-04-06T09:48:52.264Z",codex-agent,"Duplicate-check evidence: dedupe command set run immediately before create and no open/in_progress/blocked duplicate found for this scope."
+close_reason: extension help/contracts runtime remediation complete
+body: ""

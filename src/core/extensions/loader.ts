@@ -226,10 +226,24 @@ export interface ServiceOverrideContext {
   payload: unknown;
 }
 
+export interface ExtensionCommandArgumentDefinition {
+  name: string;
+  required?: boolean;
+  variadic?: boolean;
+  description?: string;
+}
+
 export interface CommandDefinition {
   name: string;
   run?: CommandHandler;
   handler?: CommandHandler;
+  action?: string;
+  description?: string;
+  intent?: string;
+  examples?: string[];
+  failure_hints?: string[];
+  arguments?: ExtensionCommandArgumentDefinition[];
+  flags?: FlagDefinition[];
 }
 
 export type FlagDefinition = Record<string, unknown>;
@@ -310,6 +324,18 @@ export interface RegisteredExtensionFlagDefinitions {
   flags: FlagDefinition[];
 }
 
+export interface RegisteredExtensionCommandDefinition {
+  layer: ExtensionLayer;
+  name: string;
+  command: string;
+  action: string;
+  description?: string;
+  intent?: string;
+  examples: string[];
+  failure_hints: string[];
+  arguments: ExtensionCommandArgumentDefinition[];
+}
+
 export interface RegisteredExtensionSchemaFieldDefinitions {
   layer: ExtensionLayer;
   name: string;
@@ -356,6 +382,7 @@ export interface RegisteredExtensionVectorStoreAdapter {
 }
 
 export interface ExtensionRegistrationRegistry {
+  commands: RegisteredExtensionCommandDefinition[];
   flags: RegisteredExtensionFlagDefinitions[];
   item_fields: RegisteredExtensionSchemaFieldDefinitions[];
   item_types: RegisteredExtensionSchemaItemTypeDefinitions[];
@@ -367,6 +394,7 @@ export interface ExtensionRegistrationRegistry {
 }
 
 export interface ExtensionRegistrationCounts {
+  commands: number;
   flags: number;
   item_fields: number;
   item_types: number;
@@ -789,6 +817,7 @@ export function createEmptyExtensionRendererRegistry(): ExtensionRendererRegistr
 
 export function createEmptyExtensionRegistrationRegistry(): ExtensionRegistrationRegistry {
   return {
+    commands: [],
     flags: [],
     item_fields: [],
     item_types: [],
@@ -1305,6 +1334,100 @@ function assertOptionalStringArrayField(name: string, value: unknown): void {
   }
 }
 
+function normalizeOptionalStringArrayField(name: string, value: unknown): string[] {
+  assertOptionalStringArrayField(name, value);
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const normalized: string[] = [];
+  const seen = new Set<string>();
+  for (const entry of value) {
+    const trimmed = entry.trim();
+    if (trimmed.length === 0 || seen.has(trimmed)) {
+      continue;
+    }
+    seen.add(trimmed);
+    normalized.push(trimmed);
+  }
+  return normalized;
+}
+
+function normalizeCommandActionName(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_]+/g, "-")
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function resolveCommandDefinitionAction(commandPath: string, action: unknown): string {
+  if (action === undefined) {
+    return commandPath.replace(/\s+/g, "-");
+  }
+  if (typeof action !== "string" || action.trim().length === 0) {
+    throw new TypeError("registerCommand definition.action must be a non-empty string when provided");
+  }
+  const normalized = normalizeCommandActionName(action);
+  if (normalized.length === 0) {
+    throw new TypeError("registerCommand definition.action must contain alphanumeric characters");
+  }
+  return normalized;
+}
+
+function normalizeCommandDefinitionArguments(value: unknown): ExtensionCommandArgumentDefinition[] {
+  if (value === undefined) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    throw new TypeError("registerCommand definition.arguments must be an array when provided");
+  }
+  const normalized: ExtensionCommandArgumentDefinition[] = [];
+  for (const [index, entry] of value.entries()) {
+    const record = asRegistrationRecord(`registerCommand definition.arguments[${index}]`, entry);
+    const name = assertNonEmptyString(`registerCommand definition.arguments[${index}].name`, record.name);
+    assertOptionalBooleanField(`registerCommand definition.arguments[${index}].required`, record.required);
+    assertOptionalBooleanField(`registerCommand definition.arguments[${index}].variadic`, record.variadic);
+    assertOptionalStringField(`registerCommand definition.arguments[${index}].description`, record.description);
+    if (name.includes(" ")) {
+      throw new TypeError(`registerCommand definition.arguments[${index}].name must not contain spaces`);
+    }
+    const definition: ExtensionCommandArgumentDefinition = {
+      name,
+    };
+    if (record.required === true) {
+      definition.required = true;
+    }
+    if (record.variadic === true) {
+      definition.variadic = true;
+    }
+    if (typeof record.description === "string") {
+      const trimmedDescription = record.description.trim();
+      if (trimmedDescription.length > 0) {
+        definition.description = trimmedDescription;
+      }
+    }
+    normalized.push(definition);
+  }
+
+  let variadicCount = 0;
+  for (const [index, argument] of normalized.entries()) {
+    if (!argument.variadic) {
+      continue;
+    }
+    variadicCount += 1;
+    if (variadicCount > 1) {
+      throw new TypeError("registerCommand definition.arguments supports at most one variadic argument");
+    }
+    if (index !== normalized.length - 1) {
+      throw new TypeError("registerCommand definition.arguments variadic argument must be the final argument");
+    }
+  }
+
+  return normalized;
+}
+
 function validateFlagDefinitions(flags: unknown): void {
   if (!Array.isArray(flags)) {
     throw new TypeError("registerFlags flags requires an array of object definitions");
@@ -1590,6 +1713,61 @@ function createExtensionApi(
         trace,
       );
     }
+    try {
+      assertOptionalStringField("registerCommand definition.action", commandOrDefinition.action);
+      assertOptionalStringField("registerCommand definition.description", commandOrDefinition.description);
+      assertOptionalStringField("registerCommand definition.intent", commandOrDefinition.intent);
+      const action = resolveCommandDefinitionAction(normalizedCommand, commandOrDefinition.action);
+      const description = commandOrDefinition.description?.trim();
+      const intent = commandOrDefinition.intent?.trim();
+      const examples = normalizeOptionalStringArrayField("registerCommand definition.examples", commandOrDefinition.examples);
+      const failureHints = normalizeOptionalStringArrayField(
+        "registerCommand definition.failure_hints",
+        commandOrDefinition.failure_hints,
+      );
+      const argumentsDefinition = normalizeCommandDefinitionArguments(commandOrDefinition.arguments);
+
+      if (commandOrDefinition.flags !== undefined) {
+        assertExtensionCapability(extension, "schema", "registerCommand flags");
+        validateFlagDefinitions(commandOrDefinition.flags);
+        registrations.flags.push({
+          layer: extension.layer,
+          name: extension.name,
+          target_command: normalizedCommand,
+          flags: normalizeRegistrationRecordList("registerCommand definition.flags", commandOrDefinition.flags),
+        });
+      }
+
+      const registration: RegisteredExtensionCommandDefinition = {
+        layer: extension.layer,
+        name: extension.name,
+        command: normalizedCommand,
+        action,
+        examples,
+        failure_hints: failureHints,
+        arguments: argumentsDefinition,
+      };
+      if (description) {
+        registration.description = description;
+      }
+      if (intent) {
+        registration.intent = intent;
+      }
+      registrations.commands.push(registration);
+    } catch (error: unknown) {
+      const reason = error instanceof Error ? error.message : "registerCommand definition validation failed";
+      const trace = registerCommandTrace(
+        "definition",
+        normalizedCommand,
+        "{ name: string; run: (context) => unknown; action?: string; arguments?: object[]; flags?: object[]; }",
+        commandOrDefinition,
+        "Use schema-style metadata (action/arguments/flags/examples/intent) with valid values.",
+      );
+      throw createRegistrationValidationError(
+        `registerCommand definition metadata invalid (command="${normalizedCommand}", registration_index=${trace.registration_index}): ${reason}`,
+        trace,
+      );
+    }
     commands.handlers.push({
       layer: extension.layer,
       name: extension.name,
@@ -1870,10 +2048,12 @@ async function executeRegisteredHooks<TContext>(
 }
 
 function getRegistrationCounts(registrations: ExtensionRegistrationRegistry): ExtensionRegistrationCounts {
+  const commandCount = registrations.commands.length;
   const flagCount = registrations.flags.reduce((total, entry) => total + entry.flags.length, 0);
   const itemFieldCount = registrations.item_fields.reduce((total, entry) => total + entry.fields.length, 0);
   const itemTypeCount = registrations.item_types.reduce((total, entry) => total + entry.types.length, 0);
   return {
+    commands: commandCount,
     flags: flagCount,
     item_fields: itemFieldCount,
     item_types: itemTypeCount,

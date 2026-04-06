@@ -16,6 +16,7 @@ let activeExtensionRegistrations: Record<string, unknown> | null = null;
 
 function createExtensionRegistrations(): Record<string, unknown> {
   return {
+    commands: [],
     flags: [],
     item_fields: [],
     item_types: [],
@@ -1539,5 +1540,79 @@ describe("runSearch", () => {
         path: expect.stringMatching(/pm-fallback-toon\.toon$/),
       }),
     );
+  });
+
+  it("supports compact/full/fields projections and validates projection flags", async () => {
+    const projectedItem = makeFrontMatter({
+      id: "pm-projection",
+      title: "Projection title token",
+      status: "in_progress",
+      priority: 2,
+      type: "Task",
+      updated_at: "2026-02-18T00:03:00.000Z",
+    });
+    listAllFrontMatterMock.mockResolvedValue([projectedItem]);
+    readFileMock.mockResolvedValue(serializeDocument(projectedItem, "projection token body"));
+
+    const { runSearch } = await import("../../src/cli/commands/search.js");
+
+    const fullResult = await runSearch("token", { mode: "keyword" }, { path: "/tmp/pm-search" });
+    expect(fullResult.projection).toEqual({
+      mode: "full",
+      fields: null,
+    });
+    expect(fullResult.items[0]).toMatchObject({
+      item: {
+        id: "pm-projection",
+      },
+      matched_fields: expect.arrayContaining(["title"]),
+    });
+
+    const compactResult = await runSearch("token", { mode: "keyword", compact: true }, { path: "/tmp/pm-search" });
+    expect(compactResult.projection.mode).toBe("compact");
+    expect(compactResult.projection.fields).toEqual([
+      "id",
+      "title",
+      "status",
+      "type",
+      "priority",
+      "updated_at",
+      "score",
+      "matched_fields",
+    ]);
+    expect(compactResult.items[0]).toMatchObject({
+      id: "pm-projection",
+      title: "Projection title token",
+      status: "in_progress",
+      type: "Task",
+      priority: 2,
+      score: expect.any(Number),
+      matched_fields: expect.arrayContaining(["title"]),
+    });
+    expect((compactResult.items[0] as Record<string, unknown>).item).toBeUndefined();
+
+    const fieldResult = await runSearch(
+      "token",
+      { mode: "keyword", fields: "id,score,item.title,item.missing_field" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(fieldResult.projection).toEqual({
+      mode: "fields",
+      fields: ["id", "score", "item.title", "item.missing_field"],
+    });
+    const projected = fieldResult.items[0] as Record<string, unknown>;
+    expect(projected.id).toBe("pm-projection");
+    expect(typeof projected.score).toBe("number");
+    expect(projected["item.title"]).toBe("Projection title token");
+    expect(projected["item.missing_field"]).toBeNull();
+
+    await expect(
+      runSearch("token", { mode: "keyword", compact: true, full: true }, { path: "/tmp/pm-search" }),
+    ).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+    await expect(runSearch("token", { mode: "keyword", fields: " , " }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
   });
 });

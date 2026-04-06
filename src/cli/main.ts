@@ -85,6 +85,7 @@ import {
   type ExtensionPreflightRegistry,
   type ExtensionServiceRegistry,
   type PreflightRuntimeDecision,
+  type RegisteredExtensionCommandDefinition,
   type RegisteredExtensionFlagDefinitions,
   type RegisteredExtensionSchemaMigrationDefinition,
   type ExtensionRendererRegistry,
@@ -319,6 +320,307 @@ function collectDynamicExtensionFlagHelpByCommand(
     helpByCommand.set(commandPath, helpText);
   }
   return helpByCommand;
+}
+
+interface ExtensionCommandArgumentHelpDescriptor {
+  name: string;
+  required: boolean;
+  variadic: boolean;
+  description?: string;
+}
+
+interface ExtensionCommandHelpDescriptor {
+  command: string;
+  action: string;
+  description?: string;
+  intent?: string;
+  examples: string[];
+  failure_hints: string[];
+  arguments: ExtensionCommandArgumentHelpDescriptor[];
+  flags: Array<Record<string, unknown>>;
+  source?: {
+    layer: "global" | "project";
+    name: string;
+  };
+}
+
+function normalizeExtensionCommandAction(commandPath: string, action: string | undefined): string {
+  if (typeof action !== "string" || action.trim().length === 0) {
+    return commandPath.replace(/\s+/g, "-");
+  }
+  return action.trim().toLowerCase();
+}
+
+function normalizeExtensionCommandStringList(values: string[] | undefined): string[] {
+  if (!Array.isArray(values)) {
+    return [];
+  }
+  const normalized: string[] = [];
+  const seen = new Set<string>();
+  for (const value of values) {
+    if (typeof value !== "string") {
+      continue;
+    }
+    const trimmed = value.trim();
+    if (trimmed.length === 0 || seen.has(trimmed)) {
+      continue;
+    }
+    seen.add(trimmed);
+    normalized.push(trimmed);
+  }
+  return normalized;
+}
+
+function normalizeExtensionCommandArguments(
+  values: Array<{ name?: unknown; required?: unknown; variadic?: unknown; description?: unknown }> | undefined,
+): ExtensionCommandArgumentHelpDescriptor[] {
+  if (!Array.isArray(values)) {
+    return [];
+  }
+  return values
+    .map((value) => {
+      const name = typeof value.name === "string" ? value.name.trim() : "";
+      if (name.length === 0) {
+        return null;
+      }
+      const normalized: ExtensionCommandArgumentHelpDescriptor = {
+        name,
+        required: value.required === true,
+        variadic: value.variadic === true,
+      };
+      if (typeof value.description === "string" && value.description.trim().length > 0) {
+        normalized.description = value.description.trim();
+      }
+      return normalized;
+    })
+    .filter((entry): entry is ExtensionCommandArgumentHelpDescriptor => entry !== null);
+}
+
+function collectExtensionCommandHelpDescriptors(
+  commandHandlers: string[],
+  commandDefinitions: RegisteredExtensionCommandDefinition[],
+  flagRegistrations: RegisteredExtensionFlagDefinitions[],
+): Map<string, ExtensionCommandHelpDescriptor> {
+  const definitionsByCommand = new Map<string, ExtensionCommandHelpDescriptor>();
+  for (const definition of commandDefinitions) {
+    const commandPath = normalizeExtensionCommandPath(definition.command);
+    if (commandPath.length === 0) {
+      continue;
+    }
+    const description =
+      typeof definition.description === "string" && definition.description.trim().length > 0
+        ? definition.description.trim()
+        : undefined;
+    const intent =
+      typeof definition.intent === "string" && definition.intent.trim().length > 0
+        ? definition.intent.trim()
+        : undefined;
+    definitionsByCommand.set(commandPath, {
+      command: commandPath,
+      action: normalizeExtensionCommandAction(commandPath, definition.action),
+      description,
+      intent,
+      examples: normalizeExtensionCommandStringList(definition.examples),
+      failure_hints: normalizeExtensionCommandStringList(definition.failure_hints),
+      arguments: normalizeExtensionCommandArguments(definition.arguments),
+      flags: [],
+      source: {
+        layer: definition.layer,
+        name: definition.name,
+      },
+    });
+  }
+
+  const flagsByCommand = new Map<string, Array<Record<string, unknown>>>();
+  for (const registration of flagRegistrations) {
+    const commandPath = normalizeExtensionCommandPath(registration.target_command);
+    if (commandPath.length === 0) {
+      continue;
+    }
+    const existing = flagsByCommand.get(commandPath) ?? [];
+    existing.push(...registration.flags);
+    flagsByCommand.set(commandPath, existing);
+  }
+
+  const commandSet = new Set<string>();
+  for (const commandPath of commandHandlers) {
+    const normalized = normalizeExtensionCommandPath(commandPath);
+    if (normalized.length > 0) {
+      commandSet.add(normalized);
+    }
+  }
+  for (const commandPath of definitionsByCommand.keys()) {
+    commandSet.add(commandPath);
+  }
+  for (const commandPath of flagsByCommand.keys()) {
+    commandSet.add(commandPath);
+  }
+
+  const descriptors = new Map<string, ExtensionCommandHelpDescriptor>();
+  const sortedCommands = [...commandSet].sort((left, right) => left.localeCompare(right));
+  for (const commandPath of sortedCommands) {
+    const definition = definitionsByCommand.get(commandPath);
+    const flags = flagsByCommand.get(commandPath) ?? [];
+    if (definition) {
+      descriptors.set(commandPath, {
+        ...definition,
+        flags,
+      });
+      continue;
+    }
+    descriptors.set(commandPath, {
+      command: commandPath,
+      action: normalizeExtensionCommandAction(commandPath, undefined),
+      examples: [],
+      failure_hints: [],
+      arguments: [],
+      flags,
+    });
+  }
+
+  return descriptors;
+}
+
+function buildExtensionArgumentToken(argument: ExtensionCommandArgumentHelpDescriptor): string {
+  const variadicSuffix = argument.variadic ? "..." : "";
+  if (argument.required) {
+    return `<${argument.name}${variadicSuffix}>`;
+  }
+  return `[${argument.name}${variadicSuffix}]`;
+}
+
+function applyDynamicExtensionArguments(command: Command, descriptor: ExtensionCommandHelpDescriptor): void {
+  for (const argument of descriptor.arguments) {
+    command.argument(buildExtensionArgumentToken(argument), argument.description ?? "Extension argument.");
+  }
+}
+
+function formatDynamicExtensionOptionFlags(definition: Record<string, unknown>): string | null {
+  const visible = toOptionalBoolean(definition.visible);
+  if (visible === false) {
+    return null;
+  }
+  const longName = toNonEmptyFlagString(definition.long);
+  const shortName = toNonEmptyFlagString(definition.short);
+  const normalizedShort = shortName && shortName.startsWith("-") && !shortName.startsWith("--") ? shortName : null;
+  const normalizedLong = longName && longName.startsWith("--") && longName.length > 2 ? longName : null;
+  if (!normalizedLong && !normalizedShort) {
+    return null;
+  }
+  const optionValueName = toNonEmptyFlagString(definition.value_name);
+  const optionValueSuffix = optionValueName ? ` <${optionValueName}>` : "";
+  const optionNames = [normalizedShort, normalizedLong].filter((entry): entry is string => entry !== null);
+  return `${optionNames.join(", ")}${optionValueSuffix}`;
+}
+
+function formatDynamicExtensionOptionDescription(definition: Record<string, unknown>): string {
+  const description = toNonEmptyFlagString(definition.description) ?? "Extension-provided option.";
+  const markers: string[] = [];
+  if (toOptionalBoolean(definition.required) === true) {
+    markers.push("required");
+  }
+  if (toOptionalBoolean(definition.enabled) === false) {
+    markers.push("disabled");
+  }
+  const markerSuffix = markers.length > 0 ? ` [${markers.join(", ")}]` : "";
+  return `${description}${markerSuffix}`;
+}
+
+function applyDynamicExtensionOptions(command: Command, descriptor: ExtensionCommandHelpDescriptor): void {
+  const seen = new Set<string>();
+  for (const definition of descriptor.flags) {
+    const optionFlags = formatDynamicExtensionOptionFlags(definition);
+    if (!optionFlags || seen.has(optionFlags)) {
+      continue;
+    }
+    seen.add(optionFlags);
+    command.option(optionFlags, formatDynamicExtensionOptionDescription(definition));
+  }
+}
+
+function buildDynamicExtensionHelpOptionSummary(definition: Record<string, unknown>): HelpOptionSummary | null {
+  const flags = formatDynamicExtensionOptionFlags(definition);
+  if (!flags) {
+    return null;
+  }
+  const longName = toNonEmptyFlagString(definition.long);
+  const shortName = toNonEmptyFlagString(definition.short);
+  const normalizedLong = longName && longName.startsWith("--") && longName.length > 2 ? longName : null;
+  const normalizedShort = shortName && shortName.startsWith("-") && !shortName.startsWith("--") ? shortName : null;
+  const valueName = toNonEmptyFlagString(definition.value_name);
+  const required = toOptionalBoolean(definition.required) === true;
+  return {
+    flags,
+    long: normalizedLong,
+    short: normalizedShort,
+    description: formatDynamicExtensionOptionDescription(definition),
+    takes_value: valueName !== null,
+    value_required: valueName !== null,
+    value_name: valueName,
+    variadic: false,
+    required,
+    aliases: [],
+    alias_for: null,
+  };
+}
+
+function buildDynamicExtensionHelpOptionSummaries(descriptor: ExtensionCommandHelpDescriptor | undefined): HelpOptionSummary[] {
+  if (!descriptor) {
+    return [];
+  }
+  const summaries: HelpOptionSummary[] = [];
+  const seen = new Set<string>();
+  for (const definition of descriptor.flags) {
+    const summary = buildDynamicExtensionHelpOptionSummary(definition);
+    if (!summary || seen.has(summary.flags)) {
+      continue;
+    }
+    seen.add(summary.flags);
+    summaries.push(summary);
+  }
+  return summaries;
+}
+
+function mergeHelpOptionSummaries(base: HelpOptionSummary[], extension: HelpOptionSummary[]): HelpOptionSummary[] {
+  if (extension.length === 0) {
+    return base;
+  }
+  const merged = [...base];
+  const seen = new Set(base.map((entry) => entry.flags));
+  for (const entry of extension) {
+    if (seen.has(entry.flags)) {
+      continue;
+    }
+    seen.add(entry.flags);
+    merged.push(entry);
+  }
+  return merged;
+}
+
+function buildDynamicExtensionCommandMetadataHelp(descriptor: ExtensionCommandHelpDescriptor): string | null {
+  const lines: string[] = [];
+  if (descriptor.intent) {
+    lines.push(`Intent: ${descriptor.intent}`);
+  }
+  if (descriptor.action) {
+    lines.push(`Action contract: ${descriptor.action}`);
+  }
+  if (descriptor.examples.length > 0) {
+    lines.push("Examples:");
+    for (const example of descriptor.examples) {
+      lines.push(`  - ${example}`);
+    }
+  }
+  if (descriptor.failure_hints.length > 0) {
+    lines.push("Common failure hints:");
+    for (const hint of descriptor.failure_hints) {
+      lines.push(`  - ${hint}`);
+    }
+  }
+  if (lines.length === 0) {
+    return null;
+  }
+  return `\nExtension command metadata:\n  ${lines.join("\n  ")}`;
 }
 
 function commandAliases(command: Command): string[] {
@@ -765,7 +1067,34 @@ function buildJsonHelpPayload(rootProgram: Command, targetCommand: Command, argv
   const detailMode = resolveHelpDetailMode(argv);
   const resolvedPath = normalizeHelpCommandPath(getCommandPath(targetCommand));
   const commandPath = resolvedPath.length > 0 ? resolvedPath : undefined;
-  const narrative = resolveHelpNarrative(commandPath, detailMode);
+  const fallbackNarrative = resolveHelpNarrative(commandPath, detailMode);
+  const extensionDescriptor = commandPath ? activeRuntimeExtensionCommandDescriptors.get(commandPath) : undefined;
+  const extensionExamples = extensionDescriptor?.examples ?? [];
+  const extensionFailureHints = extensionDescriptor?.failure_hints ?? [];
+  const narrative = extensionDescriptor
+    ? {
+        intent: extensionDescriptor.intent ?? extensionDescriptor.description ?? fallbackNarrative.intent,
+        examples:
+          detailMode === "detailed"
+            ? extensionExamples.length > 0
+              ? [...extensionExamples]
+              : [...fallbackNarrative.examples]
+            : extensionExamples.length > 0
+              ? [extensionExamples[0]]
+              : [...fallbackNarrative.examples],
+        tips:
+          detailMode === "detailed"
+            ? extensionFailureHints.length > 0
+              ? [...extensionFailureHints]
+              : [...fallbackNarrative.tips]
+            : [],
+        detail_mode: detailMode,
+      }
+    : fallbackNarrative;
+  const optionSummaries = mergeHelpOptionSummaries(
+    buildHelpOptionSummaries(targetCommand),
+    buildDynamicExtensionHelpOptionSummaries(extensionDescriptor),
+  );
   const subcommands = buildHelpSubcommandSummaries(targetCommand);
   return {
     format: "pm_help_v1",
@@ -779,7 +1108,7 @@ function buildJsonHelpPayload(rootProgram: Command, targetCommand: Command, argv
     examples: narrative.examples,
     tips: narrative.tips,
     arguments: buildHelpArgumentSummaries(targetCommand),
-    options: buildHelpOptionSummaries(targetCommand),
+    options: optionSummaries,
     subcommands,
     has_subcommands: subcommands.length > 0,
   };
@@ -939,6 +1268,7 @@ interface RuntimeExtensionSnapshot {
   settings: PmSettings;
   commandHandlers: string[];
   commandFlagHelp: Map<string, string>;
+  commandDescriptors: Map<string, ExtensionCommandHelpDescriptor>;
   loadWarnings: string[];
   activationWarnings: string[];
   loadedCount: number;
@@ -947,6 +1277,7 @@ interface RuntimeExtensionSnapshot {
 }
 
 let runtimeExtensionSnapshotCache: { key: string; snapshot: RuntimeExtensionSnapshot | null } | null = null;
+let activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
 
 function formatHookWarnings(warnings: string[]): string {
   return warnings.join(",");
@@ -1326,6 +1657,11 @@ async function loadRuntimeExtensionSnapshot(pmRoot: string): Promise<RuntimeExte
       .filter((entry) => entry.length > 0)
       .sort((left, right) => left.localeCompare(right));
     const commandFlagHelp = collectDynamicExtensionFlagHelpByCommand(activationResult.registrations.flags);
+    const commandDescriptors = collectExtensionCommandHelpDescriptors(
+      commandHandlers,
+      activationResult.registrations.commands,
+      activationResult.registrations.flags,
+    );
     const snapshot: RuntimeExtensionSnapshot = {
       hooks: activationResult.hooks,
       commands: activationResult.commands,
@@ -1338,6 +1674,7 @@ async function loadRuntimeExtensionSnapshot(pmRoot: string): Promise<RuntimeExte
       settings,
       commandHandlers,
       commandFlagHelp,
+      commandDescriptors,
       loadWarnings: [...loadResult.warnings],
       activationWarnings: [...activationResult.warnings],
       loadedCount: loadResult.loaded.length,
@@ -1578,27 +1915,38 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
 async function registerDynamicExtensionCommandPaths(rootProgram: Command): Promise<void> {
   const bootstrapGlobalOptions = parseBootstrapGlobalOptions(process.argv.slice(2));
   if (bootstrapGlobalOptions.noExtensions) {
+    activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
     return;
   }
 
   const pmRoot = resolvePmRoot(process.cwd(), bootstrapGlobalOptions.path);
   const snapshot = await loadRuntimeExtensionSnapshot(pmRoot);
   if (!snapshot) {
+    activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
     return;
   }
+  activeRuntimeExtensionCommandDescriptors = new Map(snapshot.commandDescriptors);
   const typeRegistry = resolveItemTypeRegistry(snapshot.settings, snapshot.registrations);
   attachCreateUpdatePolicyHelpText(rootProgram, typeRegistry, process.argv.slice(2));
 
-  for (const commandPath of snapshot.commandHandlers) {
+  const commandPaths = [...new Set([...snapshot.commandHandlers, ...snapshot.commandDescriptors.keys()])].sort((left, right) =>
+    left.localeCompare(right),
+  );
+  for (const commandPath of commandPaths) {
     const pathParts = commandPath.split(" ").filter((part) => part.length > 0);
     if (pathParts.length === 0) {
       continue;
     }
+    const descriptor = snapshot.commandDescriptors.get(commandPath);
     const existingCommand = findCommandByPath(rootProgram, pathParts);
     const flagHelp = snapshot.commandFlagHelp.get(commandPath);
+    const metadataHelp = descriptor ? buildDynamicExtensionCommandMetadataHelp(descriptor) : null;
     if (existingCommand) {
       if (flagHelp) {
         existingCommand.addHelpText("after", flagHelp);
+      }
+      if (metadataHelp) {
+        existingCommand.addHelpText("after", metadataHelp);
       }
       continue;
     }
@@ -1607,8 +1955,17 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command): Promi
     if (!dynamicCommand) {
       continue;
     }
+    if (descriptor?.description) {
+      dynamicCommand.description(descriptor.description);
+    }
+    if (descriptor) {
+      applyDynamicExtensionArguments(dynamicCommand, descriptor);
+    }
     if (flagHelp) {
       dynamicCommand.addHelpText("after", flagHelp);
+    }
+    if (metadataHelp) {
+      dynamicCommand.addHelpText("after", metadataHelp);
     }
 
     dynamicCommand
@@ -1618,11 +1975,12 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command): Promi
         const globalOptions = getGlobalOptions(command);
         const startedAt = Date.now();
         const extensionFlagDefinitions = collectExtensionFlagDefinitionsForCommand(snapshot.registrations, commandPath);
-        const looseOptions = coerceLooseCommandOptionsWithFlagDefinitions(
-          parseLooseCommandOptions(command.args.map(String)),
+        const scopedOptions = extractCommandScopedOptions(
+          command,
+          command.args.map(String),
           extensionFlagDefinitions,
         );
-        const result = await runRequiredExtensionCommand(command, looseOptions, globalOptions);
+        const result = await runRequiredExtensionCommand(command, scopedOptions, globalOptions);
         await invalidateSearchCachesForMutation(globalOptions, result);
         printResult(result, globalOptions);
         if (globalOptions.profile) {
@@ -1834,6 +2192,7 @@ function normalizeListOptions(options: Record<string, unknown>): ListOptions {
     deadlineAfter: readListString("deadlineAfter"),
     assignee: readListString("assignee"),
     assigneeFilter: readListString("assigneeFilter"),
+    parent: readListString("parent"),
     sprint: readListString("sprint"),
     release: readListString("release"),
     limit: readListString("limit"),
@@ -1880,6 +2239,10 @@ function normalizeSearchOptions(options: Record<string, unknown>): Record<string
         keys: [target],
       },
     );
+  const fields = readSearchString("fields");
+  const compactRequested = options.compact === true;
+  const fullRequested = options.full === true;
+  const defaultCompact = !compactRequested && !fullRequested && fields === undefined;
   return {
     mode: readSearchString("mode"),
     includeLinked: options.includeLinked === true ? true : undefined,
@@ -1889,7 +2252,21 @@ function normalizeSearchOptions(options: Record<string, unknown>): Record<string
     deadlineBefore: readSearchString("deadlineBefore"),
     deadlineAfter: readSearchString("deadlineAfter"),
     limit: readSearchString("limit"),
+    fields,
+    compact: compactRequested || defaultCompact ? true : undefined,
+    full: fullRequested ? true : undefined,
   };
+}
+
+function normalizeSearchKeywordsInput(keywords: string[]): string {
+  const query = keywords
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0)
+    .join(" ");
+  if (query.length === 0) {
+    throw new PmCliError("Search query must not be empty", EXIT_CODE.USAGE);
+  }
+  return query;
 }
 
 function normalizeCalendarOptions(options: Record<string, unknown>): CalendarOptions {
@@ -2521,6 +2898,7 @@ function registerListCommand(name: string, description: string, status?: ItemSta
     .option("--assignee <value>", "Filter by assignee")
     .option("--assignee-filter <value>", "Filter assignee presence: assigned|unassigned")
     .option("--assignee_filter <value>", "Alias for --assignee-filter")
+    .option("--parent <value>", "Filter by parent item ID")
     .option("--sprint <value>", "Filter by sprint")
     .option("--release <value>", "Filter by release")
     .option("--limit <n>", "Limit returned item count")
@@ -2654,7 +3032,7 @@ registerContextCommand();
 
 program
   .command("search")
-  .argument("<keywords>", "Keyword query string")
+  .argument("<keywords...>", "Keyword query tokens")
   .description("Search items with keyword, semantic, or hybrid modes.")
   .option(
     "--mode <value>",
@@ -2666,11 +3044,14 @@ program
   .option("--priority <value>", "Filter by priority")
   .option("--deadline-before <value>", "Filter by deadline upper bound (ISO/date string or relative)")
   .option("--deadline-after <value>", "Filter by deadline lower bound (ISO/date string or relative)")
+  .option("--compact", "Render compact search hits (default)")
+  .option("--full", "Render full search hits with nested item payloads")
+  .option("--fields <value>", "Render custom comma-separated search hit fields")
   .option("--limit <n>", "Limit returned item count")
-  .action(async (keywords: string, options: Record<string, unknown>, command) => {
+  .action(async (keywords: string[], options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
-    const result = await runSearch(keywords, normalizeSearchOptions(options), globalOptions);
+    const result = await runSearch(normalizeSearchKeywordsInput(keywords), normalizeSearchOptions(options), globalOptions);
     printResult(result, globalOptions);
     if (globalOptions.profile) {
       printError(`profile:command=search took_ms=${Date.now() - startedAt}`);

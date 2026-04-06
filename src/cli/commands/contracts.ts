@@ -2,6 +2,10 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { activateExtensions, loadExtensions } from "../../core/extensions/index.js";
+import type {
+  RegisteredExtensionCommandDefinition,
+  RegisteredExtensionFlagDefinitions,
+} from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -44,6 +48,11 @@ export interface ContractsCommandOptions {
 interface CommandFlagSurface {
   command: string;
   flags: CliFlagContract[];
+  provider?: "core" | "extension" | "mixed";
+  extension_sources?: Array<{
+    layer: "global" | "project";
+    name: string;
+  }>;
 }
 
 export interface ContractsResult {
@@ -61,6 +70,7 @@ export interface ContractsResult {
   schema: Record<string, unknown>;
   command_flags?: CommandFlagSurface[];
   commander_aliases?: Record<string, CommanderOptionAliasContract[]>;
+  extension_commands?: ExtensionCommandContract[];
 }
 
 type PmToolAction = (typeof PM_TOOL_ACTIONS)[number];
@@ -77,6 +87,28 @@ export interface ContractsActionAvailability {
 interface RuntimeExtensionActionProbe {
   handlers: Set<string>;
   disabledReason: string | null;
+  commandDefinitions: RegisteredExtensionCommandDefinition[];
+  flagRegistrations: RegisteredExtensionFlagDefinitions[];
+}
+
+interface ExtensionCommandContract {
+  command: string;
+  action: string;
+  source: {
+    layer: "global" | "project";
+    name: string;
+  } | null;
+  description: string | null;
+  intent: string | null;
+  arguments: Array<{
+    name: string;
+    required: boolean;
+    variadic: boolean;
+    description: string | null;
+  }>;
+  flags: CliFlagContract[];
+  examples: string[];
+  failure_hints: string[];
 }
 
 const LIST_COMMAND_NAMES = new Set([
@@ -163,11 +195,269 @@ function normalizeCommandPath(value: string): string {
     .join(" ");
 }
 
+function normalizeActionNameFromCommand(commandPath: string): string {
+  return commandPath.replace(/\s+/g, "-");
+}
+
+function toOptionalTrimmedString(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function normalizeStringList(values: string[] | undefined): string[] {
+  if (!Array.isArray(values)) {
+    return [];
+  }
+  const normalized: string[] = [];
+  const seen = new Set<string>();
+  for (const value of values) {
+    const trimmed = toOptionalTrimmedString(value);
+    if (!trimmed || seen.has(trimmed)) {
+      continue;
+    }
+    seen.add(trimmed);
+    normalized.push(trimmed);
+  }
+  return normalized;
+}
+
+function toExtensionFlagContract(definition: Record<string, unknown>): CliFlagContract | null {
+  const longName = toOptionalTrimmedString(definition.long);
+  const shortName = toOptionalTrimmedString(definition.short);
+  const normalizedLong = longName && longName.startsWith("--") && longName.length > 2 ? longName : null;
+  const normalizedShort = shortName && shortName.startsWith("-") && !shortName.startsWith("--") ? shortName : null;
+  const flag = normalizedLong ?? normalizedShort;
+  if (!flag) {
+    return null;
+  }
+  const contract: CliFlagContract = { flag };
+  if (normalizedShort && normalizedLong) {
+    contract.short = normalizedShort;
+  }
+  return contract;
+}
+
+function collectExtensionFlagContractsByCommand(
+  registrations: RegisteredExtensionFlagDefinitions[],
+): Map<
+  string,
+  {
+    flags: CliFlagContract[];
+    sources: Array<{ layer: "global" | "project"; name: string }>;
+  }
+> {
+  const grouped = new Map<
+    string,
+    {
+      flags: CliFlagContract[];
+      sources: Array<{ layer: "global" | "project"; name: string }>;
+      dedupe: Set<string>;
+      sourceDedupe: Set<string>;
+    }
+  >();
+  for (const registration of registrations) {
+    const commandPath = normalizeCommandPath(registration.target_command);
+    if (commandPath.length === 0) {
+      continue;
+    }
+    const bucket = grouped.get(commandPath) ?? {
+      flags: [],
+      sources: [],
+      dedupe: new Set<string>(),
+      sourceDedupe: new Set<string>(),
+    };
+    const sourceKey = `${registration.layer}:${registration.name}`;
+    if (!bucket.sourceDedupe.has(sourceKey)) {
+      bucket.sourceDedupe.add(sourceKey);
+      bucket.sources.push({
+        layer: registration.layer,
+        name: registration.name,
+      });
+    }
+    for (const definition of registration.flags) {
+      const contract = toExtensionFlagContract(definition);
+      if (!contract) {
+        continue;
+      }
+      const key = `${contract.flag}|${contract.short ?? ""}`;
+      if (bucket.dedupe.has(key)) {
+        continue;
+      }
+      bucket.dedupe.add(key);
+      bucket.flags.push(contract);
+    }
+    grouped.set(commandPath, bucket);
+  }
+  const normalized = new Map<
+    string,
+    {
+      flags: CliFlagContract[];
+      sources: Array<{ layer: "global" | "project"; name: string }>;
+    }
+  >();
+  for (const [commandPath, bucket] of grouped.entries()) {
+    normalized.set(commandPath, {
+      flags: bucket.flags,
+      sources: bucket.sources.sort((left, right) => {
+        const layerOrder = left.layer.localeCompare(right.layer);
+        if (layerOrder !== 0) {
+          return layerOrder;
+        }
+        return left.name.localeCompare(right.name);
+      }),
+    });
+  }
+  return normalized;
+}
+
+function collectExtensionCommandContracts(runtimeProbe: RuntimeExtensionActionProbe): ExtensionCommandContract[] {
+  const flagsByCommand = collectExtensionFlagContractsByCommand(runtimeProbe.flagRegistrations);
+  const definitionsByCommand = new Map<string, ExtensionCommandContract>();
+  for (const definition of runtimeProbe.commandDefinitions) {
+    const command = normalizeCommandPath(definition.command);
+    if (command.length === 0) {
+      continue;
+    }
+    const action = toOptionalTrimmedString(definition.action) ?? normalizeActionNameFromCommand(command);
+    const args = Array.isArray(definition.arguments)
+      ? definition.arguments
+          .map((argument) => {
+            const name = toOptionalTrimmedString(argument.name);
+            if (!name) {
+              return null;
+            }
+            return {
+              name,
+              required: argument.required === true,
+              variadic: argument.variadic === true,
+              description: toOptionalTrimmedString(argument.description),
+            };
+          })
+          .filter(
+            (argument): argument is { name: string; required: boolean; variadic: boolean; description: string | null } =>
+              argument !== null,
+          )
+      : [];
+    definitionsByCommand.set(command, {
+      command,
+      action,
+      source: {
+        layer: definition.layer,
+        name: definition.name,
+      },
+      description: toOptionalTrimmedString(definition.description),
+      intent: toOptionalTrimmedString(definition.intent),
+      arguments: args,
+      flags: flagsByCommand.get(command)?.flags ?? [],
+      examples: normalizeStringList(definition.examples),
+      failure_hints: normalizeStringList(definition.failure_hints),
+    });
+  }
+
+  const extensionCommands = new Set<string>();
+  for (const command of runtimeProbe.handlers) {
+    extensionCommands.add(normalizeCommandPath(command));
+  }
+  for (const command of definitionsByCommand.keys()) {
+    extensionCommands.add(command);
+  }
+  for (const command of flagsByCommand.keys()) {
+    extensionCommands.add(command);
+  }
+
+  const contracts: ExtensionCommandContract[] = [];
+  for (const command of [...extensionCommands].sort((left, right) => left.localeCompare(right))) {
+    const definition = definitionsByCommand.get(command);
+    if (definition) {
+      contracts.push({
+        ...definition,
+        flags: definition.flags.length > 0 ? definition.flags : flagsByCommand.get(command)?.flags ?? [],
+      });
+      continue;
+    }
+    contracts.push({
+      command,
+      action: normalizeActionNameFromCommand(command),
+      source: null,
+      description: null,
+      intent: null,
+      arguments: [],
+      flags: flagsByCommand.get(command)?.flags ?? [],
+      examples: [],
+      failure_hints: [],
+    });
+  }
+  return contracts;
+}
+
+function extensionSchemaPropertyNameFromFlag(flag: CliFlagContract): string | null {
+  const normalized = flag.flag.replace(/^-+/, "").trim();
+  if (normalized.length === 0) {
+    return null;
+  }
+  const camelCased = normalized.replace(/-([a-z0-9])/g, (_match, char: string) => char.toUpperCase());
+  const cleaned = camelCased.replace(/[^a-zA-Z0-9]/g, "");
+  return cleaned.length > 0 ? cleaned : null;
+}
+
+function buildExtensionActionSchemaBranch(contract: ExtensionCommandContract): Record<string, unknown> {
+  const properties: Record<string, unknown> = {
+    action: {
+      type: "string",
+      const: contract.action,
+      description: contract.intent ?? contract.description ?? `Invoke extension command '${contract.command}'.`,
+    },
+  };
+  const required: string[] = ["action"];
+  for (const argument of contract.arguments) {
+    if (argument.variadic) {
+      properties[argument.name] = {
+        type: "array",
+        items: { type: "string" },
+        description: argument.description ?? `Variadic argument '${argument.name}' for extension action '${contract.action}'.`,
+      };
+    } else {
+      properties[argument.name] = {
+        type: "string",
+        description: argument.description ?? `Argument '${argument.name}' for extension action '${contract.action}'.`,
+      };
+    }
+    if (argument.required) {
+      required.push(argument.name);
+    }
+  }
+  for (const flag of contract.flags) {
+    const propertyName = extensionSchemaPropertyNameFromFlag(flag);
+    if (!propertyName || properties[propertyName] !== undefined) {
+      continue;
+    }
+    const isBooleanFlag = !flag.flag.includes(" ");
+    properties[propertyName] = {
+      type: isBooleanFlag ? ["boolean", "string"] : "string",
+      description: `Extension option '${flag.flag}' for action '${contract.action}'.`,
+    };
+  }
+
+  return {
+    type: "object",
+    properties,
+    required,
+    additionalProperties: true,
+    "x-extension-source": contract.source,
+    "x-extension-command": contract.command,
+  };
+}
+
 async function resolveRuntimeExtensionActionProbe(global: GlobalOptions): Promise<RuntimeExtensionActionProbe> {
   if (global.noExtensions) {
     return {
       handlers: new Set<string>(),
       disabledReason: "extensions_disabled",
+      commandDefinitions: [],
+      flagRegistrations: [],
     };
   }
 
@@ -176,6 +466,8 @@ async function resolveRuntimeExtensionActionProbe(global: GlobalOptions): Promis
     return {
       handlers: new Set<string>(),
       disabledReason: null,
+      commandDefinitions: [],
+      flagRegistrations: [],
     };
   }
 
@@ -197,20 +489,58 @@ async function resolveRuntimeExtensionActionProbe(global: GlobalOptions): Promis
     return {
       handlers,
       disabledReason: null,
+      commandDefinitions: activationResult.registrations.commands,
+      flagRegistrations: activationResult.registrations.flags,
     };
   } catch {
     return {
       handlers: new Set<string>(),
       disabledReason: "extension_runtime_probe_failed",
+      commandDefinitions: [],
+      flagRegistrations: [],
     };
   }
 }
 
-function resolveActionAvailability(action: string, runtimeProbe: RuntimeExtensionActionProbe): ContractsActionAvailability {
-  const extensionCommandPath = EXTENSION_ACTION_COMMAND_PATHS[action as PmToolAction];
-  if (!extensionCommandPath) {
-    return {
+interface ActionContractDescriptor {
+  action: string;
+  provider: "core" | "extension";
+  requires_extension: boolean;
+  command_path: string | null;
+}
+
+function collectActionContractDescriptors(extensionContracts: ExtensionCommandContract[]): ActionContractDescriptor[] {
+  const descriptors = new Map<string, ActionContractDescriptor>();
+  for (const action of PM_TOOL_ACTIONS) {
+    const extensionCommandPath = EXTENSION_ACTION_COMMAND_PATHS[action as PmToolAction];
+    descriptors.set(action, {
       action,
+      provider: extensionCommandPath ? "extension" : "core",
+      requires_extension: extensionCommandPath !== undefined,
+      command_path: extensionCommandPath ? normalizeCommandPath(extensionCommandPath) : null,
+    });
+  }
+  for (const contract of extensionContracts) {
+    if (descriptors.has(contract.action)) {
+      continue;
+    }
+    descriptors.set(contract.action, {
+      action: contract.action,
+      provider: "extension",
+      requires_extension: true,
+      command_path: normalizeCommandPath(contract.command),
+    });
+  }
+  return [...descriptors.values()].sort((left, right) => left.action.localeCompare(right.action));
+}
+
+function resolveActionAvailability(
+  descriptor: ActionContractDescriptor,
+  runtimeProbe: RuntimeExtensionActionProbe,
+): ContractsActionAvailability {
+  if (descriptor.provider === "core" && !descriptor.requires_extension) {
+    return {
+      action: descriptor.action,
       invocable: true,
       available: true,
       requires_extension: false,
@@ -219,25 +549,20 @@ function resolveActionAvailability(action: string, runtimeProbe: RuntimeExtensio
     };
   }
 
-  const normalizedCommandPath = normalizeCommandPath(extensionCommandPath);
-  const extensionCommandAvailable = runtimeProbe.handlers.has(normalizedCommandPath);
+  const commandPath = descriptor.command_path ? normalizeCommandPath(descriptor.command_path) : "";
+  const extensionCommandAvailable = commandPath.length > 0 && runtimeProbe.handlers.has(commandPath);
   const invocable = runtimeProbe.disabledReason === null && extensionCommandAvailable;
-  let disabledReason: string | null = null;
-  if (!invocable) {
-    disabledReason = runtimeProbe.disabledReason ?? "extension_command_not_registered";
-  }
-
   return {
-    action,
+    action: descriptor.action,
     invocable,
     available: invocable,
     requires_extension: true,
     provider: "extension",
-    disabled_reason: disabledReason,
+    disabled_reason: invocable ? null : runtimeProbe.disabledReason ?? "extension_command_not_registered",
   };
 }
 
-function resolveCommandFlags(command: string): CliFlagContract[] {
+function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   if (command === "create") {
     return CREATE_FLAG_CONTRACTS;
   }
@@ -277,12 +602,43 @@ function resolveCommandFlags(command: string): CliFlagContract[] {
   return GLOBAL_FLAG_CONTRACTS;
 }
 
-function buildCommandFlagSurface(commands: string[]): CommandFlagSurface[] {
+function mergeFlagContracts(primary: CliFlagContract[], secondary: CliFlagContract[]): CliFlagContract[] {
+  const merged: CliFlagContract[] = [];
+  const seen = new Set<string>();
+  for (const contract of [...primary, ...secondary]) {
+    const key = `${contract.flag}|${contract.short ?? ""}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    merged.push(contract);
+  }
+  return merged;
+}
+
+function buildCommandFlagSurface(
+  commands: string[],
+  extensionFlagMap: ReturnType<typeof collectExtensionFlagContractsByCommand>,
+): CommandFlagSurface[] {
   return commands
-    .map((command) => ({
-      command,
-      flags: resolveCommandFlags(command),
-    }))
+    .map((command) => {
+      const isCoreCommand = PM_CORE_COMMAND_NAMES.includes(command as (typeof PM_CORE_COMMAND_NAMES)[number]);
+      const coreFlags = isCoreCommand ? resolveCoreCommandFlags(command) : [];
+      const extensionFlags = extensionFlagMap.get(command);
+      const flags = mergeFlagContracts(coreFlags, extensionFlags?.flags ?? []);
+      const provider: CommandFlagSurface["provider"] =
+        coreFlags.length > 0 && (extensionFlags?.flags.length ?? 0) > 0
+          ? "mixed"
+          : isCoreCommand
+            ? "core"
+            : "extension";
+      return {
+        command,
+        flags,
+        provider,
+        extension_sources: extensionFlags?.sources,
+      };
+    })
     .sort((left, right) => left.command.localeCompare(right.command));
 }
 
@@ -304,31 +660,74 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
   const selectedCommand = normalizeToken(options.command);
   const schemaOnly = options.schemaOnly === true;
   const runtimeOnly = options.runtimeOnly === true;
-
-  if (selectedAction && !PM_TOOL_ACTIONS.includes(selectedAction as (typeof PM_TOOL_ACTIONS)[number])) {
+  const runtimeProbe = await resolveRuntimeExtensionActionProbe(global);
+  const extensionContracts = collectExtensionCommandContracts(runtimeProbe);
+  const extensionFlagMap = collectExtensionFlagContractsByCommand(runtimeProbe.flagRegistrations);
+  const actionDescriptors = collectActionContractDescriptors(extensionContracts);
+  const actionNames = new Set(actionDescriptors.map((entry) => entry.action));
+  if (selectedAction && !actionNames.has(selectedAction)) {
     throw new PmCliError(`Unknown action: "${options.action}".`, EXIT_CODE.USAGE);
   }
-  if (selectedCommand && !PM_CORE_COMMAND_NAMES.includes(selectedCommand as (typeof PM_CORE_COMMAND_NAMES)[number])) {
+
+  const commandCatalog = [...new Set([...PM_CORE_COMMAND_NAMES, ...extensionContracts.map((entry) => entry.command)])]
+    .map((entry) => normalizeCommandPath(entry))
+    .filter((entry) => entry.length > 0)
+    .sort((left, right) => left.localeCompare(right));
+  const commandNames = new Set(commandCatalog);
+  if (selectedCommand && !commandNames.has(selectedCommand)) {
     throw new PmCliError(`Unknown command: "${options.command}".`, EXIT_CODE.USAGE);
   }
 
-  const runtimeProbe = await resolveRuntimeExtensionActionProbe(global);
   const schema = PM_TOOL_PARAMETERS_SCHEMA as Record<string, unknown>;
-  const allActionAvailability = (selectedAction ? [selectedAction] : [...PM_TOOL_ACTIONS]).map((action) =>
-    resolveActionAvailability(action, runtimeProbe),
+  const schemaBranches = extractActionBranches(schema);
+  const schemaActionSet = new Set(
+    schemaBranches
+      .map((entry) => {
+        const properties = entry.properties;
+        if (typeof properties !== "object" || properties === null) {
+          return null;
+        }
+        const actionProperty = (properties as Record<string, unknown>).action;
+        if (typeof actionProperty !== "object" || actionProperty === null) {
+          return null;
+        }
+        const actionConst = (actionProperty as { const?: unknown }).const;
+        return typeof actionConst === "string" ? actionConst : null;
+      })
+      .filter((entry): entry is string => entry !== null),
+  );
+  const extensionBranches = extensionContracts
+    .filter((contract) => !schemaActionSet.has(contract.action))
+    .map((contract) => buildExtensionActionSchemaBranch(contract));
+  const mergedSchema =
+    extensionBranches.length > 0
+      ? {
+          ...schema,
+          oneOf: [...schemaBranches, ...extensionBranches],
+        }
+      : schema;
+
+  const scopedActionDescriptors = selectedAction
+    ? actionDescriptors.filter((descriptor) => descriptor.action === selectedAction)
+    : actionDescriptors;
+  const allActionAvailability = scopedActionDescriptors.map((descriptor) =>
+    resolveActionAvailability(descriptor, runtimeProbe),
   );
   const actionAvailability =
     runtimeOnly && !selectedAction ? allActionAvailability.filter((entry) => entry.invocable) : allActionAvailability;
   const actions = actionAvailability.map((entry) => entry.action);
-  let filteredSchema = filterSchemaByAction(schema, selectedAction);
+  let filteredSchema = filterSchemaByAction(mergedSchema, selectedAction);
   if (runtimeOnly && !selectedAction) {
     filteredSchema = filterSchemaByActions(filteredSchema, new Set(actions));
   }
-  const commands = selectedCommand ? [selectedCommand] : [...PM_CORE_COMMAND_NAMES];
+  const commands = selectedCommand ? [selectedCommand] : commandCatalog;
+  const extensionCommandContracts = selectedCommand
+    ? extensionContracts.filter((entry) => entry.command === selectedCommand)
+    : extensionContracts;
 
   const result: ContractsResult = {
-    schema_version: typeof schema["x-schema-version"] === "string" ? (schema["x-schema-version"] as string) : null,
-    schema_id: typeof schema.$id === "string" ? (schema.$id as string) : null,
+    schema_version: typeof mergedSchema["x-schema-version"] === "string" ? (mergedSchema["x-schema-version"] as string) : null,
+    schema_id: typeof mergedSchema.$id === "string" ? (mergedSchema.$id as string) : null,
     selected: {
       action: selectedAction ?? null,
       command: selectedCommand ?? null,
@@ -339,10 +738,11 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
     action_availability: actionAvailability,
     commands,
     schema: filteredSchema,
+    extension_commands: extensionCommandContracts,
   };
 
   if (!schemaOnly) {
-    result.command_flags = buildCommandFlagSurface(commands);
+    result.command_flags = buildCommandFlagSurface(commands, extensionFlagMap);
     result.commander_aliases = buildCommanderAliasSurface();
   }
 

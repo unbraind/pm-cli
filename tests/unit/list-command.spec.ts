@@ -14,6 +14,7 @@ function createItem(context: TempPmContext, params: {
   tags: string;
   deadline: string;
   assignee?: string;
+  parent?: string;
   sprint?: string;
   release?: string;
   body?: string;
@@ -64,6 +65,9 @@ function createItem(context: TempPmContext, params: {
   ];
   if (params.sprint !== undefined) {
     args.push("--sprint", params.sprint);
+  }
+  if (params.parent !== undefined) {
+    args.push("--parent", params.parent);
   }
   if (params.release !== undefined) {
     args.push("--release", params.release);
@@ -351,6 +355,58 @@ describe("runList", () => {
 
       const noReleaseMatch = await runList(undefined, { release: "v99.0" }, { path: context.pmPath });
       expect(noReleaseMatch.count).toBe(0);
+    });
+  });
+
+  it("applies parent filters for hierarchical list views", async () => {
+    await withTempPmPath(async (context) => {
+      const parentA = createItem(context, {
+        title: "Parent A",
+        status: "open",
+        priority: "1",
+        tags: "hierarchy,parent",
+        deadline: "+1d",
+      });
+      const parentB = createItem(context, {
+        title: "Parent B",
+        status: "open",
+        priority: "1",
+        tags: "hierarchy,parent",
+        deadline: "+1d",
+      });
+      createItem(context, {
+        title: "Child A1",
+        status: "open",
+        priority: "2",
+        tags: "hierarchy,child",
+        deadline: "+1d",
+        parent: parentA,
+      });
+      createItem(context, {
+        title: "Child B1",
+        status: "open",
+        priority: "2",
+        tags: "hierarchy,child",
+        deadline: "+1d",
+        parent: parentB,
+      });
+      createItem(context, {
+        title: "Unparented Child",
+        status: "open",
+        priority: "2",
+        tags: "hierarchy,child",
+        deadline: "+1d",
+      });
+
+      const parentFiltered = await runList(undefined, { parent: parentA }, { path: context.pmPath });
+      expect(parentFiltered.count).toBe(1);
+      expect(parentFiltered.items[0].title).toBe("Child A1");
+      expect(parentFiltered.items[0].parent).toBe(parentA);
+      expect(parentFiltered.filters.parent).toBe(parentA);
+
+      const parentMiss = await runList(undefined, { parent: "pm-missing-parent" }, { path: context.pmPath });
+      expect(parentMiss.count).toBe(0);
+      expect(parentMiss.filters.parent).toBe("pm-missing-parent");
     });
   });
 });

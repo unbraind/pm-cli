@@ -166,7 +166,7 @@ function buildPmCliErrorGuidance(rawMessage: string, context?: PmCliErrorContext
         happened: `No item with id "${itemNotFound[1]}" exists in the active tracker scope.`,
         required: "Use an existing item ID from current tracker data.",
         why: "Mutation and read commands operate only on known IDs.",
-        examples: ["pm list-open --limit 20", `pm get ${itemNotFound[1]}`],
+        examples: ['pm list-open --limit 20', 'pm search "<keyword>" --limit 10'],
         nextSteps: ["Confirm the active --path/PM_PATH scope, then retry with a valid id."],
       }),
       rawMessage,

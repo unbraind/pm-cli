@@ -172,6 +172,7 @@ export const PI_LIST_FILTER_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "deadlineAfter", flag: "--deadline-after" },
   { param: "assignee", flag: "--assignee" },
   { param: "assigneeFilter", flag: "--assignee-filter" },
+  { param: "parent", flag: "--parent" },
   { param: "sprint", flag: "--sprint" },
   { param: "release", flag: "--release" },
   { param: "limit", flag: "--limit" },
@@ -184,6 +185,7 @@ export const PI_SEARCH_FILTER_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "priority", flag: "--priority" },
   { param: "deadlineBefore", flag: "--deadline-before" },
   { param: "deadlineAfter", flag: "--deadline-after" },
+  { param: "fields", flag: "--fields" },
   { param: "limit", flag: "--limit" },
 ];
 
@@ -356,6 +358,7 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--assignee" },
   { flag: "--assignee-filter" },
   { flag: "--assignee_filter" },
+  { flag: "--parent" },
   { flag: "--sprint" },
   { flag: "--release" },
   { flag: "--limit" },
@@ -629,6 +632,9 @@ export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = [
 export const SEARCH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--mode" },
   { flag: "--include-linked" },
+  { flag: "--compact" },
+  { flag: "--full" },
+  { flag: "--fields" },
   { flag: "--limit" },
   { flag: "--type" },
   { flag: "--tag" },
@@ -788,6 +794,7 @@ export const LIST_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContrac
   { target: "deadlineAfter", keys: ["deadlineAfter"] },
   { target: "assignee", keys: ["assignee"] },
   { target: "assigneeFilter", keys: ["assigneeFilter", "assignee_filter"] },
+  { target: "parent", keys: ["parent"] },
   { target: "sprint", keys: ["sprint"] },
   { target: "release", keys: ["release"] },
   { target: "limit", keys: ["limit"] },
@@ -801,6 +808,7 @@ export const SEARCH_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContr
   { target: "priority", keys: ["priority"] },
   { target: "deadlineBefore", keys: ["deadlineBefore"] },
   { target: "deadlineAfter", keys: ["deadlineAfter"] },
+  { target: "fields", keys: ["fields"] },
   { target: "limit", keys: ["limit"] },
 ];
 
@@ -880,6 +888,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   ref: { type: "string" },
   query: { type: "string" },
   keywords: { type: "string" },
+  fields: { type: "string" },
   prefix: { type: "string" },
   scope: { type: "string", enum: ["project", "global"] },
   contractAction: { type: "string" },
@@ -936,6 +945,8 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   outcome: { type: "string" },
   whyNow: { type: "string" },
   mode: { type: "string", enum: ["keyword", "semantic", "hybrid"] },
+  compact: { type: "boolean" },
+  full: { type: "boolean" },
   view: { type: "string", enum: ["agenda", "day", "week", "month"] },
   date: { type: "string" },
   from: { type: "string" },
@@ -1071,6 +1082,8 @@ const SEARCH_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   "keywords",
   "mode",
   "includeLinked",
+  "compact",
+  "full",
   ...PI_SEARCH_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
 ]);
 
@@ -1338,6 +1351,10 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     description: "Assignee presence selector for list/calendar/context/comments-audit filters.",
     examples: ["assigned", "unassigned"],
   },
+  parent: {
+    description: "Parent item ID filter for hierarchical list queries.",
+    examples: ["pm-epic01"],
+  },
   unset: {
     description: "Repeatable list of front-matter fields to clear explicitly during create/update mutations.",
     examples: [["deadline", "assignee"], ["close-reason"]],
@@ -1493,6 +1510,22 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   query: {
     description: "Search query text for search action.",
+  },
+  keywords: {
+    description: "Alias for query in search action payloads.",
+  },
+  includeLinked: {
+    description: "Include readable linked docs/files/tests content in keyword and hybrid lexical scoring.",
+  },
+  compact: {
+    description: "Render compact search hit projection output.",
+  },
+  full: {
+    description: "Render full nested search hit payload output.",
+  },
+  fields: {
+    description: "Comma-separated custom search hit fields for projection output.",
+    examples: ["id,title,score,matched_fields"],
   },
   shell: {
     description: "Shell target for completion generation.",

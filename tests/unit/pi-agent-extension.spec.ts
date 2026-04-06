@@ -491,6 +491,12 @@ describe("Pi agent extension wrapper for pm", () => {
       expect.arrayContaining([expect.objectContaining({ required: ["query"] }), expect.objectContaining({ required: ["keywords"] })]),
     );
     expect(schemaProperty(searchSchema, "includeLinked").type).toBe("boolean");
+    expect(schemaProperty(searchSchema, "compact").type).toBe("boolean");
+    expect(schemaProperty(searchSchema, "full").type).toBe("boolean");
+    expect(schemaProperty(searchSchema, "fields").type).toBe("string");
+
+    const listOpenSchema = schemaForAction(tool.parameters as Record<string, unknown>, "list-open");
+    expect(schemaProperty(listOpenSchema, "parent").type).toBe("string");
 
     const extensionInstallSchema = schemaForAction(tool.parameters as Record<string, unknown>, "extension-install");
     expect(extensionInstallSchema.required).toEqual(["action"]);
@@ -682,6 +688,7 @@ describe("Pi agent extension wrapper for pm", () => {
         type: "Task",
         tag: "pi",
         priority: "1",
+        parent: "pm-epic01",
         deadlineBefore: "2026-12-31T00:00:00.000Z",
         deadlineAfter: "2026-01-01T00:00:00.000Z",
         limit: "20",
@@ -699,6 +706,8 @@ describe("Pi agent extension wrapper for pm", () => {
       "2026-12-31T00:00:00.000Z",
       "--deadline-after",
       "2026-01-01T00:00:00.000Z",
+      "--parent",
+      "pm-epic01",
       "--limit",
       "20",
     ]);
@@ -963,9 +972,25 @@ describe("Pi agent extension wrapper for pm", () => {
         query: "linked parity",
         mode: "keyword",
         includeLinked: true,
+        compact: true,
+        full: true,
+        fields: "id,title",
         limit: "3",
       }),
-    ).toEqual(["--json", "search", "linked parity", "--mode", "keyword", "--include-linked", "--limit", "3"]);
+    ).toEqual([
+      "--json",
+      "search",
+      "linked parity",
+      "--mode",
+      "keyword",
+      "--include-linked",
+      "--compact",
+      "--full",
+      "--fields",
+      "id,title",
+      "--limit",
+      "3",
+    ]);
 
     expect(
       buildPmCliArgs({

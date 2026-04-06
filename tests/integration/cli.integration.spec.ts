@@ -1905,6 +1905,26 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const createJson = createResult.json as { item: { id: string } };
       const id = createJson.item.id;
 
+      const childCreateResult = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Integration Child Item",
+          "--description",
+          "Parent-scoped list validation child",
+          "--type",
+          "Task",
+          "--create-mode",
+          "progressive",
+          "--parent",
+          id,
+        ],
+        { expectJson: true },
+      );
+      expect(childCreateResult.code).toBe(0);
+      const childId = (childCreateResult.json as { item: { id: string } }).item.id;
+
       const historyAfterCreate = context.runCli(["history", id, "--json"], { expectJson: true });
       expect(historyAfterCreate.code).toBe(0);
       const historyAfterCreateJson = historyAfterCreate.json as { count: number; history: Array<{ op: string }> };
@@ -1913,15 +1933,77 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const listOpen = context.runCli(["list-open", "--type", "Task", "--limit", "5", "--json"], { expectJson: true });
       expect(listOpen.code).toBe(0);
+      const parentScopedList = context.runCli(["list-open", "--parent", id, "--limit", "10", "--json"], {
+        expectJson: true,
+      });
+      expect(parentScopedList.code).toBe(0);
+      const parentScopedListJson = parentScopedList.json as {
+        count: number;
+        filters: { parent: string | null };
+        items: Array<{ id: string; parent?: string }>;
+      };
+      expect(parentScopedListJson.count).toBeGreaterThanOrEqual(1);
+      expect(parentScopedListJson.filters.parent).toBe(id);
+      expect(parentScopedListJson.items.some((entry) => entry.id === childId)).toBe(true);
+      expect(parentScopedListJson.items.every((entry) => entry.parent === id)).toBe(true);
 
       const getResult = context.runCli(["get", id, "--json"], { expectJson: true });
       expect(getResult.code).toBe(0);
 
       const searchResult = context.runCli(["search", "integration", "--json", "--limit", "5"], { expectJson: true });
       expect(searchResult.code).toBe(0);
-      const searchJson = searchResult.json as { mode: string; items: Array<{ item: { id: string } }> };
+      const searchJson = searchResult.json as {
+        mode: string;
+        projection: { mode: string; fields: string[] | null };
+        items: Array<{ id: string; matched_fields: string[] }>;
+      };
       expect(searchJson.mode).toBe("keyword");
-      expect(searchJson.items.some((entry) => entry.item.id === id)).toBe(true);
+      expect(searchJson.projection.mode).toBe("compact");
+      expect(searchJson.items.some((entry) => entry.id === id)).toBe(true);
+
+      const unquotedMultiWordSearch = context.runCli(
+        ["search", "integration", "smoke", "--json", "--limit", "5"],
+        { expectJson: true },
+      );
+      expect(unquotedMultiWordSearch.code).toBe(0);
+      const unquotedSearchJson = unquotedMultiWordSearch.json as {
+        query: string;
+        projection: { mode: string };
+        items: Array<{ id: string }>;
+      };
+      expect(unquotedSearchJson.query).toBe("integration smoke");
+      expect(unquotedSearchJson.projection.mode).toBe("compact");
+      expect(unquotedSearchJson.items.some((entry) => entry.id === id)).toBe(true);
+
+      const fullProjectionSearch = context.runCli(
+        ["search", "integration", "--json", "--full", "--limit", "5"],
+        { expectJson: true },
+      );
+      expect(fullProjectionSearch.code).toBe(0);
+      const fullProjectionJson = fullProjectionSearch.json as {
+        projection: { mode: string; fields: string[] | null };
+        items: Array<{ item: { id: string } }>;
+      };
+      expect(fullProjectionJson.projection).toEqual({
+        mode: "full",
+        fields: null,
+      });
+      expect(fullProjectionJson.items.some((entry) => entry.item.id === id)).toBe(true);
+
+      const fieldsProjectionSearch = context.runCli(
+        ["search", "integration", "--json", "--fields", "id,title,score", "--limit", "5"],
+        { expectJson: true },
+      );
+      expect(fieldsProjectionSearch.code).toBe(0);
+      const fieldsProjectionJson = fieldsProjectionSearch.json as {
+        projection: { mode: string; fields: string[] | null };
+        items: Array<Record<string, unknown>>;
+      };
+      expect(fieldsProjectionJson.projection).toEqual({
+        mode: "fields",
+        fields: ["id", "title", "score"],
+      });
+      expect(fieldsProjectionJson.items.some((entry) => entry.id === id)).toBe(true);
 
       const reindexResult = context.runCli(["reindex", "--json"], { expectJson: true });
       expect(reindexResult.code).toBe(0);

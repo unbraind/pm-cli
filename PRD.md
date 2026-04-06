@@ -863,6 +863,7 @@ List/search filters:
 - `--type`
 - `--tag`
 - `--priority`
+- `--parent` (`list*` commands; exact match on parent item ID for hierarchical scoping)
 - `--limit`
 - `--offset` (`list*` commands; apply offset before limit for deterministic pagination)
 - `--stream` (`list*` commands; JSON-only newline-delimited item streaming)
@@ -873,6 +874,7 @@ List/search filters:
 - `--sprint` (exact match on `sprint` field)
 - `--release` (exact match on `release` field)
 - `--include-body` (list* only; when enabled, each returned item includes `body`; default list rows remain front-matter-only)
+- `--compact` / `--full` / `--fields <csv>` (`search` only; mutually exclusive projection controls, default compact)
 
 Mutation safety:
 
@@ -894,23 +896,23 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 
 - Existing CLI command paths and aliases remain valid.
 - Pi tool input validation uses strict action-scoped schema branches (schema v4) with per-action required fields and `additionalProperties: false`.
-- `pm contracts` provides deterministic runtime contract introspection (`--action`, `--command`, `--schema-only`, `--runtime-only`, `--active-only`) for agent callers, including action availability metadata (`action_availability`) with invocability/provider diagnostics.
-- Command output remains deterministic; `--json` exposes full machine payloads and JSON error envelopes.
+- `pm contracts` provides deterministic runtime contract introspection (`--action`, `--command`, `--schema-only`, `--runtime-only`, `--active-only`) for agent callers, including action availability metadata (`action_availability`) with invocability/provider diagnostics and additive extension command/action schema inclusion (`extension_commands`).
+- Command output remains deterministic; `--json` exposes command-contract machine payloads and JSON error envelopes.
 
 | Command | Key inputs | Output object |
 | --- | --- | --- |
 | `pm init [PREFIX]` | optional prefix, `--path` | `{ ok, path, settings, created_dirs, warnings }` |
 | `pm extension [target] --install\|--uninstall\|--explore\|--manage\|--doctor\|--adopt\|--adopt-all\|--activate\|--deactivate` | exactly one lifecycle action, optional `target` (required for install/uninstall/activate/deactivate/adopt; disallowed for `adopt-all`; `doctor` supports `pm extension doctor` target syntax), scope flags (`--project` default, `--local` alias, `--global`), install/adopt source selectors (`target`, `--gh`, `--github`, optional `--ref`), bundled aliases (`beads`, `todos`), doctor detail mode (`--detail summary\|deep`), doctor trace mode (`--trace` with deep detail), manage runtime parity probe (`--runtime-probe`), optional managed-state remediation (`--fix-managed-state`), doctor strict warning exits (`--strict-exit`, alias `--fail-on-warn`) | `{ ok, action, scope, roots, warnings, details }` where `details` is action-specific: `explore/manage` include per-extension state/status fields (`active` compatibility alias, `enabled`, `runtime_active`, `activation_status`) plus `update_check_status`/`update_check_reason`; `manage` includes optional `runtime_probe` and `managed_state_fix` metadata; `manage`/`doctor` include triage rollups (`warning_codes`, `update_health_coverage`, `update_health_partial`, `update_check_status_totals`, remediation) with top-level warning parity; doctor summary includes blocking-failure indicators (`blocking_failure_count`, `has_blocking_failures`), trace status (`trace_enabled`), and capability metadata (`capability_contract_version`/`capability_guidance`/`capability_contract`); `adopt` reports adoption result/provenance (`adopted`, `already_managed?`, `source`) without reinstalling extension files; `adopt-all` reports bulk adoption totals and per-extension adoption rows |
-| `pm list` | optional filter flags (including `--include-body`, `--offset`, and JSON-only `--stream`); excludes terminal statuses (`closed`, `canceled`) by default | `{ items, count, filters, now }` (or streamed newline-delimited rows when `--json --stream`) |
-| `pm list-all` | optional filter flags (including `--include-body`, `--offset`, and JSON-only `--stream`); includes all statuses including terminal | `{ items, count, filters, now }` (or streamed newline-delimited rows when `--json --stream`) |
-| `pm list-draft` | optional type/tag/priority/deadline/assignee/sprint/release/include-body/offset filters plus JSON-only stream mode | `{ items, count, filters, now }` (or streamed newline-delimited rows when `--json --stream`) |
-| `pm list-open` | optional type/tag/priority/deadline/assignee/sprint/release/include-body/offset filters plus JSON-only stream mode | `{ items, count, filters, now }` (or streamed newline-delimited rows when `--json --stream`) |
+| `pm list` | optional filter flags (including `--parent`, `--include-body`, `--offset`, and JSON-only `--stream`); excludes terminal statuses (`closed`, `canceled`) by default | `{ items, count, filters, now }` (or streamed newline-delimited rows when `--json --stream`) |
+| `pm list-all` | optional filter flags (including `--parent`, `--include-body`, `--offset`, and JSON-only `--stream`); includes all statuses including terminal | `{ items, count, filters, now }` (or streamed newline-delimited rows when `--json --stream`) |
+| `pm list-draft` | optional type/tag/priority/parent/deadline/assignee/sprint/release/include-body/offset filters plus JSON-only stream mode | `{ items, count, filters, now }` (or streamed newline-delimited rows when `--json --stream`) |
+| `pm list-open` | optional type/tag/priority/parent/deadline/assignee/sprint/release/include-body/offset filters plus JSON-only stream mode | `{ items, count, filters, now }` (or streamed newline-delimited rows when `--json --stream`) |
 | `pm list-in-progress` | same as above | `{ items, count, filters, now }` |
 | `pm list-blocked` | same as above | `{ items, count, filters, now }` |
 | `pm list-closed` | same as above | `{ items, count, filters, now }` |
 | `pm list-canceled` | same as above | `{ items, count, filters, now }` |
 | `pm get <ID>` | normalized id | `{ item, body, linked: { files, tests, docs } }` |
-| `pm search <keywords>` | keyword query + optional mode/include-linked/limit filters | `{ query, mode, items, count, filters, now }` |
+| `pm search <keywords...>` | keyword query tokens + optional mode/include-linked/compact/full/fields/limit filters | `{ query, mode, items, count, filters, projection, now }` |
 | `pm reindex` | optional `--mode` (`keyword|semantic|hybrid` baseline) and additive `--progress` stderr visibility | `{ ok, mode, total_items, artifacts, warnings, generated_at }` |
 | `pm calendar` / `pm cal` | `--view agenda|day|week|month`, `--date`, `--from`/`--to` (agenda), `--past`, list-like filters (`type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`), source controls (`--include`), and recurrence bounds (`--recurrence-lookahead-days`, `--recurrence-lookback-days`, `--occurrence-limit`) | `{ view, output_default, now, anchor, range, filters, summary, events, days }` where `summary` includes deterministic aggregate breakdown fields (`by_kind`, `by_type`, `by_status`, `recurring_events`) and markdown output includes rich event detail tokens by default |
 | `pm context` / `pm ctx` | `--date`, `--from`/`--to`, `--past`, list-like filters (`type`, `tag`, `priority`, `assignee`, `sprint`, `release`, `limit`), `--format` | `{ output_default, now, window, filters, summary, high_level, low_level, blocked_fallback, agenda }` (defaults to TOON unless `--format` or `--json` override) |
@@ -940,7 +942,7 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | `pm validate` | optional scoped checks (`--check-metadata`, `--check-resolution`, `--check-lifecycle`, `--check-stale-blockers`, `--check-files`, `--check-command-references`, `--check-history-drift`; default all checks); metadata checks accept `--metadata-profile core|strict|custom`; lifecycle checks surface active closure-like metadata and active items whose parents are terminal, with optional stale blocker heuristics when `--check-stale-blockers` is enabled; file checks accept `--scan-mode default|tracked-all|tracked-all-strict` plus `--include-pm-internals` opt-in and report filtered + raw candidate metrics (`candidate_total`, `candidate_scanned`, `candidate_total_raw`, `candidate_scanned_raw`) plus structured exclusion summaries (`excluded_by_reason`); resolution checks include default remediation command templates for missing resolution fields; strict warning exits via `--strict-exit` (alias `--fail-on-warn`) | `{ ok, checks, warnings, generated_at }` where metadata details include profile/source/fallback visibility fields, lifecycle details include deterministic per-category row summaries, and tracked-all-strict visibility includes explicit file-check detail flags (`strict_mode_forces_pm_internals`, `strict_mode_forces_pm_internals_notice`) plus warning token `validate_files_tracked_all_strict_forces_pm_internals` when strict mode force-enables PM internals |
 | `pm config <project\|global> <get\|set\|list\|export> [key]` | scope + action; `get/set` require key, `list/export` reject key; policy/format/criterion flags apply where relevant | `get/set`: existing key-specific result shape; `list`: `{ scope, keys, count, settings_path, changed, warnings? }`; `export`: `{ scope, values, settings_path, changed, warnings? }` |
 | `pm gc` | none | `{ ok, removed, retained, warnings, generated_at }` |
-| `pm contracts [--action <value>] [--command <value>] [--schema-only] [--runtime-only|--active-only]` | optional action/command filters, schema-only mode, and runtime invocability filtering for machine contract introspection | `{ schema_version, schema_id, selected, actions, action_availability, commands, schema, command_flags?, commander_aliases? }` |
+| `pm contracts [--action <value>] [--command <value>] [--schema-only] [--runtime-only|--active-only]` | optional action/command filters, schema-only mode, and runtime invocability filtering for machine contract introspection | `{ schema_version, schema_id, selected, actions, action_availability, commands, schema, extension_commands, command_flags?, commander_aliases? }` |
 | `pm docs <ID> --add/--add-glob/--remove/--migrate/--validate-paths/--audit` | id + doc refs (`--add/--remove` accept CSV key/value, markdown `key: value`, or stdin token `-`); optional glob expansion via repeatable `--add-glob` (plain glob or `pattern=<glob>,scope=<scope>,note=<text>`); optional additive linked-path hygiene (`--migrate from=<old>,to=<new>`, path existence validation, cross-item audit) | `{ id, docs, changed, count, migrations_applied, validation, audit }` |
 | `pm deps <ID> --format tree|graph` | id + optional output selector (`tree` default, `graph` for node/edge projection) | `{ id, format, node_count, edge_count, missing_count, tree? graph? }` |
 | `pm history <ID> --limit/--diff/--verify` | id + optional limit + additive diagnostics (`--diff` changed-field patch summaries, `--verify` hash-chain/current-hash verification) | `{ id, history, count, limit, diff, verify }` |
@@ -983,7 +985,7 @@ Determinism requirements:
 - Stable key order in every object.
 - Stable array order for `items` (default sort: non-terminal before terminal, then priority asc, then updated_at desc, then id asc).
 - `pm list` excludes terminal statuses (`closed`, `canceled`) by default; `pm list-all` includes all statuses.
-- JSON output preserves full fields (including explicit `null` placeholders where applicable by command contract).
+- JSON output preserves command-contract fields (including explicit `null` placeholders where applicable by command contract); `pm search` compact projection is default unless `--full` or `--fields` is provided.
 - TOON output is a sparse projection that omits `null`/`undefined`/empty arrays/empty objects while preserving non-empty values.
 - `--quiet` prints nothing to stdout but still uses exit codes.
 - Stdin token paths requiring piped input fail fast on interactive TTY stdin with actionable guidance instead of waiting indefinitely for EOF.
@@ -994,13 +996,14 @@ Determinism requirements:
 
 ### 13.0 Command contract (implemented baseline)
 
-`pm search <keywords>` is implemented across keyword, semantic, and hybrid modes with deterministic ordering. The baseline command searches core item corpus fields, supports vector-query execution when configured (or when local Ollama auto-defaults are resolved), and returns stable JSON payloads plus sparse TOON projections.
+`pm search <keywords...>` is implemented across keyword, semantic, and hybrid modes with deterministic ordering. The command accepts quoted or unquoted multi-word queries, searches core item corpus fields, supports vector-query execution when configured (or when local Ollama auto-defaults are resolved), and returns stable JSON/TOON payloads with compact projection default.
 
 Initial flags:
 
 - `--mode <keyword|semantic|hybrid>` (all modes implemented baseline; advanced semantic/hybrid tuning planned)
 - `--include-linked` (keyword mode and hybrid lexical component: include readable linked docs/files/tests content in corpus scoring)
 - `--limit <n>`
+- projection controls: `--compact` (default), `--full`, `--fields <csv>` (mutually exclusive)
 - `--limit 0` is valid and returns a deterministic empty result set (after mode/config validation) without executing embedding/vector query requests
 - shared list-like filters where applicable (`--type`, `--tag`, `--priority`, `--deadline-before`, `--deadline-after`)
 - shared `--type` and `--priority` filters follow canonical validation (`--type` resolved by runtime item-type registry aliases, `--priority` integer `0..4`)

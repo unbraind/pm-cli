@@ -48,8 +48,8 @@ Compatibility policy for command contracts:
 
 - Existing commands/flags and aliases remain valid.
 - Pi tool schema now uses strict action-scoped branches (schema v4); callers should send only action-relevant fields.
-- `--json` remains the full machine payload; default TOON remains sparse/token-efficient.
-- `pm contracts --json` is the canonical runtime contract introspection surface for agents.
+- `--json` remains machine-contract stable; search projection defaults are command-specific (`pm search` defaults to compact rows unless `--full` is requested).
+- `pm contracts --json` is the canonical runtime contract introspection surface for agents, including active extension command/action metadata.
 - Contract payloads include runtime action availability metadata (`action_availability`) and optional runtime-filtered views (`--runtime-only`, `--active-only`) so automation can avoid non-invocable actions.
 
 ## Item Storage Formats
@@ -211,6 +211,30 @@ To (re)build semantic artifacts explicitly:
 
 ```bash
 pm reindex --mode hybrid
+```
+
+## Search Projection Modes
+
+`pm search` now supports explicit projection controls and defaults to compact rows in both TOON and JSON output modes:
+
+- default projection: compact (`id`, `title`, `status`, `type`, `priority`, `updated_at`, `score`, `matched_fields`)
+- `--full`: return full hit rows (including nested `item` payload)
+- `--fields <csv>`: return only specific fields (for example `--fields id,title,score,item.updated_at`)
+- projection flags are mutually exclusive (`--compact`, `--full`, `--fields`)
+
+Unquoted multi-word queries are accepted directly:
+
+```bash
+pm search performance mobile gpu --limit 5
+```
+
+## Hierarchical List Filtering
+
+All list-family commands now support parent-scoped filtering:
+
+```bash
+pm list-open --parent pm-epic01 --limit 20
+pm list-in-progress --parent pm-feature02 --json
 ```
 
 ## Health Drift, Integrity, and Vectorization Checks
@@ -629,7 +653,7 @@ For default TOON output, command results are rendered directly from the command 
 - omit empty arrays and empty objects
 - preserve meaningful falsy values (`0`, `false`, non-empty strings)
 
-JSON output remains contract-stable and continues to expose the full payload through `--json`.
+JSON output remains contract-stable and command-contract driven; `pm search` uses compact projection by default unless overridden with `--full` or `--fields`.
 
 ## SDK and Full Override Extensions
 
@@ -658,6 +682,7 @@ Extension runtime behavior is extension-first by default:
 - `beforeCommand` and `afterCommand` hooks receive command args/options/global snapshots and final command result/error state.
 - `registerItemFields(...)` definitions now participate in create/update defaulting and validation.
 - `registerSearchProvider(...)` + `settings.search.provider` and `registerVectorStoreAdapter(...)` + `settings.vector_store.adapter` are now live runtime selectors for `pm search` / `pm reindex`.
+- `registerCommand(...)` definitions can optionally declare action/intent/examples/failure hints/arguments/flags metadata, which is surfaced in dynamic `--help` text, `--help --json` payloads, and `pm contracts`.
 
 Use `--no-extensions` to force core-only behavior for a single invocation.
 

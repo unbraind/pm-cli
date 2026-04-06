@@ -189,6 +189,18 @@ Register a new command handler path or replace an existing core command at dispa
 ```ts
 api.registerCommand({
   name: "acme sync",
+  action: "acme-sync",
+  description: "Synchronize ACME assets into PM items.",
+  intent: "Run a deterministic import/sync pass before release prep.",
+  examples: ["pm acme sync --source ./assets.json --dry-run"],
+  failure_hints: ["Ensure --source points to a readable JSON file."],
+  arguments: [
+    { name: "sourceId", required: false, description: "Optional source identifier override." },
+  ],
+  flags: [
+    { long: "--source", value_name: "path", description: "Input file path", required: true },
+    { long: "--dry-run", description: "Preview without writing items" },
+  ],
   run: async (context) => {
     // context.command: normalized command path
     // context.args: string[] positional args
@@ -201,6 +213,12 @@ api.registerCommand({
 ```
 
 If the command path matches a core command (for example `list-open`), the extension handler runs first and the core action is skipped. Command names are canonicalized (trimmed, lowercased, repeated whitespace collapsed). Handlers receive cloned snapshots so mutation cannot leak into caller state.
+
+Optional command metadata (`action`, `description`, `intent`, `examples`, `failure_hints`, `arguments`, and inline `flags`) is consumed by runtime help surfaces and contracts:
+
+- `pm <extension-command> --help` / `--help --json`
+- `pm contracts --command <extension-command>`
+- `pm contracts --action <extension-action>`
 
 For backward compatibility, command definitions that still use `handler` are accepted and mapped to `run`, with warning `extension_command_definition_legacy_handler_alias` to guide migration.
 
@@ -312,7 +330,7 @@ api.registerFlags("acme sync", [
 ]);
 ```
 
-Supported metadata for dynamic extension help rendering:
+Supported metadata for dynamic extension help/contract rendering:
 
 - `required: true` appends a `[required]` marker in help.
 - `enabled: false` appends a `[disabled]` marker in help.
@@ -320,7 +338,7 @@ Supported metadata for dynamic extension help rendering:
 - `type` / `value_type` (`string` | `number` | `boolean`) enables runtime loose-option coercion for matching command flags.
 - Validation contract: each entry must provide at least one of `long` or `short`; optional metadata fields must match expected scalar types.
 
-Core help output appends command-level guidance with compact defaults (`Intent` + one example) and supports deep help via `--explain`. Dynamic extension commands still receive flag-level rendering from `registerFlags(...)`, so extension authors should provide explicit `description` text on each flag to keep help high-signal.
+Core help output appends command-level guidance with compact defaults (`Intent` + one example) and supports deep help via `--explain`. Dynamic extension commands receive flag-level rendering from both `registerFlags(...)` and `registerCommand({ flags: [...] })`; provide explicit `description` text on each flag to keep help/contracts high-signal.
 
 ### `api.registerRenderer(format, renderer)`
 

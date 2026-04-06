@@ -107,11 +107,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added structured linked-test failure classification in `run_results` (`failure_category`) and aggregated `failure_categories` totals in `pm test`/`pm test-all` results for triage (`infra_collision` vs `assertion_failure` and related categories).
 - Added standalone `pm validate` linked command-reference diagnostics (`command_references`) with default-on stale PM-id detection and dedicated warning token (`validate_command_references_stale_pm_ids:<count>`).
 - Added default-on resolution remediation command hints in `pm validate` details for missing resolution metadata (`resolution`, `expected_result`, `actual_result`).
+- Added unquoted multi-word query support for `pm search <keywords...>` so variadic tokens are normalized into one query string without requiring shell quoting.
+- Added `--parent <id>` filtering support to `pm list` and all `pm list-*` command families, with shared contract/completion/Pi wrapper parity.
+- Added `pm search` projection controls (`--compact`, `--full`, `--fields <csv>`) with deterministic projection metadata in result payloads.
+- Added extension command metadata surfacing (`action`, `intent`, `examples`, `failure_hints`, argument/flag descriptors) in dynamic `--help` text and `--help --json` payloads.
+- Added runtime extension command/action schema inclusion in `pm contracts` output (`extension_commands`, merged action availability/schema branches, extension-sourced command flag metadata).
 
 ### Changed
 - Removed the `pm install` command surface; extension lifecycle installs now flow through `pm extension` only.
 - `pm beads import`, `pm todos import`, and `pm todos export` are now extension-discovered command paths that appear only after corresponding bundled extensions are installed and active.
 - Commander option normalization, shell completion flag generation, and Pi wrapper action/schema/arg mapping now consume the shared command contract registry to reduce cross-surface drift.
+- `pm search` now defaults to compact projection for both TOON and JSON output unless callers request `--full` or explicit `--fields`.
+- `pm get` missing-item guidance now uses deterministic recovery examples (`pm list-open --limit 20`, `pm search "<keyword>" --limit 10`) instead of echoing invalid IDs.
 - `pm help` and `pm help <command>` now exit successfully without trailing invalid-usage envelopes.
 - Runtime `PmCliError.context` fields (`required`, `why`, `examples`, `next_steps`, and optional code/type overrides) now flow through canonical text/JSON guidance rendering.
 - Top-level `--json` error handling now emits canonical machine-readable diagnostics instead of text-only guidance.

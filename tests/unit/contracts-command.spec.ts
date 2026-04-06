@@ -1,4 +1,4 @@
-import { mkdir, rm } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runContracts } from "../../src/cli/commands/contracts.js";
@@ -13,6 +13,18 @@ const GLOBAL_OPTIONS: GlobalOptions = {
   noExtensions: false,
   profile: false,
 };
+
+async function createProjectExtension(
+  pmPath: string,
+  directory: string,
+  manifest: Record<string, unknown>,
+  entrySource: string,
+): Promise<void> {
+  const extensionRoot = path.join(pmPath, "extensions", directory);
+  await mkdir(extensionRoot, { recursive: true });
+  await writeFile(path.join(extensionRoot, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+  await writeFile(path.join(extensionRoot, "index.mjs"), entrySource, "utf8");
+}
 
 describe("contracts command runtime", () => {
   it("returns schema, actions, command flags, and alias surfaces", async () => {
@@ -128,6 +140,141 @@ describe("contracts command runtime", () => {
         requires_extension: true,
         provider: "extension",
         disabled_reason: "extension_runtime_probe_failed",
+      });
+    });
+  });
+
+  it("merges active extension command/action schemas into contracts output", async () => {
+    await withTempPmPath(async (context) => {
+      await createProjectExtension(
+        context.pmPath,
+        "migrate-asset-contracts",
+        {
+          name: "migrate-asset-contracts",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["commands", "schema"],
+        },
+        [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerCommand({",
+          "      name: 'migrate-asset',",
+          "      action: 'migrate-asset',",
+          "      description: 'Migrate asset payloads to the current schema version.',",
+          "      intent: 'Validate and migrate asset payloads before writing output.',",
+          "      examples: [",
+          "        'pm migrate-asset --source assets/source.json --target assets/output.json'",
+          "      ],",
+          "      failure_hints: [",
+          "        'Ensure --source points to an existing readable file.'",
+          "      ],",
+          "      arguments: [",
+          "        { name: 'assetId', required: false, description: 'Optional asset identifier override.' }",
+          "      ],",
+          "      flags: [",
+          "        { long: '--source', value_name: 'path', required: true, description: 'Source asset payload path.' },",
+          "        { long: '--target', value_name: 'path', description: 'Destination payload path.' },",
+          "        { long: '--dry-run', description: 'Preview migration only.' }",
+          "      ],",
+          "      run: (context) => ({",
+          "        command: context.command,",
+          "        options: context.options,",
+          "      }),",
+          "    });",
+          "  },",
+          "};",
+          "",
+        ].join("\n"),
+      );
+
+      const result = await runContracts(
+        {
+          action: "migrate-asset",
+          command: "migrate-asset",
+        },
+        {
+          ...GLOBAL_OPTIONS,
+          path: context.pmPath,
+        },
+      );
+
+      expect(result.actions).toEqual(["migrate-asset"]);
+      expect(result.commands).toEqual(["migrate-asset"]);
+      expect(result.action_availability).toEqual([
+        expect.objectContaining({
+          action: "migrate-asset",
+          provider: "extension",
+          requires_extension: true,
+          invocable: true,
+          available: true,
+          disabled_reason: null,
+        }),
+      ]);
+      expect(result.extension_commands).toEqual([
+        expect.objectContaining({
+          command: "migrate-asset",
+          action: "migrate-asset",
+          source: {
+            layer: "project",
+            name: "migrate-asset-contracts",
+          },
+          description: "Migrate asset payloads to the current schema version.",
+          intent: "Validate and migrate asset payloads before writing output.",
+          arguments: [
+            {
+              name: "assetId",
+              required: false,
+              variadic: false,
+              description: "Optional asset identifier override.",
+            },
+          ],
+          flags: [
+            { flag: "--source" },
+            { flag: "--target" },
+            { flag: "--dry-run" },
+          ],
+          examples: ["pm migrate-asset --source assets/source.json --target assets/output.json"],
+          failure_hints: ["Ensure --source points to an existing readable file."],
+        }),
+      ]);
+      expect(result.command_flags).toEqual([
+        expect.objectContaining({
+          command: "migrate-asset",
+          provider: "extension",
+          flags: [
+            { flag: "--source" },
+            { flag: "--target" },
+            { flag: "--dry-run" },
+          ],
+          extension_sources: [
+            {
+              layer: "project",
+              name: "migrate-asset-contracts",
+            },
+          ],
+        }),
+      ]);
+
+      const oneOf = (result.schema.oneOf ?? []) as Array<{
+        properties?: {
+          action?: { const?: string };
+          assetId?: unknown;
+          source?: unknown;
+          target?: unknown;
+          dryRun?: unknown;
+        };
+        ["x-extension-source"]?: { layer?: string; name?: string } | null;
+      }>;
+      const migrateBranch = oneOf.find((entry) => entry.properties?.action?.const === "migrate-asset");
+      expect(migrateBranch).toBeDefined();
+      expect(migrateBranch?.properties?.assetId).toBeDefined();
+      expect(migrateBranch?.properties?.source).toBeDefined();
+      expect(migrateBranch?.properties?.target).toBeDefined();
+      expect(migrateBranch?.properties?.dryRun).toBeDefined();
+      expect(migrateBranch?.["x-extension-source"]).toEqual({
+        layer: "project",
+        name: "migrate-asset-contracts",
       });
     });
   });
