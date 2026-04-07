@@ -403,6 +403,7 @@ export const SUBCOMMAND_GLOBAL_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--quiet" },
   { flag: "--path" },
   { flag: "--no-extensions" },
+  { flag: "--no-pager" },
   { flag: "--profile" },
   { flag: "--help" },
 ];
@@ -483,6 +484,7 @@ export const COMMENTS_AUDIT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--release" },
   { flag: "--priority" },
   { flag: "--limit-items" },
+  { flag: "--limit" },
   { flag: "--full-history" },
   { flag: "--latest" },
 ];
@@ -652,6 +654,7 @@ export const TEST_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--env-clear" },
   { flag: "--shared-host-safe" },
   { flag: "--pm-context" },
+  { flag: "--override-linked-pm-context" },
   { flag: "--fail-on-context-mismatch" },
   { flag: "--fail-on-skipped" },
   { flag: "--fail-on-empty-test-run" },
@@ -663,6 +666,8 @@ export const TEST_FLAG_CONTRACTS: CliFlagContract[] = [
 
 export const TEST_ALL_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--status" },
+  { flag: "--limit" },
+  { flag: "--offset" },
   { flag: "--background" },
   { flag: "--timeout" },
   { flag: "--progress" },
@@ -670,6 +675,7 @@ export const TEST_ALL_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--env-clear" },
   { flag: "--shared-host-safe" },
   { flag: "--pm-context" },
+  { flag: "--override-linked-pm-context" },
   { flag: "--fail-on-context-mismatch" },
   { flag: "--fail-on-skipped" },
   { flag: "--fail-on-empty-test-run" },
@@ -1283,6 +1289,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   quiet: { type: "boolean" },
   profile: { type: "boolean" },
   noExtensions: { type: "boolean" },
+  noPager: { type: "boolean" },
   path: { type: "string" },
   pmExecutable: { type: "string" },
   timeoutMs: { type: "number" },
@@ -1397,6 +1404,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   runtimeProbe: { type: "boolean" },
   fixManagedState: { type: "boolean" },
   pmContext: { type: "string", enum: ["schema", "tracker", "auto"] },
+  overrideLinkedPmContext: { type: "boolean" },
   failOnContextMismatch: { type: "boolean" },
   failOnSkipped: { type: "boolean" },
   failOnEmptyTestRun: { type: "boolean" },
@@ -1479,7 +1487,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   policy: { type: "string" },
 };
 
-const PM_TOOL_GLOBAL_PARAMETER_KEYS = ["json", "quiet", "profile", "noExtensions", "path", "pmExecutable", "timeoutMs"] as const;
+const PM_TOOL_GLOBAL_PARAMETER_KEYS = ["json", "quiet", "profile", "noExtensions", "noPager", "path", "pmExecutable", "timeoutMs"] as const;
 
 interface PmActionSchemaContract {
   required?: string[];
@@ -1604,6 +1612,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
       "release",
       "priority",
       "limitItems",
+      "limit",
       "fullHistory",
       "latest",
     ],
@@ -1638,6 +1647,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
       "envClear",
       "sharedHostSafe",
       "pmContext",
+      "overrideLinkedPmContext",
       "failOnContextMismatch",
       "failOnSkipped",
       "failOnEmptyTestRun",
@@ -1648,6 +1658,8 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   "test-all": {
     optional: [
       "status",
+      "limit",
+      "offset",
       "background",
       "timeout",
       "progress",
@@ -1655,6 +1667,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
       "envClear",
       "sharedHostSafe",
       "pmContext",
+      "overrideLinkedPmContext",
       "failOnContextMismatch",
       "failOnSkipped",
       "failOnEmptyTestRun",
@@ -1764,6 +1777,9 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   noExtensions: {
     description: "Disable extension loading for this invocation.",
+  },
+  noPager: {
+    description: "Disable pager integration for help and long output.",
   },
   profile: {
     description: "Emit deterministic timing diagnostics to stderr.",
@@ -1925,6 +1941,9 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
       "PM linked-test context mode (schema keeps isolated tracker data; tracker seeds source tracker data; auto uses tracker for PM tracker-read linked commands).",
     examples: ["schema", "tracker", "auto"],
   },
+  overrideLinkedPmContext: {
+    description: "Force run-level --pm-context to override per-linked-test pm_context_mode metadata for all linked-test entries.",
+  },
   failOnContextMismatch: {
     description: "Fail linked PM command runs when source and sandbox tracker item counts differ.",
   },
@@ -1942,7 +1961,7 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     examples: [0, 50, "100"],
   },
   limitItems: {
-    description: "Maximum number of filtered items to include in comments-audit output.",
+    description: "Maximum number of filtered items to include in comments-audit output (alias: --limit).",
     examples: [10, "25"],
   },
   fullHistory: {

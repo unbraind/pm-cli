@@ -1268,6 +1268,17 @@ describe("runUpdate", () => {
           { path: context.pmPath },
         ),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          { reminder: ["at=+3d+1h,text=compound-relative"] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining('Invalid reminder.at value "+3d+1h"'),
+      });
     });
   });
 
@@ -1378,6 +1389,17 @@ describe("runUpdate", () => {
           { path: context.pmPath },
         ),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          { event: ["start=+3d,end=+3d+1h,title=compound-relative"] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining('Invalid event.end value "+3d+1h"'),
+      });
     });
   });
 

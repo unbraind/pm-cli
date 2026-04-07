@@ -767,7 +767,7 @@ function parseReminders(raw: string[] | undefined, nowValue: string): { values: 
       throw new PmCliError("--reminder text must not be empty", EXIT_CODE.USAGE);
     }
     return {
-      at: resolveIsoOrRelative(atRaw, new Date(nowValue)),
+      at: resolveIsoOrRelative(atRaw, new Date(nowValue), "reminder.at"),
       text,
     };
   });
@@ -823,7 +823,7 @@ function parseRecurrenceRule(kv: Record<string, string>, startAt: string, nowVal
   if (count !== undefined && (!Number.isInteger(count) || count < 1)) {
     throw new PmCliError("--event recur_count must be an integer >= 1", EXIT_CODE.USAGE);
   }
-  const until = untilRaw ? resolveIsoOrRelative(untilRaw, nowValue) : undefined;
+  const until = untilRaw ? resolveIsoOrRelative(untilRaw, nowValue, "event.recur_until") : undefined;
   if (until && until < startAt) {
     throw new PmCliError("--event recur_until must be at or after start", EXIT_CODE.USAGE);
   }
@@ -850,9 +850,9 @@ function parseRecurrenceRule(kv: Record<string, string>, startAt: string, nowVal
     ),
   ).sort((left, right) => left - right);
 
-  const exdates = Array.from(new Set(parseDelimitedList(exdatesRaw).map((value) => resolveIsoOrRelative(value, nowValue)))).sort(
-    (left, right) => left.localeCompare(right),
-  );
+  const exdates = Array.from(
+    new Set(parseDelimitedList(exdatesRaw).map((value) => resolveIsoOrRelative(value, nowValue, "event.recur_exdates"))),
+  ).sort((left, right) => left.localeCompare(right));
 
   return {
     freq,
@@ -875,9 +875,9 @@ function parseEvents(raw: string[] | undefined, nowValue: string): { values: Cal
     if (!startRaw) {
       throw new PmCliError("--event requires start=<iso|relative>", EXIT_CODE.USAGE);
     }
-    const startAt = resolveIsoOrRelative(startRaw, referenceDate);
+    const startAt = resolveIsoOrRelative(startRaw, referenceDate, "event.start");
     const endRaw = parseOptionalString(kv.end)?.trim();
-    const endAt = endRaw ? resolveIsoOrRelative(endRaw, referenceDate) : undefined;
+    const endAt = endRaw ? resolveIsoOrRelative(endRaw, referenceDate, "event.end") : undefined;
     if (endAt && endAt <= startAt) {
       throw new PmCliError("--event end must be after start", EXIT_CODE.USAGE);
     }
@@ -1573,6 +1573,13 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   );
   if (combinedMissingFlags.length > 0) {
     const nextValidExample = buildTypeSpecificCreateExample(typeDefinition, missingRequiredCreateFlags, missingRequiredTypeOptionKeys);
+    const nextSteps = [`Run "pm create --help --type ${type}" for type-aware required option guidance.`];
+    if (createMode === "strict") {
+      nextSteps.push('For staged onboarding, retry with "--create-mode progressive".');
+      if (SCHEDULE_CREATE_PRESET_TYPES.has(type)) {
+        nextSteps.push('For minimal scheduling inputs, try "--schedule-preset lightweight".');
+      }
+    }
     const errorMessage =
       combinedMissingFlags.length === 1
         ? `Missing required option ${combinedMissingFlags[0]} for type "${type}"`
@@ -1581,7 +1588,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
       code: "missing_required_option",
       required: `Provide all required create options and type options for type "${type}" in one invocation.`,
       examples: [nextValidExample],
-      nextSteps: [`Run "pm create --help --type ${type}" for type-aware required option guidance.`],
+      nextSteps,
     });
   }
   const nonMissingTypeOptionErrors = filterNonMissingTypeOptionErrors(validatedTypeOptions.errors, type);
@@ -1608,7 +1615,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     ? undefined
     : resolvedOptions.deadline === undefined
       ? undefined
-      : resolveIsoOrRelative(resolvedOptions.deadline, new Date(nowValue));
+      : resolveIsoOrRelative(resolvedOptions.deadline, new Date(nowValue), "deadline");
   const estimatedMinutes = unsetTargets.frontMatterKeys.has("estimated_minutes")
     ? undefined
     : resolvedOptions.estimatedMinutes === undefined

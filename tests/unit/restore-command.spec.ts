@@ -490,6 +490,10 @@ describe("runRestore", () => {
       await writeFile(historyPath, `${JSON.stringify(invalidPatchEntry)}\n`, "utf8");
       await expect(runRestore(id, "1", {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.GENERIC_FAILURE,
+        message: expect.stringContaining("op=replace"),
+      });
+      await expect(runRestore(id, "1", {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("path=/front_matter/missing"),
       });
 
       const validTarget = {

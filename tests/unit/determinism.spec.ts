@@ -162,6 +162,65 @@ describe("deterministic primitives", () => {
     expect(reorderedEntry.after_hash).toBe(entry.after_hash);
   });
 
+  it("normalizes replace ops to add when a patch path is absent", () => {
+    const baseFrontMatter = {
+      id: "pm-a1",
+      title: "Patch mode",
+      description: "Patch mode",
+      type: "Task" as const,
+      status: "open" as const,
+      priority: 1,
+      tags: ["history"],
+      created_at: "2026-02-18T00:00:00.000Z",
+      updated_at: "2026-02-18T00:05:00.000Z",
+    };
+    const before = canonicalDocument({
+      front_matter: {
+        ...baseFrontMatter,
+        tests: [
+          {
+            command: "node scripts/run-tests.mjs test",
+            scope: "project",
+            pm_context_mode: undefined as unknown as string,
+          },
+        ],
+      },
+      body: "",
+    });
+    const after = canonicalDocument({
+      front_matter: {
+        ...baseFrontMatter,
+        updated_at: "2026-02-18T00:06:00.000Z",
+        tests: [
+          {
+            command: "node scripts/run-tests.mjs test",
+            scope: "project",
+            pm_context_mode: "schema",
+          },
+        ],
+      },
+      body: "",
+    });
+    const entry = createHistoryEntry({
+      nowIso: "2026-02-18T00:06:00.000Z",
+      author: "tester",
+      op: "tests_add",
+      before,
+      after,
+      message: "set per-linked-test pm_context_mode",
+    });
+    expect(entry.patch).toContainEqual({
+      op: "add",
+      path: "/front_matter/tests/0/pm_context_mode",
+      value: "schema",
+    });
+    expect(
+      entry.patch.some(
+        (operation) => operation.op === "replace" && operation.path === "/front_matter/tests/0/pm_context_mode",
+      ),
+    ).toBe(false);
+  });
+
   it("returns a deterministic empty canonical document hash", () => {
     const first = hashEmptyDocument();
     const second = hashEmptyDocument();

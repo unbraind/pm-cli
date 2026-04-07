@@ -301,6 +301,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   get: {
     why: "Shows complete details for one item by ID.",
     examples: ["pm get pm-a1b2", "pm get pm-a1b2 --json"],
+    tips: ["JSON output shape is { item, body, linked, claim_state }; body is top-level (not item.body)."],
   },
   history: {
     why: "Inspects item mutation timeline and audit trail.",
@@ -350,9 +351,11 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm comments-audit --status open --latest 1",
       "pm comments-audit --status open --latest 0",
       "pm comments-audit --parent pm-feature01 --tag governance --sprint sprint-12 --release vnext --priority 0",
-      "pm comments-audit --full-history --limit-items 50",
+      "pm comments-audit --full-history --limit 50",
     ],
-    tips: ["Use either --latest or --full-history (not both). --latest 0 returns item summaries without comment rows."],
+    tips: [
+      "Use either --latest or --full-history (not both). --latest 0 returns item summaries without comment rows. --limit is an alias for --limit-items.",
+    ],
   },
   notes: {
     why: "Adds or reviews durable implementation notes linked to an item.",
@@ -396,7 +399,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   "test-all": {
     why: "Runs linked tests in bulk for release/readiness sweeps.",
     examples: [
-      "pm test-all --status in_progress --timeout 2400",
+      "pm test-all --status in_progress --limit 5 --offset 10 --timeout 2400",
       "pm test-all --status closed --timeout 3600 --progress --env-set PORT=0 --shared-host-safe --fail-on-skipped",
       "pm test-all --status in_progress --pm-context tracker --fail-on-context-mismatch --require-assertions-for-pm",
       "pm test-all --status in_progress --pm-context auto --fail-on-context-mismatch",
@@ -491,6 +494,7 @@ export const ROOT_HELP_BUNDLE: HelpBundle = {
   tips: [
     "Use <command> --help for command-specific guidance and examples.",
     "Use --json for machine parsing and integration flows.",
+    "Use --no-pager to force direct help output in CI and other non-interactive shells.",
   ],
 };
 

@@ -301,11 +301,12 @@ describe("runComments", () => {
       expect(auditOpen.items.some((entry) => entry.id === closedId)).toBe(false);
       expect(auditOpen.items.find((entry) => entry.id === openId)?.comments.map((entry) => entry.text)).toEqual(["open-second"]);
 
-      const auditClosed = await runCommentsAudit({ status: "closed", latest: "3", limitItems: "1" }, { path: context.pmPath });
+      const auditClosed = await runCommentsAudit({ status: "closed", latest: "3", limit: "1" }, { path: context.pmPath });
       expect(auditClosed.count).toBe(1);
       expect(auditClosed.items[0]?.id).toBe(closedId);
       expect(auditClosed.items[0]?.comments.map((entry) => entry.text)).toEqual(["closed-only"]);
       expect(auditClosed.items[0]?.comment_count).toBe(1);
+      expect(auditClosed.filters.limit_items).toBe(1);
       expect(auditClosed.summary.totals).toMatchObject({
         items_scanned: 1,
         items_with_comments: 1,
@@ -482,6 +483,15 @@ describe("runComments", () => {
       });
       await expect(runCommentsAudit({ limitItems: "1.5" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runCommentsAudit({ limit: "1.5" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runCommentsAudit({ limitItems: "3", limit: "1" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: "--limit and --limit-items must match when both are provided",
       });
       await expect(runCommentsAudit({ fullHistory: true, latest: "1" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,

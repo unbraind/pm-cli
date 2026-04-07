@@ -47,9 +47,10 @@ const CONTRACTS_FLAGS = toCompletionFlagString(CONTRACTS_FLAG_CONTRACTS);
 const COMPLETION_FLAGS = toCompletionFlagString(COMPLETION_FLAG_CONTRACTS);
 const COMPLETION_SHELL_CHOICES = `${COMPLETION_FLAGS} bash zsh fish`;
 
-const MUTATION_FLAGS = "--author --message --force --json --quiet --path --no-extensions --profile --help";
-const CLOSE_MUTATION_FLAGS = "--author --message --validate-close --force --json --quiet --path --no-extensions --profile --help";
-const RELEASE_MUTATION_FLAGS = "--allow-audit-release --author --message --force --json --quiet --path --no-extensions --profile --help";
+const MUTATION_FLAGS = "--author --message --force --json --quiet --path --no-extensions --no-pager --profile --help";
+const CLOSE_MUTATION_FLAGS = "--author --message --validate-close --force --json --quiet --path --no-extensions --no-pager --profile --help";
+const RELEASE_MUTATION_FLAGS =
+  "--allow-audit-release --author --message --force --json --quiet --path --no-extensions --no-pager --profile --help";
 
 const GLOBAL_FLAGS = GLOBAL_FLAG_CONTRACTS.flatMap((entry) => [entry.short, entry.flag])
   .filter((value): value is string => Boolean(value))
@@ -126,10 +127,10 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(LIST_FLAGS)})`,
     "      ;;",
     "    aggregate)",
-    `      COMPREPLY=(${compgen("--group-by --count --include-unparented --status --type --tag --priority --deadline-before --deadline-after --assignee --assignee-filter --parent --sprint --release --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--group-by --count --include-unparented --status --type --tag --priority --deadline-before --deadline-after --assignee --assignee-filter --parent --sprint --release --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    dedupe-audit)",
-    `      COMPREPLY=(${compgen("--mode --limit --threshold --status --type --tag --priority --deadline-before --deadline-after --assignee --assignee-filter --parent --sprint --release --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--mode --limit --threshold --status --type --tag --priority --deadline-before --deadline-after --assignee --assignee-filter --parent --sprint --release --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    create)",
     `      COMPREPLY=(${compgen(CREATE_FLAGS)})`,
@@ -150,31 +151,31 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(SEARCH_FLAGS)})`,
     "      ;;",
     "    reindex)",
-    `      COMPREPLY=(${compgen("--mode --progress --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--mode --progress --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    config)",
-    `      COMPREPLY=(${compgen("--criterion --clear-criteria --format --policy --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--criterion --clear-criteria --format --policy --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    extension)",
-    `      COMPREPLY=(${compgen("install uninstall explore manage doctor adopt adopt-all activate deactivate --install --uninstall --explore --manage --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --trace --runtime-probe --fix-managed-state --strict-exit --fail-on-warn --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("install uninstall explore manage doctor adopt adopt-all activate deactivate --install --uninstall --explore --manage --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --trace --runtime-probe --fix-managed-state --strict-exit --fail-on-warn --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    comments)",
-    `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-comment --force --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-comment --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    comments-audit)",
-    `      COMPREPLY=(${compgen("--status --type --tag --priority --parent --sprint --release --assignee --assignee-filter --limit-items --full-history --latest --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--status --type --tag --priority --parent --sprint --release --assignee --assignee-filter --limit-items --limit --full-history --latest --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    notes)",
-    `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-note --allow-audit-comment --force --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-note --allow-audit-comment --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    learnings)",
-    `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-learning --allow-audit-comment --force --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-learning --allow-audit-comment --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    files)",
-    `      COMPREPLY=(${compgen("--add --add-glob --remove --migrate --append-stable --validate-paths --audit --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --add-glob --remove --migrate --append-stable --validate-paths --audit --author --message --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    docs)",
-    `      COMPREPLY=(${compgen("--add --add-glob --remove --migrate --validate-paths --audit --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --add-glob --remove --migrate --validate-paths --audit --author --message --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    append)",
     `      COMPREPLY=(${compgen(APPEND_FLAGS)})`,
@@ -183,22 +184,22 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(DEPS_FLAGS)})`,
     "      ;;",
     "    test)",
-    `      COMPREPLY=(${compgen("--add --remove --run --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --remove --run --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --override-linked-pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --author --message --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    test-all)",
-    `      COMPREPLY=(${compgen("--status --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--status --limit --offset --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --override-linked-pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    test-runs)",
-    `      COMPREPLY=(${compgen("list status logs stop resume --status --limit --stream --tail --force --author --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("list status logs stop resume --status --limit --stream --tail --force --author --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    validate)",
-    `      COMPREPLY=(${compgen("--check-metadata --metadata-profile --check-resolution --check-lifecycle --check-stale-blockers --check-files --scan-mode --include-pm-internals --verbose-file-lists --strict-exit --fail-on-warn --check-history-drift --check-command-references --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--check-metadata --metadata-profile --check-resolution --check-lifecycle --check-stale-blockers --check-files --scan-mode --include-pm-internals --verbose-file-lists --strict-exit --fail-on-warn --check-history-drift --check-command-references --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    health)",
     `      COMPREPLY=(${compgen(HEALTH_FLAGS)})`,
     "      ;;",
     "    history)",
-    `      COMPREPLY=(${compgen("--limit --diff --verify --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--limit --diff --verify --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    activity)",
     `      COMPREPLY=(${compgen(ACTIVITY_FLAGS)})`,
@@ -330,6 +331,7 @@ _pm() {
     '--quiet[Suppress stdout output]' \\
     '--path[Override PM path for this command]:path:_files -/' \\
     '--no-extensions[Disable extension loading]' \\
+    '--no-pager[Disable pager integration for help and long output]' \\
     '--profile[Print deterministic timing diagnostics]' \\
     '(-V --version)--version[Output the version number]' \\
     '(-h --help)--help[Display help]' \\
@@ -705,6 +707,7 @@ _pm() {
             '--env-clear[Clear linked-test runtime environment values]:name' \\
             '--shared-host-safe[Apply shared-host-safe runtime defaults]' \\
             '--pm-context[PM linked-test context mode]:(schema tracker auto)' \\
+            '--override-linked-pm-context[Force run-level --pm-context over per-linked-test pm_context_mode metadata]' \\
             '--fail-on-context-mismatch[Fail when context item counts mismatch]' \\
             '--fail-on-skipped[Treat skipped linked tests as dependency failures]' \\
             '--fail-on-empty-test-run[Treat empty linked-test selections as failures]' \\
@@ -718,6 +721,8 @@ _pm() {
         test-all)
           _arguments \\
             '--status[Filter by status]:(open in_progress)' \\
+            '--limit[Limit matching items before running linked tests]:number' \\
+            '--offset[Skip matching items before running linked tests]:number' \\
             '--background[Run linked tests in managed background mode]' \\
             '--timeout[Default timeout seconds]:seconds' \\
             '--progress[Emit linked-test progress to stderr]' \\
@@ -725,6 +730,7 @@ _pm() {
             '--env-clear[Clear linked-test runtime environment values]:name' \\
             '--shared-host-safe[Apply shared-host-safe runtime defaults]' \\
             '--pm-context[PM linked-test context mode]:(schema tracker auto)' \\
+            '--override-linked-pm-context[Force run-level --pm-context over per-linked-test pm_context_mode metadata]' \\
             '--fail-on-context-mismatch[Fail when context item counts mismatch]' \\
             '--fail-on-skipped[Treat skipped linked tests as dependency failures]' \\
             '--fail-on-empty-test-run[Treat empty linked-test selections as failures]' \\
@@ -838,6 +844,7 @@ _pm() {
             '--assignee[Filter by assignee]:assignee' \\
             '--assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
             '--limit-items[Limit returned item count]:number' \\
+            '--limit[Alias for --limit-items]:number' \\
             '--full-history[Export full comment history rows (cannot be combined with --latest)]' \\
             '--latest[Return latest n comments per item (0 for summary-only rows)]:number' \\
             '--json[Output JSON]' \\
@@ -1292,6 +1299,7 @@ complete -c pm -n '__fish_seen_subcommand_from test' -l env-set -d 'Set linked-t
 complete -c pm -n '__fish_seen_subcommand_from test' -l env-clear -d 'Clear linked-test runtime environment values' -r
 complete -c pm -n '__fish_seen_subcommand_from test' -l shared-host-safe -d 'Apply shared-host-safe runtime defaults'
 complete -c pm -n '__fish_seen_subcommand_from test' -l pm-context -d 'PM linked-test context mode' -r -a 'schema tracker auto'
+complete -c pm -n '__fish_seen_subcommand_from test' -l override-linked-pm-context -d 'Force run-level --pm-context over per-linked-test metadata'
 complete -c pm -n '__fish_seen_subcommand_from test' -l fail-on-context-mismatch -d 'Fail when context item counts mismatch'
 complete -c pm -n '__fish_seen_subcommand_from test' -l fail-on-skipped -d 'Treat skipped linked tests as dependency failures'
 complete -c pm -n '__fish_seen_subcommand_from test' -l fail-on-empty-test-run -d 'Treat empty linked-test selections as failures'
@@ -1302,6 +1310,8 @@ complete -c pm -n '__fish_seen_subcommand_from test' -l force -d 'Force override
 
 # test-all flags
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l status  -d 'Filter by status' -r -a 'open in_progress'
+complete -c pm -n '__fish_seen_subcommand_from test-all' -l limit -d 'Limit matching items before running linked tests' -r
+complete -c pm -n '__fish_seen_subcommand_from test-all' -l offset -d 'Skip matching items before running linked tests' -r
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l background -d 'Run linked tests in managed background mode'
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l timeout -d 'Default timeout seconds' -r
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l progress -d 'Emit linked-test progress to stderr'
@@ -1309,6 +1319,7 @@ complete -c pm -n '__fish_seen_subcommand_from test-all' -l env-set -d 'Set link
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l env-clear -d 'Clear linked-test runtime environment values' -r
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l shared-host-safe -d 'Apply shared-host-safe runtime defaults'
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l pm-context -d 'PM linked-test context mode' -r -a 'schema tracker auto'
+complete -c pm -n '__fish_seen_subcommand_from test-all' -l override-linked-pm-context -d 'Force run-level --pm-context over per-linked-test metadata'
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l fail-on-context-mismatch -d 'Fail when context item counts mismatch'
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l fail-on-skipped -d 'Treat skipped linked tests as dependency failures'
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l fail-on-empty-test-run -d 'Treat empty linked-test selections as failures'
@@ -1371,6 +1382,7 @@ complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l release -d 'Fi
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l assignee -d 'Filter by assignee' -r
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l limit-items -d 'Limit returned item count' -r
+complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l limit -d 'Alias for --limit-items' -r
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l full-history -d 'Export full comment history rows (cannot be combined with --latest)'
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l latest -d 'Return latest n comments per item (0 for summary-only rows)' -r
 

@@ -172,7 +172,7 @@ describe("generateBashScript", () => {
     expect(script).toContain("--allow-audit-note");
     expect(script).toContain("--allow-audit-learning");
     expect(script).toContain(
-      "--status --type --tag --priority --parent --sprint --release --assignee --assignee-filter --limit-items --full-history --latest",
+      "--status --type --tag --priority --parent --sprint --release --assignee --assignee-filter --limit-items --limit --full-history --latest",
     );
   });
 
@@ -187,6 +187,15 @@ describe("generateBashScript", () => {
     expect(fishScript).toContain("-l allow-audit-note");
     expect(fishScript).toContain("-l allow-audit-learning");
     expect(fishScript).toContain("-l allow-audit-comment");
+  });
+
+  it("includes comments-audit --limit alias in zsh and fish completion", () => {
+    const zshScript = generateZshScript();
+    expect(zshScript).toContain("--limit[Alias for --limit-items]:number");
+
+    const fishScript = generateFishScript();
+    expect(fishScript).toContain("__fish_seen_subcommand_from comments-audit");
+    expect(fishScript).toContain("-l limit -d 'Alias for --limit-items'");
   });
 
   it("includes files/docs add-glob flag in bash completion", () => {
@@ -209,7 +218,7 @@ describe("generateBashScript", () => {
   it("includes strict health flags in bash completion", () => {
     const script = generateBashScript();
     expect(script).toContain(
-      "--strict-directories --strict-exit --fail-on-warn --check-only --no-refresh --refresh-vectors --verbose-stale-items --json --quiet --path --no-extensions --profile --help",
+      "--strict-directories --strict-exit --fail-on-warn --check-only --no-refresh --refresh-vectors --verbose-stale-items --json --quiet --path --no-extensions --no-pager --profile --help",
     );
   });
 
@@ -222,7 +231,13 @@ describe("generateBashScript", () => {
 
   it("includes fail-on-empty-test-run in bash test completions", () => {
     const script = generateBashScript();
+    expect(script).toContain("--override-linked-pm-context");
     expect(script).toContain("--fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm");
+  });
+
+  it("includes test-all pagination flags in bash completion", () => {
+    const script = generateBashScript();
+    expect(script).toContain("--status --limit --offset --background --timeout --progress");
   });
 
   it("includes calendar-specific flags", () => {
@@ -358,6 +373,7 @@ describe("generateZshScript", () => {
     expect(script).toContain("--quiet");
     expect(script).toContain("--path");
     expect(script).toContain("--no-extensions");
+    expect(script).toContain("--no-pager");
     expect(script).toContain("--profile");
     expect(script).toContain("--version");
     expect(script).toContain("--help");
@@ -420,7 +436,14 @@ describe("generateZshScript", () => {
 
   it("includes fail-on-empty-test-run in zsh test completions", () => {
     const script = generateZshScript();
+    expect(script).toContain("--override-linked-pm-context[Force run-level --pm-context over per-linked-test pm_context_mode metadata]");
     expect(script).toContain("--fail-on-empty-test-run[Treat empty linked-test selections as failures]");
+  });
+
+  it("includes test-all pagination flags in zsh completion", () => {
+    const script = generateZshScript();
+    expect(script).toContain("--limit[Limit matching items before running linked tests]:number");
+    expect(script).toContain("--offset[Skip matching items before running linked tests]:number");
   });
 
   it("includes deterministic tag choices for zsh --tag flags", () => {
@@ -558,8 +581,16 @@ describe("generateFishScript", () => {
   it("includes fail-on-empty-test-run in fish test completions", () => {
     const script = generateFishScript();
     expect(script).toContain("__fish_seen_subcommand_from test");
+    expect(script).toContain("-l override-linked-pm-context");
     expect(script).toContain("-l fail-on-empty-test-run");
     expect(script).toContain("__fish_seen_subcommand_from test-all");
+  });
+
+  it("includes test-all pagination flags in fish completion", () => {
+    const script = generateFishScript();
+    expect(script).toContain("__fish_seen_subcommand_from test-all");
+    expect(script).toContain("-l limit -d 'Limit matching items before running linked tests'");
+    expect(script).toContain("-l offset -d 'Skip matching items before running linked tests'");
   });
 
   it("includes __pm_no_subcommand helper function", () => {

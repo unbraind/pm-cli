@@ -51,13 +51,13 @@ function parseNonEmptyFilter(raw: string | undefined, flagLabel: string): string
   return normalized;
 }
 
-function parseRangeBound(raw: string | undefined, nowValue: string): string | undefined {
+function parseRangeBound(raw: string | undefined, nowValue: string, fieldLabel: string): string | undefined {
   if (raw === undefined) return undefined;
   const normalized = raw.trim();
   if (normalized.length === 0) {
     throw new PmCliError("Activity time bounds must not be empty", EXIT_CODE.USAGE);
   }
-  return resolveIsoOrRelative(normalized, new Date(nowValue));
+  return resolveIsoOrRelative(normalized, new Date(nowValue), fieldLabel);
 }
 
 function includeByTimeWindow(entry: ActivityEntry, from: string | undefined, to: string | undefined): boolean {
@@ -109,8 +109,8 @@ export async function runActivity(options: ActivityCommandOptions, global: Globa
   const idFilter = parseNonEmptyFilter(options.id, "Activity --id");
   const opFilter = parseNonEmptyFilter(options.op, "Activity --op");
   const authorFilter = parseNonEmptyFilter(options.author, "Activity --author");
-  const fromBound = parseRangeBound(options.from, nowValue);
-  const toBound = parseRangeBound(options.to, nowValue);
+  const fromBound = parseRangeBound(options.from, nowValue, "--from");
+  const toBound = parseRangeBound(options.to, nowValue, "--to");
   if (fromBound && toBound && compareTimestampStrings(fromBound, toBound) >= 0) {
     throw new PmCliError("Activity --from must be before --to", EXIT_CODE.USAGE);
   }

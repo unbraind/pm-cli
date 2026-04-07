@@ -195,6 +195,7 @@ function buildBackgroundTestCommandArgs(id: string, options: Record<string, unkn
   pushRepeatableValueFlag(args, "--env-clear", options.envClear);
   pushOptionalBooleanFlag(args, "--shared-host-safe", options.sharedHostSafe);
   pushOptionalValueFlag(args, "--pm-context", options.pmContext);
+  pushOptionalBooleanFlag(args, "--override-linked-pm-context", options.overrideLinkedPmContext);
   pushOptionalBooleanFlag(args, "--fail-on-context-mismatch", options.failOnContextMismatch);
   pushOptionalBooleanFlag(args, "--fail-on-skipped", options.failOnSkipped);
   pushOptionalBooleanFlag(args, "--fail-on-empty-test-run", options.failOnEmptyTestRun);
@@ -208,11 +209,14 @@ function buildBackgroundTestCommandArgs(id: string, options: Record<string, unkn
 function buildBackgroundTestAllCommandArgs(options: Record<string, unknown>): string[] {
   const args: string[] = ["test-all", "--json", "--progress"];
   pushOptionalValueFlag(args, "--status", options.status);
+  pushOptionalValueFlag(args, "--limit", options.limit);
+  pushOptionalValueFlag(args, "--offset", options.offset);
   pushOptionalValueFlag(args, "--timeout", options.timeout);
   pushRepeatableValueFlag(args, "--env-set", options.envSet);
   pushRepeatableValueFlag(args, "--env-clear", options.envClear);
   pushOptionalBooleanFlag(args, "--shared-host-safe", options.sharedHostSafe);
   pushOptionalValueFlag(args, "--pm-context", options.pmContext);
+  pushOptionalBooleanFlag(args, "--override-linked-pm-context", options.overrideLinkedPmContext);
   pushOptionalBooleanFlag(args, "--fail-on-context-mismatch", options.failOnContextMismatch);
   pushOptionalBooleanFlag(args, "--fail-on-skipped", options.failOnSkipped);
   pushOptionalBooleanFlag(args, "--fail-on-empty-test-run", options.failOnEmptyTestRun);
@@ -227,6 +231,7 @@ function getGlobalOptions(command: Command): GlobalOptions {
     quiet: Boolean(opts.quiet),
     path: typeof opts.path === "string" ? opts.path : undefined,
     noExtensions: opts.extensions === false,
+    noPager: Boolean(opts.noPager),
     profile: Boolean(opts.profile),
   };
 }
@@ -735,6 +740,7 @@ function parseBootstrapPathToken(
 interface BootstrapGlobalOptions {
   path?: string;
   noExtensions: boolean;
+  noPager: boolean;
   json: boolean;
   quiet: boolean;
 }
@@ -742,6 +748,7 @@ interface BootstrapGlobalOptions {
 function parseBootstrapGlobalOptions(argv: string[]): BootstrapGlobalOptions {
   let pathValue: string | undefined;
   let noExtensions = false;
+  let noPager = false;
   let json = false;
   let quiet = false;
   let index = 0;
@@ -752,6 +759,11 @@ function parseBootstrapGlobalOptions(argv: string[]): BootstrapGlobalOptions {
     }
     if (token === "--no-extensions") {
       noExtensions = true;
+      index += 1;
+      continue;
+    }
+    if (token === "--no-pager") {
+      noPager = true;
       index += 1;
       continue;
     }
@@ -778,6 +790,7 @@ function parseBootstrapGlobalOptions(argv: string[]): BootstrapGlobalOptions {
   return {
     path: pathValue,
     noExtensions,
+    noPager,
     json,
     quiet,
   };
@@ -795,6 +808,7 @@ function stripGlobalBootstrapTokens(argv: string[]): string[] {
       token === "--json" ||
       token === "--quiet" ||
       token === "--no-extensions" ||
+      token === "--no-pager" ||
       token === "--profile" ||
       token === "--explain"
     ) {
@@ -813,6 +827,30 @@ function stripGlobalBootstrapTokens(argv: string[]): string[] {
     index += 1;
   }
   return remaining;
+}
+
+function shouldDisablePagerForInvocation(argv: string[], bootstrapGlobal: BootstrapGlobalOptions): boolean {
+  if (bootstrapGlobal.noPager) {
+    return true;
+  }
+  if (process.stdout.isTTY === true) {
+    return false;
+  }
+  const helpRequest = parseBootstrapHelpRequest(argv);
+  return helpRequest.requested;
+}
+
+function applyBootstrapPagerPolicy(argv: string[]): void {
+  const bootstrapGlobal = parseBootstrapGlobalOptions(argv);
+  if (!shouldDisablePagerForInvocation(argv, bootstrapGlobal)) {
+    return;
+  }
+  process.env.PAGER = "cat";
+  process.env.MANPAGER = "cat";
+  process.env.GIT_PAGER = "cat";
+  if (typeof process.env.LESS !== "string" || process.env.LESS.trim().length === 0) {
+    process.env.LESS = "FRX";
+  }
 }
 
 interface BootstrapHelpRequest {
@@ -874,6 +912,7 @@ function parseBootstrapCommandName(argv: string[]): string | undefined {
       token === "--json" ||
       token === "--quiet" ||
       token === "--no-extensions" ||
+      token === "--no-pager" ||
       token === "--profile" ||
       token === "--explain"
     ) {
@@ -1593,6 +1632,7 @@ function extractCommandScopedOptions(
   delete scoped.noExtensions;
   delete scoped.extensions;
   delete scoped.profile;
+  delete scoped.pager;
 
   const looseOptions = parseLooseCommandOptions(commandArgs);
   for (const [key, value] of Object.entries(looseOptions)) {
@@ -2524,6 +2564,7 @@ program
   .option("--quiet", "Suppress stdout output")
   .option("--path <dir>", "Override PM path for this command")
   .option("--no-extensions", "Disable extension loading")
+  .option("--no-pager", "Disable pager integration for help and long output")
   .option("--explain", "Render extended rationale and examples in help output")
   .option("--profile", "Print deterministic timing diagnostics")
   .exitOverride();
@@ -3944,6 +3985,7 @@ program
   .option("--assignee-filter <value>", "Filter assignee presence: assigned|unassigned")
   .option("--assignee_filter <value>", "Alias for --assignee-filter")
   .option("--limit-items <n>", "Limit returned item count")
+  .option("--limit <n>", "Alias for --limit-items")
   .option("--full-history", "Export full comment history rows (cannot be combined with --latest)")
   .option("--latest <n>", "Return latest n comments per item (default: 1, use 0 for summary-only rows)")
   .description("Audit latest comments or full comment history across filtered items.")
@@ -3961,6 +4003,7 @@ program
         release: typeof options.release === "string" ? options.release : undefined,
         assignee: typeof options.assignee === "string" ? options.assignee : undefined,
         assigneeFilter: typeof options.assigneeFilter === "string" ? options.assigneeFilter : undefined,
+        limit: typeof options.limit === "string" ? options.limit : undefined,
         limitItems: typeof options.limitItems === "string" ? options.limitItems : undefined,
         fullHistory: options.fullHistory === true,
         latest: typeof options.latest === "string" ? options.latest : undefined,
@@ -4199,6 +4242,10 @@ program
   .option("--env-clear <value>", "Clear environment variable(s) for linked-test runs (NAME, repeatable)", collect)
   .option("--shared-host-safe", "Apply additive shared-host-safe runtime defaults for linked-test runs")
   .option("--pm-context <mode>", "PM linked-test context mode: schema|tracker|auto (default: schema)")
+  .option(
+    "--override-linked-pm-context",
+    "Force run-level --pm-context to override per-linked-test pm_context_mode metadata",
+  )
   .option("--fail-on-context-mismatch", "Fail linked PM commands when context item counts differ")
   .option("--fail-on-skipped", "Treat skipped linked tests as dependency failures")
   .option(
@@ -4255,6 +4302,7 @@ program
         envClear: Array.isArray(options.envClear) ? (options.envClear as string[]) : [],
         sharedHostSafe: Boolean(options.sharedHostSafe),
         pmContext: typeof options.pmContext === "string" ? options.pmContext : undefined,
+        overrideLinkedPmContext: Boolean(options.overrideLinkedPmContext),
         failOnContextMismatch: Boolean(options.failOnContextMismatch),
         failOnSkipped: Boolean(options.failOnSkipped),
         failOnEmptyTestRun: Boolean(options.failOnEmptyTestRun),
@@ -4281,6 +4329,8 @@ program
   .command("test-all")
   .description("Run linked tests across matching items.")
   .option("--status <value>", "Filter items by status before running tests")
+  .option("--limit <n>", "Limit matching items before running linked tests")
+  .option("--offset <n>", "Skip matching items before running linked tests")
   .option("--background", "Run linked tests in managed background mode")
   .option("--timeout <seconds>", "Default run timeout in seconds")
   .option("--progress", "Emit linked-test progress to stderr (always shown in TTY, opt-in for non-TTY)")
@@ -4288,6 +4338,10 @@ program
   .option("--env-clear <value>", "Clear environment variable(s) for linked-test runs (NAME, repeatable)", collect)
   .option("--shared-host-safe", "Apply additive shared-host-safe runtime defaults for linked-test runs")
   .option("--pm-context <mode>", "PM linked-test context mode: schema|tracker|auto (default: schema)")
+  .option(
+    "--override-linked-pm-context",
+    "Force run-level --pm-context to override per-linked-test pm_context_mode metadata",
+  )
   .option("--fail-on-context-mismatch", "Fail linked PM commands when context item counts differ")
   .option("--fail-on-skipped", "Treat skipped linked tests as dependency failures")
   .option(
@@ -4318,12 +4372,15 @@ program
     const result = await runTestAll(
       {
         status: typeof options.status === "string" ? options.status : undefined,
+        limit: typeof options.limit === "string" ? options.limit : undefined,
+        offset: typeof options.offset === "string" ? options.offset : undefined,
         timeout: typeof options.timeout === "string" ? options.timeout : undefined,
         progress: Boolean(options.progress),
         envSet: Array.isArray(options.envSet) ? (options.envSet as string[]) : [],
         envClear: Array.isArray(options.envClear) ? (options.envClear as string[]) : [],
         sharedHostSafe: Boolean(options.sharedHostSafe),
         pmContext: typeof options.pmContext === "string" ? options.pmContext : undefined,
+        overrideLinkedPmContext: Boolean(options.overrideLinkedPmContext),
         failOnContextMismatch: Boolean(options.failOnContextMismatch),
         failOnSkipped: Boolean(options.failOnSkipped),
         failOnEmptyTestRun: Boolean(options.failOnEmptyTestRun),
@@ -4923,6 +4980,7 @@ async function formatCommanderUsageJson(error: unknown): Promise<string> {
 
 async function main(): Promise<void> {
   try {
+    applyBootstrapPagerPolicy(process.argv.slice(2));
     await registerDynamicExtensionCommandPaths(program);
     wrapProgramActionsForExtensionHandlers(program);
     const renderedBootstrapJsonHelp = await maybeRenderBootstrapJsonHelp(program, process.argv.slice(2));

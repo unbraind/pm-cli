@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: context-parity,external-audit,implementation,linked-tests
 created_at: "2026-04-04T12:43:04.119Z"
-updated_at: "2026-04-06T20:11:22.678Z"
+updated_at: "2026-04-07T08:32:52.101Z"
 deadline: "2026-04-11T12:43:04.119Z"
 author: codex-agent
 estimated_minutes: 220
@@ -40,7 +40,7 @@ regression: true
 customer_impact: Improves trust in PM-command governance evidence from linked runs.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-6pij,related,"2026-04-04T12:43:04.119Z",codex-agent,null
-comments[8]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-04-04T12:43:04.119Z",codex-agent,Task created after dedupe checks found no active implementation item for PM dataset parity controls and mismatch-fail behavior.
   "2026-04-04T14:01:37.286Z",codex-agent,"Implemented --pm-context schema|tracker runtime controls, execution_context telemetry, and --fail-on-context-mismatch guardrails across test/test-all surfaces. Evidence: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts and pm test pm-vrsn --run --pm-context tracker --fail-on-context-mismatch passed."
   "2026-04-04T18:31:13.935Z",codex-agent,"Implemented default schema-mode mismatch failure for PM tracker-read linked commands, added execution_context tracker-read classification, and updated unit coverage. Evidence: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts plus schema/tracker repro runs."
@@ -49,23 +49,31 @@ comments[8]{created_at,author,text}:
   "2026-04-05T03:46:56.969Z",codex-agent,Implemented pm-context auto mode and per-linked-test pm_context_mode override across parse/normalize/run/dedupe paths; verified auto mode routes tracker-read linked command to tracker with mismatch_detected=false.
   "2026-04-06T19:39:59.214Z",codex-agent,Duplicate-check evidence refreshed via pm context/list/search sweep. Reusing this task for linked-test pm-context mismatch diagnostics precision so per-test pm_context_mode override precedence is explained accurately.
   "2026-04-06T19:50:24.879Z",codex-agent,"Progress: refined linked-test context mismatch diagnostics so tracker-read mismatches now explain override precedence when run-level --pm-context tracker is superseded by per-linked-test pm_context_mode=schema. Added regression assertion in tests/unit/test-command.spec.ts and verified with node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts."
+  "2026-04-07T08:09:09.363Z",codex-agent,"Wave 8/9 execution kickoff: extending this canonical PM context task to add explicit run-level override control for linked-test pm_context_mode."
+  "2026-04-07T08:21:58.262Z",codex-agent,"Implementation in progress: add explicit --override-linked-pm-context to pm test and pm test-all so run-level --pm-context can force execution context over per-linked-test pm_context_mode metadata."
+  "2026-04-07T08:32:34.990Z",codex-agent,"Completed Wave 8/9 override implementation: added --override-linked-pm-context to pm test and pm test-all, wired background test run command forwarding, and applied precedence so run-level --pm-context can intentionally supersede per-linked-test pm_context_mode metadata. Propagated parity updates across CLI option wiring, linked-test runtime guardrails, shell completion outputs (bash/zsh/fish), command contracts + PM tool schema, and Pi wrapper argument construction/schema typing. Added regression coverage for runtime validation and behavior in test/test-all plus completion/contracts/Pi/help parity assertions. Verification passed: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts."
 notes[1]{created_at,author,text}:
   "2026-04-04T12:43:04.119Z",codex-agent,Keep default mode backward compatible; all strict behavior must be opt-in.
-files[8]{path,scope,note}:
+files[12]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,context-parity-implementation
+  src/cli/commands/completion.ts,project,override-linked-pm-context completion parity
   src/cli/commands/test-all.ts,project,context-parity-implementation
   src/cli/commands/test.ts,project,context-parity-implementation
   src/cli/main.ts,project,context-parity-implementation
   src/sdk/cli-contracts.ts,project,context-parity-implementation
   tests/integration/release-readiness-runtime.spec.ts,project,context-parity-implementation
+  tests/unit/completion-command.spec.ts,project,override-linked-pm-context completion coverage
+  tests/unit/contracts-command.spec.ts,project,override-linked-pm-context contract flag parity
+  tests/unit/pi-agent-extension.spec.ts,project,override-linked-pm-context Pi schema mapping coverage
   tests/unit/test-all-command.spec.ts,project,context-parity-implementation
   tests/unit/test-command.spec.ts,project,context-parity-implementation
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,context-parity-regression
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,null,override-linked-pm-context-regression-suite
 docs[4]{path,scope,note}:
   AGENTS.md,project,agent-guardrail-update
   docs/ARCHITECTURE.md,project,runtime-behavior-update
   PRD.md,project,runtime-contract-update
   README.md,project,linked-test-schema-default-note
-close_reason: Linked-test PM-context mismatch guidance refinement implemented and verified.
+close_reason: Wave 8/9 override flag shipped with parity + regression evidence
 body: Code workstream for feature pm-8izv and issue pm-6pij.

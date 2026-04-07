@@ -412,6 +412,9 @@ describe("runTest", () => {
       await expect(runTest(id, { pmContext: "tracker" }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
+      await expect(runTest(id, { overrideLinkedPmContext: true }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
       await expect(runTest(id, { failOnContextMismatch: true }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
@@ -1183,6 +1186,21 @@ describe("runTest", () => {
       expect(perTestSchemaOverride.run_results[0]?.error ?? "").toContain(
         "pm_context_mode=schema overrides run-level --pm-context tracker",
       );
+
+      const runLevelOverride = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "30",
+          pmContext: "tracker",
+          overrideLinkedPmContext: true,
+          failOnContextMismatch: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(runLevelOverride.run_results[0]?.status).toBe("passed");
+      expect(runLevelOverride.run_results[0]?.execution_context?.pm_context_mode).toBe("tracker");
+      expect(runLevelOverride.run_results[0]?.execution_context?.mismatch_detected).toBe(false);
     });
   });
 

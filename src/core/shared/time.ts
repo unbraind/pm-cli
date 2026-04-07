@@ -2,6 +2,7 @@ import { PmCliError } from "./errors.js";
 import { EXIT_CODE } from "./constants.js";
 
 const RELATIVE_DEADLINE = /^\+?(\d+)([hdwm])$/i;
+const COMPOUND_RELATIVE_DEADLINE = /^\+?\d+[hdwm](?:\+\d+[hdwm])+$/i;
 const COMPACT_DATE = /^(\d{4})(\d{2})(\d{2})$/;
 const COMPACT_DATETIME = /^(\d{4})(\d{2})(\d{2})(?:[T\s]?)(\d{2})(\d{2})(\d{2})?([.,]\d{1,3})?(Z|[+-]\d{2}:?\d{2})?$/i;
 const HYPHEN_TIME = /^(\d{4}-\d{2}-\d{2})[T\s](\d{2})-(\d{2})(?:-(\d{2}))?([.,]\d{1,3})?(Z|[+-]\d{2}:?\d{2})?$/i;
@@ -111,6 +112,7 @@ function addUtcMonths(now: Date, amount: number): Date {
 export function resolveIsoOrRelative(
   input: string,
   now: Date = new Date(),
+  fieldLabel = "deadline",
 ): string {
   const trimmed = input.trim();
   const relative = RELATIVE_DEADLINE.exec(trimmed);
@@ -126,8 +128,12 @@ export function resolveIsoOrRelative(
 
   const timestamp = parseTimestampWithFallbacks(trimmed);
   if (!Number.isFinite(timestamp)) {
+    const normalizedLabel = fieldLabel.trim().length > 0 ? fieldLabel.trim() : "deadline";
+    const guidance = COMPOUND_RELATIVE_DEADLINE.test(trimmed)
+      ? "Compound relative expressions like +3d+1h are not supported; use a single relative token (for example +3d) or an ISO/date string."
+      : "Use ISO/date string input or relative +6h/+1d/+2w/+6m.";
     throw new PmCliError(
-      `Invalid deadline value "${input}". Use ISO/date string input or relative +6h/+1d/+2w/+6m.`,
+      `Invalid ${normalizedLabel} value "${input}". ${guidance}`,
       EXIT_CODE.USAGE,
     );
   }

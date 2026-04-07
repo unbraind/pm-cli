@@ -3,5 +3,6 @@ export interface GlobalOptions {
   quiet?: boolean;
   path?: string;
   noExtensions?: boolean;
+  noPager?: boolean;
   profile?: boolean;
 }

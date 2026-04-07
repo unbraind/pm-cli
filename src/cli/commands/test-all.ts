@@ -16,12 +16,15 @@ import { countFailureCategories, runLinkedTests, runTest, type LinkedTestFailure
 
 export interface TestAllCommandOptions {
   status?: string;
+  limit?: string;
+  offset?: string;
   timeout?: string;
   progress?: boolean;
   envSet?: string[];
   envClear?: string[];
   sharedHostSafe?: boolean;
   pmContext?: string;
+  overrideLinkedPmContext?: boolean;
   failOnContextMismatch?: boolean;
   failOnSkipped?: boolean;
   failOnEmptyTestRun?: boolean;
@@ -72,6 +75,17 @@ function parseTimeout(raw: string | undefined): number | undefined {
     return undefined;
   }
   return parseOptionalNumber(raw, "timeout");
+}
+
+function parseNonNegativeInteger(raw: string | undefined, flag: string): number | undefined {
+  if (raw === undefined) {
+    return undefined;
+  }
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new PmCliError(`${flag} must be a non-negative integer`, EXIT_CODE.USAGE);
+  }
+  return parsed;
 }
 
 function resolveTrackingAuthor(fallback: string): string {
@@ -191,10 +205,16 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const statusFilter = parseStatus(options.status);
+  const limitFilter = parseNonNegativeInteger(options.limit, "--limit");
+  const offsetFilter = parseNonNegativeInteger(options.offset, "--offset") ?? 0;
   const allItems = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
-  const filteredItems = allItems
+  const statusFilteredItems = allItems
     .filter((item) => (statusFilter ? item.status === statusFilter : true))
     .sort((a, b) => a.id.localeCompare(b.id));
+  const filteredItems =
+    limitFilter === undefined
+      ? statusFilteredItems.slice(offsetFilter)
+      : statusFilteredItems.slice(offsetFilter, offsetFilter + limitFilter);
   const defaultTimeoutSeconds = parseTimeout(options.timeout);
   const sourceRoots = {
     projectPmRoot: pmRoot,
@@ -270,6 +290,7 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
             envClear: options.envClear,
             sharedHostSafe: options.sharedHostSafe,
             pmContext: options.pmContext,
+        overrideLinkedPmContext: options.overrideLinkedPmContext,
             failOnContextMismatch: options.failOnContextMismatch,
             failOnEmptyTestRun: options.failOnEmptyTestRun,
             requireAssertionsForPm: options.requireAssertionsForPm,

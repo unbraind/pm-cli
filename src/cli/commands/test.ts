@@ -137,6 +137,7 @@ export interface TestCommandOptions {
   envClear?: string[];
   sharedHostSafe?: boolean;
   pmContext?: string;
+  overrideLinkedPmContext?: boolean;
   failOnContextMismatch?: boolean;
   failOnSkipped?: boolean;
   failOnEmptyTestRun?: boolean;
@@ -435,7 +436,11 @@ function parsePmContextMode(raw: string | undefined): LinkedTestPmContextMode {
 function resolveLinkedTestRequestedContextMode(
   linkedTest: LinkedTest,
   runLevelMode: LinkedTestPmContextMode,
+  overrideLinkedPmContext: boolean,
 ): LinkedTestPmContextMode {
+  if (overrideLinkedPmContext) {
+    return runLevelMode;
+  }
   if (typeof linkedTest.pm_context_mode !== "string" || linkedTest.pm_context_mode.trim().length === 0) {
     return runLevelMode;
   }
@@ -1708,6 +1713,7 @@ export async function runLinkedTests(
     envClear?: string[];
     sharedHostSafe?: boolean;
     pmContext?: string;
+    overrideLinkedPmContext?: boolean;
     failOnContextMismatch?: boolean;
     failOnEmptyTestRun?: boolean;
     requireAssertionsForPm?: boolean;
@@ -1795,7 +1801,11 @@ export async function runLinkedTests(
         isPmCommand && typeof linkedTest.command === "string" && linkedTest.command.length > 0
           ? commandInvokesPmTrackerReadCommand(linkedTest.command)
           : false;
-      const requestedPmContextMode = resolveLinkedTestRequestedContextMode(linkedTest, runLevelPmContextMode);
+      const requestedPmContextMode = resolveLinkedTestRequestedContextMode(
+        linkedTest,
+        runLevelPmContextMode,
+        options?.overrideLinkedPmContext === true,
+      );
       const effectivePmContextMode = resolveLinkedTestEffectiveContextMode(requestedPmContextMode, isPmTrackerReadCommand);
       const executionContext = buildExecutionContext(isPmCommand, isPmTrackerReadCommand, effectivePmContextMode);
       if (!linkedTest.command) {
@@ -2023,13 +2033,14 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
     (options.envClear?.length ?? 0) > 0 ||
     options.sharedHostSafe === true ||
     options.pmContext !== undefined ||
+    options.overrideLinkedPmContext === true ||
     options.failOnContextMismatch === true ||
     options.failOnSkipped === true ||
     options.failOnEmptyTestRun === true ||
     options.requireAssertionsForPm === true;
   if (hasRuntimeDirectiveFlags && options.run !== true) {
     throw new PmCliError(
-      "--env-set, --env-clear, --shared-host-safe, --pm-context, --fail-on-context-mismatch, --fail-on-skipped, --fail-on-empty-test-run, and --require-assertions-for-pm require --run",
+      "--env-set, --env-clear, --shared-host-safe, --pm-context, --override-linked-pm-context, --fail-on-context-mismatch, --fail-on-skipped, --fail-on-empty-test-run, and --require-assertions-for-pm require --run",
       EXIT_CODE.USAGE,
     );
   }
@@ -2042,6 +2053,7 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
         envClear: options.envClear,
         sharedHostSafe: options.sharedHostSafe,
         pmContext: pmContextMode,
+        overrideLinkedPmContext: options.overrideLinkedPmContext,
         failOnContextMismatch: options.failOnContextMismatch,
         failOnEmptyTestRun: options.failOnEmptyTestRun,
         requireAssertionsForPm: options.requireAssertionsForPm,

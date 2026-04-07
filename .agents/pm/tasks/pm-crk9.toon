@@ -1,0 +1,32 @@
+id: pm-crk9
+title: "Wave 8/9: non-interactive help paging safeguards and --no-pager"
+description: Implement deterministic non-TTY help paging safeguards and add first-class --no-pager control with contracts/completion/docs parity.
+type: Task
+status: closed
+priority: 1
+tags[5]: help,pager,pm-cli,wave8,wave9
+created_at: "2026-04-07T08:09:27.158Z"
+updated_at: "2026-04-07T09:06:52.817Z"
+author: codex-agent
+parent: pm-o7be
+comments[4]{created_at,author,text}:
+  "2026-04-07T08:09:27.158Z",codex-agent,"Duplicate-check evidence commands: pm context --limit 10; pm list-open --limit 50; pm list-in-progress --limit 50; pm search no-pager non-interactive help paging --limit 10. Net-new because no active item directly covers non-TTY help paging safeguards and first-class --no-pager support."
+  "2026-04-07T08:14:45.826Z",codex-agent,"Implementation in progress: wiring global --no-pager option, bootstrap parser handling, non-TTY help pager auto-disable policy, and parity updates for contracts/completion/Pi/tests/docs."
+  "2026-04-07T08:17:35.193Z",codex-agent,"Completed implementation: added global --no-pager option, bootstrap parsing, and non-TTY help auto pager-disable policy via PAGER/MANPAGER/GIT_PAGER=cat. Propagated to contracts/completion/Pi/help text with focused regression suite passing (132 tests): node scripts/run-tests.mjs test -- tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts."
+  "2026-04-07T09:06:42.406Z",codex-agent,"Post-implementation verification caught a compatibility regression from the new global --no-pager switch: extension command handler contexts were receiving a default pager=true option in context.options. Fixed by excluding global pager state from command-scoped extension options in src/cli/main.ts (extractCommandScopedOptions) so dynamic command option payloads remain command-specific and backward-compatible. Re-ran focused integration suite (cli/help/release-readiness) and then full sandboxed test + coverage runs successfully."
+files[10]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,Pi wrapper forwards no-pager
+  src/cli/commands/completion.ts,project,completion includes no-pager flag
+  src/cli/help-content.ts,project,root help tip for no-pager
+  src/cli/main.ts,project,global no-pager option and bootstrap pager policy
+  src/core/shared/command-types.ts,project,global option type includes noPager
+  src/sdk/cli-contracts.ts,project,global flag and schema contract parity
+  tests/integration/help-runtime.spec.ts,project,help runtime no-pager coverage
+  tests/integration/release-readiness-runtime.spec.ts,project,release help includes no-pager
+  tests/unit/completion-command.spec.ts,project,completion regression for no-pager
+  tests/unit/pi-agent-extension.spec.ts,project,Pi arg mapping regression
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,extension-command-global-pager-option-regression
+  node scripts/run-tests.mjs test -- tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,pager-safety-targeted-suite
+close_reason: non-interactive pager safeguards and no-pager shipped
+body: ""

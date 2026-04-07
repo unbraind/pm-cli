@@ -178,6 +178,7 @@ describe("contracts command runtime", () => {
 
     const commandFlagParityChecks: Array<{ command: string; flags: string[] }> = [
       { command: "comments", flags: ["--add", "--allow-audit-comment"] },
+      { command: "comments-audit", flags: ["--assignee-filter", "--limit-items", "--limit", "--full-history", "--latest"] },
       { command: "notes", flags: ["--add", "--limit", "--author", "--message", "--allow-audit-note", "--allow-audit-comment", "--force"] },
       {
         command: "learnings",
@@ -189,6 +190,22 @@ describe("contracts command runtime", () => {
       { command: "config", flags: ["--criterion", "--clear-criteria", "--format", "--policy"] },
       { command: "restore", flags: ["--author", "--message", "--force"] },
       { command: "delete", flags: ["--author", "--message", "--force"] },
+      {
+        command: "test",
+        flags: ["--run", "--background", "--pm-context", "--override-linked-pm-context", "--fail-on-empty-test-run"],
+      },
+      {
+        command: "test-all",
+        flags: [
+          "--status",
+          "--limit",
+          "--offset",
+          "--background",
+          "--pm-context",
+          "--override-linked-pm-context",
+          "--fail-on-empty-test-run",
+        ],
+      },
       { command: "extension", flags: ["--install", "--doctor", "--runtime-probe", "--strict-exit"] },
       { command: "test-runs", flags: ["--status", "--limit", "--stream", "--tail", "--force", "--author"] },
       {

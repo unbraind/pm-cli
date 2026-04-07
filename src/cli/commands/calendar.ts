@@ -679,12 +679,12 @@ function buildRange(
   periodEnd?: string;
   fullPeriod: boolean;
 } {
-  const anchor = options.date ? resolveIsoOrRelative(options.date, new Date(nowValue)) : nowValue;
+  const anchor = options.date ? resolveIsoOrRelative(options.date, new Date(nowValue), "--date") : nowValue;
   const includePast = options.past === true;
   const fullPeriodRequested = options.fullPeriod === true;
 
-  const from = options.from ? resolveIsoOrRelative(options.from, new Date(nowValue)) : undefined;
-  const to = options.to ? resolveIsoOrRelative(options.to, new Date(nowValue)) : undefined;
+  const from = options.from ? resolveIsoOrRelative(options.from, new Date(nowValue), "--from") : undefined;
+  const to = options.to ? resolveIsoOrRelative(options.to, new Date(nowValue), "--to") : undefined;
   if (from && to && compareTimestampStrings(from, to) >= 0) {
     throw new PmCliError("Calendar --from must be before --to", EXIT_CODE.USAGE);
   }

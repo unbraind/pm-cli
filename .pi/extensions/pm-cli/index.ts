@@ -29,6 +29,7 @@ export interface PmToolParameters {
   quiet?: boolean;
   profile?: boolean;
   noExtensions?: boolean;
+  noPager?: boolean;
   path?: string;
   pmExecutable?: string;
   timeoutMs?: number;
@@ -136,6 +137,7 @@ export interface PmToolParameters {
   runtimeProbe?: boolean;
   fixManagedState?: boolean;
   pmContext?: string;
+  overrideLinkedPmContext?: boolean;
   failOnContextMismatch?: boolean;
   failOnSkipped?: boolean;
   failOnEmptyTestRun?: boolean;
@@ -388,6 +390,9 @@ function addGlobalFlags(args: string[], params: PmToolParameters): void {
   }
   if (params.noExtensions) {
     args.push("--no-extensions");
+  }
+  if (params.noPager) {
+    args.push("--no-pager");
   }
   pushOption(args, "--path", params.path);
 }
@@ -685,7 +690,8 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       pushOption(args, "--sprint", params.sprint);
       pushOption(args, "--release", params.release);
       pushOption(args, "--priority", params.priority);
-      pushOption(args, "--limit-items", params.limitItems ?? params.limit);
+      pushOption(args, "--limit-items", params.limitItems);
+      pushOption(args, "--limit", params.limit);
       if (params.fullHistory) {
         args.push("--full-history");
       }
@@ -773,6 +779,9 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
         args.push("--shared-host-safe");
       }
       pushOption(args, "--pm-context", params.pmContext);
+      if (params.overrideLinkedPmContext) {
+        args.push("--override-linked-pm-context");
+      }
       if (params.failOnContextMismatch) {
         args.push("--fail-on-context-mismatch");
       }
@@ -790,6 +799,8 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
     case "test-all":
       args.push("test-all");
       pushOption(args, "--status", params.status);
+      pushOption(args, "--limit", params.limit);
+      pushOption(args, "--offset", params.offset);
       if (params.background) {
         args.push("--background");
       }
@@ -803,6 +814,9 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
         args.push("--shared-host-safe");
       }
       pushOption(args, "--pm-context", params.pmContext);
+      if (params.overrideLinkedPmContext) {
+        args.push("--override-linked-pm-context");
+      }
       if (params.failOnContextMismatch) {
         args.push("--fail-on-context-mismatch");
       }

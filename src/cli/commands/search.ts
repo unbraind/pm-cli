@@ -183,9 +183,9 @@ function parseType(raw: string | undefined, typeRegistry: ItemTypeRegistry): Ite
   return parsed;
 }
 
-function parseDeadline(raw: string | undefined): string | undefined {
+function parseDeadline(raw: string | undefined, fieldLabel: string): string | undefined {
   if (raw === undefined) return undefined;
-  return resolveIsoOrRelative(raw);
+  return resolveIsoOrRelative(raw, new Date(), fieldLabel);
 }
 
 function parseLimit(raw: string | undefined): number | undefined {
@@ -298,8 +298,8 @@ function applyFilters(items: ItemDocument[], options: SearchOptions, typeRegistr
   const typeFilter = parseType(options.type, typeRegistry);
   const tagFilter = options.tag?.trim().toLowerCase();
   const priorityFilter = parsePriority(options.priority);
-  const deadlineBefore = parseDeadline(options.deadlineBefore);
-  const deadlineAfter = parseDeadline(options.deadlineAfter);
+  const deadlineBefore = parseDeadline(options.deadlineBefore, "deadline-before");
+  const deadlineAfter = parseDeadline(options.deadlineAfter, "deadline-after");
 
   return items.filter((document) => {
     const item = document.front_matter;

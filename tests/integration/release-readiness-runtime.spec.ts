@@ -262,6 +262,7 @@ const REQUIRED_TEST_FLAGS = [
   "--env-clear",
   "--shared-host-safe",
   "--pm-context",
+  "--override-linked-pm-context",
   "--fail-on-context-mismatch",
   "--fail-on-skipped",
   "--fail-on-empty-test-run",
@@ -271,7 +272,15 @@ const REQUIRED_TEST_FLAGS = [
   "--force",
 ];
 const REQUIRED_COMMENTS_FLAGS = ["--add", "--limit", "--author", "--message", "--allow-audit-comment", "--force"];
-const REQUIRED_COMMENTS_AUDIT_FLAGS = ["--status", "--type", "--assignee", "--limit-items", "--full-history", "--latest"];
+const REQUIRED_COMMENTS_AUDIT_FLAGS = [
+  "--status",
+  "--type",
+  "--assignee",
+  "--limit-items",
+  "--limit",
+  "--full-history",
+  "--latest",
+];
 const REQUIRED_NOTES_FLAGS = ["--add", "--limit", "--author", "--message", "--allow-audit-note", "--allow-audit-comment", "--force"];
 const REQUIRED_LEARNINGS_FLAGS = [
   "--add",
@@ -351,6 +360,7 @@ describe("release readiness runtime coverage", () => {
       const help = context.runCli(["--help"]);
       expect(help.code).toBe(0);
       expectHelpContainsCommands(help.stdout, CORE_COMMANDS);
+      expect(help.stdout).toContain("--no-pager");
     });
   });
 
@@ -707,6 +717,12 @@ describe("release readiness runtime coverage", () => {
       }
       expect(testHelp.stdout).not.toContain("Add linked test entry (default: [])");
       expect(testHelp.stdout).not.toContain("Remove linked test entry by command/path (default: [])");
+
+      const testAllHelp = context.runCli(["test-all", "--help"]);
+      expect(testAllHelp.code).toBe(0);
+      for (const flag of ["--status", "--limit", "--offset", "--background", "--timeout"]) {
+        expect(testAllHelp.stdout).toContain(flag);
+      }
 
       const filesHelp = context.runCli(["files", "--help"]);
       expect(filesHelp.code).toBe(0);
@@ -1179,6 +1195,9 @@ describe("release readiness runtime coverage", () => {
       const getResult = context.runCli(["get", createdId, "--json"], { expectJson: true });
       expect(getResult.code).toBe(0);
       expectTopLevelKeyOrder(getResult.json, ["item", "body", "linked", "claim_state"]);
+      const getJson = getResult.json as { item: Record<string, unknown>; body: string };
+      expect(typeof getJson.body).toBe("string");
+      expect(getJson.item).not.toHaveProperty("body");
 
       const reindexResult = context.runCli(["reindex", "--mode", "keyword", "--json"], { expectJson: true });
       expect(reindexResult.code).toBe(0);

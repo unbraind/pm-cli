@@ -14,6 +14,7 @@ export interface CommentsAuditOptions {
   release?: string;
   assignee?: string;
   assigneeFilter?: string;
+  limit?: string;
   limitItems?: string;
   latest?: string;
   fullHistory?: boolean;
@@ -234,7 +235,16 @@ export async function runCommentsAudit(options: CommentsAuditOptions, global: Gl
     throw new PmCliError("--full-history cannot be combined with --latest", EXIT_CODE.USAGE);
   }
   const latest = fullHistory ? undefined : latestParsed ?? 1;
-  const limitItems = parseNonNegativeInteger(options.limitItems, "--limit-items");
+  const limitItemsPrimary = parseNonNegativeInteger(options.limitItems, "--limit-items");
+  const limitItemsAlias = parseNonNegativeInteger(options.limit, "--limit");
+  if (
+    limitItemsPrimary !== undefined &&
+    limitItemsAlias !== undefined &&
+    limitItemsPrimary !== limitItemsAlias
+  ) {
+    throw new PmCliError("--limit and --limit-items must match when both are provided", EXIT_CODE.USAGE);
+  }
+  const limitItems = limitItemsPrimary ?? limitItemsAlias;
 
   const listed = await runList(
     status,

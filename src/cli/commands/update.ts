@@ -519,7 +519,7 @@ function parseReminderEntries(raw: string[], nowValue: Date): Reminder[] {
       throw new PmCliError("--reminder requires at=<iso|relative> and text=<value>", EXIT_CODE.USAGE);
     }
     return {
-      at: resolveIsoOrRelative(atRaw, nowValue),
+      at: resolveIsoOrRelative(atRaw, nowValue, "reminder.at"),
       text: textRaw,
     };
   });
@@ -574,7 +574,7 @@ function parseRecurrenceRule(kv: Record<string, string>, startAt: string, nowVal
   if (count !== undefined && (!Number.isInteger(count) || count < 1)) {
     throw new PmCliError("--event recur_count must be an integer >= 1", EXIT_CODE.USAGE);
   }
-  const until = untilRaw ? resolveIsoOrRelative(untilRaw, nowValue) : undefined;
+  const until = untilRaw ? resolveIsoOrRelative(untilRaw, nowValue, "event.recur_until") : undefined;
   if (until && until < startAt) {
     throw new PmCliError("--event recur_until must be at or after start", EXIT_CODE.USAGE);
   }
@@ -605,7 +605,7 @@ function parseRecurrenceRule(kv: Record<string, string>, startAt: string, nowVal
 
   const exdates = Array.from(
     new Set(
-      parseDelimitedList(exdatesRaw).map((value) => resolveIsoOrRelative(value, nowValue)),
+      parseDelimitedList(exdatesRaw).map((value) => resolveIsoOrRelative(value, nowValue, "event.recur_exdates")),
     ),
   ).sort((left, right) => left.localeCompare(right));
 
@@ -627,9 +627,9 @@ function parseEventEntries(raw: string[], nowValue: Date): CalendarEvent[] {
     if (!startRaw) {
       throw new PmCliError("--event requires start=<iso|relative>", EXIT_CODE.USAGE);
     }
-    const startAt = resolveIsoOrRelative(startRaw, nowValue);
+    const startAt = resolveIsoOrRelative(startRaw, nowValue, "event.start");
     const endRaw = kv.end?.trim();
-    const endAt = endRaw ? resolveIsoOrRelative(endRaw, nowValue) : undefined;
+    const endAt = endRaw ? resolveIsoOrRelative(endRaw, nowValue, "event.end") : undefined;
     if (endAt && endAt <= startAt) {
       throw new PmCliError("--event end must be after start", EXIT_CODE.USAGE);
     }
@@ -1529,7 +1529,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         if (clearFrontMatterKeys.has("deadline")) {
           delete document.front_matter.deadline;
         } else {
-          document.front_matter.deadline = resolveIsoOrRelative(options.deadline!);
+          document.front_matter.deadline = resolveIsoOrRelative(options.deadline!, new Date(), "deadline");
         }
         changedFields.push("deadline");
       }

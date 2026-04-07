@@ -34,6 +34,7 @@
 - Standalone `pm validate` command for metadata, resolution, lifecycle, linked-file, linked-command reference, and history-drift audits
 - Opt-in non-interactive progress output for long-running operations (`pm test`, `pm test-all`, `pm reindex` with `--progress`)
 - Managed background linked-test orchestration (`pm test --run --background`, `pm test-all --background`, and `pm test-runs` lifecycle controls; bare `pm test-runs` defaults to list output)
+- Pager-safe help output in automation (help requests auto-disable paging on non-TTY stdout, with explicit global `--no-pager` override)
 - Settings-gated item-level test result tracking (`pm config ... test-result-tracking --policy enabled|disabled`)
 - Optional search and extension support for more advanced setups
 
@@ -166,6 +167,7 @@ Claim behavior note:
 - For non-owner release handoffs that only clear assignee metadata, prefer `pm release <ID> --allow-audit-release --author <you>` before `--force`.
 - For ownership-conflict mutations, `--force` is intended for coordinated PM audits, lead-maintainer metadata corrections, or explicit ownership handoff cleanup.
 - `pm get <ID> --json` now includes `claim_state` with current assignee plus latest claim/release history context.
+- `pm get <ID> --json` returns body at top-level key `body` (not `item.body`) alongside `item`, `linked`, and `claim_state`.
 
 Create policy mode note:
 
@@ -501,6 +503,8 @@ pm activity --json --stream rows --from -1d --limit 200
   - Flexible date strings (for example `2026-03-31T13-59`, `20260331`, `20260331T135900Z`)
   - Relative offsets (`+6h`, `+1d`, `+2w`, `+6m`)
 - Accepted values are normalized to canonical ISO timestamps for deterministic storage and filtering.
+- Parse failures now report the precise field context (for example `event.end`, `reminder.at`, `--from`, `deadline-before`) for faster remediation.
+- Compound relative expressions such as `+3d+1h` are rejected; use a single relative token (`+3d`) or an ISO/date string.
 
 ## Status Values
 
@@ -569,16 +573,16 @@ pm deps pm-a1b2 --format tree
 pm deps pm-a1b2 --format graph --json
 
 # Bulk governance snapshots for latest comments across matching items
-pm comments-audit --status in_progress --parent pm-epic01 --tag governance --latest 1 --limit-items 20 --json
+pm comments-audit --status in_progress --parent pm-epic01 --tag governance --latest 1 --limit 20 --json
 
 # Full-history export rows for NDJSON-friendly downstream processing
-pm comments-audit --status in_progress --sprint sprint-12 --release v0.2 --priority 1 --full-history --limit-items 20 --json
+pm comments-audit --status in_progress --sprint sprint-12 --release v0.2 --priority 1 --full-history --limit 20 --json
 
 # Summary-only item rows (no comment rows) for scoped inventory checks
 pm comments-audit --status in_progress --latest 0 --limit-items 20 --json
 ```
 
-`pm comments-audit --latest` and `--full-history` are intentionally mutually exclusive. `--latest 0` is valid and returns deterministic summary rows with `export.row_count = 0`. All modes now include additive top-level `summary` metrics (`totals`, coverage ratio/percent, and `by_type` breakdown) without changing existing `items`/`filters`/`export` payloads.
+`pm comments-audit --latest` and `--full-history` are intentionally mutually exclusive. `--latest 0` is valid and returns deterministic summary rows with `export.row_count = 0`. `--limit` is an alias for `--limit-items` (both remain supported). All modes now include additive top-level `summary` metrics (`totals`, coverage ratio/percent, and `by_type` breakdown) without changing existing `items`/`filters`/`export` payloads.
 
 Use explicit clear flags for repeatable fields (`--clear-files`, `--clear-comments`, `--clear-docs`, etc.) and `--unset <field>` for scalar clears.
 
@@ -598,13 +602,14 @@ For `pm create` log-seed flags (`--comment`, `--note`, `--learning`), only `auth
 - `pm create --test` follows the same policy: `command=...` is required, optional `path=...` can annotate command scope.
 - Linked test entries also support optional per-entry runtime directives/assertions plus context override metadata: `env_set=KEY=VALUE;KEY2=VALUE2`, `env_clear=KEY1;KEY2`, `shared_host_safe=true|false`, `pm_context_mode=schema|tracker|auto`, `assert_stdout_contains=...`, `assert_stdout_regex=...`, `assert_stderr_contains=...`, `assert_stderr_regex=...`, `assert_stdout_min_lines=<int>`, `assert_json_field_equals=path=value`, `assert_json_field_gte=path=<number>`.
 - `pm test <ID> --run` / `pm test-all` execute in temporary sandbox roots but seed project/global `settings.json` and `extensions/` directories from source roots so extension-defined type behavior matches direct workspace commands.
-- `pm test <ID> --run` / `pm test-all` support additive run-level runtime controls: repeatable `--env-set KEY=VALUE`, repeatable `--env-clear NAME`, `--shared-host-safe` (ephemeral/shared-host-friendly defaults such as `PORT=0` when unset), `--pm-context schema|tracker|auto`, `--fail-on-context-mismatch`, `--fail-on-skipped`, `--fail-on-empty-test-run`, and `--require-assertions-for-pm`.
+- `pm test <ID> --run` / `pm test-all` support additive run-level runtime controls: repeatable `--env-set KEY=VALUE`, repeatable `--env-clear NAME`, `--shared-host-safe` (ephemeral/shared-host-friendly defaults such as `PORT=0` when unset), `--pm-context schema|tracker|auto`, `--override-linked-pm-context` (force run-level context over per-test `pm_context_mode`), `--fail-on-context-mismatch`, `--fail-on-skipped`, `--fail-on-empty-test-run`, and `--require-assertions-for-pm`.
+- `pm test-all` supports blast-radius pagination with `--limit` and `--offset` before linked-test execution.
 - `pm test <ID> --run --background` and `pm test-all --background` start managed background runs and return run metadata immediately.
 - `pm test-runs` (no subcommand) defaults to `list` output; `pm test-runs list|status|logs|stop|resume` provides explicit background lifecycle management, log tailing, health snapshots, and stop/resume controls.
 - Background run dedupe prevents parallel duplicate execution when an equivalent active run fingerprint already exists.
 - Linked-test `run_results` include `execution_context` metadata (context mode, PM roots, item counts, mismatch signal, extension seeding state, PM tracker-read classification) so PM-command parity is explicit in machine-readable output.
 - In default `--pm-context schema` mode, PM tracker-read linked commands (for example `list*`, `get`, `search`, `stats`, `test-all`) fail on dataset mismatch by default; use `--pm-context auto` for automatic tracker-read routing or `--pm-context tracker` for full tracker-mode execution.
-- If run-level `--pm-context tracker` is set but a linked test entry pins `pm_context_mode=schema`, mismatch diagnostics explicitly call out that per-test override precedence and recommend changing/removing that override.
+- If run-level `--pm-context tracker` is set but a linked test entry pins `pm_context_mode=schema`, mismatch diagnostics explicitly call out per-test override precedence and recommend either changing/removing per-test metadata or passing `--override-linked-pm-context` to force run-level precedence.
 - `pm test <ID> --run` and `pm test-all` emit heartbeat/progress lines to stderr in interactive terminals during long-running linked commands, and support explicit non-interactive progress output via `--progress`.
 - Linked test timeout handling uses deterministic process termination (including force-kill fallback) and reports explicit timeout/maxBuffer diagnostics in `run_results`.
 - Failed linked test `run_results` now include `failure_category` (for example `infra_collision` vs `assertion_failure`) and `pm test-all` totals include aggregated `failure_categories` counts for triage.
@@ -617,6 +622,7 @@ For `pm create` log-seed flags (`--comment`, `--note`, `--learning`), only `auth
 
 - Output is plain deterministic TOON/JSON/markdown text (no required terminal-specific OSC/ANSI control protocol).
 - Error exits preserve deterministic exit-code mapping while using graceful `process.exitCode` behavior.
+- Help invocations suppress pager hangs in non-interactive contexts by auto-disabling paging when stdout is not a TTY; use global `--no-pager` for explicit suppression in any context.
 - Stdin token entry (`-`) requires piped stdin when invoked from an interactive TTY.
 - `pm beads import --file -` follows the same stdin guard: if stdin is interactive TTY, `pm` returns usage guidance instead of waiting for EOF.
 - Linked test execution uses shell-compatible spawn orchestration instead of buffered one-shot capture, reducing silent long-run behavior in IDE-integrated terminals.

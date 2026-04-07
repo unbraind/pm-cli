@@ -1,0 +1,24 @@
+id: pm-n5cw
+title: "Wave 8/9: restore replay patch compatibility and diagnostics"
+description: Fix restore replay compatibility when history patches target absent paths and emit failing patch op/path details in restore diagnostics.
+type: Task
+status: closed
+priority: 1
+tags[5]: history,patch,pm-cli,restore,wave9
+created_at: "2026-04-07T08:09:47.937Z"
+updated_at: "2026-04-07T09:06:55.134Z"
+author: codex-agent
+parent: pm-o7be
+comments[3]{created_at,author,text}:
+  "2026-04-07T08:09:47.937Z",codex-agent,"Duplicate-check evidence commands: pm context --limit 10; pm list-open --limit 50; pm search restore patch replay add replace pm_context_mode --limit 10. Net-new because no active item directly tracks this restore replay compatibility plus failing patch diagnostics delta."
+  "2026-04-07T08:17:55.051Z",codex-agent,"Implementation in progress: normalize RFC6902 patch ops for absent paths and improve restore replay failure diagnostics with explicit entry/op/path context plus regression tests."
+  "2026-04-07T08:21:42.932Z",codex-agent,"Completed implementation: history patch generation now normalizes replace->add when a target pointer is absent, preventing replay failures for sparse linked-test metadata paths. Restore patch replay errors now include entry history_op plus failing patch_index/op/path/from context and upstream reason text. Verification passed (27 tests): node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts tests/unit/restore-command.spec.ts."
+files[4]{path,scope,note}:
+  src/cli/commands/restore.ts,project,restore patch failure diagnostics include entry/op/path context
+  src/core/history/history.ts,project,normalize replace-to-add patch ops when target path is absent
+  tests/unit/determinism.spec.ts,project,history patch normalization regression
+  tests/unit/restore-command.spec.ts,project,restore failure context regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/determinism.spec.ts tests/unit/restore-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,restore-patch-hardening-targeted-suite
+close_reason: restore replay compatibility hardening shipped
+body: ""

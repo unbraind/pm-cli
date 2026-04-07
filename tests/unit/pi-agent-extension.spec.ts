@@ -58,11 +58,13 @@ describe("Pi agent extension wrapper for pm", () => {
       reminder: ["at=+1d,text=seed reminder"],
       event: ["start=+1d,title=seed event"],
       path: "/tmp/pm-sandbox",
+      noPager: true,
     });
 
     expect(args).toContain("--json");
     expect(args).toContain("--path");
     expect(args).toContain("/tmp/pm-sandbox");
+    expect(args).toContain("--no-pager");
     expect(args.slice(args.indexOf("create"))).toEqual(
       expect.arrayContaining([
         "create",
@@ -230,9 +232,22 @@ describe("Pi agent extension wrapper for pm", () => {
     const testAllArgs = buildPmCliArgs({
       action: "test-all",
       status: "in_progress",
+      limit: 5,
+      offset: 2,
       timeout: 1800,
     });
-    expect(testAllArgs).toEqual(["--json", "test-all", "--status", "in_progress", "--timeout", "1800"]);
+    expect(testAllArgs).toEqual([
+      "--json",
+      "test-all",
+      "--status",
+      "in_progress",
+      "--limit",
+      "5",
+      "--offset",
+      "2",
+      "--timeout",
+      "1800",
+    ]);
 
     const invalidNumericArgs = buildPmCliArgs({
       action: "list-open",
@@ -609,6 +624,14 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(schemaProperty(learningsSchema, "allowAuditLearning").type).toBe("boolean");
     expect(schemaProperty(learningsSchema, "allowAuditComment").type).toBe("boolean");
 
+    const commentsAuditSchema = schemaForAction(tool.parameters as Record<string, unknown>, "comments-audit");
+    expect(schemaProperty(commentsAuditSchema, "limit").anyOf).toEqual(
+      expect.arrayContaining([{ type: "string" }, { type: "number" }]),
+    );
+    expect(schemaProperty(commentsAuditSchema, "limitItems").anyOf).toEqual(
+      expect.arrayContaining([{ type: "string" }, { type: "number" }]),
+    );
+
     const calendarSchema = schemaForAction(tool.parameters as Record<string, unknown>, "calendar");
     expect(schemaProperty(calendarSchema, "view").type).toBe("string");
     expect(schemaProperty(calendarSchema, "past").type).toBe("boolean");
@@ -687,9 +710,16 @@ describe("Pi agent extension wrapper for pm", () => {
 
     const testSchema = schemaForAction(tool.parameters as Record<string, unknown>, "test");
     expect(schemaProperty(testSchema, "failOnEmptyTestRun").type).toBe("boolean");
+    expect(schemaProperty(testSchema, "overrideLinkedPmContext").type).toBe("boolean");
 
     const testAllSchema = schemaForAction(tool.parameters as Record<string, unknown>, "test-all");
     expect(schemaProperty(testAllSchema, "timeout").anyOf).toEqual(
+      expect.arrayContaining([{ type: "string" }, { type: "number" }]),
+    );
+    expect(schemaProperty(testAllSchema, "limit").anyOf).toEqual(
+      expect.arrayContaining([{ type: "string" }, { type: "number" }]),
+    );
+    expect(schemaProperty(testAllSchema, "offset").anyOf).toEqual(
       expect.arrayContaining([{ type: "string" }, { type: "number" }]),
     );
     expect(schemaProperty(testAllSchema, "status").type).toBe("string");
@@ -703,6 +733,7 @@ describe("Pi agent extension wrapper for pm", () => {
     });
     expect(schemaProperty(testAllSchema, "sharedHostSafe").type).toBe("boolean");
     expect(schemaProperty(testAllSchema, "pmContext").enum).toEqual(["schema", "tracker", "auto"]);
+    expect(schemaProperty(testAllSchema, "overrideLinkedPmContext").type).toBe("boolean");
     expect(schemaProperty(testAllSchema, "failOnContextMismatch").type).toBe("boolean");
     expect(schemaProperty(testAllSchema, "failOnSkipped").type).toBe("boolean");
     expect(schemaProperty(testAllSchema, "failOnEmptyTestRun").type).toBe("boolean");
@@ -1045,6 +1076,14 @@ describe("Pi agent extension wrapper for pm", () => {
       "--latest",
       "2",
     ]);
+
+    expect(
+      buildPmCliArgs({
+        action: "comments-audit",
+        status: "open",
+        limit: 7,
+      }),
+    ).toEqual(["--json", "comments-audit", "--status", "open", "--limit", "7"]);
 
     expect(
       buildPmCliArgs({
@@ -1452,6 +1491,7 @@ describe("Pi agent extension wrapper for pm", () => {
         envClear: ["PLAYWRIGHT_BASE_URL"],
         sharedHostSafe: true,
         pmContext: "tracker",
+        overrideLinkedPmContext: true,
         failOnContextMismatch: true,
         failOnSkipped: true,
         failOnEmptyTestRun: true,
@@ -1473,6 +1513,7 @@ describe("Pi agent extension wrapper for pm", () => {
       "--shared-host-safe",
       "--pm-context",
       "tracker",
+      "--override-linked-pm-context",
       "--fail-on-context-mismatch",
       "--fail-on-skipped",
       "--fail-on-empty-test-run",
@@ -1483,11 +1524,14 @@ describe("Pi agent extension wrapper for pm", () => {
       buildPmCliArgs({
         action: "test-all",
         status: "in_progress",
+        limit: 3,
+        offset: 1,
         timeout: "1800",
         envSet: ["PORT=0"],
         envClear: ["PLAYWRIGHT_BASE_URL"],
         sharedHostSafe: true,
         pmContext: "tracker",
+        overrideLinkedPmContext: true,
         failOnContextMismatch: true,
         failOnSkipped: true,
         failOnEmptyTestRun: true,
@@ -1498,6 +1542,10 @@ describe("Pi agent extension wrapper for pm", () => {
       "test-all",
       "--status",
       "in_progress",
+      "--limit",
+      "3",
+      "--offset",
+      "1",
       "--timeout",
       "1800",
       "--env-set",
@@ -1507,6 +1555,7 @@ describe("Pi agent extension wrapper for pm", () => {
       "--shared-host-safe",
       "--pm-context",
       "tracker",
+      "--override-linked-pm-context",
       "--fail-on-context-mismatch",
       "--fail-on-skipped",
       "--fail-on-empty-test-run",

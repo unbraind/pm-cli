@@ -26,6 +26,11 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(compactHelp.stdout).toContain("Intent:");
       expect(compactHelp.stdout).toContain("Need deeper rationale and more examples?");
       expect(compactHelp.stdout).toContain("Re-run with --explain.");
+      expect(compactHelp.stdout).toContain("--no-pager");
+
+      const explicitNoPagerHelp = context.runCli(["--help", "--no-pager"]);
+      expect(explicitNoPagerHelp.code).toBe(0);
+      expect(explicitNoPagerHelp.stdout).toContain("Usage: pm [options] [command]");
 
       const detailedHelp = context.runCli(["--help", "--explain"]);
       expect(detailedHelp.code).toBe(0);

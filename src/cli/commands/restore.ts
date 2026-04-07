@@ -142,10 +142,53 @@ function ensureReplayTarget(target: string, history: HistoryEntry[]): ResolvedRe
   };
 }
 
+function extractPatchFailureContext(
+  patch: HistoryPatchOp[],
+  error: unknown,
+): { patchIndex?: number; op?: string; path?: string; from?: string; reason?: string } {
+  const context: { patchIndex?: number; op?: string; path?: string; from?: string; reason?: string } = {};
+  if (error instanceof Error && error.message.trim().length > 0) {
+    context.reason = error.message.trim();
+  }
+  if (typeof error !== "object" || error === null) {
+    return context;
+  }
+  const candidate = error as {
+    index?: unknown;
+    operation?: unknown;
+  };
+  if (typeof candidate.index === "number" && Number.isInteger(candidate.index) && candidate.index >= 0) {
+    context.patchIndex = candidate.index;
+  }
+  const operationRecord =
+    typeof candidate.operation === "object" && candidate.operation !== null
+      ? (candidate.operation as { op?: unknown; path?: unknown; from?: unknown })
+      : null;
+  if (operationRecord && typeof operationRecord.op === "string") {
+    context.op = operationRecord.op;
+  }
+  if (operationRecord && typeof operationRecord.path === "string") {
+    context.path = operationRecord.path;
+  }
+  if (operationRecord && typeof operationRecord.from === "string") {
+    context.from = operationRecord.from;
+  }
+  if ((context.op === undefined || context.path === undefined) && context.patchIndex !== undefined) {
+    const fallback = patch[context.patchIndex];
+    if (fallback) {
+      context.op = context.op ?? fallback.op;
+      context.path = context.path ?? fallback.path;
+      context.from = context.from ?? fallback.from;
+    }
+  }
+  return context;
+}
+
 function applyHistoryPatch(
   current: CanonicalReplayDocument,
   patch: HistoryPatchOp[],
   entryNumber: number,
+  entryOp: string,
 ): CanonicalReplayDocument {
   try {
     const applied = jsonPatch.applyPatch(
@@ -177,8 +220,17 @@ function applyHistoryPatch(
     if (error instanceof PmCliError) {
       throw error;
     }
+    const failureContext = extractPatchFailureContext(patch, error);
+    const contextTokens = [
+      `history_op=${entryOp}`,
+      failureContext.patchIndex !== undefined ? `patch_index=${failureContext.patchIndex}` : null,
+      failureContext.op ? `op=${failureContext.op}` : null,
+      failureContext.path ? `path=${failureContext.path}` : null,
+      failureContext.from ? `from=${failureContext.from}` : null,
+    ].filter((token): token is string => token !== null);
+    const reasonSuffix = failureContext.reason ? ` ${failureContext.reason}` : "";
     throw new PmCliError(
-      `Failed to apply history patch at entry ${entryNumber}.`,
+      `Failed to apply history patch at entry ${entryNumber} (${contextTokens.join(", ")}).${reasonSuffix}`,
       EXIT_CODE.GENERIC_FAILURE,
     );
   }
@@ -197,7 +249,7 @@ function replayToTarget(history: HistoryEntry[], targetIndex: number): Canonical
       );
     }
 
-    document = applyHistoryPatch(document, entry.patch, i + 1);
+    document = applyHistoryPatch(document, entry.patch, i + 1, entry.op);
 
     const afterHash = replayHash(document);
     if (afterHash !== entry.after_hash) {

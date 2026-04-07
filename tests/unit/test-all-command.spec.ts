@@ -168,6 +168,48 @@ describe("runTestAll", () => {
       await expect(runTestAll({ status: "invalid" }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
+      await expect(runTestAll({ limit: "1.5" }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runTestAll({ offset: "-1" }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
+  it("applies deterministic limit/offset pagination before execution", async () => {
+    await withTempPmPath(async (context) => {
+      const firstId = createTaskWithTests(context, {
+        title: "Pagination First",
+        status: "open",
+        testEntries: ["command=node --version,scope=project"],
+      });
+      const secondId = createTaskWithTests(context, {
+        title: "Pagination Second",
+        status: "open",
+        testEntries: ["command=node --version,scope=project"],
+      });
+      const thirdId = createTaskWithTests(context, {
+        title: "Pagination Third",
+        status: "open",
+        testEntries: ["command=node --version,scope=project"],
+      });
+      const sortedIds = [firstId, secondId, thirdId].sort((left, right) => left.localeCompare(right));
+
+      const paged = await runTestAll({ status: "open", offset: "1", limit: "1", timeout: "20" }, { path: context.pmPath });
+      expect(paged.totals.items).toBe(1);
+      expect(paged.results).toHaveLength(1);
+      expect(paged.results[0]?.id).toBe(sortedIds[1]);
+      expect(paged.totals.linked_tests).toBe(1);
+
+      const offsetOnly = await runTestAll({ status: "open", offset: "2", timeout: "20" }, { path: context.pmPath });
+      expect(offsetOnly.totals.items).toBe(1);
+      expect(offsetOnly.results[0]?.id).toBe(sortedIds[2]);
+
+      const zeroLimit = await runTestAll({ status: "open", limit: "0", timeout: "20" }, { path: context.pmPath });
+      expect(zeroLimit.totals.items).toBe(0);
+      expect(zeroLimit.results).toHaveLength(0);
+      expect(zeroLimit.totals.linked_tests).toBe(0);
     });
   });
 
@@ -730,6 +772,52 @@ describe("runTestAll", () => {
       );
       expect(requireAssertions.failed).toBe(1);
       expect(requireAssertions.results[0]?.run_results[0]?.error ?? "").toContain("requires assertions");
+
+      const overrideTargetId = createTaskWithTests(context, {
+        title: "Test-All PM Context Override Target",
+        status: "open",
+        testEntries: ["command=node --version,scope=project"],
+      });
+      await overwriteTaskTests(context, overrideTargetId, [
+        {
+          command: "node dist/cli.js list-all --type Task --limit 201 --json",
+          scope: "project",
+          pm_context_mode: "schema",
+        },
+      ]);
+
+      const runLevelTrackerWithoutOverride = await runTestAll(
+        {
+          status: "open",
+          pmContext: "tracker",
+          failOnContextMismatch: true,
+        },
+        { path: context.pmPath },
+      );
+      const withoutOverrideEntry = runLevelTrackerWithoutOverride.results
+        .flatMap((entry) => entry.run_results)
+        .find((entry) => entry.command?.includes("list-all --type Task --limit 201 --json"));
+      expect(withoutOverrideEntry?.status).toBe("failed");
+      expect(withoutOverrideEntry?.execution_context?.pm_context_mode).toBe("schema");
+      expect(withoutOverrideEntry?.error ?? "").toContain(
+        "pm_context_mode=schema overrides run-level --pm-context tracker",
+      );
+
+      const runLevelTrackerWithOverride = await runTestAll(
+        {
+          status: "open",
+          pmContext: "tracker",
+          overrideLinkedPmContext: true,
+          failOnContextMismatch: true,
+        },
+        { path: context.pmPath },
+      );
+      const withOverrideEntry = runLevelTrackerWithOverride.results
+        .flatMap((entry) => entry.run_results)
+        .find((entry) => entry.command?.includes("list-all --type Task --limit 201 --json"));
+      expect(withOverrideEntry?.status).toBe("passed");
+      expect(withOverrideEntry?.execution_context?.pm_context_mode).toBe("tracker");
+      expect(withOverrideEntry?.execution_context?.mismatch_detected).toBe(false);
     });
   });
 

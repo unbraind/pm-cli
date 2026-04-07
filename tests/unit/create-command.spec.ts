@@ -71,8 +71,23 @@ describe("runCreate", () => {
       };
       await expect(runCreate(minimal, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
+        context: {
+          nextSteps: expect.arrayContaining([expect.stringContaining("--create-mode progressive")]),
+        },
       });
       await expect(runCreate(minimal, { path: context.pmPath })).rejects.toThrow("Missing required options");
+
+      const scheduleMinimal: CreateCommandOptions = {
+        title: "strict-default-event-minimal",
+        description: "strict default event should include schedule hint",
+        type: "Event",
+      };
+      await expect(runCreate(scheduleMinimal, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: {
+          nextSteps: expect.arrayContaining([expect.stringContaining("--schedule-preset lightweight")]),
+        },
+      });
     });
   });
 
@@ -1355,6 +1370,26 @@ describe("runCreate", () => {
           { path: context.pmPath },
         ),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            reminder: ["at=+3d+1h,text=compound-relative"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining('Invalid reminder.at value "+3d+1h"'),
+      });
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            reminder: ["at=+3d+1h,text=compound-relative"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toThrow("Compound relative expressions like +3d+1h are not supported");
     });
   });
 
@@ -1476,6 +1511,26 @@ describe("runCreate", () => {
           { path: context.pmPath },
         ),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            event: ["start=+3d,end=+3d+1h,title=compound-relative"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining('Invalid event.end value "+3d+1h"'),
+      });
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            event: ["start=+3d,end=+3d+1h,title=compound-relative"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toThrow("Compound relative expressions like +3d+1h are not supported");
     });
   });
 
@@ -1629,7 +1684,10 @@ describe("runCreate", () => {
         context: {
           code: "missing_required_option",
           examples: [expect.stringContaining("--type-option category=feature")],
-          nextSteps: [expect.stringContaining("pm create --help --type Asset")],
+          nextSteps: expect.arrayContaining([
+            expect.stringContaining("pm create --help --type Asset"),
+            expect.stringContaining("--create-mode progressive"),
+          ]),
         },
       });
     });

@@ -6,6 +6,78 @@ import { canonicalDocument } from "../item/item-format.js";
 import { orderObject, sha256Hex, stableStringify } from "../shared/serialization.js";
 import type { HistoryEntry, HistoryPatchOp, ItemDocument } from "../../types/index.js";
 
+function decodeJsonPointer(path: string): string[] {
+  if (!path || path === "/") {
+    return [];
+  }
+  if (!path.startsWith("/")) {
+    return [];
+  }
+  return path
+    .slice(1)
+    .split("/")
+    .map((segment) => segment.replaceAll("~1", "/").replaceAll("~0", "~"));
+}
+
+function isDefinedPointerPath(document: unknown, path: string): boolean {
+  const segments = decodeJsonPointer(path);
+  if (segments.length === 0) {
+    return true;
+  }
+  let cursor: unknown = document;
+  for (const segment of segments) {
+    if (Array.isArray(cursor)) {
+      if (segment === "-" || !/^(0|[1-9]\d*)$/.test(segment)) {
+        return false;
+      }
+      const index = Number(segment);
+      if (!Number.isInteger(index) || index < 0 || index >= cursor.length) {
+        return false;
+      }
+      const next = cursor[index];
+      if (next === undefined) {
+        return false;
+      }
+      cursor = next;
+      continue;
+    }
+    if (typeof cursor !== "object" || cursor === null) {
+      return false;
+    }
+    if (!Object.prototype.hasOwnProperty.call(cursor, segment)) {
+      return false;
+    }
+    const next = (cursor as Record<string, unknown>)[segment];
+    if (next === undefined) {
+      return false;
+    }
+    cursor = next;
+  }
+  return true;
+}
+
+function normalizeHistoryPatchOps(
+  beforeDocument: { front_matter: Record<string, unknown>; body: string },
+  patch: HistoryPatchOp[],
+): HistoryPatchOp[] {
+  const normalized: HistoryPatchOp[] = [];
+  let replayCursor: unknown = structuredClone(beforeDocument);
+  for (const operation of patch) {
+    const normalizedOperation =
+      operation.op === "replace" && !isDefinedPointerPath(replayCursor, operation.path)
+        ? ({ ...operation, op: "add" } as HistoryPatchOp)
+        : operation;
+    normalized.push(normalizedOperation);
+    replayCursor = jsonPatch.applyPatch(
+      replayCursor,
+      [normalizedOperation as jsonPatch.Operation],
+      true,
+      true,
+    ).newDocument as unknown;
+  }
+  return normalized;
+}
+
 function canonicalHashDocument(document: ItemDocument): { front_matter: Record<string, unknown>; body: string } {
   const hasFrontMatter = document.front_matter && Object.keys(document.front_matter).length > 0;
   if (!hasFrontMatter) {
@@ -43,7 +115,8 @@ export function createHistoryEntry(params: {
 }): HistoryEntry {
   const beforeCanonical = canonicalHashDocument(params.before);
   const afterCanonical = canonicalHashDocument(params.after);
-  const patch = jsonPatch.compare(beforeCanonical, afterCanonical) as HistoryPatchOp[];
+  const rawPatch = jsonPatch.compare(beforeCanonical, afterCanonical) as HistoryPatchOp[];
+  const patch = normalizeHistoryPatchOps(beforeCanonical, rawPatch);
 
   return {
     ts: params.nowIso,

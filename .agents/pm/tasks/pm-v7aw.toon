@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:create",audit,governance,implementation,pm-cli
 created_at: "2026-04-03T20:58:19.715Z"
-updated_at: "2026-04-07T00:12:26.389Z"
+updated_at: "2026-04-07T08:49:26.901Z"
 deadline: "2026-04-11T20:58:19.715Z"
 author: codex-agent
 estimated_minutes: 240
@@ -29,13 +29,15 @@ component: project-management/implement-issue4-create-progressive-policy-mode
 customer_impact: Gives maintainers and contributors clearer context and safer change execution for Implement Issue4 create progressive policy mode.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-431e,parent,"2026-04-03T20:58:19.715Z",codex-agent,null
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-04-03T20:58:19.715Z",codex-agent,Task created for direct implementation of Issue #4 workstream.
   "2026-04-03T21:13:12.815Z",codex-agent,"Implemented additive --create-mode strict|progressive with strict as default, progressive staged creation that relaxes type-level required create fields/repeatables, and preserved command-option policy enforcement. Updated CLI/contracts/completion/Pi/error-guidance surfaces and passed targeted suite: node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts."
   "2026-04-03T21:26:53.061Z",codex-agent,"Final verification complete for create progressive-mode work: docs/contracts parity updated and full project verification passed (build + full tests + coverage + smoke)."
   "2026-04-06T23:07:47.358Z",codex-agent,"Reopened as canonical remediation tracker under pm-o7be for current audit findings wave to avoid duplicate item creation. Scope retained from prior implementation lineage and expanded for new report deltas only. Decision rationale: duplicate-check sweep in this run found no open/in-progress item directly covering this exact delta while this closed item already contains closest historical context, linked artifacts, and verification lineage."
   "2026-04-06T23:25:23.297Z",codex-agent,"Implementation start for scheduling artifact UX delta: add explicit lightweight create preset/path for Reminder/Meeting/Event so agents can create cadence artifacts with minimal required flags while keeping strict mode defaults unchanged for existing flows. Planned surfaces: create runtime policy handling, help output examples, contracts/completion/Pi parity, and regression tests."
   "2026-04-06T23:33:43.993Z",codex-agent,"Implemented first-party scheduling lightweight create path via --schedule-preset lightweight for Reminder/Meeting/Event. Runtime behavior: preset resolves create-mode to progressive for minimal required options while preserving strict-mode default elsewhere and preserving explicit strict parity via --create-mode strict. Added type-aware help guidance, command contracts/schema parity, shell completion updates, Pi wrapper mapping, and unit/integration regression coverage for preset success and validation errors."
+  "2026-04-07T08:09:04.626Z",codex-agent,"Wave 8/9 execution kickoff: extending this canonical create-mode task to add explicit strict-mode remediation hints (--create-mode progressive and scheduling lightweight guidance)."
+  "2026-04-07T08:49:14.948Z",codex-agent,"Completed strict create onboarding hint follow-up: missing-required-option create errors in strict mode now include direct remediation guidance for --create-mode progressive, and scheduling types (Reminder/Meeting/Event) additionally surface --schedule-preset lightweight guidance. Added regression assertions in create-command tests for both progressive and schedule-preset next-step hints. Verification passed in targeted suite that includes create/help runtime coverage."
 notes[1]{created_at,author,text}:
   "2026-04-03T20:58:19.715Z",codex-agent,Avoid global flag collisions and preserve current default strict behavior.
 learnings[1]{created_at,author,text}:
@@ -60,5 +62,5 @@ tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,10800,null,null,null,null,null,null,null,null,null,null,null,schedule-preset-targeted-suite
 docs[1]{path,scope,note}:
   PRD.md,project,create policy mode contract docs
-close_reason: schedule preset workflow delivered and verified in remediation wave
+close_reason: strict create onboarding hints updated
 body: Execution task for Issue #4 implementation and verification.
