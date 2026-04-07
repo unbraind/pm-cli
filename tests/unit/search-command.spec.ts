@@ -1413,6 +1413,117 @@ describe("runSearch", () => {
     expect(result.items[0]?.score).toBeGreaterThan(result.items[1]?.score ?? 0);
   });
 
+  it("supports --title-exact filtering for query/title parity", async () => {
+    const exactTitle = makeFrontMatter({
+      id: "pm-title-exact",
+      title: "Cross-Epic Realism Dependency Council",
+      updated_at: "2026-02-18T00:00:00.000Z",
+    });
+    const nearMatch = makeFrontMatter({
+      id: "pm-title-near",
+      title: "Cross-Epic Realism Governance Council",
+      updated_at: "2026-02-18T00:00:00.000Z",
+    });
+
+    const allItems = [nearMatch, exactTitle];
+    listAllFrontMatterMock.mockResolvedValueOnce(allItems);
+    readFileMock.mockImplementation(async (targetPath) => {
+      const match = allItems.find((item) => targetPath.endsWith(`${item.id}.md`));
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(match, "cross-epic realism dependency council");
+    });
+
+    const { runSearch } = await import("../../src/cli/commands/search.js");
+    const result = await runSearch(
+      "Cross-Epic Realism Dependency Council",
+      { mode: "keyword", titleExact: true },
+      { path: "/tmp/pm-search" },
+    );
+
+    expect(result.filters).toMatchObject({ title_exact: true });
+    expect(result.items.map((entry) => entry.item.id)).toEqual(["pm-title-exact"]);
+  });
+
+  it("supports --phrase-exact filtering for normalized phrase matches", async () => {
+    const phraseInBody = makeFrontMatter({
+      id: "pm-phrase-body",
+      title: "Scheduling note",
+      description: "Contains full phrase in body only",
+    });
+    const tokenOnly = makeFrontMatter({
+      id: "pm-token-only",
+      title: "Cross-Epic Council",
+      description: "Contains related tokens but no exact phrase",
+    });
+
+    const allItems = [tokenOnly, phraseInBody];
+    listAllFrontMatterMock.mockResolvedValueOnce(allItems);
+    readFileMock.mockImplementation(async (targetPath) => {
+      const match = allItems.find((item) => targetPath.endsWith(`${item.id}.md`));
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      if (match.id === "pm-phrase-body") {
+        return serializeDocument(match, "Planning uses the Cross-Epic Realism Dependency Council cadence.");
+      }
+      return serializeDocument(
+        match,
+        "cross-epic realism dependency details exist but council keyword is detached and phrase is broken",
+      );
+    });
+
+    const { runSearch } = await import("../../src/cli/commands/search.js");
+    const result = await runSearch(
+      "Cross-Epic Realism Dependency Council",
+      { mode: "keyword", phraseExact: true },
+      { path: "/tmp/pm-search" },
+    );
+
+    expect(result.filters).toMatchObject({ phrase_exact: true });
+    expect(result.items.map((entry) => entry.item.id)).toEqual(["pm-phrase-body"]);
+  });
+
+  it("boosts exact long-phrase title matches above partial lexical overlap noise", async () => {
+    const exactTitle = makeFrontMatter({
+      id: "pm-long-phrase-exact-title",
+      title: "Cross-Epic Realism Dependency Council",
+      updated_at: "2026-02-18T00:00:00.000Z",
+    });
+    const noisyPartial = makeFrontMatter({
+      id: "pm-long-phrase-noise",
+      title: "Operational cadence sync",
+      description: [
+        Array.from({ length: 9 }, () => "cross-epic").join(" "),
+        Array.from({ length: 9 }, () => "realism").join(" "),
+        Array.from({ length: 9 }, () => "dependency").join(" "),
+        Array.from({ length: 9 }, () => "council").join(" "),
+      ].join(" "),
+      updated_at: "2026-02-18T00:00:00.000Z",
+    });
+
+    const allItems = [noisyPartial, exactTitle];
+    listAllFrontMatterMock.mockResolvedValueOnce(allItems);
+    readFileMock.mockImplementation(async (targetPath) => {
+      const match = allItems.find((item) => targetPath.endsWith(`${item.id}.md`));
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(match, "no exact phrase in body");
+    });
+
+    const { runSearch } = await import("../../src/cli/commands/search.js");
+    const result = await runSearch(
+      "Cross-Epic Realism Dependency Council",
+      { mode: "keyword" },
+      { path: "/tmp/pm-search" },
+    );
+
+    expect(result.items[0]?.item.id).toBe("pm-long-phrase-exact-title");
+    expect(result.items[0]?.score).toBeGreaterThan(result.items[1]?.score ?? 0);
+  });
+
   it("resolves search tuning parameters from settings", async () => {
     const { resolveSearchTuning } = await import("../../src/cli/commands/search.js");
     const defaultTuning = resolveSearchTuning({});

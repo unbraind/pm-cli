@@ -149,9 +149,13 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Creates a new planning item with deterministic metadata and history.",
     examples: [
       'pm create --title "Harden lock flow" --description "Improve stale lock handling" --type Task --status open --priority 1 --message "Create lock hardening task" --create-mode progressive',
+      'pm create --title "Weekly planning sync" --description "Recurring coordination meeting" --type Meeting --schedule-preset lightweight',
       'pm create --title "Asset: Hero model" --description "Track playable model asset" --type Asset --status open --priority 1 --message "Create asset item" --type-option category=Character --dep "id=pm-epic01,kind=parent,author=codex-agent,created_at=now" --comment "author=codex-agent,created_at=now,text=Why this asset item exists." --note "author=codex-agent,created_at=now,text=Initial implementation note." --learning "author=codex-agent,created_at=now,text=Durable lesson placeholder." --file "path=src/assets/hero.glb,scope=project,note=tracked asset" --test "command=node scripts/run-tests.mjs test,scope=project,timeout_seconds=240" --doc "path=README.md,scope=project,note=asset docs"',
     ],
-    tips: ["Use --type <value> to load type-aware policy guidance in --help output."],
+    tips: [
+      "Use --schedule-preset lightweight for Reminder/Meeting/Event when you want minimal required create inputs.",
+      "Use --type <value> to load type-aware policy guidance in --help output.",
+    ],
   },
   update: {
     why: "Mutates existing item fields while preserving history and lock safety.",
@@ -166,6 +170,38 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "When reopening from closed to a non-terminal status, update clears stale close_reason unless explicitly set via --close-reason.",
       'Use "pm append <ID> --body <text>" for additive notes; use update --body to replace body content.',
     ],
+  },
+  "update-many": {
+    why: "Bulk-updates matched item sets with dry-run previews and rollback checkpoints for safe large-scale metadata changes.",
+    examples: [
+      "pm update-many --filter-status open --status in_progress --dry-run",
+      'pm update-many --filter-tag wave:7 --replace-tests --test "command=node scripts/run-tests.mjs test -- tests/core/history.spec.ts,scope=project,timeout_seconds=240"',
+      'pm update-many --filter-tag governance --reviewer maintainer-review --message "Normalize reviewer metadata"',
+      "pm update-many --rollback ckpt-abc123",
+    ],
+    tips: [
+      "Use --dry-run first to inspect proposed changes before apply mode.",
+      "Linked-array mutation flags mirror pm update semantics (for example --replace-tests, --clear-files, and repeatable --doc/--note seeds).",
+      "Checkpoints are enabled by default for apply mode and can be restored with --rollback.",
+    ],
+  },
+  templates: {
+    why: "Saves, lists, and inspects reusable create option bundles for repeatable workflows.",
+    examples: [
+      'pm templates save triage-default --title "Triage item" --description "..." --type Task --status open --priority 2 --message "Seed triage template"',
+      "pm templates list",
+      "pm templates show triage-default",
+    ],
+    tips: ["Combine templates with explicit create flags; explicit flags always override template defaults."],
+  },
+  deps: {
+    why: "Inspects an item dependency graph as a tree or graph payload to understand blockers and hierarchy links.",
+    examples: [
+      "pm deps pm-a1b2",
+      "pm deps pm-a1b2 --format graph",
+      "pm deps pm-a1b2 --max-depth 2 --collapse repeated --summary",
+    ],
+    tips: ["Use --summary for lightweight counts when full graph payloads are unnecessary."],
   },
   list: {
     why: "Lists active items with deterministic filtering and ordering.",
@@ -251,8 +287,12 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     examples: [
       'pm search "lock stale retry" --mode keyword --limit 10',
       'pm search "extension migration blockers" --mode hybrid --type Task --priority 0',
+      'pm search "Cross-Epic Realism Dependency Council" --mode keyword --title-exact',
     ],
-    tips: ["Use --include-linked when linked docs/files/tests should influence scoring."],
+    tips: [
+      "Use --title-exact to require exact normalized title parity, or --phrase-exact to require full-phrase matches in item text fields.",
+      "Use --include-linked when linked docs/files/tests should influence scoring.",
+    ],
   },
   reindex: {
     why: "Rebuilds search artifacts after large changes to item corpus or provider/vector config.",
@@ -316,11 +356,23 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   notes: {
     why: "Adds or reviews durable implementation notes linked to an item.",
-    examples: ['pm notes pm-a1b2 --add "Investigated parser edge case and documented fallback logic."', "pm notes pm-a1b2 --limit 10"],
+    examples: [
+      'pm notes pm-a1b2 --add "Investigated parser edge case and documented fallback logic."',
+      'pm notes pm-a1b2 --add "Audit note" --author "reviewer" --allow-audit-note',
+      "pm notes pm-a1b2 --limit 10",
+    ],
+    tips: ["Use --allow-audit-note for append-only non-owner audits; --allow-audit-comment remains supported as a legacy alias."],
   },
   learnings: {
     why: "Adds or reviews post-implementation learnings for future work.",
-    examples: ['pm learnings pm-a1b2 --add "Avoid direct test-runner commands in linked tests; use sandbox runner."', "pm learnings pm-a1b2 --limit 10"],
+    examples: [
+      'pm learnings pm-a1b2 --add "Avoid direct test-runner commands in linked tests; use sandbox runner."',
+      'pm learnings pm-a1b2 --add "Audit learning" --author "reviewer" --allow-audit-learning',
+      "pm learnings pm-a1b2 --limit 10",
+    ],
+    tips: [
+      "Use --allow-audit-learning for append-only non-owner audits; --allow-audit-comment remains supported as a legacy alias.",
+    ],
   },
   files: {
     why: "Associates changed source files with tracker items for reproducibility.",

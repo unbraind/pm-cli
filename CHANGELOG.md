@@ -107,6 +107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `pm comments-audit` full-history export mode (`--full-history`) with mutually-exclusive latest controls, explicit export metadata (`filters.full_history`, `export.mode`, `export.row_count`), and NDJSON-friendly `rows[]` payload support.
 - Added ownership-safe non-owner metadata update mode on `pm update` via `--allow-audit-update` / `--allow_audit_update`, with explicit lifecycle/ownership/linkage guardrails.
 - Added `pm update-many` bulk mutation workflow with deterministic filter targeting, `--dry-run` planning, checkpoint capture, and `--rollback <checkpoint-id>` restore support.
+- Added `pm update-many` linked-array mutation parity with `pm update` (`--dep`, `--comment`, `--note`, `--learning`, `--file`, `--test`, `--doc`, `--reminder`, `--event`, `--clear-*`, `--replace-deps`, `--replace-tests`), including deterministic dry-run/apply actionability for linked-array payloads and command/contracts/completion/help parity updates.
 - Added task lifecycle alias commands: `pm start-task`, `pm pause-task`, and `pm close-task` for discoverable claim/update/close/release workflows.
 - Added `pm contracts` projection flags `--flags-only` and `--availability-only` for lightweight machine-readable output selection.
 - Added completion mode controls: `pm completion --eager-tags` for embedded tag expansion and hidden `pm completion-tags` helper command for default lazy tag lookup.

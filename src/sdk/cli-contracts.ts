@@ -270,6 +270,7 @@ export const PI_CREATE_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "type", flag: "--type" },
   { param: "template", flag: "--template" },
   { param: "createMode", flag: "--create-mode" },
+  { param: "schedulePreset", flag: "--schedule-preset" },
   { param: "status", flag: "--status" },
   { param: "priority", flag: "--priority" },
   { param: "tags", flag: "--tags", allowEmpty: true },
@@ -322,6 +323,7 @@ export const PI_UPDATE_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "dep", flag: "--dep", repeatable: true },
   { param: "depRemove", flag: "--dep-remove", repeatable: true },
   { param: "replaceDeps", flag: "--replace-deps" },
+  { param: "replaceTests", flag: "--replace-tests" },
   { param: "comment", flag: "--comment", repeatable: true },
   { param: "note", flag: "--note", repeatable: true },
   { param: "learning", flag: "--learning", repeatable: true },
@@ -499,6 +501,7 @@ export const NOTES_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--limit" },
   { flag: "--author" },
   { flag: "--message" },
+  { flag: "--allow-audit-note" },
   { flag: "--allow-audit-comment" },
   { flag: "--force" },
 ];
@@ -508,6 +511,7 @@ export const LEARNINGS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--limit" },
   { flag: "--author" },
   { flag: "--message" },
+  { flag: "--allow-audit-learning" },
   { flag: "--allow-audit-comment" },
   { flag: "--force" },
 ];
@@ -688,6 +692,7 @@ export const HEALTH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--check-only" },
   { flag: "--no-refresh" },
   { flag: "--refresh-vectors" },
+  { flag: "--verbose-stale-items" },
 ];
 
 export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -699,6 +704,7 @@ export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--check-files" },
   { flag: "--scan-mode" },
   { flag: "--include-pm-internals" },
+  { flag: "--verbose-file-lists" },
   { flag: "--strict-exit" },
   { flag: "--fail-on-warn" },
   { flag: "--check-history-drift" },
@@ -712,6 +718,8 @@ export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--template" },
   { flag: "--create-mode" },
   { flag: "--create_mode" },
+  { flag: "--schedule-preset" },
+  { flag: "--schedule_preset" },
   { short: "-s", flag: "--status" },
   { short: "-p", flag: "--priority" },
   { flag: "--tags" },
@@ -830,6 +838,7 @@ export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--dep-remove" },
   { flag: "--dep_remove" },
   { flag: "--replace-deps" },
+  { flag: "--replace-tests" },
   { flag: "--comment" },
   { flag: "--note" },
   { flag: "--learning" },
@@ -911,9 +920,31 @@ export const UPDATE_MANY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--component" },
   { flag: "--regression" },
   { flag: "--customer-impact" },
+  { flag: "--dep" },
+  { flag: "--dep-remove" },
+  { flag: "--dep_remove" },
+  { flag: "--replace-deps" },
+  { flag: "--replace-tests" },
+  { flag: "--comment" },
+  { flag: "--note" },
+  { flag: "--learning" },
+  { flag: "--file" },
+  { flag: "--test" },
+  { flag: "--doc" },
+  { flag: "--reminder" },
+  { flag: "--event" },
   { flag: "--type-option" },
   { flag: "--type_option" },
   { flag: "--unset" },
+  { flag: "--clear-deps" },
+  { flag: "--clear-comments" },
+  { flag: "--clear-notes" },
+  { flag: "--clear-learnings" },
+  { flag: "--clear-files" },
+  { flag: "--clear-tests" },
+  { flag: "--clear-docs" },
+  { flag: "--clear-reminders" },
+  { flag: "--clear-events" },
   { flag: "--clear-type-options" },
   { flag: "--allow-audit-update" },
   { flag: "--allow_audit_update" },
@@ -984,6 +1015,8 @@ export const DEPS_FLAG_CONTRACTS: CliFlagContract[] = [
 export const SEARCH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--mode" },
   { flag: "--include-linked" },
+  { flag: "--title-exact" },
+  { flag: "--phrase-exact" },
   { flag: "--compact" },
   { flag: "--full" },
   { flag: "--fields" },
@@ -1026,6 +1059,7 @@ export const CREATE_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContr
   { target: "type", keys: ["type"] },
   { target: "template", keys: ["template"] },
   { target: "createMode", keys: ["createMode", "create_mode"] },
+  { target: "schedulePreset", keys: ["schedulePreset", "schedule_preset"] },
   { target: "status", keys: ["status"] },
   { target: "priority", keys: ["priority"] },
   { target: "tags", keys: ["tags"] },
@@ -1277,6 +1311,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   type: { type: "string" },
   template: { type: "string" },
   createMode: { type: "string", enum: ["strict", "progressive"] },
+  schedulePreset: { type: "string", enum: ["lightweight"] },
   status: { type: "string", enum: ["draft", "open", "in_progress", "blocked", "closed", "canceled", "in-progress"] },
   closeReason: { type: "string" },
   priority: { anyOf: [{ type: "string" }, { type: "number" }] },
@@ -1336,6 +1371,8 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   recurrenceLookbackDays: { anyOf: [{ type: "string" }, { type: "number" }] },
   occurrenceLimit: { anyOf: [{ type: "string" }, { type: "number" }] },
   includeLinked: { type: "boolean" },
+  titleExact: { type: "boolean" },
+  phraseExact: { type: "boolean" },
   includeBody: { type: "boolean" },
   tag: { type: "string" },
   deadlineBefore: { type: "string" },
@@ -1378,12 +1415,16 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   checkOnly: { type: "boolean" },
   noRefresh: { type: "boolean" },
   refreshVectors: { type: "boolean" },
+  verboseStaleItems: { type: "boolean" },
   scanMode: { type: "string", enum: ["default", "tracked-all", "tracked-all-strict"] },
   includePmInternals: { type: "boolean" },
+  verboseFileLists: { type: "boolean" },
   strictExit: { type: "boolean" },
   failOnWarn: { type: "boolean" },
   checkHistoryDrift: { type: "boolean" },
   checkCommandReferences: { type: "boolean" },
+  allowAuditNote: { type: "boolean" },
+  allowAuditLearning: { type: "boolean" },
   allowAuditComment: { type: "boolean" },
   allowAuditUpdate: { type: "boolean" },
   allowAuditRelease: { type: "boolean" },
@@ -1409,6 +1450,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   dep: { type: "array", items: { type: "string" } },
   depRemove: { type: "array", items: { type: "string" } },
   replaceDeps: { type: "boolean" },
+  replaceTests: { type: "boolean" },
   comment: { type: "array", items: { type: "string" } },
   note: { type: "array", items: { type: "string" } },
   learning: { type: "array", items: { type: "string" } },
@@ -1493,6 +1535,8 @@ const SEARCH_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   "keywords",
   "mode",
   "includeLinked",
+  "titleExact",
+  "phraseExact",
   "compact",
   "full",
   ...PI_SEARCH_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
@@ -1564,8 +1608,14 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
       "latest",
     ],
   },
-  notes: { required: ["id"], optional: ["text", "add", "limit", "allowAuditComment", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
-  learnings: { required: ["id"], optional: ["text", "add", "limit", "allowAuditComment", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
+  notes: {
+    required: ["id"],
+    optional: ["text", "add", "limit", "allowAuditNote", "allowAuditComment", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
+  },
+  learnings: {
+    required: ["id"],
+    optional: ["text", "add", "limit", "allowAuditLearning", "allowAuditComment", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
+  },
   files: {
     required: ["id"],
     optional: ["add", "addGlob", "remove", "migrate", "appendStable", "validatePaths", "audit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
@@ -1630,7 +1680,9 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
     optional: ["author"],
   },
   stats: {},
-  health: { optional: ["strictDirectories", "strictExit", "failOnWarn", "checkOnly", "noRefresh", "refreshVectors"] },
+  health: {
+    optional: ["strictDirectories", "strictExit", "failOnWarn", "checkOnly", "noRefresh", "refreshVectors", "verboseStaleItems"],
+  },
   validate: {
     optional: [
       "checkMetadata",
@@ -1641,6 +1693,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
       "checkFiles",
       "scanMode",
       "includePmInternals",
+      "verboseFileLists",
       "strictExit",
       "failOnWarn",
       "checkHistoryDrift",
@@ -1741,6 +1794,10 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     description: "Create required-option policy mode.",
     examples: ["strict", "progressive"],
   },
+  schedulePreset: {
+    description: "Schedule-centric create preset for Reminder, Meeting, and Event types.",
+    examples: ["lightweight"],
+  },
   status: {
     description: "Item status value.",
     examples: ["open", "in_progress"],
@@ -1800,6 +1857,9 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   replaceDeps: {
     description: "When true for update, atomically replace dependencies with the supplied --dep values.",
+  },
+  replaceTests: {
+    description: "When true for update, atomically replace linked tests with the supplied --test values.",
   },
   clearComments: {
     description: "When true, clear item comments.",
@@ -1927,12 +1987,18 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   refreshVectors: {
     description: "For health action, explicitly refresh stale vectors.",
   },
+  verboseStaleItems: {
+    description: "For health action, include full stale-item arrays in vectorization details.",
+  },
   scanMode: {
     description: "Select file candidate scan mode for --check-files.",
     examples: ["default", "tracked-all", "tracked-all-strict"],
   },
   includePmInternals: {
     description: "Include PM storage internals in tracked-all candidate scans.",
+  },
+  verboseFileLists: {
+    description: "For validate action, include full file-path lists for --check-files details.",
   },
   strictExit: {
     description: "Return non-zero exit when health/validate/extension-doctor warnings are present (ok=false).",
@@ -1946,8 +2012,14 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   checkCommandReferences: {
     description: "Run linked-command PM-ID reference checks.",
   },
+  allowAuditNote: {
+    description: "For notes action, allow non-owner append-only note audits without requiring --force.",
+  },
+  allowAuditLearning: {
+    description: "For learnings action, allow non-owner append-only learning audits without requiring --force.",
+  },
   allowAuditComment: {
-    description: "Allow non-owner append-only comment/note/learning audits without requiring --force.",
+    description: "For comments action, allow non-owner append-only comment audits without requiring --force.",
   },
   allowAuditUpdate: {
     description: "Allow non-owner metadata-only update audits without requiring --force.",
@@ -1979,6 +2051,12 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   includeLinked: {
     description: "Include readable linked docs/files/tests content in keyword and hybrid lexical scoring.",
+  },
+  titleExact: {
+    description: "For search action, require exact normalized title match for the full query string.",
+  },
+  phraseExact: {
+    description: "For search action, require exact normalized query phrase match in item text fields.",
   },
   includeBody: {
     description: "When true for list-family actions, include item body text in projected rows.",

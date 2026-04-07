@@ -178,8 +178,11 @@ describe("contracts command runtime", () => {
 
     const commandFlagParityChecks: Array<{ command: string; flags: string[] }> = [
       { command: "comments", flags: ["--add", "--allow-audit-comment"] },
-      { command: "notes", flags: ["--add", "--limit", "--author", "--message", "--allow-audit-comment", "--force"] },
-      { command: "learnings", flags: ["--add", "--limit", "--author", "--message", "--allow-audit-comment", "--force"] },
+      { command: "notes", flags: ["--add", "--limit", "--author", "--message", "--allow-audit-note", "--allow-audit-comment", "--force"] },
+      {
+        command: "learnings",
+        flags: ["--add", "--limit", "--author", "--message", "--allow-audit-learning", "--allow-audit-comment", "--force"],
+      },
       { command: "files", flags: ["--add", "--add-glob", "--append-stable", "--validate-paths", "--audit"] },
       { command: "docs", flags: ["--add", "--add-glob", "--validate-paths", "--audit"] },
       { command: "history", flags: ["--limit", "--diff", "--verify"] },
@@ -189,9 +192,24 @@ describe("contracts command runtime", () => {
       { command: "extension", flags: ["--install", "--doctor", "--runtime-probe", "--strict-exit"] },
       { command: "test-runs", flags: ["--status", "--limit", "--stream", "--tail", "--force", "--author"] },
       {
-        command: "validate",
-        flags: ["--check-metadata", "--metadata-profile", "--check-lifecycle", "--check-stale-blockers"],
+        command: "update-many",
+        flags: [
+          "--filter-status",
+          "--dry-run",
+          "--rollback",
+          "--no-checkpoint",
+          "--dep",
+          "--replace-tests",
+          "--clear-docs",
+          "--clear-events",
+          "--allow-audit-update",
+        ],
       },
+      {
+        command: "validate",
+        flags: ["--check-metadata", "--metadata-profile", "--check-lifecycle", "--check-stale-blockers", "--verbose-file-lists"],
+      },
+      { command: "health", flags: ["--check-only", "--no-refresh", "--refresh-vectors", "--verbose-stale-items"] },
     ];
     for (const check of commandFlagParityChecks) {
       const parityResult = await runContracts({ command: check.command, flagsOnly: true }, GLOBAL_OPTIONS);

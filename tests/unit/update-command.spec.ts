@@ -952,6 +952,95 @@ describe("runUpdate", () => {
     });
   });
 
+  it("supports atomic linked test replacement with --replace-tests", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-replace-tests");
+      await runUpdate(
+        id,
+        {
+          test: [
+            "command=node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,scope=project",
+            "command=node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts,scope=project",
+          ],
+          message: "seed tests before replacement",
+        },
+        { path: context.pmPath },
+      );
+
+      const replaced = await runUpdate(
+        id,
+        {
+          replaceTests: true,
+          test: [
+            "command=node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,scope=project",
+            "command=node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,scope=project",
+          ],
+          message: "replace tests atomically",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(replaced.changed_fields).toContain("tests");
+      expect((replaced.item as { tests?: Array<Record<string, unknown>> }).tests).toEqual([
+        {
+          command: "node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts",
+          scope: "project",
+        },
+      ]);
+    });
+  });
+
+  it("validates --replace-tests requirements and preserves clear/value conflict behavior", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-replace-tests-validation");
+
+      await expect(
+        runUpdate(
+          id,
+          {
+            replaceTests: true,
+            message: "missing replacement values",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--replace-tests requires at least one --test entry"),
+      });
+
+      await expect(
+        runUpdate(
+          id,
+          {
+            replaceTests: true,
+            clearTests: true,
+            test: ["command=node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,scope=project"],
+            message: "conflicting replacement and clear flags",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--replace-tests cannot be combined with --clear-tests"),
+      });
+
+      await expect(
+        runUpdate(
+          id,
+          {
+            clearTests: true,
+            test: ["command=node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,scope=project"],
+            message: "clear/value conflict still rejected",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Cannot combine --clear-tests with --test"),
+      });
+    });
+  });
+
   it("supports transactional linked collection mutations in a single update", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-transactional-annotate");

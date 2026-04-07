@@ -141,6 +141,7 @@ const REQUIRED_CREATE_FLAGS = [
   "--description",
   "--type",
   "--create-mode",
+  "--schedule-preset",
   "--status",
   "--priority",
   "--tags",
@@ -179,6 +180,7 @@ const REQUIRED_UPDATE_FLAGS = [
   "--dep",
   "--dep-remove",
   "--replace-deps",
+  "--replace-tests",
   "--comment",
   "--note",
   "--learning",
@@ -190,6 +192,41 @@ const REQUIRED_UPDATE_FLAGS = [
   "--type-option",
   "--author",
   "--message",
+  "--force",
+];
+
+const REQUIRED_UPDATE_MANY_FLAGS = [
+  "--filter-status",
+  "--filter-type",
+  "--filter-tag",
+  "--filter-priority",
+  "--filter-assignee",
+  "--dry-run",
+  "--rollback",
+  "--no-checkpoint",
+  "--dep",
+  "--dep-remove",
+  "--replace-deps",
+  "--replace-tests",
+  "--comment",
+  "--note",
+  "--learning",
+  "--file",
+  "--test",
+  "--doc",
+  "--reminder",
+  "--event",
+  "--clear-deps",
+  "--clear-comments",
+  "--clear-notes",
+  "--clear-learnings",
+  "--clear-files",
+  "--clear-tests",
+  "--clear-docs",
+  "--clear-reminders",
+  "--clear-events",
+  "--clear-type-options",
+  "--allow-audit-update",
   "--force",
 ];
 
@@ -235,8 +272,16 @@ const REQUIRED_TEST_FLAGS = [
 ];
 const REQUIRED_COMMENTS_FLAGS = ["--add", "--limit", "--author", "--message", "--allow-audit-comment", "--force"];
 const REQUIRED_COMMENTS_AUDIT_FLAGS = ["--status", "--type", "--assignee", "--limit-items", "--full-history", "--latest"];
-const REQUIRED_NOTES_FLAGS = ["--add", "--limit", "--author", "--message", "--allow-audit-comment", "--force"];
-const REQUIRED_LEARNINGS_FLAGS = ["--add", "--limit", "--author", "--message", "--allow-audit-comment", "--force"];
+const REQUIRED_NOTES_FLAGS = ["--add", "--limit", "--author", "--message", "--allow-audit-note", "--allow-audit-comment", "--force"];
+const REQUIRED_LEARNINGS_FLAGS = [
+  "--add",
+  "--limit",
+  "--author",
+  "--message",
+  "--allow-audit-learning",
+  "--allow-audit-comment",
+  "--force",
+];
 const REQUIRED_CLAIM_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_RELEASE_FLAGS = ["--author", "--message", "--allow-audit-release", "--force"];
 const REQUIRED_RESTORE_FLAGS = ["--author", "--message", "--force"];
@@ -251,11 +296,12 @@ const REQUIRED_VALIDATE_FLAGS = [
   "--check-command-references",
   "--scan-mode",
   "--include-pm-internals",
+  "--verbose-file-lists",
   "--strict-exit",
   "--fail-on-warn",
   "--check-history-drift",
 ];
-const REQUIRED_HEALTH_FLAGS = ["--strict-directories", "--strict-exit", "--fail-on-warn"];
+const REQUIRED_HEALTH_FLAGS = ["--strict-directories", "--strict-exit", "--fail-on-warn", "--verbose-stale-items"];
 const REQUIRED_DELETE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_APPEND_FLAGS = ["--body", "--author", "--message", "--force"];
 const REQUIRED_DEPS_FLAGS = ["--format", "--max-depth", "--collapse", "--summary"];
@@ -593,6 +639,23 @@ describe("release readiness runtime coverage", () => {
       expect(help.stdout).toContain("--unblock_note");
       expect(help.stdout).toContain("--dep_remove");
       expect(help.stdout).toContain("low|med|medium|high|critical");
+      expect(help.stdout).toContain("--confidence");
+      for (const flag of ISSUE_METADATA_UPDATE_FLAG_TOKENS) {
+        expect(help.stdout).toContain(flag);
+      }
+    });
+  });
+
+  it("keeps update-many help aligned with bulk linked-array mutation flags and aliases", async () => {
+    await withTempPmPath(async (context) => {
+      const help = context.runCli(["update-many", "--help"]);
+      expect(help.code).toBe(0);
+      for (const flag of REQUIRED_UPDATE_MANY_FLAGS) {
+        expect(help.stdout).toContain(flag);
+      }
+      expect(help.stdout).toContain("--dep_remove");
+      expect(help.stdout).toContain("--type_option");
+      expect(help.stdout).toContain("--allow_audit_update");
       expect(help.stdout).toContain("--confidence");
       for (const flag of ISSUE_METADATA_UPDATE_FLAG_TOKENS) {
         expect(help.stdout).toContain(flag);

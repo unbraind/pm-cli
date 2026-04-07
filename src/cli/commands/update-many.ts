@@ -59,8 +59,71 @@ const UPDATE_OPTION_TO_ITEM_KEY: Partial<Record<keyof UpdateCommandOptions, stri
   component: "component",
   regression: "regression",
   customerImpact: "customer_impact",
-  typeOption: "type_options",
 };
+
+interface CollectionMutationPlanDefinition {
+  field: string;
+  addKey?: keyof UpdateCommandOptions;
+  removeKey?: keyof UpdateCommandOptions;
+  clearKey?: keyof UpdateCommandOptions;
+  replaceKey?: keyof UpdateCommandOptions;
+}
+
+const COLLECTION_MUTATION_PLAN_DEFINITIONS: CollectionMutationPlanDefinition[] = [
+  {
+    field: "dependencies",
+    addKey: "dep",
+    removeKey: "depRemove",
+    clearKey: "clearDeps",
+    replaceKey: "replaceDeps",
+  },
+  {
+    field: "comments",
+    addKey: "comment",
+    clearKey: "clearComments",
+  },
+  {
+    field: "notes",
+    addKey: "note",
+    clearKey: "clearNotes",
+  },
+  {
+    field: "learnings",
+    addKey: "learning",
+    clearKey: "clearLearnings",
+  },
+  {
+    field: "files",
+    addKey: "file",
+    clearKey: "clearFiles",
+  },
+  {
+    field: "tests",
+    addKey: "test",
+    clearKey: "clearTests",
+    replaceKey: "replaceTests",
+  },
+  {
+    field: "docs",
+    addKey: "doc",
+    clearKey: "clearDocs",
+  },
+  {
+    field: "reminders",
+    addKey: "reminder",
+    clearKey: "clearReminders",
+  },
+  {
+    field: "events",
+    addKey: "event",
+    clearKey: "clearEvents",
+  },
+  {
+    field: "type_options",
+    addKey: "typeOption",
+    clearKey: "clearTypeOptions",
+  },
+];
 
 const UNSET_FIELD_ALIASES: Record<string, string> = {
   close_reason: "close_reason",
@@ -263,6 +326,58 @@ function areValuesEqual(left: unknown, right: unknown): boolean {
   return JSON.stringify(left) === JSON.stringify(right);
 }
 
+function normalizeCollectionBeforeValue(field: string, value: unknown): unknown {
+  if (value !== undefined) {
+    return value;
+  }
+  if (field === "type_options") {
+    return {};
+  }
+  return [];
+}
+
+function collectionValueCount(field: string, value: unknown): number {
+  if (Array.isArray(value)) {
+    return value.length;
+  }
+  if (field === "type_options" && value && typeof value === "object") {
+    return Object.keys(value as Record<string, unknown>).length;
+  }
+  return 0;
+}
+
+function buildCollectionMutationPlans(row: Record<string, unknown>, update: UpdateCommandOptions): PlannedChange[] {
+  const changes: PlannedChange[] = [];
+  for (const definition of COLLECTION_MUTATION_PLAN_DEFINITIONS) {
+    const addValues = definition.addKey ? update[definition.addKey] : undefined;
+    const removeValues = definition.removeKey ? update[definition.removeKey] : undefined;
+    const addCount = Array.isArray(addValues) ? addValues.length : 0;
+    const removeCount = Array.isArray(removeValues) ? removeValues.length : 0;
+    const clear = definition.clearKey ? update[definition.clearKey] === true : false;
+    const replace = definition.replaceKey ? update[definition.replaceKey] === true : false;
+    if (!clear && !replace && addCount === 0 && removeCount === 0) {
+      continue;
+    }
+
+    const before = normalizeCollectionBeforeValue(definition.field, row[definition.field]);
+    const beforeCount = collectionValueCount(definition.field, before);
+    const operation = replace ? "replace" : clear ? "clear_or_reset" : removeCount > 0 ? "merge_remove" : "append";
+    changes.push({
+      field: definition.field,
+      before,
+      after: {
+        operation,
+        clear,
+        replace,
+        add_count: addCount,
+        remove_count: removeCount,
+        before_count: beforeCount,
+      },
+    });
+  }
+  return changes;
+}
+
 function buildPlannedItemDiff(item: ListedItem, update: UpdateCommandOptions): PlannedItemDiff {
   const row = item as unknown as Record<string, unknown>;
   const changes: PlannedChange[] = [];
@@ -282,6 +397,7 @@ function buildPlannedItemDiff(item: ListedItem, update: UpdateCommandOptions): P
       after,
     });
   }
+  changes.push(...buildCollectionMutationPlans(row, update));
 
   if (update.unset && update.unset.length > 0) {
     for (const rawUnsetField of update.unset) {

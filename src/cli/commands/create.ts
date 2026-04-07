@@ -111,6 +111,7 @@ export interface CreateCommandOptions {
   typeOption?: string[];
   template?: string;
   createMode?: string;
+  schedulePreset?: string;
   unset?: string[];
   clearDeps?: boolean;
   clearComments?: boolean;
@@ -132,6 +133,9 @@ export interface CreateResult {
 
 type CreateMode = "strict" | "progressive";
 const CREATE_MODE_VALUES = ["strict", "progressive"] as const;
+type ScheduleCreatePreset = "lightweight";
+const SCHEDULE_CREATE_PRESET_VALUES = ["lightweight"] as const;
+const SCHEDULE_CREATE_PRESET_TYPES = new Set(["Reminder", "Meeting", "Event"]);
 const LOG_SEED_ALLOWED_KEYS = new Set(["author", "created_at", "text"]);
 const LEGACY_NONE_TOKENS = new Set(["none", "null"]);
 
@@ -1030,6 +1034,38 @@ function resolveCreateMode(createMode: string | undefined): CreateMode {
   );
 }
 
+function resolveScheduleCreatePreset(raw: string | undefined): ScheduleCreatePreset | undefined {
+  if (raw === undefined) {
+    return undefined;
+  }
+  const normalized = raw.trim().toLowerCase();
+  if (normalized.length === 0) {
+    throw new PmCliError("--schedule-preset must not be empty", EXIT_CODE.USAGE);
+  }
+  if (normalized === "lightweight" || normalized === "lite" || normalized === "schedule-lite") {
+    return "lightweight";
+  }
+  throw new PmCliError(
+    `Invalid --schedule-preset value "${raw}". Allowed: ${SCHEDULE_CREATE_PRESET_VALUES.join(", ")}`,
+    EXIT_CODE.USAGE,
+  );
+}
+
+function resolveEffectiveCreateMode(createMode: string | undefined, schedulePreset: ScheduleCreatePreset | undefined): CreateMode {
+  const resolvedMode = resolveCreateMode(createMode);
+  if (schedulePreset === undefined) {
+    return resolvedMode;
+  }
+  const createModeWasExplicit = typeof createMode === "string" && createMode.trim().length > 0;
+  if (createModeWasExplicit && resolvedMode === "strict") {
+    throw new PmCliError(
+      "--schedule-preset lightweight cannot be combined with --create-mode strict. Use --create-mode progressive or omit --create-mode.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  return "progressive";
+}
+
 function requireCreateOptionByType(
   typeDefinition: ResolvedItemTypeDefinition,
   options: CreateCommandOptions,
@@ -1313,8 +1349,15 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   if (!typeDefinition) {
     throw new PmCliError(`Invalid type value "${resolvedOptions.type}"`, EXIT_CODE.USAGE);
   }
-  const createMode = resolveCreateMode(resolvedOptions.createMode);
   const type = typeDefinition.name;
+  const schedulePreset = resolveScheduleCreatePreset(resolvedOptions.schedulePreset);
+  if (schedulePreset !== undefined && !SCHEDULE_CREATE_PRESET_TYPES.has(type)) {
+    throw new PmCliError(
+      `--schedule-preset ${schedulePreset} is only supported for Reminder, Meeting, or Event types`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  const createMode = resolveEffectiveCreateMode(resolvedOptions.createMode, schedulePreset);
   const unsetTargets = parseCreateUnsetTargets(resolvedOptions.unset);
   const explicitUnsets = new Set<string>(unsetTargets.frontMatterKeys);
   const clearOptionKeys = new Set<string>(unsetTargets.optionKeys);

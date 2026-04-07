@@ -269,6 +269,7 @@ Governance workflows now include explicit non-owner metadata mutation and bulk u
 - `pm update --allow-audit-update` allows non-owner metadata updates without broad `--force` semantics.
 - `--allow-audit-update` is intentionally scoped: lifecycle/ownership/linkage mutations remain disallowed in this mode (for example assignee/parent and other lifecycle-governing fields).
 - `pm update-many` provides native bulk mutation with deterministic filter targeting, dry-run planning, optional checkpoint capture, and rollback.
+- `pm update-many` supports linked-array payload parity with `pm update` (repeatable `--dep/--comment/--note/--learning/--file/--test/--doc/--reminder/--event` plus `--clear-*`, `--replace-deps`, and `--replace-tests`).
 - `pm update-many --rollback <checkpoint-id>` restores every item in a prior checkpoint (ownership-safe restore path included).
 
 ```bash
@@ -277,6 +278,9 @@ pm update pm-a1b2 --description "Clarified acceptance boundaries" --allow-audit-
 
 # Bulk apply mode with deterministic targeting
 pm update-many --filter-status open --filter-tag governance --status in_progress --author maintainer --message "Governance sweep"
+
+# Bulk linked-test replacement across matched items (single transaction per item)
+pm update-many --filter-tag wave:7 --replace-tests --test "command=node scripts/run-tests.mjs test -- tests/core/history.spec.ts,scope=project,timeout_seconds=240" --message "Normalize linked test assertions"
 
 # Dry-run planning mode (no mutations)
 pm update-many --filter-status in_progress --priority 1 --deadline +2d --dry-run --json

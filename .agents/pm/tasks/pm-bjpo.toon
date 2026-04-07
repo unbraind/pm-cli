@@ -1,0 +1,49 @@
+id: pm-bjpo
+title: Add deterministic linked-test replacement mode for update test mutations
+description: Introduce a one-step replacement workflow for linked tests in pm update so operators can atomically clear and reseed tests without per-entry loops.
+type: Task
+status: closed
+priority: 1
+tags[4]: external-audit,pm-cli,tests,update
+created_at: "2026-04-06T23:08:42.681Z"
+updated_at: "2026-04-07T00:12:28.891Z"
+deadline: "2026-04-16T23:08:42.681Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: pm update supports deterministic one-step linked-test replacement semantics with clear CLI/help/contracts guidance and regression coverage for allowed/disallowed combinations.
+parent: pm-o7be
+reviewer: maintainer-review
+risk: medium
+confidence: medium
+reporter: codex-agent
+severity: medium
+environment: linux
+repro_steps: Run pm update <id> --clear-tests --test command=... and observe conflict error requiring looped pm test operations
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-o7be,related,"2026-04-06T23:08:42.681Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-04-06T23:08:42.681Z",codex-agent,Duplicate-check evidence rerun via context list-open list-in-progress list-blocked and focused searches; no open direct equivalent for clear-tests plus test replacement.
+  "2026-04-06T23:15:34.488Z",codex-agent,"Implementation start: add deterministic single-transaction linked-test replacement semantics in pm update (explicit replace path and/or clear+seed transaction support), preserve existing conflict checks for unrelated collection clears, and add unit/integration regression coverage for allowed and disallowed flag combinations."
+  "2026-04-06T23:25:00.802Z",codex-agent,"Implemented deterministic linked-test replacement ergonomics via new --replace-tests update flag. Behavior: requires at least one --test entry, clears/reseeds tests atomically in one mutation transaction, rejects --replace-tests with --clear-tests, and preserves legacy --clear-tests + --test conflict guard. Also updated contracts/schema, shell completion surfaces (bash/zsh/fish), Pi wrapper mapping, and release-readiness expectations. Verification: node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/integration/cli.integration.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts (passed)."
+notes[1]{created_at,author,text}:
+  "2026-04-06T23:08:42.681Z",codex-agent,Prefer explicit replacement flag or deterministic combined semantics while preserving existing conflict guards for other linked collections.
+learnings[1]{created_at,author,text}:
+  "2026-04-06T23:08:42.681Z",codex-agent,Linked-array mutation ergonomics need transaction-level shortcuts to avoid error-prone per-entry loops.
+files[10]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,pi-replace-tests-flag-mapping
+  src/cli/commands/completion.ts,project,replace-tests-shell-completion-parity
+  src/cli/commands/update.ts,project,update replacement semantics
+  src/cli/main.ts,project,update-replace-tests-cli-flag
+  src/sdk/cli-contracts.ts,project,replace-tests-contract-and-schema
+  tests/integration/cli.integration.spec.ts,project,replace-tests-integration-coverage
+  tests/integration/release-readiness-runtime.spec.ts,project,update-help-required-flags-coverage
+  tests/unit/completion-command.spec.ts,project,replace-tests-completion-tests
+  tests/unit/pi-agent-extension.spec.ts,project,replace-tests-pi-arg-tests
+  tests/unit/update-command.spec.ts,project,replace-tests-unit-coverage
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,null,linked-test replacement regressions
+  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/integration/cli.integration.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,10800,null,null,null,null,null,null,null,null,null,null,null,replace-tests-targeted-suite
+docs[1]{path,scope,note}:
+  README.md,project,linked-test replacement documentation
+close_reason: replace-tests update workflow delivered and verified in remediation wave
+body: "External report reproduced in this repository: pm update currently rejects --clear-tests combined with --test, forcing manual remove/add loops through pm test for each linked test entry. This task adds explicit replacement semantics while preserving deterministic validation and backward compatibility."

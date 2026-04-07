@@ -55,6 +55,13 @@ function getItemDescription(context: TempPmContext, id: string): string {
   return String((result.json as { item: { description: string } }).item.description);
 }
 
+function getItemTests(context: TempPmContext, id: string): Array<{ command?: string }> {
+  const result = context.runCli(["get", id, "--json"], { expectJson: true });
+  expect(result.code).toBe(0);
+  const item = (result.json as { item: { tests?: Array<{ command?: string }> } }).item;
+  return Array.isArray(item.tests) ? item.tests : [];
+}
+
 describe("runUpdateMany", () => {
   it("produces dry-run plans without mutating matched items", async () => {
     await withTempPmPath(async (context) => {
@@ -159,6 +166,77 @@ describe("runUpdateMany", () => {
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
+    });
+  });
+
+  it("treats linked-array mutation flags as actionable in dry-run and apply modes", async () => {
+    await withTempPmPath(async (context) => {
+      const firstId = createTask(context, "bulk-linked-tests-a", { tags: "bulk-linked-tests" });
+      const secondId = createTask(context, "bulk-linked-tests-b", { tags: "bulk-linked-tests" });
+      const originalTestCommand = "command=node scripts/run-tests.mjs test -- tests/seed-a.spec.ts,scope=project,timeout_seconds=240";
+      const replacementTestCommand =
+        "command=node scripts/run-tests.mjs test -- tests/replaced.spec.ts,scope=project,timeout_seconds=240";
+
+      const seed = context.runCli(
+        ["update", firstId, "--json", "--test", originalTestCommand, "--message", "seed linked test"],
+        { expectJson: true },
+      );
+      expect(seed.code).toBe(0);
+      expect(getItemTests(context, firstId).map((entry) => entry.command)).toEqual([
+        "node scripts/run-tests.mjs test -- tests/seed-a.spec.ts",
+      ]);
+      expect(getItemTests(context, secondId)).toEqual([]);
+
+      const dryRun = await runUpdateMany(
+        {
+          list: {
+            tag: "bulk-linked-tests",
+            includeBody: true,
+          },
+          update: {
+            replaceTests: true,
+            test: [replacementTestCommand],
+            message: "bulk linked tests dry-run",
+          },
+          dryRun: true,
+        },
+        { path: context.pmPath },
+      );
+
+      expect(dryRun.mode).toBe("dry_run");
+      expect(dryRun.matched_count).toBe(2);
+      expect(dryRun.item_plans?.every((row) => row.changes.some((change) => change.field === "tests"))).toBe(true);
+      expect(getItemTests(context, firstId).map((entry) => entry.command)).toEqual([
+        "node scripts/run-tests.mjs test -- tests/seed-a.spec.ts",
+      ]);
+      expect(getItemTests(context, secondId)).toEqual([]);
+
+      const apply = await runUpdateMany(
+        {
+          list: {
+            tag: "bulk-linked-tests",
+            includeBody: true,
+          },
+          update: {
+            replaceTests: true,
+            test: [replacementTestCommand],
+            message: "bulk linked tests apply",
+          },
+        },
+        { path: context.pmPath },
+      );
+
+      expect(apply.mode).toBe("apply");
+      expect(apply.matched_count).toBe(2);
+      expect(apply.updated_count).toBe(2);
+      expect(apply.skipped_count).toBe(0);
+      expect(apply.failed_count).toBe(0);
+      expect(getItemTests(context, firstId).map((entry) => entry.command)).toEqual([
+        "node scripts/run-tests.mjs test -- tests/replaced.spec.ts",
+      ]);
+      expect(getItemTests(context, secondId).map((entry) => entry.command)).toEqual([
+        "node scripts/run-tests.mjs test -- tests/replaced.spec.ts",
+      ]);
     });
   });
 });

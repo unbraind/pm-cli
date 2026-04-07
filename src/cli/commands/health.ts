@@ -53,6 +53,7 @@ export interface RunHealthOptions {
   checkOnly?: boolean;
   noRefresh?: boolean;
   refreshVectors?: boolean;
+  verboseStaleItems?: boolean;
 }
 
 interface MigrationStatusEntry {
@@ -96,6 +97,7 @@ interface ExtensionHealthTriageSummary {
 }
 
 type ItemWithBody = Awaited<ReturnType<typeof listAllFrontMatterWithBody>>[number];
+const STALE_VECTORIZATION_SUMMARY_LIMIT = 25;
 
 function warningCode(value: string): string {
   const normalized = value.trim();
@@ -697,6 +699,39 @@ function collectStaleVectorizationIds(items: ItemWithBody[], ledgerEntries: Reco
     .sort((left, right) => left.localeCompare(right));
 }
 
+function summarizeList(values: string[], limit: number): { values: string[]; truncated: boolean } {
+  if (values.length <= limit) {
+    return { values, truncated: false };
+  }
+  return {
+    values: values.slice(0, limit),
+    truncated: true,
+  };
+}
+
+function selectStaleItemDetail(
+  values: string[],
+  verboseStaleItems: boolean,
+): {
+  values: string[];
+  truncated: boolean;
+  total: number;
+} {
+  if (verboseStaleItems) {
+    return {
+      values,
+      truncated: false,
+      total: values.length,
+    };
+  }
+  const summary = summarizeList(values, STALE_VECTORIZATION_SUMMARY_LIMIT);
+  return {
+    values: summary.values,
+    truncated: summary.truncated,
+    total: values.length,
+  };
+}
+
 async function buildHistoryDriftCheck(
   pmRoot: string,
   items: ItemWithBody[],
@@ -789,6 +824,7 @@ async function buildVectorizationCheck(
     noRefresh: boolean;
     refreshVectors: boolean;
   },
+  verboseStaleItems: boolean,
 ): Promise<{ check: HealthCheck; warnings: string[] }> {
   const runtimeDefaults = resolveSettingsWithSemanticRuntimeDefaults(settings);
   const providerResolution = resolveEmbeddingProviders(runtimeDefaults.settings);
@@ -820,6 +856,8 @@ async function buildVectorizationCheck(
     warningSet.add(`vectorization_stale_items_remaining:${staleAfter.length}`);
   }
   const warnings = [...warningSet].sort((left, right) => left.localeCompare(right));
+  const staleBeforeDetail = selectStaleItemDetail(staleBefore, verboseStaleItems);
+  const staleAfterDetail = selectStaleItemDetail(staleAfter, verboseStaleItems);
 
   return {
     check: {
@@ -839,7 +877,11 @@ async function buildVectorizationCheck(
         vector_store_active: vectorStoreResolution.active?.name ?? null,
         items: items.length,
         ledger_entries_before: Object.keys(ledgerBefore.entries).length,
-        stale_items_before: staleBefore,
+        stale_items_detail_mode: verboseStaleItems ? "full" : "summary",
+        stale_items_summary_limit: STALE_VECTORIZATION_SUMMARY_LIMIT,
+        stale_items_before_total: staleBeforeDetail.total,
+        stale_items_before: staleBeforeDetail.values,
+        stale_items_before_truncated: staleBeforeDetail.truncated,
         refresh_attempted: refreshPolicy.enabled && staleBefore.length > 0 && semanticRuntimeAvailable,
         refresh_skipped_reason:
           refreshPolicy.enabled && semanticRuntimeAvailable && staleBefore.length > 0
@@ -851,7 +893,9 @@ async function buildVectorizationCheck(
                 : "no_stale_items",
         refresh_result: refreshResult,
         ledger_entries_after: Object.keys(ledgerAfter.entries).length,
-        stale_items_after: staleAfter,
+        stale_items_after_total: staleAfterDetail.total,
+        stale_items_after: staleAfterDetail.values,
+        stale_items_after_truncated: staleAfterDetail.truncated,
       },
     },
     warnings,
@@ -951,7 +995,13 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
   const historySummary = await countHistoryStreams(pmRoot);
   const integrityCheck = await buildIntegrityCheck(pmRoot, typeRegistry.type_to_folder);
   const historyDriftCheck = await buildHistoryDriftCheck(pmRoot, items);
-  const vectorizationCheck = await buildVectorizationCheck(pmRoot, settings, items, refreshPolicy);
+  const vectorizationCheck = await buildVectorizationCheck(
+    pmRoot,
+    settings,
+    items,
+    refreshPolicy,
+    options.verboseStaleItems === true,
+  );
 
   const checks: HealthCheck[] = [
     {

@@ -129,6 +129,22 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
+  it("renders intent and example sections for templates, deps, and update-many help", async () => {
+    await withTempPmPath(async (context) => {
+      for (const commandName of ["templates", "deps", "update-many"] as const) {
+        const compact = context.runCli([commandName, "--help"]);
+        expect(compact.code).toBe(0);
+        expect(compact.stdout).toContain("Intent:");
+        expect(compact.stdout).toContain("Example:");
+
+        const detailed = context.runCli([commandName, "--help", "--explain"]);
+        expect(detailed.code).toBe(0);
+        expect(detailed.stdout).toContain("Why use this command:");
+        expect(detailed.stdout).toContain("Examples:");
+      }
+    });
+  });
+
   it("surfaces extension command schema details in help output and JSON payloads", async () => {
     await withTempPmPath(async (context) => {
       await createProjectExtension(
@@ -316,6 +332,33 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
+  it("supports lightweight scheduling create preset for Reminder/Meeting/Event", async () => {
+    await withTempPmPath(async (context) => {
+      for (const type of ["Reminder", "Meeting", "Event"] as const) {
+        const created = context.runCli(
+          [
+            "create",
+            "--title",
+            `${type} lightweight seed`,
+            "--description",
+            `Minimal ${type.toLowerCase()} schedule artifact`,
+            "--type",
+            type,
+            "--schedule-preset",
+            "lightweight",
+            "--json",
+          ],
+          { expectJson: true },
+        );
+        expect(created.code).toBe(0);
+        const payload = created.json as { item: { type: string; status: string; priority: number } };
+        expect(payload.item.type).toBe(type);
+        expect(payload.item.status).toBe("open");
+        expect(payload.item.priority).toBe(2);
+      }
+    });
+  });
+
   it("supports --allow-audit-comment for non-owner append-only comment audits", async () => {
     await withTempPmPath(async (context) => {
       const created = context.runCli(
@@ -358,6 +401,91 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(allowed.code).toBe(0);
       const payload = allowed.json as { comments: Array<{ text: string; author: string }> };
       expect(payload.comments.at(-1)).toMatchObject({ text: "audit note", author: "owner-b" });
+    });
+  });
+
+  it("supports command-specific audit aliases for notes/learnings with legacy compatibility", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(
+        [
+          "create",
+          "--title",
+          "Audit note-learning seed",
+          "--description",
+          "Seed item for notes/learnings audit alias checks",
+          "--type",
+          "Task",
+          "--create-mode",
+          "progressive",
+          "--assignee",
+          "owner-a",
+          "--author",
+          "owner-a",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(created.code).toBe(0);
+      const id = (created.json as { item: { id: string } }).item.id;
+
+      const blockedNote = context.runCli(["notes", id, "--add", "audit note", "--author", "owner-b", "--json"]);
+      expect(blockedNote.code).toBe(4);
+      const blockedNoteEnvelope = JSON.parse(blockedNote.stderr) as {
+        code: string;
+        required: string;
+        next_steps?: string[];
+      };
+      expect(blockedNoteEnvelope.code).toBe("ownership_conflict");
+      expect(blockedNoteEnvelope.required).toContain("--allow-audit-note");
+      expect(blockedNoteEnvelope.required).toContain("--allow-audit-comment");
+      expect(blockedNoteEnvelope.next_steps?.some((step) => step.includes("--allow-audit-note"))).toBe(true);
+
+      const allowedNote = context.runCli(
+        ["notes", id, "--add", "audit note", "--author", "owner-b", "--allow-audit-note", "--json"],
+        { expectJson: true },
+      );
+      expect(allowedNote.code).toBe(0);
+      const allowedNotePayload = allowedNote.json as { notes: Array<{ text: string; author: string }> };
+      expect(allowedNotePayload.notes.at(-1)).toMatchObject({ text: "audit note", author: "owner-b" });
+
+      const allowedNoteLegacy = context.runCli(
+        ["notes", id, "--add", "legacy alias note", "--author", "owner-b", "--allow-audit-comment", "--json"],
+        { expectJson: true },
+      );
+      expect(allowedNoteLegacy.code).toBe(0);
+      const allowedNoteLegacyPayload = allowedNoteLegacy.json as { notes: Array<{ text: string; author: string }> };
+      expect(allowedNoteLegacyPayload.notes.at(-1)).toMatchObject({ text: "legacy alias note", author: "owner-b" });
+
+      const blockedLearning = context.runCli(["learnings", id, "--add", "audit learning", "--author", "owner-b", "--json"]);
+      expect(blockedLearning.code).toBe(4);
+      const blockedLearningEnvelope = JSON.parse(blockedLearning.stderr) as {
+        code: string;
+        required: string;
+        next_steps?: string[];
+      };
+      expect(blockedLearningEnvelope.code).toBe("ownership_conflict");
+      expect(blockedLearningEnvelope.required).toContain("--allow-audit-learning");
+      expect(blockedLearningEnvelope.required).toContain("--allow-audit-comment");
+      expect(blockedLearningEnvelope.next_steps?.some((step) => step.includes("--allow-audit-learning"))).toBe(true);
+
+      const allowedLearning = context.runCli(
+        ["learnings", id, "--add", "audit learning", "--author", "owner-b", "--allow-audit-learning", "--json"],
+        { expectJson: true },
+      );
+      expect(allowedLearning.code).toBe(0);
+      const allowedLearningPayload = allowedLearning.json as { learnings: Array<{ text: string; author: string }> };
+      expect(allowedLearningPayload.learnings.at(-1)).toMatchObject({ text: "audit learning", author: "owner-b" });
+
+      const allowedLearningLegacy = context.runCli(
+        ["learnings", id, "--add", "legacy alias learning", "--author", "owner-b", "--allow-audit-comment", "--json"],
+        { expectJson: true },
+      );
+      expect(allowedLearningLegacy.code).toBe(0);
+      const allowedLearningLegacyPayload = allowedLearningLegacy.json as { learnings: Array<{ text: string; author: string }> };
+      expect(allowedLearningLegacyPayload.learnings.at(-1)).toMatchObject({
+        text: "legacy alias learning",
+        author: "owner-b",
+      });
     });
   });
 

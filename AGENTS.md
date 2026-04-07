@@ -262,6 +262,7 @@ pm claim pm-a1b2
 pm update pm-a1b2 --status in_progress --description "Implement restore replay"
 pm update pm-a1b2 --description "Audit metadata clarification" --allow-audit-update --author "audit-maintainer"
 pm update-many --filter-status open --filter-tag governance --status in_progress --dry-run --json
+pm update-many --filter-tag wave:7 --replace-tests --test "command=node scripts/run-tests.mjs test -- tests/core/history.spec.ts,scope=project,timeout_seconds=240" --message "Normalize linked tests"
 pm update pm-a1b2 --body "Restore replay scope and acceptance details."
 pm update pm-a1b2 --reminder "at=+1d,text=Follow up on restore replay tests"
 pm files pm-a1b2 --add path=src/history.ts,scope=project,note="restore implementation"

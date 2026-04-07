@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:files","area:validation",follow-up,pm-cli
 created_at: "2026-04-03T21:59:58.425Z"
-updated_at: "2026-04-05T22:42:48.873Z"
+updated_at: "2026-04-06T23:51:30.633Z"
 deadline: "2026-04-10T21:59:58.425Z"
 author: codex-agent
 estimated_minutes: 220
@@ -18,7 +18,7 @@ value: "Improves future change velocity by making External follow-up: reduce tra
 impact: "Reduces ambiguity and handoff risk for future work touching External follow-up: reduce tracked-all orphaned noise from PM internals."
 outcome: "This record can be used as canonical context when modifying External follow-up: reduce tracked-all orphaned noise from PM internals."
 why_now: "Historical decisions for External follow-up: reduce tracked-all orphaned noise from PM internals need durable context for future maintenance and audits."
-parent: pm-j371
+parent: pm-o7be
 blocked_reason: "External follow-up: reduce tracked-all orphaned noise from PM internals has no active blocker because work is closed and verification evidence is recorded in linked artifacts/comments."
 unblock_note: "If External follow-up: reduce tracked-all orphaned noise from PM internals is reopened, first confirm scope/lineage validity, then capture concrete blocker IDs and mitigation notes before execution."
 environment: "Project workspace execution context for External follow-up: reduce tracked-all orphaned noise from PM internals (pm CLI + Node/pnpm toolchain)."
@@ -27,7 +27,7 @@ expected_result: "Acceptance criteria for External follow-up: reduce tracked-all
 actual_result: "Work completed and recorded with linked artifacts for External follow-up: reduce tracked-all orphaned noise from PM internals."
 component: project-management/external-follow-up-reduce-tracked-all-orphaned-n
 customer_impact: "Gives maintainers and contributors clearer context and safer change execution for External follow-up: reduce tracked-all orphaned noise from PM internals."
-comments[9]{created_at,author,text}:
+comments[12]{created_at,author,text}:
   "2026-04-03T21:59:58.425Z",codex-agent,Child task created from tracked-all orphaned-path signal-quality report.
   "2026-04-03T22:03:12.315Z",codex-agent,"Implementation started: add default tracked-all exclusion for PM internals plus explicit opt-in include flag with contracts/completion/Pi parity."
   "2026-04-03T22:17:03.821Z",codex-agent,"Implemented tracked-all PM-internal filtering: default scans exclude PM internals for higher-signal orphaned results; --include-pm-internals restores full internal audit coverage. Added completion/contracts/Pi parity and regressions. Evidence: pm test pm-a228 --run passed; full build/test/coverage passed; smoke check shows include_pm_internals=false with .agents paths excluded by default and include=true reintroduces them."
@@ -37,9 +37,12 @@ comments[9]{created_at,author,text}:
   "2026-04-05T02:18:43.421Z",codex-agent,"Correction: Issue 1 follow-up completed with explicit strict tracked-all visibility fields (`strict_mode_forces_pm_internals`, `strict_mode_forces_pm_internals_notice`) and warning token `validate_files_tracked_all_strict_forces_pm_internals`, preserving compatibility while making implicit inclusion auditable. Evidence: node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/integration/cli.integration.spec.ts passed; validate repro probe reports strict_mode_forces_pm_internals=true with warning token present; node scripts/run-tests.mjs coverage passed (branch 91.01%); pnpm build passed."
   "2026-04-05T20:39:55.497Z",codex-agent,Duplicate-check evidence refreshed; reusing canonical tracked-all strict semantics lineage for docs/help clarification updates (no duplicate item created).
   "2026-04-05T22:42:44.722Z",codex-agent,"Normalization decision: tracked-all PM internals follow-up is implemented and verified; closing to align status and eliminate closure-like active metadata drift."
+  "2026-04-06T23:08:11.335Z",codex-agent,"Reopened as canonical remediation tracker under pm-o7be for current audit findings wave to avoid duplicate item creation. Scope retained from prior implementation lineage and expanded for new report deltas only. Decision rationale: duplicate-check sweep in this run found no open/in-progress item directly covering this exact delta while this closed item already contains closest historical context, linked artifacts, and verification lineage."
+  "2026-04-06T23:44:19.991Z",codex-agent,"Implementation start for health-validate-signal (validate slice): reduce default validate --check-files list verbosity, add explicit opt-in flag for full file list payloads, and preserve actionable summary counts with completion/contracts/Pi/test parity."
+  "2026-04-06T23:51:20.143Z",codex-agent,"Implemented validate signal refinement: default validate --check-files now returns concise summarized file-path lists with counts/total/truncation metadata, while new --verbose-file-lists opt-in exposes full path lists. Also added parity updates for new verbosity controls across CLI options, completion, SDK contracts, and Pi wrapper; included matching health verbosity support to keep audit-facing diagnostics consistent. Verification: node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/unit/validate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts (181 passed)."
 notes[1]{created_at,author,text}:
   "2026-04-03T21:59:58.425Z",codex-agent,Implement as additive behavior to avoid breaking existing users.
-files[9]{path,scope,note}:
+files[11]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,Pi validate arg mapping parity
   src/cli/commands/completion.ts,project,validate completion parity
   src/cli/commands/validate.ts,project,tracked-all candidate filtering
@@ -47,14 +50,17 @@ files[9]{path,scope,note}:
   src/sdk/cli-contracts.ts,project,validate contract/schema parity
   tests/integration/release-readiness-runtime.spec.ts,project,runtime help/contract + pipeline regressions
   tests/unit/completion-command.spec.ts,project,validate completion flag test
+  tests/unit/contracts-command.spec.ts,project,Added contracts parity assertions for verbose validate/health flags
+  tests/unit/health-command.spec.ts,project,Added stale list summary/full health regression coverage
   tests/unit/pi-agent-extension.spec.ts,project,Pi schema/mapping include flag tests
   tests/unit/validate-command.spec.ts,project,tracked-all internal exclusion tests
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/unit/validate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,1500,null,null,null,null,null,null,null,null,null,null,null,Health/validate verbosity and surface parity regression suite
   node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,null,tracked-all option and contract regressions
 docs[4]{path,scope,note}:
   CHANGELOG.md,project,tracked-all internal exclusion changelog
   docs/ARCHITECTURE.md,project,validate filtered/raw candidate metrics docs
   PRD.md,project,validate scan-mode and option contract docs
   README.md,project,validate scan-mode and internal include docs
-close_reason: Tracked-all orphaned-noise follow-up is complete with verification evidence; stale open state removed.
+close_reason: Reduced default validate file-list verbosity and added explicit full-list opt-in
 body: External report reproduction in this repo shows orphaned_paths_count dominated by .agents/pm/** entries under tracked-all mode. Implement additive filtering that preserves existing behavior for explicit internal-audit use cases.

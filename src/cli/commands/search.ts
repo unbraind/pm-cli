@@ -35,6 +35,8 @@ import type { ItemDocument, ItemFormat, ItemFrontMatter, ItemStatus, ItemType, P
 export interface SearchOptions {
   mode?: string;
   includeLinked?: boolean;
+  titleExact?: boolean;
+  phraseExact?: boolean;
   type?: string;
   tag?: string;
   priority?: string;
@@ -64,6 +66,10 @@ const DEFAULT_COMPACT_SEARCH_FIELDS = [
   "score",
   "matched_fields",
 ] as const;
+
+const LONG_QUERY_TOKEN_THRESHOLD = 4;
+const LONG_QUERY_TITLE_EXACT_BONUS = 120;
+const LONG_QUERY_PHRASE_MULTIPLIER = 6;
 
 export interface SearchHit {
   item: ItemFrontMatter;
@@ -142,6 +148,21 @@ function parseMode(raw: string | undefined, context: SearchModeContext): SearchM
 
 function parseIncludeLinked(raw: boolean | undefined): boolean {
   return raw === true;
+}
+
+function parseTitleExact(raw: boolean | undefined): boolean {
+  return raw === true;
+}
+
+function parsePhraseExact(raw: boolean | undefined): boolean {
+  return raw === true;
+}
+
+function normalizeSearchPhrase(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function parsePriority(raw: string | undefined): number | undefined {
@@ -226,11 +247,51 @@ function parseProjectionConfig(options: SearchOptions): SearchProjectionConfig {
 }
 
 function parseTokens(query: string): string[] {
-  const normalized = query.trim().toLowerCase();
+  const normalized = normalizeSearchPhrase(query);
   if (!normalized) {
     throw new PmCliError("Search query must not be empty", EXIT_CODE.USAGE);
   }
   return normalized.split(/\s+/).filter(Boolean);
+}
+
+function collectExactPhraseFields(document: ItemDocument): string[] {
+  const item = document.front_matter;
+  return [
+    item.title,
+    item.description,
+    item.status,
+    item.tags.join(" "),
+    document.body,
+    (item.comments ?? []).map((entry) => entry.text).join(" "),
+    (item.notes ?? []).map((entry) => entry.text).join(" "),
+    (item.learnings ?? []).map((entry) => entry.text).join(" "),
+    (item.dependencies ?? []).map((entry) => `${entry.id} ${entry.kind}`).join(" "),
+  ];
+}
+
+function documentContainsExactPhrase(document: ItemDocument, normalizedQuery: string): boolean {
+  return collectExactPhraseFields(document).some((fieldValue) =>
+    normalizeSearchPhrase(fieldValue).includes(normalizedQuery),
+  );
+}
+
+function applyExactQueryFilters(
+  items: ItemDocument[],
+  normalizedQuery: string,
+  options: { titleExact: boolean; phraseExact: boolean },
+): ItemDocument[] {
+  if (!options.titleExact && !options.phraseExact) {
+    return items;
+  }
+  return items.filter((document) => {
+    if (options.titleExact && normalizeSearchPhrase(document.front_matter.title) !== normalizedQuery) {
+      return false;
+    }
+    if (options.phraseExact && !documentContainsExactPhrase(document, normalizedQuery)) {
+      return false;
+    }
+    return true;
+  });
 }
 
 function applyFilters(items: ItemDocument[], options: SearchOptions, typeRegistry: ItemTypeRegistry): ItemDocument[] {
@@ -373,7 +434,13 @@ export interface SearchTuning {
   linked_content_weight: number;
 }
 
-function scoreDocument(document: ItemDocument, tokens: string[], linkedCorpus: string, tuning: SearchTuning): SearchHit | null {
+function scoreDocument(
+  document: ItemDocument,
+  tokens: string[],
+  normalizedQuery: string,
+  linkedCorpus: string,
+  tuning: SearchTuning,
+): SearchHit | null {
   const item = document.front_matter;
   const titleTokenCounts = new Map<string, number>();
   for (const token of tokenizeForExactTokenMatch(item.title)) {
@@ -414,6 +481,23 @@ function scoreDocument(document: ItemDocument, tokens: string[], linkedCorpus: s
     }
   }
 
+  const isLongPhraseQuery = tokens.length >= LONG_QUERY_TOKEN_THRESHOLD && normalizedQuery.includes(" ");
+  if (isLongPhraseQuery) {
+    const normalizedTitle = normalizeSearchPhrase(item.title);
+    if (normalizedTitle === normalizedQuery) {
+      score += LONG_QUERY_TITLE_EXACT_BONUS;
+      matched.add("title");
+    }
+    for (const field of searchableFields) {
+      const normalizedField = normalizeSearchPhrase(field.value);
+      const phraseOccurrences = countOccurrences(normalizedField, normalizedQuery);
+      if (phraseOccurrences > 0) {
+        score += phraseOccurrences * field.weight * LONG_QUERY_PHRASE_MULTIPLIER;
+        matched.add(field.name);
+      }
+    }
+  }
+
   if (score <= 0) {
     return null;
   }
@@ -445,6 +529,7 @@ function sortHits(items: SearchHit[]): SearchHit[] {
 function buildHybridLexicalScore(
   document: ItemDocument,
   tokens: string[],
+  normalizedQuery: string,
   includeLinked: boolean,
   linkedCorpusById: Map<string, string>,
   tuning: SearchTuning,
@@ -452,6 +537,7 @@ function buildHybridLexicalScore(
   return scoreDocument(
     document,
     tokens,
+    normalizedQuery,
     includeLinked ? linkedCorpusById.get(document.front_matter.id) ?? "" : "",
     tuning,
   );
@@ -561,6 +647,8 @@ function emptySearchResult(
       deadline_before: options.deadlineBefore ?? null,
       deadline_after: options.deadlineAfter ?? null,
       include_linked: includeLinked,
+      title_exact: options.titleExact === true,
+      phrase_exact: options.phraseExact === true,
       score_threshold: scoreThreshold,
       hybrid_semantic_weight: mode === "hybrid" ? hybridSemanticWeight : null,
       limit: options.limit ?? null,
@@ -900,7 +988,10 @@ function projectSearchHits(hits: SearchHit[], projection: SearchProjectionConfig
 
 export async function runSearch(query: string, options: SearchOptions, global: GlobalOptions): Promise<SearchResult> {
   const includeLinked = parseIncludeLinked(options.includeLinked);
+  const titleExact = parseTitleExact(options.titleExact);
+  const phraseExact = parsePhraseExact(options.phraseExact);
   const tokens = parseTokens(query);
+  const normalizedQuery = normalizeSearchPhrase(query);
   const limit = parseLimit(options.limit);
   const projection = parseProjectionConfig(options);
   const modeWasExplicit = typeof options.mode === "string" && options.mode.trim().length > 0;
@@ -927,7 +1018,11 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   const loadedDocuments = await loadDocuments(pmRoot, settings.item_format ?? "json_markdown", typeRegistry.type_to_folder);
   const warnings = loadedDocuments.warnings;
   const allDocuments = loadedDocuments.documents;
-  const filteredDocuments = applyFilters(allDocuments, options, typeRegistry);
+  const metadataFilteredDocuments = applyFilters(allDocuments, options, typeRegistry);
+  const filteredDocuments = applyExactQueryFilters(metadataFilteredDocuments, normalizedQuery, {
+    titleExact,
+    phraseExact,
+  });
   if (effectiveMode === "keyword" && (filteredDocuments.length === 0 || limit === 0)) {
     return emptySearchResult(query, effectiveMode, options, includeLinked, scoreThreshold, hybridSemanticWeight, projection, warnings);
   }
@@ -942,7 +1037,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   }
 
   const keywordHits = filteredDocuments
-    .map((document) => buildHybridLexicalScore(document, tokens, effectiveMode !== "semantic", linkedCorpusById, tuning))
+    .map((document) => buildHybridLexicalScore(document, tokens, normalizedQuery, effectiveMode !== "semantic", linkedCorpusById, tuning))
     .filter((entry): entry is SearchHit => entry !== null);
 
   let hits = keywordHits;
@@ -1040,6 +1135,8 @@ export async function runSearch(query: string, options: SearchOptions, global: G
       deadline_before: options.deadlineBefore ?? null,
       deadline_after: options.deadlineAfter ?? null,
       include_linked: includeLinked,
+      title_exact: titleExact,
+      phrase_exact: phraseExact,
       score_threshold: scoreThreshold,
       hybrid_semantic_weight: effectiveMode === "hybrid" ? hybridSemanticWeight : null,
       limit: options.limit ?? null,

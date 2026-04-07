@@ -16,6 +16,7 @@ export interface LearningsCommandOptions {
   limit?: string;
   author?: string;
   message?: string;
+  allowAuditLearning?: boolean;
   allowAuditComment?: boolean;
   force?: boolean;
 }
@@ -110,7 +111,7 @@ export async function runLearnings(
       author,
       message: options.message,
       force: options.force,
-      bypassAssigneeConflict: Boolean(options.allowAuditComment),
+      bypassAssigneeConflict: Boolean(options.allowAuditLearning || options.allowAuditComment),
       mutate(document) {
         const learnings = document.front_matter.learnings ?? [];
         learnings.push({
@@ -132,10 +133,10 @@ export async function runLearnings(
       throw new PmCliError(error.message, error.exitCode, {
         code: "ownership_conflict",
         required:
-          "For append-only learning audits on another owner's item, prefer --allow-audit-comment before considering --force.",
-        examples: ['pm learnings pm-a1b2 --add "audit learning" --author "reviewer" --allow-audit-comment'],
+          "For append-only learning audits on another owner's item, prefer --allow-audit-learning (legacy alias: --allow-audit-comment) before considering --force.",
+        examples: ['pm learnings pm-a1b2 --add "audit learning" --author "reviewer" --allow-audit-learning'],
         nextSteps: [
-          "Retry with --allow-audit-comment for append-only learning audits that do not mutate item metadata beyond learnings.",
+          "Retry with --allow-audit-learning (or legacy --allow-audit-comment) for append-only learning audits that do not mutate item metadata beyond learnings.",
           "Use --force only when an ownership override is explicitly approved.",
         ],
       });

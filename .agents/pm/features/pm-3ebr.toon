@@ -6,9 +6,8 @@ status: closed
 priority: 1
 tags[4]: "area:health","area:search",pm-cli,semantic
 created_at: "2026-04-01T14:42:18.406Z"
-updated_at: "2026-04-04T21:33:26.225Z"
+updated_at: "2026-04-06T23:51:28.230Z"
 deadline: "2026-04-10T14:42:18.406Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 260
 acceptance_criteria: pm health reports vectorization status and attempts targeted refresh for stale/missing vectorized items without forcing full reindex or breaking non-semantic setups.
@@ -20,7 +19,7 @@ value: Reduces stale semantic index risk without heavy full rebuilds
 impact: Improves semantic query reliability in active repos
 outcome: Stale vectors are detected and refreshed proactively
 why_now: Users requested automatic vectorization start when items are not vectorized.
-parent: pm-1hkq
+parent: pm-o7be
 reviewer: maintainer-review
 risk: medium
 confidence: high
@@ -43,17 +42,31 @@ regression: true
 customer_impact: Users get fresher semantic results with minimal manual maintenance
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-1hkq,parent,"2026-04-01T14:42:18.406Z",codex-agent,null
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-01T14:42:18.406Z",codex-agent,Feature created from approved targeted-refresh strategy for pm health.
+  "2026-04-06T23:08:06.392Z",codex-agent,"Reopened as canonical remediation tracker under pm-o7be for current audit findings wave to avoid duplicate item creation. Scope retained from prior implementation lineage and expanded for new report deltas only. Decision rationale: duplicate-check sweep in this run found no open/in-progress item directly covering this exact delta while this closed item already contains closest historical context, linked artifacts, and verification lineage."
+  "2026-04-06T23:44:18.105Z",codex-agent,"Implementation start for health-validate-signal (health slice): reduce default health vectorization detail payload by summarizing stale item arrays, add explicit opt-in flag for full stale ID lists, and update completion/contracts/Pi/test parity."
+  "2026-04-06T23:50:51.940Z",codex-agent,"Implemented health verbosity refinement: default health output now summarizes stale vectorization IDs and emits counts/summary metadata, while new --verbose-stale-items opt-in returns full stale ID arrays. Also added cross-surface parity for new verbosity flags (main/help/completion/contracts/Pi/tests). Verification: node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/unit/validate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts (181 passed)."
 notes[1]{created_at,author,text}:
   "2026-04-01T14:42:18.406Z",codex-agent,Auto-refresh must remain non-fatal and deterministic when semantic runtime is unavailable.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:21:48.583Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[1]{path,scope,note}:
+files[11]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,Added Pi mapping for verbose health/validate options
+  src/cli/commands/completion.ts,project,Added completion coverage for verbose health/validate flags
+  src/cli/commands/health.ts,project,Summarized stale vectorization lists by default with verbose opt-in
+  src/cli/main.ts,project,Added --verbose-stale-items and --verbose-file-lists CLI options
   src/core/search/cache.ts,project,targeted semantic refresh plumbing
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  src/sdk/cli-contracts.ts,project,Added health/validate verbosity flag contracts and schema metadata
+  tests/integration/release-readiness-runtime.spec.ts,project,Updated required help flags for verbose health/validate options
+  tests/unit/completion-command.spec.ts,project,Added completion assertions for verbose health/validate flags
+  tests/unit/contracts-command.spec.ts,project,Added contracts flag parity assertions for verbose health/validate flags
+  tests/unit/health-command.spec.ts,project,Added default-summary vs verbose stale list regression coverage
+  tests/unit/pi-agent-extension.spec.ts,project,Added Pi schema/args assertions for verbose health/validate options
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/unit/validate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,1500,null,null,null,null,null,null,null,null,null,null,null,Health/validate verbosity and surface parity regression suite
   node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,targeted semantic refresh regression
 docs[1]{path,scope,note}:
   PRD.md,project,health command and semantic behavior contract
-close_reason: Vectorization status + targeted refresh shipped with ledger synchronization and regression coverage (pm-v48k).
+close_reason: Reduced default health vectorization verbosity and added explicit full-list opt-in
 body: Feature for health-time vector freshness checks and targeted stale-ID semantic refresh with deterministic warning output.

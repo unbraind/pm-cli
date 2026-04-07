@@ -749,6 +749,8 @@ describe("runValidate", () => {
 
       const defaultResult = await runValidate({ checkFiles: true, scanMode: "tracked-all" }, { path: context.pmPath });
       const defaultDetails = checkByName(defaultResult, "files").details as {
+        file_list_detail_mode: string;
+        file_list_summary_limit: number;
         include_pm_internals: boolean;
         include_pm_internals_requested: boolean;
         candidate_total_raw: number;
@@ -758,18 +760,53 @@ describe("runValidate", () => {
           pm_internals?: {
             count: number;
             paths: string[];
+            paths_truncated: boolean;
+            paths_total: number;
           };
         };
         orphaned_paths_count: number;
       };
+      expect(defaultDetails.file_list_detail_mode).toBe("summary");
+      expect(defaultDetails.file_list_summary_limit).toBe(40);
       expect(defaultDetails.include_pm_internals).toBe(false);
       expect(defaultDetails.include_pm_internals_requested).toBe(false);
       expect(defaultDetails.candidate_total_raw).toBe(2);
       expect(defaultDetails.candidate_total).toBe(1);
       expect(defaultDetails.pm_internal_excluded_count).toBe(1);
       expect(defaultDetails.excluded_by_reason.pm_internals?.count).toBe(1);
+      expect(defaultDetails.excluded_by_reason.pm_internals?.paths_total).toBe(1);
+      expect(defaultDetails.excluded_by_reason.pm_internals?.paths_truncated).toBe(false);
       expect(defaultDetails.excluded_by_reason.pm_internals?.paths.some((entry) => entry.endsWith(`${id}.toon`))).toBe(true);
       expect(defaultDetails.orphaned_paths_count).toBe(0);
+
+      const verboseResult = await runValidate(
+        {
+          checkFiles: true,
+          scanMode: "tracked-all",
+          verboseFileLists: true,
+        },
+        { path: context.pmPath },
+      );
+      const verboseDetails = checkByName(verboseResult, "files").details as {
+        file_list_detail_mode: string;
+        include_pm_internals: boolean;
+        pm_internal_excluded_count: number;
+        excluded_by_reason: {
+          pm_internals?: {
+            count: number;
+            paths: string[];
+            paths_total: number;
+            paths_truncated: boolean;
+          };
+        };
+      };
+      expect(verboseDetails.file_list_detail_mode).toBe("full");
+      expect(verboseDetails.include_pm_internals).toBe(false);
+      expect(verboseDetails.pm_internal_excluded_count).toBe(1);
+      expect(verboseDetails.excluded_by_reason.pm_internals?.count).toBe(1);
+      expect(verboseDetails.excluded_by_reason.pm_internals?.paths_total).toBe(1);
+      expect(verboseDetails.excluded_by_reason.pm_internals?.paths_truncated).toBe(false);
+      expect(verboseDetails.excluded_by_reason.pm_internals?.paths.some((entry) => entry.endsWith(`${id}.toon`))).toBe(true);
 
       const includeResult = await runValidate(
         {

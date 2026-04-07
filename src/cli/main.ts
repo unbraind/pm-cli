@@ -1179,12 +1179,18 @@ function buildCreateUpdatePolicyHelpText(
   const selectedTypeRaw = parseBootstrapTypeValue(argv);
   if (!selectedTypeRaw) {
     const allowed = typeRegistry.types.join("|");
-    return [
+    const lines = [
       "",
       "Type-aware option policies:",
       "  pass --type <value> with --help to render required/disabled/hidden option policy details for that type.",
       `  active type values: ${allowed}`,
-    ].join("\n");
+    ];
+    if (commandName === "create") {
+      lines.push(
+        "  scheduling shortcut: use --schedule-preset lightweight for Reminder/Meeting/Event minimal create flows.",
+      );
+    }
+    return lines.join("\n");
   }
 
   const typeDefinition = resolveTypeDefinition(selectedTypeRaw, typeRegistry);
@@ -1212,6 +1218,12 @@ function buildCreateUpdatePolicyHelpText(
     `  disabled: ${toFlags(policyState.disabled)}`,
     `  hidden: ${toFlags(policyState.hidden)}`,
   ];
+  if (commandName === "create" && ["Reminder", "Meeting", "Event"].includes(typeDefinition.name)) {
+    lines.push(
+      "  schedule preset: --schedule-preset lightweight switches schedule artifacts to progressive required-option policy.",
+    );
+    lines.push("  strict parity remains available via --create-mode strict.");
+  }
   if (typeDefinition.options.length === 0) {
     lines.push("  type options: none");
   } else {
@@ -2028,6 +2040,7 @@ function normalizeCreateOptions(
     type,
     template: readCreateString("template"),
     createMode: readCreateString("createMode"),
+    schedulePreset: readCreateString("schedulePreset"),
     status: readCreateString("status"),
     priority: readCreateString("priority"),
     tags: readCreateString("tags"),
@@ -2161,6 +2174,7 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
     dep: readUpdateList("dep"),
     depRemove: readUpdateList("depRemove"),
     replaceDeps: commandOptions.replaceDeps === true ? true : undefined,
+    replaceTests: commandOptions.replaceTests === true ? true : undefined,
     comment: readUpdateList("comment"),
     note: readUpdateList("note"),
     learning: readUpdateList("learning"),
@@ -2341,6 +2355,8 @@ function normalizeSearchOptions(options: Record<string, unknown>): Record<string
   return {
     mode: readSearchString("mode"),
     includeLinked: options.includeLinked === true ? true : undefined,
+    titleExact: options.titleExact === true ? true : undefined,
+    phraseExact: options.phraseExact === true ? true : undefined,
     type: readSearchString("type"),
     tag: readSearchString("tag"),
     priority: readSearchString("priority"),
@@ -3017,6 +3033,8 @@ program
   .option("--template <value>", "Apply named create template defaults before explicit flags")
   .option("--create-mode <value>", "Create required-option policy mode: strict|progressive")
   .option("--create_mode <value>", "Alias for --create-mode")
+  .option("--schedule-preset <value>", "Scheduling preset for Reminder|Meeting|Event: lightweight")
+  .option("--schedule_preset <value>", "Alias for --schedule-preset")
   .option("--status, -s <value>", "Item status")
   .option("--priority, -p <value>", "Priority 0..4")
   .option("--tags <value>", "Comma-separated tags")
@@ -3361,6 +3379,8 @@ program
     "Search mode: keyword|semantic|hybrid (default: hybrid when semantic config or local Ollama auto-defaults are available, else keyword)",
   )
   .option("--include-linked", "Include readable linked docs/files/tests content in keyword and hybrid lexical scoring")
+  .option("--title-exact", "Require exact normalized title match against the full query")
+  .option("--phrase-exact", "Require exact normalized query phrase match in item text fields")
   .option("--type <value>", "Filter by item type")
   .option("--tag <value>", "Filter by tag")
   .option("--priority <value>", "Filter by priority")
@@ -3572,6 +3592,7 @@ program
   )
   .option("--dep_remove <value>", "Alias for --dep-remove", collect)
   .option("--replace-deps", "Atomically replace dependency entries with the provided --dep values")
+  .option("--replace-tests", "Atomically replace linked test entries with the provided --test values")
   .option(
     "--comment <value>",
     "Append comment seed author=<value>,created_at=<iso|now>,text=<value> (also accepts markdown pairs and - for stdin; repeatable)",
@@ -3709,9 +3730,31 @@ program
   .option("--regression <value>", "Set regression marker: true|false|1|0")
   .option("--customer-impact <value>", "Set customer impact summary")
   .option("--customer_impact <value>", "Alias for --customer-impact")
+  .option("--dep <value>", "Add dependency entry id=<id>,kind=<kind>,author=<author>,created_at=<timestamp>", collect)
+  .option("--dep-remove <value>", "Remove dependency entries by id/kind/author/timestamp signature", collect)
+  .option("--dep_remove <value>", "Alias for --dep-remove", collect)
+  .option("--replace-deps", "Atomically replace dependency entries with provided --dep values")
+  .option("--replace-tests", "Atomically replace linked tests with provided --test values")
+  .option("--comment <value>", "Add comment seed author=<value>,created_at=<iso|now>,text=<value>", collect)
+  .option("--note <value>", "Add note seed author=<value>,created_at=<iso|now>,text=<value>", collect)
+  .option("--learning <value>", "Add learning seed author=<value>,created_at=<iso|now>,text=<value>", collect)
+  .option("--file <value>", "Add linked file path=<value>,scope=<project|global>,note=<text>", collect)
+  .option("--test <value>", "Add linked test command=<value>,path=<value>,scope=<project|global>", collect)
+  .option("--doc <value>", "Add linked doc path=<value>,scope=<project|global>,note=<text>", collect)
+  .option("--reminder <value>", "Add reminder entry at=<iso|relative>,text=<text>", collect)
+  .option("--event <value>", "Add event entry start=<iso|relative>,end=<iso|relative>,recur_*", collect)
   .option("--type-option <value>", "Set type options key=value (repeatable)", collect)
   .option("--type_option <value>", "Alias for --type-option", collect)
   .option("--unset <field>", "Clear scalar metadata field by name (repeatable)", collect)
+  .option("--clear-deps", "Clear dependency entries")
+  .option("--clear-comments", "Clear comments")
+  .option("--clear-notes", "Clear notes")
+  .option("--clear-learnings", "Clear learnings")
+  .option("--clear-files", "Clear linked files")
+  .option("--clear-tests", "Clear linked tests")
+  .option("--clear-docs", "Clear linked docs")
+  .option("--clear-reminders", "Clear reminders")
+  .option("--clear-events", "Clear events")
   .option("--clear-type-options", "Clear type options")
   .option("--allow-audit-update", "Allow non-owner metadata-only audit updates without requiring --force")
   .option("--allow_audit_update", "Alias for --allow-audit-update")
@@ -3938,7 +3981,8 @@ program
   .option("--limit <n>", "Return only latest n notes")
   .option("--author [value]", "Note author (optional; falls back to PM_AUTHOR/settings)")
   .option("--message <value>", "History message")
-  .option("--allow-audit-comment", "Allow non-owner append-only note audits without requiring --force")
+  .option("--allow-audit-note", "Allow non-owner append-only note audits without requiring --force")
+  .option("--allow-audit-comment", "Backward-compatible alias for --allow-audit-note")
   .option("--force", "Force ownership override")
   .description("List or add notes for an item.")
   .action(async (id: string, text: string | undefined, options: Record<string, unknown>, command) => {
@@ -3957,7 +4001,7 @@ program
         limit: typeof options.limit === "string" ? options.limit : undefined,
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
-        allowAuditComment: Boolean(options.allowAuditComment),
+        allowAuditComment: Boolean(options.allowAuditNote || options.allowAuditComment),
         force: Boolean(options.force),
       },
       globalOptions,
@@ -3979,7 +4023,8 @@ program
   .option("--limit <n>", "Return only latest n learnings")
   .option("--author [value]", "Learning author (optional; falls back to PM_AUTHOR/settings)")
   .option("--message <value>", "History message")
-  .option("--allow-audit-comment", "Allow non-owner append-only learning audits without requiring --force")
+  .option("--allow-audit-learning", "Allow non-owner append-only learning audits without requiring --force")
+  .option("--allow-audit-comment", "Backward-compatible alias for --allow-audit-learning")
   .option("--force", "Force ownership override")
   .description("List or add learnings for an item.")
   .action(async (id: string, text: string | undefined, options: Record<string, unknown>, command) => {
@@ -3998,7 +4043,7 @@ program
         limit: typeof options.limit === "string" ? options.limit : undefined,
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
-        allowAuditComment: Boolean(options.allowAuditComment),
+        allowAuditComment: Boolean(options.allowAuditLearning || options.allowAuditComment),
         force: Boolean(options.force),
       },
       globalOptions,
@@ -4441,6 +4486,7 @@ program
   .option("--check-only", "Run read-only health diagnostics without refreshing vectors")
   .option("--no-refresh", "Disable automatic vector refresh attempts during health checks")
   .option("--refresh-vectors", "Explicitly enable vector refresh attempts during health checks")
+  .option("--verbose-stale-items", "Include full stale vectorization ID lists in health output")
   .option("--strict-exit", "Return non-zero exit when health warnings are present (ok=false)")
   .option("--fail-on-warn", "Alias for --strict-exit")
   .action(async (options: Record<string, unknown>, command) => {
@@ -4451,6 +4497,7 @@ program
       checkOnly: Boolean(options.checkOnly),
       noRefresh: Boolean(options.noRefresh),
       refreshVectors: Boolean(options.refreshVectors),
+      verboseStaleItems: Boolean(options.verboseStaleItems),
     });
     printResult(result, globalOptions);
     const strictExit = Boolean(options.strictExit) || Boolean(options.failOnWarn);
@@ -4474,6 +4521,7 @@ program
   .option("--check-command-references", "Run linked-command PM-ID reference checks")
   .option("--scan-mode <value>", "Select file candidate scan mode for --check-files (default|tracked-all|tracked-all-strict)")
   .option("--include-pm-internals", "Include PM storage internals in tracked-all candidate scans")
+  .option("--verbose-file-lists", "Include full file-path lists for validate --check-files details")
   .option("--strict-exit", "Return non-zero exit when validation warnings are present (ok=false)")
   .option("--fail-on-warn", "Alias for --strict-exit")
   .option("--check-history-drift", "Run item/history hash drift checks")
@@ -4491,6 +4539,7 @@ program
         checkCommandReferences: Boolean(options.checkCommandReferences),
         scanMode: typeof options.scanMode === "string" ? options.scanMode : undefined,
         includePmInternals: Boolean(options.includePmInternals),
+        verboseFileLists: Boolean(options.verboseFileLists),
         checkHistoryDrift: Boolean(options.checkHistoryDrift),
       },
       globalOptions,

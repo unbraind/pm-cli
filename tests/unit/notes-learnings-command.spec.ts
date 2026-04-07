@@ -266,3 +266,57 @@ describe.each(TARGETS)("run%s", (target) => {
     });
   });
 });
+
+describe("command-specific audit aliases", () => {
+  it("allows note append audits with allowAuditNote", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "notes-audit-alias");
+      const claim = context.runCli(["claim", id, "--author", "owner-a", "--message", "claim for audit alias", "--json"], {
+        expectJson: true,
+      });
+      expect(claim.code).toBe(0);
+
+      await expect(runNotes(id, { add: "blocked note", author: "owner-b" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.CONFLICT,
+      });
+
+      const allowed = await runNotes(
+        id,
+        {
+          add: "allowed note",
+          author: "owner-b",
+          allowAuditNote: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(allowed.notes.at(-1)).toMatchObject({ text: "allowed note", author: "owner-b" });
+    });
+  });
+
+  it("allows learning append audits with allowAuditLearning", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "learnings-audit-alias");
+      const claim = context.runCli(["claim", id, "--author", "owner-a", "--message", "claim for audit alias", "--json"], {
+        expectJson: true,
+      });
+      expect(claim.code).toBe(0);
+
+      await expect(
+        runLearnings(id, { add: "blocked learning", author: "owner-b" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.CONFLICT,
+      });
+
+      const allowed = await runLearnings(
+        id,
+        {
+          add: "allowed learning",
+          author: "owner-b",
+          allowAuditLearning: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(allowed.learnings.at(-1)).toMatchObject({ text: "allowed learning", author: "owner-b" });
+    });
+  });
+});

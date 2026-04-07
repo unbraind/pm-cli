@@ -92,6 +92,7 @@ describe("generateBashScript", () => {
     expect(script).toContain("--title");
     expect(script).toContain("--description");
     expect(script).toContain("--create-mode");
+    expect(script).toContain("--schedule-preset");
     expect(script).toContain("--acceptance-criteria");
     expect(script).toContain("--dep");
     expect(script).toContain("--reminder");
@@ -111,6 +112,7 @@ describe("generateBashScript", () => {
     expect(script).toContain("--dep");
     expect(script).toContain("--dep-remove");
     expect(script).toContain("--replace-deps");
+    expect(script).toContain("--replace-tests");
     expect(script).toContain("--comment");
     expect(script).toContain("--note");
     expect(script).toContain("--learning");
@@ -119,6 +121,25 @@ describe("generateBashScript", () => {
     expect(script).toContain("--doc");
     expect(script).toContain("--reminder");
     expect(script).toContain("--event");
+  });
+
+  it("includes update-many linked-array mutation flags across completion scripts", () => {
+    const bashScript = generateBashScript();
+    expect(bashScript).toContain("--replace-tests");
+    expect(bashScript).toContain("--clear-files");
+    expect(bashScript).toContain("--clear-events");
+
+    const zshScript = generateZshScript();
+    expect(zshScript).toContain("update-many)");
+    expect(zshScript).toContain("--replace-tests[Atomically replace linked tests with provided --test values]");
+    expect(zshScript).toContain("--clear-tests[Clear linked tests]");
+    expect(zshScript).toContain("--dep[Dependency seed id=<id>,kind=<kind>,author=<author>,created_at=<timestamp>]");
+
+    const fishScript = generateFishScript();
+    expect(fishScript).toContain("__fish_seen_subcommand_from update-many");
+    expect(fishScript).toContain("-l replace-tests");
+    expect(fishScript).toContain("-l clear-docs");
+    expect(fishScript).toContain("-l reminder");
   });
 
   it("includes append required --body flag from command contracts", () => {
@@ -148,9 +169,24 @@ describe("generateBashScript", () => {
     const script = generateBashScript();
     expect(script).toContain("--add --limit --author --message --allow-audit-comment --force");
     expect(script).toContain("--allow-audit-comment");
+    expect(script).toContain("--allow-audit-note");
+    expect(script).toContain("--allow-audit-learning");
     expect(script).toContain(
       "--status --type --tag --priority --parent --sprint --release --assignee --assignee-filter --limit-items --full-history --latest",
     );
+  });
+
+  it("includes notes/learnings audit alias flags in zsh and fish completion", () => {
+    const zshScript = generateZshScript();
+    expect(zshScript).toContain("--allow-audit-note");
+    expect(zshScript).toContain("--allow-audit-learning");
+    expect(zshScript).toContain("Backward-compatible alias for --allow-audit-note");
+    expect(zshScript).toContain("Backward-compatible alias for --allow-audit-learning");
+
+    const fishScript = generateFishScript();
+    expect(fishScript).toContain("-l allow-audit-note");
+    expect(fishScript).toContain("-l allow-audit-learning");
+    expect(fishScript).toContain("-l allow-audit-comment");
   });
 
   it("includes files/docs add-glob flag in bash completion", () => {
@@ -166,14 +202,14 @@ describe("generateBashScript", () => {
   it("includes validate scan-mode flag in bash completion", () => {
     const script = generateBashScript();
     expect(script).toContain(
-      "--check-metadata --metadata-profile --check-resolution --check-lifecycle --check-stale-blockers --check-files --scan-mode --include-pm-internals --strict-exit --fail-on-warn --check-history-drift --check-command-references",
+      "--check-metadata --metadata-profile --check-resolution --check-lifecycle --check-stale-blockers --check-files --scan-mode --include-pm-internals --verbose-file-lists --strict-exit --fail-on-warn --check-history-drift --check-command-references",
     );
   });
 
   it("includes strict health flags in bash completion", () => {
     const script = generateBashScript();
     expect(script).toContain(
-      "--strict-directories --strict-exit --fail-on-warn --check-only --no-refresh --refresh-vectors --json --quiet --path --no-extensions --profile --help",
+      "--strict-directories --strict-exit --fail-on-warn --check-only --no-refresh --refresh-vectors --verbose-stale-items --json --quiet --path --no-extensions --profile --help",
     );
   });
 
@@ -217,6 +253,8 @@ describe("generateBashScript", () => {
     const script = generateBashScript();
     expect(script).toContain("--mode");
     expect(script).toContain("--include-linked");
+    expect(script).toContain("--title-exact");
+    expect(script).toContain("--phrase-exact");
   });
 
   it("includes deterministic tag suggestions for --tag completion", () => {
@@ -366,6 +404,7 @@ describe("generateZshScript", () => {
   it("includes strict health flags in zsh completion", () => {
     const script = generateZshScript();
     expect(script).toContain("--strict-directories[Treat optional item-type directories as required failures]");
+    expect(script).toContain("--verbose-stale-items[Include full stale vectorization ID lists in health output]");
     expect(script).toContain("--strict-exit[Return non-zero exit when health warnings are present]");
     expect(script).toContain("--fail-on-warn[Alias for --strict-exit]");
   });
@@ -511,6 +550,7 @@ describe("generateFishScript", () => {
     const script = generateFishScript();
     expect(script).toContain("__fish_seen_subcommand_from health");
     expect(script).toContain("-l strict-directories");
+    expect(script).toContain("-l verbose-stale-items");
     expect(script).toContain("-l strict-exit");
     expect(script).toContain("-l fail-on-warn");
   });
@@ -533,6 +573,7 @@ describe("generateFishScript", () => {
     expect(script).toContain("__fish_seen_subcommand_from create");
     expect(script).toContain("-l title");
     expect(script).toContain("-l description");
+    expect(script).toContain("-l schedule-preset");
     expect(script).toContain("-l acceptance-criteria");
   });
 
@@ -542,6 +583,7 @@ describe("generateFishScript", () => {
     expect(script).toContain("-l body");
     expect(script).toContain("-l close-reason");
     expect(script).toContain("-l force");
+    expect(script).toContain("-l replace-tests");
     expect(script).toContain("-l reminder");
     expect(script).toContain("-l event");
   });

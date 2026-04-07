@@ -54,6 +54,7 @@ export interface PmToolParameters {
   type?: string;
   template?: string;
   createMode?: string;
+  schedulePreset?: string;
   status?: string;
   closeReason?: string;
   priority?: NumericFlagInput;
@@ -107,6 +108,8 @@ export interface PmToolParameters {
   recurrenceLookbackDays?: NumericFlagInput;
   occurrenceLimit?: NumericFlagInput;
   includeLinked?: boolean;
+  titleExact?: boolean;
+  phraseExact?: boolean;
   includeBody?: boolean;
   compact?: boolean;
   full?: boolean;
@@ -148,8 +151,10 @@ export interface PmToolParameters {
   checkOnly?: boolean;
   noRefresh?: boolean;
   refreshVectors?: boolean;
+  verboseStaleItems?: boolean;
   scanMode?: string;
   includePmInternals?: boolean;
+  verboseFileLists?: boolean;
   strictExit?: boolean;
   failOnWarn?: boolean;
   checkHistoryDrift?: boolean;
@@ -157,6 +162,8 @@ export interface PmToolParameters {
   diff?: boolean;
   verify?: boolean;
   timeout?: NumericFlagInput;
+  allowAuditNote?: boolean;
+  allowAuditLearning?: boolean;
   allowAuditComment?: boolean;
   allowAuditUpdate?: boolean;
   allowAuditRelease?: boolean;
@@ -182,6 +189,7 @@ export interface PmToolParameters {
   dep?: string[];
   depRemove?: string[];
   replaceDeps?: boolean;
+  replaceTests?: boolean;
   comment?: string[];
   note?: string[];
   learning?: string[];
@@ -347,6 +355,9 @@ function addUpdateFlags(args: string[], params: PmToolParameters): void {
   pushContractedFlags(args, params, repeatableContracts);
   if (params.replaceDeps) {
     args.push("--replace-deps");
+  }
+  if (params.replaceTests) {
+    args.push("--replace-tests");
   }
   if (params.force) {
     args.push("--force");
@@ -592,6 +603,12 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       if (params.includeLinked) {
         args.push("--include-linked");
       }
+      if (params.titleExact) {
+        args.push("--title-exact");
+      }
+      if (params.phraseExact) {
+        args.push("--phrase-exact");
+      }
       if (params.compact) {
         args.push("--compact");
       }
@@ -678,7 +695,9 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       args.push("notes", requireString(params.id, "id", action));
       pushOption(args, "--add", params.text ?? params.add?.[0]);
       pushOption(args, "--limit", params.limit);
-      if (params.allowAuditComment) {
+      if (params.allowAuditNote) {
+        args.push("--allow-audit-note");
+      } else if (params.allowAuditComment) {
         args.push("--allow-audit-comment");
       }
       addAuthorMessageForceFlags(args, params);
@@ -687,7 +706,9 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       args.push("learnings", requireString(params.id, "id", action));
       pushOption(args, "--add", params.text ?? params.add?.[0]);
       pushOption(args, "--limit", params.limit);
-      if (params.allowAuditComment) {
+      if (params.allowAuditLearning) {
+        args.push("--allow-audit-learning");
+      } else if (params.allowAuditComment) {
         args.push("--allow-audit-comment");
       }
       addAuthorMessageForceFlags(args, params);
@@ -842,6 +863,9 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       if (params.refreshVectors) {
         args.push("--refresh-vectors");
       }
+      if (params.verboseStaleItems) {
+        args.push("--verbose-stale-items");
+      }
       return args;
     case "validate":
       args.push("validate");
@@ -864,6 +888,9 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       pushOption(args, "--scan-mode", params.scanMode);
       if (params.includePmInternals) {
         args.push("--include-pm-internals");
+      }
+      if (params.verboseFileLists) {
+        args.push("--verbose-file-lists");
       }
       if (params.strictExit) {
         args.push("--strict-exit");

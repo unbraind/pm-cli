@@ -94,6 +94,7 @@ describe("Pi agent extension wrapper for pm", () => {
       title: "Pi task",
       description: "",
       type: "Task",
+      schedulePreset: "lightweight",
       status: "open",
       priority: "1",
       tags: "",
@@ -201,6 +202,7 @@ describe("Pi agent extension wrapper for pm", () => {
       title: "Pi numeric task",
       description: "",
       type: "Task",
+      schedulePreset: "lightweight",
       status: "open",
       priority: 1,
       tags: "",
@@ -245,6 +247,7 @@ describe("Pi agent extension wrapper for pm", () => {
       title: "Pi parity task",
       description: "full metadata",
       type: "Task",
+      schedulePreset: "lightweight",
       status: "open",
       priority: "1",
       tags: "pi,parity",
@@ -335,6 +338,8 @@ describe("Pi agent extension wrapper for pm", () => {
         "none",
         "--regression",
         "false",
+        "--schedule-preset",
+        "lightweight",
         "--customer-impact",
         "none",
         "--definition-of-ready",
@@ -374,6 +379,7 @@ describe("Pi agent extension wrapper for pm", () => {
       dep: ["id=pm-a1b3,kind=related"],
       depRemove: ["id=pm-a1b4,kind=blocks"],
       replaceDeps: true,
+      replaceTests: true,
     });
 
     expect(updateArgs).toEqual(
@@ -407,6 +413,7 @@ describe("Pi agent extension wrapper for pm", () => {
         "--dep-remove",
         "id=pm-a1b4,kind=blocks",
         "--replace-deps",
+        "--replace-tests",
       ]),
     );
   });
@@ -493,6 +500,8 @@ describe("Pi agent extension wrapper for pm", () => {
       expect.arrayContaining([expect.objectContaining({ required: ["query"] }), expect.objectContaining({ required: ["keywords"] })]),
     );
     expect(schemaProperty(searchSchema, "includeLinked").type).toBe("boolean");
+    expect(schemaProperty(searchSchema, "titleExact").type).toBe("boolean");
+    expect(schemaProperty(searchSchema, "phraseExact").type).toBe("boolean");
     expect(schemaProperty(searchSchema, "compact").type).toBe("boolean");
     expect(schemaProperty(searchSchema, "full").type).toBe("boolean");
     expect(schemaProperty(searchSchema, "fields").type).toBe("string");
@@ -569,6 +578,7 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(schemaProperty(validateSchema, "checkFiles").type).toBe("boolean");
     expect(schemaProperty(validateSchema, "scanMode").enum).toEqual(["default", "tracked-all", "tracked-all-strict"]);
     expect(schemaProperty(validateSchema, "includePmInternals").type).toBe("boolean");
+    expect(schemaProperty(validateSchema, "verboseFileLists").type).toBe("boolean");
     expect(schemaProperty(validateSchema, "strictExit").type).toBe("boolean");
     expect(schemaProperty(validateSchema, "failOnWarn").type).toBe("boolean");
     expect(schemaProperty(validateSchema, "checkLifecycle").type).toBe("boolean");
@@ -583,10 +593,21 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(schemaProperty(healthSchema, "checkOnly").type).toBe("boolean");
     expect(schemaProperty(healthSchema, "noRefresh").type).toBe("boolean");
     expect(schemaProperty(healthSchema, "refreshVectors").type).toBe("boolean");
+    expect(schemaProperty(healthSchema, "verboseStaleItems").type).toBe("boolean");
 
     const releaseSchema = schemaForAction(tool.parameters as Record<string, unknown>, "release");
     expect(releaseSchema.required).toEqual(expect.arrayContaining(["action", "id"]));
     expect(schemaProperty(releaseSchema, "allowAuditRelease").type).toBe("boolean");
+
+    const notesSchema = schemaForAction(tool.parameters as Record<string, unknown>, "notes");
+    expect(notesSchema.required).toEqual(expect.arrayContaining(["action", "id"]));
+    expect(schemaProperty(notesSchema, "allowAuditNote").type).toBe("boolean");
+    expect(schemaProperty(notesSchema, "allowAuditComment").type).toBe("boolean");
+
+    const learningsSchema = schemaForAction(tool.parameters as Record<string, unknown>, "learnings");
+    expect(learningsSchema.required).toEqual(expect.arrayContaining(["action", "id"]));
+    expect(schemaProperty(learningsSchema, "allowAuditLearning").type).toBe("boolean");
+    expect(schemaProperty(learningsSchema, "allowAuditComment").type).toBe("boolean");
 
     const calendarSchema = schemaForAction(tool.parameters as Record<string, unknown>, "calendar");
     expect(schemaProperty(calendarSchema, "view").type).toBe("string");
@@ -627,6 +648,8 @@ describe("Pi agent extension wrapper for pm", () => {
       items: { type: "string" },
     });
     expect(schemaProperty(createSchema, "blockedBy").type).toBe("string");
+    expect(schemaProperty(createSchema, "schedulePreset").type).toBe("string");
+    expect(schemaProperty(createSchema, "schedulePreset").enum).toEqual(["lightweight"]);
     expect(schemaProperty(createSchema, "definitionOfReady").type).toBe("string");
     expect(schemaProperty(createSchema, "priority").anyOf).toEqual(
       expect.arrayContaining([{ type: "string" }, { type: "number" }]),
@@ -641,6 +664,7 @@ describe("Pi agent extension wrapper for pm", () => {
     const updateSchema = schemaForAction(tool.parameters as Record<string, unknown>, "update");
     expect(updateSchema.required).toEqual(expect.arrayContaining(["action", "id"]));
     expect(schemaProperty(updateSchema, "closeReason").type).toBe("string");
+    expect(schemaProperty(updateSchema, "replaceTests").type).toBe("boolean");
     expect(schemaProperty(updateSchema, "depRemove")).toMatchObject({
       type: "array",
       items: { type: "string" },
@@ -935,6 +959,7 @@ describe("Pi agent extension wrapper for pm", () => {
         checkFiles: true,
         scanMode: "tracked-all",
         includePmInternals: true,
+        verboseFileLists: true,
         strictExit: true,
         failOnWarn: true,
         checkLifecycle: true,
@@ -951,6 +976,7 @@ describe("Pi agent extension wrapper for pm", () => {
       "--scan-mode",
       "tracked-all",
       "--include-pm-internals",
+      "--verbose-file-lists",
       "--strict-exit",
       "--fail-on-warn",
       "--check-history-drift",
@@ -963,8 +989,9 @@ describe("Pi agent extension wrapper for pm", () => {
         strictDirectories: true,
         strictExit: true,
         failOnWarn: true,
+        verboseStaleItems: true,
       }),
-    ).toEqual(["--json", "health", "--strict-directories", "--strict-exit", "--fail-on-warn"]);
+    ).toEqual(["--json", "health", "--strict-directories", "--strict-exit", "--fail-on-warn", "--verbose-stale-items"]);
 
     expect(
       buildPmCliArgs({
@@ -1163,6 +1190,8 @@ describe("Pi agent extension wrapper for pm", () => {
         query: "linked parity",
         mode: "keyword",
         includeLinked: true,
+        titleExact: true,
+        phraseExact: true,
         compact: true,
         full: true,
         fields: "id,title",
@@ -1175,6 +1204,8 @@ describe("Pi agent extension wrapper for pm", () => {
       "--mode",
       "keyword",
       "--include-linked",
+      "--title-exact",
+      "--phrase-exact",
       "--compact",
       "--full",
       "--fields",
@@ -1351,6 +1382,24 @@ describe("Pi agent extension wrapper for pm", () => {
       "learning",
       "--force",
     ]);
+
+    expect(
+      buildPmCliArgs({
+        action: "notes",
+        id: "pm-a1b2",
+        text: "capture implementation note",
+        allowAuditNote: true,
+      }),
+    ).toEqual(["--json", "notes", "pm-a1b2", "--add", "capture implementation note", "--allow-audit-note"]);
+
+    expect(
+      buildPmCliArgs({
+        action: "learnings",
+        id: "pm-a1b2",
+        text: "capture learning",
+        allowAuditLearning: true,
+      }),
+    ).toEqual(["--json", "learnings", "pm-a1b2", "--add", "capture learning", "--allow-audit-learning"]);
 
     expect(
       buildPmCliArgs({

@@ -118,6 +118,7 @@ const METADATA_TRUNCATED_KEY_BY_FIELD: Record<ValidateMetadataRequiredField, str
   release: "missing_release_truncated",
 };
 const GIT_LS_FILES_MAX_BUFFER = 32 * 1024 * 1024;
+const FILE_LIST_SUMMARY_LIMIT = 40;
 const execFileAsync = promisify(execFile);
 
 export interface ValidateCommandOptions {
@@ -127,6 +128,7 @@ export interface ValidateCommandOptions {
   checkStaleBlockers?: boolean;
   checkFiles?: boolean;
   includePmInternals?: boolean;
+  verboseFileLists?: boolean;
   checkHistoryDrift?: boolean;
   checkCommandReferences?: boolean;
   scanMode?: string;
@@ -473,6 +475,29 @@ function summarizeList(values: string[], limit = 200): { values: string[]; trunc
   /* c8 ignore stop */
 }
 
+function summarizeFileList(
+  values: string[],
+  verboseFileLists: boolean,
+): {
+  values: string[];
+  truncated: boolean;
+  total: number;
+} {
+  if (verboseFileLists) {
+    return {
+      values,
+      truncated: false,
+      total: values.length,
+    };
+  }
+  const summary = summarizeList(values, FILE_LIST_SUMMARY_LIMIT);
+  return {
+    values: summary.values,
+    truncated: summary.truncated,
+    total: values.length,
+  };
+}
+
 const RESOLUTION_REMEDIATION_FLAG_BY_FIELD: Record<ResolutionFieldKey, string> = {
   resolution: "--resolution",
   expected_result: "--expected-result",
@@ -749,6 +774,7 @@ async function buildFilesCheck(
   pmRoot: string,
   fileScanMode: ValidateFileScanMode,
   includePmInternals: boolean,
+  verboseFileLists: boolean,
 ): Promise<{ check: ValidateCheck; warnings: string[] }> {
   const linkedProjectPaths = new Set<string>();
   const missingLinkedPaths: string[] = [];
@@ -793,11 +819,12 @@ async function buildFilesCheck(
   const excludedPmInternalCount = excludedPmInternalPaths.length;
   const excludedByReason: Record<string, unknown> = {};
   if (excludedPmInternalCount > 0) {
-    const summarizedPmInternalPaths = summarizeList(excludedPmInternalPaths);
+    const summarizedPmInternalPaths = summarizeFileList(excludedPmInternalPaths, verboseFileLists);
     excludedByReason.pm_internals = {
       count: excludedPmInternalCount,
       paths: summarizedPmInternalPaths.values,
       paths_truncated: summarizedPmInternalPaths.truncated,
+      paths_total: summarizedPmInternalPaths.total,
     };
   }
   const orphanedFiles = candidateFiles.filter((candidate) => !linkedProjectPaths.has(candidate));
@@ -811,8 +838,8 @@ async function buildFilesCheck(
   if (orphanedFiles.length > 0) {
     warnings.push(`validate_files_orphaned_paths:${orphanedFiles.length}`);
   }
-  const summarizedMissing = summarizeList(uniqueMissingLinkedPaths);
-  const summarizedOrphaned = summarizeList(orphanedFiles);
+  const summarizedMissing = summarizeFileList(uniqueMissingLinkedPaths, verboseFileLists);
+  const summarizedOrphaned = summarizeFileList(orphanedFiles, verboseFileLists);
 
   return {
     check: {
@@ -827,6 +854,8 @@ async function buildFilesCheck(
         strict_mode_forces_pm_internals_notice: strictModeForcesPmInternals
           ? "tracked-all-strict force-enables PM internals; pass --include-pm-internals to make inclusion explicit."
           : null,
+        file_list_detail_mode: verboseFileLists ? "full" : "summary",
+        file_list_summary_limit: FILE_LIST_SUMMARY_LIMIT,
         candidate_scan_source: fileCandidates.source,
         include_pm_internals: includePmInternalsEffective,
         include_pm_internals_requested: includePmInternals,
@@ -841,9 +870,11 @@ async function buildFilesCheck(
         candidate_scanned: candidateFiles.length,
         scanned_candidate_files: candidateFiles.length,
         missing_linked_paths_count: uniqueMissingLinkedPaths.length,
+        missing_linked_paths_total: summarizedMissing.total,
         missing_linked_paths: summarizedMissing.values,
         missing_linked_paths_truncated: summarizedMissing.truncated,
         orphaned_paths_count: orphanedFiles.length,
+        orphaned_paths_total: summarizedOrphaned.total,
         orphaned_paths: summarizedOrphaned.values,
         orphaned_paths_truncated: summarizedOrphaned.truncated,
       },
@@ -1047,7 +1078,14 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
     warnings.push(...lifecycleCheck.warnings);
   }
   if (requestedChecks.has("files")) {
-    const filesCheck = await buildFilesCheck(items, workspaceRoot, pmRoot, fileScanMode, Boolean(options.includePmInternals));
+    const filesCheck = await buildFilesCheck(
+      items,
+      workspaceRoot,
+      pmRoot,
+      fileScanMode,
+      Boolean(options.includePmInternals),
+      Boolean(options.verboseFileLists),
+    );
     checks.push(filesCheck.check);
     warnings.push(...filesCheck.warnings);
   }

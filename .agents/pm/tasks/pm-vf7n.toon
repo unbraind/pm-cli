@@ -6,9 +6,8 @@ status: closed
 priority: 1
 tags[4]: "area:cli","area:help",code,pm-cli
 created_at: "2026-04-01T12:39:11.462Z"
-updated_at: "2026-04-04T21:38:53.816Z"
+updated_at: "2026-04-06T23:36:17.701Z"
 deadline: "2026-04-08T12:39:11.462Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 220
 acceptance_criteria: "Help output includes consistent purpose, option rationale, and examples for all core commands."
@@ -20,7 +19,7 @@ value: Fewer failed runs
 impact: Higher success rate
 outcome: Rich help across commands
 why_now: Help text is currently sparse.
-parent: pm-j162
+parent: pm-o7be
 reviewer: maintainer-review
 risk: medium
 confidence: high
@@ -43,19 +42,24 @@ regression: true
 customer_impact: Users can understand command usage without external references
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-j162,parent,"2026-04-01T12:39:11.462Z",codex-agent,null
-comments[2]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-04-01T12:39:11.462Z",codex-agent,Task maps directly to plan todo help-system.
   "2026-04-01T12:44:56.057Z",codex-agent,Implemented centralized help composer via src/cli/help-content.ts and wired attachRichHelpText(program) in src/cli/main.ts with rich purpose/examples/tips across command paths.
+  "2026-04-06T23:07:51.480Z",codex-agent,"Reopened as canonical remediation tracker under pm-o7be for current audit findings wave to avoid duplicate item creation. Scope retained from prior implementation lineage and expanded for new report deltas only. Decision rationale: duplicate-check sweep in this run found no open/in-progress item directly covering this exact delta while this closed item already contains closest historical context, linked artifacts, and verification lineage."
+  "2026-04-06T23:33:55.917Z",codex-agent,"Implementation start for help consistency delta: ensure templates/deps/update-many command help output includes both Intent and at least one Example in compact+detailed help renderers, then add runtime tests to prevent regressions."
+  "2026-04-06T23:36:10.679Z",codex-agent,"Implemented help-consistency delta: added explicit help bundles for templates/deps/update-many with command intent, concrete examples, and focused tips; added integration assertions for compact (--help) and detailed (--help --explain) rendering to ensure Intent/Example parity. Verification: node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts (16 passed)."
 notes[1]{created_at,author,text}:
   "2026-04-01T12:39:11.462Z",codex-agent,Primary coding path is src/cli/main.ts plus shared helper module.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:22:22.550Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[2]{path,scope,note}:
+files[3]{path,scope,note}:
   src/cli/help-content.ts,project,Centralized help bundle composer
   src/cli/main.ts,project,Help text integration target
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  tests/integration/help-runtime.spec.ts,project,Added runtime assertions for compact and detailed help sections
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,Help behavior regression
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,tests/integration/help-runtime.spec.ts,project,240,null,null,null,null,null,null,null,null,null,null,null,"Covers intent/example rendering for templates,deps,and update-many"
 docs[1]{path,scope,note}:
   README.md,project,Help examples documentation
-close_reason: Centralized help composer shipped with rich why/examples/tips sections across core command paths.
+close_reason: Normalized templates/deps/update-many help intent/example parity and added runtime regression coverage
 body: "Implements plan todo: help-system"

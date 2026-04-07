@@ -1895,6 +1895,102 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("supports atomic linked-test replacement through update --replace-tests", async () => {
+    await withTempPmPath(async (context) => {
+      const createResult = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Linked test replacement item",
+          "--description",
+          "Validate update linked-test replacement flow",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,tests",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "20",
+          "--acceptance-criteria",
+          "Update replace-tests atomically replaces linked tests",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create linked-test replacement seed",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(createResult.code).toBe(0);
+      const createdId = (createResult.json as { item: { id: string } }).item.id;
+
+      const seedResult = context.runCli(
+        [
+          "update",
+          createdId,
+          "--json",
+          "--test",
+          "command=node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,scope=project",
+          "--test",
+          "command=node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts,scope=project",
+          "--author",
+          "integration-test",
+          "--message",
+          "Seed linked tests before replacement",
+        ],
+        { expectJson: true },
+      );
+      expect(seedResult.code).toBe(0);
+
+      const replaceResult = context.runCli(
+        [
+          "update",
+          createdId,
+          "--json",
+          "--replace-tests",
+          "--test",
+          "command=node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,scope=project",
+          "--author",
+          "integration-test",
+          "--message",
+          "Replace linked tests atomically",
+        ],
+        { expectJson: true },
+      );
+      expect(replaceResult.code).toBe(0);
+      expect((replaceResult.json as { changed_fields: string[] }).changed_fields).toContain("tests");
+      expect((replaceResult.json as { item: { tests?: Array<Record<string, unknown>> } }).item.tests).toEqual([
+        {
+          command: "node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts",
+          scope: "project",
+        },
+      ]);
+    });
+  });
+
   it("requires explicit --assignee for create contract parity", async () => {
     await withTempPmPath(async (context) => {
       const createWithoutAssignee = context.runCli([

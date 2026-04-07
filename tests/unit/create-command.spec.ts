@@ -102,6 +102,60 @@ describe("runCreate", () => {
     });
   });
 
+  it("supports schedule lightweight preset for Reminder/Meeting/Event minimal creation", async () => {
+    await withTempPmPath(async (context) => {
+      for (const type of ["Reminder", "Meeting", "Event"] as const) {
+        const result = await runCreate(
+          {
+            title: `${type} lightweight preset`,
+            description: `Minimal ${type.toLowerCase()} creation`,
+            type,
+            schedulePreset: "lightweight",
+          },
+          { path: context.pmPath },
+        );
+        expect(result.item.type).toBe(type);
+        expect(result.item.status).toBe("open");
+        expect(result.item.priority).toBe(2);
+      }
+    });
+  });
+
+  it("validates schedule preset type scope and strict-mode conflicts", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runCreate(
+          {
+            title: "task-schedule-preset-invalid",
+            description: "Schedule preset must be schedule type only",
+            type: "Task",
+            schedulePreset: "lightweight",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("only supported for Reminder, Meeting, or Event"),
+      });
+
+      await expect(
+        runCreate(
+          {
+            title: "strict-conflict-reminder",
+            description: "Strict mode conflict with schedule preset",
+            type: "Reminder",
+            schedulePreset: "lightweight",
+            createMode: "strict",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("cannot be combined with --create-mode strict"),
+      });
+    });
+  });
+
   it("rejects unsupported create mode values", async () => {
     await withTempPmPath(async (context) => {
       await expect(

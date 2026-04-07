@@ -97,6 +97,7 @@ export interface UpdateCommandOptions {
   dep?: string[];
   depRemove?: string[];
   replaceDeps?: boolean;
+  replaceTests?: boolean;
   comment?: string[];
   note?: string[];
   learning?: string[];
@@ -384,6 +385,9 @@ function enforceAllowAuditUpdateScope(options: UpdateCommandOptions, clearFrontM
   }
   if (options.replaceDeps === true) {
     disallowedFlags.push("--replace-deps");
+  }
+  if (options.replaceTests === true) {
+    disallowedFlags.push("--replace-tests");
   }
   if (options.comment !== undefined) {
     disallowedFlags.push("--comment");
@@ -897,6 +901,7 @@ function collectProvidedUpdatePolicyOptions(options: UpdateCommandOptions): Set<
   mark("learning", options.learning !== undefined);
   mark("file", options.file !== undefined);
   mark("test", options.test !== undefined);
+  mark("test", options.replaceTests === true);
   mark("doc", options.doc !== undefined);
   mark("reminder", options.reminder !== undefined);
   mark("event", options.event !== undefined);
@@ -1030,7 +1035,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
       frontMatterKey: "files",
     },
     {
-      enabled: options.clearTests,
+      enabled: options.clearTests || options.replaceTests,
       optionKey: "test",
       clearFlag: "--clear-tests",
       valueFlag: "--test",
@@ -1076,6 +1081,12 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   if (options.replaceDeps === true && options.depRemove !== undefined && options.depRemove.length > 0) {
     throw new PmCliError("--replace-deps cannot be combined with --dep-remove", EXIT_CODE.USAGE);
   }
+  if (options.replaceTests === true && (options.test === undefined || options.test.length === 0)) {
+    throw new PmCliError("--replace-tests requires at least one --test entry", EXIT_CODE.USAGE);
+  }
+  if (options.replaceTests === true && options.clearTests === true) {
+    throw new PmCliError("--replace-tests cannot be combined with --clear-tests", EXIT_CODE.USAGE);
+  }
   for (const definition of clearCollectionDefinitions) {
     if (!definition.enabled) {
       continue;
@@ -1083,7 +1094,10 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     if (
       definition.values &&
       definition.values.length > 0 &&
-      !(definition.optionKey === "dep" && options.replaceDeps === true)
+      !(
+        (definition.optionKey === "dep" && options.replaceDeps === true) ||
+        (definition.optionKey === "test" && options.replaceTests === true)
+      )
     ) {
       throw new PmCliError(`Cannot combine ${definition.clearFlag} with ${definition.valueFlag}`, EXIT_CODE.USAGE);
     }
@@ -1262,6 +1276,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     options.learning !== undefined,
     options.file !== undefined,
     options.test !== undefined,
+    options.replaceTests === true,
     options.doc !== undefined,
     options.reminder !== undefined,
     options.event !== undefined,
@@ -1455,7 +1470,23 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         changedFields.push("files");
       }
       if (options.test !== undefined || clearFrontMatterKeys.has("tests")) {
-        if (clearFrontMatterKeys.has("tests") || !testUpdates.values || testUpdates.values.length === 0) {
+        if (clearFrontMatterKeys.has("tests") && options.replaceTests === true) {
+          if (!testUpdates.values || testUpdates.values.length === 0) {
+            delete document.front_matter.tests;
+          } else {
+            const replacementTests: LinkedTest[] = [];
+            const seen = new Set<string>();
+            for (const entry of testUpdates.values) {
+              const key = testKey(entry);
+              if (seen.has(key)) {
+                continue;
+              }
+              replacementTests.push(entry);
+              seen.add(key);
+            }
+            document.front_matter.tests = replacementTests;
+          }
+        } else if (clearFrontMatterKeys.has("tests") || !testUpdates.values || testUpdates.values.length === 0) {
           delete document.front_matter.tests;
         } else {
           const nextTests = [...(document.front_matter.tests ?? [])];

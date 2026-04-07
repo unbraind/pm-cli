@@ -164,8 +164,11 @@ export function generateBashScript(
     "    comments-audit)",
     `      COMPREPLY=(${compgen("--status --type --tag --priority --parent --sprint --release --assignee --assignee-filter --limit-items --full-history --latest --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
-    "    notes|learnings)",
-    `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-comment --force --json --quiet --path --no-extensions --profile --help")})`,
+    "    notes)",
+    `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-note --allow-audit-comment --force --json --quiet --path --no-extensions --profile --help")})`,
+    "      ;;",
+    "    learnings)",
+    `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-learning --allow-audit-comment --force --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    files)",
     `      COMPREPLY=(${compgen("--add --add-glob --remove --migrate --append-stable --validate-paths --audit --author --message --force --json --quiet --path --no-extensions --profile --help")})`,
@@ -189,7 +192,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("list status logs stop resume --status --limit --stream --tail --force --author --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    validate)",
-    `      COMPREPLY=(${compgen("--check-metadata --metadata-profile --check-resolution --check-lifecycle --check-stale-blockers --check-files --scan-mode --include-pm-internals --strict-exit --fail-on-warn --check-history-drift --check-command-references --json --quiet --path --no-extensions --profile --help")})`,
+    `      COMPREPLY=(${compgen("--check-metadata --metadata-profile --check-resolution --check-lifecycle --check-stale-blockers --check-files --scan-mode --include-pm-internals --verbose-file-lists --strict-exit --fail-on-warn --check-history-drift --check-command-references --json --quiet --path --no-extensions --profile --help")})`,
     "      ;;",
     "    health)",
     `      COMPREPLY=(${compgen(HEALTH_FLAGS)})`,
@@ -403,6 +406,7 @@ _pm() {
             '(-d --description)'{-d,--description}'[Item description]:description' \\
             '--type[Item type]:(${typeChoices})' \\
             '--create-mode[Create required-option policy mode]:(strict progressive)' \\
+            '--schedule-preset[Scheduling preset for Reminder/Meeting/Event]:(lightweight)' \\
             '(-s --status)'{-s,--status}'[Item status]:(draft open in_progress blocked)' \\
             '(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)' \\
             '--tags[Comma-separated tags]:tags' \\
@@ -414,6 +418,8 @@ _pm() {
             '--event[Event entry start=<iso|relative>,end=<iso|relative>,recur_*]:event' \\
             '--type-option[Type option key=value or key=<name>,value=<value>]:type_option' \\
             '--unset[Clear scalar metadata field by name]:field' \\
+            '--replace-deps[Atomically replace dependencies with provided --dep values]' \\
+            '--replace-tests[Atomically replace linked tests with provided --test values]' \\
             '--clear-deps[Clear dependency entries]' \\
             '--clear-comments[Clear comments]' \\
             '--clear-notes[Clear notes]' \\
@@ -519,8 +525,29 @@ _pm() {
             '--component[Issue component ownership]:component' \\
             '--regression[Regression marker true|false|1|0]:regression' \\
             '--customer-impact[Customer impact summary]:customer_impact' \\
+            '--dep[Dependency seed id=<id>,kind=<kind>,author=<author>,created_at=<timestamp>]:dep' \\
+            '--dep-remove[Dependency removal selector id=<id>,kind=<kind>,author=<author>,created_at=<timestamp>]:dep_remove' \\
+            '--replace-deps[Atomically replace dependencies with provided --dep values]' \\
+            '--replace-tests[Atomically replace linked tests with provided --test values]' \\
+            '--comment[Comment seed author=<value>,created_at=<iso|now>,text=<value>]:comment' \\
+            '--note[Note seed author=<value>,created_at=<iso|now>,text=<value>]:note' \\
+            '--learning[Learning seed author=<value>,created_at=<iso|now>,text=<value>]:learning' \\
+            '--file[Linked file path=<value>,scope=<project|global>,note=<text>]:file' \\
+            '--test[Linked test command=<value>,path=<value>,scope=<project|global>]:test' \\
+            '--doc[Linked doc path=<value>,scope=<project|global>,note=<text>]:doc' \\
+            '--reminder[Reminder entry at=<iso|relative>,text=<text>]:reminder' \\
+            '--event[Event entry start=<iso|relative>,end=<iso|relative>,recur_*]:event' \\
             '--type-option[Type option key=value or key=<name>,value=<value>]:type_option' \\
             '--unset[Clear scalar metadata field by name]:field' \\
+            '--clear-deps[Clear dependency entries]' \\
+            '--clear-comments[Clear comments]' \\
+            '--clear-notes[Clear notes]' \\
+            '--clear-learnings[Clear learnings]' \\
+            '--clear-files[Clear linked files]' \\
+            '--clear-tests[Clear linked tests]' \\
+            '--clear-docs[Clear linked docs]' \\
+            '--clear-reminders[Clear reminders]' \\
+            '--clear-events[Clear events]' \\
             '--clear-type-options[Clear type options]' \\
             '--allow-audit-update[Allow non-owner metadata-only audit updates without requiring --force]' \\
             '--author[Mutation author]:author' \\
@@ -633,13 +660,26 @@ _pm() {
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
-        notes|learnings)
+        notes)
           _arguments \\
             '--add[Add one entry (plain text, text=<value>, markdown pairs, or - for stdin)]:text' \\
             '--limit[Return only latest n entries]:number' \\
             '--author[Entry author (falls back to PM_AUTHOR/settings)]:author' \\
             '--message[History message]:message' \\
-            '--allow-audit-comment[Allow non-owner append-only comment/note/learning audits without requiring --force]' \\
+            '--allow-audit-note[Allow non-owner append-only note audits without requiring --force]' \\
+            '--allow-audit-comment[Backward-compatible alias for --allow-audit-note]' \\
+            '--force[Force override]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        learnings)
+          _arguments \\
+            '--add[Add one entry (plain text, text=<value>, markdown pairs, or - for stdin)]:text' \\
+            '--limit[Return only latest n entries]:number' \\
+            '--author[Entry author (falls back to PM_AUTHOR/settings)]:author' \\
+            '--message[History message]:message' \\
+            '--allow-audit-learning[Allow non-owner append-only learning audits without requiring --force]' \\
+            '--allow-audit-comment[Backward-compatible alias for --allow-audit-learning]' \\
             '--force[Force override]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -766,6 +806,7 @@ _pm() {
             '--check-files[Run linked-file and orphaned-file checks]' \\
             '--scan-mode[Select file candidate scan mode for --check-files]:(default tracked-all tracked-all-strict)' \\
             '--include-pm-internals[Include PM storage internals in tracked-all candidate scans]' \\
+            '--verbose-file-lists[Include full file-path lists for validate --check-files details]' \\
             '--strict-exit[Return non-zero exit when validation warnings are present]' \\
             '--fail-on-warn[Alias for --strict-exit]' \\
             '--check-history-drift[Run item/history hash drift checks]' \\
@@ -779,6 +820,7 @@ _pm() {
             '--check-only[Run read-only health diagnostics without refreshing vectors]' \\
             '--no-refresh[Disable automatic vector refresh attempts during health checks]' \\
             '--refresh-vectors[Explicitly enable vector refresh attempts during health checks]' \\
+            '--verbose-stale-items[Include full stale vectorization ID lists in health output]' \\
             '--strict-exit[Return non-zero exit when health warnings are present]' \\
             '--fail-on-warn[Alias for --strict-exit]' \\
             '--json[Output JSON]' \\
@@ -1016,6 +1058,7 @@ complete -c pm -n '__fish_seen_subcommand_from create' -s t -l title            
 complete -c pm -n '__fish_seen_subcommand_from create' -s d -l description        -d 'Item description' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l type                    -d 'Item type' -r -a '${typeChoices}'
 complete -c pm -n '__fish_seen_subcommand_from create' -l create-mode             -d 'Create required-option policy mode' -r -a 'strict progressive'
+complete -c pm -n '__fish_seen_subcommand_from create' -l schedule-preset         -d 'Scheduling preset for Reminder/Meeting/Event' -r -a 'lightweight'
 complete -c pm -n '__fish_seen_subcommand_from create' -s s -l status             -d 'Item status' -r -a 'draft open in_progress blocked'
 complete -c pm -n '__fish_seen_subcommand_from create' -s p -l priority           -d 'Priority (0-4)' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from create' -l tags                    -d 'Comma-separated tags' -r
@@ -1059,6 +1102,8 @@ complete -c pm -n '__fish_seen_subcommand_from update' -l reminder              
 complete -c pm -n '__fish_seen_subcommand_from update' -l event                   -d 'Event entry start=<iso|relative>,end=<iso|relative>,recur_*' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l type-option             -d 'Type option key=value or key=<name>,value=<value>' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l unset                   -d 'Clear scalar metadata field by name' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l replace-deps            -d 'Atomically replace dependencies with provided --dep values'
+complete -c pm -n '__fish_seen_subcommand_from update' -l replace-tests           -d 'Atomically replace linked tests with provided --test values'
 complete -c pm -n '__fish_seen_subcommand_from update' -l clear-deps              -d 'Clear dependency entries'
 complete -c pm -n '__fish_seen_subcommand_from update' -l clear-comments          -d 'Clear comments'
 complete -c pm -n '__fish_seen_subcommand_from update' -l clear-notes             -d 'Clear notes'
@@ -1125,8 +1170,29 @@ complete -c pm -n '__fish_seen_subcommand_from update-many' -l fixed-version    
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l component               -d 'Issue component ownership' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l regression              -d 'Regression marker true|false|1|0' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l customer-impact         -d 'Customer impact summary' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l dep                     -d 'Dependency seed id=<id>,kind=<kind>,author=<author>,created_at=<timestamp>' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l dep-remove              -d 'Dependency removal selector id=<id>,kind=<kind>,author=<author>,created_at=<timestamp>' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l replace-deps            -d 'Atomically replace dependencies with provided --dep values'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l replace-tests           -d 'Atomically replace linked tests with provided --test values'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l comment                 -d 'Comment seed author=<value>,created_at=<iso|now>,text=<value>' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l note                    -d 'Note seed author=<value>,created_at=<iso|now>,text=<value>' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l learning                -d 'Learning seed author=<value>,created_at=<iso|now>,text=<value>' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l file                    -d 'Linked file path=<value>,scope=<project|global>,note=<text>' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l test                    -d 'Linked test command=<value>,path=<value>,scope=<project|global>' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l doc                     -d 'Linked doc path=<value>,scope=<project|global>,note=<text>' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l reminder                -d 'Reminder entry at=<iso|relative>,text=<text>' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l event                   -d 'Event entry start=<iso|relative>,end=<iso|relative>,recur_*' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l type-option             -d 'Type option key=value or key=<name>,value=<value>' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l unset                   -d 'Clear scalar metadata field by name' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-deps              -d 'Clear dependency entries'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-comments          -d 'Clear comments'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-notes             -d 'Clear notes'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-learnings         -d 'Clear learnings'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-files             -d 'Clear linked files'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-tests             -d 'Clear linked tests'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-docs              -d 'Clear linked docs'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-reminders         -d 'Clear reminders'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-events            -d 'Clear events'
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l clear-type-options      -d 'Clear type options'
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l allow-audit-update      -d 'Allow non-owner metadata-only audit updates without requiring --force'
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l author                  -d 'Mutation author' -r
@@ -1210,7 +1276,9 @@ complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l add 
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l limit -d 'Return only latest n entries' -r
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l author -d 'Entry author' -r
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l message -d 'History message' -r
-complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l allow-audit-comment -d 'Allow non-owner append-only comment/note/learning audits without requiring --force'
+complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l allow-audit-comment -d 'Allow non-owner append-only comment audits (legacy alias for notes/learnings)'
+complete -c pm -n '__fish_seen_subcommand_from notes' -l allow-audit-note -d 'Allow non-owner append-only note audits without requiring --force'
+complete -c pm -n '__fish_seen_subcommand_from learnings' -l allow-audit-learning -d 'Allow non-owner append-only learning audits without requiring --force'
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l force -d 'Force override'
 
 # test flags
@@ -1277,6 +1345,7 @@ complete -c pm -n '__fish_seen_subcommand_from validate' -l check-stale-blockers
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-files -d 'Run linked-file and orphaned-file checks'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l scan-mode -d 'Select file candidate scan mode for --check-files' -r -a 'default tracked-all tracked-all-strict'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l include-pm-internals -d 'Include PM storage internals in tracked-all candidate scans'
+complete -c pm -n '__fish_seen_subcommand_from validate' -l verbose-file-lists -d 'Include full file-path lists for validate --check-files details'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l strict-exit -d 'Return non-zero exit when validation warnings are present'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l fail-on-warn -d 'Alias for --strict-exit'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-history-drift -d 'Run item/history hash drift checks'
@@ -1289,6 +1358,7 @@ complete -c pm -n '__fish_seen_subcommand_from health' -l strict-directories -d 
 complete -c pm -n '__fish_seen_subcommand_from health' -l check-only -d 'Run read-only health diagnostics without refreshing vectors'
 complete -c pm -n '__fish_seen_subcommand_from health' -l no-refresh -d 'Disable automatic vector refresh attempts during health checks'
 complete -c pm -n '__fish_seen_subcommand_from health' -l refresh-vectors -d 'Explicitly enable vector refresh attempts during health checks'
+complete -c pm -n '__fish_seen_subcommand_from health' -l verbose-stale-items -d 'Include full stale vectorization ID lists in health output'
 complete -c pm -n '__fish_seen_subcommand_from health' -l strict-exit -d 'Return non-zero exit when health warnings are present'
 complete -c pm -n '__fish_seen_subcommand_from health' -l fail-on-warn -d 'Alias for --strict-exit'
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l status -d 'Filter by item status' -r -a 'draft open in_progress blocked closed canceled'

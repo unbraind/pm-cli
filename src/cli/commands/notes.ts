@@ -16,6 +16,7 @@ export interface NotesCommandOptions {
   limit?: string;
   author?: string;
   message?: string;
+  allowAuditNote?: boolean;
   allowAuditComment?: boolean;
   force?: boolean;
 }
@@ -106,7 +107,7 @@ export async function runNotes(id: string, options: NotesCommandOptions, global:
       author,
       message: options.message,
       force: options.force,
-      bypassAssigneeConflict: Boolean(options.allowAuditComment),
+      bypassAssigneeConflict: Boolean(options.allowAuditNote || options.allowAuditComment),
       mutate(document) {
         const notes = document.front_matter.notes ?? [];
         notes.push({
@@ -128,10 +129,10 @@ export async function runNotes(id: string, options: NotesCommandOptions, global:
       throw new PmCliError(error.message, error.exitCode, {
         code: "ownership_conflict",
         required:
-          "For append-only note audits on another owner's item, prefer --allow-audit-comment before considering --force.",
-        examples: ['pm notes pm-a1b2 --add "audit note" --author "reviewer" --allow-audit-comment'],
+          "For append-only note audits on another owner's item, prefer --allow-audit-note (legacy alias: --allow-audit-comment) before considering --force.",
+        examples: ['pm notes pm-a1b2 --add "audit note" --author "reviewer" --allow-audit-note'],
         nextSteps: [
-          "Retry with --allow-audit-comment for append-only note audits that do not mutate item metadata beyond notes.",
+          "Retry with --allow-audit-note (or legacy --allow-audit-comment) for append-only note audits that do not mutate item metadata beyond notes.",
           "Use --force only when an ownership override is explicitly approved.",
         ],
       });
