@@ -36,6 +36,7 @@ import {
   DOCS_FLAG_CONTRACTS,
   EXTENSION_FLAG_CONTRACTS,
   FILES_FLAG_CONTRACTS,
+  GC_FLAG_CONTRACTS,
   GLOBAL_FLAG_CONTRACTS,
   HEALTH_FLAG_CONTRACTS,
   HISTORY_FLAG_CONTRACTS,
@@ -61,6 +62,7 @@ import {
   UPDATE_FLAG_CONTRACTS,
   UPDATE_MANY_FLAG_CONTRACTS,
   VALIDATE_FLAG_CONTRACTS,
+  withFlagAliasMetadata,
   type CliFlagContract,
   type CommanderOptionAliasContract,
 } from "../../sdk/cli-contracts.js";
@@ -750,6 +752,9 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   if (command === "test-runs") {
     return TEST_RUNS_FLAG_CONTRACTS;
   }
+  if (command === "gc") {
+    return GC_FLAG_CONTRACTS;
+  }
   if (command === "validate") {
     return VALIDATE_FLAG_CONTRACTS;
   }
@@ -785,7 +790,7 @@ function mergeFlagContracts(primary: CliFlagContract[], secondary: CliFlagContra
     seen.add(key);
     merged.push(contract);
   }
-  return merged;
+  return withFlagAliasMetadata(merged);
 }
 
 function buildCommandFlagSurface(

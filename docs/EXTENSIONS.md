@@ -19,13 +19,22 @@ This preserves extension-defined schema behavior (including custom item type val
 
 Linked-test runtime controls are additive: run-level `--env-set`/`--env-clear`/`--shared-host-safe` flags and per-linked-test metadata directives (`env_set`, `env_clear`, `shared_host_safe`) apply before sandbox-protected `PM_PATH`/`PM_GLOBAL_PATH` overrides.
 
-PM-command linked tests can opt into tracker-data parity via `--pm-context tracker` (default `schema` keeps isolated tracker data while still seeding settings/extensions). `--pm-context auto` automatically routes PM tracker-read commands through tracker-seeded context while keeping other commands in schema context. Per-linked-test metadata can override run-level mode with `pm_context_mode=schema|tracker|auto`. In default `schema` mode, PM tracker-read linked commands fail on context mismatch by default; strict guards remain available for other PM command shapes via `--fail-on-context-mismatch` plus `--fail-on-skipped` and `--require-assertions-for-pm`. Per-run `execution_context` metadata includes resolved roots, item counts, mismatch signal, and PM tracker-read classification.
+PM-command linked tests can opt into tracker-data parity via `--pm-context tracker` (default `schema` keeps isolated tracker data while still seeding settings/extensions). `--pm-context auto` automatically routes PM tracker-read commands through tracker-seeded context while keeping other commands in schema context. Per-linked-test metadata can override run-level mode with `pm_context_mode=schema|tracker|auto`. In default `schema` mode, PM tracker-read linked commands fail on context mismatch by default; strict guards remain available for other PM command shapes via `--fail-on-context-mismatch` plus `--fail-on-skipped` and `--require-assertions-for-pm`.
+
+Context ergonomics flags are additive:
+
+- `--check-context` emits deterministic preflight diagnostics/warnings (`context_preflight`) for PM command context mismatches
+- `--auto-pm-context` auto-remediates tracker-read mismatches by routing those commands to tracker context
+
+Per-run `execution_context` metadata includes resolved roots, item counts, mismatch signal, PM tracker-read classification, `requested_pm_context_mode`, and `auto_pm_context_applied`.
 
 Linked-test assertion metadata is optional and additive (`assert_stdout_contains`, `assert_stdout_regex`, `assert_stderr_contains`, `assert_stderr_regex`, `assert_stdout_min_lines`, `assert_json_field_equals`, `assert_json_field_gte`).
 
 ## Lifecycle Manager CLI
 
 `pm extension` is the canonical lifecycle manager for custom extensions.
+
+Top-level action and subcommand forms are flag-equivalent for lifecycle operations (for example `pm extension --doctor --detail deep --trace` and `pm extension doctor --detail deep --trace` resolve the same behavior).
 
 ### Actions
 
@@ -674,6 +683,9 @@ Current wrapper parity includes:
 - `action: "calendar"` for `pm calendar` / `pm cal` (`view`, `date`, `from`, `to`, `past`, `type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`, `format`)
 - `create`/`update` reminder forwarding via repeatable `reminder` values (`at=<iso|relative>,text=<text>`)
 - `create`/`update` custom type-option forwarding via repeatable `typeOption` values
+- `create`/`update` audit controls including `allowAuditUpdate` and dependency-only `allowAuditDepUpdate`
+- linked-test context preflight/remediation forwarding via `checkContext` and `autoPmContext` (`test` / `test-all`)
+- cache cleanup forwarding via `dryRun` and repeatable `gcScope` (`gc`)
 - extension lifecycle forwarding via `extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-doctor`, `extension-adopt`, `extension-adopt-all`, `extension-activate`, and `extension-deactivate` actions (`target`, `scope`, `github`, `ref`, `detail`, `trace`, `runtimeProbe`, `fixManagedState`, `strictExit`, `failOnWarn`)
 
 See [AGENTS.md](../AGENTS.md) section 9 for full usage details.

@@ -267,6 +267,8 @@ const REQUIRED_TEST_FLAGS = [
   "--fail-on-skipped",
   "--fail-on-empty-test-run",
   "--require-assertions-for-pm",
+  "--check-context",
+  "--auto-pm-context",
   "--author",
   "--message",
   "--force",
@@ -708,6 +710,20 @@ describe("release readiness runtime coverage", () => {
     });
   });
 
+  it("documents list/search projection exclusivity guidance in help output", async () => {
+    await withTempPmPath(async (context) => {
+      const listHelp = context.runCli(["list", "--help"]);
+      expect(listHelp.code).toBe(0);
+      expect(listHelp.stdout).toMatch(/mutually\s+exclusive with --fields/);
+      expect(listHelp.stdout).toMatch(/invalid:\s+--compact --fields id,title/);
+
+      const searchHelp = context.runCli(["search", "--help"]);
+      expect(searchHelp.code).toBe(0);
+      expect(searchHelp.stdout).toMatch(/mutually\s+exclusive with --full\/--fields/);
+      expect(searchHelp.stdout).toMatch(/invalid:\s+--full --fields\s+id,title/);
+    });
+  });
+
   it("keeps mutation help free of synthetic default-array text", async () => {
     await withTempPmPath(async (context) => {
       const testHelp = context.runCli(["test", "--help"]);
@@ -720,7 +736,7 @@ describe("release readiness runtime coverage", () => {
 
       const testAllHelp = context.runCli(["test-all", "--help"]);
       expect(testAllHelp.code).toBe(0);
-      for (const flag of ["--status", "--limit", "--offset", "--background", "--timeout"]) {
+      for (const flag of ["--status", "--limit", "--offset", "--background", "--timeout", "--check-context", "--auto-pm-context"]) {
         expect(testAllHelp.stdout).toContain(flag);
       }
 
@@ -1221,7 +1237,7 @@ describe("release readiness runtime coverage", () => {
 
       const gcResult = context.runCli(["gc", "--json"], { expectJson: true });
       expect(gcResult.code).toBe(0);
-      expectTopLevelKeyOrder(gcResult.json, ["ok", "removed", "retained", "warnings", "generated_at"]);
+      expectTopLevelKeyOrder(gcResult.json, ["ok", "dry_run", "scope", "removed", "retained", "warnings", "guidance", "generated_at"]);
 
       const testAllResult = context.runCli(["test-all", "--status", "in_progress", "--timeout", "30", "--json"], {
         expectJson: true,

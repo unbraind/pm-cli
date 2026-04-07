@@ -15,7 +15,13 @@ import { runUpdate, type UpdateCommandOptions } from "./update.js";
 const UPDATE_MANY_CHECKPOINT_SCHEMA_VERSION = 1;
 const UPDATE_MANY_CHECKPOINT_DIRECTORY = ["checkpoints", "update-many"] as const;
 
-const NON_MUTATION_UPDATE_OPTION_KEYS = new Set<keyof UpdateCommandOptions>(["author", "message", "force", "allowAuditUpdate"]);
+const NON_MUTATION_UPDATE_OPTION_KEYS = new Set<keyof UpdateCommandOptions>([
+  "author",
+  "message",
+  "force",
+  "allowAuditUpdate",
+  "allowAuditDepUpdate",
+]);
 
 const UPDATE_OPTION_TO_ITEM_KEY: Partial<Record<keyof UpdateCommandOptions, string>> = {
   title: "title",

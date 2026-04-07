@@ -72,6 +72,7 @@ export interface UpdateCommandOptions {
   message?: string;
   force?: boolean;
   allowAuditUpdate?: boolean;
+  allowAuditDepUpdate?: boolean;
   assignee?: string;
   parent?: string;
   reviewer?: string;
@@ -352,9 +353,101 @@ function parseUpdateUnsetTargets(raw: string[] | undefined): { frontMatterKeys: 
 }
 
 function enforceAllowAuditUpdateScope(options: UpdateCommandOptions, clearFrontMatterKeys: Set<string>): void {
-  if (options.allowAuditUpdate !== true) {
+  const allowAuditUpdate = options.allowAuditUpdate === true;
+  const allowAuditDepUpdate = options.allowAuditDepUpdate === true;
+  if (!allowAuditUpdate && !allowAuditDepUpdate) {
     return;
   }
+  if (allowAuditUpdate && allowAuditDepUpdate) {
+    throw new PmCliError(
+      "Choose either --allow-audit-update or --allow-audit-dep-update; these override modes are mutually exclusive.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  const pushIf = (condition: boolean, flag: string, list: string[]): void => {
+    if (condition) {
+      list.push(flag);
+    }
+  };
+  if (allowAuditDepUpdate) {
+    const disallowedFlags: string[] = [];
+    pushIf(options.title !== undefined, "--title", disallowedFlags);
+    pushIf(options.description !== undefined, "--description", disallowedFlags);
+    pushIf(options.body !== undefined, "--body", disallowedFlags);
+    pushIf(options.status !== undefined, "--status", disallowedFlags);
+    pushIf(options.closeReason !== undefined, "--close-reason", disallowedFlags);
+    pushIf(options.priority !== undefined, "--priority", disallowedFlags);
+    pushIf(options.type !== undefined, "--type", disallowedFlags);
+    pushIf(options.tags !== undefined, "--tags", disallowedFlags);
+    pushIf(options.deadline !== undefined, "--deadline", disallowedFlags);
+    pushIf(options.estimatedMinutes !== undefined, "--estimate", disallowedFlags);
+    pushIf(options.acceptanceCriteria !== undefined, "--acceptance-criteria", disallowedFlags);
+    pushIf(options.definitionOfReady !== undefined, "--definition-of-ready", disallowedFlags);
+    pushIf(options.order !== undefined || options.rank !== undefined, "--order/--rank", disallowedFlags);
+    pushIf(options.goal !== undefined, "--goal", disallowedFlags);
+    pushIf(options.objective !== undefined, "--objective", disallowedFlags);
+    pushIf(options.value !== undefined, "--value", disallowedFlags);
+    pushIf(options.impact !== undefined, "--impact", disallowedFlags);
+    pushIf(options.outcome !== undefined, "--outcome", disallowedFlags);
+    pushIf(options.whyNow !== undefined, "--why-now", disallowedFlags);
+    pushIf(options.assignee !== undefined, "--assignee", disallowedFlags);
+    pushIf(options.parent !== undefined, "--parent", disallowedFlags);
+    pushIf(options.reviewer !== undefined, "--reviewer", disallowedFlags);
+    pushIf(options.risk !== undefined, "--risk", disallowedFlags);
+    pushIf(options.confidence !== undefined, "--confidence", disallowedFlags);
+    pushIf(options.sprint !== undefined, "--sprint", disallowedFlags);
+    pushIf(options.release !== undefined, "--release", disallowedFlags);
+    pushIf(options.blockedBy !== undefined, "--blocked-by", disallowedFlags);
+    pushIf(options.blockedReason !== undefined, "--blocked-reason", disallowedFlags);
+    pushIf(options.unblockNote !== undefined, "--unblock-note", disallowedFlags);
+    pushIf(options.reporter !== undefined, "--reporter", disallowedFlags);
+    pushIf(options.severity !== undefined, "--severity", disallowedFlags);
+    pushIf(options.environment !== undefined, "--environment", disallowedFlags);
+    pushIf(options.reproSteps !== undefined, "--repro-steps", disallowedFlags);
+    pushIf(options.resolution !== undefined, "--resolution", disallowedFlags);
+    pushIf(options.expectedResult !== undefined, "--expected-result", disallowedFlags);
+    pushIf(options.actualResult !== undefined, "--actual-result", disallowedFlags);
+    pushIf(options.affectedVersion !== undefined, "--affected-version", disallowedFlags);
+    pushIf(options.fixedVersion !== undefined, "--fixed-version", disallowedFlags);
+    pushIf(options.component !== undefined, "--component", disallowedFlags);
+    pushIf(options.regression !== undefined, "--regression", disallowedFlags);
+    pushIf(options.customerImpact !== undefined, "--customer-impact", disallowedFlags);
+    pushIf(options.depRemove !== undefined, "--dep-remove", disallowedFlags);
+    pushIf(options.replaceDeps === true, "--replace-deps", disallowedFlags);
+    pushIf(options.replaceTests === true, "--replace-tests", disallowedFlags);
+    pushIf(options.comment !== undefined, "--comment", disallowedFlags);
+    pushIf(options.note !== undefined, "--note", disallowedFlags);
+    pushIf(options.learning !== undefined, "--learning", disallowedFlags);
+    pushIf(options.file !== undefined, "--file", disallowedFlags);
+    pushIf(options.test !== undefined, "--test", disallowedFlags);
+    pushIf(options.doc !== undefined, "--doc", disallowedFlags);
+    pushIf(options.reminder !== undefined, "--reminder", disallowedFlags);
+    pushIf(options.event !== undefined, "--event", disallowedFlags);
+    pushIf(options.typeOption !== undefined, "--type-option", disallowedFlags);
+    pushIf(options.clearDeps === true, "--clear-deps", disallowedFlags);
+    pushIf(options.clearComments === true, "--clear-comments", disallowedFlags);
+    pushIf(options.clearNotes === true, "--clear-notes", disallowedFlags);
+    pushIf(options.clearLearnings === true, "--clear-learnings", disallowedFlags);
+    pushIf(options.clearFiles === true, "--clear-files", disallowedFlags);
+    pushIf(options.clearTests === true, "--clear-tests", disallowedFlags);
+    pushIf(options.clearDocs === true, "--clear-docs", disallowedFlags);
+    pushIf(options.clearReminders === true, "--clear-reminders", disallowedFlags);
+    pushIf(options.clearEvents === true, "--clear-events", disallowedFlags);
+    pushIf(options.clearTypeOptions === true, "--clear-type-options", disallowedFlags);
+    pushIf(options.force === true, "--force", disallowedFlags);
+    pushIf(clearFrontMatterKeys.size > 0, "--unset", disallowedFlags);
+    if (options.dep === undefined || options.dep.length === 0) {
+      throw new PmCliError("--allow-audit-dep-update requires at least one --dep value", EXIT_CODE.USAGE);
+    }
+    if (disallowedFlags.length > 0) {
+      throw new PmCliError(
+        `--allow-audit-dep-update supports append-only dependency additions via --dep. Remove restricted options: ${disallowedFlags.join(", ")}`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    return;
+  }
+
   const disallowedFlags: string[] = [];
   if (options.status !== undefined) {
     disallowedFlags.push("--status");
@@ -1306,11 +1399,11 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     settings,
     typeToFolder: typeRegistry.type_to_folder,
     id,
-    op: options.allowAuditUpdate === true ? "update_audit" : "update",
+    op: options.allowAuditUpdate === true || options.allowAuditDepUpdate === true ? "update_audit" : "update",
     author,
     message: options.message,
     force: options.force,
-    bypassAssigneeConflict: options.allowAuditUpdate === true,
+    bypassAssigneeConflict: options.allowAuditUpdate === true || options.allowAuditDepUpdate === true,
     mutate(document) {
       const changedFields: string[] = [];
       const warnings: string[] = [];
@@ -1838,6 +1931,6 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     item: result.item as unknown as Record<string, unknown>,
     changed_fields: result.changedFields,
     warnings: [...parentReferenceWarnings, ...result.warnings],
-    ...(options.allowAuditUpdate === true ? { audit_update: true } : {}),
+    ...(options.allowAuditUpdate === true || options.allowAuditDepUpdate === true ? { audit_update: true } : {}),
   };
 }

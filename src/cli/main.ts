@@ -200,6 +200,8 @@ function buildBackgroundTestCommandArgs(id: string, options: Record<string, unkn
   pushOptionalBooleanFlag(args, "--fail-on-skipped", options.failOnSkipped);
   pushOptionalBooleanFlag(args, "--fail-on-empty-test-run", options.failOnEmptyTestRun);
   pushOptionalBooleanFlag(args, "--require-assertions-for-pm", options.requireAssertionsForPm);
+  pushOptionalBooleanFlag(args, "--check-context", options.checkContext);
+  pushOptionalBooleanFlag(args, "--auto-pm-context", options.autoPmContext);
   pushOptionalValueFlag(args, "--author", options.author);
   pushOptionalValueFlag(args, "--message", options.message);
   pushOptionalBooleanFlag(args, "--force", options.force);
@@ -221,6 +223,8 @@ function buildBackgroundTestAllCommandArgs(options: Record<string, unknown>): st
   pushOptionalBooleanFlag(args, "--fail-on-skipped", options.failOnSkipped);
   pushOptionalBooleanFlag(args, "--fail-on-empty-test-run", options.failOnEmptyTestRun);
   pushOptionalBooleanFlag(args, "--require-assertions-for-pm", options.requireAssertionsForPm);
+  pushOptionalBooleanFlag(args, "--check-context", options.checkContext);
+  pushOptionalBooleanFlag(args, "--auto-pm-context", options.autoPmContext);
   return args;
 }
 
@@ -924,6 +928,40 @@ function parseBootstrapCommandName(argv: string[]): string | undefined {
     return token.trim().toLowerCase();
   }
   return undefined;
+}
+
+const EXTENSION_ACTION_SYNTAX_TOKENS = new Set<ExtensionSubcommandAction>([
+  "install",
+  "uninstall",
+  "explore",
+  "manage",
+  "doctor",
+  "adopt",
+  "adopt-all",
+  "activate",
+  "deactivate",
+]);
+
+function normalizeLegacyExtensionActionSyntax(argv: string[]): string[] {
+  const extensionIndex = argv.findIndex((token) => token === "extension");
+  if (extensionIndex < 0) {
+    return [...argv];
+  }
+  const actionToken = argv[extensionIndex + 1];
+  if (!actionToken || actionToken.startsWith("-")) {
+    return [...argv];
+  }
+  if (!EXTENSION_ACTION_SYNTAX_TOKENS.has(actionToken as ExtensionSubcommandAction)) {
+    return [...argv];
+  }
+  if (argv.includes("--help") || argv.includes("-h")) {
+    return [...argv];
+  }
+  const forcedActionFlag = `--${actionToken}`;
+  if (argv.includes(forcedActionFlag)) {
+    return [...argv];
+  }
+  return [...argv.slice(0, extensionIndex + 1), forcedActionFlag, ...argv.slice(extensionIndex + 2)];
 }
 
 interface HelpArgumentSummary {
@@ -2189,6 +2227,8 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
     force: Boolean(commandOptions.force),
     allowAuditUpdate:
       commandOptions.allowAuditUpdate === true || commandOptions.allow_audit_update === true ? true : undefined,
+    allowAuditDepUpdate:
+      commandOptions.allowAuditDepUpdate === true || commandOptions.allow_audit_dep_update === true ? true : undefined,
     assignee: readUpdateString("assignee"),
     parent: readUpdateString("parent"),
     reviewer: readUpdateString("reviewer"),
@@ -2273,7 +2313,7 @@ function normalizeListOptions(options: Record<string, unknown>): ListOptions {
 function normalizeAggregateOptions(options: Record<string, unknown>): AggregateOptions {
   return {
     groupBy: typeof options.groupBy === "string" ? options.groupBy : undefined,
-    count: options.count === true,
+    count: options.count === true ? true : undefined,
     includeUnparented: options.includeUnparented === true || options.include_unparented === true,
     status: typeof options.status === "string" ? options.status : undefined,
     type: readListOptionString(options, "type"),
@@ -2749,28 +2789,37 @@ function normalizeExtensionOptions(
   forcedAction?: ExtensionSubcommandAction,
 ): Record<string, unknown> {
   const isForcedAction = (action: ExtensionSubcommandAction): boolean => forcedAction === action;
+  const readBoolean = (...keys: string[]): boolean => keys.some((key) => options[key] === true);
+  const readString = (...keys: string[]): string | undefined => {
+    for (const key of keys) {
+      if (typeof options[key] === "string") {
+        return options[key] as string;
+      }
+    }
+    return undefined;
+  };
   return {
-    install: isForcedAction("install") || options.install === true,
-    uninstall: isForcedAction("uninstall") || options.uninstall === true,
-    explore: isForcedAction("explore") || options.explore === true,
-    manage: isForcedAction("manage") || options.manage === true,
-    doctor: isForcedAction("doctor") || options.doctor === true,
-    adopt: isForcedAction("adopt") || options.adopt === true,
-    adoptAll: isForcedAction("adopt-all") || options.adoptAll === true,
-    activate: isForcedAction("activate") || options.activate === true,
-    deactivate: isForcedAction("deactivate") || options.deactivate === true,
-    project: options.project === true,
-    local: options.local === true,
-    global: options.global === true,
-    gh: typeof options.gh === "string" ? options.gh : undefined,
-    github: typeof options.github === "string" ? options.github : undefined,
-    ref: typeof options.ref === "string" ? options.ref : undefined,
-    detail: typeof options.detail === "string" ? options.detail : undefined,
-    trace: options.trace === true,
-    runtimeProbe: options.runtimeProbe === true,
-    fixManagedState: options.fixManagedState === true,
-    strictExit: Boolean(options.strictExit),
-    failOnWarn: Boolean(options.failOnWarn),
+    install: isForcedAction("install") || readBoolean("install"),
+    uninstall: isForcedAction("uninstall") || readBoolean("uninstall"),
+    explore: isForcedAction("explore") || readBoolean("explore"),
+    manage: isForcedAction("manage") || readBoolean("manage"),
+    doctor: isForcedAction("doctor") || readBoolean("doctor"),
+    adopt: isForcedAction("adopt") || readBoolean("adopt"),
+    adoptAll: isForcedAction("adopt-all") || readBoolean("adoptAll", "adopt_all", "adopt-all"),
+    activate: isForcedAction("activate") || readBoolean("activate"),
+    deactivate: isForcedAction("deactivate") || readBoolean("deactivate"),
+    project: readBoolean("project"),
+    local: readBoolean("local"),
+    global: readBoolean("global"),
+    gh: readString("gh"),
+    github: readString("github"),
+    ref: readString("ref"),
+    detail: readString("detail"),
+    trace: readBoolean("trace"),
+    runtimeProbe: readBoolean("runtimeProbe", "runtime_probe", "runtime-probe"),
+    fixManagedState: readBoolean("fixManagedState", "fix_managed_state", "fix-managed-state"),
+    strictExit: readBoolean("strictExit", "strict_exit", "strict-exit"),
+    failOnWarn: readBoolean("failOnWarn", "fail_on_warn", "fail-on-warn"),
   };
 }
 
@@ -2832,8 +2881,8 @@ const extensionCommand = program
   .option("--strict-exit", "Return non-zero exit when doctor warnings are present (ok=false)")
   .option("--fail-on-warn", "Alias for --strict-exit (doctor)")
   .description("Manage extension lifecycle operations for project or global scope.")
-  .action(async (target: string | undefined, options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(target, options, command);
+  .action(async (target: string | undefined, _options: Record<string, unknown>, command) => {
+    await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command);
   });
 
 addExtensionScopeOptions(
@@ -2844,19 +2893,19 @@ addExtensionScopeOptions(
     .option("--github <owner/repo[/path]>", "Alias for --gh")
     .option("--ref <ref>", "Git ref/branch/tag for GitHub install sources")
     .description("Install extension from local path or GitHub source."),
-).action(async (target: string | undefined, options: Record<string, unknown>, command) => {
-  await executeExtensionCommand(target, options, command, "install");
+).action(async (target: string | undefined, _options: Record<string, unknown>, command) => {
+  await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "install");
 });
 
 addExtensionScopeOptions(
   extensionCommand.command("uninstall").argument("<target>", "Extension name").description("Uninstall an installed extension."),
-).action(async (target: string, options: Record<string, unknown>, command) => {
-  await executeExtensionCommand(target, options, command, "uninstall");
+).action(async (target: string, _options: Record<string, unknown>, command) => {
+  await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "uninstall");
 });
 
 addExtensionScopeOptions(extensionCommand.command("explore").description("List discovered extensions in selected scope.")).action(
-  async (options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(undefined, options, command, "explore");
+  async (_options: Record<string, unknown>, command) => {
+    await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "explore");
   },
 );
 
@@ -2866,8 +2915,8 @@ addExtensionScopeOptions(
     .option("--runtime-probe", "Opt-in runtime activation probe for manage output parity")
     .option("--fix-managed-state", "Adopt unmanaged extensions before diagnostics/update checks")
     .description("List managed extensions with update-check metadata."),
-).action(async (options: Record<string, unknown>, command) => {
-  await executeExtensionCommand(undefined, options, command, "manage");
+).action(async (_options: Record<string, unknown>, command) => {
+  await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "manage");
 });
 
 addExtensionScopeOptions(
@@ -2879,8 +2928,8 @@ addExtensionScopeOptions(
     .option("--strict-exit", "Return non-zero exit when doctor warnings are present (ok=false)")
     .option("--fail-on-warn", "Alias for --strict-exit (doctor)")
     .description("Run consolidated extension diagnostics (summary/deep modes)."),
-).action(async (options: Record<string, unknown>, command) => {
-  await executeExtensionCommand(undefined, options, command, "doctor");
+).action(async (_options: Record<string, unknown>, command) => {
+  await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "doctor");
 });
 
 addExtensionScopeOptions(
@@ -2891,26 +2940,26 @@ addExtensionScopeOptions(
     .option("--github <owner/repo[/path]>", "Alias for --gh")
     .option("--ref <ref>", "Git ref/branch/tag for GitHub shorthand source")
     .description("Adopt an existing unmanaged extension into managed metadata."),
-).action(async (target: string, options: Record<string, unknown>, command) => {
-  await executeExtensionCommand(target, options, command, "adopt");
+).action(async (target: string, _options: Record<string, unknown>, command) => {
+  await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "adopt");
 });
 
 addExtensionScopeOptions(
   extensionCommand.command("adopt-all").description("Adopt all unmanaged extensions into managed metadata."),
-).action(async (options: Record<string, unknown>, command) => {
-  await executeExtensionCommand(undefined, options, command, "adopt-all");
+).action(async (_options: Record<string, unknown>, command) => {
+  await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "adopt-all");
 });
 
 addExtensionScopeOptions(
   extensionCommand.command("activate").argument("<target>", "Extension name").description("Activate an extension in selected scope settings."),
-).action(async (target: string, options: Record<string, unknown>, command) => {
-  await executeExtensionCommand(target, options, command, "activate");
+).action(async (target: string, _options: Record<string, unknown>, command) => {
+  await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "activate");
 });
 
 addExtensionScopeOptions(
   extensionCommand.command("deactivate").argument("<target>", "Extension name").description("Deactivate an extension in selected scope settings."),
-).action(async (target: string, options: Record<string, unknown>, command) => {
-  await executeExtensionCommand(target, options, command, "deactivate");
+).action(async (target: string, _options: Record<string, unknown>, command) => {
+  await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "deactivate");
 });
 
 const templatesCommand = program.command("templates").description("Manage reusable create templates.");
@@ -3222,8 +3271,11 @@ function registerListCommand(name: string, description: string, status?: ItemSta
     .option("--limit <n>", "Limit returned item count")
     .option("--offset <n>", "Skip the first n matching rows before limit is applied")
     .option("--include-body", "Include item body in each returned list row")
-    .option("--compact", "Render compact list projection fields")
-    .option("--fields <value>", "Render custom comma-separated list fields")
+    .option("--compact", "Render compact list projection fields (mutually exclusive with --fields)")
+    .option(
+      "--fields <value>",
+      "Render custom comma-separated list fields (mutually exclusive with --compact; valid: --fields id,title; invalid: --compact --fields id,title)",
+    )
     .option("--sort <value>", "Sort field: priority|deadline|updated_at|created_at|title|parent")
     .option("--order <value>", "Sort order: asc|desc (requires --sort)")
     .option("--stream", "Emit line-delimited JSON rows (requires --json)")
@@ -3261,7 +3313,7 @@ program
   .command("aggregate")
   .description("Aggregate grouped item counts for governance queries.")
   .option("--group-by <value>", "Comma-separated group-by fields (supported: parent,type)")
-  .option("--count", "Return grouped counts")
+  .option("--count", "Return grouped counts (default behavior)")
   .option("--include-unparented", "Include unparented rows when grouping by parent")
   .option("--include_unparented", "Alias for --include-unparented")
   .option("--status <value>", "Filter by item status")
@@ -3427,9 +3479,12 @@ program
   .option("--priority <value>", "Filter by priority")
   .option("--deadline-before <value>", "Filter by deadline upper bound (ISO/date string or relative)")
   .option("--deadline-after <value>", "Filter by deadline lower bound (ISO/date string or relative)")
-  .option("--compact", "Render compact search hits (default)")
-  .option("--full", "Render full search hits with nested item payloads")
-  .option("--fields <value>", "Render custom comma-separated search hit fields")
+  .option("--compact", "Render compact search hits (default; mutually exclusive with --full/--fields)")
+  .option("--full", "Render full search hits with nested item payloads (mutually exclusive with --compact/--fields)")
+  .option(
+    "--fields <value>",
+    "Render custom comma-separated search hit fields (mutually exclusive with --compact/--full; valid: --fields id,title,score; invalid: --full --fields id,title)",
+  )
   .option("--limit <n>", "Limit returned item count")
   .action(async (keywords: string[], options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
@@ -3693,6 +3748,8 @@ program
   .option("--clear-type-options", "Clear type options")
   .option("--allow-audit-update", "Allow non-owner metadata-only audit updates without requiring --force")
   .option("--allow_audit_update", "Alias for --allow-audit-update")
+  .option("--allow-audit-dep-update", "Allow non-owner append-only dependency updates without requiring --force")
+  .option("--allow_audit_dep_update", "Alias for --allow-audit-dep-update")
   .option("--force", "Force ownership override")
   .action(async (id: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
@@ -3799,6 +3856,8 @@ program
   .option("--clear-type-options", "Clear type options")
   .option("--allow-audit-update", "Allow non-owner metadata-only audit updates without requiring --force")
   .option("--allow_audit_update", "Alias for --allow-audit-update")
+  .option("--allow-audit-dep-update", "Allow non-owner append-only dependency updates without requiring --force")
+  .option("--allow_audit_dep_update", "Alias for --allow-audit-dep-update")
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "Mutation message")
   .option("--force", "Force ownership override")
@@ -4253,6 +4312,11 @@ program
     "Treat successful linked-test commands that report zero executed tests as failures",
   )
   .option("--require-assertions-for-pm", "Require assertion metadata for linked PM command tests")
+  .option("--check-context", "Preflight linked PM command context diagnostics before executing commands")
+  .option(
+    "--auto-pm-context",
+    "Auto-remediate PM tracker-read context mismatches by routing those linked commands through tracker context",
+  )
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
   .option("--force", "Force ownership override")
@@ -4307,6 +4371,8 @@ program
         failOnSkipped: Boolean(options.failOnSkipped),
         failOnEmptyTestRun: Boolean(options.failOnEmptyTestRun),
         requireAssertionsForPm: Boolean(options.requireAssertionsForPm),
+        checkContext: Boolean(options.checkContext),
+        autoPmContext: Boolean(options.autoPmContext),
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
         force: Boolean(options.force),
@@ -4349,6 +4415,11 @@ program
     "Treat successful linked-test commands that report zero executed tests as failures",
   )
   .option("--require-assertions-for-pm", "Require assertion metadata for linked PM command tests")
+  .option("--check-context", "Preflight linked PM command context diagnostics before executing commands")
+  .option(
+    "--auto-pm-context",
+    "Auto-remediate PM tracker-read context mismatches by routing those linked commands through tracker context",
+  )
   .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -4385,6 +4456,8 @@ program
         failOnSkipped: Boolean(options.failOnSkipped),
         failOnEmptyTestRun: Boolean(options.failOnEmptyTestRun),
         requireAssertionsForPm: Boolean(options.requireAssertionsForPm),
+        checkContext: Boolean(options.checkContext),
+        autoPmContext: Boolean(options.autoPmContext),
       },
       globalOptions,
     );
@@ -4613,11 +4686,20 @@ program
 
 program
   .command("gc")
+  .option("--dry-run", "Preview cleanup targets without deleting files")
+  .option(
+    "--scope <value>",
+    "Limit cleanup to one or more scopes (comma-separated or repeatable): index, embeddings, runtime",
+    collect,
+  )
   .description("Clean optional cache artifacts and show a summary.")
-  .action(async (_options, command) => {
+  .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
-    const result = await runGc(globalOptions);
+    const result = await runGc(globalOptions, {
+      dryRun: options.dryRun === true,
+      scope: Array.isArray(options.scope) ? (options.scope as string[]) : [],
+    });
     printResult(result, globalOptions);
     if (globalOptions.profile) {
       printError(`profile:command=gc took_ms=${Date.now() - startedAt}`);
@@ -4891,7 +4973,7 @@ program
     }
   });
 
-attachRichHelpText(program, process.argv.slice(2));
+attachRichHelpText(program, normalizeLegacyExtensionActionSyntax(process.argv.slice(2)));
 
 interface CommanderUsageContext {
   message: string;
@@ -4930,8 +5012,9 @@ function isKnownHelpCommandPath(root: Command, commandPathTokens: string[]): boo
 async function resolveCommanderUsageContext(error: unknown): Promise<CommanderUsageContext> {
   const rawMessage = typeof error === "object" && error !== null ? (error as { message?: string }).message : undefined;
   const message = rawMessage ?? "Invalid command usage";
-  const bootstrapGlobal = parseBootstrapGlobalOptions(process.argv.slice(2));
-  const commandName = parseBootstrapCommandName(process.argv.slice(2));
+  const invocationArgv = normalizeLegacyExtensionActionSyntax(process.argv.slice(2));
+  const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
+  const commandName = parseBootstrapCommandName(invocationArgv);
   let allowedTypes = BUILTIN_TYPE_HELP_VALUES;
   try {
     const pmRoot = resolvePmRoot(process.cwd(), bootstrapGlobal.path);
@@ -4979,21 +5062,23 @@ async function formatCommanderUsageJson(error: unknown): Promise<string> {
 }
 
 async function main(): Promise<void> {
+  const invocationArgv = normalizeLegacyExtensionActionSyntax(process.argv.slice(2));
+  const invocationProcessArgv = [process.argv[0], process.argv[1], ...invocationArgv];
   try {
-    applyBootstrapPagerPolicy(process.argv.slice(2));
+    applyBootstrapPagerPolicy(invocationArgv);
     await registerDynamicExtensionCommandPaths(program);
     wrapProgramActionsForExtensionHandlers(program);
-    const renderedBootstrapJsonHelp = await maybeRenderBootstrapJsonHelp(program, process.argv.slice(2));
+    const renderedBootstrapJsonHelp = await maybeRenderBootstrapJsonHelp(program, invocationArgv);
     if (renderedBootstrapJsonHelp) {
       return;
     }
-    await program.parseAsync(process.argv);
+    await program.parseAsync(invocationProcessArgv);
   } catch (error: unknown) {
     await runAndClearAfterCommandHooks({
       ok: false,
       error: describeUnknownError(error),
     });
-    const bootstrapGlobal = parseBootstrapGlobalOptions(process.argv.slice(2));
+    const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
     const jsonErrors = bootstrapGlobal.json;
     if (error instanceof PmCliError) {
       if (jsonErrors) {
@@ -5011,9 +5096,9 @@ async function main(): Promise<void> {
       const isHelpDisplayCode =
         code === "commander.helpDisplayed" || code === "commander.help" || code === "commander.helpCommand";
       if (isHelpDisplayCode || rawMessage.includes("(outputHelp)")) {
-        const helpRequest = parseBootstrapHelpRequest(process.argv.slice(2));
+        const helpRequest = parseBootstrapHelpRequest(invocationArgv);
         if (helpRequest.requested && !isKnownHelpCommandPath(program, helpRequest.commandPathTokens)) {
-          const unknownToken = helpRequest.commandPathTokens[0] ?? parseBootstrapCommandName(process.argv.slice(2)) ?? "<command>";
+          const unknownToken = helpRequest.commandPathTokens[0] ?? parseBootstrapCommandName(invocationArgv) ?? "<command>";
           const unknownMessage = `unknown command '${unknownToken}'`;
           if (jsonErrors) {
             printError(await formatCommanderUsageJson({ message: unknownMessage }));

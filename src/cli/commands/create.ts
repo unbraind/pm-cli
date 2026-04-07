@@ -465,9 +465,31 @@ export function parseLogSeed(
         : "Use --clear-learnings to clear learnings.";
   assertNoLegacyNoneTokens(raw, optionName, clearHint);
   const values = raw.map((entry) => {
-    const kv = parseCsvKv(entry, optionName);
+    const trimmedEntry = entry.trim();
+    const buildPlainTextCommentSeed = (): Comment => {
+      if (trimmedEntry.length === 0) {
+        throw new PmCliError(`${optionName} requires text=<value>`, EXIT_CODE.USAGE);
+      }
+      return {
+        created_at: nowValue,
+        author: fallbackAuthor,
+        text: trimmedEntry,
+      };
+    };
+    let kv: Record<string, string>;
+    try {
+      kv = parseCsvKv(entry, optionName);
+    } catch (error: unknown) {
+      if (optionName === "--comment") {
+        return buildPlainTextCommentSeed();
+      }
+      throw error;
+    }
     const unsupportedKeys = Object.keys(kv).filter((key) => !LOG_SEED_ALLOWED_KEYS.has(key));
     if (unsupportedKeys.length > 0) {
+      if (optionName === "--comment" && !trimmedEntry.includes(",") && !trimmedEntry.includes("\n")) {
+        return buildPlainTextCommentSeed();
+      }
       throw new PmCliError(buildInvalidLogSeedKeysMessage(optionName, unsupportedKeys), EXIT_CODE.USAGE);
     }
     const text = kv.text ?? "";

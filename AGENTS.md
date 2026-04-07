@@ -99,7 +99,7 @@ Attach references to keep work reproducible:
   - `pm deps` is read-only and intended for dependency tree/graph inspection (`--format tree|graph`).
 - Entry-format resilience:
   - `--add`/repeatable seed flags accept CSV `key=value`, markdown `key: value`, or stdin token `-` with piped payload.
-  - for `pm create` log-seed flags (`--comment`, `--note`, `--learning`), only `author`, `created_at`, and `text` keys are valid; quote punctuation-heavy text (for example `text="hello,scope:project"`) or use markdown/stdin to avoid ambiguous key-like continuations.
+  - for `pm create` log-seed flags, `--comment` supports plain-text shorthand in addition to structured key/value input; structured `--comment`/`--note`/`--learning` payloads accept only `author`, `created_at`, and `text` keys. Quote punctuation-heavy text (for example `text="hello,scope:project"`) or use markdown/stdin to avoid ambiguous key-like continuations.
   - Example: `printf '%s\n' 'path: src/app.ts' 'scope: project' | pm files <ID> --add -`
 
 ### Step E - Record progress
@@ -109,6 +109,7 @@ Use append-style updates:
 - `pm comments <ID> "Implemented lock retry path"` (or `--add "..."` for structured/stdin forms)
 - use `pm comments <ID> ... --allow-audit-comment` for append-only audit comments on items assigned to another owner
 - use `pm notes <ID> ... --allow-audit-comment` / `pm learnings <ID> ... --allow-audit-comment` for append-only audit note/learning entries on another owner's item
+- use `pm update <ID> --dep ... --allow-audit-dep-update` for cross-owner append-only dependency wiring without broad `--force`
 - use `pm release <ID> ... --allow-audit-release` for non-owner handoffs that only clear assignee metadata
 - reserve `pm comments <ID> ... --force` for coordinated ownership-override paths beyond append-only audit comments
 - `pm update <ID> --status in_progress`
@@ -171,7 +172,7 @@ Use release when:
 - `pm test <ID> --run` should defensively skip legacy linked commands that invoke `pm test-all` (including global-flag and package-spec launcher forms such as `pm --json test-all`, `npx @unbrained/pm-cli@latest --json test-all`, `pnpm dlx @unbrained/pm-cli@latest --json test-all`, and `npm exec -- @unbrained/pm-cli@latest --json test-all`) and report deterministic skipped results.
 - `pm test <ID> --run` / `pm test-all` should preserve sandbox isolation while seeding project/global `settings.json` and `extensions/` from source roots so extension-defined type/schema behavior matches direct workspace runs.
 - `pm test <ID> --run --background` / `pm test-all --background` should be treated as additive lifecycle controls only; use `pm test-runs` commands for status/log/stop/resume and rely on fingerprint dedupe to avoid duplicate parallel runs.
-- PM-command linked-test runs should default to `--pm-context schema`; PM tracker-read linked commands fail on context mismatch by default in schema mode, `--pm-context auto` can route tracker-read commands automatically, and `--pm-context tracker` should be used when full tracker parity is required. Per-linked-test `pm_context_mode` metadata can override run-level mode; when that override forces schema against run-level tracker, mismatch guidance should call out the override explicitly. Rely on `run_results[].execution_context` metadata (including tracker-read classification) for parity diagnostics.
+- PM-command linked-test runs should default to `--pm-context schema`; PM tracker-read linked commands fail on context mismatch by default in schema mode, `--pm-context auto` can route tracker-read commands automatically, and `--pm-context tracker` should be used when full tracker parity is required. Use `--check-context` for deterministic preflight diagnostics and `--auto-pm-context` for tracker-read auto-remediation. Per-linked-test `pm_context_mode` metadata can override run-level mode; when that override forces schema against run-level tracker, mismatch guidance should call out the override explicitly. Rely on `run_results[].execution_context` metadata (including tracker-read classification plus `requested_pm_context_mode` / `auto_pm_context_applied`) for parity diagnostics.
 - Use strict governance flags when verification quality matters: `--fail-on-context-mismatch`, `--fail-on-skipped`, and `--require-assertions-for-pm`.
 - Treat failed linked-test run results from `pm test <ID> --run` as dependency-failed process exits (code `5`) in automation/CI checks, matching `pm test-all` gating semantics.
 - Linked-test assertion metadata is optional but preferred for PM-command checks (`assert_stdout_contains`, `assert_stdout_regex`, `assert_stderr_contains`, `assert_stderr_regex`, `assert_stdout_min_lines`, `assert_json_field_equals`, `assert_json_field_gte`).
@@ -272,7 +273,7 @@ pm comments pm-a1b2 "Restore replay implemented with hash checks"
 pm notes pm-a1b2 --add "Replay path now guards missing history streams before write"
 pm learnings pm-a1b2 --add "Use sandbox runner for linked test commands to preserve PM_PATH safety"
 pm deps pm-a1b2 --format tree
-pm aggregate --group-by parent,type --count --status open --json
+pm aggregate --group-by parent,type --status open --json
 pm dedupe-audit --mode parent_scope --limit 20 --json
 pm calendar --view week --date 2026-04-06 --full-period --include deadlines,events --format markdown
 pm activity --id pm-a1b2 --op update --author codex-agent --from -7d --to now --limit 100
@@ -317,11 +318,12 @@ Use `action: "extension-doctor"` for consolidated extension diagnostics with opt
 For `list*` wrapper actions, use projection/sort controls (`compact`, `fields`, `sort`, `order`) plus `includeBody` when body projection is needed.
 For `comments-audit`, use governance filters (`parent`, `tag`, `sprint`, `release`, `priority`) in addition to status/type/assignee filters.
 For `health`, use vector refresh controls (`checkOnly`, `noRefresh`, `refreshVectors`) while keeping strict flags available (`strictDirectories`, `strictExit`, `failOnWarn`).
-For `create` and `update`, use camelCase wrapper parameters for the canonical CLI scalar fields such as `parent`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blockedBy`, `blockedReason`, `unblockNote`, `definitionOfReady`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `whyNow`, `reporter`, `severity`, `environment`, `reproSteps`, `resolution`, `expectedResult`, `actualResult`, `affectedVersion`, `fixedVersion`, `component`, `regression`, and `customerImpact`; use `createMode` (`strict|progressive`) when staged creation is needed, `appendStable` for minimal-diff file-link appends, `allowAuditUpdate` for ownership-safe metadata-only non-owner updates, `allowAuditComment` for additive non-owner comment writes, repeatable `reminder` values for persistent reminders (`at=<iso|relative>,text=<text>`), and repeatable `typeOption` values for custom type metadata.
+For `create` and `update`, use camelCase wrapper parameters for the canonical CLI scalar fields such as `parent`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blockedBy`, `blockedReason`, `unblockNote`, `definitionOfReady`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `whyNow`, `reporter`, `severity`, `environment`, `reproSteps`, `resolution`, `expectedResult`, `actualResult`, `affectedVersion`, `fixedVersion`, `component`, `regression`, and `customerImpact`; use `createMode` (`strict|progressive`) when staged creation is needed, `appendStable` for minimal-diff file-link appends, `allowAuditUpdate` for ownership-safe metadata-only non-owner updates, `allowAuditDepUpdate` for ownership-safe dependency-only non-owner updates, `allowAuditComment` for additive non-owner comment writes, repeatable `reminder` values for persistent reminders (`at=<iso|relative>,text=<text>`), and repeatable `typeOption` values for custom type metadata.
 For `contracts`, use projection controls (`flagsOnly`, `availabilityOnly`) when you need narrow machine-readable payloads; with `command` selected, contract output is command-scoped by default.
 For `completion`, use `eagerTags` only when embedding static tags in generated scripts is required; default generated scripts resolve tags lazily at runtime.
 For `activity`, use `id`, `op`, `author`, `from`, `to`, `limit`, and `stream` (`rows|ndjson|jsonl` or boolean true) for deterministic timeline filtering/export.
-For `test` and `test-all`, prefer explicit runtime parity/strictness parameters when needed: `pmContext` (`schema|tracker`), `failOnContextMismatch`, `failOnSkipped`, and `requireAssertionsForPm`.
+For `test` and `test-all`, prefer explicit runtime parity/strictness parameters when needed: `pmContext` (`schema|tracker|auto`), `checkContext`, `autoPmContext`, `failOnContextMismatch`, `failOnSkipped`, and `requireAssertionsForPm`.
+For `gc`, use `dryRun` and repeatable `gcScope` (`index`, `embeddings`, `runtime`) for no-side-effect previews and targeted cleanup.
 
 ### Example: list open tasks
 

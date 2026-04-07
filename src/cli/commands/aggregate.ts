@@ -122,7 +122,7 @@ function compareAggregateRows(
 }
 
 export async function runAggregate(options: AggregateOptions, global: GlobalOptions): Promise<AggregateResult> {
-  if (options.count !== true) {
+  if (options.count === false) {
     throw new PmCliError("Aggregate currently supports grouped counts only. Pass --count.", EXIT_CODE.USAGE);
   }
 

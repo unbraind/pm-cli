@@ -142,6 +142,8 @@ export interface TestCommandOptions {
   failOnSkipped?: boolean;
   failOnEmptyTestRun?: boolean;
   requireAssertionsForPm?: boolean;
+  checkContext?: boolean;
+  autoPmContext?: boolean;
   author?: string;
   message?: string;
   force?: boolean;
@@ -163,7 +165,9 @@ export interface TestRunResult {
   exit_code?: number;
   failure_category?: LinkedTestFailureCategory;
   execution_context?: {
+    requested_pm_context_mode: LinkedTestPmContextMode;
     pm_context_mode: LinkedTestPmContextMode;
+    auto_pm_context_applied: boolean;
     is_pm_command: boolean;
     is_pm_tracker_read_command: boolean;
     source_project_pm_path: string;
@@ -224,6 +228,40 @@ function summarizeRunResultStatuses(results: TestRunResult[]): { passed: number;
     skipped += 1;
   }
   return { passed, failed, skipped };
+}
+
+export function summarizeContextPreflight(runResults: TestRunResult[]): {
+  checked_pm_commands: number;
+  tracker_read_commands: number;
+  mismatches: number;
+  auto_remediated: number;
+} {
+  let checkedPmCommands = 0;
+  let trackerReadCommands = 0;
+  let mismatches = 0;
+  let autoRemediated = 0;
+  for (const result of runResults) {
+    const context = result.execution_context;
+    if (!context || context.is_pm_command !== true) {
+      continue;
+    }
+    checkedPmCommands += 1;
+    if (context.is_pm_tracker_read_command === true) {
+      trackerReadCommands += 1;
+    }
+    if (context.mismatch_detected === true) {
+      mismatches += 1;
+    }
+    if (context.auto_pm_context_applied === true) {
+      autoRemediated += 1;
+    }
+  }
+  return {
+    checked_pm_commands: checkedPmCommands,
+    tracker_read_commands: trackerReadCommands,
+    mismatches,
+    auto_remediated: autoRemediated,
+  };
 }
 
 function ensureScope(raw: string | undefined): LinkScope {
@@ -1717,6 +1755,8 @@ export async function runLinkedTests(
     failOnContextMismatch?: boolean;
     failOnEmptyTestRun?: boolean;
     requireAssertionsForPm?: boolean;
+    checkContext?: boolean;
+    autoPmContext?: boolean;
   },
 ): Promise<TestRunResult[]> {
   const results: TestRunResult[] = [];
@@ -1759,7 +1799,9 @@ export async function runLinkedTests(
     const buildExecutionContext = (
       isPmCommand: boolean,
       isPmTrackerReadCommand: boolean,
+      requestedPmContextMode: LinkedTestPmContextMode,
       effectivePmContextMode: ResolvedLinkedTestPmContextMode,
+      autoPmContextApplied: boolean,
     ): NonNullable<TestRunResult["execution_context"]> => {
       const selectedSandboxProjectPmPath = effectivePmContextMode === "tracker" ? trackerSandboxPmPath : schemaSandboxPmPath;
       const selectedSandboxGlobalPmPath =
@@ -1770,7 +1812,9 @@ export async function runLinkedTests(
         effectivePmContextMode === "tracker" ? trackerSandboxGlobalItemCount : schemaSandboxGlobalItemCount;
       const mismatchDetected = isPmCommand && sourceProjectItemCount !== selectedSandboxProjectItemCount;
       return {
+        requested_pm_context_mode: requestedPmContextMode,
         pm_context_mode: effectivePmContextMode,
+        auto_pm_context_applied: autoPmContextApplied,
         is_pm_command: isPmCommand,
         is_pm_tracker_read_command: isPmTrackerReadCommand,
         source_project_pm_path: sourceRoots?.projectPmRoot ?? "",
@@ -1801,13 +1845,18 @@ export async function runLinkedTests(
         isPmCommand && typeof linkedTest.command === "string" && linkedTest.command.length > 0
           ? commandInvokesPmTrackerReadCommand(linkedTest.command)
           : false;
-      const requestedPmContextMode = resolveLinkedTestRequestedContextMode(
-        linkedTest,
-        runLevelPmContextMode,
-        options?.overrideLinkedPmContext === true,
-      );
+      const autoPmContextApplied = options?.autoPmContext === true && isPmTrackerReadCommand;
+      const requestedPmContextMode = autoPmContextApplied
+        ? "auto"
+        : resolveLinkedTestRequestedContextMode(linkedTest, runLevelPmContextMode, options?.overrideLinkedPmContext === true);
       const effectivePmContextMode = resolveLinkedTestEffectiveContextMode(requestedPmContextMode, isPmTrackerReadCommand);
-      const executionContext = buildExecutionContext(isPmCommand, isPmTrackerReadCommand, effectivePmContextMode);
+      const executionContext = buildExecutionContext(
+        isPmCommand,
+        isPmTrackerReadCommand,
+        requestedPmContextMode,
+        effectivePmContextMode,
+        autoPmContextApplied,
+      );
       if (!linkedTest.command) {
         results.push({
           command: linkedTest.command,
@@ -1841,6 +1890,7 @@ export async function runLinkedTests(
           runLevelPmContextMode,
           linkedOverridePmContextMode,
         });
+        const mismatchPrefix = options?.checkContext === true ? "Linked test preflight PM context mismatch detected" : "Linked test PM context mismatch detected";
         results.push({
           command: linkedTest.command,
           path: linkedTest.path,
@@ -1849,7 +1899,7 @@ export async function runLinkedTests(
           failure_category: "assertion_failure",
           execution_context: executionContext,
           error:
-            `Linked test PM context mismatch detected (source_project_items=${executionContext.source_project_item_count}, ` +
+            `${mismatchPrefix} (source_project_items=${executionContext.source_project_item_count}, ` +
             `sandbox_project_items=${executionContext.sandbox_project_item_count}).${mismatchHint}`,
         });
         continue;
@@ -2037,10 +2087,12 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
     options.failOnContextMismatch === true ||
     options.failOnSkipped === true ||
     options.failOnEmptyTestRun === true ||
-    options.requireAssertionsForPm === true;
+    options.requireAssertionsForPm === true ||
+    options.checkContext === true ||
+    options.autoPmContext === true;
   if (hasRuntimeDirectiveFlags && options.run !== true) {
     throw new PmCliError(
-      "--env-set, --env-clear, --shared-host-safe, --pm-context, --override-linked-pm-context, --fail-on-context-mismatch, --fail-on-skipped, --fail-on-empty-test-run, and --require-assertions-for-pm require --run",
+      "--env-set, --env-clear, --shared-host-safe, --pm-context, --override-linked-pm-context, --fail-on-context-mismatch, --fail-on-skipped, --fail-on-empty-test-run, --require-assertions-for-pm, --check-context, and --auto-pm-context require --run",
       EXIT_CODE.USAGE,
     );
   }
@@ -2057,6 +2109,8 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
         failOnContextMismatch: options.failOnContextMismatch,
         failOnEmptyTestRun: options.failOnEmptyTestRun,
         requireAssertionsForPm: options.requireAssertionsForPm,
+        checkContext: options.checkContext,
+        autoPmContext: options.autoPmContext,
         sourceRoots: {
           projectPmRoot: pmRoot,
           globalPmRoot: resolveGlobalPmRoot(process.cwd()),
@@ -2067,6 +2121,15 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
   const failOnSkippedTriggered =
     options.run === true && options.failOnSkipped === true && runResults.some((entry) => entry.status === "skipped");
   const warnings: string[] = [];
+  if (options.run === true && options.checkContext === true) {
+    const preflight = summarizeContextPreflight(runResults);
+    warnings.push(
+      `context_preflight:checked_pm_commands=${preflight.checked_pm_commands};` +
+        `tracker_read_commands=${preflight.tracker_read_commands};` +
+        `mismatches=${preflight.mismatches};` +
+        `auto_remediated=${preflight.auto_remediated}`,
+    );
+  }
 
   if (options.run === true && runStartedAt && settings.testing.record_results_to_items === true) {
     const summary = summarizeRunResultStatuses(runResults);

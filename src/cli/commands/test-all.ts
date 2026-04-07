@@ -12,7 +12,14 @@ import { getSettingsPath, resolveGlobalPmRoot, resolvePmRoot } from "../../core/
 import { readSettings } from "../../core/store/settings.js";
 import { appendTrackedTestRunSummary } from "../../core/test/item-test-run-tracking.js";
 import type { ItemStatus, LinkedTest } from "../../types/index.js";
-import { countFailureCategories, runLinkedTests, runTest, type LinkedTestFailureCategory, type TestRunResult } from "./test.js";
+import {
+  countFailureCategories,
+  runLinkedTests,
+  runTest,
+  summarizeContextPreflight,
+  type LinkedTestFailureCategory,
+  type TestRunResult,
+} from "./test.js";
 
 export interface TestAllCommandOptions {
   status?: string;
@@ -29,6 +36,8 @@ export interface TestAllCommandOptions {
   failOnSkipped?: boolean;
   failOnEmptyTestRun?: boolean;
   requireAssertionsForPm?: boolean;
+  checkContext?: boolean;
+  autoPmContext?: boolean;
 }
 
 export interface TestAllItemResult {
@@ -290,10 +299,12 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
             envClear: options.envClear,
             sharedHostSafe: options.sharedHostSafe,
             pmContext: options.pmContext,
-        overrideLinkedPmContext: options.overrideLinkedPmContext,
+            overrideLinkedPmContext: options.overrideLinkedPmContext,
             failOnContextMismatch: options.failOnContextMismatch,
             failOnEmptyTestRun: options.failOnEmptyTestRun,
             requireAssertionsForPm: options.requireAssertionsForPm,
+            checkContext: options.checkContext,
+            autoPmContext: options.autoPmContext,
           })
         : [];
     let executedIndex = 0;
@@ -359,6 +370,16 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
   }
 
   const failOnSkippedTriggered = options.failOnSkipped === true && skipped > 0;
+  if (options.checkContext === true) {
+    const allRunResults = results.flatMap((entry) => entry.run_results);
+    const preflight = summarizeContextPreflight(allRunResults);
+    trackingWarnings.push(
+      `context_preflight:checked_pm_commands=${preflight.checked_pm_commands};` +
+        `tracker_read_commands=${preflight.tracker_read_commands};` +
+        `mismatches=${preflight.mismatches};` +
+        `auto_remediated=${preflight.auto_remediated}`,
+    );
+  }
 
   return {
     totals: {

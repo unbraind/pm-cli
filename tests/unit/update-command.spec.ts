@@ -1522,6 +1522,66 @@ describe("runUpdate", () => {
     });
   });
 
+  it("allows non-owner dependency additions with --allow-audit-dep-update", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-audit-dep-override", { assignee: "foreign-assignee" });
+      const result = await runUpdate(
+        id,
+        {
+          allowAuditDepUpdate: true,
+          dep: ["id=dep-audit,kind=related,author=audit-owner,created_at=2026-03-01T00:00:00.000Z"],
+          message: "audit dependency add",
+        },
+        { path: context.pmPath },
+      );
+      expect((result.item as { dependencies?: Array<Record<string, unknown>> }).dependencies).toEqual([
+        {
+          id: "pm-dep-audit",
+          kind: "related",
+          author: "audit-owner",
+          created_at: "2026-03-01T00:00:00.000Z",
+        },
+      ]);
+      expect(result.audit_update).toBe(true);
+      expect(latestUpdateOperation(context, id)).toBe("update_audit");
+    });
+  });
+
+  it("rejects non-dependency mutations when --allow-audit-dep-update is used", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-audit-dep-scope-guard", { assignee: "foreign-assignee" });
+      await expect(
+        runUpdate(
+          id,
+          {
+            allowAuditDepUpdate: true,
+            status: "blocked",
+            dep: ["id=dep-audit,kind=related"],
+            message: "attempt lifecycle mutation in dep-audit mode",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--status"),
+      });
+
+      await expect(
+        runUpdate(
+          id,
+          {
+            allowAuditDepUpdate: true,
+            message: "missing dependency payload",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("requires at least one --dep"),
+      });
+    });
+  });
+
   it("accepts colon and markdown formats for update type-option entries", async () => {
     await withTempPmPath(async (context) => {
       const settingsPath = path.join(context.pmPath, "settings.json");

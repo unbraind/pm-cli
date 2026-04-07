@@ -159,6 +159,14 @@ describe("contracts command runtime", () => {
       expect.arrayContaining([expect.objectContaining({ flag: "--eager-tags" })]),
     );
 
+    const createFlags = await runContracts({ command: "create", flagsOnly: true }, GLOBAL_OPTIONS);
+    const createAcceptanceFlag = createFlags.command_flags?.[0]?.flags.find((entry) => entry.flag === "--acceptance-criteria");
+    expect(createAcceptanceFlag?.aliases).toEqual(expect.arrayContaining(["--acceptance_criteria"]));
+
+    const updateFlags = await runContracts({ command: "update", flagsOnly: true }, GLOBAL_OPTIONS);
+    const updateWhyNowFlag = updateFlags.command_flags?.[0]?.flags.find((entry) => entry.flag === "--why-now");
+    expect(updateWhyNowFlag?.aliases).toEqual(expect.arrayContaining(["--why_now"]));
+
     const calendarFlags = await runContracts({ command: "calendar", flagsOnly: true }, GLOBAL_OPTIONS);
     expect(calendarFlags.command_flags?.[0]?.flags).toEqual(
       expect.arrayContaining([expect.objectContaining({ flag: "--full-period" })]),
@@ -177,6 +185,18 @@ describe("contracts command runtime", () => {
     );
 
     const commandFlagParityChecks: Array<{ command: string; flags: string[] }> = [
+      {
+        command: "create",
+        flags: ["--acceptance_criteria", "--definition_of_ready", "--blocked_by", "--why_now", "--customer_impact"],
+      },
+      {
+        command: "update",
+        flags: ["--acceptance_criteria", "--definition_of_ready", "--blocked_by", "--why_now", "--customer_impact"],
+      },
+      {
+        command: "update-many",
+        flags: ["--acceptance_criteria", "--definition_of_ready", "--why_now", "--customer_impact"],
+      },
       { command: "comments", flags: ["--add", "--allow-audit-comment"] },
       { command: "comments-audit", flags: ["--assignee-filter", "--limit-items", "--limit", "--full-history", "--latest"] },
       { command: "notes", flags: ["--add", "--limit", "--author", "--message", "--allow-audit-note", "--allow-audit-comment", "--force"] },
@@ -192,7 +212,15 @@ describe("contracts command runtime", () => {
       { command: "delete", flags: ["--author", "--message", "--force"] },
       {
         command: "test",
-        flags: ["--run", "--background", "--pm-context", "--override-linked-pm-context", "--fail-on-empty-test-run"],
+        flags: [
+          "--run",
+          "--background",
+          "--pm-context",
+          "--override-linked-pm-context",
+          "--fail-on-empty-test-run",
+          "--check-context",
+          "--auto-pm-context",
+        ],
       },
       {
         command: "test-all",
@@ -204,8 +232,11 @@ describe("contracts command runtime", () => {
           "--pm-context",
           "--override-linked-pm-context",
           "--fail-on-empty-test-run",
+          "--check-context",
+          "--auto-pm-context",
         ],
       },
+      { command: "gc", flags: ["--dry-run", "--scope"] },
       { command: "extension", flags: ["--install", "--doctor", "--runtime-probe", "--strict-exit"] },
       { command: "test-runs", flags: ["--status", "--limit", "--stream", "--tail", "--force", "--author"] },
       {

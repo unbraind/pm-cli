@@ -427,6 +427,12 @@ describe("runTest", () => {
       await expect(runTest(id, { requireAssertionsForPm: true }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
+      await expect(runTest(id, { checkContext: true }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runTest(id, { autoPmContext: true }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
 
       const seeded = await runTest(
         id,
@@ -1103,6 +1109,35 @@ describe("runTest", () => {
       expect(schemaResult?.execution_context?.source_project_item_count ?? 0).toBeGreaterThan(0);
       expect(schemaResult?.execution_context?.mismatch_detected).toBe(true);
       expect(schemaResult?.error ?? "").toContain("context mismatch");
+
+      const schemaPreflight = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "30",
+          checkContext: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(schemaPreflight.run_results[0]?.status).toBe("failed");
+      expect(schemaPreflight.run_results[0]?.error ?? "").toContain("preflight PM context mismatch");
+      expect(schemaPreflight.warnings?.[0] ?? "").toContain("context_preflight:");
+
+      const autoPreflight = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "30",
+          checkContext: true,
+          autoPmContext: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(autoPreflight.run_results[0]?.status).toBe("passed");
+      expect(autoPreflight.run_results[0]?.execution_context?.requested_pm_context_mode).toBe("auto");
+      expect(autoPreflight.run_results[0]?.execution_context?.auto_pm_context_applied).toBe(true);
+      expect(autoPreflight.run_results[0]?.execution_context?.pm_context_mode).toBe("tracker");
+      expect(autoPreflight.warnings?.[0] ?? "").toContain("auto_remediated=1");
 
       const strictMismatch = await runTest(
         id,

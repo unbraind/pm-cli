@@ -1,3 +1,4 @@
+import os from "node:os";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { parseOptionalNumber } from "../../core/item/parse.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
@@ -55,10 +56,38 @@ function parseLimit(value: string | undefined, label: string): number | undefine
   return Math.floor(parsed);
 }
 
+function resolveWhoamiFallback(): string | undefined {
+  try {
+    const username = os.userInfo().username.trim();
+    if (username.length > 0) {
+      return username;
+    }
+  } catch {
+    // Fall back to environment-derived attribution.
+  }
+  return undefined;
+}
+
 function resolveRequestedBy(author: string | undefined, fallback: string): string {
-  const candidate = author ?? process.env.PM_AUTHOR ?? fallback;
-  const trimmed = candidate.trim();
-  return trimmed.length > 0 ? trimmed : "unknown";
+  const candidates = [
+    author,
+    process.env.PM_AUTHOR,
+    fallback,
+    process.env.USER,
+    process.env.LOGNAME,
+    process.env.USERNAME,
+    resolveWhoamiFallback(),
+  ];
+  for (const candidate of candidates) {
+    if (typeof candidate !== "string") {
+      continue;
+    }
+    const trimmed = candidate.trim();
+    if (trimmed.length > 0) {
+      return trimmed;
+    }
+  }
+  return "unknown";
 }
 
 async function ensureInitialized(pmRoot: string): Promise<void> {

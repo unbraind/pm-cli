@@ -142,6 +142,10 @@ export interface PmToolParameters {
   failOnSkipped?: boolean;
   failOnEmptyTestRun?: boolean;
   requireAssertionsForPm?: boolean;
+  checkContext?: boolean;
+  autoPmContext?: boolean;
+  dryRun?: boolean;
+  gcScope?: string[];
   validateClose?: string;
   checkMetadata?: boolean;
   metadataProfile?: string;
@@ -794,6 +798,12 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       if (params.requireAssertionsForPm) {
         args.push("--require-assertions-for-pm");
       }
+      if (params.checkContext) {
+        args.push("--check-context");
+      }
+      if (params.autoPmContext) {
+        args.push("--auto-pm-context");
+      }
       addAuthorMessageForceFlags(args, params);
       return args;
     case "test-all":
@@ -829,6 +839,12 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       if (params.requireAssertionsForPm) {
         args.push("--require-assertions-for-pm");
       }
+      if (params.checkContext) {
+        args.push("--check-context");
+      }
+      if (params.autoPmContext) {
+        args.push("--auto-pm-context");
+      }
       return args;
     case "test-runs-list":
       args.push("test-runs", "list");
@@ -854,8 +870,14 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       pushOption(args, "--author", params.author);
       return args;
     case "stats":
+      args.push(action);
+      return args;
     case "gc":
       args.push(action);
+      if (params.dryRun) {
+        args.push("--dry-run");
+      }
+      pushRepeatable(args, "--scope", params.gcScope);
       return args;
     case "health":
       args.push("health");

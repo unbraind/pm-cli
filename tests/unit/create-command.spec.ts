@@ -1201,6 +1201,38 @@ describe("runCreate", () => {
     });
   });
 
+  it("accepts plain-text shorthand for create comment seeds", async () => {
+    await withTempPmPath(async (context) => {
+      const plainText = await runCreate(
+        baseCreateOptions({
+          title: "create-comment-plain-text",
+          comment: ["plain text create comment shorthand"],
+        }),
+        { path: context.pmPath },
+      );
+      expect(plainText.item.comments?.at(0)).toEqual(
+        expect.objectContaining({
+          author: "seed-author",
+          text: "plain text create comment shorthand",
+        }),
+      );
+
+      const colonText = await runCreate(
+        baseCreateOptions({
+          title: "create-comment-plain-text-colon",
+          comment: ["context: create comment shorthand with colon"],
+        }),
+        { path: context.pmPath },
+      );
+      expect(colonText.item.comments?.at(0)).toEqual(
+        expect.objectContaining({
+          author: "seed-author",
+          text: "context: create comment shorthand with colon",
+        }),
+      );
+    });
+  });
+
   it("rejects ambiguous unquoted key-like continuations for log seed text", async () => {
     await withTempPmPath(async (context) => {
       for (const field of ["comment", "note", "learning"] as const) {

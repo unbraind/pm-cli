@@ -6,15 +6,17 @@ status: closed
 priority: 1
 tags[4]: changelog,docs,external-audit,pm-cli
 created_at: "2026-04-06T09:49:20.458Z"
-updated_at: "2026-04-07T00:11:59.899Z"
+updated_at: "2026-04-07T19:28:44.589Z"
 author: codex-agent
 parent: pm-o7be
-comments[5]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-04-06T09:49:20.458Z",codex-agent,"Duplicate-check evidence: dedupe command set run immediately before create and no open/in_progress/blocked duplicate found for this scope."
   "2026-04-06T11:02:20.717Z",codex-agent,"Updated README/PRD/ARCHITECTURE/EXTENSIONS and CHANGELOG with search variadic+projection behavior, list parent filter, deterministic get-not-found guidance, extension help metadata, and contracts runtime extension inclusion. Verification includes targeted regressions, full test suite (927/927), full coverage, and manual sandbox smoke checks for unquoted search, parent filtering, default compact projection, and get guidance examples."
   "2026-04-06T19:40:19.351Z",codex-agent,Duplicate-check evidence refreshed via pm context/list/search sweep. Reusing this task for full command-by-command docs/contracts/help parity updates across README/PRD/ARCHITECTURE/AGENTS/CHANGELOG.
   "2026-04-06T20:09:55.902Z",codex-agent,"Completed full docs parity refresh for contracts/action-scoped flag projection, comments-audit summary metrics, notes/learnings audit-append guidance, root test-runs default list behavior, and linked-test pm-context override diagnostics across README/PRD/ARCHITECTURE/AGENTS/CHANGELOG."
   "2026-04-07T00:11:57.418Z",codex-agent,"Docs parity refresh for update-many linked-array rollout: updated README, PRD, docs/ARCHITECTURE, AGENTS, and CHANGELOG to document new update-many linked-array mutation parity (--dep/--comment/--note/--learning/--file/--test/--doc/--reminder/--event, --clear-*, --replace-deps, --replace-tests), dry-run linked-array planning semantics, and operator examples. Verification evidence: pnpm build; node scripts/run-tests.mjs test (1002 passed); node scripts/run-tests.mjs coverage (1002 passed, 100% thresholds). Additional gate: pm validate --check-resolution --check-history-drift (history_drift ok; resolution warnings are pre-existing tracker backlog rows unrelated to this change set)."
+  "2026-04-07T19:06:03.733Z",codex-agent,"Docs refresh in progress for 2026-04-07 remediation wave: README/PRD/ARCHITECTURE/EXTENSIONS/AGENTS/CHANGELOG now document create --comment plain-text shorthand, update --allow-audit-dep-update, aggregate default grouped-count behavior, contracts/completion alias parity, extension subcommand flag parity, gc --dry-run/--scope output shape, linked-test --check-context/--auto-pm-context, and requested_by fallback attribution."
+  "2026-04-07T19:28:10.365Z",codex-agent,"Completed docs parity refresh for this remediation wave across README/PRD/docs/ARCHITECTURE/docs/EXTENSIONS/AGENTS/CHANGELOG with behavior-level details for create comment shorthand, dependency audit mode, aggregate defaults, contracts/completion alias parity, extension subcommand parity, gc dry-run/scope, linked-test context preflight/auto remediation, and requested_by fallback attribution."
 notes[1]{created_at,author,text}:
   "2026-04-06T20:09:59.837Z",codex-agent,Documentation updates intentionally preserve additive compatibility framing while clarifying behavior-level details introduced by the remediation tasks.
 files[5]{path,scope,note}:
@@ -35,5 +37,5 @@ docs[6]{path,scope,note}:
   docs/EXTENSIONS.md,project,registerCommand metadata + help/contracts discoverability guidance
   PRD.md,project,contract/filter/projection updates for six findings
   README.md,project,search projection defaults and parent list filter docs
-close_reason: docs and release verification complete for linked-array update-many remediation
+close_reason: documentation surfaces updated for all remediation behavior changes
 body: ""

@@ -2,11 +2,11 @@ id: pm-a4z3
 title: List command large-output ergonomics
 description: Add offset pagination and opt-in streaming JSON output for list command family to improve large dataset processing.
 type: Feature
-status: closed
+status: in_progress
 priority: 1
 tags[4]: "area:list","area:ux",external-audit,pm-cli
 created_at: "2026-04-03T18:07:10.235Z"
-updated_at: "2026-04-05T22:42:43.704Z"
+updated_at: "2026-04-07T18:14:19.429Z"
 deadline: "2026-04-09T18:07:10.235Z"
 author: codex-agent
 estimated_minutes: 240
@@ -41,11 +41,12 @@ regression: false
 customer_impact: Improves automation reliability for repositories with many items
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-qfg8,parent,"2026-04-03T18:07:10.235Z",codex-agent,null
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-04-03T18:07:10.235Z",codex-agent,Feature created after dedup scan for list pagination/stream scope.
   "2026-04-03T18:55:48.992Z",codex-agent,"Feature complete: list family supports --offset pagination and JSON stream mode; full suite and coverage gates now pass with updated docs/contracts."
   "2026-04-05T20:39:56.309Z",codex-agent,Duplicate-check evidence refreshed; reusing canonical list large-output ergonomics lineage for additional automation guidance updates (no duplicate item created).
   "2026-04-05T22:42:41.706Z",codex-agent,"Normalization decision: feature was delivered and verified in linked child evidence; closing to remove stale open state."
+  "2026-04-07T18:14:19.429Z",codex-agent,"2026-04-07 scope extension: list help/UX explicitly documents projection mutual exclusivity (--compact/--full/--fields) with valid+invalid example pair to reduce trial/error for agents."
 notes[1]{created_at,author,text}:
   "2026-04-03T18:07:10.235Z",codex-agent,Default non-stream output contract must remain stable.
 files[1]{path,scope,note}:
@@ -54,5 +55,4 @@ tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,list regression suite
 docs[1]{path,scope,note}:
   PRD.md,project,list command contract updates
-close_reason: List large-output ergonomics feature is complete and evidenced; closing stale open record.
 body: Implements external audit follow-up for large list output handling while preserving default list JSON contracts.

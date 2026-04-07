@@ -30,10 +30,12 @@
 - Dependency topology inspection via `pm deps --format tree|graph`
 - Deterministic `--tag` completion suggestions from tracked item metadata
 - Additive large-list controls via projection (`--compact` / `--fields`), configurable sorting (`--sort` + `--order`), pagination (`--offset`), and opt-in JSON streaming (`--stream` with `--json`)
-- Governance-focused corpus analysis commands: `pm aggregate` grouped counts and `pm dedupe-audit` duplicate clustering
+- Governance-focused corpus analysis commands: `pm aggregate` default grouped counts and `pm dedupe-audit` duplicate clustering
 - Standalone `pm validate` command for metadata, resolution, lifecycle, linked-file, linked-command reference, and history-drift audits
 - Opt-in non-interactive progress output for long-running operations (`pm test`, `pm test-all`, `pm reindex` with `--progress`)
 - Managed background linked-test orchestration (`pm test --run --background`, `pm test-all --background`, and `pm test-runs` lifecycle controls; bare `pm test-runs` defaults to list output)
+- Linked-test context preflight and auto-remediation controls (`pm test`/`pm test-all` with `--check-context` and `--auto-pm-context`)
+- Safer cache cleanup controls via `pm gc --dry-run` and scoped cleanup with `--scope index|embeddings|runtime`
 - Pager-safe help output in automation (help requests auto-disable paging on non-TTY stdout, with explicit global `--no-pager` override)
 - Settings-gated item-level test result tracking (`pm config ... test-result-tracking --policy enabled|disabled`)
 - Optional search and extension support for more advanced setups
@@ -56,6 +58,8 @@ Compatibility policy for command contracts:
 - `pm contracts --command <name>` now scopes output to the selected command by default (intentional breaking change for lower-noise machine payloads); omit `--command` for full contract corpus output.
 - `pm contracts` supports lightweight projection modes for automation pipelines: `--flags-only` (command flag surface) and `--availability-only` (runtime invocability metadata); the projection flags are mutually exclusive.
 - When `--action` is provided without `--command`, `pm contracts --flags-only` now scopes `command_flags` to the action-mapped command surface (for example `test-runs-list` resolves to `test-runs`).
+- Contract payloads include canonical flag + alias metadata (`command_flags` plus `commander_aliases`) so machine clients can expose accepted hyphen/underscore variants deterministically.
+- `pm completion` scripts are generated from the same normalized command-contract registry used by parser/contracts, keeping runtime, contract, and completion parity aligned.
 - `pm completion` now defaults to lazy tag expansion through runtime `pm completion-tags` lookup in generated scripts; pass `--eager-tags` to embed static tags in the script (legacy eager mode).
 
 ## Item Storage Formats
@@ -270,6 +274,8 @@ Governance workflows now include explicit non-owner metadata mutation and bulk u
 
 - `pm update --allow-audit-update` allows non-owner metadata updates without broad `--force` semantics.
 - `--allow-audit-update` is intentionally scoped: lifecycle/ownership/linkage mutations remain disallowed in this mode (for example assignee/parent and other lifecycle-governing fields).
+- `pm update --allow-audit-dep-update` enables non-owner append-only dependency additions via `--dep` without broad `--force` semantics.
+- `--allow-audit-update` and `--allow-audit-dep-update` are mutually exclusive by design.
 - `pm update-many` provides native bulk mutation with deterministic filter targeting, dry-run planning, optional checkpoint capture, and rollback.
 - `pm update-many` supports linked-array payload parity with `pm update` (repeatable `--dep/--comment/--note/--learning/--file/--test/--doc/--reminder/--event` plus `--clear-*`, `--replace-deps`, and `--replace-tests`).
 - `pm update-many --rollback <checkpoint-id>` restores every item in a prior checkpoint (ownership-safe restore path included).
@@ -277,6 +283,9 @@ Governance workflows now include explicit non-owner metadata mutation and bulk u
 ```bash
 # Ownership-safe metadata audit update (non-owner, metadata-only scope)
 pm update pm-a1b2 --description "Clarified acceptance boundaries" --allow-audit-update --author audit-maintainer
+
+# Ownership-safe dependency-only audit update (append-only --dep)
+pm update pm-a1b2 --dep "id=pm-epic01,kind=related,author=audit-maintainer,created_at=now" --allow-audit-dep-update --author audit-maintainer
 
 # Bulk apply mode with deterministic targeting
 pm update-many --filter-status open --filter-tag governance --status in_progress --author maintainer --message "Governance sweep"
@@ -297,16 +306,33 @@ Governance workflows now have dedicated audit commands:
 
 ```bash
 # Group child counts by parent/type for decomposition checks
-pm aggregate --group-by parent,type --count --status open --json
+pm aggregate --group-by parent,type --status open --json
 
 # Include rows that do not have a parent when grouping by parent
-pm aggregate --group-by parent,type --count --include-unparented --json
+pm aggregate --group-by parent,type --include-unparented --json
 
 # Detect likely duplicates by exact title, fuzzy title, or parent-scoped title collisions
 pm dedupe-audit --mode title_exact --limit 25 --json
 pm dedupe-audit --mode title_fuzzy --threshold 0.75 --limit 25 --json
 pm dedupe-audit --mode parent_scope --limit 25 --json
 ```
+
+## GC Safety Controls
+
+`pm gc` now supports no-side-effect previews and targeted cleanup scopes:
+
+```bash
+# Preview what would be removed (no deletes)
+pm gc --dry-run --json
+
+# Clean only index + embeddings cache artifacts
+pm gc --scope index,embeddings --json
+
+# Repeatable scope flags are also supported
+pm gc --scope runtime --scope embeddings --json
+```
+
+`pm gc` output now includes `dry_run`, resolved `scope`, and `guidance` fields. When search artifacts are removed, guidance includes reindex recommendations.
 
 ## Health Drift, Integrity, and Vectorization Checks
 
@@ -586,7 +612,7 @@ pm comments-audit --status in_progress --latest 0 --limit-items 20 --json
 
 Use explicit clear flags for repeatable fields (`--clear-files`, `--clear-comments`, `--clear-docs`, etc.) and `--unset <field>` for scalar clears.
 
-For `pm create` log-seed flags (`--comment`, `--note`, `--learning`), only `author`, `created_at`, and `text` keys are accepted. Ambiguous unquoted payloads that introduce extra parsed keys (for example `text=hello,scope:project`) are rejected to prevent silent text truncation. Use quoted text (`text="hello,scope:project"`), markdown-style key/value input, or stdin token `-` for punctuation-heavy text.
+For `pm create` log-seed flags, `--comment` accepts plain-text shorthand (`--comment "triage note"`) in addition to structured forms. Structured `--comment`/`--note`/`--learning` payloads accept only `author`, `created_at`, and `text` keys. Ambiguous unquoted payloads that introduce extra parsed keys (for example `text=hello,scope:project`) are rejected to prevent silent text truncation. Use quoted text (`text="hello,scope:project"`), markdown-style key/value input, or stdin token `-` for punctuation-heavy text.
 
 ## Linked Artifact and Test Policy
 
@@ -602,12 +628,14 @@ For `pm create` log-seed flags (`--comment`, `--note`, `--learning`), only `auth
 - `pm create --test` follows the same policy: `command=...` is required, optional `path=...` can annotate command scope.
 - Linked test entries also support optional per-entry runtime directives/assertions plus context override metadata: `env_set=KEY=VALUE;KEY2=VALUE2`, `env_clear=KEY1;KEY2`, `shared_host_safe=true|false`, `pm_context_mode=schema|tracker|auto`, `assert_stdout_contains=...`, `assert_stdout_regex=...`, `assert_stderr_contains=...`, `assert_stderr_regex=...`, `assert_stdout_min_lines=<int>`, `assert_json_field_equals=path=value`, `assert_json_field_gte=path=<number>`.
 - `pm test <ID> --run` / `pm test-all` execute in temporary sandbox roots but seed project/global `settings.json` and `extensions/` directories from source roots so extension-defined type behavior matches direct workspace commands.
-- `pm test <ID> --run` / `pm test-all` support additive run-level runtime controls: repeatable `--env-set KEY=VALUE`, repeatable `--env-clear NAME`, `--shared-host-safe` (ephemeral/shared-host-friendly defaults such as `PORT=0` when unset), `--pm-context schema|tracker|auto`, `--override-linked-pm-context` (force run-level context over per-test `pm_context_mode`), `--fail-on-context-mismatch`, `--fail-on-skipped`, `--fail-on-empty-test-run`, and `--require-assertions-for-pm`.
+- `pm test <ID> --run` / `pm test-all` support additive run-level runtime controls: repeatable `--env-set KEY=VALUE`, repeatable `--env-clear NAME`, `--shared-host-safe` (ephemeral/shared-host-friendly defaults such as `PORT=0` when unset), `--pm-context schema|tracker|auto`, `--override-linked-pm-context` (force run-level context over per-test `pm_context_mode`), `--check-context`, `--auto-pm-context`, `--fail-on-context-mismatch`, `--fail-on-skipped`, `--fail-on-empty-test-run`, and `--require-assertions-for-pm`.
 - `pm test-all` supports blast-radius pagination with `--limit` and `--offset` before linked-test execution.
 - `pm test <ID> --run --background` and `pm test-all --background` start managed background runs and return run metadata immediately.
 - `pm test-runs` (no subcommand) defaults to `list` output; `pm test-runs list|status|logs|stop|resume` provides explicit background lifecycle management, log tailing, health snapshots, and stop/resume controls.
 - Background run dedupe prevents parallel duplicate execution when an equivalent active run fingerprint already exists.
-- Linked-test `run_results` include `execution_context` metadata (context mode, PM roots, item counts, mismatch signal, extension seeding state, PM tracker-read classification) so PM-command parity is explicit in machine-readable output.
+- Background run metadata resolves `requested_by` deterministically through: explicit author -> `PM_AUTHOR` -> settings `author_default` -> `USER`/`LOGNAME`/`USERNAME` -> OS username (`whoami`) -> `unknown`.
+- Linked-test `run_results` include `execution_context` metadata (context mode, PM roots, item counts, mismatch signal, extension seeding state, PM tracker-read classification, `requested_pm_context_mode`, and `auto_pm_context_applied`) so PM-command parity is explicit in machine-readable output.
+- With `--check-context`, run warnings include a `context_preflight:...` summary (`checked_pm_commands`, `tracker_read_commands`, `mismatches`, `auto_remediated`) for deterministic diagnostics before/around linked execution.
 - In default `--pm-context schema` mode, PM tracker-read linked commands (for example `list*`, `get`, `search`, `stats`, `test-all`) fail on dataset mismatch by default; use `--pm-context auto` for automatic tracker-read routing or `--pm-context tracker` for full tracker-mode execution.
 - If run-level `--pm-context tracker` is set but a linked test entry pins `pm_context_mode=schema`, mismatch diagnostics explicitly call out per-test override precedence and recommend either changing/removing per-test metadata or passing `--override-linked-pm-context` to force run-level precedence.
 - `pm test <ID> --run` and `pm test-all` emit heartbeat/progress lines to stderr in interactive terminals during long-running linked commands, and support explicit non-interactive progress output via `--progress`.
@@ -855,6 +883,7 @@ Activation and health behavior:
 - `pm extension --adopt-all` bulk-adopts all unmanaged extensions in the selected scope without reinstalling files.
 - `pm extension --manage` refreshes GitHub-managed update metadata, persists it to scope-local `.managed-extensions.json`, and includes explicit per-extension `update_check_status`/`update_check_reason` fields (`checked`, `failed`, `skipped_unmanaged`, `skipped_non_github`, `not_checked`) plus triage status totals/remediation hints and update-health coverage diagnostics (`update_health_coverage`, `warning_codes`). `--runtime-probe` opt-in runs doctor-equivalent runtime activation checks for manage output parity. `--fix-managed-state` can adopt unmanaged extensions before update checks.
 - `pm extension --doctor` (or `pm extension doctor`) provides consolidated extension diagnostics with normalized warning codes, canonical load roots, active-vs-loaded consistency diagnostics, update-health coverage signals, remediation hints, optional strict exit gating (`--strict-exit`, alias `--fail-on-warn`), machine-usable blocking indicators (`blocking_failure_count`, `has_blocking_failures`), and optional deep output via `--detail deep`. `--trace` (deep mode) includes actionable registration traces and expected-schema hints for activation failures. `--fix-managed-state` can adopt unmanaged extensions before diagnostics.
+- Subcommand invocation forms (`pm extension manage ...`, `pm extension doctor ...`) honor the same action flags (`--runtime-probe`, `--detail`, `--trace`, etc.) as top-level action-flag forms.
 - `pm health` includes managed extension state diagnostics plus a condensed extension triage block for quick load/activation/migration issue triage across project/global roots, including `extension_update_health_partial_coverage` only when unmanaged loaded extensions are action-required for update-check coverage.
 - Unknown manifest capabilities emit `extension_capability_unknown` diagnostics with inline allowed-capability lists, nearest-match suggestions, and legacy alias guidance (`migration`/`validation` -> `schema`). Health/doctor payloads include machine-readable capability contract metadata (`details.capability_contract`) and parsed guidance entries (`details.capability_guidance`).
 - Legacy extension command definitions using `handler` remain compatible and map to `run`, with deterministic warning `extension_command_definition_legacy_handler_alias` for migration visibility.

@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added `pm create --comment` plain-text shorthand support so comment seeds can be passed as raw text without mandatory `text=<value>` wrappers.
+- Added ownership-safe dependency-only audit updates via `pm update --allow-audit-dep-update` / `--allow_audit_dep_update` for append-only non-owner `--dep` additions.
+- Added cache cleanup safety controls on `pm gc`: `--dry-run`, repeatable/comma-delimited `--scope index|embeddings|runtime`, and deterministic `guidance` output (including reindex hints after search-artifact cleanup).
+- Added linked-test PM-context ergonomics flags `--check-context` and `--auto-pm-context` for `pm test --run` and `pm test-all`, including preflight summary warnings and run-level execution-context telemetry (`requested_pm_context_mode`, `auto_pm_context_applied`).
+- Added hardened background-run attribution fallback for `requested_by` in `pm test-runs` metadata: explicit author -> `PM_AUTHOR` -> settings author default -> `USER`/`LOGNAME`/`USERNAME` -> OS username -> `unknown`.
+- Added contract/completion alias parity improvements: `pm contracts` now publishes canonical flag + alias metadata for command surfaces, and generated completion scripts include accepted alias candidates from the shared contract registry.
+- Added extension lifecycle flag-forwarding parity so subcommand forms (`pm extension manage ...`, `pm extension doctor ...`) honor the same action flags as top-level action forms.
 - Added command-flag contract parity coverage for `pm contracts --flags-only` across core command families (`comments`, `notes`, `learnings`, `files`, `docs`, `history`, `config`, `restore`, `delete`, `extension`, `test-runs`, `validate`) plus action-scoped `command_flags` projection when filtering with `--action` and no explicit `--command`.
 - Added additive governance `summary` metrics to `pm comments-audit` output (`totals`, coverage ratio/percent, and `by_type`) while preserving existing export payloads.
 - Added append-only ownership-safe audit bypass parity for `pm notes` and `pm learnings` via `--allow-audit-comment`, including ownership-conflict guidance, completion surfaces, contracts, and Pi wrapper action mapping.
@@ -34,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added merge-conflict marker detection in item and history parsing paths with actionable remediation guidance.
 - Added `pm health` `integrity` diagnostics for conflict markers and parse/JSONL anomalies with deterministic warning codes.
 - `list*` commands now accept `--include-body` to project item `body` into each returned row when needed for metadata completeness analysis.
-- Added `pm aggregate` grouped child-count governance queries (`--group-by parent,type --count`, optional `--include-unparented`) with list-style filters.
+- Added `pm aggregate` grouped child-count governance queries (default grouped-count mode with `--group-by parent,type`; optional explicit `--count` and `--include-unparented`) with list-style filters.
 - Added `pm dedupe-audit` duplicate corpus checks with `title_exact`, `title_fuzzy`, and `parent_scope` modes plus machine-readable merge suggestions.
 - Added list-family projection and ordering controls: `--compact`, `--fields <csv>`, `--sort <priority|deadline|updated_at|created_at|title|parent>`, and `--order <asc|desc>`.
 - Added expanded `pm comments-audit` governance filters: `--parent`, `--tag`, `--sprint`, `--release`, and `--priority`.

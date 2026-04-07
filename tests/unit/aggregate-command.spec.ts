@@ -240,9 +240,8 @@ describe("runAggregate", () => {
 
   it("validates required and supported options", async () => {
     await withTempPmPath(async (context) => {
-      await expect(runAggregate({ groupBy: "parent,type" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
-        exitCode: EXIT_CODE.USAGE,
-      });
+      const defaultCountResult = await runAggregate({ groupBy: "parent,type" }, { path: context.pmPath });
+      expect(defaultCountResult.filters.count).toBe(true);
       await expect(
         runAggregate(
           {
@@ -259,6 +258,17 @@ describe("runAggregate", () => {
           exitCode: EXIT_CODE.USAGE,
         },
       );
+      await expect(
+        runAggregate(
+          {
+            groupBy: "parent,type",
+            count: false,
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 });

@@ -123,6 +123,15 @@ describe("generateBashScript", () => {
     expect(script).toContain("--event");
   });
 
+  it("includes underscore metadata aliases in bash completion output", () => {
+    const script = generateBashScript();
+    expect(script).toContain("--acceptance_criteria");
+    expect(script).toContain("--definition_of_ready");
+    expect(script).toContain("--blocked_by");
+    expect(script).toContain("--why_now");
+    expect(script).toContain("--customer_impact");
+  });
+
   it("includes update-many linked-array mutation flags across completion scripts", () => {
     const bashScript = generateBashScript();
     expect(bashScript).toContain("--replace-tests");
@@ -233,11 +242,18 @@ describe("generateBashScript", () => {
     const script = generateBashScript();
     expect(script).toContain("--override-linked-pm-context");
     expect(script).toContain("--fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm");
+    expect(script).toContain("--check-context --auto-pm-context");
   });
 
   it("includes test-all pagination flags in bash completion", () => {
     const script = generateBashScript();
     expect(script).toContain("--status --limit --offset --background --timeout --progress");
+  });
+
+  it("includes gc dry-run and scope flags in bash completion", () => {
+    const script = generateBashScript();
+    expect(script).toContain("gc)");
+    expect(script).toContain("--dry-run --scope");
   });
 
   it("includes calendar-specific flags", () => {

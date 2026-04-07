@@ -672,6 +672,22 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(doctorTraceFailures.length).toBeGreaterThan(0);
       expect(doctorTraceFailures[0]?.method).toBe("registerCommand");
       expect(typeof doctorTraceFailures[0]?.registration_index).toBe("number");
+      expect((doctorTrace.json as { details: { mode?: string; trace_enabled?: boolean } }).details.mode).toBe("deep");
+      expect((doctorTrace.json as { details: { trace_enabled?: boolean } }).details.trace_enabled).toBe(true);
+
+      const doctorTraceSubcommand = context.runCli(
+        ["extension", "doctor", "--project", "--detail", "deep", "--trace", "--json"],
+        { expectJson: true },
+      );
+      expect(doctorTraceSubcommand.code).toBe(0);
+      expect((doctorTraceSubcommand.json as { details: { mode?: string; trace_enabled?: boolean } }).details.mode).toBe("deep");
+      expect((doctorTraceSubcommand.json as { details: { trace_enabled?: boolean } }).details.trace_enabled).toBe(true);
+      const doctorTraceSubFailures = (
+        ((doctorTraceSubcommand.json as { details: { deep?: { trace?: { activation_failures?: Array<Record<string, unknown>> } } } })
+          .details.deep?.trace?.activation_failures ?? []) as Array<Record<string, unknown>>
+      );
+      expect(doctorTraceSubFailures.length).toBeGreaterThan(0);
+      expect(doctorTraceSubFailures[0]?.method).toBe("registerCommand");
 
       const manageDefault = context.runCli(["extension", "--manage", "--project", "--json"], { expectJson: true });
       expect(manageDefault.code).toBe(0);
@@ -699,6 +715,24 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(((manageProbe.json as { details: { runtime_probe?: Record<string, unknown> } }).details.runtime_probe ?? {}).executed).toBe(
         true,
       );
+      expect(((manageProbe.json as { details: { runtime_probe?: Record<string, unknown> } }).details.runtime_probe ?? {}).requested).toBe(
+        true,
+      );
+
+      const manageProbeSubcommand = context.runCli(
+        ["extension", "manage", "--project", "--runtime-probe", "--json"],
+        { expectJson: true },
+      );
+      expect(manageProbeSubcommand.code).toBe(0);
+      const manageProbeSubDetails = (manageProbeSubcommand.json as { details: Record<string, unknown> }).details;
+      expect((manageProbeSubDetails.runtime_probe as Record<string, unknown> | undefined)?.requested).toBe(true);
+      expect((manageProbeSubDetails.runtime_probe as Record<string, unknown> | undefined)?.executed).toBe(true);
+      const manageProbeSubExtensions = (manageProbeSubDetails.extensions ?? []) as Array<Record<string, unknown>>;
+      const manageProbeSubEntry = manageProbeSubExtensions.find((entry) => entry.name === "doctor-failing-ext");
+      expect(manageProbeSubEntry).toMatchObject({
+        runtime_active: false,
+        activation_status: "failed",
+      });
 
       const strictDoctor = context.runCli(
         ["extension", "--doctor", "--project", "--detail", "summary", "--strict-exit", "--json"],
@@ -2476,7 +2510,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       };
       expect(gcJson.ok).toBe(true);
       expect(gcJson.removed).toEqual(["index/manifest.json", "search/embeddings.jsonl"]);
-      expect(gcJson.retained).toEqual([]);
+      expect(gcJson.retained).toEqual(["runtime/test-runs"]);
       expect(gcJson.warnings).toEqual([]);
 
       const testAll = context.runCli(["test-all", "--json", "--status", "in_progress"], { expectJson: true });

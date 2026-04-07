@@ -31,16 +31,22 @@ describe("runGc", () => {
 
       const gc = await runGc({ path: context.pmPath });
       expect(gc.ok).toBe(true);
+      expect(gc.dry_run).toBe(false);
+      expect(gc.scope).toEqual(["index", "embeddings", "runtime"]);
       expect(gc.removed).toEqual(["index/manifest.json", "search/embeddings.jsonl"]);
-      expect(gc.retained).toEqual([]);
+      expect(gc.retained).toEqual(["runtime/test-runs"]);
       expect(gc.warnings).toEqual([]);
+      expect(gc.guidance).toEqual([
+        'Search artifacts were removed; run "pm reindex --mode keyword" (and "--mode semantic" when semantic search is enabled) before search-heavy workflows.',
+      ]);
       expect(gc.generated_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
 
       const gcSecondRun = await runGc({ path: context.pmPath });
       expect(gcSecondRun.ok).toBe(true);
       expect(gcSecondRun.removed).toEqual([]);
-      expect(gcSecondRun.retained).toEqual(["index/manifest.json", "search/embeddings.jsonl"]);
+      expect(gcSecondRun.retained).toEqual(["index/manifest.json", "search/embeddings.jsonl", "runtime/test-runs"]);
       expect(gcSecondRun.warnings).toEqual([]);
+      expect(gcSecondRun.guidance).toEqual([]);
     });
   });
 
@@ -52,8 +58,83 @@ describe("runGc", () => {
       const gc = await runGc({ path: context.pmPath });
       expect(gc.ok).toBe(false);
       expect(gc.removed).toEqual(["search/embeddings.jsonl"]);
-      expect(gc.retained).toEqual(["index/manifest.json"]);
+      expect(gc.retained).toEqual(["index/manifest.json", "runtime/test-runs"]);
       expect(gc.warnings).toEqual(["not_a_file:index/manifest.json"]);
+    });
+  });
+
+  it("reports warning when runtime scope target is not a directory", async () => {
+    await withTempPmPath(async (context) => {
+      await mkdir(path.join(context.pmPath, "runtime"), { recursive: true });
+      await writeFile(path.join(context.pmPath, "runtime", "test-runs"), "seed\n", "utf8");
+
+      const gc = await runGc({ path: context.pmPath }, { scope: ["runtime"] });
+      expect(gc.ok).toBe(false);
+      expect(gc.removed).toEqual([]);
+      expect(gc.retained).toEqual(["runtime/test-runs"]);
+      expect(gc.warnings).toEqual(["not_a_directory:runtime/test-runs"]);
+    });
+  });
+
+  it("supports dry-run previews without mutating files", async () => {
+    await withTempPmPath(async (context) => {
+      await writeFile(path.join(context.pmPath, "index", "manifest.json"), '{"seed":true}\n', "utf8");
+      await writeFile(path.join(context.pmPath, "search", "embeddings.jsonl"), '{"id":"seed"}\n', "utf8");
+      await mkdir(path.join(context.pmPath, "runtime", "test-runs"), { recursive: true });
+      await writeFile(path.join(context.pmPath, "runtime", "test-runs", "seed.log"), "seed\n", "utf8");
+
+      const gc = await runGc(
+        { path: context.pmPath },
+        {
+          dryRun: true,
+        },
+      );
+      expect(gc.ok).toBe(true);
+      expect(gc.dry_run).toBe(true);
+      expect(gc.scope).toEqual(["index", "embeddings", "runtime"]);
+      expect(gc.removed).toEqual(["index/manifest.json", "search/embeddings.jsonl", "runtime/test-runs"]);
+      expect(gc.retained).toEqual([]);
+      expect(gc.guidance).toEqual([
+        "Dry-run preview only: no cache artifacts were deleted.",
+        'Search artifacts were removed; run "pm reindex --mode keyword" (and "--mode semantic" when semantic search is enabled) before search-heavy workflows.',
+      ]);
+
+      await expect(fs.stat(path.join(context.pmPath, "index", "manifest.json"))).resolves.toBeTruthy();
+      await expect(fs.stat(path.join(context.pmPath, "search", "embeddings.jsonl"))).resolves.toBeTruthy();
+      await expect(fs.stat(path.join(context.pmPath, "runtime", "test-runs", "seed.log"))).resolves.toBeTruthy();
+    });
+  });
+
+  it("supports scoped cleanup for index/embeddings/runtime", async () => {
+    await withTempPmPath(async (context) => {
+      await writeFile(path.join(context.pmPath, "index", "manifest.json"), '{"seed":true}\n', "utf8");
+      await writeFile(path.join(context.pmPath, "search", "embeddings.jsonl"), '{"id":"seed"}\n', "utf8");
+      await mkdir(path.join(context.pmPath, "runtime", "test-runs"), { recursive: true });
+      await writeFile(path.join(context.pmPath, "runtime", "test-runs", "seed.log"), "seed\n", "utf8");
+
+      const indexOnly = await runGc({ path: context.pmPath }, { scope: ["index"] });
+      expect(indexOnly.scope).toEqual(["index"]);
+      expect(indexOnly.removed).toEqual(["index/manifest.json"]);
+      expect(indexOnly.retained).toEqual([]);
+      await expect(fs.stat(path.join(context.pmPath, "search", "embeddings.jsonl"))).resolves.toBeTruthy();
+      await expect(fs.stat(path.join(context.pmPath, "runtime", "test-runs"))).resolves.toBeTruthy();
+
+      const runtimeOnly = await runGc({ path: context.pmPath }, { scope: ["runtime"] });
+      expect(runtimeOnly.scope).toEqual(["runtime"]);
+      expect(runtimeOnly.removed).toEqual(["runtime/test-runs"]);
+      expect(runtimeOnly.retained).toEqual([]);
+      await expect(fs.stat(path.join(context.pmPath, "runtime", "test-runs"))).rejects.toBeTruthy();
+    });
+  });
+
+  it("rejects invalid gc scope values", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(runGc({ path: context.pmPath }, { scope: ["index,invalid"] })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runGc({ path: context.pmPath }, { scope: [" , "] })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 
@@ -105,16 +186,18 @@ describe("runGc", () => {
       const gc = await runGc({ path: context.pmPath });
       expect(gc.ok).toBe(false);
       expect(gc.removed).toEqual(["index/manifest.json", "search/embeddings.jsonl"]);
-      expect(gc.retained).toEqual([]);
+      expect(gc.retained).toEqual(["runtime/test-runs"]);
       expect(gc.warnings).toEqual([
+        "extension_hook_failed:project:boom-read-hook:onRead",
         "extension_hook_failed:project:boom-read-hook:onRead",
         "extension_hook_failed:project:boom-read-hook:onRead",
       ]);
       expect(events).toContain("read:manifest.json");
       expect(events).toContain("read:embeddings.jsonl");
+      expect(events).toContain("read:test-runs");
       expect(events).toContain("write:gc:remove:manifest.json");
       expect(events).toContain("write:gc:remove:embeddings.jsonl");
-      expect(events).toContain("index:gc:2");
+      expect(events).toContain("index:gc:3");
     });
   });
 
@@ -139,7 +222,7 @@ describe("runGc", () => {
       const gc = await runGc({ path: context.pmPath });
       expect(gc.ok).toBe(false);
       expect(gc.removed).toEqual([]);
-      expect(gc.retained).toEqual(["index/manifest.json", "search/embeddings.jsonl"]);
+      expect(gc.retained).toEqual(["index/manifest.json", "search/embeddings.jsonl", "runtime/test-runs"]);
       expect(gc.warnings).toEqual(["extension_hook_failed:project:boom-index-hook:onIndex"]);
     });
   });

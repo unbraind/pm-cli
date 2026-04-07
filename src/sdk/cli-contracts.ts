@@ -6,6 +6,7 @@ export interface CommanderOptionAliasContract {
 export interface CliFlagContract {
   flag: string;
   short?: string;
+  aliases?: string[];
 }
 
 export interface PiOptionFlagContract {
@@ -45,6 +46,47 @@ export type PmExtensionServiceNameContract = (typeof PM_EXTENSION_SERVICE_NAME_C
 
 function normalizeUniqueStringList(values: Iterable<string>): string[] {
   return [...new Set(Array.from(values).filter((value) => value.trim().length > 0))];
+}
+
+function normalizeFlagAliasKey(flag: string): string {
+  if (!flag.startsWith("--")) {
+    return flag;
+  }
+  return `--${flag.slice(2).replaceAll("_", "-")}`;
+}
+
+export function withFlagAliasMetadata(flagContracts: CliFlagContract[]): CliFlagContract[] {
+  const aliasesByCanonical = new Map<string, Set<string>>();
+  for (const contract of flagContracts) {
+    const canonical = normalizeFlagAliasKey(contract.flag);
+    const bucket = aliasesByCanonical.get(canonical) ?? new Set<string>();
+    if (contract.flag !== canonical) {
+      bucket.add(contract.flag);
+    }
+    for (const alias of contract.aliases ?? []) {
+      if (alias !== canonical) {
+        bucket.add(alias);
+      }
+    }
+    aliasesByCanonical.set(canonical, bucket);
+  }
+
+  return flagContracts.map((contract) => {
+    const canonical = normalizeFlagAliasKey(contract.flag);
+    if (contract.flag !== canonical) {
+      return contract;
+    }
+    const aliases = normalizeUniqueStringList([...(contract.aliases ?? []), ...(aliasesByCanonical.get(canonical) ?? [])]).filter(
+      (alias) => alias !== canonical,
+    );
+    if (aliases.length === 0) {
+      return contract;
+    }
+    return {
+      ...contract,
+      aliases,
+    };
+  });
 }
 
 export const PM_CORE_COMMAND_NAMES = [
@@ -344,6 +386,7 @@ export const PI_UPDATE_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "clearReminders", flag: "--clear-reminders" },
   { param: "clearEvents", flag: "--clear-events" },
   { param: "clearTypeOptions", flag: "--clear-type-options" },
+  { param: "allowAuditDepUpdate", flag: "--allow-audit-dep-update" },
 ];
 
 export const PI_CALENDAR_OPTION_CONTRACTS: PiOptionFlagContract[] = [
@@ -659,6 +702,8 @@ export const TEST_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--fail-on-skipped" },
   { flag: "--fail-on-empty-test-run" },
   { flag: "--require-assertions-for-pm" },
+  { flag: "--check-context" },
+  { flag: "--auto-pm-context" },
   { flag: "--author" },
   { flag: "--message" },
   { flag: "--force" },
@@ -680,6 +725,8 @@ export const TEST_ALL_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--fail-on-skipped" },
   { flag: "--fail-on-empty-test-run" },
   { flag: "--require-assertions-for-pm" },
+  { flag: "--check-context" },
+  { flag: "--auto-pm-context" },
 ];
 
 export const TEST_RUNS_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -689,6 +736,11 @@ export const TEST_RUNS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--tail" },
   { flag: "--force" },
   { flag: "--author" },
+];
+
+export const GC_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--dry-run" },
+  { flag: "--scope" },
 ];
 
 export const HEALTH_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -733,7 +785,9 @@ export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--deadline" },
   { flag: "--estimate" },
   { flag: "--estimated-minutes" },
+  { flag: "--estimated_minutes" },
   { flag: "--acceptance-criteria" },
+  { flag: "--acceptance_criteria" },
   { flag: "--ac" },
   { flag: "--author" },
   { flag: "--message" },
@@ -759,7 +813,9 @@ export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--component" },
   { flag: "--regression" },
   { flag: "--customer-impact" },
+  { flag: "--customer_impact" },
   { flag: "--definition-of-ready" },
+  { flag: "--definition_of_ready" },
   { flag: "--order" },
   { flag: "--rank" },
   { flag: "--goal" },
@@ -768,6 +824,15 @@ export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--impact" },
   { flag: "--outcome" },
   { flag: "--why-now" },
+  { flag: "--why_now" },
+  { flag: "--blocked_by" },
+  { flag: "--blocked_reason" },
+  { flag: "--unblock_note" },
+  { flag: "--repro_steps" },
+  { flag: "--expected_result" },
+  { flag: "--actual_result" },
+  { flag: "--affected_version" },
+  { flag: "--fixed_version" },
   { flag: "--dep" },
   { flag: "--type-option" },
   { flag: "--type_option" },
@@ -805,7 +870,9 @@ export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--deadline" },
   { flag: "--estimate" },
   { flag: "--estimated-minutes" },
+  { flag: "--estimated_minutes" },
   { flag: "--acceptance-criteria" },
+  { flag: "--acceptance_criteria" },
   { flag: "--ac" },
   { flag: "--assignee" },
   { flag: "--parent" },
@@ -826,10 +893,13 @@ export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--actual-result" },
   { flag: "--affected-version" },
   { flag: "--fixed-version" },
+  { flag: "--fixed_version" },
   { flag: "--component" },
   { flag: "--regression" },
   { flag: "--customer-impact" },
+  { flag: "--customer_impact" },
   { flag: "--definition-of-ready" },
+  { flag: "--definition_of_ready" },
   { flag: "--order" },
   { flag: "--rank" },
   { flag: "--goal" },
@@ -838,8 +908,16 @@ export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--impact" },
   { flag: "--outcome" },
   { flag: "--why-now" },
+  { flag: "--why_now" },
   { flag: "--author" },
   { flag: "--message" },
+  { flag: "--blocked_by" },
+  { flag: "--blocked_reason" },
+  { flag: "--unblock_note" },
+  { flag: "--repro_steps" },
+  { flag: "--expected_result" },
+  { flag: "--actual_result" },
+  { flag: "--affected_version" },
   { flag: "--dep" },
   { flag: "--dep-remove" },
   { flag: "--dep_remove" },
@@ -868,6 +946,8 @@ export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--clear-type-options" },
   { flag: "--allow-audit-update" },
   { flag: "--allow_audit_update" },
+  { flag: "--allow-audit-dep-update" },
+  { flag: "--allow_audit_dep_update" },
   { flag: "--force" },
 ];
 
@@ -898,9 +978,12 @@ export const UPDATE_MANY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--deadline" },
   { flag: "--estimate" },
   { flag: "--estimated-minutes" },
+  { flag: "--estimated_minutes" },
   { flag: "--acceptance-criteria" },
+  { flag: "--acceptance_criteria" },
   { flag: "--ac" },
   { flag: "--definition-of-ready" },
+  { flag: "--definition_of_ready" },
   { flag: "--order" },
   { flag: "--rank" },
   { flag: "--goal" },
@@ -909,6 +992,7 @@ export const UPDATE_MANY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--impact" },
   { flag: "--outcome" },
   { flag: "--why-now" },
+  { flag: "--why_now" },
   { flag: "--reviewer" },
   { flag: "--risk" },
   { flag: "--confidence" },
@@ -918,14 +1002,20 @@ export const UPDATE_MANY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--severity" },
   { flag: "--environment" },
   { flag: "--repro-steps" },
+  { flag: "--repro_steps" },
   { flag: "--resolution" },
   { flag: "--expected-result" },
+  { flag: "--expected_result" },
   { flag: "--actual-result" },
+  { flag: "--actual_result" },
   { flag: "--affected-version" },
+  { flag: "--affected_version" },
   { flag: "--fixed-version" },
+  { flag: "--fixed_version" },
   { flag: "--component" },
   { flag: "--regression" },
   { flag: "--customer-impact" },
+  { flag: "--customer_impact" },
   { flag: "--dep" },
   { flag: "--dep-remove" },
   { flag: "--dep_remove" },
@@ -954,6 +1044,8 @@ export const UPDATE_MANY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--clear-type-options" },
   { flag: "--allow-audit-update" },
   { flag: "--allow_audit_update" },
+  { flag: "--allow-audit-dep-update" },
+  { flag: "--allow_audit_dep_update" },
   { flag: "--author" },
   { flag: "--message" },
   { flag: "--force" },
@@ -1049,7 +1141,10 @@ export const COMPLETION_FLAG_CONTRACTS: CliFlagContract[] = [
 ];
 
 export function toCompletionFlagString(flagContracts: CliFlagContract[], includeGlobal = true): string {
-  const scoped = flagContracts.flatMap((entry) => [entry.short, entry.flag]).filter((value): value is string => Boolean(value));
+  const aliasAwareContracts = withFlagAliasMetadata(flagContracts);
+  const scoped = aliasAwareContracts
+    .flatMap((entry) => [entry.short, entry.flag, ...(entry.aliases ?? [])])
+    .filter((value): value is string => Boolean(value));
   const all = includeGlobal
     ? [
         ...scoped,
@@ -1409,6 +1504,8 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   failOnSkipped: { type: "boolean" },
   failOnEmptyTestRun: { type: "boolean" },
   requireAssertionsForPm: { type: "boolean" },
+  checkContext: { type: "boolean" },
+  autoPmContext: { type: "boolean" },
   diff: { type: "boolean" },
   verify: { type: "boolean" },
   timeout: { anyOf: [{ type: "string" }, { type: "number" }] },
@@ -1435,11 +1532,17 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   allowAuditLearning: { type: "boolean" },
   allowAuditComment: { type: "boolean" },
   allowAuditUpdate: { type: "boolean" },
+  allowAuditDepUpdate: { type: "boolean" },
   allowAuditRelease: { type: "boolean" },
+  dryRun: { type: "boolean" },
   force: { type: "boolean" },
   run: { type: "boolean" },
   count: { type: "boolean" },
   includeUnparented: { type: "boolean" },
+  gcScope: {
+    type: "array",
+    items: { type: "string", enum: ["index", "embeddings", "runtime"] },
+  },
   maxDepth: { anyOf: [{ type: "string" }, { type: "number" }] },
   collapse: { type: "string", enum: ["none", "repeated"] },
   summary: { type: "boolean" },
@@ -1652,6 +1755,8 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
       "failOnSkipped",
       "failOnEmptyTestRun",
       "requireAssertionsForPm",
+      "checkContext",
+      "autoPmContext",
       ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
     ],
   },
@@ -1672,6 +1777,8 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
       "failOnSkipped",
       "failOnEmptyTestRun",
       "requireAssertionsForPm",
+      "checkContext",
+      "autoPmContext",
     ],
   },
   "test-runs-list": {
@@ -1713,7 +1820,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
       "checkCommandReferences",
     ],
   },
-  gc: {},
+  gc: { optional: ["dryRun", "gcScope"] },
   contracts: { optional: ["contractAction", "command", "schemaOnly", "flagsOnly", "availabilityOnly", "runtimeOnly", "activeOnly"] },
   completion: { required: ["shell"], optional: ["eagerTags"] },
   "templates-save": {
@@ -1956,6 +2063,20 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   requireAssertionsForPm: {
     description: "Require assertion metadata for linked PM command test entries during run execution.",
   },
+  checkContext: {
+    description: "Run linked PM command context preflight diagnostics before command execution.",
+  },
+  autoPmContext: {
+    description:
+      "Auto-remediate PM tracker-read linked commands by routing those entries through tracker context regardless of linked-test pm_context_mode overrides.",
+  },
+  dryRun: {
+    description: "Preview command effects without mutating storage artifacts.",
+  },
+  gcScope: {
+    description: "Repeatable gc scope selector values (index, embeddings, runtime).",
+    examples: [["index", "embeddings"], ["runtime"]],
+  },
   offset: {
     description: "Number of matching rows to skip before limit is applied.",
     examples: [0, 50, "100"],
@@ -2042,6 +2163,9 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   allowAuditUpdate: {
     description: "Allow non-owner metadata-only update audits without requiring --force.",
+  },
+  allowAuditDepUpdate: {
+    description: "Allow non-owner append-only dependency update audits without requiring --force.",
   },
   allowAuditRelease: {
     description: "Allow non-owner release handoffs that clear assignee metadata without requiring --force.",

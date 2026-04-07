@@ -1,0 +1,34 @@
+id: pm-xrm7
+title: "GC safety ergonomics: dry-run and scoped cleanup"
+description: "Add no-side-effect preview and scope-targeted cache cleanup controls for pm gc, including deterministic guidance output."
+type: Task
+status: closed
+priority: 1
+tags[5]: 2026-04-07,agent-ux,external-audit,gc,pm-cli
+created_at: "2026-04-07T18:13:55.809Z"
+updated_at: "2026-04-07T19:28:35.940Z"
+author: codex-agent
+acceptance_criteria: "pm gc supports --dry-run and --scope controls, reports deterministic per-target actions, and emits post-run guidance without breaking current users."
+parent: pm-o7be
+comments[4]{created_at,author,text}:
+  "2026-04-07T18:13:55.809Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20; pm list-blocked --limit 20; pm search 'gc dry-run scope' --limit 10. Net-new because existing gc lineage covers baseline gc and hook dispatch,not no-side-effect preview plus scoped cleanup ergonomics."
+  "2026-04-07T18:14:24.799Z",codex-agent,"Execution note: this net-new task isolates gc safety ergonomics (dry-run + scope selectors + guidance output) to avoid mixing with legacy gc hook-dispatch scope and to keep regression tests/docs traceable."
+  "2026-04-07T18:57:50.653Z",codex-agent,"Implemented gc safety ergonomics: added --dry-run preview semantics, comma/repeatable --scope selectors (index/embeddings/runtime), runtime scope cleanup target support, and deterministic reindex guidance output. Wired CLI flags, contracts, completion, and Pi wrapper parity; validated with targeted unit+integration suites."
+  "2026-04-07T19:28:09.447Z",codex-agent,"Post-verification hardening: fixed full-suite regression in tests/integration/cli.integration.spec.ts for gc retained runtime target expectations and added gc unit coverage for not_a_directory + empty-scope token usage branches to restore 100% coverage thresholds."
+notes[1]{created_at,author,text}:
+  "2026-04-07T18:13:55.809Z",codex-agent,"Scope: parser flags in main.ts,execution behavior in gc.ts,tests/docs/contracts/completion parity,and reindex guidance wording."
+files[9]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,Pi wrapper gc dry-run and scope forwarding
+  src/cli/commands/completion.ts,project,completion parity for gc/test context flags
+  src/cli/commands/contracts.ts,project,contracts flag surface includes gc options
+  src/cli/commands/gc.ts,project,gc dry-run/scope execution and guidance
+  src/cli/main.ts,project,gc flag wiring and command option parsing
+  src/sdk/cli-contracts.ts,project,gc/test context contract and schema parity
+  tests/integration/cli.integration.spec.ts,project,gc runtime retained expectation parity
+  tests/integration/release-readiness-runtime.spec.ts,project,runtime help/output coverage for gc changes
+  tests/unit/gc-command.spec.ts,project,gc dry-run scope regression coverage
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/gc-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,gc integration+unit parity after runtime scope expansion
+  node scripts/run-tests.mjs test -- tests/unit/gc-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,gc safety ergonomics regression suite
+close_reason: gc safety controls delivered and verified across unit/integration/coverage gates
+body: ""

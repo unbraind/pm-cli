@@ -741,6 +741,31 @@ describe("runTestAll", () => {
       expect(schemaDefault.failed).toBe(1);
       expect(schemaDefault.results[0]?.run_results[0]?.error ?? "").toContain("context mismatch");
 
+      const schemaPreflight = await runTestAll(
+        {
+          status: "open",
+          checkContext: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(schemaPreflight.failed).toBe(1);
+      expect(schemaPreflight.results[0]?.run_results[0]?.error ?? "").toContain("preflight PM context mismatch");
+      expect(schemaPreflight.warnings?.[0] ?? "").toContain("context_preflight:");
+
+      const schemaAutoPreflight = await runTestAll(
+        {
+          status: "open",
+          checkContext: true,
+          autoPmContext: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(schemaAutoPreflight.failed).toBe(0);
+      expect(schemaAutoPreflight.passed).toBe(1);
+      expect(schemaAutoPreflight.results[0]?.run_results[0]?.execution_context?.requested_pm_context_mode).toBe("auto");
+      expect(schemaAutoPreflight.results[0]?.run_results[0]?.execution_context?.auto_pm_context_applied).toBe(true);
+      expect(schemaAutoPreflight.warnings?.[0] ?? "").toContain("auto_remediated=1");
+
       const schemaStrict = await runTestAll(
         {
           status: "open",

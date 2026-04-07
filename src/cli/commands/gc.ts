@@ -9,13 +9,46 @@ import { nowIso } from "../../core/shared/time.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 
-const GC_TARGETS = ["index/manifest.json", "search/embeddings.jsonl"] as const;
+const GC_SCOPE_VALUES = ["index", "embeddings", "runtime"] as const;
+type GcScope = (typeof GC_SCOPE_VALUES)[number];
+
+interface GcTarget {
+  scope: GcScope;
+  relativePath: string;
+  kind: "file" | "directory";
+}
+
+const GC_TARGETS: readonly GcTarget[] = [
+  {
+    scope: "index",
+    relativePath: "index/manifest.json",
+    kind: "file",
+  },
+  {
+    scope: "embeddings",
+    relativePath: "search/embeddings.jsonl",
+    kind: "file",
+  },
+  {
+    scope: "runtime",
+    relativePath: "runtime/test-runs",
+    kind: "directory",
+  },
+] as const;
+
+export interface GcCommandOptions {
+  dryRun?: boolean;
+  scope?: string[];
+}
 
 export interface GcResult {
   ok: boolean;
+  dry_run: boolean;
+  scope: GcScope[];
   removed: string[];
   retained: string[];
   warnings: string[];
+  guidance: string[];
   generated_at: string;
 }
 
@@ -25,8 +58,10 @@ function isErrno(error: unknown, code: string): boolean {
 
 async function removeCacheFile(
   pmRoot: string,
-  relativePath: (typeof GC_TARGETS)[number],
+  target: GcTarget,
+  dryRun: boolean,
 ): Promise<{ removed: boolean; warnings: string[] }> {
+  const relativePath = target.relativePath;
   const absolutePath = path.join(pmRoot, relativePath);
   const warnings = await runActiveOnReadHooks({
     path: absolutePath,
@@ -34,13 +69,29 @@ async function removeCacheFile(
   });
   try {
     const stats = await fs.stat(absolutePath);
-    if (!stats.isFile()) {
+    if (target.kind === "file" && !stats.isFile()) {
       return {
         removed: false,
         warnings: [...warnings, `not_a_file:${relativePath}`],
       };
     }
-    await fs.unlink(absolutePath);
+    if (target.kind === "directory" && !stats.isDirectory()) {
+      return {
+        removed: false,
+        warnings: [...warnings, `not_a_directory:${relativePath}`],
+      };
+    }
+    if (dryRun) {
+      return {
+        removed: true,
+        warnings,
+      };
+    }
+    if (target.kind === "file") {
+      await fs.unlink(absolutePath);
+    } else {
+      await fs.rm(absolutePath, { recursive: true, force: true });
+    }
     const writeWarnings = await runActiveOnWriteHooks({
       path: absolutePath,
       scope: "project",
@@ -61,39 +112,95 @@ async function removeCacheFile(
   }
 }
 
-export async function runGc(global: GlobalOptions): Promise<GcResult> {
+function parseScopes(raw: string[] | undefined): GcScope[] {
+  if (!raw || raw.length === 0) {
+    return [...GC_SCOPE_VALUES];
+  }
+  const tokens = raw
+    .flatMap((entry) => entry.split(","))
+    .map((entry) => entry.trim().toLowerCase())
+    .filter((entry) => entry.length > 0);
+  if (tokens.length === 0) {
+    throw new PmCliError(`--scope requires at least one value (${GC_SCOPE_VALUES.join(",")})`, EXIT_CODE.USAGE);
+  }
+  const resolved = new Set<GcScope>();
+  for (const token of tokens) {
+    if (!(GC_SCOPE_VALUES as readonly string[]).includes(token)) {
+      throw new PmCliError(
+        `Invalid --scope value "${token}". Expected one or more of: ${GC_SCOPE_VALUES.join(", ")}`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    resolved.add(token as GcScope);
+  }
+  return GC_SCOPE_VALUES.filter((scope) => resolved.has(scope));
+}
+
+function buildGcGuidance(params: {
+  dryRun: boolean;
+  scopes: GcScope[];
+  removed: string[];
+}): string[] {
+  const guidance: string[] = [];
+  if (params.dryRun) {
+    guidance.push("Dry-run preview only: no cache artifacts were deleted.");
+  }
+  const searchScopeSelected = params.scopes.includes("index") || params.scopes.includes("embeddings");
+  const searchArtifactsAffected = params.removed.some(
+    (entry) => entry === "index/manifest.json" || entry === "search/embeddings.jsonl",
+  );
+  if (searchScopeSelected && searchArtifactsAffected) {
+    guidance.push(
+      'Search artifacts were removed; run "pm reindex --mode keyword" (and "--mode semantic" when semantic search is enabled) before search-heavy workflows.',
+    );
+  }
+  return guidance;
+}
+
+export async function runGc(global: GlobalOptions, options: GcCommandOptions = {}): Promise<GcResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
 
   await readSettings(pmRoot);
+  const dryRun = options.dryRun === true;
+  const scopes = parseScopes(options.scope);
+  const selectedTargets = GC_TARGETS.filter((target) => scopes.includes(target.scope));
 
   const removed: string[] = [];
   const retained: string[] = [];
   const warnings: string[] = [];
 
-  for (const target of GC_TARGETS) {
-    const result = await removeCacheFile(pmRoot, target);
+  for (const target of selectedTargets) {
+    const result = await removeCacheFile(pmRoot, target, dryRun);
     if (result.removed) {
-      removed.push(target);
+      removed.push(target.relativePath);
     } else {
-      retained.push(target);
+      retained.push(target.relativePath);
     }
     warnings.push(...result.warnings);
   }
   warnings.push(
     ...(await runActiveOnIndexHooks({
-      mode: "gc",
-      total_items: GC_TARGETS.length,
+      mode: dryRun ? "gc:dry-run" : "gc",
+      total_items: selectedTargets.length,
     })),
   );
+  const guidance = buildGcGuidance({
+    dryRun,
+    scopes,
+    removed,
+  });
 
   return {
     ok: warnings.length === 0,
+    dry_run: dryRun,
+    scope: scopes,
     removed,
     retained,
     warnings,
+    guidance,
     generated_at: nowIso(),
   };
 }

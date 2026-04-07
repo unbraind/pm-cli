@@ -184,10 +184,10 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(DEPS_FLAGS)})`,
     "      ;;",
     "    test)",
-    `      COMPREPLY=(${compgen("--add --remove --run --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --override-linked-pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --author --message --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --remove --run --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --override-linked-pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --check-context --auto-pm-context --author --message --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    test-all)",
-    `      COMPREPLY=(${compgen("--status --limit --offset --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --override-linked-pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --json --quiet --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--status --limit --offset --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --override-linked-pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --check-context --auto-pm-context --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    test-runs)",
     `      COMPREPLY=(${compgen("list status logs stop resume --status --limit --stream --tail --force --author --json --quiet --path --no-extensions --no-pager --profile --help")})`,
@@ -206,6 +206,9 @@ export function generateBashScript(
     "      ;;",
     "    contracts)",
     `      COMPREPLY=(${compgen(CONTRACTS_FLAGS)})`,
+    "      ;;",
+    "    gc)",
+    `      COMPREPLY=(${compgen("--dry-run --scope --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    close|close-task)",
     `      COMPREPLY=(${compgen(CLOSE_MUTATION_FLAGS)})`,
@@ -651,6 +654,13 @@ _pm() {
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
+        gc)
+          _arguments \\
+            '--dry-run[Preview cleanup targets without deleting files]' \\
+            '--scope[Limit cleanup to one or more scopes]:scope' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
         comments)
           _arguments \\
             '--add[Add one entry (plain text, text=<value>, markdown pairs, or - for stdin)]:text' \\
@@ -712,6 +722,8 @@ _pm() {
             '--fail-on-skipped[Treat skipped linked tests as dependency failures]' \\
             '--fail-on-empty-test-run[Treat empty linked-test selections as failures]' \\
             '--require-assertions-for-pm[Require assertions for linked PM command tests]' \\
+            '--check-context[Preflight linked PM command context diagnostics before execution]' \\
+            '--auto-pm-context[Auto-remediate tracker-read context mismatches using tracker context]' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
@@ -735,6 +747,8 @@ _pm() {
             '--fail-on-skipped[Treat skipped linked tests as dependency failures]' \\
             '--fail-on-empty-test-run[Treat empty linked-test selections as failures]' \\
             '--require-assertions-for-pm[Require assertions for linked PM command tests]' \\
+            '--check-context[Preflight linked PM command context diagnostics before execution]' \\
+            '--auto-pm-context[Auto-remediate tracker-read context mismatches using tracker context]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -1304,6 +1318,8 @@ complete -c pm -n '__fish_seen_subcommand_from test' -l fail-on-context-mismatch
 complete -c pm -n '__fish_seen_subcommand_from test' -l fail-on-skipped -d 'Treat skipped linked tests as dependency failures'
 complete -c pm -n '__fish_seen_subcommand_from test' -l fail-on-empty-test-run -d 'Treat empty linked-test selections as failures'
 complete -c pm -n '__fish_seen_subcommand_from test' -l require-assertions-for-pm -d 'Require assertions for linked PM command tests'
+complete -c pm -n '__fish_seen_subcommand_from test' -l check-context -d 'Preflight linked PM command context diagnostics before execution'
+complete -c pm -n '__fish_seen_subcommand_from test' -l auto-pm-context -d 'Auto-remediate tracker-read context mismatches using tracker context'
 complete -c pm -n '__fish_seen_subcommand_from test' -l author -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from test' -l message -d 'History message' -r
 complete -c pm -n '__fish_seen_subcommand_from test' -l force -d 'Force override'
@@ -1324,6 +1340,8 @@ complete -c pm -n '__fish_seen_subcommand_from test-all' -l fail-on-context-mism
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l fail-on-skipped -d 'Treat skipped linked tests as dependency failures'
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l fail-on-empty-test-run -d 'Treat empty linked-test selections as failures'
 complete -c pm -n '__fish_seen_subcommand_from test-all' -l require-assertions-for-pm -d 'Require assertions for linked PM command tests'
+complete -c pm -n '__fish_seen_subcommand_from test-all' -l check-context -d 'Preflight linked PM command context diagnostics before execution'
+complete -c pm -n '__fish_seen_subcommand_from test-all' -l auto-pm-context -d 'Auto-remediate tracker-read context mismatches using tracker context'
 
 # test-runs flags
 complete -c pm -n '__fish_seen_subcommand_from test-runs' -a 'list status logs stop resume' -d 'test-runs subcommand'
@@ -1333,6 +1351,10 @@ complete -c pm -n '__fish_seen_subcommand_from test-runs' -l stream -d 'Backgrou
 complete -c pm -n '__fish_seen_subcommand_from test-runs' -l tail -d 'Tail number of lines from logs' -r
 complete -c pm -n '__fish_seen_subcommand_from test-runs' -l force -d 'Force-stop run with SIGKILL'
 complete -c pm -n '__fish_seen_subcommand_from test-runs' -l author -d 'Resume author' -r
+
+# gc flags
+complete -c pm -n '__fish_seen_subcommand_from gc' -l dry-run -d 'Preview cleanup targets without deleting files'
+complete -c pm -n '__fish_seen_subcommand_from gc' -l scope -d 'Limit cleanup to index/embeddings/runtime scopes' -r
 
 # append flags
 complete -c pm -n '__fish_seen_subcommand_from append' -s b -l body -d 'Item body' -r
