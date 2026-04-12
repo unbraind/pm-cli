@@ -70,8 +70,9 @@ async function loadDocuments(
   pmRoot: string,
   itemFormat: "toon" | "json_markdown",
   typeToFolder: Record<string, string>,
+  schema: PmSettings["schema"],
 ): Promise<ItemDocument[]> {
-  const items = await listAllFrontMatterWithBody(pmRoot, itemFormat, typeToFolder);
+  const items = await listAllFrontMatterWithBody(pmRoot, itemFormat, typeToFolder, undefined, schema);
   return items.map((item) => {
     const { body, ...frontMatter } = item;
     return {
@@ -282,7 +283,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
   }
   const mode = requestedMode;
   emitReindexProgress(progressEnabled, "loading item corpus");
-  const documents = await loadDocuments(pmRoot, settings.item_format, typeRegistry.type_to_folder);
+  const documents = await loadDocuments(pmRoot, settings.item_format, typeRegistry.type_to_folder, settings.schema);
   emitReindexProgress(progressEnabled, `loaded_items=${documents.length}`);
   const generatedAt = nowIso();
 

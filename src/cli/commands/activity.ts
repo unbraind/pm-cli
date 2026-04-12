@@ -117,7 +117,7 @@ export async function runActivity(options: ActivityCommandOptions, global: Globa
   const limit = parseLimit(options.limit);
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
+  const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema);
   await enforceHistoryStreamPolicyForItems({
     pmRoot,
     settings,

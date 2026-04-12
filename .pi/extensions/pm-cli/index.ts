@@ -422,21 +422,17 @@ export function buildPmCliSequences(params: PmToolParameters): string[][] {
     const globalArgs: string[] = [];
     addGlobalFlags(globalArgs, params);
     const id = requireString(params.id, "id", action);
-    const claimArgs = ["claim", id];
-    addAuthorMessageForceFlags(claimArgs, params);
-    const updateArgs = ["update", id, "--status", "in_progress"];
-    addAuthorMessageForceFlags(updateArgs, params);
-    return [[...globalArgs, ...claimArgs], [...globalArgs, ...updateArgs]];
+    const startArgs = ["start-task", id];
+    addAuthorMessageForceFlags(startArgs, params);
+    return [[...globalArgs, ...startArgs]];
   }
   if (action === "pause-task") {
     const globalArgs: string[] = [];
     addGlobalFlags(globalArgs, params);
     const id = requireString(params.id, "id", action);
-    const updateArgs = ["update", id, "--status", "open"];
-    addAuthorMessageForceFlags(updateArgs, params);
-    const releaseArgs = ["release", id];
-    addAuthorMessageForceFlags(releaseArgs, params);
-    return [[...globalArgs, ...updateArgs], [...globalArgs, ...releaseArgs]];
+    const pauseArgs = ["pause-task", id];
+    addAuthorMessageForceFlags(pauseArgs, params);
+    return [[...globalArgs, ...pauseArgs]];
   }
   if (action === "close-task") {
     const globalArgs: string[] = [];

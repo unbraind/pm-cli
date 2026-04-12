@@ -2,12 +2,13 @@ id: pm-r15d
 title: Configurable item types and required-option UX
 description: Extend type-model UX to include calendar-native built-ins and keep type discoverability deterministic for agents and users.
 type: Epic
-status: closed
+status: in_progress
 priority: 0
 tags[4]: agent-ux,"area:cli","area:schema",pm-cli
 created_at: "2026-03-31T23:47:27.635Z"
-updated_at: "2026-04-04T21:31:34.057Z"
+updated_at: "2026-04-12T19:47:41.117Z"
 deadline: "2026-04-17T11:57:37.630Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 480
 acceptance_criteria: "Type-model UX clearly exposes the expanded built-in set, required options remain discoverable, and behavior stays backward compatible across create/update/help/completion surfaces."
@@ -39,7 +40,7 @@ fixed_version: archive-2026q2
 component: core/cli
 regression: false
 customer_impact: Teams can model work domains without hacks
-comments[8]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-03-31T23:47:27.635Z",codex-agent,Epic created from approved implementation plan.
   "2026-04-01T00:29:14.263Z",codex-agent,Completed configurable item-type delivery across settings/extensions/CLI/storage/help output with docs updates and compatibility defaults.
   "2026-04-01T00:29:15.182Z",codex-agent,"Evidence: node scripts/run-tests.mjs test passed (57 files, 588 tests). node scripts/run-tests.mjs coverage executed; thresholds currently report 97.45 lines / 97.03 branches / 97.14 funcs / 97.29 stmts."
@@ -48,31 +49,84 @@ comments[8]{created_at,author,text}:
   "2026-04-03T12:29:13.548Z",codex-agent,"Implemented Wave1 type discoverability follow-up by extending type-aware help in src/cli/main.ts to include explicit type-option schema details (required marker, allowed values, aliases, description) for create/update --help --type <value>. Added integration coverage in tests/integration/help-runtime.spec.ts and updated README/PRD/CHANGELOG discoverability language. Evidence: pm test pm-r15d --run passed (full 722-test regression + targeted 86-test discoverability suite); pnpm build passed; node scripts/run-tests.mjs coverage passed (94.44% stmts, 91.42% branch, 96.19% funcs, 94.73% lines)."
   "2026-04-04T20:39:02.007Z",codex-agent,"Duplicate-check evidence for reactivation: searched tracker for type-model and calendar UX overlap, reviewed open/in-progress queues, and confirmed this existing epic is the canonical parent for type discoverability and required-option UX continuation."
   "2026-04-04T21:12:32.418Z",codex-agent,"Epic close-out: completed reopened delta through pm-x2k0/pm-p5q3 by adding Event/Reminder/Milestone/Meeting as built-in item types and keeping required-option discoverability deterministic across CLI/help/completion surfaces. Evidence: pm test-all --status in_progress passed linked tests; node scripts/run-tests.mjs test passed (856 tests); node scripts/run-tests.mjs coverage passed (branch 91.03%)."
+  "2026-04-12T17:14:44.003Z",codex-agent,"author=codex-agent,created_at=now,text=Execution start for PM schema customization overhaul plan. Reusing canonical schema lineage epic to avoid duplicate item creation. Working sequence mirrors plan todos: bootstrap-runtime-schema -> status-registry-refactor -> field-registry-dynamic-flags -> item-schema-validation-upgrade -> contracts-completion-pi-sync -> tests-migrations-docs. Baseline sanity checks completed in this run: npm install -g ., pm --version, node -v, pnpm -v, pnpm build."
+  "2026-04-12T17:53:26.027Z",codex-agent,"Implemented runtime schema propagation across context/list/search/calendar, aggregate/comments-audit/stats status parsing, contracts runtime schema surfaces, and bash completion runtime status/field flags. Verified with pnpm build and targeted unit tests for status/context/contracts/completion."
+  "2026-04-12T17:55:35.745Z",codex-agent,"Follow-up verification pass: fixed search-command mock hoisting for runtime-schema import fanout and reran list/search/calendar/aggregate/comments/dedupe/stats unit suite (82 tests passed)."
+  "2026-04-12T17:56:16.888Z",codex-agent,"Additional verification: node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/context-command.spec.ts passed (100 tests)."
+  "2026-04-12T19:12:44.463Z",codex-agent,"Runtime schema validation now enforces TOON metadata semantics end-to-end: parse/normalize/serialize flows use status + field registries, unknown-field policy, and schema-aware read/write plumbing across item-store, migration, search/reindex/health/listing commands. Documentation now clarifies that front_matter is the internal model key while TOON stores metadata at the root object. Evidence: pnpm build passed; node scripts/run-tests.mjs test -- tests/unit passed (68 files, 912 tests); node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/aggregate-dedupe.integration.spec.ts passed (48 tests)."
+  "2026-04-12T19:47:41.117Z",codex-agent,"Final functional verification pass is fully green. I fixed one remaining coverage gate issue by refactoring claim terminal-status detection to use the shared statusIsTerminal helper, then reran verification: pnpm build (pass), node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts (10/10 pass), node scripts/run-tests.mjs test (75 files, 1024 tests pass), node scripts/run-tests.mjs coverage (100% statements/branches/functions/lines)."
 notes[2]{created_at,author,text}:
   "2026-03-31T23:47:27.635Z",codex-agent,Default behavior must remain unchanged when no custom type settings exist.
   "2026-04-03T11:59:50.740Z",codex-agent,"Mandatory closure checklist: (1) run linked targeted tests via pm test <id> --run; (2) run pnpm build; (3) run node scripts/run-tests.mjs test; (4) run node scripts/run-tests.mjs coverage; (5) update touched docs (README/PRD/AGENTS/CHANGELOG/ARCHITECTURE as applicable); (6) add pm comment with concrete evidence/results; (7) close + release item before commit/push."
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:15:38.673Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[11]{path,scope,note}:
+files[51]{path,scope,note}:
+  AGENTS.md,project,agent guidance now clarifies TOON metadata terminology
   CHANGELOG.md,project,unreleased summary for configurable types and UX
   docs/ARCHITECTURE.md,project,runtime type registry/storage architecture
   docs/EXTENSIONS.md,project,registerItemTypes extension API docs
   PRD.md,project,dynamic type requirements and config contracts
   README.md,project,custom type/options usage documentation
+  src/cli/commands/activity.ts,project,schema-aware list loading in activity views
+  src/cli/commands/calendar.ts,project,calendar loading uses schema-aware item parsing
+  src/cli/commands/claim.ts,project,terminal-status helper refactor for full branch coverage parity
+  src/cli/commands/comments.ts,project,schema-aware item reads
   src/cli/commands/completion.ts,project,type discovery completion entries
+  src/cli/commands/config.ts,project,item-format migration call now passes runtime schema
+  src/cli/commands/context.ts,project,runtime status-aware context semantics
+  src/cli/commands/contracts.ts,project,runtime schema and dynamic field contracts
+  src/cli/commands/create.ts,project,create canonicalization/serialization now receives runtime schema
+  src/cli/commands/deps.ts,project,schema-aware list loading
+  src/cli/commands/docs.ts,project,schema-aware item/doc linkage reads
+  src/cli/commands/files.ts,project,schema-aware item/file linkage reads
+  src/cli/commands/get.ts,project,schema-aware item reads for get
+  src/cli/commands/health.ts,project,health integrity parse checks now use runtime schema
+  src/cli/commands/history.ts,project,schema-aware item hash verification reads
+  src/cli/commands/init.ts,project,runtime schema scaffold file creation and hook paths
+  src/cli/commands/learnings.ts,project,schema-aware item reads
+  src/cli/commands/list.ts,project,list loading uses schema-aware item parsing
+  src/cli/commands/notes.ts,project,schema-aware item reads
+  src/cli/commands/reindex.ts,project,reindex document load uses schema-aware parsing
+  src/cli/commands/restore.ts,project,restore canonicalization now schema-aware
+  src/cli/commands/search.ts,project,search document loading now passes runtime schema to parsing
+  src/cli/commands/stats.ts,project,schema-aware list loading for stats
+  src/cli/commands/test-all.ts,project,schema-aware list loading for test-all
+  src/cli/commands/test.ts,project,schema-aware read path for linked tests
   src/cli/main.ts,project,type-aware help/introspection surface
+  src/core/item/item-format.ts,project,runtime TOON metadata validation and schema policy enforcement
   src/core/item/type-registry.ts,project,required and type-option discoverability
+  src/core/schema/runtime-field-filters.ts,project,runtime filter extraction and matching
+  src/core/schema/runtime-field-values.ts,project,runtime field option extraction exports
+  src/core/search/cache.ts,project,semantic refresh now parses item metadata with runtime schema
+  src/core/store/item-format-migration.ts,project,item-format migration now parses and serializes with runtime schema
+  src/core/store/item-store.ts,project,schema-aware parse/serialize plumbing for reads and mutations
   src/sdk/cli-contracts.ts,project,wrapper exposure for type introspection
   src/types.ts,project,type model anchor
   tests/integration/help-runtime.spec.ts,project,type-option help discoverability assertions
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  tests/integration/release-readiness-runtime.spec.ts,project,coverage allowlist updated for runtime schema modules
+  tests/unit/claim-command.spec.ts,project,claim/release regression coverage validation
+  tests/unit/config-command.spec.ts,project,runtime schema bootstrap warning assertions
+  tests/unit/init-command.spec.ts,project,init runtime schema scaffold assertions
+  tests/unit/item-format-validation.spec.ts,project,runtime schema TOON metadata validation coverage
+  tests/unit/pi-agent-extension.spec.ts,project,workflow preset wrapper expectations
+  tests/unit/search-command.spec.ts,project,hoisted mock stability for runtime schema imports
+  tests/unit/settings-store.spec.ts,project,settings schema normalization coverage
+  tests/unit/shared-constants-errors.spec.ts,project,required directory constants include schema
+tests[8]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,full coverage gate after runtime schema TOON validation and claim parity fix
   node scripts/run-tests.mjs test,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full regression baseline
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/aggregate-dedupe.integration.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,targeted integration coverage for runtime schema and release-readiness assertions
+  node scripts/run-tests.mjs test -- tests/unit,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full unit regression after schema-aware TOON metadata validation
+  node scripts/run-tests.mjs test -- tests/unit/config-command.spec.ts tests/unit/init-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/item-format-validation.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/shared-constants-errors.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,focused regressions for settings/init/TOON metadata behavior
   node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,issues2and5 discoverability regressions
+  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/search-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/aggregate-command.spec.ts tests/unit/comments-command.spec.ts tests/unit/dedupe-audit-command.spec.ts tests/unit/stats-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/status-normalization.spec.ts tests/unit/context-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-all-local-mnktqphw-natg7c,test-all,passed,"2026-04-04T21:08:02.324Z","2026-04-04T21:10:56.880Z","2026-04-04T21:10:56.880Z",null,null,1,0,1,1,2,null
-docs[3]{path,scope,note}:
+docs[5]{path,scope,note}:
+  AGENTS.md,project,agent rule update for TOON metadata terminology
   CHANGELOG.md,project,unreleased type-option help and aggregation notes
+  docs/ARCHITECTURE.md,project,TOON metadata/front_matter representation clarified
   PRD.md,project,command and schema contract
   README.md,project,type discoverability usage docs
-close_reason: Configurable type-model UX epic updated and verified
 body: "Track implementation of customizable item types, per-type options/requirements, and actionable required-option guidance.\n\n2026-04-04 reactivation scope: extend type UX/discoverability for expanded built-in type set while preserving existing create/update semantics and required-option guidance."

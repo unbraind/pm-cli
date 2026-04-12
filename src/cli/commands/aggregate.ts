@@ -2,7 +2,11 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
-import { STATUS_VALUES, type ItemStatus } from "../../types/index.js";
+import { normalizeStatusInput } from "../../core/item/status.js";
+import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
+import { resolvePmRoot } from "../../core/store/paths.js";
+import { readSettings } from "../../core/store/settings.js";
+import { type ItemStatus } from "../../types/index.js";
 import { runList } from "./list.js";
 
 type AggregateGroupField = "parent" | "type";
@@ -59,15 +63,18 @@ export interface AggregateResult {
   warnings?: string[];
 }
 
-function parseStatus(raw: string | undefined): ItemStatus | undefined {
+function parseStatus(raw: string | undefined, statusRegistry: RuntimeStatusRegistry): ItemStatus | undefined {
   if (raw === undefined) {
     return undefined;
   }
-  const normalized = raw.trim().toLowerCase().replaceAll("-", "_");
-  if (!STATUS_VALUES.includes(normalized as ItemStatus)) {
-    throw new PmCliError(`Status filter must be one of ${STATUS_VALUES.join("|")}`, EXIT_CODE.USAGE);
+  const normalized = normalizeStatusInput(raw, statusRegistry);
+  if (!normalized) {
+    throw new PmCliError(
+      `Status filter must be one of ${statusRegistry.definitions.map((definition) => definition.id).join("|")}`,
+      EXIT_CODE.USAGE,
+    );
   }
-  return normalized as ItemStatus;
+  return normalized;
 }
 
 function parseGroupBy(raw: string | undefined): AggregateGroupField[] {
@@ -126,8 +133,11 @@ export async function runAggregate(options: AggregateOptions, global: GlobalOpti
     throw new PmCliError("Aggregate currently supports grouped counts only. Pass --count.", EXIT_CODE.USAGE);
   }
 
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  const settings = await readSettings(pmRoot);
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const groupBy = parseGroupBy(options.groupBy);
-  const status = parseStatus(options.status);
+  const status = parseStatus(options.status, statusRegistry);
   const includeUnparented = options.includeUnparented === true;
 
   const listed = await runList(

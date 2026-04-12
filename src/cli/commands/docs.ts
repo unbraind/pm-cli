@@ -274,7 +274,7 @@ export async function runDocs(id: string, options: DocsCommandOptions, global: G
     if (!located) {
       throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
     }
-    const loaded = await readLocatedItem(located);
+    const loaded = await readLocatedItem(located, { schema: settings.schema });
     const docs = loaded.document.front_matter.docs ?? [];
     return {
       id: located.id,
@@ -285,7 +285,7 @@ export async function runDocs(id: string, options: DocsCommandOptions, global: G
       audit: options.audit
         ? buildLinkedDocAudit(
             docs.map((entry) => entry.path),
-            (await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder)).map((entry) => ({
+            (await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema)).map((entry) => ({
               id: entry.id,
               docs: entry.docs,
             })),
@@ -358,7 +358,7 @@ export async function runDocs(id: string, options: DocsCommandOptions, global: G
   const migrationWarning = result.warnings.find((warning) => warning.startsWith("path_migrations_applied:"));
   const migrationCount = migrationWarning ? Number(migrationWarning.split(":")[1] ?? "0") : 0;
   const allItems = options.audit
-    ? (await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder)).map((entry) => ({
+    ? (await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema)).map((entry) => ({
         id: entry.id,
         docs: entry.docs,
       }))

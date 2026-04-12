@@ -4,6 +4,7 @@ import { getActiveExtensionRegistrations, runActiveOnReadHooks } from "../../cor
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { enforceHistoryStreamPolicyForItems } from "../../core/history/history-stream-policy.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
+import { resolveRuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -11,7 +12,6 @@ import { nowIso } from "../../core/shared/time.js";
 import { listAllFrontMatter } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import { STATUS_VALUES } from "../../types/index.js";
 import type { ItemStatus, ItemType } from "../../types/index.js";
 
 export interface StatsResult {
@@ -35,8 +35,8 @@ function zeroByType(itemTypes: string[]): Record<ItemType, number> {
   );
 }
 
-function zeroByStatus(): Record<ItemStatus, number> {
-  return STATUS_VALUES.reduce(
+function zeroByStatus(statuses: string[]): Record<ItemStatus, number> {
+  return statuses.reduce(
     (acc, value) => {
       acc[value] = 0;
       return acc;
@@ -97,7 +97,8 @@ export async function runStats(global: GlobalOptions): Promise<StatsResult> {
 
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema);
   await enforceHistoryStreamPolicyForItems({
     pmRoot,
     settings,
@@ -106,12 +107,15 @@ export async function runStats(global: GlobalOptions): Promise<StatsResult> {
   });
 
   const byType = zeroByType(typeRegistry.types);
-  const byStatus = zeroByStatus();
+  const byStatus = zeroByStatus(statusRegistry.definitions.map((definition) => definition.id));
   for (const item of items) {
     if (byType[item.type] === undefined) {
       byType[item.type] = 0;
     }
     byType[item.type] += 1;
+    if (byStatus[item.status] === undefined) {
+      byStatus[item.status] = 0;
+    }
     byStatus[item.status] += 1;
   }
 

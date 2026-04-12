@@ -17,7 +17,7 @@ import { writeFileAtomic } from "../fs/fs-utils.js";
 import { normalizeItemId, normalizeRawItemId } from "../item/id.js";
 import { getHistoryPath, getItemFormatFromPath, getItemPath, ITEM_FILE_EXTENSIONS } from "./paths.js";
 import { nowIso } from "../shared/time.js";
-import type { ItemDocument, ItemFormat, ItemFrontMatter, ItemType, PmSettings } from "../../types/index.js";
+import type { ItemDocument, ItemFormat, ItemFrontMatter, ItemType, PmSettings, RuntimeSchemaSettings } from "../../types/index.js";
 
 export interface LocatedItem {
   id: string;
@@ -88,13 +88,20 @@ export async function locateItem(
   return null;
 }
 
-export async function readLocatedItem(item: LocatedItem): Promise<{ raw: string; document: ItemDocument }> {
+export async function readLocatedItem(
+  item: LocatedItem,
+  options: { schema?: RuntimeSchemaSettings; warnings?: string[] } = {},
+): Promise<{ raw: string; document: ItemDocument }> {
   const raw = await fs.readFile(item.itemPath, "utf8");
   await runActiveOnReadHooks({
     path: item.itemPath,
     scope: "project",
   });
-  const document = parseItemDocument(raw, { format: item.item_format });
+  const document = parseItemDocument(raw, {
+    format: item.item_format,
+    schema: options.schema,
+    onWarning: (warning) => appendWarning(options.warnings, warning),
+  });
   return { raw, document };
 }
 
@@ -103,8 +110,9 @@ export async function listAllFrontMatter(
   preferredFormat?: ItemFormat,
   typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
   warnings?: string[],
+  schema?: RuntimeSchemaSettings,
 ): Promise<ItemFrontMatter[]> {
-  const documents = await listAllDocuments(pmRoot, preferredFormat, typeToFolder, warnings);
+  const documents = await listAllDocuments(pmRoot, preferredFormat, typeToFolder, warnings, schema);
   return documents.map((document) => document.front_matter);
 }
 
@@ -113,8 +121,9 @@ export async function listAllFrontMatterWithBody(
   preferredFormat?: ItemFormat,
   typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
   warnings?: string[],
+  schema?: RuntimeSchemaSettings,
 ): Promise<Array<ItemFrontMatter & { body: string }>> {
-  const documents = await listAllDocuments(pmRoot, preferredFormat, typeToFolder, warnings);
+  const documents = await listAllDocuments(pmRoot, preferredFormat, typeToFolder, warnings, schema);
   return documents.map((document) => ({
     ...document.front_matter,
     body: document.body,
@@ -126,6 +135,7 @@ async function listAllDocuments(
   preferredFormat?: ItemFormat,
   typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
   warnings?: string[],
+  schema?: RuntimeSchemaSettings,
 ): Promise<ItemDocument[]> {
   const entries = Object.entries(typeToFolder) as Array<[ItemType, string]>;
   const documentsById = new Map<string, { document: ItemDocument; itemFormat: ItemFormat }>();
@@ -149,7 +159,11 @@ async function listAllDocuments(
           path: itemPath,
           scope: "project",
         });
-        const parsed = parseItemDocument(raw, { format: itemFormat });
+        const parsed = parseItemDocument(raw, {
+          format: itemFormat,
+          schema,
+          onWarning: (warning) => appendWarning(warnings, warning),
+        });
         const existing = documentsById.get(parsed.front_matter.id);
         if (!existing) {
           documentsById.set(parsed.front_matter.id, {
@@ -205,7 +219,11 @@ export async function mutateItem(params: {
   );
 
   try {
-    const { raw: originalRaw, document } = await readLocatedItem(located);
+    const parseWarnings: string[] = [];
+    const { raw: originalRaw, document } = await readLocatedItem(located, {
+      schema: params.settings.schema,
+      warnings: parseWarnings,
+    });
 
     const assigned = document.front_matter.assignee?.trim();
     const bypassAssigneeConflict =
@@ -232,12 +250,15 @@ export async function mutateItem(params: {
       commandLabel: params.op,
     });
 
-    const beforeDocument = canonicalDocument(document);
-    const mutableDocument = canonicalDocument(structuredClone(document));
+    const beforeDocument = canonicalDocument(document, { schema: params.settings.schema });
+    const mutableDocument = canonicalDocument(structuredClone(document), { schema: params.settings.schema });
     const mutation = params.mutate(mutableDocument);
     mutableDocument.front_matter.updated_at = nowIso();
-    const afterDocument = canonicalDocument(mutableDocument);
-    const serializedAfter = serializeItemDocument(afterDocument, { format: located.item_format });
+    const afterDocument = canonicalDocument(mutableDocument, { schema: params.settings.schema });
+    const serializedAfter = serializeItemDocument(afterDocument, {
+      format: located.item_format,
+      schema: params.settings.schema,
+    });
     const targetItemPath = getItemPath(
       params.pmRoot,
       afterDocument.front_matter.type,
@@ -321,7 +342,13 @@ export async function mutateItem(params: {
       item: afterDocument.front_matter,
       body: afterDocument.body,
       changedFields: mutation.changedFields,
-      warnings: [...(mutation.warnings ?? []), ...historyPolicy.warnings, ...serviceWriteOverride.warnings, ...hookWarnings],
+      warnings: [
+        ...parseWarnings,
+        ...(mutation.warnings ?? []),
+        ...historyPolicy.warnings,
+        ...serviceWriteOverride.warnings,
+        ...hookWarnings,
+      ],
     };
   } finally {
     await releaseLock();
@@ -351,7 +378,11 @@ export async function deleteItem(params: {
   );
 
   try {
-    const { raw: originalRaw, document } = await readLocatedItem(located);
+    const parseWarnings: string[] = [];
+    const { raw: originalRaw, document } = await readLocatedItem(located, {
+      schema: params.settings.schema,
+      warnings: parseWarnings,
+    });
 
     const assigned = document.front_matter.assignee?.trim();
     if (assigned && assigned !== params.author && !params.force) {
@@ -367,7 +398,7 @@ export async function deleteItem(params: {
       commandLabel: "delete",
     });
 
-    const beforeDocument = canonicalDocument(document);
+    const beforeDocument = canonicalDocument(document, { schema: params.settings.schema });
     const deletionTimestamp = nowIso();
     const tombstoneDocument = EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument;
     const historyEntry = createHistoryEntry({
@@ -434,7 +465,7 @@ export async function deleteItem(params: {
     return {
       item: beforeDocument.front_matter,
       changedFields: ["deleted"],
-      warnings: [...historyPolicy.warnings, ...serviceDeleteOverride.warnings, ...hookWarnings],
+      warnings: [...parseWarnings, ...historyPolicy.warnings, ...serviceDeleteOverride.warnings, ...hookWarnings],
     };
   } finally {
     await releaseLock();

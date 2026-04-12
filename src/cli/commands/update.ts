@@ -16,6 +16,13 @@ import {
 import { validateSprintOrReleaseValue } from "../../core/item/sprint-release-format.js";
 import { createStdinTokenResolver, parseCsvKv, parseOptionalNumber, parseTags } from "../../core/item/parse.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
+import { collectRuntimeUpdateFieldValues } from "../../core/schema/runtime-field-values.js";
+import {
+  resolveRuntimeFieldRegistry,
+  resolveRuntimeStatusRegistry,
+  type RuntimeFieldRegistry,
+  type RuntimeStatusRegistry,
+} from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -119,6 +126,7 @@ export interface UpdateCommandOptions {
   clearReminders?: boolean;
   clearEvents?: boolean;
   clearTypeOptions?: boolean;
+  [key: string]: unknown;
 }
 
 export interface UpdateResult {
@@ -320,7 +328,40 @@ function assertNoLegacyNoneTokens(values: string[] | undefined, flag: string, re
   throw new PmCliError(`${flag} no longer accepts "none" or "null".${suffix}`.trim(), EXIT_CODE.USAGE);
 }
 
-function parseUpdateUnsetTargets(raw: string[] | undefined): { frontMatterKeys: Set<string>; optionKeys: Set<string> } {
+function resolveRuntimeUnsetDefinition(
+  token: string,
+  runtimeFieldRegistry: RuntimeFieldRegistry | undefined,
+): UpdateUnsetFieldDefinition | undefined {
+  if (!runtimeFieldRegistry) {
+    return undefined;
+  }
+  for (const definition of runtimeFieldRegistry.definitions) {
+    if (definition.allow_unset === false) {
+      continue;
+    }
+    const candidates = new Set<string>([
+      definition.key,
+      definition.front_matter_key,
+      definition.cli_flag.replaceAll("-", "_"),
+      definition.cli_flag,
+      ...definition.cli_aliases.map((alias) => alias.replaceAll("-", "_")),
+      ...definition.cli_aliases,
+    ]);
+    if (!candidates.has(token)) {
+      continue;
+    }
+    return {
+      optionKey: definition.key,
+      frontMatterKey: definition.front_matter_key,
+    };
+  }
+  return undefined;
+}
+
+function parseUpdateUnsetTargets(
+  raw: string[] | undefined,
+  runtimeFieldRegistry?: RuntimeFieldRegistry,
+): { frontMatterKeys: Set<string>; optionKeys: Set<string> } {
   const frontMatterKeys = new Set<string>();
   const optionKeys = new Set<string>();
   if (!raw || raw.length === 0) {
@@ -338,7 +379,7 @@ function parseUpdateUnsetTargets(raw: string[] | undefined): { frontMatterKeys: 
         EXIT_CODE.USAGE,
       );
     }
-    const definition = UPDATE_UNSET_ALIAS_MAP.get(trimmed);
+    const definition = UPDATE_UNSET_ALIAS_MAP.get(trimmed) ?? resolveRuntimeUnsetDefinition(trimmed, runtimeFieldRegistry);
     if (!definition) {
       throw new PmCliError(
         `Unsupported --unset field "${entry}". Supported fields: ${UPDATE_UNSET_SUPPORTED_CANONICAL_FIELDS}`,
@@ -555,10 +596,11 @@ function ensureEnum<T extends string>(value: string, allowed: readonly T[], labe
   return value as T;
 }
 
-function parseStatus(value: string): ItemStatus {
-  const normalized = normalizeStatusInput(value);
+function parseStatus(value: string, statusRegistry: RuntimeStatusRegistry): ItemStatus {
+  const normalized = normalizeStatusInput(value, statusRegistry);
   if (!normalized) {
-    throw new PmCliError(`Invalid --status value "${value}"`, EXIT_CODE.USAGE);
+    const allowedStatuses = statusRegistry.definitions.map((definition) => definition.id);
+    throw new PmCliError(`Invalid --status value "${value}". Allowed: ${allowedStatuses.join(", ")}`, EXIT_CODE.USAGE);
   }
   return normalized;
 }
@@ -1072,10 +1114,12 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
   const settings = await readSettings(pmRoot);
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const parentReferencePolicy = settings.validation.parent_reference;
   const sprintReleasePolicy = settings.validation.sprint_release_format;
-  const unsetTargets = parseUpdateUnsetTargets(options.unset);
+  const unsetTargets = parseUpdateUnsetTargets(options.unset, runtimeFieldRegistry);
   const clearOptionKeys = new Set<string>(unsetTargets.optionKeys);
   const clearFrontMatterKeys = new Set<string>(unsetTargets.frontMatterKeys);
 
@@ -1422,16 +1466,17 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         changedFields.push("body");
       }
       const previousStatus = document.front_matter.status;
+      const previousStatusNormalized = normalizeStatusInput(previousStatus, statusRegistry) ?? previousStatus;
       if (options.status !== undefined) {
-        const status = parseStatus(options.status);
-        if (status === "closed") {
+        const status = parseStatus(options.status, statusRegistry);
+        if (status === statusRegistry.close_status) {
           throw new PmCliError(
-            'Invalid --status value "closed". Use "pm close <ID> <TEXT>" to close an item.',
+            `Invalid --status value "${statusRegistry.close_status}". Use "pm close <ID> <TEXT>" to close an item.`,
             EXIT_CODE.USAGE,
           );
         }
         document.front_matter.status = status;
-        if (status === "canceled") {
+        if (status === statusRegistry.canceled_status) {
           delete document.front_matter.assignee;
         }
         changedFields.push("status");
@@ -1449,8 +1494,8 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         changedFields.push("close_reason");
       } else if (
         options.status !== undefined &&
-        previousStatus === "closed" &&
-        document.front_matter.status !== "canceled" &&
+        previousStatusNormalized === statusRegistry.close_status &&
+        document.front_matter.status !== statusRegistry.canceled_status &&
         document.front_matter.close_reason !== undefined
       ) {
         delete document.front_matter.close_reason;
@@ -1912,6 +1957,29 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
           document.front_matter.events = parseEventEntries(options.event!, nowValue);
         }
         changedFields.push("events");
+      }
+
+      for (const definition of runtimeFieldRegistry.definitions) {
+        if (!clearFrontMatterKeys.has(definition.front_matter_key)) {
+          continue;
+        }
+        if ((document.front_matter as Record<string, unknown>)[definition.front_matter_key] === undefined) {
+          continue;
+        }
+        delete (document.front_matter as Record<string, unknown>)[definition.front_matter_key];
+        changedFields.push(definition.front_matter_key);
+      }
+
+      const runtimeFieldUpdates = collectRuntimeUpdateFieldValues(options as Record<string, unknown>, runtimeFieldRegistry);
+      for (const [fieldKey, fieldValue] of Object.entries(runtimeFieldUpdates)) {
+        if (clearFrontMatterKeys.has(fieldKey)) {
+          continue;
+        }
+        if (JSON.stringify((document.front_matter as Record<string, unknown>)[fieldKey]) === JSON.stringify(fieldValue)) {
+          continue;
+        }
+        (document.front_matter as Record<string, unknown>)[fieldKey] = fieldValue;
+        changedFields.push(fieldKey);
       }
 
       try {

@@ -1,6 +1,13 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import { normalizeStatusInput } from "../../core/item/status.js";
 import { resolveItemTypeRegistry, resolveTypeName, type ItemTypeRegistry } from "../../core/item/type-registry.js";
+import { collectRuntimeFilterValues, matchesRuntimeFilters } from "../../core/schema/runtime-field-filters.js";
+import {
+  resolveRuntimeFieldRegistry,
+  resolveRuntimeStatusRegistry,
+  type RuntimeStatusRegistry,
+} from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -29,6 +36,7 @@ export interface ListOptions {
   sort?: string;
   order?: string;
   excludeTerminal?: boolean;
+  [key: string]: unknown;
 }
 
 export type ListedItem = ItemFrontMatter | (ItemFrontMatter & { body: string });
@@ -64,13 +72,14 @@ export interface ListResult {
   warnings?: string[];
 }
 
-function isTerminal(status: ItemStatus): boolean {
-  return status === "closed" || status === "canceled";
+function isTerminal(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): boolean {
+  const normalized = normalizeStatusInput(status, statusRegistry) ?? status;
+  return statusRegistry.terminal_statuses.has(normalized);
 }
 
-function compareDefaultSort(left: ListedItem, right: ListedItem): number {
-  const leftTerminal = isTerminal(left.status);
-  const rightTerminal = isTerminal(right.status);
+function compareDefaultSort(left: ListedItem, right: ListedItem, statusRegistry: RuntimeStatusRegistry): number {
+  const leftTerminal = isTerminal(left.status, statusRegistry);
+  const rightTerminal = isTerminal(right.status, statusRegistry);
   if (leftTerminal !== rightTerminal) {
     return leftTerminal ? 1 : -1;
   }
@@ -85,8 +94,8 @@ function compareDefaultSort(left: ListedItem, right: ListedItem): number {
   return left.id.localeCompare(right.id);
 }
 
-function sortItemsDefault(items: ListedItem[]): ListedItem[] {
-  return [...items].sort(compareDefaultSort);
+function sortItemsDefault(items: ListedItem[], statusRegistry: RuntimeStatusRegistry): ListedItem[] {
+  return [...items].sort((left, right) => compareDefaultSort(left, right, statusRegistry));
 }
 
 function parsePriority(raw: string | undefined): number | undefined {
@@ -210,6 +219,8 @@ function applyFilters(
   status: ItemStatus | undefined,
   options: ListOptions,
   typeRegistry: ItemTypeRegistry,
+  statusRegistry: RuntimeStatusRegistry,
+  runtimeFieldFilters: Record<string, unknown>,
 ): ListedItem[] {
   const typeFilter = parseType(options.type, typeRegistry);
   const tagFilter = options.tag?.trim().toLowerCase();
@@ -234,7 +245,7 @@ function applyFilters(
 
   return items.filter((item) => {
     if (status && item.status !== status) return false;
-    if (options.excludeTerminal && isTerminal(item.status)) return false;
+    if (options.excludeTerminal && isTerminal(item.status, statusRegistry)) return false;
     if (typeFilter && item.type !== typeFilter) return false;
     if (tagFilter && !item.tags.includes(tagFilter)) return false;
     if (priorityFilter !== undefined && item.priority !== priorityFilter) return false;
@@ -248,6 +259,9 @@ function applyFilters(
     if (parentFilter !== undefined && item.parent !== parentFilter) return false;
     if (sprintFilter !== undefined && item.sprint !== sprintFilter) return false;
     if (releaseFilter !== undefined && item.release !== releaseFilter) return false;
+    if (!matchesRuntimeFilters(item as Record<string, unknown>, runtimeFieldFilters)) {
+      return false;
+    }
     return true;
   });
 }
@@ -297,16 +311,21 @@ function compareBySortField(left: ListedItem, right: ListedItem, field: ListSort
   }
 }
 
-function sortItems(items: ListedItem[], sortField: ListSortField | undefined, sortOrder: ListSortOrder): ListedItem[] {
+function sortItems(
+  items: ListedItem[],
+  sortField: ListSortField | undefined,
+  sortOrder: ListSortOrder,
+  statusRegistry: RuntimeStatusRegistry,
+): ListedItem[] {
   if (!sortField) {
-    return sortItemsDefault(items);
+    return sortItemsDefault(items, statusRegistry);
   }
   return [...items].sort((left, right) => {
     const byField = compareBySortField(left, right, sortField);
     if (byField !== 0) {
       return sortOrder === "desc" ? -byField : byField;
     }
-    const fallback = compareDefaultSort(left, right);
+    const fallback = compareDefaultSort(left, right, statusRegistry);
     return sortOrder === "desc" ? -fallback : fallback;
   });
 }
@@ -350,19 +369,22 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
   const settings = await readSettings(pmRoot);
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
+  const runtimeFieldFilters = collectRuntimeFilterValues(options as Record<string, unknown>, runtimeFieldRegistry, "list");
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const listWarnings: string[] = [];
   const items = options.includeBody
-    ? await listAllFrontMatterWithBody(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings)
-    : await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings);
+    ? await listAllFrontMatterWithBody(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings, settings.schema)
+    : await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings, settings.schema);
   const projection = parseProjectionConfig(options);
   const sortField = parseSortField(options.sort);
   const sortOrder = parseSortOrder(options.order) ?? "asc";
   if (!sortField && options.order !== undefined) {
     throw new PmCliError("List --order requires --sort", EXIT_CODE.USAGE);
   }
-  const filtered = applyFilters(items, status, options, typeRegistry);
-  const sorted = sortItems(filtered, sortField, sortOrder);
+  const filtered = applyFilters(items, status, options, typeRegistry, statusRegistry, runtimeFieldFilters);
+  const sorted = sortItems(filtered, sortField, sortOrder, statusRegistry);
   const limit = parseLimit(options.limit);
   const offset = parseOffset(options.offset) ?? 0;
   const limited = limit === undefined ? sorted.slice(offset) : sorted.slice(offset, offset + limit);
@@ -393,6 +415,7 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
       sort: sortField ?? null,
       order: sortField ? sortOrder : null,
       projection: projection.mode,
+      runtime_filters: runtimeFieldFilters,
     },
     projection: {
       mode: projection.mode,

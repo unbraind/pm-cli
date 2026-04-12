@@ -66,6 +66,7 @@ Compatibility policy for command contracts:
 
 - Default item format is TOON (`.toon`) using root-object field storage (`id`, `title`, ..., `body`).
 - JSON front matter + markdown body (`.md`) is a fully supported alternative format.
+- `front_matter` is an internal TypeScript field name (`ItemDocument.front_matter`) for item metadata; TOON files store the same metadata as top-level keys, not YAML front matter.
 - History files always remain JSONL (`history/<id>.jsonl`).
 - Set project item storage format with:
 

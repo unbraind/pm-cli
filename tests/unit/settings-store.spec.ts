@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
 import type { ExtensionHookRegistry } from "../../src/core/extensions/loader.js";
+import { normalizeRuntimeSchemaSettings } from "../../src/core/schema/runtime-schema.js";
 import { SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
 import { getSettingsPath } from "../../src/core/store/paths.js";
 import { readSettings, readSettingsWithMetadata, serializeSettings, writeSettings } from "../../src/core/store/settings.js";
@@ -136,6 +137,7 @@ describe("core/store/settings", () => {
         "workflow",
         "testing",
         "item_types",
+        "schema",
         "extensions",
         "search",
         "providers",
@@ -153,6 +155,7 @@ describe("core/store/settings", () => {
       expectOrderedObjectKeys(parsed.workflow, ["definition_of_done"]);
       expectOrderedObjectKeys(parsed.testing, ["record_results_to_items"]);
       expectOrderedObjectKeys(parsed.item_types, ["definitions"]);
+      expectOrderedObjectKeys(parsed.schema, ["version", "files", "statuses", "fields", "workflow", "unknown_field_policy"]);
       expectOrderedObjectKeys(parsed.extensions, ["enabled", "disabled"]);
       expectOrderedObjectKeys(parsed.search, [
         "score_threshold",
@@ -175,7 +178,16 @@ describe("core/store/settings", () => {
       expectOrderedObjectKeys(vectorStore.lancedb, ["path"]);
 
       const loaded = await readSettings(pmRoot);
-      expect(loaded).toEqual(custom);
+      expect(loaded).toMatchObject({
+        ...custom,
+        schema: expect.objectContaining({
+          version: normalizeRuntimeSchemaSettings(custom.schema).version,
+          unknown_field_policy: normalizeRuntimeSchemaSettings(custom.schema).unknown_field_policy,
+        }),
+      });
+      expect(loaded.schema.statuses.map((definition) => definition.id)).toEqual(
+        normalizeRuntimeSchemaSettings(custom.schema).statuses.map((definition) => definition.id),
+      );
     });
   });
 

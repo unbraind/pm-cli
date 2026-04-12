@@ -374,7 +374,7 @@ export async function runRestore(
   const restoredDocument = canonicalDocument({
     front_matter: replayDocument.front_matter as unknown as ItemFrontMatter,
     body: replayDocument.body,
-  });
+  }, { schema: settings.schema });
 
   if (restoredDocument.front_matter.id !== resolvedId) {
     throw new PmCliError(
@@ -398,7 +398,7 @@ export async function runRestore(
     let resolvedCurrentDocument: ItemDocument;
     let resolvedOriginalRaw: string | null = null;
     if (subject.located) {
-      const loaded = await readLocatedItem(subject.located);
+      const loaded = await readLocatedItem(subject.located, { schema: settings.schema });
       resolvedCurrentDocument = loaded.document;
       resolvedOriginalRaw = loaded.raw;
     } else {
@@ -412,7 +412,7 @@ export async function runRestore(
       );
     }
 
-    const serializedRestore = serializeItemDocument(restoredDocument, { format: itemFormat });
+    const serializedRestore = serializeItemDocument(restoredDocument, { format: itemFormat, schema: settings.schema });
     const restoredItemPath = getItemPath(
       pmRoot,
       restoredDocument.front_matter.type,

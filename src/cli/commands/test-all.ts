@@ -3,6 +3,7 @@ import { getActiveExtensionRegistrations } from "../../core/extensions/index.js"
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { parseOptionalNumber } from "../../core/item/parse.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
+import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -68,13 +69,14 @@ export interface TestAllResult {
   results: TestAllItemResult[];
 }
 
-function parseStatus(raw: string | undefined): ItemStatus | undefined {
+function parseStatus(raw: string | undefined, statusRegistry: RuntimeStatusRegistry): ItemStatus | undefined {
   if (raw === undefined) {
     return undefined;
   }
-  const normalized = normalizeStatusInput(raw);
+  const normalized = normalizeStatusInput(raw, statusRegistry);
   if (!normalized) {
-    throw new PmCliError(`Invalid --status value "${raw}"`, EXIT_CODE.USAGE);
+    const allowedStatuses = statusRegistry.definitions.map((definition) => definition.id);
+    throw new PmCliError(`Invalid --status value "${raw}". Allowed: ${allowedStatuses.join(", ")}`, EXIT_CODE.USAGE);
   }
   return normalized;
 }
@@ -212,11 +214,12 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
   }
 
   const settings = await readSettings(pmRoot);
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const statusFilter = parseStatus(options.status);
+  const statusFilter = parseStatus(options.status, statusRegistry);
   const limitFilter = parseNonNegativeInteger(options.limit, "--limit");
   const offsetFilter = parseNonNegativeInteger(options.offset, "--offset") ?? 0;
-  const allItems = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
+  const allItems = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema);
   const statusFilteredItems = allItems
     .filter((item) => (statusFilter ? item.status === statusFilter : true))
     .sort((a, b) => a.id.localeCompare(b.id));

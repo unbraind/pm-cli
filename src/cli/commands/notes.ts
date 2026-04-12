@@ -81,7 +81,7 @@ export async function runNotes(id: string, options: NotesCommandOptions, global:
     if (!located) {
       throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
     }
-    const loaded = await readLocatedItem(located);
+    const loaded = await readLocatedItem(located, { schema: settings.schema });
     const notes = limitNotes(loaded.document.front_matter.notes ?? [], limit);
     return {
       id: located.id,

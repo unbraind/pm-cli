@@ -6,7 +6,9 @@ import { promisify } from "node:util";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { hashDocument } from "../../core/history/history.js";
+import { normalizeStatusInput } from "../../core/item/status.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
+import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE, PM_DIRNAME } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -39,7 +41,6 @@ const RESOLUTION_FIELD_KEYS = ["resolution", "expected_result", "actual_result"]
 type ResolutionFieldKey = (typeof RESOLUTION_FIELD_KEYS)[number];
 const VALIDATE_FILE_SCAN_MODES = ["default", "tracked-all", "tracked-all-strict"] as const;
 const VALIDATE_METADATA_PROFILE_VALUES = ["core", "strict", "custom"] as const;
-const TERMINAL_STATUSES = new Set(["closed", "canceled"]);
 const STALE_BLOCKER_REASON_PATTERNS = ["no active blocker", "work is closed", "work completed", "ready for planned execution sequencing"] as const;
 const CLOSURE_LIKE_METADATA_FIELD_PATTERNS = {
   blocked_reason: ["work is closed", "no active blocker because work is closed"],
@@ -177,6 +178,14 @@ function toMeaningfulString(value: unknown): string | undefined {
   return normalized;
 }
 
+function normalizeStatusForRegistry(status: string, statusRegistry: RuntimeStatusRegistry): string {
+  return normalizeStatusInput(status, statusRegistry) ?? status;
+}
+
+function isTerminalStatus(status: string, statusRegistry: RuntimeStatusRegistry): boolean {
+  return statusRegistry.terminal_statuses.has(normalizeStatusForRegistry(status, statusRegistry));
+}
+
 interface ValidateMetadataPolicy {
   profile: ValidateMetadataProfile;
   profile_source: "default" | "settings" | "option";
@@ -256,7 +265,11 @@ function resolveValidateMetadataPolicy(
   };
 }
 
-function isMetadataFieldMissing(item: ItemWithBody, field: ValidateMetadataRequiredField): boolean {
+function isMetadataFieldMissing(
+  item: ItemWithBody,
+  field: ValidateMetadataRequiredField,
+  statusRegistry: RuntimeStatusRegistry,
+): boolean {
   if (field === "author") {
     return !toNonEmptyString(item.author);
   }
@@ -267,7 +280,7 @@ function isMetadataFieldMissing(item: ItemWithBody, field: ValidateMetadataRequi
     return !Number.isFinite(item.estimated_minutes);
   }
   if (field === "close_reason") {
-    return item.status === "closed" && !toNonEmptyString(item.close_reason);
+    return normalizeStatusForRegistry(item.status, statusRegistry) === statusRegistry.close_status && !toNonEmptyString(item.close_reason);
   }
   if (field === "reviewer") {
     return !toNonEmptyString(item.reviewer);
@@ -548,14 +561,18 @@ function resolveRequestedChecks(options: ValidateCommandOptions): Set<ValidateCh
   return requested;
 }
 
-function buildMetadataCheck(items: ItemWithBody[], metadataPolicy: ValidateMetadataPolicy): { check: ValidateCheck; warnings: string[] } {
+function buildMetadataCheck(
+  items: ItemWithBody[],
+  metadataPolicy: ValidateMetadataPolicy,
+  statusRegistry: RuntimeStatusRegistry,
+): { check: ValidateCheck; warnings: string[] } {
   const missingByField = Object.fromEntries(
     SUPPORTED_METADATA_REQUIRED_FIELDS.map((field) => [field, [] as string[]]),
   ) as Record<ValidateMetadataRequiredField, string[]>;
 
   for (const item of items) {
     for (const field of SUPPORTED_METADATA_REQUIRED_FIELDS) {
-      if (!isMetadataFieldMissing(item, field)) {
+      if (!isMetadataFieldMissing(item, field, statusRegistry)) {
         continue;
       }
       missingByField[field].push(item.id);
@@ -601,8 +618,13 @@ function buildMetadataCheck(items: ItemWithBody[], metadataPolicy: ValidateMetad
   };
 }
 
-function buildResolutionCheck(items: ItemWithBody[]): { check: ValidateCheck; warnings: string[] } {
-  const closedItems = items.filter((item) => item.status === "closed");
+function buildResolutionCheck(
+  items: ItemWithBody[],
+  statusRegistry: RuntimeStatusRegistry,
+): { check: ValidateCheck; warnings: string[] } {
+  const terminalDoneStatuses = new Set<string>(statusRegistry.terminal_done_statuses);
+  terminalDoneStatuses.add(statusRegistry.close_status);
+  const closedItems = items.filter((item) => terminalDoneStatuses.has(normalizeStatusForRegistry(item.status, statusRegistry)));
   const missingResolutionRows: Array<{ id: string; missing_fields: ResolutionFieldKey[] }> = [];
 
   for (const item of closedItems) {
@@ -641,9 +663,12 @@ function buildResolutionCheck(items: ItemWithBody[]): { check: ValidateCheck; wa
 function buildLifecycleCheck(
   items: ItemWithBody[],
   includeStaleBlockers: boolean,
+  statusRegistry: RuntimeStatusRegistry,
 ): { check: ValidateCheck; warnings: string[] } {
   const itemsById = new Map(items.map((item) => [item.id, item]));
-  const activeItems = items.filter((item) => !TERMINAL_STATUSES.has(item.status));
+  const blockedStatuses =
+    statusRegistry.blocked_statuses.size > 0 ? statusRegistry.blocked_statuses : new Set<string>(["blocked"]);
+  const activeItems = items.filter((item) => !isTerminalStatus(item.status, statusRegistry));
   const closureLikeRows: Array<{ id: string; fields: string[] }> = [];
   const terminalParentRows: Array<{ id: string; parent_id: string; parent_status: string }> = [];
   const staleBlockerRows: Array<{ id: string; status: string; reasons: string[] }> = [];
@@ -671,7 +696,7 @@ function buildLifecycleCheck(
     const parentId = toMeaningfulString(item.parent);
     if (parentId) {
       const parent = itemsById.get(parentId);
-      if (parent && TERMINAL_STATUSES.has(parent.status)) {
+      if (parent && isTerminalStatus(parent.status, statusRegistry)) {
         terminalParentRows.push({
           id: item.id,
           parent_id: parent.id,
@@ -685,8 +710,9 @@ function buildLifecycleCheck(
       const blockedReason = toMeaningfulString(item.blocked_reason);
       const blockedReasonNormalized = blockedReason?.toLowerCase();
       const reasons: string[] = [];
+      const normalizedStatus = normalizeStatusForRegistry(item.status, statusRegistry);
 
-      if (item.status !== "blocked") {
+      if (!blockedStatuses.has(normalizedStatus)) {
         if (blockedBy) {
           reasons.push("non_blocked_status_has_blocked_by");
         }
@@ -1043,9 +1069,16 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
   }
 
   const settings = await readSettings(pmRoot);
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const itemReadWarnings: string[] = [];
-  const items = await listAllFrontMatterWithBody(pmRoot, settings.item_format, typeRegistry.type_to_folder, itemReadWarnings);
+  const items = await listAllFrontMatterWithBody(
+    pmRoot,
+    settings.item_format,
+    typeRegistry.type_to_folder,
+    itemReadWarnings,
+    settings.schema,
+  );
   const requestedChecks = resolveRequestedChecks(options);
   const metadataProfileSource: "default" | "settings" | "option" =
     typeof options.metadataProfile === "string" ? "option" : "settings";
@@ -1063,17 +1096,17 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
   const warnings = [...new Set(itemReadWarnings)];
 
   if (requestedChecks.has("metadata")) {
-    const metadataCheck = buildMetadataCheck(items, metadataPolicy);
+    const metadataCheck = buildMetadataCheck(items, metadataPolicy, statusRegistry);
     checks.push(metadataCheck.check);
     warnings.push(...metadataCheck.warnings);
   }
   if (requestedChecks.has("resolution")) {
-    const resolutionCheck = buildResolutionCheck(items);
+    const resolutionCheck = buildResolutionCheck(items, statusRegistry);
     checks.push(resolutionCheck.check);
     warnings.push(...resolutionCheck.warnings);
   }
   if (requestedChecks.has("lifecycle")) {
-    const lifecycleCheck = buildLifecycleCheck(items, Boolean(options.checkStaleBlockers));
+    const lifecycleCheck = buildLifecycleCheck(items, Boolean(options.checkStaleBlockers), statusRegistry);
     checks.push(lifecycleCheck.check);
     warnings.push(...lifecycleCheck.warnings);
   }

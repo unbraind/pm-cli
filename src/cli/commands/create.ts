@@ -20,6 +20,13 @@ import {
   validateTypeOptions,
 } from "../../core/item/type-registry.js";
 import { acquireLock } from "../../core/lock/lock.js";
+import { collectRuntimeCreateFieldValues } from "../../core/schema/runtime-field-values.js";
+import {
+  type RuntimeFieldRegistry,
+  resolveRuntimeFieldRegistry,
+  resolveRuntimeStatusRegistry,
+  type RuntimeStatusRegistry,
+} from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -52,7 +59,6 @@ import {
   RECURRENCE_WEEKDAY_VALUES,
   RISK_VALUES,
   SCOPE_VALUES,
-  STATUS_VALUES,
 } from "../../types/index.js";
 
 export interface CreateCommandOptions {
@@ -123,6 +129,7 @@ export interface CreateCommandOptions {
   clearReminders?: boolean;
   clearEvents?: boolean;
   clearTypeOptions?: boolean;
+  [key: string]: unknown;
 }
 
 export interface CreateResult {
@@ -303,10 +310,11 @@ function ensureEnumValue<T extends string>(value: string, allowed: readonly T[],
   return value as T;
 }
 
-function parseStatusValue(value: string): ItemStatus {
-  const normalized = normalizeStatusInput(value);
+function parseStatusValue(value: string, statusRegistry: RuntimeStatusRegistry): ItemStatus {
+  const normalized = normalizeStatusInput(value, statusRegistry);
   if (!normalized) {
-    throw new PmCliError(`Invalid status value "${value}". Allowed: ${STATUS_VALUES.join(", ")}`, EXIT_CODE.USAGE);
+    const allowedStatuses = statusRegistry.definitions.map((definition) => definition.id);
+    throw new PmCliError(`Invalid status value "${value}". Allowed: ${allowedStatuses.join(", ")}`, EXIT_CODE.USAGE);
   }
   return normalized;
 }
@@ -390,7 +398,40 @@ function parseOptionalString(value: string | undefined): string | undefined {
   return value;
 }
 
-function parseCreateUnsetTargets(raw: string[] | undefined): { frontMatterKeys: Set<string>; optionKeys: Set<string> } {
+function resolveRuntimeCreateUnsetDefinition(
+  token: string,
+  runtimeFieldRegistry: RuntimeFieldRegistry | undefined,
+): CreateUnsetFieldDefinition | undefined {
+  if (!runtimeFieldRegistry) {
+    return undefined;
+  }
+  for (const definition of runtimeFieldRegistry.definitions) {
+    if (definition.allow_unset === false) {
+      continue;
+    }
+    const candidates = new Set<string>([
+      definition.key,
+      definition.front_matter_key,
+      definition.cli_flag.replaceAll("-", "_"),
+      definition.cli_flag,
+      ...definition.cli_aliases.map((alias) => alias.replaceAll("-", "_")),
+      ...definition.cli_aliases,
+    ]);
+    if (!candidates.has(token)) {
+      continue;
+    }
+    return {
+      optionKey: definition.key,
+      frontMatterKey: definition.front_matter_key,
+    };
+  }
+  return undefined;
+}
+
+function parseCreateUnsetTargets(
+  raw: string[] | undefined,
+  runtimeFieldRegistry?: RuntimeFieldRegistry,
+): { frontMatterKeys: Set<string>; optionKeys: Set<string> } {
   const frontMatterKeys = new Set<string>();
   const optionKeys = new Set<string>();
   if (!raw || raw.length === 0) {
@@ -408,7 +449,7 @@ function parseCreateUnsetTargets(raw: string[] | undefined): { frontMatterKeys: 
         EXIT_CODE.USAGE,
       );
     }
-    const definition = CREATE_UNSET_ALIAS_MAP.get(trimmed);
+    const definition = CREATE_UNSET_ALIAS_MAP.get(trimmed) ?? resolveRuntimeCreateUnsetDefinition(trimmed, runtimeFieldRegistry);
     if (!definition) {
       throw new PmCliError(
         `Unsupported --unset field "${entry}". Supported fields: ${CREATE_UNSET_SUPPORTED_CANONICAL_FIELDS}`,
@@ -1240,7 +1281,7 @@ function typeOptionExampleValue(typeDefinition: ResolvedItemTypeDefinition, key:
   return "<value>";
 }
 
-function createExampleTokensForFlag(flag: string, typeName: string): string[] {
+function createExampleTokensForFlag(flag: string, typeName: string, openStatus: string): string[] {
   switch (flag) {
     case "--title":
       return ["--title", `"${typeName} example title"`];
@@ -1249,7 +1290,7 @@ function createExampleTokensForFlag(flag: string, typeName: string): string[] {
     case "--type":
       return ["--type", typeName];
     case "--status":
-      return ["--status", "open"];
+      return ["--status", openStatus];
     case "--priority":
       return ["--priority", "1"];
     case "--message":
@@ -1277,6 +1318,7 @@ function buildTypeSpecificCreateExample(
   typeDefinition: ResolvedItemTypeDefinition,
   missingCreateFlags: string[],
   missingTypeOptionKeys: string[],
+  openStatus: string,
 ): string {
   const tokens = ["pm", "create", "--title", `"${typeDefinition.name} example title"`, "--description", `"${typeDefinition.name} example description"`, "--type", typeDefinition.name];
   const optionalRecommendationFlags = ["--status", "--priority", "--message"];
@@ -1286,7 +1328,7 @@ function buildTypeSpecificCreateExample(
     if (includedFlags.has(flag)) {
       continue;
     }
-    tokens.push(...createExampleTokensForFlag(flag, typeDefinition.name));
+    tokens.push(...createExampleTokensForFlag(flag, typeDefinition.name, openStatus));
     includedFlags.add(flag);
   }
   for (const key of missingTypeOptionKeys) {
@@ -1347,6 +1389,8 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   await ensureInitHasRun(pmRoot);
 
   const settings = await readSettings(pmRoot);
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   assertNoLegacyNoneToken(resolvedOptions.template, "--template", "Omit --template to skip template usage.");
   if (resolvedOptions.template !== undefined) {
@@ -1380,7 +1424,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     );
   }
   const createMode = resolveEffectiveCreateMode(resolvedOptions.createMode, schedulePreset);
-  const unsetTargets = parseCreateUnsetTargets(resolvedOptions.unset);
+  const unsetTargets = parseCreateUnsetTargets(resolvedOptions.unset, runtimeFieldRegistry);
   const explicitUnsets = new Set<string>(unsetTargets.frontMatterKeys);
   const clearOptionKeys = new Set<string>(unsetTargets.optionKeys);
 
@@ -1588,13 +1632,33 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const events = parseEvents(resolvedOptions.event, nowValue);
   const typeOptions = parseTypeOptions(resolvedOptions.typeOption);
   const validatedTypeOptions = validateTypeOptions(type, typeOptions.values, typeRegistry);
+  const runtimeCreateFieldValues = collectRuntimeCreateFieldValues(
+    resolvedOptions as Record<string, unknown>,
+    runtimeFieldRegistry,
+    type,
+  );
+  for (const fieldKey of Object.keys(runtimeCreateFieldValues.values)) {
+    if (!unsetTargets.frontMatterKeys.has(fieldKey)) {
+      continue;
+    }
+    throw new PmCliError(`Cannot combine --unset ${fieldKey.replaceAll("_", "-")} with its value flag`, EXIT_CODE.USAGE);
+  }
   const missingRequiredTypeOptionKeys = collectMissingRequiredTypeOptionKeys(validatedTypeOptions.errors, type);
   const missingRequiredTypeOptionFlags = missingRequiredTypeOptionKeys.map((key) => `--type-option ${key}=<value>`);
-  const combinedMissingFlags = [...new Set([...missingRequiredCreateFlags, ...missingRequiredTypeOptionFlags])].sort((left, right) =>
-    left.localeCompare(right),
-  );
+  const combinedMissingFlags = [
+    ...new Set([
+      ...missingRequiredCreateFlags,
+      ...missingRequiredTypeOptionFlags,
+      ...runtimeCreateFieldValues.missing_required_flags,
+    ]),
+  ].sort((left, right) => left.localeCompare(right));
   if (combinedMissingFlags.length > 0) {
-    const nextValidExample = buildTypeSpecificCreateExample(typeDefinition, missingRequiredCreateFlags, missingRequiredTypeOptionKeys);
+    const nextValidExample = buildTypeSpecificCreateExample(
+      typeDefinition,
+      missingRequiredCreateFlags,
+      missingRequiredTypeOptionKeys,
+      statusRegistry.open_status,
+    );
     const nextSteps = [`Run "pm create --help --type ${type}" for type-aware required option guidance.`];
     if (createMode === "strict") {
       nextSteps.push('For staged onboarding, retry with "--create-mode progressive".');
@@ -1615,7 +1679,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   }
   const nonMissingTypeOptionErrors = filterNonMissingTypeOptionErrors(validatedTypeOptions.errors, type);
   if (nonMissingTypeOptionErrors.length > 0) {
-    const nextValidExample = buildTypeSpecificCreateExample(typeDefinition, [], []);
+    const nextValidExample = buildTypeSpecificCreateExample(typeDefinition, [], [], statusRegistry.open_status);
     throw new PmCliError(nonMissingTypeOptionErrors.join("; "), EXIT_CODE.USAGE, {
       code: "invalid_argument_value",
       required: `Provide valid --type-option key/value pairs for type "${type}".`,
@@ -1625,7 +1689,8 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   }
 
   const id = await generateItemId(pmRoot, settings.id_prefix);
-  const status = resolvedOptions.status !== undefined ? parseStatusValue(resolvedOptions.status) : "open";
+  const status =
+    resolvedOptions.status !== undefined ? parseStatusValue(resolvedOptions.status, statusRegistry) : statusRegistry.open_status;
   const priority = resolvedOptions.priority !== undefined ? ensurePriority(resolvedOptions.priority) : 2;
   const tags = unsetTargets.frontMatterKeys.has("tags")
     ? []
@@ -1862,6 +1927,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     docs: docs.values,
     reminders: reminders.values,
     events: events.values,
+    ...runtimeCreateFieldValues.values,
   });
   try {
     applyRegisteredItemFieldDefaultsAndValidation(
@@ -1875,7 +1941,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const afterDocument: ItemDocument = canonicalDocument({
     front_matter: frontMatter,
     body,
-  });
+  }, { schema: settings.schema });
   const beforeDocument: ItemDocument = {
     front_matter: {} as ItemFrontMatter,
     body: "",
@@ -1889,7 +1955,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   let hookWarnings: string[] = [];
 
   try {
-    await writeFileAtomic(itemPath, serializeItemDocument(afterDocument, { format: settings.item_format }));
+    await writeFileAtomic(itemPath, serializeItemDocument(afterDocument, { format: settings.item_format, schema: settings.schema }));
     try {
       const entry = createHistoryEntry({
         nowIso: nowValue,

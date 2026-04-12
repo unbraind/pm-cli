@@ -2,6 +2,11 @@ import { z } from "zod";
 import { runActiveOnReadHooks, runActiveOnWriteHooks } from "../extensions/index.js";
 import { SETTINGS_DEFAULTS } from "../shared/constants.js";
 import { readFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
+import {
+  ensureRuntimeSchemaFileScaffold,
+  loadRuntimeSchemaFromOptionalFiles,
+  normalizeRuntimeSchemaSettings,
+} from "../schema/runtime-schema.js";
 import { getSettingsPath } from "./paths.js";
 import { orderObject } from "../shared/serialization.js";
 import type {
@@ -37,6 +42,82 @@ const itemTypeDefinitionSchema = z.object({
   options: z.array(itemTypeOptionSchema).optional(),
   command_option_policies: z.array(itemTypeCommandOptionPolicySchema).optional(),
 });
+
+const runtimeStatusDefinitionSchema = z.object({
+  id: z.string(),
+  aliases: z.array(z.string()).optional(),
+  roles: z
+    .array(
+      z.union([
+        z.literal("draft"),
+        z.literal("active"),
+        z.literal("blocked"),
+        z.literal("terminal"),
+        z.literal("terminal_done"),
+        z.literal("terminal_canceled"),
+        z.literal("default_open"),
+        z.literal("default_close"),
+        z.literal("default_cancel"),
+      ]),
+    )
+    .optional(),
+  description: z.string().optional(),
+  order: z.number().optional(),
+});
+
+const runtimeFieldDefinitionSchema = z.object({
+  key: z.string(),
+  front_matter_key: z.string().optional(),
+  cli_flag: z.string().optional(),
+  cli_aliases: z.array(z.string()).optional(),
+  description: z.string().optional(),
+  type: z.union([z.literal("string"), z.literal("number"), z.literal("boolean"), z.literal("string_array")]).optional(),
+  commands: z
+    .array(
+      z.union([
+        z.literal("create"),
+        z.literal("update"),
+        z.literal("update_many"),
+        z.literal("list"),
+        z.literal("search"),
+        z.literal("calendar"),
+        z.literal("context"),
+      ]),
+    )
+    .optional(),
+  repeatable: z.boolean().optional(),
+  required: z.boolean().optional(),
+  required_on_create: z.boolean().optional(),
+  required_types: z.array(z.string()).optional(),
+  allow_unset: z.boolean().optional(),
+});
+
+const runtimeSchemaSettingsSchema = z
+  .object({
+    version: z.number().int().optional(),
+    files: z
+      .object({
+        types: z.string().optional(),
+        statuses: z.string().optional(),
+        fields: z.string().optional(),
+        workflows: z.string().optional(),
+      })
+      .optional(),
+    statuses: z.array(runtimeStatusDefinitionSchema).optional(),
+    fields: z.array(runtimeFieldDefinitionSchema).optional(),
+    workflow: z
+      .object({
+        draft_status: z.string().optional(),
+        open_status: z.string().optional(),
+        in_progress_status: z.string().optional(),
+        blocked_status: z.string().optional(),
+        close_status: z.string().optional(),
+        canceled_status: z.string().optional(),
+      })
+      .optional(),
+    unknown_field_policy: z.union([z.literal("allow"), z.literal("warn"), z.literal("reject")]).optional(),
+  })
+  .optional();
 
 const settingsSchema = z.object({
   version: z.number().int(),
@@ -77,6 +158,7 @@ const settingsSchema = z.object({
       definitions: z.array(itemTypeDefinitionSchema),
     })
     .optional(),
+  schema: runtimeSchemaSettingsSchema,
   extensions: z.object({
     enabled: z.array(z.string()),
     disabled: z.array(z.string()),
@@ -248,7 +330,7 @@ function normalizeItemTypeDefinition(definition: ItemTypeDefinition): ItemTypeDe
   };
 }
 
-function normalizeItemTypeDefinitions(definitions: ItemTypeDefinition[] | undefined): ItemTypeDefinition[] {
+export function normalizeItemTypeDefinitions(definitions: ItemTypeDefinition[] | undefined): ItemTypeDefinition[] {
   const normalized = (definitions ?? [])
     .map((definition) => normalizeItemTypeDefinition(definition))
     .filter((definition): definition is ItemTypeDefinition => definition !== null);
@@ -288,6 +370,7 @@ function mergeSettings(raw: unknown): PmSettings {
     item_types: {
       definitions: normalizeItemTypeDefinitions(settings.item_types?.definitions),
     },
+    schema: normalizeRuntimeSchemaSettings(settings.schema ?? defaults.schema),
     extensions: {
       enabled: [...settings.extensions.enabled],
       disabled: [...settings.extensions.disabled],
@@ -306,7 +389,14 @@ function mergeSettings(raw: unknown): PmSettings {
 }
 
 export function serializeSettings(settings: PmSettings): string {
-  const ordered = orderObject(settings as unknown as Record<string, unknown>, [
+  const normalizedSettings: PmSettings = {
+    ...settings,
+    item_types: {
+      definitions: normalizeItemTypeDefinitions(settings.item_types?.definitions),
+    },
+    schema: normalizeRuntimeSchemaSettings(settings.schema),
+  };
+  const ordered = orderObject(normalizedSettings as unknown as Record<string, unknown>, [
     "version",
     "id_prefix",
     "author_default",
@@ -318,6 +408,7 @@ export function serializeSettings(settings: PmSettings): string {
     "workflow",
     "testing",
     "item_types",
+    "schema",
     "extensions",
     "search",
     "providers",
@@ -334,6 +425,22 @@ export function serializeSettings(settings: PmSettings): string {
   ordered.workflow = orderObject(ordered.workflow as Record<string, unknown>, ["definition_of_done"]);
   ordered.testing = orderObject(ordered.testing as Record<string, unknown>, ["record_results_to_items"]);
   ordered.item_types = orderObject(ordered.item_types as Record<string, unknown>, ["definitions"]);
+  ordered.schema = orderObject(ordered.schema as Record<string, unknown>, [
+    "version",
+    "files",
+    "statuses",
+    "fields",
+    "workflow",
+    "unknown_field_policy",
+  ]);
+  (ordered.schema as Record<string, unknown>).files = orderObject(
+    ((ordered.schema as Record<string, unknown>).files ?? {}) as Record<string, unknown>,
+    ["types", "statuses", "fields", "workflows"],
+  );
+  (ordered.schema as Record<string, unknown>).workflow = orderObject(
+    ((ordered.schema as Record<string, unknown>).workflow ?? {}) as Record<string, unknown>,
+    ["draft_status", "open_status", "in_progress_status", "blocked_status", "close_status", "canceled_status"],
+  );
   ordered.extensions = orderObject(ordered.extensions as Record<string, unknown>, ["enabled", "disabled"]);
   ordered.search = orderObject(ordered.search as Record<string, unknown>, [
     "score_threshold",
@@ -390,12 +497,28 @@ export async function readSettingsWithMetadata(pmRoot: string): Promise<Settings
   }
 
   try {
+    const mergedSettings = mergeSettings(validated.data);
+    const schemaScaffold = await ensureRuntimeSchemaFileScaffold(pmRoot, mergedSettings.schema);
+    const loadedSchemaSections = await loadRuntimeSchemaFromOptionalFiles(pmRoot, mergedSettings.schema);
+    const settings = {
+      ...mergedSettings,
+      item_types: {
+        definitions: normalizeItemTypeDefinitions([
+          ...mergedSettings.item_types.definitions,
+          ...(loadedSchemaSections.type_definitions_from_file ?? []),
+        ]),
+      },
+      schema: loadedSchemaSections.schema,
+    };
     return {
-      settings: mergeSettings(validated.data),
+      settings,
       metadata: {
         has_explicit_item_format: hasExplicitItemFormat(parsed),
       },
-      warnings: [],
+      warnings: [
+        ...schemaScaffold.created_paths.map((createdPath) => `runtime_schema_bootstrap_created:${createdPath}`),
+        ...loadedSchemaSections.warnings,
+      ],
     };
   } catch {
     return buildFallbackSettingsReadResult("settings_read_merge_failed");

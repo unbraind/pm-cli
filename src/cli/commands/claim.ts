@@ -1,11 +1,11 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
+import { resolveRuntimeStatusRegistry, statusIsTerminal } from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import type { ItemStatus } from "../../types/index.js";
 
 export interface ClaimResult {
   item: Record<string, unknown>;
@@ -31,10 +31,6 @@ export interface ReleaseMutationOptions extends ClaimMutationOptions {
   allowAuditRelease?: boolean;
 }
 
-function isTerminal(status: ItemStatus): boolean {
-  return status === "closed" || status === "canceled";
-}
-
 function resolveAuthor(candidate: string | undefined, fallback: string): string {
   const resolved = candidate ?? process.env.PM_AUTHOR ?? fallback;
   const trimmed = resolved.trim();
@@ -52,6 +48,7 @@ export async function runClaim(
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
   const settings = await readSettings(pmRoot);
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const author = resolveAuthor(options.author, settings.author_default);
   let previousAssignee: string | null = null;
 
@@ -65,7 +62,7 @@ export async function runClaim(
     force,
     mutate(document) {
       previousAssignee = document.front_matter.assignee ?? null;
-      if (isTerminal(document.front_matter.status) && !force) {
+      if (statusIsTerminal(document.front_matter.status, statusRegistry) && !force) {
         throw new PmCliError(`Cannot claim terminal item ${document.front_matter.id} without --force`, EXIT_CODE.CONFLICT);
       }
       document.front_matter.assignee = author;

@@ -10,6 +10,7 @@ export const PM_CORE_REQUIRED_SUBDIRS = [
   "tasks",
   "chores",
   "issues",
+  "schema",
   "history",
   "index",
   "search",
@@ -38,7 +39,7 @@ export const TYPE_TO_FOLDER: Record<BuiltinItemType, string> = {
   Meeting: "meetings",
 };
 
-export const FRONT_MATTER_KEY_ORDER: ReadonlyArray<keyof ItemFrontMatter> = [
+export const FRONT_MATTER_KEY_ORDER: ReadonlyArray<string> = [
   "id",
   "title",
   "description",
@@ -129,6 +130,53 @@ export const SETTINGS_DEFAULTS: PmSettings = {
   },
   item_types: {
     definitions: [],
+  },
+  schema: {
+    version: 1,
+    files: {
+      types: "schema/types.json",
+      statuses: "schema/statuses.json",
+      fields: "schema/fields.json",
+      workflows: "schema/workflows.json",
+    },
+    statuses: [
+      {
+        id: "draft",
+        roles: ["draft"],
+      },
+      {
+        id: "open",
+        roles: ["active", "default_open"],
+      },
+      {
+        id: "in_progress",
+        aliases: ["in-progress"],
+        roles: ["active"],
+      },
+      {
+        id: "blocked",
+        roles: ["blocked"],
+      },
+      {
+        id: "closed",
+        roles: ["terminal", "terminal_done", "default_close"],
+      },
+      {
+        id: "canceled",
+        aliases: ["cancelled"],
+        roles: ["terminal", "terminal_canceled", "default_cancel"],
+      },
+    ],
+    fields: [],
+    workflow: {
+      draft_status: "draft",
+      open_status: "open",
+      in_progress_status: "in_progress",
+      blocked_status: "blocked",
+      close_status: "closed",
+      canceled_status: "canceled",
+    },
+    unknown_field_policy: "allow",
   },
   extensions: {
     enabled: [],

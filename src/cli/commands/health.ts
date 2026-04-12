@@ -225,6 +225,7 @@ async function listItemDocumentPaths(pmRoot: string, typeToFolder: Record<string
 async function buildIntegrityCheck(
   pmRoot: string,
   typeToFolder: Record<string, string>,
+  schema: PmSettings["schema"],
 ): Promise<{ check: HealthCheck; warnings: string[] }> {
   const itemPaths = await listItemDocumentPaths(pmRoot, typeToFolder);
   const itemUnreadable: string[] = [];
@@ -250,7 +251,7 @@ async function buildIntegrityCheck(
       continue;
     }
     try {
-      parseItemDocument(raw, { format: getItemFormatFromPath(itemPath) as ItemFormat });
+      parseItemDocument(raw, { format: getItemFormatFromPath(itemPath) as ItemFormat, schema });
     } catch {
       itemParseFailures.push(relativePath);
     }
@@ -984,7 +985,13 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
   const settingWarnings = validateSettingsValues(settings);
   const extensionCheck = await buildExtensionCheck(pmRoot, settings, Boolean(global.noExtensions));
   const itemReadWarnings: string[] = [];
-  const items = await listAllFrontMatterWithBody(pmRoot, settings.item_format, typeRegistry.type_to_folder, itemReadWarnings);
+  const items = await listAllFrontMatterWithBody(
+    pmRoot,
+    settings.item_format,
+    typeRegistry.type_to_folder,
+    itemReadWarnings,
+    settings.schema,
+  );
   const normalizedItemReadWarnings = [...new Set(itemReadWarnings)];
   const historyPolicy = await enforceHistoryStreamPolicyForItems({
     pmRoot,
@@ -993,7 +1000,7 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
     commandLabel: "health",
   });
   const historySummary = await countHistoryStreams(pmRoot);
-  const integrityCheck = await buildIntegrityCheck(pmRoot, typeRegistry.type_to_folder);
+  const integrityCheck = await buildIntegrityCheck(pmRoot, typeRegistry.type_to_folder, settings.schema);
   const historyDriftCheck = await buildHistoryDriftCheck(pmRoot, items);
   const vectorizationCheck = await buildVectorizationCheck(
     pmRoot,

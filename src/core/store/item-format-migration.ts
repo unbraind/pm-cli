@@ -5,7 +5,7 @@ import { pathExists, readFileIfExists, removeFileIfExists, writeFileAtomic } fro
 import { parseItemDocument, serializeItemDocument } from "../item/item-format.js";
 import { TYPE_TO_FOLDER } from "../shared/constants.js";
 import { getItemFormatFromPath, getItemPath } from "./paths.js";
-import type { ItemFormat, ItemType } from "../../types/index.js";
+import type { ItemFormat, ItemType, RuntimeSchemaSettings } from "../../types/index.js";
 
 interface ItemPathVariants {
   json_markdown?: string;
@@ -33,6 +33,7 @@ export async function migrateItemFilesToFormat(
   targetFormat: ItemFormat,
   op = "item_format:migrate",
   typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
+  schema?: RuntimeSchemaSettings,
 ): Promise<ItemFormatMigrationResult> {
   const migratedIds = new Set<string>();
   const removedPaths = new Set<string>();
@@ -74,9 +75,9 @@ export async function migrateItemFilesToFormat(
       const sourcePath = (variants[targetFormat] ?? variants[alternateFormat]) as string;
       const sourceFormat = sourcePath === variants[targetFormat] ? targetFormat : alternateFormat;
       const sourceRaw = await fs.readFile(sourcePath, "utf8");
-      const parsedDocument = parseItemDocument(sourceRaw, { format: sourceFormat });
+      const parsedDocument = parseItemDocument(sourceRaw, { format: sourceFormat, schema });
       const targetPath = getItemPath(pmRoot, itemType, itemId, targetFormat, typeToFolder);
-      const serializedTarget = serializeItemDocument(parsedDocument, { format: targetFormat });
+      const serializedTarget = serializeItemDocument(parsedDocument, { format: targetFormat, schema });
       const existingTargetRaw = await readFileIfExists(targetPath);
       if (existingTargetRaw !== serializedTarget) {
         await writeFileAtomic(targetPath, serializedTarget);

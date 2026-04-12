@@ -7,6 +7,7 @@ This document defines how coding agents must use `pm` for planning, execution, a
 - Use `pm` as the system of record for project work.
 - Prefer deterministic, script-friendly command usage (`--json` when strict parsing is needed).
 - Default to TOON output when human + model readability and low token use are desired (calendar command is the intentional exception and defaults to markdown unless overridden).
+- Treat TOON as the canonical item-document format in this repo; `front_matter` is an internal model key, while TOON item metadata is stored as top-level object fields.
 - Never make destructive item changes outside `pm` mutations.
 - Every mutation must produce a history entry.
 

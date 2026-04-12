@@ -46,13 +46,16 @@ describe("runConfig", () => {
 
       const result = await runConfig("project", "get", "definition-of-done", {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot });
 
-      expect(result).toEqual({
+      expect(result).toMatchObject({
         scope: "project",
         key: "definition_of_done",
         criteria: ["tests pass"],
         settings_path: getSettingsPath(pmRoot),
         changed: false,
       });
+      expect(result.warnings).toBeDefined();
+      expect(result.warnings).toHaveLength(4);
+      expect((result.warnings ?? []).every((warning) => warning.startsWith("runtime_schema_bootstrap_created:"))).toBe(true);
     });
   });
 

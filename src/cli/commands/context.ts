@@ -2,6 +2,10 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { compareTimestampStrings } from "../../core/shared/time.js";
+import { normalizeStatusInput } from "../../core/item/status.js";
+import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
+import { resolvePmRoot } from "../../core/store/paths.js";
+import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter, ItemStatus } from "../../types/index.js";
 import { runCalendar, type CalendarEvent, type CalendarOptions } from "./calendar.js";
 import { runList, type ListOptions } from "./list.js";
@@ -23,6 +27,7 @@ export interface ContextOptions {
   release?: string;
   limit?: string;
   format?: string;
+  [key: string]: unknown;
 }
 
 export interface ContextFocusItem {
@@ -77,6 +82,7 @@ export interface ContextResult {
     sprint: string | null;
     release: string | null;
     limit: string | null;
+    runtime_filters?: Record<string, unknown>;
   };
   summary: ContextSummary;
   high_level: ContextFocusItem[];
@@ -89,8 +95,6 @@ export interface ContextResult {
   warnings?: string[];
 }
 
-const ACTIVE_STATUSES = new Set<ItemStatus>(["in_progress", "open"]);
-const TERMINAL_STATUSES = new Set<ItemStatus>(["closed", "canceled"]);
 const HIGH_LEVEL_TYPES = new Set<string>(["Epic", "Feature"]);
 const DEFAULT_CONTEXT_LIMIT = 10;
 
@@ -125,12 +129,24 @@ function parseLimit(raw: string | undefined): number {
   return parsed;
 }
 
-function statusRank(status: ItemStatus): number {
-  if (status === "in_progress") return 0;
-  if (status === "open") return 1;
-  if (status === "blocked") return 2;
-  if (status === "draft") return 3;
-  return 4;
+function normalizeStatusForRegistry(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): ItemStatus {
+  return normalizeStatusInput(status, statusRegistry) ?? status;
+}
+
+function statusRank(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): number {
+  const normalizedStatus = normalizeStatusForRegistry(status, statusRegistry);
+  const inProgressStatus = normalizeStatusInput("in_progress", statusRegistry);
+  const openStatus = normalizeStatusInput("open", statusRegistry) ?? statusRegistry.open_status;
+  const blockedStatus = normalizeStatusInput("blocked", statusRegistry);
+  const draftStatus = normalizeStatusInput("draft", statusRegistry);
+  if (inProgressStatus && normalizedStatus === inProgressStatus) return 0;
+  if (openStatus && normalizedStatus === openStatus) return 1;
+  if (blockedStatus && normalizedStatus === blockedStatus) return 2;
+  if (draftStatus && normalizedStatus === draftStatus) return 3;
+  if (statusRegistry.active_statuses.has(normalizedStatus)) return 4;
+  if (statusRegistry.blocked_statuses.has(normalizedStatus)) return 5;
+  if (statusRegistry.terminal_statuses.has(normalizedStatus)) return 7;
+  return 6;
 }
 
 function compareOptionalOrder(left: number | null | undefined, right: number | null | undefined): number {
@@ -151,8 +167,8 @@ function compareOptionalDeadline(left: string | null | undefined, right: string 
   return compareTimestampStrings(leftValue, rightValue);
 }
 
-function compareCriticalItems(left: ItemFrontMatter, right: ItemFrontMatter): number {
-  const byStatus = statusRank(left.status) - statusRank(right.status);
+function compareCriticalItems(left: ItemFrontMatter, right: ItemFrontMatter, statusRegistry: RuntimeStatusRegistry): number {
+  const byStatus = statusRank(left.status, statusRegistry) - statusRank(right.status, statusRegistry);
   if (byStatus !== 0) return byStatus;
   const byPriority = left.priority - right.priority;
   if (byPriority !== 0) return byPriority;
@@ -206,8 +222,8 @@ function summarizeAgenda(events: CalendarEvent[]): ContextAgendaSummary {
   };
 }
 
-function filterTerminalCalendarEvents(events: CalendarEvent[]): CalendarEvent[] {
-  return events.filter((event) => !TERMINAL_STATUSES.has(event.item_status));
+function filterTerminalCalendarEvents(events: CalendarEvent[], statusRegistry: RuntimeStatusRegistry): CalendarEvent[] {
+  return events.filter((event) => !statusRegistry.terminal_statuses.has(normalizeStatusForRegistry(event.item_status, statusRegistry)));
 }
 
 function formatClock(timestamp: string): string {
@@ -286,22 +302,23 @@ export function renderContextMarkdown(result: ContextResult): string {
 }
 
 export async function runContext(options: ContextOptions, global: GlobalOptions): Promise<ContextResult> {
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  const settings = await readSettings(pmRoot);
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const limit = parseLimit(options.limit);
-  const listOptions: ListOptions = {
-    type: options.type,
-    tag: options.tag,
-    priority: options.priority,
-    assignee: options.assignee,
-    assigneeFilter: options.assigneeFilter,
-    sprint: options.sprint,
-    release: options.release,
-    excludeTerminal: true,
-  };
+  const listOptions: ListOptions = { ...(options as Record<string, unknown>), excludeTerminal: true };
   const listed = await runList(undefined, listOptions, global);
   const listedFrontMatter = listed.items as ItemFrontMatter[];
-  const ranked = [...listedFrontMatter].sort(compareCriticalItems);
-  const activeItems = ranked.filter((item) => ACTIVE_STATUSES.has(item.status));
-  const blockedItems = ranked.filter((item) => item.status === "blocked");
+  const ranked = [...listedFrontMatter].sort((left, right) => compareCriticalItems(left, right, statusRegistry));
+  const activeStatuses =
+    statusRegistry.active_statuses.size > 0
+      ? statusRegistry.active_statuses
+      : new Set<ItemStatus>([statusRegistry.open_status]);
+  const blockedStatuses = statusRegistry.blocked_statuses;
+  const activeItems = ranked.filter((item) => activeStatuses.has(normalizeStatusForRegistry(item.status, statusRegistry)));
+  const blockedItems = ranked.filter((item) =>
+    blockedStatuses.has(normalizeStatusForRegistry(item.status, statusRegistry)),
+  );
 
   const highLevel = activeItems
     .filter((item) => HIGH_LEVEL_TYPES.has(item.type))
@@ -316,30 +333,24 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
   const blockedFallback = blockedFallbackUsed ? blockedItems.slice(0, limit).map(toContextFocusItem) : [];
 
   const calendarOptions: CalendarOptions = {
+    ...(options as Record<string, unknown>),
     view: "agenda",
-    date: options.date,
-    from: options.from,
-    to: options.to,
-    past: options.past,
-    type: options.type,
-    tag: options.tag,
-    priority: options.priority,
-    assignee: options.assignee,
-    assigneeFilter: options.assigneeFilter,
-    sprint: options.sprint,
-    release: options.release,
     include: "all",
     limit: String(limit),
   };
   const agenda = await runCalendar(calendarOptions, global);
-  const agendaEvents = filterTerminalCalendarEvents(agenda.events).slice(0, limit);
+  const agendaEvents = filterTerminalCalendarEvents(agenda.events, statusRegistry).slice(0, limit);
   const agendaSummary = summarizeAgenda(agendaEvents);
   const warnings = [...new Set([...(listed.warnings ?? []), ...(agenda.warnings ?? [])])].sort((left, right) =>
     left.localeCompare(right),
   );
 
-  const inProgressCount = activeItems.filter((item) => item.status === "in_progress").length;
-  const openCount = activeItems.filter((item) => item.status === "open").length;
+  const inProgressStatus = normalizeStatusInput("in_progress", statusRegistry);
+  const openStatus = normalizeStatusInput("open", statusRegistry) ?? statusRegistry.open_status;
+  const inProgressCount = inProgressStatus
+    ? activeItems.filter((item) => normalizeStatusForRegistry(item.status, statusRegistry) === inProgressStatus).length
+    : 0;
+  const openCount = activeItems.filter((item) => normalizeStatusForRegistry(item.status, statusRegistry) === openStatus).length;
 
   return {
     output_default: "toon",
@@ -361,6 +372,7 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
       sprint: options.sprint ?? null,
       release: options.release ?? null,
       limit: options.limit ?? null,
+      runtime_filters: (listed.filters.runtime_filters ?? agenda.filters.runtime_filters ?? {}) as Record<string, unknown>,
     },
     summary: {
       active_items: activeItems.length,

@@ -250,6 +250,7 @@ async function collectSemanticRefreshWorkload(
   preferredFormat: "toon" | "json_markdown",
   normalizedItemIds: string[],
   typeToFolder: Record<string, string>,
+  schema: Awaited<ReturnType<typeof readSettings>>["schema"],
 ): Promise<SemanticRefreshWorkload> {
   const warnings: string[] = [];
   const skipped = new Set<string>();
@@ -264,7 +265,7 @@ async function collectSemanticRefreshWorkload(
     }
 
     try {
-      const loaded = await readLocatedItem(located);
+      const loaded = await readLocatedItem(located, { schema });
       documents.push({
         id: loaded.document.front_matter.id,
         document: loaded.document,
@@ -390,6 +391,7 @@ export async function refreshSemanticEmbeddingsForMutatedItems(
     runtimeContext.settings.item_format,
     normalizedItemIds,
     typeRegistry.type_to_folder,
+    runtimeContext.settings.schema,
   );
   const refreshedResult = await refreshLocatedSemanticVectors(
     runtimeContext.settings,

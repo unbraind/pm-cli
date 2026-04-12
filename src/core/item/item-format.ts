@@ -5,6 +5,7 @@ import type {
   Dependency,
   ItemDocument,
   ItemFrontMatter,
+  RuntimeSchemaSettings,
   ItemTestRunSummary,
   LinkedDoc,
   LinkedFile,
@@ -21,6 +22,13 @@ import {
   RECURRENCE_WEEKDAY_VALUES,
   STATUS_VALUES,
 } from "../../types/index.js";
+import { coerceRuntimeFieldValue } from "../schema/runtime-field-values.js";
+import {
+  resolveRuntimeFieldRegistry,
+  resolveRuntimeStatusRegistry,
+  type RuntimeFieldRegistry,
+  type RuntimeStatusRegistry,
+} from "../schema/runtime-schema.js";
 import { normalizeStatusInput } from "./status.js";
 import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
 import { findFirstMergeConflictMarker } from "../shared/conflict-markers.js";
@@ -41,6 +49,45 @@ const REQUIRED_STRING_FIELDS = [
   "created_at",
   "updated_at",
 ] as const;
+
+const STATIC_FRONT_MATTER_FIELD_SET = new Set(FRONT_MATTER_KEY_ORDER);
+
+interface RuntimeSchemaValidationContext {
+  statusRegistry?: RuntimeStatusRegistry;
+  fieldRegistry?: RuntimeFieldRegistry;
+  unknownFieldPolicy: "allow" | "warn" | "reject";
+  onWarning?: (warning: string) => void;
+}
+
+export interface ItemDocumentFormatOptions {
+  format?: ItemFormat;
+  schema?: RuntimeSchemaSettings;
+  onWarning?: (warning: string) => void;
+}
+
+function resolveRuntimeSchemaValidationContext(
+  options: ItemDocumentFormatOptions | undefined,
+): RuntimeSchemaValidationContext | undefined {
+  if (!options?.schema) {
+    return undefined;
+  }
+  return {
+    statusRegistry: resolveRuntimeStatusRegistry(options.schema),
+    fieldRegistry: resolveRuntimeFieldRegistry(options.schema),
+    unknownFieldPolicy: options.schema.unknown_field_policy ?? "allow",
+    onWarning: options.onWarning,
+  };
+}
+
+function runtimeFieldRequiredForType(definition: RuntimeFieldRegistry["definitions"][number], typeName: string): boolean {
+  if (!definition.required) {
+    return false;
+  }
+  if (definition.required_types.length === 0) {
+    return true;
+  }
+  return definition.required_types.map((value) => value.toLowerCase()).includes(typeName.trim().toLowerCase());
+}
 
 function weekdayOrderIndex(value: (typeof RECURRENCE_WEEKDAY_VALUES)[number]): number {
   return RECURRENCE_WEEKDAY_VALUES.indexOf(value);
@@ -131,7 +178,10 @@ function assertValidRecurrenceRule(recurrence: unknown): void {
   }
 }
 
-function assertValidFrontMatter(frontMatter: unknown): asserts frontMatter is ItemFrontMatter {
+function assertValidFrontMatter(
+  frontMatter: unknown,
+  runtimeContext?: RuntimeSchemaValidationContext,
+): asserts frontMatter is ItemFrontMatter {
   assertFrontMatterCondition(
     typeof frontMatter === "object" && frontMatter !== null && !Array.isArray(frontMatter),
     "front matter must be an object",
@@ -146,11 +196,16 @@ function assertValidFrontMatter(frontMatter: unknown): asserts frontMatter is It
   assertFrontMatterCondition(typeof itemType === "string" && itemType.trim().length > 0, "type must be a non-empty string");
 
   const status = record.status;
-  const normalizedStatus = typeof status === "string" ? normalizeStatusInput(status) : undefined;
   assertFrontMatterCondition(
-    normalizedStatus !== undefined,
-    `status must be one of: ${STATUS_VALUES.join(", ")}`,
+    typeof status === "string" && status.trim().length > 0,
+    "status must be a non-empty string",
   );
+  const statusRegistry = runtimeContext?.statusRegistry;
+  const normalizedStatus = normalizeStatusInput(status as string, statusRegistry);
+  const statusDomain = statusRegistry
+    ? statusRegistry.definitions.map((definition) => definition.id)
+    : [...STATUS_VALUES];
+  assertFrontMatterCondition(normalizedStatus !== undefined, `status must be one of: ${statusDomain.join(", ")}`);
 
   const priority = record.priority;
   assertFrontMatterCondition(
@@ -290,6 +345,44 @@ function assertValidFrontMatter(frontMatter: unknown): asserts frontMatter is It
       assertFrontMatterCondition(typeof optionValue === "string", "type_options values must be strings");
       const optionText = optionValue as string;
       assertFrontMatterCondition(optionText.trim().length > 0, "type_options values must be non-empty strings");
+    }
+  }
+
+  if (runtimeContext?.fieldRegistry) {
+    for (const definition of runtimeContext.fieldRegistry.definitions) {
+      const fieldValue = record[definition.front_matter_key];
+      if (fieldValue === undefined) {
+        if (runtimeFieldRequiredForType(definition, itemType as string)) {
+          validationError(`missing required schema field: ${definition.front_matter_key}`);
+        }
+        continue;
+      }
+      try {
+        record[definition.front_matter_key] = coerceRuntimeFieldValue(
+          definition,
+          fieldValue,
+          `metadata field "${definition.front_matter_key}"`,
+        );
+      } catch (error: unknown) {
+        validationError(
+          error instanceof Error ? error.message.replace(/^Invalid\s+/u, "") : `invalid ${definition.front_matter_key} value`,
+        );
+      }
+    }
+  }
+
+  if (runtimeContext && runtimeContext.unknownFieldPolicy !== "allow") {
+    const knownKeys = new Set(STATIC_FRONT_MATTER_FIELD_SET);
+    for (const definition of runtimeContext.fieldRegistry?.definitions ?? []) {
+      knownKeys.add(definition.front_matter_key);
+    }
+    const unknownKeys = Object.keys(record).filter((key) => !knownKeys.has(key)).sort((left, right) => left.localeCompare(right));
+    if (unknownKeys.length > 0) {
+      if (runtimeContext.unknownFieldPolicy === "reject") {
+        validationError(`unknown schema fields are not allowed: ${unknownKeys.join(", ")}`);
+      } else {
+        runtimeContext.onWarning?.(`item_unknown_schema_fields:${unknownKeys.join(",")}`);
+      }
     }
   }
 }
@@ -688,8 +781,12 @@ function normalizeSeverityValue(value: ItemFrontMatter["severity"] | undefined):
   return undefined;
 }
 
-export function normalizeFrontMatter(frontMatter: ItemFrontMatter): ItemFrontMatter {
-  const normalizedStatus = normalizeStatusInput(frontMatter.status) ?? frontMatter.status;
+export function normalizeFrontMatter(
+  frontMatter: ItemFrontMatter,
+  options: Pick<ItemDocumentFormatOptions, "schema" | "onWarning"> = {},
+): ItemFrontMatter {
+  const runtimeContext = resolveRuntimeSchemaValidationContext(options);
+  const normalizedStatus = normalizeStatusInput(frontMatter.status, runtimeContext?.statusRegistry) ?? frontMatter.status;
   const tags = Array.from(new Set(frontMatter.tags.map((tag) => tag.trim().toLowerCase()).filter(Boolean))).sort((a, b) =>
     a.localeCompare(b),
   );
@@ -762,6 +859,36 @@ export function normalizeFrontMatter(frontMatter: ItemFrontMatter): ItemFrontMat
     }
     (normalized as unknown as Record<string, unknown>)[key] = value;
   }
+
+  if (runtimeContext?.fieldRegistry) {
+    for (const definition of runtimeContext.fieldRegistry.definitions) {
+      const currentValue = (normalized as unknown as Record<string, unknown>)[definition.front_matter_key];
+      if (currentValue === undefined) {
+        continue;
+      }
+      (normalized as unknown as Record<string, unknown>)[definition.front_matter_key] = coerceRuntimeFieldValue(
+        definition,
+        currentValue,
+        `metadata field "${definition.front_matter_key}"`,
+      );
+    }
+  }
+
+  if (runtimeContext && runtimeContext.unknownFieldPolicy !== "allow") {
+    const knownKeys = new Set(STATIC_FRONT_MATTER_FIELD_SET);
+    for (const definition of runtimeContext.fieldRegistry?.definitions ?? []) {
+      knownKeys.add(definition.front_matter_key);
+    }
+    const unknownKeys = Object.keys(normalized as unknown as Record<string, unknown>)
+      .filter((key) => !knownKeys.has(key))
+      .sort((left, right) => left.localeCompare(right));
+    if (unknownKeys.length > 0) {
+      if (runtimeContext.unknownFieldPolicy === "reject") {
+        validationError(`unknown schema fields are not allowed: ${unknownKeys.join(", ")}`);
+      }
+    }
+  }
+
   for (const [key, value] of Object.entries(normalized)) {
     if (value === undefined) {
       delete (normalized as unknown as Record<string, unknown>)[key];
@@ -827,7 +954,11 @@ export function splitFrontMatter(content: string): { frontMatter: string; body: 
   return { frontMatter, body };
 }
 
-function parseJsonMarkdownItemDocument(content: string): ItemDocument {
+function parseJsonMarkdownItemDocument(
+  content: string,
+  runtimeContext?: RuntimeSchemaValidationContext,
+  options: Pick<ItemDocumentFormatOptions, "schema" | "onWarning"> = {},
+): ItemDocument {
   const { frontMatter, body } = splitFrontMatter(content);
   if (!frontMatter) {
     const trimmed = content.trimStart();
@@ -843,15 +974,19 @@ function parseJsonMarkdownItemDocument(content: string): ItemDocument {
   } catch {
     validationError("JSON front matter is not valid JSON");
   }
-  assertValidFrontMatter(parsed);
+  assertValidFrontMatter(parsed, runtimeContext);
 
   return {
-    front_matter: normalizeFrontMatter(parsed),
+    front_matter: normalizeFrontMatter(parsed, options),
     body: normalizeBody(body),
   };
 }
 
-function parseToonItemDocument(content: string): ItemDocument {
+function parseToonItemDocument(
+  content: string,
+  runtimeContext?: RuntimeSchemaValidationContext,
+  options: Pick<ItemDocumentFormatOptions, "schema" | "onWarning"> = {},
+): ItemDocument {
   let parsed: unknown;
   try {
     parsed = decodeToon(content);
@@ -865,13 +1000,13 @@ function parseToonItemDocument(content: string): ItemDocument {
   const record = parsed as Record<string, unknown>;
 
   if (Object.prototype.hasOwnProperty.call(record, "front_matter")) {
-    assertValidFrontMatter(record.front_matter);
+    assertValidFrontMatter(record.front_matter, runtimeContext);
     assertFrontMatterCondition(
       record.body === undefined || typeof record.body === "string",
       "TOON item document body must be a string",
     );
     return {
-      front_matter: normalizeFrontMatter(record.front_matter),
+      front_matter: normalizeFrontMatter(record.front_matter, options),
       body: normalizeBody(typeof record.body === "string" ? record.body : ""),
     };
   }
@@ -881,15 +1016,18 @@ function parseToonItemDocument(content: string): ItemDocument {
     body === undefined || typeof body === "string",
     "TOON item document body must be a string",
   );
-  assertValidFrontMatter(frontMatterRecord);
+  assertValidFrontMatter(frontMatterRecord, runtimeContext);
   return {
-    front_matter: normalizeFrontMatter(frontMatterRecord),
+    front_matter: normalizeFrontMatter(frontMatterRecord, options),
     body: normalizeBody(typeof body === "string" ? body : ""),
   };
 }
 
-function serializeJsonMarkdownItemDocument(document: ItemDocument): string {
-  const normalizedFrontMatter = normalizeFrontMatter(document.front_matter);
+function serializeJsonMarkdownItemDocument(
+  document: ItemDocument,
+  options: Pick<ItemDocumentFormatOptions, "schema" | "onWarning"> = {},
+): string {
+  const normalizedFrontMatter = normalizeFrontMatter(document.front_matter, options);
   const orderedFrontMatter = orderFrontMatter(normalizedFrontMatter);
   const serializedFrontMatter = JSON.stringify(orderedFrontMatter, null, 2);
   const normalizedBody = normalizeBody(document.body ?? "");
@@ -899,14 +1037,17 @@ function serializeJsonMarkdownItemDocument(document: ItemDocument): string {
   return `${serializedFrontMatter}\n\n${normalizedBody}\n`;
 }
 
-function serializeToonItemDocument(document: ItemDocument): string {
-  const normalizedFrontMatter = normalizeFrontMatter(document.front_matter);
+function serializeToonItemDocument(
+  document: ItemDocument,
+  options: Pick<ItemDocumentFormatOptions, "schema" | "onWarning"> = {},
+): string {
+  const normalizedFrontMatter = normalizeFrontMatter(document.front_matter, options);
   const orderedFrontMatter = orderFrontMatter(normalizedFrontMatter);
   const normalizedBody = normalizeBody(document.body ?? "");
   return `${encodeToon({ ...orderedFrontMatter, body: normalizedBody })}\n`;
 }
 
-export function parseItemDocument(content: string, options: { format?: ItemFormat } = {}): ItemDocument {
+export function parseItemDocument(content: string, options: ItemDocumentFormatOptions = {}): ItemDocument {
   const conflictMarker = findFirstMergeConflictMarker(content);
   if (conflictMarker) {
     throw new PmCliError(
@@ -922,17 +1063,20 @@ export function parseItemDocument(content: string, options: { format?: ItemForma
     );
   }
   const format = options.format ?? "json_markdown";
-  return format === "toon" ? parseToonItemDocument(content) : parseJsonMarkdownItemDocument(content);
+  const runtimeContext = resolveRuntimeSchemaValidationContext(options);
+  return format === "toon"
+    ? parseToonItemDocument(content, runtimeContext, options)
+    : parseJsonMarkdownItemDocument(content, runtimeContext, options);
 }
 
-export function serializeItemDocument(document: ItemDocument, options: { format?: ItemFormat } = {}): string {
+export function serializeItemDocument(document: ItemDocument, options: ItemDocumentFormatOptions = {}): string {
   const format = options.format ?? "json_markdown";
-  return format === "toon" ? serializeToonItemDocument(document) : serializeJsonMarkdownItemDocument(document);
+  return format === "toon" ? serializeToonItemDocument(document, options) : serializeJsonMarkdownItemDocument(document, options);
 }
 
-export function canonicalDocument(document: ItemDocument): ItemDocument {
+export function canonicalDocument(document: ItemDocument, options: Pick<ItemDocumentFormatOptions, "schema" | "onWarning"> = {}): ItemDocument {
   return {
-    front_matter: normalizeFrontMatter(document.front_matter),
+    front_matter: normalizeFrontMatter(document.front_matter, options),
     body: normalizeBody(document.body ?? ""),
   };
 }

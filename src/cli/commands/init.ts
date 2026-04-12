@@ -4,6 +4,7 @@ import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../co
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { normalizePrefix } from "../../core/item/id.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
+import { ensureRuntimeSchemaFileScaffold } from "../../core/schema/runtime-schema.js";
 import { PM_REQUIRED_SUBDIRS, SETTINGS_DEFAULTS } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
@@ -63,6 +64,18 @@ export async function runInit(prefixArg: string | undefined, global: GlobalOptio
     settings = cloneDefaults();
     settings.id_prefix = normalizedPrefix;
     await writeSettings(pmRoot, settings);
+  }
+
+  const runtimeSchemaScaffold = await ensureRuntimeSchemaFileScaffold(pmRoot, settings.schema);
+  for (const createdPath of runtimeSchemaScaffold.created_paths) {
+    createdDirs.push(createdPath);
+    warnings.push(
+      ...(await runActiveOnWriteHooks({
+        path: createdPath,
+        scope: "project",
+        op: "init:runtime_schema_file",
+      })),
+    );
   }
 
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());

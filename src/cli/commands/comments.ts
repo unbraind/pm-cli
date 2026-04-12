@@ -80,7 +80,7 @@ export async function runComments(id: string, options: CommentsCommandOptions, g
     if (!located) {
       throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
     }
-    const loaded = await readLocatedItem(located);
+    const loaded = await readLocatedItem(located, { schema: settings.schema });
     const comments = limitComments(loaded.document.front_matter.comments ?? [], limit);
     return {
       id: located.id,

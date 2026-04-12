@@ -1,9 +1,13 @@
+import { normalizeStatusInput } from "../../core/item/status.js";
+import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { compareTimestampStrings, nowIso } from "../../core/shared/time.js";
 import { jaccardSimilarity, normalizeLowercaseWhitespace, tokenizeAlphaNumeric } from "../../core/shared/text-normalization.js";
-import { STATUS_VALUES, type ItemStatus } from "../../types/index.js";
+import { resolvePmRoot } from "../../core/store/paths.js";
+import { readSettings } from "../../core/store/settings.js";
+import { type ItemStatus } from "../../types/index.js";
 import { runList } from "./list.js";
 
 export const DEDUPE_AUDIT_MODES = ["title_exact", "title_fuzzy", "parent_scope"] as const;
@@ -112,13 +116,17 @@ function parseMode(raw: string | undefined): DedupeAuditMode {
   return normalized as DedupeAuditMode;
 }
 
+let dedupeAllowedStatuses = new Set<string>(["draft", "open", "in_progress", "blocked", "closed", "canceled"]);
+let dedupeTerminalStatuses = new Set<string>(["closed", "canceled"]);
+let dedupeStatusRegistry: RuntimeStatusRegistry | null = null;
+
 function parseStatus(raw: string | undefined): ItemStatus | undefined {
   if (raw === undefined) {
     return undefined;
   }
   const normalized = raw.trim().toLowerCase().replaceAll("-", "_");
-  if (!STATUS_VALUES.includes(normalized as ItemStatus)) {
-    throw new PmCliError(`Status filter must be one of ${STATUS_VALUES.join("|")}`, EXIT_CODE.USAGE);
+  if (!dedupeAllowedStatuses.has(normalized)) {
+    throw new PmCliError(`Status filter must be one of ${[...dedupeAllowedStatuses].join("|")}`, EXIT_CODE.USAGE);
   }
   return normalized as ItemStatus;
 }
@@ -146,7 +154,8 @@ function parseThreshold(raw: string | undefined): number | undefined {
 }
 
 function isTerminal(status: ItemStatus): boolean {
-  return status === "closed" || status === "canceled";
+  const normalized = normalizeStatusInput(status, dedupeStatusRegistry ?? undefined) ?? status;
+  return dedupeTerminalStatuses.has(normalized);
 }
 
 function compareCandidates(left: DedupeAuditPreparedCandidate, right: DedupeAuditPreparedCandidate): number {
@@ -361,6 +370,12 @@ function compareClusters(left: DedupeAuditCluster, right: DedupeAuditCluster): n
 }
 
 export async function runDedupeAudit(options: DedupeAuditOptions, global: GlobalOptions): Promise<DedupeAuditResult> {
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  const settings = await readSettings(pmRoot);
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  dedupeStatusRegistry = statusRegistry;
+  dedupeAllowedStatuses = new Set(statusRegistry.definitions.map((definition) => definition.id));
+  dedupeTerminalStatuses = new Set(statusRegistry.terminal_statuses);
   const mode = parseMode(options.mode);
   const status = parseStatus(options.status);
   const limit = parseLimit(options.limit);

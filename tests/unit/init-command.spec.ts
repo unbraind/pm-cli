@@ -19,7 +19,7 @@ describe("runInit", () => {
       expect(result.ok).toBe(true);
       expect(result.path).toBe(tempRoot);
       expect(result.settings.id_prefix).toBe("acme-");
-      expect(result.created_dirs).toHaveLength(PM_REQUIRED_SUBDIRS.length - 1);
+      expect(result.created_dirs).toHaveLength(PM_REQUIRED_SUBDIRS.length - 1 + 4);
       expect(result.warnings).toEqual([`already_exists:${tempRoot}`]);
 
       for (const subdir of PM_REQUIRED_SUBDIRS) {
@@ -94,15 +94,22 @@ describe("runInit", () => {
       const result = await runInit("pm", { path: tempRoot });
       const expectedTargets = PM_REQUIRED_SUBDIRS.map((subdir) => (subdir ? path.join(tempRoot, subdir) : tempRoot));
       const settingsPath = path.join(tempRoot, "settings.json");
+      const expectedSchemaFiles = [
+        path.join(tempRoot, "schema", "types.json"),
+        path.join(tempRoot, "schema", "statuses.json"),
+        path.join(tempRoot, "schema", "fields.json"),
+        path.join(tempRoot, "schema", "workflows.json"),
+      ];
 
       expect(trace).toEqual([
         ...expectedTargets.map((target) => `init:ensure_dir:${target}`),
         `settings:write:${settingsPath}`,
+        ...expectedSchemaFiles.map((target) => `init:runtime_schema_file:${target}`),
       ]);
       expect(result.warnings).toContain(`already_exists:${tempRoot}`);
       expect(
         result.warnings.filter((warning) => warning === "extension_hook_failed:project:init-write-boom:onWrite"),
-      ).toHaveLength(PM_REQUIRED_SUBDIRS.length);
+      ).toHaveLength(PM_REQUIRED_SUBDIRS.length + 4);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

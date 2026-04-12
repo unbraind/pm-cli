@@ -8,6 +8,12 @@ import type {
 } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { commandOptionFlagLabel, resolveCommandOptionPolicyState, resolveItemTypeRegistry } from "../../core/item/type-registry.js";
+import {
+  resolveRuntimeFieldRegistry,
+  resolveRuntimeStatusRegistry,
+  runtimeFieldOptionTarget,
+  type RuntimeFieldRegistry,
+} from "../../core/schema/runtime-schema.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import {
@@ -105,6 +111,14 @@ export interface ContractsResult {
   command_flags?: CommandFlagSurface[];
   commander_aliases?: Record<string, CommanderOptionAliasContract[]>;
   extension_commands?: ExtensionCommandContract[];
+  runtime_schema?: {
+    statuses: string[];
+    open_status: string;
+    close_status: string;
+    canceled_status: string;
+    types: string[];
+    fields_by_command: Record<string, string[]>;
+  };
 }
 
 type PmToolAction = (typeof PM_TOOL_ACTIONS)[number];
@@ -779,6 +793,57 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   return GLOBAL_FLAG_CONTRACTS;
 }
 
+function normalizeCommandForRuntimeFieldFlags(command: string): string {
+  if (LIST_COMMAND_NAMES.has(command)) {
+    return "list";
+  }
+  if (command === "cal") {
+    return "calendar";
+  }
+  if (command === "ctx") {
+    return "context";
+  }
+  if (command === "update-many") {
+    return "update";
+  }
+  return command;
+}
+
+function buildRuntimeFieldFlagContracts(fieldRegistry: RuntimeFieldRegistry): Map<string, CliFlagContract[]> {
+  const buckets = new Map<string, { flags: CliFlagContract[]; seen: Set<string> }>();
+  for (const definition of fieldRegistry.definitions) {
+    const primaryFlag = runtimeFieldOptionTarget(definition);
+    if (!primaryFlag.startsWith("--")) {
+      continue;
+    }
+    const shortAlias = definition.cli_aliases.find((alias) => alias.startsWith("-") && !alias.startsWith("--"));
+    const longAliases = definition.cli_aliases.filter((alias) => alias.startsWith("--"));
+    for (const command of definition.commands) {
+      const bucket = buckets.get(command) ?? { flags: [], seen: new Set<string>() };
+      const primaryContract: CliFlagContract = shortAlias ? { flag: primaryFlag, short: shortAlias } : { flag: primaryFlag };
+      const primaryKey = `${primaryContract.flag}|${primaryContract.short ?? ""}`;
+      if (!bucket.seen.has(primaryKey)) {
+        bucket.seen.add(primaryKey);
+        bucket.flags.push(primaryContract);
+      }
+      for (const alias of longAliases) {
+        const key = `${alias}|`;
+        if (bucket.seen.has(key)) {
+          continue;
+        }
+        bucket.seen.add(key);
+        bucket.flags.push({ flag: alias });
+      }
+      buckets.set(command, bucket);
+    }
+  }
+  const result = new Map<string, CliFlagContract[]>();
+  for (const [command, bucket] of buckets.entries()) {
+    result.set(command, withFlagAliasMetadata(bucket.flags));
+  }
+  return result;
+}
+
 function mergeFlagContracts(primary: CliFlagContract[], secondary: CliFlagContract[]): CliFlagContract[] {
   const merged: CliFlagContract[] = [];
   const seen = new Set<string>();
@@ -796,13 +861,16 @@ function mergeFlagContracts(primary: CliFlagContract[], secondary: CliFlagContra
 function buildCommandFlagSurface(
   commands: string[],
   extensionFlagMap: ReturnType<typeof collectExtensionFlagContractsByCommand>,
+  runtimeFieldFlagMap: Map<string, CliFlagContract[]>,
 ): CommandFlagSurface[] {
   return commands
     .map((command) => {
       const isCoreCommand = PM_CORE_COMMAND_NAMES.includes(command as (typeof PM_CORE_COMMAND_NAMES)[number]);
       const coreFlags = isCoreCommand ? resolveCoreCommandFlags(command) : [];
+      const runtimeFlags = runtimeFieldFlagMap.get(normalizeCommandForRuntimeFieldFlags(command)) ?? [];
       const extensionFlags = extensionFlagMap.get(command);
-      const flags = mergeFlagContracts(coreFlags, extensionFlags?.flags ?? []);
+      const coreWithRuntime = mergeFlagContracts(coreFlags, runtimeFlags);
+      const flags = mergeFlagContracts(coreWithRuntime, extensionFlags?.flags ?? []);
       const provider: CommandFlagSurface["provider"] =
         coreFlags.length > 0 && (extensionFlags?.flags.length ?? 0) > 0
           ? "mixed"
@@ -940,6 +1008,9 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
     settings = structuredClone(SETTINGS_DEFAULTS);
   }
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
+  const runtimeFieldFlagMap = buildRuntimeFieldFlagContracts(runtimeFieldRegistry);
   const createRequiredOptionContracts = buildCreateRequiredOptionContracts(typeRegistry);
   const runtimeProbe = await resolveRuntimeExtensionActionProbe(global);
   const extensionContracts = collectExtensionCommandContracts(runtimeProbe);
@@ -1050,6 +1121,19 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
       command_scoped: selectedCommand !== undefined,
     },
     commands,
+    runtime_schema: {
+      statuses: statusRegistry.definitions.map((definition) => definition.id),
+      open_status: statusRegistry.open_status,
+      close_status: statusRegistry.close_status,
+      canceled_status: statusRegistry.canceled_status,
+      types: [...typeRegistry.types],
+      fields_by_command: Object.fromEntries(
+        [...runtimeFieldRegistry.command_to_fields.entries()].map(([command, definitions]) => [
+          command,
+          definitions.map((definition) => runtimeFieldOptionTarget(definition)),
+        ]),
+      ),
+    },
   };
 
   if (!flagsOnly) {
@@ -1063,7 +1147,7 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
   }
 
   if (!schemaOnly && !availabilityOnly) {
-    result.command_flags = buildCommandFlagSurface(commands, extensionFlagMap);
+    result.command_flags = buildCommandFlagSurface(commands, extensionFlagMap, runtimeFieldFlagMap);
   }
 
   if (!schemaOnly && !flagsOnly && !availabilityOnly) {

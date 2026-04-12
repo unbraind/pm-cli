@@ -30,6 +30,14 @@ export interface CompletionResult {
 
 const VALID_SHELLS: CompletionShell[] = ["bash", "zsh", "fish"];
 const DEFAULT_ITEM_TYPES = [...BUILTIN_ITEM_TYPE_VALUES];
+const DEFAULT_STATUS_VALUES = ["draft", "open", "in_progress", "blocked", "closed", "canceled"];
+
+type CompletionFlagCommand = "list" | "create" | "update" | "update-many" | "search" | "calendar" | "context";
+
+export interface CompletionRuntimeConfig {
+  statuses?: string[];
+  command_flags?: Partial<Record<CompletionFlagCommand, string[]>>;
+}
 
 const ALL_COMMANDS = [...PM_CORE_COMMAND_NAMES];
 const LIST_FLAGS = toCompletionFlagString(LIST_FILTER_FLAG_CONTRACTS);
@@ -62,14 +70,28 @@ function joinCompletionValues(values: string[]): string {
     .join(" ");
 }
 
+function mergeFlagStrings(baseFlags: string, runtimeFlags: string[] | undefined): string {
+  const merged = [...baseFlags.split(/\s+/u).filter((value) => value.length > 0), ...(runtimeFlags ?? [])];
+  return joinCompletionValues(merged);
+}
+
 export function generateBashScript(
   itemTypes: string[] = DEFAULT_ITEM_TYPES,
   tags: string[] = [],
   eagerTagExpansion = false,
+  runtime: CompletionRuntimeConfig = {},
 ): string {
   const cmds = ALL_COMMANDS.join(" ");
   const typeValues = itemTypes.join(" ");
+  const statusValues = joinCompletionValues(runtime.statuses ?? DEFAULT_STATUS_VALUES);
   const tagValues = joinCompletionValues(tags);
+  const listFlags = mergeFlagStrings(LIST_FLAGS, runtime.command_flags?.list);
+  const createFlags = mergeFlagStrings(CREATE_FLAGS, runtime.command_flags?.create);
+  const updateFlags = mergeFlagStrings(UPDATE_FLAGS, runtime.command_flags?.update);
+  const updateManyFlags = mergeFlagStrings(UPDATE_MANY_FLAGS, runtime.command_flags?.["update-many"]);
+  const searchFlags = mergeFlagStrings(SEARCH_FLAGS, runtime.command_flags?.search);
+  const calendarFlags = mergeFlagStrings(CALENDAR_FLAGS, runtime.command_flags?.calendar);
+  const contextFlags = mergeFlagStrings(CONTEXT_FLAGS, runtime.command_flags?.context);
   const useEagerTagExpansion = eagerTagExpansion || tags.length > 0;
   // Note: "${...}" inside regular (non-template) strings are literal characters,
   // not JS interpolation. Only backtick template literals interpolate ${...}.
@@ -93,6 +115,11 @@ export function generateBashScript(
     "",
     '  if [[ "$prev" == "--type" ]]; then',
     `    COMPREPLY=(${compgen(typeValues)})`,
+    "    return 0",
+    "  fi",
+    "",
+    '  if [[ "$prev" == "--status" ]]; then',
+    `    COMPREPLY=(${compgen(statusValues)})`,
     "    return 0",
     "  fi",
     "",
@@ -124,7 +151,7 @@ export function generateBashScript(
     "",
     '  case "$cmd" in',
     "    list|list-all|list-draft|list-open|list-in-progress|list-blocked|list-closed|list-canceled)",
-    `      COMPREPLY=(${compgen(LIST_FLAGS)})`,
+    `      COMPREPLY=(${compgen(listFlags)})`,
     "      ;;",
     "    aggregate)",
     `      COMPREPLY=(${compgen("--group-by --count --include-unparented --status --type --tag --priority --deadline-before --deadline-after --assignee --assignee-filter --parent --sprint --release --json --quiet --path --no-extensions --no-pager --profile --help")})`,
@@ -133,22 +160,22 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--mode --limit --threshold --status --type --tag --priority --deadline-before --deadline-after --assignee --assignee-filter --parent --sprint --release --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    create)",
-    `      COMPREPLY=(${compgen(CREATE_FLAGS)})`,
+    `      COMPREPLY=(${compgen(createFlags)})`,
     "      ;;",
     "    update)",
-    `      COMPREPLY=(${compgen(UPDATE_FLAGS)})`,
+    `      COMPREPLY=(${compgen(updateFlags)})`,
     "      ;;",
     "    update-many)",
-    `      COMPREPLY=(${compgen(UPDATE_MANY_FLAGS)})`,
+    `      COMPREPLY=(${compgen(updateManyFlags)})`,
     "      ;;",
     "    calendar|cal)",
-      `      COMPREPLY=(${compgen(CALENDAR_FLAGS)})`,
+      `      COMPREPLY=(${compgen(calendarFlags)})`,
       "      ;;",
     "    context|ctx)",
-    `      COMPREPLY=(${compgen(CONTEXT_FLAGS)})`,
+    `      COMPREPLY=(${compgen(contextFlags)})`,
     "      ;;",
     "    search)",
-    `      COMPREPLY=(${compgen(SEARCH_FLAGS)})`,
+    `      COMPREPLY=(${compgen(searchFlags)})`,
     "      ;;",
     "    reindex)",
     `      COMPREPLY=(${compgen("--mode --progress --json --quiet --path --no-extensions --no-pager --profile --help")})`,
@@ -1451,6 +1478,7 @@ export function runCompletion(
   itemTypes: string[] = DEFAULT_ITEM_TYPES,
   tags: string[] = [],
   eagerTagExpansion = false,
+  runtime: CompletionRuntimeConfig = {},
 ): CompletionResult {
   const normalized = shell.trim().toLowerCase();
   if (!VALID_SHELLS.includes(normalized as CompletionShell)) {
@@ -1462,7 +1490,7 @@ export function runCompletion(
   const validShell = normalized as CompletionShell;
   let script: string;
   if (validShell === "bash") {
-    script = generateBashScript(itemTypes, tags, eagerTagExpansion);
+    script = generateBashScript(itemTypes, tags, eagerTagExpansion, runtime);
   } else if (validShell === "zsh") {
     script = generateZshScript(itemTypes, tags, eagerTagExpansion);
   } else {

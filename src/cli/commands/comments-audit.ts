@@ -1,7 +1,11 @@
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { STATUS_VALUES, type Comment, type ItemStatus } from "../../types/index.js";
+import { normalizeStatusInput } from "../../core/item/status.js";
+import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
+import { resolvePmRoot } from "../../core/store/paths.js";
+import { readSettings } from "../../core/store/settings.js";
+import { type Comment, type ItemStatus } from "../../types/index.js";
 import { runList } from "./list.js";
 
 export interface CommentsAuditOptions {
@@ -98,15 +102,18 @@ export interface CommentsAuditHistoryRow {
   text: string;
 }
 
-function parseStatus(raw: string | undefined): ItemStatus | undefined {
+function parseStatus(raw: string | undefined, statusRegistry: RuntimeStatusRegistry): ItemStatus | undefined {
   if (raw === undefined) {
     return undefined;
   }
-  const normalized = raw.trim().toLowerCase().replaceAll("-", "_");
-  if (!STATUS_VALUES.includes(normalized as ItemStatus)) {
-    throw new PmCliError(`Status filter must be one of ${STATUS_VALUES.join("|")}`, EXIT_CODE.USAGE);
+  const normalized = normalizeStatusInput(raw, statusRegistry);
+  if (!normalized) {
+    throw new PmCliError(
+      `Status filter must be one of ${statusRegistry.definitions.map((definition) => definition.id).join("|")}`,
+      EXIT_CODE.USAGE,
+    );
   }
-  return normalized as ItemStatus;
+  return normalized;
 }
 
 function parseNonNegativeInteger(raw: string | undefined, flag: string): number | undefined {
@@ -228,7 +235,10 @@ function buildCommentsAuditSummary(items: CommentsAuditEntry[]): CommentsAuditSu
 }
 
 export async function runCommentsAudit(options: CommentsAuditOptions, global: GlobalOptions): Promise<CommentsAuditResult> {
-  const status = parseStatus(options.status);
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  const settings = await readSettings(pmRoot);
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const status = parseStatus(options.status, statusRegistry);
   const fullHistory = options.fullHistory === true;
   const latestParsed = parseNonNegativeInteger(options.latest, "--latest");
   if (fullHistory && latestParsed !== undefined) {

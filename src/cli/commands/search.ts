@@ -22,6 +22,13 @@ import {
 } from "../../core/search/vector-stores.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
+import { normalizeStatusInput } from "../../core/item/status.js";
+import { collectRuntimeFilterValues, matchesRuntimeFilters } from "../../core/schema/runtime-field-filters.js";
+import {
+  resolveRuntimeFieldRegistry,
+  resolveRuntimeStatusRegistry,
+  type RuntimeStatusRegistry,
+} from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -46,6 +53,7 @@ export interface SearchOptions {
   compact?: boolean;
   full?: boolean;
   fields?: string;
+  [key: string]: unknown;
 }
 
 type SearchMode = "keyword" | "semantic" | "hybrid";
@@ -126,8 +134,9 @@ type ExtensionVectorAdapter = {
 
 
 
-function isTerminal(status: ItemStatus): boolean {
-  return status === "closed" || status === "canceled";
+function isTerminal(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): boolean {
+  const normalized = normalizeStatusInput(status, statusRegistry) ?? status;
+  return statusRegistry.terminal_statuses.has(normalized);
 }
 
 interface SearchModeContext {
@@ -294,7 +303,12 @@ function applyExactQueryFilters(
   });
 }
 
-function applyFilters(items: ItemDocument[], options: SearchOptions, typeRegistry: ItemTypeRegistry): ItemDocument[] {
+function applyFilters(
+  items: ItemDocument[],
+  options: SearchOptions,
+  typeRegistry: ItemTypeRegistry,
+  runtimeFieldFilters: Record<string, unknown>,
+): ItemDocument[] {
   const typeFilter = parseType(options.type, typeRegistry);
   const tagFilter = options.tag?.trim().toLowerCase();
   const priorityFilter = parsePriority(options.priority);
@@ -308,6 +322,7 @@ function applyFilters(items: ItemDocument[], options: SearchOptions, typeRegistr
     if (priorityFilter !== undefined && item.priority !== priorityFilter) return false;
     if (deadlineBefore && (!item.deadline || compareTimestampStrings(item.deadline, deadlineBefore) > 0)) return false;
     if (deadlineAfter && (!item.deadline || compareTimestampStrings(item.deadline, deadlineAfter) < 0)) return false;
+    if (!matchesRuntimeFilters(item as Record<string, unknown>, runtimeFieldFilters)) return false;
     return true;
   });
 }
@@ -509,12 +524,12 @@ function scoreDocument(
   };
 }
 
-function sortHits(items: SearchHit[]): SearchHit[] {
+function sortHits(items: SearchHit[], statusRegistry: RuntimeStatusRegistry): SearchHit[] {
   return [...items].sort((a, b) => {
     const byScore = b.score - a.score;
     if (byScore !== 0) return byScore;
-    const aTerminal = isTerminal(a.item.status);
-    const bTerminal = isTerminal(b.item.status);
+    const aTerminal = isTerminal(a.item.status, statusRegistry);
+    const bTerminal = isTerminal(b.item.status, statusRegistry);
     if (aTerminal !== bTerminal) {
       return aTerminal ? 1 : -1;
     }
@@ -910,9 +925,10 @@ async function loadDocuments(
   pmRoot: string,
   itemFormat: ItemFormat,
   typeToFolder: Record<string, string>,
+  schema: PmSettings["schema"],
 ): Promise<{ documents: ItemDocument[]; warnings: string[] }> {
   const listWarnings: string[] = [];
-  const items = await listAllFrontMatter(pmRoot, itemFormat, typeToFolder, listWarnings);
+  const items = await listAllFrontMatter(pmRoot, itemFormat, typeToFolder, listWarnings, schema);
   const warnings = [...new Set(listWarnings)].sort((left, right) => left.localeCompare(right));
   const documents: ItemDocument[] = [];
   for (const item of items) {
@@ -923,7 +939,7 @@ async function loadDocuments(
         path: preferredPath,
         scope: "project",
       });
-      documents.push(parseItemDocument(raw, { format: itemFormat }));
+      documents.push(parseItemDocument(raw, { format: itemFormat, schema, onWarning: (warning) => listWarnings.push(warning) }));
       continue;
     } catch {
       // Fallback to the alternate format when preferred format path is absent.
@@ -935,7 +951,7 @@ async function loadDocuments(
       path: fallbackPath,
       scope: "project",
     });
-    documents.push(parseItemDocument(raw, { format: fallbackFormat }));
+    documents.push(parseItemDocument(raw, { format: fallbackFormat, schema, onWarning: (warning) => listWarnings.push(warning) }));
   }
   return {
     documents,
@@ -1002,6 +1018,9 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   const storedSettings = await readSettings(pmRoot);
   const runtimeDefaultsResolution = resolveSettingsWithSemanticRuntimeDefaults(storedSettings);
   const settings = runtimeDefaultsResolution.settings;
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
+  const runtimeFieldFilters = collectRuntimeFilterValues(options as Record<string, unknown>, runtimeFieldRegistry, "search");
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const maxResults = resolveSearchMaxResults(settings);
   const scoreThreshold = resolveSearchScoreThreshold(settings);
@@ -1015,10 +1034,15 @@ export async function runSearch(query: string, options: SearchOptions, global: G
     hasProvider: providerResolution.active !== null || extensionSearchProvider !== null,
     hasVectorStore: vectorResolution.active !== null || extensionVectorAdapter !== null,
   });
-  const loadedDocuments = await loadDocuments(pmRoot, settings.item_format ?? "json_markdown", typeRegistry.type_to_folder);
+  const loadedDocuments = await loadDocuments(
+    pmRoot,
+    settings.item_format ?? "json_markdown",
+    typeRegistry.type_to_folder,
+    settings.schema,
+  );
   const warnings = loadedDocuments.warnings;
   const allDocuments = loadedDocuments.documents;
-  const metadataFilteredDocuments = applyFilters(allDocuments, options, typeRegistry);
+  const metadataFilteredDocuments = applyFilters(allDocuments, options, typeRegistry, runtimeFieldFilters);
   const filteredDocuments = applyExactQueryFilters(metadataFilteredDocuments, normalizedQuery, {
     titleExact,
     phraseExact,
@@ -1116,7 +1140,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   }
 
   const thresholded = hits.filter((entry) => entry.score >= scoreThreshold);
-  const sorted = sortHits(thresholded);
+  const sorted = sortHits(thresholded, statusRegistry);
   const resolvedLimit = effectiveMode === "keyword" ? limit : (limit ?? maxResults);
   const limited = resolvedLimit === undefined ? sorted : sorted.slice(0, resolvedLimit);
   const projectedItems = projectSearchHits(limited, projection);
@@ -1140,6 +1164,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
       score_threshold: scoreThreshold,
       hybrid_semantic_weight: effectiveMode === "hybrid" ? hybridSemanticWeight : null,
       limit: options.limit ?? null,
+      runtime_filters: runtimeFieldFilters,
       projection: projection.mode,
       fields: projectionFields,
     },

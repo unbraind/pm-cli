@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { encode as encodeToon } from "@toon-format/toon";
 import { normalizeFrontMatter, parseItemDocument, serializeItemDocument } from "../../src/item-format.js";
+import { SETTINGS_DEFAULTS } from "../../src/constants.js";
 
 const FIXED_TS = "2026-02-22T00:00:00.000Z";
 
@@ -17,6 +19,13 @@ function buildSource(overrides: Record<string, unknown> = {}, body = "Body"): st
     ...overrides,
   };
   return `${JSON.stringify(frontMatter, null, 2)}\n\n${body}\n`;
+}
+
+function runtimeSchemaOverrides(overrides: Record<string, unknown> = {}) {
+  return {
+    ...SETTINGS_DEFAULTS.schema,
+    ...overrides,
+  };
 }
 
 describe("item-format front-matter validation", () => {
@@ -64,6 +73,72 @@ describe("item-format front-matter validation", () => {
   it("accepts in-progress status alias and normalizes to canonical status", () => {
     const parsed = parseItemDocument(buildSource({ status: "in-progress" }));
     expect(parsed.front_matter.status).toBe("in_progress");
+  });
+
+  it("accepts custom statuses when provided via runtime schema", () => {
+    const schema = runtimeSchemaOverrides({
+      statuses: [
+        { id: "open", roles: ["active", "default_open"] },
+        { id: "review", roles: ["active"] },
+        { id: "done", roles: ["terminal", "terminal_done", "default_close"] },
+        { id: "canceled", roles: ["terminal", "terminal_canceled", "default_cancel"] },
+      ],
+      workflow: {
+        ...SETTINGS_DEFAULTS.schema.workflow,
+        open_status: "open",
+        close_status: "done",
+      },
+    });
+    const parsed = parseItemDocument(buildSource({ status: "review" }), { schema });
+    expect(parsed.front_matter.status).toBe("review");
+  });
+
+  it("enforces runtime field types for TOON metadata values", () => {
+    const schema = runtimeSchemaOverrides({
+      fields: [
+        {
+          key: "story_points",
+          type: "number",
+          commands: ["create", "update", "list", "search", "calendar", "context"],
+        },
+      ],
+    });
+    const source = `${encodeToon({
+      id: "pm-toon-schema-field",
+      title: "TOON runtime field check",
+      description: "Validate schema field coercion",
+      type: "Task",
+      status: "open",
+      priority: 1,
+      tags: [],
+      created_at: FIXED_TS,
+      updated_at: FIXED_TS,
+      story_points: "abc",
+      body: "Body",
+    })}\n`;
+    expect(() => parseItemDocument(source, { format: "toon", schema })).toThrow('metadata field "story_points" must be a number');
+  });
+
+  it("rejects unknown metadata fields when unknown_field_policy is reject", () => {
+    const schema = runtimeSchemaOverrides({
+      unknown_field_policy: "reject",
+    });
+    expect(() => parseItemDocument(buildSource({ mystery_field: "x" }), { schema })).toThrow(
+      "unknown schema fields are not allowed: mystery_field",
+    );
+  });
+
+  it("emits warnings for unknown metadata fields when unknown_field_policy is warn", () => {
+    const warnings: string[] = [];
+    const schema = runtimeSchemaOverrides({
+      unknown_field_policy: "warn",
+    });
+    const parsed = parseItemDocument(buildSource({ mystery_field: "x" }), {
+      schema,
+      onWarning: (warning) => warnings.push(warning),
+    });
+    expect((parsed.front_matter as Record<string, unknown>).mystery_field).toBe("x");
+    expect(warnings).toEqual(["item_unknown_schema_fields:mystery_field"]);
   });
 
   it("throws when tags are not string arrays", () => {

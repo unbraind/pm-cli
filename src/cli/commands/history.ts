@@ -267,7 +267,7 @@ export async function runHistory(id: string, options: HistoryCommandOptions, glo
     const errors = [...verification.errors];
 
     if (located) {
-      const loaded = await readLocatedItem(located);
+      const loaded = await readLocatedItem(located, { schema: settings.schema });
       currentItemHash = hashDocument(loaded.document);
       currentMatchesLatest = currentItemHash === latestAfterHash;
       if (!currentMatchesLatest) {

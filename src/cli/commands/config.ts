@@ -527,6 +527,7 @@ export async function runConfig(
         nextFormat,
         "config:set:item_format:migrate",
         typeRegistry.type_to_folder,
+        settings.schema,
       );
       migration = {
         target_format: migrated.target_format,

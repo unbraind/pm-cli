@@ -230,15 +230,16 @@ Constraints:
 
 ## 7) Item File Format
 
-Each item is one markdown file at `<type-folder>/<id>.md`.
+Each item is one document at `<type-folder>/<id>.toon` (default) or `<type-folder>/<id>.md` (JSON+Markdown alternative).
 
 Format:
 
-1. JSON object front-matter (pretty-printed, 2-space indent, stable key order).
-2. One blank line.
-3. Optional markdown body.
+1. TOON root-object metadata keys (default) or JSON object metadata block (markdown format).
+2. Optional `body` field / markdown body.
 
-### 7.1 Canonical front-matter schema
+### 7.1 Canonical item-metadata schema
+
+`front_matter` remains the internal field name in TypeScript (`ItemDocument.front_matter`), but TOON documents store the same metadata as top-level keys.
 
 Required fields:
 

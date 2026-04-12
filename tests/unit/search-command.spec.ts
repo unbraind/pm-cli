@@ -5,13 +5,23 @@ import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../src/constants.js";
 import { serializeItemDocument } from "../../src/item-format.js";
 import { readJsonFixture } from "../helpers/fixtures.js";
 
-const pathExistsMock = vi.fn<() => Promise<boolean>>();
-const readSettingsMock = vi.fn<() => Promise<{ id_prefix: string }>>();
-const listAllFrontMatterMock = vi.fn<() => Promise<ItemFrontMatter[]>>();
-const readFileMock = vi.fn<(targetPath: string, encoding: string) => Promise<string>>();
-const realpathMock = vi.fn<(targetPath: string) => Promise<string>>();
-const runActiveOnReadHooksMock = vi.fn<() => Promise<string[]>>();
-const spawnSyncMock = vi.fn();
+const {
+  pathExistsMock,
+  readSettingsMock,
+  listAllFrontMatterMock,
+  readFileMock,
+  realpathMock,
+  runActiveOnReadHooksMock,
+  spawnSyncMock,
+} = vi.hoisted(() => ({
+  pathExistsMock: vi.fn<() => Promise<boolean>>(),
+  readSettingsMock: vi.fn<() => Promise<{ id_prefix: string }>>(),
+  listAllFrontMatterMock: vi.fn<() => Promise<ItemFrontMatter[]>>(),
+  readFileMock: vi.fn<(targetPath: string, encoding: string) => Promise<string>>(),
+  realpathMock: vi.fn<(targetPath: string) => Promise<string>>(),
+  runActiveOnReadHooksMock: vi.fn<() => Promise<string[]>>(),
+  spawnSyncMock: vi.fn(),
+}));
 let activeExtensionRegistrations: Record<string, unknown> | null = null;
 
 function createExtensionRegistrations(): Record<string, unknown> {

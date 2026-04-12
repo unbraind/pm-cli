@@ -2069,7 +2069,7 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
       throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
     }
     itemId = located.id;
-    const loaded = await readLocatedItem(located);
+    const loaded = await readLocatedItem(located, { schema: settings.schema });
     tests = loaded.document.front_matter.tests ?? [];
   }
 

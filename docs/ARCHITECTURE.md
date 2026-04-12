@@ -153,7 +153,7 @@ Each item is stored as a format-configured document file:
 ```
 .agents/pm/
   <type-folder>/<id>.toon   default item storage (TOON root-object fields)
-  <type-folder>/<id>.md     fully supported JSON front matter + markdown body
+  <type-folder>/<id>.md     fully supported JSON metadata object + markdown body
   history/<id>.jsonl        append-only RFC6902 patch log
   locks/<id>.lock           exclusive lock metadata (JSON)
   settings.json             project configuration
@@ -191,6 +191,8 @@ Optional markdown body here.
 
 Fields are normalized and serialized in canonical key order (defined in `item-format.ts`) before hashing/history patch generation, regardless of on-disk item format.
 
+`front_matter` is the internal object key used by the TypeScript document model; TOON files store identical metadata as top-level keys (no YAML front matter layer).
+
 Type resolution is centralized in the runtime type registry:
 
 - built-in types (`Epic`, `Feature`, `Task`, `Chore`, `Issue`, `Event`, `Reminder`, `Milestone`, `Meeting`)
@@ -201,7 +203,7 @@ The registry is used by create/update validation, list/search/calendar type filt
 
 Type definitions can additionally provide `command_option_policies` entries (`create`/`update`) to mark options as required, disabled, or hidden in policy-aware help guidance while preserving default behavior when unset.
 
-Scheduling metadata is persisted directly in item front matter:
+Scheduling metadata is persisted directly in item metadata:
 
 - `reminders?: Array<{ at: ISO timestamp; text: string }>`
 - reminders are normalized and sorted deterministically by `at` then `text`

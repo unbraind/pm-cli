@@ -262,7 +262,7 @@ export async function runDeps(id: string, options: DepsCommandOptions, global: G
   const summaryOnly = options.summary === true;
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
+  const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema);
   const index = new Map(items.map((item) => [item.id, toIndexedItem(item)]));
   if (!index.has(id)) {
     throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);

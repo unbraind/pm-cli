@@ -21,7 +21,29 @@ export const STATUS_VALUES = [
   "closed",
   "canceled",
 ] as const;
-export type ItemStatus = (typeof STATUS_VALUES)[number];
+export type ItemStatus = string;
+
+export const RUNTIME_STATUS_ROLE_VALUES = [
+  "draft",
+  "active",
+  "blocked",
+  "terminal",
+  "terminal_done",
+  "terminal_canceled",
+  "default_open",
+  "default_close",
+  "default_cancel",
+] as const;
+export type RuntimeStatusRole = (typeof RUNTIME_STATUS_ROLE_VALUES)[number];
+
+export const RUNTIME_FIELD_TYPE_VALUES = ["string", "number", "boolean", "string_array"] as const;
+export type RuntimeFieldType = (typeof RUNTIME_FIELD_TYPE_VALUES)[number];
+
+export const RUNTIME_FIELD_COMMAND_VALUES = ["create", "update", "update_many", "list", "search", "calendar", "context"] as const;
+export type RuntimeFieldCommand = (typeof RUNTIME_FIELD_COMMAND_VALUES)[number];
+
+export const RUNTIME_UNKNOWN_FIELD_POLICY_VALUES = ["allow", "warn", "reject"] as const;
+export type RuntimeUnknownFieldPolicy = (typeof RUNTIME_UNKNOWN_FIELD_POLICY_VALUES)[number];
 
 export const DEPENDENCY_KIND_VALUES = [
   "blocks",
@@ -184,6 +206,54 @@ export interface ItemTypeDefinition {
   command_option_policies?: ItemTypeCommandOptionPolicy[];
 }
 
+export interface RuntimeStatusDefinition {
+  id: string;
+  aliases?: string[];
+  roles?: RuntimeStatusRole[];
+  description?: string;
+  order?: number;
+}
+
+export interface RuntimeFieldDefinition {
+  key: string;
+  front_matter_key?: string;
+  cli_flag?: string;
+  cli_aliases?: string[];
+  description?: string;
+  type?: RuntimeFieldType;
+  commands?: RuntimeFieldCommand[];
+  repeatable?: boolean;
+  required?: boolean;
+  required_on_create?: boolean;
+  required_types?: string[];
+  allow_unset?: boolean;
+}
+
+export interface RuntimeWorkflowDefinition {
+  draft_status?: string;
+  open_status?: string;
+  in_progress_status?: string;
+  blocked_status?: string;
+  close_status?: string;
+  canceled_status?: string;
+}
+
+export interface RuntimeSchemaFileConfig {
+  types?: string;
+  statuses?: string;
+  fields?: string;
+  workflows?: string;
+}
+
+export interface RuntimeSchemaSettings {
+  version: number;
+  files: RuntimeSchemaFileConfig;
+  statuses: RuntimeStatusDefinition[];
+  fields: RuntimeFieldDefinition[];
+  workflow: RuntimeWorkflowDefinition;
+  unknown_field_policy: RuntimeUnknownFieldPolicy;
+}
+
 export interface ItemTestRunSummary {
   run_id: string;
   kind: "test" | "test-all";
@@ -262,6 +332,7 @@ export interface ItemFrontMatter {
   test_runs?: ItemTestRunSummary[];
   docs?: LinkedDoc[];
   close_reason?: string;
+  [key: string]: unknown;
 }
 
 export interface ItemDocument {
@@ -315,6 +386,7 @@ export interface PmSettings {
   item_types: {
     definitions: ItemTypeDefinition[];
   };
+  schema: RuntimeSchemaSettings;
   extensions: {
     enabled: string[];
     disabled: string[];

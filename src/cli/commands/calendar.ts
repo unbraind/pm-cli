@@ -2,6 +2,12 @@ import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { resolveItemTypeRegistry, resolveTypeName, type ItemTypeRegistry } from "../../core/item/type-registry.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
+import { collectRuntimeFilterValues, matchesRuntimeFilters } from "../../core/schema/runtime-field-filters.js";
+import {
+  resolveRuntimeFieldRegistry,
+  resolveRuntimeStatusRegistry,
+  type RuntimeStatusRegistry,
+} from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -10,7 +16,7 @@ import { listAllFrontMatter } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter, ItemStatus, ItemType, RecurrenceRule } from "../../types/index.js";
-import { RECURRENCE_WEEKDAY_VALUES, STATUS_VALUES } from "../../types/index.js";
+import { RECURRENCE_WEEKDAY_VALUES } from "../../types/index.js";
 
 export const CALENDAR_VIEW_VALUES = ["agenda", "day", "week", "month"] as const;
 export type CalendarView = (typeof CALENDAR_VIEW_VALUES)[number];
@@ -39,6 +45,7 @@ export interface CalendarOptions {
   recurrenceLookbackDays?: string;
   occurrenceLimit?: string;
   format?: string;
+  [key: string]: unknown;
 }
 
 export interface CalendarEvent {
@@ -93,6 +100,7 @@ export interface CalendarResult {
     assignee_filter: string | null;
     sprint: string | null;
     release: string | null;
+    runtime_filters?: Record<string, unknown>;
     limit: string | null;
     include: string | null;
     full_period: string | null;
@@ -230,11 +238,12 @@ function parseType(raw: string | undefined, typeRegistry: ItemTypeRegistry): Ite
   return parsed;
 }
 
-function parseStatus(raw: string | undefined): ItemStatus | undefined {
+function parseStatus(raw: string | undefined, statusRegistry: RuntimeStatusRegistry): ItemStatus | undefined {
   if (raw === undefined) return undefined;
-  const normalized = normalizeStatusInput(raw);
+  const normalized = normalizeStatusInput(raw, statusRegistry);
   if (!normalized) {
-    throw new PmCliError(`Calendar status filter must be one of ${STATUS_VALUES.join("|")}`, EXIT_CODE.USAGE);
+    const allowedStatuses = statusRegistry.definitions.map((definition) => definition.id);
+    throw new PmCliError(`Calendar status filter must be one of ${allowedStatuses.join("|")}`, EXIT_CODE.USAGE);
   }
   return normalized;
 }
@@ -621,11 +630,17 @@ function buildEventSeed(
   return sortEvents(events);
 }
 
-function filterItems(items: ItemFrontMatter[], options: CalendarOptions, typeRegistry: ItemTypeRegistry): ItemFrontMatter[] {
+function filterItems(
+  items: ItemFrontMatter[],
+  options: CalendarOptions,
+  typeRegistry: ItemTypeRegistry,
+  statusRegistry: RuntimeStatusRegistry,
+  runtimeFieldFilters: Record<string, unknown>,
+): ItemFrontMatter[] {
   const typeFilter = parseType(options.type, typeRegistry);
   const tagFilter = options.tag?.trim().toLowerCase();
   const priorityFilter = parsePriority(options.priority);
-  const statusFilter = parseStatus(options.status);
+  const statusFilter = parseStatus(options.status, statusRegistry);
   const assigneeFilter = options.assignee?.trim();
   const assigneeModeFilter = parseAssigneeFilter(options.assigneeFilter);
   const sprintFilter = options.sprint?.trim();
@@ -653,6 +668,7 @@ function filterItems(items: ItemFrontMatter[], options: CalendarOptions, typeReg
     }
     if (sprintFilter !== undefined && item.sprint !== sprintFilter) return false;
     if (releaseFilter !== undefined && item.release !== releaseFilter) return false;
+    if (!matchesRuntimeFilters(item as Record<string, unknown>, runtimeFieldFilters)) return false;
     return true;
   });
 }
@@ -936,10 +952,13 @@ export async function runCalendar(options: CalendarOptions, global: GlobalOption
   }
 
   const settings = await readSettings(pmRoot);
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
+  const runtimeFieldFilters = collectRuntimeFilterValues(options as Record<string, unknown>, runtimeFieldRegistry, "calendar");
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const listWarnings: string[] = [];
-  const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings);
-  const filteredItems = filterItems(items, options, typeRegistry);
+  const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings, settings.schema);
+  const filteredItems = filterItems(items, options, typeRegistry, statusRegistry, runtimeFieldFilters);
   const recurringWindow = buildRecurringEventWindow(
     rangeBounds.start,
     rangeBounds.end,
@@ -977,6 +996,7 @@ export async function runCalendar(options: CalendarOptions, global: GlobalOption
       assignee_filter: options.assigneeFilter ?? null,
       sprint: options.sprint ?? null,
       release: options.release ?? null,
+      runtime_filters: runtimeFieldFilters,
       limit: options.limit ?? null,
       include: options.include ?? null,
       full_period: options.fullPeriod === true ? "true" : null,

@@ -2,11 +2,13 @@ import { mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
+import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
+import { readSettings } from "../../core/store/settings.js";
 import type { ItemStatus } from "../../types/index.js";
 import { runList, type ListOptions, type ListedItem } from "./list.js";
 import { runRestore } from "./restore.js";
@@ -440,13 +442,17 @@ function checkpointFilePath(pmRoot: string, checkpointId: string): string {
   return path.join(checkpointDirectoryPath(pmRoot), `${checkpointId}.json`);
 }
 
-function normalizeStatusFilter(value: string | undefined): ItemStatus | undefined {
+function normalizeStatusFilter(value: string | undefined, statusRegistry: RuntimeStatusRegistry): ItemStatus | undefined {
   if (value === undefined) {
     return undefined;
   }
-  const normalized = normalizeStatusInput(value);
+  const normalized = normalizeStatusInput(value, statusRegistry);
   if (!normalized) {
-    throw new PmCliError(`Invalid --filter-status value "${value}"`, EXIT_CODE.USAGE);
+    const allowedStatuses = statusRegistry.definitions.map((definition) => definition.id);
+    throw new PmCliError(
+      `Invalid --filter-status value "${value}". Allowed: ${allowedStatuses.join(", ")}`,
+      EXIT_CODE.USAGE,
+    );
   }
   return normalized;
 }
@@ -546,6 +552,8 @@ export async function runUpdateMany(options: UpdateManyCommandOptions, global: G
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
   }
+  const settings = await readSettings(pmRoot);
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
 
   const dryRun = options.dryRun === true;
   const rollbackId = typeof options.rollback === "string" ? options.rollback : undefined;
@@ -616,7 +624,7 @@ export async function runUpdateMany(options: UpdateManyCommandOptions, global: G
     throw new PmCliError("No update-many mutation flags provided", EXIT_CODE.USAGE);
   }
 
-  const statusFilter = normalizeStatusFilter(options.status);
+  const statusFilter = normalizeStatusFilter(options.status, statusRegistry);
   const listed = await runList(statusFilter, { ...options.list, includeBody: true }, global);
   const planned = listed.items.map((item) => buildPlannedItemDiff(item, options.update));
   const actionable = planned.filter((row) => row.changes.length > 0);

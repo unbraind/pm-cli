@@ -1,4 +1,6 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
+import { normalizeStatusInput } from "../../core/item/status.js";
+import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -34,8 +36,9 @@ function ensureCloseReason(reasonText: string): string {
   return reason;
 }
 
-function isTerminal(status: ItemStatus): boolean {
-  return status === "closed" || status === "canceled";
+function isTerminal(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): boolean {
+  const normalized = normalizeStatusInput(status, statusRegistry) ?? status;
+  return statusRegistry.terminal_statuses.has(normalized);
 }
 
 type ValidateCloseMode = "warn" | "strict";
@@ -83,6 +86,7 @@ export async function runClose(
   }
 
   const settings = await readSettings(pmRoot);
+  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const author = toAuthor(options.author, settings.author_default);
   const closeReason = ensureCloseReason(closeReasonText);
   const validateCloseMode = parseValidateCloseMode(options.validateClose);
@@ -96,7 +100,7 @@ export async function runClose(
     message: options.message,
     force: options.force,
     mutate(document) {
-      if (isTerminal(document.front_matter.status) && !options.force) {
+      if (isTerminal(document.front_matter.status, statusRegistry) && !options.force) {
         throw new PmCliError(`Item ${document.front_matter.id} is already terminal; use --force to close again.`, EXIT_CODE.CONFLICT);
       }
       const mutationWarnings: string[] = [];
@@ -115,7 +119,7 @@ export async function runClose(
         }
       }
 
-      document.front_matter.status = "closed";
+      document.front_matter.status = statusRegistry.close_status;
       document.front_matter.close_reason = closeReason;
 
       const changedFields = ["status", "close_reason"];

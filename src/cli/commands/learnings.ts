@@ -85,7 +85,7 @@ export async function runLearnings(
     if (!located) {
       throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
     }
-    const loaded = await readLocatedItem(located);
+    const loaded = await readLocatedItem(located, { schema: settings.schema });
     const learnings = limitLearnings(loaded.document.front_matter.learnings ?? [], limit);
     return {
       id: located.id,

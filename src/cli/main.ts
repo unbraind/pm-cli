@@ -102,6 +102,13 @@ import {
   resolveItemTypeRegistry,
   resolveTypeDefinition,
 } from "../core/item/type-registry.js";
+import { normalizeStatusInput } from "../core/item/status.js";
+import {
+  resolveRuntimeFieldRegistry,
+  resolveRuntimeStatusRegistry,
+  runtimeFieldOptionTarget,
+  type RuntimeFieldCommand,
+} from "../core/schema/runtime-schema.js";
 import { refreshSearchArtifactsForMutation } from "../core/search/cache.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -1567,6 +1574,7 @@ async function enforceItemFormatWriteGateAndPreflightMigration(
       settings.item_format,
       "item_format:pre_mutation_sync",
       typeRegistry.type_to_folder,
+      settings.schema,
     );
   }
 }
@@ -1695,6 +1703,108 @@ function collectExtensionFlagDefinitionsForCommand(
   return registrations.flags
     .filter((entry) => normalizeExtensionCommandPath(entry.target_command) === normalizedCommandPath)
     .flatMap((entry) => entry.flags);
+}
+
+const RUNTIME_FIELD_COMMAND_BY_COMMAND_PATH: Readonly<Record<string, RuntimeFieldCommand>> = {
+  create: "create",
+  update: "update",
+  "update-many": "update_many",
+  list: "list",
+  search: "search",
+  calendar: "calendar",
+  context: "context",
+};
+
+const runtimeFieldLooseFlagDefinitionCache = new Map<string, Array<Record<string, unknown>>>();
+
+function toLooseFieldDefinitionType(fieldType: string): "string" | "number" | "boolean" {
+  if (fieldType === "number") {
+    return "number";
+  }
+  if (fieldType === "boolean") {
+    return "boolean";
+  }
+  return "string";
+}
+
+function commandHasLongOption(command: Command, longFlag: string): boolean {
+  return command.options.some((option) => option.long === longFlag);
+}
+
+function addRuntimeFieldOption(command: Command, flagToken: string, description: string, repeatable: boolean): void {
+  const longFlag = `--${flagToken}`;
+  if (commandHasLongOption(command, longFlag)) {
+    return;
+  }
+  const helpText = description.length > 0 ? description : `Runtime schema field (${flagToken})`;
+  if (repeatable) {
+    command.option(`${longFlag} <value>`, `${helpText} (repeatable)`, collect);
+    return;
+  }
+  command.option(`${longFlag} <value>`, helpText);
+}
+
+async function collectRuntimeFieldLooseFlagDefinitionsForCommand(
+  commandPath: string,
+  pmRoot: string,
+): Promise<Array<Record<string, unknown>>> {
+  const runtimeCommand = RUNTIME_FIELD_COMMAND_BY_COMMAND_PATH[commandPath];
+  if (!runtimeCommand) {
+    return [];
+  }
+  const cacheKey = `${pmRoot}:${runtimeCommand}`;
+  const cached = runtimeFieldLooseFlagDefinitionCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+  if (!(await pathExists(getSettingsPath(pmRoot)))) {
+    runtimeFieldLooseFlagDefinitionCache.set(cacheKey, []);
+    return [];
+  }
+  const settings = await readSettings(pmRoot);
+  const fieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
+  const definitions = (fieldRegistry.command_to_fields.get(runtimeCommand) ?? []).flatMap((field) => {
+    const flagTokens = [field.cli_flag, ...field.cli_aliases];
+    return flagTokens.map((token) => ({
+      long: `--${token}`,
+      type: toLooseFieldDefinitionType(field.type),
+      value_type: toLooseFieldDefinitionType(field.type),
+    }));
+  });
+  runtimeFieldLooseFlagDefinitionCache.set(cacheKey, definitions);
+  return definitions;
+}
+
+async function registerRuntimeSchemaFieldFlags(rootProgram: Command): Promise<void> {
+  const bootstrapGlobalOptions = parseBootstrapGlobalOptions(process.argv.slice(2));
+  const pmRoot = resolvePmRoot(process.cwd(), bootstrapGlobalOptions.path);
+  if (!(await pathExists(getSettingsPath(pmRoot)))) {
+    return;
+  }
+  const settings = await readSettings(pmRoot);
+  const fieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
+  const mappings: Array<{ path: string; command: RuntimeFieldCommand }> = [
+    { path: "create", command: "create" },
+    { path: "update", command: "update" },
+    { path: "update-many", command: "update_many" },
+    { path: "list", command: "list" },
+    { path: "search", command: "search" },
+    { path: "calendar", command: "calendar" },
+    { path: "context", command: "context" },
+  ];
+  for (const mapping of mappings) {
+    const command = findCommandByPath(rootProgram, mapping.path.split(" "));
+    if (!command) {
+      continue;
+    }
+    for (const field of fieldRegistry.command_to_fields.get(mapping.command) ?? []) {
+      const description = field.description ?? "";
+      addRuntimeFieldOption(command, field.cli_flag, description, field.repeatable);
+      for (const alias of field.cli_aliases) {
+        addRuntimeFieldOption(command, alias, `Alias for --${field.cli_flag}`, field.repeatable);
+      }
+    }
+  }
 }
 
 function defaultPreflightDecision(): PreflightRuntimeDecision {
@@ -1944,13 +2054,17 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         const startedAt = Date.now();
         let globalOptions = getGlobalOptions(actionCommand);
         const commandPath = getCommandPath(actionCommand);
+        const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
         let commandArgs = actionCommand.args.map(String);
         const activeRegistrations = getActiveExtensionRegistrations();
         const extensionFlagDefinitions = activeRegistrations
           ? collectExtensionFlagDefinitionsForCommand(activeRegistrations, commandPath)
           : [];
-        let commandOptions = extractCommandScopedOptions(actionCommand, commandArgs, extensionFlagDefinitions);
-        const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
+        const runtimeFieldFlagDefinitions = await collectRuntimeFieldLooseFlagDefinitionsForCommand(commandPath, pmRoot);
+        let commandOptions = extractCommandScopedOptions(actionCommand, commandArgs, [
+          ...extensionFlagDefinitions,
+          ...runtimeFieldFlagDefinitions,
+        ]);
         const parserOverride = await runActiveParserOverride({
           command: commandPath,
           args: commandArgs,
@@ -2112,7 +2226,7 @@ function normalizeCreateOptions(
     throw new PmCliError("Missing required option --type", EXIT_CODE.USAGE);
   }
 
-  return {
+  const normalized: Record<string, unknown> = {
     title: readCreateString("title"),
     description: readCreateString("description"),
     type,
@@ -2181,6 +2295,13 @@ function normalizeCreateOptions(
     clearEvents: commandOptions.clearEvents === true ? true : undefined,
     clearTypeOptions: commandOptions.clearTypeOptions === true ? true : undefined,
   };
+  for (const [key, value] of Object.entries(commandOptions)) {
+    if (Object.hasOwn(normalized, key)) {
+      continue;
+    }
+    normalized[key] = value;
+  }
+  return normalized as CreateCommandOptions;
 }
 
 function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record<string, unknown> {
@@ -2201,7 +2322,7 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
       },
     );
 
-  return {
+  const normalized: Record<string, unknown> = {
     title: readUpdateString("title"),
     description: readUpdateString("description"),
     body: readUpdateString("body"),
@@ -2276,6 +2397,13 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
     clearEvents: commandOptions.clearEvents === true ? true : undefined,
     clearTypeOptions: commandOptions.clearTypeOptions === true ? true : undefined,
   };
+  for (const [key, value] of Object.entries(commandOptions)) {
+    if (Object.hasOwn(normalized, key)) {
+      continue;
+    }
+    normalized[key] = value;
+  }
+  return normalized;
 }
 
 function readListOptionString(options: Record<string, unknown>, target: string): string | undefined {
@@ -2289,7 +2417,7 @@ function readListOptionString(options: Record<string, unknown>, target: string):
 }
 
 function normalizeListOptions(options: Record<string, unknown>): ListOptions {
-  return {
+  const normalized: Record<string, unknown> = {
     type: readListOptionString(options, "type"),
     tag: readListOptionString(options, "tag"),
     priority: readListOptionString(options, "priority"),
@@ -2308,6 +2436,13 @@ function normalizeListOptions(options: Record<string, unknown>): ListOptions {
     sort: readListOptionString(options, "sort"),
     order: readListOptionString(options, "order"),
   };
+  for (const [key, value] of Object.entries(options)) {
+    if (Object.hasOwn(normalized, key)) {
+      continue;
+    }
+    normalized[key] = value;
+  }
+  return normalized as ListOptions;
 }
 
 function normalizeAggregateOptions(options: Record<string, unknown>): AggregateOptions {
@@ -2419,7 +2554,7 @@ function printActivityJsonStream(
   writeStdout(`${JSON.stringify({ type: "end", command: "activity", count: result.count })}\n`);
 }
 
-function normalizeSearchOptions(options: Record<string, unknown>): Record<string, string | boolean | undefined> {
+function normalizeSearchOptions(options: Record<string, unknown>): Record<string, unknown> {
   const readSearchString = (target: string): string | undefined =>
     readFirstStringFromCommanderOptions(
       options,
@@ -2432,7 +2567,7 @@ function normalizeSearchOptions(options: Record<string, unknown>): Record<string
   const compactRequested = options.compact === true;
   const fullRequested = options.full === true;
   const defaultCompact = !compactRequested && !fullRequested && fields === undefined;
-  return {
+  const normalized: Record<string, unknown> = {
     mode: readSearchString("mode"),
     includeLinked: options.includeLinked === true ? true : undefined,
     titleExact: options.titleExact === true ? true : undefined,
@@ -2447,6 +2582,13 @@ function normalizeSearchOptions(options: Record<string, unknown>): Record<string
     compact: compactRequested || defaultCompact ? true : undefined,
     full: fullRequested ? true : undefined,
   };
+  for (const [key, value] of Object.entries(options)) {
+    if (Object.hasOwn(normalized, key)) {
+      continue;
+    }
+    normalized[key] = value;
+  }
+  return normalized;
 }
 
 function normalizeSearchKeywordsInput(keywords: string[]): string {
@@ -2469,7 +2611,7 @@ function normalizeCalendarOptions(options: Record<string, unknown>): CalendarOpt
         keys: [target],
       },
     );
-  return {
+  const normalized: Record<string, unknown> = {
     view: readCalendarString("view"),
     date: readCalendarString("date"),
     from: readCalendarString("from"),
@@ -2491,6 +2633,13 @@ function normalizeCalendarOptions(options: Record<string, unknown>): CalendarOpt
     occurrenceLimit: readCalendarString("occurrenceLimit"),
     format: readCalendarString("format"),
   };
+  for (const [key, value] of Object.entries(options)) {
+    if (Object.hasOwn(normalized, key)) {
+      continue;
+    }
+    normalized[key] = value;
+  }
+  return normalized as CalendarOptions;
 }
 
 function normalizeActivityOptions(options: Record<string, unknown>): {
@@ -2556,7 +2705,7 @@ function normalizeContextOptions(options: Record<string, unknown>): ContextOptio
         keys: [target],
       },
     );
-  return {
+  const normalized: Record<string, unknown> = {
     date: readContextString("date"),
     from: readContextString("from"),
     to: readContextString("to"),
@@ -2571,6 +2720,13 @@ function normalizeContextOptions(options: Record<string, unknown>): ContextOptio
     limit: readContextString("limit"),
     format: readContextString("format"),
   };
+  for (const [key, value] of Object.entries(options)) {
+    if (Object.hasOwn(normalized, key)) {
+      continue;
+    }
+    normalized[key] = value;
+  }
+  return normalized as ContextOptions;
 }
 
 function resolveCliVersion(): string {
@@ -4790,6 +4946,10 @@ program
   .action(async (id: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
+    const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
+    const settings = await readSettings(pmRoot);
+    const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+    const inProgressStatus = normalizeStatusInput("in_progress", statusRegistry) ?? statusRegistry.open_status;
     const force = Boolean(options.force);
     const mutationOptions = {
       author: typeof options.author === "string" ? options.author : undefined,
@@ -4801,7 +4961,7 @@ program
       id,
       {
         ...mutationOptions,
-        status: "in_progress",
+        status: inProgressStatus,
         force,
       },
       globalOptions,
@@ -4831,6 +4991,10 @@ program
   .action(async (id: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
+    const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
+    const settings = await readSettings(pmRoot);
+    const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+    const openStatus = statusRegistry.open_status;
     const force = Boolean(options.force);
     const mutationOptions = {
       author: typeof options.author === "string" ? options.author : undefined,
@@ -4840,7 +5004,7 @@ program
       id,
       {
         ...mutationOptions,
-        status: "open",
+        status: openStatus,
         force,
       },
       globalOptions,
@@ -4916,18 +5080,44 @@ program
     const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
     let completionTypes: string[] | undefined;
     let completionTags: string[] | undefined;
+    let completionStatuses: string[] | undefined;
+    const completionCommandFlags: Partial<
+      Record<"list" | "create" | "update" | "update-many" | "search" | "calendar" | "context", string[]>
+    > = {};
     const eagerTags = Boolean(options.eagerTags);
     if (await pathExists(getSettingsPath(pmRoot))) {
       const settings = await readSettings(pmRoot);
+      const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+      const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
       const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
       completionTypes = typeRegistry.types;
+      completionStatuses = statusRegistry.definitions.map((definition) => definition.id);
+      for (const [commandKey, definitions] of runtimeFieldRegistry.command_to_fields.entries()) {
+        if (
+          commandKey !== "list" &&
+          commandKey !== "create" &&
+          commandKey !== "update" &&
+          commandKey !== "search" &&
+          commandKey !== "calendar" &&
+          commandKey !== "context"
+        ) {
+          continue;
+        }
+        completionCommandFlags[commandKey] = definitions.map((definition) => runtimeFieldOptionTarget(definition));
+      }
+      if (completionCommandFlags.update) {
+        completionCommandFlags["update-many"] = [...completionCommandFlags.update];
+      }
       if (eagerTags) {
-        const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
+        const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema);
         completionTags = [...new Set(items.flatMap((item) => item.tags ?? []).map((tag) => tag.trim()).filter((tag) => tag.length > 0))]
           .sort((left, right) => left.localeCompare(right));
       }
     }
-    const result = runCompletion(shell, completionTypes, completionTags ?? [], eagerTags);
+    const result = runCompletion(shell, completionTypes, completionTags ?? [], eagerTags, {
+      statuses: completionStatuses,
+      command_flags: completionCommandFlags,
+    });
     if (globalOptions.json) {
       printResult(result, globalOptions);
     } else if (!globalOptions.quiet) {
@@ -4949,7 +5139,7 @@ program
     if (await pathExists(getSettingsPath(pmRoot))) {
       const settings = await readSettings(pmRoot);
       const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-      const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder);
+      const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema);
       tags = [...new Set(items.flatMap((item) => item.tags ?? []).map((tag) => tag.trim()).filter((tag) => tag.length > 0))].sort((left, right) =>
         left.localeCompare(right),
       );
@@ -5067,6 +5257,7 @@ async function main(): Promise<void> {
   try {
     applyBootstrapPagerPolicy(invocationArgv);
     await registerDynamicExtensionCommandPaths(program);
+    await registerRuntimeSchemaFieldFlags(program);
     wrapProgramActionsForExtensionHandlers(program);
     const renderedBootstrapJsonHelp = await maybeRenderBootstrapJsonHelp(program, invocationArgv);
     if (renderedBootstrapJsonHelp) {
