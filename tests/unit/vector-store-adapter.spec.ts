@@ -1304,7 +1304,7 @@ describe("LanceDB local snapshot persistence", () => {
         ),
       ).rejects.toThrow(`LanceDB local snapshot directory create failed at '${snapshotDir}': mkdir-boom`);
     } finally {
-      vi.unmock("node:fs/promises");
+      vi.doUnmock("node:fs/promises");
       vi.resetModules();
       await rm(sandboxRoot, { recursive: true, force: true });
     }
@@ -1346,7 +1346,7 @@ describe("LanceDB local snapshot persistence", () => {
       ).rejects.toThrow(`LanceDB local snapshot write failed at '${snapshotPath}': rename-boom`);
       expect(unlinkMock).toHaveBeenCalledTimes(1);
     } finally {
-      vi.unmock("node:fs/promises");
+      vi.doUnmock("node:fs/promises");
       vi.resetModules();
       await rm(sandboxRoot, { recursive: true, force: true });
     }
@@ -1385,7 +1385,7 @@ describe("LanceDB local snapshot persistence", () => {
         ),
       ).resolves.toEqual({ status: "ok" });
     } finally {
-      vi.unmock("node:fs/promises");
+      vi.doUnmock("node:fs/promises");
       vi.resetModules();
       await rm(sandboxRoot, { recursive: true, force: true });
     }
@@ -1423,7 +1423,7 @@ describe("LanceDB local snapshot persistence", () => {
         ),
       ).rejects.toThrow(`LanceDB local snapshot delete failed at '${snapshotPath}': unlink-boom`);
     } finally {
-      vi.unmock("node:fs/promises");
+      vi.doUnmock("node:fs/promises");
       vi.resetModules();
       await rm(sandboxRoot, { recursive: true, force: true });
     }
@@ -1455,7 +1455,7 @@ describe("LanceDB local snapshot persistence", () => {
         ),
       ).rejects.toThrow("non-errno-read-failure");
     } finally {
-      vi.unmock("node:fs/promises");
+      vi.doUnmock("node:fs/promises");
       vi.resetModules();
       await rm(sandboxRoot, { recursive: true, force: true });
     }

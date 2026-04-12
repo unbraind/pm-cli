@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 describe("item-format TOON decode failures", () => {
   afterEach(() => {
-    vi.unmock("@toon-format/toon");
+    vi.doUnmock("@toon-format/toon");
     vi.resetModules();
   });
 

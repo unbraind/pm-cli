@@ -1,16 +1,16 @@
 id: pm-4vm7
 title: Full-repo audit hardening pass (warnings + metadata alignment)
-description: "Execute a full-repository issue and improvement sweep, then implement top-priority runtime warning and release-metadata fixes."
+description: "Execute a full-repository quality sweep (errors + warnings), remediate findings, and capture reproducible verification evidence."
 type: Task
 status: closed
 priority: 0
 tags[5]: audit,hardening,pm-cli,quality,release-readiness
 created_at: "2026-04-01T21:49:02.011Z"
-updated_at: "2026-04-04T21:35:15.503Z"
+updated_at: "2026-04-12T16:00:55.765Z"
 deadline: "2026-04-03T21:49:02.011Z"
 author: codex-agent
 estimated_minutes: 360
-acceptance_criteria: "Top-priority issues are fixed with warning-first behavior, docs/package metadata are aligned, tests are updated, and verification evidence is logged."
+acceptance_criteria: All CI-aligned local gates pass; surfaced warnings are triaged/fixed where actionable; evidence is recorded in pm comments/files/tests/docs.
 definition_of_ready: scope-and-verification-plan-confirmed
 order: 1
 goal: Full-repo hardening
@@ -39,19 +39,22 @@ fixed_version: target-vnext
 component: core-runtime-and-release-docs
 regression: true
 customer_impact: improves reliability and contributor clarity
-comments[6]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-04-01T21:49:02.011Z",codex-agent,Created to track full-repo audit findings and warning-first hardening implementation.
   "2026-04-01T21:49:16.626Z",codex-agent,"Audit baseline (full repo): prioritized findings are silent settings fallback on invalid JSON, lock read/parse failures collapsing to stale behavior without diagnostics, unreadable item skips without visibility, and docs/package metadata drift (calendar versioning wording + repository links + packaged community docs). Chosen implementation policy is warn-continue to preserve compatibility while improving diagnosability."
   "2026-04-01T21:55:25.517Z",codex-agent,"Implemented runtime warning-first hardening slice 1: settings reads now emit deterministic warning tokens on invalid JSON/schema fallbacks; lock stale conflicts include deterministic warning tokens when lock metadata is unreadable/invalid; item-store listing paths now collect deterministic warning tokens for unreadable item files and non-ENOENT directory read failures."
   "2026-04-01T21:56:15.163Z",codex-agent,"Implemented docs/package metadata alignment: changelog header now references calendar versioning policy, package repository/homepage/bugs URLs now point to unbrained org, and npm files allowlist now includes CHANGELOG/CONTRIBUTING/SECURITY/CODE_OF_CONDUCT for packaged community guidance parity."
   "2026-04-01T21:57:47.380Z",codex-agent,"Targeted test hardening complete: added assertions for settings warning tokens, lock unreadable metadata warning token propagation, and item-store unreadable file warning emission. Verification: pnpm build passed; focused suite node scripts/run-tests.mjs test -- [settings-store core-item-lock-coverage item-store config health list search calendar context] passed 9 files / 110 tests."
   "2026-04-01T22:01:22.465Z",codex-agent,"Verification evidence: pm test pm-4vm7 --run --timeout 7200 --json passed all linked commands (full regression suite, focused warning-hardening suite, and pnpm build). Additional coverage run node scripts/run-tests.mjs coverage passed with thresholds met (All files: statements 94.4, branches 91.49, functions 96.12, lines 94.7)."
+  "2026-04-12T15:37:21.444Z",codex-agent,"Execution kickoff (2026-04-12): duplicate-check evidence rerun with pm context --limit 10; pm search 'full-repo issue sweep remediation' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20; pm list-blocked --limit 20. Reusing and reopening pm-4vm7 as canonical scope for full-repo errors+warnings sweep to avoid duplicate task creation."
+  "2026-04-12T15:48:58.194Z",codex-agent,"Fix pass: addressed Vitest warnings about non-top-level hoisted unmock calls by replacing vi.unmock with vi.doUnmock in cleanup paths for tests/unit/vector-store-adapter.spec.ts and tests/unit/item-format-toon-decode-error.spec.ts. Targeted verification passed with no warning emissions: pnpm exec vitest run tests/unit/vector-store-adapter.spec.ts tests/unit/item-format-toon-decode-error.spec.ts."
+  "2026-04-12T16:00:43.955Z",codex-agent,"Final verification rerun (post-fix) passed cleanly with no Vitest warning emissions: pm --version; node -v; pnpm -v; pnpm version:check; pnpm security:scan; pnpm build; pnpm typecheck; pnpm test (75 files / 1020 tests); pnpm test:coverage (75 files / 1020 tests, coverage 100/100/100/100); node scripts/run-tests.mjs coverage (75 files / 1020 tests, coverage 100/100/100/100); npm pack --dry-run; pnpm smoke:npx."
 notes[2]{created_at,author,text}:
   "2026-04-01T21:49:02.011Z",codex-agent,Start with runtime warning surfaces then docs and package metadata alignment and verification.
   "2026-04-01T21:49:18.705Z",codex-agent,Apply warning-first changes with deterministic warning tokens and preserve existing return types where possible to minimize blast radius.
 learnings[1]{created_at,author,text}:
   "2026-04-01T21:49:20.121Z",codex-agent,warn-continue-policy-reduces-risk-while-improving-operator-visibility
-files[15]{path,scope,note}:
+files[17]{path,scope,note}:
   CHANGELOG.md,project,align versioning statement with calendar version policy
   package.json,project,fix repository metadata and include community docs in npm package files
   src/cli/commands/calendar.ts,project,propagate list warnings into calendar result
@@ -65,14 +68,17 @@ files[15]{path,scope,note}:
   src/core/store/item-store.ts,project,collect warnings while skipping unreadable items
   src/core/store/settings.ts,project,primary warning-first target
   tests/unit/core-item-lock-coverage.spec.ts,project,cover deterministic lock read warning tokens
+  tests/unit/item-format-toon-decode-error.spec.ts,project,replace-hoisted-unmock-with-doUnmock-cleanup
   tests/unit/item-store.spec.ts,project,cover unreadable-item warning token emission
   tests/unit/settings-store.spec.ts,project,assert settings warning tokens for invalid fallback paths
-tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  tests/unit/vector-store-adapter.spec.ts,project,replace-hoisted-unmock-with-doUnmock-cleanup
+tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full coverage verification
   node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full regression baseline
   node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/core-item-lock-coverage.spec.ts tests/unit/item-store.spec.ts tests/unit/config-command.spec.ts tests/unit/health-command.spec.ts tests/unit/list-command.spec.ts tests/unit/search-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/context-command.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,focused warning-hardening regression suite
+  node scripts/run-tests.mjs test -- tests/unit/vector-store-adapter.spec.ts tests/unit/item-format-toon-decode-error.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,targeted-warning-regression
   pnpm build,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,typecheck compile gate
 docs[1]{path,scope,note}:
   CHANGELOG.md,project,versioning policy wording alignment
-close_reason: Implemented warning-first runtime hardening and release metadata alignment with passing regression and coverage evidence.
+close_reason: Full repo sweep completed; warnings fixed and all CI-aligned gates pass.
 body: "Execute full-repo issue sweep and implement top-priority warning-first runtime plus docs and package metadata fixes.\n\nImplementation scope: (1) runtime warning surfaces in settings/lock/item-store paths, (2) tests covering warning behavior and regression semantics, (3) changelog/package metadata alignment, (4) full verification and closure evidence."
