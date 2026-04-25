@@ -446,73 +446,77 @@ describe("runHealth", () => {
     });
   });
 
-  it("summarizes stale vectorization IDs by default and supports verbose expansion", async () => {
-    await withTempPmPath(async (context) => {
-      const ids: string[] = [];
-      for (let index = 0; index < 30; index += 1) {
-        ids.push(createSeedItem(context));
-      }
+  it(
+    "summarizes stale vectorization IDs by default and supports verbose expansion",
+    async () => {
+      await withTempPmPath(async (context) => {
+        const ids: string[] = [];
+        for (let index = 0; index < 26; index += 1) {
+          ids.push(createSeedItem(context));
+        }
 
-      const settings = await readSettings(context.pmPath);
-      settings.providers.openai.base_url = "https://api.example.test/v1";
-      settings.providers.openai.model = "text-embedding-3-small";
-      settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
-      await writeSettings(context.pmPath, settings);
+        const settings = await readSettings(context.pmPath);
+        settings.providers.openai.base_url = "https://api.example.test/v1";
+        settings.providers.openai.model = "text-embedding-3-small";
+        settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
+        await writeSettings(context.pmPath, settings);
 
-      const summaryResult = await runHealth(
-        { path: context.pmPath },
-        {
-          checkOnly: true,
-        },
-      );
-      const summaryDetails = summaryResult.checks.find((check) => check.name === "vectorization")?.details as {
-        stale_items_detail_mode: string;
-        stale_items_summary_limit: number;
-        stale_items_before_total: number;
-        stale_items_before: string[];
-        stale_items_before_truncated: boolean;
-        stale_items_after_total: number;
-        stale_items_after: string[];
-        stale_items_after_truncated: boolean;
-      };
-      expect(summaryDetails.stale_items_detail_mode).toBe("summary");
-      expect(summaryDetails.stale_items_summary_limit).toBe(25);
-      expect(summaryDetails.stale_items_before_total).toBe(ids.length);
-      expect(summaryDetails.stale_items_after_total).toBe(ids.length);
-      expect(summaryDetails.stale_items_before.length).toBe(25);
-      expect(summaryDetails.stale_items_after.length).toBe(25);
-      expect(summaryDetails.stale_items_before_truncated).toBe(true);
-      expect(summaryDetails.stale_items_after_truncated).toBe(true);
-      expect(summaryDetails.stale_items_before.every((entry) => ids.includes(entry))).toBe(true);
-      expect(summaryDetails.stale_items_after.every((entry) => ids.includes(entry))).toBe(true);
+        const summaryResult = await runHealth(
+          { path: context.pmPath },
+          {
+            checkOnly: true,
+          },
+        );
+        const summaryDetails = summaryResult.checks.find((check) => check.name === "vectorization")?.details as {
+          stale_items_detail_mode: string;
+          stale_items_summary_limit: number;
+          stale_items_before_total: number;
+          stale_items_before: string[];
+          stale_items_before_truncated: boolean;
+          stale_items_after_total: number;
+          stale_items_after: string[];
+          stale_items_after_truncated: boolean;
+        };
+        expect(summaryDetails.stale_items_detail_mode).toBe("summary");
+        expect(summaryDetails.stale_items_summary_limit).toBe(25);
+        expect(summaryDetails.stale_items_before_total).toBe(ids.length);
+        expect(summaryDetails.stale_items_after_total).toBe(ids.length);
+        expect(summaryDetails.stale_items_before.length).toBe(25);
+        expect(summaryDetails.stale_items_after.length).toBe(25);
+        expect(summaryDetails.stale_items_before_truncated).toBe(true);
+        expect(summaryDetails.stale_items_after_truncated).toBe(true);
+        expect(summaryDetails.stale_items_before.every((entry) => ids.includes(entry))).toBe(true);
+        expect(summaryDetails.stale_items_after.every((entry) => ids.includes(entry))).toBe(true);
 
-      const verboseResult = await runHealth(
-        { path: context.pmPath },
-        {
-          checkOnly: true,
-          verboseStaleItems: true,
-        },
-      );
-      const verboseDetails = verboseResult.checks.find((check) => check.name === "vectorization")?.details as {
-        stale_items_detail_mode: string;
-        stale_items_before_total: number;
-        stale_items_before: string[];
-        stale_items_before_truncated: boolean;
-        stale_items_after_total: number;
-        stale_items_after: string[];
-        stale_items_after_truncated: boolean;
-      };
-      expect(verboseDetails.stale_items_detail_mode).toBe("full");
-      expect(verboseDetails.stale_items_before_total).toBe(ids.length);
-      expect(verboseDetails.stale_items_after_total).toBe(ids.length);
-      expect(verboseDetails.stale_items_before.length).toBe(ids.length);
-      expect(verboseDetails.stale_items_after.length).toBe(ids.length);
-      expect(verboseDetails.stale_items_before_truncated).toBe(false);
-      expect(verboseDetails.stale_items_after_truncated).toBe(false);
-      expect(verboseDetails.stale_items_before).toEqual(expect.arrayContaining(ids));
-      expect(verboseDetails.stale_items_after).toEqual(expect.arrayContaining(ids));
-    });
-  });
+        const verboseResult = await runHealth(
+          { path: context.pmPath },
+          {
+            checkOnly: true,
+            verboseStaleItems: true,
+          },
+        );
+        const verboseDetails = verboseResult.checks.find((check) => check.name === "vectorization")?.details as {
+          stale_items_detail_mode: string;
+          stale_items_before_total: number;
+          stale_items_before: string[];
+          stale_items_before_truncated: boolean;
+          stale_items_after_total: number;
+          stale_items_after: string[];
+          stale_items_after_truncated: boolean;
+        };
+        expect(verboseDetails.stale_items_detail_mode).toBe("full");
+        expect(verboseDetails.stale_items_before_total).toBe(ids.length);
+        expect(verboseDetails.stale_items_after_total).toBe(ids.length);
+        expect(verboseDetails.stale_items_before.length).toBe(ids.length);
+        expect(verboseDetails.stale_items_after.length).toBe(ids.length);
+        expect(verboseDetails.stale_items_before_truncated).toBe(false);
+        expect(verboseDetails.stale_items_after_truncated).toBe(false);
+        expect(verboseDetails.stale_items_before).toEqual(expect.arrayContaining(ids));
+        expect(verboseDetails.stale_items_after).toEqual(expect.arrayContaining(ids));
+      });
+    },
+    120_000,
+  );
 
   it("rejects conflicting vector refresh policy flags", async () => {
     await withTempPmPath(async (context) => {

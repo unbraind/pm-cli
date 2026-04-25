@@ -114,6 +114,32 @@ describe("extension command runtime", () => {
     });
   });
 
+  it("resolves bundled aliases for activate/deactivate lifecycle commands", async () => {
+    await withTempPmPath(async (context) => {
+      await runExtension("beads", { install: true, project: true }, { path: context.pmPath });
+
+      const deactivate = await runExtension("beads", { deactivate: true, project: true }, { path: context.pmPath });
+      expect(deactivate.details).toMatchObject({
+        extension: {
+          name: "builtin-beads-import",
+        },
+        active: false,
+      });
+      const settingsAfterDeactivate = await readSettings(context.pmPath);
+      expect(settingsAfterDeactivate.extensions.disabled).toContain("builtin-beads-import");
+
+      const activate = await runExtension("beads", { activate: true, project: true }, { path: context.pmPath });
+      expect(activate.details).toMatchObject({
+        extension: {
+          name: "builtin-beads-import",
+        },
+        active: true,
+      });
+      const settingsAfterActivate = await readSettings(context.pmPath);
+      expect(settingsAfterActivate.extensions.disabled).not.toContain("builtin-beads-import");
+    });
+  });
+
   it("installs bundled extension source via explicit local path", async () => {
     await withTempPmPath(async (context) => {
       const bundledTodosPath = path.resolve(process.cwd(), ".agents", "pm", "extensions", "todos");

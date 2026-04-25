@@ -8,6 +8,7 @@ import {
 } from "../../src/cli/commands/completion.js";
 import { EXIT_CODE } from "../../src/constants.js";
 import { PmCliError } from "../../src/errors.js";
+import { readSettings, writeSettings } from "../../src/settings.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("generateBashScript", () => {
@@ -209,7 +210,13 @@ describe("generateBashScript", () => {
 
   it("includes files/docs add-glob flag in bash completion", () => {
     const script = generateBashScript();
-    expect(script).toContain("--add --add-glob --remove --migrate --validate-paths --audit");
+    expect(script).toContain("--add");
+    expect(script).toContain("--add-glob");
+    expect(script).toContain("--remove");
+    expect(script).toContain("--migrate");
+    expect(script).toContain("--list");
+    expect(script).toContain("--validate-paths");
+    expect(script).toContain("--audit");
   });
 
   it("includes files append-stable flag in bash completion", () => {
@@ -759,6 +766,26 @@ describe("pm completion CLI command", () => {
       expect(typeof json.script).toBe("string");
       expect(json.script.length).toBeGreaterThan(100);
       expect(typeof json.setup_hint).toBe("string");
+    });
+  });
+
+  it("emits runtime field completion flags using canonical dashed CLI tokens", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      settings.schema.fields = [
+        ...(settings.schema.fields ?? []),
+        {
+          key: "customer_segment",
+          type: "string",
+          commands: ["list", "create", "update", "search"],
+        },
+      ];
+      await writeSettings(context.pmPath, settings, "settings:write");
+
+      const result = context.runCli(["completion", "bash"]);
+      expect(result.code).toBe(0);
+      expect(result.stdout).toContain("--customer-segment");
+      expect(result.stdout).not.toContain("--customersegment");
     });
   });
 

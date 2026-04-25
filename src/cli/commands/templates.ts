@@ -8,18 +8,13 @@ import { nowIso } from "../../core/shared/time.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import {
   CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
-  CREATE_COMMANDER_STRING_OPTION_CONTRACTS,
 } from "../../sdk/cli-contracts.js";
 
 const TEMPLATE_DIRECTORY_NAME = "templates";
 const TEMPLATE_FILE_EXTENSION = ".json";
 const TEMPLATE_NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 
-const TEMPLATE_OPTION_STRING_KEYS = CREATE_COMMANDER_STRING_OPTION_CONTRACTS.map((entry) => entry.target).filter(
-  (target) => target !== "template",
-);
 const TEMPLATE_OPTION_REPEATABLE_KEYS = CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS.map((entry) => entry.target);
-const TEMPLATE_OPTION_ALLOWED_KEYS = new Set<string>([...TEMPLATE_OPTION_STRING_KEYS, ...TEMPLATE_OPTION_REPEATABLE_KEYS]);
 const TEMPLATE_OPTION_REPEATABLE_KEY_SET = new Set<string>(TEMPLATE_OPTION_REPEATABLE_KEYS);
 
 type TemplateOptionValue = string | string[];
@@ -87,7 +82,7 @@ function sortTemplateOptions(options: CreateTemplateOptions): CreateTemplateOpti
 function extractTemplateOptions(rawOptions: Record<string, unknown>): CreateTemplateOptions {
   const next: CreateTemplateOptions = {};
   for (const [key, value] of Object.entries(rawOptions)) {
-    if (!TEMPLATE_OPTION_ALLOWED_KEYS.has(key) || value === undefined) {
+    if (value === undefined) {
       continue;
     }
     if (TEMPLATE_OPTION_REPEATABLE_KEY_SET.has(key)) {
@@ -102,6 +97,10 @@ function extractTemplateOptions(rawOptions: Record<string, unknown>): CreateTemp
     }
     if (typeof value === "string") {
       next[key] = value;
+      continue;
+    }
+    if (Array.isArray(value) && value.every((entry) => typeof entry === "string")) {
+      next[key] = [...value];
     }
   }
   return sortTemplateOptions(next);
@@ -114,22 +113,23 @@ function parseStoredTemplateOptions(rawOptions: unknown, templateName: string): 
   const optionsRecord = rawOptions as Record<string, unknown>;
   const normalized: CreateTemplateOptions = {};
   for (const [key, value] of Object.entries(optionsRecord)) {
-    if (!TEMPLATE_OPTION_ALLOWED_KEYS.has(key)) {
+    const normalizedKey = key.trim();
+    if (normalizedKey.length === 0) {
       throw new PmCliError(
-        `Template "${templateName}" contains unsupported option key "${key}".`,
+        `Template "${templateName}" contains an empty option key.`,
         EXIT_CODE.GENERIC_FAILURE,
       );
     }
     if (typeof value === "string") {
-      normalized[key] = value;
+      normalized[normalizedKey] = value;
       continue;
     }
     if (Array.isArray(value) && value.every((entry) => typeof entry === "string")) {
-      normalized[key] = [...value];
+      normalized[normalizedKey] = [...value];
       continue;
     }
     throw new PmCliError(
-      `Template "${templateName}" contains invalid value for option "${key}".`,
+      `Template "${templateName}" contains invalid value for option "${normalizedKey}".`,
       EXIT_CODE.GENERIC_FAILURE,
     );
   }

@@ -566,6 +566,7 @@ export const FILES_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--add-glob" },
   { flag: "--remove" },
   { flag: "--migrate" },
+  { flag: "--list" },
   { flag: "--append-stable" },
   { flag: "--validate-paths" },
   { flag: "--audit" },

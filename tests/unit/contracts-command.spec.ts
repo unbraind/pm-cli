@@ -5,6 +5,7 @@ import { runContracts } from "../../src/cli/commands/contracts.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import type { GlobalOptions } from "../../src/core/shared/command-types.js";
+import { readSettings, writeSettings } from "../../src/settings.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 const GLOBAL_OPTIONS: GlobalOptions = {
@@ -84,6 +85,44 @@ describe("contracts command runtime", () => {
     expect(createRequiredContracts?.by_create_mode?.progressive?.by_type?.Task?.required_flags).not.toEqual(
       expect.arrayContaining(["--dep", "--comment", "--doc"]),
     );
+  });
+
+  it("includes runtime field flags for list aliases and runtime schema command metadata", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      settings.schema.fields = [
+        ...(settings.schema.fields ?? []),
+        {
+          key: "customer_segment",
+          type: "string",
+          commands: ["list", "create", "update", "search"],
+          cli_aliases: ["segment"],
+        },
+      ];
+      await writeSettings(context.pmPath, settings, "settings:write");
+
+      const listAliasContracts = await runContracts(
+        { command: "list-open", flagsOnly: true },
+        {
+          ...GLOBAL_OPTIONS,
+          path: context.pmPath,
+        },
+      );
+      expect(listAliasContracts.command_flags?.[0]?.flags).toEqual(
+        expect.arrayContaining([expect.objectContaining({ flag: "--customer-segment" }), expect.objectContaining({ flag: "--segment" })]),
+      );
+
+      const runtimeContracts = await runContracts(
+        {},
+        {
+          ...GLOBAL_OPTIONS,
+          path: context.pmPath,
+        },
+      );
+      expect(runtimeContracts.runtime_schema.fields_by_command.list).toEqual(
+        expect.arrayContaining(["--customer-segment"]),
+      );
+    });
   });
 
   it("supports runtime-only filtering and reports extension-action availability", async () => {
@@ -204,7 +243,7 @@ describe("contracts command runtime", () => {
         command: "learnings",
         flags: ["--add", "--limit", "--author", "--message", "--allow-audit-learning", "--allow-audit-comment", "--force"],
       },
-      { command: "files", flags: ["--add", "--add-glob", "--append-stable", "--validate-paths", "--audit"] },
+      { command: "files", flags: ["--add", "--add-glob", "--list", "--append-stable", "--validate-paths", "--audit"] },
       { command: "docs", flags: ["--add", "--add-glob", "--validate-paths", "--audit"] },
       { command: "history", flags: ["--limit", "--diff", "--verify"] },
       { command: "config", flags: ["--criterion", "--clear-criteria", "--format", "--policy"] },

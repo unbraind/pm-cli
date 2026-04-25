@@ -169,6 +169,61 @@ describe("runUpdateMany", () => {
     });
   });
 
+  it("accepts rollback-only CLI invocations without misclassifying control flags as mutations", async () => {
+    await withTempPmPath(async (context) => {
+      const firstId = createTask(context, "bulk-cli-rollback-a", {
+        tags: "bulk-cli-rollback",
+        description: "bulk cli rollback A",
+      });
+      const secondId = createTask(context, "bulk-cli-rollback-b", {
+        tags: "bulk-cli-rollback",
+        description: "bulk cli rollback B",
+      });
+
+      const applyResult = context.runCli(
+        [
+          "update-many",
+          "--json",
+          "--filter-tag",
+          "bulk-cli-rollback",
+          "--description",
+          "bulk cli rollback updated",
+          "--message",
+          "bulk cli apply",
+        ],
+        { expectJson: true },
+      );
+      expect(applyResult.code).toBe(0);
+      const checkpointId = (applyResult.json as { checkpoint?: { id?: string } }).checkpoint?.id;
+      expect(typeof checkpointId).toBe("string");
+
+      const rollbackResult = context.runCli(
+        [
+          "update-many",
+          "--json",
+          "--rollback",
+          checkpointId as string,
+          "--author",
+          "rollback-author",
+          "--message",
+          "bulk cli rollback",
+        ],
+        { expectJson: true },
+      );
+      expect(rollbackResult.code).toBe(0);
+      const rollbackJson = rollbackResult.json as {
+        mode: string;
+        rollback_checkpoint_id?: string;
+        restored_count?: number;
+      };
+      expect(rollbackJson.mode).toBe("rollback");
+      expect(rollbackJson.rollback_checkpoint_id).toBe(checkpointId);
+      expect(rollbackJson.restored_count).toBe(2);
+      expect(getItemDescription(context, firstId)).toBe("bulk cli rollback A");
+      expect(getItemDescription(context, secondId)).toBe("bulk cli rollback B");
+    });
+  });
+
   it("treats linked-array mutation flags as actionable in dry-run and apply modes", async () => {
     await withTempPmPath(async (context) => {
       const firstId = createTask(context, "bulk-linked-tests-a", { tags: "bulk-linked-tests" });

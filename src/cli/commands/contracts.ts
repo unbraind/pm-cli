@@ -11,7 +11,6 @@ import { commandOptionFlagLabel, resolveCommandOptionPolicyState, resolveItemTyp
 import {
   resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,
-  runtimeFieldOptionTarget,
   type RuntimeFieldRegistry,
 } from "../../core/schema/runtime-schema.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
@@ -809,15 +808,45 @@ function normalizeCommandForRuntimeFieldFlags(command: string): string {
   return command;
 }
 
+function toRuntimeLongFlagToken(token: string): string | null {
+  const trimmed = token.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (trimmed.startsWith("--")) {
+    return trimmed;
+  }
+  if (trimmed.startsWith("-")) {
+    return null;
+  }
+  return `--${trimmed}`;
+}
+
+function toRuntimeShortFlagToken(token: string): string | null {
+  const trimmed = token.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (trimmed.startsWith("--")) {
+    return null;
+  }
+  if (trimmed.startsWith("-")) {
+    return trimmed;
+  }
+  return null;
+}
+
 function buildRuntimeFieldFlagContracts(fieldRegistry: RuntimeFieldRegistry): Map<string, CliFlagContract[]> {
   const buckets = new Map<string, { flags: CliFlagContract[]; seen: Set<string> }>();
   for (const definition of fieldRegistry.definitions) {
-    const primaryFlag = runtimeFieldOptionTarget(definition);
-    if (!primaryFlag.startsWith("--")) {
+    const primaryFlag = toRuntimeLongFlagToken(definition.cli_flag);
+    if (!primaryFlag) {
       continue;
     }
-    const shortAlias = definition.cli_aliases.find((alias) => alias.startsWith("-") && !alias.startsWith("--"));
-    const longAliases = definition.cli_aliases.filter((alias) => alias.startsWith("--"));
+    const shortAlias = definition.cli_aliases.map((alias) => toRuntimeShortFlagToken(alias)).find((alias) => alias !== null);
+    const longAliases = definition.cli_aliases
+      .map((alias) => toRuntimeLongFlagToken(alias))
+      .filter((alias): alias is string => alias !== null && alias !== primaryFlag);
     for (const command of definition.commands) {
       const bucket = buckets.get(command) ?? { flags: [], seen: new Set<string>() };
       const primaryContract: CliFlagContract = shortAlias ? { flag: primaryFlag, short: shortAlias } : { flag: primaryFlag };
@@ -1130,7 +1159,9 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
       fields_by_command: Object.fromEntries(
         [...runtimeFieldRegistry.command_to_fields.entries()].map(([command, definitions]) => [
           command,
-          definitions.map((definition) => runtimeFieldOptionTarget(definition)),
+          [...new Set(definitions.map((definition) => `--${definition.cli_flag}`))].sort((left, right) =>
+            left.localeCompare(right),
+          ),
         ]),
       ),
     },

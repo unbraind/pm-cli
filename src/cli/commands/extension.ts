@@ -508,6 +508,42 @@ function normalizeExtensionNameForMatch(value: string): string {
   return value.trim().toLowerCase();
 }
 
+async function resolveBundledAliasManifestName(input: string): Promise<string | null> {
+  const bundledAliasSource = await resolveBundledExtensionAliasSource(input);
+  if (!bundledAliasSource) {
+    return null;
+  }
+  try {
+    const validated = await validateExtensionDirectory(bundledAliasSource);
+    return validated.manifest.name;
+  } catch {
+    return null;
+  }
+}
+
+async function resolveInstalledExtensionCandidate(
+  installed: ManagedExtensionSummary[],
+  extensionTarget: string,
+): Promise<ManagedExtensionSummary | undefined> {
+  const lookupValues = [extensionTarget];
+  const bundledAliasManifestName = await resolveBundledAliasManifestName(extensionTarget);
+  if (bundledAliasManifestName) {
+    lookupValues.push(bundledAliasManifestName);
+  }
+  const normalizedLookups = [...new Set(lookupValues.map((value) => normalizeExtensionNameForMatch(value)).filter((value) => value.length > 0))];
+  for (const lookup of normalizedLookups) {
+    const byName = installed.find((entry) => normalizeExtensionNameForMatch(entry.name) === lookup);
+    if (byName) {
+      return byName;
+    }
+    const byDirectory = installed.find((entry) => normalizeExtensionNameForMatch(entry.directory) === lookup);
+    if (byDirectory) {
+      return byDirectory;
+    }
+  }
+  return undefined;
+}
+
 function isExtensionEnabled(settings: PmSettings, name: string): boolean {
   const normalizedName = name.trim();
   const enabled = new Set(normalizeStringList(settings.extensions.enabled));
@@ -1636,10 +1672,7 @@ export async function runExtension(
     warnings.push(...managedStateRead.warnings);
     const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
     warnings.push(...installed.warnings);
-    const normalizedLookup = normalizeExtensionNameForMatch(extensionTarget);
-    const candidate =
-      installed.extensions.find((entry) => normalizeExtensionNameForMatch(entry.name) === normalizedLookup) ??
-      installed.extensions.find((entry) => normalizeExtensionNameForMatch(entry.directory) === normalizedLookup);
+    const candidate = await resolveInstalledExtensionCandidate(installed.extensions, extensionTarget);
     if (!candidate) {
       throw new PmCliError(`Installed extension "${extensionTarget}" was not found in ${scope} scope.`, EXIT_CODE.NOT_FOUND);
     }
@@ -1726,10 +1759,7 @@ export async function runExtension(
     warnings.push(...managedStateRead.warnings);
     const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
     warnings.push(...installed.warnings);
-    const normalizedLookup = normalizeExtensionNameForMatch(extensionTarget);
-    const candidate =
-      installed.extensions.find((entry) => normalizeExtensionNameForMatch(entry.name) === normalizedLookup) ??
-      installed.extensions.find((entry) => normalizeExtensionNameForMatch(entry.directory) === normalizedLookup);
+    const candidate = await resolveInstalledExtensionCandidate(installed.extensions, extensionTarget);
     if (!candidate) {
       throw new PmCliError(`Installed extension "${extensionTarget}" was not found in ${scope} scope.`, EXIT_CODE.NOT_FOUND);
     }
@@ -1770,10 +1800,7 @@ export async function runExtension(
     warnings.push(...managedStateRead.warnings);
     const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
     warnings.push(...installed.warnings);
-    const normalizedLookup = normalizeExtensionNameForMatch(extensionTarget);
-    const candidate =
-      installed.extensions.find((entry) => normalizeExtensionNameForMatch(entry.name) === normalizedLookup) ??
-      installed.extensions.find((entry) => normalizeExtensionNameForMatch(entry.directory) === normalizedLookup);
+    const candidate = await resolveInstalledExtensionCandidate(installed.extensions, extensionTarget);
     if (!candidate) {
       throw new PmCliError(`Installed extension "${extensionTarget}" was not found in ${scope} scope.`, EXIT_CODE.NOT_FOUND);
     }

@@ -3,6 +3,7 @@ import { runCreate } from "../../src/cli/commands/create.js";
 import { runTemplatesList, runTemplatesSave, runTemplatesShow } from "../../src/cli/commands/templates.js";
 import { EXIT_CODE } from "../../src/constants.js";
 import { PmCliError } from "../../src/errors.js";
+import { readSettings, writeSettings } from "../../src/settings.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("templates command flows", () => {
@@ -39,6 +40,32 @@ describe("templates command flows", () => {
       const shown = await runTemplatesShow("release-defaults", { path: context.pmPath });
       expect(shown.name).toBe("release-defaults");
       expect(shown.options).toEqual(saved.options);
+    });
+  });
+
+  it("accepts runtime create field flags when saving templates via CLI", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      settings.schema.fields = [
+        ...(settings.schema.fields ?? []),
+        {
+          key: "customer_segment",
+          type: "string",
+          commands: ["create"],
+        },
+      ];
+      await writeSettings(context.pmPath, settings, "settings:write");
+
+      const saveResult = context.runCli(
+        ["templates", "save", "runtime-template", "--type", "Task", "--customer-segment", "enterprise", "--json"],
+        { expectJson: true },
+      );
+      expect(saveResult.code).toBe(0);
+      expect((saveResult.json as { options: Record<string, unknown> }).options.customerSegment).toBe("enterprise");
+
+      const showResult = context.runCli(["templates", "show", "runtime-template", "--json"], { expectJson: true });
+      expect(showResult.code).toBe(0);
+      expect((showResult.json as { options: Record<string, unknown> }).options.customerSegment).toBe("enterprise");
     });
   });
 

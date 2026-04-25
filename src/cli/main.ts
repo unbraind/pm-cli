@@ -106,7 +106,6 @@ import { normalizeStatusInput } from "../core/item/status.js";
 import {
   resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,
-  runtimeFieldOptionTarget,
   type RuntimeFieldCommand,
 } from "../core/schema/runtime-schema.js";
 import { refreshSearchArtifactsForMutation } from "../core/search/cache.js";
@@ -1743,9 +1742,17 @@ const RUNTIME_FIELD_COMMAND_BY_COMMAND_PATH: Readonly<Record<string, RuntimeFiel
   update: "update",
   "update-many": "update_many",
   list: "list",
+  "list-all": "list",
+  "list-draft": "list",
+  "list-open": "list",
+  "list-in-progress": "list",
+  "list-blocked": "list",
+  "list-closed": "list",
+  "list-canceled": "list",
   search: "search",
   calendar: "calendar",
   context: "context",
+  "templates save": "create",
 };
 
 const runtimeFieldLooseFlagDefinitionCache = new Map<string, Array<Record<string, unknown>>>();
@@ -1764,12 +1771,31 @@ function commandHasLongOption(command: Command, longFlag: string): boolean {
   return command.options.some((option) => option.long === longFlag);
 }
 
+function commandHasShortOption(command: Command, shortFlag: string): boolean {
+  return command.options.some((option) => option.short === shortFlag);
+}
+
 function addRuntimeFieldOption(command: Command, flagToken: string, description: string, repeatable: boolean): void {
-  const longFlag = `--${flagToken}`;
-  if (commandHasLongOption(command, longFlag)) {
+  const normalizedToken = flagToken.trim();
+  if (!normalizedToken) {
     return;
   }
   const helpText = description.length > 0 ? description : `Runtime schema field (${flagToken})`;
+  if (normalizedToken.startsWith("-") && !normalizedToken.startsWith("--")) {
+    if (commandHasShortOption(command, normalizedToken)) {
+      return;
+    }
+    if (repeatable) {
+      command.option(`${normalizedToken} <value>`, `${helpText} (repeatable)`, collect);
+      return;
+    }
+    command.option(`${normalizedToken} <value>`, helpText);
+    return;
+  }
+  const longFlag = normalizedToken.startsWith("--") ? normalizedToken : `--${normalizedToken}`;
+  if (commandHasLongOption(command, longFlag)) {
+    return;
+  }
   if (repeatable) {
     command.option(`${longFlag} <value>`, `${helpText} (repeatable)`, collect);
     return;
@@ -1821,9 +1847,17 @@ async function registerRuntimeSchemaFieldFlags(rootProgram: Command): Promise<vo
     { path: "update", command: "update" },
     { path: "update-many", command: "update_many" },
     { path: "list", command: "list" },
+    { path: "list-all", command: "list" },
+    { path: "list-draft", command: "list" },
+    { path: "list-open", command: "list" },
+    { path: "list-in-progress", command: "list" },
+    { path: "list-blocked", command: "list" },
+    { path: "list-closed", command: "list" },
+    { path: "list-canceled", command: "list" },
     { path: "search", command: "search" },
     { path: "calendar", command: "calendar" },
     { path: "context", command: "context" },
+    { path: "templates save", command: "create" },
   ];
   for (const mapping of mappings) {
     const command = findCommandByPath(rootProgram, mapping.path.split(" "));
@@ -2440,6 +2474,37 @@ function normalizeUpdateOptions(commandOptions: Record<string, unknown>): Record
     normalized[key] = value;
   }
   return normalized;
+}
+
+const UPDATE_MANY_CONTROL_OPTION_KEYS = new Set<string>([
+  "filterStatus",
+  "filterType",
+  "filterTag",
+  "filterPriority",
+  "filterDeadlineBefore",
+  "filterDeadlineAfter",
+  "filterAssignee",
+  "filterAssigneeFilter",
+  "filterAssignee_filter",
+  "filterParent",
+  "filterSprint",
+  "filterRelease",
+  "limit",
+  "offset",
+  "dryRun",
+  "rollback",
+  "checkpoint",
+]);
+
+function extractUpdateManyMutationOptionSource(commandOptions: Record<string, unknown>): Record<string, unknown> {
+  const mutationOptions: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(commandOptions)) {
+    if (UPDATE_MANY_CONTROL_OPTION_KEYS.has(key)) {
+      continue;
+    }
+    mutationOptions[key] = value;
+  }
+  return mutationOptions;
 }
 
 function readListOptionString(options: Record<string, unknown>, target: string): string | undefined {
@@ -4080,7 +4145,7 @@ program
           offset: typeof options.offset === "string" ? options.offset : undefined,
           includeBody: true,
         },
-        update: normalizeUpdateOptions(options),
+        update: normalizeUpdateOptions(extractUpdateManyMutationOptionSource(options)),
         dryRun: options.dryRun === true ? true : undefined,
         rollback: typeof options.rollback === "string" ? options.rollback : undefined,
         checkpoint: options.checkpoint === false ? false : undefined,
@@ -4363,6 +4428,7 @@ program
   )
   .option("--remove <value>", "Remove linked file by path (path=<value>, path:<value>, plain path, or - for stdin)", collect)
   .option("--migrate <value>", "Migrate linked file paths in-place (from=<prefix>,to=<prefix>; repeatable)", collect)
+  .option("--list", "List linked files without mutating")
   .option("--append-stable", "Preserve existing linked-file order and append new links without full-array resorting")
   .option("--validate-paths", "Validate linked file paths for existence and file shape")
   .option("--audit", "Audit linked file usage across all items for this item's linked paths")
@@ -4384,6 +4450,7 @@ program
         addGlob: addGlobValues,
         remove: removeValues,
         migrate: migrateValues,
+        list: Boolean(options.list),
         appendStable: Boolean(options.appendStable),
         validatePaths: Boolean(options.validatePaths),
         audit: Boolean(options.audit),
@@ -5140,7 +5207,18 @@ program
         ) {
           continue;
         }
-        completionCommandFlags[commandKey] = definitions.map((definition) => runtimeFieldOptionTarget(definition));
+        const runtimeFlags = new Set<string>();
+        for (const definition of definitions) {
+          runtimeFlags.add(`--${definition.cli_flag}`);
+          for (const alias of definition.cli_aliases) {
+            if (alias.startsWith("--") || (alias.startsWith("-") && !alias.startsWith("--"))) {
+              runtimeFlags.add(alias);
+            } else {
+              runtimeFlags.add(`--${alias}`);
+            }
+          }
+        }
+        completionCommandFlags[commandKey] = [...runtimeFlags].sort((left, right) => left.localeCompare(right));
       }
       if (completionCommandFlags.update) {
         completionCommandFlags["update-many"] = [...completionCommandFlags.update];
