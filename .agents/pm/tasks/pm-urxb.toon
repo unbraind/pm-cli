@@ -2,11 +2,11 @@ id: pm-urxb
 title: Make lifecycle validate patterns configurable
 description: Add settings-backed lifecycle validation pattern controls so closure-like and stale-blocker heuristics can be tuned per project without code changes.
 type: Task
-status: open
+status: in_progress
 priority: 2
 tags[4]: governance,lifecycle,pm-cli,validation
 created_at: "2026-04-05T23:06:03.204Z"
-updated_at: "2026-04-25T17:10:36.291Z"
+updated_at: "2026-04-25T20:04:47.301Z"
 deadline: "2026-05-09T17:10:36.291Z"
 assignee: codex-agent
 author: codex-agent
@@ -37,8 +37,9 @@ regression: false
 customer_impact: Maintainers get tunable lifecycle diagnostics with less manual suppression.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-dw5s,parent,"2026-04-05T23:06:03.204Z",codex-agent,null
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-04-05T23:06:03.204Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'validate lifecycle stale blocker configurable patterns' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because existing lifecycle guardrails ship static heuristics but no settings-backed pattern policy surface."
+  "2026-04-25T20:04:47.301Z",codex-agent,"2026-04-25 validate sweep still reports lifecycle advisories: active_closure_like_metadata for pm-a4z3/pm-cvwi/pm-kglq/pm-r15d and active_terminal_parent for pm-0nxf, pm-a4z3, pm-cvwi, pm-i4ef, pm-p0ij, pm-umhv, pm-urxb. This follow-up remains open as policy/lineage normalization work."
 notes[1]{created_at,author,text}:
   "2026-04-05T23:06:03.204Z",codex-agent,Implement deterministic pattern-source reporting (default vs settings override) and preserve warning token stability by default.
 files[1]{path,scope,note}:

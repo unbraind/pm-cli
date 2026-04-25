@@ -353,6 +353,37 @@ function addCreateFlags(args: string[], params: PmToolParameters): void {
   pushContractedFlags(args, params, repeatableContracts);
 }
 
+const TEMPLATE_SAVE_UNSUPPORTED_PARAMS = new Set([
+  "createMode",
+  "schedulePreset",
+  "unset",
+  "clearDeps",
+  "clearComments",
+  "clearNotes",
+  "clearLearnings",
+  "clearFiles",
+  "clearTests",
+  "clearDocs",
+  "clearReminders",
+  "clearEvents",
+  "clearTypeOptions",
+]);
+
+function addTemplateSaveFlags(args: string[], params: PmToolParameters): void {
+  const scalarContracts = PI_CREATE_OPTION_CONTRACTS.filter(
+    (entry) => !entry.repeatable && !TEMPLATE_SAVE_UNSUPPORTED_PARAMS.has(entry.param),
+  );
+  const repeatableContracts = PI_CREATE_OPTION_CONTRACTS.filter(
+    (entry) => entry.repeatable && !TEMPLATE_SAVE_UNSUPPORTED_PARAMS.has(entry.param),
+  );
+  const sharedContracts = PI_SHARED_CREATE_UPDATE_OPTION_CONTRACTS.filter(
+    (entry) => !TEMPLATE_SAVE_UNSUPPORTED_PARAMS.has(entry.param),
+  );
+  pushContractedFlags(args, params, scalarContracts);
+  pushContractedFlags(args, params, sharedContracts);
+  pushContractedFlags(args, params, repeatableContracts);
+}
+
 function addUpdateFlags(args: string[], params: PmToolParameters): void {
   const scalarContracts = PI_UPDATE_OPTION_CONTRACTS.filter((entry) => !entry.repeatable);
   const repeatableContracts = PI_UPDATE_OPTION_CONTRACTS.filter((entry) => entry.repeatable);
@@ -966,7 +997,7 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
     case "templates-save": {
       args.push("templates", "save", requireString(params.template, "template", action));
       const templateSaveParams: PmToolParameters = { ...params, template: undefined };
-      addCreateFlags(args, templateSaveParams);
+      addTemplateSaveFlags(args, templateSaveParams);
       return args;
     }
     case "templates-list":

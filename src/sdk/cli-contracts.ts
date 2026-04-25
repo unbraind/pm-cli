@@ -1609,6 +1609,26 @@ const CREATE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   "assignee",
 ]);
 
+const TEMPLATE_SAVE_UNSUPPORTED_PARAMETER_KEYS = new Set([
+  "createMode",
+  "schedulePreset",
+  "unset",
+  "clearDeps",
+  "clearComments",
+  "clearNotes",
+  "clearLearnings",
+  "clearFiles",
+  "clearTests",
+  "clearDocs",
+  "clearReminders",
+  "clearEvents",
+  "clearTypeOptions",
+]);
+
+const TEMPLATE_SAVE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList(
+  CREATE_CONTRACT_PARAMETER_KEYS.filter((key) => !TEMPLATE_SAVE_UNSUPPORTED_PARAMETER_KEYS.has(key)),
+);
+
 const UPDATE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...PI_UPDATE_OPTION_CONTRACTS.map((entry) => entry.param),
   ...PI_SHARED_CREATE_UPDATE_OPTION_CONTRACTS.map((entry) => entry.param),
@@ -1826,7 +1846,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   completion: { required: ["shell"], optional: ["eagerTags"] },
   "templates-save": {
     required: ["template"],
-    optional: CREATE_CONTRACT_PARAMETER_KEYS,
+    optional: TEMPLATE_SAVE_CONTRACT_PARAMETER_KEYS,
   },
   "templates-list": {},
   "templates-show": { required: ["template"] },

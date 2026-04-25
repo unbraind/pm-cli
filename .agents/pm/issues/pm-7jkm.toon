@@ -1,0 +1,41 @@
+id: pm-7jkm
+title: Fix parser overrides for core commands without positional args
+description: Parser overrides registered by extensions were not applied to core commands like list when invoked without positional args.
+type: Issue
+status: closed
+priority: 0
+tags[3]: "area:agent-ux","area:extensions","audit:2026-04-25"
+created_at: "2026-04-25T20:01:14.954Z"
+updated_at: "2026-04-25T20:03:57.393Z"
+deadline: "2026-04-27T20:01:14.954Z"
+author: codex-agent
+estimated_minutes: 90
+acceptance_criteria: Core parser overrides affect built-in commands with and without positional args; regression test covers pm list override.
+parent: pm-o7be
+reporter: codex-agent
+severity: high
+environment: cli
+repro_steps: "Install parser extension overriding list limit, run pm list --json."
+resolution: Patched wrapped action forwarding to replay parser-mutated args via Commander processedArgs and synced option values before invoking core handlers.
+expected_result: filters.limit reflects override and result count is constrained.
+actual_result: override ignored for core list command.
+component: extension-runtime
+regression: true
+customer_impact: Agent-authored parser extensions cannot reliably shape built-in command UX.
+comments[2]{created_at,author,text}:
+  "2026-04-25T20:01:14.954Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'parser override core command' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because no active item tracked no-positional core parser forwarding bug."
+  "2026-04-25T20:03:44.443Z",codex-agent,"Implemented core parser-forwarding fix in wrapped action dispatch by replaying parser-mutated args through Commander processedArgs and syncing option values via setOptionValueWithSource. Evidence: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts (61 passed)."
+notes[1]{created_at,author,text}:
+  "2026-04-25T20:01:14.954Z",codex-agent,Failure reproduced in /tmp dogfood project via local extension parser override.
+learnings[1]{created_at,author,text}:
+  "2026-04-25T20:01:14.954Z",codex-agent,Wrapper-level action interception must preserve Commander processedArgs semantics for variadic/single-arg commands.
+files[1]{path,scope,note}:
+  src/cli/main.ts,project,core parser forwarding fix
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-moeroocq-78vz1h,test,passed,"2026-04-25T20:01:55.904Z","2026-04-25T20:03:33.578Z","2026-04-25T20:03:33.578Z",null,null,1,0,0,null,null,null
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,parser capability behavior reference
+close_reason: Parser overrides now apply to core commands without positional args; integration regression test passes.
+body: "Dogfood evidence: extension registerParser('list') injected limit=1 but pm list --json kept filters.limit=null and returned full counts. Root cause in wrapped action forwarding only patched user options objects, not Commander processed args/options pipeline for core commands."

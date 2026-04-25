@@ -4384,6 +4384,103 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("applies parser overrides for core commands without positional args", async () => {
+    await withTempPmPath(async (context) => {
+      const extensionDir = path.join(context.pmPath, "extensions", "core-parser-ext");
+      await mkdir(extensionDir, { recursive: true });
+
+      await writeFile(
+        path.join(extensionDir, "manifest.json"),
+        `${JSON.stringify(
+          {
+            name: "core-parser-ext",
+            version: "1.0.0",
+            entry: "./index.mjs",
+            capabilities: ["parser"],
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+
+      await writeFile(
+        path.join(extensionDir, "index.mjs"),
+        [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerParser('list', (context) => ({",
+          "      options: {",
+          "        ...context.options,",
+          "        limit: '1',",
+          "      },",
+          "    }));",
+          "  }",
+          "};",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const buildCreateArgs = (title: string): string[] => [
+        "create",
+        "--json",
+        "--title",
+        title,
+        "--description",
+        "Seed item for core parser override coverage",
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--priority",
+        "1",
+        "--tags",
+        "integration,parser-core",
+        "--body",
+        "",
+        "--deadline",
+        "none",
+        "--estimate",
+        "10",
+        "--ac",
+        "Core parser override is applied",
+        "--author",
+        "integration-test",
+        "--message",
+        `Seed ${title}`,
+        "--assignee",
+        "none",
+        "--dep",
+        "none",
+        "--comment",
+        "none",
+        "--note",
+        "none",
+        "--learning",
+        "none",
+        "--file",
+        "none",
+        "--test",
+        "none",
+        "--doc",
+        "none",
+      ];
+
+      const firstCreate = context.runCli(buildCreateArgs("Core parser seed A"), { expectJson: true });
+      expect(firstCreate.code).toBe(0);
+
+      const secondCreate = context.runCli(buildCreateArgs("Core parser seed B"), { expectJson: true });
+      expect(secondCreate.code).toBe(0);
+
+      const listed = context.runCli(["list", "--json"], { expectJson: true });
+      expect(listed.code).toBe(0);
+      const listedJson = listed.json as { count: number; filters: { limit: string | null } };
+      expect(listedJson.count).toBe(1);
+      expect(listedJson.filters.limit).toBe("1");
+    });
+  });
+
   it("applies history append service overrides during item mutations", async () => {
     await withTempPmPath(async (context) => {
       const extensionDir = path.join(context.pmPath, "extensions", "history-service-ext");

@@ -693,6 +693,13 @@ describe("Pi agent extension wrapper for pm", () => {
       items: { type: "string" },
     });
 
+    const templatesSaveSchema = schemaForAction(tool.parameters as Record<string, unknown>, "templates-save");
+    const templatesSaveProperties = templatesSaveSchema.properties as Record<string, unknown>;
+    expect(templatesSaveProperties.createMode).toBeUndefined();
+    expect(templatesSaveProperties.schedulePreset).toBeUndefined();
+    expect(templatesSaveProperties.unset).toBeUndefined();
+    expect(templatesSaveProperties.clearDeps).toBeUndefined();
+
     const completionSchema = schemaForAction(tool.parameters as Record<string, unknown>, "completion");
     expect(completionSchema.required).toEqual(expect.arrayContaining(["action", "shell"]));
     expect(schemaProperty(completionSchema, "shell").type).toBe("string");
@@ -1601,6 +1608,40 @@ describe("Pi agent extension wrapper for pm", () => {
         eagerTags: true,
       }),
     ).toEqual(["--json", "completion", "bash", "--eager-tags"]);
+
+    expect(
+      buildPmCliArgs({
+        action: "templates-save",
+        template: "pi-template",
+        title: "Pi template title",
+        description: "Pi template description",
+        type: "Task",
+        status: "open",
+        priority: 1,
+        assignee: "pi-bot",
+        createMode: "progressive",
+        schedulePreset: "lightweight",
+        unset: ["author"],
+        clearDeps: true,
+      }),
+    ).toEqual([
+      "--json",
+      "templates",
+      "save",
+      "pi-template",
+      "--title",
+      "Pi template title",
+      "--description",
+      "Pi template description",
+      "--type",
+      "Task",
+      "--status",
+      "open",
+      "--priority",
+      "1",
+      "--assignee",
+      "pi-bot",
+    ]);
 
     expect(
       buildPmCliArgs({

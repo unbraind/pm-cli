@@ -2149,9 +2149,14 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         globalOptions = await applyDefaultOutputFormat(globalOptions);
         setResolvedGlobalOptions(actionCommand, globalOptions);
         actionCommand.args = [...commandArgs];
-        const optionsArgIndex = actionArgs.length - 2;
-        if (optionsArgIndex >= 0 && typeof actionArgs[optionsArgIndex] === "object" && actionArgs[optionsArgIndex] !== null) {
-          actionArgs[optionsArgIndex] = commandOptions;
+        if ("_processArguments" in actionCommand && typeof actionCommand._processArguments === "function") {
+          actionCommand._processArguments();
+        }
+        if (actionArgs.length > 0 && Array.isArray(actionArgs[0])) {
+          actionArgs[0] = [...actionCommand.processedArgs];
+        }
+        for (const [key, value] of Object.entries(commandOptions)) {
+          actionCommand.setOptionValueWithSource(key, value, "cli");
         }
         setActiveCommandResult(undefined);
         setActiveCommandContext({
