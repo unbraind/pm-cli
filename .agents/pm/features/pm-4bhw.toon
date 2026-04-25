@@ -6,8 +6,10 @@ status: closed
 priority: 1
 tags[5]: contracts,extensions,external-audit,help,pm-cli
 created_at: "2026-04-06T09:48:52.264Z"
-updated_at: "2026-04-06T15:42:32.532Z"
+updated_at: "2026-04-25T11:03:55.266Z"
 author: codex-agent
+estimated_minutes: 60
+acceptance_criteria: "Governance backfill acceptance: item metadata is complete and remains consistent with existing work history."
 parent: pm-o7be
 resolution: Added extension action subcommands with legacy-flag compatibility and exposed type-aware create required options in contracts schema metadata.
 expected_result: Operators can discover extension workflows via explicit subcommands and machine contracts expose effective create requirements per type/mode.

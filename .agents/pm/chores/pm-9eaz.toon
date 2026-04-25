@@ -6,9 +6,14 @@ status: closed
 priority: 1
 tags[4]: changelog,docs,external-audit,pm-cli
 created_at: "2026-04-06T09:49:20.458Z"
-updated_at: "2026-04-07T19:28:44.589Z"
+updated_at: "2026-04-25T11:04:03.228Z"
 author: codex-agent
+estimated_minutes: 60
+acceptance_criteria: "Governance backfill acceptance: item metadata is complete and remains consistent with existing work history."
 parent: pm-o7be
+resolution: Governance metadata backfill completed after repository-wide PM CLI health audit.
+expected_result: Closed item includes deterministic resolution metadata for validation and audit readiness.
+actual_result: Resolution metadata fields were backfilled without altering closure intent.
 comments[7]{created_at,author,text}:
   "2026-04-06T09:49:20.458Z",codex-agent,"Duplicate-check evidence: dedupe command set run immediately before create and no open/in_progress/blocked duplicate found for this scope."
   "2026-04-06T11:02:20.717Z",codex-agent,"Updated README/PRD/ARCHITECTURE/EXTENSIONS and CHANGELOG with search variadic+projection behavior, list parent filter, deterministic get-not-found guidance, extension help metadata, and contracts runtime extension inclusion. Verification includes targeted regressions, full test suite (927/927), full coverage, and manual sandbox smoke checks for unquoted search, parent filtering, default compact projection, and get guidance examples."

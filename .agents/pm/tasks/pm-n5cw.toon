@@ -6,9 +6,14 @@ status: closed
 priority: 1
 tags[5]: history,patch,pm-cli,restore,wave9
 created_at: "2026-04-07T08:09:47.937Z"
-updated_at: "2026-04-07T09:06:55.134Z"
+updated_at: "2026-04-25T11:04:29.209Z"
 author: codex-agent
+estimated_minutes: 60
+acceptance_criteria: "Governance backfill acceptance: item metadata is complete and remains consistent with existing work history."
 parent: pm-o7be
+resolution: Governance metadata backfill completed after repository-wide PM CLI health audit.
+expected_result: Closed item includes deterministic resolution metadata for validation and audit readiness.
+actual_result: Resolution metadata fields were backfilled without altering closure intent.
 comments[3]{created_at,author,text}:
   "2026-04-07T08:09:47.937Z",codex-agent,"Duplicate-check evidence commands: pm context --limit 10; pm list-open --limit 50; pm search restore patch replay add replace pm_context_mode --limit 10. Net-new because no active item directly tracks this restore replay compatibility plus failing patch diagnostics delta."
   "2026-04-07T08:17:55.051Z",codex-agent,"Implementation in progress: normalize RFC6902 patch ops for absent paths and improve restore replay failure diagnostics with explicit entry/op/path context plus regression tests."

@@ -2,13 +2,12 @@ id: pm-f583
 title: Implement and verify pm context command
 description: "Code the context command module and all wiring/tests/docs, then verify with build, tests, coverage, and command smoke checks."
 type: Task
-status: blocked
+status: in_progress
 priority: 1
 tags[3]: "area:context",implementation,pm-cli
 created_at: "2026-04-01T14:10:51.504Z"
-updated_at: "2026-04-05T22:46:23.552Z"
+updated_at: "2026-04-25T11:05:42.380Z"
 deadline: "2026-04-12T22:46:23.551Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 360
 acceptance_criteria: "All implementation, test, and documentation updates for pm context are complete and verified with build/test/coverage."
@@ -26,9 +25,6 @@ risk: medium
 confidence: high
 sprint: context-rollout
 release: vnext
-blocked_by: pm-iyqf
-blocked_reason: Global coverage threshold baseline remains below 100% (97.64/95.34/98.24/97.32) despite passing feature-specific suites.
-unblock_note: "Unblock by resolving parent blocker pm-iyqf, rerunning build/test/coverage verification for context command scope, and recording pass evidence before status transition."
 reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Implement and verify pm context command (pm CLI + Node/pnpm toolchain).
@@ -43,11 +39,12 @@ regression: true
 customer_impact: Users and agents get faster context snapshots
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-iyqf,parent,"2026-04-01T14:10:51.504Z",codex-agent,null
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-04-01T14:10:51.504Z",codex-agent,Implementation task created and ready for claim.
   "2026-04-01T14:26:43.067Z",codex-agent,"Implemented pm context/ctx end-to-end: new command module, CLI wiring/help, completion parity, Pi wrapper action mapping, unit/integration/release-readiness tests, and docs (README/PRD/ARCHITECTURE/AGENTS/CHANGELOG). Verification: pnpm build passed; node scripts/run-tests.mjs test passed (63 files / 661 tests); targeted changed-suite regression passed (5 files / 131 tests). Coverage command still fails on existing global 100% thresholds across broader repo (lines 97.64, branches 95.34, functions 98.24, statements 97.32), but context command behavior and all related suites are passing."
   "2026-04-05T22:43:38.081Z",codex-agent,"Normalization decision: removed stale governance backfill links that now point to deleted legacy install/beads/todos/builtins paths. These stale entries generated validate missing_linked_paths noise and obscured actionable linkage."
   "2026-04-05T22:46:20.828Z",codex-agent,"Normalization decision: deadline refreshed because item remains intentionally blocked by upstream coverage-baseline gate; prior deadline was stale and created misleading overdue triage noise."
+  "2026-04-25T11:01:37.351Z",codex-agent,Coverage baseline blocker is resolved in latest run; unblocking task for completion workflow.
 notes[1]{created_at,author,text}:
   "2026-04-01T14:10:51.504Z",codex-agent,Will track files tests docs and verification evidence before close.
 learnings[1]{created_at,author,text}:

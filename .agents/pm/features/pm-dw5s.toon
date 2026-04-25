@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: governance,metadata,pm-cli,validation
 created_at: "2026-04-04T21:55:14.472Z"
-updated_at: "2026-04-06T18:48:08.082Z"
+updated_at: "2026-04-25T11:05:13.690Z"
 deadline: "2026-04-18T21:55:14.472Z"
 author: codex-agent
 estimated_minutes: 240
@@ -28,6 +28,9 @@ reporter: codex-agent
 severity: medium
 environment: linux
 repro_steps: Run pm validate on a tracker containing placeholder metadata and observe that current checks do not flag low-signal fields.
+resolution: Governance metadata backfill completed after repository-wide PM CLI health audit.
+expected_result: Closed item includes deterministic resolution metadata for validation and audit readiness.
+actual_result: Resolution metadata fields were backfilled without altering closure intent.
 affected_version: 2026.3.12
 component: validate-metadata-quality
 regression: false
@@ -48,23 +51,24 @@ comments[13]{created_at,author,text}:
   "2026-04-06T18:48:03.982Z",codex-agent,"Feature completion verified in remediation wave: validate-related governance hardening remained stable while downstream mutation/search/contracts/completion/calendar/activity changes landed, and full repository verification (build + test + coverage) stayed green with docs synchronized."
 notes[1]{created_at,author,text}:
   "2026-04-04T21:55:14.472Z",codex-agent,Checks should be configurable and avoid false positives by supporting per-rule opt-outs and rule versioning.
-files[16]{path,scope,note}:
+files[17]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,pi-wrapper-validate-metadata-profile-forwarding
   src/cli/commands/completion.ts,project,validate-metadata-profile-completion-flags
   src/cli/commands/config.ts,project,config-keys-for-metadata-validation-profile-and-required-fields
   src/cli/commands/validate.ts,project,validation rule engine extension point
   src/cli/main.ts,project,validate-metadata-profile-flag
+  src/core/schema/runtime-schema.ts,project,validate metadata runtime-schema coverage
   src/core/shared/constants.ts,project,default-metadata-validation-profile-settings
   src/core/store/settings.ts,project,settings-schema-and-merge-support-for-metadata-validation-policy
   src/sdk/cli-contracts.ts,project,tool-contract-metadata-profile-parameter
   src/types.ts,project,validate-metadata-policy-types
+  tests/integration/cli.integration.spec.ts,project,validate-lifecycle-integration-regression
   tests/integration/release-readiness-runtime.spec.ts,project,validate-flag-contract-coverage
   tests/unit/completion-command.spec.ts,project,validate-metadata-profile-completion-coverage
   tests/unit/config-command.spec.ts,project,config-metadata-policy-regressions
-  tests/unit/validate-command.spec.ts,project,metadata-profile-custom-strict-regressions
-  tests/unit/settings-store.spec.ts,project,validation-settings-key-order-regression
-  tests/integration/cli.integration.spec.ts,project,validate-lifecycle-integration-regression
   tests/unit/pi-agent-extension.spec.ts,project,validate-lifecycle-pi-wrapper-contract-parity
+  tests/unit/settings-store.spec.ts,project,validation-settings-key-order-regression
+  tests/unit/validate-command.spec.ts,project,metadata-profile-custom-strict-regressions
 tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,metadata quality rule coverage
   node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,validate-lifecycle-guardrails-regression-suite

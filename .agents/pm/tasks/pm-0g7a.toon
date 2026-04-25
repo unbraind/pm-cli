@@ -6,10 +6,14 @@ status: closed
 priority: 1
 tags[4]: activity,external-audit,pm-cli,tracking
 created_at: "2026-04-06T16:48:05.699Z"
-updated_at: "2026-04-06T18:26:07.704Z"
+updated_at: "2026-04-25T11:03:49.500Z"
 author: codex-agent
+estimated_minutes: 60
 acceptance_criteria: pm activity supports --id --op --author --from --to filters and optional stream mode with deterministic ordering and contract/documentation parity.
 parent: pm-o7be
+resolution: Governance metadata backfill completed after repository-wide PM CLI health audit.
+expected_result: Closed item includes deterministic resolution metadata for validation and audit readiness.
+actual_result: Resolution metadata fields were backfilled without altering closure intent.
 comments[2]{created_at,author,text}:
   "2026-04-06T16:48:05.699Z",codex-agent,Duplicate-check evidence used pm context pm search and open or in-progress lists. Net-new scope under pm-o7be for activity filtering and automation stream behavior.
   "2026-04-06T18:25:50.309Z",codex-agent,"Implemented activity scaling controls: --id, --op, --author, --from, --to filters in runActivity with deterministic descending sort preserved and inclusive-from/exclusive-to window semantics. Added optional activity stream mode via --stream [rows|ndjson|jsonl] requiring --json, emitting meta/entry/end NDJSON rows for automation parity with list stream UX. Updated command wiring, contracts flags/aliases, shell completion, help examples, and Pi wrapper mapping (including stream + filter arguments). Verification: node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/unit/history-activity-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts (208/208 passed)."

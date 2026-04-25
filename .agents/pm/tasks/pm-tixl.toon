@@ -6,8 +6,9 @@ status: closed
 priority: 1
 tags[4]: dependencies,external-audit,pm-cli,update
 created_at: "2026-04-06T14:39:14.605Z"
-updated_at: "2026-04-06T15:42:16.773Z"
+updated_at: "2026-04-25T11:04:45.241Z"
 author: codex-agent
+estimated_minutes: 60
 acceptance_criteria: "pm update can atomically replace dependencies with one command path, while preserving existing clear/add behavior and backward compatibility."
 parent: pm-lwps
 resolution: Added --replace-deps path that atomically replaces dependencies in one update mutation with deterministic validation.

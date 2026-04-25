@@ -2,13 +2,12 @@ id: pm-iyqf
 title: Implement context command runtime and surfaces
 description: "Build the new context command, wire CLI and integrations, and cover behavior with unit/integration/runtime tests and docs."
 type: Feature
-status: blocked
+status: in_progress
 priority: 1
 tags[3]: agent-ux,"area:context",pm-cli
 created_at: "2026-04-01T14:10:36.966Z"
-updated_at: "2026-04-04T21:53:11.695Z"
+updated_at: "2026-04-25T11:05:40.250Z"
 deadline: "2026-04-06T14:10:36.966Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 300
 acceptance_criteria: "Context command, alias, completion, Pi wrapper, tests, and docs are shipped with deterministic behavior and no regressions."
@@ -26,9 +25,6 @@ risk: medium
 confidence: high
 sprint: context-rollout
 release: vnext
-blocked_by: pm-abhj
-blocked_reason: Feature implementation complete but closure blocked by global coverage threshold baseline below 100%.
-unblock_note: "Unblock by clearing pm-abhj coverage-gate blocker, rerunning linked regression/coverage commands, and then moving this feature back to in_progress for closure verification."
 reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Implement context command runtime and surfaces (pm CLI + Node/pnpm toolchain).
@@ -43,8 +39,9 @@ regression: false
 customer_impact: Faster and more reliable project-state triage
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-abhj,parent,"2026-04-01T14:10:36.966Z",codex-agent,null
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-04-01T14:10:36.966Z",codex-agent,Feature created as child of epic pm-abhj.
+  "2026-04-25T11:01:36.427Z",codex-agent,Parent coverage blocker is stale after latest 100% coverage verification; unblocking and resuming feature execution.
 notes[1]{created_at,author,text}:
   "2026-04-01T14:10:36.966Z",codex-agent,Implement core command then integrate completion wrapper tests and docs.
 learnings[1]{created_at,author,text}:

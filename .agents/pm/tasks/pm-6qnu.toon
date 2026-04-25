@@ -6,10 +6,14 @@ status: closed
 priority: 1
 tags[4]: completion,external-audit,pm-cli,search
 created_at: "2026-04-06T16:47:49.461Z"
-updated_at: "2026-04-06T17:54:42.396Z"
+updated_at: "2026-04-25T11:04:01.251Z"
 author: codex-agent
+estimated_minutes: 60
 acceptance_criteria: Completion supports lazy or dynamic tag suggestion mode with deterministic fallback and optional eager expansion mode for compatibility.
 parent: pm-o7be
+resolution: Governance metadata backfill completed after repository-wide PM CLI health audit.
+expected_result: Closed item includes deterministic resolution metadata for validation and audit readiness.
+actual_result: Resolution metadata fields were backfilled without altering closure intent.
 comments[2]{created_at,author,text}:
   "2026-04-06T16:47:49.461Z",codex-agent,Duplicate-check evidence used pm context pm search and open or in-progress lists. Net-new scope under pm-o7be for lazy dynamic completion tag sourcing.
   "2026-04-06T17:54:28.296Z",codex-agent,"Implemented lazy dynamic tag completion with optional eager expansion. Added hidden completion-tags command in CLI wiring, plumbed completion --eager-tags option through command parsing and Pi wrapper, and updated shell generators to use runtime tag lookups by default (with cache TTL) while preserving eager embedded tags when explicitly requested. Resolved TypeScript template-literal bash interpolation issue by moving shell choice rendering into explicit constants and verified behavior with completion/contract/Pi tests plus integration coverage. Verification: same 6-suite regression sweep passed twice via pm test --run."

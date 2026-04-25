@@ -6,9 +6,14 @@ status: closed
 priority: 2
 tags[6]: docs,get,json,pm-cli,wave8,wave9
 created_at: "2026-04-07T08:10:14.911Z"
-updated_at: "2026-04-07T09:06:57.839Z"
+updated_at: "2026-04-25T11:04:19.018Z"
 author: codex-agent
+estimated_minutes: 60
+acceptance_criteria: "Governance backfill acceptance: item metadata is complete and remains consistent with existing work history."
 parent: pm-o7be
+resolution: Governance metadata backfill completed after repository-wide PM CLI health audit.
+expected_result: Closed item includes deterministic resolution metadata for validation and audit readiness.
+actual_result: Resolution metadata fields were backfilled without altering closure intent.
 comments[2]{created_at,author,text}:
   "2026-04-07T08:10:14.911Z",codex-agent,"Duplicate-check evidence commands: pm context --limit 10; pm list-open --limit 50; pm search get json body include-body complete details --limit 10. Net-new because no active item directly captures this false-positive clarification and regression-hardening scope."
   "2026-04-07T09:06:43.065Z",codex-agent,"Completed get --json body-shape clarification and hardening: documented that JSON get responses use deterministic top-level shape { item, body, linked, claim_state } and that body is top-level (not item.body). Updated README, docs/ARCHITECTURE, and get help tips, and added release-readiness regression assertion that body is present at top-level while item body remains front-matter only. Verification passed via focused integrations (cli.integration/help-runtime/release-readiness), full sandboxed test suite, and full sandboxed coverage run."

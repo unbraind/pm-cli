@@ -6,10 +6,14 @@ status: closed
 priority: 1
 tags[4]: automation,governance,pm-cli,update
 created_at: "2026-04-06T16:47:17.517Z"
-updated_at: "2026-04-07T00:11:37.216Z"
+updated_at: "2026-04-25T11:04:27.357Z"
 author: codex-agent
+estimated_minutes: 60
 acceptance_criteria: pm update-many supports filter-driven selection dry-run diff output deterministic apply execution and checkpoint-based rollback with per-item result accounting.
 parent: pm-o7be
+resolution: Governance metadata backfill completed after repository-wide PM CLI health audit.
+expected_result: Closed item includes deterministic resolution metadata for validation and audit readiness.
+actual_result: Resolution metadata fields were backfilled without altering closure intent.
 comments[7]{created_at,author,text}:
   "2026-04-06T16:47:17.517Z",codex-agent,Duplicate-check evidence used pm context pm search and open or in-progress lists. Net-new scope under pm-lwps for first-class update-many workflow with rollback semantics.
   "2026-04-06T17:08:53.092Z",codex-agent,"Progress: shipped new pm update-many command with filter selectors, deterministic dry-run item diff preview, checkpoint file creation, apply execution summaries, and --rollback restore workflow. Rollback uses captured target updated_at values per item to replay precise restores and emits per-item restored or failed rows."

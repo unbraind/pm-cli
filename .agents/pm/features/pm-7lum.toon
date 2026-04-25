@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: dedupe,governance,pm-cli,reporting
 created_at: "2026-04-04T17:53:51.723Z"
-updated_at: "2026-04-06T13:29:20.179Z"
+updated_at: "2026-04-25T11:02:07.334Z"
 deadline: "2026-04-18T17:53:51.723Z"
 author: codex-agent
 estimated_minutes: 240
@@ -29,6 +29,9 @@ reporter: codex-agent
 severity: low
 environment: linux
 repro_steps: Run search/list/context inventory and manually cluster near-duplicate titles; compare with scripted clustering output.
+resolution: Governance metadata backfill completed after repository-wide PM CLI health audit.
+expected_result: Closed item includes deterministic resolution metadata for validation and audit readiness.
+actual_result: Resolution metadata fields were backfilled without altering closure intent.
 affected_version: 2026.3.12
 component: dedupe-automation
 regression: false

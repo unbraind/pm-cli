@@ -6,8 +6,10 @@ status: in_progress
 priority: 1
 tags[3]: pm-cli,search,tests
 created_at: "2026-04-06T09:49:11.684Z"
-updated_at: "2026-04-07T18:14:20.366Z"
+updated_at: "2026-04-25T11:03:51.389Z"
 author: codex-agent
+estimated_minutes: 60
+acceptance_criteria: "Governance backfill acceptance: item metadata is complete and remains consistent with existing work history."
 parent: pm-qb71
 comments[3]{created_at,author,text}:
   "2026-04-06T09:49:11.684Z",codex-agent,"Duplicate-check evidence: dedupe command set run immediately before create and no open/in_progress/blocked duplicate found for this scope."
