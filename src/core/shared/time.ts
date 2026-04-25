@@ -1,8 +1,8 @@
 import { PmCliError } from "./errors.js";
 import { EXIT_CODE } from "./constants.js";
 
-const RELATIVE_DEADLINE = /^\+?(\d+)([hdwm])$/i;
-const COMPOUND_RELATIVE_DEADLINE = /^\+?\d+[hdwm](?:\+\d+[hdwm])+$/i;
+const RELATIVE_DEADLINE = /^([+-]?)(\d+)([hdwm])$/i;
+const COMPOUND_RELATIVE_DEADLINE = /^[+-]?\d+[hdwm](?:[+-]\d+[hdwm])+$/i;
 const COMPACT_DATE = /^(\d{4})(\d{2})(\d{2})$/;
 const COMPACT_DATETIME = /^(\d{4})(\d{2})(\d{2})(?:[T\s]?)(\d{2})(\d{2})(\d{2})?([.,]\d{1,3})?(Z|[+-]\d{2}:?\d{2})?$/i;
 const HYPHEN_TIME = /^(\d{4}-\d{2}-\d{2})[T\s](\d{2})-(\d{2})(?:-(\d{2}))?([.,]\d{1,3})?(Z|[+-]\d{2}:?\d{2})?$/i;
@@ -115,10 +115,14 @@ export function resolveIsoOrRelative(
   fieldLabel = "deadline",
 ): string {
   const trimmed = input.trim();
+  if (trimmed.toLowerCase() === "now") {
+    return now.toISOString();
+  }
   const relative = RELATIVE_DEADLINE.exec(trimmed);
   if (relative) {
-    const amount = Number.parseInt(relative[1], 10);
-    const unit = relative[2].toLowerCase();
+    const sign = relative[1] === "-" ? -1 : 1;
+    const amount = Number.parseInt(relative[2], 10) * sign;
+    const unit = relative[3].toLowerCase();
     if (unit === "m") {
       return addUtcMonths(now, amount).toISOString();
     }
@@ -131,7 +135,7 @@ export function resolveIsoOrRelative(
     const normalizedLabel = fieldLabel.trim().length > 0 ? fieldLabel.trim() : "deadline";
     const guidance = COMPOUND_RELATIVE_DEADLINE.test(trimmed)
       ? "Compound relative expressions like +3d+1h are not supported; use a single relative token (for example +3d) or an ISO/date string."
-      : "Use ISO/date string input or relative +6h/+1d/+2w/+6m.";
+      : 'Use ISO/date string input, "now", or relative +6h/-6h/+1d/-1d/+2w/-2w/+6m/-6m.';
     throw new PmCliError(
       `Invalid ${normalizedLabel} value "${input}". ${guidance}`,
       EXIT_CODE.USAGE,

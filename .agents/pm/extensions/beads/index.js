@@ -8,7 +8,7 @@ export const manifest = {
   version: "0.1.0",
   entry: "./index.js",
   priority: 0,
-  capabilities: ["commands"],
+  capabilities: ["commands", "schema"],
 };
 
 function asOptionalString(value) {
@@ -73,6 +73,32 @@ async function runBeadsImportFromRuntime(options, global) {
 export function activate(api) {
   api.registerCommand({
     name: "beads import",
+    description: "Import Beads JSONL records into pm items.",
+    flags: [
+      {
+        long: "--file",
+        value_name: "path",
+        value_type: "string",
+        description: "Path to the Beads JSONL source file.",
+      },
+      {
+        long: "--author",
+        value_name: "author",
+        value_type: "string",
+        description: "Override import mutation author.",
+      },
+      {
+        long: "--message",
+        value_name: "text",
+        value_type: "string",
+        description: "Override import history message.",
+      },
+      {
+        long: "--preserve-source-ids",
+        value_type: "boolean",
+        description: "Preserve source IDs from Beads payload records when possible.",
+      },
+    ],
     run: async (context) => runBeadsImportFromRuntime(toBeadsImportOptions(context.options), context.global),
   });
 }

@@ -441,4 +441,22 @@ describe("runHistory and runActivity", () => {
       expect(byWindow.activity.map((entry) => entry.ts)).toEqual(["2026-01-02T00:00:00.000Z"]);
     });
   });
+
+  it("accepts relative and preset time bounds for activity queries", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Relative Activity Window");
+      context.runCli(["append", id, "--json", "--body", "relative window", "--author", "test-author", "--message", "Append"], {
+        expectJson: true,
+      });
+
+      const relativeWindow = await runActivity(
+        {
+          from: "-1d",
+          to: "now",
+        },
+        { path: context.pmPath },
+      );
+      expect(relativeWindow.count).toBeGreaterThanOrEqual(1);
+    });
+  });
 });

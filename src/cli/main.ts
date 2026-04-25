@@ -235,10 +235,43 @@ function buildBackgroundTestAllCommandArgs(options: Record<string, unknown>): st
   return args;
 }
 
+const RESOLVED_GLOBAL_OPTIONS = Symbol("pm.resolvedGlobalOptions");
+
+type CommandWithResolvedGlobals = Command & {
+  [RESOLVED_GLOBAL_OPTIONS]?: GlobalOptions;
+};
+
+function setResolvedGlobalOptions(command: Command, globalOptions: GlobalOptions): void {
+  (command as CommandWithResolvedGlobals)[RESOLVED_GLOBAL_OPTIONS] = { ...globalOptions };
+}
+
+function clearResolvedGlobalOptions(command: Command): void {
+  delete (command as CommandWithResolvedGlobals)[RESOLVED_GLOBAL_OPTIONS];
+}
+
+async function applyDefaultOutputFormat(globalOptions: GlobalOptions): Promise<GlobalOptions> {
+  if (globalOptions.json === true) {
+    return globalOptions;
+  }
+  const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
+  if (!(await pathExists(getSettingsPath(pmRoot)))) {
+    return globalOptions;
+  }
+  const settings = await readSettings(pmRoot);
+  return {
+    ...globalOptions,
+    defaultOutputFormat: settings.output.default_format,
+  };
+}
+
 function getGlobalOptions(command: Command): GlobalOptions {
+  const resolved = (command as CommandWithResolvedGlobals)[RESOLVED_GLOBAL_OPTIONS];
+  if (resolved) {
+    return { ...resolved };
+  }
   const opts = command.optsWithGlobals();
   return {
-    json: Boolean(opts.json),
+    json: opts.json === true ? true : undefined,
     quiet: Boolean(opts.quiet),
     path: typeof opts.path === "string" ? opts.path : undefined,
     noExtensions: opts.extensions === false,
@@ -2052,6 +2085,7 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         const possibleCommand = actionArgs[actionArgs.length - 1];
         const actionCommand = possibleCommand instanceof Command ? possibleCommand : entry;
         const startedAt = Date.now();
+        clearResolvedGlobalOptions(actionCommand);
         let globalOptions = getGlobalOptions(actionCommand);
         const commandPath = getCommandPath(actionCommand);
         const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
@@ -2078,6 +2112,8 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         commandArgs = parserOverride.context.args;
         commandOptions = parserOverride.context.options;
         globalOptions = parserOverride.context.global;
+        globalOptions = await applyDefaultOutputFormat(globalOptions);
+        setResolvedGlobalOptions(actionCommand, globalOptions);
         actionCommand.args = [...commandArgs];
         const optionsArgIndex = actionArgs.length - 2;
         if (optionsArgIndex >= 0 && typeof actionArgs[optionsArgIndex] === "object" && actionArgs[optionsArgIndex] !== null) {
@@ -2223,7 +2259,7 @@ function normalizeCreateOptions(
 
   const type = readCreateString("type");
   if (options.requireType !== false && type === undefined) {
-    throw new PmCliError("Missing required option --type", EXIT_CODE.USAGE);
+    throw new PmCliError("Missing required option --type <value>", EXIT_CODE.USAGE);
   }
 
   const normalized: Record<string, unknown> = {
@@ -2768,6 +2804,7 @@ program
 program.hook("preAction", async (_thisCommand, actionCommand) => {
   activeExtensionHookContext = null;
   clearActiveExtensionHooks();
+  clearResolvedGlobalOptions(actionCommand);
   const bootstrapGlobalOptions = getGlobalOptions(actionCommand);
   const commandPath = getCommandPath(actionCommand);
   let commandArgs = actionCommand.args.map(String);
@@ -3275,7 +3312,7 @@ program
   .description("Create a new project management item.")
   .requiredOption("--title, -t <value>", "Item title")
   .requiredOption("--description, -d <value>", "Item description (allow empty string)")
-  .requiredOption("--type <value>", "Item type (built-ins plus any configured custom types)")
+  .option("--type <value>", "Item type (built-ins plus any configured custom types)")
   .option("--template <value>", "Apply named create template defaults before explicit flags")
   .option("--create-mode <value>", "Create required-option policy mode: strict|progressive")
   .option("--create_mode <value>", "Alias for --create-mode")
@@ -3400,7 +3437,7 @@ program
   .action(async (options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
-    const normalized = normalizeCreateOptions(options);
+    const normalized = normalizeCreateOptions(options, { requireType: false });
     const result = await runCreate(normalized, globalOptions);
     await invalidateSearchCachesForMutation(globalOptions, result);
     printResult(result, globalOptions);

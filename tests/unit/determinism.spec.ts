@@ -33,10 +33,14 @@ describe("deterministic primitives", () => {
     const plusOneDay = resolveIsoOrRelative("+1d", now);
     const plusOneWeek = resolveIsoOrRelative("+1w", now);
     const plusOneMonth = resolveIsoOrRelative("+1m", now);
+    const minusOneDay = resolveIsoOrRelative("-1d", now);
+    const nowToken = resolveIsoOrRelative("now", now);
     expect(plusOneHour).toBe("2026-02-18T01:00:00.000Z");
     expect(plusOneDay).toBe("2026-02-19T00:00:00.000Z");
     expect(plusOneWeek).toBe("2026-02-25T00:00:00.000Z");
     expect(plusOneMonth).toBe("2026-03-18T00:00:00.000Z");
+    expect(minusOneDay).toBe("2026-02-17T00:00:00.000Z");
+    expect(nowToken).toBe("2026-02-18T00:00:00.000Z");
 
     const monthEdge = new Date("2026-01-31T00:00:00.000Z");
     expect(resolveIsoOrRelative("+1m", monthEdge)).toBe("2026-02-28T00:00:00.000Z");

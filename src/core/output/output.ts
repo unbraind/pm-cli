@@ -9,6 +9,7 @@ import { EXIT_CODE } from "../shared/constants.js";
 export interface OutputOptions {
   json?: boolean;
   quiet?: boolean;
+  defaultOutputFormat?: "toon" | "json";
 }
 
 interface NodeLikeError {
@@ -181,7 +182,14 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
   const commandOverride = runActiveCommandOverride(result);
   const effectiveResult = commandOverride.result;
   setActiveCommandResult(effectiveResult);
-  const format = options.json ? "json" : "toon";
+  const format =
+    options.json === true
+      ? "json"
+      : options.json === false
+        ? "toon"
+        : options.defaultOutputFormat === "json"
+          ? "json"
+          : "toon";
   const serviceOverride = runActiveServiceOverrideSync("output_format", {
     format,
     options: { ...options },
@@ -194,7 +202,7 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
   if (rendererOverride.rendered !== null) {
     return rendererOverride.rendered.endsWith("\n") ? rendererOverride.rendered : `${rendererOverride.rendered}\n`;
   }
-  if (options.json) {
+  if (format === "json") {
     return `${JSON.stringify(effectiveResult, null, 2)}\n`;
   }
   const compactedToon = compactToonValue(effectiveResult);

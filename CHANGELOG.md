@@ -142,6 +142,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added runtime extension command/action schema inclusion in `pm contracts` output (`extension_commands`, merged action availability/schema branches, extension-sourced command flag metadata).
 
 ### Changed
+- `settings.output.default_format` now drives default command rendering for `printResult`-based commands (without requiring explicit `--json`), while explicit per-command format decisions still take precedence.
+- `pm create --template <name>` now allows template-provided `type` defaults to satisfy create requirements when `--type` is omitted on the command line.
+- Relative time parsing now supports preset `now` and negative offsets (for example `-1d`) across shared ISO/relative parsing paths, restoring documented `pm activity --from/--to` behavior.
+- `pm list-open` now resolves against workflow-configured `open_status` values instead of assuming literal status `open`, so customized workflows (for example `triage`) are returned correctly.
+- Bundled `beads`/`todos` extension command help now includes discoverable option flags (`--file`, `--folder`, `--author`, `--message`, and related flags) after install, matching runtime-supported invocation surfaces.
 - Updated command-by-command documentation parity across `README.md`, `PRD.md`, `docs/ARCHITECTURE.md`, and `AGENTS.md` to reflect contracts projection behavior, `comments-audit` summary metrics, `notes`/`learnings` audit bypass parity, root `test-runs` list behavior, and PM-context mismatch guidance.
 - Removed the `pm install` command surface; extension lifecycle installs now flow through `pm extension` only.
 - `pm beads import`, `pm todos import`, and `pm todos export` are now extension-discovered command paths that appear only after corresponding bundled extensions are installed and active.

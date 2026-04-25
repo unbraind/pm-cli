@@ -1402,7 +1402,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     resolvedOptions = mergeCreateOptionsWithTemplate(templateOptions, resolvedOptions);
   }
   if (resolvedOptions.type === undefined) {
-    throw new PmCliError("Missing required option --type", EXIT_CODE.USAGE);
+    throw new PmCliError("Missing required option --type <value>", EXIT_CODE.USAGE);
   }
   const resolvedTypeName = resolveTypeName(resolvedOptions.type, typeRegistry);
   if (!resolvedTypeName) {

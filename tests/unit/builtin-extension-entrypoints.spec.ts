@@ -135,7 +135,7 @@ describe("built-in extension entrypoints", () => {
       version: "0.1.0",
       entry: "./index.js",
       priority: 0,
-      capabilities: ["commands"],
+      capabilities: ["commands", "schema"],
     });
     expect(beadsBuiltin).toEqual({
       manifest: beadsManifest,
@@ -147,7 +147,7 @@ describe("built-in extension entrypoints", () => {
       version: "0.1.0",
       entry: "./index.js",
       priority: 0,
-      capabilities: ["commands"],
+      capabilities: ["commands", "schema"],
     });
     expect(todosBuiltin).toEqual({
       manifest: todosManifest,
@@ -160,6 +160,14 @@ describe("built-in extension entrypoints", () => {
 
     activateBeads(api);
     expect(commands.map((command) => command.name)).toEqual(["beads import"]);
+    expect(commands[0]?.flags).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ long: "--file" }),
+        expect.objectContaining({ long: "--author" }),
+        expect.objectContaining({ long: "--message" }),
+        expect.objectContaining({ long: "--preserve-source-ids" }),
+      ]),
+    );
 
     const result = await commands[0]!.run({
       command: "beads import",
@@ -232,6 +240,14 @@ describe("built-in extension entrypoints", () => {
       "todos import",
       "todos export",
     ]);
+    expect(commands[0]?.flags).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ long: "--folder" }),
+        expect.objectContaining({ long: "--author" }),
+        expect.objectContaining({ long: "--message" }),
+      ]),
+    );
+    expect(commands[1]?.flags).toEqual(expect.arrayContaining([expect.objectContaining({ long: "--folder" })]));
 
     const importResult = await commands[0]!.run({
       command: "todos import",

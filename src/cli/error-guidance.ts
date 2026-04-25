@@ -219,14 +219,18 @@ function buildPmCliErrorGuidance(rawMessage: string, context?: PmCliErrorContext
   const missingRequiredOptions = message.match(/^Missing required options /);
   if (missingRequiredOption || missingRequiredOptions) {
     const plural = Boolean(missingRequiredOptions);
+    const missingOptionFlag = !plural ? message.replace(/^Missing required option\s+/, "").trim() : null;
+    const missingOptionRequired = missingOptionFlag
+      ? `Pass ${missingOptionFlag} with a valid value before running the command.`
+      : "Provide the required option for this command invocation.";
     return applyPmCliErrorContext(
       makeGuidanceMessage({
         code: "missing_required_option",
-        title: plural ? "Missing required options" : "Missing required option",
+        title: plural ? "Missing required options" : missingOptionFlag ? `Missing required option ${missingOptionFlag}` : "Missing required option",
         happened: message,
         required: plural
           ? "Provide every required option for this command invocation."
-          : "Provide the required option for this command invocation.",
+          : missingOptionRequired,
         why: "Required options define command intent and enforce deterministic write contracts.",
         examples: [
           'pm create --title "Task title" --description "Task details" --type Task --create-mode progressive',

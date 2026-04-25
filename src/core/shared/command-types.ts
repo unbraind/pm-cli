@@ -5,4 +5,5 @@ export interface GlobalOptions {
   noExtensions?: boolean;
   noPager?: boolean;
   profile?: boolean;
+  defaultOutputFormat?: "toon" | "json";
 }

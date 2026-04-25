@@ -263,6 +263,41 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
+  it("allows create templates to satisfy missing --type", async () => {
+    await withTempPmPath(async (context) => {
+      const savedTemplate = context.runCli(
+        ["templates", "save", "typed-task-default", "--type", "Task", "--priority", "1", "--json"],
+        { expectJson: true },
+      );
+      expect(savedTemplate.code).toBe(0);
+
+      const created = context.runCli(
+        [
+          "create",
+          "--title",
+          "Template type item",
+          "--description",
+          "Type should come from template",
+          "--template",
+          "typed-task-default",
+          "--create-mode",
+          "progressive",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(created.code).toBe(0);
+      const payload = created.json as {
+        item: {
+          type: string;
+          priority: number;
+        };
+      };
+      expect(payload.item.type).toBe("Task");
+      expect(payload.item.priority).toBe(1);
+    });
+  });
+
   it("renders plural guidance when create is missing multiple type-required options", async () => {
     await withTempPmPath(async (context) => {
       const settingsPath = path.join(context.pmPath, "settings.json");

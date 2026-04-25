@@ -214,6 +214,24 @@ function parseAssigneeFilter(raw: string | undefined): "assigned" | "unassigned"
   return normalized;
 }
 
+function resolveStatusFilter(status: ItemStatus | undefined, statusRegistry: RuntimeStatusRegistry): ItemStatus | undefined {
+  if (status === undefined) {
+    return undefined;
+  }
+  const normalized = normalizeStatusInput(status, statusRegistry);
+  const token = status.trim().toLowerCase();
+  if (token === "open") {
+    return statusRegistry.open_status;
+  }
+  if (token === "closed") {
+    return statusRegistry.close_status;
+  }
+  if (token === "canceled" || token === "cancelled") {
+    return statusRegistry.canceled_status;
+  }
+  return normalized ?? status;
+}
+
 function applyFilters(
   items: ListedItem[],
   status: ItemStatus | undefined,
@@ -383,7 +401,8 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
   if (!sortField && options.order !== undefined) {
     throw new PmCliError("List --order requires --sort", EXIT_CODE.USAGE);
   }
-  const filtered = applyFilters(items, status, options, typeRegistry, statusRegistry, runtimeFieldFilters);
+  const resolvedStatus = resolveStatusFilter(status, statusRegistry);
+  const filtered = applyFilters(items, resolvedStatus, options, typeRegistry, statusRegistry, runtimeFieldFilters);
   const sorted = sortItems(filtered, sortField, sortOrder, statusRegistry);
   const limit = parseLimit(options.limit);
   const offset = parseOffset(options.offset) ?? 0;
@@ -396,7 +415,7 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
     items: projected,
     count: projected.length,
     filters: {
-      status: status ?? null,
+      status: resolvedStatus ?? null,
       type: options.type ?? null,
       tag: options.tag ?? null,
       priority: options.priority ?? null,

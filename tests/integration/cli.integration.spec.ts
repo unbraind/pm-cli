@@ -149,6 +149,73 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("applies settings.output.default_format=json to printResult command output", async () => {
+    await withTempPmPath(async (context) => {
+      const seed = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Default json output seed",
+          "--description",
+          "Seed item for output default format assertions",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,output-default",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "10",
+          "--ac",
+          "Output default should be honored",
+          "--author",
+          "integration-test",
+          "--message",
+          "Seed for output default assertions",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(seed.code).toBe(0);
+
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        output?: { default_format?: "toon" | "json" };
+      };
+      settings.output = { ...(settings.output ?? {}), default_format: "json" };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const listResult = context.runCli(["list-open", "--limit", "10"]);
+      expect(listResult.code).toBe(0);
+      const parsed = JSON.parse(listResult.stdout) as {
+        items: Array<{ title: string }>;
+      };
+      expect(parsed.items.some((item) => item.title === "Default json output seed")).toBe(true);
+    });
+  });
+
   it("supports list JSON stream mode with offset pagination and enforces --json", async () => {
     await withTempPmPath(async (context) => {
       const createArgs = [
@@ -4719,6 +4786,35 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(exportedFrontMatter.tags).toEqual(["cli", "todos"]);
       expect(typeof exportedFrontMatter.created_at).toBe("string");
       expect(exportedDoc.body.trim()).toBe("Todos CLI body.");
+    });
+  });
+
+  it("surfaces bundled extension command flags in --help output after install", async () => {
+    await withTempPmPath(async (context) => {
+      const installTodos = context.runCli(["extension", "--install", "todos", "--project", "--json"], { expectJson: true });
+      expect(installTodos.code).toBe(0);
+      const installBeads = context.runCli(["extension", "--install", "beads", "--project", "--json"], { expectJson: true });
+      expect(installBeads.code).toBe(0);
+
+      const beadsHelp = context.runCli(["beads", "import", "--help"]);
+      expect(beadsHelp.code).toBe(0);
+      expect(beadsHelp.stdout).toContain("Extension-provided flags:");
+      expect(beadsHelp.stdout).toContain("--file");
+      expect(beadsHelp.stdout).toContain("--author");
+      expect(beadsHelp.stdout).toContain("--message");
+      expect(beadsHelp.stdout).toContain("--preserve-source-ids");
+
+      const todosImportHelp = context.runCli(["todos", "import", "--help"]);
+      expect(todosImportHelp.code).toBe(0);
+      expect(todosImportHelp.stdout).toContain("Extension-provided flags:");
+      expect(todosImportHelp.stdout).toContain("--folder");
+      expect(todosImportHelp.stdout).toContain("--author");
+      expect(todosImportHelp.stdout).toContain("--message");
+
+      const todosExportHelp = context.runCli(["todos", "export", "--help"]);
+      expect(todosExportHelp.code).toBe(0);
+      expect(todosExportHelp.stdout).toContain("Extension-provided flags:");
+      expect(todosExportHelp.stdout).toContain("--folder");
     });
   });
 

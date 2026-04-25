@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -9,7 +9,7 @@ import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js
 
 function createItem(context: TempPmContext, params: {
   title: string;
-  status: "open" | "blocked" | "closed";
+  status: "open" | "triage" | "blocked" | "closed";
   priority: string;
   tags: string;
   deadline: string;
@@ -149,6 +149,71 @@ describe("runList", () => {
 
       const monthRelativeFilter = await runList(undefined, { deadlineAfter: "+1m" }, { path: context.pmPath });
       expect(monthRelativeFilter.count).toBe(0);
+    });
+  });
+
+  it("maps list-open filters to workflow open_status", async () => {
+    await withTempPmPath(async (context) => {
+      const statusesPath = path.join(context.pmPath, "schema", "statuses.json");
+      const workflowsPath = path.join(context.pmPath, "schema", "workflows.json");
+      await writeFile(
+        statusesPath,
+        `${JSON.stringify(
+          {
+            statuses: [
+              { id: "draft", roles: ["draft"] },
+              { id: "triage", roles: ["active", "default_open"] },
+              { id: "open", roles: ["active"] },
+              { id: "in_progress", roles: ["active"] },
+              { id: "blocked", roles: ["blocked"] },
+              { id: "closed", roles: ["terminal", "terminal_done", "default_close"] },
+              { id: "canceled", roles: ["terminal", "terminal_canceled", "default_cancel"] },
+            ],
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+      await writeFile(
+        workflowsPath,
+        `${JSON.stringify(
+          {
+            workflow: {
+              draft_status: "draft",
+              open_status: "triage",
+              in_progress_status: "in_progress",
+              blocked_status: "blocked",
+              close_status: "closed",
+              canceled_status: "canceled",
+            },
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+
+      createItem(context, {
+        title: "Workflow Triage Item",
+        status: "triage",
+        priority: "1",
+        tags: "workflow,triage",
+        deadline: "+1d",
+      });
+      createItem(context, {
+        title: "Workflow Open Item",
+        status: "open",
+        priority: "1",
+        tags: "workflow,open",
+        deadline: "+1d",
+      });
+
+      const openResult = await runList("open", {}, { path: context.pmPath });
+      expect(openResult.count).toBe(1);
+      expect(openResult.items[0].status).toBe("triage");
+      expect(openResult.items[0].title).toBe("Workflow Triage Item");
+      expect(openResult.filters.status).toBe("triage");
     });
   });
 

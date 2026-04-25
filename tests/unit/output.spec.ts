@@ -20,6 +20,16 @@ describe("core/output/output", () => {
     expect(formatOutput(payload, { json: true })).toBe(`${JSON.stringify(payload, null, 2)}\n`);
   });
 
+  it("honors default output format and explicit json overrides", () => {
+    const payload = { ok: true };
+    const renderedFromDefault = formatOutput(payload, { defaultOutputFormat: "json" });
+    expect(renderedFromDefault).toBe(`${JSON.stringify(payload, null, 2)}\n`);
+
+    // Explicit json=false should keep TOON output even when defaults prefer JSON.
+    const renderedFromExplicitToon = formatOutput(payload, { json: false, defaultOutputFormat: "json" });
+    expect(renderedFromExplicitToon).toContain("ok: true");
+  });
+
   it("renders deterministic TOON output for nested values", () => {
     const rendered = formatOutput(
       {
