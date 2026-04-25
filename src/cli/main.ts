@@ -22,6 +22,7 @@ import {
   runDocs,
   runExtension,
   runFiles,
+  runFilesDiscover,
   runGet,
   runGc,
   runHealth,
@@ -4423,8 +4424,11 @@ program
     }
   });
 
-program
+const filesCommand = program
   .command("files")
+  .description("Manage files linked to an item.");
+
+filesCommand
   .argument("<id>", "Item id")
   .option("--add <value>", "Add linked file entry (CSV/markdown pairs or - for stdin)", collect)
   .option(
@@ -4441,7 +4445,6 @@ program
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
   .option("--force", "Force ownership override")
-  .description("Manage files linked to an item.")
   .action(async (id: string, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
@@ -4472,6 +4475,40 @@ program
     printResult(result, globalOptions);
     if (globalOptions.profile) {
       printError(`profile:command=files took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+filesCommand
+  .command("discover")
+  .argument("<id>", "Item id")
+  .option("--apply", "Add discovered missing files to the item")
+  .option("--note <value>", "Note to attach to discovered file links")
+  .option("--append-stable", "Preserve existing linked-file order and append discovered links without full-array resorting")
+  .option("--author <value>", "Mutation author")
+  .option("--message <value>", "History message")
+  .option("--force", "Force ownership override")
+  .description("Discover existing file paths referenced in item text and optionally link missing files.")
+  .action(async (id: string, options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const result = await runFilesDiscover(
+      id,
+      {
+        apply: Boolean(options.apply),
+        note: typeof options.note === "string" ? options.note : undefined,
+        appendStable: Boolean(options.appendStable),
+        author: typeof options.author === "string" ? options.author : undefined,
+        message: typeof options.message === "string" ? options.message : undefined,
+        force: Boolean(options.force),
+      },
+      globalOptions,
+    );
+    if (result.changed) {
+      await invalidateSearchCachesForMutation(globalOptions, result);
+    }
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=files.discover took_ms=${Date.now() - startedAt}`);
     }
   });
 

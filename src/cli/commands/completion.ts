@@ -199,7 +199,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-learning --allow-audit-comment --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    files)",
-    `      COMPREPLY=(${compgen("--add --add-glob --remove --migrate --list --append-stable --validate-paths --audit --author --message --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("discover --add --add-glob --remove --migrate --list --apply --note --append-stable --validate-paths --audit --author --message --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    docs)",
     `      COMPREPLY=(${compgen("--add --add-glob --remove --migrate --validate-paths --audit --author --message --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,

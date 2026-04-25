@@ -567,6 +567,8 @@ export const FILES_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--remove" },
   { flag: "--migrate" },
   { flag: "--list" },
+  { flag: "--apply" },
+  { flag: "--note" },
   { flag: "--append-stable" },
   { flag: "--validate-paths" },
   { flag: "--audit" },
@@ -1556,6 +1558,9 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   addGlob: { type: "array", items: { type: "string" } },
   remove: { type: "array", items: { type: "string" } },
   migrate: { type: "array", items: { type: "string" } },
+  discover: { type: "boolean" },
+  apply: { type: "boolean" },
+  discoveryNote: { type: "string" },
   appendStable: { type: "boolean" },
   validatePaths: { type: "boolean" },
   audit: { type: "boolean" },
@@ -1751,7 +1756,19 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   },
   files: {
     required: ["id"],
-    optional: ["add", "addGlob", "remove", "migrate", "appendStable", "validatePaths", "audit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
+    optional: [
+      "add",
+      "addGlob",
+      "remove",
+      "migrate",
+      "discover",
+      "apply",
+      "discoveryNote",
+      "appendStable",
+      "validatePaths",
+      "audit",
+      ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
+    ],
   },
   docs: {
     required: ["id"],
@@ -2197,6 +2214,16 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   appendStable: {
     description: "When true for files action, preserve existing linked-file order and append new links without full-array resorting.",
+  },
+  discover: {
+    description: "When true for files action, use `pm files discover <id>` to scan item text for referenced file paths.",
+  },
+  apply: {
+    description: "When true for files discovery, add missing discovered file links instead of returning a dry-run preview.",
+  },
+  discoveryNote: {
+    description: "Note attached to file links added by files discovery.",
+    examples: ["discovered from item text"],
   },
   stream: {
     description:

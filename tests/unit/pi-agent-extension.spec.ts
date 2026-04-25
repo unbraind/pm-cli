@@ -1471,6 +1471,26 @@ describe("Pi agent extension wrapper for pm", () => {
 
     expect(
       buildPmCliArgs({
+        action: "files",
+        id: "pm-a1b2",
+        discover: true,
+        apply: true,
+        discoveryNote: "found in comments",
+        appendStable: true,
+      }),
+    ).toEqual([
+      "--json",
+      "files",
+      "discover",
+      "pm-a1b2",
+      "--apply",
+      "--note",
+      "found in comments",
+      "--append-stable",
+    ]);
+
+    expect(
+      buildPmCliArgs({
         action: "deps",
         id: "pm-a1b2",
         format: "graph",

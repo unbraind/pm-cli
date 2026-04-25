@@ -2664,7 +2664,160 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const releaseResult = context.runCli(["release", id, "--json"], { expectJson: true });
       expect(releaseResult.code).toBe(0);
     });
-  }, 60_000);
+  }, 120_000);
+
+  it("discovers referenced file links through files discover in a temporary project", async () => {
+    await withTempPmPath(async (context) => {
+      const projectRoot = path.join(context.tempRoot, "discovery-project");
+      const outsideRoot = path.join(context.tempRoot, "outside");
+      await mkdir(path.join(projectRoot, "src"), { recursive: true });
+      await mkdir(path.join(projectRoot, "docs"), { recursive: true });
+      await mkdir(outsideRoot, { recursive: true });
+      const appFile = path.join(projectRoot, "src", "app.ts");
+      const planFile = path.join(projectRoot, "docs", "plan.md");
+      const globalFile = path.join(outsideRoot, "global.txt");
+      const normalizedGlobalFile = globalFile.split(path.sep).join("/");
+      await writeFile(appFile, "export const app = true;\n", "utf8");
+      await writeFile(planFile, "# plan\n", "utf8");
+      await writeFile(globalFile, "global reference\n", "utf8");
+
+      const createResult = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Files discover integration",
+          "--description",
+          "Validate referenced path discovery",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,files,discover",
+          "--body",
+          "Body references src/app.ts, docs/plan.md, and missing src/missing.ts.",
+          "--deadline",
+          "none",
+          "--estimate",
+          "20",
+          "--acceptance-criteria",
+          "Referenced files can be discovered and applied",
+          "--author",
+          "integration-test",
+          "--message",
+          "Create discovery item",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true, cwd: projectRoot },
+      );
+      expect(createResult.code).toBe(0);
+      const id = (createResult.json as { item: { id: string } }).item.id;
+
+      const seedExisting = context.runCli(
+        ["files", id, "--json", "--add", "path=docs/plan.md,scope=project,note=already linked"],
+        { expectJson: true, cwd: projectRoot },
+      );
+      expect(seedExisting.code).toBe(0);
+      const comment = context.runCli(["comments", id, `Absolute project path ${appFile}:3 is also referenced.`, "--json"], {
+        expectJson: true,
+        cwd: projectRoot,
+      });
+      expect(comment.code).toBe(0);
+      const learning = context.runCli(["learnings", id, `Outside file ${globalFile} should become global scope.`, "--json"], {
+        expectJson: true,
+        cwd: projectRoot,
+      });
+      expect(learning.code).toBe(0);
+
+      const dryRun = context.runCli(["files", "discover", id, "--json"], { expectJson: true, cwd: projectRoot });
+      expect(dryRun.code).toBe(0);
+      const dryRunJson = dryRun.json as {
+        changed: boolean;
+        addable_count: number;
+        skipped_existing_count: number;
+        candidates: Array<{ path: string; scope: string; status: string }>;
+      };
+      expect(dryRunJson.changed).toBe(false);
+      expect(dryRunJson.addable_count).toBe(2);
+      expect(dryRunJson.skipped_existing_count).toBe(1);
+      expect(dryRunJson.candidates).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ path: "src/app.ts", scope: "project", status: "addable" }),
+          expect.objectContaining({ path: "docs/plan.md", scope: "project", status: "already_linked" }),
+          expect.objectContaining({ path: normalizedGlobalFile, scope: "global", status: "addable" }),
+        ]),
+      );
+
+      const applied = context.runCli(
+        [
+          "files",
+          "discover",
+          id,
+          "--json",
+          "--apply",
+          "--note",
+          "context discovery",
+          "--author",
+          "integration-test",
+          "--message",
+          "Apply discovered file links",
+        ],
+        { expectJson: true, cwd: projectRoot },
+      );
+      expect(applied.code).toBe(0);
+      const appliedJson = applied.json as {
+        changed: boolean;
+        added_count: number;
+        files: Array<{ path: string; scope: string; note?: string }>;
+      };
+      expect(appliedJson.changed).toBe(true);
+      expect(appliedJson.added_count).toBe(2);
+      expect(appliedJson.files).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ path: "src/app.ts", scope: "project", note: "context discovery" }),
+          expect.objectContaining({ path: normalizedGlobalFile, scope: "global", note: "context discovery" }),
+          expect.objectContaining({ path: "docs/plan.md", scope: "project" }),
+        ]),
+      );
+
+      const rerun = context.runCli(["files", "discover", id, "--json", "--apply"], { expectJson: true, cwd: projectRoot });
+      expect(rerun.code).toBe(0);
+      const rerunJson = rerun.json as { changed: boolean; addable_count: number; skipped_existing_count: number };
+      expect(rerunJson.changed).toBe(false);
+      expect(rerunJson.addable_count).toBe(0);
+      expect(rerunJson.skipped_existing_count).toBe(3);
+
+      const listFiles = context.runCli(["files", id, "--json"], { expectJson: true, cwd: projectRoot });
+      expect(listFiles.code).toBe(0);
+      const listFilesJson = listFiles.json as { files: Array<{ path: string }> };
+      expect(listFilesJson.files.map((entry) => entry.path).sort()).toEqual(
+        [normalizedGlobalFile, "docs/plan.md", "src/app.ts"].sort(),
+      );
+
+      const history = context.runCli(["history", id, "--json", "--limit", "1"], { expectJson: true, cwd: projectRoot });
+      expect(history.code).toBe(0);
+      const historyJson = history.json as { history: Array<{ op: string }> };
+      expect(historyJson.history.at(-1)?.op).toBe("files_discover");
+    });
+  });
 
   it("deletes an item through CLI and keeps history retrievable", async () => {
     await withTempPmPath(async (context) => {

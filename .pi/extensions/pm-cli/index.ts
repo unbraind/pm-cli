@@ -189,6 +189,9 @@ export interface PmToolParameters {
   addGlob?: string[];
   remove?: string[];
   migrate?: string[];
+  discover?: boolean;
+  apply?: boolean;
+  discoveryNote?: string;
   appendStable?: boolean;
   validatePaths?: boolean;
   audit?: boolean;
@@ -751,6 +754,18 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       addAuthorMessageForceFlags(args, params);
       return args;
     case "files":
+      if (params.discover) {
+        args.push("files", "discover", requireString(params.id, "id", action));
+        if (params.apply) {
+          args.push("--apply");
+        }
+        pushOption(args, "--note", params.discoveryNote);
+        if (params.appendStable) {
+          args.push("--append-stable");
+        }
+        addAuthorMessageForceFlags(args, params);
+        return args;
+      }
       args.push("files", requireString(params.id, "id", action));
       pushRepeatable(args, "--add", params.add);
       pushRepeatable(args, "--add-glob", params.addGlob);

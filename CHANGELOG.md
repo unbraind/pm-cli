@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added `pm files discover <ID>` to scan item text for existing project/global file paths, report addable vs already linked candidates, and optionally add missing linked files with `--apply`.
 - Added `pm create --comment` plain-text shorthand support so comment seeds can be passed as raw text without mandatory `text=<value>` wrappers.
 - Added ownership-safe dependency-only audit updates via `pm update --allow-audit-dep-update` / `--allow_audit_dep_update` for append-only non-owner `--dep` additions.
 - Added cache cleanup safety controls on `pm gc`: `--dry-run`, repeatable/comma-delimited `--scope index|embeddings|runtime`, and deterministic `guidance` output (including reindex hints after search-artifact cleanup).

@@ -4,7 +4,7 @@ import path from "node:path";
 import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runDocs } from "../../src/cli/commands/docs.js";
-import { runFiles } from "../../src/cli/commands/files.js";
+import { runFiles, runFilesDiscover } from "../../src/cli/commands/files.js";
 import { EXIT_CODE } from "../../src/constants.js";
 import { PmCliError } from "../../src/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
@@ -29,7 +29,7 @@ interface LinkResult {
 
 type RunLinkCommand = (id: string, options: LinkOptions, global: { path: string }) => Promise<LinkResult>;
 
-function createTask(context: TempPmContext, title: string): string {
+function createTask(context: TempPmContext, title: string, cwd?: string): string {
   const created = context.runCli(
     [
       "create",
@@ -75,7 +75,7 @@ function createTask(context: TempPmContext, title: string): string {
       "--doc",
       "none",
     ],
-    { expectJson: true },
+    { expectJson: true, cwd },
   );
   expect(created.code).toBe(0);
   return (created.json as { item: { id: string } }).item.id;
@@ -444,6 +444,96 @@ describe("runFiles", () => {
       );
       expect(asGlobal.count).toBe(6);
       expect(asGlobal.files.filter((entry) => entry.scope === "global")).toHaveLength(3);
+    });
+  });
+
+  it("discovers referenced project and global files from item text and applies only missing links", async () => {
+    await withTempPmPath(async (context) => {
+      const projectRoot = path.join(context.tempRoot, "workspace");
+      const globalRoot = path.join(context.tempRoot, "shared");
+      await mkdir(path.join(projectRoot, "src"), { recursive: true });
+      await mkdir(globalRoot, { recursive: true });
+      await writeFile(path.join(projectRoot, "README.md"), "# discovery fixture\n", "utf8");
+      await writeFile(path.join(projectRoot, "src", "discovered.ts"), "export const discovered = true;\n", "utf8");
+      const globalFile = path.join(globalRoot, "global-notes.md");
+      await writeFile(globalFile, "# global reference\n", "utf8");
+
+      const id = createTask(context, "files-discover-direct", projectRoot);
+      const seedExisting = context.runCli(
+        ["files", id, "--json", "--add", "path=README.md,scope=project,note=manual link", "--message", "seed existing linked file"],
+        { expectJson: true, cwd: projectRoot },
+      );
+      expect(seedExisting.code).toBe(0);
+
+      const update = context.runCli(
+        [
+          "update",
+          id,
+          "--json",
+          "--body",
+          [
+            "Implementation references src/discovered.ts and the absolute duplicate",
+            `${path.join(projectRoot, "src", "discovered.ts")}:12.`,
+            "Ignore missing src/missing.ts.",
+          ].join(" "),
+          "--author",
+          "test-author",
+          "--message",
+          "Seed discovery body",
+        ],
+        { expectJson: true, cwd: projectRoot },
+      );
+      expect(update.code).toBe(0);
+
+      const comment = context.runCli(["comments", id, "Review ./README.md before linking docs/missing.md", "--json"], {
+        expectJson: true,
+        cwd: projectRoot,
+      });
+      expect(comment.code).toBe(0);
+      const learning = context.runCli(["learnings", id, `Global reference lives at ${globalFile}.`, "--json"], {
+        expectJson: true,
+        cwd: projectRoot,
+      });
+      expect(learning.code).toBe(0);
+
+      const cwdSpy = vi.spyOn(process, "cwd").mockReturnValue(projectRoot);
+      try {
+        const dryRun = await runFilesDiscover(id, {}, { path: context.pmPath });
+        const addablePaths = dryRun.candidates
+          .filter((entry) => entry.status === "addable")
+          .map((entry) => entry.path)
+          .sort((left, right) => left.localeCompare(right));
+        expect(dryRun.changed).toBe(false);
+        expect(addablePaths).toEqual(["src/discovered.ts", normalizeLinkedPath(globalFile)].sort());
+        expect(dryRun.skipped_existing.map((entry) => entry.path)).toContain("README.md");
+        const discoveredCandidate = dryRun.candidates.find((entry) => entry.path === "src/discovered.ts");
+        expect(discoveredCandidate?.source_fields).toContain("body");
+        expect(discoveredCandidate?.source_count).toBeGreaterThanOrEqual(2);
+        expect(discoveredCandidate?.original_paths).toContain(normalizeLinkedPath(path.join(projectRoot, "src", "discovered.ts")));
+        expect(dryRun.candidates.find((entry) => entry.path === normalizeLinkedPath(globalFile))?.scope).toBe("global");
+
+        const applied = await runFilesDiscover(
+          id,
+          {
+            apply: true,
+            note: "auto-discovered",
+            message: "Apply discovered linked files",
+          },
+          { path: context.pmPath },
+        );
+        expect(applied.changed).toBe(true);
+        expect(applied.added_count).toBe(2);
+        expect(applied.files.filter((entry) => entry.path === "src/discovered.ts" && entry.scope === "project")).toHaveLength(1);
+        expect(applied.files.filter((entry) => entry.path === normalizeLinkedPath(globalFile) && entry.scope === "global")).toHaveLength(1);
+        expect(applied.files.find((entry) => entry.path === "src/discovered.ts")?.note).toBe("auto-discovered");
+
+        const rerun = await runFilesDiscover(id, { apply: true }, { path: context.pmPath });
+        expect(rerun.changed).toBe(false);
+        expect(rerun.addable_count).toBe(0);
+        expect(rerun.skipped_existing_count).toBe(3);
+      } finally {
+        cwdSpy.mockRestore();
+      }
     });
   });
 });

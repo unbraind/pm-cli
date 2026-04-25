@@ -34,7 +34,7 @@ export { runDeps, DEPS_FORMAT_VALUES, type DepsCommandOptions, type DepsFormat, 
 export { runDedupeAudit, DEDUPE_AUDIT_MODES, type DedupeAuditMode, type DedupeAuditOptions, type DedupeAuditResult } from "./dedupe-audit.js";
 export { runDocs } from "./docs.js";
 export { runExtension, type ExtensionCommandOptions, type ExtensionCommandResult } from "./extension.js";
-export { runFiles } from "./files.js";
+export { runFiles, runFilesDiscover } from "./files.js";
 export { runGc } from "./gc.js";
 export { runGet } from "./get.js";
 export { runHealth } from "./health.js";

@@ -379,7 +379,11 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   files: {
     why: "Associates changed source files with tracker items for reproducibility.",
-    examples: ['pm files pm-a1b2 --add "path=src/cli/main.ts,scope=project,note=help orchestration"'],
+    examples: [
+      'pm files pm-a1b2 --add "path=src/cli/main.ts,scope=project,note=help orchestration"',
+      "pm files discover pm-a1b2",
+      'pm files discover pm-a1b2 --apply --note "discovered from item text"',
+    ],
   },
   docs: {
     why: "Associates relevant documentation paths with tracker items.",

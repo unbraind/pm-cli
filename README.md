@@ -572,6 +572,10 @@ pm files pm-a1b2 --migrate "from=src/old/,to=src/new/" --validate-paths --audit
 pm docs pm-a1b2 --migrate "from=docs/legacy/,to=docs/current/" --validate-paths --audit
 pm files pm-a1b2 --add "path=src/new/entry.ts,scope=project" --append-stable
 
+# Discover file paths mentioned in item text before adding them as links
+pm files discover pm-a1b2
+pm files discover pm-a1b2 --apply --note "discovered from item text"
+
 # Comments can be added positionally or with --add
 pm comments pm-a1b2 "captured from shorthand positional text"
 pm comments pm-a1b2 --add "text: captured from markdown formatter"

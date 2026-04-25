@@ -1,0 +1,47 @@
+id: pm-n2ts
+title: Add files discovery subcommand for referenced paths
+description: "Add a pm files subcommand that scans item text for existing workspace/global path references, reports candidates, and can add missing linked files without duplicates."
+type: Feature
+status: closed
+priority: 1
+tags[4]: files,governance,pm-cli,traceability
+created_at: "2026-04-25T20:08:23.573Z"
+updated_at: "2026-04-25T21:10:59.270Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: "pm files can discover referenced files from item body/comments/notes/learnings and other text context, skip already linked files, validate file existence/containment, support dry-run/reporting and apply modes, and include detailed end-to-end tests in sandboxed temporary projects."
+parent: pm-5rjn
+resolution: Implemented pm files discover with dry-run candidate reporting and --apply linked-file backfill.
+expected_result: "Referenced project and global file paths in item text are discovered, existing linked files are skipped, and apply mode adds only missing links with history."
+actual_result: "Runtime, CLI, contracts, Pi wrapper, completion, docs, unit coverage, and temporary-project end-to-end coverage are implemented and verified."
+comments[3]{created_at,author,text}:
+  "2026-04-25T20:08:23.573Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'files referenced linked files comments body learnings' --limit 10; pm search 'pm files scan referenced paths linked file hygiene' --limit 10; pm search 'linked-file hygiene referenced files comments body' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20; pm list-blocked --limit 20. Net-new because related linked-file hygiene and check-files items are closed and do not implement a files command scanner/backfill path."
+  "2026-04-25T20:45:56.709Z",codex-agent,"Evidence: implemented pm files discover <ID> dry-run reporting and --apply backfill for existing project/global file paths found in item text. Duplicate protection normalizes linked paths and skips already linked entries. Verification passed: focused unit/contract/wrapper/completion suite (123 tests), temporary-project CLI e2e (1 passed / 61 skipped), full regression (76 files / 1042 tests), coverage (100% statements/branches/functions/lines), pm test pm-n2ts --run --progress (4/4 linked commands passed), pm validate --check-resolution --check-history-drift, and pm validate --check-files --scan-mode tracked-all."
+  "2026-04-25T21:10:59.270Z",codex-agent,"Post-close evidence update: after tightening absolute path line-suffix sanitization and increasing the existing core lifecycle integration timeout for stable V8 coverage under load, verification passed again: node scripts/run-tests.mjs test (76 files / 1042 tests) and node scripts/run-tests.mjs coverage (76 files / 1042 tests, 100% statements/branches/functions/lines)."
+notes[1]{created_at,author,text}:
+  "2026-04-25T20:08:23.573Z",codex-agent,Implementation should keep pm mutations authoritative by applying additions through the existing files mutation path and preserving duplicate checks against normalized linked file paths.
+files[10]{path,scope,note}:
+  src/cli/commands/files.ts,project,discovery runtime and mutation path
+  src/cli/main.ts,project,files discover subcommand wiring
+  src/cli/commands/index.ts,project,files discover export
+  src/sdk/cli-contracts.ts,project,contracts and tool schema parity
+  .pi/extensions/pm-cli/index.ts,project,Pi wrapper files discover mapping
+  src/cli/commands/completion.ts,project,completion candidate parity
+  src/cli/help-content.ts,project,help examples
+  tests/unit/files-docs-command.spec.ts,project,direct discovery coverage
+  tests/integration/cli.integration.spec.ts,project,temporary project end-to-end discovery coverage
+  tests/unit/pi-agent-extension.spec.ts,project,wrapper args coverage
+tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,full coverage gate
+  node scripts/run-tests.mjs test,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,full regression suite
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t 'discovers referenced file links',null,project,240,null,null,null,null,null,null,null,null,null,null,null,temporary project files discover end-to-end coverage
+  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,focused files discovery/contracts/wrapper/completion coverage
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-moet5s34-azf2f8,test,passed,"2026-04-25T20:34:37.195Z","2026-04-25T20:44:51.184Z","2026-04-25T20:44:51.184Z",null,null,4,0,0,null,null,null
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,unreleased entry
+  docs/ARCHITECTURE.md,project,linked-path hygiene architecture
+  PRD.md,project,command contract and output shape
+  README.md,project,user-facing files discover examples
+close_reason: "Implemented files discovery subcommand with dry-run reporting, duplicate-safe apply mode, docs, and verified temporary-project e2e/full coverage evidence."
+body: ""

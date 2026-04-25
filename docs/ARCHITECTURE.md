@@ -256,6 +256,7 @@ When `update --type` changes an item's resolved type folder, mutation logic perf
   - `--validate-paths` for resolved path-existence checks
   - `--audit` for cross-item linked-path usage inspection
   - `pm files --list` for explicit non-mutating linked-file listing
+  - `pm files discover <ID>` scans item text fields for existing project/global file paths, reports addable vs already linked candidates, and only writes missing links when `--apply` is supplied
 - `pm comments|notes|learnings --allow-audit-comment` enables append-only audit log entries on items assigned to other owners without broad ownership override semantics.
 - `pm release --allow-audit-release` enables non-owner release handoffs that only clear assignee metadata without broad ownership override semantics.
 - `pm comments-audit` now emits additive top-level governance `summary` metrics (`totals`, coverage ratio/percent, and `by_type`) across latest and full-history export modes while preserving existing item/export payloads; `--limit` is available as an alias for legacy `--limit-items`.
