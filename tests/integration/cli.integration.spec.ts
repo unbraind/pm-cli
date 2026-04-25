@@ -2538,6 +2538,29 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(sprintReleasePolicyGetJson.policy).toBe("strict_error");
       expect(sprintReleasePolicyGetJson.changed).toBe(false);
 
+      const telemetryPolicySet = context.runCli(
+        ["config", "project", "set", "telemetry-tracking", "--policy", "disabled", "--json"],
+        { expectJson: true },
+      );
+      expect(telemetryPolicySet.code).toBe(0);
+      const telemetryPolicySetJson = telemetryPolicySet.json as {
+        key: string;
+        policy: string;
+        changed: boolean;
+      };
+      expect(telemetryPolicySetJson.key).toBe("telemetry_tracking");
+      expect(telemetryPolicySetJson.policy).toBe("disabled");
+      expect(telemetryPolicySetJson.changed).toBe(true);
+
+      const telemetryPolicyGet = context.runCli(
+        ["config", "project", "get", "telemetry-tracking", "--json"],
+        { expectJson: true },
+      );
+      expect(telemetryPolicyGet.code).toBe(0);
+      const telemetryPolicyGetJson = telemetryPolicyGet.json as { policy: string; changed: boolean };
+      expect(telemetryPolicyGetJson.policy).toBe("disabled");
+      expect(telemetryPolicyGetJson.changed).toBe(false);
+
       const previousDisableAutoDefaults = process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS;
       process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS = "1";
       const health = context.runCli(["health", "--json"], { expectJson: true });

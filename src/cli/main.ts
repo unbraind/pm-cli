@@ -113,6 +113,12 @@ import { refreshSearchArtifactsForMutation } from "../core/search/cache.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { printError, printResult, writeStdout } from "../core/output/output.js";
+import { maybeRunFirstUseTelemetryPrompt } from "../core/telemetry/consent.js";
+import {
+  finishTelemetryCommand,
+  startTelemetryCommand,
+  type ActiveTelemetryCommand,
+} from "../core/telemetry/runtime.js";
 import { migrateItemFilesToFormat } from "../core/store/item-format-migration.js";
 import { listAllFrontMatter } from "../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
@@ -1390,6 +1396,7 @@ interface ActiveExtensionHookContext {
 }
 
 let activeExtensionHookContext: ActiveExtensionHookContext | null = null;
+let activeTelemetryCommandContext: ActiveTelemetryCommand | null = null;
 
 interface RuntimeExtensionSnapshot {
   hooks: ExtensionHookRegistry;
@@ -1675,6 +1682,14 @@ async function invalidateSearchCachesForMutation(globalOptions: GlobalOptions, r
 }
 
 async function runAndClearAfterCommandHooks(outcome: { ok: boolean; error?: string }): Promise<void> {
+  const telemetryRuntime = activeTelemetryCommandContext;
+  activeTelemetryCommandContext = null;
+  await finishTelemetryCommand(telemetryRuntime, {
+    ok: outcome.ok,
+    error: outcome.error,
+    result: getActiveCommandResult(),
+  });
+
   const runtime = activeExtensionHookContext;
   activeExtensionHookContext = null;
   if (!runtime) {
@@ -2874,6 +2889,7 @@ program
 
 program.hook("preAction", async (_thisCommand, actionCommand) => {
   activeExtensionHookContext = null;
+  activeTelemetryCommandContext = null;
   clearActiveExtensionHooks();
   clearResolvedGlobalOptions(actionCommand);
   const bootstrapGlobalOptions = getGlobalOptions(actionCommand);
@@ -2881,9 +2897,17 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
   let commandArgs = actionCommand.args.map(String);
   let commandOptions = extractCommandScopedOptions(actionCommand, commandArgs);
   let globalOptions = { ...bootstrapGlobalOptions };
+  await maybeRunFirstUseTelemetryPrompt(commandPath, globalOptions);
   const fallbackPmRoot = resolvePmRoot(process.cwd(), bootstrapGlobalOptions.path);
   const runtimeExtensions = await maybeLoadRuntimeExtensions(actionCommand);
   if (!runtimeExtensions) {
+    activeTelemetryCommandContext = await startTelemetryCommand({
+      command: commandPath,
+      args: commandArgs,
+      options: commandOptions,
+      global: globalOptions,
+      pm_root: fallbackPmRoot,
+    });
     await enforceItemFormatWriteGateAndPreflightMigration(
       commandPath,
       commandOptions,
@@ -2965,6 +2989,13 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
     global: { ...globalOptions },
     pm_root: runtimeExtensions.pmRoot,
   });
+  activeTelemetryCommandContext = await startTelemetryCommand({
+    command: commandPath,
+    args: commandArgs,
+    options: commandOptions,
+    global: globalOptions,
+    pm_root: runtimeExtensions.pmRoot,
+  });
 
   const hookWarnings = await runBeforeCommandHooks(runtimeExtensions.hooks, {
     command: commandPath,
@@ -3005,14 +3036,14 @@ program
   .argument("<action>", "Config action: get|set|list|export")
   .argument(
     "[key]",
-    "Config key for get|set: definition-of-done|item-format|history-missing-stream-policy|sprint-release-format-policy|parent-reference-policy|metadata-validation-profile|metadata-required-fields|test-result-tracking",
+    "Config key for get|set: definition-of-done|item-format|history-missing-stream-policy|sprint-release-format-policy|parent-reference-policy|metadata-validation-profile|metadata-required-fields|test-result-tracking|telemetry-tracking",
   )
   .option("--criterion <text>", "Criteria value for definition-of-done or metadata-required-fields (repeatable for set)", collect)
   .option("--clear-criteria", "Clear metadata-required-fields criteria list (set metadata-required-fields only)")
   .option("--format <value>", "Item format for item-format key: toon|json_markdown")
   .option(
     "--policy <value>",
-    "Policy key values: history-missing-stream-policy=auto_create|strict_error; sprint-release-format-policy=warn|strict_error; parent-reference-policy=warn|strict_error; test-result-tracking=enabled|disabled",
+    "Policy key values: history-missing-stream-policy=auto_create|strict_error; sprint-release-format-policy=warn|strict_error; parent-reference-policy=warn|strict_error; test-result-tracking=enabled|disabled; telemetry-tracking=enabled|disabled",
   )
   .description("Read or update pm settings for the current workspace or global profile.")
   .action(async (scope: string, action: string, key: string | undefined, options: Record<string, unknown>, command) => {

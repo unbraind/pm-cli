@@ -136,6 +136,7 @@ describe("core/store/settings", () => {
         "validation",
         "workflow",
         "testing",
+        "telemetry",
         "item_types",
         "schema",
         "extensions",
@@ -154,6 +155,14 @@ describe("core/store/settings", () => {
       ]);
       expectOrderedObjectKeys(parsed.workflow, ["definition_of_done"]);
       expectOrderedObjectKeys(parsed.testing, ["record_results_to_items"]);
+      expectOrderedObjectKeys(parsed.telemetry, [
+        "enabled",
+        "first_run_prompt_completed",
+        "capture_level",
+        "endpoint",
+        "installation_id",
+        "retention_days",
+      ]);
       expectOrderedObjectKeys(parsed.item_types, ["definitions"]);
       expectOrderedObjectKeys(parsed.schema, ["version", "files", "statuses", "fields", "workflow", "unknown_field_policy"]);
       expectOrderedObjectKeys(parsed.extensions, ["enabled", "disabled"]);

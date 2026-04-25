@@ -1,0 +1,15 @@
+id: pm-5v5w
+title: Implement CLI telemetry consent and runtime pipeline
+description: "Add first-run consent, config controls, event capture, scrubbing, queuing, and exporter transport to pm CLI."
+type: Feature
+status: open
+priority: 1
+tags[4]: cli,gdpr,pm-cli,telemetry
+created_at: "2026-04-25T21:33:00.979Z"
+updated_at: "2026-04-25T21:33:00.979Z"
+deadline: "2026-05-05T21:33:00.979Z"
+author: codex-agent
+estimated_minutes: 540
+acceptance_criteria: "CLI emits telemetry to configured endpoint with opt-out controls, scrubbing safeguards, and passing tests."
+parent: pm-lnq3
+body: "Feature covers settings/config surfaces, first-run prompt, runtime event schema, exporter queue, and tests."

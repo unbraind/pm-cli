@@ -96,6 +96,9 @@ src/
     test/
       background-runs.ts         Background linked-test run registry/worker lifecycle + dedupe
       item-test-run-tracking.ts  Settings-gated bounded item `test_runs` summary persistence
+    telemetry/
+      consent.ts                 First-run telemetry consent prompt + non-interactive guardrails
+      runtime.ts                 Telemetry event capture, redaction, queueing, and exporter retry flow
     shared/
       command-types.ts           GlobalOptions, shared command type definitions
       constants.ts               Exit codes, required directory names
@@ -485,6 +488,11 @@ Weights are configurable via `settings.json` under `search.tuning`.
 | `validation.sprint_release_format` | Sprint/release format policy: `warn` (default) or `strict_error` |
 | `validation.parent_reference` | Parent-reference policy for create/update: `warn` (default) or `strict_error` |
 | `testing.record_results_to_items` | Item-level test summary persistence toggle: `false` (default) / `true` |
+| `telemetry.enabled` | Telemetry export toggle: `true` (default) / `false` |
+| `telemetry.capture_level` | Runtime capture profile (`max`, `redacted`, `minimal`) |
+| `telemetry.endpoint` | Remote telemetry ingestion endpoint URL |
+| `telemetry.installation_id` | Pseudonymous global installation identifier |
+| `telemetry.retention_days` | Raw event retention policy used by remote worker cleanup |
 | `item_types.definitions[]` | Custom type names, aliases, folders, required fields/repeatables, `--type-option` definitions, and `command_option_policies` (`required`/`enabled`/`visible`) |
 | `search.*` | Search provider and tuning settings |
 | `providers.openai` / `providers.ollama` | Embedding provider config |
@@ -501,9 +509,33 @@ Validation policies can be configured via:
 - `pm config ... sprint-release-format-policy --policy warn|strict_error`
 - `pm config ... parent-reference-policy --policy warn|strict_error`
 - `pm config ... test-result-tracking --policy enabled|disabled`
+- `pm config ... telemetry-tracking --policy enabled|disabled`
 - `pm config ... list|export` for key discovery and one-shot resolved snapshot export
 
 Under `warn`, create/update continue and return deterministic validation warnings; under `strict_error`, invalid values are rejected with usage errors.
+
+## Telemetry Pipeline
+
+Command lifecycle telemetry is integrated as an additive runtime path:
+
+- `src/cli/main.ts`
+  - initializes first-run consent behavior
+  - starts telemetry capture during pre-action bootstrap
+  - finalizes telemetry with command outcome in post-action and error paths
+- `src/core/telemetry/consent.ts`
+  - interactive first-run consent prompt
+  - deterministic skip behavior for non-interactive/CI/json contexts
+- `src/core/telemetry/runtime.ts`
+  - sanitizes args/options/result summaries
+  - emits `command_start` + `command_finish` events
+  - spools local JSONL queue entries under global runtime storage
+  - exports batched events to `settings.telemetry.endpoint` with retry/backoff
+
+Design constraints:
+
+- telemetry failures never block command execution
+- sensitive fields are redacted before transport
+- pseudonymous identifiers are used for host/path metadata
 
 ## Exit Codes
 

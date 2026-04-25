@@ -26,6 +26,22 @@ Please include:
 
 Please avoid public disclosure before a fix or mitigation is available.
 
+## Telemetry and Privacy Controls
+
+Telemetry is opt-out and defaults to enabled for operational diagnostics.
+
+- Disable globally at any time: `pm config global set telemetry-tracking --policy disabled`
+- First-run consent prompt is interactive-only and is skipped for non-interactive/CI/json automation paths.
+- Sensitive values are redacted prior to export (for example token/password/api-key style fields).
+- Runtime telemetry failures are non-blocking and do not alter command success/failure behavior.
+
+Retention and DSAR operations are handled on the remote telemetry platform:
+
+- Raw event retention target: 365 days
+- Aggregated daily rollups retained long-term
+- Export by installation identifier: `/home/steve/container/pm-cli/scripts/dsar-export.sh`
+- Deletion by installation identifier: `/home/steve/container/pm-cli/scripts/dsar-delete.sh`
+
 ## Extension Runtime Trust Model
 
 `pm` extensions execute as local Node.js code and can intercept command execution, parser/preflight lifecycle, output/error/help rendering, lock/history/item-store service paths, and search/vector runtime paths.

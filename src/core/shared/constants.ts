@@ -128,6 +128,14 @@ export const SETTINGS_DEFAULTS: PmSettings = {
   testing: {
     record_results_to_items: false,
   },
+  telemetry: {
+    enabled: true,
+    first_run_prompt_completed: false,
+    capture_level: "max",
+    endpoint: "https://pm-cli.unbrained.dev/v1/events",
+    installation_id: "",
+    retention_days: 365,
+  },
   item_types: {
     definitions: [],
   },

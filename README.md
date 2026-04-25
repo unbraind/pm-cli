@@ -483,6 +483,25 @@ pm config project set test-result-tracking --policy disabled
 pm config project get test-result-tracking --json
 ```
 
+## Telemetry Tracking Policy and First-Run Consent
+
+`settings.telemetry.enabled` controls whether command telemetry is exported to the configured ingestion endpoint.
+
+- default: `enabled`
+- opt-out: `disabled`
+- first-run prompt:
+  - interactive TTY only
+  - skipped for non-interactive/CI and JSON-oriented automation paths
+  - persisted in global settings
+
+Configure policy with:
+
+```bash
+pm config global set telemetry-tracking --policy enabled
+pm config global set telemetry-tracking --policy disabled
+pm config global get telemetry-tracking --json
+```
+
 ## Config Discovery and Snapshot Export
 
 `pm config` also supports read-only key discovery and one-shot snapshot export for integration workflows:
@@ -1034,6 +1053,8 @@ pm context --date 2026-04-01T00:00:00.000Z --past --json
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md)
+- [Telemetry and GDPR Operations](docs/TELEMETRY.md)
+- [Remote Telemetry Stack Runbook](docs/operations/REMOTE_TELEMETRY_STACK.md)
 - [Extensions](docs/EXTENSIONS.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security Policy](SECURITY.md)

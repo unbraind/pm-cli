@@ -105,13 +105,14 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     tips: ["Run this once per repository before create/list/update commands."],
   },
   config: {
-    why: "Reads or updates project/global settings such as definition-of-done, item format, and policy toggles.",
+    why: "Reads or updates project/global settings such as definition-of-done, item format, telemetry, and policy toggles.",
     examples: [
       'pm config project get definition-of-done',
       'pm config project set definition-of-done --criterion "tests pass"',
       "pm config project set item-format --format toon",
       "pm config project set sprint-release-format-policy --policy strict_error",
       "pm config project set test-result-tracking --policy enabled",
+      "pm config global set telemetry-tracking --policy disabled",
     ],
   },
   extension: {

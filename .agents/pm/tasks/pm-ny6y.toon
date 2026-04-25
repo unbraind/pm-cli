@@ -1,0 +1,48 @@
+id: pm-ny6y
+title: Execute telemetry + observability rollout implementation
+description: "Implement CLI telemetry changes, deploy remote stack on 192.168.1.183, configure Caddy domains, backups, and full E2E verification."
+type: Task
+status: closed
+priority: 1
+tags[5]: deployment,gdpr,observability,pm-cli,telemetry
+created_at: "2026-04-25T21:33:07.558Z"
+updated_at: "2026-04-25T22:17:52.747Z"
+deadline: "2026-05-02T21:33:07.558Z"
+author: codex-agent
+estimated_minutes: 900
+acceptance_criteria: "All rollout todos complete with verified telemetry ingestion, observability dashboards, backups, and documentation."
+parent: pm-5v5w
+comments[9]{created_at,author,text}:
+  "2026-04-25T21:33:22.735Z",codex-agent,"Execution kickoff: implementing attached telemetry+observability rollout in sequence (CLI consent/settings, telemetry runtime/exporter, tests, remote stack deployment on 192.168.1.183, Caddy domain wiring, backup/restore, and full E2E validation)."
+  "2026-04-25T21:36:48.864Z",codex-agent,"Progress: added telemetry settings defaults/schema (enabled by default, capture_level=max, retention_days=365), config key telemetry-tracking (enabled|disabled), and first-run TTY consent prompt that persists global decision without affecting non-interactive/json/CI runs. Verification: pnpm build passed."
+  "2026-04-25T21:41:03.674Z",codex-agent,"Progress: implemented telemetry runtime pipeline with command_start/command_finish events, key/value scrubbing for sensitive fields, pseudonymous installation/session identifiers, local JSONL queueing under global runtime path, retry backoff, and batched HTTPS exporter flush. Smoke checks in temporary PM_PATH/PM_GLOBAL_PATH confirmed queue population and install_id persistence."
+  "2026-04-25T21:49:21.975Z",codex-agent,"Verification evidence: node scripts/run-tests.mjs test -- tests/unit/config-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/telemetry-runtime.spec.ts tests/unit/telemetry-consent.spec.ts tests/integration/cli.integration.spec.ts passed (5 files, 99 tests). ReadLints reports no new diagnostics on changed source/test files."
+  "2026-04-25T21:59:52.236Z",codex-agent,"Remote deployment evidence (192.168.1.183): docker compose stack launched in /home/steve/container/pm-cli with telemetry-api, telemetry-worker, RabbitMQ, Postgres, Prometheus, Loki, Tempo, Alloy, Grafana and persistent volumes. Smoke validation: POST /v1/events accepted synthetic event; Postgres telemetry_events count=1 and telemetry_command_daily updated for command list-open."
+  "2026-04-25T22:02:24.648Z",codex-agent,"Caddy domain wiring complete on 192.168.1.183: added pm.unbrained.dev -> http://192.168.1.183:13000 and pm-cli.unbrained.dev -> http://192.168.1.183:18080 in /home/steve/caddy/npm_proxy_hosts_extracted.json, executed ./scripts/generate-validate-reload.sh, and verified both local SNI checks (--resolve to 127.0.0.1) and public HTTPS responses for /api/health and /healthz."
+  "2026-04-25T22:08:00.929Z",codex-agent,"Backup/restore implemented on remote host: scripts/backup-all.sh captures Postgres dumps, RabbitMQ definitions + volume, Loki/Tempo/Grafana/Prometheus volume archives, and config tarballs with SHA256 manifest; scripts/restore-postgres.sh, restore-rabbitmq-definitions.sh, restore-volume.sh, and restore-drill.sh added. Automation: cron installed (daily backup 03:15, weekly restore drill Sunday 03:45). Validation: backup-all.sh succeeded, restore-drill.sh succeeded (telemetry_events=13, telemetry_command_daily=4), and RabbitMQ definitions restore test passed."
+  "2026-04-25T22:11:46.845Z",codex-agent,"E2E validation complete using temporary project root /tmp/tmp.5CucGC9iAM (PM_PATH/PM_GLOBAL_PATH sandbox). Executed init/create/list-open/get/close via node dist/cli.js; remote evidence: telemetry_events row count increased from 24 to 34 (+10), recent commands recorded start+finish events for init/create/list-open/get/close, RabbitMQ queue pm.telemetry.events drained to 0 ready/0 unacked, Prometheus pm_telemetry_ingested_events_total increased to 11, Loki query for container=pm-telemetry-api with '/v1/events' returned 10 log lines, and Tempo spans metric tempo_distributor_spans_received_total increased to 74."
+  "2026-04-25T22:17:35.580Z",codex-agent,"Documentation complete: repo docs updated (README telemetry policy section + links, docs/ARCHITECTURE telemetry pipeline/config entries, SECURITY telemetry/privacy controls) and new docs added (docs/TELEMETRY.md, docs/operations/REMOTE_TELEMETRY_STACK.md). Remote docs added under /home/steve/container/pm-cli/docs (README, DEPLOYMENT, RUNBOOK, BACKUP_RESTORE, GDPR_DSAR) covering deployment, runbook, retention, backup/restore, and DSAR procedures."
+files[13]{path,scope,note}:
+  src/cli/commands/config.ts,project,telemetry config key policy handling
+  src/cli/help-content.ts,project,config help examples include telemetry opt-out
+  src/cli/main.ts,project,first-run consent prompt wiring and config help text
+  src/core/shared/constants.ts,project,telemetry default settings
+  src/core/store/settings.ts,project,settings validation merge and serialization for telemetry
+  src/core/telemetry/consent.ts,project,TTY-safe first-run telemetry consent prompt
+  src/core/telemetry/runtime.ts,project,"telemetry event capture,redaction,queue,retry,and exporter flush"
+  src/types.ts,project,telemetry settings schema type
+  tests/integration/cli.integration.spec.ts,project,telemetry config integration behavior
+  tests/unit/config-command.spec.ts,project,telemetry config key unit coverage
+  tests/unit/settings-store.spec.ts,project,settings serialization updates for telemetry block
+  tests/unit/telemetry-consent.spec.ts,project,consent prompt non-interactive guard coverage
+  tests/unit/telemetry-runtime.spec.ts,project,runtime queue/redaction telemetry unit coverage
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/config-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/telemetry-runtime.spec.ts tests/unit/telemetry-consent.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,telemetry settings/runtime and integration coverage
+docs[5]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,telemetry pipeline architecture and settings
+  docs/operations/REMOTE_TELEMETRY_STACK.md,project,remote deployment and operations runbook
+  docs/TELEMETRY.md,project,GDPR-oriented telemetry operations guide
+  README.md,project,telemetry policy and documentation links
+  SECURITY.md,project,telemetry privacy and DSAR security controls
+close_reason: "Telemetry rollout completed with validated CLI telemetry runtime, remote observability stack, Caddy routing, backup/restore automation, and E2E evidence."
+body: "Execution task for attached rollout plan with code, infra, and docs deliverables."

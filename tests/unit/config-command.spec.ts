@@ -7,7 +7,7 @@ import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { canonicalDocument, serializeItemDocument } from "../../src/core/item/item-format.js";
 import { getItemPath, getSettingsPath } from "../../src/core/store/paths.js";
-import { writeSettings } from "../../src/core/store/settings.js";
+import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import type { ItemDocument } from "../../src/types/index.js";
 import type { GlobalOptions } from "../../src/core/shared/command-types.js";
 
@@ -69,7 +69,7 @@ describe("runConfig", () => {
 
       const result = await runConfig("project", "list", undefined, {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot });
       expect(result.changed).toBe(false);
-      expect(result.count).toBe(8);
+      expect(result.count).toBe(9);
       expect(result.keys?.map((entry) => entry.key)).toEqual([
         "definition_of_done",
         "item_format",
@@ -79,6 +79,7 @@ describe("runConfig", () => {
         "metadata_validation_profile",
         "metadata_required_fields",
         "test_result_tracking",
+        "telemetry_tracking",
       ]);
       expect(result.keys?.find((entry) => entry.key === "definition_of_done")?.value).toEqual(["tests pass"]);
       expect(result.keys?.find((entry) => entry.key === "definition_of_done")?.set_flags).toEqual([
@@ -86,6 +87,7 @@ describe("runConfig", () => {
         "--clear-criteria",
       ]);
       expect(result.keys?.find((entry) => entry.key === "test_result_tracking")?.value).toBe("enabled");
+      expect(result.keys?.find((entry) => entry.key === "telemetry_tracking")?.value).toBe("enabled");
     });
   });
 
@@ -108,6 +110,7 @@ describe("runConfig", () => {
         metadata_validation_profile: "core",
         metadata_required_fields: [],
         test_result_tracking: "disabled",
+        telemetry_tracking: "enabled",
       });
     });
   });
@@ -704,6 +707,59 @@ describe("runConfig", () => {
           "set",
           "metadata-required-fields",
           { criterion: ["unknown_field"] },
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
+  it("gets and sets telemetry tracking policy", async () => {
+    await withTempRoot(async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      const getDefault = await runConfig(
+        "project",
+        "get",
+        "telemetry-tracking",
+        {},
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(getDefault.key).toBe("telemetry_tracking");
+      expect(getDefault.policy).toBe("enabled");
+      expect(getDefault.changed).toBe(false);
+
+      const setDisabled = await runConfig(
+        "project",
+        "set",
+        "telemetry_tracking",
+        { policy: "disabled" },
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(setDisabled.key).toBe("telemetry_tracking");
+      expect(setDisabled.policy).toBe("disabled");
+      expect(setDisabled.changed).toBe(true);
+      const persistedAfterSet = await readSettings(pmRoot);
+      expect(persistedAfterSet.telemetry.first_run_prompt_completed).toBe(true);
+
+      const setDisabledAgain = await runConfig(
+        "project",
+        "set",
+        "telemetry-tracking",
+        { policy: "disabled" },
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(setDisabledAgain.policy).toBe("disabled");
+      expect(setDisabledAgain.changed).toBe(false);
+
+      await expect(
+        runConfig(
+          "project",
+          "set",
+          "telemetry-tracking",
+          { policy: "auto_create" },
           { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
         ),
       ).rejects.toMatchObject<PmCliError>({

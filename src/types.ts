@@ -383,6 +383,14 @@ export interface PmSettings {
   testing: {
     record_results_to_items: boolean;
   };
+  telemetry: {
+    enabled: boolean;
+    first_run_prompt_completed: boolean;
+    capture_level: "minimal" | "redacted" | "max";
+    endpoint: string;
+    installation_id: string;
+    retention_days: number;
+  };
   item_types: {
     definitions: ItemTypeDefinition[];
   };

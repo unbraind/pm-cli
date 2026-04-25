@@ -153,6 +153,16 @@ const settingsSchema = z.object({
       record_results_to_items: z.boolean(),
     })
     .optional(),
+  telemetry: z
+    .object({
+      enabled: z.boolean(),
+      first_run_prompt_completed: z.boolean().optional(),
+      capture_level: z.union([z.literal("minimal"), z.literal("redacted"), z.literal("max")]).optional(),
+      endpoint: z.string().optional(),
+      installation_id: z.string().optional(),
+      retention_days: z.number().int().positive().optional(),
+    })
+    .optional(),
   item_types: z
     .object({
       definitions: z.array(itemTypeDefinitionSchema),
@@ -367,6 +377,15 @@ function mergeSettings(raw: unknown): PmSettings {
     testing: {
       record_results_to_items: settings.testing?.record_results_to_items ?? defaults.testing.record_results_to_items,
     },
+    telemetry: {
+      enabled: settings.telemetry?.enabled ?? defaults.telemetry.enabled,
+      first_run_prompt_completed:
+        settings.telemetry?.first_run_prompt_completed ?? defaults.telemetry.first_run_prompt_completed,
+      capture_level: settings.telemetry?.capture_level ?? defaults.telemetry.capture_level,
+      endpoint: settings.telemetry?.endpoint ?? defaults.telemetry.endpoint,
+      installation_id: settings.telemetry?.installation_id ?? defaults.telemetry.installation_id,
+      retention_days: settings.telemetry?.retention_days ?? defaults.telemetry.retention_days,
+    },
     item_types: {
       definitions: normalizeItemTypeDefinitions(settings.item_types?.definitions),
     },
@@ -407,6 +426,7 @@ export function serializeSettings(settings: PmSettings): string {
     "validation",
     "workflow",
     "testing",
+    "telemetry",
     "item_types",
     "schema",
     "extensions",
@@ -424,6 +444,14 @@ export function serializeSettings(settings: PmSettings): string {
   ]);
   ordered.workflow = orderObject(ordered.workflow as Record<string, unknown>, ["definition_of_done"]);
   ordered.testing = orderObject(ordered.testing as Record<string, unknown>, ["record_results_to_items"]);
+  ordered.telemetry = orderObject(ordered.telemetry as Record<string, unknown>, [
+    "enabled",
+    "first_run_prompt_completed",
+    "capture_level",
+    "endpoint",
+    "installation_id",
+    "retention_days",
+  ]);
   ordered.item_types = orderObject(ordered.item_types as Record<string, unknown>, ["definitions"]);
   ordered.schema = orderObject(ordered.schema as Record<string, unknown>, [
     "version",

@@ -41,6 +41,8 @@ const CONFIG_KEY_VALUES = [
   "metadata_required_fields",
   "test-result-tracking",
   "test_result_tracking",
+  "telemetry-tracking",
+  "telemetry_tracking",
 ] as const;
 type ConfigAction = "get" | "set" | "list" | "export";
 type ConfigKey =
@@ -51,9 +53,11 @@ type ConfigKey =
   | "parent_reference_policy"
   | "metadata_validation_profile"
   | "metadata_required_fields"
-  | "test_result_tracking";
+  | "test_result_tracking"
+  | "telemetry_tracking";
 type HistoryMissingStreamPolicy = "auto_create" | "strict_error";
 type TestResultTrackingPolicy = "enabled" | "disabled";
+type TelemetryTrackingPolicy = "enabled" | "disabled";
 type ConfigValue =
   | string[]
   | ItemFormat
@@ -61,7 +65,8 @@ type ConfigValue =
   | SprintReleaseFormatPolicy
   | ParentReferencePolicy
   | ValidateMetadataProfile
-  | TestResultTrackingPolicy;
+  | TestResultTrackingPolicy
+  | TelemetryTrackingPolicy;
 
 interface ConfigKeyDescriptor {
   key: ConfigKey;
@@ -89,7 +94,8 @@ export interface ConfigResult {
     | SprintReleaseFormatPolicy
     | ParentReferencePolicy
     | ValidateMetadataProfile
-    | TestResultTrackingPolicy;
+    | TestResultTrackingPolicy
+    | TelemetryTrackingPolicy;
   keys?: ConfigKeyDescriptor[];
   values?: Record<ConfigKey, ConfigValue>;
   count?: number;
@@ -115,6 +121,7 @@ const CONFIG_KEY_ALIASES: Record<ConfigKey, string[]> = {
   metadata_validation_profile: ["metadata-validation-profile", "metadata_validation_profile"],
   metadata_required_fields: ["metadata-required-fields", "metadata_required_fields"],
   test_result_tracking: ["test-result-tracking", "test_result_tracking"],
+  telemetry_tracking: ["telemetry-tracking", "telemetry_tracking"],
 };
 
 const CONFIG_KEY_SUMMARIES: Record<ConfigKey, string> = {
@@ -126,6 +133,7 @@ const CONFIG_KEY_SUMMARIES: Record<ConfigKey, string> = {
   metadata_validation_profile: "Validate metadata profile policy (core|strict|custom).",
   metadata_required_fields: "Validate custom metadata required-fields list.",
   test_result_tracking: "Item-level linked test result persistence policy.",
+  telemetry_tracking: "Telemetry usage reporting policy.",
 };
 
 function normalizeScope(value: string): ConfigScope {
@@ -167,6 +175,9 @@ function normalizeKey(value: string): ConfigKey {
     }
     if (value === "test-result-tracking" || value === "test_result_tracking") {
       return "test_result_tracking";
+    }
+    if (value === "telemetry-tracking" || value === "telemetry_tracking") {
+      return "telemetry_tracking";
     }
     return "definition_of_done";
   }
@@ -224,6 +235,17 @@ function normalizeTestResultTrackingPolicy(value: string | undefined): TestResul
   }
   throw new PmCliError(
     "Config set test-result-tracking requires --policy with one of: enabled, disabled",
+    EXIT_CODE.USAGE,
+  );
+}
+
+function normalizeTelemetryTrackingPolicy(value: string | undefined): TelemetryTrackingPolicy {
+  const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
+  if (normalized === "enabled" || normalized === "disabled") {
+    return normalized;
+  }
+  throw new PmCliError(
+    "Config set telemetry-tracking requires --policy with one of: enabled, disabled",
     EXIT_CODE.USAGE,
   );
 }
@@ -328,6 +350,7 @@ function readConfigValue(settings: {
     metadata_required_fields: ValidateMetadataRequiredField[];
   };
   testing: { record_results_to_items: boolean };
+  telemetry: { enabled: boolean };
 }, key: ConfigKey): ConfigValue {
   if (key === "item_format") {
     return settings.item_format;
@@ -349,6 +372,9 @@ function readConfigValue(settings: {
   }
   if (key === "test_result_tracking") {
     return settings.testing.record_results_to_items ? "enabled" : "disabled";
+  }
+  if (key === "telemetry_tracking") {
+    return settings.telemetry.enabled ? "enabled" : "disabled";
   }
   return [...settings.workflow.definition_of_done];
 }
@@ -431,6 +457,7 @@ export async function runConfig(
       metadata_validation_profile: readConfigValue(settings, "metadata_validation_profile"),
       metadata_required_fields: readConfigValue(settings, "metadata_required_fields"),
       test_result_tracking: readConfigValue(settings, "test_result_tracking"),
+      telemetry_tracking: readConfigValue(settings, "telemetry_tracking"),
     } satisfies Record<ConfigKey, ConfigValue>;
     return withWarnings(
       {
@@ -507,6 +534,15 @@ export async function runConfig(
         scope,
         key,
         policy: settings.testing.record_results_to_items ? "enabled" : "disabled",
+        settings_path: target.settingsPath,
+        changed: false,
+      }, warnings);
+    }
+    if (key === "telemetry_tracking") {
+      return withWarnings({
+        scope,
+        key,
+        policy: settings.telemetry.enabled ? "enabled" : "disabled",
         settings_path: target.settingsPath,
         changed: false,
       }, warnings);
@@ -657,6 +693,24 @@ export async function runConfig(
       scope,
       key,
       policy: settings.testing.record_results_to_items ? "enabled" : "disabled",
+      settings_path: target.settingsPath,
+      changed,
+    }, warnings);
+  }
+
+  if (key === "telemetry_tracking") {
+    const nextPolicy = normalizeTelemetryTrackingPolicy(options.policy);
+    const nextEnabled = nextPolicy === "enabled";
+    const changed = settings.telemetry.enabled !== nextEnabled || !settings.telemetry.first_run_prompt_completed;
+    settings.telemetry.enabled = nextEnabled;
+    settings.telemetry.first_run_prompt_completed = true;
+    if (changed) {
+      await writeSettings(target.pmRoot, settings, "config:set:telemetry_tracking");
+    }
+    return withWarnings({
+      scope,
+      key,
+      policy: settings.telemetry.enabled ? "enabled" : "disabled",
       settings_path: target.settingsPath,
       changed,
     }, warnings);
