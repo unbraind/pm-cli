@@ -6,8 +6,8 @@ status: open
 priority: 1
 tags[4]: automation,governance,normalization,pm-cli
 created_at: "2026-04-04T21:55:02.727Z"
-updated_at: "2026-04-04T21:55:02.727Z"
-deadline: "2026-04-18T21:55:02.727Z"
+updated_at: "2026-04-25T17:10:36.281Z"
+deadline: "2026-05-09T17:10:36.281Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 300

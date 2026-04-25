@@ -4043,6 +4043,7 @@ program
   .option("--title, -t <value>", "Set title")
   .option("--description, -d <value>", "Set description")
   .option("--body, -b <value>", "Set body (allow empty string)")
+  .option("--status, -s <value>", "Set status (use close command for closed)")
   .option("--priority, -p <value>", "Set priority")
   .option("--type <value>", "Set type")
   .option("--tags <value>", "Set comma-separated tags")

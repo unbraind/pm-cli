@@ -224,6 +224,41 @@ describe("runUpdateMany", () => {
     });
   });
 
+  it("supports status mutations from CLI --status options", async () => {
+    await withTempPmPath(async (context) => {
+      const firstId = createTask(context, "bulk-status-a", { tags: "bulk-status" });
+      const secondId = createTask(context, "bulk-status-b", { tags: "bulk-status" });
+
+      const updateResult = context.runCli(
+        [
+          "update-many",
+          "--json",
+          "--filter-tag",
+          "bulk-status",
+          "--status",
+          "in_progress",
+          "--message",
+          "bulk status transition",
+        ],
+        { expectJson: true },
+      );
+      expect(updateResult.code).toBe(0);
+      const updateJson = updateResult.json as {
+        updated_count?: number;
+        failed_count?: number;
+      };
+      expect(updateJson.updated_count).toBe(2);
+      expect(updateJson.failed_count).toBe(0);
+
+      const first = context.runCli(["get", firstId, "--json"], { expectJson: true });
+      const second = context.runCli(["get", secondId, "--json"], { expectJson: true });
+      expect(first.code).toBe(0);
+      expect(second.code).toBe(0);
+      expect((first.json as { item: { status: string } }).item.status).toBe("in_progress");
+      expect((second.json as { item: { status: string } }).item.status).toBe("in_progress");
+    });
+  });
+
   it("treats linked-array mutation flags as actionable in dry-run and apply modes", async () => {
     await withTempPmPath(async (context) => {
       const firstId = createTask(context, "bulk-linked-tests-a", { tags: "bulk-linked-tests" });

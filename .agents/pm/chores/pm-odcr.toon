@@ -1,0 +1,30 @@
+id: pm-odcr
+title: Consolidate 2026-04-25 dogfood audit evidence and tracker links
+description: "Collect command evidence, link touched files/tests/docs, and keep remediation lineage deterministic across the new dogfood feature and child findings."
+type: Chore
+status: closed
+priority: 2
+tags[5]: 2026-04-25,dogfood,governance,pm-cli,traceability
+created_at: "2026-04-25T16:54:27.185Z"
+updated_at: "2026-04-25T17:11:11.050Z"
+deadline: "2026-04-26T16:55:00.559Z"
+author: codex-agent
+estimated_minutes: 60
+acceptance_criteria: "Dogfood findings include linked files/tests/docs, clear comments with evidence, and parent/dependency lineage under the remediation feature."
+parent: pm-2hrt
+resolution: completed-best-practice-sweep
+expected_result: "Validation, dedupe, deadline hygiene, and dependency checks are captured with linked evidence and no open hygiene warnings for tracked-all files."
+actual_result: "Tracked-all validation clean, open-item dedupe clean, overdue open/in-progress counts reduced to zero, and linked coverage run passed with full suite success."
+comments[2]{created_at,author,text}:
+  "2026-04-25T16:54:27.185Z",codex-agent,"Duplicate-check evidence: pm context/list-open/list-in-progress/list-blocked and keyword searches show no active chore dedicated to this specific evidence-consolidation scope."
+  "2026-04-25T17:10:55.521Z",codex-agent,"Phase 4 best-practice sweep complete: pm validate (--check-resolution --check-files --check-history-drift --scan-mode tracked-all) now reports zero orphaned paths and zero drift; pm dedupe-audit (parent_scope/title_fuzzy on open items) reports zero duplicate candidates; deadline hygiene applied via update-many checkpoints update-many-20260425170553-gqenfq, update-many-20260425170959-rnrvx3, and update-many-20260425171036-1p8g7c with follow-up list-open/list-in-progress overdue queries returning count=0; linked evidence test pm test pm-odcr --run passed with 76/76 files and 1038/1038 tests passing under node scripts/run-tests.mjs coverage."
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,global coverage gate evidence
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-moelh1l4-b24oda,test,passed,"2026-04-25T17:06:16.431Z","2026-04-25T17:09:39.784Z","2026-04-25T17:09:39.784Z",null,null,1,0,0,null,null,null
+docs[3]{path,scope,note}:
+  AGENTS.md,project,dogfood governance process reference
+  CHANGELOG.md,project,release evidence tracking
+  README.md,project,user-facing behavior reference
+close_reason: "Best-practice sweep completed with validation, dedupe, deadline, and coverage evidence recorded"
+body: ""

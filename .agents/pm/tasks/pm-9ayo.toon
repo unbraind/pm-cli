@@ -1,0 +1,33 @@
+id: pm-9ayo
+title: Clarify config policy value ergonomics for strict modes
+description: "Dogfood audit found config UX friction: sprint-release and parent-reference policies require strict_error while common strict naming fails, and definition-of-done does not support clear-style reset semantics. Clarify aliases/help/contracts and docs for deterministic operator experience."
+type: Task
+status: closed
+priority: 1
+tags[6]: 2026-04-25,config,dogfood,pm-cli,policy,ux
+created_at: "2026-04-25T16:54:10.382Z"
+updated_at: "2026-04-25T17:05:34.181Z"
+deadline: "2026-04-27T16:54:59.140Z"
+author: codex-agent
+estimated_minutes: 90
+acceptance_criteria: "Config policy flags accept intuitive strict aliases or clearly guide strict_error usage, and definition-of-done reset behavior is explicitly discoverable and tested."
+parent: pm-2hrt
+resolution: Added strict alias normalization in policy modules and clear-criteria support for definition-of-done in config command.
+expected_result: Operators can use strict aliases and clear DoD criteria intentionally without confusing usage errors.
+actual_result: Config set now accepts strict aliases for sprint/parent policies and supports definition-of-done --clear-criteria with passing tests.
+comments[2]{created_at,author,text}:
+  "2026-04-25T16:54:10.382Z",codex-agent,"Duplicate-check evidence: pm search 'config strict_error policy naming' --mode keyword --limit 10 surfaced historical and adjacent work but no active/open item dedicated to this current dogfood UX gap."
+  "2026-04-25T17:05:31.340Z",codex-agent,"Implementation complete: added strict alias support for sprint/parent policy config values, enabled definition-of-done --clear-criteria reset semantics, expanded config list metadata flags, and added/ran targeted config regression tests."
+files[4]{path,scope,note}:
+  src/cli/commands/config.ts,project,config set policy handling and messaging
+  src/core/item/parent-reference-policy.ts,project,policy alias normalization for strict
+  src/core/item/sprint-release-format.ts,project,policy alias normalization for strict
+  tests/unit/config-command.spec.ts,project,config policy and clear-criteria regression coverage
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/config-command.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,config command regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-moelbpdz-6l49ec,test,passed,"2026-04-25T17:05:23.706Z","2026-04-25T17:05:30.695Z","2026-04-25T17:05:30.695Z",null,null,1,0,0,null,null,null
+docs[1]{path,scope,note}:
+  README.md,project,config policy naming docs
+close_reason: config strict aliases and definition-of-done clear semantics implemented with regression coverage
+body: ""

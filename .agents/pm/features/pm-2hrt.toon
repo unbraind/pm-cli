@@ -1,0 +1,31 @@
+id: pm-2hrt
+title: 2026-04-25 full dogfood audit remediation wave
+description: "Track findings from the full manual sandbox dogfood audit and drive follow-up remediations for CLI reliability, UX clarity, and extensibility."
+type: Feature
+status: closed
+priority: 1
+tags[5]: 2026-04-25,agent-ux,audit,dogfood,pm-cli
+created_at: "2026-04-25T16:53:13.083Z"
+updated_at: "2026-04-25T17:11:33.972Z"
+deadline: "2026-04-27T16:54:54.273Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: "All high-impact dogfood findings are documented, linked, and either fixed or queued with clear ownership and verification evidence."
+parent: pm-o7be
+resolution: completed-remediation-wave
+expected_result: "All high-impact dogfood findings from the 2026-04-25 sandbox audit are documented as child items, fixed or explicitly queued, and verified with command/test evidence."
+actual_result: Child findings pm-oyt8/pm-3cx8/pm-9ayo/pm-odcr are closed with linked code/test/docs evidence; update-many/config/search fixes landed with passing unit and coverage evidence; best-practice sweep checks are clean.
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-cvwi,related,"2026-04-25T16:55:47.070Z",codex-agent,null
+  pm-jqgc,related,"2026-04-25T16:55:47.070Z",codex-agent,null
+comments[4]{created_at,author,text}:
+  "2026-04-25T16:53:13.083Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search '2026-04-25 dogfood audit update-many status option' --mode keyword --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20; pm list-blocked --limit 20. Net-new scope because no active/open item tracks this full sandbox dogfood wave."
+  "2026-04-25T16:55:38.025Z",codex-agent,"Execution evidence (2026-04-25): completed full sandbox dogfood pass covering bootstrap, lifecycle CRUD, ownership, annotations, query/search/context/calendar/aggregate/activity/history/stats/comments-audit, linked-test orchestration (schema/auto context + background stop/resume), governance (health/validate/gc/contracts/completion), extension lifecycle + beads/todos import/export, and help/discoverability loops."
+  "2026-04-25T17:01:23.172Z",codex-agent,"Progress update: closed child findings pm-3cx8 (update-many --status mismatch) and pm-oyt8 (LanceDB dimension mismatch search failure) with linked code/test evidence. Remaining active scope: pm-9ayo (config strict policy ergonomics) and pm-odcr (evidence consolidation + project management sweep)."
+  "2026-04-25T17:11:24.798Z",codex-agent,"Final wave status: child findings pm-oyt8, pm-3cx8, pm-9ayo, and pm-odcr are closed. Verification evidence includes targeted unit suites for vector-store/config/update-many fixes plus linked coverage run (76 files/1038 tests passed). Best-practice sweep now reports tracked-all validation clean, dedupe-open clean, and overdue open/in-progress deadline queries at zero."
+notes[1]{created_at,author,text}:
+  "2026-04-25T16:55:38.722Z",codex-agent,"Key findings captured: LanceDB dimension mismatch blocks default search in real tracker; update-many help advertises unsupported --status; config strict policy ergonomics around strict_error/clear semantics need clarification; --add structured payload ergonomics in comment/note/learning flows can be ambiguous without explicit examples."
+learnings[1]{created_at,author,text}:
+  "2026-04-25T16:55:39.667Z",codex-agent,"Dogfood in isolated PM_PATH sandboxes catches command-contract drift quickly, but real-tracker validation is still required to surface vector-store/index compatibility regressions."
+close_reason: All 2026-04-25 dogfood remediation children completed with verification evidence
+body: ""

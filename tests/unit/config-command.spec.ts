@@ -81,6 +81,10 @@ describe("runConfig", () => {
         "test_result_tracking",
       ]);
       expect(result.keys?.find((entry) => entry.key === "definition_of_done")?.value).toEqual(["tests pass"]);
+      expect(result.keys?.find((entry) => entry.key === "definition_of_done")?.set_flags).toEqual([
+        "--criterion",
+        "--clear-criteria",
+      ]);
       expect(result.keys?.find((entry) => entry.key === "test_result_tracking")?.value).toBe("enabled");
     });
   });
@@ -188,6 +192,40 @@ describe("runConfig", () => {
       });
       await expect(
         runConfig("project", "set", "definition-of-done", {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
+  it("supports clearing definition-of-done criteria with --clear-criteria", async () => {
+    await withTempRoot(async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      const settings = structuredClone(SETTINGS_DEFAULTS);
+      settings.workflow.definition_of_done = ["linked files/tests/docs present", "tests pass"];
+      await writeSettings(pmRoot, settings);
+
+      const cleared = await runConfig(
+        "project",
+        "set",
+        "definition-of-done",
+        { clearCriteria: true },
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(cleared.criteria).toEqual([]);
+      expect(cleared.changed).toBe(true);
+
+      const reread = await runConfig("project", "get", "definition_of_done", {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot });
+      expect(reread.criteria).toEqual([]);
+
+      await expect(
+        runConfig(
+          "project",
+          "set",
+          "definition-of-done",
+          { clearCriteria: true, criterion: ["tests pass"] },
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        ),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
@@ -390,15 +428,15 @@ describe("runConfig", () => {
       expect(getDefault.policy).toBe("warn");
       expect(getDefault.changed).toBe(false);
 
-      const setStrict = await runConfig(
+      const setStrictAlias = await runConfig(
         "project",
         "set",
         "sprint_release_format_policy",
-        { policy: "strict-error" },
+        { policy: "strict" },
         { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
       );
-      expect(setStrict.policy).toBe("strict_error");
-      expect(setStrict.changed).toBe(true);
+      expect(setStrictAlias.policy).toBe("strict_error");
+      expect(setStrictAlias.changed).toBe(true);
 
       const setStrictAgain = await runConfig(
         "project",
@@ -459,15 +497,15 @@ describe("runConfig", () => {
       expect(getDefault.policy).toBe("warn");
       expect(getDefault.changed).toBe(false);
 
-      const setStrict = await runConfig(
+      const setStrictAlias = await runConfig(
         "project",
         "set",
         "parent_reference_policy",
-        { policy: "strict-error" },
+        { policy: "strict" },
         { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
       );
-      expect(setStrict.policy).toBe("strict_error");
-      expect(setStrict.changed).toBe(true);
+      expect(setStrictAlias.policy).toBe("strict_error");
+      expect(setStrictAlias.changed).toBe(true);
 
       const setStrictAgain = await runConfig(
         "project",

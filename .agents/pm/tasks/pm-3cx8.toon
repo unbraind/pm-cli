@@ -1,0 +1,31 @@
+id: pm-3cx8
+title: Align update-many status mutation support with help/contracts
+description: "update-many help currently advertises an example using --status, but the command rejects --status as unknown. Align command behavior and docs/contracts for deterministic bulk status transitions."
+type: Task
+status: closed
+priority: 1
+tags[6]: 2026-04-25,contracts,dogfood,pm-cli,update-many,ux
+created_at: "2026-04-25T16:53:52.278Z"
+updated_at: "2026-04-25T17:01:15.789Z"
+deadline: "2026-04-26T16:54:57.655Z"
+author: codex-agent
+estimated_minutes: 90
+acceptance_criteria: "update-many supports explicit status mutation (or its help/contracts no longer advertise unsupported flags), and regression tests cover the expected behavior."
+parent: pm-2hrt
+resolution: Added update-many --status option registration and regression coverage.
+expected_result: Bulk update flows accept --status and transition matched items without usage errors.
+actual_result: "update-many now accepts --status, applies transitions, and tests pass."
+comments[2]{created_at,author,text}:
+  "2026-04-25T16:53:52.278Z",codex-agent,"Duplicate-check evidence: pm search 'update-many status option' --mode keyword --limit 10 returned historical/closed work only; no active item tracks this current command-contract mismatch."
+  "2026-04-25T17:01:05.605Z",codex-agent,"Implementation complete: added update-many CLI registration for --status/-s in src/cli/main.ts, added CLI regression coverage in tests/unit/update-many-command.spec.ts, and verified via node scripts/run-tests.mjs test -- tests/unit/update-many-command.spec.ts plus live sandbox command execution."
+files[2]{path,scope,note}:
+  src/cli/commands/update-many.ts,project,bulk update behavior
+  src/cli/main.ts,project,update-many option registration
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/update-many-command.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,update-many regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-moel5nwi-qlaj0k,test,passed,"2026-04-25T17:00:31.230Z","2026-04-25T17:00:48.834Z","2026-04-25T17:00:48.834Z",null,null,1,0,0,null,null,null
+docs[1]{path,scope,note}:
+  README.md,project,update-many help example parity
+close_reason: update-many status mutation now works and is covered by regression tests
+body: ""

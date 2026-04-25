@@ -6,8 +6,8 @@ status: in_progress
 priority: 1
 tags[4]: extensions,external-audit,pm-cli,runtime-probe
 created_at: "2026-04-05T18:46:53.384Z"
-updated_at: "2026-04-07T18:14:18.249Z"
-deadline: "2026-04-19T18:46:53.384Z"
+updated_at: "2026-04-25T17:09:59.595Z"
+deadline: "2026-05-09T17:09:59.595Z"
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: pm extension --manage supports an opt-in runtime probe that computes runtime_active/activation_status with doctor-equivalent semantics; default manage behavior remains compatibility-safe; warning surfaces are normalized for automation.

@@ -7,8 +7,11 @@ export function normalizeParentReferencePolicy(value: string | undefined): Paren
   if (normalized === "warn" || normalized === "strict_error") {
     return normalized;
   }
+  if (normalized === "strict") {
+    return "strict_error";
+  }
   throw new PmCliError(
-    "Config set parent-reference-policy requires --policy with one of: warn, strict_error",
+    "Config set parent-reference-policy requires --policy with one of: warn, strict_error (alias: strict)",
     EXIT_CODE.USAGE,
   );
 }

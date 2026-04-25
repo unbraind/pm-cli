@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[4]: external-audit,governance,pm-cli,query-surfaces
 created_at: "2026-04-06T12:40:25.542Z"
-updated_at: "2026-04-25T11:04:25.060Z"
+updated_at: "2026-04-25T16:54:41.596Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: "Issue report items 1 and 3 through 7 are implemented with tests, docs, contracts, completion, and Pi wrapper parity while preserving backward-compatible defaults."
@@ -14,13 +14,14 @@ parent: pm-5rjn
 resolution: Adjusted aggregate grouped row shaping to emit only requested group_by dimensions while preserving count ordering and include-unparented behavior.
 expected_result: Type-only aggregate rollups do not include parent fields and grouped payload shape matches requested dimensions.
 actual_result: group.parent leakage removed for type-only groupings; unit/integration regressions cover payload shape and pass.
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-04-06T12:40:25.542Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'list fields compact sort order list-all projection' --limit 20; pm search 'comments-audit parent tag sprint release priority filters' --limit 20; pm search 'health check-only no-refresh refresh-vectors' --limit 20; pm search 'aggregate group-by parent type count child counts' --limit 20; pm search 'ownership conflict allow-audit-comment remediation hint' --limit 20; pm list-open --limit 50; pm list-in-progress --limit 50. Net-new because matching items are either closed or only partially overlapping and no active feature currently tracks this combined non-dedupe scope.'"
   "2026-04-06T13:28:53.414Z",codex-agent,"Implemented issue-report follow-ups for comments guidance, aggregate grouped counts, list projection/sorting, comments-audit filter expansion, and health refresh controls with backward-compatible defaults. Verification: node scripts/run-tests.mjs test -- tests/unit/aggregate-command.spec.ts tests/unit/list-command.spec.ts tests/unit/list-sort-branches.spec.ts tests/unit/comments-command.spec.ts tests/unit/health-command.spec.ts tests/integration/aggregate-dedupe.integration.spec.ts tests/integration/cli.integration.spec.ts tests/integration/help-runtime.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts; pnpm build; node scripts/run-tests.mjs test; node scripts/run-tests.mjs coverage."
   "2026-04-06T14:39:36.760Z",codex-agent,"Seven-issue hardening follow-up kickoff: duplicate-check evidence refreshed via pm search \"aggregate group parent type-only rollup\" --limit 10 plus global context/list sweeps; reusing this feature for aggregate grouped payload shape regression fix."
   "2026-04-06T15:39:47.371Z",codex-agent,"Implemented aggregate grouped payload shaping fix: grouped rows now emit only requested --group-by dimensions (no leaked group.parent in type-only rollups). Added unit/integration regressions and verified with targeted suites plus full test+coverage gates."
   "2026-04-07T18:14:17.089Z",codex-agent,"2026-04-07 scope extension: make aggregate grouped-count mode ergonomic by defaulting to count semantics when no explicit mode is provided, preserving machine-readable output stability and backwards safety. Planned files: src/cli/commands/aggregate.ts, tests/unit/aggregate-command.spec.ts, docs/help examples."
   "2026-04-07T18:24:10.313Z",codex-agent,"Implementation progress: aggregate grouped-count mode now defaults on when --count is omitted, preserving existing grouped-count behavior while keeping explicit count=false as a usage error. Updated aggregate option normalization and unit coverage to validate default mode plus false-mode rejection."
+  "2026-04-25T16:54:41.596Z",codex-agent,"Dogfood finding (2026-04-25): comments-audit hard-fails when both --limit and --limit-items are provided with different values; error is deterministic but UX could expose clearer remediation in help/examples."
 notes[1]{created_at,author,text}:
   "2026-04-06T12:40:25.542Z",codex-agent,Implement command surfaces additively and keep existing defaults stable for current users.
 files[10]{path,scope,note}:

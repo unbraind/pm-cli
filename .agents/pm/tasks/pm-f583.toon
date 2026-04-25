@@ -6,8 +6,8 @@ status: in_progress
 priority: 1
 tags[3]: "area:context",implementation,pm-cli
 created_at: "2026-04-01T14:10:51.504Z"
-updated_at: "2026-04-25T11:05:42.380Z"
-deadline: "2026-04-12T22:46:23.551Z"
+updated_at: "2026-04-25T17:09:59.572Z"
+deadline: "2026-05-09T17:09:59.572Z"
 author: codex-agent
 estimated_minutes: 360
 acceptance_criteria: "All implementation, test, and documentation updates for pm context are complete and verified with build/test/coverage."

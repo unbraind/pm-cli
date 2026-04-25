@@ -637,9 +637,9 @@ export async function executeVectorQuery(
     const hits: VectorQueryHit[] = [];
     for (const record of table.values()) {
       if (record.vector.length !== queryVector.length) {
-        throw new Error(
-          `LanceDB local vector record '${record.id}' dimension mismatch: expected ${queryVector.length}, received ${record.vector.length}`,
-        );
+        // Skip stale records with mismatched dimensions so search remains available
+        // while operators repair vector artifacts with reindex/gc workflows.
+        continue;
       }
       hits.push({
         id: record.id,

@@ -6,3 +6,4 @@ coverage/
 .agents/pm/search/lancedb/
 .agents/pm/index/manifest.json
 .agents/pm/search/
+.agents/pm/checkpoints/

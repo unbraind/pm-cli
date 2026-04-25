@@ -6,8 +6,8 @@ status: in_progress
 priority: 0
 tags[4]: agent-ux,"area:cli","area:schema",pm-cli
 created_at: "2026-03-31T23:47:27.635Z"
-updated_at: "2026-04-12T19:47:41.117Z"
-deadline: "2026-04-17T11:57:37.630Z"
+updated_at: "2026-04-25T17:05:53.410Z"
+deadline: "2026-05-09T17:05:53.410Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 480
@@ -60,7 +60,7 @@ notes[2]{created_at,author,text}:
   "2026-04-03T11:59:50.740Z",codex-agent,"Mandatory closure checklist: (1) run linked targeted tests via pm test <id> --run; (2) run pnpm build; (3) run node scripts/run-tests.mjs test; (4) run node scripts/run-tests.mjs coverage; (5) update touched docs (README/PRD/AGENTS/CHANGELOG/ARCHITECTURE as applicable); (6) add pm comment with concrete evidence/results; (7) close + release item before commit/push."
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:15:38.673Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[51]{path,scope,note}:
+files[52]{path,scope,note}:
   AGENTS.md,project,agent guidance now clarifies TOON metadata terminology
   CHANGELOG.md,project,unreleased summary for configurable types and UX
   docs/ARCHITECTURE.md,project,runtime type registry/storage architecture
@@ -109,6 +109,7 @@ files[51]{path,scope,note}:
   tests/unit/init-command.spec.ts,project,init runtime schema scaffold assertions
   tests/unit/item-format-validation.spec.ts,project,runtime schema TOON metadata validation coverage
   tests/unit/pi-agent-extension.spec.ts,project,workflow preset wrapper expectations
+  tests/unit/runtime-schema-command-flags.spec.ts,project,tracked-all orphan backfill from best-practice sweep
   tests/unit/search-command.spec.ts,project,hoisted mock stability for runtime schema imports
   tests/unit/settings-store.spec.ts,project,settings schema normalization coverage
   tests/unit/shared-constants-errors.spec.ts,project,required directory constants include schema

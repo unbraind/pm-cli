@@ -176,12 +176,24 @@ function normalizeKey(value: string): ConfigKey {
   );
 }
 
-function normalizeCriteria(values: string[] | undefined): string[] {
+function normalizeCriteria(values: string[] | undefined, clearCriteria: boolean | undefined): string[] {
   const normalized = [...new Set((values ?? []).map((value) => value.trim()).filter((value) => value.length > 0))].sort(
     (left, right) => left.localeCompare(right),
   );
+  if (clearCriteria) {
+    if (normalized.length > 0) {
+      throw new PmCliError(
+        "Config set definition-of-done cannot combine --clear-criteria with --criterion values",
+        EXIT_CODE.USAGE,
+      );
+    }
+    return [];
+  }
   if (normalized.length === 0) {
-    throw new PmCliError("Config set definition-of-done requires at least one non-empty --criterion value", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Config set definition-of-done requires at least one non-empty --criterion value (or --clear-criteria to clear)",
+      EXIT_CODE.USAGE,
+    );
   }
   return normalized;
 }
@@ -388,7 +400,7 @@ export async function runConfig(
           : ("enum" as const),
       set_flags:
         candidate === "definition_of_done"
-          ? ["--criterion"]
+          ? ["--criterion", "--clear-criteria"]
           : candidate === "metadata_required_fields"
             ? ["--criterion", "--clear-criteria"]
           : candidate === "item_format"
@@ -511,8 +523,11 @@ export async function runConfig(
   if (!key) {
     throw new PmCliError('Config action "set" requires <key>', EXIT_CODE.USAGE);
   }
-  if (options.clearCriteria === true && key !== "metadata_required_fields") {
-    throw new PmCliError("--clear-criteria is only supported with config set metadata-required-fields", EXIT_CODE.USAGE);
+  if (options.clearCriteria === true && key !== "metadata_required_fields" && key !== "definition_of_done") {
+    throw new PmCliError(
+      "--clear-criteria is only supported with config set definition-of-done or metadata-required-fields",
+      EXIT_CODE.USAGE,
+    );
   }
   if (key === "item_format") {
     const nextFormat = normalizeItemFormat(options.format);
@@ -647,7 +662,7 @@ export async function runConfig(
     }, warnings);
   }
 
-  const nextCriteria = normalizeCriteria(options.criterion);
+  const nextCriteria = normalizeCriteria(options.criterion, options.clearCriteria);
   const changed =
     nextCriteria.length !== settings.workflow.definition_of_done.length ||
     nextCriteria.some((value, index) => value !== settings.workflow.definition_of_done[index]);

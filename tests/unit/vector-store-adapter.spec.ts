@@ -557,7 +557,7 @@ describe("executeVectorQuery", () => {
         [1, 0, 0],
         3,
       ),
-    ).rejects.toThrow("dimension mismatch: expected 3, received 2");
+    ).resolves.toEqual([]);
 
     await expect(
       executeVectorQuery(

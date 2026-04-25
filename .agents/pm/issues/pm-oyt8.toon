@@ -1,0 +1,37 @@
+id: pm-oyt8
+title: Fix LanceDB vector dimension mismatch blocking default search
+description: "pm search in default mode currently fails in the real tracker with LanceDB dimension mismatch errors, blocking hybrid search and duplicate-check workflows."
+type: Issue
+status: closed
+priority: 0
+tags[6]: 2026-04-25,dogfood,lancedb,pm-cli,regression,search
+created_at: "2026-04-25T16:53:33.854Z"
+updated_at: "2026-04-25T17:01:17.225Z"
+deadline: "2026-04-26T16:54:55.870Z"
+author: codex-agent
+estimated_minutes: 120
+acceptance_criteria: pm search default and hybrid modes succeed without dimension mismatch errors and return deterministic results against existing indexed items.
+parent: pm-2hrt
+reporter: codex-agent
+severity: high
+environment: real project tracker with existing LanceDB embeddings
+repro_steps: "Run: pm search '2026-04-25 dogfood audit update-many status option' --limit 10"
+resolution: Updated LanceDB local query behavior to skip mismatched-dimension stale vectors; refreshed index artifacts.
+expected_result: Search returns results without runtime vector dimension errors.
+actual_result: "Command exits with LanceDB local vector record dimension mismatch (expected 1024, received 768)."
+component: search-vector-store
+customer_impact: Blocks default search workflows used for duplicate-check and planning.
+comments[2]{created_at,author,text}:
+  "2026-04-25T16:53:33.854Z",codex-agent,"Duplicate-check evidence for net-new issue scope: pm search 'lancedb dimension mismatch' --mode keyword --limit 10 returned only closed historical work (no active/open item tracking this current runtime failure)."
+  "2026-04-25T17:01:07.516Z",codex-agent,"Remediation complete: search query path now skips stale LanceDB vectors with mismatched dimensions instead of hard-failing; verified by unit coverage updates and successful default hybrid search in the real tracker after reindex."
+files[2]{path,scope,note}:
+  src/cli/commands/search.ts,project,search mode execution path
+  src/core/search/vector-stores.ts,project,LanceDB adapter and vector dimension handling
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,search command regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-moel5tr5-0hc4pv,test,passed,"2026-04-25T17:00:49.494Z","2026-04-25T17:00:56.417Z","2026-04-25T17:00:56.417Z",null,null,1,0,0,null,null,null
+docs[1]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,search and vector-store architecture reference
+close_reason: default search no longer fails on stale LanceDB dimension mismatch and linked regression tests pass
+body: ""
