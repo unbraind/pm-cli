@@ -12,6 +12,11 @@ const TELEMETRY_FLUSH_BATCH_SIZE = 100;
 const TELEMETRY_MAX_RETRY_DELAY_MS = 3_600_000;
 const TELEMETRY_RETRY_BASE_DELAY_MS = 30_000;
 const TELEMETRY_HTTP_TIMEOUT_MS = 2_500;
+const OTEL_TRACES_ENDPOINT_ENV = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT";
+const OTEL_BASE_ENDPOINT_ENV = "OTEL_EXPORTER_OTLP_ENDPOINT";
+const OTEL_SERVICE_NAME_ENV = "OTEL_SERVICE_NAME";
+const PM_TELEMETRY_OTEL_DISABLED_ENV = "PM_TELEMETRY_OTEL_DISABLED";
+const PM_TELEMETRY_OTEL_DISABLED_VALUES = new Set(["1", "true", "yes", "on"]);
 const PROCESS_SESSION_ID = crypto.randomUUID();
 
 const SENSITIVE_KEYWORDS = [
@@ -51,8 +56,13 @@ export interface ActiveTelemetryCommand {
   started_at_ms: number;
   command: string;
   installation_id: string;
+  pm_root_hash: string;
+  cwd_hash: string;
   endpoint: string;
   global_pm_root: string;
+  otel_traces_endpoint?: string;
+  otel_trace_id?: string;
+  otel_span_id?: string;
 }
 
 export interface TelemetryCommandContext {
@@ -155,6 +165,146 @@ function sanitizeCommandArgs(args: string[]): string[] {
 
 function hashWithInstallationId(installationId: string, value: string): string {
   return crypto.createHash("sha256").update(`${installationId}:${value}`).digest("hex");
+}
+
+function resolveOtelTracesEndpoint(): string | null {
+  if (PM_TELEMETRY_OTEL_DISABLED_VALUES.has((process.env[PM_TELEMETRY_OTEL_DISABLED_ENV] ?? "").trim().toLowerCase())) {
+    return null;
+  }
+
+  const directEndpoint = (process.env[OTEL_TRACES_ENDPOINT_ENV] ?? "").trim();
+  if (directEndpoint.length > 0) {
+    try {
+      return new URL(directEndpoint).toString();
+    } catch {
+      return null;
+    }
+  }
+
+  const baseEndpoint = (process.env[OTEL_BASE_ENDPOINT_ENV] ?? "").trim();
+  if (baseEndpoint.length === 0) {
+    return null;
+  }
+
+  try {
+    const url = new URL(baseEndpoint);
+    const normalizedPath = url.pathname.replace(/\/+$/, "");
+    if (!normalizedPath.endsWith("/v1/traces")) {
+      url.pathname = `${normalizedPath.length === 0 ? "" : normalizedPath}/v1/traces`;
+    }
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+function isoToUnixNano(iso: string): string {
+  const parsedMs = Date.parse(iso);
+  const epochMs = Number.isNaN(parsedMs) ? Date.now() : parsedMs;
+  return `${BigInt(epochMs) * 1_000_000n}`;
+}
+
+function otlpStringAttribute(key: string, value: string): { key: string; value: { stringValue: string } } {
+  return {
+    key,
+    value: { stringValue: value },
+  };
+}
+
+function otlpBoolAttribute(key: string, value: boolean): { key: string; value: { boolValue: boolean } } {
+  return {
+    key,
+    value: { boolValue: value },
+  };
+}
+
+function otlpIntAttribute(key: string, value: number): { key: string; value: { intValue: string } } {
+  return {
+    key,
+    value: { intValue: String(Math.max(0, Math.trunc(value))) },
+  };
+}
+
+async function exportLocalOtelSpan(
+  activeCommand: ActiveTelemetryCommand,
+  outcome: { ok: boolean; error?: string },
+  finishedAtIso: string,
+  durationMs: number,
+): Promise<void> {
+  if (
+    typeof activeCommand.otel_traces_endpoint !== "string" ||
+    activeCommand.otel_traces_endpoint.trim().length === 0 ||
+    typeof activeCommand.otel_trace_id !== "string" ||
+    activeCommand.otel_trace_id.length === 0 ||
+    typeof activeCommand.otel_span_id !== "string" ||
+    activeCommand.otel_span_id.length === 0
+  ) {
+    return;
+  }
+
+  const serviceNameCandidate = sanitizeString((process.env[OTEL_SERVICE_NAME_ENV] ?? "").trim());
+  const serviceName = serviceNameCandidate.length > 0 ? serviceNameCandidate : "pm-cli";
+  const attributes: Array<
+    | ReturnType<typeof otlpStringAttribute>
+    | ReturnType<typeof otlpBoolAttribute>
+    | ReturnType<typeof otlpIntAttribute>
+  > = [
+    otlpStringAttribute("pm.command", sanitizeString(activeCommand.command)),
+    otlpStringAttribute("pm.installation_id", activeCommand.installation_id),
+    otlpStringAttribute("pm.session_id", PROCESS_SESSION_ID),
+    otlpStringAttribute("pm.pm_root_hash", activeCommand.pm_root_hash),
+    otlpStringAttribute("pm.cwd_hash", activeCommand.cwd_hash),
+    otlpBoolAttribute("pm.ok", outcome.ok),
+    otlpIntAttribute("pm.duration_ms", durationMs),
+  ];
+  if (typeof outcome.error === "string" && outcome.error.trim().length > 0) {
+    attributes.push(otlpStringAttribute("pm.error", sanitizeString(outcome.error)));
+  }
+
+  const payload = {
+    resourceSpans: [
+      {
+        resource: {
+          attributes: [otlpStringAttribute("service.name", serviceName)],
+        },
+        scopeSpans: [
+          {
+            scope: {
+              name: "pm-cli.telemetry",
+              version: "1",
+            },
+            spans: [
+              {
+                traceId: activeCommand.otel_trace_id,
+                spanId: activeCommand.otel_span_id,
+                name: `pm.command.${sanitizeString(activeCommand.command)}`,
+                kind: 1,
+                startTimeUnixNano: isoToUnixNano(activeCommand.started_at),
+                endTimeUnixNano: isoToUnixNano(finishedAtIso),
+                attributes,
+                status: {
+                  code: outcome.ok ? 1 : 2,
+                  message: outcome.ok ? "" : sanitizeString(outcome.error ?? "command_failed"),
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
+  const response = await fetch(activeCommand.otel_traces_endpoint, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(TELEMETRY_HTTP_TIMEOUT_MS),
+  });
+  if (!response.ok) {
+    throw new Error(`local_otel_export_http_${response.status}`);
+  }
 }
 
 function summarizeResult(result: unknown): Record<string, unknown> {
@@ -322,6 +472,9 @@ export async function startTelemetryCommand(context: TelemetryCommandContext): P
       return null;
     }
     const { installationId, endpoint } = await ensureInstallationId(globalPmRoot);
+    const pmRootHash = hashWithInstallationId(installationId, context.pm_root);
+    const cwdHash = hashWithInstallationId(installationId, process.cwd());
+    const otelTracesEndpoint = resolveOtelTracesEndpoint();
     const occurredAt = nowIso();
     const event: TelemetryEvent = {
       schema_version: TELEMETRY_SCHEMA_VERSION,
@@ -335,8 +488,8 @@ export async function startTelemetryCommand(context: TelemetryCommandContext): P
         command_args: sanitizeCommandArgs(context.args),
         command_options: sanitizeValue(context.options) as Record<string, unknown>,
         global_options: sanitizeValue(context.global) as Record<string, unknown>,
-        pm_root_hash: hashWithInstallationId(installationId, context.pm_root),
-        cwd_hash: hashWithInstallationId(installationId, process.cwd()),
+        pm_root_hash: pmRootHash,
+        cwd_hash: cwdHash,
         capture_level: settings.telemetry.capture_level,
         runtime: {
           node: process.version,
@@ -355,8 +508,13 @@ export async function startTelemetryCommand(context: TelemetryCommandContext): P
       started_at_ms: Date.now(),
       command: context.command,
       installation_id: installationId,
+      pm_root_hash: pmRootHash,
+      cwd_hash: cwdHash,
       endpoint,
       global_pm_root: globalPmRoot,
+      otel_traces_endpoint: otelTracesEndpoint ?? undefined,
+      otel_trace_id: otelTracesEndpoint ? crypto.randomBytes(16).toString("hex") : undefined,
+      otel_span_id: otelTracesEndpoint ? crypto.randomBytes(8).toString("hex") : undefined,
     };
   } catch {
     // Telemetry must never block command execution.
@@ -392,6 +550,7 @@ export async function finishTelemetryCommand(
     };
     await enqueueTelemetryEvent(activeCommand.global_pm_root, event);
     await flushQueue(activeCommand.global_pm_root, activeCommand.endpoint);
+    await exportLocalOtelSpan(activeCommand, outcome, finishedAt, durationMs);
   } catch {
     // Telemetry must never block command execution.
   }

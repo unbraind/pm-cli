@@ -493,6 +493,7 @@ Weights are configurable via `settings.json` under `search.tuning`.
 | `telemetry.endpoint` | Remote telemetry ingestion endpoint URL |
 | `telemetry.installation_id` | Pseudonymous global installation identifier |
 | `telemetry.retention_days` | Raw event retention policy used by remote worker cleanup |
+| `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` / `OTEL_EXPORTER_OTLP_ENDPOINT` (env) | Optional local OTLP trace export target for command spans |
 | `item_types.definitions[]` | Custom type names, aliases, folders, required fields/repeatables, `--type-option` definitions, and `command_option_policies` (`required`/`enabled`/`visible`) |
 | `search.*` | Search provider and tuning settings |
 | `providers.openai` / `providers.ollama` | Embedding provider config |
@@ -530,6 +531,7 @@ Command lifecycle telemetry is integrated as an additive runtime path:
   - emits `command_start` + `command_finish` events
   - spools local JSONL queue entries under global runtime storage
   - exports batched events to `settings.telemetry.endpoint` with retry/backoff
+  - optionally exports command spans to OTLP (`OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` or `OTEL_EXPORTER_OTLP_ENDPOINT`)
 
 Design constraints:
 

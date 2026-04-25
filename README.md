@@ -502,6 +502,21 @@ pm config global set telemetry-tracking --policy disabled
 pm config global get telemetry-tracking --json
 ```
 
+### Optional local OTEL trace export
+
+`pm` can additionally emit one OTLP trace span per command to a local (or custom) collector endpoint:
+
+- `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:4318/v1/traces`
+- or `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318` (auto-appends `/v1/traces`)
+- optional service name override: `OTEL_SERVICE_NAME=pm-cli`
+- disable this OTEL side-channel explicitly with `PM_TELEMETRY_OTEL_DISABLED=1`
+
+Example:
+
+```bash
+OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318 OTEL_SERVICE_NAME=pm-cli node dist/cli.js list-open
+```
+
 ## Config Discovery and Snapshot Export
 
 `pm config` also supports read-only key discovery and one-shot snapshot export for integration workflows:
