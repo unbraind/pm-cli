@@ -171,6 +171,22 @@ Every extension directory must contain a `manifest.json`:
 - Unknown capability names are ignored for gating but emit discovery diagnostics that include allowed-capability lists and nearest-match suggestions when confidence is high.
 - Legacy manifest capability aliases `migration` and `validation` are remapped to `schema` and emit consolidated warning `extension_capability_legacy_alias` so compatibility remains additive while migration intent stays visible.
 
+## SDK Dependency Setup
+
+External extensions should declare an explicit dependency on the pm package so `@unbrained/pm-cli/sdk` resolves at runtime.
+
+```json
+{
+  "name": "my-pm-extension",
+  "type": "module",
+  "dependencies": {
+    "@unbrained/pm-cli": "^2026.3.12"
+  }
+}
+```
+
+This keeps extension imports stable and avoids relying on internal `src/core/...` paths.
+
 ## Extension Module
 
 The entry module must export an `activate` function:

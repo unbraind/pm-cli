@@ -676,6 +676,34 @@ describe("runValidate", () => {
     });
   });
 
+  it("uses tracker-root workspace when cwd is nested under tracker root", async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-validate-workspace-root-"));
+    const trackerRoot = path.join(tempDir, "tracker-root");
+    const nestedCwd = path.join(trackerRoot, "extensions", "nested");
+    const previousCwd = process.cwd();
+    try {
+      await runInit(undefined, { path: trackerRoot });
+      await mkdir(path.join(trackerRoot, "src"), { recursive: true });
+      await writeFile(path.join(trackerRoot, "src", "root.ts"), "export const root = true;\n", "utf8");
+      await mkdir(nestedCwd, { recursive: true });
+      process.chdir(nestedCwd);
+
+      const result = await runValidate({ checkFiles: true }, { path: trackerRoot });
+      const filesCheck = checkByName(result, "files");
+      const details = filesCheck.details as {
+        workspace_root: string;
+        candidate_scan_source: string;
+        candidate_total: number;
+      };
+      expect(details.workspace_root).toBe(path.resolve(trackerRoot));
+      expect(details.candidate_scan_source).toBe("default-curated");
+      expect(details.candidate_total).toBeGreaterThanOrEqual(1);
+    } finally {
+      process.chdir(previousCwd);
+      await rm(tempDir, { recursive: true, force: true });
+    }
+  });
+
   it("uses cwd fallback for non-standard PM root layouts", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-validate-workspace-fallback-"));
     const workspaceRoot = path.join(tempDir, "workspace");

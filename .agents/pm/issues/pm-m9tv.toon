@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: files,governance,pm-cli,validation
 created_at: "2026-04-04T17:53:32.045Z"
-updated_at: "2026-04-05T22:44:37.035Z"
+updated_at: "2026-04-25T17:54:33.850Z"
 deadline: "2026-04-11T17:53:32.045Z"
 author: codex-agent
 estimated_minutes: 180
@@ -38,14 +38,18 @@ regression: true
 customer_impact: Maintainers currently receive incorrect warnings that reduce confidence in project-management audits.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-wtsp,discovered_from,"2026-04-04T17:53:32.045Z",codex-agent,null
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-04-04T17:53:32.045Z",codex-agent,Duplicate-check evidence pm context --limit 10; pm search validate check-files missing_linked_paths false positive --limit 20; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because no existing item tracks this active false-positive behavior.
   "2026-04-04T17:54:15.825Z",codex-agent,"Reproduction captured after governance remediation: pm validate --check-files --scan-mode tracked-all still reports 9 missing_linked_paths even after explicit linking. Independent audit (git tracked minus parsed project file links) reports candidate=202 linked=222 missing=0, confirming false-positive behavior in validate path matching layer."
   "2026-04-04T22:39:04.265Z",codex-agent,Reused existing tracked-all lineage for external issue report follow-up (no duplicate item created). This cycle adds strict tracked-all mode and structured exclusion reasons under parent epic pm-gt8u.
   "2026-04-04T22:50:28.232Z",codex-agent,"Implemented validate tracked-all follow-up: added tracked-all-strict scan mode, include_pm_internals effective semantics for strict mode, and structured excluded_by_reason diagnostics. Updated CLI/completion/contracts/Pi parity and extended validate tests. Evidence: node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts passed."
   "2026-04-04T23:35:02.892Z",codex-agent,"Final evidence: validate tracked-all follow-up completed with tracked-all-strict mode and structured excluded_by_reason reporting, plus contract/completion/Pi/docs parity. Verification passed: linked test run via pm test pm-m9tv --run, full node scripts/run-tests.mjs test, and node scripts/run-tests.mjs coverage."
-notes[1]{created_at,author,text}:
+  "2026-04-25T17:54:21.748Z",codex-agent,"Dogfood finding: validate check-files anchored workspace_root to nested cwd when --path pointed to tracker root; fixed resolveWorkspaceRoot to prefer tracker root when cwd is inside it."
+notes[2]{created_at,author,text}:
   "2026-04-04T17:53:32.045Z",codex-agent,Independent git-vs-linked audit currently reports candidate=202 linked=222 missing=0 while validate reports 9 missing paths.
+  "2026-04-25T17:54:24.560Z",codex-agent,"Verification: node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts passed (34 tests)."
+learnings[1]{created_at,author,text}:
+  "2026-04-25T17:54:27.095Z",codex-agent,Workspace-root derivation should account for nested cwd under tracker roots to avoid false diagnostic framing in validate --check-files.
 files[6]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,pi-validate-mode-mapping
   src/cli/commands/completion.ts,project,validate-mode-completion
@@ -60,5 +64,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resum
   test-local-mnkyxs57-52h2jl,test,passed,"2026-04-04T23:32:40.426Z","2026-04-04T23:33:30.427Z","2026-04-04T23:33:30.427Z",null,null,2,0,0,null,null,null
 docs[1]{path,scope,note}:
   README.md,project,validate command behavior docs
-close_reason: Implemented tracked-all-strict mode with structured exclusion diagnostics and verified linked/full test coverage.
+close_reason: "Dogfood audit follow-up complete: nested-cwd workspace root handling fixed and regression-covered."
 body: "Observed during governance refactor: validate reports 9 missing_linked_paths for beads/install/todos command and builtins files, while independent git-vs-linked audit reports no missing paths. This item tracks root-cause analysis, deterministic reproduction, and behavior-correct fix."

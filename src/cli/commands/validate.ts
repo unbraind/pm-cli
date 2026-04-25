@@ -324,12 +324,21 @@ function resolveFileScanMode(scanMode: string | undefined): ValidateFileScanMode
 }
 
 function resolveWorkspaceRoot(pmRoot: string): string {
-  const normalized = pmRoot.replaceAll("\\", "/");
-  if (normalized.endsWith("/.agents/pm")) {
-    return path.dirname(path.dirname(pmRoot));
+  const resolvedPmRoot = path.resolve(pmRoot);
+  const normalizedPmRoot = resolvedPmRoot.replaceAll("\\", "/");
+  if (normalizedPmRoot.endsWith("/.agents/pm")) {
+    return path.dirname(path.dirname(resolvedPmRoot));
+  }
+  const resolvedCwd = path.resolve(process.cwd());
+  const relativeFromPmRoot = path.relative(resolvedPmRoot, resolvedCwd);
+  const cwdInsidePmRoot =
+    relativeFromPmRoot.length === 0 ||
+    (!relativeFromPmRoot.startsWith("..") && !path.isAbsolute(relativeFromPmRoot));
+  if (cwdInsidePmRoot) {
+    return resolvedPmRoot;
   }
   /* c8 ignore next 2 -- non-standard PM root layouts are integration-only edge cases. */
-  return process.cwd();
+  return resolvedCwd;
 }
 
 async function listFilesRecursive(basePath: string, relativePath: string, output: string[]): Promise<void> {
