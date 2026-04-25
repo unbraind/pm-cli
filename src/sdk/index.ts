@@ -1,24 +1,44 @@
-import type { ExtensionApi, ExtensionManifest } from "../core/extensions/loader.js";
+import {
+  EXTENSION_CAPABILITY_CONTRACT,
+  EXTENSION_CAPABILITY_CONTRACT_VERSION,
+  EXTENSION_CAPABILITY_LEGACY_ALIASES,
+  KNOWN_EXTENSION_CAPABILITIES,
+  type ExtensionApi,
+  type ExtensionManifest,
+} from "../core/extensions/loader.js";
 export * from "./cli-contracts.js";
 
-export const EXTENSION_CAPABILITIES = [
-  "commands",
-  "renderers",
-  "hooks",
-  "schema",
-  "importers",
-  "search",
-  "parser",
-  "preflight",
-  "services",
-] as const;
+/**
+ * Canonical extension capability names accepted by pm.
+ *
+ * Extension manifests should declare one or more of these values in
+ * `capabilities`.
+ */
+export const EXTENSION_CAPABILITIES = KNOWN_EXTENSION_CAPABILITIES;
 export type ExtensionCapability = (typeof EXTENSION_CAPABILITIES)[number];
 
+/**
+ * Versioned capability contract metadata emitted by runtime diagnostics.
+ */
+export { EXTENSION_CAPABILITY_CONTRACT, EXTENSION_CAPABILITY_CONTRACT_VERSION, EXTENSION_CAPABILITY_LEGACY_ALIASES };
+
 export interface ExtensionModule {
+  /**
+   * Optional in-module metadata mirror.
+   *
+   * The authoritative manifest remains on-disk `manifest.json`; this field is
+   * useful when authors want colocated metadata for tooling/tests.
+   */
   manifest?: ExtensionManifest;
   activate(api: ExtensionApi): void | Promise<void>;
 }
 
+/**
+ * Typed identity helper for extension module exports.
+ *
+ * Use as:
+ * `export default defineExtension({ activate(api) { ... } })`
+ */
 export function defineExtension<TModule extends ExtensionModule>(module: TModule): TModule {
   return module;
 }

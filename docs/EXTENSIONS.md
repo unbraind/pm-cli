@@ -571,8 +571,8 @@ Runs before each item file write:
 ```ts
 api.hooks.onWrite((ctx) => {
   // ctx.path: string
+  // ctx.scope: "project" | "global"
   // ctx.op: string (create, update, restore, etc.)
-  // ctx.item_id: string
 });
 ```
 
@@ -583,7 +583,7 @@ Runs after each item file read:
 ```ts
 api.hooks.onRead((ctx) => {
   // ctx.path: string
-  // ctx.item_id: string
+  // ctx.scope: "project" | "global"
 });
 ```
 
@@ -594,7 +594,7 @@ Runs during reindex/gc operations:
 ```ts
 api.hooks.onIndex((ctx) => {
   // ctx.mode: "keyword" | "semantic" | "hybrid" | "gc"
-  // ctx.total?: number
+  // ctx.total_items?: number
 });
 ```
 

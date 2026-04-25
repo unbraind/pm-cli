@@ -6,12 +6,15 @@ status: closed
 priority: 1
 tags[5]: deployment,gdpr,observability,pm-cli,telemetry
 created_at: "2026-04-25T21:33:07.558Z"
-updated_at: "2026-04-25T22:17:52.747Z"
+updated_at: "2026-04-25T23:11:28.383Z"
 deadline: "2026-05-02T21:33:07.558Z"
 author: codex-agent
 estimated_minutes: 900
 acceptance_criteria: "All rollout todos complete with verified telemetry ingestion, observability dashboards, backups, and documentation."
 parent: pm-5v5w
+resolution: "Completed telemetry rollout across CLI runtime, remote stack deployment, routing, backup/restore, and documentation."
+expected_result: "Telemetry ingestion, observability, routing, and operational docs are fully validated and tracked."
+actual_result: Rollout comments show end-to-end verification evidence; missing repo docs are now backfilled in this run for linked-path parity.
 comments[9]{created_at,author,text}:
   "2026-04-25T21:33:22.735Z",codex-agent,"Execution kickoff: implementing attached telemetry+observability rollout in sequence (CLI consent/settings, telemetry runtime/exporter, tests, remote stack deployment on 192.168.1.183, Caddy domain wiring, backup/restore, and full E2E validation)."
   "2026-04-25T21:36:48.864Z",codex-agent,"Progress: added telemetry settings defaults/schema (enabled by default, capture_level=max, retention_days=365), config key telemetry-tracking (enabled|disabled), and first-run TTY consent prompt that persists global decision without affecting non-interactive/json/CI runs. Verification: pnpm build passed."

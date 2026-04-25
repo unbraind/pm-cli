@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[4]: extensions,external-audit,pm-cli,runtime-probe
 created_at: "2026-04-05T18:46:53.384Z"
-updated_at: "2026-04-25T17:09:59.595Z"
+updated_at: "2026-04-25T23:06:48.483Z"
 deadline: "2026-05-09T17:09:59.595Z"
 author: codex-agent
 estimated_minutes: 240
@@ -15,10 +15,11 @@ parent: pm-gt8u
 resolution: Resolution metadata backfilled during governance normalization; implementation evidence is already captured in linked comments and artifacts.
 expected_result: Closed item includes explicit resolution/expected_result/actual_result metadata for deterministic validation and audit workflows.
 actual_result: Resolution fields were previously missing and are now backfilled as part of governance hardening.
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-05T18:46:53.384Z",codex-agent,"Duplicate-check evidence: pm context --limit 20; pm list-open --limit 200; pm list-in-progress --limit 200; pm search 'extension diagnostics warning parity runtime probe' --limit 20; pm search 'activation_status unknown manage doctor' --limit 20. Net-new scope because no active canonical item tracks opt-in runtime probe mode for manage."
   "2026-04-05T19:29:09.252Z",codex-agent,"Completed opt-in runtime probe mode for extension manage parity with doctor-like runtime_active/activation_status semantics when explicitly requested. Default manage behavior remains compatibility-safe. Verification: extension command + CLI integration tests, full coverage, and typecheck passed."
   "2026-04-07T18:14:18.249Z",codex-agent,"2026-04-07 scope extension: enforce top-level/subcommand parity for extension manage runtime probe and doctor trace/detail forwarding; add regression tests for subcommand forms to prevent parser drift. Planned files: src/cli/main.ts, src/cli/commands/extension.ts, tests/unit/extension-command.spec.ts."
+  "2026-04-25T23:06:48.483Z",audit-agent,Extension lifecycle dogfood run created two local extensions to test collisions. Doctor/manage output and runtime_probe metadata were useful; collision warnings surfaced correctly (parser/service override collisions) and deactivate/activate toggles updated runtime_active as expected.
 notes[1]{created_at,author,text}:
   "2026-04-05T18:46:53.384Z",codex-agent,Design target keep default manage output stable and gate runtime activation inspection behind explicit opt-in flag.
 files[1]{path,scope,note}:

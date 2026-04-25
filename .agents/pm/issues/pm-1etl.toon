@@ -1,0 +1,23 @@
+id: pm-1etl
+title: Clarify or harden SDK import resolution for local extension installs
+description: Dogfood extension install from local path failed to load when extension imported @unbrained/pm-cli/sdk without its own dependency install.
+type: Issue
+status: open
+priority: 1
+tags[4]: extensions,external-audit,pm-cli,sdk
+created_at: "2026-04-25T23:06:27.563Z"
+updated_at: "2026-04-25T23:07:42.346Z"
+author: audit-agent
+acceptance_criteria: Local extension install path provides deterministic guidance (or runtime support) for SDK import resolution and doctor output points directly to remediation.
+parent: pm-o7be
+comments[2]{created_at,author,text}:
+  "2026-04-25T23:06:27.563Z",audit-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'audit extension sdk calendar docs' --mode keyword --limit 10; pm list-open --fields id,title,type,parent,status,priority --limit 50; pm list-in-progress --fields id,title,type,parent,status,priority --limit 50. Net-new because active items cover extension runtime probe/docs parity but not local install SDK module-resolution behavior."
+  "2026-04-25T23:07:38.813Z",audit-agent,"Repro evidence from sandbox audit: local extension install succeeds, but doctor reports extension_load_failed when extension entry imports @unbrained/pm-cli/sdk and source package has no installed dependency. Runtime error: Cannot find package '@unbrained/pm-cli' imported from installed extension index.js."
+notes[1]{created_at,author,text}:
+  "2026-04-25T23:07:42.346Z",audit-agent,"Potential remediation paths: (a) install-time dependency validation/warning for local sources, (b) extension loader resolution fallback to pm CLI SDK for explicit compatibility mode, or (c) tighter doctor remediation hints with concrete npm install guidance."
+files[2]{path,scope,note}:
+  src/cli/commands/extension.ts,project,extension install/manage runtime behavior
+  src/core/extensions/loader.ts,project,module load and import resolution path
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,sdk dependency guidance
+body: "During sandbox extension lifecycle audit, pm extension doctor reported extension_load_failed for local installs because Node could not resolve @unbrained/pm-cli from extension directory. Need deterministic UX: either improve install/runtime behavior or strengthen diagnostics/docs to make dependency expectations explicit."
