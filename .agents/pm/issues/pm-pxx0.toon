@@ -1,0 +1,15 @@
+id: pm-pxx0
+title: Implement local telemetry queue retention_days TTL cleanup
+description: retention_days exists in telemetry settings but no cleanup logic prunes old queue entries or events from disk.
+type: Issue
+status: open
+priority: 3
+tags[3]: "audit:2026-04-26",pm-cli,telemetry
+created_at: "2026-04-26T14:52:27.856Z"
+updated_at: "2026-04-26T14:52:27.856Z"
+deadline: "2026-05-10T14:52:27.856Z"
+author: audit-agent
+estimated_minutes: 30
+acceptance_criteria: Stale queue entries older than retention_days are pruned during flush cycles.
+parent: pm-lnq3
+body: The events.jsonl queue file grows unbounded if the remote endpoint is unreachable. retention_days should be used to prune stale entries and cap disk usage.

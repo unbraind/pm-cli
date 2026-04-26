@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: "area:calendar","area:output",code,pm-cli
 created_at: "2026-03-31T21:28:33.277Z"
-updated_at: "2026-04-26T13:51:52.747Z"
+updated_at: "2026-04-26T14:51:49.698Z"
 deadline: "2026-05-09T17:10:36.266Z"
 assignee: codex-agent
 author: codex-agent
@@ -41,7 +41,7 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-3aga,related,"2026-03-31T21:28:33.277Z",codex-agent,null
   pm-ezri,blocks,"2026-03-31T21:28:33.277Z",codex-agent,null
   pm-122q,parent,"2026-04-04T21:29:28.438Z",codex-agent,null
-comments[10]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-03-31T21:28:33.277Z",codex-agent,Task created for markdown-default calendar output handling.
   "2026-03-31T21:45:12.525Z",codex-agent,Added calendar-specific markdown default rendering with explicit --format and --json override precedence checks.
   "2026-03-31T21:45:24.102Z",codex-agent,"Evidence: output behavior tests passed including calendar output precedence."
@@ -52,6 +52,7 @@ comments[10]{created_at,author,text}:
   "2026-04-26T08:42:52.498Z",codex-agent,"Calendar dogfood evidence 2026-04-26: recurrence works when using event field recur_by_weekday with pipe-delimited weekdays (mon|tue|wed|thu|fri). Initial attempts with recur_byweekday or comma-separated weekday lists fail with generic invalid --event payload error. UX opportunity remains to surface an explicit recurrence field/delimiter hint in the parse error path for agent-oriented troubleshooting."
   "2026-04-26T13:16:13.798Z",cursor-agent,"Fresh calendar audit evidence 2026-04-26: valid day/week/month/agenda commands pass with --date now and ISO/from-to values, recurrence expansion works, and context includes agenda data. The audit checklist's --date today probe fails with invalid argument guidance; consider supporting today as an alias or documenting that agents must use now/relative/ISO values."
   "2026-04-26T13:51:52.747Z",cursor-agent,"Telemetry evidence from persisted user data analysis: calendar had 127 finishes and 14 failures for an 11.02 percent failure rate. Repeated failure pattern includes invalid --date value today with 5 occurrences, matching the existing calendar UX follow-up scope."
+  "2026-04-26T14:51:49.698Z",audit-agent,"2026-04-26 audit confirms calendar works in all 4 views (agenda/day/week/month). Reminders and deadlines render correctly. Recurrence expansion verified. Outstanding: no local timezone support, no reminder recurrence, no iCal export, --limit is blunt global cap."
 notes[1]{created_at,author,text}:
   "2026-03-31T21:28:33.277Z",codex-agent,Avoid changes to global TOON default behavior for existing commands.
 learnings[1]{created_at,author,text}:

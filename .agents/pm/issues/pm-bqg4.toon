@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,extensions,external-audit,pm-cli,sdk,types
 created_at: "2026-04-26T09:56:34.292Z"
-updated_at: "2026-04-26T13:16:31.724Z"
+updated_at: "2026-04-26T14:51:48.539Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 180
@@ -14,10 +14,11 @@ acceptance_criteria: "SDK exports concrete extension registration interfaces for
 parent: pm-o7be
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-o7be,parent,"2026-04-26T09:56:34.292Z",codex-agent,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-26T09:56:34.292Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'Extension SDK schema type definitions Record unknown' --limit 10; pm search 'SchemaFieldDefinition Record unknown ExtensionApi typing' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because existing open SDK issue pm-1etl covers module resolution/diagnostics,not compile-time contract precision for extension registration payloads."
   "2026-04-26T09:57:29.339Z",codex-agent,"SDK audit evidence: src/core/extensions/loader.ts currently aliases multiple extension registration contracts as Record<string, unknown> (SchemaFieldDefinition, SchemaItemTypeDefinition, SearchProviderDefinition, VectorStoreAdapterDefinition), which limits compile-time validation and editor guidance for extension authors. Recommend promoting these to explicit interfaces in SDK exports."
   "2026-04-26T13:16:31.724Z",cursor-agent,"Fresh SDK audit evidence 2026-04-26: external-style TypeScript smoke using defineExtension, ExtensionApi, and CommandDefinition compiled successfully after including required manifest priority. pm contracts --flags-only exposed all 52 PM_CORE_COMMAND_NAMES with no missing core commands; remaining DX gap is still the loose Record<string, unknown> aliases for FlagDefinition, SchemaFieldDefinition, SchemaItemTypeDefinition, SchemaMigrationDefinition, SearchProviderDefinition, and VectorStoreAdapterDefinition."
+  "2026-04-26T14:51:48.539Z",audit-agent,"2026-04-26 audit confirms SDK gaps: defineExtension is minimal, field/search/vector types are Record<string,unknown>, no extension scaffold template exists, no deactivate lifecycle hook. SDK exports are clean and well-documented in EXTENSIONS.md."
 files[2]{path,scope,note}:
   src/core/extensions/loader.ts,project,Extension API registration typing surface audited for loose payload contracts
   src/sdk/index.ts,project,SDK export surface reviewed for extension authoring DX

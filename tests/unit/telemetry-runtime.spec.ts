@@ -21,6 +21,7 @@ async function withTempGlobalRoot(run: (globalRoot: string) => Promise<void>): P
   const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pm-cli-telemetry-runtime-test-"));
   const globalRoot = path.join(tempRoot, ".pm-cli");
   process.env.PM_GLOBAL_PATH = globalRoot;
+  delete process.env.PM_TELEMETRY_DISABLED;
   try {
     await run(globalRoot);
   } finally {

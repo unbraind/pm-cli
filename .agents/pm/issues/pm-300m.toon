@@ -6,17 +6,18 @@ status: open
 priority: 1
 tags[5]: external-audit,health,observability,pm-cli,telemetry
 created_at: "2026-04-26T00:31:23.357Z"
-updated_at: "2026-04-26T13:51:52.888Z"
+updated_at: "2026-04-26T14:51:51.094Z"
 author: codex-agent
 estimated_minutes: 120
 acceptance_criteria: "pm health reports telemetry enabled policy, endpoint target, queue status summary, and environment overrides without leaking sensitive values."
 parent: pm-lnq3
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-lnq3,parent,"2026-04-26T00:31:23.357Z",codex-agent,null
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-04-26T00:31:23.357Z",codex-agent,Duplicate check evidence ran pm context limit 10 plus pm search health telemetry check limit 20 plus pm list-open limit 20 plus pm list-in-progress limit 20 and found no open item dedicated to telemetry check visibility in pm health
   "2026-04-26T08:42:51.310Z",codex-agent,"Follow-up evidence from latest audit: pm health --check-only --json remains blind to telemetry runtime/export queue state while remote stack is active and ingesting. Validation still needed to expose telemetry-enabled status, endpoint target, and export health summary in pm health output."
   "2026-04-26T09:56:04.220Z",codex-agent,"Audit follow-up 2026-04-26: remote Prometheus and Grafana confirm telemetry ingest activity, but pm health --check-only --json still omits telemetry runtime/export diagnostics. Recommend adding telemetry policy+endpoint snapshot (sanitized), queue depth/unacked indicators, and worker insert error counters so operators can detect remote ingestion degradation from CLI health output."
   "2026-04-26T13:16:31.774Z",cursor-agent,"Fresh telemetry health audit evidence 2026-04-26: local telemetry default-enabled commands flushed successfully to https://pm-cli.unbrained.dev/v1/events; failed exports were queued with retry metadata and redacted payloads; opt-out stopped subsequent event writes. pm health --check-only remains focused on tracker health and does not expose telemetry endpoint/queue/export state, so this diagnostics gap remains open."
   "2026-04-26T13:51:52.888Z",cursor-agent,"Telemetry analysis evidence: persisted payload key coverage includes runtime node platform data but no pm CLI version key, and start/finish deltas appeared for update, test-all, and get. pm health telemetry diagnostics should surface enough local/export state to catch these instrumentation quality gaps without raw identifiers."
+  "2026-04-26T14:51:51.094Z",audit-agent,"2026-04-26 audit confirms: pm health has NO telemetry check despite operations docs claiming it does. This is a documentation/implementation gap. Telemetry runtime health should be surfaced in pm health output."
 body: ""
