@@ -34,6 +34,17 @@ const SENSITIVE_KEYWORDS = [
   "credentials",
   "bearer",
 ] as const;
+const SENSITIVE_INLINE_KEY_PATTERN =
+  "(?:token|secret|password|passwd|api[_-]?key|apikey|authorization|cookie|session|credentials|bearer)";
+const INLINE_SENSITIVE_ASSIGNMENT_PATTERN = new RegExp(
+  `\\b(${SENSITIVE_INLINE_KEY_PATTERN})\\s*([:=])\\s*([^\\s,;]+)`,
+  "giu",
+);
+const INLINE_SENSITIVE_FLAG_PATTERN = new RegExp(
+  `(--${SENSITIVE_INLINE_KEY_PATTERN})(=|\\s+)([^\\s,;]+)`,
+  "giu",
+);
+const ABSOLUTE_PATH_TOKEN_PATTERN = /(^|[\s"'`(=])\/(?:[^\s"'`),;]+)/g;
 
 interface TelemetryEvent {
   schema_version: number;
@@ -91,17 +102,37 @@ function isSensitiveKey(key: string): boolean {
   );
 }
 
+function redactInlineSensitiveAssignments(input: string): string {
+  const withoutAssignments = input.replaceAll(
+    INLINE_SENSITIVE_ASSIGNMENT_PATTERN,
+    (_match: string, key: string, delimiter: string): string => `${key}${delimiter}[redacted]`,
+  );
+  return withoutAssignments.replaceAll(
+    INLINE_SENSITIVE_FLAG_PATTERN,
+    (_match: string, flag: string, delimiter: string): string => `${flag}${delimiter}[redacted]`,
+  );
+}
+
+function redactAbsolutePathTokens(input: string): string {
+  return input.replaceAll(
+    ABSOLUTE_PATH_TOKEN_PATTERN,
+    (_match: string, prefix: string): string => `${prefix}[redacted_path]`,
+  );
+}
+
 function sanitizeString(input: string): string {
   const withoutEmails = input.replaceAll(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/giu, "[redacted_email]");
   const withoutBearer = withoutEmails.replaceAll(/bearer\s+[a-z0-9._=-]+/giu, "bearer [redacted_token]");
-  const trimmed = withoutBearer.trim();
+  const withoutInlineSecrets = redactInlineSensitiveAssignments(withoutBearer);
+  const withoutAbsolutePaths = redactAbsolutePathTokens(withoutInlineSecrets);
+  const trimmed = withoutAbsolutePaths.trim();
   if (trimmed.startsWith("/") && trimmed.length > 1) {
     return "[redacted_path]";
   }
-  if (withoutBearer.length > 512) {
-    return `${withoutBearer.slice(0, 509)}...`;
+  if (withoutAbsolutePaths.length > 512) {
+    return `${withoutAbsolutePaths.slice(0, 509)}...`;
   }
-  return withoutBearer;
+  return withoutAbsolutePaths;
 }
 
 function sanitizeValue(value: unknown, keyHint?: string): unknown {

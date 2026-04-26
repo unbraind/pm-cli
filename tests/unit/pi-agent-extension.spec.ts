@@ -693,6 +693,14 @@ describe("Pi agent extension wrapper for pm", () => {
       items: { type: "string" },
     });
 
+    const updateManySchema = schemaForAction(tool.parameters as Record<string, unknown>, "update-many");
+    expect(updateManySchema.required).toEqual(["action"]);
+    expect(schemaProperty(updateManySchema, "filterStatus").type).toBe("string");
+    expect(schemaProperty(updateManySchema, "filterAssigneeFilter").enum).toEqual(["assigned", "unassigned"]);
+    expect(schemaProperty(updateManySchema, "rollback").type).toBe("string");
+    expect(schemaProperty(updateManySchema, "noCheckpoint").type).toBe("boolean");
+    expect(schemaProperty(updateManySchema, "allowAuditDepUpdate").type).toBe("boolean");
+
     const templatesSaveSchema = schemaForAction(tool.parameters as Record<string, unknown>, "templates-save");
     const templatesSaveProperties = templatesSaveSchema.properties as Record<string, unknown>;
     expect(templatesSaveProperties.createMode).toBeUndefined();
@@ -879,6 +887,81 @@ describe("Pi agent extension wrapper for pm", () => {
         status: "open",
       }),
     ).toEqual(["--json", "dedupe-audit", "--mode", "title_fuzzy", "--threshold", "0.8", "--status", "open"]);
+
+    expect(
+      buildPmCliArgs({
+        action: "update-many",
+        filterStatus: "open",
+        filterType: "Task",
+        filterTag: "pi",
+        filterPriority: 1,
+        filterAssignee: "pi-bot",
+        filterAssigneeFilter: "assigned",
+        filterParent: "pm-epic01",
+        filterSprint: "sprint-7",
+        filterRelease: "vnext",
+        limit: 5,
+        offset: 1,
+        dryRun: true,
+        noCheckpoint: true,
+        status: "in_progress",
+        assignee: "pi-owner",
+        parent: "pm-feature01",
+        blockedBy: "pm-dep01",
+        blockedReason: "waiting on dependency",
+        unblockNote: "resume after merge",
+        dep: ["id=pm-dep01,kind=related"],
+        replaceDeps: true,
+        replaceTests: true,
+        allowAuditDepUpdate: true,
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        "--json",
+        "update-many",
+        "--filter-status",
+        "open",
+        "--filter-type",
+        "Task",
+        "--filter-tag",
+        "pi",
+        "--filter-priority",
+        "1",
+        "--filter-assignee",
+        "pi-bot",
+        "--filter-assignee-filter",
+        "assigned",
+        "--filter-parent",
+        "pm-epic01",
+        "--filter-sprint",
+        "sprint-7",
+        "--filter-release",
+        "vnext",
+        "--limit",
+        "5",
+        "--offset",
+        "1",
+        "--dry-run",
+        "--no-checkpoint",
+        "--status",
+        "in_progress",
+        "--assignee",
+        "pi-owner",
+        "--parent",
+        "pm-feature01",
+        "--blocked-by",
+        "pm-dep01",
+        "--blocked-reason",
+        "waiting on dependency",
+        "--unblock-note",
+        "resume after merge",
+        "--dep",
+        "id=pm-dep01,kind=related",
+        "--replace-deps",
+        "--replace-tests",
+        "--allow-audit-dep-update",
+      ]),
+    );
 
     expect(
       buildPmCliArgs({

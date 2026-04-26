@@ -72,7 +72,13 @@ describe("core/telemetry/runtime", () => {
 
       const active = await startTelemetryCommand({
         command: "create",
-        args: ["--api-key", "supersecret", "--token=abc123", "user@example.com"],
+        args: [
+          "--api-key",
+          "supersecret",
+          "--token=abc123",
+          "user@example.com",
+          "token=inline-secret --password hunter2 /home/steve/private/path",
+        ],
         options: {
           apiKey: "value",
           title: "Telemetry smoke",
@@ -111,8 +117,64 @@ describe("core/telemetry/runtime", () => {
         "[redacted]",
         "--token=[redacted]",
         "[redacted_email]",
+        "token=[redacted] --password [redacted] [redacted_path]",
       ]);
       expect(queued.event.payload.command_options.apiKey).toBe("[redacted]");
+    });
+  });
+
+  it("redacts inline secrets and paths in command_finish result summaries", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      globalThis.fetch = vi.fn(async () => {
+        throw new Error("network_down");
+      }) as unknown as typeof fetch;
+
+      const active = await startTelemetryCommand({
+        command: "search",
+        args: ["query"],
+        options: {},
+        global: {
+          json: false,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+      expect(active).not.toBeNull();
+
+      await finishTelemetryCommand(active, {
+        ok: true,
+        result: {
+          query: "user@example.com token=supersecret --password hunter2 /home/steve/private/path",
+        },
+      });
+
+      const queueRaw = await fs.readFile(telemetryQueuePath(globalRoot), "utf8");
+      const queuedEntries = queueRaw
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+        .map((line) =>
+          JSON.parse(line) as {
+            event: {
+              event_type: string;
+              payload: {
+                result_summary?: {
+                  preview?: {
+                    query?: string;
+                  };
+                };
+              };
+            };
+          },
+        );
+      const finishEvent = queuedEntries.find((entry) => entry.event.event_type === "command_finish");
+      expect(finishEvent).toBeDefined();
+      expect(finishEvent?.event.payload.result_summary?.preview?.query).toBe(
+        "[redacted_email] token=[redacted] --password [redacted] [redacted_path]",
+      );
     });
   });
 

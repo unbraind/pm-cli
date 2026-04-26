@@ -259,6 +259,85 @@ describe("runUpdateMany", () => {
     });
   });
 
+  it("accepts shared update metadata flags from CLI wiring", async () => {
+    await withTempPmPath(async (context) => {
+      const firstId = createTask(context, "bulk-shared-flags-a", { tags: "bulk-shared-flags" });
+      const secondId = createTask(context, "bulk-shared-flags-b", { tags: "bulk-shared-flags" });
+
+      const parentCreate = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Bulk shared parent feature",
+          "--description",
+          "Parent for update-many shared flag test",
+          "--type",
+          "Feature",
+          "--create-mode",
+          "progressive",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--message",
+          "create parent for shared flag test",
+        ],
+        { expectJson: true },
+      );
+      expect(parentCreate.code).toBe(0);
+      const parentId = (parentCreate.json as { item: { id: string } }).item.id;
+
+      const updateResult = context.runCli(
+        [
+          "update-many",
+          "--json",
+          "--filter-tag",
+          "bulk-shared-flags",
+          "--assignee",
+          "bulk-owner",
+          "--parent",
+          parentId,
+          "--blocked-by",
+          "pm-dependency",
+          "--blocked-reason",
+          "blocked in shared-flag test",
+          "--unblock-note",
+          "resume once dependency closes",
+          "--message",
+          "bulk apply shared metadata",
+        ],
+        { expectJson: true },
+      );
+      expect(updateResult.code).toBe(0);
+      const updateJson = updateResult.json as {
+        updated_count?: number;
+        failed_count?: number;
+      };
+      expect(updateJson.updated_count).toBe(2);
+      expect(updateJson.failed_count).toBe(0);
+
+      const first = context.runCli(["get", firstId, "--json"], { expectJson: true });
+      const second = context.runCli(["get", secondId, "--json"], { expectJson: true });
+      expect(first.code).toBe(0);
+      expect(second.code).toBe(0);
+      expect((first.json as { item: Record<string, unknown> }).item).toMatchObject({
+        assignee: "bulk-owner",
+        parent: parentId,
+        blocked_by: "pm-dependency",
+        blocked_reason: "blocked in shared-flag test",
+        unblock_note: "resume once dependency closes",
+      });
+      expect((second.json as { item: Record<string, unknown> }).item).toMatchObject({
+        assignee: "bulk-owner",
+        parent: parentId,
+        blocked_by: "pm-dependency",
+        blocked_reason: "blocked in shared-flag test",
+        unblock_note: "resume once dependency closes",
+      });
+    });
+  });
+
   it("treats linked-array mutation flags as actionable in dry-run and apply modes", async () => {
     await withTempPmPath(async (context) => {
       const firstId = createTask(context, "bulk-linked-tests-a", { tags: "bulk-linked-tests" });

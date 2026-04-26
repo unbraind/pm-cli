@@ -12,6 +12,7 @@ import {
   PI_SEARCH_FILTER_OPTION_CONTRACTS,
   PI_SHARED_CREATE_UPDATE_OPTION_CONTRACTS,
   PI_UPDATE_OPTION_CONTRACTS,
+  PI_UPDATE_MANY_FILTER_OPTION_CONTRACTS,
   type PiOptionFlagContract,
 } from "@unbrained/pm-cli/sdk";
 
@@ -57,6 +58,17 @@ export interface PmToolParameters {
   createMode?: string;
   schedulePreset?: string;
   status?: string;
+  filterStatus?: string;
+  filterType?: string;
+  filterTag?: string;
+  filterPriority?: NumericFlagInput;
+  filterDeadlineBefore?: string;
+  filterDeadlineAfter?: string;
+  filterAssignee?: string;
+  filterAssigneeFilter?: string;
+  filterParent?: string;
+  filterSprint?: string;
+  filterRelease?: string;
   closeReason?: string;
   priority?: NumericFlagInput;
   tags?: string;
@@ -145,6 +157,8 @@ export interface PmToolParameters {
   checkContext?: boolean;
   autoPmContext?: boolean;
   dryRun?: boolean;
+  rollback?: string;
+  noCheckpoint?: boolean;
   gcScope?: string[];
   validateClose?: string;
   checkMetadata?: boolean;
@@ -172,6 +186,7 @@ export interface PmToolParameters {
   allowAuditLearning?: boolean;
   allowAuditComment?: boolean;
   allowAuditUpdate?: boolean;
+  allowAuditDepUpdate?: boolean;
   allowAuditRelease?: boolean;
   force?: boolean;
   run?: boolean;
@@ -393,6 +408,25 @@ function addUpdateFlags(args: string[], params: PmToolParameters): void {
   pushContractedFlags(args, params, scalarContracts);
   addSharedCreateUpdateFlags(args, params);
   pushContractedFlags(args, params, repeatableContracts);
+  const presenceBooleanFlags: Array<{ enabled: boolean | undefined; flag: string }> = [
+    { enabled: params.clearDeps, flag: "--clear-deps" },
+    { enabled: params.clearComments, flag: "--clear-comments" },
+    { enabled: params.clearNotes, flag: "--clear-notes" },
+    { enabled: params.clearLearnings, flag: "--clear-learnings" },
+    { enabled: params.clearFiles, flag: "--clear-files" },
+    { enabled: params.clearTests, flag: "--clear-tests" },
+    { enabled: params.clearDocs, flag: "--clear-docs" },
+    { enabled: params.clearReminders, flag: "--clear-reminders" },
+    { enabled: params.clearEvents, flag: "--clear-events" },
+    { enabled: params.clearTypeOptions, flag: "--clear-type-options" },
+    { enabled: params.allowAuditUpdate, flag: "--allow-audit-update" },
+    { enabled: params.allowAuditDepUpdate, flag: "--allow-audit-dep-update" },
+  ];
+  for (const entry of presenceBooleanFlags) {
+    if (entry.enabled) {
+      args.push(entry.flag);
+    }
+  }
   if (params.replaceDeps) {
     args.push("--replace-deps");
   }
@@ -688,6 +722,18 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       return args;
     case "update":
       args.push("update", requireString(params.id, "id", action));
+      addUpdateFlags(args, params);
+      return args;
+    case "update-many":
+      args.push("update-many");
+      pushContractedFlags(args, params, PI_UPDATE_MANY_FILTER_OPTION_CONTRACTS);
+      if (params.dryRun) {
+        args.push("--dry-run");
+      }
+      pushOption(args, "--rollback", params.rollback);
+      if (params.noCheckpoint) {
+        args.push("--no-checkpoint");
+      }
       addUpdateFlags(args, params);
       return args;
     case "close":

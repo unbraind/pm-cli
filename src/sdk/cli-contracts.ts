@@ -176,6 +176,7 @@ export const PM_TOOL_ACTIONS = [
   "activity",
   "restore",
   "update",
+  "update-many",
   "close",
   "delete",
   "append",
@@ -387,6 +388,22 @@ export const PI_UPDATE_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "clearEvents", flag: "--clear-events" },
   { param: "clearTypeOptions", flag: "--clear-type-options" },
   { param: "allowAuditDepUpdate", flag: "--allow-audit-dep-update" },
+];
+
+export const PI_UPDATE_MANY_FILTER_OPTION_CONTRACTS: PiOptionFlagContract[] = [
+  { param: "filterStatus", flag: "--filter-status" },
+  { param: "filterType", flag: "--filter-type" },
+  { param: "filterTag", flag: "--filter-tag" },
+  { param: "filterPriority", flag: "--filter-priority" },
+  { param: "filterDeadlineBefore", flag: "--filter-deadline-before" },
+  { param: "filterDeadlineAfter", flag: "--filter-deadline-after" },
+  { param: "filterAssignee", flag: "--filter-assignee" },
+  { param: "filterAssigneeFilter", flag: "--filter-assignee-filter" },
+  { param: "filterParent", flag: "--filter-parent" },
+  { param: "filterSprint", flag: "--filter-sprint" },
+  { param: "filterRelease", flag: "--filter-release" },
+  { param: "limit", flag: "--limit" },
+  { param: "offset", flag: "--offset" },
 ];
 
 export const PI_CALENDAR_OPTION_CONTRACTS: PiOptionFlagContract[] = [
@@ -1418,6 +1435,17 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   createMode: { type: "string", enum: ["strict", "progressive"] },
   schedulePreset: { type: "string", enum: ["lightweight"] },
   status: { type: "string", enum: ["draft", "open", "in_progress", "blocked", "closed", "canceled", "in-progress"] },
+  filterStatus: { type: "string" },
+  filterType: { type: "string" },
+  filterTag: { type: "string" },
+  filterPriority: { anyOf: [{ type: "string" }, { type: "number" }] },
+  filterDeadlineBefore: { type: "string" },
+  filterDeadlineAfter: { type: "string" },
+  filterAssignee: { type: "string" },
+  filterAssigneeFilter: { type: "string", enum: ["assigned", "unassigned"] },
+  filterParent: { type: "string" },
+  filterSprint: { type: "string" },
+  filterRelease: { type: "string" },
   closeReason: { type: "string" },
   priority: { anyOf: [{ type: "string" }, { type: "number" }] },
   tags: { type: "string" },
@@ -1538,6 +1566,8 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   allowAuditDepUpdate: { type: "boolean" },
   allowAuditRelease: { type: "boolean" },
   dryRun: { type: "boolean" },
+  rollback: { type: "string" },
+  noCheckpoint: { type: "boolean" },
   force: { type: "boolean" },
   run: { type: "boolean" },
   count: { type: "boolean" },
@@ -1640,6 +1670,14 @@ const UPDATE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   "force",
 ]);
 
+const UPDATE_MANY_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
+  ...PI_UPDATE_MANY_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
+  ...UPDATE_CONTRACT_PARAMETER_KEYS,
+  "dryRun",
+  "rollback",
+  "noCheckpoint",
+]);
+
 const CALENDAR_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...PI_CALENDAR_OPTION_CONTRACTS.map((entry) => entry.param),
   "past",
@@ -1725,6 +1763,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   activity: { optional: ACTIVITY_CONTRACT_PARAMETER_KEYS },
   restore: { required: ["id", "target"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   update: { required: ["id"], optional: UPDATE_CONTRACT_PARAMETER_KEYS },
+  "update-many": { optional: UPDATE_MANY_CONTRACT_PARAMETER_KEYS },
   close: { required: ["id", "text"], optional: ["validateClose", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   delete: { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   append: { required: ["id", "body"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },

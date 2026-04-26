@@ -7,3 +7,4 @@ coverage/
 .agents/pm/index/manifest.json
 .agents/pm/search/
 .agents/pm/checkpoints/
+.agents/pm/runtime/telemetry/
