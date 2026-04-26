@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: 2026-04-26,dogfood,external-audit,pm-cli,stabilization
 created_at: "2026-04-26T00:29:45.075Z"
-updated_at: "2026-04-26T09:12:54.288Z"
+updated_at: "2026-04-26T09:58:07.097Z"
 author: codex-agent
 estimated_minutes: 480
 acceptance_criteria: Full sandboxed test and coverage suites pass; telemetry and extension dogfood evidence captured; findings linked to affected items with reproducible evidence.
@@ -21,7 +21,7 @@ dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-g9yi,related,"2026-04-26T08:43:12.806Z",codex-agent,null
   pm-kglq,related,"2026-04-26T08:43:12.806Z",codex-agent,null
   pm-vhdc,related,"2026-04-26T08:43:12.806Z",codex-agent,null
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-04-26T00:29:45.075Z",codex-agent,Duplicate check evidence ran pm context limit 10 plus pm search comprehensive dogfood audit limit 10 plus pm list-open limit 20 plus pm list-in-progress limit 20 and found no active task for 2026-04-26 stabilization scope
   "2026-04-26T00:30:20.152Z",codex-agent,"Evidence sweep 2026-04-26: pnpm build succeeded; node scripts/run-tests.mjs test passed 78 files and 1048 tests in 353.97s; node scripts/run-tests.mjs coverage passed 78 files and 1048 tests with 100 percent thresholds in 779.25s after timeout stabilization and coverage-list alignment updates."
   "2026-04-26T00:30:21.409Z",codex-agent,"Dogfood matrix evidence: executed comprehensive valid command sweep in /tmp/pm-audit-dogfood-valid-CcOz3W with all command groups returning zero non-zero exit codes including init/create/update/list/search/context/calendar/deps/aggregate/dedupe/history/activity/contracts/completion/validate/health/stats/gc/test/test-all/test-runs/extensions/beads/todos and lifecycle aliases."
@@ -29,6 +29,7 @@ comments[7]{created_at,author,text}:
   "2026-04-26T08:43:17.476Z",codex-agent,"Full audit execution evidence (latest run): Phase1 bootstrap/build/tests/coverage/health all passed; Phase2 sandbox lifecycle command matrix completed in isolated project /tmp/pm-dogfood-20260426-102156 covering init/config/CRUD/list/search/aggregate/dedupe/context/stats/files/docs/test/comments/notes/learnings/deps/history/activity/templates/contracts/completion/update-many rollback; Phase3 calendar views/filters/formats/includes/recurrence verified including recurring event expansion; Phase4 SDK+extension validation covered local install/activate/deactivate/uninstall/adopt/adopt-all plus project-over-global precedence and parser/service/preflight overrides; Phase5 remote telemetry stack verified on steve@192.168.1.183 with service health, ingest acceptance, Postgres persistence, DSAR export/delete, backup script execution, and observed worker invalid-UUID failure pattern now tracked in pm-vhdc."
   "2026-04-26T08:49:20.578Z",codex-agent,"Final governance evidence: pm validate --check-metadata --check-resolution --check-lifecycle --check-stale-blockers --check-files --check-history-drift --json now returns ok=true and warnings=[] after assignee/lifecycle/path normalization sweep."
   "2026-04-26T09:12:54.288Z",codex-agent,"Post-fix verification rerun complete: node scripts/run-tests.mjs test (78/78 files, 1052/1052 tests passed) and node scripts/run-tests.mjs coverage (78/78 files, 1052/1052 tests passed, 100% coverage report)."
+  "2026-04-26T09:58:07.097Z",codex-agent,"Phase 4b-c and Phase 5 continuation evidence (2026-04-26): verified remote stack on steve@192.168.1.183 including healthy compose services, public health endpoints, Prometheus/Tempo activity, Postgres telemetry persistence, and synthetic UUID event persistence. Documented new actionable findings as pm-r9ei (Grafana RabbitMQ panel selector mismatch), pm-bqg4 (SDK extension typing hardening), and pm-mpmv (Decision-type guidance alignment), while updating existing telemetry issues pm-vhdc and pm-300m with fresh queue/log diagnostics."
 notes[2]{created_at,author,text}:
   "2026-04-26T00:30:24.098Z",codex-agent,Custom schema extension dogfood confirmed project-specific Decision and Change types can be added without core code changes via api.registerItemTypes and filtered/listed through standard commands.
   "2026-04-26T08:43:19.202Z",codex-agent,"Latest run finding summary: one code-level validation gap (undefined placeholder IDs for parent/dependencies) was fixed and closed as pm-g9yi; telemetry ingestion UUID boundary hardening remains open in pm-vhdc; telemetry health visibility remains tracked in pm-300m; recurrence parse UX hinting remains tracked in pm-kglq."

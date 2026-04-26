@@ -6,14 +6,15 @@ status: open
 priority: 1
 tags[5]: external-audit,health,observability,pm-cli,telemetry
 created_at: "2026-04-26T00:31:23.357Z"
-updated_at: "2026-04-26T08:44:48.883Z"
+updated_at: "2026-04-26T09:57:52.146Z"
 author: codex-agent
 estimated_minutes: 120
 acceptance_criteria: "pm health reports telemetry enabled policy, endpoint target, queue status summary, and environment overrides without leaking sensitive values."
 parent: pm-lnq3
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-lnq3,parent,"2026-04-26T00:31:23.357Z",codex-agent,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-26T00:31:23.357Z",codex-agent,Duplicate check evidence ran pm context limit 10 plus pm search health telemetry check limit 20 plus pm list-open limit 20 plus pm list-in-progress limit 20 and found no open item dedicated to telemetry check visibility in pm health
   "2026-04-26T08:42:51.310Z",codex-agent,"Follow-up evidence from latest audit: pm health --check-only --json remains blind to telemetry runtime/export queue state while remote stack is active and ingesting. Validation still needed to expose telemetry-enabled status, endpoint target, and export health summary in pm health output."
+  "2026-04-26T09:56:04.220Z",codex-agent,"Audit follow-up 2026-04-26: remote Prometheus and Grafana confirm telemetry ingest activity, but pm health --check-only --json still omits telemetry runtime/export diagnostics. Recommend adding telemetry policy+endpoint snapshot (sanitized), queue depth/unacked indicators, and worker insert error counters so operators can detect remote ingestion degradation from CLI health output."
 body: ""

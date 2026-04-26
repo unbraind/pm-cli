@@ -1,0 +1,25 @@
+id: pm-bqg4
+title: Strengthen SDK typing for extension registration contracts
+description: "SDK/extension audit found extension-facing registration types that are too loose (Record<string, unknown> style payloads), which weakens autocomplete and compile-time validation for schema/search/service extension authors and increases trial-and-error integration."
+type: Issue
+status: open
+priority: 1
+tags[6]: agent-ux,extensions,external-audit,pm-cli,sdk,types
+created_at: "2026-04-26T09:56:34.292Z"
+updated_at: "2026-04-26T09:57:29.339Z"
+assignee: codex-agent
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: "SDK exports concrete extension registration interfaces for schema/search/service payloads, examples compile with those types, and extension authoring docs reflect the typed contracts."
+parent: pm-o7be
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-o7be,parent,"2026-04-26T09:56:34.292Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-26T09:56:34.292Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'Extension SDK schema type definitions Record unknown' --limit 10; pm search 'SchemaFieldDefinition Record unknown ExtensionApi typing' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because existing open SDK issue pm-1etl covers module resolution/diagnostics,not compile-time contract precision for extension registration payloads."
+  "2026-04-26T09:57:29.339Z",codex-agent,"SDK audit evidence: src/core/extensions/loader.ts currently aliases multiple extension registration contracts as Record<string, unknown> (SchemaFieldDefinition, SchemaItemTypeDefinition, SearchProviderDefinition, VectorStoreAdapterDefinition), which limits compile-time validation and editor guidance for extension authors. Recommend promoting these to explicit interfaces in SDK exports."
+files[2]{path,scope,note}:
+  src/core/extensions/loader.ts,project,Extension API registration typing surface audited for loose payload contracts
+  src/sdk/index.ts,project,SDK export surface reviewed for extension authoring DX
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,Extension authoring docs to align with stronger SDK type contracts
+body: ""

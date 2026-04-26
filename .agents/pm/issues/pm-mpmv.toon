@@ -1,0 +1,23 @@
+id: pm-mpmv
+title: Align default item types with Decision tracking guidance
+description: "Current runtime create/type contracts include Chore,Epic,Event,Feature,Issue,Meeting,Milestone,Reminder,Task but exclude Decision, while repository operating guidance explicitly expects decision artifacts. This mismatch creates first-run governance friction for agent workflows."
+type: Issue
+status: open
+priority: 1
+tags[5]: agent-ux,external-audit,governance,item-types,pm-cli
+created_at: "2026-04-26T09:56:45.340Z"
+updated_at: "2026-04-26T09:57:31.949Z"
+assignee: codex-agent
+author: codex-agent
+estimated_minutes: 120
+acceptance_criteria: "Default type guidance is consistent: either include Decision in the default runtime type registry/contracts or update bootstrap guidance to auto-provision Decision with clear examples."
+parent: pm-r15d
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-r15d,parent,"2026-04-26T09:56:45.340Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-26T09:56:45.340Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'Decision item type missing' --limit 10; pm search 'built-in Decision item type' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because no open item currently tracks alignment between default type registry/contracts and decision-tracking guidance."
+  "2026-04-26T09:57:31.949Z",codex-agent,"Governance evidence: contracts output for create runtime_schema types currently lists Chore,Epic,Event,Feature,Issue,Meeting,Milestone,Reminder,Task with no Decision type, while repository operating guidance expects decision artifacts. Aligning defaults or bootstrap guidance avoids first-run mismatch for agent workflows."
+files[2]{path,scope,note}:
+  AGENTS.md,project,Repository operating guidance requires decision artifacts
+  src/core/shared/constants.ts,project,Runtime default type registry lacks Decision in current contract output
+body: ""

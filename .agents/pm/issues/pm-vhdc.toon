@@ -6,16 +6,17 @@ status: open
 priority: 1
 tags[4]: observability,pm-cli,telemetry,validation
 created_at: "2026-04-26T08:38:49.149Z"
-updated_at: "2026-04-26T08:44:45.392Z"
+updated_at: "2026-04-26T09:57:49.961Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: Ingestion path validates UUID-typed identifiers before queueing; invalid payloads are dropped/quarantined with explicit counters and do not repeatedly fail worker inserts.
 parent: pm-lnq3
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-lnq3,parent,"2026-04-26T08:38:49.149Z",codex-agent,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-26T08:38:49.149Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'telemetry worker invalid uuid' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because current telemetry open items cover docs/health visibility but not ingestion boundary UUID validation and worker retry churn."
   "2026-04-26T08:42:50.281Z",codex-agent,"Remote verification evidence 2026-04-26: docker compose services healthy on steve@192.168.1.183 (telemetry-api/worker/rabbitmq/postgres/prometheus/loki/tempo/alloy/grafana); /healthz returned ok queue pm.telemetry.events; synthetic POST /v1/events accepted=1; Postgres telemetry_events count increased (9516->9519) and live command ingest confirmed (stats delta +1); DSAR export/delete scripts executed successfully for probe installation UUID. Outstanding failure signal: telemetry-worker logs repeated worker_insert_failed invalid UUID errors for non-UUID identifiers, indicating ingestion boundary lacks strict UUID validation before worker insert."
+  "2026-04-26T09:56:01.971Z",codex-agent,"Remote telemetry verification 2026-04-26: all stack services are running and healthy, public /healthz and Grafana API health respond (200), and a UUID-based synthetic event command=remote-audit-smoke was accepted and persisted in Postgres. RabbitMQ queue depth remains non-zero (messages=4, messages_unacknowledged=4) while telemetry-worker logs repeatedly show worker_insert_failed invalid UUID errors for non-UUID identifiers, confirming poison-message churn when ingestion accepts malformed UUID fields."
 files[3]{path,scope,note}:
   .agents/pm/search/operations/REMOTE_TELEMETRY_STACK.md,project,Remote telemetry stack runbook used during verification
   .gitignore,project,Telemetry runtime and search caches excluded from git
