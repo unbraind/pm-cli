@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added `Decision` as a built-in item type with `decisions/` folder mapping, completion support, and stats coverage.
+- Added structured `close_through_update` error context with actionable `pm close` examples when users attempt `pm update --status closed`.
+- Added audit flag recommendations (`--allow-audit-update`, `--allow-audit-dep-update`, `--allow-audit-comment`) to ownership conflict error guidance as non-force alternatives.
+
+### Changed
+- Bumped `pnpm/action-setup` from v5 to v6 in all CI/release/nightly workflows (pnpm v11 support).
+- Bumped `softprops/action-gh-release` from v2 to v3 in release workflow (Node 24 runtime).
+- Bumped `undici`, `@types/node`, `@vitest/coverage-v8`, `vitest`, and `typescript` to latest.
+
 - Added `pm files discover <ID>` to scan item text for existing project/global file paths, report addable vs already linked candidates, and optionally add missing linked files with `--apply`.
 - Added `pm create --comment` plain-text shorthand support so comment seeds can be passed as raw text without mandatory `text=<value>` wrappers.
 - Added ownership-safe dependency-only audit updates via `pm update --allow-audit-dep-update` / `--allow_audit_dep_update` for append-only non-owner `--dep` additions.

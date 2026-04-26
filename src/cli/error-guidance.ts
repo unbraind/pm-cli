@@ -181,14 +181,20 @@ function buildPmCliErrorGuidance(rawMessage: string, context?: PmCliErrorContext
         title: "Ownership conflict",
         happened: message,
         required:
-          "Run as assigned owner, use claim/release audit handoff options when applicable, or use --force only for approved override scenarios.",
+          "Run as assigned owner, use audit flags for safe non-owner updates, or use --force only for approved override scenarios.",
         why: "Ownership checks prevent accidental concurrent mutations on claimed items and protect against conflicting writes.",
         examples: [
+          'pm update pm-a1b2 --allow-audit-update --description "..." --author "audit-agent"',
+          'pm update pm-a1b2 --allow-audit-dep-update --dep "..." --author "audit-agent"',
+          'pm comments pm-a1b2 "..." --allow-audit-comment --author "audit-agent"',
           'pm claim pm-a1b2 --author "codex-agent"',
           'pm release pm-a1b2 --allow-audit-release --author "reviewer"',
           'pm update pm-a1b2 --status in_progress --force',
         ],
         nextSteps: [
+          "Use --allow-audit-update for metadata-only non-owner updates (excludes lifecycle/ownership fields).",
+          "Use --allow-audit-dep-update for dependency-only non-owner additions.",
+          "Use --allow-audit-comment on comments/notes/learnings for append-only audit entries.",
           "Use --force for PM audits and systematic metadata updates performed by leads/maintainers.",
           "Use --force when correcting known stale metadata after coordinating ownership changes.",
           'For non-terminal reassignment, prefer "pm claim <ID> --author <you>" before running other mutations.',

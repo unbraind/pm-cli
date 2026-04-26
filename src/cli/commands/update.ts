@@ -1485,6 +1485,18 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
           throw new PmCliError(
             `Invalid --status value "${statusRegistry.close_status}". Use "pm close <ID> <TEXT>" to close an item.`,
             EXIT_CODE.USAGE,
+            {
+              code: "close_through_update",
+              why: "Closing requires a close reason and optional validation checks that pm update cannot enforce. Use pm close for auditable close workflows.",
+              examples: [
+                `pm close ${id} "All acceptance criteria met" --author "${author}" --message "Close: verified"`,
+                `pm close ${id} "Resolved" --validate-close warn --author "${author}"`,
+              ],
+              nextSteps: [
+                'Use "pm close <ID> <reason>" to close with required close reason and optional --validate-close.',
+                'To cancel instead, use "pm update <ID> --status canceled".',
+              ],
+            },
           );
         }
         document.front_matter.status = status;

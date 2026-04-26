@@ -4,6 +4,7 @@ export const BUILTIN_ITEM_TYPE_VALUES = [
   "Task",
   "Chore",
   "Issue",
+  "Decision",
   "Event",
   "Reminder",
   "Milestone",

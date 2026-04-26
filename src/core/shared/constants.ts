@@ -19,6 +19,7 @@ export const PM_CORE_REQUIRED_SUBDIRS = [
 ] as const;
 
 export const PM_OPTIONAL_TYPE_SUBDIRS = [
+  "decisions",
   "events",
   "reminders",
   "milestones",
@@ -33,6 +34,7 @@ export const TYPE_TO_FOLDER: Record<BuiltinItemType, string> = {
   Task: "tasks",
   Chore: "chores",
   Issue: "issues",
+  Decision: "decisions",
   Event: "events",
   Reminder: "reminders",
   Milestone: "milestones",

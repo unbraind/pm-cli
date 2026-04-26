@@ -125,7 +125,7 @@ describe("GitHub workflow contract", () => {
       "run: pnpm smoke:npx",
       "run: npm publish",
       "NPM_TOKEN",
-      "uses: softprops/action-gh-release@v2",
+      "uses: softprops/action-gh-release@v3",
       "uses: actions/upload-artifact@v7",
       "path: coverage",
       "if-no-files-found: ignore",

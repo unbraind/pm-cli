@@ -2,23 +2,28 @@ id: pm-mpmv
 title: Align default item types with Decision tracking guidance
 description: "Current runtime create/type contracts include Chore,Epic,Event,Feature,Issue,Meeting,Milestone,Reminder,Task but exclude Decision, while repository operating guidance explicitly expects decision artifacts. This mismatch creates first-run governance friction for agent workflows."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,external-audit,governance,item-types,pm-cli
 created_at: "2026-04-26T09:56:45.340Z"
-updated_at: "2026-04-26T13:16:31.767Z"
-assignee: codex-agent
+updated_at: "2026-04-26T14:26:47.455Z"
 author: codex-agent
 estimated_minutes: 120
 acceptance_criteria: "Default type guidance is consistent: either include Decision in the default runtime type registry/contracts or update bootstrap guidance to auto-provision Decision with clear examples."
 parent: pm-r15d
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-r15d,parent,"2026-04-26T09:56:45.340Z",codex-agent,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-26T09:56:45.340Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'Decision item type missing' --limit 10; pm search 'built-in Decision item type' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because no open item currently tracks alignment between default type registry/contracts and decision-tracking guidance."
   "2026-04-26T09:57:31.949Z",codex-agent,"Governance evidence: contracts output for create runtime_schema types currently lists Chore,Epic,Event,Feature,Issue,Meeting,Milestone,Reminder,Task with no Decision type, while repository operating guidance expects decision artifacts. Aligning defaults or bootstrap guidance avoids first-run mismatch for agent workflows."
   "2026-04-26T13:16:31.767Z",cursor-agent,"Fresh extension audit evidence 2026-04-26: a temp extension with schema capability successfully registered a custom Decision type and created a Decision item, confirming extensibility works. Default runtime contracts still list only Chore/Epic/Event/Feature/Issue/Meeting/Milestone/Reminder/Task, so first-run Decision guidance remains unresolved."
-files[2]{path,scope,note}:
+  "2026-04-26T14:26:04.597Z",cursor-agent,"Implemented Decision as a built-in item type. Changes: added Decision to BUILTIN_ITEM_TYPE_VALUES in src/types.ts, added Decision->decisions mapping in TYPE_TO_FOLDER in src/core/shared/constants.ts, added decisions to PM_OPTIONAL_TYPE_SUBDIRS. Updated tests: shared-constants-errors.spec.ts, completion-command.spec.ts, stats-command.spec.ts. Evidence: pnpm build passed, all 1052 tests pass across 78 files."
+files[6]{path,scope,note}:
   AGENTS.md,project,Repository operating guidance requires decision artifacts
   src/core/shared/constants.ts,project,Runtime default type registry lacks Decision in current contract output
+  src/types.ts,project,added Decision to BUILTIN_ITEM_TYPE_VALUES
+  tests/unit/shared-constants-errors.spec.ts,project,updated type assertion
+  tests/unit/completion-command.spec.ts,project,updated completion type list assertion
+  tests/unit/stats-command.spec.ts,project,updated by_type assertions for Decision
+close_reason: "Decision added as built-in item type with folder mapping, completion, and test coverage"
 body: ""

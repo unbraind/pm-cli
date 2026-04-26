@@ -1429,7 +1429,7 @@ describe("release readiness runtime coverage", () => {
       expect(invalidUpdateCloseResult.code).toBe(2);
       const invalidUpdateEnvelope = parseJsonErrorEnvelope(invalidUpdateCloseResult.stderr);
       expect(invalidUpdateEnvelope).toMatchObject({
-        code: "invalid_argument_value",
+        code: "close_through_update",
         exit_code: 2,
       });
       expect(invalidUpdateEnvelope.detail).toContain('Use "pm close <ID> <TEXT>"');
