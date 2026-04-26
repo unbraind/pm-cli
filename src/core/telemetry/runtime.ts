@@ -15,6 +15,8 @@ const TELEMETRY_HTTP_TIMEOUT_MS = 2_500;
 const OTEL_TRACES_ENDPOINT_ENV = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT";
 const OTEL_BASE_ENDPOINT_ENV = "OTEL_EXPORTER_OTLP_ENDPOINT";
 const OTEL_SERVICE_NAME_ENV = "OTEL_SERVICE_NAME";
+const PM_TELEMETRY_DISABLED_ENV = "PM_TELEMETRY_DISABLED";
+const PM_TELEMETRY_DISABLED_VALUES = new Set(["1", "true", "yes", "on"]);
 const PM_TELEMETRY_OTEL_DISABLED_ENV = "PM_TELEMETRY_OTEL_DISABLED";
 const PM_TELEMETRY_OTEL_DISABLED_VALUES = new Set(["1", "true", "yes", "on"]);
 const PROCESS_SESSION_ID = crypto.randomUUID();
@@ -165,6 +167,10 @@ function sanitizeCommandArgs(args: string[]): string[] {
 
 function hashWithInstallationId(installationId: string, value: string): string {
   return crypto.createHash("sha256").update(`${installationId}:${value}`).digest("hex");
+}
+
+function telemetryDisabledByEnvironment(): boolean {
+  return PM_TELEMETRY_DISABLED_VALUES.has((process.env[PM_TELEMETRY_DISABLED_ENV] ?? "").trim().toLowerCase());
 }
 
 function resolveOtelTracesEndpoint(): string | null {
@@ -465,6 +471,9 @@ async function flushQueue(globalPmRoot: string, endpoint: string): Promise<void>
 }
 
 export async function startTelemetryCommand(context: TelemetryCommandContext): Promise<ActiveTelemetryCommand | null> {
+  if (telemetryDisabledByEnvironment()) {
+    return null;
+  }
   try {
     const globalPmRoot = resolveGlobalPmRoot(process.cwd());
     const settings = await readSettings(globalPmRoot);

@@ -10,6 +10,7 @@ const originalFetch = globalThis.fetch;
 const originalOtelTracesEndpoint = process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT;
 const originalOtelEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
 const originalOtelServiceName = process.env.OTEL_SERVICE_NAME;
+const originalTelemetryDisabled = process.env.PM_TELEMETRY_DISABLED;
 const originalTelemetryOtelDisabled = process.env.PM_TELEMETRY_OTEL_DISABLED;
 
 function telemetryQueuePath(globalRoot: string): string {
@@ -48,6 +49,11 @@ describe("core/telemetry/runtime", () => {
       delete process.env.OTEL_SERVICE_NAME;
     } else {
       process.env.OTEL_SERVICE_NAME = originalOtelServiceName;
+    }
+    if (originalTelemetryDisabled === undefined) {
+      delete process.env.PM_TELEMETRY_DISABLED;
+    } else {
+      process.env.PM_TELEMETRY_DISABLED = originalTelemetryDisabled;
     }
     if (originalTelemetryOtelDisabled === undefined) {
       delete process.env.PM_TELEMETRY_OTEL_DISABLED;
@@ -107,6 +113,32 @@ describe("core/telemetry/runtime", () => {
         "[redacted_email]",
       ]);
       expect(queued.event.payload.command_options.apiKey).toBe("[redacted]");
+    });
+  });
+
+  it("skips telemetry command collection when PM_TELEMETRY_DISABLED is set", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      process.env.PM_TELEMETRY_DISABLED = "1";
+      const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      const active = await startTelemetryCommand({
+        command: "list-open",
+        args: [],
+        options: {},
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+
+      expect(active).toBeNull();
+      await expect(fs.access(telemetryQueuePath(globalRoot))).rejects.toMatchObject({ code: "ENOENT" });
+      expect(fetchMock).not.toHaveBeenCalled();
     });
   });
 

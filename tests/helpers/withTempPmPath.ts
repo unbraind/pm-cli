@@ -218,6 +218,9 @@ export async function withTempPmPath<T>(callback: (context: TempPmContext) => Pr
     PM_PATH: pmPath,
     PM_GLOBAL_PATH: path.join(tempRoot, ".pm-cli-global"),
     PM_AUTHOR: "test-author",
+    PM_TELEMETRY_DISABLED: "1",
+    PM_TELEMETRY_OTEL_DISABLED: "1",
+    PM_TELEMETRY_PROMPT: "0",
     PM_DISABLE_OLLAMA_AUTO_DEFAULTS: "1",
     FORCE_COLOR: "0",
   };
@@ -229,11 +232,17 @@ export async function withTempPmPath<T>(callback: (context: TempPmContext) => Pr
     PM_PATH: process.env.PM_PATH,
     PM_GLOBAL_PATH: process.env.PM_GLOBAL_PATH,
     PM_AUTHOR: process.env.PM_AUTHOR,
+    PM_TELEMETRY_DISABLED: process.env.PM_TELEMETRY_DISABLED,
+    PM_TELEMETRY_OTEL_DISABLED: process.env.PM_TELEMETRY_OTEL_DISABLED,
+    PM_TELEMETRY_PROMPT: process.env.PM_TELEMETRY_PROMPT,
     PM_DISABLE_OLLAMA_AUTO_DEFAULTS: process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS,
   };
   process.env.PM_PATH = env.PM_PATH;
   process.env.PM_GLOBAL_PATH = env.PM_GLOBAL_PATH;
   process.env.PM_AUTHOR = env.PM_AUTHOR;
+  process.env.PM_TELEMETRY_DISABLED = env.PM_TELEMETRY_DISABLED;
+  process.env.PM_TELEMETRY_OTEL_DISABLED = env.PM_TELEMETRY_OTEL_DISABLED;
+  process.env.PM_TELEMETRY_PROMPT = env.PM_TELEMETRY_PROMPT;
   process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS = env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS;
 
   try {
@@ -263,6 +272,21 @@ export async function withTempPmPath<T>(callback: (context: TempPmContext) => Pr
       delete process.env.PM_AUTHOR;
     } else {
       process.env.PM_AUTHOR = previousEnv.PM_AUTHOR;
+    }
+    if (previousEnv.PM_TELEMETRY_DISABLED === undefined) {
+      delete process.env.PM_TELEMETRY_DISABLED;
+    } else {
+      process.env.PM_TELEMETRY_DISABLED = previousEnv.PM_TELEMETRY_DISABLED;
+    }
+    if (previousEnv.PM_TELEMETRY_OTEL_DISABLED === undefined) {
+      delete process.env.PM_TELEMETRY_OTEL_DISABLED;
+    } else {
+      process.env.PM_TELEMETRY_OTEL_DISABLED = previousEnv.PM_TELEMETRY_OTEL_DISABLED;
+    }
+    if (previousEnv.PM_TELEMETRY_PROMPT === undefined) {
+      delete process.env.PM_TELEMETRY_PROMPT;
+    } else {
+      process.env.PM_TELEMETRY_PROMPT = previousEnv.PM_TELEMETRY_PROMPT;
     }
     if (previousEnv.PM_DISABLE_OLLAMA_AUTO_DEFAULTS === undefined) {
       delete process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS;

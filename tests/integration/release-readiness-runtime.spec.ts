@@ -1534,6 +1534,8 @@ describe("release readiness runtime coverage", () => {
       "src/core/schema/runtime-field-values.ts",
       "src/core/schema/runtime-schema.ts",
       "src/core/shared/text-normalization.ts",
+      "src/core/telemetry/consent.ts",
+      "src/core/telemetry/runtime.ts",
       "src/core/test/background-runs.ts",
       "src/core/test/item-test-run-tracking.ts",
       "src/sdk/cli-contracts.ts",

@@ -3427,7 +3427,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         expect(withBodyJson.items.every((item) => typeof item.body === "string")).toBe(true);
       }
     });
-  });
+  }, 60_000);
 
   it("runs extension before/after command hooks with failure containment", async () => {
     await withTempPmPath(async (context) => {

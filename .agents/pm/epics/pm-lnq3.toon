@@ -6,12 +6,13 @@ status: open
 priority: 0
 tags[5]: gdpr,observability,ops,pm-cli,telemetry
 created_at: "2026-04-25T21:32:54.868Z"
-updated_at: "2026-04-25T23:13:44.662Z"
+updated_at: "2026-04-26T00:31:13.065Z"
 deadline: "2026-05-09T21:32:54.868Z"
 author: codex-agent
 estimated_minutes: 720
 acceptance_criteria: "Telemetry stack is deployed and verified end-to-end with consent controls, retention, backups, and docs."
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-25T21:32:54.868Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'telemetry observability gdpr' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20; pm search 'telemetry' --mode keyword --limit 20; pm list-open --tag telemetry --limit 20. Net-new scope because no active telemetry rollout lineage existed."
   "2026-04-25T23:13:44.662Z",audit-agent,"Tracker hygiene follow-up completed: created and closed pm-35wb to backfill missing docs/TELEMETRY.md and docs/operations/REMOTE_TELEMETRY_STACK.md references from telemetry rollout lineage. Post-fix validate and health checks are clean."
+  "2026-04-26T00:31:13.065Z",codex-agent,"Remote telemetry verification 2026-04-26: health endpoint https://pm-cli.unbrained.dev/healthz returned ok true queue pm.telemetry.events; synthetic POST to /v1/events accepted one event with schema_version 1; Grafana endpoint https://pm.unbrained.dev returned authenticated login redirect. Remaining gap observed in local CLI: pm health output does not include telemetry runtime/export status despite operations guidance expecting telemetry visibility."
 body: "Track end-to-end rollout for opt-out telemetry, remote ingestion, observability stack, backups, and verification."

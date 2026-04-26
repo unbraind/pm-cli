@@ -1,0 +1,40 @@
+id: pm-mb4n
+title: 2026-04-26 comprehensive dogfood audit stabilization
+description: "Execute a full dogfood audit in isolated projects, validate telemetry/calendar/SDK/extension behaviors, and remediate regressions discovered in latest changes."
+type: Task
+status: closed
+priority: 1
+tags[5]: 2026-04-26,dogfood,external-audit,pm-cli,stabilization
+created_at: "2026-04-26T00:29:45.075Z"
+updated_at: "2026-04-26T00:32:06.278Z"
+author: codex-agent
+acceptance_criteria: Full sandboxed test and coverage suites pass; telemetry and extension dogfood evidence captured; findings linked to affected items with reproducible evidence.
+parent: pm-o7be
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-o7be,parent,"2026-04-26T00:29:45.075Z",codex-agent,null
+  pm-300m,related,"2026-04-26T00:31:39.179Z",codex-agent,null
+  pm-35wb,related,"2026-04-26T00:31:39.179Z",codex-agent,null
+comments[4]{created_at,author,text}:
+  "2026-04-26T00:29:45.075Z",codex-agent,Duplicate check evidence ran pm context limit 10 plus pm search comprehensive dogfood audit limit 10 plus pm list-open limit 20 plus pm list-in-progress limit 20 and found no active task for 2026-04-26 stabilization scope
+  "2026-04-26T00:30:20.152Z",codex-agent,"Evidence sweep 2026-04-26: pnpm build succeeded; node scripts/run-tests.mjs test passed 78 files and 1048 tests in 353.97s; node scripts/run-tests.mjs coverage passed 78 files and 1048 tests with 100 percent thresholds in 779.25s after timeout stabilization and coverage-list alignment updates."
+  "2026-04-26T00:30:21.409Z",codex-agent,"Dogfood matrix evidence: executed comprehensive valid command sweep in /tmp/pm-audit-dogfood-valid-CcOz3W with all command groups returning zero non-zero exit codes including init/create/update/list/search/context/calendar/deps/aggregate/dedupe/history/activity/contracts/completion/validate/health/stats/gc/test/test-all/test-runs/extensions/beads/todos and lifecycle aliases."
+  "2026-04-26T00:30:22.493Z",codex-agent,"Telemetry evidence: local client audit in /tmp/pm-telemetry-audit-LC65Uh confirmed queue writes command_start and command_finish events with retry metadata under unreachable endpoint; config global telemetry-tracking disabled leaves queue hash unchanged; remote health endpoint https://pm-cli.unbrained.dev/healthz responded ok true queue pm.telemetry.events; synthetic POST to /v1/events returned accepted 1; https://pm.unbrained.dev returned login redirect headers."
+notes[1]{created_at,author,text}:
+  "2026-04-26T00:30:24.098Z",codex-agent,Custom schema extension dogfood confirmed project-specific Decision and Change types can be added without core code changes via api.registerItemTypes and filtered/listed through standard commands.
+learnings[1]{created_at,author,text}:
+  "2026-04-26T00:30:25.789Z",codex-agent,Extension authoring ergonomics still require explicit ESM packaging type module for scratch extensions; capability gating correctly blocks registerCommand when commands capability is absent and surfaces activation diagnostics in extension doctor and health.
+files[5]{path,scope,note}:
+  src/core/telemetry/runtime.ts,project,Add PM_TELEMETRY_DISABLED gate for deterministic test CLI runs
+  tests/helpers/withTempPmPath.ts,project,Disable telemetry pipeline in sandbox helper environments
+  tests/integration/cli.integration.spec.ts,project,Increase timeout for coverage-mode list filter lifecycle test
+  tests/integration/release-readiness-runtime.spec.ts,project,Align expected uncovered source list with telemetry modules
+  tests/unit/telemetry-runtime.spec.ts,project,Assert PM_TELEMETRY_DISABLED short-circuits telemetry collection
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,Post-fix full coverage gate sweep
+  node scripts/run-tests.mjs test,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,Post-fix full sandbox test sweep
+docs[3]{path,scope,note}:
+  .agents/pm/search/operations/REMOTE_TELEMETRY_STACK.md,project,Remote stack composition and runbook references
+  .agents/pm/search/TELEMETRY.md,project,Telemetry privacy and export contract guidance
+  docs/EXTENSIONS.md,project,Reference for custom item type registration and extension authoring contracts
+close_reason: Comprehensive audit complete with full test and coverage passes; unresolved telemetry/docs gaps tracked in pm-300m and pm-35wb.
+body: ""

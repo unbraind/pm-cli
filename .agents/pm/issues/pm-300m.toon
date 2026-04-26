@@ -1,0 +1,17 @@
+id: pm-300m
+title: Add telemetry runtime diagnostics to pm health
+description: pm health currently omits telemetry runtime/export state even though telemetry operations docs expect visibility for endpoint policy and queue/export readiness.
+type: Issue
+status: open
+priority: 1
+tags[5]: external-audit,health,observability,pm-cli,telemetry
+created_at: "2026-04-26T00:31:23.357Z"
+updated_at: "2026-04-26T00:31:23.357Z"
+author: codex-agent
+acceptance_criteria: "pm health reports telemetry enabled policy, endpoint target, queue status summary, and environment overrides without leaking sensitive values."
+parent: pm-lnq3
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-lnq3,parent,"2026-04-26T00:31:23.357Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-04-26T00:31:23.357Z",codex-agent,Duplicate check evidence ran pm context limit 10 plus pm search health telemetry check limit 20 plus pm list-open limit 20 plus pm list-in-progress limit 20 and found no open item dedicated to telemetry check visibility in pm health
+body: ""
