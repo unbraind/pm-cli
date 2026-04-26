@@ -2593,6 +2593,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         "settings",
         "directories",
         "settings_values",
+        "telemetry",
         "extensions",
         "storage",
         "integrity",

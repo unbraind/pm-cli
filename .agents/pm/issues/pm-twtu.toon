@@ -1,0 +1,14 @@
+id: pm-twtu
+title: "Update-many: improve error message when no mutation flags provided"
+description: "pm update-many with --dry-run but no actual mutation flags (--status, --priority, etc.) fails with 'No update-many mutation flags provided'. This is correct validation but the error should list available mutation flags to guide agents."
+type: Issue
+status: open
+priority: 3
+tags[3]: agent-ux,pm-cli,update-many
+created_at: "2026-04-26T20:17:06.781Z"
+updated_at: "2026-04-26T20:17:06.781Z"
+deadline: "2026-05-03T20:17:06.781Z"
+author: audit-agent
+estimated_minutes: 15
+acceptance_criteria: Error message includes available mutation flag list
+body: "Error output only says 'No update-many mutation flags provided' without listing what mutation flags are available. For agent UX, the error should enumerate available flags: --status, --priority, --tags, --description, etc."

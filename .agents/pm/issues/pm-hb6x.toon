@@ -1,0 +1,17 @@
+id: pm-hb6x
+title: "Fix integration test: health check list missing telemetry entry"
+description: "The core lifecycle integration test asserts health check names without the telemetry check that was added. Test fails with: expected checks to equal [settings,directories,settings_values,extensions,...] but received [settings,directories,settings_values,telemetry,extensions,...]"
+type: Issue
+status: open
+priority: 0
+tags[4]: bug-fix,pm-cli,telemetry,testing
+created_at: "2026-04-26T20:16:29.226Z"
+updated_at: "2026-04-26T20:19:00.689Z"
+deadline: "2026-04-27T20:16:29.226Z"
+author: audit-agent
+estimated_minutes: 5
+acceptance_criteria: Integration test passes with telemetry check in expected list
+parent: pm-lnq3
+files[1]{path,scope,note}:
+  tests/integration/cli.integration.spec.ts,project,fixed health check assertion
+body: "File: tests/integration/cli.integration.spec.ts line 2592. The telemetry health check was added to pm health but the integration test expectation was not updated. Fix: add 'telemetry' to the expected check names array between 'settings_values' and 'extensions'."

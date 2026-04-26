@@ -1,0 +1,16 @@
+id: pm-71sj
+title: "Calendar audit: all views verified working, reminders and deadlines render correctly"
+description: "Calendar audit verified: agenda/day/week/month views all work. Markdown/TOON/JSON formats functional. Deadlines render correctly. Reminders appear in agenda. Filters by type/priority work."
+type: Task
+status: closed
+priority: 1
+tags[3]: calendar,pm-cli,verification
+created_at: "2026-04-26T20:18:00.294Z"
+updated_at: "2026-04-26T20:18:18.461Z"
+deadline: "2026-04-27T20:18:00.294Z"
+author: audit-agent
+estimated_minutes: 15
+acceptance_criteria: All calendar views and formats verified
+parent: pm-kglq
+close_reason: All calendar views and formats verified working
+body: "Verified: agenda/day/week/month views, markdown/toon/json formats, deadlines, reminders, type/priority filters. Only issue: --full-period rejection on agenda (filed separately)."

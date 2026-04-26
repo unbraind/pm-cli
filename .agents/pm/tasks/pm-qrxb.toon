@@ -1,0 +1,20 @@
+id: pm-qrxb
+title: "SDK docs: document cli-contracts exports and extension capability requirements"
+description: "SDK audit found gaps: (1) docs/SDK.md does not document the large cli-contracts layer (PM_CORE_COMMAND_NAMES, PM_TOOL_ACTIONS, PM_TOOL_PARAMETERS_SCHEMA, flag contracts). (2) docs/EXTENSIONS.md does not note that registerCommand with inline flags requires schema capability, and registerExporter requires importers capability."
+type: Task
+status: open
+priority: 1
+tags[4]: documentation,extensions,pm-cli,sdk
+created_at: "2026-04-26T20:17:00.482Z"
+updated_at: "2026-04-26T20:19:10.969Z"
+deadline: "2026-05-01T20:17:00.482Z"
+author: audit-agent
+estimated_minutes: 90
+acceptance_criteria: SDK.md and EXTENSIONS.md accurately reflect all public exports and capability requirements
+parent: pm-1etl
+files[4]{path,scope,note}:
+  docs/EXTENSIONS.md,project,needs capability requirement docs
+  docs/SDK.md,project,needs cli-contracts documentation
+  src/sdk/cli-contracts.ts,project,undocumented contracts layer
+  src/sdk/index.ts,project,SDK barrel exports
+body: "Specific gaps found:\\n1. SDK.md missing: cli-contracts exports inventory (PM_CORE_COMMAND_NAMES, PM_TOOL_ACTIONS, PM_TOOL_PARAMETERS_SCHEMA, withFlagAliasMetadata, toCompletionFlagString, Commander helpers)\\n2. EXTENSION_CAPABILITIES / EXTENSION_CAPABILITY_* not listed in SDK.md\\n3. EXTENSIONS.md: registerCommand + inline flags needs schema capability (not documented)\\n4. EXTENSIONS.md: registerExporter requires importers capability (same as importers) but not stated\\n5. ExtensionCommandArgumentDefinition not exported from SDK but used by CommandDefinition.arguments\\n6. CommandDefinition.handler should have @deprecated JSDoc annotation\\n7. ./cli package.json entry has empty type declarations"

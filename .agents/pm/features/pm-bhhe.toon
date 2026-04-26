@@ -1,0 +1,14 @@
+id: pm-bhhe
+title: "Expand aggregate group-by to support priority, status, assignee, tags"
+description: "The aggregate command currently only supports group-by parent|type. Attempting --group-by priority returns error: 'Aggregate group fields must be one of parent|type'. For a universal PM tool, grouping by priority, status, assignee, sprint, release, and tags would be essential."
+type: Feature
+status: open
+priority: 2
+tags[4]: agent-ux,aggregate,extensibility,pm-cli
+created_at: "2026-04-26T20:16:46.172Z"
+updated_at: "2026-04-26T20:16:46.172Z"
+deadline: "2026-05-03T20:16:46.172Z"
+author: audit-agent
+estimated_minutes: 120
+acceptance_criteria: "Aggregate supports grouping by priority, status, assignee, tags at minimum"
+body: "Current behavior: only parent|type allowed. Expected: priority, status, assignee, tags, sprint, release should also be valid group-by fields. This limits the analytical capabilities for agents trying to triage and report on project state."

@@ -1,0 +1,15 @@
+id: pm-8qpc
+title: "Calendar: allow --full-period for agenda view or improve error message"
+description: "Calendar agenda view rejects --full-period with error. While agenda is unbounded, the error message could suggest using --from/--to instead. Alternatively, --full-period could be silently ignored for agenda, or agenda could support bounded periods."
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-ux,calendar,pm-cli
+created_at: "2026-04-26T20:16:53.254Z"
+updated_at: "2026-04-26T20:16:53.254Z"
+deadline: "2026-05-03T20:16:53.254Z"
+author: audit-agent
+estimated_minutes: 30
+acceptance_criteria: Either --full-period works with agenda or error message suggests --from/--to alternative
+parent: pm-kglq
+body: "Error: --full-period is only supported for --view day|week|month. For agent UX, a constructive error suggesting alternatives (--from/--to) would be better than a bare rejection."
