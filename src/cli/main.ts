@@ -2217,6 +2217,7 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command): Promi
   const bootstrapGlobalOptions = parseBootstrapGlobalOptions(process.argv.slice(2));
   if (bootstrapGlobalOptions.noExtensions) {
     activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
+    setActiveExtensionServices({ overrides: [] });
     return;
   }
 
@@ -2224,8 +2225,12 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command): Promi
   const snapshot = await loadRuntimeExtensionSnapshot(pmRoot);
   if (!snapshot) {
     activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
+    setActiveExtensionServices({ overrides: [] });
     return;
   }
+  // Ensure usage/help/error formatting overrides are available even when parse
+  // errors occur before preAction hooks initialize full runtime extension state.
+  setActiveExtensionServices(snapshot.services);
   activeRuntimeExtensionCommandDescriptors = new Map(snapshot.commandDescriptors);
   const typeRegistry = resolveItemTypeRegistry(snapshot.settings, snapshot.registrations);
   attachCreateUpdatePolicyHelpText(rootProgram, typeRegistry, process.argv.slice(2));
@@ -4966,6 +4971,7 @@ program
   .description("Show project tracker health checks.")
   .option("--strict-directories", "Treat optional item-type directories as required failures")
   .option("--check-only", "Run read-only health diagnostics without refreshing vectors")
+  .option("--check-telemetry", "Probe telemetry endpoint health and include network diagnostics")
   .option("--no-refresh", "Disable automatic vector refresh attempts during health checks")
   .option("--refresh-vectors", "Explicitly enable vector refresh attempts during health checks")
   .option("--verbose-stale-items", "Include full stale vectorization ID lists in health output")
@@ -4977,6 +4983,7 @@ program
     const result = await runHealth(globalOptions, {
       strictDirectories: Boolean(options.strictDirectories),
       checkOnly: Boolean(options.checkOnly),
+      checkTelemetry: Boolean(options.checkTelemetry),
       noRefresh: Boolean(options.noRefresh),
       refreshVectors: Boolean(options.refreshVectors),
       verboseStaleItems: Boolean(options.verboseStaleItems),
@@ -5478,6 +5485,11 @@ async function main(): Promise<void> {
     });
     const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
     const jsonErrors = bootstrapGlobal.json;
+    if (!bootstrapGlobal.noExtensions) {
+      const bootstrapPmRoot = resolvePmRoot(process.cwd(), bootstrapGlobal.path);
+      const bootstrapSnapshot = await loadRuntimeExtensionSnapshot(bootstrapPmRoot);
+      setActiveExtensionServices(bootstrapSnapshot?.services ?? { overrides: [] });
+    }
     if (error instanceof PmCliError) {
       if (jsonErrors) {
         printError(JSON.stringify(formatPmCliErrorForJson(error.message, error.exitCode, error.context), null, 2));

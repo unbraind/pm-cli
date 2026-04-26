@@ -1,0 +1,10 @@
+{
+  "name": "@pm-cli/starter-extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Reference extension starter using @unbrained/pm-cli/sdk",
+  "dependencies": {
+    "@unbrained/pm-cli": "^2026.3.12"
+  }
+}

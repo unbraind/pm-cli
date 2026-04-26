@@ -772,6 +772,7 @@ export const HEALTH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--strict-exit" },
   { flag: "--fail-on-warn" },
   { flag: "--check-only" },
+  { flag: "--check-telemetry" },
   { flag: "--no-refresh" },
   { flag: "--refresh-vectors" },
   { flag: "--verbose-stale-items" },
@@ -1554,6 +1555,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   checkFiles: { type: "boolean" },
   strictDirectories: { type: "boolean" },
   checkOnly: { type: "boolean" },
+  checkTelemetry: { type: "boolean" },
   noRefresh: { type: "boolean" },
   refreshVectors: { type: "boolean" },
   verboseStaleItems: { type: "boolean" },
@@ -1883,7 +1885,16 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   },
   stats: {},
   health: {
-    optional: ["strictDirectories", "strictExit", "failOnWarn", "checkOnly", "noRefresh", "refreshVectors", "verboseStaleItems"],
+    optional: [
+      "strictDirectories",
+      "strictExit",
+      "failOnWarn",
+      "checkOnly",
+      "checkTelemetry",
+      "noRefresh",
+      "refreshVectors",
+      "verboseStaleItems",
+    ],
   },
   validate: {
     optional: [
@@ -2206,6 +2217,9 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   checkOnly: {
     description: "For health action, run read-only diagnostics without refreshing vectors.",
+  },
+  checkTelemetry: {
+    description: "For health action, probe telemetry endpoint health and include network diagnostics.",
   },
   noRefresh: {
     description: "For health action, skip vector refresh while still running checks.",

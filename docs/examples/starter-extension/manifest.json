@@ -1,0 +1,17 @@
+{
+  "name": "starter-extension",
+  "version": "0.1.0",
+  "description": "SDK-first starter extension demonstrating all pm extension capabilities.",
+  "entry": "./index.js",
+  "capabilities": [
+    "commands",
+    "parser",
+    "preflight",
+    "services",
+    "renderers",
+    "hooks",
+    "schema",
+    "importers",
+    "search"
+  ]
+}

@@ -2,14 +2,28 @@ id: pm-gusd
 title: Enforce telemetry capture_level setting in runtime event collection
 description: capture_level (minimal/redacted/max) is stored in settings but not enforced. The runtime always collects max-level data regardless of the setting.
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: "audit:2026-04-26",pm-cli,privacy,telemetry
 created_at: "2026-04-26T14:52:26.308Z"
-updated_at: "2026-04-26T14:52:26.308Z"
+updated_at: "2026-04-26T19:59:42.146Z"
 deadline: "2026-05-10T14:52:26.308Z"
 author: audit-agent
 estimated_minutes: 60
 acceptance_criteria: "capture_level minimal: only command name and duration. redacted: current behavior. max: full payload."
 parent: pm-lnq3
+resolution: Implemented capture-aware telemetry payload builders and sanitization routing so capture_level now controls collected fields and redaction depth.
+expected_result: minimal capture_level records only essential command outcome metadata while redacted and max modes preserve intended detail boundaries.
+actual_result: Telemetry runtime now emits minimal payloads when configured and retains redacted/max behaviors with dedicated unit coverage and passing linked tests.
+comments[2]{created_at,author,text}:
+  "2026-04-26T19:48:42.032Z",codex-agent,"Implemented capture_level enforcement in telemetry runtime with explicit minimal/redacted/max payload builders, capture-aware sanitization, and runtime state persistence updates; validated with targeted unit suite."
+  "2026-04-26T19:48:43.547Z",codex-agent,"Verification evidence: node scripts/run-tests.mjs test -- tests/unit/telemetry-runtime.spec.ts tests/unit/health-command.spec.ts (subset included in 12-file regression run; all passed)."
+files[2]{path,scope,note}:
+  src/core/telemetry/runtime.ts,project,capture_level enforcement with minimal redacted max payload shaping
+  tests/unit/telemetry-runtime.spec.ts,project,minimal redacted max runtime coverage
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/telemetry-runtime.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,telemetry capture-level unit regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mog6lq68-puvoc1,test,passed,"2026-04-26T19:48:48.387Z","2026-04-26T19:48:56.384Z","2026-04-26T19:48:56.384Z",null,null,1,0,0,null,null,null
+close_reason: capture_level enforcement implemented and verified with unit regressions
 body: The capture_level field exists in settings.telemetry but is only copied into the command_start payload. No code branches on minimal/redacted/max to actually reduce data collection. This means the setting is misleading - users who set capture_level to minimal still have full data collected.

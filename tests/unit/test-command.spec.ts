@@ -100,6 +100,13 @@ async function setTestResultTracking(pmPath: string, enabled: boolean): Promise<
   await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
 }
 
+function setGovernancePreset(context: TempPmContext, preset: "minimal" | "default" | "strict" | "custom"): void {
+  const result = context.runCli(["config", "project", "set", "governance-preset", "--policy", preset, "--json"], {
+    expectJson: true,
+  });
+  expect(result.code).toBe(0);
+}
+
 async function loadTaskFrontMatter(context: TempPmContext, id: string): Promise<Record<string, unknown>> {
   const toonPath = path.join(context.pmPath, "tasks", `${id}.toon`);
   const markdownPath = path.join(context.pmPath, "tasks", `${id}.md`);
@@ -1880,6 +1887,7 @@ describe("runTest", () => {
   it("returns tracking warnings when summary persistence cannot mutate item", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "track-test-run-warning");
+      setGovernancePreset(context, "strict");
       await runTest(
         id,
         {

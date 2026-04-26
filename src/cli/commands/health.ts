@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { pathExists } from "../../core/fs/fs-utils.js";
+import { pathExists, readFileIfExists } from "../../core/fs/fs-utils.js";
 import { activateExtensions, getActiveExtensionRegistrations, loadExtensions, runActiveOnReadHooks } from "../../core/extensions/index.js";
 import {
   EXTENSION_CAPABILITY_CONTRACT,
@@ -27,7 +27,14 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
 import { listAllFrontMatterWithBody } from "../../core/store/item-store.js";
-import { getHistoryPath, getItemFormatFromPath, getSettingsPath, ITEM_FILE_EXTENSIONS, resolvePmRoot } from "../../core/store/paths.js";
+import {
+  getHistoryPath,
+  getItemFormatFromPath,
+  getSettingsPath,
+  ITEM_FILE_EXTENSIONS,
+  resolveGlobalPmRoot,
+  resolvePmRoot,
+} from "../../core/store/paths.js";
 import { readSettingsWithMetadata } from "../../core/store/settings.js";
 import type { ItemFormat, PmSettings } from "../../types/index.js";
 import { readManagedExtensionState } from "./extension.js";
@@ -36,7 +43,16 @@ type HealthStatus = "ok" | "warn";
 type MigrationRuntimeStatus = "pending" | "failed" | "applied";
 
 export interface HealthCheck {
-  name: "settings" | "directories" | "settings_values" | "extensions" | "storage" | "integrity" | "history_drift" | "vectorization";
+  name:
+    | "settings"
+    | "directories"
+    | "settings_values"
+    | "telemetry"
+    | "extensions"
+    | "storage"
+    | "integrity"
+    | "history_drift"
+    | "vectorization";
   status: HealthStatus;
   details: Record<string, unknown>;
 }
@@ -51,6 +67,7 @@ export interface HealthResult {
 export interface RunHealthOptions {
   strictDirectories?: boolean;
   checkOnly?: boolean;
+  checkTelemetry?: boolean;
   noRefresh?: boolean;
   refreshVectors?: boolean;
   verboseStaleItems?: boolean;
@@ -98,6 +115,9 @@ interface ExtensionHealthTriageSummary {
 
 type ItemWithBody = Awaited<ReturnType<typeof listAllFrontMatterWithBody>>[number];
 const STALE_VECTORIZATION_SUMMARY_LIMIT = 25;
+const TELEMETRY_QUEUE_RELATIVE_PATH = path.join("runtime", "telemetry", "events.jsonl");
+const TELEMETRY_STATE_RELATIVE_PATH = path.join("runtime", "telemetry", "state.json");
+const TELEMETRY_ENDPOINT_PROBE_TIMEOUT_MS = 2_500;
 
 function warningCode(value: string): string {
   const normalized = value.trim();
@@ -733,6 +753,199 @@ function selectStaleItemDetail(
   };
 }
 
+interface TelemetryRuntimeStateRecord {
+  endpoint?: string;
+  queue_entries?: number;
+  last_attempted_flush_at?: string;
+  last_successful_flush_at?: string;
+  last_failed_flush_at?: string;
+  last_failed_flush_error?: string;
+}
+
+function telemetryEnvFlagEnabled(envKey: "PM_TELEMETRY_DISABLED" | "PM_TELEMETRY_OTEL_DISABLED"): boolean {
+  const value = (process.env[envKey] ?? "").trim().toLowerCase();
+  return value === "1" || value === "true" || value === "yes" || value === "on";
+}
+
+function normalizeEndpointForDisplay(rawEndpoint: string): string {
+  const trimmed = rawEndpoint.trim();
+  if (trimmed.length === 0) {
+    return "";
+  }
+  try {
+    const parsed = new URL(trimmed);
+    parsed.username = "";
+    parsed.password = "";
+    parsed.search = "";
+    parsed.hash = "";
+    return parsed.toString();
+  } catch {
+    return trimmed;
+  }
+}
+
+function parseTelemetryQueue(raw: string): { validEntries: number; invalidRows: number; totalRows: number } {
+  let validEntries = 0;
+  let invalidRows = 0;
+  let totalRows = 0;
+  for (const line of raw.split("\n")) {
+    const trimmed = line.trim();
+    if (trimmed.length === 0) {
+      continue;
+    }
+    totalRows += 1;
+    try {
+      const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+      if (typeof parsed === "object" && parsed !== null && typeof parsed.attempts === "number") {
+        validEntries += 1;
+      } else {
+        invalidRows += 1;
+      }
+    } catch {
+      invalidRows += 1;
+    }
+  }
+  return {
+    validEntries,
+    invalidRows,
+    totalRows,
+  };
+}
+
+async function probeTelemetryEndpointHealth(endpoint: string): Promise<{
+  probe_url: string;
+  ok: boolean;
+  status?: number;
+  error?: string;
+}> {
+  let probeUrl = endpoint;
+  try {
+    const parsed = new URL(endpoint);
+    parsed.pathname = "/healthz";
+    parsed.search = "";
+    parsed.hash = "";
+    probeUrl = parsed.toString();
+  } catch {
+    // keep original endpoint when URL parsing fails
+  }
+  try {
+    const response = await fetch(probeUrl, {
+      method: "GET",
+      signal: AbortSignal.timeout(TELEMETRY_ENDPOINT_PROBE_TIMEOUT_MS),
+    });
+    return {
+      probe_url: normalizeEndpointForDisplay(probeUrl),
+      ok: response.ok,
+      status: response.status,
+    };
+  } catch (error: unknown) {
+    return {
+      probe_url: normalizeEndpointForDisplay(probeUrl),
+      ok: false,
+      error: error instanceof Error ? error.message : "probe_failed",
+    };
+  }
+}
+
+async function buildTelemetryCheck(
+  settings: PmSettings,
+  options: { checkTelemetry: boolean },
+): Promise<{ check: HealthCheck; warnings: string[] }> {
+  const globalPmRoot = resolveGlobalPmRoot(process.cwd());
+  const queuePath = path.join(globalPmRoot, TELEMETRY_QUEUE_RELATIVE_PATH);
+  const statePath = path.join(globalPmRoot, TELEMETRY_STATE_RELATIVE_PATH);
+
+  const queueRaw = await readFileIfExists(queuePath);
+  const queueExists = queueRaw !== null;
+  const queueSizeBytes = queueRaw ? Buffer.byteLength(queueRaw, "utf8") : 0;
+  const queueSummary = queueRaw ? parseTelemetryQueue(queueRaw) : { validEntries: 0, invalidRows: 0, totalRows: 0 };
+
+  const stateRaw = await readFileIfExists(statePath);
+  let runtimeState: TelemetryRuntimeStateRecord = {};
+  let stateParseFailed = false;
+  if (stateRaw && stateRaw.trim().length > 0) {
+    try {
+      const parsed = JSON.parse(stateRaw) as TelemetryRuntimeStateRecord;
+      if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+        runtimeState = parsed;
+      } else {
+        stateParseFailed = true;
+      }
+    } catch {
+      stateParseFailed = true;
+    }
+  }
+
+  const endpoint = settings.telemetry.endpoint.trim();
+  const endpointDisplay = normalizeEndpointForDisplay(endpoint);
+  let endpointProbe:
+    | {
+        attempted: boolean;
+        probe_url: string;
+        ok: boolean;
+        status?: number;
+        error?: string;
+      }
+    | undefined;
+  if (options.checkTelemetry && settings.telemetry.enabled && endpoint.length > 0) {
+    const probe = await probeTelemetryEndpointHealth(endpoint);
+    endpointProbe = {
+      attempted: true,
+      ...probe,
+    };
+  }
+
+  const warnings: string[] = [];
+  if (stateParseFailed) {
+    warnings.push("telemetry_state_invalid_json");
+  }
+  if (queueSummary.invalidRows > 0) {
+    warnings.push(`telemetry_queue_invalid_rows:${queueSummary.invalidRows}`);
+  }
+  if (settings.telemetry.enabled && queueSummary.validEntries > 0) {
+    warnings.push(`telemetry_queue_pending:${queueSummary.validEntries}`);
+  }
+  if (endpointProbe && !endpointProbe.ok) {
+    if (typeof endpointProbe.status === "number") {
+      warnings.push(`telemetry_endpoint_probe_http_status:${endpointProbe.status}`);
+    } else {
+      warnings.push("telemetry_endpoint_probe_failed");
+    }
+  }
+
+  return {
+    check: {
+      name: "telemetry",
+      status: warnings.length === 0 ? "ok" : "warn",
+      details: {
+        enabled: settings.telemetry.enabled,
+        capture_level: settings.telemetry.capture_level,
+        endpoint: endpointDisplay,
+        global_pm_root: globalPmRoot,
+        queue_path: queuePath,
+        queue_exists: queueExists,
+        queue_entries: queueSummary.validEntries,
+        queue_invalid_rows: queueSummary.invalidRows,
+        queue_rows_total: queueSummary.totalRows,
+        queue_size_bytes: queueSizeBytes,
+        runtime_state_path: statePath,
+        last_attempted_flush_at: runtimeState.last_attempted_flush_at ?? null,
+        last_successful_flush_at: runtimeState.last_successful_flush_at ?? null,
+        last_failed_flush_at: runtimeState.last_failed_flush_at ?? null,
+        last_failed_flush_error: runtimeState.last_failed_flush_error ?? null,
+        endpoint_probe: endpointProbe ?? {
+          attempted: false,
+        },
+        env_overrides: {
+          telemetry_disabled: telemetryEnvFlagEnabled("PM_TELEMETRY_DISABLED"),
+          telemetry_otel_disabled: telemetryEnvFlagEnabled("PM_TELEMETRY_OTEL_DISABLED"),
+        },
+      },
+    },
+    warnings,
+  };
+}
+
 async function buildHistoryDriftCheck(
   pmRoot: string,
   items: ItemWithBody[],
@@ -983,6 +1196,9 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
   const missingDirs = strictDirectories ? [...missingRequiredDirs, ...missingOptionalDirs] : [...missingRequiredDirs];
 
   const settingWarnings = validateSettingsValues(settings);
+  const telemetryCheck = await buildTelemetryCheck(settings, {
+    checkTelemetry: options.checkTelemetry === true,
+  });
   const extensionCheck = await buildExtensionCheck(pmRoot, settings, Boolean(global.noExtensions));
   const itemReadWarnings: string[] = [];
   const items = await listAllFrontMatterWithBody(
@@ -1041,6 +1257,7 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
         warnings: settingWarnings,
       },
     },
+    telemetryCheck.check,
     extensionCheck.check,
     {
       name: "storage",
@@ -1060,6 +1277,7 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
     ...normalizedSettingsReadWarnings,
     ...settingWarnings,
     ...normalizedItemReadWarnings,
+    ...telemetryCheck.warnings,
     ...extensionCheck.warnings,
     ...historyPolicy.warnings,
     ...historySummary.warnings,

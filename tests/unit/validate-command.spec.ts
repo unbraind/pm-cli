@@ -378,9 +378,15 @@ describe("runValidate", () => {
       const settingsPath = path.join(context.pmPath, "settings.json");
       const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
         validation: { metadata_profile: string; metadata_required_fields: string[] };
+        governance?: { preset?: string; metadata_profile?: string };
       };
       settings.validation.metadata_profile = "custom";
       settings.validation.metadata_required_fields = ["sprint", "release"];
+      settings.governance = {
+        ...(settings.governance ?? {}),
+        preset: "custom",
+        metadata_profile: "custom",
+      };
       await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
 
       const result = await runValidate({ checkMetadata: true }, { path: context.pmPath });
@@ -407,9 +413,15 @@ describe("runValidate", () => {
       const settingsPath = path.join(context.pmPath, "settings.json");
       const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
         validation: { metadata_profile: string; metadata_required_fields: string[] };
+        governance?: { preset?: string; metadata_profile?: string };
       };
       settings.validation.metadata_profile = "custom";
       settings.validation.metadata_required_fields = [];
+      settings.governance = {
+        ...(settings.governance ?? {}),
+        preset: "custom",
+        metadata_profile: "custom",
+      };
       await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
 
       const result = await runValidate({ checkMetadata: true }, { path: context.pmPath });

@@ -48,7 +48,7 @@ export interface CalendarOptions {
   [key: string]: unknown;
 }
 
-export interface CalendarEvent {
+export interface CalendarRow {
   at: string;
   date: string;
   kind: "deadline" | "reminder" | "event";
@@ -73,7 +73,7 @@ export interface CalendarEvent {
 export interface CalendarDayBucket {
   date: string;
   count: number;
-  events: CalendarEvent[];
+  events: CalendarRow[];
 }
 
 export interface CalendarResult {
@@ -123,7 +123,7 @@ export interface CalendarResult {
     by_status: Record<string, number>;
     recurring_events: number;
   };
-  events: CalendarEvent[];
+  events: CalendarRow[];
   days: CalendarDayBucket[];
   warnings?: string[];
 }
@@ -516,7 +516,7 @@ function expandRecurringOccurrences(
   return occurrences;
 }
 
-function sortEvents(values: CalendarEvent[]): CalendarEvent[] {
+function sortEvents(values: CalendarRow[]): CalendarRow[] {
   return [...values].sort((a, b) => {
     const byAt = compareTimestampStrings(a.at, b.at);
     if (byAt !== 0) return byAt;
@@ -537,8 +537,8 @@ function buildEventSeed(
   recurringWindow: { start: string; end: string },
   includeSources: Set<CalendarIncludeKind>,
   occurrenceLimit: number | undefined,
-): CalendarEvent[] {
-  const events: CalendarEvent[] = [];
+): CalendarRow[] {
+  const events: CalendarRow[] = [];
   for (const item of items) {
     if (includeSources.has("deadlines") && item.deadline) {
       events.push({
@@ -673,7 +673,7 @@ function filterItems(
   });
 }
 
-function includeEventInWindow(event: CalendarEvent, start: string | undefined, end: string | undefined): boolean {
+function includeEventInWindow(event: CalendarRow, start: string | undefined, end: string | undefined): boolean {
   if (start && compareTimestampStrings(event.at, start) < 0) {
     return false;
   }
@@ -764,8 +764,8 @@ function buildRange(
   };
 }
 
-function bucketEventsByDay(events: CalendarEvent[]): CalendarDayBucket[] {
-  const dayMap = new Map<string, CalendarEvent[]>();
+function bucketEventsByDay(events: CalendarRow[]): CalendarDayBucket[] {
+  const dayMap = new Map<string, CalendarRow[]>();
   for (const event of events) {
     const list = dayMap.get(event.date) ?? [];
     list.push(event);
@@ -780,7 +780,7 @@ function bucketEventsByDay(events: CalendarEvent[]): CalendarDayBucket[] {
     }));
 }
 
-function summarize(events: CalendarEvent[]): CalendarResult["summary"] {
+function summarize(events: CalendarRow[]): CalendarResult["summary"] {
   const itemIds = new Set<string>();
   const byType = new Map<string, number>();
   const byStatus = new Map<string, number>();
@@ -838,7 +838,7 @@ function formatSummaryCountRecord(values: Record<string, number>): string {
   return entries.map(([key, value]) => `${key}=${value}`).join(", ");
 }
 
-function formatEventEnd(event: CalendarEvent): string | null {
+function formatEventEnd(event: CalendarRow): string | null {
   if (!event.event_end) {
     return null;
   }
@@ -851,7 +851,7 @@ function formatEventEnd(event: CalendarEvent): string | null {
   return event.event_end;
 }
 
-function formatEventLine(event: CalendarEvent): string {
+function formatEventLine(event: CalendarRow): string {
   const core = `${formatClock(event.at)} [${event.kind}] ${event.item_id} type=${event.item_type} p${event.item_priority} ${event.item_status} ${event.item_title}`;
   if (event.kind === "reminder") {
     const reminderText = event.reminder_text ?? "";

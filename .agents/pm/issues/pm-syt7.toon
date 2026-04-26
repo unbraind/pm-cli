@@ -6,11 +6,14 @@ status: closed
 priority: 1
 tags[5]: agent-ux,external-audit,pm-cli,telemetry,update
 created_at: "2026-04-26T13:50:51.381Z"
-updated_at: "2026-04-26T14:27:19.683Z"
+updated_at: "2026-04-26T20:01:00.529Z"
 author: cursor-agent
 estimated_minutes: 120
 acceptance_criteria: "Update-command failures for close-through-update and audit ownership restrictions produce clearer actionable remediation, with regression tests and updated help/docs where applicable."
 parent: pm-o7be
+resolution: Enhanced update-command failure guidance for close-through-update and ownership conflicts with actionable next steps and audit-safe flag alternatives.
+expected_result: Users receive deterministic remediation instructions when update attempts invalid close transitions or ownership-restricted mutations.
+actual_result: "Error guidance now includes structured close_through_update context and audit-flag recommendations, with integration tests remaining green."
 comments[2]{created_at,author,text}:
   "2026-04-26T13:50:51.381Z",cursor-agent,"Duplicate-check evidence: pm search update status closed close command telemetry failure audit ownership --limit 10 found only closed close-workflow implementation/history items and no active data-derived update UX remediation item. Telemetry evidence: update had 386 finishes, 105 failures, 27.2 percent failure rate; top patterns included invalid --status closed and audit ownership restriction errors."
   "2026-04-26T14:26:56.079Z",cursor-agent,"Implemented improved update-command error guidance. Changes: (1) Added structured PmCliErrorContext with code=close_through_update, why, examples, and nextSteps to the close-through-update error in update.ts so users get actionable pm close examples. (2) Enhanced ownership_conflict guidance in error-guidance.ts with audit flag recommendations (--allow-audit-update, --allow-audit-dep-update, --allow-audit-comment) as non-force alternatives. Updated tests: release-readiness-runtime.spec.ts (code assertion), help-runtime.spec.ts (unchanged assertions still pass). Evidence: all 1052 tests pass across 78 files."

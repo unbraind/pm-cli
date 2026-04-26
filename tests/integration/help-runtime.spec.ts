@@ -80,6 +80,38 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
+  it("applies help_format service overrides for commander usage errors", async () => {
+    await withTempPmPath(async (context) => {
+      await createProjectExtension(
+        context.pmPath,
+        "help-format-service",
+        {
+          name: "help-format-service",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["services"],
+        },
+        [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerService('help_format', (context) => {",
+          "      const payload = typeof context.payload === 'object' && context.payload !== null ? context.payload : {};",
+          "      const message = typeof payload.message === 'string' ? payload.message : String(context.payload ?? '');",
+          "      return `${message}\\n[service-help-format-applied]`;",
+          "    });",
+          "  },",
+          "};",
+          "",
+        ].join("\n"),
+      );
+
+      const usage = context.runCli(["list-open", "--bogus"]);
+      expect(usage.code).toBe(2);
+      expect(usage.stderr).toContain("Unknown option --bogus");
+      expect(usage.stderr).toContain("[service-help-format-applied]");
+    });
+  });
+
   it("renders machine-readable help payloads for --help --json and help --json", async () => {
     await withTempPmPath(async (context) => {
       const directJsonHelp = context.runCli(["create", "--help", "--json"], { expectJson: true });

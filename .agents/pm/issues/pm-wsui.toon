@@ -6,10 +6,19 @@ status: open
 priority: 2
 tags[5]: "audit:2026-04-26",dx,extensions,pm-cli,sdk
 created_at: "2026-04-26T14:52:29.628Z"
-updated_at: "2026-04-26T14:52:29.628Z"
+updated_at: "2026-04-26T20:01:50.039Z"
 deadline: "2026-05-10T14:52:29.628Z"
 author: audit-agent
 estimated_minutes: 90
 acceptance_criteria: "pm extension --init creates a working starter extension with manifest, entry point, and example capability."
 parent: pm-o7be
+comments[2]{created_at,author,text}:
+  "2026-04-26T19:58:06.880Z",codex-agent,"Audit mitigation delivered: added docs/examples/starter-extension with manifest, entry point, and full capability walkthrough to provide deterministic copyable scaffold for extension authors."
+  "2026-04-26T19:58:09.965Z",codex-agent,Item remains open because CLI-native scaffold command (for example pm extension --init/--scaffold) is still not implemented; current deliverable is documentation/template only.
+files[3]{path,scope,note}:
+  docs/examples/starter-extension/index.js,project,reference entry implementing all capabilities
+  docs/examples/starter-extension/manifest.json,project,reference manifest for extension bootstrapping
+  docs/examples/starter-extension/README.md,project,starter template added as immediate scaffold substitute
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,sdk quick start linked to starter template
 body: "pm extension --init or pm extension --scaffold should generate a starter extension with manifest.json, index.ts, and example registration. This would dramatically improve the extension authoring experience."

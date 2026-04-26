@@ -1,7 +1,7 @@
 import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runHealth } from "../../src/cli/commands/health.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
 import { EXIT_CODE } from "../../src/constants.js";
@@ -97,6 +97,7 @@ describe("runHealth", () => {
         "settings",
         "directories",
         "settings_values",
+        "telemetry",
         "extensions",
         "storage",
         "integrity",
@@ -113,6 +114,21 @@ describe("runHealth", () => {
       const settingValuesCheck = health.checks.find((check) => check.name === "settings_values");
       expect(settingValuesCheck?.status).toBe("ok");
       expect(settingValuesCheck?.details).toEqual({ warnings: [] });
+
+      const telemetryCheck = health.checks.find((check) => check.name === "telemetry");
+      expect(telemetryCheck?.status).toBe("ok");
+      expect(telemetryCheck?.details).toMatchObject({
+        enabled: true,
+        capture_level: "max",
+        queue_entries: 0,
+        endpoint_probe: {
+          attempted: false,
+        },
+        env_overrides: {
+          telemetry_disabled: true,
+          telemetry_otel_disabled: true,
+        },
+      });
 
       const extensionCheck = health.checks.find((check) => check.name === "extensions");
       expect(extensionCheck?.status).toBe("ok");
@@ -189,6 +205,75 @@ describe("runHealth", () => {
         },
       });
       expect(health.generated_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    });
+  });
+
+  it("reports pending telemetry queue entries and last successful flush metadata", async () => {
+    await withTempPmPath(async (context) => {
+      const globalRoot = context.env.PM_GLOBAL_PATH as string;
+      const telemetryRuntimeDir = path.join(globalRoot, "runtime", "telemetry");
+      await mkdir(telemetryRuntimeDir, { recursive: true });
+      await writeFile(
+        path.join(telemetryRuntimeDir, "events.jsonl"),
+        `${JSON.stringify({ attempts: 0, event: { event_id: "evt-1" } })}\n`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(telemetryRuntimeDir, "state.json"),
+        `${JSON.stringify(
+          {
+            last_successful_flush_at: "2026-04-26T10:11:12.000Z",
+            queue_entries: 1,
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+
+      const health = await runHealth({ path: context.pmPath });
+      expect(health.ok).toBe(false);
+      expect(health.warnings).toEqual(expect.arrayContaining(["telemetry_queue_pending:1"]));
+
+      const telemetryCheck = health.checks.find((check) => check.name === "telemetry");
+      expect(telemetryCheck?.status).toBe("warn");
+      expect(telemetryCheck?.details).toMatchObject({
+        queue_entries: 1,
+        queue_exists: true,
+        last_successful_flush_at: "2026-04-26T10:11:12.000Z",
+      });
+    });
+  });
+
+  it("probes telemetry endpoint health when --check-telemetry is enabled", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      settings.telemetry.endpoint = "https://pm-cli.unbrained.dev/v1/events";
+      await writeSettings(context.pmPath, settings);
+
+      const originalFetch = globalThis.fetch;
+      const fetchMock = vi.fn(async () => new Response("service unavailable", { status: 503 }));
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+      try {
+        const health = await runHealth({ path: context.pmPath }, { checkTelemetry: true });
+        expect(health.ok).toBe(false);
+        expect(health.warnings).toEqual(expect.arrayContaining(["telemetry_endpoint_probe_http_status:503"]));
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+
+        const telemetryCheck = health.checks.find((check) => check.name === "telemetry");
+        expect(telemetryCheck?.status).toBe("warn");
+        expect(telemetryCheck?.details).toMatchObject({
+          endpoint: "https://pm-cli.unbrained.dev/v1/events",
+          endpoint_probe: {
+            attempted: true,
+            ok: false,
+            status: 503,
+            probe_url: "https://pm-cli.unbrained.dev/healthz",
+          },
+        });
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
     });
   });
 

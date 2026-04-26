@@ -6,9 +6,8 @@ status: open
 priority: 1
 tags[4]: "area:calendar","area:output",code,pm-cli
 created_at: "2026-03-31T21:28:33.277Z"
-updated_at: "2026-04-26T14:51:49.698Z"
+updated_at: "2026-04-26T20:01:29.356Z"
 deadline: "2026-05-09T17:10:36.266Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 90
 acceptance_criteria: Calendar output keeps existing defaults/contracts but adds deterministic agent-friendly summary fields and richer markdown details (title/location/all-day/timezone/recurrence context) with tests covering parsing stability.
@@ -41,7 +40,7 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-3aga,related,"2026-03-31T21:28:33.277Z",codex-agent,null
   pm-ezri,blocks,"2026-03-31T21:28:33.277Z",codex-agent,null
   pm-122q,parent,"2026-04-04T21:29:28.438Z",codex-agent,null
-comments[11]{created_at,author,text}:
+comments[14]{created_at,author,text}:
   "2026-03-31T21:28:33.277Z",codex-agent,Task created for markdown-default calendar output handling.
   "2026-03-31T21:45:12.525Z",codex-agent,Added calendar-specific markdown default rendering with explicit --format and --json override precedence checks.
   "2026-03-31T21:45:24.102Z",codex-agent,"Evidence: output behavior tests passed including calendar output precedence."
@@ -53,16 +52,22 @@ comments[11]{created_at,author,text}:
   "2026-04-26T13:16:13.798Z",cursor-agent,"Fresh calendar audit evidence 2026-04-26: valid day/week/month/agenda commands pass with --date now and ISO/from-to values, recurrence expansion works, and context includes agenda data. The audit checklist's --date today probe fails with invalid argument guidance; consider supporting today as an alias or documenting that agents must use now/relative/ISO values."
   "2026-04-26T13:51:52.747Z",cursor-agent,"Telemetry evidence from persisted user data analysis: calendar had 127 finishes and 14 failures for an 11.02 percent failure rate. Repeated failure pattern includes invalid --date value today with 5 occurrences, matching the existing calendar UX follow-up scope."
   "2026-04-26T14:51:49.698Z",audit-agent,"2026-04-26 audit confirms calendar works in all 4 views (agenda/day/week/month). Reminders and deadlines render correctly. Recurrence expansion verified. Outstanding: no local timezone support, no reminder recurrence, no iCal export, --limit is blunt global cap."
+  "2026-04-26T19:56:59.875Z",codex-agent,"Phase 4A/4B/4C audit evidence: verified machine-parseable json and toon outputs in agenda/day/week/month views, renamed rendered row type from CalendarEvent to CalendarRow in calendar/context command surfaces, and validated recurring/event/deadline/reminder rendering through dogfood command matrix."
+  "2026-04-26T19:57:02.431Z",codex-agent,"Verification evidence: node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/unit/context-command.spec.ts (passes) and broader 12-file regression suite including calendar command pathways."
+  "2026-04-26T19:57:04.569Z",codex-agent,"Outstanding follow-up retained in this item: better recurrence parse guidance and date alias ergonomics (for example today alias) remain open UX improvements beyond current acceptance checks."
 notes[1]{created_at,author,text}:
   "2026-03-31T21:28:33.277Z",codex-agent,Avoid changes to global TOON default behavior for existing commands.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:25:12.157Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[4]{path,scope,note}:
+files[6]{path,scope,note}:
   src/cli/commands/calendar.ts,project,markdown renderer and format resolution
+  src/cli/commands/context.ts,project,context agenda now consumes CalendarRow type naming
   src/cli/main.ts,project,calendar output switch logic
   src/core/output/command-aware.ts,project,calendar summary highlights for agents
   tests/unit/calendar-command.spec.ts,project,output precedence tests
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  tests/unit/context-command.spec.ts,project,context agenda regression coverage alongside calendar output checks
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/unit/context-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,calendar/context agent-format regression bundle
   node scripts/run-tests.mjs test -- tests/unit/output.spec.ts tests/unit/calendar-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,output behavior coverage
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-all-local-mnktqphw-natg7c,test-all,passed,"2026-04-04T21:08:02.324Z","2026-04-04T21:10:32.449Z","2026-04-04T21:10:32.449Z",null,null,1,0,0,1,1,null

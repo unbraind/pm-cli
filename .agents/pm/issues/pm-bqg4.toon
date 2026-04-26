@@ -2,26 +2,41 @@ id: pm-bqg4
 title: Strengthen SDK typing for extension registration contracts
 description: "SDK/extension audit found extension-facing registration types that are too loose (Record<string, unknown> style payloads), which weakens autocomplete and compile-time validation for schema/search/service extension authors and increases trial-and-error integration."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: agent-ux,extensions,external-audit,pm-cli,sdk,types
 created_at: "2026-04-26T09:56:34.292Z"
-updated_at: "2026-04-26T14:51:48.539Z"
-assignee: codex-agent
+updated_at: "2026-04-26T19:59:51.568Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: "SDK exports concrete extension registration interfaces for schema/search/service payloads, examples compile with those types, and extension authoring docs reflect the typed contracts."
 parent: pm-o7be
+resolution: "Replaced loose extension registration records with explicit SDK interfaces and exported them for extension authors, with docs and starter examples updated."
+expected_result: Extension authors receive compile-time contracts for schema/search/vector/service registration and corresponding SDK documentation/examples.
+actual_result: "Typed contracts are available through sdk exports, starter example/docs added, and SDK regression suites pass."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-o7be,parent,"2026-04-26T09:56:34.292Z",codex-agent,null
-comments[4]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-04-26T09:56:34.292Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'Extension SDK schema type definitions Record unknown' --limit 10; pm search 'SchemaFieldDefinition Record unknown ExtensionApi typing' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because existing open SDK issue pm-1etl covers module resolution/diagnostics,not compile-time contract precision for extension registration payloads."
   "2026-04-26T09:57:29.339Z",codex-agent,"SDK audit evidence: src/core/extensions/loader.ts currently aliases multiple extension registration contracts as Record<string, unknown> (SchemaFieldDefinition, SchemaItemTypeDefinition, SearchProviderDefinition, VectorStoreAdapterDefinition), which limits compile-time validation and editor guidance for extension authors. Recommend promoting these to explicit interfaces in SDK exports."
   "2026-04-26T13:16:31.724Z",cursor-agent,"Fresh SDK audit evidence 2026-04-26: external-style TypeScript smoke using defineExtension, ExtensionApi, and CommandDefinition compiled successfully after including required manifest priority. pm contracts --flags-only exposed all 52 PM_CORE_COMMAND_NAMES with no missing core commands; remaining DX gap is still the loose Record<string, unknown> aliases for FlagDefinition, SchemaFieldDefinition, SchemaItemTypeDefinition, SchemaMigrationDefinition, SearchProviderDefinition, and VectorStoreAdapterDefinition."
   "2026-04-26T14:51:48.539Z",audit-agent,"2026-04-26 audit confirms SDK gaps: defineExtension is minimal, field/search/vector types are Record<string,unknown>, no extension scaffold template exists, no deactivate lifecycle hook. SDK exports are clean and well-documented in EXTENSIONS.md."
-files[2]{path,scope,note}:
+  "2026-04-26T19:50:34.291Z",codex-agent,"Implemented strong extension registration interfaces in src/core/extensions/loader.ts (schema/search/vector/import-export/migration/flags contexts), re-exported them from src/sdk/index.ts, and validated compile/build parity."
+  "2026-04-26T19:50:36.034Z",codex-agent,Added SDK-first documentation and a full starter extension example under docs/examples/starter-extension to reduce trial-and-error for extension authors while exercising typed registration paths.
+  "2026-04-26T19:50:38.102Z",codex-agent,"Verification evidence: node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/sdk-index.spec.ts tests/unit/structure-exports.spec.ts (38 passed) and targeted 12-file regression suite (318 passed)."
+files[5]{path,scope,note}:
+  docs/examples/starter-extension/index.js,project,all-9-capability starter extension uses public sdk contracts
+  docs/SDK.md,project,sdk-first typed extension authoring guide added during audit
+  src/cli/main.ts,project,early service bootstrap ensures help/error service typing paths work at parse time
   src/core/extensions/loader.ts,project,Extension API registration typing surface audited for loose payload contracts
   src/sdk/index.ts,project,SDK export surface reviewed for extension authoring DX
-docs[1]{path,scope,note}:
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/sdk-index.spec.ts tests/unit/structure-exports.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,sdk typing and export regression bundle
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mog6oekc-x0v3j1,test,passed,"2026-04-26T19:50:42.146Z","2026-04-26T19:51:01.308Z","2026-04-26T19:51:01.308Z",null,null,1,0,0,null,null,null
+docs[3]{path,scope,note}:
+  docs/examples/starter-extension/README.md,project,starter extension walkthrough for all capabilities
   docs/EXTENSIONS.md,project,Extension authoring docs to align with stronger SDK type contracts
+  docs/SDK.md,project,typed extension contracts and defineExtension usage
+close_reason: SDK extension registration typing hardened and documented
 body: ""

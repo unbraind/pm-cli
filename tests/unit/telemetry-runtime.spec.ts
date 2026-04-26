@@ -29,6 +29,12 @@ async function withTempGlobalRoot(run: (globalRoot: string) => Promise<void>): P
   }
 }
 
+async function setTelemetryCaptureLevel(globalRoot: string, level: "minimal" | "redacted" | "max"): Promise<void> {
+  const settings = await readSettings(globalRoot);
+  settings.telemetry.capture_level = level;
+  await writeSettings(globalRoot, settings, `test:set_capture_level:${level}`);
+}
+
 describe("core/telemetry/runtime", () => {
   afterEach(() => {
     if (originalGlobalPath === undefined) {
@@ -67,6 +73,7 @@ describe("core/telemetry/runtime", () => {
 
   it("queues redacted command_start events when exporter fails", async () => {
     await withTempGlobalRoot(async (globalRoot) => {
+      await setTelemetryCaptureLevel(globalRoot, "redacted");
       globalThis.fetch = vi.fn(async () => {
         throw new Error("network_down");
       }) as unknown as typeof fetch;
@@ -106,6 +113,7 @@ describe("core/telemetry/runtime", () => {
         event: {
           event_type: string;
           payload: {
+            capture_level?: string;
             command_args: string[];
             command_options: Record<string, string>;
           };
@@ -113,6 +121,7 @@ describe("core/telemetry/runtime", () => {
       };
       expect(queued.attempts).toBe(1);
       expect(queued.event.event_type).toBe("command_start");
+      expect(queued.event.payload.capture_level).toBe("redacted");
       expect(queued.event.payload.command_args).toEqual([
         "--api-key",
         "[redacted]",
@@ -126,6 +135,7 @@ describe("core/telemetry/runtime", () => {
 
   it("redacts inline secrets and paths in command_finish result summaries", async () => {
     await withTempGlobalRoot(async (globalRoot) => {
+      await setTelemetryCaptureLevel(globalRoot, "redacted");
       globalThis.fetch = vi.fn(async () => {
         throw new Error("network_down");
       }) as unknown as typeof fetch;
@@ -176,6 +186,133 @@ describe("core/telemetry/runtime", () => {
       expect(finishEvent?.event.payload.result_summary?.preview?.query).toBe(
         "[redacted_email] token=[redacted] --password [redacted] [redacted_path]",
       );
+    });
+  });
+
+  it("reduces telemetry payload shape when capture level is minimal", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      await setTelemetryCaptureLevel(globalRoot, "minimal");
+      globalThis.fetch = vi.fn(async () => {
+        throw new Error("network_down");
+      }) as unknown as typeof fetch;
+
+      const active = await startTelemetryCommand({
+        command: "list-open",
+        args: ["--token=secret", "user@example.com"],
+        options: { token: "secret", path: "/home/steve/private/path" },
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+      expect(active?.capture_level).toBe("minimal");
+
+      await finishTelemetryCommand(active, {
+        ok: false,
+        error: "token=supersecret /home/steve/private/path",
+        result: {
+          token: "still-secret",
+          query: "user@example.com",
+        },
+      });
+
+      const queueRaw = await fs.readFile(telemetryQueuePath(globalRoot), "utf8");
+      const queuedEntries = queueRaw
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+        .map((line) => JSON.parse(line) as { event: { event_type: string; payload: Record<string, unknown> } });
+      const startEvent = queuedEntries.find((entry) => entry.event.event_type === "command_start");
+      const finishEvent = queuedEntries.find((entry) => entry.event.event_type === "command_finish");
+
+      expect(startEvent).toBeDefined();
+      expect(finishEvent).toBeDefined();
+      expect(startEvent?.event.payload).toEqual({ capture_level: "minimal" });
+
+      const finishPayload = finishEvent?.event.payload ?? {};
+      expect(finishPayload.capture_level).toBe("minimal");
+      expect(finishPayload.ok).toBe(false);
+      expect(typeof finishPayload.duration_ms).toBe("number");
+      expect(finishPayload.started_at).toBeUndefined();
+      expect(finishPayload.result_summary).toBeUndefined();
+      expect(String(finishPayload.error ?? "")).toContain("[redacted]");
+      expect(String(finishPayload.error ?? "")).not.toContain("supersecret");
+    });
+  });
+
+  it("retains non-sensitive context at max capture level while redacting secrets", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      await setTelemetryCaptureLevel(globalRoot, "max");
+      globalThis.fetch = vi.fn(async () => {
+        throw new Error("network_down");
+      }) as unknown as typeof fetch;
+
+      const active = await startTelemetryCommand({
+        command: "search",
+        args: ["user@example.com", "/home/steve/private/path", "--token=abc123"],
+        options: {
+          contact: "user@example.com",
+          path: "/home/steve/private/path",
+          apiKey: "top-secret",
+        },
+        global: {
+          json: false,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+      expect(active?.capture_level).toBe("max");
+
+      await finishTelemetryCommand(active, {
+        ok: true,
+        result: {
+          query: "user@example.com token=supersecret /home/steve/private/path",
+        },
+      });
+
+      const queueRaw = await fs.readFile(telemetryQueuePath(globalRoot), "utf8");
+      const queuedEntries = queueRaw
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+        .map((line) =>
+          JSON.parse(line) as {
+            event: {
+              event_type: string;
+              payload: {
+                capture_level?: string;
+                command_args?: string[];
+                command_options?: Record<string, unknown>;
+                result_summary?: { preview?: Record<string, unknown> };
+              };
+            };
+          },
+        );
+
+      const startEvent = queuedEntries.find((entry) => entry.event.event_type === "command_start");
+      const finishEvent = queuedEntries.find((entry) => entry.event.event_type === "command_finish");
+      expect(startEvent).toBeDefined();
+      expect(finishEvent).toBeDefined();
+      expect(startEvent?.event.payload.capture_level).toBe("max");
+      expect(startEvent?.event.payload.command_args).toEqual(
+        expect.arrayContaining(["user@example.com", "/home/steve/private/path", "--token=[redacted]"]),
+      );
+      expect(startEvent?.event.payload.command_options?.contact).toBe("user@example.com");
+      expect(startEvent?.event.payload.command_options?.path).toBe("/home/steve/private/path");
+      expect(startEvent?.event.payload.command_options?.apiKey).toBe("[redacted]");
+
+      const query = String(finishEvent?.event.payload.result_summary?.preview?.query ?? "");
+      expect(query).toContain("user@example.com");
+      expect(query).toContain("/home/steve/private/path");
+      expect(query).toContain("token=[redacted]");
+      expect(query).not.toContain("supersecret");
     });
   });
 

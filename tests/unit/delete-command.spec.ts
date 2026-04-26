@@ -79,6 +79,13 @@ function latestDeleteHistoryEntry(
   return [...entries].reverse().find((entry) => entry.op === "delete");
 }
 
+function setGovernancePreset(context: TempPmContext, preset: "minimal" | "default" | "strict" | "custom"): void {
+  const result = context.runCli(["config", "project", "set", "governance-preset", "--policy", preset, "--json"], {
+    expectJson: true,
+  });
+  expect(result.code).toBe(0);
+}
+
 describe("runDelete", () => {
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-delete-not-init-"));
@@ -162,6 +169,7 @@ describe("runDelete", () => {
   it("rejects foreign assignment unless forced and supports unknown author fallback", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "delete-foreign-assigned-item", { assignee: "foreign-author" });
+      setGovernancePreset(context, "strict");
       await expect(runDelete(id, {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.CONFLICT,
       });

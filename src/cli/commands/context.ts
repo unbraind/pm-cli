@@ -7,7 +7,7 @@ import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../
 import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter, ItemStatus } from "../../types/index.js";
-import { runCalendar, type CalendarEvent, type CalendarOptions } from "./calendar.js";
+import { runCalendar, type CalendarOptions, type CalendarRow } from "./calendar.js";
 import { runList, type ListOptions } from "./list.js";
 
 export const CONTEXT_OUTPUT_VALUES = ["markdown", "toon", "json"] as const;
@@ -90,7 +90,7 @@ export interface ContextResult {
   blocked_fallback: ContextFocusItem[];
   agenda: {
     summary: ContextAgendaSummary;
-    events: CalendarEvent[];
+    events: CalendarRow[];
   };
   warnings?: string[];
 }
@@ -196,7 +196,7 @@ function toContextFocusItem(item: ItemFrontMatter): ContextFocusItem {
   };
 }
 
-function summarizeAgenda(events: CalendarEvent[]): ContextAgendaSummary {
+function summarizeAgenda(events: CalendarRow[]): ContextAgendaSummary {
   let deadlines = 0;
   let reminders = 0;
   let scheduled = 0;
@@ -222,7 +222,7 @@ function summarizeAgenda(events: CalendarEvent[]): ContextAgendaSummary {
   };
 }
 
-function filterTerminalCalendarEvents(events: CalendarEvent[], statusRegistry: RuntimeStatusRegistry): CalendarEvent[] {
+function filterTerminalCalendarEvents(events: CalendarRow[], statusRegistry: RuntimeStatusRegistry): CalendarRow[] {
   return events.filter((event) => !statusRegistry.terminal_statuses.has(normalizeStatusForRegistry(event.item_status, statusRegistry)));
 }
 
@@ -236,7 +236,7 @@ function formatFocusLine(item: ContextFocusItem): string {
   return `${item.id} p${item.priority} ${item.status} ${item.type} order:${orderToken} deadline:${deadlineToken} ${item.title}`;
 }
 
-function formatAgendaLine(event: CalendarEvent): string {
+function formatAgendaLine(event: CalendarRow): string {
   const base = `${formatClock(event.at)} [${event.kind}] ${event.item_id} p${event.item_priority} ${event.item_status} ${event.item_title}`;
   if (event.kind === "reminder") {
     return `${base} — ${event.reminder_text}`;

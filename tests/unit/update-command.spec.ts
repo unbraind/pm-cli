@@ -75,6 +75,13 @@ function latestUpdateOperation(context: TempPmContext, id: string): string | und
   return [...entries].reverse().find((entry) => entry.op.startsWith("update"))?.op;
 }
 
+function setGovernancePreset(context: TempPmContext, preset: "minimal" | "default" | "strict" | "custom"): void {
+  const result = context.runCli(["config", "project", "set", "governance-preset", "--policy", preset, "--json"], {
+    expectJson: true,
+  });
+  expect(result.code).toBe(0);
+}
+
 describe("runUpdate", () => {
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-update-not-init-"));
@@ -803,15 +810,7 @@ describe("runUpdate", () => {
   it("rejects missing parent references under strict policy", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-parent-strict");
-      const settingsPath = path.join(context.pmPath, "settings.json");
-      const parsed = JSON.parse(await readFile(settingsPath, "utf8")) as {
-        validation?: { parent_reference?: string };
-      };
-      parsed.validation = {
-        ...(parsed.validation ?? {}),
-        parent_reference: "strict_error",
-      };
-      await writeFile(settingsPath, `${JSON.stringify(parsed, null, 2)}\n`, "utf8");
+      setGovernancePreset(context, "strict");
 
       await expect(
         runUpdate(
@@ -1500,6 +1499,7 @@ describe("runUpdate", () => {
   it("blocks foreign assignment updates unless forced", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-force", { assignee: "foreign-assignee" });
+      setGovernancePreset(context, "strict");
 
       await expect(runUpdate(id, { description: "blocked update" }, { path: context.pmPath })).rejects.toMatchObject<
         PmCliError

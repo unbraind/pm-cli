@@ -1039,7 +1039,15 @@ describe("release readiness runtime coverage", () => {
     await withTempPmPath(async (context) => {
       const initResult = context.runCli(["init", "--json"], { expectJson: true });
       expect(initResult.code).toBe(0);
-      expectTopLevelKeyOrder(initResult.json, ["ok", "path", "settings", "created_dirs", "warnings"]);
+      expectTopLevelKeyOrder(initResult.json, [
+        "ok",
+        "path",
+        "settings",
+        "created_dirs",
+        "warnings",
+        "governance_preset",
+        "wizard_used",
+      ]);
 
       const createResult = context.runCli(
         [
@@ -1354,6 +1362,10 @@ describe("release readiness runtime coverage", () => {
       });
       expect(conflictSeed.code).toBe(0);
       const conflictSeedId = (conflictSeed.json as { item: { id: string } }).item.id;
+      const strictPreset = context.runCli(["config", "project", "set", "governance-preset", "--policy", "strict", "--json"], {
+        expectJson: true,
+      });
+      expect(strictPreset.code).toBe(0);
       const conflictResult = context.runCli(["update", conflictSeedId, "--status", "in_progress", "--json"]);
       expect(conflictResult.code).toBe(4);
 

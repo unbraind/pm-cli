@@ -2,22 +2,38 @@ id: pm-300m
 title: Add telemetry runtime diagnostics to pm health
 description: pm health currently omits telemetry runtime/export state even though telemetry operations docs expect visibility for endpoint policy and queue/export readiness.
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: external-audit,health,observability,pm-cli,telemetry
 created_at: "2026-04-26T00:31:23.357Z"
-updated_at: "2026-04-26T14:51:51.094Z"
+updated_at: "2026-04-26T19:59:49.938Z"
 author: codex-agent
 estimated_minutes: 120
 acceptance_criteria: "pm health reports telemetry enabled policy, endpoint target, queue status summary, and environment overrides without leaking sensitive values."
 parent: pm-lnq3
+resolution: "Added telemetry health check pipeline to pm health including queue/state parsing, environment overrides, and optional endpoint probing via check-telemetry."
+expected_result: Health output exposes telemetry policy and exporter readiness details without leaking sensitive values.
+actual_result: pm health now includes telemetry diagnostics and check-telemetry probing with CLI contract/completion and unit regressions passing.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-lnq3,parent,"2026-04-26T00:31:23.357Z",codex-agent,null
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-04-26T00:31:23.357Z",codex-agent,Duplicate check evidence ran pm context limit 10 plus pm search health telemetry check limit 20 plus pm list-open limit 20 plus pm list-in-progress limit 20 and found no open item dedicated to telemetry check visibility in pm health
   "2026-04-26T08:42:51.310Z",codex-agent,"Follow-up evidence from latest audit: pm health --check-only --json remains blind to telemetry runtime/export queue state while remote stack is active and ingesting. Validation still needed to expose telemetry-enabled status, endpoint target, and export health summary in pm health output."
   "2026-04-26T09:56:04.220Z",codex-agent,"Audit follow-up 2026-04-26: remote Prometheus and Grafana confirm telemetry ingest activity, but pm health --check-only --json still omits telemetry runtime/export diagnostics. Recommend adding telemetry policy+endpoint snapshot (sanitized), queue depth/unacked indicators, and worker insert error counters so operators can detect remote ingestion degradation from CLI health output."
   "2026-04-26T13:16:31.774Z",cursor-agent,"Fresh telemetry health audit evidence 2026-04-26: local telemetry default-enabled commands flushed successfully to https://pm-cli.unbrained.dev/v1/events; failed exports were queued with retry metadata and redacted payloads; opt-out stopped subsequent event writes. pm health --check-only remains focused on tracker health and does not expose telemetry endpoint/queue/export state, so this diagnostics gap remains open."
   "2026-04-26T13:51:52.888Z",cursor-agent,"Telemetry analysis evidence: persisted payload key coverage includes runtime node platform data but no pm CLI version key, and start/finish deltas appeared for update, test-all, and get. pm health telemetry diagnostics should surface enough local/export state to catch these instrumentation quality gaps without raw identifiers."
   "2026-04-26T14:51:51.094Z",audit-agent,"2026-04-26 audit confirms: pm health has NO telemetry check despite operations docs claiming it does. This is a documentation/implementation gap. Telemetry runtime health should be surfaced in pm health output."
+  "2026-04-26T19:49:22.827Z",codex-agent,"Implemented telemetry diagnostics in pm health: added telemetry check summary, queue/state parsing, env override visibility, optional endpoint probe behind --check-telemetry, and CLI contract wiring through health flag schemas."
+  "2026-04-26T19:49:24.660Z",codex-agent,"Verification evidence: node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/unit/completion-command.spec.ts (passes) plus broader 12-file regression sweep including health/help/release-readiness suites."
+files[5]{path,scope,note}:
+  src/cli/commands/health.ts,project,telemetry health check with queue state and endpoint probe support
+  src/cli/main.ts,project,health command wiring for check-telemetry option
+  src/sdk/cli-contracts.ts,project,health check-telemetry flag contract coverage
+  tests/unit/completion-command.spec.ts,project,completion includes check-telemetry flag
+  tests/unit/health-command.spec.ts,project,telemetry health check coverage including queue state and endpoint probing
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/unit/completion-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,telemetry health diagnostics regression bundle
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mog6n6bz-k0vmgf,test,passed,"2026-04-26T19:49:29.158Z","2026-04-26T19:50:03.983Z","2026-04-26T19:50:03.983Z",null,null,1,0,0,null,null,null
+close_reason: telemetry diagnostics now exposed in pm health output
 body: ""

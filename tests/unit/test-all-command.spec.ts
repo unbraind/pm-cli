@@ -105,6 +105,13 @@ async function setTestResultTracking(pmPath: string, enabled: boolean): Promise<
   await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
 }
 
+function setGovernancePreset(context: TempPmContext, preset: "minimal" | "default" | "strict" | "custom"): void {
+  const result = context.runCli(["config", "project", "set", "governance-preset", "--policy", preset, "--json"], {
+    expectJson: true,
+  });
+  expect(result.code).toBe(0);
+}
+
 async function loadTaskFrontMatter(context: TempPmContext, id: string): Promise<Record<string, unknown>> {
   const toonPath = path.join(context.pmPath, "tasks", `${id}.toon`);
   const markdownPath = path.join(context.pmPath, "tasks", `${id}.md`);
@@ -999,6 +1006,7 @@ describe("runTestAll", () => {
         status: "open",
         testEntries: ["command=node --version,scope=project"],
       });
+      setGovernancePreset(context, "strict");
       await setTestResultTracking(context.pmPath, true);
       const reassigned = context.runCli(
         ["update", "--json", id, "--assignee", "other-owner", "--message", "Reassign for test-all tracking warning"],

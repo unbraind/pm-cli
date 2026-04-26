@@ -7,6 +7,7 @@ import { resolveGlobalPmRoot } from "../store/paths.js";
 import { readSettings, writeSettings } from "../store/settings.js";
 
 const TELEMETRY_QUEUE_RELATIVE_PATH = path.join("runtime", "telemetry", "events.jsonl");
+const TELEMETRY_STATE_RELATIVE_PATH = path.join("runtime", "telemetry", "state.json");
 const TELEMETRY_SCHEMA_VERSION = 1;
 const TELEMETRY_FLUSH_BATCH_SIZE = 100;
 const TELEMETRY_MAX_RETRY_DELAY_MS = 3_600_000;
@@ -64,6 +65,17 @@ interface QueuedTelemetryEvent {
   next_attempt_after?: string;
 }
 
+interface TelemetryRuntimeState {
+  last_attempted_flush_at?: string;
+  last_successful_flush_at?: string;
+  last_failed_flush_at?: string;
+  last_failed_flush_error?: string;
+  endpoint?: string;
+  queue_entries?: number;
+}
+
+type TelemetryCaptureLevel = "minimal" | "redacted" | "max";
+
 export interface ActiveTelemetryCommand {
   started_at: string;
   started_at_ms: number;
@@ -73,6 +85,7 @@ export interface ActiveTelemetryCommand {
   cwd_hash: string;
   endpoint: string;
   global_pm_root: string;
+  capture_level: TelemetryCaptureLevel;
   otel_traces_endpoint?: string;
   otel_trace_id?: string;
   otel_span_id?: string;
@@ -92,6 +105,44 @@ function nowIso(): string {
 
 function queuePath(globalPmRoot: string): string {
   return path.join(globalPmRoot, TELEMETRY_QUEUE_RELATIVE_PATH);
+}
+
+function runtimeStatePath(globalPmRoot: string): string {
+  return path.join(globalPmRoot, TELEMETRY_STATE_RELATIVE_PATH);
+}
+
+async function readRuntimeState(globalPmRoot: string): Promise<TelemetryRuntimeState> {
+  const raw = await readFileIfExists(runtimeStatePath(globalPmRoot));
+  if (!raw || raw.trim().length === 0) {
+    return {};
+  }
+  try {
+    const parsed = JSON.parse(raw) as TelemetryRuntimeState;
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      return {};
+    }
+    return parsed;
+  } catch {
+    return {};
+  }
+}
+
+async function writeRuntimeState(globalPmRoot: string, patch: TelemetryRuntimeState): Promise<void> {
+  try {
+    const current = await readRuntimeState(globalPmRoot);
+    const next: TelemetryRuntimeState = {
+      ...current,
+      ...patch,
+    };
+    const normalized = Object.fromEntries(
+      Object.entries(next)
+        .filter(([, value]) => value !== undefined)
+        .sort((left, right) => left[0].localeCompare(right[0])),
+    );
+    await writeFileAtomic(runtimeStatePath(globalPmRoot), `${JSON.stringify(normalized, null, 2)}\n`);
+  } catch {
+    // Runtime state persistence is best effort and must not block command execution.
+  }
 }
 
 function isSensitiveKey(key: string): boolean {
@@ -120,7 +171,7 @@ function redactAbsolutePathTokens(input: string): string {
   );
 }
 
-function sanitizeString(input: string): string {
+function sanitizeStringRedacted(input: string): string {
   const withoutEmails = input.replaceAll(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/giu, "[redacted_email]");
   const withoutBearer = withoutEmails.replaceAll(/bearer\s+[a-z0-9._=-]+/giu, "bearer [redacted_token]");
   const withoutInlineSecrets = redactInlineSensitiveAssignments(withoutBearer);
@@ -135,7 +186,27 @@ function sanitizeString(input: string): string {
   return withoutAbsolutePaths;
 }
 
-function sanitizeValue(value: unknown, keyHint?: string): unknown {
+function sanitizeStringMax(input: string): string {
+  const withoutBearer = input.replaceAll(/bearer\s+[a-z0-9._=-]+/giu, "bearer [redacted_token]");
+  const withoutInlineSecrets = redactInlineSensitiveAssignments(withoutBearer);
+  if (withoutInlineSecrets.length > 2048) {
+    return `${withoutInlineSecrets.slice(0, 2045)}...`;
+  }
+  return withoutInlineSecrets;
+}
+
+function sanitizeString(input: string, captureLevel: Exclude<TelemetryCaptureLevel, "minimal"> = "redacted"): string {
+  if (captureLevel === "max") {
+    return sanitizeStringMax(input);
+  }
+  return sanitizeStringRedacted(input);
+}
+
+function sanitizeValue(
+  value: unknown,
+  keyHint?: string,
+  captureLevel: Exclude<TelemetryCaptureLevel, "minimal"> = "redacted",
+): unknown {
   if (keyHint && isSensitiveKey(keyHint)) {
     return "[redacted]";
   }
@@ -143,30 +214,33 @@ function sanitizeValue(value: unknown, keyHint?: string): unknown {
     return value;
   }
   if (typeof value === "string") {
-    return sanitizeString(value);
+    return sanitizeString(value, captureLevel);
   }
   if (typeof value === "number" || typeof value === "boolean") {
     return value;
   }
   if (Array.isArray(value)) {
-    return value.map((entry) => sanitizeValue(entry));
+    return value.map((entry) => sanitizeValue(entry, undefined, captureLevel));
   }
   if (typeof value === "object") {
     const record = value as Record<string, unknown>;
     const sanitized: Record<string, unknown> = {};
     for (const [key, nested] of Object.entries(record)) {
-      sanitized[key] = sanitizeValue(nested, key);
+      sanitized[key] = sanitizeValue(nested, key, captureLevel);
     }
     return sanitized;
   }
   return String(value);
 }
 
-function sanitizeCommandArgs(args: string[]): string[] {
+function sanitizeCommandArgs(
+  args: string[],
+  captureLevel: Exclude<TelemetryCaptureLevel, "minimal"> = "redacted",
+): string[] {
   const sanitized: string[] = [];
   let nextIsSensitiveValue = false;
   for (const rawArg of args) {
-    const arg = sanitizeString(rawArg);
+    const arg = sanitizeString(rawArg, captureLevel);
     if (nextIsSensitiveValue) {
       sanitized.push("[redacted]");
       nextIsSensitiveValue = false;
@@ -181,7 +255,7 @@ function sanitizeCommandArgs(args: string[]): string[] {
         if (isSensitiveKey(key)) {
           sanitized.push(`--${key}=[redacted]`);
         } else {
-          sanitized.push(`--${key}=${sanitizeString(value)}`);
+          sanitized.push(`--${key}=${sanitizeString(value, captureLevel)}`);
         }
         continue;
       }
@@ -194,6 +268,14 @@ function sanitizeCommandArgs(args: string[]): string[] {
     sanitized.push(arg);
   }
   return sanitized;
+}
+
+function normalizeCaptureLevel(value: string | undefined): TelemetryCaptureLevel {
+  const normalized = value?.trim().toLowerCase();
+  if (normalized === "minimal" || normalized === "redacted" || normalized === "max") {
+    return normalized;
+  }
+  return "redacted";
 }
 
 function hashWithInstallationId(installationId: string, value: string): string {
@@ -344,12 +426,15 @@ async function exportLocalOtelSpan(
   }
 }
 
-function summarizeResult(result: unknown): Record<string, unknown> {
+function summarizeResult(
+  result: unknown,
+  captureLevel: Exclude<TelemetryCaptureLevel, "minimal"> = "redacted",
+): Record<string, unknown> {
   if (result === null || result === undefined) {
     return { type: "nullish" };
   }
   if (typeof result === "string") {
-    return { type: "string", value: sanitizeString(result) };
+    return { type: "string", value: sanitizeString(result, captureLevel) };
   }
   if (typeof result === "number" || typeof result === "boolean") {
     return { type: typeof result, value: result };
@@ -358,7 +443,7 @@ function summarizeResult(result: unknown): Record<string, unknown> {
     return {
       type: "array",
       length: result.length,
-      sample: result.slice(0, 5).map((entry) => sanitizeValue(entry)),
+      sample: result.slice(0, 5).map((entry) => sanitizeValue(entry, undefined, captureLevel)),
     };
   }
   if (typeof result === "object") {
@@ -366,7 +451,7 @@ function summarizeResult(result: unknown): Record<string, unknown> {
     const keys = Object.keys(record).sort((left, right) => left.localeCompare(right));
     const sanitized: Record<string, unknown> = {};
     for (const key of keys.slice(0, 25)) {
-      sanitized[key] = sanitizeValue(record[key], key);
+      sanitized[key] = sanitizeValue(record[key], key, captureLevel);
     }
     return {
       type: "object",
@@ -376,6 +461,62 @@ function summarizeResult(result: unknown): Record<string, unknown> {
     };
   }
   return { type: typeof result, value: String(result) };
+}
+
+function buildCommandStartPayload(params: {
+  captureLevel: TelemetryCaptureLevel;
+  context: TelemetryCommandContext;
+  pmRootHash: string;
+  cwdHash: string;
+  installationId: string;
+}): Record<string, unknown> {
+  const { captureLevel, context, pmRootHash, cwdHash, installationId } = params;
+  if (captureLevel === "minimal") {
+    return {
+      capture_level: captureLevel,
+    };
+  }
+  return {
+    command_args: sanitizeCommandArgs(context.args, captureLevel),
+    command_options: sanitizeValue(context.options, undefined, captureLevel) as Record<string, unknown>,
+    global_options: sanitizeValue(context.global, undefined, captureLevel) as Record<string, unknown>,
+    pm_root_hash: pmRootHash,
+    cwd_hash: cwdHash,
+    capture_level: captureLevel,
+    runtime: {
+      node: process.version,
+      platform: process.platform,
+      arch: process.arch,
+      hostname_hash: hashWithInstallationId(installationId, os.hostname()),
+      stdin_tty: process.stdin.isTTY === true,
+      stdout_tty: process.stdout.isTTY === true,
+    },
+  };
+}
+
+function buildCommandFinishPayload(params: {
+  captureLevel: TelemetryCaptureLevel;
+  outcome: { ok: boolean; error?: string; result?: unknown };
+  durationMs: number;
+  startedAt: string;
+}): Record<string, unknown> {
+  const { captureLevel, outcome, durationMs, startedAt } = params;
+  if (captureLevel === "minimal") {
+    return {
+      capture_level: captureLevel,
+      ok: outcome.ok,
+      error: outcome.error ? sanitizeString(outcome.error, "redacted") : undefined,
+      duration_ms: durationMs,
+    };
+  }
+  return {
+    capture_level: captureLevel,
+    ok: outcome.ok,
+    error: outcome.error ? sanitizeString(outcome.error, captureLevel) : undefined,
+    duration_ms: durationMs,
+    started_at: startedAt,
+    result_summary: summarizeResult(outcome.result, captureLevel),
+  };
 }
 
 async function ensureInstallationId(globalPmRoot: string): Promise<{ installationId: string; endpoint: string }> {
@@ -449,26 +590,39 @@ async function rewriteQueue(globalPmRoot: string, entries: QueuedTelemetryEvent[
 }
 
 async function flushQueue(globalPmRoot: string, endpoint: string): Promise<void> {
-  if (endpoint.trim().length === 0) {
+  const normalizedEndpoint = endpoint.trim();
+  if (normalizedEndpoint.length === 0) {
     return;
   }
   const raw = await readFileIfExists(queuePath(globalPmRoot));
   if (raw === null || raw.trim().length === 0) {
+    await writeRuntimeState(globalPmRoot, {
+      endpoint: normalizedEndpoint,
+      queue_entries: 0,
+    });
     return;
   }
   const queueEntries = parseQueueLines(raw);
   if (queueEntries.length === 0) {
+    await writeRuntimeState(globalPmRoot, {
+      endpoint: normalizedEndpoint,
+      queue_entries: 0,
+    });
     return;
   }
   const dueEntries = queueEntries.filter((entry) => isDueForRetry(entry)).slice(0, TELEMETRY_FLUSH_BATCH_SIZE);
   if (dueEntries.length === 0) {
+    await writeRuntimeState(globalPmRoot, {
+      endpoint: normalizedEndpoint,
+      queue_entries: queueEntries.length,
+    });
     return;
   }
   const dueIds = new Set(dueEntries.map((entry) => entry.event.event_id));
   const attemptTime = nowIso();
 
   try {
-    const response = await fetch(endpoint, {
+    const response = await fetch(normalizedEndpoint, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -484,7 +638,15 @@ async function flushQueue(globalPmRoot: string, endpoint: string): Promise<void>
     }
     const remaining = queueEntries.filter((entry) => !dueIds.has(entry.event.event_id));
     await rewriteQueue(globalPmRoot, remaining);
-  } catch {
+    await writeRuntimeState(globalPmRoot, {
+      endpoint: normalizedEndpoint,
+      queue_entries: remaining.length,
+      last_attempted_flush_at: attemptTime,
+      last_successful_flush_at: attemptTime,
+      last_failed_flush_at: undefined,
+      last_failed_flush_error: undefined,
+    });
+  } catch (error: unknown) {
     const retried = queueEntries.map((entry) => {
       if (!dueIds.has(entry.event.event_id)) {
         return entry;
@@ -498,6 +660,19 @@ async function flushQueue(globalPmRoot: string, endpoint: string): Promise<void>
       };
     });
     await rewriteQueue(globalPmRoot, retried);
+    const errorMessage = (() => {
+      if (error instanceof Error) {
+        return sanitizeString(error.message, "redacted");
+      }
+      return "telemetry_flush_failed";
+    })();
+    await writeRuntimeState(globalPmRoot, {
+      endpoint: normalizedEndpoint,
+      queue_entries: retried.length,
+      last_attempted_flush_at: attemptTime,
+      last_failed_flush_at: attemptTime,
+      last_failed_flush_error: errorMessage,
+    });
   }
 }
 
@@ -511,6 +686,7 @@ export async function startTelemetryCommand(context: TelemetryCommandContext): P
     if (!settings.telemetry.enabled) {
       return null;
     }
+    const captureLevel = normalizeCaptureLevel(settings.telemetry.capture_level);
     const { installationId, endpoint } = await ensureInstallationId(globalPmRoot);
     const pmRootHash = hashWithInstallationId(installationId, context.pm_root);
     const cwdHash = hashWithInstallationId(installationId, process.cwd());
@@ -524,22 +700,13 @@ export async function startTelemetryCommand(context: TelemetryCommandContext): P
       installation_id: installationId,
       session_id: PROCESS_SESSION_ID,
       command: context.command,
-      payload: {
-        command_args: sanitizeCommandArgs(context.args),
-        command_options: sanitizeValue(context.options) as Record<string, unknown>,
-        global_options: sanitizeValue(context.global) as Record<string, unknown>,
-        pm_root_hash: pmRootHash,
-        cwd_hash: cwdHash,
-        capture_level: settings.telemetry.capture_level,
-        runtime: {
-          node: process.version,
-          platform: process.platform,
-          arch: process.arch,
-          hostname_hash: hashWithInstallationId(installationId, os.hostname()),
-          stdin_tty: process.stdin.isTTY === true,
-          stdout_tty: process.stdout.isTTY === true,
-        },
-      },
+      payload: buildCommandStartPayload({
+        captureLevel,
+        context,
+        pmRootHash,
+        cwdHash,
+        installationId,
+      }),
     };
     await enqueueTelemetryEvent(globalPmRoot, event);
     await flushQueue(globalPmRoot, endpoint);
@@ -552,6 +719,7 @@ export async function startTelemetryCommand(context: TelemetryCommandContext): P
       cwd_hash: cwdHash,
       endpoint,
       global_pm_root: globalPmRoot,
+      capture_level: captureLevel,
       otel_traces_endpoint: otelTracesEndpoint ?? undefined,
       otel_trace_id: otelTracesEndpoint ? crypto.randomBytes(16).toString("hex") : undefined,
       otel_span_id: otelTracesEndpoint ? crypto.randomBytes(8).toString("hex") : undefined,
@@ -580,13 +748,12 @@ export async function finishTelemetryCommand(
       installation_id: activeCommand.installation_id,
       session_id: PROCESS_SESSION_ID,
       command: activeCommand.command,
-      payload: {
-        ok: outcome.ok,
-        error: outcome.error ? sanitizeString(outcome.error) : undefined,
-        duration_ms: durationMs,
-        started_at: activeCommand.started_at,
-        result_summary: summarizeResult(outcome.result),
-      },
+      payload: buildCommandFinishPayload({
+        captureLevel: activeCommand.capture_level,
+        outcome,
+        durationMs,
+        startedAt: activeCommand.started_at,
+      }),
     };
     await enqueueTelemetryEvent(activeCommand.global_pm_root, event);
     await flushQueue(activeCommand.global_pm_root, activeCommand.endpoint);

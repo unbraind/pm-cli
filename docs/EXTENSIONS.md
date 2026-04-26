@@ -2,6 +2,8 @@
 
 Extensions let you add commands, parser/preflight lifecycle control, core service overrides, renderers, importers, exporters, schema fields, item-type definitions, search providers, and lifecycle hooks to `pm-cli` without modifying core.
 
+For a quick SDK-first authoring path, start with `docs/SDK.md`.
+
 ## Extension Locations
 
 | Scope | Path |
@@ -186,6 +188,12 @@ External extensions should declare an explicit dependency on the pm package so `
 ```
 
 This keeps extension imports stable and avoids relying on internal `src/core/...` paths.
+
+## Starter Extension Reference
+
+For a complete example that demonstrates all 9 capabilities via the public SDK, see:
+
+- `docs/examples/starter-extension/`
 
 ## Extension Module
 

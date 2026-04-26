@@ -6,12 +6,15 @@ status: closed
 priority: 0
 tags[9]: 2026-04-26,agent-ux,audit,calendar,dogfood,pm-cli,release,sdk,telemetry
 created_at: "2026-04-26T14:49:42.659Z"
-updated_at: "2026-04-26T14:52:43.782Z"
+updated_at: "2026-04-26T20:00:50.267Z"
 deadline: "2026-05-03T14:49:42.659Z"
 author: audit-agent
 estimated_minutes: 240
 acceptance_criteria: All CLI features verified. SDK reviewed. Calendar working. Telemetry flowing. All findings documented as pm items. Test suite 100% green.
 parent: pm-o7be
+resolution: "Completed full sandbox and remote-stack dogfood audit, captured findings, and linked resulting follow-up issues and evidence artifacts."
+expected_result: "Audit verifies end-to-end CLI functionality, telemetry stack operation, and records actionable findings in PM lineage."
+actual_result: "Comprehensive audit finished with passing test matrix and documented follow-up issues across telemetry, SDK, calendar, and extension UX."
 comments[1]{created_at,author,text}:
   "2026-04-26T14:50:24.301Z",audit-agent,"AUDIT RESULTS SUMMARY (2026-04-26):\n\nOVERALL STATUS: PASS - All 78 test files, 1052 tests pass. CLI fully functional.\n\nDOGFOOD VERIFICATION (temp sandbox):\n- init: OK - Creates all directories, schema files, settings\n- config: OK - project/global scope, definition-of-done, test-result-tracking\n- health: OK - All 8 checks pass (settings, directories, extensions, storage, integrity, history_drift, vectorization, settings_values)\n- create: OK - All types (Epic, Feature, Task, Chore), all fields including rich metadata (risk, confidence, sprint, release, reviewer, goal, objective, value, impact, outcome, why_now)\n- lifecycle: OK - claim, start-task, pause-task, close-task, release all work correctly\n- update: OK - All fields update properly, history recorded\n- comments/notes/learnings: OK - Append correctly with author/timestamp\n- files/docs: OK - Link management works\n- append: OK - Body append works\n- calendar: OK - All 4 views (agenda, day, week, month), reminders and deadlines render correctly\n- context: OK - Token-efficient snapshot with high/low level items and agenda\n- aggregate: OK - Group-by type/status/priority works\n- list variants: OK - list-all, list-open, list-in-progress, list-blocked, list-closed, list-canceled\n- search: OK - Hybrid search with scoring and matched_fields\n- reindex: OK - Keyword mode rebuilds artifacts\n- history: OK - Full audit trail with JSON patches and hash chains\n- activity: OK - Cross-item activity log\n- deps: OK - Tree format dependency view\n- stats: OK - Project statistics\n- validate: OK - Resolution and history drift checks\n- dedupe-audit: OK - Parent scope deduplication\n- comments-audit: OK - Coverage reporting by type\n- contracts: OK - Machine-readable flag/schema contracts\n- search: OK - Hybrid mode with semantic weight\n\nTELEMETRY STACK (remote): FULLY OPERATIONAL\n- Endpoint: https://pm-cli.unbrained.dev/v1/events returns HTTP 200 with proper payload\n- Postgres: 11,414+ events stored and queryable\n- RabbitMQ: Healthy, message processing\n- Grafana: v11.6.14, dashboard accessible at https://pm.unbrained.dev\n- Loki: Ready, collecting container logs via Alloy\n- Tempo: Ready, receiving OTLP traces\n- Prometheus: Ready\n- Alloy: v1.16.0, configured for Docker log discovery + OTLP trace forwarding"
 notes[1]{created_at,author,text}:

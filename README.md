@@ -1068,6 +1068,7 @@ pm context --date 2026-04-01T00:00:00.000Z --past --json
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md)
+- [SDK Guide](docs/SDK.md)
 - [Telemetry and GDPR Operations](docs/TELEMETRY.md)
 - [Remote Telemetry Stack Runbook](docs/operations/REMOTE_TELEMETRY_STACK.md)
 - [Extensions](docs/EXTENSIONS.md)

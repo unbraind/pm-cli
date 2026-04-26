@@ -3,7 +3,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { pathExists } from "../fs/fs-utils.js";
 import { resolveGlobalPmRoot } from "../store/paths.js";
-import type { PmSettings } from "../../types/index.js";
+import type { ItemDocument, PmSettings } from "../../types/index.js";
 import type { GlobalOptions } from "../shared/command-types.js";
 
 const DEFAULT_EXTENSION_PRIORITY = 100;
@@ -246,14 +246,173 @@ export interface CommandDefinition {
   flags?: FlagDefinition[];
 }
 
-export type FlagDefinition = Record<string, unknown>;
-export type SchemaFieldDefinition = Record<string, unknown>;
-export type SchemaItemTypeDefinition = Record<string, unknown>;
-export type SchemaMigrationDefinition = Record<string, unknown>;
-export type SearchProviderDefinition = Record<string, unknown>;
-export type VectorStoreAdapterDefinition = Record<string, unknown>;
-export type Importer = (context: unknown) => unknown;
-export type Exporter = (context: unknown) => unknown;
+export type FlagValueType = "string" | "number" | "boolean";
+
+export interface FlagDefinition {
+  long?: string;
+  short?: string;
+  value_name?: string;
+  description?: string;
+  required?: boolean;
+  enabled?: boolean;
+  visible?: boolean;
+  type?: FlagValueType;
+  value_type?: FlagValueType;
+  [key: string]: unknown;
+}
+
+export interface SchemaFieldDefinition {
+  name: string;
+  type: string;
+  optional?: boolean;
+  [key: string]: unknown;
+}
+
+export interface SchemaItemTypeCommandOptionPolicyDefinition {
+  command: string;
+  option: string;
+  enabled?: boolean;
+  required?: boolean;
+  visible?: boolean;
+  [key: string]: unknown;
+}
+
+export interface SchemaItemTypeOptionDefinition {
+  key: string;
+  values?: string[];
+  required?: boolean;
+  aliases?: string[];
+  [key: string]: unknown;
+}
+
+export interface SchemaItemTypeDefinition {
+  name: string;
+  folder?: string;
+  aliases?: string[];
+  required_create_fields?: string[];
+  required_create_repeatables?: string[];
+  command_option_policies?: SchemaItemTypeCommandOptionPolicyDefinition[];
+  options?: SchemaItemTypeOptionDefinition[];
+  [key: string]: unknown;
+}
+
+export interface SchemaMigrationRunContext {
+  id: string;
+  command: "migration";
+  layer: ExtensionLayer;
+  extension: string;
+  pm_root: string;
+  status: string;
+}
+
+export type SchemaMigrationRunner = (context: SchemaMigrationRunContext) => unknown | Promise<unknown>;
+
+export interface SchemaMigrationDefinition {
+  id?: string;
+  description?: string;
+  status?: string;
+  mandatory?: boolean;
+  run?: SchemaMigrationRunner;
+  [key: string]: unknown;
+}
+
+export interface ImportExportContext {
+  registration: string;
+  action: "import" | "export";
+  command: string;
+  args: string[];
+  options: Record<string, unknown>;
+  global: GlobalOptions;
+  pm_root: string;
+}
+
+export type Importer = (context: ImportExportContext) => unknown | Promise<unknown>;
+export type Exporter = (context: ImportExportContext) => unknown | Promise<unknown>;
+
+export type ExtensionSearchMode = "keyword" | "semantic" | "hybrid";
+
+export interface SearchProviderQueryContext {
+  query: string;
+  mode: ExtensionSearchMode;
+  tokens: string[];
+  options: Record<string, unknown>;
+  settings: PmSettings;
+  documents: ItemDocument[];
+  [key: string]: unknown;
+}
+
+export interface SearchProviderHit {
+  id: string;
+  score: number;
+  matched_fields?: string[];
+  [key: string]: unknown;
+}
+
+export type SearchProviderQueryResult = SearchProviderHit[] | { hits?: SearchProviderHit[] };
+
+export interface SearchProviderEmbedBatchContext {
+  inputs: string[];
+  settings: PmSettings;
+  model: string;
+  [key: string]: unknown;
+}
+
+export interface SearchProviderEmbedContext {
+  input: string;
+  settings: PmSettings;
+  model: string;
+  [key: string]: unknown;
+}
+
+export interface SearchProviderDefinition {
+  name: string;
+  query?: (context: SearchProviderQueryContext) => SearchProviderQueryResult | Promise<SearchProviderQueryResult>;
+  embedBatch?: (context: SearchProviderEmbedBatchContext) => number[][] | Promise<number[][]>;
+  embed_batch?: (context: SearchProviderEmbedBatchContext) => number[][] | Promise<number[][]>;
+  embed?: (context: SearchProviderEmbedContext) => number[] | Promise<number[]>;
+  [key: string]: unknown;
+}
+
+export interface VectorStoreQueryHit {
+  id: string;
+  score: number;
+  payload?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+export interface VectorStoreQueryContext {
+  vector: number[];
+  limit: number;
+  settings: PmSettings;
+  [key: string]: unknown;
+}
+
+export interface VectorStoreUpsertPoint {
+  id: string;
+  vector: number[];
+  payload?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+export interface VectorStoreUpsertContext {
+  points: VectorStoreUpsertPoint[];
+  settings: PmSettings;
+  [key: string]: unknown;
+}
+
+export interface VectorStoreDeleteContext {
+  ids: string[];
+  settings: PmSettings;
+  [key: string]: unknown;
+}
+
+export interface VectorStoreAdapterDefinition {
+  name: string;
+  query?: (context: VectorStoreQueryContext) => VectorStoreQueryHit[] | Promise<VectorStoreQueryHit[]>;
+  upsert?: (context: VectorStoreUpsertContext) => unknown | Promise<unknown>;
+  delete?: (context: VectorStoreDeleteContext) => unknown | Promise<unknown>;
+  [key: string]: unknown;
+}
 
 export interface RegisteredExtensionCommandOverride {
   layer: ExtensionLayer;
@@ -1843,7 +2002,10 @@ function createExtensionApi(
   const registerItemFields = (fields: SchemaFieldDefinition[]): void => {
     assertExtensionCapability(extension, "schema", "registerItemFields");
     validateItemFieldDefinitions(fields);
-    const normalizedFields = normalizeRegistrationRecordList("registerItemFields fields", fields);
+    const normalizedFields = normalizeRegistrationRecordList(
+      "registerItemFields fields",
+      fields,
+    ) as SchemaFieldDefinition[];
     if (normalizedFields.length === 0) {
       throw new TypeError("registerItemFields requires at least one field definition");
     }
@@ -1856,7 +2018,10 @@ function createExtensionApi(
   const registerItemTypes = (types: SchemaItemTypeDefinition[]): void => {
     assertExtensionCapability(extension, "schema", "registerItemTypes");
     validateItemTypeDefinitions(types);
-    const normalizedTypes = normalizeRegistrationRecordList("registerItemTypes types", types);
+    const normalizedTypes = normalizeRegistrationRecordList(
+      "registerItemTypes types",
+      types,
+    ) as SchemaItemTypeDefinition[];
     if (normalizedTypes.length === 0) {
       throw new TypeError("registerItemTypes requires at least one type definition");
     }
