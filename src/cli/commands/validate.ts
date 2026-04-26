@@ -9,7 +9,12 @@ import { hashDocument } from "../../core/history/history.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
-import { EXIT_CODE, PM_DIRNAME } from "../../core/shared/constants.js";
+import {
+  DEFAULT_VALIDATE_CLOSURE_LIKE_METADATA_FIELD_PATTERNS,
+  DEFAULT_VALIDATE_STALE_BLOCKER_REASON_PATTERNS,
+  EXIT_CODE,
+  PM_DIRNAME,
+} from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
@@ -41,12 +46,8 @@ const RESOLUTION_FIELD_KEYS = ["resolution", "expected_result", "actual_result"]
 type ResolutionFieldKey = (typeof RESOLUTION_FIELD_KEYS)[number];
 const VALIDATE_FILE_SCAN_MODES = ["default", "tracked-all", "tracked-all-strict"] as const;
 const VALIDATE_METADATA_PROFILE_VALUES = ["core", "strict", "custom"] as const;
-const STALE_BLOCKER_REASON_PATTERNS = ["no active blocker", "work is closed", "work completed", "ready for planned execution sequencing"] as const;
-const CLOSURE_LIKE_METADATA_FIELD_PATTERNS = {
-  blocked_reason: ["work is closed", "no active blocker because work is closed"],
-  resolution: ["closed with implementation evidence", "closed with verification evidence", "work completed and recorded", "work is closed"],
-  actual_result: ["work completed and recorded", "work completed", "closed and recorded"],
-} as const;
+const LIFECYCLE_PATTERN_FIELD_KEYS = ["blocked_reason", "resolution", "actual_result"] as const;
+type LifecyclePatternFieldKey = (typeof LIFECYCLE_PATTERN_FIELD_KEYS)[number];
 const CORE_METADATA_REQUIRED_FIELDS = ["author", "acceptance_criteria", "estimated_minutes", "close_reason"] as const;
 const STRICT_METADATA_REQUIRED_FIELDS = [
   ...CORE_METADATA_REQUIRED_FIELDS,
@@ -193,6 +194,72 @@ interface ValidateMetadataPolicy {
   configured_custom_fields: ValidateMetadataRequiredField[];
   fallback_to_core: boolean;
   warnings: string[];
+}
+
+type LifecyclePatternSource = "default" | "settings";
+
+interface LifecyclePatternPolicy {
+  stale_blocker_reason_patterns: string[];
+  stale_blocker_reason_pattern_source: LifecyclePatternSource;
+  closure_like_metadata_field_patterns: Record<LifecyclePatternFieldKey, string[]>;
+  closure_like_metadata_field_pattern_sources: Record<LifecyclePatternFieldKey, LifecyclePatternSource>;
+}
+
+interface LifecyclePatternSettingsSource {
+  validation: {
+    lifecycle_stale_blocker_reason_patterns: string[];
+    lifecycle_closure_like_blocked_reason_patterns: string[];
+    lifecycle_closure_like_resolution_patterns: string[];
+    lifecycle_closure_like_actual_result_patterns: string[];
+  };
+}
+
+function normalizeLifecyclePatternList(values: readonly string[] | undefined): string[] {
+  return [...new Set((values ?? []).map((value) => value.trim().toLowerCase()).filter((value) => value.length > 0))].sort(
+    (left, right) => left.localeCompare(right),
+  );
+}
+
+function areSortedStringListsEqual(left: readonly string[], right: readonly string[]): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+  return left.every((value, index) => value === right[index]);
+}
+
+function resolveLifecyclePatternPolicy(settings: LifecyclePatternSettingsSource): LifecyclePatternPolicy {
+  const defaultStalePatterns = normalizeLifecyclePatternList(DEFAULT_VALIDATE_STALE_BLOCKER_REASON_PATTERNS);
+  const defaultClosureLikePatterns = {
+    blocked_reason: normalizeLifecyclePatternList(DEFAULT_VALIDATE_CLOSURE_LIKE_METADATA_FIELD_PATTERNS.blocked_reason),
+    resolution: normalizeLifecyclePatternList(DEFAULT_VALIDATE_CLOSURE_LIKE_METADATA_FIELD_PATTERNS.resolution),
+    actual_result: normalizeLifecyclePatternList(DEFAULT_VALIDATE_CLOSURE_LIKE_METADATA_FIELD_PATTERNS.actual_result),
+  } satisfies Record<LifecyclePatternFieldKey, string[]>;
+  const staleBlockerReasonPatterns = normalizeLifecyclePatternList(
+    settings.validation.lifecycle_stale_blocker_reason_patterns,
+  );
+  const closureLikePatterns = {
+    blocked_reason: normalizeLifecyclePatternList(settings.validation.lifecycle_closure_like_blocked_reason_patterns),
+    resolution: normalizeLifecyclePatternList(settings.validation.lifecycle_closure_like_resolution_patterns),
+    actual_result: normalizeLifecyclePatternList(settings.validation.lifecycle_closure_like_actual_result_patterns),
+  } satisfies Record<LifecyclePatternFieldKey, string[]>;
+  return {
+    stale_blocker_reason_patterns: staleBlockerReasonPatterns,
+    stale_blocker_reason_pattern_source: areSortedStringListsEqual(staleBlockerReasonPatterns, defaultStalePatterns)
+      ? "default"
+      : "settings",
+    closure_like_metadata_field_patterns: closureLikePatterns,
+    closure_like_metadata_field_pattern_sources: {
+      blocked_reason: areSortedStringListsEqual(closureLikePatterns.blocked_reason, defaultClosureLikePatterns.blocked_reason)
+        ? "default"
+        : "settings",
+      resolution: areSortedStringListsEqual(closureLikePatterns.resolution, defaultClosureLikePatterns.resolution)
+        ? "default"
+        : "settings",
+      actual_result: areSortedStringListsEqual(closureLikePatterns.actual_result, defaultClosureLikePatterns.actual_result)
+        ? "default"
+        : "settings",
+    },
+  };
 }
 
 function resolveValidateMetadataProfile(value: string | undefined): ValidateMetadataProfile {
@@ -673,6 +740,7 @@ function buildLifecycleCheck(
   items: ItemWithBody[],
   includeStaleBlockers: boolean,
   statusRegistry: RuntimeStatusRegistry,
+  lifecyclePatternPolicy: LifecyclePatternPolicy,
 ): { check: ValidateCheck; warnings: string[] } {
   const itemsById = new Map(items.map((item) => [item.id, item]));
   const blockedStatuses =
@@ -683,7 +751,7 @@ function buildLifecycleCheck(
   const staleBlockerRows: Array<{ id: string; status: string; reasons: string[] }> = [];
 
   for (const item of activeItems) {
-    const closureLikeFields = Object.entries(CLOSURE_LIKE_METADATA_FIELD_PATTERNS)
+    const closureLikeFields = Object.entries(lifecyclePatternPolicy.closure_like_metadata_field_patterns)
       .filter(([field, patterns]) => {
         const value = toMeaningfulString(item[field as keyof ItemWithBody]);
         if (!value) {
@@ -737,7 +805,7 @@ function buildLifecycleCheck(
         }
         if (
           blockedReasonNormalized &&
-          STALE_BLOCKER_REASON_PATTERNS.some((pattern) => blockedReasonNormalized.includes(pattern))
+          lifecyclePatternPolicy.stale_blocker_reason_patterns.some((pattern) => blockedReasonNormalized.includes(pattern))
         ) {
           reasons.push("blocked_status_reason_matches_stale_pattern");
         }
@@ -796,7 +864,19 @@ function buildLifecycleCheck(
         stale_blocker_items: staleBlockerRows.length,
         stale_blocker_rows: summarizedStaleBlockerRows.values,
         stale_blocker_rows_truncated: summarizedStaleBlockerRows.truncated,
-        stale_blocker_reason_patterns: [...STALE_BLOCKER_REASON_PATTERNS],
+        stale_blocker_reason_patterns: [...lifecyclePatternPolicy.stale_blocker_reason_patterns],
+        stale_blocker_reason_pattern_source: lifecyclePatternPolicy.stale_blocker_reason_pattern_source,
+        closure_like_blocked_reason_patterns: [
+          ...lifecyclePatternPolicy.closure_like_metadata_field_patterns.blocked_reason,
+        ],
+        closure_like_blocked_reason_pattern_source:
+          lifecyclePatternPolicy.closure_like_metadata_field_pattern_sources.blocked_reason,
+        closure_like_resolution_patterns: [...lifecyclePatternPolicy.closure_like_metadata_field_patterns.resolution],
+        closure_like_resolution_pattern_source:
+          lifecyclePatternPolicy.closure_like_metadata_field_pattern_sources.resolution,
+        closure_like_actual_result_patterns: [...lifecyclePatternPolicy.closure_like_metadata_field_patterns.actual_result],
+        closure_like_actual_result_pattern_source:
+          lifecyclePatternPolicy.closure_like_metadata_field_pattern_sources.actual_result,
       },
     },
     warnings,
@@ -1099,6 +1179,7 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
     metadataProfileSource,
     settings.validation.metadata_required_fields,
   );
+  const lifecyclePatternPolicy = resolveLifecyclePatternPolicy(settings);
   const fileScanMode = resolveFileScanMode(options.scanMode);
   const workspaceRoot = resolveWorkspaceRoot(pmRoot);
   const checks: ValidateCheck[] = [];
@@ -1115,7 +1196,12 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
     warnings.push(...resolutionCheck.warnings);
   }
   if (requestedChecks.has("lifecycle")) {
-    const lifecycleCheck = buildLifecycleCheck(items, Boolean(options.checkStaleBlockers), statusRegistry);
+    const lifecycleCheck = buildLifecycleCheck(
+      items,
+      Boolean(options.checkStaleBlockers),
+      statusRegistry,
+      lifecyclePatternPolicy,
+    );
     checks.push(lifecycleCheck.check);
     warnings.push(...lifecycleCheck.warnings);
   }

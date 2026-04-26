@@ -3048,10 +3048,14 @@ program
   .argument("<action>", "Config action: get|set|list|export")
   .argument(
     "[key]",
-    "Config key for get|set: definition-of-done|item-format|history-missing-stream-policy|sprint-release-format-policy|parent-reference-policy|metadata-validation-profile|metadata-required-fields|governance-preset|governance-ownership-enforcement|governance-create-mode-default|governance-close-validation-default|governance-parent-reference-policy|governance-metadata-validation-profile|governance-force-required-for-stale-lock|test-result-tracking|telemetry-tracking",
+    "Config key for get|set: definition-of-done|item-format|history-missing-stream-policy|sprint-release-format-policy|parent-reference-policy|metadata-validation-profile|metadata-required-fields|lifecycle-stale-blocker-reason-patterns|lifecycle-closure-like-blocked-reason-patterns|lifecycle-closure-like-resolution-patterns|lifecycle-closure-like-actual-result-patterns|governance-preset|governance-ownership-enforcement|governance-create-mode-default|governance-close-validation-default|governance-parent-reference-policy|governance-metadata-validation-profile|governance-force-required-for-stale-lock|test-result-tracking|telemetry-tracking",
   )
-  .option("--criterion <text>", "Criteria value for definition-of-done or metadata-required-fields (repeatable for set)", collect)
-  .option("--clear-criteria", "Clear metadata-required-fields criteria list (set metadata-required-fields only)")
+  .option(
+    "--criterion <text>",
+    "Criteria value for definition-of-done, metadata-required-fields, or lifecycle pattern keys (repeatable for set)",
+    collect,
+  )
+  .option("--clear-criteria", "Clear criteria-list keys for config set operations")
   .option("--format <value>", "Item format for item-format key: toon|json_markdown")
   .option(
     "--policy <value>",

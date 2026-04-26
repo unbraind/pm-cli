@@ -69,7 +69,7 @@ describe("runConfig", () => {
 
       const result = await runConfig("project", "list", undefined, {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot });
       expect(result.changed).toBe(false);
-      expect(result.count).toBe(16);
+      expect(result.count).toBe(20);
       expect(result.keys?.map((entry) => entry.key)).toEqual([
         "definition_of_done",
         "item_format",
@@ -78,6 +78,10 @@ describe("runConfig", () => {
         "parent_reference_policy",
         "metadata_validation_profile",
         "metadata_required_fields",
+        "lifecycle_stale_blocker_reason_patterns",
+        "lifecycle_closure_like_blocked_reason_patterns",
+        "lifecycle_closure_like_resolution_patterns",
+        "lifecycle_closure_like_actual_result_patterns",
         "governance_preset",
         "governance_ownership_enforcement",
         "governance_create_mode_default",
@@ -90,6 +94,10 @@ describe("runConfig", () => {
       ]);
       expect(result.keys?.find((entry) => entry.key === "definition_of_done")?.value).toEqual(["tests pass"]);
       expect(result.keys?.find((entry) => entry.key === "definition_of_done")?.set_flags).toEqual([
+        "--criterion",
+        "--clear-criteria",
+      ]);
+      expect(result.keys?.find((entry) => entry.key === "lifecycle_stale_blocker_reason_patterns")?.set_flags).toEqual([
         "--criterion",
         "--clear-criteria",
       ]);
@@ -124,6 +132,20 @@ describe("runConfig", () => {
         parent_reference_policy: "strict_error",
         metadata_validation_profile: "strict",
         metadata_required_fields: [],
+        lifecycle_stale_blocker_reason_patterns: [
+          "no active blocker",
+          "ready for planned execution sequencing",
+          "work completed",
+          "work is closed",
+        ],
+        lifecycle_closure_like_blocked_reason_patterns: ["no active blocker because work is closed", "work is closed"],
+        lifecycle_closure_like_resolution_patterns: [
+          "closed with implementation evidence",
+          "closed with verification evidence",
+          "work completed and recorded",
+          "work is closed",
+        ],
+        lifecycle_closure_like_actual_result_patterns: ["closed and recorded", "work completed", "work completed and recorded"],
         governance_preset: "custom",
         governance_ownership_enforcement: "strict",
         governance_create_mode_default: "strict",
@@ -788,6 +810,90 @@ describe("runConfig", () => {
           "set",
           "metadata-required-fields",
           { criterion: ["unknown_field"] },
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
+  it("gets and sets lifecycle pattern criteria lists", async () => {
+    await withTempRoot(async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      const getDefault = await runConfig(
+        "project",
+        "get",
+        "lifecycle-stale-blocker-reason-patterns",
+        {},
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(getDefault.key).toBe("lifecycle_stale_blocker_reason_patterns");
+      expect(getDefault.criteria).toEqual([
+        "no active blocker",
+        "ready for planned execution sequencing",
+        "work completed",
+        "work is closed",
+      ]);
+      expect(getDefault.changed).toBe(false);
+
+      const setStalePatterns = await runConfig(
+        "project",
+        "set",
+        "lifecycle_stale_blocker_reason_patterns",
+        { criterion: ["Need Review", " need review ", "awaiting qa"] },
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(setStalePatterns.criteria).toEqual(["awaiting qa", "need review"]);
+      expect(setStalePatterns.changed).toBe(true);
+
+      const setResolutionPatterns = await runConfig(
+        "project",
+        "set",
+        "lifecycle-closure-like-resolution-patterns",
+        { criterion: ["handoff complete", "handoff complete", "close candidate"] },
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(setResolutionPatterns.criteria).toEqual(["close candidate", "handoff complete"]);
+      expect(setResolutionPatterns.changed).toBe(true);
+
+      const clearResolutionPatterns = await runConfig(
+        "project",
+        "set",
+        "lifecycle-closure-like-resolution-patterns",
+        { clearCriteria: true },
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(clearResolutionPatterns.criteria).toEqual([]);
+      expect(clearResolutionPatterns.changed).toBe(true);
+    });
+  });
+
+  it("validates lifecycle pattern criteria operations", async () => {
+    await withTempRoot(async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      await expect(
+        runConfig(
+          "project",
+          "set",
+          "lifecycle-stale-blocker-reason-patterns",
+          {},
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+
+      await expect(
+        runConfig(
+          "project",
+          "set",
+          "lifecycle_closure_like_actual_result_patterns",
+          { clearCriteria: true, criterion: ["done"] },
           { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
         ),
       ).rejects.toMatchObject<PmCliError>({

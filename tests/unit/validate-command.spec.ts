@@ -114,8 +114,18 @@ describe("runValidate", () => {
       expect(result.checks[0]?.name).toBe("lifecycle");
       expect(result.checks[0]?.status).toBe("ok");
       const lifecycleCheck = checkByName(result, "lifecycle");
-      const details = lifecycleCheck.details as { stale_blocker_checks_enabled: boolean };
+      const details = lifecycleCheck.details as {
+        stale_blocker_checks_enabled: boolean;
+        stale_blocker_reason_pattern_source: string;
+        closure_like_blocked_reason_pattern_source: string;
+        closure_like_resolution_pattern_source: string;
+        closure_like_actual_result_pattern_source: string;
+      };
       expect(details.stale_blocker_checks_enabled).toBe(false);
+      expect(details.stale_blocker_reason_pattern_source).toBe("default");
+      expect(details.closure_like_blocked_reason_pattern_source).toBe("default");
+      expect(details.closure_like_resolution_pattern_source).toBe("default");
+      expect(details.closure_like_actual_result_pattern_source).toBe("default");
     });
   });
 
@@ -195,6 +205,65 @@ describe("runValidate", () => {
       expect(details.stale_blocker_checks_enabled).toBe(true);
       expect(details.stale_blocker_items).toBe(1);
       expect(details.stale_blocker_rows[0]).toContain(id);
+    });
+  });
+
+  it("uses configured lifecycle pattern settings and reports pattern sources", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "validate-lifecycle-pattern-settings");
+      const seeded = context.runCli(
+        [
+          "update",
+          id,
+          "--json",
+          "--status",
+          "blocked",
+          "--blocked-by",
+          "pm-pattern-blocker",
+          "--blocked-reason",
+          "Awaiting legal review before execution can continue.",
+          "--resolution",
+          "handoff review pending and should be treated as closure-like metadata for this project.",
+          "--message",
+          "Seed lifecycle pattern settings metadata",
+        ],
+        { expectJson: true },
+      );
+      expect(seeded.code).toBe(0);
+
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        validation: {
+          lifecycle_stale_blocker_reason_patterns: string[];
+          lifecycle_closure_like_blocked_reason_patterns: string[];
+          lifecycle_closure_like_resolution_patterns: string[];
+          lifecycle_closure_like_actual_result_patterns: string[];
+        };
+      };
+      settings.validation.lifecycle_stale_blocker_reason_patterns = ["awaiting legal review"];
+      settings.validation.lifecycle_closure_like_resolution_patterns = ["handoff review pending"];
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const result = await runValidate({ checkStaleBlockers: true }, { path: context.pmPath });
+      expect(result.ok).toBe(false);
+      expect(result.warnings).toContain("validate_lifecycle_stale_blockers:1");
+      expect(result.warnings).toContain("validate_lifecycle_active_closure_like_metadata:1");
+
+      const lifecycleCheck = checkByName(result, "lifecycle");
+      const details = lifecycleCheck.details as {
+        stale_blocker_reason_patterns: string[];
+        stale_blocker_reason_pattern_source: string;
+        closure_like_resolution_patterns: string[];
+        closure_like_resolution_pattern_source: string;
+        closure_like_blocked_reason_pattern_source: string;
+        closure_like_actual_result_pattern_source: string;
+      };
+      expect(details.stale_blocker_reason_patterns).toEqual(["awaiting legal review"]);
+      expect(details.stale_blocker_reason_pattern_source).toBe("settings");
+      expect(details.closure_like_resolution_patterns).toEqual(["handoff review pending"]);
+      expect(details.closure_like_resolution_pattern_source).toBe("settings");
+      expect(details.closure_like_blocked_reason_pattern_source).toBe("default");
+      expect(details.closure_like_actual_result_pattern_source).toBe("default");
     });
   });
 

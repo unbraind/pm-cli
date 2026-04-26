@@ -43,6 +43,14 @@ const CONFIG_KEY_VALUES = [
   "metadata_validation_profile",
   "metadata-required-fields",
   "metadata_required_fields",
+  "lifecycle-stale-blocker-reason-patterns",
+  "lifecycle_stale_blocker_reason_patterns",
+  "lifecycle-closure-like-blocked-reason-patterns",
+  "lifecycle_closure_like_blocked_reason_patterns",
+  "lifecycle-closure-like-resolution-patterns",
+  "lifecycle_closure_like_resolution_patterns",
+  "lifecycle-closure-like-actual-result-patterns",
+  "lifecycle_closure_like_actual_result_patterns",
   "governance-preset",
   "governance_preset",
   "governance-ownership-enforcement",
@@ -71,6 +79,10 @@ type ConfigKey =
   | "parent_reference_policy"
   | "metadata_validation_profile"
   | "metadata_required_fields"
+  | "lifecycle_stale_blocker_reason_patterns"
+  | "lifecycle_closure_like_blocked_reason_patterns"
+  | "lifecycle_closure_like_resolution_patterns"
+  | "lifecycle_closure_like_actual_result_patterns"
   | "governance_preset"
   | "governance_ownership_enforcement"
   | "governance_create_mode_default"
@@ -156,6 +168,22 @@ const CONFIG_KEY_ALIASES: Record<ConfigKey, string[]> = {
   parent_reference_policy: ["parent-reference-policy", "parent_reference_policy"],
   metadata_validation_profile: ["metadata-validation-profile", "metadata_validation_profile"],
   metadata_required_fields: ["metadata-required-fields", "metadata_required_fields"],
+  lifecycle_stale_blocker_reason_patterns: [
+    "lifecycle-stale-blocker-reason-patterns",
+    "lifecycle_stale_blocker_reason_patterns",
+  ],
+  lifecycle_closure_like_blocked_reason_patterns: [
+    "lifecycle-closure-like-blocked-reason-patterns",
+    "lifecycle_closure_like_blocked_reason_patterns",
+  ],
+  lifecycle_closure_like_resolution_patterns: [
+    "lifecycle-closure-like-resolution-patterns",
+    "lifecycle_closure_like_resolution_patterns",
+  ],
+  lifecycle_closure_like_actual_result_patterns: [
+    "lifecycle-closure-like-actual-result-patterns",
+    "lifecycle_closure_like_actual_result_patterns",
+  ],
   governance_preset: ["governance-preset", "governance_preset"],
   governance_ownership_enforcement: ["governance-ownership-enforcement", "governance_ownership_enforcement"],
   governance_create_mode_default: ["governance-create-mode-default", "governance_create_mode_default"],
@@ -184,6 +212,14 @@ const CONFIG_KEY_SUMMARIES: Record<ConfigKey, string> = {
   parent_reference_policy: "Parent reference validation policy.",
   metadata_validation_profile: "Validate metadata profile policy (core|strict|custom).",
   metadata_required_fields: "Validate custom metadata required-fields list.",
+  lifecycle_stale_blocker_reason_patterns:
+    "Validate lifecycle stale-blocker reason substring patterns (criteria list).",
+  lifecycle_closure_like_blocked_reason_patterns:
+    "Validate lifecycle closure-like blocked_reason substring patterns (criteria list).",
+  lifecycle_closure_like_resolution_patterns:
+    "Validate lifecycle closure-like resolution substring patterns (criteria list).",
+  lifecycle_closure_like_actual_result_patterns:
+    "Validate lifecycle closure-like actual_result substring patterns (criteria list).",
   governance_preset: "Governance preset policy (minimal|default|strict|custom).",
   governance_ownership_enforcement: "Governance ownership enforcement policy (none|warn|strict).",
   governance_create_mode_default: "Governance default create mode (progressive|strict).",
@@ -194,6 +230,17 @@ const CONFIG_KEY_SUMMARIES: Record<ConfigKey, string> = {
   test_result_tracking: "Item-level linked test result persistence policy.",
   telemetry_tracking: "Telemetry usage reporting policy.",
 };
+
+const LIFECYCLE_PATTERN_CONFIG_KEYS: ConfigKey[] = [
+  "lifecycle_stale_blocker_reason_patterns",
+  "lifecycle_closure_like_blocked_reason_patterns",
+  "lifecycle_closure_like_resolution_patterns",
+  "lifecycle_closure_like_actual_result_patterns",
+];
+
+function isCriteriaConfigKey(key: ConfigKey): boolean {
+  return key === "definition_of_done" || key === "metadata_required_fields" || LIFECYCLE_PATTERN_CONFIG_KEYS.includes(key);
+}
 
 function normalizeScope(value: string): ConfigScope {
   if ((CONFIG_SCOPE_VALUES as readonly string[]).includes(value)) {
@@ -231,6 +278,30 @@ function normalizeKey(value: string): ConfigKey {
     }
     if (value === "metadata-required-fields" || value === "metadata_required_fields") {
       return "metadata_required_fields";
+    }
+    if (
+      value === "lifecycle-stale-blocker-reason-patterns" ||
+      value === "lifecycle_stale_blocker_reason_patterns"
+    ) {
+      return "lifecycle_stale_blocker_reason_patterns";
+    }
+    if (
+      value === "lifecycle-closure-like-blocked-reason-patterns" ||
+      value === "lifecycle_closure_like_blocked_reason_patterns"
+    ) {
+      return "lifecycle_closure_like_blocked_reason_patterns";
+    }
+    if (
+      value === "lifecycle-closure-like-resolution-patterns" ||
+      value === "lifecycle_closure_like_resolution_patterns"
+    ) {
+      return "lifecycle_closure_like_resolution_patterns";
+    }
+    if (
+      value === "lifecycle-closure-like-actual-result-patterns" ||
+      value === "lifecycle_closure_like_actual_result_patterns"
+    ) {
+      return "lifecycle_closure_like_actual_result_patterns";
     }
     if (value === "governance-preset" || value === "governance_preset") {
       return "governance_preset";
@@ -468,6 +539,32 @@ function normalizeMetadataRequiredFields(
   );
 }
 
+function normalizeLifecyclePatternCriteria(
+  key: ConfigKey,
+  values: string[] | undefined,
+  clearCriteria: boolean | undefined,
+): string[] {
+  const normalized = [...new Set((values ?? []).map((value) => value.trim().toLowerCase()).filter((value) => value.length > 0))].sort(
+    (left, right) => left.localeCompare(right),
+  );
+  if (clearCriteria) {
+    if (normalized.length > 0) {
+      throw new PmCliError(
+        `Config set ${CONFIG_KEY_ALIASES[key][0]} cannot combine --clear-criteria with --criterion values`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    return [];
+  }
+  if (normalized.length === 0) {
+    throw new PmCliError(
+      `Config set ${CONFIG_KEY_ALIASES[key][0]} requires at least one --criterion value (or --clear-criteria to clear)`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  return normalized;
+}
+
 function normalizeWarnings(values: string[]): string[] {
   return [...new Set(values)].sort((left, right) => left.localeCompare(right));
 }
@@ -494,6 +591,10 @@ function readConfigValue(settings: {
     parent_reference: ParentReferencePolicy;
     metadata_profile: ValidateMetadataProfile;
     metadata_required_fields: ValidateMetadataRequiredField[];
+    lifecycle_stale_blocker_reason_patterns: string[];
+    lifecycle_closure_like_blocked_reason_patterns: string[];
+    lifecycle_closure_like_resolution_patterns: string[];
+    lifecycle_closure_like_actual_result_patterns: string[];
   };
   governance: {
     preset: GovernancePreset;
@@ -524,6 +625,18 @@ function readConfigValue(settings: {
   }
   if (key === "metadata_required_fields") {
     return [...settings.validation.metadata_required_fields];
+  }
+  if (key === "lifecycle_stale_blocker_reason_patterns") {
+    return [...settings.validation.lifecycle_stale_blocker_reason_patterns];
+  }
+  if (key === "lifecycle_closure_like_blocked_reason_patterns") {
+    return [...settings.validation.lifecycle_closure_like_blocked_reason_patterns];
+  }
+  if (key === "lifecycle_closure_like_resolution_patterns") {
+    return [...settings.validation.lifecycle_closure_like_resolution_patterns];
+  }
+  if (key === "lifecycle_closure_like_actual_result_patterns") {
+    return [...settings.validation.lifecycle_closure_like_actual_result_patterns];
   }
   if (key === "governance_preset") {
     return settings.governance.preset;
@@ -596,18 +709,9 @@ export async function runConfig(
     const keys = (Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]).map((candidate) => ({
       key: candidate,
       aliases: CONFIG_KEY_ALIASES[candidate],
-      value_kind:
-        candidate === "definition_of_done" || candidate === "metadata_required_fields"
-          ? ("string_array" as const)
-          : ("enum" as const),
+      value_kind: isCriteriaConfigKey(candidate) ? ("string_array" as const) : ("enum" as const),
       set_flags:
-        candidate === "definition_of_done"
-          ? ["--criterion", "--clear-criteria"]
-          : candidate === "metadata_required_fields"
-            ? ["--criterion", "--clear-criteria"]
-          : candidate === "item_format"
-            ? ["--format"]
-            : ["--policy"],
+        isCriteriaConfigKey(candidate) ? ["--criterion", "--clear-criteria"] : candidate === "item_format" ? ["--format"] : ["--policy"],
       summary: CONFIG_KEY_SUMMARIES[candidate],
       value: readConfigValue(settings, candidate),
     }));
@@ -632,6 +736,16 @@ export async function runConfig(
       parent_reference_policy: readConfigValue(settings, "parent_reference_policy"),
       metadata_validation_profile: readConfigValue(settings, "metadata_validation_profile"),
       metadata_required_fields: readConfigValue(settings, "metadata_required_fields"),
+      lifecycle_stale_blocker_reason_patterns: readConfigValue(settings, "lifecycle_stale_blocker_reason_patterns"),
+      lifecycle_closure_like_blocked_reason_patterns: readConfigValue(
+        settings,
+        "lifecycle_closure_like_blocked_reason_patterns",
+      ),
+      lifecycle_closure_like_resolution_patterns: readConfigValue(settings, "lifecycle_closure_like_resolution_patterns"),
+      lifecycle_closure_like_actual_result_patterns: readConfigValue(
+        settings,
+        "lifecycle_closure_like_actual_result_patterns",
+      ),
       governance_preset: readConfigValue(settings, "governance_preset"),
       governance_ownership_enforcement: readConfigValue(settings, "governance_ownership_enforcement"),
       governance_create_mode_default: readConfigValue(settings, "governance_create_mode_default"),
@@ -708,6 +822,42 @@ export async function runConfig(
         scope,
         key,
         criteria: [...settings.validation.metadata_required_fields],
+        settings_path: target.settingsPath,
+        changed: false,
+      }, warnings);
+    }
+    if (key === "lifecycle_stale_blocker_reason_patterns") {
+      return withWarnings({
+        scope,
+        key,
+        criteria: [...settings.validation.lifecycle_stale_blocker_reason_patterns],
+        settings_path: target.settingsPath,
+        changed: false,
+      }, warnings);
+    }
+    if (key === "lifecycle_closure_like_blocked_reason_patterns") {
+      return withWarnings({
+        scope,
+        key,
+        criteria: [...settings.validation.lifecycle_closure_like_blocked_reason_patterns],
+        settings_path: target.settingsPath,
+        changed: false,
+      }, warnings);
+    }
+    if (key === "lifecycle_closure_like_resolution_patterns") {
+      return withWarnings({
+        scope,
+        key,
+        criteria: [...settings.validation.lifecycle_closure_like_resolution_patterns],
+        settings_path: target.settingsPath,
+        changed: false,
+      }, warnings);
+    }
+    if (key === "lifecycle_closure_like_actual_result_patterns") {
+      return withWarnings({
+        scope,
+        key,
+        criteria: [...settings.validation.lifecycle_closure_like_actual_result_patterns],
         settings_path: target.settingsPath,
         changed: false,
       }, warnings);
@@ -805,9 +955,9 @@ export async function runConfig(
   if (!key) {
     throw new PmCliError('Config action "set" requires <key>', EXIT_CODE.USAGE);
   }
-  if (options.clearCriteria === true && key !== "metadata_required_fields" && key !== "definition_of_done") {
+  if (options.clearCriteria === true && !isCriteriaConfigKey(key)) {
     throw new PmCliError(
-      "--clear-criteria is only supported with config set definition-of-done or metadata-required-fields",
+      "--clear-criteria is only supported with config set criteria-list keys",
       EXIT_CODE.USAGE,
     );
   }
@@ -932,6 +1082,78 @@ export async function runConfig(
       scope,
       key,
       criteria: [...settings.validation.metadata_required_fields],
+      settings_path: target.settingsPath,
+      changed,
+    }, warnings);
+  }
+
+  if (key === "lifecycle_stale_blocker_reason_patterns") {
+    const nextCriteria = normalizeLifecyclePatternCriteria(key, options.criterion, options.clearCriteria);
+    const changed =
+      nextCriteria.length !== settings.validation.lifecycle_stale_blocker_reason_patterns.length ||
+      nextCriteria.some((value, index) => value !== settings.validation.lifecycle_stale_blocker_reason_patterns[index]);
+    settings.validation.lifecycle_stale_blocker_reason_patterns = nextCriteria;
+    if (changed) {
+      await writeSettings(target.pmRoot, settings, "config:set:lifecycle_stale_blocker_reason_patterns");
+    }
+    return withWarnings({
+      scope,
+      key,
+      criteria: [...settings.validation.lifecycle_stale_blocker_reason_patterns],
+      settings_path: target.settingsPath,
+      changed,
+    }, warnings);
+  }
+
+  if (key === "lifecycle_closure_like_blocked_reason_patterns") {
+    const nextCriteria = normalizeLifecyclePatternCriteria(key, options.criterion, options.clearCriteria);
+    const changed =
+      nextCriteria.length !== settings.validation.lifecycle_closure_like_blocked_reason_patterns.length ||
+      nextCriteria.some((value, index) => value !== settings.validation.lifecycle_closure_like_blocked_reason_patterns[index]);
+    settings.validation.lifecycle_closure_like_blocked_reason_patterns = nextCriteria;
+    if (changed) {
+      await writeSettings(target.pmRoot, settings, "config:set:lifecycle_closure_like_blocked_reason_patterns");
+    }
+    return withWarnings({
+      scope,
+      key,
+      criteria: [...settings.validation.lifecycle_closure_like_blocked_reason_patterns],
+      settings_path: target.settingsPath,
+      changed,
+    }, warnings);
+  }
+
+  if (key === "lifecycle_closure_like_resolution_patterns") {
+    const nextCriteria = normalizeLifecyclePatternCriteria(key, options.criterion, options.clearCriteria);
+    const changed =
+      nextCriteria.length !== settings.validation.lifecycle_closure_like_resolution_patterns.length ||
+      nextCriteria.some((value, index) => value !== settings.validation.lifecycle_closure_like_resolution_patterns[index]);
+    settings.validation.lifecycle_closure_like_resolution_patterns = nextCriteria;
+    if (changed) {
+      await writeSettings(target.pmRoot, settings, "config:set:lifecycle_closure_like_resolution_patterns");
+    }
+    return withWarnings({
+      scope,
+      key,
+      criteria: [...settings.validation.lifecycle_closure_like_resolution_patterns],
+      settings_path: target.settingsPath,
+      changed,
+    }, warnings);
+  }
+
+  if (key === "lifecycle_closure_like_actual_result_patterns") {
+    const nextCriteria = normalizeLifecyclePatternCriteria(key, options.criterion, options.clearCriteria);
+    const changed =
+      nextCriteria.length !== settings.validation.lifecycle_closure_like_actual_result_patterns.length ||
+      nextCriteria.some((value, index) => value !== settings.validation.lifecycle_closure_like_actual_result_patterns[index]);
+    settings.validation.lifecycle_closure_like_actual_result_patterns = nextCriteria;
+    if (changed) {
+      await writeSettings(target.pmRoot, settings, "config:set:lifecycle_closure_like_actual_result_patterns");
+    }
+    return withWarnings({
+      scope,
+      key,
+      criteria: [...settings.validation.lifecycle_closure_like_actual_result_patterns],
       settings_path: target.settingsPath,
       changed,
     }, warnings);

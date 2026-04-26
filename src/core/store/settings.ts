@@ -155,6 +155,10 @@ const settingsSchema = z.object({
       parent_reference: z.union([z.literal("warn"), z.literal("strict_error")]).optional(),
       metadata_profile: z.union([z.literal("core"), z.literal("strict"), z.literal("custom")]).optional(),
       metadata_required_fields: z.array(z.string()).optional(),
+      lifecycle_stale_blocker_reason_patterns: z.array(z.string()).optional(),
+      lifecycle_closure_like_blocked_reason_patterns: z.array(z.string()).optional(),
+      lifecycle_closure_like_resolution_patterns: z.array(z.string()).optional(),
+      lifecycle_closure_like_actual_result_patterns: z.array(z.string()).optional(),
     })
     .optional(),
   governance: governanceSettingsSchema,
@@ -330,6 +334,12 @@ function normalizeValidationMetadataRequiredFields(values: string[] | undefined)
   );
 }
 
+function normalizeValidationPatternList(values: string[] | undefined): string[] {
+  return [...new Set((values ?? []).map((value) => value.trim().toLowerCase()).filter((value) => value.length > 0))].sort(
+    (left, right) => left.localeCompare(right),
+  );
+}
+
 function normalizeItemTypeOptionDefinition(option: ItemTypeOptionDefinition): ItemTypeOptionDefinition | null {
   const key = option.key.trim();
   if (key.length === 0) {
@@ -440,6 +450,22 @@ function mergeSettings(raw: unknown): PmSettings {
       parent_reference: governance.parent_reference,
       metadata_profile: governance.metadata_profile,
       metadata_required_fields: normalizeValidationMetadataRequiredFields(settings.validation?.metadata_required_fields),
+      lifecycle_stale_blocker_reason_patterns: normalizeValidationPatternList(
+        settings.validation?.lifecycle_stale_blocker_reason_patterns ??
+          defaults.validation.lifecycle_stale_blocker_reason_patterns,
+      ),
+      lifecycle_closure_like_blocked_reason_patterns: normalizeValidationPatternList(
+        settings.validation?.lifecycle_closure_like_blocked_reason_patterns ??
+          defaults.validation.lifecycle_closure_like_blocked_reason_patterns,
+      ),
+      lifecycle_closure_like_resolution_patterns: normalizeValidationPatternList(
+        settings.validation?.lifecycle_closure_like_resolution_patterns ??
+          defaults.validation.lifecycle_closure_like_resolution_patterns,
+      ),
+      lifecycle_closure_like_actual_result_patterns: normalizeValidationPatternList(
+        settings.validation?.lifecycle_closure_like_actual_result_patterns ??
+          defaults.validation.lifecycle_closure_like_actual_result_patterns,
+      ),
     },
     governance,
     workflow: {
@@ -487,6 +513,22 @@ export function serializeSettings(settings: PmSettings): string {
       parent_reference: governance.parent_reference,
       metadata_profile: governance.metadata_profile,
       metadata_required_fields: normalizeValidationMetadataRequiredFields(settings.validation?.metadata_required_fields),
+      lifecycle_stale_blocker_reason_patterns: normalizeValidationPatternList(
+        settings.validation?.lifecycle_stale_blocker_reason_patterns ??
+          SETTINGS_DEFAULTS.validation.lifecycle_stale_blocker_reason_patterns,
+      ),
+      lifecycle_closure_like_blocked_reason_patterns: normalizeValidationPatternList(
+        settings.validation?.lifecycle_closure_like_blocked_reason_patterns ??
+          SETTINGS_DEFAULTS.validation.lifecycle_closure_like_blocked_reason_patterns,
+      ),
+      lifecycle_closure_like_resolution_patterns: normalizeValidationPatternList(
+        settings.validation?.lifecycle_closure_like_resolution_patterns ??
+          SETTINGS_DEFAULTS.validation.lifecycle_closure_like_resolution_patterns,
+      ),
+      lifecycle_closure_like_actual_result_patterns: normalizeValidationPatternList(
+        settings.validation?.lifecycle_closure_like_actual_result_patterns ??
+          SETTINGS_DEFAULTS.validation.lifecycle_closure_like_actual_result_patterns,
+      ),
     },
     governance,
     item_types: {
@@ -529,6 +571,10 @@ export function serializeSettings(settings: PmSettings): string {
     "parent_reference",
     "metadata_profile",
     "metadata_required_fields",
+    "lifecycle_stale_blocker_reason_patterns",
+    "lifecycle_closure_like_blocked_reason_patterns",
+    "lifecycle_closure_like_resolution_patterns",
+    "lifecycle_closure_like_actual_result_patterns",
   ]);
   ordered.governance = orderObject(ordered.governance as Record<string, unknown>, [
     "preset",

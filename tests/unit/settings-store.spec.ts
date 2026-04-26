@@ -153,6 +153,10 @@ describe("core/store/settings", () => {
         "parent_reference",
         "metadata_profile",
         "metadata_required_fields",
+        "lifecycle_stale_blocker_reason_patterns",
+        "lifecycle_closure_like_blocked_reason_patterns",
+        "lifecycle_closure_like_resolution_patterns",
+        "lifecycle_closure_like_actual_result_patterns",
       ]);
       expectOrderedObjectKeys(parsed.governance, ["preset"]);
       expectOrderedObjectKeys(parsed.workflow, ["definition_of_done"]);

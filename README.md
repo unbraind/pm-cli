@@ -372,6 +372,7 @@ The vectorization ledger is also refreshed during `pm reindex --mode semantic|hy
 - `--metadata-profile custom` reads `settings.validation.metadata_required_fields`; if the configured list is empty, validation falls back to core requirements and emits `validate_metadata_custom_profile_missing_required_fields:0`.
 - `--check-lifecycle` audits active-item governance drift for terminal-parent lineage and closure-like metadata on non-terminal items.
 - `--check-stale-blockers` adds optional blocker-consistency diagnostics to lifecycle checks, surfacing stale `blocked_by`/`blocked_reason` patterns without enabling those heuristics by default.
+- Lifecycle-check details include effective closure/stale pattern lists and deterministic per-field pattern sources (`default` vs `settings`).
 - `--check-files` supports `--scan-mode default|tracked-all|tracked-all-strict`; tracked modes use git-tracked candidates when available.
 - `tracked-all` excludes PM internals by default for higher-signal orphaned results; pass `--include-pm-internals` for full internal-audit scans.
 - `tracked-all-strict` forces full tracked coverage (including PM internals) and bypasses internal exclusion filtering.
@@ -464,6 +465,30 @@ Configure custom required fields with:
 pm config project set metadata-required-fields --criterion sprint --criterion release
 pm config project set metadata-required-fields --clear-criteria
 pm config project get metadata-required-fields --json
+```
+
+## Lifecycle Validation Pattern Policy
+
+`settings.validation.lifecycle_*_patterns` controls default substring heuristics used by `pm validate --check-lifecycle` and optional stale blocker diagnostics (`--check-stale-blockers`):
+
+- `settings.validation.lifecycle_stale_blocker_reason_patterns`
+  - stale blocker reason substrings matched when stale blocker checks are enabled
+- `settings.validation.lifecycle_closure_like_blocked_reason_patterns`
+  - closure-like `blocked_reason` substrings flagged on active items
+- `settings.validation.lifecycle_closure_like_resolution_patterns`
+  - closure-like `resolution` substrings flagged on active items
+- `settings.validation.lifecycle_closure_like_actual_result_patterns`
+  - closure-like `actual_result` substrings flagged on active items
+
+Configure lifecycle patterns with:
+
+```bash
+pm config project set lifecycle-stale-blocker-reason-patterns --criterion "no active blocker"
+pm config project set lifecycle-closure-like-blocked-reason-patterns --criterion "work is closed"
+pm config project set lifecycle-closure-like-resolution-patterns --criterion "closed with implementation evidence"
+pm config project set lifecycle-closure-like-actual-result-patterns --criterion "work completed"
+pm config project set lifecycle-closure-like-resolution-patterns --clear-criteria
+pm config project get lifecycle-stale-blocker-reason-patterns --json
 ```
 
 ## Test Result Tracking Policy

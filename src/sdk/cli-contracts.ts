@@ -2109,7 +2109,8 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     description: "When true, clear type option metadata.",
   },
   clearCriteria: {
-    description: "When true for config set metadata-required-fields, clear the criteria list.",
+    description:
+      "When true for config set criteria-list keys (definition-of-done, metadata-required-fields, lifecycle pattern lists), clear the criteria list.",
   },
   mode: {
     description:

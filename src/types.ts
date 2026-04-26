@@ -395,6 +395,10 @@ export interface PmSettings {
     parent_reference: ParentReferencePolicy;
     metadata_profile: ValidateMetadataProfile;
     metadata_required_fields: ValidateMetadataRequiredField[];
+    lifecycle_stale_blocker_reason_patterns: string[];
+    lifecycle_closure_like_blocked_reason_patterns: string[];
+    lifecycle_closure_like_resolution_patterns: string[];
+    lifecycle_closure_like_actual_result_patterns: string[];
   };
   governance: GovernanceSettings;
   workflow: {

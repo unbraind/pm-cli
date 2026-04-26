@@ -133,6 +133,19 @@ export const GOVERNANCE_PRESET_DEFAULTS: Record<BuiltinGovernancePreset, Omit<Go
   },
 };
 
+export const DEFAULT_VALIDATE_STALE_BLOCKER_REASON_PATTERNS = [
+  "no active blocker",
+  "ready for planned execution sequencing",
+  "work completed",
+  "work is closed",
+] as const;
+
+export const DEFAULT_VALIDATE_CLOSURE_LIKE_METADATA_FIELD_PATTERNS = {
+  blocked_reason: ["no active blocker because work is closed", "work is closed"],
+  resolution: ["closed with implementation evidence", "closed with verification evidence", "work completed and recorded", "work is closed"],
+  actual_result: ["closed and recorded", "work completed", "work completed and recorded"],
+} as const;
+
 export const SETTINGS_DEFAULTS: PmSettings = {
   version: 1,
   id_prefix: "pm-",
@@ -152,6 +165,14 @@ export const SETTINGS_DEFAULTS: PmSettings = {
     parent_reference: "warn",
     metadata_profile: "core",
     metadata_required_fields: [],
+    lifecycle_stale_blocker_reason_patterns: [...DEFAULT_VALIDATE_STALE_BLOCKER_REASON_PATTERNS],
+    lifecycle_closure_like_blocked_reason_patterns: [
+      ...DEFAULT_VALIDATE_CLOSURE_LIKE_METADATA_FIELD_PATTERNS.blocked_reason,
+    ],
+    lifecycle_closure_like_resolution_patterns: [...DEFAULT_VALIDATE_CLOSURE_LIKE_METADATA_FIELD_PATTERNS.resolution],
+    lifecycle_closure_like_actual_result_patterns: [
+      ...DEFAULT_VALIDATE_CLOSURE_LIKE_METADATA_FIELD_PATTERNS.actual_result,
+    ],
   },
   governance: {
     preset: "minimal",
