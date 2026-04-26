@@ -1,0 +1,28 @@
+id: pm-qgvj
+title: Ignore local .env files for telemetry/security operations
+description: Audit found root .env is not covered by .gitignore even though telemetry/security checklist requires local environment secrets to remain unpublished.
+type: Issue
+status: closed
+priority: 1
+tags[4]: external-audit,gitignore,security,telemetry
+created_at: "2026-04-26T13:11:41.990Z"
+updated_at: "2026-04-26T13:15:39.174Z"
+author: cursor-agent
+estimated_minutes: 20
+acceptance_criteria: .gitignore excludes .env; git check-ignore confirms .env and telemetry runtime paths are ignored; secret scan remains clean.
+parent: pm-lnq3
+resolution: Added .env to .gitignore.
+expected_result: .env and telemetry runtime/search paths are ignored and tracked secret scan remains clean.
+actual_result: git check-ignore and node scripts/check-secrets.mjs passed via linked pm test.
+comments[2]{created_at,author,text}:
+  "2026-04-26T13:11:41.990Z",cursor-agent,"Duplicate-check evidence: pm search '.env gitignore telemetry security' --limit 10 plus open/in-progress context showed no direct active finding; net-new because telemetry security checklist explicitly requires .env exclusion."
+  "2026-04-26T13:13:55.634Z",cursor-agent,"Implemented .env ignore rule. Evidence: git check-ignore confirms .env, .agents/pm/search/TELEMETRY.md, and .agents/pm/runtime/telemetry/events.jsonl are ignored; node scripts/check-secrets.mjs passed."
+files[1]{path,scope,note}:
+  .gitignore,project,security ignore rule target
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  git check-ignore -v .env .agents/pm/search/TELEMETRY.md .agents/pm/runtime/telemetry/events.jsonl,null,project,120,null,null,null,null,null,null,null,null,null,null,null,ignore coverage for env/search/telemetry
+  node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,tracked secret scan
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mofshghk-fq00qg,test,passed,"2026-04-26T13:13:42.138Z","2026-04-26T13:13:42.584Z","2026-04-26T13:13:42.584Z",null,null,2,0,0,null,null,null
+close_reason: Added .env ignore rule and verified ignore/security checks
+body: ""

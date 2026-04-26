@@ -1,0 +1,16 @@
+id: pm-bhmu
+title: Investigate search command latency from persisted telemetry
+description: "Persisted telemetry shows search has a high p95 duration compared with other frequently used commands, which can slow agent loops and interactive triage."
+type: Issue
+status: open
+priority: 1
+tags[5]: performance,pm-cli,product-analytics,search,telemetry
+created_at: "2026-04-26T13:51:28.435Z"
+updated_at: "2026-04-26T13:51:28.435Z"
+author: cursor-agent
+estimated_minutes: 180
+acceptance_criteria: Search latency is profiled with telemetry-backed reproduction; slow paths are optimized or documented with progress/diagnostic guidance; regression coverage protects the chosen fix.
+parent: pm-o7be
+comments[1]{created_at,author,text}:
+  "2026-04-26T13:51:28.435Z",cursor-agent,Duplicate check used pm search for search latency p95 telemetry performance slow. Results found closed vector store and telemetry work but no active search latency issue. Evidence shows search had 83 finishes with average 6753.6 ms and p95 32822 ms in persisted telemetry.
+body: ""

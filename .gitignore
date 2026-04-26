@@ -2,6 +2,7 @@ node_modules/
 dist/
 coverage/
 .gemini/
+.env
 # Local vector store and search index cache (optional, rebuilt on demand via pm reindex)
 .agents/pm/search/lancedb/
 .agents/pm/index/manifest.json

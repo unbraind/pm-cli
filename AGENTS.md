@@ -477,7 +477,7 @@ Rules:
 
 ### All-Flags Create Template (copy/paste)
 
-`pm create` strict mode (default / `--create-mode strict`) enforces every repeatable seed flag as explicit input; pass concrete values for each of `--dep`, `--comment`, `--note`, `--learning`, `--file`, `--test`, and `--doc` (use explicit `--clear-*` flags when intentionally empty).
+`pm create` strict mode (default / `--create-mode strict`) enforces every repeatable seed flag as concrete input; pass concrete values for each of `--dep`, `--comment`, `--note`, `--learning`, `--file`, `--test`, and `--doc`. If a repeatable field is intentionally empty during staged capture, use `--create-mode progressive` and backfill required metadata before close.
 
 ```bash
 pm create \

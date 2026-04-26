@@ -1,0 +1,27 @@
+id: pm-k8i0
+title: Clarify strict create empty repeatable semantics
+description: "Dogfood audit found AGENTS.md says strict create can satisfy required repeatables with --clear-* flags, but current CLI rejects --clear-deps in strict mode and requires concrete repeatable values."
+type: Issue
+status: closed
+priority: 1
+tags[5]: agent-ux,create,docs,external-audit,pm-cli
+created_at: "2026-04-26T13:12:14.570Z"
+updated_at: "2026-04-26T13:15:39.175Z"
+author: cursor-agent
+estimated_minutes: 30
+acceptance_criteria: Agent guidance matches current strict create behavior or CLI behavior is changed; root-item create examples avoid suggesting --clear-deps as strict-mode satisfaction.
+parent: pm-r15d
+resolution: Updated AGENTS.md strict-create guidance to require concrete repeatable values and recommend progressive mode for staged empty repeatables.
+expected_result: Agent guidance matches current CLI strict-mode behavior.
+actual_result: pnpm build passed via linked pm test after docs update.
+comments[2]{created_at,author,text}:
+  "2026-04-26T13:12:14.570Z",cursor-agent,"Duplicate-check evidence: pm search 'strict create clear deps required options' --limit 10 plus context/open/in-progress checks found closed historical required-option work but no active direct docs/runtime parity item for strict empty repeatables."
+  "2026-04-26T13:13:55.640Z",cursor-agent,"Updated AGENTS.md strict-create guidance to match runtime behavior: strict mode requires concrete repeatable values; use progressive mode for staged/empty repeatables. Evidence: pnpm build passed via linked pm test."
+files[1]{path,scope,note}:
+  AGENTS.md,project,strict create guidance
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  pnpm build,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,docs-only change sanity build
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mofshk3p-3y3rdi,test,passed,"2026-04-26T13:13:42.103Z","2026-04-26T13:13:47.269Z","2026-04-26T13:13:47.269Z",null,null,1,0,0,null,null,null
+close_reason: Aligned AGENTS strict-create guidance with current runtime behavior
+body: ""

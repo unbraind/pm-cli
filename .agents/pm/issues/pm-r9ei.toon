@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: external-audit,grafana,observability,pm-cli,prometheus,telemetry
 created_at: "2026-04-26T09:56:16.564Z"
-updated_at: "2026-04-26T09:57:02.619Z"
+updated_at: "2026-04-26T13:16:13.794Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 90
@@ -14,9 +14,10 @@ acceptance_criteria: Grafana queue panels render live queue depth and unacked va
 parent: pm-lnq3
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-lnq3,parent,"2026-04-26T09:56:16.564Z",codex-agent,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-26T09:56:16.564Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'Grafana rabbitmq queue dashboard metric label' --limit 10; pm search 'queue label rabbitmq_queue_messages' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because no open item currently tracks dashboard query label mismatch between Prometheus RabbitMQ series and Grafana queue panel selectors."
   "2026-04-26T09:57:02.619Z",codex-agent,"Remote evidence 2026-04-26: Prometheus query rabbitmq_queue_messages returns value 3 and rabbitmq_queue_messages_unacked returns value 3, but both series are exported without queue label in metric metadata. Dashboard expressions filtering queue=pm.telemetry.events therefore return empty vectors and hide active queue backlog."
+  "2026-04-26T13:16:13.794Z",cursor-agent,"Fresh remote audit evidence 2026-04-26: Prometheus query rabbitmq_queue_messages{queue=\"pm.telemetry.events\"} returned an empty vector, while unfiltered rabbitmq_queue_messages and rabbitmq_queue_messages_unacked returned non-zero values without a queue label. Grafana/API/Prometheus were healthy, so the dashboard panel issue remains a selector-label mismatch."
 docs[1]{path,scope,note}:
   .agents/pm/search/operations/REMOTE_TELEMETRY_STACK.md,project,Remote telemetry stack runbook used for panel diagnostics
 body: ""
