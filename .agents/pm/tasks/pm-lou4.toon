@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: calendar,dependabot,github,operations,recurring
 created_at: "2026-04-03T17:33:17.602Z"
-updated_at: "2026-04-26T14:27:42.087Z"
+updated_at: "2026-04-26T14:32:59.845Z"
 events[1]:
   - start_at: "2026-04-10T09:00:00.000Z"
     end_at: "2026-04-10T09:30:00.000Z"
@@ -44,12 +44,13 @@ fixed_version: vnext
 component: calendar-recurring-review
 regression: false
 customer_impact: Maintainers can catch and remediate findings quickly
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-04-03T17:33:17.602Z",codex-agent,Created recurring operational task for weekly GitHub findings review.
   "2026-04-03T17:45:39.395Z",codex-agent,"Verified recurring event persistence and expansion: pm calendar agenda/week show weekly Friday occurrences starting 2026-04-10 at 09:00Z."
   "2026-04-04T12:02:45.922Z",codex-agent,"Governance metadata pass: assigned owner explicitly to preserve active-work ownership consistency."
   "2026-04-05T22:43:20.272Z",codex-agent,"Normalization decision: recurring weekly operations task remains active but parent epic pm-i7w2 is closed; parent cleared to keep lineage valid without forcing unrelated epic reopen."
   "2026-04-26T14:04:43.744Z",cursor-agent,"Weekly GitHub findings review 2026-04-26: Triaged 8 Dependabot PRs. Closed 4 stale/superseded PRs (#5 upload-artifact v7 already on main, #6 setup-node v6 already on main, #7 checkout v6 already on main, #9 undici superseded by #15). Applied remaining 4 changes directly on main: bumped pnpm/action-setup v5->v6 in all 3 workflows (#16), bumped softprops/action-gh-release v2->v3 in release workflow (#18), updated undici to 8.1.0 and dev-deps to latest (#15/#19). Fixed ci-workflow-contract test for v3 action ref. All 8 PRs now closed."
+  "2026-04-26T14:32:59.845Z",cursor-agent,"Follow-up security remediation: patched vite 7.3.1->7.3.2 via pnpm override for CVE-related path traversal and WebSocket vulnerabilities; dismissed 14 stale Dependabot alerts for undici/zod/fast-json-patch already resolved by installed versions. All 20 security alerts now resolved (0 open)."
 notes[1]{created_at,author,text}:
   "2026-04-03T17:33:17.602Z",codex-agent,Each run should dedupe against existing pm items before creating new ones.
 files[6]{path,scope,note}:
