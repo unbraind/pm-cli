@@ -1,0 +1,31 @@
+id: pm-g9yi
+title: Reject undefined placeholder IDs in parent/dependency inputs
+description: "Dogfood run showed create accepted --parent undefined and --dep id=undefined, producing persisted references like parent=undefined and dependency id=pm-undefined instead of failing fast."
+type: Issue
+status: closed
+priority: 1
+tags[4]: external-audit,ids,pm-cli,validation
+created_at: "2026-04-26T08:38:37.889Z"
+updated_at: "2026-04-26T08:44:38.498Z"
+author: codex-agent
+estimated_minutes: 90
+acceptance_criteria: create/update reject undefined placeholder tokens for parent and dependency id fields with actionable guidance; regression tests cover both commands.
+parent: pm-o7be
+resolution: Reject placeholder tokens none/null/undefined for parent and dependency IDs in create/update paths.
+expected_result: CLI rejects undefined placeholder IDs with actionable validation errors before persisting references.
+actual_result: create/update now fail fast on undefined placeholder IDs and regression tests pass.
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-o7be,parent,"2026-04-26T08:38:37.889Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-04-26T08:38:37.889Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'pm-undefined parent dependency' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because no active item tracks undefined placeholder acceptance in create/update parent and dependency parsing."
+  "2026-04-26T08:42:24.409Z",codex-agent,"Implemented validation guards in create/update parent+dependency parsing to reject undefined placeholder tokens; added regression coverage in create/update unit suites. Evidence: pnpm build passed and node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts passed (2 files, 77 tests)."
+files[5]{path,scope,note}:
+  src/cli/commands/create.ts,project,Reject undefined dependency IDs during create
+  src/cli/commands/update.ts,project,Reject undefined dependency IDs during update and dep-remove
+  src/core/item/parent-reference-policy.ts,project,Reject placeholder parent tokens including undefined
+  tests/unit/create-command.spec.ts,project,Regression tests for create parent/dep placeholder rejection
+  tests/unit/update-command.spec.ts,project,Regression tests for update parent/dep placeholder rejection
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,Targeted regression suite
+close_reason: Undefined placeholder IDs now rejected in create/update with regression coverage
+body: ""

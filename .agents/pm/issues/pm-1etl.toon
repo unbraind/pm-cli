@@ -6,14 +6,16 @@ status: open
 priority: 1
 tags[4]: extensions,external-audit,pm-cli,sdk
 created_at: "2026-04-25T23:06:27.563Z"
-updated_at: "2026-04-26T00:31:11.473Z"
+updated_at: "2026-04-26T08:44:54.869Z"
 author: audit-agent
+estimated_minutes: 120
 acceptance_criteria: Local extension install path provides deterministic guidance (or runtime support) for SDK import resolution and doctor output points directly to remediation.
 parent: pm-o7be
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-25T23:06:27.563Z",audit-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'audit extension sdk calendar docs' --mode keyword --limit 10; pm list-open --fields id,title,type,parent,status,priority --limit 50; pm list-in-progress --fields id,title,type,parent,status,priority --limit 50. Net-new because active items cover extension runtime probe/docs parity but not local install SDK module-resolution behavior."
   "2026-04-25T23:07:38.813Z",audit-agent,"Repro evidence from sandbox audit: local extension install succeeds, but doctor reports extension_load_failed when extension entry imports @unbrained/pm-cli/sdk and source package has no installed dependency. Runtime error: Cannot find package '@unbrained/pm-cli' imported from installed extension index.js."
   "2026-04-26T00:31:11.473Z",codex-agent,"Follow-up evidence from 2026-04-26 audit: local extension imports of @unbrained/pm-cli/sdk require ESM package metadata type module in addition to dependency installation. Without type module, extension install appears successful but runtime command path remains unavailable with only a Node module warning. Recommend install-time or doctor diagnostics that explicitly call out missing ESM package type alongside dependency guidance."
+  "2026-04-26T08:42:53.552Z",codex-agent,Latest sandbox run confirms @unbrained/pm-cli/sdk imports work when extension package metadata and module setup are correct. Remaining ergonomics gap is actionable diagnostics when extension appears installed but runtime command remains unavailable due packaging mismatch; doctor guidance can be more direct.
 notes[1]{created_at,author,text}:
   "2026-04-25T23:07:42.346Z",audit-agent,"Potential remediation paths: (a) install-time dependency validation/warning for local sources, (b) extension loader resolution fallback to pm CLI SDK for explicit compatibility mode, or (c) tighter doctor remediation hints with concrete npm install guidance."
 files[2]{path,scope,note}:

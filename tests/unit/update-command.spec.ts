@@ -828,6 +828,24 @@ describe("runUpdate", () => {
     });
   });
 
+  it("rejects undefined parent placeholder tokens", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-parent-undefined");
+      await expect(
+        runUpdate(
+          id,
+          {
+            parent: "undefined",
+            message: "attempt undefined parent placeholder",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
   it("adds and removes dependencies for existing items", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-dependency-mutations");
@@ -1170,7 +1188,27 @@ describe("runUpdate", () => {
         runUpdate(
           id,
           {
+            dep: ["id=undefined,kind=blocks"],
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          {
             depRemove: ["none"],
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runUpdate(
+          id,
+          {
+            depRemove: ["undefined"],
           },
           { path: context.pmPath },
         ),

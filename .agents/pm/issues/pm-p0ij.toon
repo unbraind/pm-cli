@@ -6,12 +6,12 @@ status: in_progress
 priority: 1
 tags[4]: extensions,external-audit,pm-cli,runtime-probe
 created_at: "2026-04-05T18:46:53.384Z"
-updated_at: "2026-04-25T23:06:48.483Z"
+updated_at: "2026-04-26T08:48:21.841Z"
 deadline: "2026-05-09T17:09:59.595Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: pm extension --manage supports an opt-in runtime probe that computes runtime_active/activation_status with doctor-equivalent semantics; default manage behavior remains compatibility-safe; warning surfaces are normalized for automation.
-parent: pm-gt8u
 resolution: Resolution metadata backfilled during governance normalization; implementation evidence is already captured in linked comments and artifacts.
 expected_result: Closed item includes explicit resolution/expected_result/actual_result metadata for deterministic validation and audit workflows.
 actual_result: Resolution fields were previously missing and are now backfilled as part of governance hardening.

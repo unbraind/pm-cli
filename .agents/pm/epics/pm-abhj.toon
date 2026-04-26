@@ -6,8 +6,9 @@ status: in_progress
 priority: 0
 tags[4]: agent-ux,"area:context",core,pm-cli
 created_at: "2026-04-01T14:09:44.275Z"
-updated_at: "2026-04-25T17:09:59.559Z"
+updated_at: "2026-04-26T08:47:17.085Z"
 deadline: "2026-05-09T17:09:59.558Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: "`pm context` and `pm ctx` provide deterministic, token-efficient high-level and low-level focus context plus agenda/reminder data with no regressions."

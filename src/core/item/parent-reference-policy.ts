@@ -21,6 +21,13 @@ export function normalizeParentReferenceValue(rawValue: string): string {
   if (value.length === 0) {
     throw new PmCliError("--parent must not be empty. Use --parent none to unset.", EXIT_CODE.USAGE);
   }
+  const normalized = value.toLowerCase();
+  if (normalized === "none" || normalized === "null" || normalized === "undefined") {
+    throw new PmCliError(
+      `--parent must not use placeholder token "${value}". Use --unset parent to clear this field.`,
+      EXIT_CODE.USAGE,
+    );
+  }
   return value;
 }
 

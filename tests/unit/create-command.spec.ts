@@ -1139,6 +1139,21 @@ describe("runCreate", () => {
     });
   });
 
+  it("rejects undefined parent placeholder tokens", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            parent: "undefined",
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
   it("validates dependency seed input", async () => {
     await withTempPmPath(async (context) => {
       await expect(
@@ -1172,6 +1187,15 @@ describe("runCreate", () => {
         runCreate(
           baseCreateOptions({
             dep: ["id=a1b2,kind=related,created_at=not-a-date"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            dep: ["id=undefined,kind=related,created_at=now"],
           }),
           { path: context.pmPath },
         ),

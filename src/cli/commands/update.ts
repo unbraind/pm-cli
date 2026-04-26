@@ -888,6 +888,12 @@ function parseDependencyAdditions(raw: string[] | undefined, prefix: string, now
     if (!id || !kind) {
       throw new PmCliError("--dep requires id and kind", EXIT_CODE.USAGE);
     }
+    if (id.toLowerCase() === "undefined") {
+      throw new PmCliError(
+        `--dep id must not use placeholder token "${id}". Use --clear-deps to clear dependencies.`,
+        EXIT_CODE.USAGE,
+      );
+    }
     const sourceKind = parseOptionalDependencyString(kv.source_kind);
     return {
       id: normalizeItemId(id, prefix),
@@ -916,6 +922,9 @@ function parseDependencyRemovals(raw: string[] | undefined, prefix: string): Dep
       if (!idRaw) {
         throw new PmCliError("--dep-remove key/value form requires id=<value>", EXIT_CODE.USAGE);
       }
+      if (idRaw.toLowerCase() === "undefined") {
+        throw new PmCliError(`--dep-remove id must not use placeholder token "${idRaw}"`, EXIT_CODE.USAGE);
+      }
       const kindRaw = parseOptionalDependencyString(kv.kind);
       const sourceKind = parseOptionalDependencyString(kv.source_kind);
       return {
@@ -923,6 +932,9 @@ function parseDependencyRemovals(raw: string[] | undefined, prefix: string): Dep
         kind: kindRaw ? ensureEnum(kindRaw, DEPENDENCY_KIND_VALUES, "dependency kind") : undefined,
         source_kind: sourceKind,
       };
+    }
+    if (trimmed.toLowerCase() === "undefined") {
+      throw new PmCliError(`--dep-remove id must not use placeholder token "${trimmed}"`, EXIT_CODE.USAGE);
     }
     return {
       id: normalizeItemId(trimmed, prefix),

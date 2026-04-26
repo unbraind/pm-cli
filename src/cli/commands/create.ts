@@ -476,10 +476,16 @@ function parseDependencies(
   assertNoLegacyNoneTokens(raw, "--dep", "Use --clear-deps to clear dependencies.");
   const values: Dependency[] = raw.map((entry) => {
     const kv = parseCsvKv(entry, "--dep");
-    const id = kv.id;
-    const kind = kv.kind;
+    const id = parseOptionalString(kv.id);
+    const kind = parseOptionalString(kv.kind);
     if (!id || !kind) {
       throw new PmCliError("--dep requires id and kind", EXIT_CODE.USAGE);
+    }
+    if (id.trim().toLowerCase() === "undefined") {
+      throw new PmCliError(
+        `--dep id must not use placeholder token "${id}". Use --clear-deps to clear dependencies.`,
+        EXIT_CODE.USAGE,
+      );
     }
     return {
       id: normalizeItemId(id, prefix),

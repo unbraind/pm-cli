@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[4]: governance,lifecycle,pm-cli,validation
 created_at: "2026-04-05T23:06:03.204Z"
-updated_at: "2026-04-25T20:04:47.301Z"
+updated_at: "2026-04-26T08:48:27.984Z"
 deadline: "2026-05-09T17:10:36.291Z"
 assignee: codex-agent
 author: codex-agent
@@ -20,7 +20,6 @@ value: Projects can tune lifecycle heuristics without patching CLI code
 impact: Improves validation signal quality across heterogeneous workflows
 outcome: "Lifecycle validation becomes configurable, deterministic, and easier to adopt"
 why_now: Today’s lifecycle hardening shipped static heuristics; configurable policy prevents future drift/false-positive churn.
-parent: pm-dw5s
 reviewer: maintainer-review
 risk: medium
 confidence: medium
