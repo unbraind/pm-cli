@@ -247,6 +247,11 @@ api.registerCommand({
 
 If the command path matches a core command (for example `list-open`), the extension handler runs first and the core action is skipped. Command names are canonicalized (trimmed, lowercased, repeated whitespace collapsed). Handlers receive cloned snapshots so mutation cannot leak into caller state.
 
+Capability requirements:
+
+- `registerCommand(...)` requires `commands` capability.
+- Defining inline command metadata `flags` inside `registerCommand({ ... })` also requires `schema` capability (same gate as `registerFlags(...)`).
+
 Optional command metadata (`action`, `description`, `intent`, `examples`, `failure_hints`, `arguments`, and inline `flags`) is consumed by runtime help surfaces and contracts:
 
 - `pm <extension-command> --help` / `--help --json`
@@ -422,6 +427,10 @@ api.registerExporter("jira", async (context) => {
   return { ok: true, exported: 5, ids: ["pm-xxxx"], warnings: [] };
 });
 ```
+
+Notes:
+
+- `registerExporter(...)` uses the same capability gate as importers. Declare `importers` in `manifest.json` to use both `registerImporter(...)` and `registerExporter(...)`.
 
 ### `api.registerItemFields(fields)`
 

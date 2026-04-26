@@ -187,6 +187,8 @@ pm create --title "Triage seed" --description "Capture scope first, enrich later
 
 Use templates to save recurring create metadata (including repeatable seeds) and apply them with explicit override precedence:
 
+Template names are positional arguments (`pm templates save <name>` / `pm templates show <name>`); `--name` is not a valid flag.
+
 ```bash
 pm templates save release-issue \
   --type Issue \

@@ -291,6 +291,12 @@ pm close pm-a1b2 "history replay tests passed; restore emits restore history eve
 pm release pm-a1b2
 ```
 
+Templates syntax reminder:
+
+- `pm templates save` and `pm templates show` use positional template names.
+- Use `pm templates save <name> ...` and `pm templates show <name>`.
+- Do not pass `--name`; it is not a supported flag.
+
 Investigate change timeline:
 
 ```bash

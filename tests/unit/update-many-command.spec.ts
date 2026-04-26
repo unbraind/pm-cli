@@ -169,6 +169,41 @@ describe("runUpdateMany", () => {
     });
   });
 
+  it("returns actionable mutation-flag guidance when no update flags are provided", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, "bulk-no-mutation-guidance");
+      await expect(
+        runUpdateMany(
+          {
+            list: {
+              tag: "update-many,unit",
+            },
+            update: {},
+            dryRun: true,
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--status"),
+      });
+      await expect(
+        runUpdateMany(
+          {
+            list: {
+              tag: "update-many,unit",
+            },
+            update: {},
+            dryRun: true,
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("--replace-tests"),
+      });
+    });
+  });
+
   it("accepts rollback-only CLI invocations without misclassifying control flags as mutations", async () => {
     await withTempPmPath(async (context) => {
       const firstId = createTask(context, "bulk-cli-rollback-a", {

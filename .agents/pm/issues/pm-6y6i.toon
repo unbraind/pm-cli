@@ -2,13 +2,27 @@ id: pm-6y6i
 title: "Templates command: document correct invocation syntax (positional vs --name)"
 description: "pm templates save --name fails with 'Unknown option --name'. The templates subcommands use positional arguments not flags. The AGENTS.md and help text should clarify the correct syntax: pm templates save <name> [options]."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,documentation,pm-cli,templates
 created_at: "2026-04-26T20:16:52.690Z"
-updated_at: "2026-04-26T20:16:52.690Z"
+updated_at: "2026-04-26T21:09:44.091Z"
 deadline: "2026-04-29T20:16:52.690Z"
 author: audit-agent
 estimated_minutes: 15
 acceptance_criteria: Templates save syntax is clear in help and AGENTS.md
+comments[3]{created_at,author,text}:
+  "2026-04-26T21:09:19.120Z",codex-agent,"Clarified templates syntax across help and docs: templates help tips now explicitly state names are positional (, ) and that  is unsupported; mirrored the same guidance in AGENTS.md and README templates section."
+  "2026-04-26T21:09:21.879Z",codex-agent,"Verification: pnpm build passed; node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts passed (19 tests)."
+  "2026-04-26T21:09:44.091Z",codex-agent,"Correction: templates help/docs now explicitly state positional syntax pm templates save <name> and pm templates show <name>; the --name flag is unsupported."
+files[4]{path,scope,note}:
+  src/cli/help-content.ts,project,templates help narrative now calls out positional <name> syntax
+  AGENTS.md,project,operator guidance now states templates use positional name and --name is unsupported
+  README.md,project,templates section now explicitly documents positional name syntax
+  CHANGELOG.md,project,unreleased note for templates positional syntax clarification
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,tests/integration/help-runtime.spec.ts,project,300,null,null,null,null,null,null,null,null,null,null,null,verify help output includes updated templates syntax guidance
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mog9gp24-19e9wr,test,passed,"2026-04-26T21:08:14.637Z","2026-04-26T21:09:00.509Z","2026-04-26T21:09:00.509Z",null,null,1,0,0,null,null,null
+close_reason: Templates syntax guidance now clearly documents positional template names and unsupported --name flag in help/docs.
 body: "Tested: pm templates save --name 'audit-task' fails. The command likely uses positional args. Discovery needed: check pm templates --help and verify correct syntax, then update docs if needed."

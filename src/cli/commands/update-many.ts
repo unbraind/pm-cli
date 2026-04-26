@@ -25,6 +25,30 @@ const NON_MUTATION_UPDATE_OPTION_KEYS = new Set<keyof UpdateCommandOptions>([
   "allowAuditDepUpdate",
 ]);
 
+const UPDATE_MANY_MUTATION_FLAG_GUIDANCE = [
+  "--status",
+  "--priority",
+  "--type",
+  "--tags",
+  "--description",
+  "--body",
+  "--deadline",
+  "--estimate",
+  "--assignee",
+  "--dep",
+  "--dep-remove",
+  "--comment",
+  "--note",
+  "--learning",
+  "--file",
+  "--test",
+  "--doc",
+  "--replace-deps",
+  "--replace-tests",
+  "--unset",
+  "--clear-*",
+].join(", ");
+
 const UPDATE_OPTION_TO_ITEM_KEY: Partial<Record<keyof UpdateCommandOptions, string>> = {
   title: "title",
   description: "description",
@@ -621,7 +645,10 @@ export async function runUpdateMany(options: UpdateManyCommandOptions, global: G
   }
 
   if (!hasAnyUpdateMutationInput(options.update)) {
-    throw new PmCliError("No update-many mutation flags provided", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `No update-many mutation flags provided. Add at least one mutation flag (for example: ${UPDATE_MANY_MUTATION_FLAG_GUIDANCE}).`,
+      EXIT_CODE.USAGE,
+    );
   }
 
   const statusFilter = normalizeStatusFilter(options.status, statusRegistry);

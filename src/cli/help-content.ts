@@ -198,7 +198,10 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm templates list",
       "pm templates show triage-default",
     ],
-    tips: ["Combine templates with explicit create flags; explicit flags always override template defaults."],
+    tips: [
+      "Template names are positional arguments (`pm templates save <name>` and `pm templates show <name>`), not --name flags.",
+      "Combine templates with explicit create flags; explicit flags always override template defaults.",
+    ],
   },
   deps: {
     why: "Inspects an item dependency graph as a tree or graph payload to understand blockers and hierarchy links.",
@@ -273,7 +276,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     ],
     tips: [
       "Day/week/month views are anchored period windows; default mode clips the start to now unless --past or --full-period is set.",
-      "--full-period applies only to day/week/month views and makes the effective window match the full anchored period boundaries.",
+      "--full-period applies only to day/week/month views; use --from/--to to bound agenda windows.",
     ],
   },
   context: {

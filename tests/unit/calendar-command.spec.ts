@@ -1022,6 +1022,11 @@ describe("calendar command module", () => {
           exitCode: EXIT_CODE.USAGE,
         });
       }
+
+      await expect(runCalendar({ view: "agenda", fullPeriod: true }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("use --from and --to"),
+      });
     });
   });
 });

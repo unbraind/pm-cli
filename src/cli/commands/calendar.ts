@@ -711,7 +711,10 @@ function buildRange(
 
   if (view === "agenda") {
     if (fullPeriodRequested) {
-      throw new PmCliError("--full-period is only supported for --view day|week|month", EXIT_CODE.USAGE);
+      throw new PmCliError(
+        "--full-period is only supported for --view day|week|month. For agenda windows, use --from and --to.",
+        EXIT_CODE.USAGE,
+      );
     }
     const start = from ?? (options.date ? anchor : includePast ? undefined : nowValue);
     return {

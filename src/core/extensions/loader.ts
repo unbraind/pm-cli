@@ -236,6 +236,9 @@ export interface ExtensionCommandArgumentDefinition {
 export interface CommandDefinition {
   name: string;
   run?: CommandHandler;
+  /**
+   * @deprecated Use `run` instead. This alias remains for backward compatibility.
+   */
   handler?: CommandHandler;
   action?: string;
   description?: string;

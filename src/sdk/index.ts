@@ -49,6 +49,7 @@ export type {
   BeforeCommandHook,
   BeforeCommandHookContext,
   CommandDefinition,
+  ExtensionCommandArgumentDefinition,
   CommandHandler,
   CommandHandlerContext,
   CommandOverride,

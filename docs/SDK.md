@@ -1,28 +1,72 @@
 # pm SDK Guide
 
-This guide is the SDK-first quick start for extension authors using:
+This guide documents the public SDK surface for extension authors.
+
+Primary import:
 
 ```ts
 import { defineExtension } from "@unbrained/pm-cli/sdk";
 ```
 
-Use this document for authoring ergonomics. Use `docs/EXTENSIONS.md` for full lifecycle/runtime behavior details.
+Use this document for SDK/API contracts. Use `docs/EXTENSIONS.md` for full runtime lifecycle behavior.
 
-## What the SDK Guarantees
+## Import Surfaces
 
-The SDK provides stable authoring contracts for:
+- `@unbrained/pm-cli/sdk`: stable extension authoring API and CLI contract exports.
+- `@unbrained/pm-cli/cli`: runtime CLI module entrypoint. This path is for runtime module resolution, not a typed library API; its declaration file intentionally exports no symbols.
+
+## Public SDK Exports
+
+Source of truth:
+
+- `src/sdk/index.ts`
+- `src/sdk/cli-contracts.ts`
+
+### Extension authoring values
 
 - `defineExtension(...)`
-- `ExtensionApi` registration methods
-- lifecycle hook context types
-- schema/type registration definitions
-- importer/exporter contexts
-- search provider and vector adapter definitions
-- `GlobalOptions` and `PmSettings` type exports
+- `EXTENSION_CAPABILITIES`
+- `EXTENSION_CAPABILITY_CONTRACT`
+- `EXTENSION_CAPABILITY_CONTRACT_VERSION`
+- `EXTENSION_CAPABILITY_LEGACY_ALIASES`
 
-Reference starter that demonstrates all capabilities:
+### CLI/action contract values
 
-- `docs/examples/starter-extension/`
+- `PM_CORE_COMMAND_NAMES`
+- `PM_TOOL_ACTIONS`
+- `PM_TOOL_PARAMETERS_SCHEMA`
+- `PM_EXTENSION_CAPABILITY_CONTRACTS`
+- `PM_EXTENSION_SERVICE_NAME_CONTRACTS`
+- all exported `...FLAG_CONTRACTS`, `...OPTION_CONTRACTS`, and `...COMMANDER_*_CONTRACTS` arrays from `src/sdk/cli-contracts.ts`
+
+### CLI/action contract helpers
+
+- `withFlagAliasMetadata(...)`
+- `toCompletionFlagString(...)`
+- `readFirstStringFromCommanderOptions(...)`
+- `readStringArrayFromCommanderOptions(...)`
+
+### Key type exports
+
+- extension capability/types: `ExtensionCapability`, `PmToolAction`, `PmExtensionCapabilityContract`, `PmExtensionServiceNameContract`
+- command/flag/type helpers: `CommandDefinition`, `ExtensionCommandArgumentDefinition`, `FlagDefinition`, `SchemaFieldDefinition`, `SchemaItemTypeDefinition`
+- runtime extension API types: `ExtensionApi`, `ExtensionManifest`, lifecycle hook context types, importer/exporter contexts, search provider types, vector adapter types
+- shared command/settings types: `GlobalOptions`, `PmSettings`
+
+## Capability Requirements (Quick Reference)
+
+Declare capabilities in `manifest.json`; runtime gating is strict.
+
+- `registerCommand(...)`: requires `commands`
+- `registerCommand({ flags: [...] })` and `registerFlags(...)`: require `schema`
+- `registerItemFields(...)`, `registerItemTypes(...)`, `registerMigration(...)`: require `schema`
+- `registerImporter(...)` and `registerExporter(...)`: require `importers`
+- `registerParser(...)`: requires `parser`
+- `registerPreflight(...)`: requires `preflight`
+- `registerService(...)`: requires `services`
+- `registerRenderer(...)`: requires `renderers`
+- lifecycle hooks (`beforeCommand`, `afterCommand`, `onWrite`, `onRead`, `onIndex`): require `hooks`
+- `registerSearchProvider(...)` and `registerVectorStoreAdapter(...)`: require `search`
 
 ## Minimal Extension
 
@@ -52,43 +96,25 @@ export default defineExtension({
 });
 ```
 
-## Capability Registration Surface
-
-Use `ExtensionApi` to register:
-
-- `registerCommand`, `registerFlags`
-- `registerParser`, `registerPreflight`
-- `registerService`, `registerRenderer`
-- `hooks.beforeCommand`, `hooks.afterCommand`, `hooks.onWrite`, `hooks.onRead`, `hooks.onIndex`
-- `registerItemFields`, `registerItemTypes`, `registerMigration`
-- `registerImporter`, `registerExporter`
-- `registerSearchProvider`, `registerVectorStoreAdapter`
-
-Declare matching capabilities in `manifest.json`. Runtime gating is strict.
-
 ## Typed Authoring Highlights
 
-The SDK now provides explicit extension-authoring interfaces instead of `unknown`/`Record<string, unknown>` for key surfaces, including:
+The SDK provides explicit interfaces for key surfaces including:
 
+- `CommandDefinition` and `ExtensionCommandArgumentDefinition`
 - `FlagDefinition`
-- `SchemaFieldDefinition`
-- `SchemaItemTypeDefinition`
-- `SchemaMigrationDefinition`, `SchemaMigrationRunContext`
+- `SchemaFieldDefinition`, `SchemaItemTypeDefinition`, `SchemaMigrationDefinition`
 - `ImportExportContext`
 - `SearchProviderDefinition`, `SearchProviderQueryContext`, `SearchProviderHit`
 - `VectorStoreAdapterDefinition`, `VectorStoreQueryContext`, `VectorStoreUpsertContext`
 
-These interfaces are intentionally permissive (`[key: string]: unknown`) so extensions can add metadata without fighting the type checker.
+These interfaces intentionally allow additive metadata (`[key: string]: unknown`) where extension-defined metadata is expected.
 
 ## Recommended Authoring Pattern
 
 - keep command handlers deterministic and JSON-like
 - keep renderer/service overrides narrow to specific command paths
 - prefer additive hooks and schema fields over global behavior changes
-- ship one extension folder with:
-  - `manifest.json`
-  - entry module (`index.js` or `dist/index.js`)
-  - package metadata/dependencies as needed
+- ship one extension folder with `manifest.json`, an entry module, and package metadata/dependencies
 
 ## Related Docs
 

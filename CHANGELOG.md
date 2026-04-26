@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bumped `pnpm/action-setup` from v5 to v6 in all CI/release/nightly workflows (pnpm v11 support).
 - Bumped `softprops/action-gh-release` from v2 to v3 in release workflow (Node 24 runtime).
 - Bumped `undici`, `@types/node`, `@vitest/coverage-v8`, `vitest`, and `typescript` to latest.
+- Updated SDK/extension docs to explicitly cover `cli-contracts` public exports, capability contract constants, inline command flag schema capability requirements, and importer/exporter capability gating parity.
+- Clarified templates command name binding in help/docs (`pm templates save <name>`, `pm templates show <name>`), including explicit guidance that `--name` is unsupported.
+- Improved calendar usage guidance when `--full-period` is used with `--view agenda` by recommending `--from`/`--to` bounded windows in both runtime error text and help tips.
+- Improved `pm update-many` no-op validation guidance by listing actionable mutation flag examples when users provide filters/`--dry-run` without any mutation flags.
 
 - Added `pm files discover <ID>` to scan item text for existing project/global file paths, report addable vs already linked candidates, and optionally add missing linked files with `--apply`.
 - Added `pm create --comment` plain-text shorthand support so comment seeds can be passed as raw text without mandatory `text=<value>` wrappers.
