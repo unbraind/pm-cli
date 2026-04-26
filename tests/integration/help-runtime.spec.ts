@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { withTempPmPath } from "../helpers/withTempPmPath.js";
+import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 async function createProjectExtension(
   pmPath: string,
@@ -13,6 +13,13 @@ async function createProjectExtension(
   await mkdir(extensionRoot, { recursive: true });
   await writeFile(path.join(extensionRoot, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
   await writeFile(path.join(extensionRoot, "index.mjs"), entrySource, "utf8");
+}
+
+function setGovernancePreset(context: TempPmContext, preset: "minimal" | "default" | "strict"): void {
+  const result = context.runCli(["config", "project", "set", "governance-preset", "--policy", preset, "--json"], {
+    expectJson: true,
+  });
+  expect(result.code).toBe(0);
 }
 
 describe("CLI help runtime coverage (sandboxed)", () => {
@@ -401,6 +408,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
   it("supports --allow-audit-comment for non-owner append-only comment audits", async () => {
     await withTempPmPath(async (context) => {
+      setGovernancePreset(context, "strict");
       const created = context.runCli(
         [
           "create",
@@ -446,6 +454,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
   it("supports command-specific audit aliases for notes/learnings with legacy compatibility", async () => {
     await withTempPmPath(async (context) => {
+      setGovernancePreset(context, "strict");
       const created = context.runCli(
         [
           "create",
@@ -531,6 +540,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
   it("supports --allow-audit-release for non-owner release handoffs", async () => {
     await withTempPmPath(async (context) => {
+      setGovernancePreset(context, "strict");
       const created = context.runCli(
         [
           "create",
@@ -577,6 +587,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
   it("renders ownership conflict guidance with explicit force-usage scenarios", async () => {
     await withTempPmPath(async (context) => {
+      setGovernancePreset(context, "strict");
       const createResult = context.runCli(
         [
           "create",

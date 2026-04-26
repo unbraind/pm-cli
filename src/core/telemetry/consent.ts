@@ -6,7 +6,7 @@ import { readSettings, writeSettings } from "../store/settings.js";
 
 const TELEMETRY_PROMPT_DISABLE_ENV = "PM_TELEMETRY_PROMPT";
 const TELEMETRY_PROMPT_DISABLE_VALUES = new Set(["0", "false", "no", "off"]);
-const TELEMETRY_PROMPT_SKIPPED_COMMANDS = new Set(["completion", "completion-tags"]);
+const TELEMETRY_PROMPT_SKIPPED_COMMANDS = new Set(["init", "completion", "completion-tags"]);
 
 function parseBooleanLike(value: string | undefined): boolean {
   if (typeof value !== "string") {

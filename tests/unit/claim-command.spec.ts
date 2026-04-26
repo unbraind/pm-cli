@@ -68,6 +68,13 @@ function createTask(
   return payload.item?.id ?? "";
 }
 
+function setGovernancePreset(context: TempPmContext, preset: "minimal" | "default" | "strict"): void {
+  const result = context.runCli(["config", "project", "set", "governance-preset", "--policy", preset, "--json"], {
+    expectJson: true,
+  });
+  expect(result.code).toBe(0);
+}
+
 describe("runClaim/runRelease", () => {
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-claim-not-init-"));
@@ -143,6 +150,7 @@ describe("runClaim/runRelease", () => {
 
   it("releases current author assignments and blocks foreign assignees unless forced", async () => {
     await withTempPmPath(async (context) => {
+      setGovernancePreset(context, "strict");
       const current = createTask(context, {
         title: "release-current-assignee",
         status: "open",
@@ -173,6 +181,7 @@ describe("runClaim/runRelease", () => {
 
   it("supports audited non-owner release handoffs without force", async () => {
     await withTempPmPath(async (context) => {
+      setGovernancePreset(context, "strict");
       const foreign = createTask(context, {
         title: "release-audit-foreign-assignee",
         status: "open",

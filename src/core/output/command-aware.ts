@@ -360,7 +360,8 @@ function resolveNextSteps(command: string, result: unknown): string[] {
       return ["pm calendar --view agenda --from +0d --to +7d", "pm calendar --view month --format json"];
     case "init":
       return [
-        'pm create --title "Example" --description "..." --type Task --status open --priority 1 --message "Create initial item" --create-mode progressive',
+        "pm init --preset minimal",
+        'pm create --title "Example" --description "..." --type Task --status open --priority 1 --message "Create initial item"',
       ];
     case "config":
       return ["pm config project get definition-of-done", "pm config project get item-format", "pm config project get test-result-tracking"];

@@ -14,6 +14,10 @@ import {
 } from "../../core/store/paths.js";
 import { readSettingsWithMetadata, writeSettings } from "../../core/store/settings.js";
 import type {
+  GovernanceCloseValidationDefault,
+  GovernanceCreateModeDefault,
+  GovernanceOwnershipEnforcement,
+  GovernancePreset,
   ItemFormat,
   ParentReferencePolicy,
   SprintReleaseFormatPolicy,
@@ -39,6 +43,20 @@ const CONFIG_KEY_VALUES = [
   "metadata_validation_profile",
   "metadata-required-fields",
   "metadata_required_fields",
+  "governance-preset",
+  "governance_preset",
+  "governance-ownership-enforcement",
+  "governance_ownership_enforcement",
+  "governance-create-mode-default",
+  "governance_create_mode_default",
+  "governance-close-validation-default",
+  "governance_close_validation_default",
+  "governance-parent-reference-policy",
+  "governance_parent_reference_policy",
+  "governance-metadata-validation-profile",
+  "governance_metadata_validation_profile",
+  "governance-force-required-for-stale-lock",
+  "governance_force_required_for_stale_lock",
   "test-result-tracking",
   "test_result_tracking",
   "telemetry-tracking",
@@ -53,11 +71,19 @@ type ConfigKey =
   | "parent_reference_policy"
   | "metadata_validation_profile"
   | "metadata_required_fields"
+  | "governance_preset"
+  | "governance_ownership_enforcement"
+  | "governance_create_mode_default"
+  | "governance_close_validation_default"
+  | "governance_parent_reference_policy"
+  | "governance_metadata_validation_profile"
+  | "governance_force_required_for_stale_lock"
   | "test_result_tracking"
   | "telemetry_tracking";
 type HistoryMissingStreamPolicy = "auto_create" | "strict_error";
 type TestResultTrackingPolicy = "enabled" | "disabled";
 type TelemetryTrackingPolicy = "enabled" | "disabled";
+type GovernanceForceRequiredForStaleLockPolicy = "enabled" | "disabled";
 type ConfigValue =
   | string[]
   | ItemFormat
@@ -65,6 +91,11 @@ type ConfigValue =
   | SprintReleaseFormatPolicy
   | ParentReferencePolicy
   | ValidateMetadataProfile
+  | GovernancePreset
+  | GovernanceOwnershipEnforcement
+  | GovernanceCreateModeDefault
+  | GovernanceCloseValidationDefault
+  | GovernanceForceRequiredForStaleLockPolicy
   | TestResultTrackingPolicy
   | TelemetryTrackingPolicy;
 
@@ -94,6 +125,11 @@ export interface ConfigResult {
     | SprintReleaseFormatPolicy
     | ParentReferencePolicy
     | ValidateMetadataProfile
+    | GovernancePreset
+    | GovernanceOwnershipEnforcement
+    | GovernanceCreateModeDefault
+    | GovernanceCloseValidationDefault
+    | GovernanceForceRequiredForStaleLockPolicy
     | TestResultTrackingPolicy
     | TelemetryTrackingPolicy;
   keys?: ConfigKeyDescriptor[];
@@ -120,6 +156,22 @@ const CONFIG_KEY_ALIASES: Record<ConfigKey, string[]> = {
   parent_reference_policy: ["parent-reference-policy", "parent_reference_policy"],
   metadata_validation_profile: ["metadata-validation-profile", "metadata_validation_profile"],
   metadata_required_fields: ["metadata-required-fields", "metadata_required_fields"],
+  governance_preset: ["governance-preset", "governance_preset"],
+  governance_ownership_enforcement: ["governance-ownership-enforcement", "governance_ownership_enforcement"],
+  governance_create_mode_default: ["governance-create-mode-default", "governance_create_mode_default"],
+  governance_close_validation_default: [
+    "governance-close-validation-default",
+    "governance_close_validation_default",
+  ],
+  governance_parent_reference_policy: ["governance-parent-reference-policy", "governance_parent_reference_policy"],
+  governance_metadata_validation_profile: [
+    "governance-metadata-validation-profile",
+    "governance_metadata_validation_profile",
+  ],
+  governance_force_required_for_stale_lock: [
+    "governance-force-required-for-stale-lock",
+    "governance_force_required_for_stale_lock",
+  ],
   test_result_tracking: ["test-result-tracking", "test_result_tracking"],
   telemetry_tracking: ["telemetry-tracking", "telemetry_tracking"],
 };
@@ -132,6 +184,13 @@ const CONFIG_KEY_SUMMARIES: Record<ConfigKey, string> = {
   parent_reference_policy: "Parent reference validation policy.",
   metadata_validation_profile: "Validate metadata profile policy (core|strict|custom).",
   metadata_required_fields: "Validate custom metadata required-fields list.",
+  governance_preset: "Governance preset policy (minimal|default|strict|custom).",
+  governance_ownership_enforcement: "Governance ownership enforcement policy (none|warn|strict).",
+  governance_create_mode_default: "Governance default create mode (progressive|strict).",
+  governance_close_validation_default: "Governance default close validation mode (off|warn|strict).",
+  governance_parent_reference_policy: "Governance parent reference policy (warn|strict_error).",
+  governance_metadata_validation_profile: "Governance metadata validation profile (core|strict|custom).",
+  governance_force_required_for_stale_lock: "Governance stale-lock force policy (enabled|disabled).",
   test_result_tracking: "Item-level linked test result persistence policy.",
   telemetry_tracking: "Telemetry usage reporting policy.",
 };
@@ -172,6 +231,33 @@ function normalizeKey(value: string): ConfigKey {
     }
     if (value === "metadata-required-fields" || value === "metadata_required_fields") {
       return "metadata_required_fields";
+    }
+    if (value === "governance-preset" || value === "governance_preset") {
+      return "governance_preset";
+    }
+    if (value === "governance-ownership-enforcement" || value === "governance_ownership_enforcement") {
+      return "governance_ownership_enforcement";
+    }
+    if (value === "governance-create-mode-default" || value === "governance_create_mode_default") {
+      return "governance_create_mode_default";
+    }
+    if (value === "governance-close-validation-default" || value === "governance_close_validation_default") {
+      return "governance_close_validation_default";
+    }
+    if (value === "governance-parent-reference-policy" || value === "governance_parent_reference_policy") {
+      return "governance_parent_reference_policy";
+    }
+    if (
+      value === "governance-metadata-validation-profile" ||
+      value === "governance_metadata_validation_profile"
+    ) {
+      return "governance_metadata_validation_profile";
+    }
+    if (
+      value === "governance-force-required-for-stale-lock" ||
+      value === "governance_force_required_for_stale_lock"
+    ) {
+      return "governance_force_required_for_stale_lock";
     }
     if (value === "test-result-tracking" || value === "test_result_tracking") {
       return "test_result_tracking";
@@ -257,6 +343,66 @@ function normalizeValidateMetadataProfile(value: string | undefined): ValidateMe
   }
   throw new PmCliError(
     "Config set metadata-validation-profile requires --policy with one of: core, strict, custom",
+    EXIT_CODE.USAGE,
+  );
+}
+
+function normalizeGovernancePreset(value: string | undefined): GovernancePreset {
+  const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
+  if (normalized === "minimal" || normalized === "default" || normalized === "strict" || normalized === "custom") {
+    return normalized;
+  }
+  throw new PmCliError(
+    "Config set governance-preset requires --policy with one of: minimal, default, strict, custom",
+    EXIT_CODE.USAGE,
+  );
+}
+
+function normalizeGovernanceOwnershipEnforcement(value: string | undefined): GovernanceOwnershipEnforcement {
+  const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
+  if (normalized === "none" || normalized === "warn" || normalized === "strict") {
+    return normalized;
+  }
+  throw new PmCliError(
+    "Config set governance-ownership-enforcement requires --policy with one of: none, warn, strict",
+    EXIT_CODE.USAGE,
+  );
+}
+
+function normalizeGovernanceCreateModeDefault(value: string | undefined): GovernanceCreateModeDefault {
+  const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
+  if (normalized === "progressive" || normalized === "strict") {
+    return normalized;
+  }
+  throw new PmCliError(
+    "Config set governance-create-mode-default requires --policy with one of: progressive, strict",
+    EXIT_CODE.USAGE,
+  );
+}
+
+function normalizeGovernanceCloseValidationDefault(value: string | undefined): GovernanceCloseValidationDefault {
+  const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
+  if (normalized === "off" || normalized === "warn" || normalized === "strict") {
+    return normalized;
+  }
+  if (normalized === "none" || normalized === "disabled") {
+    return "off";
+  }
+  throw new PmCliError(
+    "Config set governance-close-validation-default requires --policy with one of: off, warn, strict",
+    EXIT_CODE.USAGE,
+  );
+}
+
+function normalizeGovernanceForceRequiredForStaleLockPolicy(
+  value: string | undefined,
+): GovernanceForceRequiredForStaleLockPolicy {
+  const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
+  if (normalized === "enabled" || normalized === "disabled") {
+    return normalized;
+  }
+  throw new PmCliError(
+    "Config set governance-force-required-for-stale-lock requires --policy with one of: enabled, disabled",
     EXIT_CODE.USAGE,
   );
 }
@@ -349,6 +495,15 @@ function readConfigValue(settings: {
     metadata_profile: ValidateMetadataProfile;
     metadata_required_fields: ValidateMetadataRequiredField[];
   };
+  governance: {
+    preset: GovernancePreset;
+    ownership_enforcement: GovernanceOwnershipEnforcement;
+    create_mode_default: GovernanceCreateModeDefault;
+    close_validation_default: GovernanceCloseValidationDefault;
+    parent_reference: ParentReferencePolicy;
+    metadata_profile: ValidateMetadataProfile;
+    force_required_for_stale_lock: boolean;
+  };
   testing: { record_results_to_items: boolean };
   telemetry: { enabled: boolean };
 }, key: ConfigKey): ConfigValue {
@@ -369,6 +524,27 @@ function readConfigValue(settings: {
   }
   if (key === "metadata_required_fields") {
     return [...settings.validation.metadata_required_fields];
+  }
+  if (key === "governance_preset") {
+    return settings.governance.preset;
+  }
+  if (key === "governance_ownership_enforcement") {
+    return settings.governance.ownership_enforcement;
+  }
+  if (key === "governance_create_mode_default") {
+    return settings.governance.create_mode_default;
+  }
+  if (key === "governance_close_validation_default") {
+    return settings.governance.close_validation_default;
+  }
+  if (key === "governance_parent_reference_policy") {
+    return settings.governance.parent_reference;
+  }
+  if (key === "governance_metadata_validation_profile") {
+    return settings.governance.metadata_profile;
+  }
+  if (key === "governance_force_required_for_stale_lock") {
+    return settings.governance.force_required_for_stale_lock ? "enabled" : "disabled";
   }
   if (key === "test_result_tracking") {
     return settings.testing.record_results_to_items ? "enabled" : "disabled";
@@ -456,6 +632,13 @@ export async function runConfig(
       parent_reference_policy: readConfigValue(settings, "parent_reference_policy"),
       metadata_validation_profile: readConfigValue(settings, "metadata_validation_profile"),
       metadata_required_fields: readConfigValue(settings, "metadata_required_fields"),
+      governance_preset: readConfigValue(settings, "governance_preset"),
+      governance_ownership_enforcement: readConfigValue(settings, "governance_ownership_enforcement"),
+      governance_create_mode_default: readConfigValue(settings, "governance_create_mode_default"),
+      governance_close_validation_default: readConfigValue(settings, "governance_close_validation_default"),
+      governance_parent_reference_policy: readConfigValue(settings, "governance_parent_reference_policy"),
+      governance_metadata_validation_profile: readConfigValue(settings, "governance_metadata_validation_profile"),
+      governance_force_required_for_stale_lock: readConfigValue(settings, "governance_force_required_for_stale_lock"),
       test_result_tracking: readConfigValue(settings, "test_result_tracking"),
       telemetry_tracking: readConfigValue(settings, "telemetry_tracking"),
     } satisfies Record<ConfigKey, ConfigValue>;
@@ -525,6 +708,69 @@ export async function runConfig(
         scope,
         key,
         criteria: [...settings.validation.metadata_required_fields],
+        settings_path: target.settingsPath,
+        changed: false,
+      }, warnings);
+    }
+    if (key === "governance_preset") {
+      return withWarnings({
+        scope,
+        key,
+        policy: settings.governance.preset,
+        settings_path: target.settingsPath,
+        changed: false,
+      }, warnings);
+    }
+    if (key === "governance_ownership_enforcement") {
+      return withWarnings({
+        scope,
+        key,
+        policy: settings.governance.ownership_enforcement,
+        settings_path: target.settingsPath,
+        changed: false,
+      }, warnings);
+    }
+    if (key === "governance_create_mode_default") {
+      return withWarnings({
+        scope,
+        key,
+        policy: settings.governance.create_mode_default,
+        settings_path: target.settingsPath,
+        changed: false,
+      }, warnings);
+    }
+    if (key === "governance_close_validation_default") {
+      return withWarnings({
+        scope,
+        key,
+        policy: settings.governance.close_validation_default,
+        settings_path: target.settingsPath,
+        changed: false,
+      }, warnings);
+    }
+    if (key === "governance_parent_reference_policy") {
+      return withWarnings({
+        scope,
+        key,
+        policy: settings.governance.parent_reference,
+        settings_path: target.settingsPath,
+        changed: false,
+      }, warnings);
+    }
+    if (key === "governance_metadata_validation_profile") {
+      return withWarnings({
+        scope,
+        key,
+        policy: settings.governance.metadata_profile,
+        settings_path: target.settingsPath,
+        changed: false,
+      }, warnings);
+    }
+    if (key === "governance_force_required_for_stale_lock") {
+      return withWarnings({
+        scope,
+        key,
+        policy: settings.governance.force_required_for_stale_lock ? "enabled" : "disabled",
         settings_path: target.settingsPath,
         changed: false,
       }, warnings);
@@ -633,8 +879,13 @@ export async function runConfig(
 
   if (key === "parent_reference_policy") {
     const nextPolicy = normalizeParentReferencePolicy(options.policy);
-    const changed = settings.validation.parent_reference !== nextPolicy;
+    const changed =
+      settings.validation.parent_reference !== nextPolicy ||
+      settings.governance.preset !== "custom" ||
+      settings.governance.parent_reference !== nextPolicy;
     settings.validation.parent_reference = nextPolicy;
+    settings.governance.preset = "custom";
+    settings.governance.parent_reference = nextPolicy;
     if (changed) {
       await writeSettings(target.pmRoot, settings, "config:set:parent_reference_policy");
     }
@@ -649,8 +900,13 @@ export async function runConfig(
 
   if (key === "metadata_validation_profile") {
     const nextPolicy = normalizeValidateMetadataProfile(options.policy);
-    const changed = settings.validation.metadata_profile !== nextPolicy;
+    const changed =
+      settings.validation.metadata_profile !== nextPolicy ||
+      settings.governance.preset !== "custom" ||
+      settings.governance.metadata_profile !== nextPolicy;
     settings.validation.metadata_profile = nextPolicy;
+    settings.governance.preset = "custom";
+    settings.governance.metadata_profile = nextPolicy;
     if (changed) {
       await writeSettings(target.pmRoot, settings, "config:set:metadata_validation_profile");
     }
@@ -676,6 +932,133 @@ export async function runConfig(
       scope,
       key,
       criteria: [...settings.validation.metadata_required_fields],
+      settings_path: target.settingsPath,
+      changed,
+    }, warnings);
+  }
+
+  if (key === "governance_preset") {
+    const nextPolicy = normalizeGovernancePreset(options.policy);
+    const changed = settings.governance.preset !== nextPolicy;
+    settings.governance.preset = nextPolicy;
+    if (changed) {
+      await writeSettings(target.pmRoot, settings, "config:set:governance_preset");
+    }
+    return withWarnings({
+      scope,
+      key,
+      policy: settings.governance.preset,
+      settings_path: target.settingsPath,
+      changed,
+    }, warnings);
+  }
+
+  if (key === "governance_ownership_enforcement") {
+    const nextPolicy = normalizeGovernanceOwnershipEnforcement(options.policy);
+    const changed =
+      settings.governance.preset !== "custom" || settings.governance.ownership_enforcement !== nextPolicy;
+    settings.governance.preset = "custom";
+    settings.governance.ownership_enforcement = nextPolicy;
+    if (changed) {
+      await writeSettings(target.pmRoot, settings, "config:set:governance_ownership_enforcement");
+    }
+    return withWarnings({
+      scope,
+      key,
+      policy: settings.governance.ownership_enforcement,
+      settings_path: target.settingsPath,
+      changed,
+    }, warnings);
+  }
+
+  if (key === "governance_create_mode_default") {
+    const nextPolicy = normalizeGovernanceCreateModeDefault(options.policy);
+    const changed =
+      settings.governance.preset !== "custom" || settings.governance.create_mode_default !== nextPolicy;
+    settings.governance.preset = "custom";
+    settings.governance.create_mode_default = nextPolicy;
+    if (changed) {
+      await writeSettings(target.pmRoot, settings, "config:set:governance_create_mode_default");
+    }
+    return withWarnings({
+      scope,
+      key,
+      policy: settings.governance.create_mode_default,
+      settings_path: target.settingsPath,
+      changed,
+    }, warnings);
+  }
+
+  if (key === "governance_close_validation_default") {
+    const nextPolicy = normalizeGovernanceCloseValidationDefault(options.policy);
+    const changed =
+      settings.governance.preset !== "custom" || settings.governance.close_validation_default !== nextPolicy;
+    settings.governance.preset = "custom";
+    settings.governance.close_validation_default = nextPolicy;
+    if (changed) {
+      await writeSettings(target.pmRoot, settings, "config:set:governance_close_validation_default");
+    }
+    return withWarnings({
+      scope,
+      key,
+      policy: settings.governance.close_validation_default,
+      settings_path: target.settingsPath,
+      changed,
+    }, warnings);
+  }
+
+  if (key === "governance_parent_reference_policy") {
+    const nextPolicy = normalizeParentReferencePolicy(options.policy);
+    const changed =
+      settings.governance.preset !== "custom" || settings.governance.parent_reference !== nextPolicy;
+    settings.governance.preset = "custom";
+    settings.governance.parent_reference = nextPolicy;
+    settings.validation.parent_reference = nextPolicy;
+    if (changed) {
+      await writeSettings(target.pmRoot, settings, "config:set:governance_parent_reference_policy");
+    }
+    return withWarnings({
+      scope,
+      key,
+      policy: settings.governance.parent_reference,
+      settings_path: target.settingsPath,
+      changed,
+    }, warnings);
+  }
+
+  if (key === "governance_metadata_validation_profile") {
+    const nextPolicy = normalizeValidateMetadataProfile(options.policy);
+    const changed =
+      settings.governance.preset !== "custom" || settings.governance.metadata_profile !== nextPolicy;
+    settings.governance.preset = "custom";
+    settings.governance.metadata_profile = nextPolicy;
+    settings.validation.metadata_profile = nextPolicy;
+    if (changed) {
+      await writeSettings(target.pmRoot, settings, "config:set:governance_metadata_validation_profile");
+    }
+    return withWarnings({
+      scope,
+      key,
+      policy: settings.governance.metadata_profile,
+      settings_path: target.settingsPath,
+      changed,
+    }, warnings);
+  }
+
+  if (key === "governance_force_required_for_stale_lock") {
+    const nextPolicy = normalizeGovernanceForceRequiredForStaleLockPolicy(options.policy);
+    const nextEnabled = nextPolicy === "enabled";
+    const changed =
+      settings.governance.preset !== "custom" || settings.governance.force_required_for_stale_lock !== nextEnabled;
+    settings.governance.preset = "custom";
+    settings.governance.force_required_for_stale_lock = nextEnabled;
+    if (changed) {
+      await writeSettings(target.pmRoot, settings, "config:set:governance_force_required_for_stale_lock");
+    }
+    return withWarnings({
+      scope,
+      key,
+      policy: settings.governance.force_required_for_stale_lock ? "enabled" : "disabled",
       settings_path: target.settingsPath,
       changed,
     }, warnings);

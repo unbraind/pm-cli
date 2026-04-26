@@ -41,7 +41,7 @@ function isTerminal(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): 
   return statusRegistry.terminal_statuses.has(normalized);
 }
 
-type ValidateCloseMode = "warn" | "strict";
+type ValidateCloseMode = "off" | "warn" | "strict";
 
 const CLOSE_VALIDATION_FIELDS: Array<{ key: keyof Pick<ItemFrontMatter, "resolution" | "expected_result" | "actual_result">; label: string }> = [
   { key: "resolution", label: "resolution" },
@@ -57,10 +57,13 @@ function parseValidateCloseMode(raw: string | undefined): ValidateCloseMode | un
   if (normalized.length === 0 || normalized === "warn") {
     return "warn";
   }
+  if (normalized === "off" || normalized === "none" || normalized === "disabled") {
+    return "off";
+  }
   if (normalized === "strict") {
     return "strict";
   }
-  throw new PmCliError(`Invalid --validate-close mode "${raw}" (expected "warn" or "strict")`, EXIT_CODE.USAGE);
+  throw new PmCliError(`Invalid --validate-close mode "${raw}" (expected "off", "warn", or "strict")`, EXIT_CODE.USAGE);
 }
 
 function findMissingCloseValidationFields(frontMatter: ItemFrontMatter): string[] {
@@ -89,7 +92,7 @@ export async function runClose(
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const author = toAuthor(options.author, settings.author_default);
   const closeReason = ensureCloseReason(closeReasonText);
-  const validateCloseMode = parseValidateCloseMode(options.validateClose);
+  const validateCloseMode = parseValidateCloseMode(options.validateClose) ?? settings.governance.close_validation_default;
 
   const result = await mutateItem({
     pmRoot,
@@ -104,7 +107,7 @@ export async function runClose(
         throw new PmCliError(`Item ${document.front_matter.id} is already terminal; use --force to close again.`, EXIT_CODE.CONFLICT);
       }
       const mutationWarnings: string[] = [];
-      if (validateCloseMode) {
+      if (validateCloseMode !== "off") {
         const missingFields = findMissingCloseValidationFields(document.front_matter);
         if (missingFields.length > 0) {
           if (validateCloseMode === "strict") {

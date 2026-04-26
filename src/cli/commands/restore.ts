@@ -390,6 +390,7 @@ export async function runRestore(
     settings.locks.ttl_seconds,
     author,
     Boolean(options.force),
+    settings.governance.force_required_for_stale_lock,
   );
 
   try {
@@ -405,11 +406,18 @@ export async function runRestore(
       resolvedCurrentDocument = replayCurrentDocument(history);
     }
     const assigned = resolvedCurrentDocument.front_matter.assignee?.trim();
-    if (assigned && assigned !== author && !options.force) {
-      throw new PmCliError(
-        `Item ${resolvedId} is assigned to ${assigned}. Use --force to override.`,
-        EXIT_CODE.CONFLICT,
-      );
+    const ownershipWarnings: string[] = [];
+    const hasOwnershipConflict = assigned && assigned !== author && !options.force;
+    if (hasOwnershipConflict) {
+      if (settings.governance.ownership_enforcement === "strict") {
+        throw new PmCliError(
+          `Item ${resolvedId} is assigned to ${assigned}. Use --force to override.`,
+          EXIT_CODE.CONFLICT,
+        );
+      }
+      if (settings.governance.ownership_enforcement === "warn") {
+        ownershipWarnings.push(`ownership_warning:assignee_conflict:${resolvedId}:${assigned}`);
+      }
     }
 
     const serializedRestore = serializeItemDocument(restoredDocument, { format: itemFormat, schema: settings.schema });
@@ -471,7 +479,7 @@ export async function runRestore(
         entry_op: targetEntry.op,
       },
       changed_fields: changedFields(resolvedCurrentDocument, restoredDocument),
-      warnings: [...subject.historyPolicyWarnings, ...hookWarnings],
+      warnings: [...subject.historyPolicyWarnings, ...ownershipWarnings, ...hookWarnings],
     };
   } finally {
     await releaseLock();

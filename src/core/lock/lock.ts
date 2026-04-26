@@ -141,13 +141,19 @@ function lockOwnerSuffix(info: LockInfo | null): string {
   return info?.owner ? ` (owner ${info.owner})` : "";
 }
 
-async function handleExistingLock(lockPath: string, id: string, ttlSeconds: number, force: boolean): Promise<void> {
+async function handleExistingLock(
+  lockPath: string,
+  id: string,
+  ttlSeconds: number,
+  force: boolean,
+  forceRequiredForStaleLock: boolean,
+): Promise<void> {
   const lockInfo = await readLockInfo(lockPath);
   if (!isStaleLock(lockInfo.info, ttlSeconds)) {
     throw new PmCliError(`Item ${id} is locked${lockOwnerSuffix(lockInfo.info)}`, EXIT_CODE.CONFLICT);
   }
 
-  if (!force) {
+  if (!force && forceRequiredForStaleLock) {
     const warningSuffix = lockInfo.warnings.length > 0 ? ` (${lockInfo.warnings.join(",")})` : "";
     throw new PmCliError(
       `Item ${id} lock is stale${warningSuffix}; rerun with --force when supported for this command`,
@@ -171,6 +177,7 @@ export async function acquireLock(
   ttlSeconds: number,
   owner: string,
   force = false,
+  forceRequiredForStaleLock = true,
 ): Promise<() => Promise<void>> {
   const lockOverride = await runActiveServiceOverride("lock_acquire", {
     pm_root: pmRoot,
@@ -178,6 +185,7 @@ export async function acquireLock(
     ttl_seconds: ttlSeconds,
     owner,
     force,
+    force_required_for_stale_lock: forceRequiredForStaleLock,
   });
   if (lockOverride.handled) {
     const releaseFromFunction = typeof lockOverride.result === "function" ? lockOverride.result : null;
@@ -218,7 +226,7 @@ export async function acquireLock(
       if (!isErrno(error, "EEXIST")) {
         throw new PmCliError(`Failed to acquire lock for ${id}: ${toErrorMessage(error)}`, EXIT_CODE.GENERIC_FAILURE);
       }
-      await handleExistingLock(lockPath, id, ttlSeconds, force);
+      await handleExistingLock(lockPath, id, ttlSeconds, force, forceRequiredForStaleLock);
     }
   }
 

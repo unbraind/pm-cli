@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { runActiveOnReadHooks, runActiveOnWriteHooks } from "../extensions/index.js";
-import { SETTINGS_DEFAULTS } from "../shared/constants.js";
+import { GOVERNANCE_PRESET_DEFAULTS, SETTINGS_DEFAULTS } from "../shared/constants.js";
 import { readFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
 import {
   ensureRuntimeSchemaFileScaffold,
@@ -10,10 +10,12 @@ import {
 import { getSettingsPath } from "./paths.js";
 import { orderObject } from "../shared/serialization.js";
 import type {
+  GovernanceSettings,
   ItemTypeCommandOptionPolicy,
   ItemTypeDefinition,
   ItemTypeOptionDefinition,
   PmSettings,
+  GovernancePreset,
   ValidateMetadataRequiredField,
 } from "../../types/index.js";
 
@@ -119,6 +121,18 @@ const runtimeSchemaSettingsSchema = z
   })
   .optional();
 
+const governanceSettingsSchema = z
+  .object({
+    preset: z.union([z.literal("minimal"), z.literal("default"), z.literal("strict"), z.literal("custom")]).optional(),
+    ownership_enforcement: z.union([z.literal("none"), z.literal("warn"), z.literal("strict")]).optional(),
+    create_mode_default: z.union([z.literal("progressive"), z.literal("strict")]).optional(),
+    close_validation_default: z.union([z.literal("off"), z.literal("warn"), z.literal("strict")]).optional(),
+    parent_reference: z.union([z.literal("warn"), z.literal("strict_error")]).optional(),
+    metadata_profile: z.union([z.literal("core"), z.literal("strict"), z.literal("custom")]).optional(),
+    force_required_for_stale_lock: z.boolean().optional(),
+  })
+  .optional();
+
 const settingsSchema = z.object({
   version: z.number().int(),
   id_prefix: z.string(),
@@ -143,6 +157,7 @@ const settingsSchema = z.object({
       metadata_required_fields: z.array(z.string()).optional(),
     })
     .optional(),
+  governance: governanceSettingsSchema,
   workflow: z
     .object({
       definition_of_done: z.array(z.string()),
@@ -215,6 +230,57 @@ export interface SettingsReadResult {
   settings: PmSettings;
   metadata: SettingsReadMetadata;
   warnings: string[];
+}
+
+function resolveGovernanceKnobsFromPreset(preset: Exclude<GovernancePreset, "custom">): Omit<GovernanceSettings, "preset"> {
+  return structuredClone(GOVERNANCE_PRESET_DEFAULTS[preset]);
+}
+
+function normalizeGovernancePreset(value: GovernancePreset | undefined): GovernancePreset {
+  if (value === "minimal" || value === "default" || value === "strict" || value === "custom") {
+    return value;
+  }
+  return SETTINGS_DEFAULTS.governance.preset;
+}
+
+function normalizeGovernanceForPersist(governance: GovernanceSettings): Partial<GovernanceSettings> & { preset: GovernancePreset } {
+  if (governance.preset === "custom") {
+    return {
+      preset: "custom",
+      ownership_enforcement: governance.ownership_enforcement,
+      create_mode_default: governance.create_mode_default,
+      close_validation_default: governance.close_validation_default,
+      parent_reference: governance.parent_reference,
+      metadata_profile: governance.metadata_profile,
+      force_required_for_stale_lock: governance.force_required_for_stale_lock,
+    };
+  }
+  return {
+    preset: governance.preset,
+  };
+}
+
+export function resolveGovernanceKnobs(
+  settings: Pick<PmSettings, "governance"> | { governance?: Partial<GovernanceSettings> },
+): GovernanceSettings {
+  const rawGovernance = settings.governance ?? {};
+  const preset = normalizeGovernancePreset(rawGovernance.preset);
+  if (preset === "custom") {
+    const baseline = resolveGovernanceKnobsFromPreset("default");
+    return {
+      preset,
+      ownership_enforcement: rawGovernance.ownership_enforcement ?? baseline.ownership_enforcement,
+      create_mode_default: rawGovernance.create_mode_default ?? baseline.create_mode_default,
+      close_validation_default: rawGovernance.close_validation_default ?? baseline.close_validation_default,
+      parent_reference: rawGovernance.parent_reference ?? baseline.parent_reference,
+      metadata_profile: rawGovernance.metadata_profile ?? baseline.metadata_profile,
+      force_required_for_stale_lock: rawGovernance.force_required_for_stale_lock ?? baseline.force_required_for_stale_lock,
+    };
+  }
+  return {
+    preset,
+    ...resolveGovernanceKnobsFromPreset(preset),
+  };
 }
 
 function cloneDefaults(): PmSettings {
@@ -358,6 +424,9 @@ function mergeSettings(raw: unknown): PmSettings {
     return defaults;
   }
   const settings = parsed.data;
+  const governance = resolveGovernanceKnobs({
+    governance: settings.governance ?? { preset: "default" },
+  });
   return {
     ...defaults,
     ...settings,
@@ -368,9 +437,11 @@ function mergeSettings(raw: unknown): PmSettings {
     validation: {
       ...defaults.validation,
       ...(settings.validation ?? {}),
-      metadata_profile: settings.validation?.metadata_profile ?? defaults.validation.metadata_profile,
+      parent_reference: governance.parent_reference,
+      metadata_profile: governance.metadata_profile,
       metadata_required_fields: normalizeValidationMetadataRequiredFields(settings.validation?.metadata_required_fields),
     },
+    governance,
     workflow: {
       definition_of_done: [...(settings.workflow?.definition_of_done ?? defaults.workflow.definition_of_done)],
     },
@@ -408,14 +479,27 @@ function mergeSettings(raw: unknown): PmSettings {
 }
 
 export function serializeSettings(settings: PmSettings): string {
+  const governance = resolveGovernanceKnobs(settings);
   const normalizedSettings: PmSettings = {
     ...settings,
+    validation: {
+      ...settings.validation,
+      parent_reference: governance.parent_reference,
+      metadata_profile: governance.metadata_profile,
+      metadata_required_fields: normalizeValidationMetadataRequiredFields(settings.validation?.metadata_required_fields),
+    },
+    governance,
     item_types: {
       definitions: normalizeItemTypeDefinitions(settings.item_types?.definitions),
     },
     schema: normalizeRuntimeSchemaSettings(settings.schema),
   };
-  const ordered = orderObject(normalizedSettings as unknown as Record<string, unknown>, [
+  const ordered = orderObject(
+    {
+      ...(normalizedSettings as unknown as Record<string, unknown>),
+      governance: normalizeGovernanceForPersist(governance) as unknown,
+    },
+    [
     "version",
     "id_prefix",
     "author_default",
@@ -424,6 +508,7 @@ export function serializeSettings(settings: PmSettings): string {
     "output",
     "history",
     "validation",
+    "governance",
     "workflow",
     "testing",
     "telemetry",
@@ -433,7 +518,8 @@ export function serializeSettings(settings: PmSettings): string {
     "search",
     "providers",
     "vector_store",
-  ]);
+    ],
+  );
 
   ordered.locks = orderObject(ordered.locks as Record<string, unknown>, ["ttl_seconds"]);
   ordered.output = orderObject(ordered.output as Record<string, unknown>, ["default_format"]);
@@ -441,6 +527,17 @@ export function serializeSettings(settings: PmSettings): string {
   ordered.validation = orderObject(ordered.validation as Record<string, unknown>, [
     "sprint_release_format",
     "parent_reference",
+    "metadata_profile",
+    "metadata_required_fields",
+  ]);
+  ordered.governance = orderObject(ordered.governance as Record<string, unknown>, [
+    "preset",
+    "ownership_enforcement",
+    "create_mode_default",
+    "close_validation_default",
+    "parent_reference",
+    "metadata_profile",
+    "force_required_for_stale_lock",
   ]);
   ordered.workflow = orderObject(ordered.workflow as Record<string, unknown>, ["definition_of_done"]);
   ordered.testing = orderObject(ordered.testing as Record<string, unknown>, ["record_results_to_items"]);

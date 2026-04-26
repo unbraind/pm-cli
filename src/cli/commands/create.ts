@@ -1086,13 +1086,13 @@ async function resolveCreateStdinInputs(options: CreateCommandOptions): Promise<
   };
 }
 
-function resolveCreateMode(createMode: string | undefined): CreateMode {
+function resolveCreateMode(createMode: string | undefined, defaultMode: CreateMode): CreateMode {
   if (createMode === undefined) {
-    return "strict";
+    return defaultMode;
   }
   const normalized = createMode.trim().toLowerCase();
   if (normalized.length === 0) {
-    return "strict";
+    return defaultMode;
   }
   if (normalized === "strict" || normalized === "progressive") {
     return normalized;
@@ -1120,8 +1120,12 @@ function resolveScheduleCreatePreset(raw: string | undefined): ScheduleCreatePre
   );
 }
 
-function resolveEffectiveCreateMode(createMode: string | undefined, schedulePreset: ScheduleCreatePreset | undefined): CreateMode {
-  const resolvedMode = resolveCreateMode(createMode);
+function resolveEffectiveCreateMode(
+  createMode: string | undefined,
+  schedulePreset: ScheduleCreatePreset | undefined,
+  defaultMode: CreateMode,
+): CreateMode {
+  const resolvedMode = resolveCreateMode(createMode, defaultMode);
   if (schedulePreset === undefined) {
     return resolvedMode;
   }
@@ -1429,7 +1433,11 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
       EXIT_CODE.USAGE,
     );
   }
-  const createMode = resolveEffectiveCreateMode(resolvedOptions.createMode, schedulePreset);
+  const createMode = resolveEffectiveCreateMode(
+    resolvedOptions.createMode,
+    schedulePreset,
+    settings.governance.create_mode_default,
+  );
   const unsetTargets = parseCreateUnsetTargets(resolvedOptions.unset, runtimeFieldRegistry);
   const explicitUnsets = new Set<string>(unsetTargets.frontMatterKeys);
   const clearOptionKeys = new Set<string>(unsetTargets.optionKeys);
@@ -1955,7 +1963,14 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
 
   const itemPath = getItemPath(pmRoot, type, id, settings.item_format, typeRegistry.type_to_folder);
   const historyPath = getHistoryPath(pmRoot, id);
-  const lockRelease = await acquireLock(pmRoot, id, settings.locks.ttl_seconds, author);
+  const lockRelease = await acquireLock(
+    pmRoot,
+    id,
+    settings.locks.ttl_seconds,
+    author,
+    false,
+    settings.governance.force_required_for_stale_lock,
+  );
   const explicitUnsetKeys = [...explicitUnsets].sort((left, right) => left.localeCompare(right));
   const historyMessage = buildHistoryMessage(resolvedOptions.message, explicitUnsetKeys);
   let hookWarnings: string[] = [];

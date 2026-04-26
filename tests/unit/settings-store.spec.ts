@@ -7,7 +7,7 @@ import type { ExtensionHookRegistry } from "../../src/core/extensions/loader.js"
 import { normalizeRuntimeSchemaSettings } from "../../src/core/schema/runtime-schema.js";
 import { SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
 import { getSettingsPath } from "../../src/core/store/paths.js";
-import { readSettings, readSettingsWithMetadata, serializeSettings, writeSettings } from "../../src/core/store/settings.js";
+import { readSettings, readSettingsWithMetadata, resolveGovernanceKnobs, serializeSettings, writeSettings } from "../../src/core/store/settings.js";
 
 async function withTempRoot(run: (pmRoot: string) => Promise<void>): Promise<void> {
   const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pm-cli-settings-test-"));
@@ -134,6 +134,7 @@ describe("core/store/settings", () => {
         "output",
         "history",
         "validation",
+        "governance",
         "workflow",
         "testing",
         "telemetry",
@@ -153,6 +154,7 @@ describe("core/store/settings", () => {
         "metadata_profile",
         "metadata_required_fields",
       ]);
+      expectOrderedObjectKeys(parsed.governance, ["preset"]);
       expectOrderedObjectKeys(parsed.workflow, ["definition_of_done"]);
       expectOrderedObjectKeys(parsed.testing, ["record_results_to_items"]);
       expectOrderedObjectKeys(parsed.telemetry, [
@@ -340,5 +342,52 @@ describe("core/store/settings", () => {
     expect(providers.ollama).toEqual({});
     expect(vectorStore.qdrant).toEqual({});
     expect(vectorStore.lancedb).toEqual({});
+  });
+
+  it("resolves governance knobs for built-in presets and custom overrides", () => {
+    expect(resolveGovernanceKnobs({ governance: { preset: "minimal" } })).toEqual({
+      preset: "minimal",
+      ownership_enforcement: "none",
+      create_mode_default: "progressive",
+      close_validation_default: "off",
+      parent_reference: "warn",
+      metadata_profile: "core",
+      force_required_for_stale_lock: false,
+    });
+    expect(resolveGovernanceKnobs({ governance: { preset: "default" } })).toEqual({
+      preset: "default",
+      ownership_enforcement: "warn",
+      create_mode_default: "progressive",
+      close_validation_default: "warn",
+      parent_reference: "warn",
+      metadata_profile: "core",
+      force_required_for_stale_lock: true,
+    });
+    expect(resolveGovernanceKnobs({ governance: { preset: "strict" } })).toEqual({
+      preset: "strict",
+      ownership_enforcement: "strict",
+      create_mode_default: "strict",
+      close_validation_default: "strict",
+      parent_reference: "strict_error",
+      metadata_profile: "strict",
+      force_required_for_stale_lock: true,
+    });
+    expect(
+      resolveGovernanceKnobs({
+        governance: {
+          preset: "custom",
+          ownership_enforcement: "none",
+          force_required_for_stale_lock: false,
+        },
+      }),
+    ).toEqual({
+      preset: "custom",
+      ownership_enforcement: "none",
+      create_mode_default: "progressive",
+      close_validation_default: "warn",
+      parent_reference: "warn",
+      metadata_profile: "core",
+      force_required_for_stale_lock: false,
+    });
   });
 });

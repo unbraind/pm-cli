@@ -41,6 +41,7 @@ export interface PmToolParameters {
   query?: string;
   keywords?: string;
   prefix?: string;
+  preset?: string;
   scope?: string;
   contractAction?: string;
   command?: string;
@@ -530,6 +531,7 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       if (params.prefix) {
         args.push(params.prefix);
       }
+      pushOption(args, "--preset", params.preset);
       return args;
     case "config":
       {

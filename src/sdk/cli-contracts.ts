@@ -612,6 +612,10 @@ export const HISTORY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--verify" },
 ];
 
+export const INIT_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--preset" },
+];
+
 export const CONFIG_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--criterion" },
   { flag: "--clear-criteria" },
@@ -1417,6 +1421,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   fields: { type: "string" },
   sort: { type: "string", enum: ["priority", "deadline", "updated_at", "created_at", "title", "parent"] },
   prefix: { type: "string" },
+  preset: { type: "string", enum: ["minimal", "default", "strict", "custom"] },
   scope: { type: "string", enum: ["project", "global"] },
   contractAction: { type: "string" },
   command: { type: "string" },
@@ -1540,7 +1545,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   diff: { type: "boolean" },
   verify: { type: "boolean" },
   timeout: { anyOf: [{ type: "string" }, { type: "number" }] },
-  validateClose: { type: "string", enum: ["warn", "strict"] },
+  validateClose: { type: "string", enum: ["off", "warn", "strict"] },
   checkMetadata: { type: "boolean" },
   metadataProfile: { type: "string", enum: ["core", "strict", "custom"] },
   checkResolution: { type: "boolean" },
@@ -1720,7 +1725,7 @@ const SEARCH_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
 const AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS = ["author", "message", "force"];
 
 const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContract> = {
-  init: { optional: ["prefix"] },
+  init: { optional: ["prefix", "preset"] },
   config: {
     required: ["scope", "configAction"],
     optional: ["key", "criterion", "clearCriteria", "format", "policy"],
@@ -1990,6 +1995,10 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     description: "Item type name from the active runtime type registry.",
     examples: ["Task", "Feature"],
   },
+  preset: {
+    description: "Governance preset for initialization flows.",
+    examples: ["minimal", "default", "strict"],
+  },
   createMode: {
     description: "Create required-option policy mode.",
     examples: ["strict", "progressive"],
@@ -2170,8 +2179,8 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     examples: [0, 1, "3"],
   },
   validateClose: {
-    description: 'Close-time metadata validation mode ("warn" or "strict").',
-    examples: ["warn", "strict"],
+    description: 'Close-time metadata validation mode ("off", "warn", or "strict").',
+    examples: ["off", "warn", "strict"],
   },
   checkMetadata: {
     description: "Run metadata completeness checks.",

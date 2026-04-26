@@ -101,8 +101,11 @@ export function resolveHelpDetailMode(argv: string[]): HelpDetailMode {
 const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   init: {
     why: "Bootstraps tracker storage and settings so all other commands can run safely.",
-    examples: ['pm init', 'pm init acme'],
-    tips: ["Run this once per repository before create/list/update commands."],
+    examples: ['pm init', 'pm init acme', "pm init --preset minimal", "pm init --preset strict"],
+    tips: [
+      "Run this once per repository before create/list/update commands.",
+      "Use --preset for non-interactive automation; omit it in a TTY to use the setup wizard.",
+    ],
   },
   config: {
     why: "Reads or updates project/global settings such as definition-of-done, item format, telemetry, and policy toggles.",
@@ -111,6 +114,8 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       'pm config project set definition-of-done --criterion "tests pass"',
       "pm config project set item-format --format toon",
       "pm config project set sprint-release-format-policy --policy strict_error",
+      "pm config project set governance-preset --policy minimal",
+      "pm config project set governance-ownership-enforcement --policy none",
       "pm config project set test-result-tracking --policy enabled",
       "pm config global set telemetry-tracking --policy disabled",
     ],
@@ -326,6 +331,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     examples: [
       'pm close pm-a1b2 "All acceptance criteria met" --author "codex-agent" --message "Close after verification"',
       'pm close pm-a1b2 "Done" --validate-close',
+      'pm close pm-a1b2 "Done" --validate-close off',
       'pm close pm-a1b2 "Done" --validate-close strict',
     ],
   },

@@ -62,13 +62,29 @@ describe("runCreate", () => {
     }
   });
 
-  it("keeps strict mode as default for required create options", async () => {
+  it("uses governance create-mode defaults for permissive and strict flows", async () => {
     await withTempPmPath(async (context) => {
       const minimal: CreateCommandOptions = {
-        title: "strict-default-minimal",
-        description: "strict default mode should still require governance fields",
+        title: "minimal-default-progressive",
+        description: "minimal default should allow staged creation",
         type: "Task",
       };
+      const defaultResult = await runCreate(minimal, { path: context.pmPath });
+      expect(defaultResult.item.title).toBe("minimal-default-progressive");
+      expect(defaultResult.item.status).toBe("open");
+      expect(defaultResult.item.priority).toBe(2);
+      expect(defaultResult.warnings).toEqual([]);
+
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const strictSettings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        governance?: { preset?: string };
+      };
+      strictSettings.governance = {
+        ...(strictSettings.governance ?? {}),
+        preset: "strict",
+      };
+      await writeFile(settingsPath, `${JSON.stringify(strictSettings, null, 2)}\n`, "utf8");
+
       await expect(runCreate(minimal, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
         context: {
@@ -735,6 +751,7 @@ describe("runCreate", () => {
         runCreate(
           baseCreateOptions({
             title: "create-strict-author-unset-rejected",
+            createMode: "strict",
             author: undefined,
             unset: ["author"],
             message: "strict unset author",
@@ -786,6 +803,7 @@ describe("runCreate", () => {
     await withTempPmPath(async (context) => {
       const options = baseCreateOptions({
         title: "create-optional-seeds-omitted",
+        createMode: "strict",
         dep: undefined,
         comment: undefined,
         note: undefined,
@@ -1118,10 +1136,14 @@ describe("runCreate", () => {
     await withTempPmPath(async (context) => {
       const settingsPath = path.join(context.pmPath, "settings.json");
       const parsed = JSON.parse(await readFile(settingsPath, "utf8")) as {
-        validation?: { parent_reference?: string };
+        governance?: {
+          preset?: string;
+          parent_reference?: string;
+        };
       };
-      parsed.validation = {
-        ...(parsed.validation ?? {}),
+      parsed.governance = {
+        ...(parsed.governance ?? {}),
+        preset: "custom",
         parent_reference: "strict_error",
       };
       await writeFile(settingsPath, `${JSON.stringify(parsed, null, 2)}\n`, "utf8");
@@ -1700,6 +1722,11 @@ describe("runCreate", () => {
       const settingsPath = path.join(context.pmPath, "settings.json");
       const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
         item_types?: { definitions?: Array<Record<string, unknown>> };
+        governance?: { preset?: string };
+      };
+      settings.governance = {
+        ...(settings.governance ?? {}),
+        preset: "strict",
       };
       settings.item_types = {
         definitions: [

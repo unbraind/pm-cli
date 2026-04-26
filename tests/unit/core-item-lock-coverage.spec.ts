@@ -320,6 +320,24 @@ describe("core/lock/lock additional branch coverage", () => {
     });
   });
 
+  it("auto-removes stale locks without force when policy allows it", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-auto-stale";
+      const lockPath = getLockPath(pmPath, id);
+      await fs.writeFile(
+        lockPath,
+        `${JSON.stringify({ id, pid: 1, owner: "other-owner", created_at: STALE_TS, ttl_seconds: 60 }, null, 2)}\n`,
+        "utf8",
+      );
+
+      const release = await acquireLock(pmPath, id, 60, "owner-auto", false, false);
+      const lockInfo = JSON.parse(await fs.readFile(lockPath, "utf8")) as { owner: string };
+      expect(lockInfo.owner).toBe("owner-auto");
+      await release();
+      await expect(fs.access(lockPath)).rejects.toBeInstanceOf(Error);
+    });
+  });
+
   it("reports active lock conflicts with owning actor details", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-lock-active";

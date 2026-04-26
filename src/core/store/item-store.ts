@@ -16,6 +16,7 @@ import { acquireLock } from "../lock/lock.js";
 import { writeFileAtomic } from "../fs/fs-utils.js";
 import { normalizeItemId, normalizeRawItemId } from "../item/id.js";
 import { getHistoryPath, getItemFormatFromPath, getItemPath, ITEM_FILE_EXTENSIONS } from "./paths.js";
+import { resolveGovernanceKnobs } from "./settings.js";
 import { nowIso } from "../shared/time.js";
 import type { ItemDocument, ItemFormat, ItemFrontMatter, ItemType, PmSettings, RuntimeSchemaSettings } from "../../types/index.js";
 
@@ -216,6 +217,7 @@ export async function mutateItem(params: {
     params.settings.locks.ttl_seconds,
     params.author,
     Boolean(params.force),
+    params.settings.governance.force_required_for_stale_lock,
   );
 
   try {
@@ -226,6 +228,7 @@ export async function mutateItem(params: {
     });
 
     const assigned = document.front_matter.assignee?.trim();
+    const governance = resolveGovernanceKnobs(params.settings);
     const bypassAssigneeConflict =
       params.op === "claim" ||
       ((
@@ -237,11 +240,17 @@ export async function mutateItem(params: {
         params.op === "update_audit"
       ) &&
         params.bypassAssigneeConflict === true);
-    if (assigned && assigned !== params.author && !params.force && !bypassAssigneeConflict) {
-      throw new PmCliError(
-        `Item ${located.id} is assigned to ${assigned}. Use --force to override.`,
-        EXIT_CODE.CONFLICT,
-      );
+    const hasOwnershipConflict = assigned && assigned !== params.author && !params.force && !bypassAssigneeConflict;
+    if (hasOwnershipConflict) {
+      if (governance.ownership_enforcement === "strict") {
+        throw new PmCliError(
+          `Item ${located.id} is assigned to ${assigned}. Use --force to override.`,
+          EXIT_CODE.CONFLICT,
+        );
+      }
+      if (governance.ownership_enforcement === "warn") {
+        parseWarnings.push(`ownership_warning:assignee_conflict:${located.id}:${assigned}`);
+      }
     }
     const historyPolicy = await enforceHistoryStreamPolicyForItem({
       pmRoot: params.pmRoot,
@@ -375,6 +384,7 @@ export async function deleteItem(params: {
     params.settings.locks.ttl_seconds,
     params.author,
     Boolean(params.force),
+    params.settings.governance.force_required_for_stale_lock,
   );
 
   try {
@@ -385,11 +395,18 @@ export async function deleteItem(params: {
     });
 
     const assigned = document.front_matter.assignee?.trim();
-    if (assigned && assigned !== params.author && !params.force) {
-      throw new PmCliError(
-        `Item ${located.id} is assigned to ${assigned}. Use --force to override.`,
-        EXIT_CODE.CONFLICT,
-      );
+    const governance = resolveGovernanceKnobs(params.settings);
+    const hasOwnershipConflict = assigned && assigned !== params.author && !params.force;
+    if (hasOwnershipConflict) {
+      if (governance.ownership_enforcement === "strict") {
+        throw new PmCliError(
+          `Item ${located.id} is assigned to ${assigned}. Use --force to override.`,
+          EXIT_CODE.CONFLICT,
+        );
+      }
+      if (governance.ownership_enforcement === "warn") {
+        parseWarnings.push(`ownership_warning:assignee_conflict:${located.id}:${assigned}`);
+      }
     }
     const historyPolicy = await enforceHistoryStreamPolicyForItem({
       pmRoot: params.pmRoot,

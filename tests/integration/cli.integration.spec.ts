@@ -1805,6 +1805,12 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
   it("requires explicit repeatable seed flags for create contract parity", async () => {
     await withTempPmPath(async (context) => {
+      const strictPreset = context.runCli(
+        ["config", "project", "set", "governance-preset", "--policy", "strict", "--json"],
+        { expectJson: true },
+      );
+      expect(strictPreset.code).toBe(0);
+
       const createWithoutRepeatables = context.runCli([
         "create",
         "--json",
@@ -2094,6 +2100,12 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
   it("requires explicit --assignee for create contract parity", async () => {
     await withTempPmPath(async (context) => {
+      const strictPreset = context.runCli(
+        ["config", "project", "set", "governance-preset", "--policy", "strict", "--json"],
+        { expectJson: true },
+      );
+      expect(strictPreset.code).toBe(0);
+
       const createWithoutAssignee = context.runCli([
         "create",
         "--json",
@@ -5131,6 +5143,12 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
   it("enforces ownership conflicts across assignees", async () => {
     await withTempPmPath(async (context) => {
+      const strictPreset = context.runCli(
+        ["config", "project", "set", "governance-preset", "--policy", "strict", "--json"],
+        { expectJson: true },
+      );
+      expect(strictPreset.code).toBe(0);
+
       const createResult = context.runCli(
         [
           "create",
@@ -5200,6 +5218,12 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
   it("supports audited non-owner release handoffs without force", async () => {
     await withTempPmPath(async (context) => {
+      const strictPreset = context.runCli(
+        ["config", "project", "set", "governance-preset", "--policy", "strict", "--json"],
+        { expectJson: true },
+      );
+      expect(strictPreset.code).toBe(0);
+
       const createResult = context.runCli(
         [
           "create",

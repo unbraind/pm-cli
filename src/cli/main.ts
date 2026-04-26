@@ -3019,11 +3019,18 @@ program.hook("postAction", async () => {
 program
   .command("init")
   .argument("[prefix]", "Optional id prefix")
+  .option("--preset <value>", "Governance preset for new setups: minimal|default|strict")
   .description("Initialize pm storage and defaults for the current workspace.")
-  .action(async (prefix: string | undefined, _options, command) => {
+  .action(async (prefix: string | undefined, options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
-    const result = await runInit(prefix, globalOptions);
+    const result = await runInit(
+      prefix,
+      globalOptions,
+      {
+        preset: typeof options.preset === "string" ? options.preset : undefined,
+      },
+    );
     printResult(result, globalOptions);
     if (globalOptions.profile) {
       printError(`profile:command=init took_ms=${Date.now() - startedAt}`);
@@ -3036,14 +3043,14 @@ program
   .argument("<action>", "Config action: get|set|list|export")
   .argument(
     "[key]",
-    "Config key for get|set: definition-of-done|item-format|history-missing-stream-policy|sprint-release-format-policy|parent-reference-policy|metadata-validation-profile|metadata-required-fields|test-result-tracking|telemetry-tracking",
+    "Config key for get|set: definition-of-done|item-format|history-missing-stream-policy|sprint-release-format-policy|parent-reference-policy|metadata-validation-profile|metadata-required-fields|governance-preset|governance-ownership-enforcement|governance-create-mode-default|governance-close-validation-default|governance-parent-reference-policy|governance-metadata-validation-profile|governance-force-required-for-stale-lock|test-result-tracking|telemetry-tracking",
   )
   .option("--criterion <text>", "Criteria value for definition-of-done or metadata-required-fields (repeatable for set)", collect)
   .option("--clear-criteria", "Clear metadata-required-fields criteria list (set metadata-required-fields only)")
   .option("--format <value>", "Item format for item-format key: toon|json_markdown")
   .option(
     "--policy <value>",
-    "Policy key values: history-missing-stream-policy=auto_create|strict_error; sprint-release-format-policy=warn|strict_error; parent-reference-policy=warn|strict_error; test-result-tracking=enabled|disabled; telemetry-tracking=enabled|disabled",
+    "Policy key values: history-missing-stream-policy=auto_create|strict_error; sprint-release-format-policy=warn|strict_error; parent-reference-policy=warn|strict_error; governance-preset=minimal|default|strict|custom; governance-ownership-enforcement=none|warn|strict; governance-create-mode-default=progressive|strict; governance-close-validation-default=off|warn|strict; governance-parent-reference-policy=warn|strict_error; governance-metadata-validation-profile=core|strict|custom; governance-force-required-for-stale-lock=enabled|disabled; test-result-tracking=enabled|disabled; telemetry-tracking=enabled|disabled",
   )
   .description("Read or update pm settings for the current workspace or global profile.")
   .action(async (scope: string, action: string, key: string | undefined, options: Record<string, unknown>, command) => {
@@ -4211,7 +4218,10 @@ program
   .argument("<text>", "Close reason text")
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
-  .option("--validate-close [mode]", 'Validate closure metadata before close: "warn" or "strict" (default: warn)')
+  .option(
+    "--validate-close [mode]",
+    'Validate closure metadata before close: "off", "warn", or "strict" (default: settings governance preset)',
+  )
   .option("--force", "Force ownership override")
   .description("Close an item with a required reason.")
   .action(async (id: string, text: string, options: Record<string, unknown>, command) => {
@@ -5218,7 +5228,7 @@ program
   .argument("<reason>", "Close reason text")
   .option("--author <value>", "Mutation author")
   .option("--message <value>", "History message")
-  .option("--validate-close <value>", "Close-time validation mode: warn|strict")
+  .option("--validate-close <value>", "Close-time validation mode: off|warn|strict")
   .option("--force", "Force ownership or terminal override when required")
   .description("Lifecycle alias: close an item with reason and release assignment metadata.")
   .action(async (id: string, reason: string, options: Record<string, unknown>, command) => {

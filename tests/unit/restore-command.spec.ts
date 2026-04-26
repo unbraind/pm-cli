@@ -124,6 +124,13 @@ function createRestoreFixture(context: TempPmContext, title: string): string {
   return id;
 }
 
+function setGovernancePreset(context: TempPmContext, preset: "minimal" | "default" | "strict"): void {
+  const result = context.runCli(["config", "project", "set", "governance-preset", "--policy", preset, "--json"], {
+    expectJson: true,
+  });
+  expect(result.code).toBe(0);
+}
+
 describe("runRestore", () => {
   afterEach(() => {
     clearActiveExtensionHooks();
@@ -397,6 +404,7 @@ describe("runRestore", () => {
 
   it("enforces assignee conflicts unless forced", async () => {
     await withTempPmPath(async (context) => {
+      setGovernancePreset(context, "strict");
       const id = createRestoreFixture(context, "Assigned Author Item");
       const assign = context.runCli(
         ["update", id, "--json", "--assignee", "other-author", "--author", "test-author", "--message", "assign other"],

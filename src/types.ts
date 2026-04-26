@@ -85,6 +85,14 @@ export const PARENT_REFERENCE_POLICY_VALUES = ["warn", "strict_error"] as const;
 export type ParentReferencePolicy = (typeof PARENT_REFERENCE_POLICY_VALUES)[number];
 export const VALIDATE_METADATA_PROFILE_VALUES = ["core", "strict", "custom"] as const;
 export type ValidateMetadataProfile = (typeof VALIDATE_METADATA_PROFILE_VALUES)[number];
+export const GOVERNANCE_PRESET_VALUES = ["minimal", "default", "strict", "custom"] as const;
+export type GovernancePreset = (typeof GOVERNANCE_PRESET_VALUES)[number];
+export const GOVERNANCE_OWNERSHIP_ENFORCEMENT_VALUES = ["none", "warn", "strict"] as const;
+export type GovernanceOwnershipEnforcement = (typeof GOVERNANCE_OWNERSHIP_ENFORCEMENT_VALUES)[number];
+export const GOVERNANCE_CREATE_MODE_DEFAULT_VALUES = ["progressive", "strict"] as const;
+export type GovernanceCreateModeDefault = (typeof GOVERNANCE_CREATE_MODE_DEFAULT_VALUES)[number];
+export const GOVERNANCE_CLOSE_VALIDATION_DEFAULT_VALUES = ["off", "warn", "strict"] as const;
+export type GovernanceCloseValidationDefault = (typeof GOVERNANCE_CLOSE_VALIDATION_DEFAULT_VALUES)[number];
 export const VALIDATE_METADATA_REQUIRED_FIELD_VALUES = [
   "author",
   "acceptance_criteria",
@@ -358,6 +366,16 @@ export interface HistoryEntry {
   message?: string;
 }
 
+export interface GovernanceSettings {
+  preset: GovernancePreset;
+  ownership_enforcement: GovernanceOwnershipEnforcement;
+  create_mode_default: GovernanceCreateModeDefault;
+  close_validation_default: GovernanceCloseValidationDefault;
+  parent_reference: ParentReferencePolicy;
+  metadata_profile: ValidateMetadataProfile;
+  force_required_for_stale_lock: boolean;
+}
+
 export interface PmSettings {
   version: number;
   id_prefix: string;
@@ -378,6 +396,7 @@ export interface PmSettings {
     metadata_profile: ValidateMetadataProfile;
     metadata_required_fields: ValidateMetadataRequiredField[];
   };
+  governance: GovernanceSettings;
   workflow: {
     definition_of_done: string[];
   };

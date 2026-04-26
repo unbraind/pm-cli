@@ -69,7 +69,7 @@ describe("runConfig", () => {
 
       const result = await runConfig("project", "list", undefined, {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot });
       expect(result.changed).toBe(false);
-      expect(result.count).toBe(9);
+      expect(result.count).toBe(16);
       expect(result.keys?.map((entry) => entry.key)).toEqual([
         "definition_of_done",
         "item_format",
@@ -78,6 +78,13 @@ describe("runConfig", () => {
         "parent_reference_policy",
         "metadata_validation_profile",
         "metadata_required_fields",
+        "governance_preset",
+        "governance_ownership_enforcement",
+        "governance_create_mode_default",
+        "governance_close_validation_default",
+        "governance_parent_reference_policy",
+        "governance_metadata_validation_profile",
+        "governance_force_required_for_stale_lock",
         "test_result_tracking",
         "telemetry_tracking",
       ]);
@@ -96,7 +103,15 @@ describe("runConfig", () => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       const settings = structuredClone(SETTINGS_DEFAULTS);
       settings.workflow.definition_of_done = ["tests pass"];
-      settings.validation.parent_reference = "strict_error";
+      settings.governance = {
+        preset: "custom",
+        ownership_enforcement: "strict",
+        create_mode_default: "strict",
+        close_validation_default: "strict",
+        parent_reference: "strict_error",
+        metadata_profile: "strict",
+        force_required_for_stale_lock: true,
+      };
       await writeSettings(pmRoot, settings);
 
       const result = await runConfig("project", "export", undefined, {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot });
@@ -107,11 +122,77 @@ describe("runConfig", () => {
         history_missing_stream_policy: "auto_create",
         sprint_release_format_policy: "warn",
         parent_reference_policy: "strict_error",
-        metadata_validation_profile: "core",
+        metadata_validation_profile: "strict",
         metadata_required_fields: [],
+        governance_preset: "custom",
+        governance_ownership_enforcement: "strict",
+        governance_create_mode_default: "strict",
+        governance_close_validation_default: "strict",
+        governance_parent_reference_policy: "strict_error",
+        governance_metadata_validation_profile: "strict",
+        governance_force_required_for_stale_lock: "enabled",
         test_result_tracking: "disabled",
         telemetry_tracking: "enabled",
       });
+    });
+  });
+
+  it("gets and sets governance preset and knob policies", async () => {
+    await withTempRoot(async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      const getDefaultPreset = await runConfig(
+        "project",
+        "get",
+        "governance-preset",
+        {},
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(getDefaultPreset.key).toBe("governance_preset");
+      expect(getDefaultPreset.policy).toBe("minimal");
+      expect(getDefaultPreset.changed).toBe(false);
+
+      const setStrictPreset = await runConfig(
+        "project",
+        "set",
+        "governance_preset",
+        { policy: "strict" },
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(setStrictPreset.key).toBe("governance_preset");
+      expect(setStrictPreset.policy).toBe("strict");
+      expect(setStrictPreset.changed).toBe(true);
+
+      const getStrictParent = await runConfig(
+        "project",
+        "get",
+        "parent-reference-policy",
+        {},
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(getStrictParent.key).toBe("parent_reference_policy");
+      expect(getStrictParent.policy).toBe("strict_error");
+
+      const setOwnershipNone = await runConfig(
+        "project",
+        "set",
+        "governance-ownership-enforcement",
+        { policy: "none" },
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(setOwnershipNone.key).toBe("governance_ownership_enforcement");
+      expect(setOwnershipNone.policy).toBe("none");
+      expect(setOwnershipNone.changed).toBe(true);
+
+      const getCustomPreset = await runConfig(
+        "project",
+        "get",
+        "governance_preset",
+        {},
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(getCustomPreset.policy).toBe("custom");
     });
   });
 

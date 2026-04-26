@@ -63,6 +63,33 @@ describe("runInit", () => {
     }
   });
 
+  it("applies governance presets through init options for new and existing trackers", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-governance-preset-"));
+    try {
+      const strictInit = await runInit("pm", { path: tempRoot }, { preset: "strict" });
+      expect(strictInit.governance_preset).toBe("strict");
+      expect(strictInit.wizard_used).toBe(false);
+      expect(strictInit.settings.governance).toMatchObject({
+        preset: "strict",
+        ownership_enforcement: "strict",
+        create_mode_default: "strict",
+        close_validation_default: "strict",
+      });
+
+      const minimalInit = await runInit("pm", { path: tempRoot }, { preset: "minimal" });
+      expect(minimalInit.governance_preset).toBe("minimal");
+      expect(minimalInit.warnings).toContain("updated:governance_preset:minimal");
+      expect(minimalInit.settings.governance).toMatchObject({
+        preset: "minimal",
+        ownership_enforcement: "none",
+        create_mode_default: "progressive",
+        close_validation_default: "off",
+      });
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it("dispatches onWrite hooks for init directory ensure operations", async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-hooks-"));
     try {

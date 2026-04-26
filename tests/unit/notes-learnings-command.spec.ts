@@ -81,6 +81,13 @@ function createTask(context: TempPmContext, title: string): string {
   return (created.json as { item: { id: string } }).item.id;
 }
 
+function setGovernancePreset(context: TempPmContext, preset: "minimal" | "default" | "strict"): void {
+  const result = context.runCli(["config", "project", "set", "governance-preset", "--policy", preset, "--json"], {
+    expectJson: true,
+  });
+  expect(result.code).toBe(0);
+}
+
 function extractEntries(target: LogCommandTarget, result: unknown): Array<{ text: string; author: string }> {
   const record = result as Record<string, unknown>;
   const entries = record[target.name] as Array<{ text: string; author: string }>;
@@ -220,6 +227,7 @@ describe.each(TARGETS)("run%s", (target) => {
 
   it("supports append-only audit bypass on assignee conflicts", async () => {
     await withTempPmPath(async (context) => {
+      setGovernancePreset(context, "strict");
       const id = createTask(context, `${target.name}-assignee-conflict`);
       const claim = context.runCli(["claim", id, "--author", "owner-a", "--message", "claim for ownership test", "--json"], {
         expectJson: true,
@@ -270,6 +278,7 @@ describe.each(TARGETS)("run%s", (target) => {
 describe("command-specific audit aliases", () => {
   it("allows note append audits with allowAuditNote", async () => {
     await withTempPmPath(async (context) => {
+      setGovernancePreset(context, "strict");
       const id = createTask(context, "notes-audit-alias");
       const claim = context.runCli(["claim", id, "--author", "owner-a", "--message", "claim for audit alias", "--json"], {
         expectJson: true,
@@ -295,6 +304,7 @@ describe("command-specific audit aliases", () => {
 
   it("allows learning append audits with allowAuditLearning", async () => {
     await withTempPmPath(async (context) => {
+      setGovernancePreset(context, "strict");
       const id = createTask(context, "learnings-audit-alias");
       const claim = context.runCli(["claim", id, "--author", "owner-a", "--message", "claim for audit alias", "--json"], {
         expectJson: true,

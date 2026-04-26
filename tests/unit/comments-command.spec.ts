@@ -65,6 +65,13 @@ function createTask(context: TempPmContext, title: string): string {
   return (created.json as { item: { id: string } }).item.id;
 }
 
+function setGovernancePreset(context: TempPmContext, preset: "minimal" | "default" | "strict"): void {
+  const result = context.runCli(["config", "project", "set", "governance-preset", "--policy", preset, "--json"], {
+    expectJson: true,
+  });
+  expect(result.code).toBe(0);
+}
+
 describe("runComments", () => {
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-comments-not-init-"));
@@ -198,6 +205,7 @@ describe("runComments", () => {
 
   it("allows audit comment appends without force while preserving non-comment ownership checks", async () => {
     await withTempPmPath(async (context) => {
+      setGovernancePreset(context, "strict");
       const id = createTask(context, "comments-audit-append-policy");
       const assigned = context.runCli(
         ["update", id, "--assignee", "owner-a", "--author", "owner-a", "--message", "assign owner for audit test", "--json"],

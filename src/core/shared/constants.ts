@@ -1,4 +1,4 @@
-import type { BuiltinItemType, ItemFrontMatter, PmSettings } from "../../types/index.js";
+import type { BuiltinItemType, GovernancePreset, GovernanceSettings, ItemFrontMatter, PmSettings } from "../../types/index.js";
 
 export const PM_DIRNAME = ".agents/pm";
 export const SETTINGS_FILENAME = "settings.json";
@@ -104,6 +104,35 @@ export const FRONT_MATTER_KEY_ORDER: ReadonlyArray<string> = [
   "close_reason",
 ];
 
+type BuiltinGovernancePreset = Exclude<GovernancePreset, "custom">;
+
+export const GOVERNANCE_PRESET_DEFAULTS: Record<BuiltinGovernancePreset, Omit<GovernanceSettings, "preset">> = {
+  minimal: {
+    ownership_enforcement: "none",
+    create_mode_default: "progressive",
+    close_validation_default: "off",
+    parent_reference: "warn",
+    metadata_profile: "core",
+    force_required_for_stale_lock: false,
+  },
+  default: {
+    ownership_enforcement: "warn",
+    create_mode_default: "progressive",
+    close_validation_default: "warn",
+    parent_reference: "warn",
+    metadata_profile: "core",
+    force_required_for_stale_lock: true,
+  },
+  strict: {
+    ownership_enforcement: "strict",
+    create_mode_default: "strict",
+    close_validation_default: "strict",
+    parent_reference: "strict_error",
+    metadata_profile: "strict",
+    force_required_for_stale_lock: true,
+  },
+};
+
 export const SETTINGS_DEFAULTS: PmSettings = {
   version: 1,
   id_prefix: "pm-",
@@ -123,6 +152,10 @@ export const SETTINGS_DEFAULTS: PmSettings = {
     parent_reference: "warn",
     metadata_profile: "core",
     metadata_required_fields: [],
+  },
+  governance: {
+    preset: "minimal",
+    ...GOVERNANCE_PRESET_DEFAULTS.minimal,
   },
   workflow: {
     definition_of_done: [],

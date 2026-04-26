@@ -11,6 +11,7 @@ import {
   DEPS_FLAG_CONTRACTS,
   GLOBAL_FLAG_CONTRACTS,
   HEALTH_FLAG_CONTRACTS,
+  INIT_FLAG_CONTRACTS,
   LIST_FILTER_FLAG_CONTRACTS,
   PM_CORE_COMMAND_NAMES,
   SEARCH_FLAG_CONTRACTS,
@@ -51,6 +52,7 @@ const CONTEXT_FLAGS = toCompletionFlagString(CONTEXT_FLAG_CONTRACTS);
 const DEPS_FLAGS = toCompletionFlagString(DEPS_FLAG_CONTRACTS);
 const SEARCH_FLAGS = toCompletionFlagString(SEARCH_FLAG_CONTRACTS);
 const HEALTH_FLAGS = toCompletionFlagString(HEALTH_FLAG_CONTRACTS);
+const INIT_FLAGS = toCompletionFlagString(INIT_FLAG_CONTRACTS);
 const CONTRACTS_FLAGS = toCompletionFlagString(CONTRACTS_FLAG_CONTRACTS);
 const COMPLETION_FLAGS = toCompletionFlagString(COMPLETION_FLAG_CONTRACTS);
 const COMPLETION_SHELL_CHOICES = `${COMPLETION_FLAGS} bash zsh fish`;
@@ -179,6 +181,9 @@ export function generateBashScript(
     "      ;;",
     "    reindex)",
     `      COMPREPLY=(${compgen("--mode --progress --json --quiet --path --no-extensions --no-pager --profile --help")})`,
+    "      ;;",
+    "    init)",
+    `      COMPREPLY=(${compgen(`${INIT_FLAGS} --json --quiet --path --no-extensions --no-pager --profile --help`)})`,
     "      ;;",
     "    config)",
     `      COMPREPLY=(${compgen("--criterion --clear-criteria --format --policy --json --quiet --path --no-extensions --no-pager --profile --help")})`,
@@ -791,6 +796,18 @@ _pm() {
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
+        init)
+          _arguments \\
+            '--preset[Governance preset for new setups]:preset:(minimal default strict)' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        init)
+          _arguments \\
+            '--preset[Governance preset for new setups]:preset:(minimal default strict)' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
         config)
           _arguments \\
             '--criterion[Criteria value for definition-of-done or metadata-required-fields (repeatable for set)]:criterion' \\
@@ -804,7 +821,7 @@ _pm() {
           _arguments \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
-            '--validate-close[Validate closure metadata mode]:(warn strict)' \\
+            '--validate-close[Validate closure metadata mode]:(off warn strict)' \\
             '--force[Force override]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -838,7 +855,7 @@ _pm() {
           _arguments \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
-            '--validate-close[Validate closure metadata mode]:(warn strict)' \\
+            '--validate-close[Validate closure metadata mode]:(off warn strict)' \\
             '--force[Force override]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -1393,7 +1410,7 @@ complete -c pm -n '__fish_seen_subcommand_from append' -l force -d 'Force overri
 complete -c pm -n '__fish_seen_subcommand_from claim release start-task pause-task close close-task' -l author -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from claim release start-task pause-task close close-task' -l message -d 'History message' -r
 complete -c pm -n '__fish_seen_subcommand_from claim release start-task pause-task close close-task' -l force -d 'Force override'
-complete -c pm -n '__fish_seen_subcommand_from close close-task' -l validate-close -d 'Validate closure metadata mode' -r -a 'warn strict'
+complete -c pm -n '__fish_seen_subcommand_from close close-task' -l validate-close -d 'Validate closure metadata mode' -r -a 'off warn strict'
 complete -c pm -n '__fish_seen_subcommand_from release' -l allow-audit-release -d 'Allow non-owner release handoffs without requiring --force'
 
 # validate flags
@@ -1410,6 +1427,7 @@ complete -c pm -n '__fish_seen_subcommand_from validate' -l strict-exit -d 'Retu
 complete -c pm -n '__fish_seen_subcommand_from validate' -l fail-on-warn -d 'Alias for --strict-exit'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-history-drift -d 'Run item/history hash drift checks'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-command-references -d 'Run linked-command PM-ID reference checks'
+complete -c pm -n '__fish_seen_subcommand_from init' -l preset -d 'Governance preset for new setups' -r -a 'minimal default strict'
 complete -c pm -n '__fish_seen_subcommand_from config' -l criterion -d 'Criteria value for definition-of-done or metadata-required-fields (repeatable for set)' -r
 complete -c pm -n '__fish_seen_subcommand_from config' -l clear-criteria -d 'Clear metadata-required-fields criteria list'
 complete -c pm -n '__fish_seen_subcommand_from config' -l format -d 'Item format for item-format key' -r -a 'toon json_markdown'

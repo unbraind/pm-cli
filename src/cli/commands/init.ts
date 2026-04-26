@@ -1,15 +1,18 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import readline from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
 import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { normalizePrefix } from "../../core/item/id.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { ensureRuntimeSchemaFileScaffold } from "../../core/schema/runtime-schema.js";
-import { PM_REQUIRED_SUBDIRS, SETTINGS_DEFAULTS } from "../../core/shared/constants.js";
+import { EXIT_CODE, GOVERNANCE_PRESET_DEFAULTS, PM_REQUIRED_SUBDIRS, SETTINGS_DEFAULTS } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
+import { PmCliError } from "../../core/shared/errors.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings, writeSettings } from "../../core/store/settings.js";
-import type { PmSettings } from "../../types/index.js";
+import type { GovernancePreset, PmSettings } from "../../types/index.js";
 
 export interface InitResult {
   ok: boolean;
@@ -17,17 +20,114 @@ export interface InitResult {
   settings: PmSettings;
   created_dirs: string[];
   warnings: string[];
+  governance_preset: GovernancePreset;
+  wizard_used: boolean;
+}
+
+export interface InitCommandOptions {
+  preset?: string;
 }
 
 function cloneDefaults(): PmSettings {
   return structuredClone(SETTINGS_DEFAULTS);
 }
 
-export async function runInit(prefixArg: string | undefined, global: GlobalOptions): Promise<InitResult> {
+type BuiltinGovernancePreset = Exclude<GovernancePreset, "custom">;
+const BUILTIN_GOVERNANCE_PRESETS: BuiltinGovernancePreset[] = ["minimal", "default", "strict"];
+
+function normalizeInitGovernancePreset(rawValue: string | undefined): BuiltinGovernancePreset | undefined {
+  if (rawValue === undefined) {
+    return undefined;
+  }
+  const normalized = rawValue.trim().toLowerCase().replaceAll("-", "_");
+  if (normalized.length === 0) {
+    throw new PmCliError("--preset must not be empty", EXIT_CODE.USAGE);
+  }
+  if (normalized === "minimal" || normalized === "default" || normalized === "strict") {
+    return normalized;
+  }
+  if (normalized === "lite" || normalized === "minimum") {
+    return "minimal";
+  }
+  throw new PmCliError(
+    `Invalid --preset value "${rawValue}". Allowed: ${BUILTIN_GOVERNANCE_PRESETS.join(", ")}`,
+    EXIT_CODE.USAGE,
+  );
+}
+
+function parseYesNoChoice(answer: string, currentDefault: boolean): boolean {
+  const normalized = answer.trim().toLowerCase();
+  if (normalized.length === 0) {
+    return currentDefault;
+  }
+  if (normalized === "y" || normalized === "yes") {
+    return true;
+  }
+  if (normalized === "n" || normalized === "no") {
+    return false;
+  }
+  return currentDefault;
+}
+
+function applyGovernancePreset(settings: PmSettings, preset: BuiltinGovernancePreset): void {
+  const knobs = GOVERNANCE_PRESET_DEFAULTS[preset];
+  settings.governance = {
+    preset,
+    ...knobs,
+  };
+  settings.validation.parent_reference = knobs.parent_reference;
+  settings.validation.metadata_profile = knobs.metadata_profile;
+}
+
+async function runInitWizard(initialPrefix: string, telemetryDefault: boolean): Promise<{
+  prefix: string;
+  preset: BuiltinGovernancePreset;
+  telemetry_enabled: boolean;
+}> {
+  const rl = readline.createInterface({ input, output });
+  try {
+    output.write("pm init setup wizard (agent-optimized)\n");
+    output.write("This walkthrough is non-destructive and each choice can be changed later with pm config.\n\n");
+
+    output.write("1/3 Item ID prefix\n");
+    output.write("Prefix is prepended to generated IDs (for example pm-a1b2).\n");
+    const prefixAnswer = await rl.question(`Item ID prefix [${initialPrefix}]: `);
+    const resolvedPrefix = prefixAnswer.trim().length > 0 ? normalizePrefix(prefixAnswer) : initialPrefix;
+
+    output.write("\n2/3 Governance preset\n");
+    output.write("minimal: no ownership blocking, progressive create defaults, close validation off.\n");
+    output.write("default: ownership conflict warnings, progressive create defaults, close validation warn.\n");
+    output.write("strict: ownership blocking, strict create defaults, close validation strict.\n");
+    const presetAnswer = await rl.question("Governance preset [minimal/default/strict] (default: minimal): ");
+    const resolvedPreset = normalizeInitGovernancePreset(presetAnswer.trim().length > 0 ? presetAnswer : "minimal") ?? "minimal";
+
+    output.write("\n3/3 Project telemetry\n");
+    output.write("Telemetry helps improve reliability and can be disabled anytime via pm config.\n");
+    const telemetryLabel = telemetryDefault ? "Y/n" : "y/N";
+    const telemetryAnswer = await rl.question(`Enable telemetry for this project? [${telemetryLabel}] `);
+    const telemetryEnabled = parseYesNoChoice(telemetryAnswer, telemetryDefault);
+
+    output.write("\n");
+    return {
+      prefix: resolvedPrefix,
+      preset: resolvedPreset,
+      telemetry_enabled: telemetryEnabled,
+    };
+  } finally {
+    rl.close();
+  }
+}
+
+export async function runInit(
+  prefixArg: string | undefined,
+  global: GlobalOptions,
+  options: InitCommandOptions = {},
+): Promise<InitResult> {
   const cwd = process.cwd();
   const pmRoot = resolvePmRoot(cwd, global.path);
   const createdDirs: string[] = [];
   const warnings: string[] = [];
+  let wizardUsed = false;
 
   for (const subdir of PM_REQUIRED_SUBDIRS) {
     const target = subdir ? path.join(pmRoot, subdir) : pmRoot;
@@ -49,20 +149,45 @@ export async function runInit(prefixArg: string | undefined, global: GlobalOptio
 
   const settingsPath = path.join(pmRoot, "settings.json");
   const settingsExists = await pathExists(settingsPath);
-  const normalizedPrefix = normalizePrefix(prefixArg);
+  let normalizedPrefix = normalizePrefix(prefixArg);
+  const presetFromOption = normalizeInitGovernancePreset(options.preset);
+  let chosenPreset = presetFromOption;
+  let chosenTelemetryEnabled: boolean | undefined;
 
   let settings: PmSettings;
   if (settingsExists) {
     settings = await readSettings(pmRoot);
     warnings.push(`already_exists:${settingsPath}`);
+    let changed = false;
     if (prefixArg !== undefined && settings.id_prefix !== normalizedPrefix) {
       settings.id_prefix = normalizedPrefix;
-      await writeSettings(pmRoot, settings);
       warnings.push(`updated:id_prefix:${normalizedPrefix}`);
+      changed = true;
+    }
+    if (presetFromOption !== undefined && settings.governance.preset !== presetFromOption) {
+      applyGovernancePreset(settings, presetFromOption);
+      warnings.push(`updated:governance_preset:${presetFromOption}`);
+      changed = true;
+    }
+    if (changed) {
+      await writeSettings(pmRoot, settings);
     }
   } else {
+    if (presetFromOption === undefined && process.stdin.isTTY === true && process.stdout.isTTY === true) {
+      const wizardChoices = await runInitWizard(normalizedPrefix, SETTINGS_DEFAULTS.telemetry.enabled);
+      normalizedPrefix = wizardChoices.prefix;
+      chosenPreset = wizardChoices.preset;
+      chosenTelemetryEnabled = wizardChoices.telemetry_enabled;
+      wizardUsed = true;
+    }
+    const effectivePreset = chosenPreset ?? "minimal";
     settings = cloneDefaults();
     settings.id_prefix = normalizedPrefix;
+    applyGovernancePreset(settings, effectivePreset);
+    if (chosenTelemetryEnabled !== undefined) {
+      settings.telemetry.enabled = chosenTelemetryEnabled;
+      settings.telemetry.first_run_prompt_completed = true;
+    }
     await writeSettings(pmRoot, settings);
   }
 
@@ -106,5 +231,7 @@ export async function runInit(prefixArg: string | undefined, global: GlobalOptio
     settings,
     created_dirs: createdDirs,
     warnings,
+    governance_preset: settings.governance.preset,
+    wizard_used: wizardUsed,
   };
 }
