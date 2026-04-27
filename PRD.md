@@ -946,7 +946,7 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | `pm list-blocked` | same as above | `{ items, count, filters, now }` |
 | `pm list-closed` | same as above | `{ items, count, filters, now }` |
 | `pm list-canceled` | same as above | `{ items, count, filters, now }` |
-| `pm aggregate` | grouped-count governance query (`--group-by parent,type` default; `--count` accepted for explicit parity) with list-like filters and optional `--include-unparented` | `{ groups, count, totals, filters, now, warnings? }` |
+| `pm aggregate` | grouped-count governance query (`--group-by parent,type` default; supported dimensions: `parent,type,priority,status,assignee,tags,sprint,release`; `--count` accepted for explicit parity) with list-like filters and optional `--include-unparented` | `{ groups, count, totals, filters, now, warnings? }` |
 | `pm dedupe-audit` | duplicate-audit query with `--mode title_exact|title_fuzzy|parent_scope`, optional `--threshold`, optional `--limit`, and list-like filters | `{ clusters, count, mode, filters, now, warnings? }` |
 | `pm get <ID>` | normalized id | `{ item, body, linked: { files, tests, docs }, claim_state }` where `claim_state` includes current assignee plus latest claim/release history context |
 | `pm search <keywords...>` | keyword query tokens + optional mode/include-linked/compact/full/fields/limit filters | `{ query, mode, items, count, filters, projection, now }` |

@@ -55,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added merge-conflict marker detection in item and history parsing paths with actionable remediation guidance.
 - Added `pm health` `integrity` diagnostics for conflict markers and parse/JSONL anomalies with deterministic warning codes.
 - `list*` commands now accept `--include-body` to project item `body` into each returned row when needed for metadata completeness analysis.
-- Added `pm aggregate` grouped child-count governance queries (default grouped-count mode with `--group-by parent,type`; optional explicit `--count` and `--include-unparented`) with list-style filters.
+- Added `pm aggregate` grouped governance queries with expanded `--group-by` dimensions (`parent`, `type`, `priority`, `status`, `assignee`, `tags`, `sprint`, `release`) while keeping default grouped-count mode (`parent,type`) and optional `--count`/`--include-unparented`.
 - Added `pm dedupe-audit` duplicate corpus checks with `title_exact`, `title_fuzzy`, and `parent_scope` modes plus machine-readable merge suggestions.
 - Added list-family projection and ordering controls: `--compact`, `--fields <csv>`, `--sort <priority|deadline|updated_at|created_at|title|parent>`, and `--order <asc|desc>`.
 - Added expanded `pm comments-audit` governance filters: `--parent`, `--tag`, `--sprint`, `--release`, and `--priority`.

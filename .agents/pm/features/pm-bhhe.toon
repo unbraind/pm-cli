@@ -2,13 +2,38 @@ id: pm-bhhe
 title: "Expand aggregate group-by to support priority, status, assignee, tags"
 description: "The aggregate command currently only supports group-by parent|type. Attempting --group-by priority returns error: 'Aggregate group fields must be one of parent|type'. For a universal PM tool, grouping by priority, status, assignee, sprint, release, and tags would be essential."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,aggregate,extensibility,pm-cli
 created_at: "2026-04-26T20:16:46.172Z"
-updated_at: "2026-04-26T20:16:46.172Z"
+updated_at: "2026-04-26T21:38:49.111Z"
 deadline: "2026-05-03T20:16:46.172Z"
 author: audit-agent
 estimated_minutes: 120
 acceptance_criteria: "Aggregate supports grouping by priority, status, assignee, tags at minimum"
+parent: pm-5rjn
+resolution: Aggregate command now accepts and executes extended group-by dimensions with deterministic grouped output.
+expected_result: "pm aggregate supports parent,type,priority,status,assignee,tags,sprint,release group fields with tests/contracts/docs parity."
+actual_result: "Runtime now accepts expanded group fields, completion/help/contracts text updated, and unit+integration+coverage verification passed."
+comments[1]{created_at,author,text}:
+  "2026-04-26T21:38:29.062Z",codex-agent,"Implemented aggregate group-by expansion across runtime/help/contracts/docs: aggregate now accepts parent,type,priority,status,assignee,tags,sprint,release with deterministic sorting and normalized tag-set grouping. Added unit + integration coverage for new dimensions, including --group-by type,status CLI flow. Evidence: pm test pm-bhhe --run --progress passed (linked regression + pnpm build); node scripts/run-tests.mjs coverage passed (79 files, 1070 tests, 100% statements/branches/functions/lines). Close-readiness check: pm validate --check-resolution --check-history-drift returned history_drift ok and existing repository-wide resolution warnings on unrelated legacy closed items."
+files[7]{path,scope,note}:
+  src/cli/commands/aggregate.ts,project,expanded-group-dimensions-and-value-handling
+  src/cli/commands/completion.ts,project,shell-completion-description-parity-for-group-by-fields
+  src/cli/help-content.ts,project,aggregate-help-examples-include-status-grouping
+  src/cli/main.ts,project,aggregate-help-surface-for-new-group-fields
+  src/sdk/cli-contracts.ts,project,aggregate-groupBy-contract-description-and-examples
+  tests/integration/aggregate-dedupe.integration.spec.ts,project,aggregate-cli-type-status-grouping-regression
+  tests/unit/aggregate-command.spec.ts,project,expanded-group-by-unit-coverage
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/aggregate-command.spec.ts tests/integration/aggregate-dedupe.integration.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,aggregate-expanded-group-by-regression-suite
+  pnpm build,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,typescript-build-parity
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-moga9xdk-rmr6js,test,passed,"2026-04-26T21:31:23.176Z","2026-04-26T21:31:44.312Z","2026-04-26T21:31:44.312Z",null,null,2,0,0,null,null,null
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,unreleased-note-for-expanded-group-by-support
+  docs/ARCHITECTURE.md,project,aggregate-dimension-support-architecture-note
+  PRD.md,project,command-contract-table-updated-for-aggregate-fields
+  README.md,project,aggregate-group-by-dimensions-documented
+close_reason: "aggregate group-by now supports priority/status/assignee/tags/sprint/release with verified runtime, contracts, and docs parity"
 body: "Current behavior: only parent|type allowed. Expected: priority, status, assignee, tags, sprint, release should also be valid group-by fields. This limits the analytical capabilities for agents trying to triage and report on project state."

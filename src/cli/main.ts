@@ -3623,7 +3623,10 @@ registerListCommand("list-canceled", "List canceled items with optional filters.
 program
   .command("aggregate")
   .description("Aggregate grouped item counts for governance queries.")
-  .option("--group-by <value>", "Comma-separated group-by fields (supported: parent,type)")
+  .option(
+    "--group-by <value>",
+    "Comma-separated group-by fields (supported: parent,type,priority,status,assignee,tags,sprint,release)",
+  )
   .option("--count", "Return grouped counts (default behavior)")
   .option("--include-unparented", "Include unparented rows when grouping by parent")
   .option("--include_unparented", "Alias for --include-unparented")

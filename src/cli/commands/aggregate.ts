@@ -9,9 +9,30 @@ import { readSettings } from "../../core/store/settings.js";
 import { type ItemStatus } from "../../types/index.js";
 import { runList } from "./list.js";
 
-type AggregateGroupField = "parent" | "type";
+type AggregateGroupField = "parent" | "type" | "priority" | "status" | "assignee" | "tags" | "sprint" | "release";
+type AggregateGroupValue = string | number | null;
+type AggregateGroupRecord = Partial<Record<AggregateGroupField, AggregateGroupValue>>;
+type AggregateListedItem = {
+  type: string;
+  status: ItemStatus;
+  priority: number;
+  parent?: string;
+  assignee?: string;
+  tags: string[];
+  sprint?: string;
+  release?: string;
+};
 
-const AGGREGATE_GROUP_FIELDS: AggregateGroupField[] = ["parent", "type"];
+const AGGREGATE_GROUP_FIELDS: AggregateGroupField[] = [
+  "parent",
+  "type",
+  "priority",
+  "status",
+  "assignee",
+  "tags",
+  "sprint",
+  "release",
+];
 
 export interface AggregateOptions {
   groupBy?: string;
@@ -31,7 +52,7 @@ export interface AggregateOptions {
 }
 
 export interface AggregateRow {
-  group: Partial<Record<AggregateGroupField, string | null>>;
+  group: AggregateGroupRecord;
   count: number;
 }
 
@@ -97,21 +118,59 @@ function parseGroupBy(raw: string | undefined): AggregateGroupField[] {
   return requested as AggregateGroupField[];
 }
 
-function compareNullableString(left: string | null, right: string | null): number {
-  if (left === right) {
-    return 0;
+function normalizeTagGroupValue(tags: string[]): string | null {
+  const normalized = [...new Set(tags.map((tag) => tag.trim().toLowerCase()).filter((tag) => tag.length > 0))].sort((left, right) =>
+    left.localeCompare(right),
+  );
+  if (normalized.length === 0) {
+    return null;
   }
-  if (left === null) {
-    return 1;
-  }
-  if (right === null) {
-    return -1;
-  }
-  return left.localeCompare(right);
+  return normalized.join(",");
 }
 
-function buildGroupKey(groupBy: AggregateGroupField[], group: Partial<Record<AggregateGroupField, string | null>>): string {
-  return groupBy.map((field) => `${field}:${group[field] ?? "__null__"}`).join("|");
+function resolveGroupValue(field: AggregateGroupField, item: AggregateListedItem): AggregateGroupValue {
+  switch (field) {
+    case "parent":
+      return item.parent ?? null;
+    case "type":
+      return item.type;
+    case "priority":
+      return item.priority;
+    case "status":
+      return item.status;
+    case "assignee":
+      return item.assignee ?? null;
+    case "tags":
+      return normalizeTagGroupValue(item.tags);
+    case "sprint":
+      return item.sprint ?? null;
+    case "release":
+      return item.release ?? null;
+    default:
+      return null;
+  }
+}
+
+function compareNullableGroupValue(left: AggregateGroupValue | undefined, right: AggregateGroupValue | undefined): number {
+  const leftValue = left ?? null;
+  const rightValue = right ?? null;
+  if (leftValue === rightValue) {
+    return 0;
+  }
+  if (leftValue === null) {
+    return 1;
+  }
+  if (rightValue === null) {
+    return -1;
+  }
+  if (typeof leftValue === "number" && typeof rightValue === "number") {
+    return leftValue - rightValue;
+  }
+  return String(leftValue).localeCompare(String(rightValue));
+}
+
+function buildGroupKey(groupBy: AggregateGroupField[], group: AggregateGroupRecord): string {
+  return groupBy.map((field) => `${field}:${JSON.stringify(group[field] ?? null)}`).join("|");
 }
 
 function compareAggregateRows(
@@ -120,7 +179,7 @@ function compareAggregateRows(
   groupBy: AggregateGroupField[],
 ): number {
   for (const field of groupBy) {
-    const byField = compareNullableString(left.group[field] ?? null, right.group[field] ?? null);
+    const byField = compareNullableGroupValue(left.group[field], right.group[field]);
     if (byField !== 0) {
       return byField;
     }
@@ -161,14 +220,11 @@ export async function runAggregate(options: AggregateOptions, global: GlobalOpti
   let skippedUnparented = 0;
   let groupedItemCount = 0;
 
-  for (const item of listed.items) {
-    const group: Partial<Record<AggregateGroupField, string | null>> = {};
+  for (const listedItem of listed.items) {
+    const item = listedItem as AggregateListedItem;
+    const group: AggregateGroupRecord = {};
     for (const field of groupBy) {
-      if (field === "parent") {
-        group.parent = item.parent ?? null;
-      } else if (field === "type") {
-        group.type = item.type;
-      }
+      group[field] = resolveGroupValue(field, item);
     }
     if (groupBy.includes("parent") && group.parent === null && !includeUnparented) {
       skippedUnparented += 1;

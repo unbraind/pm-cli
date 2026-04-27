@@ -314,11 +314,16 @@ pm aggregate --group-by parent,type --status open --json
 # Include rows that do not have a parent when grouping by parent
 pm aggregate --group-by parent,type --include-unparented --json
 
+# Group by operational triage dimensions
+pm aggregate --group-by type,status --json
+
 # Detect likely duplicates by exact title, fuzzy title, or parent-scoped title collisions
 pm dedupe-audit --mode title_exact --limit 25 --json
 pm dedupe-audit --mode title_fuzzy --threshold 0.75 --limit 25 --json
 pm dedupe-audit --mode parent_scope --limit 25 --json
 ```
+
+`pm aggregate --group-by` supports `parent,type,priority,status,assignee,tags,sprint,release`.
 
 ## GC Safety Controls
 

@@ -14,8 +14,14 @@ function createItem(
     type: "Feature" | "Task" | "Issue" | "Chore";
     status: "open" | "closed";
     parent?: string;
+    priority?: number;
+    tags?: string;
+    assignee?: string | null;
+    sprint?: string;
+    release?: string;
   },
 ): string {
+  const resolvedAssignee = params.assignee === undefined || params.assignee === null ? "none" : params.assignee;
   const args = [
     "create",
     "--json",
@@ -28,9 +34,9 @@ function createItem(
     "--status",
     params.status,
     "--priority",
-    "1",
+    String(params.priority ?? 1),
     "--tags",
-    "aggregate,unit",
+    params.tags ?? "aggregate,unit",
     "--body",
     "",
     "--deadline",
@@ -44,7 +50,7 @@ function createItem(
     "--message",
     `Create ${params.title}`,
     "--assignee",
-    "none",
+    resolvedAssignee,
     "--dep",
     "none",
     "--comment",
@@ -62,6 +68,12 @@ function createItem(
   ];
   if (params.parent) {
     args.push("--parent", params.parent);
+  }
+  if (params.sprint) {
+    args.push("--sprint", params.sprint);
+  }
+  if (params.release) {
+    args.push("--release", params.release);
   }
   const created = context.runCli(args, { expectJson: true });
   expect(created.code).toBe(0);
@@ -235,6 +247,145 @@ describe("runAggregate", () => {
       expect(Object.keys(result.groups[0]!.group)).toEqual(["type"]);
       expect(result.totals.items_skipped_unparented).toBe(0);
       expect(result.totals.items_grouped).toBe(2);
+    });
+  });
+
+  it("supports expanded group-by dimensions", async () => {
+    await withTempPmPath(async (context) => {
+      createItem(context, {
+        title: "Expanded Group Task A",
+        type: "Task",
+        status: "open",
+        priority: 2,
+        assignee: "alice",
+        tags: "alpha,beta",
+        sprint: "sprint-1",
+        release: "release-1",
+      });
+      createItem(context, {
+        title: "Expanded Group Task B",
+        type: "Task",
+        status: "closed",
+        priority: 1,
+        assignee: null,
+        tags: "alpha",
+        sprint: "sprint-1",
+        release: "release-1",
+      });
+      createItem(context, {
+        title: "Expanded Group Issue",
+        type: "Issue",
+        status: "open",
+        priority: 2,
+        assignee: "bob",
+        tags: "beta",
+      });
+
+      const byStatus = await runAggregate(
+        {
+          groupBy: "status",
+          count: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(byStatus.filters.group_by).toEqual(["status"]);
+      expect(byStatus.groups).toEqual([
+        {
+          group: {
+            status: "closed",
+          },
+          count: 1,
+        },
+        {
+          group: {
+            status: "open",
+          },
+          count: 2,
+        },
+      ]);
+
+      const byPriorityAssignee = await runAggregate(
+        {
+          groupBy: "priority,assignee",
+          count: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(byPriorityAssignee.groups).toEqual([
+        {
+          group: {
+            priority: 1,
+            assignee: null,
+          },
+          count: 1,
+        },
+        {
+          group: {
+            priority: 2,
+            assignee: "alice",
+          },
+          count: 1,
+        },
+        {
+          group: {
+            priority: 2,
+            assignee: "bob",
+          },
+          count: 1,
+        },
+      ]);
+
+      const byTags = await runAggregate(
+        {
+          groupBy: "tags",
+          count: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(byTags.groups).toEqual([
+        {
+          group: {
+            tags: "alpha",
+          },
+          count: 1,
+        },
+        {
+          group: {
+            tags: "alpha,beta",
+          },
+          count: 1,
+        },
+        {
+          group: {
+            tags: "beta",
+          },
+          count: 1,
+        },
+      ]);
+
+      const bySprintRelease = await runAggregate(
+        {
+          groupBy: "sprint,release",
+          count: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(bySprintRelease.groups).toEqual([
+        {
+          group: {
+            sprint: "sprint-1",
+            release: "release-1",
+          },
+          count: 2,
+        },
+        {
+          group: {
+            sprint: null,
+            release: null,
+          },
+          count: 1,
+        },
+      ]);
     });
   });
 

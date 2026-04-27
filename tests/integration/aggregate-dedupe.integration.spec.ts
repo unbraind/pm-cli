@@ -67,6 +67,7 @@ describe("aggregate and dedupe-audit CLI integration", () => {
     await withTempPmPath(async (context) => {
       const parentId = createItem(context, { title: "Aggregate Parent", type: "Feature" });
       createItem(context, { title: "Aggregate Child Task", type: "Task", parent: parentId });
+      createItem(context, { title: "Aggregate Closed Task", type: "Task", status: "closed", parent: parentId });
       createItem(context, { title: "Aggregate Child Issue", type: "Issue", parent: parentId });
 
       const aggregate = context.runCli(["aggregate", "--json", "--group-by", "parent,type", "--count"], { expectJson: true });
@@ -92,6 +93,49 @@ describe("aggregate and dedupe-audit CLI integration", () => {
             parent: parentId,
             type: "Task",
           },
+          count: 2,
+        },
+      ]);
+
+      const typeStatusAggregate = context.runCli(["aggregate", "--json", "--group-by", "type,status", "--count"], {
+        expectJson: true,
+      });
+      expect(typeStatusAggregate.code).toBe(0);
+      const typeStatusPayload = typeStatusAggregate.json as {
+        count: number;
+        groups: Array<{ group: { type: string; status: string }; count: number }>;
+        filters: { group_by: string[]; count: boolean };
+      };
+      expect(typeStatusPayload.filters.group_by).toEqual(["type", "status"]);
+      expect(typeStatusPayload.filters.count).toBe(true);
+      expect(typeStatusPayload.count).toBe(4);
+      expect(typeStatusPayload.groups).toEqual([
+        {
+          group: {
+            type: "Feature",
+            status: "open",
+          },
+          count: 1,
+        },
+        {
+          group: {
+            type: "Issue",
+            status: "open",
+          },
+          count: 1,
+        },
+        {
+          group: {
+            type: "Task",
+            status: "closed",
+          },
+          count: 1,
+        },
+        {
+          group: {
+            type: "Task",
+            status: "open",
+          },
           count: 1,
         },
       ]);
@@ -113,7 +157,7 @@ describe("aggregate and dedupe-audit CLI integration", () => {
           group: {
             type: "Task",
           },
-          count: 1,
+          count: 2,
         },
       ]);
       expect(Object.prototype.hasOwnProperty.call(typeOnlyPayload.groups[0]!.group, "parent")).toBe(false);

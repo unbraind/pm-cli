@@ -2326,8 +2326,9 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     examples: ["id,title,score,matched_fields", "id,title,parent,type"],
   },
   groupBy: {
-    description: "Comma-separated aggregate grouping fields.",
-    examples: ["parent,type"],
+    description:
+      "Comma-separated aggregate grouping fields (supported: parent,type,priority,status,assignee,tags,sprint,release).",
+    examples: ["parent,type", "type,status", "priority,assignee", "tags", "sprint,release"],
   },
   count: {
     description: "Enable grouped count output for aggregate action.",

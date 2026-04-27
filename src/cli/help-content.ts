@@ -250,9 +250,10 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     examples: ["pm list-draft --limit 20"],
   },
   aggregate: {
-    why: "Runs grouped aggregation queries for governance checks such as child-count validation by parent and type.",
+    why: "Runs grouped aggregation queries for governance checks such as decomposition by parent/type or triage by status/priority.",
     examples: [
       "pm aggregate --group-by parent,type --count",
+      "pm aggregate --group-by type,status --count",
       "pm aggregate --group-by parent,type --count --status open --parent pm-feature01",
     ],
     tips: ["Current aggregate mode is grouped counts only, so pass --count explicitly."],

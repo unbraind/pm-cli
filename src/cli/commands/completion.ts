@@ -401,7 +401,7 @@ _pm() {
           ;;
         aggregate)
           _arguments \\
-            '--group-by[Comma-separated group-by fields (supported: parent,type)]:fields' \\
+            '--group-by[Comma-separated group-by fields (supported: parent,type,priority,status,assignee,tags,sprint,release)]:fields' \\
             '--count[Return grouped counts]' \\
             '--include-unparented[Include unparented rows when grouping by parent]' \\
             '--status[Filter by status]:(draft open in_progress blocked closed canceled)' \\
@@ -1087,7 +1087,7 @@ for list_cmd in ${listCmds}
 end
 
 # aggregate flags
-complete -c pm -n '__fish_seen_subcommand_from aggregate' -l group-by -d 'Comma-separated group-by fields (supported: parent,type)' -r
+complete -c pm -n '__fish_seen_subcommand_from aggregate' -l group-by -d 'Comma-separated group-by fields (supported: parent,type,priority,status,assignee,tags,sprint,release)' -r
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l count -d 'Return grouped counts'
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l include-unparented -d 'Include unparented rows when grouping by parent'
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l status -d 'Filter by status' -r -a 'draft open in_progress blocked closed canceled'
