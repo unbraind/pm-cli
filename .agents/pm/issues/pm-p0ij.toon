@@ -2,30 +2,41 @@ id: pm-p0ij
 title: Add opt-in runtime probe mode for extension manage parity
 description: Introduce an opt-in runtime probe for pm extension --manage so users can request doctor-like runtime activation semantics without changing default compatibility behavior.
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[4]: extensions,external-audit,pm-cli,runtime-probe
 created_at: "2026-04-05T18:46:53.384Z"
-updated_at: "2026-04-27T20:09:52.433Z"
+updated_at: "2026-04-27T21:33:06.887Z"
 deadline: "2026-05-09T17:09:59.595Z"
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: pm extension --manage supports an opt-in runtime probe that computes runtime_active/activation_status with doctor-equivalent semantics; default manage behavior remains compatibility-safe; warning surfaces are normalized for automation.
-resolution: Resolution metadata backfilled during governance normalization; implementation evidence is already captured in linked comments and artifacts.
-expected_result: Closed item includes explicit resolution/expected_result/actual_result metadata for deterministic validation and audit workflows.
-actual_result: Resolution fields were previously missing and are now backfilled as part of governance hardening.
-comments[5]{created_at,author,text}:
+resolution: Runtime-probe parity closeout completed by confirming top-level and subcommand extension forms share identical manage runtime-probe and doctor trace/detail behavior.
+expected_result: Parity regressions pass and manage runtime_probe + doctor trace/detail metadata are consistent across both invocation forms.
+actual_result: "pm test pm-p0ij --run passed linked suites (2 files, 103 tests) validating runtime-probe and doctor parity semantics with no failures."
+comments[8]{created_at,author,text}:
   "2026-04-05T18:46:53.384Z",codex-agent,"Duplicate-check evidence: pm context --limit 20; pm list-open --limit 200; pm list-in-progress --limit 200; pm search 'extension diagnostics warning parity runtime probe' --limit 20; pm search 'activation_status unknown manage doctor' --limit 20. Net-new scope because no active canonical item tracks opt-in runtime probe mode for manage."
   "2026-04-05T19:29:09.252Z",codex-agent,"Completed opt-in runtime probe mode for extension manage parity with doctor-like runtime_active/activation_status semantics when explicitly requested. Default manage behavior remains compatibility-safe. Verification: extension command + CLI integration tests, full coverage, and typecheck passed."
   "2026-04-07T18:14:18.249Z",codex-agent,"2026-04-07 scope extension: enforce top-level/subcommand parity for extension manage runtime probe and doctor trace/detail forwarding; add regression tests for subcommand forms to prevent parser drift. Planned files: src/cli/main.ts, src/cli/commands/extension.ts, tests/unit/extension-command.spec.ts."
   "2026-04-25T23:06:48.483Z",audit-agent,Extension lifecycle dogfood run created two local extensions to test collisions. Doctor/manage output and runtime_probe metadata were useful; collision warnings surfaced correctly (parser/service override collisions) and deactivate/activate toggles updated runtime_active as expected.
   "2026-04-27T20:09:47.225Z",codex-agent,"Stale-state normalization 2026-04-27: status intentionally remains in_progress pending explicit closure of 2026-04-07 parity extension scope (top-level/subcommand runtime-probe parity and doctor trace/detail forwarding regression confirmation). Existing implementation evidence is strong; remaining step is explicit parity-close validation and lifecycle close record."
-notes[1]{created_at,author,text}:
+  "2026-04-27T21:00:11.303Z",codex-agent,"Kickoff 2026-04-27: baseline refreshed (pm context/list-open/list-in-progress + validate resolution/history drift). Executing explicit parity closeout for extension manage runtime-probe and doctor trace/detail forwarding across top-level and subcommand forms."
+  "2026-04-27T21:03:20.875Z",codex-agent,"Closure evidence 2026-04-27: ran pm test pm-p0ij --run --progress. Linked command node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/integration/cli.integration.spec.ts passed (2/2 files, 103 tests, duration ~143s). This confirms runtime-probe and doctor trace/detail parity for top-level and subcommand extension forms."
+  "2026-04-27T21:33:06.887Z",codex-agent,"Final handoff 2026-04-27: global gate run after backlog closeout -> pm validate --check-resolution --check-history-drift --json (warn on legacy resolution backlog: 10 items; history drift hash mismatches: pm-r9ei, pm-vhdc), pm normalize --dry-run --json (rule closed_resolution_backfill count=10), pm context --limit 20 (active_items=0)."
+notes[2]{created_at,author,text}:
   "2026-04-05T18:46:53.384Z",codex-agent,Design target keep default manage output stable and gate runtime activation inspection behind explicit opt-in flag.
-files[1]{path,scope,note}:
+  "2026-04-27T21:00:22.486Z",codex-agent,Closeout verification will rely on linked extension unit+integration suites that assert top-level and subcommand parity for runtime-probe and doctor trace/detail flags.
+learnings[1]{created_at,author,text}:
+  "2026-04-27T21:03:24.404Z",codex-agent,Subcommand-form parity is easy to regress when parser wiring evolves; preserving paired top-level and subcommand integration assertions prevents silent drift in manage runtime_probe and doctor trace/detail semantics.
+files[2]{path,scope,note}:
   src/cli/commands/extension.ts,project,runtime probe manage parity implementation
+  src/cli/main.ts,project,top-level and subcommand flag wiring parity
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,runtime probe + warning parity regressions
-docs[1]{path,scope,note}:
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mohooxli-6c51w9,test,passed,"2026-04-27T21:00:31.037Z","2026-04-27T21:03:05.238Z","2026-04-27T21:03:05.238Z",null,null,1,0,0,null,null,null
+docs[2]{path,scope,note}:
   docs/EXTENSIONS.md,project,runtime probe behavior contract
+  README.md,project,extension command usage parity guidance
+close_reason: Runtime probe parity scope validated with passing linked regression suites and documented evidence.
 body: "Scope: add manage-only runtime probe flag, normalize warning parity surfaces, and expose explicit runtime probe metadata while preserving default manage/explore runtime status compatibility."

@@ -193,6 +193,10 @@ describe("runComments", () => {
       const structured = await runComments(id, { add: "text: markdown comment body" }, { path: context.pmPath });
       expect(structured.comments.at(-1)?.text).toBe("markdown comment body");
 
+      const ambiguousCsvLike = "text=hello,scope:project";
+      const ambiguousResult = await runComments(id, { add: ambiguousCsvLike }, { path: context.pmPath });
+      expect(ambiguousResult.comments.at(-1)?.text).toBe(ambiguousCsvLike);
+
       const fenced = ["```", "text: fenced body", "```"].join("\n");
       const fencedResult = await runComments(id, { add: fenced }, { path: context.pmPath });
       expect(fencedResult.comments.at(-1)?.text).toBe("fenced body");

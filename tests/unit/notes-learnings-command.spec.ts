@@ -215,6 +215,10 @@ describe.each(TARGETS)("run%s", (target) => {
       const structured = await target.run(id, { add: "text: markdown entry body" }, { path: context.pmPath });
       expect(extractEntries(target, structured).at(-1)?.text).toBe("markdown entry body");
 
+      const ambiguousCsvLike = "text=hello,scope:project";
+      const ambiguousResult = await target.run(id, { add: ambiguousCsvLike }, { path: context.pmPath });
+      expect(extractEntries(target, ambiguousResult).at(-1)?.text).toBe(ambiguousCsvLike);
+
       const fenced = ["```", "text: fenced body", "```"].join("\n");
       const fencedResult = await target.run(id, { add: fenced }, { path: context.pmPath });
       expect(extractEntries(target, fencedResult).at(-1)?.text).toBe("fenced body");

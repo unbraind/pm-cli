@@ -58,6 +58,10 @@ function parseCommentTextInput(raw: string): string {
   }
   try {
     const kv = parseCsvKv(trimmed, "--add");
+    const keys = Object.keys(kv).map((key) => key.trim().toLowerCase());
+    if (keys.some((key) => key !== "text")) {
+      return trimmed;
+    }
     const text = kv.text?.trim();
     return text || trimmed;
   } catch {

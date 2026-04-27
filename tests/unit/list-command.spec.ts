@@ -276,6 +276,11 @@ describe("runList", () => {
       // status filter takes precedence over excludeTerminal (status filter is exact match)
       const closedExplicit = await runList("closed", { excludeTerminal: true }, { path: context.pmPath });
       expect(closedExplicit.count).toBe(0);
+
+      // explicit --status on bare list should override active-only default filtering
+      const closedViaStatusOption = await runList(undefined, { status: "closed", excludeTerminal: true }, { path: context.pmPath });
+      expect(closedViaStatusOption.count).toBe(1);
+      expect(closedViaStatusOption.items[0].status).toBe("closed");
     });
   });
 

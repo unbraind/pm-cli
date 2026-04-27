@@ -2,11 +2,11 @@ id: pm-a4z3
 title: List command large-output ergonomics
 description: Add offset pagination and opt-in streaming JSON output for list command family to improve large dataset processing.
 type: Feature
-status: in_progress
+status: closed
 priority: 1
 tags[4]: "area:list","area:ux",external-audit,pm-cli
 created_at: "2026-04-03T18:07:10.235Z"
-updated_at: "2026-04-27T20:09:40.591Z"
+updated_at: "2026-04-27T21:33:12.934Z"
 deadline: "2026-05-09T17:09:59.589Z"
 author: codex-agent
 estimated_minutes: 240
@@ -29,7 +29,9 @@ reporter: codex-agent
 severity: low
 environment: Project workspace execution context for List command large-output ergonomics (pm CLI + Node/pnpm toolchain).
 repro_steps: run list-closed over large datasets and process via jq
-expected_result: List commands expose scalable output controls without breaking existing behavior
+resolution: List discoverability gap is resolved by supporting explicit --status filtering on list/list-all while preserving existing list-* subcommand behavior and active-only defaults when status is omitted.
+expected_result: "Users can run pm list --status <value> without unknown-option failures, and list ordering/projection/pagination contracts remain unchanged."
+actual_result: pm list --status in_progress now succeeds; linked verification passed via pm test pm-a4z3 --run (97 tests contracts/completion + 75 tests list/integration) with no regressions.
 affected_version: 2026.3.12
 fixed_version: target-vnext
 component: cli-list
@@ -37,7 +39,7 @@ regression: false
 customer_impact: Improves automation reliability for repositories with many items
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-qfg8,parent,"2026-04-03T18:07:10.235Z",codex-agent,null
-comments[7]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-04-03T18:07:10.235Z",codex-agent,Feature created after dedup scan for list pagination/stream scope.
   "2026-04-03T18:55:48.992Z",codex-agent,"Feature complete: list family supports --offset pagination and JSON stream mode; full suite and coverage gates now pass with updated docs/contracts."
   "2026-04-05T20:39:56.309Z",codex-agent,Duplicate-check evidence refreshed; reusing canonical list large-output ergonomics lineage for additional automation guidance updates (no duplicate item created).
@@ -45,12 +47,28 @@ comments[7]{created_at,author,text}:
   "2026-04-07T18:14:19.429Z",codex-agent,"2026-04-07 scope extension: list help/UX explicitly documents projection mutual exclusivity (--compact/--full/--fields) with valid+invalid example pair to reduce trial/error for agents."
   "2026-04-26T00:31:14.116Z",codex-agent,"Dogfood UX note 2026-04-26: pm list --status in_progress returns unknown_option while list-open/list-in-progress/list-* variants work. Behavior is deterministic but discoverability is lower for users expecting list parity with status filter semantics. Consider aliasing or guidance hint in unknown-option response."
   "2026-04-27T20:09:36.573Z",codex-agent,"Stale-state normalization 2026-04-27: status intentionally remains in_progress. List pagination/stream ergonomics shipped, but residual discoverability follow-up remains from dogfood evidence: improve guidance for users attempting list --status in_progress (list-family alias/help/error remediation path) before closure."
-notes[1]{created_at,author,text}:
+  "2026-04-27T21:06:19.399Z",codex-agent,"Execution start 2026-04-27: reproducing dogfood gap where pm list --status in_progress returned unknown_option while list-open/list-in-progress worked. Implementing compatibility-safe remediation by adding explicit --status filter support on list/list-all paths, preserving default active-only list behavior when --status is omitted."
+  "2026-04-27T21:11:51.369Z",codex-agent,"Implementation 2026-04-27: added --status support to list/list-all command surfaces so pm list --status in_progress no longer errors. runList now treats explicit option status as an intentional filter (including terminal statuses) while preserving default active-only behavior when --status is omitted."
+  "2026-04-27T21:14:58.717Z",codex-agent,"Verification 2026-04-27: pm test pm-a4z3 --run --progress passed both linked suites (tests/unit/contracts-command.spec.ts + tests/unit/completion-command.spec.ts => 97 tests; tests/unit/list-command.spec.ts + tests/integration/cli.integration.spec.ts => 75 tests). Manual smoke check pm list --status in_progress --limit 5 now exits 0 and returns in_progress rows."
+  "2026-04-27T21:33:12.934Z",codex-agent,"Final handoff 2026-04-27: global gate run after backlog closeout -> pm validate --check-resolution --check-history-drift --json (warn on legacy resolution backlog: 10 items; history drift hash mismatches: pm-r9ei, pm-vhdc), pm normalize --dry-run --json (rule closed_resolution_backfill count=10), pm context --limit 20 (active_items=0)."
+notes[2]{created_at,author,text}:
   "2026-04-03T18:07:10.235Z",codex-agent,Default non-stream output contract must remain stable.
-files[1]{path,scope,note}:
+  "2026-04-27T21:11:55.025Z",codex-agent,"Discoverability fix is additive: existing list-open/list-in-progress/list-* workflows remain unchanged, and bare list keeps active-only defaults unless an explicit status filter is provided."
+learnings[1]{created_at,author,text}:
+  "2026-04-27T21:15:02.893Z",codex-agent,"Discoverability improvements are safest when additive: enabling list/list-all --status resolves expectation drift without changing list-open/list-in-progress semantics or default active-only list output."
+files[5]{path,scope,note}:
   src/cli/commands/list.ts,project,list pagination and stream implementation
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  src/cli/main.ts,project,list/list-all --status flag wiring
+  src/sdk/cli-contracts.ts,project,list commander alias contract now includes status option
+  tests/integration/cli.integration.spec.ts,project,integration coverage for pm list --status in_progress|closed
+  tests/unit/list-command.spec.ts,project,unit coverage for explicit status filter on bare list
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,contracts/completion parity after list status option wiring
   node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,list regression suite
-docs[1]{path,scope,note}:
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mohp3qp8-0ua3ju,test,passed,"2026-04-27T21:12:02.774Z","2026-04-27T21:14:36.140Z","2026-04-27T21:14:36.140Z",null,null,2,0,0,null,null,null
+docs[2]{path,scope,note}:
   PRD.md,project,list command contract updates
+  README.md,project,document pm list/list-all status filter discoverability
+close_reason: List status-filter discoverability follow-up shipped with passing regression evidence.
 body: Implements external audit follow-up for large list output handling while preserving default list JSON contracts.

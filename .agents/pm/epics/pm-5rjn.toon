@@ -2,11 +2,11 @@ id: pm-5rjn
 title: Continuous governance automation and policy enforcement
 description: "Productize tracker-governance workflows so normalization, placeholder detection, and large-scale policy enforcement can run deterministically without ad-hoc scripts."
 type: Epic
-status: open
+status: closed
 priority: 1
 tags[4]: automation,governance,pm-cli,traceability
 created_at: "2026-04-04T21:54:42.936Z"
-updated_at: "2026-04-26T20:00:05.204Z"
+updated_at: "2026-04-27T21:33:27.087Z"
 deadline: "2026-04-25T21:54:42.936Z"
 author: codex-agent
 estimated_minutes: 360
@@ -27,11 +27,14 @@ reporter: codex-agent
 severity: medium
 environment: linux
 repro_steps: Re-run full tracker normalization manually and observe script-heavy operational burden.
+resolution: Governance automation milestone scope tracked under this epic is fully closed for the current wave with no active child backlog remaining.
+expected_result: Epic can close when child lifecycle scans show no open/in_progress descendants and closure narrative maps delivered governance outcomes.
+actual_result: Parent-filtered scans show 0 open + 0 in_progress + 9 closed children for pm-5rjn; closure synthesis and future-reopen guidance are recorded.
 affected_version: 2026.3.12
 component: governance-automation
 regression: false
 customer_impact: "Maintainers and agents gain safer, faster, and more deterministic governance maintenance."
-comments[8]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-04-04T21:54:42.936Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'bulk governance normalization command pm tracker' --limit 20; pm search 'validate placeholder metadata blocked_reason unblock_note repro_steps' --limit 20; pm search 'ownership-safe batch mutation mode governance override' --limit 20; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because existing governance epics are historical execution snapshots rather than productized automation roadmap."
   "2026-04-05T22:41:27.175Z",codex-agent,"Governance hardening run started (plan execution). Baseline findings: active_items=17, overdue_active=4, active_with_closed_parent=9, active_with_closure_like_metadata=6, validate warnings include missing_estimate=1, missing_resolution_fields=8, missing_linked_paths=9, and dangling dependency edge pm-ac8x->pm-y50x. Next actions: normalize tracker lifecycle/lineage metadata, repair stale links/dependency drift, then implement validate guardrails to prevent recurrence."
   "2026-04-05T22:46:38.492Z",codex-agent,"Governance normalization pass complete. Actions: closed stale active-complete items (pm-5dia, pm-qkx0, pm-hzh6, pm-doek, pm-ice4, pm-a4z3, pm-a228, pm-o5uw), repaired active lineage (pm-7lum->pm-5rjn, pm-lou4 parent=none), removed dangling dependency edge pm-ac8x->pm-y50x, backfilled missing resolution metadata on all flagged closed items, and removed stale missing linked-path references across affected historical items. Verification: pm validate --check-metadata --check-resolution --check-files --check-command-references --check-history-drift --scan-mode tracked-all => ok=true,warnings=0; active governance drift metrics now active_items=9, overdue_active=0, active_with_closed_parent=0, active_with_closure_like_metadata=0."
@@ -40,6 +43,8 @@ comments[8]{created_at,author,text}:
   "2026-04-06T16:45:37.754Z",codex-agent,"13-issue remediation lineage normalization: this open governance epic remains canonical parent for governance hardening scope in this wave (ownership-safe update overrides, update-many bulk workflow, mutation-triggered vector refresh hardening, and validate dependency-cycle diagnostics) to avoid duplicate epics."
   "2026-04-06T16:48:18.554Z",codex-agent,"Child task seeding complete under pm-5rjn for current wave: pm-bgd8 (mutation-triggered vector refresh coverage hardening across write paths)."
   "2026-04-26T20:00:03.247Z",codex-agent,"Phase-7 validate tracked-all follow-up: linked orphaned governance preset integration spec to canonical governance automation epic to clear file-link drift."
+  "2026-04-27T21:30:15.716Z",codex-agent,"Closure-readiness evidence 2026-04-27: governance epic has no remaining active descendants (pm list-open --parent pm-5rjn --limit 50 => 0; pm list-in-progress --parent pm-5rjn --limit 50 => 0) and all known child scope is terminal (pm list-closed --parent pm-5rjn --limit 50 => 9)."
+  "2026-04-27T21:33:27.087Z",codex-agent,"Final handoff 2026-04-27: post-closure governance gate -> pm validate --check-resolution --check-history-drift --json (warn limited to 10 legacy resolution rows + 2 legacy history mismatches), pm normalize --dry-run --json (closed_resolution_backfill count=10), pm context --limit 20 (no active backlog)."
 notes[1]{created_at,author,text}:
   "2026-04-04T21:54:42.936Z",codex-agent,"Roadmap will prioritize dry-run visibility,deterministic mutation plans,and safety semantics compatible with ownership and lock constraints."
 files[2]{path,scope,note}:
@@ -49,4 +54,5 @@ tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   pm validate --check-metadata --check-resolution --check-history-drift --json,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,automation acceptance baseline
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,future governance automation architecture
-body: Establish a long-lived epic for converting manual governance sweeps into first-class pm capabilities with auditable dry-run and apply workflows.
+close_reason: Governance automation milestone delivered; no active child scope remains.
+body: "Establish a long-lived epic for converting manual governance sweeps into first-class pm capabilities with auditable dry-run and apply workflows.\n\n\\n## 2026-04-27 closure synthesis\\nCurrent governance automation lineage is terminal for this wave with zero active child items and nine closed descendants. No immediate net-new child is required to complete this milestone; future governance roadmap can reopen via a new child when additional policy-productization work is approved.\\n"

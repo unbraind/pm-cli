@@ -3416,6 +3416,22 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(activeStatuses).toContain("in_progress");
       expect(activeStatuses).toContain("blocked");
 
+      const listInProgressViaStatus = context.runCli(["list", "--json", "--type", "Task", "--status", "in_progress"], {
+        expectJson: true,
+      });
+      expect(listInProgressViaStatus.code).toBe(0);
+      const listInProgressViaStatusJson = listInProgressViaStatus.json as { count: number; items: Array<{ status: string }> };
+      expect(listInProgressViaStatusJson.count).toBe(1);
+      expect(listInProgressViaStatusJson.items.map((item) => item.status)).toEqual(["in_progress"]);
+
+      const listClosedViaStatus = context.runCli(["list", "--json", "--type", "Task", "--status", "closed"], {
+        expectJson: true,
+      });
+      expect(listClosedViaStatus.code).toBe(0);
+      const listClosedViaStatusJson = listClosedViaStatus.json as { count: number; items: Array<{ status: string }> };
+      expect(listClosedViaStatusJson.count).toBe(1);
+      expect(listClosedViaStatusJson.items.map((item) => item.status)).toEqual(["closed"]);
+
       const listCommandsWithBody = [
         "list",
         "list-all",

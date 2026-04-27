@@ -2549,6 +2549,7 @@ function readListOptionString(options: Record<string, unknown>, target: string):
 
 function normalizeListOptions(options: Record<string, unknown>): ListOptions {
   const normalized: Record<string, unknown> = {
+    status: readListOptionString(options, "status"),
     type: readListOptionString(options, "type"),
     tag: readListOptionString(options, "tag"),
     priority: readListOptionString(options, "priority"),
@@ -3587,10 +3588,18 @@ program
     }
   });
 
-function registerListCommand(name: string, description: string, status?: ItemStatus, excludeTerminal?: boolean): void {
-  program
-    .command(name)
-    .description(description)
+function registerListCommand(
+  name: string,
+  description: string,
+  status?: ItemStatus,
+  excludeTerminal?: boolean,
+  allowStatusFilter?: boolean,
+): void {
+  const command = program.command(name).description(description);
+  if (allowStatusFilter) {
+    command.option("--status <value>", "Filter by status");
+  }
+  command
     .option("--type <value>", "Filter by item type")
     .option("--tag <value>", "Filter by tag")
     .option("--priority <value>", "Filter by priority")
@@ -3613,8 +3622,8 @@ function registerListCommand(name: string, description: string, status?: ItemSta
     .option("--sort <value>", "Sort field: priority|deadline|updated_at|created_at|title|parent")
     .option("--order <value>", "Sort order: asc|desc (requires --sort)")
     .option("--stream", "Emit line-delimited JSON rows (requires --json)")
-    .action(async (options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
+    .action(async (options: Record<string, unknown>, actionCommand) => {
+      const globalOptions = getGlobalOptions(actionCommand);
       const startedAt = Date.now();
       const listOptions = normalizeListOptions(options);
       if (excludeTerminal) listOptions.excludeTerminal = true;
@@ -3634,8 +3643,8 @@ function registerListCommand(name: string, description: string, status?: ItemSta
     });
 }
 
-registerListCommand("list", "List active items with optional filters.", undefined, true);
-registerListCommand("list-all", "List all items with optional filters.");
+registerListCommand("list", "List active items with optional filters.", undefined, true, true);
+registerListCommand("list-all", "List all items with optional filters.", undefined, false, true);
 registerListCommand("list-draft", "List draft items with optional filters.", "draft");
 registerListCommand("list-open", "List open items with optional filters.", "open");
 registerListCommand("list-in-progress", "List in-progress items with optional filters.", "in_progress");
@@ -4414,7 +4423,10 @@ program
   .command("comments")
   .argument("<id>", "Item id")
   .argument("[text]", "Optional comment text shorthand (equivalent to --add; use - for stdin)")
-  .option("--add <text>", "Add one comment entry (plain text, text=<value>, markdown pairs, or - for stdin)")
+  .option(
+    "--add <text>",
+    "Add one comment entry (plain text fallback, text=<value>, markdown pairs, or - for stdin; CSV-like key fragments are preserved as plain text unless text is explicit)",
+  )
   .option("--limit <n>", "Return only latest n comments")
   .option("--author [value]", "Comment author (optional; falls back to PM_AUTHOR/settings)")
   .option("--message <value>", "History message")
@@ -4499,7 +4511,10 @@ program
   .command("notes")
   .argument("<id>", "Item id")
   .argument("[text]", "Optional note text shorthand (equivalent to --add; use - for stdin)")
-  .option("--add <text>", "Add one note entry (plain text, text=<value>, markdown pairs, or - for stdin)")
+  .option(
+    "--add <text>",
+    "Add one note entry (plain text fallback, text=<value>, markdown pairs, or - for stdin; CSV-like key fragments are preserved as plain text unless text is explicit)",
+  )
   .option("--limit <n>", "Return only latest n notes")
   .option("--author [value]", "Note author (optional; falls back to PM_AUTHOR/settings)")
   .option("--message <value>", "History message")
@@ -4541,7 +4556,10 @@ program
   .command("learnings")
   .argument("<id>", "Item id")
   .argument("[text]", "Optional learning text shorthand (equivalent to --add; use - for stdin)")
-  .option("--add <text>", "Add one learning entry (plain text, text=<value>, markdown pairs, or - for stdin)")
+  .option(
+    "--add <text>",
+    "Add one learning entry (plain text fallback, text=<value>, markdown pairs, or - for stdin; CSV-like key fragments are preserved as plain text unless text is explicit)",
+  )
   .option("--limit <n>", "Return only latest n learnings")
   .option("--author [value]", "Learning author (optional; falls back to PM_AUTHOR/settings)")
   .option("--message <value>", "History message")

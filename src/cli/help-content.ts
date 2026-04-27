@@ -365,10 +365,14 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Adds or reviews lightweight status updates linked to an item.",
     examples: [
       'pm comments pm-a1b2 --add "Verified fix on Linux and macOS"',
+      'pm comments pm-a1b2 --add "text: verification note with commas, key-like words, and parser details"',
       'pm comments pm-a1b2 --add "Follow-up needed after review" --author "codex-agent" --force',
       "pm comments pm-a1b2 --limit 10",
     ],
-    tips: ["Use --force when adding comments to items currently assigned to a different owner."],
+    tips: [
+      "Use --force when adding comments to items currently assigned to a different owner.",
+      "When --add payload resembles CSV-like key fragments (for example text=hello,scope:project), plain-text fallback is intentional; use explicit text=..., markdown text: ..., or stdin token - for structured intent.",
+    ],
   },
   "comments-audit": {
     why: "Audits latest comments or full history rows across filtered item sets.",
@@ -386,20 +390,26 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Adds or reviews durable implementation notes linked to an item.",
     examples: [
       'pm notes pm-a1b2 --add "Investigated parser edge case and documented fallback logic."',
+      'pm notes pm-a1b2 --add "text: parser rationale with commas, colons, and key-like wording"',
       'pm notes pm-a1b2 --add "Audit note" --author "reviewer" --allow-audit-note',
       "pm notes pm-a1b2 --limit 10",
     ],
-    tips: ["Use --allow-audit-note for append-only non-owner audits; --allow-audit-comment remains supported as a legacy alias."],
+    tips: [
+      "Use --allow-audit-note for append-only non-owner audits; --allow-audit-comment remains supported as a legacy alias.",
+      "CSV-like add payloads with extra key fragments are treated as plain text by design; use explicit text keys (text= or text:) when structured parsing is required.",
+    ],
   },
   learnings: {
     why: "Adds or reviews post-implementation learnings for future work.",
     examples: [
       'pm learnings pm-a1b2 --add "Avoid direct test-runner commands in linked tests; use sandbox runner."',
+      'pm learnings pm-a1b2 --add "text: lesson with commas, key-like words, and punctuation-safe context"',
       'pm learnings pm-a1b2 --add "Audit learning" --author "reviewer" --allow-audit-learning',
       "pm learnings pm-a1b2 --limit 10",
     ],
     tips: [
       "Use --allow-audit-learning for append-only non-owner audits; --allow-audit-comment remains supported as a legacy alias.",
+      "If you intended structured parsing for a key-like payload, prefer explicit text=..., markdown text: ..., or stdin token -; ambiguous CSV-like forms intentionally remain plain text.",
     ],
   },
   files: {

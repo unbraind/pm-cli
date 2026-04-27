@@ -682,6 +682,11 @@ pm notes pm-a1b2 --add "audit note from governance review" --author "audit-maint
 pm learnings pm-a1b2 --add "text: always run linked tests through the sandbox runner"
 pm learnings pm-a1b2 --add "audit learning from governance review" --author "audit-maintainer" --allow-audit-comment
 
+# CSV-like key fragments remain plain text unless text is explicit
+pm comments pm-a1b2 --add "text=hello,scope:project"          # plain-text fallback
+pm comments pm-a1b2 --add 'text="hello,scope:project"'        # explicit structured text field
+pm notes pm-a1b2 --add "text: hello,scope:project"            # markdown structured form
+
 # Pipe markdown payload via stdin with "-"
 printf '%s\n' 'path: docs/ARCHITECTURE.md' 'scope: project' 'note: piped update' | pm files pm-a1b2 --add -
 printf '%s\n' 'text: evidence from piped stdin' | pm comments pm-a1b2 --add -
@@ -740,7 +745,7 @@ For `pm create` log-seed flags, `--comment` accepts plain-text shorthand (`--com
 - Linked test timeout handling uses deterministic process termination (including force-kill fallback) and reports explicit timeout/maxBuffer diagnostics in `run_results`.
 - Failed linked test `run_results` now include `failure_category` (for example `infra_collision` vs `assertion_failure`) and `pm test-all` totals include aggregated `failure_categories` counts for triage.
 - `pm test <ID> --run` now returns dependency-failed exit code (`5`) when any linked test run result fails (matching `pm test-all` failure gating behavior).
-- `pm list` / `pm list-*` return front-matter rows by default; pass `--compact` or `--fields <csv>` for projection control, `--sort <field> --order <asc|desc>` for deterministic ordering, `--include-body` when body projection is needed, `--offset <n>` for pagination, and `--stream` (with `--json`) for newline-delimited item streaming.
+- `pm list` / `pm list-*` return front-matter rows by default; `pm list` and `pm list-all` also accept `--status <value>` for status-specific filtering without switching subcommands. Pass `--compact` or `--fields <csv>` for projection control, `--sort <field> --order <asc|desc>` for deterministic ordering, `--include-body` when body projection is needed, `--offset <n>` for pagination, and `--stream` (with `--json`) for newline-delimited item streaming.
 
 ## Terminal Compatibility
 

@@ -18,6 +18,7 @@ import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter, ItemStatus, ItemType } from "../../types/index.js";
 
 export interface ListOptions {
+  status?: string;
   type?: string;
   tag?: string;
   priority?: string;
@@ -401,8 +402,10 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
   if (!sortField && options.order !== undefined) {
     throw new PmCliError("List --order requires --sort", EXIT_CODE.USAGE);
   }
-  const resolvedStatus = resolveStatusFilter(status, statusRegistry);
-  const filtered = applyFilters(items, resolvedStatus, options, typeRegistry, statusRegistry, runtimeFieldFilters);
+  const explicitStatus = resolveStatusFilter(options.status as ItemStatus | undefined, statusRegistry);
+  const resolvedStatus = explicitStatus ?? resolveStatusFilter(status, statusRegistry);
+  const effectiveOptions = explicitStatus ? { ...options, excludeTerminal: false } : options;
+  const filtered = applyFilters(items, resolvedStatus, effectiveOptions, typeRegistry, statusRegistry, runtimeFieldFilters);
   const sorted = sortItems(filtered, sortField, sortOrder, statusRegistry);
   const limit = parseLimit(options.limit);
   const offset = parseOffset(options.offset) ?? 0;

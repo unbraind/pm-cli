@@ -101,6 +101,7 @@ Attach references to keep work reproducible:
 - Entry-format resilience:
   - `--add`/repeatable seed flags accept CSV `key=value`, markdown `key: value`, or stdin token `-` with piped payload.
   - for `pm create` log-seed flags, `--comment` supports plain-text shorthand in addition to structured key/value input; structured `--comment`/`--note`/`--learning` payloads accept only `author`, `created_at`, and `text` keys. Quote punctuation-heavy text (for example `text="hello,scope:project"`) or use markdown/stdin to avoid ambiguous key-like continuations.
+  - for `pm comments|notes|learnings --add`, CSV-like strings with extra key fragments (for example `text=hello,scope:project`) are intentionally preserved as plain text; use explicit `text=...`, markdown `text: ...`, or stdin token `-` when structured parsing is required.
   - Example: `printf '%s\n' 'path: src/app.ts' 'scope: project' | pm files <ID> --add -`
 
 ### Step E - Record progress

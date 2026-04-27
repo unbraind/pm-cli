@@ -2,11 +2,11 @@ id: pm-cvwi
 title: Comments shorthand compatibility and docs parity
 description: "Implement intuitive positional comment text support for pm comments, retain --add path, and align docs/help/tests."
 type: Feature
-status: in_progress
+status: closed
 priority: 1
 tags[5]: "area:cli","area:comments","area:docs",compatibility,pm-cli
 created_at: "2026-04-01T11:05:50.847Z"
-updated_at: "2026-04-27T20:09:29.010Z"
+updated_at: "2026-04-27T21:33:16.349Z"
 deadline: "2026-05-09T17:05:53.426Z"
 author: codex-agent
 estimated_minutes: 160
@@ -29,7 +29,9 @@ reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Comments shorthand compatibility and docs parity (pm CLI + Node/pnpm toolchain).
 repro_steps: Review linked files/tests/docs for pm-cvwi (Comments shorthand compatibility and docs parity); run linked verification via pm test pm-cvwi --run when available; compare observed behavior with acceptance criteria and capture results in comments.
-expected_result: Acceptance criteria for Comments shorthand compatibility and docs parity are satisfied with reproducible verification evidence.
+resolution: "Comments/notes/learnings add semantics are now explicit and safe: ambiguous CSV-like payloads containing non-text keys fall back to literal plain text, while explicit text= / markdown text: / stdin forms remain structured."
+expected_result: "Users can distinguish structured and plain add payload paths from command help/docs, and key-like comma payloads no longer silently truncate trailing fragments."
+actual_result: "Parser now preserves text=hello,scope:project as plain text for comments/notes/learnings when non-text keys are present; help/docs updated across main/README/AGENTS/PRD; linked cvwi test runs passed (104 + 41 + 16 tests)."
 affected_version: archive-2026q2
 fixed_version: archive-2026q2
 component: cli-comments
@@ -37,7 +39,7 @@ regression: true
 customer_impact: Existing users keep working syntax while agents gain intuitive shorthand
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-v3g3,parent,"2026-04-01T11:05:50.847Z",codex-agent,null
-comments[9]{created_at,author,text}:
+comments[13]{created_at,author,text}:
   "2026-04-01T11:05:50.847Z",codex-agent,Feature created after deep duplicate search over open/in-progress/blocked/search surfaces.
   "2026-04-01T11:18:49.987Z",codex-agent,"Feature evidence: targeted and full test suites pass after implementation; manual validation confirms positional comments, --add compatibility, and conflict-path usage error. Full coverage gate remains globally below repository threshold (98.14/96.57/98.37/97.99)."
   "2026-04-01T11:19:16.550Z",codex-agent,"Validation: user-reported form now succeeds (pm comments <id> \"...\" --author) without too-many-arguments error."
@@ -47,18 +49,35 @@ comments[9]{created_at,author,text}:
   "2026-04-07T18:24:04.211Z",codex-agent,"Implementation progress: create --comment now accepts plain-text shorthand by defaulting to a comment seed when structured parsing fails or when single-key colon text is provided (while preserving strict rejection for ambiguous comma key-like fragments such as text=...,scope:...). Added regression coverage in tests/unit/create-command.spec.ts for plain text and colon shorthand plus existing ambiguity guards."
   "2026-04-25T16:54:40.806Z",codex-agent,"Dogfood finding (2026-04-25): comments/notes/learnings --add payloads passed as single CSV-like strings can be interpreted as plain text entries, which is easy to misread as structured parsing. Review parser/doc ergonomics and add explicit examples for unambiguous structured input."
   "2026-04-27T20:09:24.663Z",codex-agent,"Stale-state normalization 2026-04-27: status intentionally remains in_progress. Core acceptance behavior for comments shorthand shipped, but residual follow-up from latest dogfood note remains: clarify CSV-like --add payload ergonomics (structured vs plain-text ambiguity) with explicit docs/help examples and parser guidance before close."
-notes[1]{created_at,author,text}:
+  "2026-04-27T21:16:37.950Z",codex-agent,"Execution start 2026-04-27: addressing dogfood ambiguity where CSV-like --add payloads can be read as plain text for comments/notes/learnings. Scope: improve command help + docs with explicit structured-vs-plain guidance and add regression coverage that codifies fallback behavior."
+  "2026-04-27T21:23:37.982Z",codex-agent,"Implementation 2026-04-27: clarified comments/notes/learnings --add semantics across CLI help/docs and fixed parser ambiguity by preserving payload as plain text whenever parsed CSV-like input includes non-text keys (e.g. text=hello,scope:project). Added unit regressions for comments and notes/learnings fallback behavior."
+  "2026-04-27T21:27:35.900Z",codex-agent,"Verification 2026-04-27: pm test pm-cvwi --run --progress passed all linked suites (comments+cli+release-readiness: 104 tests; create-command: 41 tests; notes-learnings: 16 tests). Additional targeted rerun for guidance update also passed before linked run. Regression assertions now cover ambiguous CSV-like add payload fallback for comments/notes/learnings."
+  "2026-04-27T21:33:16.349Z",codex-agent,"Final handoff 2026-04-27: global gate run after backlog closeout -> pm validate --check-resolution --check-history-drift --json (warn on legacy resolution backlog: 10 items; history drift hash mismatches: pm-r9ei, pm-vhdc), pm normalize --dry-run --json (rule closed_resolution_backfill count=10), pm context --limit 20 (active_items=0)."
+notes[2]{created_at,author,text}:
   "2026-04-01T11:05:50.847Z",codex-agent,Prior closed parser-hardening work is reused; this feature targets positional shorthand UX gap.
-learnings[1]{created_at,author,text}:
+  "2026-04-27T21:23:43.184Z",codex-agent,"Guidance now consistently differentiates plain-text fallback vs explicit structured text forms (text=..., markdown text:, or stdin token -) across main help, README, AGENTS, and PRD."
+learnings[2]{created_at,author,text}:
   "2026-04-01T20:22:39.883Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[3]{path,scope,note}:
-  src/cli/main.ts,project,comments command argument wiring
+  "2026-04-27T21:27:40.484Z",codex-agent,"For text-entry commands, treating non-text parsed keys as a plain-text fallback avoids silent truncation and keeps user intent explicit while preserving structured text= and markdown text: paths."
+files[9]{path,scope,note}:
+  src/cli/commands/comments.ts,project,ambiguous CSV-like --add payloads now fall back to plain text when non-text keys are present
   src/cli/commands/create.ts,project,create --comment plain-text shorthand
+  src/cli/commands/learnings.ts,project,learnings add parser now preserves ambiguous CSV-like payloads as plain text
+  src/cli/commands/notes.ts,project,notes add parser now preserves ambiguous CSV-like payloads as plain text
+  src/cli/help-content.ts,project,command help examples/tips clarify structured vs plain add payload guidance
+  src/cli/main.ts,project,comments command argument wiring
+  tests/unit/comments-command.spec.ts,project,comment add fallback regression for ambiguous CSV-like payload
   tests/unit/create-command.spec.ts,project,regression coverage for create comment shorthand
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  tests/unit/notes-learnings-command.spec.ts,project,notes/learnings fallback regressions for ambiguous CSV-like payload
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,comments shorthand + help contract regressions
   node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,create-comment-shorthand regression
-docs[2]{path,scope,note}:
+  node scripts/run-tests.mjs test -- tests/unit/notes-learnings-command.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,notes/learnings ambiguous add payload fallback regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mohpjwyq-m8w4jx,test,passed,"2026-04-27T21:23:54.192Z","2026-04-27T21:27:10.754Z","2026-04-27T21:27:10.754Z",null,null,3,0,0,null,null,null
+docs[3]{path,scope,note}:
+  AGENTS.md,project,agent guidance for comments/notes/learnings structured-vs-plain add semantics
   PRD.md,project,command contract update for comments shorthand
   README.md,project,document create comment shorthand
+close_reason: Structured-vs-plain add-payload guidance and fallback behavior delivered with passing regressions.
 body: "Delivery feature under the comments UX hardening epic.\n\n## Detailed implementation plan\n1. Command UX wiring\n   - Update comments command signature to accept optional positional text argument in addition to --add.\n   - Allow --author optional value so bare --author falls back to PM_AUTHOR/settings/defaults instead of failing parse.\n   - Add deterministic conflict handling when both positional text and --add are provided in one invocation.\n2. Runtime behavior and compatibility\n   - Preserve existing --add plain text, text=<value>, markdown text:, and stdin token - support.\n   - Keep list mode behavior unchanged when neither positional text nor --add is provided.\n3. Regression coverage\n   - Add integration assertions for positional shorthand success.\n   - Add coverage for conflict path and optional --author path using CLI invocation tests.\n   - Keep help/runtime contract tests passing with updated command usage.\n4. Documentation updates\n   - Update README, PRD, AGENTS examples to show shorthand plus backward-compatible --add usage.\n   - Update CHANGELOG Unreleased notes with compatibility-safe UX improvement.\n5. Verification and closure\n   - Run targeted tests, then full sandbox-safe test and coverage sweeps.\n   - Record verification evidence in linked pm items and close/release epic-feature-task chain."

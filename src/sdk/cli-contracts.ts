@@ -1337,6 +1337,7 @@ export const UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS: CommanderOptionAliasC
 ];
 
 export const LIST_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
+  { target: "status", keys: ["status"] },
   { target: "type", keys: ["type"] },
   { target: "tag", keys: ["tag"] },
   { target: "priority", keys: ["priority"] },
