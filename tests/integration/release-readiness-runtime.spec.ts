@@ -303,6 +303,7 @@ const REQUIRED_VALIDATE_FLAGS = [
   "--check-resolution",
   "--check-lifecycle",
   "--check-stale-blockers",
+  "--dependency-cycle-severity",
   "--check-files",
   "--check-command-references",
   "--scan-mode",

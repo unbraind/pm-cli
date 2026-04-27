@@ -441,10 +441,11 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   validate: {
     why:
-      "Runs standalone metadata, resolution, linked-file, linked-command reference, and history drift checks with default remediation hints for resolution gaps.",
+      "Runs standalone metadata, resolution, lifecycle (including dependency-cycle diagnostics), linked-file, linked-command reference, and history drift checks with default remediation hints for resolution gaps.",
     examples: [
       "pm validate",
       "pm validate --check-resolution --json",
+      "pm validate --check-lifecycle --dependency-cycle-severity error",
       "pm validate --check-files --scan-mode tracked-all",
       "pm validate --check-files --scan-mode tracked-all-strict --include-pm-internals",
       "pm validate --check-command-references",

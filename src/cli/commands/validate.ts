@@ -26,6 +26,7 @@ import { extractReferencedPmItemIdsFromCommand } from "./test.js";
 
 type ValidateCheckName = "metadata" | "resolution" | "lifecycle" | "files" | "command_references" | "history_drift";
 type ValidateStatus = "ok" | "warn";
+type ValidateDependencyCycleSeverity = "off" | "warn" | "error";
 type ValidateFileScanMode = "default" | "tracked-all" | "tracked-all-strict";
 type ItemWithBody = Awaited<ReturnType<typeof listAllFrontMatterWithBody>>[number];
 type FileCandidateSource = "default-curated" | "tracked-git" | "tracked-all-fallback-default";
@@ -46,6 +47,7 @@ const RESOLUTION_FIELD_KEYS = ["resolution", "expected_result", "actual_result"]
 type ResolutionFieldKey = (typeof RESOLUTION_FIELD_KEYS)[number];
 const VALIDATE_FILE_SCAN_MODES = ["default", "tracked-all", "tracked-all-strict"] as const;
 const VALIDATE_METADATA_PROFILE_VALUES = ["core", "strict", "custom"] as const;
+const VALIDATE_DEPENDENCY_CYCLE_SEVERITY_VALUES = ["off", "warn", "error"] as const;
 const LIFECYCLE_PATTERN_FIELD_KEYS = ["blocked_reason", "resolution", "actual_result"] as const;
 type LifecyclePatternFieldKey = (typeof LIFECYCLE_PATTERN_FIELD_KEYS)[number];
 const CORE_METADATA_REQUIRED_FIELDS = ["author", "acceptance_criteria", "estimated_minutes", "close_reason"] as const;
@@ -128,6 +130,7 @@ export interface ValidateCommandOptions {
   checkResolution?: boolean;
   checkLifecycle?: boolean;
   checkStaleBlockers?: boolean;
+  dependencyCycleSeverity?: string;
   checkFiles?: boolean;
   includePmInternals?: boolean;
   verboseFileLists?: boolean;
@@ -272,6 +275,20 @@ function resolveValidateMetadataProfile(value: string | undefined): ValidateMeta
   }
   throw new PmCliError(
     `Unknown --metadata-profile value "${value}". Supported values: ${VALIDATE_METADATA_PROFILE_VALUES.join(", ")}.`,
+    EXIT_CODE.USAGE,
+  );
+}
+
+function resolveDependencyCycleSeverity(value: string | undefined): ValidateDependencyCycleSeverity {
+  const normalized = value?.trim().toLowerCase();
+  if (!normalized || normalized.length === 0) {
+    return "warn";
+  }
+  if ((VALIDATE_DEPENDENCY_CYCLE_SEVERITY_VALUES as readonly string[]).includes(normalized)) {
+    return normalized as ValidateDependencyCycleSeverity;
+  }
+  throw new PmCliError(
+    `Unknown --dependency-cycle-severity value "${value}". Supported values: ${VALIDATE_DEPENDENCY_CYCLE_SEVERITY_VALUES.join(", ")}.`,
     EXIT_CODE.USAGE,
   );
 }
@@ -736,9 +753,144 @@ function buildResolutionCheck(
   };
 }
 
+function buildLifecycleDependencyGraph(activeItems: ItemWithBody[]): Map<string, string[]> {
+  const activeItemIds = new Set(activeItems.map((item) => item.id));
+  const graph = new Map<string, string[]>();
+  const sortedItems = [...activeItems].sort((left, right) => left.id.localeCompare(right.id));
+  for (const item of sortedItems) {
+    const edges = new Set<string>();
+    for (const dependency of item.dependencies ?? []) {
+      const dependencyId = toMeaningfulString(dependency.id);
+      if (!dependencyId || !activeItemIds.has(dependencyId)) {
+        continue;
+      }
+      edges.add(dependencyId);
+    }
+    graph.set(item.id, [...edges].sort((left, right) => left.localeCompare(right)));
+  }
+  return graph;
+}
+
+function findLifecycleDependencyCycleComponents(graph: Map<string, string[]>): string[][] {
+  let nextIndex = 0;
+  const indexById = new Map<string, number>();
+  const lowLinkById = new Map<string, number>();
+  const stack: string[] = [];
+  const inStack = new Set<string>();
+  const components: string[][] = [];
+
+  const visit = (id: string): void => {
+    indexById.set(id, nextIndex);
+    lowLinkById.set(id, nextIndex);
+    nextIndex += 1;
+    stack.push(id);
+    inStack.add(id);
+
+    for (const dependencyId of graph.get(id) ?? []) {
+      if (!indexById.has(dependencyId)) {
+        visit(dependencyId);
+        lowLinkById.set(id, Math.min(lowLinkById.get(id)!, lowLinkById.get(dependencyId)!));
+      } else if (inStack.has(dependencyId)) {
+        lowLinkById.set(id, Math.min(lowLinkById.get(id)!, indexById.get(dependencyId)!));
+      }
+    }
+
+    if (lowLinkById.get(id) !== indexById.get(id)) {
+      return;
+    }
+    const component: string[] = [];
+    while (stack.length > 0) {
+      const member = stack.pop()!;
+      inStack.delete(member);
+      component.push(member);
+      if (member === id) {
+        break;
+      }
+    }
+    component.sort((left, right) => left.localeCompare(right));
+    components.push(component);
+  };
+
+  const sortedNodeIds = [...graph.keys()].sort((left, right) => left.localeCompare(right));
+  for (const id of sortedNodeIds) {
+    if (!indexById.has(id)) {
+      visit(id);
+    }
+  }
+
+  const cycleComponents = components.filter((component) => {
+    if (component.length > 1) {
+      return true;
+    }
+    const selfId = component[0];
+    return (graph.get(selfId) ?? []).includes(selfId);
+  });
+  return cycleComponents.sort(
+    (left, right) =>
+      left[0].localeCompare(right[0]) ||
+      left.length - right.length ||
+      left.join(",").localeCompare(right.join(",")),
+  );
+}
+
+function resolveLifecycleDependencyCycleSamplePath(component: string[], graph: Map<string, string[]>): string[] {
+  const start = component[0];
+  if (component.length === 1) {
+    return [start, start];
+  }
+  const componentSet = new Set(component);
+  const path: string[] = [start];
+  const visited = new Set<string>([start]);
+
+  const search = (current: string): boolean => {
+    const neighbors = (graph.get(current) ?? []).filter((candidate) => componentSet.has(candidate));
+    for (const next of neighbors) {
+      if (next === start && path.length > 1) {
+        path.push(start);
+        return true;
+      }
+      if (visited.has(next)) {
+        continue;
+      }
+      visited.add(next);
+      path.push(next);
+      if (search(next)) {
+        return true;
+      }
+      path.pop();
+      visited.delete(next);
+    }
+    return false;
+  };
+
+  if (search(start)) {
+    return [...path];
+  }
+  return [...component, start];
+}
+
+function detectLifecycleDependencyCycles(activeItems: ItemWithBody[]): {
+  cycle_count: number;
+  cycle_item_ids: string[];
+  cycle_sample_paths: string[];
+} {
+  const graph = buildLifecycleDependencyGraph(activeItems);
+  const cycleComponents = findLifecycleDependencyCycleComponents(graph);
+  const cycleItemIds = [...new Set(cycleComponents.flat())].sort((left, right) => left.localeCompare(right));
+  const cycleSamplePaths = cycleComponents.map((component) =>
+    resolveLifecycleDependencyCycleSamplePath(component, graph).join("->"),
+  );
+  return {
+    cycle_count: cycleComponents.length,
+    cycle_item_ids: cycleItemIds,
+    cycle_sample_paths: cycleSamplePaths,
+  };
+}
+
 function buildLifecycleCheck(
   items: ItemWithBody[],
   includeStaleBlockers: boolean,
+  dependencyCycleSeverity: ValidateDependencyCycleSeverity,
   statusRegistry: RuntimeStatusRegistry,
   lifecyclePatternPolicy: LifecyclePatternPolicy,
 ): { check: ValidateCheck; warnings: string[] } {
@@ -826,6 +978,7 @@ function buildLifecycleCheck(
     (left, right) => left.id.localeCompare(right.id) || left.parent_id.localeCompare(right.parent_id),
   );
   staleBlockerRows.sort((left, right) => left.id.localeCompare(right.id));
+  const dependencyCycleDiagnostics = detectLifecycleDependencyCycles(activeItems);
 
   const warnings: string[] = [];
   if (closureLikeRows.length > 0) {
@@ -837,6 +990,15 @@ function buildLifecycleCheck(
   if (includeStaleBlockers && staleBlockerRows.length > 0) {
     warnings.push(`validate_lifecycle_stale_blockers:${staleBlockerRows.length}`);
   }
+  if (dependencyCycleDiagnostics.cycle_count > 0 && dependencyCycleSeverity !== "off") {
+    warnings.push(
+      `${
+        dependencyCycleSeverity === "error"
+          ? "validate_lifecycle_dependency_cycles_error"
+          : "validate_lifecycle_dependency_cycles"
+      }:${dependencyCycleDiagnostics.cycle_count}`,
+    );
+  }
 
   const summarizedClosureLikeRows = summarizeList(
     closureLikeRows.map((row) => `${row.id}:${row.fields.join(",")}`),
@@ -847,6 +1009,8 @@ function buildLifecycleCheck(
   const summarizedStaleBlockerRows = summarizeList(
     staleBlockerRows.map((row) => `${row.id}:${row.status}:${row.reasons.join(",")}`),
   );
+  const summarizedDependencyCycleItemIds = summarizeList(dependencyCycleDiagnostics.cycle_item_ids);
+  const summarizedDependencyCycleSamplePaths = summarizeList(dependencyCycleDiagnostics.cycle_sample_paths);
 
   return {
     check: {
@@ -864,6 +1028,13 @@ function buildLifecycleCheck(
         stale_blocker_items: staleBlockerRows.length,
         stale_blocker_rows: summarizedStaleBlockerRows.values,
         stale_blocker_rows_truncated: summarizedStaleBlockerRows.truncated,
+        dependency_cycle_severity_policy: dependencyCycleSeverity,
+        dependency_cycle_count: dependencyCycleDiagnostics.cycle_count,
+        dependency_cycle_item_count: dependencyCycleDiagnostics.cycle_item_ids.length,
+        dependency_cycle_item_ids: summarizedDependencyCycleItemIds.values,
+        dependency_cycle_item_ids_truncated: summarizedDependencyCycleItemIds.truncated,
+        dependency_cycle_sample_paths: summarizedDependencyCycleSamplePaths.values,
+        dependency_cycle_sample_paths_truncated: summarizedDependencyCycleSamplePaths.truncated,
         stale_blocker_reason_patterns: [...lifecyclePatternPolicy.stale_blocker_reason_patterns],
         stale_blocker_reason_pattern_source: lifecyclePatternPolicy.stale_blocker_reason_pattern_source,
         closure_like_blocked_reason_patterns: [
@@ -1180,6 +1351,7 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
     settings.validation.metadata_required_fields,
   );
   const lifecyclePatternPolicy = resolveLifecyclePatternPolicy(settings);
+  const dependencyCycleSeverity = resolveDependencyCycleSeverity(options.dependencyCycleSeverity);
   const fileScanMode = resolveFileScanMode(options.scanMode);
   const workspaceRoot = resolveWorkspaceRoot(pmRoot);
   const checks: ValidateCheck[] = [];
@@ -1199,6 +1371,7 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
     const lifecycleCheck = buildLifecycleCheck(
       items,
       Boolean(options.checkStaleBlockers),
+      dependencyCycleSeverity,
       statusRegistry,
       lifecyclePatternPolicy,
     );

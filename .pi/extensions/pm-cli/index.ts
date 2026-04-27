@@ -167,6 +167,7 @@ export interface PmToolParameters {
   checkResolution?: boolean;
   checkLifecycle?: boolean;
   checkStaleBlockers?: boolean;
+  dependencyCycleSeverity?: string;
   checkFiles?: boolean;
   strictDirectories?: boolean;
   checkOnly?: boolean;
@@ -1008,6 +1009,7 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       if (params.checkStaleBlockers) {
         args.push("--check-stale-blockers");
       }
+      pushOption(args, "--dependency-cycle-severity", params.dependencyCycleSeverity);
       if (params.checkFiles) {
         args.push("--check-files");
       }

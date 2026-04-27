@@ -294,7 +294,14 @@ describe("contracts command runtime", () => {
       },
       {
         command: "validate",
-        flags: ["--check-metadata", "--metadata-profile", "--check-lifecycle", "--check-stale-blockers", "--verbose-file-lists"],
+        flags: [
+          "--check-metadata",
+          "--metadata-profile",
+          "--check-lifecycle",
+          "--check-stale-blockers",
+          "--dependency-cycle-severity",
+          "--verbose-file-lists",
+        ],
       },
       { command: "health", flags: ["--check-only", "--no-refresh", "--refresh-vectors", "--verbose-stale-items"] },
     ];

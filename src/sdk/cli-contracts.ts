@@ -784,6 +784,7 @@ export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--check-resolution" },
   { flag: "--check-lifecycle" },
   { flag: "--check-stale-blockers" },
+  { flag: "--dependency-cycle-severity" },
   { flag: "--check-files" },
   { flag: "--scan-mode" },
   { flag: "--include-pm-internals" },
@@ -1552,6 +1553,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   checkResolution: { type: "boolean" },
   checkLifecycle: { type: "boolean" },
   checkStaleBlockers: { type: "boolean" },
+  dependencyCycleSeverity: { type: "string", enum: ["off", "warn", "error"] },
   checkFiles: { type: "boolean" },
   strictDirectories: { type: "boolean" },
   checkOnly: { type: "boolean" },
@@ -1903,6 +1905,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
       "checkResolution",
       "checkLifecycle",
       "checkStaleBlockers",
+      "dependencyCycleSeverity",
       "checkFiles",
       "scanMode",
       "includePmInternals",
@@ -2209,6 +2212,10 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   checkStaleBlockers: {
     description: "Include stale blocker-pattern diagnostics in lifecycle checks.",
+  },
+  dependencyCycleSeverity: {
+    description: "Set dependency-cycle warning policy for lifecycle checks.",
+    examples: ["off", "warn", "error"],
   },
   checkFiles: {
     description: "Run linked-file and orphaned-file checks.",

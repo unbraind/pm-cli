@@ -598,6 +598,7 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(schemaProperty(validateSchema, "failOnWarn").type).toBe("boolean");
     expect(schemaProperty(validateSchema, "checkLifecycle").type).toBe("boolean");
     expect(schemaProperty(validateSchema, "checkStaleBlockers").type).toBe("boolean");
+    expect(schemaProperty(validateSchema, "dependencyCycleSeverity").enum).toEqual(["off", "warn", "error"]);
     expect(schemaProperty(validateSchema, "checkCommandReferences").type).toBe("boolean");
 
     const healthSchema = schemaForAction(tool.parameters as Record<string, unknown>, "health");
@@ -1085,6 +1086,7 @@ describe("Pi agent extension wrapper for pm", () => {
         failOnWarn: true,
         checkLifecycle: true,
         checkStaleBlockers: true,
+        dependencyCycleSeverity: "error",
         checkHistoryDrift: true,
         checkCommandReferences: true,
       }),
@@ -1093,6 +1095,8 @@ describe("Pi agent extension wrapper for pm", () => {
       "validate",
       "--check-lifecycle",
       "--check-stale-blockers",
+      "--dependency-cycle-severity",
+      "error",
       "--check-files",
       "--scan-mode",
       "tracked-all",

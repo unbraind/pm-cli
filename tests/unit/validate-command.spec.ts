@@ -63,6 +63,33 @@ function createTask(context: TempPmContext, title: string): string {
   return (created.json as { item: { id: string } }).item.id;
 }
 
+function seedDependencyCycle(context: TempPmContext): [string, string, string] {
+  const first = createTask(context, "validate-lifecycle-dependency-cycle-a");
+  const second = createTask(context, "validate-lifecycle-dependency-cycle-b");
+  const third = createTask(context, "validate-lifecycle-dependency-cycle-c");
+  const cycleEdges: Array<{ from: string; to: string }> = [
+    { from: first, to: second },
+    { from: second, to: third },
+    { from: third, to: first },
+  ];
+  for (const edge of cycleEdges) {
+    const updated = context.runCli(
+      [
+        "update",
+        edge.from,
+        "--json",
+        "--dep",
+        `id=${edge.to},kind=blocks,author=seed-author,created_at=now`,
+        "--message",
+        "Seed lifecycle dependency cycle edge",
+      ],
+      { expectJson: true },
+    );
+    expect(updated.code).toBe(0);
+  }
+  return [first, second, third];
+}
+
 function checkByName(result: Awaited<ReturnType<typeof runValidate>>, name: string): Record<string, unknown> {
   const found = result.checks.find((entry) => entry.name === name);
   expect(found).toBeDefined();
@@ -264,6 +291,81 @@ describe("runValidate", () => {
       expect(details.closure_like_resolution_pattern_source).toBe("settings");
       expect(details.closure_like_blocked_reason_pattern_source).toBe("default");
       expect(details.closure_like_actual_result_pattern_source).toBe("default");
+    });
+  });
+
+  it("reports dependency-cycle diagnostics in lifecycle checks by default", async () => {
+    await withTempPmPath(async (context) => {
+      const [first, second, third] = seedDependencyCycle(context);
+      const result = await runValidate({ checkLifecycle: true }, { path: context.pmPath });
+      expect(result.ok).toBe(false);
+      expect(result.warnings).toContain("validate_lifecycle_dependency_cycles:1");
+      const lifecycleCheck = checkByName(result, "lifecycle");
+      expect(lifecycleCheck.status).toBe("warn");
+      const details = lifecycleCheck.details as {
+        dependency_cycle_severity_policy: string;
+        dependency_cycle_count: number;
+        dependency_cycle_item_count: number;
+        dependency_cycle_item_ids: string[];
+        dependency_cycle_sample_paths: string[];
+      };
+      expect(details.dependency_cycle_severity_policy).toBe("warn");
+      expect(details.dependency_cycle_count).toBe(1);
+      expect(details.dependency_cycle_item_count).toBe(3);
+      expect(details.dependency_cycle_item_ids).toEqual([first, second, third].sort((left, right) => left.localeCompare(right)));
+      expect(details.dependency_cycle_sample_paths).toHaveLength(1);
+      const cyclePath = details.dependency_cycle_sample_paths[0] ?? "";
+      const cycleSegments = cyclePath.split("->");
+      expect(cycleSegments[0]).toBe(cycleSegments[cycleSegments.length - 1]);
+      expect(cyclePath).toContain(first);
+      expect(cyclePath).toContain(second);
+      expect(cyclePath).toContain(third);
+    });
+  });
+
+  it("supports dependency-cycle severity policy overrides", async () => {
+    await withTempPmPath(async (context) => {
+      seedDependencyCycle(context);
+
+      const warnResult = await runValidate(
+        { checkLifecycle: true, dependencyCycleSeverity: "error" },
+        { path: context.pmPath },
+      );
+      expect(warnResult.ok).toBe(false);
+      expect(warnResult.warnings).toContain("validate_lifecycle_dependency_cycles_error:1");
+      const errorLifecycleCheck = checkByName(warnResult, "lifecycle");
+      const errorDetails = errorLifecycleCheck.details as {
+        dependency_cycle_severity_policy: string;
+        dependency_cycle_count: number;
+      };
+      expect(errorDetails.dependency_cycle_severity_policy).toBe("error");
+      expect(errorDetails.dependency_cycle_count).toBe(1);
+
+      const offResult = await runValidate(
+        { checkLifecycle: true, dependencyCycleSeverity: "off" },
+        { path: context.pmPath },
+      );
+      expect(offResult.ok).toBe(true);
+      expect(offResult.warnings.some((warning) => warning.startsWith("validate_lifecycle_dependency_cycles"))).toBe(false);
+      const offLifecycleCheck = checkByName(offResult, "lifecycle");
+      expect(offLifecycleCheck.status).toBe("ok");
+      const offDetails = offLifecycleCheck.details as {
+        dependency_cycle_severity_policy: string;
+        dependency_cycle_count: number;
+      };
+      expect(offDetails.dependency_cycle_severity_policy).toBe("off");
+      expect(offDetails.dependency_cycle_count).toBe(1);
+    });
+  });
+
+  it("rejects unknown dependency-cycle severity values", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, "validate-lifecycle-invalid-cycle-severity");
+      await expect(
+        runValidate({ checkLifecycle: true, dependencyCycleSeverity: "invalid" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 

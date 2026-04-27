@@ -2,15 +2,39 @@ id: pm-i4ef
 title: Add dependency-cycle diagnostics to pm validate lifecycle checks
 description: Extend pm validate with dependency cycle detection reporting so lifecycle gates surface cyclic blockers directly.
 type: Task
-status: open
+status: closed
 priority: 1
 tags[4]: dependencies,governance,pm-cli,validation
 created_at: "2026-04-06T16:47:21.911Z"
-updated_at: "2026-04-26T08:48:19.132Z"
-assignee: codex-agent
+updated_at: "2026-04-27T16:44:26.414Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: pm validate exposes dependency-cycle diagnostics with deterministic counts and sample cycle paths and configurable severity policy while preserving existing validate checks.
-comments[1]{created_at,author,text}:
+parent: pm-dw5s
+resolution: Validate lifecycle checks now report deterministic dependency-cycle diagnostics with configurable severity policy.
+expected_result: "pm validate lifecycle surfaces dependency-cycle counts, cycle item IDs, and sample cycle paths with off|warn|error policy controls and cross-surface flag parity."
+actual_result: "Lifecycle validate now detects active-item dependency cycles, supports --dependency-cycle-severity across CLI/completion/contracts/Pi wrapper, and passes focused regression verification."
+comments[2]{created_at,author,text}:
   "2026-04-06T16:47:21.911Z",codex-agent,Duplicate-check evidence used pm context pm search and open or in-progress lists. Net-new validate extension scope under pm-dw5s for dependency-cycle diagnostics.
+  "2026-04-27T16:44:10.015Z",codex-agent,"Implemented lifecycle dependency-cycle diagnostics in pm validate: lifecycle check now builds a deterministic active-item dependency graph, detects cyclic SCC components, and emits stable cycle item IDs + sample cycle paths in check details. Added configurable policy flag --dependency-cycle-severity (off|warn|error) across CLI runtime, completion, contracts, and Pi wrapper mappings. Verification: pm test pm-i4ef --run --progress passed (validate/contracts/completion/pi/release-readiness suites: 236 tests) and pnpm build passed."
+files[11]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,pi-wrapper-forwarding-for-validate-dependency-cycle-severity
+  src/cli/commands/completion.ts,project,validate-dependency-cycle-severity-shell-completion
+  src/cli/commands/validate.ts,project,lifecycle-dependency-cycle-detection-and-severity-policy
+  src/cli/help-content.ts,project,validate-help-narrative-and-example-for-cycle-severity
+  src/cli/main.ts,project,validate-flag-wiring-for-dependency-cycle-severity
+  src/sdk/cli-contracts.ts,project,validate-contract-schema-flag-and-parameter-metadata
+  tests/integration/release-readiness-runtime.spec.ts,project,release-readiness-required-validate-flags-parity
+  tests/unit/completion-command.spec.ts,project,validate-completion-flag-regression
+  tests/unit/contracts-command.spec.ts,project,validate-contract-flag-parity-regression
+  tests/unit/pi-agent-extension.spec.ts,project,pi-validate-schema-and-arg-forwarding-regression
+  tests/unit/validate-command.spec.ts,project,lifecycle-cycle-diagnostics-and-severity-regressions
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/cli.integration.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,validate-cycle-diagnostics-contracts-completion-and-release-readiness-regressions
+  pnpm build,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,typescript-build-parity
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mohffrth-58cf71,test,passed,"2026-04-27T16:41:47.772Z","2026-04-27T16:44:01.301Z","2026-04-27T16:44:01.301Z",null,null,2,0,0,null,null,null
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,unreleased-note-for-validate-dependency-cycle-diagnostics
+close_reason: validate lifecycle dependency-cycle diagnostics implemented and verified with severity policy controls
 body: ""

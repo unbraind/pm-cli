@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `Decision` as a built-in item type with `decisions/` folder mapping, completion support, and stats coverage.
 - Added structured `close_through_update` error context with actionable `pm close` examples when users attempt `pm update --status closed`.
 - Added audit flag recommendations (`--allow-audit-update`, `--allow-audit-dep-update`, `--allow-audit-comment`) to ownership conflict error guidance as non-force alternatives.
+- Added lifecycle dependency-cycle diagnostics to `pm validate` with deterministic cycle counts/sample paths and configurable `--dependency-cycle-severity off|warn|error` policy.
 
 ### Changed
 - Bumped `pnpm/action-setup` from v5 to v6 in all CI/release/nightly workflows (pnpm v11 support).
