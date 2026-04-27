@@ -2,15 +2,19 @@ id: pm-o7be
 title: PM CLI 2026-04-06 audit findings remediation
 description: "Track and deliver six external audit findings for CLI UX, extension discoverability/contracts, and search output ergonomics."
 type: Epic
-status: open
+status: closed
 priority: 1
 tags[6]: 2026-04-06,agent-ux,extensions,external-audit,pm-cli,search
 created_at: "2026-04-06T09:48:14.630Z"
-updated_at: "2026-04-27T17:23:36.500Z"
+updated_at: "2026-04-27T18:14:01.717Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: "Governance backfill acceptance: item metadata is complete and remains consistent with existing work history."
-comments[18]{created_at,author,text}:
+resolution: fixed
+expected_result: All external-audit child remediations under pm-o7be close with linked code/test/doc evidence and no remaining open/in_progress/blocked child scope.
+actual_result: "All currently tracked pm-o7be child scope is closed (including final pm-wsui scaffold implementation); strict lifecycle validation is clean, and remaining metadata/resolution warnings are pre-existing repository-wide legacy items outside this epic lineage."
+fixed_version: target-vnext
+comments[21]{created_at,author,text}:
   "2026-04-06T09:48:14.630Z",codex-agent,"Duplicate-check evidence commands run: pm context --limit 10; pm search for each finding keyword; pm list-open --limit 20; pm list-in-progress --limit 20; pm list-blocked --limit 20. Net-new because no active item directly tracks this six-finding remediation scope."
   "2026-04-06T16:45:36.156Z",codex-agent,"13-issue remediation lineage bootstrap: reused and reopened as canonical external-audit parent after duplicate-check sweep (pm context --limit 10; pm search '2026-04-06 audit findings remediation' --limit 10; pm search 'comments-audit full-history latest row_count latest 0' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20). Planned child scopes under this epic: lifecycle CLI aliases/discoverability, runtime-aware unknown-command guidance, completion contract-driven parity/lazy tags, contracts command narrowing+projection modes, calendar full-period contract wording, and activity filtering/streaming enhancements."
   "2026-04-06T16:48:15.848Z",codex-agent,"Child task seeding for 13-issue remediation complete under this epic: pm-3www (lifecycle CLI aliases), pm-a01m (runtime-aware unknown-command examples), pm-xhot (contract-driven completion flags), pm-6qnu (lazy dynamic tag completion), pm-xlzl (breaking contracts --command narrowing plus projection modes), pm-euh6 (calendar full-period contract), pm-0g7a (activity filtering and stream mode)."
@@ -29,6 +33,9 @@ comments[18]{created_at,author,text}:
   "2026-04-26T19:58:59.043Z",codex-agent,"Verification evidence for this closeout pass: pnpm build; node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/unit/telemetry-runtime.spec.ts tests/integration/help-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/update-command.spec.ts tests/unit/delete-command.spec.ts tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/validate-command.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/calendar-command.spec.ts tests/unit/context-command.spec.ts (12 files, 318 tests, all passed); node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/sdk-index.spec.ts tests/unit/structure-exports.spec.ts (3 files, 38 tests, all passed)."
   "2026-04-27T17:21:40.305Z",codex-agent,"Hybrid continuation handoff 2026-04-27: closed and released child tasks pm-xhot, pm-xlzl, and pm-0nxf after fresh linked test reruns (157/157, 157/157, and 120/120 tests respectively) and backfilled resolution metadata for close-readiness. Started pm-a01m in_progress and implemented runtime-aware unknown-command remediation examples from active command registries; linked files/tests and logged evidence (targeted suite 52/52 passing)."
   "2026-04-27T17:23:36.500Z",codex-agent,"Final sweep 2026-04-27: pm validate --check-history-drift returned clean (0 drift); pm validate --check-files --scan-mode tracked-all returned clean (0 missing/orphaned linked paths). pm validate --check-resolution reports 10 legacy closed items outside this execution still missing resolution metadata (pm-3akm, pm-3s52, pm-6y6i, pm-71sj, pm-8qpc, pm-ewxk, pm-hb6x, pm-qrxb, pm-twtu, pm-urxb)."
+  "2026-04-27T17:32:05.213Z",codex-agent,"Execution kickoff 2026-04-27: bootstrap checks passed (npm install -g ., pm --version, node -v, pnpm -v, pnpm build). Planned child execution order: pm-a01m -> pm-h8j3 -> pm-kglq -> pm-bhmu -> pm-1etl -> pm-wsui. Baseline duplicate-check commands rerun: pm context --limit 10; pm search 'unknown-command runtime guidance' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20."
+  "2026-04-27T18:13:43.906Z",codex-agent,"Execution closeout 2026-04-27: child status sweep for parent pm-o7be returned open=0, in_progress=0, blocked=0, and closed includes pm-a01m/pm-h8j3/pm-kglq/pm-bhmu/pm-1etl/pm-wsui delivered in this wave."
+  "2026-04-27T18:13:47.371Z",codex-agent,"Validation closeout 2026-04-27: pm validate --check-metadata --check-resolution --check-lifecycle --check-stale-blockers --strict-exit reports only legacy repository-wide warnings (metadata missing acceptance/estimate on pm-z87r and 10 pre-existing closed items missing resolution fields), with lifecycle checks clean and no pm-o7be child blockers/open scope."
 notes[3]{created_at,author,text}:
   "2026-04-25T17:55:20.182Z",codex-agent,"Audit findings integrated: (1) validate workspace-root anchoring fix for nested cwd under tracker root (src/cli/commands/validate.ts + tests/unit/validate-command.spec.ts), (2) extension authoring docs now include explicit @unbrained/pm-cli SDK dependency setup (docs/EXTENSIONS.md)."
   "2026-04-25T20:04:32.830Z",codex-agent,"Post-fix validate status: remaining warnings are lifecycle policy advisories on long-running legacy items (active-terminal-parent and closure-like metadata), while history drift and command reference checks are clean."
@@ -45,8 +52,9 @@ files[8]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,templates-save arg emission filtering
   tests/integration/cli.integration.spec.ts,project,core parser override regression test
   tests/unit/pi-agent-extension.spec.ts,project,templates-save schema/arg parity test
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,dogfood regression bundle
+  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/search-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/context-command.spec.ts tests/unit/parse-utils.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,final child-wave regression suite including extension scaffold + contracts/completion parity
   node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,dogfood regression validation
 docs[6]{path,scope,note}:
   AGENTS.md,project,Agent workflow guidance parity for new commands
@@ -55,4 +63,5 @@ docs[6]{path,scope,note}:
   docs/EXTENSIONS.md,project,extension setup docs update
   PRD.md,project,Command contract and command-surface updates
   README.md,project,Remediation wave CLI behavior docs
+close_reason: All tracked child remediation scope under pm-o7be completed and documented; only unrelated legacy repository warnings remain.
 body: ""

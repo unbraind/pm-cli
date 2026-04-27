@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added structured `close_through_update` error context with actionable `pm close` examples when users attempt `pm update --status closed`.
 - Added audit flag recommendations (`--allow-audit-update`, `--allow-audit-dep-update`, `--allow-audit-comment`) to ownership conflict error guidance as non-force alternatives.
 - Added lifecycle dependency-cycle diagnostics to `pm validate` with deterministic cycle counts/sample paths and configurable `--dependency-cycle-severity off|warn|error` policy.
+- Added extension scaffold lifecycle action (`pm extension --init`, alias `--scaffold`) that generates idempotent starter extension projects with manifest, entrypoint, and quick-start guidance.
 
 ### Changed
 - Bumped `pnpm/action-setup` from v5 to v6 in all CI/release/nightly workflows (pnpm v11 support).
@@ -20,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated SDK/extension docs to explicitly cover `cli-contracts` public exports, capability contract constants, inline command flag schema capability requirements, and importer/exporter capability gating parity.
 - Clarified templates command name binding in help/docs (`pm templates save <name>`, `pm templates show <name>`), including explicit guidance that `--name` is unsupported.
 - Improved calendar usage guidance when `--full-period` is used with `--view agenda` by recommending `--from`/`--to` bounded windows in both runtime error text and help tips.
+- Improved calendar UX ergonomics by accepting `today` for `--date`/`--from`/`--to` boundaries and by adding explicit recurrence delimiter guidance for malformed `--event` CSV payloads.
+- Improved implicit Ollama hybrid search latency by bounding semantic timeout windows and emitting deterministic warning codes when auto-defaulted semantic execution falls back to keyword mode.
+- Improved extension doctor load diagnostics with targeted warning codes and remediation hints for missing `@unbrained/pm-cli` SDK dependency resolution and ESM module-mode mismatches.
 - Improved `pm update-many` no-op validation guidance by listing actionable mutation flag examples when users provide filters/`--dry-run` without any mutation flags.
 
 - Added `pm files discover <ID>` to scan item text for existing project/global file paths, report addable vs already linked candidates, and optionally add missing linked files with `--apply`.

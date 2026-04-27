@@ -552,6 +552,10 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
       pushOption(args, "--format", params.format);
       pushOption(args, "--policy", params.policy);
       return args;
+    case "extension-init":
+      args.push("extension", "--init", requireString(params.target, "target", action));
+      addExtensionScopeFlag(args, params);
+      return args;
     case "extension-install": {
       args.push("extension", "--install");
       addExtensionScopeFlag(args, params);

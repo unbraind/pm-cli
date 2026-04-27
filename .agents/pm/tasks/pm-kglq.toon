@@ -1,16 +1,16 @@
 id: pm-kglq
 title: "Follow-up: enhance calendar UX for agents and LLM parsing"
-description: Enhance pm calendar output for agent/LLM readability with deterministic summary breakdowns and richer markdown event details while preserving existing defaults.
+description: Enhance calendar UX by supporting --date today alias and adding recurrence delimiter guidance for malformed --event payloads used in calendar-centric planning flows.
 type: Task
-status: open
+status: closed
 priority: 1
 tags[4]: "area:calendar","area:output",code,pm-cli
 created_at: "2026-03-31T21:28:33.277Z"
-updated_at: "2026-04-26T20:01:29.356Z"
+updated_at: "2026-04-27T17:44:22.752Z"
 deadline: "2026-05-09T17:10:36.266Z"
 author: codex-agent
 estimated_minutes: 90
-acceptance_criteria: Calendar output keeps existing defaults/contracts but adds deterministic agent-friendly summary fields and richer markdown details (title/location/all-day/timezone/recurrence context) with tests covering parsing stability.
+acceptance_criteria: Calendar behavior preserves existing contracts while adding deterministic today alias support for date boundaries and actionable recurrence parse guidance; linked tests cover calendar/context and parse guidance regressions.
 definition_of_ready: Output precedence and override semantics are documented.
 order: 8
 goal: Agent planning ergonomics
@@ -30,7 +30,9 @@ reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Implement calendar markdown default and explicit output overrides (pm CLI + Node/pnpm toolchain).
 repro_steps: "Review linked files/tests/docs for pm-kglq (Follow-up: enhance calendar UX for agents and LLM parsing); run linked verification via pm test pm-kglq --run when available; compare observed behavior with acceptance criteria and capture results in comments."
-expected_result: Acceptance criteria for Implement calendar markdown default and explicit output overrides are satisfied with reproducible verification evidence.
+resolution: "Calendar date boundary parsing now accepts today alias for --date/--from/--to, and malformed --event recurrence CSV payloads emit explicit pipe-delimiter guidance."
+expected_result: Calendar workflows accept intuitive today anchors and provide actionable recurrence parse diagnostics without changing existing output contracts.
+actual_result: "Implemented today alias boundary resolver in calendar command, added event recurrence delimiter hint in CSV parse errors, and updated calendar docs/changelog with passing linked regressions."
 affected_version: vnext
 fixed_version: vnext
 component: core/output
@@ -40,7 +42,7 @@ dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-3aga,related,"2026-03-31T21:28:33.277Z",codex-agent,null
   pm-ezri,blocks,"2026-03-31T21:28:33.277Z",codex-agent,null
   pm-122q,parent,"2026-04-04T21:29:28.438Z",codex-agent,null
-comments[14]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-03-31T21:28:33.277Z",codex-agent,Task created for markdown-default calendar output handling.
   "2026-03-31T21:45:12.525Z",codex-agent,Added calendar-specific markdown default rendering with explicit --format and --json override precedence checks.
   "2026-03-31T21:45:24.102Z",codex-agent,"Evidence: output behavior tests passed including calendar output precedence."
@@ -55,25 +57,33 @@ comments[14]{created_at,author,text}:
   "2026-04-26T19:56:59.875Z",codex-agent,"Phase 4A/4B/4C audit evidence: verified machine-parseable json and toon outputs in agenda/day/week/month views, renamed rendered row type from CalendarEvent to CalendarRow in calendar/context command surfaces, and validated recurring/event/deadline/reminder rendering through dogfood command matrix."
   "2026-04-26T19:57:02.431Z",codex-agent,"Verification evidence: node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/unit/context-command.spec.ts (passes) and broader 12-file regression suite including calendar command pathways."
   "2026-04-26T19:57:04.569Z",codex-agent,"Outstanding follow-up retained in this item: better recurrence parse guidance and date alias ergonomics (for example today alias) remain open UX improvements beyond current acceptance checks."
-notes[1]{created_at,author,text}:
+  "2026-04-27T17:44:09.055Z",codex-agent,"Execution 2026-04-27: implemented calendar boundary support for --date/--from/--to value 'today' and added explicit recurrence delimiter guidance for malformed --event CSV entries. Verification: pm test pm-kglq --run --progress passed all linked suites (20 + 33 + 30 tests)."
+notes[2]{created_at,author,text}:
   "2026-03-31T21:28:33.277Z",codex-agent,Avoid changes to global TOON default behavior for existing commands.
-learnings[1]{created_at,author,text}:
+  "2026-04-27T17:44:12.194Z",codex-agent,Calendar date-boundary alias intentionally maps today to UTC day-start for deterministic agenda/day/week/month window calculations.
+learnings[2]{created_at,author,text}:
   "2026-04-01T20:25:12.157Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[6]{path,scope,note}:
+  "2026-04-27T17:44:15.321Z",codex-agent,"For CSV-style recurrence fields, error guidance should explicitly mention pipe-delimited multi-value syntax to prevent repeated malformed retries."
+files[8]{path,scope,note}:
   src/cli/commands/calendar.ts,project,markdown renderer and format resolution
   src/cli/commands/context.ts,project,context agenda now consumes CalendarRow type naming
   src/cli/main.ts,project,calendar output switch logic
   src/core/output/command-aware.ts,project,calendar summary highlights for agents
   tests/unit/calendar-command.spec.ts,project,output precedence tests
   tests/unit/context-command.spec.ts,project,context agenda regression coverage alongside calendar output checks
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  src/core/item/parse.ts,project,event CSV parse guidance now includes recurrence delimiter hint
+  tests/unit/parse-utils.spec.ts,project,coverage for recurrence delimiter guidance in malformed --event payloads
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/unit/context-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,calendar/context agent-format regression bundle
+  node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/unit/context-command.spec.ts tests/unit/parse-utils.spec.ts,null,project,3000,null,null,null,null,null,null,null,null,null,null,null,calendar today alias and recurrence parse guidance regression bundle
   node scripts/run-tests.mjs test -- tests/unit/output.spec.ts tests/unit/calendar-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,output behavior coverage
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-all-local-mnktqphw-natg7c,test-all,passed,"2026-04-04T21:08:02.324Z","2026-04-04T21:10:32.449Z","2026-04-04T21:10:32.449Z",null,null,1,0,0,1,1,null
+  test-local-mohhju1i-ykecx7,test,passed,"2026-04-27T17:42:03.126Z","2026-04-27T17:43:10.038Z","2026-04-27T17:43:10.038Z",null,null,3,0,0,null,null,null
 docs[4]{path,scope,note}:
   CHANGELOG.md,project,calendar ux release notes
   docs/ARCHITECTURE.md,project,calendar summary and markdown pipeline
   PRD.md,project,calendar command contract details
   README.md,project,calendar output mode documentation
+close_reason: "Acceptance criteria met: today alias and recurrence parse guidance delivered with linked regression evidence"
 body: "Task for command-specific output strategy and markdown renderer utility.\n\n2026-04-04 follow-up scope: continue calendar UX work for agent and LLM consumption under pm-122q by improving deterministic summaries and markdown fidelity without breaking TOON/JSON/flag compatibility."

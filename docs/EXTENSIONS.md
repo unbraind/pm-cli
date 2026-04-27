@@ -42,6 +42,7 @@ Top-level action and subcommand forms are flag-equivalent for lifecycle operatio
 
 Pass exactly one action flag:
 
+- `--init` (alias: `--scaffold`)
 - `--install`
 - `--uninstall`
 - `--explore`
@@ -87,6 +88,10 @@ If multiple extension manifests are discovered, install fails with deterministic
 ### Requested equivalence examples
 
 ```bash
+# Scaffold a starter extension project in your workspace
+pm extension --init ./my-extension
+pm extension scaffold ./my-extension
+
 # Bundled aliases shipped with pm-cli (not auto-installed)
 pm extension --install --project beads
 pm extension --install --project todos
@@ -97,7 +102,7 @@ pm extension --install --project .agents/pm/extensions/todos
 
 # Custom roots
 pm extension --install --project https://github.com/unbraind/pm-cli/tree/main/.custom/pm-extensions/my-ext
-pm extension --install --project github.com/unbraind/pm-cli/.custom/pm-extension/my-ext
+pm extension --install --project github.com/unbraind/pm-cli/.custom/pm-extensions/my-ext
 pm extension --install --project --gh unbraind/pm-cli/.custom/pm-extensions/my-ext
 
 # Single-extension repo or extension rooted at repository top-level
@@ -105,6 +110,8 @@ pm extension --install --project https://github.com/unbraind/pm-cli
 pm extension --install --project github.com/unbraind/pm-cli
 pm extension --install --project --gh unbraind/pm-cli
 ```
+
+Canonical public shorthand examples in this repository use `unbraind/pm-cli`. For private repositories, make sure git authentication is configured before using `--gh` or `github.com/...` selectors.
 
 ### Managed extension state
 
@@ -116,6 +123,7 @@ State records include deterministic source metadata (`local` or `github`), insta
 
 Lifecycle semantics:
 
+- Init/scaffold creates an idempotent starter extension project (`manifest.json`, `index.js`, `README.md`) and fails fast on conflicting pre-existing file contents.
 - Install copies/clones into the selected extension root, validates `manifest.json` and `entry`, updates managed state, and activates the extension in settings.
 - Uninstall removes extension files, removes managed-state entry, and clears settings references.
 - Activate/deactivate updates `settings.extensions.enabled[]` / `settings.extensions.disabled[]`.
@@ -620,6 +628,8 @@ api.hooks.onIndex((ctx) => {
 `pm health` probes all loaded extensions and surfaces:
 
 - `extension_load_failed:<layer>:<name>` — manifest parse or module import error
+- `extension_load_failed_sdk_dependency_missing:<name>` — doctor detected missing `@unbrained/pm-cli` dependency resolution in extension runtime imports
+- `extension_load_failed_module_mode_mismatch:<name>` — doctor detected ESM/CJS mode mismatch (for example missing `"type": "module"` for ESM-style entrypoints)
 - `extension_activate_failed:<layer>:<name>` — exception in `activate()`
 - `extension_entry_outside_extension:<layer>:<name>` — entry path escapes directory
 - `extension_capability_unknown:<layer>:<name>:<capability>:allowed=<csv>:suggested=<capability|none>` — unknown capability in manifest with inline guidance (including legacy alias replacements where applicable)

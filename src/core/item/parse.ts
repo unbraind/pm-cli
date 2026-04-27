@@ -118,11 +118,28 @@ function findKeyValueDelimiter(segment: string): number {
   return -1;
 }
 
+function buildOptionSpecificKvGuidance(raw: string, optionName: string): string {
+  if (optionName !== "--event") {
+    return "";
+  }
+  const lowered = raw.toLowerCase();
+  const recurrenceHint =
+    lowered.includes("recur_") || lowered.includes("recurrence")
+      ? ' Recurrence list values must stay in one field and use "|" delimiters (for example recur_by_weekday=mon|wed or recur_by_month_day=1|15).'
+      : "";
+  const weekdayAliasHint = lowered.includes("recur_byweekday")
+    ? " Use recur_by_weekday (with underscores) for weekday recurrence filters."
+    : "";
+  return `${recurrenceHint}${weekdayAliasHint}`;
+}
+
 function buildInvalidKvMessage(raw: string, optionName: string): string {
   const condensed = raw.replaceAll(/\s+/g, " ").trim();
   const preview = condensed.length > 160 ? `${condensed.slice(0, 157)}...` : condensed;
+  const optionSpecificGuidance = buildOptionSpecificKvGuidance(raw, optionName);
   return (
     `Invalid ${optionName} value "${preview}". Expected key=value entries separated by commas. ` +
+    optionSpecificGuidance +
     'Also accepts markdown-style key/value lines (for example "- path: README.md"). ' +
     `Use ${optionName} ${STDIN_TOKEN} to read piped stdin input.`
   );

@@ -3088,6 +3088,7 @@ program
   });
 
 type ExtensionSubcommandAction =
+  | "init"
   | "install"
   | "uninstall"
   | "explore"
@@ -3113,6 +3114,8 @@ function normalizeExtensionOptions(
     return undefined;
   };
   return {
+    init: isForcedAction("init") || readBoolean("init"),
+    scaffold: readBoolean("scaffold"),
     install: isForcedAction("install") || readBoolean("install"),
     uninstall: isForcedAction("uninstall") || readBoolean("uninstall"),
     explore: isForcedAction("explore") || readBoolean("explore"),
@@ -3172,7 +3175,9 @@ function addExtensionScopeOptions<T extends Command>(command: T): T {
 
 const extensionCommand = program
   .command("extension")
-  .argument("[target]", "Extension source (install) or extension name (adopt/activate/deactivate/uninstall)")
+  .argument("[target]", "Extension source/name or scaffold target path (for --init/--scaffold)")
+  .option("--init", "Generate a starter extension scaffold at target path")
+  .option("--scaffold", "Alias for --init")
   .option("--install", "Install extension from local path or GitHub source")
   .option("--uninstall", "Uninstall an installed extension")
   .option("--explore", "List discovered extensions in selected scope")
@@ -3198,6 +3203,16 @@ const extensionCommand = program
   .action(async (target: string | undefined, _options: Record<string, unknown>, command) => {
     await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command);
   });
+
+addExtensionScopeOptions(
+  extensionCommand
+    .command("init")
+    .alias("scaffold")
+    .argument("<target>", "Scaffold target directory path")
+    .description("Generate a starter extension scaffold with manifest and entrypoint."),
+).action(async (target: string, _options: Record<string, unknown>, command) => {
+  await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "init");
+});
 
 addExtensionScopeOptions(
   extensionCommand

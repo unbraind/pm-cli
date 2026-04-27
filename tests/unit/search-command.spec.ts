@@ -367,9 +367,58 @@ describe("runSearch", () => {
       expect(implicitResult.mode).toBe("keyword");
       expect(implicitResult.count).toBe(1);
       expect(implicitResult.items[0].item.id).toBe("pm-ollama-auto-fallback");
+      expect(implicitResult.warnings).toContain("search_implicit_semantic_fallback:connection:using_keyword_mode");
       await expect(runSearch("token", { mode: "hybrid" }, { path: "/tmp/pm-search" })).rejects.toThrow(
         "Embedding request execution failed",
       );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("labels implicit fallback warnings as timeout when semantic execution times out", async () => {
+    readSettingsMock.mockResolvedValue(makeDefaultSettings() as unknown as { id_prefix: string });
+    spawnSyncMock.mockImplementation((_command: string, args: string[]) => {
+      if (args[0] === "--version") {
+        return {
+          status: 0,
+          stdout: "ollama version is 0.0.0",
+          stderr: "",
+        };
+      }
+      if (args[0] === "list") {
+        return {
+          status: 0,
+          stdout: "NAME ID SIZE MODIFIED\nqwen3-embedding:0.6b abc 380 MB now\n",
+          stderr: "",
+        };
+      }
+      return {
+        status: 1,
+        stdout: "",
+        stderr: "",
+      };
+    });
+    const autoItem = makeFrontMatter({
+      id: "pm-ollama-timeout-fallback",
+      title: "token timeout",
+      description: "token timeout description",
+      tags: ["token"],
+    });
+    listAllFrontMatterMock.mockResolvedValue([autoItem]);
+    readFileMock.mockResolvedValue(serializeDocument(autoItem, "token body"));
+
+    const fetchMock = vi.fn(async () => {
+      throw new Error("Embedding request timed out after 8000ms");
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+    try {
+      const { runSearch } = await import("../../src/cli/commands/search.js");
+      const implicitResult = await runSearch("token", {}, { path: "/tmp/pm-search" });
+      expect(implicitResult.mode).toBe("keyword");
+      expect(implicitResult.count).toBe(1);
+      expect(implicitResult.warnings).toContain("search_implicit_semantic_fallback:timeout:using_keyword_mode");
     } finally {
       globalThis.fetch = originalFetch;
     }

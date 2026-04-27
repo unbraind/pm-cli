@@ -683,6 +683,13 @@ function includeEventInWindow(event: CalendarRow, start: string | undefined, end
   return true;
 }
 
+function resolveCalendarBoundaryInput(raw: string, nowValue: string, fieldLabel: "--date" | "--from" | "--to"): string {
+  if (raw.trim().toLowerCase() === "today") {
+    return startOfUtcDay(nowValue);
+  }
+  return resolveIsoOrRelative(raw, new Date(nowValue), fieldLabel);
+}
+
 function buildRange(
   view: CalendarView,
   options: CalendarOptions,
@@ -695,12 +702,12 @@ function buildRange(
   periodEnd?: string;
   fullPeriod: boolean;
 } {
-  const anchor = options.date ? resolveIsoOrRelative(options.date, new Date(nowValue), "--date") : nowValue;
+  const anchor = options.date ? resolveCalendarBoundaryInput(options.date, nowValue, "--date") : nowValue;
   const includePast = options.past === true;
   const fullPeriodRequested = options.fullPeriod === true;
 
-  const from = options.from ? resolveIsoOrRelative(options.from, new Date(nowValue), "--from") : undefined;
-  const to = options.to ? resolveIsoOrRelative(options.to, new Date(nowValue), "--to") : undefined;
+  const from = options.from ? resolveCalendarBoundaryInput(options.from, nowValue, "--from") : undefined;
+  const to = options.to ? resolveCalendarBoundaryInput(options.to, nowValue, "--to") : undefined;
   if (from && to && compareTimestampStrings(from, to) >= 0) {
     throw new PmCliError("Calendar --from must be before --to", EXIT_CODE.USAGE);
   }

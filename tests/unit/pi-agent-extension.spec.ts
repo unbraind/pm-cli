@@ -455,6 +455,7 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(() => buildPmCliArgs({ action: "extension-install" })).toThrow(
       'Action "extension-install" requires "target" or "github".',
     );
+    expect(() => buildPmCliArgs({ action: "extension-init" })).toThrow('Action "extension-init" requires "target".');
     expect(() => buildPmCliArgs({ action: "extension-uninstall" })).toThrow(
       'Action "extension-uninstall" requires "target".',
     );
@@ -559,6 +560,10 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(schemaProperty(extensionInstallSchema, "scope").enum).toEqual(["project", "global"]);
     expect(schemaProperty(extensionInstallSchema, "github").type).toBe("string");
     expect(schemaProperty(extensionInstallSchema, "ref").type).toBe("string");
+
+    const extensionInitSchema = schemaForAction(tool.parameters as Record<string, unknown>, "extension-init");
+    expect(extensionInitSchema.required).toEqual(expect.arrayContaining(["action", "target"]));
+    expect(schemaProperty(extensionInitSchema, "scope").enum).toEqual(["project", "global"]);
 
     const extensionActivateSchema = schemaForAction(tool.parameters as Record<string, unknown>, "extension-activate");
     expect(extensionActivateSchema.required).toEqual(expect.arrayContaining(["action", "target"]));
@@ -963,6 +968,14 @@ describe("Pi agent extension wrapper for pm", () => {
         "--allow-audit-dep-update",
       ]),
     );
+
+    expect(
+      buildPmCliArgs({
+        action: "extension-init",
+        target: "./my-extension",
+        scope: "project",
+      }),
+    ).toEqual(["--json", "extension", "--init", "./my-extension", "--project"]);
 
     expect(
       buildPmCliArgs({

@@ -1,7 +1,7 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   renderCalendarMarkdown,
   resolveCalendarOutputFormat,
@@ -817,6 +817,19 @@ describe("calendar command module", () => {
       expect(futureDayWithoutPast.range.start).toBe("2099-01-01T00:00:00.000Z");
       expect(futureDayWithoutPast.range.end).toBe("2099-01-02T00:00:00.000Z");
       expect(futureDayWithoutPast.range.full_period).toBe(false);
+
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2031-06-15T18:45:00.000Z"));
+      try {
+        const todayAliasDay = await runCalendar(
+          { view: "day", date: "today", past: true },
+          { path: context.pmPath },
+        );
+        expect(todayAliasDay.range.start).toBe("2031-06-15T00:00:00.000Z");
+        expect(todayAliasDay.range.end).toBe("2031-06-16T00:00:00.000Z");
+      } finally {
+        vi.useRealTimers();
+      }
 
       const dayWithPast = await runCalendar(
         { view: "day", date: "2000-01-01T00:00:00.000Z", past: true },

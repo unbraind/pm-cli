@@ -2,23 +2,47 @@ id: pm-wsui
 title: Add extension project scaffold command or template
 description: No extension template or scaffold exists. Extension authors must read docs and bundled extensions to understand the structure.
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: "audit:2026-04-26",dx,extensions,pm-cli,sdk
 created_at: "2026-04-26T14:52:29.628Z"
-updated_at: "2026-04-26T20:01:50.039Z"
+updated_at: "2026-04-27T18:12:27.155Z"
 deadline: "2026-05-10T14:52:29.628Z"
 author: audit-agent
 estimated_minutes: 90
 acceptance_criteria: "pm extension --init creates a working starter extension with manifest, entry point, and example capability."
 parent: pm-o7be
-comments[2]{created_at,author,text}:
+resolution: fixed
+expected_result: "pm extension --init/--scaffold generates a working starter extension project with manifest, entrypoint, example command capability, and deterministic guidance."
+actual_result: "Implemented extension init/scaffold action with idempotent scaffold generation (manifest/index/README), contract/completion wiring, and regression coverage across extension + contracts surfaces."
+fixed_version: target-vnext
+comments[4]{created_at,author,text}:
   "2026-04-26T19:58:06.880Z",codex-agent,"Audit mitigation delivered: added docs/examples/starter-extension with manifest, entry point, and full capability walkthrough to provide deterministic copyable scaffold for extension authors."
   "2026-04-26T19:58:09.965Z",codex-agent,Item remains open because CLI-native scaffold command (for example pm extension --init/--scaffold) is still not implemented; current deliverable is documentation/template only.
-files[3]{path,scope,note}:
+  "2026-04-27T18:11:16.397Z",codex-agent,"author=codex-agent,created_at=now,text=Implemented native scaffold lifecycle action with --init and --scaffold aliases, idempotent file generation, conflict-safe behavior, and actionable next-step output."
+  "2026-04-27T18:11:35.079Z",codex-agent,"Implemented native scaffold lifecycle action with --init/--scaffold aliases, idempotent file generation, conflict-safe behavior, and actionable next-step output."
+notes[2]{created_at,author,text}:
+  "2026-04-27T18:11:19.290Z",codex-agent,"author=codex-agent,created_at=now,text=Scaffold entrypoint uses CommonJS module.exports for zero-config runtime compatibility without requiring package type/module wiring."
+  "2026-04-27T18:11:38.228Z",codex-agent,Scaffold entrypoint uses CommonJS module.exports for zero-config runtime compatibility without requiring package type/module wiring.
+learnings[2]{created_at,author,text}:
+  "2026-04-27T18:11:22.254Z",codex-agent,"author=codex-agent,created_at=now,text=For retry-safe CLI scaffolds, treat matching existing files as unchanged and only fail when file contents diverge; this preserves idempotency while preventing silent clobbering."
+  "2026-04-27T18:11:41.046Z",codex-agent,"For retry-safe CLI scaffolds, treat matching existing files as unchanged and only fail when file contents diverge to preserve idempotency without silent clobbering."
+files[9]{path,scope,note}:
+  .pi/extensions/pm-cli/index.ts,project,map extension-init PI tool action to pm extension --init args
   docs/examples/starter-extension/index.js,project,reference entry implementing all capabilities
   docs/examples/starter-extension/manifest.json,project,reference manifest for extension bootstrapping
   docs/examples/starter-extension/README.md,project,starter template added as immediate scaffold substitute
-docs[1]{path,scope,note}:
+  src/cli/commands/completion.ts,project,"include scaffold action/flags in bash,zsh,fish completion payloads"
+  src/cli/commands/extension.ts,project,"add init/scaffold action,idempotent scaffold writer,conflict-safe reruns"
+  src/cli/help-content.ts,project,refresh extension help examples/tips with scaffold command
+  src/cli/main.ts,project,wire extension init/scaffold flags and subcommand alias
+  src/sdk/cli-contracts.ts,project,add extension-init action and scaffold flag contracts
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/search-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/context-command.spec.ts tests/unit/parse-utils.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,extension scaffold plus contracts/completion/context/search/calendar regression suite
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,record extension scaffold lifecycle action addition
+  docs/EXTENSIONS.md,project,document init/scaffold action semantics and idempotent scaffold behavior
   docs/SDK.md,project,sdk quick start linked to starter template
+  README.md,project,document extension scaffold init/scaffold lifecycle action and quickstart examples
+close_reason: Native extension scaffold command implemented and validated with regression coverage.
 body: "pm extension --init or pm extension --scaffold should generate a starter extension with manifest.json, index.ts, and example registration. This would dramatically improve the extension authoring experience."

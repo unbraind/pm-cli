@@ -1,31 +1,46 @@
 id: pm-1etl
 title: Clarify or harden SDK import resolution for local extension installs
-description: Dogfood extension install from local path failed to load when extension imported @unbrained/pm-cli/sdk without its own dependency install.
+description: Close runtime diagnostics gap for local extension SDK imports by surfacing targeted doctor warning codes/remediation for missing @unbrained/pm-cli dependency resolution and ESM module-mode mismatches.
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: extensions,external-audit,pm-cli,sdk
 created_at: "2026-04-25T23:06:27.563Z"
-updated_at: "2026-04-26T20:02:40.225Z"
+updated_at: "2026-04-27T17:55:23.143Z"
 author: audit-agent
 estimated_minutes: 120
-acceptance_criteria: Local extension install path provides deterministic guidance (or runtime support) for SDK import resolution and doctor output points directly to remediation.
+acceptance_criteria: "Doctor/install diagnostics provide deterministic actionable guidance for local extension SDK import failures (dependency and module-mode mismatch cases), with regression coverage proving warning-code/remediation behavior."
 parent: pm-o7be
-comments[6]{created_at,author,text}:
+resolution: Extension doctor now emits targeted warning codes and remediation hints for missing @unbrained/pm-cli dependency resolution and ESM module-mode mismatches during extension load failures.
+expected_result: Local extension SDK import failures produce deterministic diagnostics that point directly to dependency install and package module-mode remediation.
+actual_result: "Doctor diagnostics now classify local load failures into sdk_dependency_missing and module_mode_mismatch warning codes, and docs/runtime guidance were updated with passing regression coverage."
+comments[7]{created_at,author,text}:
   "2026-04-25T23:06:27.563Z",audit-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'audit extension sdk calendar docs' --mode keyword --limit 10; pm list-open --fields id,title,type,parent,status,priority --limit 50; pm list-in-progress --fields id,title,type,parent,status,priority --limit 50. Net-new because active items cover extension runtime probe/docs parity but not local install SDK module-resolution behavior."
   "2026-04-25T23:07:38.813Z",audit-agent,"Repro evidence from sandbox audit: local extension install succeeds, but doctor reports extension_load_failed when extension entry imports @unbrained/pm-cli/sdk and source package has no installed dependency. Runtime error: Cannot find package '@unbrained/pm-cli' imported from installed extension index.js."
   "2026-04-26T00:31:11.473Z",codex-agent,"Follow-up evidence from 2026-04-26 audit: local extension imports of @unbrained/pm-cli/sdk require ESM package metadata type module in addition to dependency installation. Without type module, extension install appears successful but runtime command path remains unavailable with only a Node module warning. Recommend install-time or doctor diagnostics that explicitly call out missing ESM package type alongside dependency guidance."
   "2026-04-26T08:42:53.552Z",codex-agent,Latest sandbox run confirms @unbrained/pm-cli/sdk imports work when extension package metadata and module setup are correct. Remaining ergonomics gap is actionable diagnostics when extension appears installed but runtime command remains unavailable due packaging mismatch; doctor guidance can be more direct.
   "2026-04-26T19:58:29.442Z",codex-agent,"Documentation hardening landed via docs/SDK.md and starter-extension package/README examples, reducing ambiguity around extension dependency setup for @unbrained/pm-cli/sdk imports."
   "2026-04-26T19:58:45.877Z",codex-agent,"Issue remains open for runtime diagnostics parity: extension doctor/install paths should emit clearer actionable errors when package metadata/module mode mismatch causes installed commands to remain unavailable."
-notes[1]{created_at,author,text}:
+  "2026-04-27T17:55:10.536Z",codex-agent,"Runtime diagnostics hardening 2026-04-27: extension doctor now classifies common local SDK import failures with warning codes extension_load_failed_sdk_dependency_missing and extension_load_failed_module_mode_mismatch, plus targeted remediation guidance. Verification: pm test pm-1etl --run --progress passed linked suite (6 files, 134 tests)."
+notes[2]{created_at,author,text}:
   "2026-04-25T23:07:42.346Z",audit-agent,"Potential remediation paths: (a) install-time dependency validation/warning for local sources, (b) extension loader resolution fallback to pm CLI SDK for explicit compatibility mode, or (c) tighter doctor remediation hints with concrete npm install guidance."
-files[4]{path,scope,note}:
+  "2026-04-27T17:55:13.591Z",codex-agent,Diagnostics intentionally focus on doctor warning-code/remediation parity so extension setup failures remain actionable without requiring forceful install-time mutations.
+learnings[1]{created_at,author,text}:
+  "2026-04-27T17:55:16.828Z",codex-agent,Classifying extension load-failure patterns into stable warning codes enables machine-readable triage and clearer operator remediation for local SDK onboarding.
+files[5]{path,scope,note}:
   docs/examples/starter-extension/package.json,project,reference dependency wiring for @unbrained/pm-cli sdk imports
   docs/SDK.md,project,sdk quick-start now clarifies public sdk contract usage
   src/cli/commands/extension.ts,project,extension install/manage runtime behavior
   src/core/extensions/loader.ts,project,module load and import resolution path
-docs[2]{path,scope,note}:
+  tests/unit/extension-command.spec.ts,project,doctor load-failure regression covering sdk-dependency and module-mode diagnostics
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/extension-loader.spec.ts tests/unit/search-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/context-command.spec.ts tests/unit/parse-utils.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,extension diagnostics hardening plus related search/calendar regressions
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mohhyvlk-ub225d,test,passed,"2026-04-27T17:54:20.562Z","2026-04-27T17:54:51.896Z","2026-04-27T17:54:51.896Z",null,null,1,0,0,null,null,null
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,unreleased extension diagnostics hardening entry
   docs/examples/starter-extension/README.md,project,local starter guidance for extension packaging
   docs/EXTENSIONS.md,project,sdk dependency guidance
+  README.md,project,extension doctor diagnostics guidance for local SDK setup
+close_reason: "Acceptance criteria met: deterministic doctor diagnostics now cover local SDK dependency and module-mode mismatch failures"
 body: "During sandbox extension lifecycle audit, pm extension doctor reported extension_load_failed for local installs because Node could not resolve @unbrained/pm-cli from extension directory. Need deterministic UX: either improve install/runtime behavior or strengthen diagnostics/docs to make dependency expectations explicit."

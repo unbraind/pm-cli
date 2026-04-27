@@ -78,6 +78,8 @@ const DEFAULT_COMPACT_SEARCH_FIELDS = [
 const LONG_QUERY_TOKEN_THRESHOLD = 4;
 const LONG_QUERY_TITLE_EXACT_BONUS = 120;
 const LONG_QUERY_PHRASE_MULTIPLIER = 6;
+const IMPLICIT_AUTO_HYBRID_EMBEDDING_TIMEOUT_MS = 8_000;
+const IMPLICIT_AUTO_HYBRID_VECTOR_TIMEOUT_MS = 8_000;
 
 export interface SearchHit {
   item: ItemFrontMatter;
@@ -142,6 +144,36 @@ function isTerminal(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): 
 interface SearchModeContext {
   hasProvider: boolean;
   hasVectorStore: boolean;
+}
+
+type ImplicitSemanticFallbackReason = "timeout" | "connection" | "error";
+
+function classifyImplicitSemanticFallbackReason(error: unknown): ImplicitSemanticFallbackReason {
+  const message = (error instanceof Error ? error.message : String(error)).toLowerCase();
+  if (message.includes("timed out") || message.includes("timeout")) {
+    return "timeout";
+  }
+  if (
+    message.includes("econnrefused") ||
+    message.includes("connection refused") ||
+    message.includes("connect ") ||
+    message.includes("enotfound") ||
+    message.includes("eai_again")
+  ) {
+    return "connection";
+  }
+  return "error";
+}
+
+function buildImplicitSemanticFallbackWarning(error: unknown): string {
+  const reason = classifyImplicitSemanticFallbackReason(error);
+  if (reason === "timeout") {
+    return "search_implicit_semantic_fallback:timeout:using_keyword_mode";
+  }
+  if (reason === "connection") {
+    return "search_implicit_semantic_fallback:connection:using_keyword_mode";
+  }
+  return "search_implicit_semantic_fallback:error:using_keyword_mode";
 }
 
 function parseMode(raw: string | undefined, context: SearchModeContext): SearchMode {
@@ -876,11 +908,15 @@ interface SemanticQueryContext {
   vectorStore: VectorStoreConfig | null;
   extensionVectorAdapter: ExtensionVectorAdapter | null;
   settings: PmSettings;
+  embeddingTimeoutMs?: number;
+  vectorQueryTimeoutMs?: number;
 }
 
 async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promise<SearchHit[]> {
   const semanticLimit = context.limit ?? context.maxResults;
-  const queryVectors = await executeEmbeddingRequest(context.provider, context.query.trim());
+  const embeddingOptions = context.embeddingTimeoutMs !== undefined ? { timeout_ms: context.embeddingTimeoutMs } : {};
+  const vectorQueryOptions = context.vectorQueryTimeoutMs !== undefined ? { timeout_ms: context.vectorQueryTimeoutMs } : {};
+  const queryVectors = await executeEmbeddingRequest(context.provider, context.query.trim(), embeddingOptions);
   const semanticVector = queryVectors[0];
   let vectorHits: VectorQueryHit[];
   if (context.extensionVectorAdapter?.query) {
@@ -899,10 +935,10 @@ async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promi
           EXIT_CODE.GENERIC_FAILURE,
         );
       }
-      vectorHits = await executeVectorQuery(context.vectorStore, semanticVector, semanticLimit);
+      vectorHits = await executeVectorQuery(context.vectorStore, semanticVector, semanticLimit, vectorQueryOptions);
     }
   } else if (context.vectorStore) {
-    vectorHits = await executeVectorQuery(context.vectorStore, semanticVector, semanticLimit);
+    vectorHits = await executeVectorQuery(context.vectorStore, semanticVector, semanticLimit, vectorQueryOptions);
   } else {
     throw new PmCliError(
       "Semantic search requires either a configured vector store or an extension vector adapter query handler",
@@ -1108,6 +1144,8 @@ export async function runSearch(query: string, options: SearchOptions, global: G
         }
       }
       if (hits === keywordHits) {
+        const implicitAutoHybridMode =
+          runtimeDefaultsResolution.auto_ollama_defaults_applied && !modeWasExplicit && effectiveMode === "hybrid";
         const { provider, vectorStore } = requireSemanticDependencies(
           effectiveMode,
           providerResolution,
@@ -1126,6 +1164,12 @@ export async function runSearch(query: string, options: SearchOptions, global: G
           vectorStore,
           extensionVectorAdapter,
           settings,
+          ...(implicitAutoHybridMode
+            ? {
+                embeddingTimeoutMs: IMPLICIT_AUTO_HYBRID_EMBEDDING_TIMEOUT_MS,
+                vectorQueryTimeoutMs: IMPLICIT_AUTO_HYBRID_VECTOR_TIMEOUT_MS,
+              }
+            : {}),
         });
       }
     } catch (error: unknown) {
@@ -1136,6 +1180,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
       }
       effectiveMode = "keyword";
       hits = keywordHits;
+      warnings.push(buildImplicitSemanticFallbackWarning(error));
     }
   }
 

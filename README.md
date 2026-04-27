@@ -221,6 +221,8 @@ pm create \
   - vector store: local LanceDB path `.agents/pm/search/lancedb/`
 - Explicit user/project configuration always takes precedence over auto-defaults.
 - If implicit auto-defaulted semantic execution fails at runtime, `pm search` falls back to keyword mode to avoid breaking existing users.
+- Implicit hybrid auto-default execution now uses bounded semantic timeouts and adds deterministic fallback warnings (for example `search_implicit_semantic_fallback:timeout:using_keyword_mode`) when switching to keyword mode.
+- For strict low-latency loops, use `--mode keyword` explicitly.
 - Disable this behavior with `PM_DISABLE_OLLAMA_AUTO_DEFAULTS=1`.
 
 To (re)build semantic artifacts explicitly:
@@ -900,12 +902,14 @@ Use `pm extension` to install, adopt, inspect, manage, activate, deactivate, and
 
 Lifecycle actions (exactly one per call):
 
+- `--init` (alias: `--scaffold`)
 - `--install`
 - `--uninstall`
 - `--explore`
 - `--manage`
 - `--doctor`
 - `--adopt`
+- `--adopt-all`
 - `--activate`
 - `--deactivate`
 
@@ -926,6 +930,10 @@ Install source selectors:
 Requested source equivalence examples:
 
 ```bash
+# Scaffold a starter extension project (manifest + entrypoint + README)
+pm extension --init ./my-extension
+pm extension scaffold ./my-extension
+
 # Bundled managed aliases shipped with pm-cli (not auto-installed)
 pm extension --install --project beads
 pm extension --install --project todos
@@ -945,8 +953,11 @@ pm extension --install --project github.com/unbraind/pm-cli
 pm extension --install --project --gh unbraind/pm-cli
 ```
 
+Canonical public shorthand examples in this repository use `unbraind/pm-cli`. For private repositories, ensure your git credentials can access the source before using `--gh` or `github.com/...` selectors.
+
 Activation and health behavior:
 
+- `pm extension --init`/`--scaffold` creates an idempotent starter extension scaffold (manifest, entrypoint, README) and reports deterministic next steps.
 - Install auto-activates the extension in selected scope settings.
 - Deactivate/activate toggle `extensions.disabled[]`/`extensions.enabled[]` in settings.
 - `pm extension --explore` lists discovered extensions and compatibility/runtime status fields (`active` compatibility alias, `enabled`, `runtime_active`, `activation_status`).
@@ -954,6 +965,7 @@ Activation and health behavior:
 - `pm extension --adopt-all` bulk-adopts all unmanaged extensions in the selected scope without reinstalling files.
 - `pm extension --manage` refreshes GitHub-managed update metadata, persists it to scope-local `.managed-extensions.json`, and includes explicit per-extension `update_check_status`/`update_check_reason` fields (`checked`, `failed`, `skipped_unmanaged`, `skipped_non_github`, `not_checked`) plus triage status totals/remediation hints and update-health coverage diagnostics (`update_health_coverage`, `warning_codes`). `--runtime-probe` opt-in runs doctor-equivalent runtime activation checks for manage output parity. `--fix-managed-state` can adopt unmanaged extensions before update checks.
 - `pm extension --doctor` (or `pm extension doctor`) provides consolidated extension diagnostics with normalized warning codes, canonical load roots, active-vs-loaded consistency diagnostics, update-health coverage signals, remediation hints, optional strict exit gating (`--strict-exit`, alias `--fail-on-warn`), machine-usable blocking indicators (`blocking_failure_count`, `has_blocking_failures`), and optional deep output via `--detail deep`. `--trace` (deep mode) includes actionable registration traces and expected-schema hints for activation failures. `--fix-managed-state` can adopt unmanaged extensions before diagnostics.
+- Doctor load diagnostics include targeted guidance codes for common local setup failures: `extension_load_failed_sdk_dependency_missing` (missing `@unbrained/pm-cli` dependency) and `extension_load_failed_module_mode_mismatch` (ESM entry without `"type": "module"` or `.mjs` mode alignment).
 - Subcommand invocation forms (`pm extension manage ...`, `pm extension doctor ...`) honor the same action flags (`--runtime-probe`, `--detail`, `--trace`, etc.) as top-level action-flag forms.
 - `pm health` includes managed extension state diagnostics plus a condensed extension triage block for quick load/activation/migration issue triage across project/global roots, including `extension_update_health_partial_coverage` only when unmanaged loaded extensions are action-required for update-check coverage.
 - Unknown manifest capabilities emit `extension_capability_unknown` diagnostics with inline allowed-capability lists, nearest-match suggestions, and legacy alias guidance (`migration`/`validation` -> `schema`). Health/doctor payloads include machine-readable capability contract metadata (`details.capability_contract`) and parsed guidance entries (`details.capability_guidance`).
@@ -1053,14 +1065,15 @@ pm update pm-a1b2 --clear-events
 - Past toggles and range controls:
   - `--past` includes past events in bounded views
   - `--full-period` keeps day/week/month windows anchored to full period boundaries (without now-clipping)
-  - `--from` / `--to` supported on `agenda`
-  - `--date` anchors day/week/month calculations
+  - `--from` / `--to` supported on `agenda` (accept `today` as a day-start alias)
+  - `--date` anchors day/week/month calculations (accepts `today` as a day-start alias)
 - Shared filters: `--type`, `--tag`, `--priority`, `--status`, `--assignee`, `--assignee-filter assigned|unassigned`, `--sprint`, `--release`, `--limit`
 
 Examples:
 
 ```bash
 pm calendar
+pm calendar --view day --date today --past
 pm cal --view week --date +2d --past
 pm calendar --view week --date 2026-04-06 --full-period --include deadlines,events
 pm calendar --view agenda --from 2026-04-01T00:00:00.000Z --to 2026-04-08T00:00:00.000Z --assignee alex

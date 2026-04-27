@@ -29,6 +29,12 @@ describe("core/item/parse", () => {
     );
   });
 
+  it("adds recurrence delimiter guidance for malformed --event csv entries", () => {
+    expect(() =>
+      parseCsvKv("start=2026-04-01T09:00:00.000Z,recur_freq=weekly,recur_by_weekday=mon,tue", "--event"),
+    ).toThrow('Recurrence list values must stay in one field and use "|" delimiters');
+  });
+
   it("accepts trailing commas without creating empty key-value entries", () => {
     expect(parseCsvKv("path=README.md,", "--file")).toEqual({
       path: "README.md",

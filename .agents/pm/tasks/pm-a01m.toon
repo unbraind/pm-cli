@@ -2,24 +2,29 @@ id: pm-a01m
 title: Generate unknown-command remediation examples from runtime registry
 description: Replace static unknown-command help examples with runtime-aware suggestions derived from active core and extension command registries.
 type: Task
-status: in_progress
+status: closed
 priority: 1
 tags[4]: agent-ux,error,external-audit,pm-cli
 created_at: "2026-04-06T16:47:44.962Z"
-updated_at: "2026-04-27T17:23:25.509Z"
-assignee: codex-agent
+updated_at: "2026-04-27T17:34:37.855Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: Unknown-command guidance examples are generated from active runtime command registry and do not reference unavailable extension commands.
 parent: pm-o7be
-comments[3]{created_at,author,text}:
+resolution: Runtime unknown-command examples and next steps are derived from active command registries and validated in text/json guidance paths.
+expected_result: Unknown-command guidance remains runtime-aware and deterministic for CLI text and JSON envelopes.
+actual_result: Runtime guidance wiring is complete and linked regression suites are passing.
+comments[4]{created_at,author,text}:
   "2026-04-06T16:47:44.962Z",codex-agent,Duplicate-check evidence used pm context pm search and open or in-progress lists. Net-new scope under pm-o7be for runtime-aware unknown command remediation examples.
   "2026-04-27T17:20:43.942Z",codex-agent,"Implementation 2026-04-27: replaced static unknown-command examples with runtime-aware remediation generated from active command registries. main.ts now computes command-path suggestions from core + extension command trees and passes guidance context into commander error formatting for text/JSON paths (including bootstrap help JSON unknown-command branch). error-guidance.ts now accepts unknownCommandExamples/unknownCommandNextSteps context and uses it for unknown_command envelopes."
   "2026-04-27T17:23:25.509Z",codex-agent,"Verification update 2026-04-27: pm test pm-a01m --run --progress passed linked suite (3 files, 52 tests). Test run persisted under sandbox schema context with no mismatches."
-notes[1]{created_at,author,text}:
+  "2026-04-27T17:34:17.776Z",codex-agent,"Evidence 2026-04-27: pm test pm-a01m --run --progress passed linked runtime guidance suite (3 files, 52 tests). Unknown-command remediation examples and next-steps are derived from active runtime command registries rather than static fallback examples."
+notes[2]{created_at,author,text}:
   "2026-04-27T17:20:47.660Z",codex-agent,"Validation 2026-04-27: node scripts/run-tests.mjs test -- tests/unit/error-guidance.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts passed (3 files, 52 tests)."
-learnings[1]{created_at,author,text}:
+  "2026-04-27T17:34:21.029Z",codex-agent,"When extension commands are active, unknown-command suggestions now reflect that live runtime surface; when absent, guidance remains deterministic and safe."
+learnings[2]{created_at,author,text}:
   "2026-04-27T17:20:51.714Z",codex-agent,Unknown-command guidance should be derived from current runtime command registration rather than static examples so extension-enabled and no-extension runtimes both produce accurate remediation steps.
+  "2026-04-27T17:34:24.785Z",codex-agent,Treat unknown-command examples as runtime-generated data so help/error remediation does not drift from active core + extension command registries.
 files[4]{path,scope,note}:
   src/cli/error-guidance.ts,project,unknown-command guidance now accepts runtime examples and next steps
   src/cli/main.ts,project,runtime command registry suggestions wired into commander unknown-command formatting
@@ -27,6 +32,12 @@ files[4]{path,scope,note}:
   tests/unit/error-guidance.spec.ts,project,unit coverage for runtime unknown-command guidance context plumbing
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/error-guidance.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,runtime unknown-command guidance regression suite
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mohgu82v-ndrgnm,test,passed,"2026-04-27T17:22:21.403Z","2026-04-27T17:23:15.175Z","2026-04-27T17:23:15.175Z",null,null,1,0,0,null,null,null
+  test-local-mohh89u9-7h048v,test,passed,"2026-04-27T17:33:27.306Z","2026-04-27T17:34:10.641Z","2026-04-27T17:34:10.641Z",null,null,1,0,0,null,null,null
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,null
+  PRD.md,project,null
+  README.md,project,null
+close_reason: Acceptance criteria met with runtime-aware guidance and linked tests passing
 body: "Implementation checklist:\\n- Build runtime command registry snapshots from active core + extension command paths.\\n- Generate unknown-command remediation examples dynamically from current registry (no static beads/todos examples).\\n- Wire guidance context into commander error formatter for both text and JSON envelopes.\\n- Add/adjust unit and integration coverage for unknown-command guidance examples.\\n- Verify via targeted help/error/runtime tests and record PM evidence."

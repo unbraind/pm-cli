@@ -94,6 +94,52 @@ describe("extension command runtime", () => {
     });
   });
 
+  it("scaffolds starter extension files via init/scaffold aliases with idempotent reruns", async () => {
+    await withTempPmPath(async (context) => {
+      const scaffoldPath = path.join(context.tempRoot, "starter-ext");
+      const scaffold = await runExtension(scaffoldPath, { init: true, project: true }, { path: context.pmPath });
+      expect(scaffold.action).toBe("init");
+      expect(scaffold.details).toMatchObject({
+        extension: {
+          name: "starter-ext",
+          command: "starter-ext ping",
+        },
+        target_path: scaffoldPath,
+        created_directory: true,
+      });
+
+      const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
+      expect(manifest).toMatchObject({
+        name: "starter-ext",
+        entry: "./index.js",
+        capabilities: ["commands"],
+      });
+      const entry = await readFile(path.join(scaffoldPath, "index.js"), "utf8");
+      expect(entry).toContain("module.exports");
+      expect(entry).toContain('name: "starter-ext ping"');
+
+      const rerun = await runExtension(scaffoldPath, { scaffold: true, project: true }, { path: context.pmPath });
+      const rerunFiles = (rerun.details as { files?: Array<{ status: string }> }).files ?? [];
+      expect(rerunFiles.length).toBeGreaterThan(0);
+      expect(rerunFiles.every((entry) => entry.status === "unchanged")).toBe(true);
+    });
+  });
+
+  it("reports usage guidance for missing init target and conflicts for divergent scaffold files", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(runExtension("init", {}, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+
+      const conflictPath = path.join(context.tempRoot, "starter-conflict");
+      await mkdir(conflictPath, { recursive: true });
+      await writeFile(path.join(conflictPath, "manifest.json"), '{"name":"conflict-ext","entry":"./main.js"}\n', "utf8");
+      await expect(runExtension(conflictPath, { init: true, project: true }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.CONFLICT,
+      });
+    });
+  });
+
   it("installs bundled beads and todos aliases via extension install", async () => {
     await withTempPmPath(async (context) => {
       const beadsInstall = await runExtension("beads", { install: true, project: true }, { path: context.pmPath });
@@ -995,16 +1041,26 @@ describe("extension command runtime", () => {
       await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
 
       const installedEntryPath = path.join(context.pmPath, "extensions", "doctor-broken-load-ext", "index.js");
-      await writeFile(installedEntryPath, "throw new Error('load boom');\n", "utf8");
+      await writeFile(
+        installedEntryPath,
+        "throw new Error(\"Cannot find package '@unbrained/pm-cli' imported from doctor-broken-load-ext/index.js. Cannot use import statement outside a module.\");\n",
+        "utf8",
+      );
 
       const doctor = await runExtension(undefined, { doctor: true, project: true, detail: "deep" }, { path: context.pmPath });
       const summary = doctor.details.summary as {
         load_failure_count: number;
         blocking_failure_count: number;
+        warning_codes: string[];
+        remediation: string[];
       };
 
       expect(summary.load_failure_count).toBeGreaterThanOrEqual(1);
       expect(summary.blocking_failure_count).toBeGreaterThanOrEqual(1);
+      expect(summary.warning_codes).toContain("extension_load_failed_sdk_dependency_missing");
+      expect(summary.warning_codes).toContain("extension_load_failed_module_mode_mismatch");
+      expect(summary.remediation.join(" ")).toContain("@unbrained/pm-cli");
+      expect(summary.remediation.join(" ")).toContain('"type": "module"');
     });
   });
 

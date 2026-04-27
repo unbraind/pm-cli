@@ -147,6 +147,7 @@ export const PM_CORE_COMMAND_NAMES = [
 export const PM_TOOL_ACTIONS = [
   "init",
   "config",
+  "extension-init",
   "extension-install",
   "extension-uninstall",
   "extension-explore",
@@ -624,6 +625,8 @@ export const CONFIG_FLAG_CONTRACTS: CliFlagContract[] = [
 ];
 
 export const EXTENSION_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--init" },
+  { flag: "--scaffold" },
   { flag: "--install" },
   { flag: "--uninstall" },
   { flag: "--explore" },
@@ -1734,6 +1737,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
     required: ["scope", "configAction"],
     optional: ["key", "criterion", "clearCriteria", "format", "policy"],
   },
+  "extension-init": { required: ["target"], optional: ["scope"] },
   "extension-install": {
     optional: ["target", "github", "scope", "ref"],
     anyOfRequired: [["target"], ["github"]],

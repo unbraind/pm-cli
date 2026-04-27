@@ -124,6 +124,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why:
       "Installs, explores, manages, diagnoses, adopts (single or bulk), and activates/deactivates custom extensions across project or global scope.",
     examples: [
+      "pm extension init ./my-extension",
       "pm extension install beads --project",
       "pm extension install todos --global",
       "pm extension install .agents/pm/extensions/sample --project",
@@ -141,7 +142,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm extension --install beads --project",
     ],
     tips: [
-      "Prefer explicit subcommands (install/uninstall/explore/manage/doctor/adopt/adopt-all/activate/deactivate) for discoverability.",
+      "Prefer explicit subcommands (init/scaffold/install/uninstall/explore/manage/doctor/adopt/adopt-all/activate/deactivate) for discoverability.",
       "Legacy lifecycle flags remain supported as backward-compatible aliases.",
       "Bundled aliases beads and todos resolve to package-shipped extension sources.",
       "Use --gh/--github shorthand for GitHub sources and --ref to pin a branch, tag, or ref.",

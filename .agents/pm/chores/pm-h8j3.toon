@@ -1,23 +1,37 @@
 id: pm-h8j3
 title: Track extension GitHub shorthand source documentation parity
-description: Dogfood run hit repository-not-found for unbrained/pm-cli shorthand; documentation/source examples need verification.
+description: Verify extension --gh shorthand examples point to canonical reachable repository and document private-source access requirements.
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[3]: "area:docs","area:extensions","audit:2026-04-25"
 created_at: "2026-04-25T20:01:17.484Z"
-updated_at: "2026-04-25T20:03:48.289Z"
+updated_at: "2026-04-27T17:37:17.686Z"
 deadline: "2026-05-02T20:01:17.484Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 30
-acceptance_criteria: All extension --gh examples reference a reachable canonical repository or explicitly document private-source requirements.
+acceptance_criteria: All extension --gh examples use canonical reachable repository references and docs explicitly state that private repositories require authenticated git access.
 parent: pm-o7be
-comments[2]{created_at,author,text}:
+resolution: Extension GitHub shorthand documentation now consistently uses canonical unbraind/pm-cli references and includes private-source authentication guidance.
+expected_result: Operators see only canonical reachable shorthand examples and know private repos require authenticated git access.
+actual_result: README and docs/EXTENSIONS now include canonical shorthand examples plus explicit private-repo auth guidance; linked extension regression suite passed.
+comments[3]{created_at,author,text}:
   "2026-04-25T20:01:17.484Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'extension github shorthand repository not found' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because no active docs task covered this specific shorthand source parity check."
   "2026-04-25T20:03:48.288Z",codex-agent,"Observed failure evidence during dogfood: pm extension --install --gh unbrained/pm-cli/.agents/pm/extensions/todos --project --ref main -> repository not found. Follow-up needed to verify canonical public shorthand examples."
-files[1]{path,scope,note}:
+  "2026-04-27T17:36:53.673Z",codex-agent,"Documentation parity 2026-04-27: extension source examples now consistently reference canonical public shorthand unbraind/pm-cli, and README + docs/EXTENSIONS explicitly call out git-auth requirements for private repositories. Verification: pm test pm-h8j3 --run --progress passed linked regression suite (2 files, 45 tests)."
+notes[1]{created_at,author,text}:
+  "2026-04-27T17:36:56.651Z",codex-agent,"Validated canonical repository source against origin remote (https://github.com/unbraind/pm-cli.git) before normalizing shorthand examples."
+learnings[1]{created_at,author,text}:
+  "2026-04-27T17:36:59.767Z",codex-agent,"When documenting --gh shorthand selectors, pair canonical public examples with explicit private-repository auth guidance to reduce repository-not-found confusion in audits."
+files[2]{path,scope,note}:
   docs/EXTENSIONS.md,project,github shorthand docs target
-docs[1]{path,scope,note}:
+  README.md,project,canonical GitHub shorthand guidance for public/private sources
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-command-github.spec.ts tests/unit/extension-command.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,extension github shorthand parsing and guidance regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mohhbl1y-f8uqj4,test,passed,"2026-04-27T17:36:26.757Z","2026-04-27T17:36:45.142Z","2026-04-27T17:36:45.142Z",null,null,1,0,0,null,null,null
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,canonical extension source equivalence examples
   README.md,project,extension install examples
+close_reason: "Acceptance criteria met: canonical shorthand docs verified and private-source requirements documented with passing extension regressions"
 body: "During extension install --gh tests, clone of https://github.com/unbrained/pm-cli.git returned repository not found. Validate canonical GitHub owner/repo references across docs, examples, and error guidance."

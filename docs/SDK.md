@@ -8,7 +8,7 @@ Primary import:
 import { defineExtension } from "@unbrained/pm-cli/sdk";
 ```
 
-Use this document for SDK/API contracts. Use `docs/EXTENSIONS.md` for full runtime lifecycle behavior.
+Use this document for SDK/API contracts. Use `docs/EXTENSIONS.md` for full runtime lifecycle behavior and `pm extension --init ./my-extension` for starter scaffold generation.
 
 ## Import Surfaces
 

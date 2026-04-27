@@ -276,7 +276,7 @@ describe("contracts command runtime", () => {
         ],
       },
       { command: "gc", flags: ["--dry-run", "--scope"] },
-      { command: "extension", flags: ["--install", "--doctor", "--runtime-probe", "--strict-exit"] },
+      { command: "extension", flags: ["--init", "--install", "--doctor", "--runtime-probe", "--strict-exit"] },
       { command: "test-runs", flags: ["--status", "--limit", "--stream", "--tail", "--force", "--author"] },
       {
         command: "update-many",
