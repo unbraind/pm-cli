@@ -9,3 +9,4 @@ coverage/
 .agents/pm/search/
 .agents/pm/checkpoints/
 .agents/pm/runtime/telemetry/
+scripts/prod
