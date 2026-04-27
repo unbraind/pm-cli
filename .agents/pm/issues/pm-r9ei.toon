@@ -2,22 +2,45 @@ id: pm-r9ei
 title: Fix Grafana RabbitMQ queue panel metric selector mismatch
 description: "Telemetry overview dashboard queue panels query rabbitmq_queue_messages{queue=\"pm.telemetry.events\"} and rabbitmq_queue_messages_unacked{queue=\"pm.telemetry.events\"}, but current Prometheus series on the remote stack have no queue label, so the panel query returns empty data despite non-zero queue depth."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: external-audit,grafana,observability,pm-cli,prometheus,telemetry
 created_at: "2026-04-26T09:56:16.564Z"
-updated_at: "2026-04-26T13:16:13.794Z"
-assignee: codex-agent
+updated_at: "2026-04-27T19:45:21.965Z"
 author: codex-agent
 estimated_minutes: 90
 acceptance_criteria: Grafana queue panels render live queue depth and unacked values in production by aligning panel queries with actual metric labels (or by exposing the queue label in exporter config).
 parent: pm-lnq3
+resolution: Grafana queue panel PromQL now uses job-scoped aggregates that match the RabbitMQ exporter label model on this stack.
+expected_result: Queue depth and unacked panels evaluate successfully without relying on absent queue labels.
+actual_result: "Dashboard expressions now use sum(rabbitmq_queue_messages{job=\"rabbitmq\"}) and sum(rabbitmq_queue_messages_unacked{job=\"rabbitmq\"}); Prometheus returns non-empty vectors and Grafana remains healthy."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-lnq3,parent,"2026-04-26T09:56:16.564Z",codex-agent,null
-comments[3]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-04-26T09:56:16.564Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'Grafana rabbitmq queue dashboard metric label' --limit 10; pm search 'queue label rabbitmq_queue_messages' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because no open item currently tracks dashboard query label mismatch between Prometheus RabbitMQ series and Grafana queue panel selectors."
   "2026-04-26T09:57:02.619Z",codex-agent,"Remote evidence 2026-04-26: Prometheus query rabbitmq_queue_messages returns value 3 and rabbitmq_queue_messages_unacked returns value 3, but both series are exported without queue label in metric metadata. Dashboard expressions filtering queue=pm.telemetry.events therefore return empty vectors and hide active queue backlog."
   "2026-04-26T13:16:13.794Z",cursor-agent,"Fresh remote audit evidence 2026-04-26: Prometheus query rabbitmq_queue_messages{queue=\"pm.telemetry.events\"} returned an empty vector, while unfiltered rabbitmq_queue_messages and rabbitmq_queue_messages_unacked returned non-zero values without a queue label. Grafana/API/Prometheus were healthy, so the dashboard panel issue remains a selector-label mismatch."
-docs[1]{path,scope,note}:
+  "2026-04-27T19:27:48.607Z",codex-agent,"Wave kickoff 2026-04-27: baseline captured via pm context/list-open telemetry snapshot; item remains in_progress under codex-agent. Next steps: inspect live Prometheus label model, compare Grafana queue panel queries, choose fix strategy from stack evidence, and verify queue depth panels render non-empty vectors after patch. Evidence logs linked under scripts/prod/telemetry baseline and pm-r9ei execution log."
+  "2026-04-27T19:29:26.780Z",codex-agent,"Remote baseline 2026-04-27: Caddy host mappings are enabled for pm.unbrained.dev->:13000 and pm-cli.unbrained.dev->:18080. RabbitMQ queue shows live backlog (5/5), but Prometheus instant queries rabbitmq_queue_messages, rabbitmq_queue_messages_unacked, and rabbitmq_queue_messages{queue=pm.telemetry.events} all return empty vectors, matching dashboard panel blank-state symptoms. Detailed evidence captured in scripts/prod/telemetry/2026-04-27-backlog-wave-baseline.md and scripts/prod/telemetry/2026-04-27-pm-r9ei-execution-log.md."
+  "2026-04-27T19:38:54.416Z",codex-agent,"Implementation 2026-04-27: inspected live dashboard JSON and confirmed queue panel expressions in /home/steve/container/pm-cli/grafana/dashboards/pm-cli-telemetry-overview.json. Applied query hardening to explicit job-scoped aggregates: sum(rabbitmq_queue_messages{job=\"rabbitmq\"}) and sum(rabbitmq_queue_messages_unacked{job=\"rabbitmq\"}), then restarted grafana service to reload provisioning."
+  "2026-04-27T19:38:57.283Z",codex-agent,"Verification 2026-04-27: Prometheus now returns non-empty vectors for the patched expressions (scalar vector values present), filtered queue-label query remains empty as expected for this exporter profile, dashboard JSON reflects patched expressions, and Grafana health endpoint stays database=ok."
+  "2026-04-27T19:44:40.758Z",codex-agent,"Final evidence 2026-04-27: Prometheus query sum(rabbitmq_queue_messages{job=\"rabbitmq\"}) returns a non-empty vector and queue depth panel expressions in dashboard JSON match that label model; Grafana API health remains database=ok."
+notes[2]{created_at,author,text}:
+  "2026-04-27T19:29:32.022Z",codex-agent,"Fix strategy gate: inspect live Grafana dashboard JSON first, then patch query expressions to match actual exported RabbitMQ series labels unless exporter-level label restoration is clearly lower-risk."
+  "2026-04-27T19:39:00.791Z",codex-agent,"Root cause is label-model mismatch: RabbitMQ exporter emits queue gauges with instance/job labels in this profile, not queue label selectors, so panel queries should aggregate over job-scoped series."
+learnings[1]{created_at,author,text}:
+  "2026-04-27T19:39:04.640Z",codex-agent,"For host-level diagnostics on this stack, use Prometheus published port 19090 (not container-internal 9090) to avoid false-negative query conclusions during dashboard triage."
+files[2]{path,scope,note}:
+  /home/steve/container/pm-cli/grafana/dashboards/pm-cli-telemetry-overview.json,project,remote Grafana dashboard queue panel query fix
+  scripts/prod/telemetry/2026-04-27-pm-cli-telemetry-overview.json,project,local snapshot of patched Grafana dashboard JSON
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "ssh -o BatchMode=yes 'curl -fsS \"http://127.0.0.1:19090/api/v1/query?query=rabbitmq_queue_messages\" && curl -fsS \"http://127.0.0.1:19090/api/v1/query?query=rabbitmq_queue_messages_unacked\"'",null,project,180,null,null,null,null,null,null,null,null,null,null,null,promql queue metric availability smoke
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mohlp2dy-ew2asp,test,failed,"2026-04-27T19:39:11.580Z","2026-04-27T19:39:12.598Z","2026-04-27T19:39:12.598Z",null,null,0,1,0,null,null,null
+  test-local-mohlpwx1-kyik2u,test,passed,"2026-04-27T19:39:51.148Z","2026-04-27T19:39:52.165Z","2026-04-27T19:39:52.165Z",null,null,1,0,0,null,null,null
+docs[3]{path,scope,note}:
   .agents/pm/search/operations/REMOTE_TELEMETRY_STACK.md,project,Remote telemetry stack runbook used for panel diagnostics
+  scripts/prod/telemetry/2026-04-27-backlog-wave-baseline.md,project,telemetry wave kickoff baseline
+  scripts/prod/telemetry/2026-04-27-pm-r9ei-execution-log.md,project,grafana queue panel execution log
+close_reason: Grafana queue panel queries aligned with rabbitmq exporter labels and verified via PromQL + health checks.
 body: ""

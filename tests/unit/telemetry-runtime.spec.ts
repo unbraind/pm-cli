@@ -13,6 +13,7 @@ const originalOtelServiceName = process.env.OTEL_SERVICE_NAME;
 const originalTelemetryDisabled = process.env.PM_TELEMETRY_DISABLED;
 const originalTelemetryOtelDisabled = process.env.PM_TELEMETRY_OTEL_DISABLED;
 const originalTelemetrySourceContext = process.env.PM_TELEMETRY_SOURCE_CONTEXT;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 function telemetryQueuePath(globalRoot: string): string {
   return path.join(globalRoot, "runtime", "telemetry", "events.jsonl");
@@ -457,6 +458,84 @@ describe("core/telemetry/runtime", () => {
       expect(settings.telemetry.installation_id.length).toBeGreaterThan(0);
       expect(settings.telemetry.enabled).toBe(true);
       expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  it("prunes stale queue entries based on retention_days during flush", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      const settings = await readSettings(globalRoot);
+      settings.telemetry.endpoint = "https://pm-cli.unbrained.dev/v1/events";
+      settings.telemetry.retention_days = 1;
+      await writeSettings(globalRoot, settings, "test:set_retention_days");
+
+      const staleEventId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+      const freshEventId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+      const queueEntries = [
+        {
+          attempts: 0,
+          event: {
+            schema_version: 1,
+            event_id: staleEventId,
+            event_type: "command_start",
+            occurred_at: new Date(Date.now() - 2 * DAY_MS).toISOString(),
+            installation_id: "44444444-4444-4444-8444-444444444444",
+            session_id: "55555555-5555-4555-8555-555555555555",
+            command: "stale-event",
+            payload: { capture_level: "minimal" },
+          },
+        },
+        {
+          attempts: 0,
+          event: {
+            schema_version: 1,
+            event_id: freshEventId,
+            event_type: "command_start",
+            occurred_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+            installation_id: "66666666-6666-4666-8666-666666666666",
+            session_id: "77777777-7777-4777-8777-777777777777",
+            command: "fresh-event",
+            payload: { capture_level: "minimal" },
+          },
+        },
+      ];
+
+      await fs.mkdir(path.join(globalRoot, "runtime", "telemetry"), { recursive: true });
+      await fs.writeFile(
+        telemetryQueuePath(globalRoot),
+        `${queueEntries.map((entry) => JSON.stringify(entry)).join("\n")}\n`,
+        "utf8",
+      );
+
+      const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      const active = await startTelemetryCommand({
+        command: "list-open",
+        pm_version: "9.9.9-test",
+        args: [],
+        options: {},
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+      expect(active).not.toBeNull();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      const payload = JSON.parse(String(init.body ?? "{}")) as {
+        events: Array<{ event_id: string }>;
+      };
+      const sentEventIds = payload.events.map((event) => event.event_id);
+      expect(sentEventIds).toContain(freshEventId);
+      expect(sentEventIds).not.toContain(staleEventId);
+
+      const queueRaw = await fs.readFile(telemetryQueuePath(globalRoot), "utf8");
+      expect(queueRaw.trim()).toBe("");
     });
   });
 

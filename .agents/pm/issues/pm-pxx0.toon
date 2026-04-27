@@ -2,14 +2,38 @@ id: pm-pxx0
 title: Implement local telemetry queue retention_days TTL cleanup
 description: retention_days exists in telemetry settings but no cleanup logic prunes old queue entries or events from disk.
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[3]: "audit:2026-04-26",pm-cli,telemetry
 created_at: "2026-04-26T14:52:27.856Z"
-updated_at: "2026-04-26T14:52:27.856Z"
+updated_at: "2026-04-27T19:45:25.713Z"
 deadline: "2026-05-10T14:52:27.856Z"
 author: audit-agent
 estimated_minutes: 30
 acceptance_criteria: Stale queue entries older than retention_days are pruned during flush cycles.
 parent: pm-lnq3
+resolution: Local telemetry runtime now prunes stale queue entries older than telemetry.retention_days during flush cycles.
+expected_result: Queue entries older than retention_days are removed while fresh entries continue normal export/retry flow.
+actual_result: "flushQueue prunes stale entries pre-send, rewrites queue with retained entries, and regression tests confirm stale entries are omitted from export while targeted suites pass."
+comments[4]{created_at,author,text}:
+  "2026-04-27T19:27:52.897Z",codex-agent,"Wave kickoff 2026-04-27: baseline captured via pm context/list-open telemetry snapshot; item claimed and moved to in_progress. After remote telemetry fixes, local runtime update will implement retention_days TTL pruning during flush in src/core/telemetry/runtime.ts with focused unit coverage and architecture docs alignment. Evidence logs linked under scripts/prod/telemetry baseline and pm-pxx0 execution log."
+  "2026-04-27T19:43:04.342Z",codex-agent,"Implementation 2026-04-27: updated src/core/telemetry/runtime.ts to prune stale queue entries by telemetry.retention_days before due/retry processing. flushQueue now rewrites queue after pruning and reports post-prune queue size; telemetry command context carries retention_days so start/finish flush cycles apply deterministic retention behavior."
+  "2026-04-27T19:43:07.208Z",codex-agent,"Verification 2026-04-27: pnpm build passed and node scripts/run-tests.mjs test -- tests/unit/telemetry-runtime.spec.ts passed (9 tests), including new stale-entry pruning regression that confirms aged queue events are excluded from export payload and removed from local queue during flush."
+  "2026-04-27T19:44:44.239Z",codex-agent,"Final evidence 2026-04-27: local targeted suites passed (telemetry runtime + health command, 34 tests). retention_days flush pruning regression confirms stale queue entries are excluded from export and removed from queue rewrite path."
+notes[1]{created_at,author,text}:
+  "2026-04-27T19:43:10.782Z",codex-agent,Local retention pruning is intentionally timestamp-based on event.occurred_at and only removes entries older than retention cutoff; invalid/missing timestamps are preserved to avoid accidental data loss from malformed local rows.
+learnings[1]{created_at,author,text}:
+  "2026-04-27T19:43:14.280Z",codex-agent,Retention controls should apply where backlog forms (local JSONL queue) in addition to downstream storage cleanup; this keeps disk growth bounded even when remote delivery is delayed.
+files[2]{path,scope,note}:
+  src/core/telemetry/runtime.ts,project,local queue retention_days pruning during flush
+  tests/unit/telemetry-runtime.spec.ts,project,retention_days queue pruning regression test
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/telemetry-runtime.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,telemetry runtime retention-days regression suite
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mohlugzm-x5eez9,test,passed,"2026-04-27T19:43:17.647Z","2026-04-27T19:43:24.802Z","2026-04-27T19:43:24.802Z",null,null,1,0,0,null,null,null
+docs[3]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,telemetry retention semantics updated for local and remote paths
+  scripts/prod/telemetry/2026-04-27-backlog-wave-baseline.md,project,telemetry wave kickoff baseline
+  scripts/prod/telemetry/2026-04-27-pm-pxx0-execution-log.md,project,local retention TTL execution log
+close_reason: Local telemetry queue retention_days pruning implemented with regression tests and docs updates.
 body: The events.jsonl queue file grows unbounded if the remote endpoint is unreachable. retention_days should be used to prune stale entries and cap disk usage.

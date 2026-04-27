@@ -13,6 +13,7 @@ const TELEMETRY_FLUSH_BATCH_SIZE = 100;
 const TELEMETRY_MAX_RETRY_DELAY_MS = 3_600_000;
 const TELEMETRY_RETRY_BASE_DELAY_MS = 30_000;
 const TELEMETRY_HTTP_TIMEOUT_MS = 2_500;
+const MILLISECONDS_PER_DAY = 86_400_000;
 const OTEL_TRACES_ENDPOINT_ENV = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT";
 const OTEL_BASE_ENDPOINT_ENV = "OTEL_EXPORTER_OTLP_ENDPOINT";
 const OTEL_SERVICE_NAME_ENV = "OTEL_SERVICE_NAME";
@@ -98,6 +99,7 @@ export interface ActiveTelemetryCommand {
   pm_root_hash: string;
   cwd_hash: string;
   endpoint: string;
+  retention_days: number;
   global_pm_root: string;
   capture_level: TelemetryCaptureLevel;
   otel_traces_endpoint?: string;
@@ -592,7 +594,9 @@ function buildCommandFinishPayload(params: {
   };
 }
 
-async function ensureInstallationId(globalPmRoot: string): Promise<{ installationId: string; endpoint: string }> {
+async function ensureInstallationId(
+  globalPmRoot: string,
+): Promise<{ installationId: string; endpoint: string; retentionDays: number }> {
   const settings = await readSettings(globalPmRoot);
   let changed = false;
   if (settings.telemetry.installation_id.trim().length === 0) {
@@ -605,6 +609,7 @@ async function ensureInstallationId(globalPmRoot: string): Promise<{ installatio
   return {
     installationId: settings.telemetry.installation_id,
     endpoint: settings.telemetry.endpoint,
+    retentionDays: Math.max(1, Math.trunc(settings.telemetry.retention_days)),
   };
 }
 
@@ -657,12 +662,46 @@ function isDueForRetry(entry: QueuedTelemetryEvent): boolean {
   return dueAtMs <= Date.now();
 }
 
+function retentionCutoffMs(retentionDays: number): number {
+  const normalizedDays = Number.isFinite(retentionDays) ? Math.max(1, Math.trunc(retentionDays)) : 1;
+  return Date.now() - normalizedDays * MILLISECONDS_PER_DAY;
+}
+
+function isExpiredQueueEntry(entry: QueuedTelemetryEvent, cutoffMs: number): boolean {
+  const occurredAt = entry.event?.occurred_at;
+  if (typeof occurredAt !== "string" || occurredAt.trim().length === 0) {
+    return false;
+  }
+  const occurredAtMs = Date.parse(occurredAt);
+  if (Number.isNaN(occurredAtMs)) {
+    return false;
+  }
+  return occurredAtMs < cutoffMs;
+}
+
+function pruneExpiredQueueEntries(
+  entries: QueuedTelemetryEvent[],
+  retentionDays: number,
+): { entries: QueuedTelemetryEvent[]; prunedCount: number } {
+  const cutoffMs = retentionCutoffMs(retentionDays);
+  const retained: QueuedTelemetryEvent[] = [];
+  let prunedCount = 0;
+  for (const entry of entries) {
+    if (isExpiredQueueEntry(entry, cutoffMs)) {
+      prunedCount += 1;
+      continue;
+    }
+    retained.push(entry);
+  }
+  return { entries: retained, prunedCount };
+}
+
 async function rewriteQueue(globalPmRoot: string, entries: QueuedTelemetryEvent[]): Promise<void> {
   const serialized = entries.map((entry) => JSON.stringify(entry)).join("\n");
   await writeFileAtomic(queuePath(globalPmRoot), serialized.length > 0 ? `${serialized}\n` : "");
 }
 
-async function flushQueue(globalPmRoot: string, endpoint: string): Promise<void> {
+async function flushQueue(globalPmRoot: string, endpoint: string, retentionDays: number): Promise<void> {
   const normalizedEndpoint = endpoint.trim();
   if (normalizedEndpoint.length === 0) {
     return;
@@ -683,11 +722,25 @@ async function flushQueue(globalPmRoot: string, endpoint: string): Promise<void>
     });
     return;
   }
-  const dueEntries = queueEntries.filter((entry) => isDueForRetry(entry)).slice(0, TELEMETRY_FLUSH_BATCH_SIZE);
-  if (dueEntries.length === 0) {
+  const { entries: retainedEntries, prunedCount } = pruneExpiredQueueEntries(queueEntries, retentionDays);
+  if (retainedEntries.length === 0) {
+    if (prunedCount > 0) {
+      await rewriteQueue(globalPmRoot, []);
+    }
     await writeRuntimeState(globalPmRoot, {
       endpoint: normalizedEndpoint,
-      queue_entries: queueEntries.length,
+      queue_entries: 0,
+    });
+    return;
+  }
+  const dueEntries = retainedEntries.filter((entry) => isDueForRetry(entry)).slice(0, TELEMETRY_FLUSH_BATCH_SIZE);
+  if (dueEntries.length === 0) {
+    if (prunedCount > 0) {
+      await rewriteQueue(globalPmRoot, retainedEntries);
+    }
+    await writeRuntimeState(globalPmRoot, {
+      endpoint: normalizedEndpoint,
+      queue_entries: retainedEntries.length,
     });
     return;
   }
@@ -709,7 +762,7 @@ async function flushQueue(globalPmRoot: string, endpoint: string): Promise<void>
     if (!response.ok) {
       throw new Error(`telemetry_flush_http_${response.status}`);
     }
-    const remaining = queueEntries.filter((entry) => !dueIds.has(entry.event.event_id));
+    const remaining = retainedEntries.filter((entry) => !dueIds.has(entry.event.event_id));
     await rewriteQueue(globalPmRoot, remaining);
     await writeRuntimeState(globalPmRoot, {
       endpoint: normalizedEndpoint,
@@ -720,7 +773,7 @@ async function flushQueue(globalPmRoot: string, endpoint: string): Promise<void>
       last_failed_flush_error: undefined,
     });
   } catch (error: unknown) {
-    const retried = queueEntries.map((entry) => {
+    const retried = retainedEntries.map((entry) => {
       if (!dueIds.has(entry.event.event_id)) {
         return entry;
       }
@@ -760,7 +813,7 @@ export async function startTelemetryCommand(context: TelemetryCommandContext): P
       return null;
     }
     const captureLevel = normalizeCaptureLevel(settings.telemetry.capture_level);
-    const { installationId, endpoint } = await ensureInstallationId(globalPmRoot);
+    const { installationId, endpoint, retentionDays } = await ensureInstallationId(globalPmRoot);
     const pmVersion = normalizePmVersion(context.pm_version);
     const sourceContext = resolveTelemetrySourceContext(context.global);
     const pmRootHash = hashWithInstallationId(installationId, context.pm_root);
@@ -786,7 +839,7 @@ export async function startTelemetryCommand(context: TelemetryCommandContext): P
       }),
     };
     await enqueueTelemetryEvent(globalPmRoot, event);
-    await flushQueue(globalPmRoot, endpoint);
+    await flushQueue(globalPmRoot, endpoint, retentionDays);
     return {
       started_at: occurredAt,
       started_at_ms: Date.now(),
@@ -798,6 +851,7 @@ export async function startTelemetryCommand(context: TelemetryCommandContext): P
       pm_root_hash: pmRootHash,
       cwd_hash: cwdHash,
       endpoint,
+      retention_days: retentionDays,
       global_pm_root: globalPmRoot,
       capture_level: captureLevel,
       otel_traces_endpoint: otelTracesEndpoint ?? undefined,
@@ -841,7 +895,7 @@ export async function finishTelemetryCommand(
       }),
     };
     await enqueueTelemetryEvent(activeCommand.global_pm_root, event);
-    await flushQueue(activeCommand.global_pm_root, activeCommand.endpoint);
+    await flushQueue(activeCommand.global_pm_root, activeCommand.endpoint, activeCommand.retention_days);
     await exportLocalOtelSpan(activeCommand, outcome, finishedAt, durationMs);
   } catch {
     // Telemetry must never block command execution.
