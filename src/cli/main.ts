@@ -2871,11 +2871,13 @@ function resolveCliVersion(): string {
   }
 }
 
+const CLI_VERSION = resolveCliVersion();
+
 const program = new Command();
 program
   .name("pm")
   .description("Universal, flexible, extensible, agent-optimized project management CLI for any project or programming language.")
-  .version(resolveCliVersion())
+  .version(CLI_VERSION)
   .showHelpAfterError(false)
   .allowExcessArguments(false)
   .allowUnknownOption(false)
@@ -2911,6 +2913,7 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
   if (!runtimeExtensions) {
     activeTelemetryCommandContext = await startTelemetryCommand({
       command: commandPath,
+      pm_version: CLI_VERSION,
       args: commandArgs,
       options: commandOptions,
       global: globalOptions,
@@ -2999,6 +3002,7 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
   });
   activeTelemetryCommandContext = await startTelemetryCommand({
     command: commandPath,
+    pm_version: CLI_VERSION,
     args: commandArgs,
     options: commandOptions,
     global: globalOptions,

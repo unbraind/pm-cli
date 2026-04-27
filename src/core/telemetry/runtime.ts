@@ -20,6 +20,10 @@ const PM_TELEMETRY_DISABLED_ENV = "PM_TELEMETRY_DISABLED";
 const PM_TELEMETRY_DISABLED_VALUES = new Set(["1", "true", "yes", "on"]);
 const PM_TELEMETRY_OTEL_DISABLED_ENV = "PM_TELEMETRY_OTEL_DISABLED";
 const PM_TELEMETRY_OTEL_DISABLED_VALUES = new Set(["1", "true", "yes", "on"]);
+const PM_TELEMETRY_SOURCE_CONTEXT_ENV = "PM_TELEMETRY_SOURCE_CONTEXT";
+const PM_TELEMETRY_SOURCE_CONTEXT_VALUES = ["user", "automation", "test", "dogfood", "audit_smoke"] as const;
+const PM_TELEMETRY_SOURCE_CONTEXT_SET = new Set<string>(PM_TELEMETRY_SOURCE_CONTEXT_VALUES);
+const BOOLEAN_TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
 const PROCESS_SESSION_ID = crypto.randomUUID();
 
 const SENSITIVE_KEYWORDS = [
@@ -75,11 +79,21 @@ interface TelemetryRuntimeState {
 }
 
 type TelemetryCaptureLevel = "minimal" | "redacted" | "max";
+type TelemetrySourceContext = (typeof PM_TELEMETRY_SOURCE_CONTEXT_VALUES)[number];
+type TelemetrySourceContextSource = "inferred" | "env_override";
+
+interface ResolvedTelemetrySourceContext {
+  source_context: TelemetrySourceContext;
+  source_context_source: TelemetrySourceContextSource;
+}
 
 export interface ActiveTelemetryCommand {
   started_at: string;
   started_at_ms: number;
   command: string;
+  pm_version: string;
+  source_context: TelemetrySourceContext;
+  source_context_source: TelemetrySourceContextSource;
   installation_id: string;
   pm_root_hash: string;
   cwd_hash: string;
@@ -93,6 +107,7 @@ export interface ActiveTelemetryCommand {
 
 export interface TelemetryCommandContext {
   command: string;
+  pm_version: string;
   args: string[];
   options: Record<string, unknown>;
   global: GlobalOptions;
@@ -278,6 +293,45 @@ function normalizeCaptureLevel(value: string | undefined): TelemetryCaptureLevel
   return "redacted";
 }
 
+function parseBooleanTrueLike(value: string | undefined): boolean {
+  return BOOLEAN_TRUE_VALUES.has((value ?? "").trim().toLowerCase());
+}
+
+function normalizePmVersion(value: string | undefined): string {
+  const trimmed = value?.trim() ?? "";
+  return trimmed.length > 0 ? trimmed : "0.0.0";
+}
+
+function resolveTelemetrySourceContext(globalOptions: GlobalOptions): ResolvedTelemetrySourceContext {
+  const override = (process.env[PM_TELEMETRY_SOURCE_CONTEXT_ENV] ?? "").trim().toLowerCase();
+  if (PM_TELEMETRY_SOURCE_CONTEXT_SET.has(override)) {
+    return {
+      source_context: override as TelemetrySourceContext,
+      source_context_source: "env_override",
+    };
+  }
+  const nodeEnv = (process.env.NODE_ENV ?? "").trim().toLowerCase();
+  if (typeof process.env.VITEST === "string" || typeof process.env.VITEST_WORKER_ID === "string" || nodeEnv === "test") {
+    return {
+      source_context: "test",
+      source_context_source: "inferred",
+    };
+  }
+  const nonTty = process.stdin.isTTY !== true || process.stdout.isTTY !== true;
+  const ci = parseBooleanTrueLike(process.env.CI);
+  const scriptLikeMode = globalOptions.json === true || globalOptions.quiet === true;
+  if (nonTty || ci || scriptLikeMode) {
+    return {
+      source_context: "automation",
+      source_context_source: "inferred",
+    };
+  }
+  return {
+    source_context: "user",
+    source_context_source: "inferred",
+  };
+}
+
 function hashWithInstallationId(installationId: string, value: string): string {
   return crypto.createHash("sha256").update(`${installationId}:${value}`).digest("hex");
 }
@@ -369,6 +423,9 @@ async function exportLocalOtelSpan(
     | ReturnType<typeof otlpIntAttribute>
   > = [
     otlpStringAttribute("pm.command", sanitizeString(activeCommand.command)),
+    otlpStringAttribute("pm.version", activeCommand.pm_version),
+    otlpStringAttribute("pm.source_context", activeCommand.source_context),
+    otlpStringAttribute("pm.source_context_source", activeCommand.source_context_source),
     otlpStringAttribute("pm.installation_id", activeCommand.installation_id),
     otlpStringAttribute("pm.session_id", PROCESS_SESSION_ID),
     otlpStringAttribute("pm.pm_root_hash", activeCommand.pm_root_hash),
@@ -466,17 +523,25 @@ function summarizeResult(
 function buildCommandStartPayload(params: {
   captureLevel: TelemetryCaptureLevel;
   context: TelemetryCommandContext;
+  pmVersion: string;
+  sourceContext: ResolvedTelemetrySourceContext;
   pmRootHash: string;
   cwdHash: string;
   installationId: string;
 }): Record<string, unknown> {
-  const { captureLevel, context, pmRootHash, cwdHash, installationId } = params;
+  const { captureLevel, context, pmVersion, sourceContext, pmRootHash, cwdHash, installationId } = params;
   if (captureLevel === "minimal") {
     return {
       capture_level: captureLevel,
+      pm_version: pmVersion,
+      source_context: sourceContext.source_context,
+      source_context_source: sourceContext.source_context_source,
     };
   }
   return {
+    pm_version: pmVersion,
+    source_context: sourceContext.source_context,
+    source_context_source: sourceContext.source_context_source,
     command_args: sanitizeCommandArgs(context.args, captureLevel),
     command_options: sanitizeValue(context.options, undefined, captureLevel) as Record<string, unknown>,
     global_options: sanitizeValue(context.global, undefined, captureLevel) as Record<string, unknown>,
@@ -496,14 +561,19 @@ function buildCommandStartPayload(params: {
 
 function buildCommandFinishPayload(params: {
   captureLevel: TelemetryCaptureLevel;
+  pmVersion: string;
+  sourceContext: ResolvedTelemetrySourceContext;
   outcome: { ok: boolean; error?: string; result?: unknown };
   durationMs: number;
   startedAt: string;
 }): Record<string, unknown> {
-  const { captureLevel, outcome, durationMs, startedAt } = params;
+  const { captureLevel, pmVersion, sourceContext, outcome, durationMs, startedAt } = params;
   if (captureLevel === "minimal") {
     return {
       capture_level: captureLevel,
+      pm_version: pmVersion,
+      source_context: sourceContext.source_context,
+      source_context_source: sourceContext.source_context_source,
       ok: outcome.ok,
       error: outcome.error ? sanitizeString(outcome.error, "redacted") : undefined,
       duration_ms: durationMs,
@@ -511,6 +581,9 @@ function buildCommandFinishPayload(params: {
   }
   return {
     capture_level: captureLevel,
+    pm_version: pmVersion,
+    source_context: sourceContext.source_context,
+    source_context_source: sourceContext.source_context_source,
     ok: outcome.ok,
     error: outcome.error ? sanitizeString(outcome.error, captureLevel) : undefined,
     duration_ms: durationMs,
@@ -688,6 +761,8 @@ export async function startTelemetryCommand(context: TelemetryCommandContext): P
     }
     const captureLevel = normalizeCaptureLevel(settings.telemetry.capture_level);
     const { installationId, endpoint } = await ensureInstallationId(globalPmRoot);
+    const pmVersion = normalizePmVersion(context.pm_version);
+    const sourceContext = resolveTelemetrySourceContext(context.global);
     const pmRootHash = hashWithInstallationId(installationId, context.pm_root);
     const cwdHash = hashWithInstallationId(installationId, process.cwd());
     const otelTracesEndpoint = resolveOtelTracesEndpoint();
@@ -703,6 +778,8 @@ export async function startTelemetryCommand(context: TelemetryCommandContext): P
       payload: buildCommandStartPayload({
         captureLevel,
         context,
+        pmVersion,
+        sourceContext,
         pmRootHash,
         cwdHash,
         installationId,
@@ -714,6 +791,9 @@ export async function startTelemetryCommand(context: TelemetryCommandContext): P
       started_at: occurredAt,
       started_at_ms: Date.now(),
       command: context.command,
+      pm_version: pmVersion,
+      source_context: sourceContext.source_context,
+      source_context_source: sourceContext.source_context_source,
       installation_id: installationId,
       pm_root_hash: pmRootHash,
       cwd_hash: cwdHash,
@@ -750,6 +830,11 @@ export async function finishTelemetryCommand(
       command: activeCommand.command,
       payload: buildCommandFinishPayload({
         captureLevel: activeCommand.capture_level,
+        pmVersion: activeCommand.pm_version,
+        sourceContext: {
+          source_context: activeCommand.source_context,
+          source_context_source: activeCommand.source_context_source,
+        },
         outcome,
         durationMs,
         startedAt: activeCommand.started_at,

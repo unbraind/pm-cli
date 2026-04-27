@@ -1,16 +1,39 @@
 id: pm-3dd9
 title: Add pm version and source classification to telemetry payloads
-description: "Persisted telemetry currently includes node/platform/runtime data but no explicit pm CLI version key, and aggregate analysis needs a better way to separate test automation, dogfood, audit smoke, and real user sessions."
+description: Add telemetry pm_version and source_context classification for analytics segmentation
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: observability,pm-cli,product-analytics,schema,telemetry
 created_at: "2026-04-26T13:51:17.624Z"
-updated_at: "2026-04-26T13:51:17.624Z"
+updated_at: "2026-04-27T19:11:07.446Z"
 author: cursor-agent
 estimated_minutes: 120
 acceptance_criteria: Telemetry command_start/finish payloads include explicit pm CLI version and privacy-safe source/context classification; aggregate reports can segment automation/test/dogfood/user traffic without raw identifiers.
 parent: pm-lnq3
-comments[1]{created_at,author,text}:
+resolution: Telemetry payload now includes pm_version and privacy-safe source context classification metadata for command lifecycle events.
+expected_result: Analytics can deterministically segment test/automation/dogfood/user telemetry streams and correlate behavior by pm CLI version without raw identifiers.
+actual_result: "Runtime now emits pm_version + source_context + source_context_source on command_start/command_finish, supports controlled source override, and passes linked telemetry/health regressions plus full 100 percent coverage."
+comments[3]{created_at,author,text}:
   "2026-04-26T13:51:17.624Z",cursor-agent,Duplicate check used pm search for telemetry runtime payload pm version node platform missing version. Existing results covered health diagnostics and closed implementation work but no active schema item for pm version and source classification. Evidence shows runtime node platform keys but no pm version key and many non TTY automation-like installations.
+  "2026-04-27T19:10:42.198Z",codex-agent,"Implementation 2026-04-27: added additive telemetry payload fields pm_version, source_context, and source_context_source for command_start/command_finish. CLI now forwards resolved version into telemetry context, runtime classifies source context with privacy-safe inference and PM_TELEMETRY_SOURCE_CONTEXT override, and OTLP span attributes include version/source context metadata."
+  "2026-04-27T19:10:49.842Z",codex-agent,"Verification 2026-04-27: pm test pm-3dd9 --run --progress passed linked suite (tests/unit/telemetry-runtime.spec.ts + tests/unit/health-command.spec.ts, 33 tests). Full sandbox coverage gate passed via node scripts/run-tests.mjs coverage (79 files, 1079 tests, 100% statements/branches/functions/lines)."
+notes[1]{created_at,author,text}:
+  "2026-04-27T19:10:46.521Z",codex-agent,"Source context classification uses coarse buckets only (user, automation, test, dogfood, audit_smoke) with explicit inferred/env_override provenance so analytics segmentation avoids raw operator identifiers."
+learnings[1]{created_at,author,text}:
+  "2026-04-27T19:10:54.789Z",codex-agent,Telemetry segmentation remains auditable and privacy-safe when payloads include explicit context provenance (source_context_source) alongside coarse source buckets and runtime version tags.
+files[3]{path,scope,note}:
+  src/cli/main.ts,project,CLI version propagation into telemetry context
+  src/core/telemetry/runtime.ts,project,payload schema enrichment
+  tests/unit/telemetry-runtime.spec.ts,project,telemetry payload regression coverage
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/telemetry-runtime.spec.ts tests/unit/health-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mohki5au-o0b3ju,test,passed,"2026-04-27T19:04:44.581Z","2026-04-27T19:05:50.166Z","2026-04-27T19:05:50.166Z",null,null,1,0,0,null,null,null
+docs[4]{path,scope,note}:
+  CHANGELOG.md,project,unreleased telemetry schema enhancement entry
+  docs/ARCHITECTURE.md,project,telemetry pipeline schema notes
+  README.md,project,telemetry payload behavior documentation
+  scripts/prod/telemetry/pm-3dd9-source-context.md,project,local telemetry stack notes for source classification segmentation
+close_reason: "Acceptance criteria met with payload schema enrichment, source-context classification, and passing regression evidence."
 body: ""

@@ -12,6 +12,7 @@ const originalOtelEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
 const originalOtelServiceName = process.env.OTEL_SERVICE_NAME;
 const originalTelemetryDisabled = process.env.PM_TELEMETRY_DISABLED;
 const originalTelemetryOtelDisabled = process.env.PM_TELEMETRY_OTEL_DISABLED;
+const originalTelemetrySourceContext = process.env.PM_TELEMETRY_SOURCE_CONTEXT;
 
 function telemetryQueuePath(globalRoot: string): string {
   return path.join(globalRoot, "runtime", "telemetry", "events.jsonl");
@@ -67,6 +68,11 @@ describe("core/telemetry/runtime", () => {
     } else {
       process.env.PM_TELEMETRY_OTEL_DISABLED = originalTelemetryOtelDisabled;
     }
+    if (originalTelemetrySourceContext === undefined) {
+      delete process.env.PM_TELEMETRY_SOURCE_CONTEXT;
+    } else {
+      process.env.PM_TELEMETRY_SOURCE_CONTEXT = originalTelemetrySourceContext;
+    }
     globalThis.fetch = originalFetch;
     vi.restoreAllMocks();
   });
@@ -80,6 +86,7 @@ describe("core/telemetry/runtime", () => {
 
       const active = await startTelemetryCommand({
         command: "create",
+        pm_version: "9.9.9-test",
         args: [
           "--api-key",
           "supersecret",
@@ -114,6 +121,9 @@ describe("core/telemetry/runtime", () => {
           event_type: string;
           payload: {
             capture_level?: string;
+            pm_version?: string;
+            source_context?: string;
+            source_context_source?: string;
             command_args: string[];
             command_options: Record<string, string>;
           };
@@ -122,6 +132,9 @@ describe("core/telemetry/runtime", () => {
       expect(queued.attempts).toBe(1);
       expect(queued.event.event_type).toBe("command_start");
       expect(queued.event.payload.capture_level).toBe("redacted");
+      expect(queued.event.payload.pm_version).toBe("9.9.9-test");
+      expect(queued.event.payload.source_context).toMatch(/^(user|automation|test|dogfood|audit_smoke)$/);
+      expect(queued.event.payload.source_context_source).toMatch(/^(inferred|env_override)$/);
       expect(queued.event.payload.command_args).toEqual([
         "--api-key",
         "[redacted]",
@@ -142,6 +155,7 @@ describe("core/telemetry/runtime", () => {
 
       const active = await startTelemetryCommand({
         command: "search",
+        pm_version: "9.9.9-test",
         args: ["query"],
         options: {},
         global: {
@@ -198,6 +212,7 @@ describe("core/telemetry/runtime", () => {
 
       const active = await startTelemetryCommand({
         command: "list-open",
+        pm_version: "9.9.9-test",
         args: ["--token=secret", "user@example.com"],
         options: { token: "secret", path: "/home/steve/private/path" },
         global: {
@@ -231,10 +246,19 @@ describe("core/telemetry/runtime", () => {
 
       expect(startEvent).toBeDefined();
       expect(finishEvent).toBeDefined();
-      expect(startEvent?.event.payload).toEqual({ capture_level: "minimal" });
+      expect(startEvent?.event.payload).toMatchObject({
+        capture_level: "minimal",
+        pm_version: "9.9.9-test",
+      });
+      expect(startEvent?.event.payload.pm_version).toBe("9.9.9-test");
+      expect(startEvent?.event.payload.source_context).toMatch(/^(user|automation|test|dogfood|audit_smoke)$/);
+      expect(startEvent?.event.payload.source_context_source).toMatch(/^(inferred|env_override)$/);
 
       const finishPayload = finishEvent?.event.payload ?? {};
       expect(finishPayload.capture_level).toBe("minimal");
+      expect(finishPayload.pm_version).toBe("9.9.9-test");
+      expect(String(finishPayload.source_context ?? "")).toMatch(/^(user|automation|test|dogfood|audit_smoke)$/);
+      expect(String(finishPayload.source_context_source ?? "")).toMatch(/^(inferred|env_override)$/);
       expect(finishPayload.ok).toBe(false);
       expect(typeof finishPayload.duration_ms).toBe("number");
       expect(finishPayload.started_at).toBeUndefined();
@@ -253,6 +277,7 @@ describe("core/telemetry/runtime", () => {
 
       const active = await startTelemetryCommand({
         command: "search",
+        pm_version: "9.9.9-test",
         args: ["user@example.com", "/home/steve/private/path", "--token=abc123"],
         options: {
           contact: "user@example.com",
@@ -288,6 +313,9 @@ describe("core/telemetry/runtime", () => {
               event_type: string;
               payload: {
                 capture_level?: string;
+                pm_version?: string;
+                source_context?: string;
+                source_context_source?: string;
                 command_args?: string[];
                 command_options?: Record<string, unknown>;
                 result_summary?: { preview?: Record<string, unknown> };
@@ -301,6 +329,9 @@ describe("core/telemetry/runtime", () => {
       expect(startEvent).toBeDefined();
       expect(finishEvent).toBeDefined();
       expect(startEvent?.event.payload.capture_level).toBe("max");
+      expect(startEvent?.event.payload.pm_version).toBe("9.9.9-test");
+      expect(startEvent?.event.payload.source_context).toMatch(/^(user|automation|test|dogfood|audit_smoke)$/);
+      expect(startEvent?.event.payload.source_context_source).toMatch(/^(inferred|env_override)$/);
       expect(startEvent?.event.payload.command_args).toEqual(
         expect.arrayContaining(["user@example.com", "/home/steve/private/path", "--token=[redacted]"]),
       );
@@ -316,6 +347,56 @@ describe("core/telemetry/runtime", () => {
     });
   });
 
+  it("honors PM_TELEMETRY_SOURCE_CONTEXT override in start and finish payloads", async () => {
+    await withTempGlobalRoot(async () => {
+      process.env.PM_TELEMETRY_SOURCE_CONTEXT = "dogfood";
+      globalThis.fetch = vi.fn(async () => {
+        throw new Error("network_down");
+      }) as unknown as typeof fetch;
+
+      const active = await startTelemetryCommand({
+        command: "list-open",
+        pm_version: "9.9.9-test",
+        args: [],
+        options: {},
+        global: {
+          json: false,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+      expect(active).not.toBeNull();
+      expect(active?.source_context).toBe("dogfood");
+      expect(active?.source_context_source).toBe("env_override");
+
+      await finishTelemetryCommand(active, {
+        ok: true,
+        result: { items: 0 },
+      });
+
+      if (!active) {
+        throw new Error("expected active telemetry context");
+      }
+
+      const queueRaw = await fs.readFile(telemetryQueuePath(active.global_pm_root), "utf8");
+      const queuedEntries = queueRaw
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+        .map((line) => JSON.parse(line) as { event: { event_type: string; payload: Record<string, unknown> } });
+      const startEvent = queuedEntries.find((entry) => entry.event.event_type === "command_start");
+      const finishEvent = queuedEntries.find((entry) => entry.event.event_type === "command_finish");
+
+      expect(startEvent?.event.payload.source_context).toBe("dogfood");
+      expect(startEvent?.event.payload.source_context_source).toBe("env_override");
+      expect(finishEvent?.event.payload.source_context).toBe("dogfood");
+      expect(finishEvent?.event.payload.source_context_source).toBe("env_override");
+    });
+  });
+
   it("skips telemetry command collection when PM_TELEMETRY_DISABLED is set", async () => {
     await withTempGlobalRoot(async (globalRoot) => {
       process.env.PM_TELEMETRY_DISABLED = "1";
@@ -324,6 +405,7 @@ describe("core/telemetry/runtime", () => {
 
       const active = await startTelemetryCommand({
         command: "list-open",
+        pm_version: "9.9.9-test",
         args: [],
         options: {},
         global: {
@@ -349,6 +431,7 @@ describe("core/telemetry/runtime", () => {
 
       const active = await startTelemetryCommand({
         command: "list-open",
+        pm_version: "9.9.9-test",
         args: [],
         options: {},
         global: {
@@ -391,6 +474,7 @@ describe("core/telemetry/runtime", () => {
 
       const active = await startTelemetryCommand({
         command: "list-open",
+        pm_version: "9.9.9-test",
         args: [],
         options: {},
         global: {

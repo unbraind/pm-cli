@@ -528,16 +528,18 @@ Command lifecycle telemetry is integrated as an additive runtime path:
   - deterministic skip behavior for non-interactive/CI/json contexts
 - `src/core/telemetry/runtime.ts`
   - sanitizes args/options/result summaries
-  - emits `command_start` + `command_finish` events
+  - emits `command_start` + `command_finish` events with additive `pm_version` and `source_context` metadata
   - spools local JSONL queue entries under global runtime storage
   - exports batched events to `settings.telemetry.endpoint` with retry/backoff
   - optionally exports command spans to OTLP (`OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` or `OTEL_EXPORTER_OTLP_ENDPOINT`)
+  - supports explicit source-context overrides via `PM_TELEMETRY_SOURCE_CONTEXT` (`user|automation|test|dogfood|audit_smoke`)
 
 Design constraints:
 
 - telemetry failures never block command execution
 - sensitive fields are redacted before transport
 - pseudonymous identifiers are used for host/path metadata
+- source-context classification uses coarse categories only (no raw session/operator identifiers)
 
 ## Exit Codes
 

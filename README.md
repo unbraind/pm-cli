@@ -536,6 +536,23 @@ pm config global set telemetry-tracking --policy disabled
 pm config global get telemetry-tracking --json
 ```
 
+### Telemetry payload version and source context
+
+Command lifecycle telemetry now includes additive payload metadata for segmentation:
+
+- `pm_version` - CLI version resolved at runtime.
+- `source_context` - privacy-safe source bucket (`user`, `automation`, `test`, `dogfood`, `audit_smoke`).
+- `source_context_source` - classification provenance (`inferred` or `env_override`).
+
+Default inference classifies non-interactive/CI/json runs as `automation`, test runtimes as `test`, and interactive sessions as `user`.
+
+For explicit dogfood/audit attribution, override source context with:
+
+```bash
+PM_TELEMETRY_SOURCE_CONTEXT=dogfood pm list-open
+PM_TELEMETRY_SOURCE_CONTEXT=audit_smoke pm context --limit 10
+```
+
 ### Optional local OTEL trace export
 
 `pm` can additionally emit one OTLP trace span per command to a local (or custom) collector endpoint:

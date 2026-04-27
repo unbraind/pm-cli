@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved calendar UX ergonomics by accepting `today` for `--date`/`--from`/`--to` boundaries and by adding explicit recurrence delimiter guidance for malformed `--event` CSV payloads.
 - Improved implicit Ollama hybrid search latency by bounding semantic timeout windows and emitting deterministic warning codes when auto-defaulted semantic execution falls back to keyword mode.
 - Improved extension doctor load diagnostics with targeted warning codes and remediation hints for missing `@unbrained/pm-cli` SDK dependency resolution and ESM module-mode mismatches.
+- Improved telemetry event segmentation by adding additive `pm_version`, `source_context`, and `source_context_source` payload fields for `command_start`/`command_finish`, plus explicit override support via `PM_TELEMETRY_SOURCE_CONTEXT`.
 - Improved `pm update-many` no-op validation guidance by listing actionable mutation flag examples when users provide filters/`--dry-run` without any mutation flags.
 
 - Added `pm files discover <ID>` to scan item text for existing project/global file paths, report addable vs already linked candidates, and optionally add missing linked files with `--apply`.
