@@ -136,6 +136,7 @@ Before close:
    - Avoid linking `pm test-all` itself as an item-level linked test command, since that creates recursive orchestration.
 4. Run targeted close-readiness validation when relevant:
    - `pm validate --check-resolution --check-history-drift`
+   - `pm normalize --dry-run --json` (when performing lifecycle metadata hygiene sweeps before apply mode)
    - for linked-file coverage audits, use `pm validate --check-files --scan-mode tracked-all`
 5. Add closure evidence:
    - `pm comments <ID> "Evidence: tests X, Y passed; coverage remains 100%."` (or `--add "..."`)
@@ -265,6 +266,8 @@ pm update pm-a1b2 --status in_progress --description "Implement restore replay"
 pm update pm-a1b2 --description "Audit metadata clarification" --allow-audit-update --author "audit-maintainer"
 pm update-many --filter-status open --filter-tag governance --status in_progress --dry-run --json
 pm update-many --filter-tag wave:7 --replace-tests --test "command=node scripts/run-tests.mjs test -- tests/core/history.spec.ts,scope=project,timeout_seconds=240" --message "Normalize linked tests"
+pm normalize --filter-status in_progress --dry-run --json
+pm normalize --filter-tag governance --apply --allow-audit-update --author audit-maintainer --message "Normalize lifecycle metadata"
 pm update pm-a1b2 --body "Restore replay scope and acceptance details."
 pm update pm-a1b2 --reminder "at=+1d,text=Follow up on restore replay tests"
 pm files pm-a1b2 --add path=src/history.ts,scope=project,note="restore implementation"
@@ -320,6 +323,7 @@ Use `action: "completion"` with `shell: "bash"|"zsh"|"fish"` to forward to `pm c
 Use `action: "calendar"` for date-centric event views (`view`, `date`, `from`, `to`, `past`, `fullPeriod`, `type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`, `format`).
 Use `action: "aggregate"` for grouped decomposition checks (`groupBy`, `count`, `includeUnparented`, list-style filters).
 Use `action: "dedupe-audit"` for duplicate corpus checks (`mode`, `threshold`, `limit`, list-style filters).
+Use `action: "normalize"` for lifecycle metadata hygiene scans (`dryRun`) and explicit apply mode (`apply`) with list-style filter targeting.
 Use `action: "validate"` with optional check toggles (`checkMetadata`, `checkResolution`, `checkFiles`, `checkHistoryDrift`) and optional `scanMode` (`default|tracked-all`) for standalone audit workflows.
 Use `action: "extension-doctor"` for consolidated extension diagnostics with optional `scope` and `detail` (`summary|deep`).
 For `list*` wrapper actions, use projection/sort controls (`compact`, `fields`, `sort`, `order`) plus `includeBody` when body projection is needed.

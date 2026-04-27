@@ -44,6 +44,8 @@ describe("generateBashScript", () => {
       "history",
       "activity",
       "restore",
+      "update-many",
+      "normalize",
       "close",
       "delete",
       "append",
@@ -150,6 +152,23 @@ describe("generateBashScript", () => {
     expect(fishScript).toContain("-l replace-tests");
     expect(fishScript).toContain("-l clear-docs");
     expect(fishScript).toContain("-l reminder");
+  });
+
+  it("includes normalize command flags across completion scripts", () => {
+    const bashScript = generateBashScript();
+    expect(bashScript).toContain("normalize)");
+    expect(bashScript).toContain("--apply");
+    expect(bashScript).toContain("--filter-status");
+
+    const zshScript = generateZshScript();
+    expect(zshScript).toContain("normalize)");
+    expect(zshScript).toContain("--apply[Apply normalize changes]");
+    expect(zshScript).toContain("--filter-status[Filter by status before planning or apply]");
+
+    const fishScript = generateFishScript();
+    expect(fishScript).toContain("__fish_seen_subcommand_from normalize");
+    expect(fishScript).toContain("-l apply");
+    expect(fishScript).toContain("-l filter-status");
   });
 
   it("includes append required --body flag from command contracts", () => {
@@ -368,6 +387,7 @@ describe("generateZshScript", () => {
     expect(script).toContain("extension:Manage extension lifecycle operations");
     expect(script).toContain("create:Create a new project management item");
     expect(script).toContain("completion:Generate shell completion");
+    expect(script).toContain("normalize:Normalize lifecycle metadata with dry-run planning or apply mode");
     expect(script).toContain("contracts:Show machine-readable command and schema contracts");
     expect(script).toContain("start-task:Lifecycle alias to claim and set in_progress");
     expect(script).toContain("pause-task:Lifecycle alias to reopen and release claim");
@@ -517,6 +537,7 @@ describe("generateFishScript", () => {
       ["get", "Show item details"],
       ["search", "Search items"],
       ["completion", "Generate shell completion"],
+      ["normalize", "Normalize lifecycle metadata"],
       ["contracts", "machine-readable command and schema contracts"],
       ["health", "project tracker health"],
       ["stats", "project tracker statistics"],

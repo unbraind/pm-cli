@@ -181,9 +181,9 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
-  it("renders intent and example sections for templates, deps, and update-many help", async () => {
+  it("renders intent and example sections for templates, deps, update-many, and normalize help", async () => {
     await withTempPmPath(async (context) => {
-      for (const commandName of ["templates", "deps", "update-many"] as const) {
+      for (const commandName of ["templates", "deps", "update-many", "normalize"] as const) {
         const compact = context.runCli([commandName, "--help"]);
         expect(compact.code).toBe(0);
         expect(compact.stdout).toContain("Intent:");

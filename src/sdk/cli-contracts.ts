@@ -116,6 +116,7 @@ export const PM_CORE_COMMAND_NAMES = [
   "restore",
   "update",
   "update-many",
+  "normalize",
   "close",
   "delete",
   "append",
@@ -178,6 +179,7 @@ export const PM_TOOL_ACTIONS = [
   "restore",
   "update",
   "update-many",
+  "normalize",
   "close",
   "delete",
   "append",
@@ -406,6 +408,8 @@ export const PI_UPDATE_MANY_FILTER_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "limit", flag: "--limit" },
   { param: "offset", flag: "--offset" },
 ];
+
+export const PI_NORMALIZE_FILTER_OPTION_CONTRACTS: PiOptionFlagContract[] = [...PI_UPDATE_MANY_FILTER_OPTION_CONTRACTS];
 
 export const PI_CALENDAR_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "view", flag: "--view" },
@@ -1080,6 +1084,30 @@ export const UPDATE_MANY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--force" },
 ];
 
+export const NORMALIZE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--filter-status" },
+  { flag: "--filter-type" },
+  { flag: "--filter-tag" },
+  { flag: "--filter-priority" },
+  { flag: "--filter-deadline-before" },
+  { flag: "--filter-deadline-after" },
+  { flag: "--filter-assignee" },
+  { flag: "--filter-assignee-filter" },
+  { flag: "--filter-assignee_filter" },
+  { flag: "--filter-parent" },
+  { flag: "--filter-sprint" },
+  { flag: "--filter-release" },
+  { flag: "--limit" },
+  { flag: "--offset" },
+  { flag: "--dry-run" },
+  { flag: "--apply" },
+  { flag: "--author" },
+  { flag: "--message" },
+  { flag: "--allow-audit-update" },
+  { flag: "--allow_audit_update" },
+  { flag: "--force" },
+];
+
 export const CALENDAR_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--view" },
   { flag: "--date" },
@@ -1690,6 +1718,16 @@ const UPDATE_MANY_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   "noCheckpoint",
 ]);
 
+const NORMALIZE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
+  ...PI_NORMALIZE_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
+  "dryRun",
+  "apply",
+  "author",
+  "message",
+  "allowAuditUpdate",
+  "force",
+]);
+
 const CALENDAR_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...PI_CALENDAR_OPTION_CONTRACTS.map((entry) => entry.param),
   "past",
@@ -1777,6 +1815,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   restore: { required: ["id", "target"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   update: { required: ["id"], optional: UPDATE_CONTRACT_PARAMETER_KEYS },
   "update-many": { optional: UPDATE_MANY_CONTRACT_PARAMETER_KEYS },
+  normalize: { optional: NORMALIZE_CONTRACT_PARAMETER_KEYS },
   close: { required: ["id", "text"], optional: ["validateClose", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   delete: { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   append: { required: ["id", "body"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },

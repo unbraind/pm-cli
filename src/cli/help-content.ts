@@ -192,6 +192,19 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "Checkpoints are enabled by default for apply mode and can be restored with --rollback.",
     ],
   },
+  normalize: {
+    why:
+      "Scans items for low-signal lifecycle metadata drift, emits deterministic per-item plans, and optionally applies normalized metadata updates with update-style safety checks.",
+    examples: [
+      "pm normalize --dry-run",
+      "pm normalize --filter-status in_progress --dry-run",
+      'pm normalize --filter-status closed --apply --author "codex-agent" --message "Normalize closure metadata"',
+    ],
+    tips: [
+      "Dry-run mode is the default; pass --apply only after reviewing planned changes.",
+      "Apply mode honors ownership/audit constraints and supports --allow-audit-update with optional --force override.",
+    ],
+  },
   templates: {
     why: "Saves, lists, and inspects reusable create option bundles for repeatable workflows.",
     examples: [

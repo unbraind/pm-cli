@@ -2,13 +2,12 @@ id: pm-abhj
 title: Agent context command ( / )
 description: Implement a dedicated context snapshot command optimized for agent next-work decisions by combining critical active items with agenda/reminder context.
 type: Epic
-status: in_progress
+status: closed
 priority: 0
 tags[4]: agent-ux,"area:context",core,pm-cli
 created_at: "2026-04-01T14:09:44.275Z"
-updated_at: "2026-04-27T17:21:50.641Z"
+updated_at: "2026-04-27T20:08:42.646Z"
 deadline: "2026-05-09T17:09:59.558Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: "`pm context` and `pm ctx` provide deterministic, token-efficient high-level and low-level focus context plus agenda/reminder data with no regressions."
@@ -29,18 +28,20 @@ reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Agent context command ( / ) (pm CLI + Node/pnpm toolchain).
 repro_steps: Review linked files/tests/docs for pm-abhj (Agent context command ( / )); run linked verification via pm test pm-abhj --run when available; compare observed behavior with acceptance criteria and capture results in comments.
-resolution: blocked-pending-coverage-baseline
-expected_result: Resume execution for Agent context command ( / ) once blockers are cleared and verification path is confirmed.
-actual_result: work-tracked-as-active-or-open
+resolution: "Epic deliverable is complete: context command shipped with deterministic ranking, agenda support, alias/completion integration, and verified regression coverage through child lineage closure."
+expected_result: "pm context/pm ctx remain token-efficient, deterministic, and fully integrated across CLI surfaces with no regression risk."
+actual_result: "Child feature pm-iyqf and execution task pm-f583 are now closed with verification evidence (coverage 100%, full regression suites, targeted context checks, pnpm build), and no remaining active child scope exists under this epic."
 affected_version: vnext
 fixed_version: target-vnext
 component: cli-context
 regression: false
 customer_impact: Improves triage speed and consistency
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-04-01T14:09:44.275Z",codex-agent,Epic created after duplicate checks found no active context-command item.
   "2026-04-25T11:01:35.576Z",codex-agent,"Coverage gate cleared on latest CLI run: node scripts/run-tests.mjs coverage now reports 100% across all metrics; removing stale blocker and resuming execution."
   "2026-04-27T17:21:50.641Z",codex-agent,"Lineage update 2026-04-27: context implementation execution task pm-f583 is now closed with fresh verification evidence; remaining active work in this lineage should focus on outstanding open/in_progress context follow-ups."
+  "2026-04-27T20:06:53.040Z",codex-agent,"Mixed-wave kickoff 2026-04-27: completed maintainer bootstrap (npm install -g ., pm --version, node -v, pnpm -v, pnpm build) and baseline governance snapshot (pm context --limit 20, pm list-in-progress --limit 50, pm list-open --limit 50, pm validate --check-resolution --check-history-drift --json). Ordering for this run follows approved plan: normalize stale in_progress lifecycle state first, then implement pm-vi2v governance normalize command with deterministic dry-run/apply behavior and full PM CLI evidence logging."
+  "2026-04-27T20:08:35.655Z",codex-agent,"Stale-state normalization 2026-04-27: context lineage rollup completed after closing child feature pm-iyqf. Existing linked evidence already covers runtime behavior, completion/wrapper parity, and regression verification; closing epic to align status with delivered scope."
 notes[1]{created_at,author,text}:
   "2026-04-01T14:09:44.275Z",codex-agent,Implementation composes list and calendar behavior with deterministic ranking.
 learnings[1]{created_at,author,text}:
@@ -51,4 +52,5 @@ tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   node scripts/run-tests.mjs test,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,full regression baseline
 docs[1]{path,scope,note}:
   PRD.md,project,command contract source
+close_reason: Context command epic scope completed and fully verified through child rollout evidence.
 body: "Track end-to-end delivery of the new context command across runtime, tests, docs, and integrations."

@@ -2,13 +2,12 @@ id: pm-iyqf
 title: Implement context command runtime and surfaces
 description: "Build the new context command, wire CLI and integrations, and cover behavior with unit/integration/runtime tests and docs."
 type: Feature
-status: in_progress
+status: closed
 priority: 1
 tags[3]: agent-ux,"area:context",pm-cli
 created_at: "2026-04-01T14:10:36.966Z"
-updated_at: "2026-04-27T17:21:44.524Z"
+updated_at: "2026-04-27T20:08:14.590Z"
 deadline: "2026-05-09T17:09:59.580Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 300
 acceptance_criteria: "Context command, alias, completion, Pi wrapper, tests, and docs are shipped with deterministic behavior and no regressions."
@@ -30,9 +29,9 @@ reporter: codex-agent
 severity: low
 environment: Project workspace execution context for Implement context command runtime and surfaces (pm CLI + Node/pnpm toolchain).
 repro_steps: Review linked files/tests/docs for pm-iyqf (Implement context command runtime and surfaces); run linked verification via pm test pm-iyqf --run when available; compare observed behavior with acceptance criteria and capture results in comments.
-resolution: planned-or-active-implementation
-expected_result: Resume execution for Implement context command runtime and surfaces once blockers are cleared and verification path is confirmed.
-actual_result: work-tracked-as-active-or-open
+resolution: Context runtime/integration rollout is complete via child execution task closure and verification bundle.
+expected_result: "Context command, alias/completion/wrapper parity, docs, and regression coverage are all shipped with deterministic behavior."
+actual_result: "Child task pm-f583 closed after rerunning coverage 100% (1073 tests), full regression bundle, targeted context suites, and pnpm build; no remaining implementation deltas were identified in this feature scope."
 affected_version: vnext
 fixed_version: target-vnext
 component: cli-context
@@ -40,10 +39,11 @@ regression: false
 customer_impact: Faster and more reliable project-state triage
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-abhj,parent,"2026-04-01T14:10:36.966Z",codex-agent,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-01T14:10:36.966Z",codex-agent,Feature created as child of epic pm-abhj.
   "2026-04-25T11:01:36.427Z",codex-agent,Parent coverage blocker is stale after latest 100% coverage verification; unblocking and resuming feature execution.
   "2026-04-27T17:21:44.524Z",codex-agent,"Hybrid continuation handoff 2026-04-27: child task pm-f583 was rerun through full linked verification (coverage 1073 tests at 100%, full regression 1073 tests, targeted bundle 191 tests, pnpm build) and then closed/released with acceptance criteria met."
+  "2026-04-27T20:08:06.944Z",codex-agent,"Stale-state normalization 2026-04-27: feature scope verified complete based on linked child task pm-f583 closure evidence and prior verification bundle (coverage 100%, full regression + targeted context suite, pnpm build). Closing this feature to align lifecycle state with delivered implementation."
 notes[1]{created_at,author,text}:
   "2026-04-01T14:10:36.966Z",codex-agent,Implement core command then integrate completion wrapper tests and docs.
 learnings[1]{created_at,author,text}:
@@ -54,4 +54,5 @@ tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,coverage gate for release
 docs[1]{path,scope,note}:
   docs/ARCHITECTURE.md,project,architecture updates for context pipeline
+close_reason: Context runtime and integration surfaces are complete with verified closure evidence.
 body: Parent feature for end-to-end implementation and verification of pm context.

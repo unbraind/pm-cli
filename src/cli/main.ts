@@ -30,6 +30,7 @@ import {
   runInit,
   runLearnings,
   runList,
+  runNormalize,
   runNotes,
   runSearch,
   runReindex,
@@ -4243,6 +4244,77 @@ program
     printResult(result, globalOptions);
     if (globalOptions.profile) {
       printError(`profile:command=update-many took_ms=${Date.now() - startedAt}`);
+    }
+  });
+
+program
+  .command("normalize")
+  .description("Normalize lifecycle metadata with deterministic dry-run plans and optional apply mode.")
+  .option("--filter-status <value>", "Filter by status before planning or apply")
+  .option("--filter-type <value>", "Filter by item type before planning or apply")
+  .option("--filter-tag <value>", "Filter by tag before planning or apply")
+  .option("--filter-priority <value>", "Filter by priority before planning or apply")
+  .option("--filter-deadline-before <value>", "Filter by deadline upper bound before planning or apply")
+  .option("--filter-deadline-after <value>", "Filter by deadline lower bound before planning or apply")
+  .option("--filter-assignee <value>", "Filter by assignee before planning or apply")
+  .option("--filter-assignee-filter <value>", "Filter assignee presence: assigned|unassigned before planning or apply")
+  .option("--filter-assignee_filter <value>", "Alias for --filter-assignee-filter")
+  .option("--filter-parent <value>", "Filter by parent item ID before planning or apply")
+  .option("--filter-sprint <value>", "Filter by sprint before planning or apply")
+  .option("--filter-release <value>", "Filter by release before planning or apply")
+  .option("--limit <n>", "Limit matched item count before planning/apply")
+  .option("--offset <n>", "Skip first n matched rows before planning/apply")
+  .option("--dry-run", "Preview normalize findings without mutating (default)")
+  .option("--apply", "Apply normalize changes using update semantics")
+  .option("--author <value>", "Mutation author for apply mode")
+  .option("--message <value>", "Mutation message for apply mode")
+  .option("--allow-audit-update", "Allow non-owner metadata-only audit updates without requiring --force")
+  .option("--allow_audit_update", "Alias for --allow-audit-update")
+  .option("--force", "Force ownership override for apply mode")
+  .action(async (options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const result = await runNormalize(
+      {
+        status: typeof options.filterStatus === "string" ? options.filterStatus : undefined,
+        list: {
+          type: typeof options.filterType === "string" ? options.filterType : undefined,
+          tag: typeof options.filterTag === "string" ? options.filterTag : undefined,
+          priority: typeof options.filterPriority === "string" ? options.filterPriority : undefined,
+          deadlineBefore: typeof options.filterDeadlineBefore === "string" ? options.filterDeadlineBefore : undefined,
+          deadlineAfter: typeof options.filterDeadlineAfter === "string" ? options.filterDeadlineAfter : undefined,
+          assignee: typeof options.filterAssignee === "string" ? options.filterAssignee : undefined,
+          assigneeFilter:
+            typeof options.filterAssigneeFilter === "string"
+              ? options.filterAssigneeFilter
+              : typeof options.filterAssignee_filter === "string"
+                ? options.filterAssignee_filter
+                : undefined,
+          parent: typeof options.filterParent === "string" ? options.filterParent : undefined,
+          sprint: typeof options.filterSprint === "string" ? options.filterSprint : undefined,
+          release: typeof options.filterRelease === "string" ? options.filterRelease : undefined,
+          limit: typeof options.limit === "string" ? options.limit : undefined,
+          offset: typeof options.offset === "string" ? options.offset : undefined,
+          includeBody: true,
+        },
+        dryRun: options.dryRun === true ? true : undefined,
+        apply: options.apply === true ? true : undefined,
+        author: typeof options.author === "string" ? options.author : undefined,
+        message: typeof options.message === "string" ? options.message : undefined,
+        allowAuditUpdate:
+          options.allowAuditUpdate === true || options.allow_audit_update === true || options.allowAudit_update === true
+            ? true
+            : undefined,
+        force: options.force === true ? true : undefined,
+      },
+      globalOptions,
+    );
+    if (result.mode === "apply") {
+      await invalidateSearchCachesForMutation(globalOptions, result);
+    }
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=normalize took_ms=${Date.now() - startedAt}`);
     }
   });
 

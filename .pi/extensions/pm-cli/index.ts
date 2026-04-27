@@ -11,6 +11,7 @@ import {
   PI_LIST_FILTER_OPTION_CONTRACTS,
   PI_SEARCH_FILTER_OPTION_CONTRACTS,
   PI_SHARED_CREATE_UPDATE_OPTION_CONTRACTS,
+  PI_NORMALIZE_FILTER_OPTION_CONTRACTS,
   PI_UPDATE_OPTION_CONTRACTS,
   PI_UPDATE_MANY_FILTER_OPTION_CONTRACTS,
   type PiOptionFlagContract,
@@ -742,6 +743,20 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
         args.push("--no-checkpoint");
       }
       addUpdateFlags(args, params);
+      return args;
+    case "normalize":
+      args.push("normalize");
+      pushContractedFlags(args, params, PI_NORMALIZE_FILTER_OPTION_CONTRACTS);
+      if (params.dryRun) {
+        args.push("--dry-run");
+      }
+      if (params.apply) {
+        args.push("--apply");
+      }
+      if (params.allowAuditUpdate) {
+        args.push("--allow-audit-update");
+      }
+      addAuthorMessageForceFlags(args, params);
       return args;
     case "close":
       args.push("close", requireString(params.id, "id", action), requireString(params.text, "text", action));

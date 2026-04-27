@@ -111,6 +111,8 @@ const CORE_COMMANDS = [
   "activity",
   "restore",
   "update",
+  "update-many",
+  "normalize",
   "close",
   "delete",
   "append",
@@ -227,6 +229,22 @@ const REQUIRED_UPDATE_MANY_FLAGS = [
   "--clear-events",
   "--clear-type-options",
   "--allow-audit-update",
+  "--force",
+];
+
+const REQUIRED_NORMALIZE_FLAGS = [
+  "--filter-status",
+  "--filter-type",
+  "--filter-tag",
+  "--filter-priority",
+  "--filter-assignee",
+  "--limit",
+  "--offset",
+  "--dry-run",
+  "--apply",
+  "--allow-audit-update",
+  "--author",
+  "--message",
   "--force",
 ];
 
@@ -673,6 +691,19 @@ describe("release readiness runtime coverage", () => {
       for (const flag of ISSUE_METADATA_UPDATE_FLAG_TOKENS) {
         expect(help.stdout).toContain(flag);
       }
+    });
+  });
+
+  it("keeps normalize help aligned with governance normalization flags and aliases", async () => {
+    await withTempPmPath(async (context) => {
+      const help = context.runCli(["normalize", "--help"]);
+      expect(help.code).toBe(0);
+      for (const flag of REQUIRED_NORMALIZE_FLAGS) {
+        expect(help.stdout).toContain(flag);
+      }
+      expect(help.stdout).toContain("--filter-assignee_filter");
+      expect(help.stdout).toContain("--allow_audit_update");
+      expect(help.stdout).toContain("dry-run plans");
     });
   });
 
@@ -1534,6 +1565,7 @@ describe("release readiness runtime coverage", () => {
       "src/cli/commands/aggregate.ts",
       "src/cli/commands/comments-audit.ts",
       "src/cli/commands/dedupe-audit.ts",
+      "src/cli/commands/normalize.ts",
       "src/cli/commands/templates.ts",
       "src/cli/commands/test-runs.ts",
       "src/cli/commands/update-many.ts",

@@ -42,6 +42,7 @@ export { runHistory } from "./history.js";
 export { runInit } from "./init.js";
 export { runLearnings } from "./learnings.js";
 export { runList, type ListOptions } from "./list.js";
+export { runNormalize, type NormalizeCommandOptions, type NormalizeResult } from "./normalize.js";
 export { runNotes } from "./notes.js";
 export { runSearch } from "./search.js";
 export { runReindex, type ReindexOptions, type ReindexResult } from "./reindex.js";

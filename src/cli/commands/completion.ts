@@ -13,6 +13,7 @@ import {
   HEALTH_FLAG_CONTRACTS,
   INIT_FLAG_CONTRACTS,
   LIST_FILTER_FLAG_CONTRACTS,
+  NORMALIZE_FLAG_CONTRACTS,
   PM_CORE_COMMAND_NAMES,
   SEARCH_FLAG_CONTRACTS,
   UPDATE_FLAG_CONTRACTS,
@@ -46,6 +47,7 @@ const APPEND_FLAGS = toCompletionFlagString(APPEND_FLAG_CONTRACTS);
 const CREATE_FLAGS = toCompletionFlagString(CREATE_FLAG_CONTRACTS);
 const UPDATE_FLAGS = toCompletionFlagString(UPDATE_FLAG_CONTRACTS);
 const UPDATE_MANY_FLAGS = toCompletionFlagString(UPDATE_MANY_FLAG_CONTRACTS);
+const NORMALIZE_FLAGS = toCompletionFlagString(NORMALIZE_FLAG_CONTRACTS);
 const ACTIVITY_FLAGS = toCompletionFlagString(ACTIVITY_FLAG_CONTRACTS);
 const CALENDAR_FLAGS = toCompletionFlagString(CALENDAR_FLAG_CONTRACTS);
 const CONTEXT_FLAGS = toCompletionFlagString(CONTEXT_FLAG_CONTRACTS);
@@ -91,6 +93,7 @@ export function generateBashScript(
   const createFlags = mergeFlagStrings(CREATE_FLAGS, runtime.command_flags?.create);
   const updateFlags = mergeFlagStrings(UPDATE_FLAGS, runtime.command_flags?.update);
   const updateManyFlags = mergeFlagStrings(UPDATE_MANY_FLAGS, runtime.command_flags?.["update-many"]);
+  const normalizeFlags = NORMALIZE_FLAGS;
   const searchFlags = mergeFlagStrings(SEARCH_FLAGS, runtime.command_flags?.search);
   const calendarFlags = mergeFlagStrings(CALENDAR_FLAGS, runtime.command_flags?.calendar);
   const contextFlags = mergeFlagStrings(CONTEXT_FLAGS, runtime.command_flags?.context);
@@ -169,6 +172,9 @@ export function generateBashScript(
     "      ;;",
     "    update-many)",
     `      COMPREPLY=(${compgen(updateManyFlags)})`,
+    "      ;;",
+    "    normalize)",
+    `      COMPREPLY=(${compgen(normalizeFlags)})`,
     "      ;;",
     "    calendar|cal)",
       `      COMPREPLY=(${compgen(calendarFlags)})`,
@@ -328,6 +334,7 @@ _pm_commands() {
     'restore:Restore an item to an earlier state'
     'update:Update item fields and metadata'
     'update-many:Bulk-update matched items with dry-run and rollback checkpoints'
+    'normalize:Normalize lifecycle metadata with dry-run planning or apply mode'
     'close:Close an item with a required reason'
     'delete:Delete an item and record the change'
     'append:Append text to an item body'
@@ -586,6 +593,30 @@ _pm() {
             '--clear-reminders[Clear reminders]' \\
             '--clear-events[Clear events]' \\
             '--clear-type-options[Clear type options]' \\
+            '--allow-audit-update[Allow non-owner metadata-only audit updates without requiring --force]' \\
+            '--author[Mutation author]:author' \\
+            '--message[History message]:message' \\
+            '--force[Force override]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        normalize)
+          _arguments \\
+            '--filter-status[Filter by status before planning or apply]:(draft open in_progress blocked closed canceled)' \\
+            '--filter-type[Filter by type before planning or apply]:(${typeChoices})' \\
+            '--filter-tag[Filter by tag before planning or apply]:(${zshTagChoices})' \\
+            '--filter-priority[Filter by priority before planning or apply]:(0 1 2 3 4)' \\
+            '--filter-deadline-before[Filter by deadline upper bound]:deadline' \\
+            '--filter-deadline-after[Filter by deadline lower bound]:deadline' \\
+            '--filter-assignee[Filter by assignee before planning or apply]:assignee' \\
+            '--filter-assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
+            '--filter-parent[Filter by parent item ID]:parent' \\
+            '--filter-sprint[Filter by sprint]:sprint' \\
+            '--filter-release[Filter by release]:release' \\
+            '--limit[Limit matched item count]:number' \\
+            '--offset[Skip first n matched rows]:number' \\
+            '--dry-run[Preview normalize findings without mutating]' \\
+            '--apply[Apply normalize changes]' \\
             '--allow-audit-update[Allow non-owner metadata-only audit updates without requiring --force]' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
@@ -1042,6 +1073,7 @@ complete -c pm -n __pm_no_subcommand -a activity      -d 'Show recent activity a
 complete -c pm -n __pm_no_subcommand -a restore       -d 'Restore an item to an earlier state'
 complete -c pm -n __pm_no_subcommand -a update        -d 'Update item fields and metadata'
 complete -c pm -n __pm_no_subcommand -a update-many   -d 'Bulk-update matched items with dry-run and rollback checkpoints'
+complete -c pm -n __pm_no_subcommand -a normalize     -d 'Normalize lifecycle metadata with dry-run planning or apply mode'
 complete -c pm -n __pm_no_subcommand -a close         -d 'Close an item with a required reason'
 complete -c pm -n __pm_no_subcommand -a delete        -d 'Delete an item and record the change'
 complete -c pm -n __pm_no_subcommand -a append        -d 'Append text to an item body'
@@ -1266,6 +1298,27 @@ complete -c pm -n '__fish_seen_subcommand_from update-many' -l allow-audit-updat
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l author                  -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l message                 -d 'History message' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l force                   -d 'Force override'
+
+# normalize flags
+complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-status           -d 'Filter by status before planning or apply' -r -a 'draft open in_progress blocked closed canceled'
+complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-type             -d 'Filter by type before planning or apply' -r -a '${typeChoices}'
+complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-tag              -d 'Filter by tag before planning or apply' -r -a ${fishTagChoices}
+complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-priority         -d 'Filter by priority before planning or apply' -r -a '0 1 2 3 4'
+complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-deadline-before  -d 'Filter by deadline upper bound' -r
+complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-deadline-after   -d 'Filter by deadline lower bound' -r
+complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-assignee         -d 'Filter by assignee before planning or apply' -r
+complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-assignee-filter  -d 'Filter assignee presence' -r -a 'assigned unassigned'
+complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-parent           -d 'Filter by parent item ID' -r
+complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-sprint           -d 'Filter by sprint before planning or apply' -r
+complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-release          -d 'Filter by release before planning or apply' -r
+complete -c pm -n '__fish_seen_subcommand_from normalize' -l limit                   -d 'Limit matched item count' -r
+complete -c pm -n '__fish_seen_subcommand_from normalize' -l offset                  -d 'Skip first n matched rows' -r
+complete -c pm -n '__fish_seen_subcommand_from normalize' -l dry-run                 -d 'Preview normalize findings without mutating'
+complete -c pm -n '__fish_seen_subcommand_from normalize' -l apply                   -d 'Apply normalize changes'
+complete -c pm -n '__fish_seen_subcommand_from normalize' -l allow-audit-update      -d 'Allow non-owner metadata-only audit updates without requiring --force'
+complete -c pm -n '__fish_seen_subcommand_from normalize' -l author                  -d 'Mutation author' -r
+complete -c pm -n '__fish_seen_subcommand_from normalize' -l message                 -d 'History message' -r
+complete -c pm -n '__fish_seen_subcommand_from normalize' -l force                   -d 'Force override'
 
 # search flags
 complete -c pm -n '__fish_seen_subcommand_from search' -l mode          -d 'Search mode' -r -a 'keyword semantic hybrid'

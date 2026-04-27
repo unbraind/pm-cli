@@ -40,7 +40,7 @@ files[7]{path,scope,note}:
   scripts/prod/telemetry/2026-04-27-remote-telemetry-api-worker.py,project,local patch snapshot for remote worker.py update
   src/core/telemetry/runtime.ts,project,Client-side telemetry event shaping and redaction
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  "ssh -o BatchMode=yes 'cd /home/steve/container/pm-cli && docker compose ps telemetry-api telemetry-worker && curl -fsS && docker compose exec -T rabbitmq rabbitmqctl list_queues name messages messages_unacknowledged'",null,project,240,null,null,null,null,null,null,null,null,null,null,null,remote health and queue zero verification
+  ssh -o BatchMode=yes 'cd /home/steve/container/pm-cli && docker compose ps telemetry-api telemetry-worker && curl -fsS && docker compose exec -T rabbitmq rabbitmqctl list_queues name messages messages_unacknowledged',null,project,240,null,null,null,null,null,null,null,null,null,null,null,remote health and queue zero verification
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mohllgbf-5s3s5x,test,passed,"2026-04-27T19:36:21.505Z","2026-04-27T19:36:24.027Z","2026-04-27T19:36:24.027Z",null,null,1,0,0,null,null,null
 docs[2]{path,scope,note}:

@@ -48,6 +48,7 @@ import {
   LEARNINGS_FLAG_CONTRACTS,
   LIST_COMMANDER_STRING_OPTION_CONTRACTS,
   LIST_FILTER_FLAG_CONTRACTS,
+  NORMALIZE_FLAG_CONTRACTS,
   NOTES_FLAG_CONTRACTS,
   PM_CORE_COMMAND_NAMES,
   PM_TOOL_ACTIONS,
@@ -689,6 +690,9 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   }
   if (command === "update-many") {
     return UPDATE_MANY_FLAG_CONTRACTS;
+  }
+  if (command === "normalize") {
+    return NORMALIZE_FLAG_CONTRACTS;
   }
   if (command === "calendar" || command === "cal") {
     return CALENDAR_FLAG_CONTRACTS;

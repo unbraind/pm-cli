@@ -2,12 +2,11 @@ id: pm-jqgc
 title: Implement governance query controls from 2026-04-06 issue report
 description: "Deliver non-dedupe follow-ups from the external seven-issue report: comments ownership hint, aggregate grouped counts, list projection/sort controls, health refresh controls, and expanded comments-audit filters."
 type: Feature
-status: in_progress
+status: closed
 priority: 1
 tags[4]: external-audit,governance,pm-cli,query-surfaces
 created_at: "2026-04-06T12:40:25.542Z"
-updated_at: "2026-04-26T13:51:52.910Z"
-assignee: codex-agent
+updated_at: "2026-04-27T20:09:01.192Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: "Issue report items 1 and 3 through 7 are implemented with tests, docs, contracts, completion, and Pi wrapper parity while preserving backward-compatible defaults."
@@ -15,7 +14,7 @@ parent: pm-5rjn
 resolution: Adjusted aggregate grouped row shaping to emit only requested group_by dimensions while preserving count ordering and include-unparented behavior.
 expected_result: Type-only aggregate rollups do not include parent fields and grouped payload shape matches requested dimensions.
 actual_result: group.parent leakage removed for type-only groupings; unit/integration regressions cover payload shape and pass.
-comments[9]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-04-06T12:40:25.542Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'list fields compact sort order list-all projection' --limit 20; pm search 'comments-audit parent tag sprint release priority filters' --limit 20; pm search 'health check-only no-refresh refresh-vectors' --limit 20; pm search 'aggregate group-by parent type count child counts' --limit 20; pm search 'ownership conflict allow-audit-comment remediation hint' --limit 20; pm list-open --limit 50; pm list-in-progress --limit 50. Net-new because matching items are either closed or only partially overlapping and no active feature currently tracks this combined non-dedupe scope.'"
   "2026-04-06T13:28:53.414Z",codex-agent,"Implemented issue-report follow-ups for comments guidance, aggregate grouped counts, list projection/sorting, comments-audit filter expansion, and health refresh controls with backward-compatible defaults. Verification: node scripts/run-tests.mjs test -- tests/unit/aggregate-command.spec.ts tests/unit/list-command.spec.ts tests/unit/list-sort-branches.spec.ts tests/unit/comments-command.spec.ts tests/unit/health-command.spec.ts tests/integration/aggregate-dedupe.integration.spec.ts tests/integration/cli.integration.spec.ts tests/integration/help-runtime.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts; pnpm build; node scripts/run-tests.mjs test; node scripts/run-tests.mjs coverage."
   "2026-04-06T14:39:36.760Z",codex-agent,"Seven-issue hardening follow-up kickoff: duplicate-check evidence refreshed via pm search \"aggregate group parent type-only rollup\" --limit 10 plus global context/list sweeps; reusing this feature for aggregate grouped payload shape regression fix."
@@ -25,6 +24,7 @@ comments[9]{created_at,author,text}:
   "2026-04-25T16:54:41.596Z",codex-agent,"Dogfood finding (2026-04-25): comments-audit hard-fails when both --limit and --limit-items are provided with different values; error is deterministic but UX could expose clearer remediation in help/examples."
   "2026-04-26T13:16:13.936Z",cursor-agent,"Fresh aggregate audit evidence 2026-04-26: pm aggregate --group-by type passes, but the requested audit probe pm aggregate --group-by type,status fails because group fields are limited to parent|type. If status grouping is intentionally unsupported, docs/checklists should avoid type,status; otherwise add status as a supported group dimension."
   "2026-04-26T13:51:52.910Z",cursor-agent,"Telemetry evidence from persisted user data analysis: aggregate failure patterns include 8 occurrences of users trying status grouping and receiving Aggregate group fields must be one of parent|type. This reinforces the active governance query controls scope."
+  "2026-04-27T20:08:53.124Z",codex-agent,"Stale-state normalization 2026-04-27: this feature scope is complete based on existing implementation evidence (aggregate/list/comments-audit/health/query controls plus contracts/completion/docs) and follow-up aggregate status-grouping remediation delivered under closed child feature pm-bhhe. Closing lifecycle state to match delivered behavior."
 notes[1]{created_at,author,text}:
   "2026-04-06T12:40:25.542Z",codex-agent,Implement command surfaces additively and keep existing defaults stable for current users.
 files[10]{path,scope,note}:
@@ -49,4 +49,5 @@ docs[5]{path,scope,note}:
   docs/ARCHITECTURE.md,project,architecture updates for new commands and options
   PRD.md,project,command contracts and flag matrix updates
   README.md,project,query surface and health behavior docs
+close_reason: Governance query control follow-ups are delivered with verified tests/docs/contracts parity.
 body: ""

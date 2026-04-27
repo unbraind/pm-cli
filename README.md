@@ -284,6 +284,8 @@ Governance workflows now include explicit non-owner metadata mutation and bulk u
 - `pm update-many` provides native bulk mutation with deterministic filter targeting, dry-run planning, optional checkpoint capture, and rollback.
 - `pm update-many` supports linked-array payload parity with `pm update` (repeatable `--dep/--comment/--note/--learning/--file/--test/--doc/--reminder/--event` plus `--clear-*`, `--replace-deps`, and `--replace-tests`).
 - `pm update-many --rollback <checkpoint-id>` restores every item in a prior checkpoint (ownership-safe restore path included).
+- `pm normalize` provides deterministic lifecycle metadata hygiene with default dry-run planning and explicit `--apply` mode.
+- `pm normalize` reuses list-style filter targeting (`--filter-status`, `--filter-type`, `--filter-tag`, assignee/parent/sprint/release, `--limit`, `--offset`) and supports ownership-safe apply controls (`--allow-audit-update`, `--force`).
 
 ```bash
 # Ownership-safe metadata audit update (non-owner, metadata-only scope)
@@ -303,6 +305,12 @@ pm update-many --filter-status in_progress --priority 1 --deadline +2d --dry-run
 
 # Roll back a previously captured checkpoint
 pm update-many --rollback 20260406T102455Z-7xq9 --author maintainer --message "Rollback governance batch"
+
+# Preview lifecycle metadata normalization plans (default mode is dry-run)
+pm normalize --filter-status in_progress --dry-run --json
+
+# Apply lifecycle metadata normalization with audit-safe ownership controls
+pm normalize --filter-tag governance --apply --allow-audit-update --author maintainer --message "Normalize lifecycle metadata"
 ```
 
 ## Duplicate and Decomposition Audits

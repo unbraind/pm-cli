@@ -36,9 +36,11 @@ describe("contracts command runtime", () => {
     expect(result.actions ?? []).toContain("contracts");
     expect(result.actions ?? []).toContain("aggregate");
     expect(result.actions ?? []).toContain("dedupe-audit");
+    expect(result.actions ?? []).toContain("normalize");
     expect(result.commands).toContain("contracts");
     expect(result.commands).toContain("aggregate");
     expect(result.commands).toContain("dedupe-audit");
+    expect(result.commands).toContain("normalize");
     expect((result.action_availability ?? []).some((entry) => entry.action === "create" && entry.invocable)).toBe(true);
     expect(result.command_flags?.some((entry) => entry.command === "contracts")).toBe(true);
     expect(result.command_flags?.find((entry) => entry.command === "aggregate")?.flags).toEqual(
@@ -290,6 +292,18 @@ describe("contracts command runtime", () => {
           "--clear-docs",
           "--clear-events",
           "--allow-audit-update",
+        ],
+      },
+      {
+        command: "normalize",
+        flags: [
+          "--filter-status",
+          "--dry-run",
+          "--apply",
+          "--author",
+          "--message",
+          "--allow-audit-update",
+          "--force",
         ],
       },
       {

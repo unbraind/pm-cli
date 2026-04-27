@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added audit flag recommendations (`--allow-audit-update`, `--allow-audit-dep-update`, `--allow-audit-comment`) to ownership conflict error guidance as non-force alternatives.
 - Added lifecycle dependency-cycle diagnostics to `pm validate` with deterministic cycle counts/sample paths and configurable `--dependency-cycle-severity off|warn|error` policy.
 - Added extension scaffold lifecycle action (`pm extension --init`, alias `--scaffold`) that generates idempotent starter extension projects with manifest, entrypoint, and quick-start guidance.
+- Added `pm normalize` lifecycle metadata governance workflow with deterministic dry-run planning (default), explicit `--apply` mode, list-style filter targeting, and ownership-safe apply controls (`--allow-audit-update`, `--force`).
 
 ### Changed
 - Bumped `pnpm/action-setup` from v5 to v6 in all CI/release/nightly workflows (pnpm v11 support).

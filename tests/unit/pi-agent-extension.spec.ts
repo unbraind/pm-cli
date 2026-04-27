@@ -707,6 +707,14 @@ describe("Pi agent extension wrapper for pm", () => {
     expect(schemaProperty(updateManySchema, "noCheckpoint").type).toBe("boolean");
     expect(schemaProperty(updateManySchema, "allowAuditDepUpdate").type).toBe("boolean");
 
+    const normalizeSchema = schemaForAction(tool.parameters as Record<string, unknown>, "normalize");
+    expect(normalizeSchema.required).toEqual(["action"]);
+    expect(schemaProperty(normalizeSchema, "filterStatus").type).toBe("string");
+    expect(schemaProperty(normalizeSchema, "filterAssigneeFilter").enum).toEqual(["assigned", "unassigned"]);
+    expect(schemaProperty(normalizeSchema, "dryRun").type).toBe("boolean");
+    expect(schemaProperty(normalizeSchema, "apply").type).toBe("boolean");
+    expect(schemaProperty(normalizeSchema, "allowAuditUpdate").type).toBe("boolean");
+
     const templatesSaveSchema = schemaForAction(tool.parameters as Record<string, unknown>, "templates-save");
     const templatesSaveProperties = templatesSaveSchema.properties as Record<string, unknown>;
     expect(templatesSaveProperties.createMode).toBeUndefined();
@@ -968,6 +976,62 @@ describe("Pi agent extension wrapper for pm", () => {
         "--allow-audit-dep-update",
       ]),
     );
+
+    expect(
+      buildPmCliArgs({
+        action: "normalize",
+        filterStatus: "in_progress",
+        filterType: "Task",
+        filterTag: "governance",
+        filterPriority: 1,
+        filterAssignee: "pi-bot",
+        filterAssigneeFilter: "assigned",
+        filterParent: "pm-feature01",
+        filterSprint: "sprint-7",
+        filterRelease: "vnext",
+        limit: 3,
+        offset: 1,
+        dryRun: true,
+        apply: true,
+        allowAuditUpdate: true,
+        author: "pi-bot",
+        message: "normalize lifecycle metadata",
+        force: true,
+      }),
+    ).toEqual([
+      "--json",
+      "normalize",
+      "--filter-status",
+      "in_progress",
+      "--filter-type",
+      "Task",
+      "--filter-tag",
+      "governance",
+      "--filter-priority",
+      "1",
+      "--filter-assignee",
+      "pi-bot",
+      "--filter-assignee-filter",
+      "assigned",
+      "--filter-parent",
+      "pm-feature01",
+      "--filter-sprint",
+      "sprint-7",
+      "--filter-release",
+      "vnext",
+      "--limit",
+      "3",
+      "--offset",
+      "1",
+      "--dry-run",
+      "--apply",
+      "--allow-audit-update",
+      "--author",
+      "pi-bot",
+      "--message",
+      "normalize lifecycle metadata",
+      "--force",
+    ]);
 
     expect(
       buildPmCliArgs({
