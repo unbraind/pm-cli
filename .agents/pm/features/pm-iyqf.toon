@@ -6,7 +6,7 @@ status: in_progress
 priority: 1
 tags[3]: agent-ux,"area:context",pm-cli
 created_at: "2026-04-01T14:10:36.966Z"
-updated_at: "2026-04-26T08:47:28.502Z"
+updated_at: "2026-04-27T17:21:44.524Z"
 deadline: "2026-05-09T17:09:59.580Z"
 assignee: codex-agent
 author: codex-agent
@@ -40,9 +40,10 @@ regression: false
 customer_impact: Faster and more reliable project-state triage
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-abhj,parent,"2026-04-01T14:10:36.966Z",codex-agent,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-01T14:10:36.966Z",codex-agent,Feature created as child of epic pm-abhj.
   "2026-04-25T11:01:36.427Z",codex-agent,Parent coverage blocker is stale after latest 100% coverage verification; unblocking and resuming feature execution.
+  "2026-04-27T17:21:44.524Z",codex-agent,"Hybrid continuation handoff 2026-04-27: child task pm-f583 was rerun through full linked verification (coverage 1073 tests at 100%, full regression 1073 tests, targeted bundle 191 tests, pnpm build) and then closed/released with acceptance criteria met."
 notes[1]{created_at,author,text}:
   "2026-04-01T14:10:36.966Z",codex-agent,Implement core command then integrate completion wrapper tests and docs.
 learnings[1]{created_at,author,text}:

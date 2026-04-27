@@ -2,13 +2,12 @@ id: pm-f583
 title: Implement and verify pm context command
 description: "Code the context command module and all wiring/tests/docs, then verify with build, tests, coverage, and command smoke checks."
 type: Task
-status: in_progress
+status: closed
 priority: 1
 tags[3]: "area:context",implementation,pm-cli
 created_at: "2026-04-01T14:10:51.504Z"
-updated_at: "2026-04-26T08:47:31.030Z"
+updated_at: "2026-04-27T17:03:55.657Z"
 deadline: "2026-05-09T17:09:59.572Z"
-assignee: codex-agent
 author: codex-agent
 estimated_minutes: 360
 acceptance_criteria: "All implementation, test, and documentation updates for pm context are complete and verified with build/test/coverage."
@@ -40,16 +39,19 @@ regression: true
 customer_impact: Users and agents get faster context snapshots
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-iyqf,parent,"2026-04-01T14:10:51.504Z",codex-agent,null
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-04-01T14:10:51.504Z",codex-agent,Implementation task created and ready for claim.
   "2026-04-01T14:26:43.067Z",codex-agent,"Implemented pm context/ctx end-to-end: new command module, CLI wiring/help, completion parity, Pi wrapper action mapping, unit/integration/release-readiness tests, and docs (README/PRD/ARCHITECTURE/AGENTS/CHANGELOG). Verification: pnpm build passed; node scripts/run-tests.mjs test passed (63 files / 661 tests); targeted changed-suite regression passed (5 files / 131 tests). Coverage command still fails on existing global 100% thresholds across broader repo (lines 97.64, branches 95.34, functions 98.24, statements 97.32), but context command behavior and all related suites are passing."
   "2026-04-05T22:43:38.081Z",codex-agent,"Normalization decision: removed stale governance backfill links that now point to deleted legacy install/beads/todos/builtins paths. These stale entries generated validate missing_linked_paths noise and obscured actionable linkage."
   "2026-04-05T22:46:20.828Z",codex-agent,"Normalization decision: deadline refreshed because item remains intentionally blocked by upstream coverage-baseline gate; prior deadline was stale and created misleading overdue triage noise."
   "2026-04-25T11:01:37.351Z",codex-agent,Coverage baseline blocker is resolved in latest run; unblocking task for completion workflow.
-notes[1]{created_at,author,text}:
+  "2026-04-27T17:03:32.104Z",codex-agent,"Verification 2026-04-27: pm test pm-f583 --run --progress executed 4 linked commands with all passing. Results: coverage suite 79 files/1073 tests passed with 100% statements/branches/functions/lines; full regression 79 files/1073 tests passed; targeted context bundle 5 files/191 tests passed; pnpm build passed. Sandbox execution_context remained schema mode with no context mismatch."
+notes[2]{created_at,author,text}:
   "2026-04-01T14:10:51.504Z",codex-agent,Will track files tests docs and verification evidence before close.
-learnings[1]{created_at,author,text}:
+  "2026-04-27T17:03:40.588Z",codex-agent,"Closeout audit 2026-04-27: linked verification now demonstrates acceptance-criteria parity including coverage pass under current baseline and full regression rerun in sandbox mode."
+learnings[2]{created_at,author,text}:
   "2026-04-01T20:14:49.670Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
+  "2026-04-27T17:03:40.344Z",codex-agent,"When long-lived in_progress tasks already have implementation evidence, rerunning linked pm test bundles before close provides deterministic, current-state proof and avoids stale quality assumptions."
 files[12]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,pi wrapper context action
   src/cli/commands/completion.ts,project,shell completion parity
@@ -68,10 +70,13 @@ tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,full regression
   node scripts/run-tests.mjs test -- tests/unit/context-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,targeted regression suite
   pnpm build,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,typescript build verification
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mohg4mj1-cnbymj,test,passed,"2026-04-27T16:53:27.334Z","2026-04-27T17:03:20.846Z","2026-04-27T17:03:20.846Z",null,null,4,0,0,null,null,null
 docs[5]{path,scope,note}:
   AGENTS.md,project,workflow recommendation update
   CHANGELOG.md,project,unreleased feature note
   docs/ARCHITECTURE.md,project,context pipeline architecture
   PRD.md,project,command and wrapper contract updates
   README.md,project,user-facing command docs
+close_reason: "acceptance criteria met: context command implementation verified via linked coverage/full/targeted tests and build"
 body: Execution task for pm context delivery.

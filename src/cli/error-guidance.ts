@@ -23,6 +23,11 @@ export interface JsonErrorEnvelope {
   next_steps?: string[];
 }
 
+export interface CommanderGuidanceContext {
+  unknownCommandExamples?: string[];
+  unknownCommandNextSteps?: string[];
+}
+
 function errorType(code: string): string {
   return `urn:pm-cli:error:${code}`;
 }
@@ -310,7 +315,12 @@ function commandExampleForRequiredOption(commandName: string | undefined, option
   return [`pm ${commandName ?? "<command>"} --help`];
 }
 
-function buildCommanderErrorGuidance(rawMessage: string, commandName: string | undefined, allowedTypes: string): GuidanceMessage {
+function buildCommanderErrorGuidance(
+  rawMessage: string,
+  commandName: string | undefined,
+  allowedTypes: string,
+  context?: CommanderGuidanceContext,
+): GuidanceMessage {
   const message = normalizeMessage(rawMessage);
 
   const requiredOption = message.match(/required option '([^']+)' not specified/);
@@ -375,14 +385,16 @@ function buildCommanderErrorGuidance(rawMessage: string, commandName: string | u
   const unknownCommand = message.match(/unknown command '([^']+)'/);
   if (unknownCommand) {
     const commandToken = unknownCommand[1];
+    const runtimeExamples = normalizeContextList(context?.unknownCommandExamples);
+    const runtimeNextSteps = normalizeContextList(context?.unknownCommandNextSteps);
     return makeGuidanceMessage({
       code: "unknown_command",
       title: `Unknown command ${commandToken}`,
       happened: `pm does not expose command path "${commandToken}" in current runtime configuration.`,
       required: "Use a valid command name or subcommand path.",
       why: "Command registry includes core commands plus active extension command handlers.",
-      examples: ["pm --help", "pm beads --help", "pm todos --help"],
-      nextSteps: ["Verify spelling and active extensions, then rerun."],
+      examples: runtimeExamples ?? ["pm --help"],
+      nextSteps: runtimeNextSteps ?? ["Verify spelling and active extensions, then rerun."],
     });
   }
 
@@ -408,8 +420,9 @@ export function formatCommanderErrorForDisplay(
   rawMessage: string,
   commandName: string | undefined,
   allowedTypes: string,
+  context?: CommanderGuidanceContext,
 ): string {
-  return renderGuidanceMessage(buildCommanderErrorGuidance(rawMessage, commandName, allowedTypes));
+  return renderGuidanceMessage(buildCommanderErrorGuidance(rawMessage, commandName, allowedTypes, context));
 }
 
 export function formatCommanderErrorForJson(
@@ -417,8 +430,9 @@ export function formatCommanderErrorForJson(
   commandName: string | undefined,
   allowedTypes: string,
   exitCode: number,
+  context?: CommanderGuidanceContext,
 ): JsonErrorEnvelope {
-  return guidanceToJsonEnvelope(buildCommanderErrorGuidance(rawMessage, commandName, allowedTypes), exitCode);
+  return guidanceToJsonEnvelope(buildCommanderErrorGuidance(rawMessage, commandName, allowedTypes, context), exitCode);
 }
 
 export function formatUnknownErrorForJson(rawMessage: string, exitCode: number): JsonErrorEnvelope {

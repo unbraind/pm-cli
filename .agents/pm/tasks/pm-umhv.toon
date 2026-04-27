@@ -2,22 +2,29 @@ id: pm-umhv
 title: Add scoped audit override mode for pm update metadata mutations
 description: Implement a non-owner metadata-only override path for pm update that avoids broad force semantics while preserving lifecycle safety.
 type: Task
-status: in_progress
+status: closed
 priority: 1
 tags[4]: governance,ownership,pm-cli,update
 created_at: "2026-04-06T16:46:58.842Z"
-updated_at: "2026-04-26T08:48:24.809Z"
-assignee: codex-agent
+updated_at: "2026-04-27T17:09:43.862Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: pm update supports a scoped --allow-audit-update mode for approved metadata fields on cross-owner items; lifecycle fields remain protected; output and history label audit override usage deterministically.
-comments[6]{created_at,author,text}:
+resolution: "Scoped audit update mode and scoped audit dependency update mode enforce ownership-safe, append-only semantics without broad force requirements."
+expected_result: "Non-owner metadata-only or dependency-only updates are explicitly gated, lifecycle fields remain protected, and audit_update labeling stays deterministic."
+actual_result: "Linked verification rerun on 2026-04-27 passed (36 + 167 tests), confirming guardrails and parity across command surfaces."
+comments[7]{created_at,author,text}:
   "2026-04-06T16:46:58.842Z",codex-agent,Duplicate-check evidence used pm context pm search and open or in-progress lists. Net-new scope under pm-lwps for scoped metadata ownership override without duplicate tracking item.
   "2026-04-06T17:08:51.634Z",codex-agent,"Progress: implemented scoped --allow-audit-update path for pm update with metadata-only guardrails and explicit update_audit history labeling. Ownership bypass now routes through mutateItem only when allow-audit-update is set; lifecycle and linkage flags are rejected in audit mode to preserve status and close semantics."
   "2026-04-06T17:08:55.120Z",codex-agent,"Verification evidence: node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/unit/update-many-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts passed (140 tests)."
   "2026-04-06T18:46:39.466Z",codex-agent,"Delivered ownership-safe audit update mode: wired --allow-audit-update across CLI normalization/contracts/Pi mapping, enforced metadata-only scope guardrails for lifecycle/linkage fields, and validated deterministic audit_update result tagging/history labeling. Verification: pnpm build; node scripts/run-tests.mjs test; node scripts/run-tests.mjs coverage."
   "2026-04-07T18:14:16.161Z",codex-agent,"2026-04-07 scope extension: introduce explicit dependency-audit override path (--allow-audit-dep-update) for cross-owner append-only dependency mutations; retain strict protection against unrelated lifecycle mutations without force. Planned files: src/cli/main.ts, src/cli/commands/update.ts, tests/unit/update-command.spec.ts, docs/AGENTS+README+PRD."
   "2026-04-07T18:24:05.498Z",codex-agent,"Implementation progress: added explicit --allow-audit-dep-update mode for cross-owner append-only dependency additions. Scope enforcement now allows only --dep and rejects lifecycle/metadata/clear/replace/remove flags; audit runs continue to use update_audit op labeling with assignee-conflict bypass for ownership-safe attribution. Added regression tests in tests/unit/update-command.spec.ts for success and guardrail failures."
+  "2026-04-27T17:09:17.472Z",codex-agent,"Verification 2026-04-27: pm test pm-umhv --run --progress executed 2 linked suites and both passed. Results: update-command suite 1 file/36 tests passed; broader ownership-audit regression 5 files/167 tests passed; schema sandbox context had no mismatches."
+notes[1]{created_at,author,text}:
+  "2026-04-27T17:09:25.438Z",codex-agent,"Closeout 2026-04-27 confirms scoped audit update and audit dep update guardrails remain deterministic across CLI, contracts, and wrapper surfaces."
+learnings[1]{created_at,author,text}:
+  "2026-04-27T17:09:25.577Z",codex-agent,Ownership-safe non-owner mutations should remain split by intent (metadata-only vs dep-only) to prevent accidental lifecycle drift while still enabling audit workflows.
 files[9]{path,scope,note}:
   .pi/extensions/pm-cli/index.ts,project,pi-update-parameter-contract-parity
   src/cli/commands/completion.ts,project,shell-completion-allow-audit-update-parity
@@ -31,6 +38,9 @@ files[9]{path,scope,note}:
 tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,allow-audit-dep-update coverage
   node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/unit/update-many-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,ownership-audit-override-and-completion-contract-regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mohgc42l-o5i6po,test,passed,"2026-04-27T17:07:43.167Z","2026-04-27T17:09:10.173Z","2026-04-27T17:09:10.173Z",null,null,2,0,0,null,null,null
 docs[1]{path,scope,note}:
   AGENTS.md,project,audit dependency override policy guidance
+close_reason: "acceptance criteria met: scoped audit override modes verified with linked regression suites and close-readiness fields populated"
 body: ""

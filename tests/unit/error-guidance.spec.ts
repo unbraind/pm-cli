@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { formatPmCliErrorForDisplay, formatPmCliErrorForJson } from "../../src/cli/error-guidance.js";
+import {
+  formatCommanderErrorForDisplay,
+  formatCommanderErrorForJson,
+  formatPmCliErrorForDisplay,
+  formatPmCliErrorForJson,
+} from "../../src/cli/error-guidance.js";
 
 describe("pm cli error guidance context plumbing", () => {
   it("applies PmCliError context fields to JSON envelope output", () => {
@@ -53,5 +58,28 @@ describe("pm cli error guidance context plumbing", () => {
       'pm search "<keyword>" --limit 10',
     ]);
     expect(envelope.examples?.some((example) => example.includes("pm-does-not-exist"))).toBe(false);
+  });
+
+  it("applies runtime unknown-command guidance examples for commander errors", () => {
+    const envelope = formatCommanderErrorForJson("unknown command 'beads'", "help", "Task|Issue", 2, {
+      unknownCommandExamples: ["pm --help", "pm list-open --help", "pm context --help"],
+      unknownCommandNextSteps: [
+        'Run "pm --help" to inspect available command paths in this runtime.',
+        'Use one of the suggested command paths with "--help".',
+      ],
+    });
+
+    expect(envelope.code).toBe("unknown_command");
+    expect(envelope.examples).toEqual(["pm --help", "pm list-open --help", "pm context --help"]);
+    expect(envelope.next_steps).toEqual([
+      'Run "pm --help" to inspect available command paths in this runtime.',
+      'Use one of the suggested command paths with "--help".',
+    ]);
+
+    const guidance = formatCommanderErrorForDisplay("unknown command 'beads'", "help", "Task|Issue", {
+      unknownCommandExamples: ["pm --help", "pm list-open --help"],
+    });
+    expect(guidance).toContain("pm list-open --help");
+    expect(guidance).not.toContain("pm todos --help");
   });
 });

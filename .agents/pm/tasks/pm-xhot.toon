@@ -2,20 +2,27 @@ id: pm-xhot
 title: Generate shell completion flags from command contracts
 description: Refactor completion generation to source command option flags from contracts metadata so required options stay in sync across shells.
 type: Task
-status: in_progress
+status: closed
 priority: 1
 tags[4]: completion,contracts,external-audit,pm-cli
 created_at: "2026-04-06T16:47:47.400Z"
-updated_at: "2026-04-26T08:47:38.755Z"
-assignee: codex-agent
+updated_at: "2026-04-27T17:12:53.820Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: Completion scripts for bash zsh and fish are generated from canonical command contract metadata and include append required --body flag parity.
 parent: pm-o7be
-comments[3]{created_at,author,text}:
+resolution: "Shell completion flag generation now derives from canonical command contracts, including alias-aware variants for parser parity."
+expected_result: Completion scripts for bash/zsh/fish expose contract-derived flags and aliases so interactive suggestions match accepted CLI options.
+actual_result: "Linked completion/contracts regression rerun on 2026-04-27 passed (157 tests), confirming contract-derived flag and alias parity remains stable."
+comments[4]{created_at,author,text}:
   "2026-04-06T16:47:47.400Z",codex-agent,Duplicate-check evidence used pm context pm search and open or in-progress lists. Net-new scope under pm-o7be for contract-driven completion option generation and append body parity.
   "2026-04-06T17:54:27.270Z",codex-agent,"Implemented contract-driven completion flag parity across bash/zsh/fish by sourcing append/completion flags from src/sdk/cli-contracts.ts via shared constants in completion generation. Added APPEND_FLAG_CONTRACTS and COMPLETION_FLAG_CONTRACTS, wired contracts --command <append|completion> --flags-only coverage, and updated help content to document eager/lazy behavior. Adjusted completion unit expectation to match generated shell choices after removing brittle quoted-shell-list assertion. Verification: node scripts/run-tests.mjs test -- tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/task-lifecycle-aliases.spec.ts (136/136 passed)."
   "2026-04-07T18:14:22.163Z",codex-agent,"2026-04-07 scope extension: completion candidate generation must derive from alias-aware command contracts so shell completion matches parser-accepted flags (underscore parity included)."
+  "2026-04-27T17:05:13.118Z",codex-agent,"Verification 2026-04-27: pm test pm-xhot --run --progress passed linked completion/contracts regression command. Result: 6 files and 157 tests passed; command completed in 53s with schema sandbox context and no mismatches."
+notes[1]{created_at,author,text}:
+  "2026-04-27T17:05:23.106Z",codex-agent,Closeout 2026-04-27 confirms alias-aware completion contract parity remains stable after latest runtime changes.
+learnings[1]{created_at,author,text}:
+  "2026-04-27T17:05:23.280Z",codex-agent,Completion/help surfaces should continue deriving accepted option aliases from command contracts to prevent parser/completion drift.
 files[6]{path,scope,note}:
   src/cli/commands/completion.ts,project,contract-driven shell completion flags
   src/cli/commands/contracts.ts,project,contracts command returns completion/append flags
@@ -25,8 +32,10 @@ files[6]{path,scope,note}:
   tests/unit/contracts-command.spec.ts,project,flags-only coverage for append/completion command contracts
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/task-lifecycle-aliases.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,completion contract and lifecycle discoverability regression sweep
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mnnhnr0g-i20jhl,test,passed,"2026-04-06T17:52:01.315Z","2026-04-06T17:53:07.456Z","2026-04-06T17:53:07.456Z",null,null,1,0,0,null,null,null
+  test-local-mohg6u5o-c0by0y,test,passed,"2026-04-27T17:04:10.388Z","2026-04-27T17:05:04.044Z","2026-04-27T17:05:04.044Z",null,null,1,0,0,null,null,null
 docs[1]{path,scope,note}:
   src/cli/help-content.ts,project,CLI help documentation for completion command behavior
+close_reason: "acceptance criteria met: completion flags remain contract-driven and verified by linked regression suite"
 body: ""

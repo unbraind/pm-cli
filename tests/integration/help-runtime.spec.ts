@@ -66,6 +66,9 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       const textHelp = context.runCli(["beads", "--help"]);
       expect(textHelp.code).toBe(2);
       expect(textHelp.stderr).toContain("Unknown command beads");
+      expect(textHelp.stderr).toContain("pm --help");
+      expect(textHelp.stderr).not.toContain("pm beads --help");
+      expect(textHelp.stderr).not.toContain("pm todos --help");
 
       const jsonHelp = context.runCli(["beads", "--help", "--json"]);
       expect(jsonHelp.code).toBe(2);
@@ -73,10 +76,15 @@ describe("CLI help runtime coverage (sandboxed)", () => {
         code: string;
         title: string;
         exit_code: number;
+        examples?: string[];
       };
       expect(envelope.code).toBe("unknown_command");
       expect(envelope.title).toContain("Unknown command beads");
       expect(envelope.exit_code).toBe(2);
+      expect(envelope.examples).toBeDefined();
+      expect(envelope.examples?.[0]).toBe("pm --help");
+      expect(envelope.examples?.some((example) => example.includes("beads"))).toBe(false);
+      expect(envelope.examples?.some((example) => example.includes("todos"))).toBe(false);
     });
   });
 
