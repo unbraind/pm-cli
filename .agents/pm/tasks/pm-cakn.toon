@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: observability,ops,pm-cli,skill,telemetry
 created_at: "2026-04-26T13:34:18.933Z"
-updated_at: "2026-04-26T13:53:37.029Z"
+updated_at: "2026-04-28T17:36:07.024Z"
 author: cursor-agent
 estimated_minutes: 180
 acceptance_criteria: Aggregated persisted telemetry is analyzed without exposing raw user identifiers; remote analysis skill exists under the pm-cli operations folder with deterministic scripts and privacy guardrails; findings and verification are recorded on the pm item.
@@ -20,7 +20,7 @@ comments[2]{created_at,author,text}:
 notes[1]{created_at,author,text}:
   "2026-04-26T13:53:15.326Z",cursor-agent,"Product-improvement findings from aggregated telemetry: update command has high failure rate driven by close-through-update and audit ownership restrictions; calendar today alias and aggregate status grouping are repeated user expectations; search has high p95 latency; telemetry payload lacks explicit pm CLI version and source classification, making real-user versus automation segmentation harder."
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  ssh -o BatchMode=yes steve@192.168.1.183 'python3 /home/steve/container/pm-cli/skills/pm-telemetry-analysis/scripts/analyze_telemetry.py --format json --limit 5 --days 3',null,project,120,null,null,null,null,null,null,null,null,null,null,null,remote telemetry analysis skill JSON smoke
+  echo telemetry-analysis-placeholder,null,project,120,null,null,null,null,null,null,null,null,null,null,null,remote telemetry analysis skill JSON smoke (redacted)
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-moftvmqg-moyolu,test,passed,"2026-04-26T13:52:38.173Z","2026-04-26T13:52:43.480Z","2026-04-26T13:52:43.480Z",null,null,1,0,0,null,null,null
 close_reason: Persisted telemetry analyzed; remote analysis skill installed and verified; product follow-up items created or updated.

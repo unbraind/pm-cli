@@ -1,0 +1,13 @@
+id: pm-7k60
+title: "Feature: Calendar Subsystem Audit - All Passing"
+description: All calendar views (agenda/day/week/month) and features verified
+type: Feature
+status: closed
+priority: 1
+tags[4]: audit,calendar,pm-cli,verified
+created_at: "2026-04-28T17:34:17.412Z"
+updated_at: "2026-04-28T17:35:29.662Z"
+author: audit-agent
+parent: pm-wg1d
+close_reason: All calendar views/formats/filters/recurrence verified in dogfood
+body: "Calendar audit results: agenda/day/week/month views all render correctly. Markdown/TOON/JSON output formats work. Reminders, deadlines, and events display properly. Filters (type/tag/priority/status/assignee/sprint/release) work. --full-period, --past, --from/--to, --date today all work. Recurrence expansion tested with weekly/daily/monthly patterns. Day bucketing and sorting correct."

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: 2026-04-26,dogfood,external-audit,pm-cli,stabilization
 created_at: "2026-04-26T00:29:45.075Z"
-updated_at: "2026-04-26T13:28:04.234Z"
+updated_at: "2026-04-28T17:36:16.989Z"
 author: codex-agent
 estimated_minutes: 480
 acceptance_criteria: Full sandboxed test and coverage suites pass; telemetry and extension dogfood evidence captured; findings linked to affected items with reproducible evidence.
@@ -21,7 +21,7 @@ dependencies[6]{id,kind,created_at,author,source_kind}:
   pm-g9yi,related,"2026-04-26T08:43:12.806Z",codex-agent,null
   pm-kglq,related,"2026-04-26T08:43:12.806Z",codex-agent,null
   pm-vhdc,related,"2026-04-26T08:43:12.806Z",codex-agent,null
-comments[10]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-04-26T00:29:45.075Z",codex-agent,Duplicate check evidence ran pm context limit 10 plus pm search comprehensive dogfood audit limit 10 plus pm list-open limit 20 plus pm list-in-progress limit 20 and found no active task for 2026-04-26 stabilization scope
   "2026-04-26T00:30:20.152Z",codex-agent,"Evidence sweep 2026-04-26: pnpm build succeeded; node scripts/run-tests.mjs test passed 78 files and 1048 tests in 353.97s; node scripts/run-tests.mjs coverage passed 78 files and 1048 tests with 100 percent thresholds in 779.25s after timeout stabilization and coverage-list alignment updates."
   "2026-04-26T00:30:21.409Z",codex-agent,"Dogfood matrix evidence: executed comprehensive valid command sweep in /tmp/pm-audit-dogfood-valid-CcOz3W with all command groups returning zero non-zero exit codes including init/create/update/list/search/context/calendar/deps/aggregate/dedupe/history/activity/contracts/completion/validate/health/stats/gc/test/test-all/test-runs/extensions/beads/todos and lifecycle aliases."
@@ -32,6 +32,7 @@ comments[10]{created_at,author,text}:
   "2026-04-26T09:58:07.097Z",codex-agent,"Phase 4b-c and Phase 5 continuation evidence (2026-04-26): verified remote stack on steve@192.168.1.183 including healthy compose services, public health endpoints, Prometheus/Tempo activity, Postgres telemetry persistence, and synthetic UUID event persistence. Documented new actionable findings as pm-r9ei (Grafana RabbitMQ panel selector mismatch), pm-bqg4 (SDK extension typing hardening), and pm-mpmv (Decision-type guidance alignment), while updating existing telemetry issues pm-vhdc and pm-300m with fresh queue/log diagnostics."
   "2026-04-26T12:48:15.229Z",cursor-agent,"Reopened for fresh user-requested full audit rerun. Duplicate-check evidence for reuse: pm context --limit 10, pm search 'Full PM CLI Audit dogfood telemetry SDK extension calendar' --limit 10, pm list-open --limit 20, pm list-in-progress --limit 20, pm list-blocked --limit 20; exact prior audit item pm-mb4n exists and is the canonical tracking record, so no duplicate item created."
   "2026-04-26T13:26:59.897Z",cursor-agent,"Final audit evidence (2026-04-26 rerun): bootstrap passed with pm 2026.3.12, node v25.9.0, pnpm 10.33.0, pnpm build, and npm install -g .; core dogfood harness /tmp/pm-full-audit-core-dEmZ9N passed 79/79 commands; calendar/extension harness /tmp/pm-full-audit-cal-ext-CCsKmu passed 32/32 unexpected checks with 3 expected validation failures documented; SDK smoke /tmp/pm-sdk-audit-pass-RaG8lS compiled and contracts had no missing core command names; remote telemetry stack had all 9 Docker Compose services running, public healthz HTTP 200, Grafana login reachable, synthetic UUID ingest persisted to Postgres, Loki/Tempo/Prometheus verified, DSAR export/delete worked, and opt-out/redaction behavior was verified locally. Fixes closed: pm-qgvj (.env ignore) and pm-k8i0 (strict create guidance). Open follow-up findings updated: pm-vhdc, pm-r9ei, pm-300m, pm-bqg4, pm-mpmv, pm-kglq, pm-jqgc. Final validation passed: pm validate --check-resolution --check-history-drift --check-files --scan-mode tracked-all ok=true; dedupe parent_scope found 0 clusters; linked pm test run passed 4/4 including coverage 78 files/1052 tests and full test 78 files/1052 tests."
+  "2026-04-28T17:36:16.989Z",audit-agent,"2026-04-28 audit: historical comment text contains private host references (steve@[redacted-host]). These are audit evidence artifacts and do not contain credentials. Private IP exposure is tracked in pm-xk8b."
 notes[2]{created_at,author,text}:
   "2026-04-26T00:30:24.098Z",codex-agent,Custom schema extension dogfood confirmed project-specific Decision and Change types can be added without core code changes via api.registerItemTypes and filtered/listed through standard commands.
   "2026-04-26T08:43:19.202Z",codex-agent,"Latest run finding summary: one code-level validation gap (undefined placeholder IDs for parent/dependencies) was fixed and closed as pm-g9yi; telemetry ingestion UUID boundary hardening remains open in pm-vhdc; telemetry health visibility remains tracked in pm-300m; recurrence parse UX hinting remains tracked in pm-kglq."

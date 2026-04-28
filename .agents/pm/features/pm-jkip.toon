@@ -1,0 +1,13 @@
+id: pm-jkip
+title: "Feature: Telemetry Pipeline Audit - Fully Operational"
+description: "End-to-end telemetry verified: client -> API -> RabbitMQ -> Worker -> Postgres, with Grafana/Loki/Tempo/Prometheus monitoring"
+type: Feature
+status: closed
+priority: 0
+tags[4]: audit,pm-cli,telemetry,verified
+created_at: "2026-04-28T17:34:39.916Z"
+updated_at: "2026-04-28T17:35:42.616Z"
+author: audit-agent
+parent: pm-wg1d
+close_reason: "End-to-end telemetry pipeline verified: 22k+ events in Postgres, all 9 Docker services healthy, Prometheus 6 targets, Grafana accessible"
+body: "Telemetry audit results: (1) Client side: Telemetry events auto-queued with command_start/command_finish pairs. Queue flushes batch to endpoint. Sensitive data redacted (passwords, tokens, emails, absolute paths). 3 capture levels (minimal/redacted/max). Source context inference (user/automation/test/dogfood). (2) Server side: All 9 Docker services healthy on 192.168.1.183. API responds correctly (POST /v1/events). RabbitMQ queue pm.telemetry.events has 1 consumer, 0 pending messages. Worker processes events. Postgres stores 22,556+ events. (3) Monitoring: Prometheus scrapes 6 targets (alloy/loki/prometheus/rabbitmq/telemetry_api/tempo). Grafana accessible at pm.unbrained.dev. OTel traces export via Tempo. (4) Privacy: Telemetry runtime data (.agents/pm/runtime/telemetry/) is gitignored. No credentials in source code."

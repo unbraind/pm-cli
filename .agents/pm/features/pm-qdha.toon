@@ -1,0 +1,13 @@
+id: pm-qdha
+title: "Feature: SDK & Extension System Audit - Comprehensive"
+description: "SDK exports, extension loader, and CLI contracts verified for best practice"
+type: Feature
+status: closed
+priority: 1
+tags[5]: audit,extensions,pm-cli,sdk,verified
+created_at: "2026-04-28T17:34:31.788Z"
+updated_at: "2026-04-28T17:35:36.336Z"
+author: audit-agent
+parent: pm-wg1d
+close_reason: "SDK exports, extension loader, CLI contracts v4 schema all audited and following best practices"
+body: "SDK audit findings: (1) defineExtension helper provides typed identity for extensions. (2) 100+ typed exports from @unbrained/pm-cli/sdk including all hook types, command/renderer/parser/preflight/service overrides, search providers, vector store adapters, schema fields/types/migrations. (3) CLI contracts in cli-contracts.ts provide exhaustive flag/option contracts for every command. (4) Extension loader supports global/project layers with priority-based precedence. (5) 9 capability categories: commands, renderers, hooks, schema, importers, search, parser, preflight, services. (6) Full lifecycle hooks: beforeCommand, afterCommand, onWrite, onRead, onIndex. (7) Tool parameters schema (v4) covers all 60+ actions with typed JSON Schema definitions. Assessment: SDK is fully fledged and follows best practices for extensibility."

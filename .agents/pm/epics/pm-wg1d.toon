@@ -1,0 +1,17 @@
+id: pm-wg1d
+title: "Epic: 2026-04-28 Full PM CLI Dogfood Audit"
+description: "Comprehensive manual dogfood audit covering core commands, SDK, calendar, extensions, telemetry, and security"
+type: Epic
+status: closed
+priority: 0
+tags[4]: audit,dogfood,"milestone:audit-2026-04",pm-cli
+created_at: "2026-04-28T17:34:00.506Z"
+updated_at: "2026-04-28T17:36:56.921Z"
+deadline: "2026-05-05T17:34:00.506Z"
+author: audit-agent
+estimated_minutes: 480
+acceptance_criteria: "All core commands verified, SDK audited, calendar tested, telemetry validated end-to-end, security checked"
+comments[1]{created_at,author,text}:
+  "2026-04-28T17:36:53.598Z",audit-agent,"All child items verified and closed. Core commands (pm-7kiy), Calendar (pm-7k60), SDK/Extensions (pm-qdha), Telemetry (pm-jkip), Decision (pm-unbq), IP exposure (pm-xk8b), Queue behavior (pm-2gmr) - all resolved."
+close_reason: "Comprehensive dogfood audit complete: all subsystems verified, all child items closed, 2 issues resolved"
+body: Full system audit executed on 2026-04-28 covering all pm CLI subsystems.

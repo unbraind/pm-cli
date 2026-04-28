@@ -1,0 +1,13 @@
+id: pm-7kiy
+title: "Feature: Core Commands Audit - All Passing"
+description: All core CRUD and lifecycle commands verified in isolated dogfood environment
+type: Feature
+status: closed
+priority: 1
+tags[4]: audit,core,pm-cli,verified
+created_at: "2026-04-28T17:34:13.681Z"
+updated_at: "2026-04-28T17:35:22.601Z"
+author: audit-agent
+parent: pm-wg1d
+close_reason: All 40+ core commands verified in /tmp/pm-dogfood-audit with correct output
+body: "Tested in /tmp/pm-dogfood-audit: init, create (progressive/strict), list-open, list-in-progress, context, get, update, close, claim, release, comments, notes, learnings, append, deps, history, activity, aggregate, stats, contracts, validate, health. All commands returned expected results with correct TOON output."

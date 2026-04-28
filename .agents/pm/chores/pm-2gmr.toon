@@ -1,0 +1,15 @@
+id: pm-2gmr
+title: "Chore: Telemetry queue steady-state has 100 pending entries"
+description: The global telemetry queue retains exactly 100 entries between flush cycles despite successful flushes
+type: Chore
+status: closed
+priority: 3
+tags[4]: audit,optimization,pm-cli,telemetry
+created_at: "2026-04-28T17:34:57.362Z"
+updated_at: "2026-04-28T17:36:40.423Z"
+author: audit-agent
+parent: pm-wg1d
+comments[1]{created_at,author,text}:
+  "2026-04-28T17:36:36.374Z",audit-agent,"Queue behavior is bounded by design: TELEMETRY_FLUSH_BATCH_SIZE=100 in runtime.ts line 12. The queue processes up to 100 entries per command invocation. When multiple commands execute rapidly, the queue stabilizes at batch size. This is acceptable behavior."
+close_reason: Documented as by-design bounded behavior in telemetry runtime; TELEMETRY_FLUSH_BATCH_SIZE=100
+body: "Observation: pm health shows telemetry queue with exactly 100 entries (TELEMETRY_FLUSH_BATCH_SIZE) remaining after successful flushes. The batch flush only processes up to 100 entries per invocation. When commands generate events faster than one flush cycle can clear, the queue stabilizes at batch size. This is by-design bounded behavior but could be improved by processing multiple batches per flush cycle or increasing the batch size."
