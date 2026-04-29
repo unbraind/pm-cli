@@ -490,7 +490,7 @@ Weights are configurable via `settings.json` under `search.tuning`.
 | `validation.parent_reference` | Parent-reference policy for create/update: `warn` (default) or `strict_error` |
 | `testing.record_results_to_items` | Item-level test summary persistence toggle: `false` (default) / `true` |
 | `telemetry.enabled` | Telemetry export toggle: `true` (default) / `false` |
-| `telemetry.capture_level` | Runtime capture profile (`max`, `redacted`, `minimal`) |
+| `telemetry.capture_level` | Runtime capture profile (`redacted` default, `max`, `minimal`) |
 | `telemetry.endpoint` | Remote telemetry ingestion endpoint URL |
 | `telemetry.installation_id` | Pseudonymous global installation identifier |
 | `telemetry.retention_days` | Telemetry retention window (days) used for local queue pruning during flush and remote worker cleanup |

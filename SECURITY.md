@@ -39,8 +39,6 @@ Retention and DSAR operations are handled on the remote telemetry platform:
 
 - Raw event retention target: 365 days
 - Aggregated daily rollups retained long-term
-- Export by installation identifier: `/home/steve/container/pm-cli/scripts/dsar-export.sh`
-- Deletion by installation identifier: `/home/steve/container/pm-cli/scripts/dsar-delete.sh`
 
 ## Extension Runtime Trust Model
 
