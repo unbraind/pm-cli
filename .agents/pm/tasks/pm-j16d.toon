@@ -1,0 +1,39 @@
+id: pm-j16d
+title: Run latest-build temp-project dogfood audit and remediate findings
+description: "Exercise the latest pm CLI manually in isolated temporary projects, audit SDK/calendar/telemetry behavior, and fix actionable defects."
+type: Task
+status: closed
+priority: 0
+tags[7]: audit,calendar,dogfood,extensibility,pm-cli,sdk,telemetry
+created_at: "2026-04-30T19:37:39.494Z"
+updated_at: "2026-04-30T20:05:04.903Z"
+deadline: "2026-05-01T19:37:39.494Z"
+author: codex-audit
+estimated_minutes: 300
+acceptance_criteria: Temp-project dogfood run completed; SDK/calendar/telemetry findings documented; feasible fixes implemented with tests; remaining risks captured as pm issues or notes.
+parent: pm-3fti
+resolution: "Completed latest-build manual dogfood audit, fixed two actionable findings, and created follow-up pm-e0b5 for historical tracker hygiene warnings."
+expected_result: "CLI, SDK, calendar, extension, and telemetry workflows are dogfooded in isolated temp roots with evidence and feasible fixes."
+actual_result: Core dogfood workflows passed; SDK starter health warning and context date-sensitive test were fixed; coverage is 100%; remote telemetry stack is live and receiving dogfood events.
+fixed_version: 2026.3.12-audit
+comments[5]{created_at,author,text}:
+  "2026-04-30T19:37:39.494Z",codex-audit,"Duplicate check before create reused current bootstrap evidence: pm context returned no active items,pm search returned only closed prior audit work,and no open or in_progress items existed. This task is the executable child for the new audit feature pm-3fti."
+  "2026-04-30T19:37:59.962Z",codex-audit,"Started audit after bootstrap: npm install -g ., pm --version 2026.3.12, node v25.0.0, pnpm 10.33.0, pnpm build passed. PM_CMD=pm."
+  "2026-04-30T20:01:18.047Z",codex-audit,"Audit link update: attached changed files, focused regression test command, and SDK/extension docs. Note: pm docs does not support --append-stable; retried docs links with supported --add."
+  "2026-04-30T20:04:22.062Z",codex-audit,"Evidence: temp dogfood project /tmp/pm-cli-dogfood-audit-Gum25N exercised init/config/create/claim/update/files/docs/tests/comments/notes/learnings/append/get/list/search/aggregate/dedupe/deps/activity/history/test/validate/calendar/context/normalize/gc/contracts/health. Extension dogfood installed zero-config scaffold and SDK starter, created extension-provided Experiment type, and verified patched starter install clears health warnings. Remote telemetry stack checked: public endpoints reachable; API/Grafana/Alloy/Loki/Tempo/Prometheus/RabbitMQ/Postgres ready; RabbitMQ queue depth 0; Postgres has fresh dogfood events; Prometheus ingestion metric present; Tempo lists pm-telemetry-api."
+  "2026-04-30T20:04:29.891Z",codex-audit,"Verification: pm test pm-j16d --run passed focused 7-file audit suite (98 tests); node scripts/run-tests.mjs coverage passed 81 files / 1087 tests / 100% statements, branches, functions, lines. pm validate completed with historical tracker hygiene warnings captured in follow-up pm-e0b5."
+notes[1]{created_at,author,text}:
+  "2026-04-30T19:37:39.494Z",codex-audit,"Do not store remote telemetry credentials in tracker comments,docs,or code. Redact host secrets in all evidence."
+files[3]{path,scope,note}:
+  docs/examples/starter-extension/index.js,project,SDK starter example health fix
+  tests/unit/starter-extension-example.spec.ts,project,starter example regression coverage
+  tests/unit/context-command.spec.ts,project,date-stable context coverage fix
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/starter-extension-example.spec.ts tests/unit/extension-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/telemetry-runtime.spec.ts tests/unit/sdk-index.spec.ts tests/unit/health-command.spec.ts tests/unit/context-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused audit regression suite
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-molwu7in-mxqgjs,test,passed,"2026-04-30T20:01:29.647Z","2026-04-30T20:02:13.007Z","2026-04-30T20:02:13.007Z",null,null,1,0,0,null,null,null
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,extension lifecycle audited
+  docs/SDK.md,project,SDK surface audited
+close_reason: Latest-build dogfood audit completed; two defects fixed and verified; remote telemetry stack verified; historical tracker hygiene captured in pm-e0b5.
+body: "Planned execution: bootstrap global CLI from repo build; run temp PM_PATH/PM_GLOBAL_PATH dogfood workflows across create/update/link/search/calendar/test/extension/telemetry surfaces; inspect SDK and docs; check remote telemetry stack without exposing secrets; create follow-up issues for nontrivial findings and fix feasible bugs in this turn."

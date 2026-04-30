@@ -205,6 +205,7 @@ describe("context command module", () => {
         status: "draft",
         type: "Task",
         priority: "2",
+        deadline: "2026-05-03T10:00:00.000Z",
       });
 
       const result = await runContext(

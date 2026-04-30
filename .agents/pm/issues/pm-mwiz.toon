@@ -1,0 +1,32 @@
+id: pm-mwiz
+title: SDK starter example leaves extension health warning
+description: "The SDK-first starter extension registered its demonstration no-op migration as active, causing a clean install to report extension_migration_pending in pm health."
+type: Issue
+status: closed
+priority: 1
+tags[6]: audit,dogfood,extensions,health,pm-cli,sdk
+created_at: "2026-04-30T19:47:34.400Z"
+updated_at: "2026-04-30T20:03:36.380Z"
+deadline: "2026-05-01T19:47:34.400Z"
+author: codex-audit
+estimated_minutes: 30
+acceptance_criteria: Starter extension install no longer leaves pm extension doctor or pm health with a pending migration warning; targeted test covers the example migration status.
+parent: pm-3fti
+resolution: Changed the SDK starter example no-op migration from active/pending to applied and made run() return applied=true.
+expected_result: Installing the reference SDK starter extension leaves pm extension doctor and pm health clean.
+actual_result: Patched temp install reported doctor status ok and pm health ok=true with no warnings.
+fixed_version: 2026.3.12-audit
+comments[2]{created_at,author,text}:
+  "2026-04-30T19:47:34.400Z",codex-audit,"Duplicate check before create: pm search 'starter extension migration pending health warning' found closed historical migration-health work only (for example pm-42oa and pm-cw6c),no open item for the SDK starter example regression. Net-new issue is required under current audit feature pm-3fti."
+  "2026-04-30T19:47:54.506Z",codex-audit,"Implemented fix: starter extension no-op migration now reports status=applied and run() returns applied=true. Added targeted test and verified patched temp install clears pm health extension warning."
+notes[1]{created_at,author,text}:
+  "2026-04-30T19:47:34.400Z",codex-audit,Found during temp dogfood project /tmp/pm-cli-dogfood-audit-Gum25N after installing the SDK-first starter extension and running pm health --check-only.
+files[2]{path,scope,note}:
+  docs/examples/starter-extension/index.js,project,reference SDK starter migration status
+  tests/unit/starter-extension-example.spec.ts,project,regression coverage for starter example migration state
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/starter-extension-example.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,targeted regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-molwqus3-0yyyfx,test,passed,"2026-04-30T19:59:28.310Z","2026-04-30T19:59:36.531Z","2026-04-30T19:59:36.531Z",null,null,1,0,0,null,null,null
+close_reason: Starter extension health warning fixed; linked pm test passed and patched temp install health is clean.
+body: "Dogfood finding: installing docs/examples/starter-extension in a clean temp project worked, but pm health --check-only returned ok=false because the sample no-op migration was reported as pending. This makes the reference SDK extension look unhealthy immediately after install."

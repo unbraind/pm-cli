@@ -143,9 +143,9 @@ export default defineExtension({
     api.registerMigration({
       id: "starter-extension-noop-migration",
       description: "No-op migration to demonstrate schema migration registration.",
-      status: "active",
+      status: "applied",
       mandatory: false,
-      run: async () => ({ applied: false }),
+      run: async () => ({ applied: true }),
     });
 
     // importers

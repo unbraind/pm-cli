@@ -1,0 +1,31 @@
+id: pm-0xhj
+title: Context blocked-fallback test uses date-sensitive default deadline
+description: "The context blocked-fallback unit test used a helper default +1d deadline for a draft seed, making coverage fail when +1d lands inside the explicit agenda window."
+type: Issue
+status: closed
+priority: 1
+tags[6]: audit,calendar,context,dogfood,pm-cli,tests
+created_at: "2026-04-30T19:53:17.267Z"
+updated_at: "2026-04-30T20:03:58.567Z"
+deadline: "2026-05-01T19:53:17.267Z"
+author: codex-audit
+estimated_minutes: 20
+acceptance_criteria: Context blocked-fallback test uses deterministic absolute seed dates and coverage no longer fails on the current date.
+parent: pm-3fti
+resolution: Made the draft seed deadline explicit and outside the May 1 context agenda window.
+expected_result: The blocked-fallback context test has one deterministic agenda event regardless of current date.
+actual_result: Targeted context test passed through both direct run and pm linked-test execution.
+fixed_version: 2026.3.12-audit
+comments[2]{created_at,author,text}:
+  "2026-04-30T19:53:17.267Z",codex-audit,"Duplicate check before create: pm search 'context command blocked fallback relative deadline date sensitive' returned closed historical context/date work only,no active item for this coverage failure. Net-new issue is required under audit feature pm-3fti."
+  "2026-04-30T19:54:13.132Z",codex-audit,"Implemented deterministic context test seed: draft item deadline is now 2026-05-03T10:00:00.000Z, outside the explicit May 1 agenda window. Verified node scripts/run-tests.mjs test -- tests/unit/context-command.spec.ts passed (6 tests)."
+notes[1]{created_at,author,text}:
+  "2026-04-30T19:53:17.267Z",codex-audit,"Found by node scripts/run-tests.mjs coverage: tests/unit/context-command.spec.ts expected agenda events=1,received 2."
+files[1]{path,scope,note}:
+  tests/unit/context-command.spec.ts,project,date-sensitive test seed
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/context-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,targeted context regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-molwr9im-slp4jm,test,passed,"2026-04-30T19:59:44.241Z","2026-04-30T19:59:55.631Z","2026-04-30T19:59:55.631Z",null,null,1,0,0,null,null,null
+close_reason: Context blocked-fallback seed is date-stable; linked pm test passed.
+body: "Coverage finding: on 2026-04-30, the draft seed in tests/unit/context-command.spec.ts resolved its default +1d deadline to 2026-05-01, inside the test window. The agenda then had two non-terminal events instead of the expected one blocked deadline."
