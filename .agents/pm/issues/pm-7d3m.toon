@@ -2,21 +2,24 @@ id: pm-7d3m
 title: Stabilize post-release cross-platform CI tests
 description: Fix macOS and Windows CI regressions from post-release workflow run 25210023872 without moving the published 2026.5.1 release tag.
 type: Issue
-status: in_progress
+status: closed
 priority: 0
 tags[5]: ci,cross-platform,pm-cli,release,tests
 created_at: "2026-05-01T10:01:56.427Z"
-updated_at: "2026-05-01T10:34:03.379Z"
+updated_at: "2026-05-01T10:50:18.905Z"
 deadline: "2026-05-02T10:01:56.427Z"
-assignee: codex-release-agent
 author: codex-release-agent
 estimated_minutes: 60
 acceptance_criteria: "Main-branch CI passes on Linux, macOS, and Windows after focused cross-platform test fixes; changed files and verification are linked; release tag v2026.5.1 remains published at the verified release commit."
 parent: pm-3fti
-comments[3]{created_at,author,text}:
+resolution: "Hardened cross-platform path handling and Windows test execution: canonical real-path containment is used where required, path spelling assertions are portable, and the sandbox runner invokes Vitest directly via Node instead of nested pnpm."
+expected_result: "Main CI passes on Linux, macOS, and Windows while v2026.5.1 remains published at the original release tag commit."
+actual_result: "Main CI run 25211328234 passed across ubuntu-latest Node 20/22/24, macOS Node 20, and Windows Node 20; v2026.5.1 remains at tag commit 61f6ac6."
+comments[4]{created_at,author,text}:
   "2026-05-01T10:01:56.427Z",codex-release-agent,"Duplicate check before create: pm context --limit 10 showed active parent pm-3fti plus tracker hygiene only; pm search 'windows macos ci path signal fixture' returned closed historical CI work only; pm list-open/list-in-progress found no active CI hardening item. Net-new issue is required for GitHub Actions run 25210023872 failures."
   "2026-05-01T10:12:42.617Z",codex-release-agent,"Implemented cross-platform CI hardening: files discover and validate now compare canonical real paths for containment while preserving stable output; Windows-sensitive tests no longer depend on shell-only quoting or exact temp-path aliases. Evidence: node scripts/run-tests.mjs test -- failed CI suites passed 5 files/149 tests; pnpm typecheck passed; git diff --check passed; node scripts/run-tests.mjs coverage passed 81 files/1087 tests with 100% coverage; pm test pm-7d3m --run --progress passed linked test."
   "2026-05-01T10:34:03.379Z",codex-release-agent,"Follow-up after GitHub Actions run 25210786166: Windows still failed only the nested run-tests integration smoke. Updated scripts/run-tests.mjs to invoke Vitest through node_modules/vitest/vitest.mjs instead of nested pnpm exec, and added assertion diagnostics for future failures. Evidence: node scripts/run-tests.mjs test -- tests/integration/run-tests-script.integration.spec.ts passed; node scripts/run-tests.mjs test -- failed CI suites passed 5 files/149 tests; pnpm typecheck passed; git diff --check passed; node scripts/run-tests.mjs coverage passed 81 files/1087 tests with 100% coverage; pm test pm-7d3m --run --progress passed linked test."
+  "2026-05-01T10:49:35.438Z",codex-release-agent,"GitHub Actions evidence: main CI run 25211328234 passed for bf8a8e2 across ubuntu-latest Node 20/22/24, macOS Node 20, and Windows Node 20. Windows passed in 8m51s after the direct Vitest runner fix; Ubuntu Node 20 full gate passed test, coverage, sandboxed PM regression, packaging smoke, and npx tarball smoke. Release tag v2026.5.1 remains at 61f6ac6 and no package republish was performed for post-release CI test hardening."
 notes[1]{created_at,author,text}:
   "2026-05-01T10:01:56.427Z",codex-release-agent,Do not move or republish v2026.5.1 for test-only CI hardening after release publication.
 files[8]{path,scope,note}:
@@ -33,4 +36,5 @@ tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-momr775z-0kr7ic,test,passed,"2026-05-01T10:10:07.074Z","2026-05-01T10:12:07.559Z","2026-05-01T10:12:07.559Z",null,null,1,0,0,null,null,null
   test-local-momrz01l-177p8b,test,passed,"2026-05-01T10:31:30.265Z","2026-05-01T10:33:44.698Z","2026-05-01T10:33:44.698Z",null,null,1,0,0,null,null,null
+close_reason: Cross-platform CI hardening passed in GitHub Actions run 25211328234; local focused and coverage verification passed; release tag v2026.5.1 remains unchanged at 61f6ac6.
 body: GitHub Actions run 25210023872 failed after the 2026.5.1 release verification commit. macOS exposed path alias and file discovery count assumptions; Windows exposed path spelling and shell quoting assumptions. The fix must keep release artifacts unchanged and harden tests/workflow signal only.
