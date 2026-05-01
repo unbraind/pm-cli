@@ -1,6 +1,6 @@
 {
   "name": "@unbrained/pm-cli",
-  "version": "2026.3.12",
+  "version": "2026.5.1",
   "description": "Git-native project management CLI for humans and agents.",
   "type": "module",
   "author": "unbrained",
@@ -58,6 +58,7 @@
     "test:coverage": "pnpm build && vitest run --coverage",
     "version:check": "node scripts/release-version.mjs check",
     "version:next": "node scripts/release-version.mjs next",
+    "release:notes": "node scripts/generate-release-notes.mjs",
     "security:scan": "node scripts/check-secrets.mjs",
     "smoke:npx": "node scripts/smoke-npx-from-pack.mjs",
     "prepublishOnly": "pnpm build"

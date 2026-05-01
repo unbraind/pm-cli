@@ -123,7 +123,7 @@ import {
 import { migrateItemFilesToFormat } from "../core/store/item-format-migration.js";
 import { listAllFrontMatter } from "../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
-import { readSettings, readSettingsWithMetadata } from "../core/store/settings.js";
+import { readSettings, readSettingsWithMetadata, writeSettings } from "../core/store/settings.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import type { ItemStatus, PmSettings } from "../types/index.js";
 import { BUILTIN_ITEM_TYPE_VALUES } from "../types/index.js";
@@ -1606,10 +1606,7 @@ async function enforceItemFormatWriteGateAndPreflightMigration(
     printError(`warning:${warning}`);
   }
   if (decision.enforce_item_format_gate && !metadata.has_explicit_item_format) {
-    throw new PmCliError(
-      `Write command "${commandPath}" requires explicit item format selection before mutations. Run "pm config project set item-format --format toon" or "pm config project set item-format --format json_markdown".`,
-      EXIT_CODE.CONFLICT,
-    );
+    await writeSettings(pmRoot, settings, "item_format:auto_select_default");
   }
   if (decision.run_preflight_item_format_sync) {
     const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());

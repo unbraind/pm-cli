@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026.5.1] - 2026-05-01
+
+### Fixed
+- Fixed first-mutation compatibility for trackers created by `@unbrained/pm-cli@2026.3.12`: legacy settings that omit `item_format` now auto-select the current default format and run the existing pre-mutation item-file migration instead of blocking writes, preserving existing items, linked artifacts, comments, close metadata, and history integrity.
+
+### Added
+- Added `scripts/generate-release-notes.mjs` and `pnpm release:notes` to generate GitHub release notes from `CHANGELOG.md` plus sanitized `pm` tracker metadata.
+
+### Changed
+- Release workflow now checks out full git history for tag discovery, uploads generated release-note artifacts, and publishes the generated `CHANGELOG.md` + `pm` tracker release body to GitHub Releases without requiring paid GitHub features.
+
 ### Added
 - Added `Decision` as a built-in item type with `decisions/` folder mapping, completion support, and stats coverage.
 - Added structured `close_through_update` error context with actionable `pm close` examples when users attempt `pm update --status closed`.
@@ -187,7 +198,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Calendar markdown summaries now include scheduled-event counts and event rendering includes recurring/location metadata where present.
 - `pm comments-audit` now treats `--latest 0` as a valid summary-only export mode with deterministic `export.row_count = 0` semantics.
 - `pm comments-audit --latest` and `--full-history` now enforce explicit mutual exclusivity in guidance/help output.
-- `pm contracts --command <name>` now scopes action/command/availability output to the selected command by default (intentional breaking change); use no `--command` filter for full corpus output.
+- `pm contracts --command <name>` now scopes action/command/availability output to the selected command for lower-noise machine payloads; use no `--command` filter for full corpus output.
 - Mutation-triggered search cache invalidation now covers linked-test run-tracking paths (`pm test --run`, `pm test-all`) and lifecycle alias mutation flows.
 - Calendar JSON/markdown summaries now expose deterministic aggregate breakdowns (`by_kind`, `by_type`, `by_status`, `recurring_events`) and markdown event lines now include richer metadata tokens (item type, recurrence rule, end-time projection, timezone/location, and description context).
 - Command-aware output summaries now consume the canonical calendar `summary.events` structure (instead of stale `summary.total`) and emit richer calendar highlight telemetry (`events`, `deadlines`, `reminders`, `scheduled`, `view`).

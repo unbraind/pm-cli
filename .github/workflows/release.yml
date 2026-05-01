@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
@@ -63,6 +65,9 @@ jobs:
       - name: npx tarball smoke check
         run: pnpm smoke:npx
 
+      - name: Generate release notes
+        run: node scripts/generate-release-notes.mjs --version "${GITHUB_REF_NAME#v}" --output "$RUNNER_TEMP/release-notes.md"
+
       - name: Upload coverage artifact
         if: always()
         uses: actions/upload-artifact@v7
@@ -70,6 +75,13 @@ jobs:
           name: coverage-release-${{ github.ref_name }}
           path: coverage
           if-no-files-found: ignore
+
+      - name: Upload release notes artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-notes-${{ github.ref_name }}
+          path: ${{ runner.temp }}/release-notes.md
+          if-no-files-found: error
 
       - name: Publish to npm
         run: npm publish --access public --provenance
@@ -79,4 +91,4 @@ jobs:
       - name: Create GitHub release
         uses: softprops/action-gh-release@v3
         with:
-          generate_release_notes: true
+          body_path: ${{ runner.temp }}/release-notes.md

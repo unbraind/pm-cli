@@ -55,7 +55,7 @@ Compatibility policy for command contracts:
 - `--json` remains machine-contract stable; search projection defaults are command-specific (`pm search` defaults to compact rows unless `--full` is requested).
 - `pm contracts --json` is the canonical runtime contract introspection surface for agents, including active extension command/action metadata.
 - Contract payloads include runtime action availability metadata (`action_availability`) and optional runtime-filtered views (`--runtime-only`, `--active-only`) so automation can avoid non-invocable actions.
-- `pm contracts --command <name>` now scopes output to the selected command by default (intentional breaking change for lower-noise machine payloads); omit `--command` for full contract corpus output.
+- `pm contracts --command <name>` scopes output to the selected command for lower-noise machine payloads; omit `--command` for the full contract corpus.
 - `pm contracts` supports lightweight projection modes for automation pipelines: `--flags-only` (command flag surface) and `--availability-only` (runtime invocability metadata); the projection flags are mutually exclusive.
 - When `--action` is provided without `--command`, `pm contracts --flags-only` now scopes `command_flags` to the action-mapped command surface (for example `test-runs-list` resolves to `test-runs`).
 - Contract payloads include canonical flag + alias metadata (`command_flags` plus `commander_aliases`) so machine clients can expose accepted hyphen/underscore variants deterministically.

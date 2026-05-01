@@ -3827,78 +3827,22 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
-  it("blocks item mutations when legacy settings omit item_format until explicit config selection is set", async () => {
+  it("auto-selects default item_format and migrates legacy settings on first mutation", async () => {
     await withTempPmPath(async (context) => {
-      const settingsPath = path.join(context.pmPath, "settings.json");
-      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as Record<string, unknown>;
-      delete settings.item_format;
-      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
-
-      const blockedCreate = context.runCli([
-        "create",
-        "--json",
-        "--title",
-        "Blocked legacy mutation",
-        "--description",
-        "Requires explicit item format selection first",
-        "--type",
-        "Task",
-        "--status",
-        "open",
-        "--priority",
-        "1",
-        "--tags",
-        "integration,item-format",
-        "--body",
-        "",
-        "--deadline",
-        "none",
-        "--estimate",
-        "20",
-        "--acceptance-criteria",
-        "Mutation blocks until format is explicitly selected",
-        "--author",
-        "integration-test",
-        "--message",
-        "Attempt blocked create",
-        "--assignee",
-        "none",
-        "--dep",
-        "none",
-        "--comment",
-        "none",
-        "--note",
-        "none",
-        "--learning",
-        "none",
-        "--file",
-        "none",
-        "--test",
-        "none",
-        "--doc",
-        "none",
-      ]);
-      expect(blockedCreate.code).toBe(4);
-      expect(blockedCreate.stderr).toContain("requires explicit item format selection before mutations");
-
-      const setFormat = context.runCli(
-        ["config", "project", "set", "item-format", "--format", "toon", "--json"],
+      const setMarkdown = context.runCli(
+        ["config", "project", "set", "item-format", "--format", "json_markdown", "--json"],
         { expectJson: true },
       );
-      expect(setFormat.code).toBe(0);
-      const setFormatJson = setFormat.json as { key: string; format: string; changed: boolean };
-      expect(setFormatJson.key).toBe("item_format");
-      expect(setFormatJson.format).toBe("toon");
-      expect(setFormatJson.changed).toBe(true);
+      expect(setMarkdown.code).toBe(0);
 
-      const allowedCreate = context.runCli(
+      const createResult = context.runCli(
         [
           "create",
           "--json",
           "--title",
-          "Allowed after explicit format set",
+          "Legacy item format mutation",
           "--description",
-          "Mutation should proceed after config selection",
+          "Mutation should auto-select a format and migrate existing files",
           "--type",
           "Task",
           "--status",
@@ -3914,11 +3858,11 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "--estimate",
           "20",
           "--acceptance-criteria",
-          "Mutation succeeds once explicit format is selected",
+          "Update succeeds after automatic format selection",
           "--author",
           "integration-test",
           "--message",
-          "Create after format set",
+          "Create markdown legacy item",
           "--assignee",
           "none",
           "--dep",
@@ -3938,11 +3882,41 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         ],
         { expectJson: true },
       );
-      expect(allowedCreate.code).toBe(0);
+      expect(createResult.code).toBe(0);
+      const createdId = (createResult.json as { item: { id: string } }).item.id;
+      const markdownPath = path.join(context.pmPath, "tasks", `${createdId}.md`);
+      const toonPath = path.join(context.pmPath, "tasks", `${createdId}.toon`);
+      await expect(readFile(markdownPath, "utf8")).resolves.toContain(createdId);
+
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as Record<string, unknown>;
+      delete settings.item_format;
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const updateResult = context.runCli(
+        [
+          "update",
+          createdId,
+          "--status",
+          "in_progress",
+          "--author",
+          "integration-test",
+          "--message",
+          "Update after legacy item_format auto-selection",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(updateResult.code).toBe(0);
+      await expect(readFile(toonPath, "utf8")).resolves.toContain(createdId);
+      await expect(readFile(markdownPath, "utf8")).rejects.toBeDefined();
+
+      const updatedSettings = JSON.parse(await readFile(settingsPath, "utf8")) as { item_format?: string };
+      expect(updatedSettings.item_format).toBe("toon");
     });
   });
 
-  it("allows preflight overrides to bypass legacy item-format mutation gate", async () => {
+  it("allows preflight overrides to bypass legacy item-format auto-selection", async () => {
     await withTempPmPath(async (context) => {
       const settingsPath = path.join(context.pmPath, "settings.json");
       const settings = JSON.parse(await readFile(settingsPath, "utf8")) as Record<string, unknown>;
@@ -3986,9 +3960,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "create",
           "--json",
           "--title",
-          "Bypassed legacy mutation gate",
+          "Bypassed legacy auto-selection",
           "--description",
-          "Preflight extension disables legacy format gate for this test",
+          "Preflight extension disables legacy format sync for this test",
           "--type",
           "Task",
           "--status",
@@ -4004,7 +3978,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "--estimate",
           "20",
           "--acceptance-criteria",
-          "Preflight override bypasses explicit format gate",
+          "Preflight override bypasses automatic format selection",
           "--author",
           "integration-test",
           "--message",
