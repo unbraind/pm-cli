@@ -1,0 +1,31 @@
+id: pm-q71q
+title: Pin release dependency ranges for Dependabot hygiene
+description: Replace direct latest dependency specs with deterministic semver ranges and publish a same-day follow-up release so GitHub Dependabot resolves the undici manifest alerts against a pinned safe version.
+type: Issue
+status: in_progress
+priority: 0
+tags[5]: dependabot,dependencies,pm-cli,release,security
+created_at: "2026-05-01T11:06:16.117Z"
+updated_at: "2026-05-01T11:13:21.500Z"
+deadline: "2026-05-02T11:06:16.117Z"
+assignee: codex-release-agent
+author: codex-release-agent
+estimated_minutes: 60
+acceptance_criteria: package.json no longer uses latest dependency specs; undici resolves to a non-vulnerable pinned range; changelog and release notes mention the dependency hygiene release; release workflow publishes and verifies the follow-up package.
+parent: pm-3fti
+comments[2]{created_at,author,text}:
+  "2026-05-01T11:06:16.117Z",codex-release-agent,"Duplicate check before create: pm context --limit 10 showed only audit parent pm-3fti and tracker hygiene; pm search 'dependabot undici latest dependency manifest' found older closed Dependabot tasks and no active item for the current GitHub advisory banner; pm list-open/list-in-progress found no active dependency release hygiene item. Net-new issue is required for the same-day follow-up release."
+  "2026-05-01T11:13:21.500Z",codex-release-agent,"Implemented dependency release hygiene follow-up: bumped package version to 2026.5.1-2, replaced all direct latest dependency specs with explicit SemVer ranges, kept undici on non-vulnerable ^8.1.0, updated pnpm-lock specifiers, CHANGELOG.md, and docs/RELEASING.md. Evidence: node scripts/release-version.mjs check --tag v2026.5.1-2 --verify-next --date 2026.5.1 passed; pnpm security:scan passed; pnpm audit --audit-level low found no known vulnerabilities; pnpm build and pnpm typecheck passed; npm pack --dry-run produced @unbrained/pm-cli@2026.5.1-2; pnpm smoke:npx passed; pm test pm-q71q --run --progress passed coverage with 81 files, 1087 tests, 100% coverage; no direct latest dependency specifiers remain."
+notes[1]{created_at,author,text}:
+  "2026-05-01T11:06:16.117Z",codex-release-agent,"GitHub Dependabot open alerts 1-3 all target undici in package.json; lockfile resolves undici 8.1.0,but the published manifest uses latest,which is nondeterministic and should be pinned."
+files[4]{path,scope,note}:
+  CHANGELOG.md,project,document 2026.5.1-2 dependency hygiene release
+  docs/RELEASING.md,project,document deterministic dependency range release requirement
+  package.json,project,pin dependency ranges and bump follow-up release version
+  pnpm-lock.yaml,project,lockfile specifiers match pinned dependency ranges
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/release-version.mjs check --tag v2026.5.1-2 --verify-next --date 2026.5.1,null,project,120,null,null,null,null,null,null,null,null,null,null,null,same-day follow-up version policy gate
+  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,sandboxed coverage release gate
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-momtdbh9-4jn6uu,test,passed,"2026-05-01T11:09:02.781Z","2026-05-01T11:12:52.317Z","2026-05-01T11:12:52.317Z",null,null,2,0,0,null,null,null
+body: ""

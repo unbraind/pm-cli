@@ -1,6 +1,6 @@
 {
   "name": "@unbrained/pm-cli",
-  "version": "2026.5.1",
+  "version": "2026.5.1-2",
   "description": "Git-native project management CLI for humans and agents.",
   "type": "module",
   "author": "unbrained",
@@ -81,19 +81,19 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@toon-format/toon": "latest",
-    "commander": "latest",
+    "@toon-format/toon": "^2.1.0",
+    "commander": "^14.0.3",
     "fast-glob": "^3.3.3",
-    "fast-json-patch": "latest",
-    "undici": "latest",
-    "zod": "latest"
+    "fast-json-patch": "^3.1.1",
+    "undici": "^8.1.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/node": "latest",
+    "@types/node": "^25.6.0",
     "@vitest/coverage-v8": "^4.1.5",
     "c8": "^11.0.0",
-    "tsx": "latest",
-    "typescript": "latest",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3",
     "vitest": "^4.1.5"
   },
   "pnpm": {

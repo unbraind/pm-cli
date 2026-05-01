@@ -14,26 +14,26 @@ importers:
   .:
     dependencies:
       '@toon-format/toon':
-        specifier: latest
+        specifier: ^2.1.0
         version: 2.1.0
       commander:
-        specifier: latest
+        specifier: ^14.0.3
         version: 14.0.3
       fast-glob:
         specifier: ^3.3.3
         version: 3.3.3
       fast-json-patch:
-        specifier: latest
+        specifier: ^3.1.1
         version: 3.1.1
       undici:
-        specifier: latest
+        specifier: ^8.1.0
         version: 8.1.0
       zod:
-        specifier: latest
+        specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
       '@types/node':
-        specifier: latest
+        specifier: ^25.6.0
         version: 25.6.0
       '@vitest/coverage-v8':
         specifier: ^4.1.5
@@ -42,10 +42,10 @@ importers:
         specifier: ^11.0.0
         version: 11.0.0
       tsx:
-        specifier: latest
+        specifier: ^4.21.0
         version: 4.21.0
       typescript:
-        specifier: latest
+        specifier: ^6.0.3
         version: 6.0.3
       vitest:
         specifier: ^4.1.5

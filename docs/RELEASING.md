@@ -40,6 +40,8 @@ pnpm version:next
 
 2. Update `package.json`, `pnpm-lock.yaml`, and `CHANGELOG.md`.
 
+   Keep direct dependency specifiers deterministic. Do not publish `latest` ranges; pin runtime and development dependencies to explicit SemVer ranges that resolve to the audited lockfile versions so Dependabot and downstream installs evaluate the same safe package line.
+
 3. Generate release notes locally from changelog + pm tracker data:
 
 ```bash

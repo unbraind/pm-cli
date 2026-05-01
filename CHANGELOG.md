@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026.5.1-2] - 2026-05-01
+
+### Fixed
+- Pinned direct runtime and development dependency ranges instead of publishing `latest` specifiers, including `undici@^8.1.0`, so installs are deterministic and GitHub Dependabot evaluates the manifest against a non-vulnerable patched range.
+
 ## [2026.5.1] - 2026-05-01
 
 ### Fixed
