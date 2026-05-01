@@ -1,48 +1,62 @@
-# Starter Extension (All 9 Capabilities)
+# Starter Extension
 
-This example demonstrates a single extension that uses the public SDK only:
-`@unbrained/pm-cli/sdk`.
+This example demonstrates all extension capability categories through the public SDK import `@unbrained/pm-cli/sdk`.
 
-It is intentionally small and "feature complete" as a reference scaffold.
+## Agent Quick Context
+
+- Copy this folder when you need a complete capability reference.
+- Use `pm extension init ./my-extension` when you need a smaller scaffold.
+- Keep production extensions narrower than this example.
+
+Related docs:
+
+- [Extensions](../../EXTENSIONS.md)
+- [SDK](../../SDK.md)
 
 ## Files
 
-- `manifest.json` declares all 9 capabilities.
-- `package.json` declares the SDK dependency.
-- `index.js` registers one or more examples for each capability.
+| File | Purpose |
+|------|---------|
+| `manifest.json` | declares extension metadata and capabilities |
+| `package.json` | declares local package metadata and SDK dependency |
+| `index.js` | registers examples for each capability category |
 
 ## Capability Coverage
 
-1. `commands` - `api.registerCommand(...)` + `api.registerFlags(...)`
-2. `parser` - `api.registerParser(...)`
-3. `preflight` - `api.registerPreflight(...)`
-4. `services` - `api.registerService(...)`
-5. `renderers` - `api.registerRenderer(...)`
-6. `hooks` - `api.hooks.beforeCommand/afterCommand/onWrite/onRead/onIndex`
-7. `schema` - `api.registerItemFields/registerItemTypes/registerMigration`
-8. `importers` - `api.registerImporter/registerExporter`
-9. `search` - `api.registerSearchProvider/registerVectorStoreAdapter`
+| Capability | Example surface |
+|------------|-----------------|
+| `commands` | `api.registerCommand(...)` |
+| `parser` | `api.registerParser(...)` |
+| `preflight` | `api.registerPreflight(...)` |
+| `services` | `api.registerService(...)` |
+| `renderers` | `api.registerRenderer(...)` |
+| `hooks` | command, read, write, and index hooks |
+| `schema` | item fields, item types, migrations |
+| `importers` | importer and exporter registration |
+| `search` | search provider and vector adapter |
 
 ## Quick Start
 
-1. Copy this folder into an extension root:
-   - project: `.agents/pm/extensions/starter-extension`
-   - global: `~/.pm-cli/extensions/starter-extension`
-2. Install dependencies in that copied folder:
+Copy into an extension root:
 
 ```bash
+mkdir -p .agents/pm/extensions
+cp -R docs/examples/starter-extension .agents/pm/extensions/starter-extension
+cd .agents/pm/extensions/starter-extension
 npm install
 ```
 
-3. Activate and test:
+Activate and test from the repository root:
 
 ```bash
-pm extension --activate --project starter-extension
+pm extension activate starter-extension --project
 pm starter ping --name "agent"
+pm extension doctor --detail summary
 ```
 
 ## Notes
 
-- This starter is for learning and scaffolding, not production behavior.
-- Keep service/renderer overrides narrowly scoped in real extensions.
-- Prefer returning deterministic JSON-like objects from handlers.
+- This starter is for learning and scaffold reference.
+- Real extensions should declare only the capabilities they need.
+- Keep service, parser, and preflight overrides narrow and well tested.
+- Return deterministic JSON-like objects from command handlers.

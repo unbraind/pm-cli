@@ -9,4 +9,8 @@ coverage/
 .agents/pm/search/
 .agents/pm/checkpoints/
 .agents/pm/runtime/telemetry/
-scripts/prod
+
+# Local production operations artifacts are private and must not be committed.
+scripts/prod/
+scripts/prod/telemetry/
+scripts/prod/telemetry/**

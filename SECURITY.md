@@ -26,19 +26,14 @@ Please include:
 
 Please avoid public disclosure before a fix or mitigation is available.
 
-## Telemetry and Privacy Controls
+## Private Data Handling
 
-Telemetry is opt-out and defaults to enabled for operational diagnostics.
+Public documentation and package output must not include credentials, host-specific operations details, unpublished evidence logs, or ignored local operations artifacts.
 
-- Disable globally at any time: `pm config global set telemetry-tracking --policy disabled`
-- First-run consent prompt is interactive-only and is skipped for non-interactive/CI/json automation paths.
-- Sensitive values are redacted prior to export (for example token/password/api-key style fields).
-- Runtime telemetry failures are non-blocking and do not alter command success/failure behavior.
-
-Retention and DSAR operations are handled on the remote telemetry platform:
-
-- Raw event retention target: 365 days
-- Aggregated daily rollups retained long-term
+- Keep secrets in environment variables or approved secret stores.
+- Do not commit `.env` files or local production operations directories.
+- Run `pnpm security:scan` before releases and after touching release/package metadata.
+- Prefer minimal reproduction details in public issues; move exploit details to private security channels.
 
 ## Extension Runtime Trust Model
 

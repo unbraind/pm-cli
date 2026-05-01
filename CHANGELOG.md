@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Reworked the README and public docs into progressive, agent-oriented pages with GitHub-compatible links and `pm` tracker cross-references.
+
+### Security
+- Kept private operations material out of public docs and package output; local production operations artifacts remain ignored by git.
+
 ## [2026.5.1-2] - 2026-05-01
 
 ### Fixed
@@ -42,14 +48,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved calendar UX ergonomics by accepting `today` for `--date`/`--from`/`--to` boundaries and by adding explicit recurrence delimiter guidance for malformed `--event` CSV payloads.
 - Improved implicit Ollama hybrid search latency by bounding semantic timeout windows and emitting deterministic warning codes when auto-defaulted semantic execution falls back to keyword mode.
 - Improved extension doctor load diagnostics with targeted warning codes and remediation hints for missing `@unbrained/pm-cli` SDK dependency resolution and ESM module-mode mismatches.
-- Improved telemetry event segmentation by adding additive `pm_version`, `source_context`, and `source_context_source` payload fields for `command_start`/`command_finish`, plus explicit override support via `PM_TELEMETRY_SOURCE_CONTEXT`.
+- Improved private diagnostics event segmentation by adding additive package/version and source-context metadata fields.
 - Improved `pm update-many` no-op validation guidance by listing actionable mutation flag examples when users provide filters/`--dry-run` without any mutation flags.
 
 - Added `pm files discover <ID>` to scan item text for existing project/global file paths, report addable vs already linked candidates, and optionally add missing linked files with `--apply`.
 - Added `pm create --comment` plain-text shorthand support so comment seeds can be passed as raw text without mandatory `text=<value>` wrappers.
 - Added ownership-safe dependency-only audit updates via `pm update --allow-audit-dep-update` / `--allow_audit_dep_update` for append-only non-owner `--dep` additions.
 - Added cache cleanup safety controls on `pm gc`: `--dry-run`, repeatable/comma-delimited `--scope index|embeddings|runtime`, and deterministic `guidance` output (including reindex hints after search-artifact cleanup).
-- Added linked-test PM-context ergonomics flags `--check-context` and `--auto-pm-context` for `pm test --run` and `pm test-all`, including preflight summary warnings and run-level execution-context telemetry (`requested_pm_context_mode`, `auto_pm_context_applied`).
+- Added linked-test PM-context ergonomics flags `--check-context` and `--auto-pm-context` for `pm test --run` and `pm test-all`, including preflight summary warnings and run-level execution-context metadata (`requested_pm_context_mode`, `auto_pm_context_applied`).
 - Added hardened background-run attribution fallback for `requested_by` in `pm test-runs` metadata: explicit author -> `PM_AUTHOR` -> settings author default -> `USER`/`LOGNAME`/`USERNAME` -> OS username -> `unknown`.
 - Added contract/completion alias parity improvements: `pm contracts` now publishes canonical flag + alias metadata for command surfaces, and generated completion scripts include accepted alias candidates from the shared contract registry.
 - Added extension lifecycle flag-forwarding parity so subcommand forms (`pm extension manage ...`, `pm extension doctor ...`) honor the same action flags as top-level action forms.
@@ -169,7 +175,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added per-linked-test runtime directives in linked test metadata (`env_set`, `env_clear`, `shared_host_safe`) for deterministic command-level execution control.
 - Added linked-test PM-context and strict-governance controls: `--pm-context schema|tracker|auto`, `--fail-on-context-mismatch`, `--fail-on-skipped`, `--fail-on-empty-test-run`, and `--require-assertions-for-pm` on `pm test --run` and `pm test-all`.
 - Added linked-test PM-context auto-routing (`--pm-context auto`) and per-linked-test context override metadata (`pm_context_mode=schema|tracker|auto`) for mixed-mode linked test execution.
-- Added linked-test assertion metadata support (`assert_stdout_contains`, `assert_stdout_regex`, `assert_stderr_contains`, `assert_stderr_regex`, `assert_stdout_min_lines`, `assert_json_field_equals`, `assert_json_field_gte`) with deterministic assertion-failure classification and per-run `execution_context` telemetry in `run_results`.
+- Added linked-test assertion metadata support (`assert_stdout_contains`, `assert_stdout_regex`, `assert_stderr_contains`, `assert_stderr_regex`, `assert_stdout_min_lines`, `assert_json_field_equals`, `assert_json_field_gte`) with deterministic assertion-failure classification and per-run `execution_context` metadata in `run_results`.
 - Added structured linked-test failure classification in `run_results` (`failure_category`) and aggregated `failure_categories` totals in `pm test`/`pm test-all` results for triage (`infra_collision` vs `assertion_failure` and related categories).
 - Added standalone `pm validate` linked command-reference diagnostics (`command_references`) with default-on stale PM-id detection and dedicated warning token (`validate_command_references_stale_pm_ids:<count>`).
 - Added default-on resolution remediation command hints in `pm validate` details for missing resolution metadata (`resolution`, `expected_result`, `actual_result`).
@@ -207,7 +213,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pm contracts --command <name>` now scopes action/command/availability output to the selected command for lower-noise machine payloads; use no `--command` filter for full corpus output.
 - Mutation-triggered search cache invalidation now covers linked-test run-tracking paths (`pm test --run`, `pm test-all`) and lifecycle alias mutation flows.
 - Calendar JSON/markdown summaries now expose deterministic aggregate breakdowns (`by_kind`, `by_type`, `by_status`, `recurring_events`) and markdown event lines now include richer metadata tokens (item type, recurrence rule, end-time projection, timezone/location, and description context).
-- Command-aware output summaries now consume the canonical calendar `summary.events` structure (instead of stale `summary.total`) and emit richer calendar highlight telemetry (`events`, `deadlines`, `reminders`, `scheduled`, `view`).
+- Command-aware output summaries now consume the canonical calendar `summary.events` structure (instead of stale `summary.total`) and emit richer calendar highlight metadata (`events`, `deadlines`, `reminders`, `scheduled`, `view`).
 - Mutation parsing errors for entry-style flags now include actionable format guidance and explicit stdin-token usage hints to reduce malformed-input retries.
 - `pm create` log-seed repeatables (`--comment`, `--note`, `--learning`) now reject parsed unsupported keys to prevent silent narrative truncation when unquoted comma segments resemble key/value tokens; guidance now explicitly routes punctuation-heavy text to quoted `text=...`, markdown key/value input, or stdin token usage.
 - Type validation/filtering/completion now resolve from the runtime registry across create/update/list/search/calendar/completion/init/health/storage paths while preserving built-in defaults when no custom type config exists.

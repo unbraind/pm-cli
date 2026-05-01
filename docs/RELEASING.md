@@ -1,55 +1,65 @@
 # Releasing `@unbrained/pm-cli`
 
-This repository uses a tag-driven GitHub Actions pipeline that publishes to npm and creates a GitHub Release. The pipeline uses standard GitHub Actions, repository or environment secrets, artifacts, and npm provenance; it does not require paid GitHub features or paid-only environment protection rules.
+This page is for maintainers cutting npm and GitHub releases. It assumes release work is tracked with `pm`.
+
+## Agent Quick Context
+
+- Release versioning is calendar SemVer-compatible: `YYYY.M.D` or `YYYY.M.D-N`.
+- Publishing is owned by the GitHub Actions release workflow.
+- Do not run manual `npm publish`.
+- Run local gates before tagging.
+
+Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
 
 ## Version Policy
 
-`pm-cli` uses a calendar SemVer-compatible scheme:
-
-- `YYYY.M.D` for the first release on a date
-- `YYYY.M.D-N` for additional releases on the same date (`N >= 2`)
-
 Examples:
 
-- First release on 2026-03-09: `2026.3.9`
-- Second release on 2026-03-09: `2026.3.9-2`
+- first release on 2026-05-01: `2026.5.1`
+- second release on 2026-05-01: `2026.5.1-2`
 
-Use this to compute the next expected release version from the npm registry:
+Check the next version:
 
 ```bash
 pnpm version:next
 ```
 
-The release workflow enforces the package version, tag name, calendar date, and npm registry sequencing before publishing.
+Validate the current package version:
+
+```bash
+pnpm version:check
+```
 
 ## One-Time Setup
 
-- Add `NPM_TOKEN` as a GitHub Environment or repository secret named `NPM_TOKEN`.
-- If using an Environment named `release`, keep it free-feature compatible: no paid-only reviewer or deployment-protection requirements.
-- Ensure `GITHUB_TOKEN` has the default workflow permission needed by `permissions: contents: write` for GitHub Release creation.
-- Keep npm two-factor settings compatible with automation tokens and provenance publishing.
-- Keep `package.json` repository, homepage, and bugs URLs aligned with the canonical GitHub source repository (`https://github.com/unbraind/pm-cli`); npm provenance validation rejects mismatched repository metadata.
+- Add `NPM_TOKEN` as a GitHub Environment or repository secret.
+- Keep any `release` environment compatible with free GitHub features.
+- Ensure `GITHUB_TOKEN` has `contents: write` for GitHub Release creation.
+- Keep `package.json` repository, homepage, and bugs URLs aligned with `https://github.com/unbraind/pm-cli`.
+- Keep npm automation token settings compatible with provenance publishing.
 
 ## Local Release Checklist
 
-1. Confirm the next version:
+1. Confirm or compute the version.
 
 ```bash
 pnpm version:next
 ```
 
-2. Update `package.json`, `pnpm-lock.yaml`, and `CHANGELOG.md`.
+2. Update release files.
 
-   Keep direct dependency specifiers deterministic. Do not publish `latest` ranges; pin runtime and development dependencies to explicit SemVer ranges that resolve to the audited lockfile versions so Dependabot and downstream installs evaluate the same safe package line.
+- `package.json`
+- `pnpm-lock.yaml`
+- [CHANGELOG.md](../CHANGELOG.md)
 
-3. Generate release notes locally from changelog + pm tracker data:
+3. Generate release notes.
 
 ```bash
 pnpm build
 pnpm release:notes -- --version "$(node -p 'require("./package.json").version')" --output /tmp/pm-cli-release-notes.md
 ```
 
-4. Run local release gates:
+4. Run local gates.
 
 ```bash
 pnpm install
@@ -63,9 +73,11 @@ pnpm security:scan
 pnpm smoke:npx
 ```
 
-5. Verify previous-version tracker compatibility before tagging. Use a temporary project with the previously published package, create representative items, then run the current build against the same sandboxed `PM_PATH` and `PM_GLOBAL_PATH`. Confirm item count, fields, linked files/docs/tests, comments, close metadata, health, and history drift checks remain intact.
+5. Verify previous-version tracker compatibility in a temporary project.
 
-6. Commit, push, tag, and push the tag:
+Check representative items, linked files/docs/tests, comments, close metadata, health, and history drift across the previous package and current build.
+
+6. Commit, push, tag, and push the tag.
 
 ```bash
 git push origin main
@@ -73,22 +85,23 @@ git tag v<version>
 git push origin v<version>
 ```
 
-## Release Workflow
+## GitHub Workflow
 
-`.github/workflows/release.yml` runs on `v*.*.*` tags and performs:
+`.github/workflows/release.yml` runs on `v*.*.*` tags and handles:
 
-- full-history checkout for previous-tag and release-note generation
+- full-history checkout
 - pnpm install with frozen lockfile
 - version policy and tag guard
-- secret leak scan
-- build, typecheck, test coverage, and sandboxed pm coverage
+- secret scan
+- build, typecheck, test, and coverage
+- sandboxed `pm` coverage
 - npm pack dry run and npx tarball smoke test
-- generated release notes from `CHANGELOG.md` plus sanitized `pm` tracker metadata
-- coverage and release-note artifact uploads
+- generated release notes from changelog plus sanitized tracker metadata
+- artifact uploads
 - `npm publish --access public --provenance`
-- GitHub Release creation using the generated release-note body
+- GitHub Release creation
 
-Monitor with:
+Monitor:
 
 ```bash
 gh run list --workflow Release --limit 5
@@ -97,8 +110,6 @@ gh run watch <run-id> --exit-status
 
 ## Post-Release Verification
 
-After the workflow succeeds, verify all distribution paths:
-
 ```bash
 npm view @unbrained/pm-cli@<version> version dist.integrity dist.unpackedSize --json
 npx --yes @unbrained/pm-cli@<version> --version
@@ -106,11 +117,11 @@ bunx @unbrained/pm-cli@<version> --version
 gh release view v<version> --json tagName,name,isDraft,isPrerelease,url
 ```
 
-The `pm` executable name remains unchanged even though the npm package is scoped.
+The executable remains `pm` even though the npm package is scoped.
 
 ## Failure Handling
 
-- Do not run manual `npm publish`; publishing is owned by `.github/workflows/release.yml`.
-- If local gates fail, fix the code/docs/tests and rerun the checklist before tagging.
-- If the tag workflow fails before npm publish, fix the issue, move the tag only after confirming no package was published, and rerun the workflow.
-- If npm publish succeeds but GitHub Release creation fails, rerun only the release creation after confirming the tag and package are correct.
+- If local gates fail, fix and rerun before tagging.
+- If the tag workflow fails before npm publish, confirm no package was published before moving or replacing a tag.
+- If npm publish succeeds but GitHub Release creation fails, recreate only the GitHub Release after verifying the tag and package.
+- Record failure evidence and remediation in the release `pm` item.

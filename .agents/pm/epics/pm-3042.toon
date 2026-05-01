@@ -1,0 +1,23 @@
+id: pm-3042
+title: Documentation overhaul and public docs safety
+description: "Restructure public documentation for users and agents with progressive disclosure, GitHub-compatible navigation, tracker references, and private operations boundaries."
+type: Epic
+status: closed
+priority: 1
+tags[4]: agent-docs,docs,public-docs,security
+created_at: "2026-05-01T20:46:58.298Z"
+updated_at: "2026-05-01T21:23:00.513Z"
+deadline: "2026-05-02T20:46:58.298Z"
+author: codex-agent
+estimated_minutes: 180
+acceptance_criteria: README is concise; documentation is navigable with GitHub-compatible relative links; agent workflows use progressive disclosure; public docs reference relevant pm items; private operations material remains local-only and gitignored.
+resolution: Documentation overhaul epic completed through feature pm-r9gu and task pm-1sb2.
+expected_result: "Public documentation is concise, progressively disclosed, agent-optimized, navigable through GitHub-compatible links, and avoids private operations material."
+actual_result: README reduced to 104 lines; focused docs and tracker links were added; private-string scan and package dry-run passed; linked coverage passed at 100%.
+comments[2]{created_at,author,text}:
+  "2026-05-01T20:51:21.686Z",codex-agent,"Duplicate check evidence: ran pm context --limit 10,pm search for README documentation docs progressive disclosure agents private operations,pm list-open --limit 20,and pm list-in-progress --limit 20. No open or in-progress documentation overhaul item existed; closed historical hits were not reusable,so a net-new parent epic was required."
+  "2026-05-01T21:22:05.858Z",codex-agent,"Epic closure evidence: pm-1sb2 closed with linked documentation,private operations exclusion checks,package dry-run,security scan,build,link checks,and 100% linked coverage."
+notes[1]{created_at,author,text}:
+  "2026-05-01T20:51:21.686Z",codex-agent,Keep private operations material out of public README and docs pages.
+close_reason: Documentation overhaul and public docs safety delivered through pm-r9gu and pm-1sb2 with verified progressive docs and private operations exclusion.
+body: "Coordinates the documentation refresh requested on 2026-05-01. Public docs are concise at entry points, detailed in deeper pages, optimized for low-token agent navigation, and exclude private operations material."

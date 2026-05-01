@@ -1,0 +1,24 @@
+id: pm-r9gu
+title: Agent-optimized documentation structure
+description: Define and publish a progressive documentation structure that keeps the README short while moving detailed user and agent guidance into focused docs.
+type: Feature
+status: closed
+priority: 1
+tags[3]: agent-docs,docs,readme
+created_at: "2026-05-01T20:47:09.530Z"
+updated_at: "2026-05-01T21:22:33.419Z"
+deadline: "2026-05-02T20:47:09.530Z"
+author: codex-agent
+estimated_minutes: 150
+acceptance_criteria: Public docs have a clear entry point; each detailed page exposes a short agent preamble; links are relative and GitHub-compatible; pm-3042 is referenced from docs and docs are linked back to the task.
+parent: pm-3042
+resolution: Documentation structure feature completed through child task pm-1sb2.
+expected_result: "README routes to focused docs; docs expose agent preambles, relative links, and tracker references."
+actual_result: "README, docs index, quickstart, agent guide, command reference, configuration, testing, architecture, extension, SDK, and releasing docs are in place and verified through pm-1sb2."
+comments[2]{created_at,author,text}:
+  "2026-05-01T20:51:21.726Z",codex-agent,"Duplicate check evidence inherited from pm-3042 creation: context/list scans showed no open or in-progress docs overhaul item; closed historical hits were not reusable. This feature is the canonical child under pm-3042 for documentation structure work."
+  "2026-05-01T21:22:05.844Z",codex-agent,"Feature closure evidence: child task pm-1sb2 closed with linked docs,private operations exclusion checks,package dry-run,security scan,build,link checks,and 100% linked coverage."
+notes[1]{created_at,author,text}:
+  "2026-05-01T20:51:21.726Z",codex-agent,"Use progressive disclosure: README for orientation,docs index for routing,focused pages for workflows and command detail."
+close_reason: "Agent-optimized documentation structure delivered through closed child task pm-1sb2 with verified docs, links, package privacy checks, security scan, build, and 100% coverage."
+body: "Feature scope: public README simplification, docs index, usage quickstart, agent guide, command reference, extension/SDK doc cleanup, release doc cleanup, and tracker cross-links."

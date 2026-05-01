@@ -1,674 +1,90 @@
-# pm-cli Extension Development Guide
+# Extensions
 
-Extensions let you add commands, parser/preflight lifecycle control, core service overrides, renderers, importers, exporters, schema fields, item-type definitions, search providers, and lifecycle hooks to `pm-cli` without modifying core.
+Extensions add commands, schema, renderers, importers/exporters, search adapters, lifecycle hooks, and selected runtime overrides without modifying core `pm-cli`.
 
-For a quick SDK-first authoring path, start with `docs/SDK.md`.
+## Agent Quick Context
+
+- Use `pm extension init ./my-extension` for a starter scaffold.
+- Use `@unbrained/pm-cli/sdk` for public extension APIs.
+- Declare only the capabilities your extension uses.
+- Run `pm extension doctor --detail deep --trace` for activation failures.
+- Use `--no-extensions` to isolate core behavior during incident triage.
+
+Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
 
 ## Extension Locations
 
 | Scope | Path |
 |-------|------|
-| Global | `~/.pm-cli/extensions/<name>/` (override: `PM_GLOBAL_PATH/extensions/<name>/`) |
-| Project | `.agents/pm/extensions/<name>/` (override: `PM_PATH/extensions/<name>/`) |
+| Project | `.agents/pm/extensions/<name>/` |
+| Global | `~/.pm-cli/extensions/<name>/` |
 
-**Load order:** global → project. Project-local extensions take precedence over global when they declare the same command name or renderer key.
+Environment overrides:
 
-## Linked-Test Sandbox Parity
+- `PM_PATH` changes project tracker root.
+- `PM_GLOBAL_PATH` changes global profile root.
 
-`pm test --run` and `pm test-all` execute linked commands in temporary sandbox roots (`PM_PATH`, `PM_GLOBAL_PATH`) to avoid mutating live tracker data. Before command execution, the runtime seeds sandbox project/global `settings.json` and `extensions/` directories from the source roots.
+Load order is global, then project. Project extensions take precedence when keys collide.
 
-This preserves extension-defined schema behavior (including custom item type validation/filtering) while retaining sandbox isolation for linked-test execution.
+## Lifecycle Manager
 
-Linked-test runtime controls are additive: run-level `--env-set`/`--env-clear`/`--shared-host-safe` flags and per-linked-test metadata directives (`env_set`, `env_clear`, `shared_host_safe`) apply before sandbox-protected `PM_PATH`/`PM_GLOBAL_PATH` overrides.
-
-PM-command linked tests can opt into tracker-data parity via `--pm-context tracker` (default `schema` keeps isolated tracker data while still seeding settings/extensions). `--pm-context auto` automatically routes PM tracker-read commands through tracker-seeded context while keeping other commands in schema context. Per-linked-test metadata can override run-level mode with `pm_context_mode=schema|tracker|auto`. In default `schema` mode, PM tracker-read linked commands fail on context mismatch by default; strict guards remain available for other PM command shapes via `--fail-on-context-mismatch` plus `--fail-on-skipped` and `--require-assertions-for-pm`.
-
-Context ergonomics flags are additive:
-
-- `--check-context` emits deterministic preflight diagnostics/warnings (`context_preflight`) for PM command context mismatches
-- `--auto-pm-context` auto-remediates tracker-read mismatches by routing those commands to tracker context
-
-Per-run `execution_context` metadata includes resolved roots, item counts, mismatch signal, PM tracker-read classification, `requested_pm_context_mode`, and `auto_pm_context_applied`.
-
-Linked-test assertion metadata is optional and additive (`assert_stdout_contains`, `assert_stdout_regex`, `assert_stderr_contains`, `assert_stderr_regex`, `assert_stdout_min_lines`, `assert_json_field_equals`, `assert_json_field_gte`).
-
-## Lifecycle Manager CLI
-
-`pm extension` is the canonical lifecycle manager for custom extensions.
-
-Top-level action and subcommand forms are flag-equivalent for lifecycle operations (for example `pm extension --doctor --detail deep --trace` and `pm extension doctor --detail deep --trace` resolve the same behavior).
-
-### Actions
-
-Pass exactly one action flag:
-
-- `--init` (alias: `--scaffold`)
-- `--install`
-- `--uninstall`
-- `--explore`
-- `--manage`
-- `--doctor`
-- `--adopt`
-- `--adopt-all`
-- `--activate`
-- `--deactivate`
-
-### Scope selection
-
-- `--project` (default)
-- `--local` (alias for `--project`)
-- `--global`
-
-Project scope resolves against `.agents/pm/extensions`. Global scope resolves against `~/.pm-cli/extensions` (or `PM_GLOBAL_PATH/extensions`).
-
-### Install source normalization
-
-`pm extension --install` accepts:
-
-- local directory paths
-- GitHub HTTPS URLs
-- `github.com/<owner>/<repo>[/path]` shorthand
-- `--gh <owner>/<repo>[/path]` (alias: `--github`)
-- optional `--ref <branch|tag|sha>` for GitHub sources
-
-When the source path is shorthand (for example `owner/repo/my-ext`), install resolution probes in this order:
-
-1. `<clone>/<subpath>`
-2. `<clone>/.agents/pm/extensions/<subpath>`
-3. `<clone>/.custom/pm-extensions/<subpath>`
-4. `<clone>/.custom/pm-extension/<subpath>`
-
-If no subpath is supplied, the resolver accepts either:
-
-- repo root containing one extension (`manifest.json` at root), or
-- exactly one extension under default roots (`.agents/pm/extensions`, `.custom/pm-extensions`, `.custom/pm-extension`)
-
-If multiple extension manifests are discovered, install fails with deterministic guidance to provide an explicit path.
-
-### Requested equivalence examples
+Scaffold:
 
 ```bash
-# Scaffold a starter extension project in your workspace
-pm extension --init ./my-extension
+pm extension init ./my-extension
 pm extension scaffold ./my-extension
-
-# Bundled aliases shipped with pm-cli (not auto-installed)
-pm extension --install --project beads
-pm extension --install --project todos
-
-# Equivalent bundled local paths
-pm extension --install --project .agents/pm/extensions/beads
-pm extension --install --project .agents/pm/extensions/todos
-
-# Custom roots
-pm extension --install --project https://github.com/unbraind/pm-cli/tree/main/.custom/pm-extensions/my-ext
-pm extension --install --project github.com/unbraind/pm-cli/.custom/pm-extensions/my-ext
-pm extension --install --project --gh unbraind/pm-cli/.custom/pm-extensions/my-ext
-
-# Single-extension repo or extension rooted at repository top-level
-pm extension --install --project https://github.com/unbraind/pm-cli
-pm extension --install --project github.com/unbraind/pm-cli
-pm extension --install --project --gh unbraind/pm-cli
 ```
 
-Canonical public shorthand examples in this repository use `unbraind/pm-cli`. For private repositories, make sure git authentication is configured before using `--gh` or `github.com/...` selectors.
+Install:
 
-### Managed extension state
+```bash
+pm extension install ./my-extension --project
+pm extension install github.com/unbraind/pm-cli/.agents/pm/extensions/todos --project
+pm extension --install --project todos
+```
 
-Each scope maintains a lifecycle state file:
+Inspect and manage:
 
-- `<scope-extension-root>/.managed-extensions.json`
+```bash
+pm extension explore --project
+pm extension manage --project
+pm extension doctor --detail summary
+pm extension doctor --detail deep --trace
+```
 
-State records include deterministic source metadata (`local` or `github`), install timestamps, manifest summary, and update-check metadata.
+Activate and deactivate:
 
-Lifecycle semantics:
+```bash
+pm extension activate my-extension --project
+pm extension deactivate my-extension --project
+```
 
-- Init/scaffold creates an idempotent starter extension project (`manifest.json`, `index.js`, `README.md`) and fails fast on conflicting pre-existing file contents.
-- Install copies/clones into the selected extension root, validates `manifest.json` and `entry`, updates managed state, and activates the extension in settings.
-- Uninstall removes extension files, removes managed-state entry, and clears settings references.
-- Activate/deactivate updates `settings.extensions.enabled[]` / `settings.extensions.disabled[]`.
-- Explore returns discovered extensions + compatibility/runtime status fields (`active`, `enabled`, `runtime_active`, `activation_status`) and managed state.
-- Manage performs GitHub update checks (`git ls-remote`) for managed GitHub entries and persists update metadata (`last_update_check_at`, `last_update_remote_commit`, `update_available`, `update_error`).
-- Manage supports `--runtime-probe` to opt into doctor-equivalent runtime activation semantics for `runtime_active`/`activation_status`.
-- Manage and doctor support `--fix-managed-state` to adopt unmanaged extensions before diagnostics/update checks.
-- Adopt records an already-installed unmanaged extension into managed state metadata without reinstalling files (supports local source metadata or explicit GitHub provenance via `--gh`/`--github` and optional `--ref`).
-- Adopt-all bulk-records all unmanaged installed extensions in selected scope into managed state metadata without reinstalling files.
-- Explore/manage extension rows include explicit update-check fields:
-  - `update_check_status`: `checked`, `failed`, `skipped_unmanaged`, `skipped_non_github`, or `not_checked`
-  - `update_check_reason`: deterministic reason/code for that status (for example `up_to_date`, `update_available`, `extension_not_managed`, or the update failure text)
-- Manage triage includes `update_check_status_totals`, `update_check_failed_total`, and update-health coverage signals (`update_health_coverage`, `update_health_partial`) for operator-friendly rollups.
-- Manage/doctor warning-code rollups include `extension_update_health_partial_coverage` only when unmanaged extensions are action-required for update-check coverage. Expected bundled/local unmanaged installs are surfaced as informational triage metadata.
-- Doctor consolidates diagnostics into summary/deep modes (`--detail summary|deep`) with normalized warning codes, canonical extension load roots, consistency diagnostics for active-vs-loaded project extensions, update-health coverage telemetry, remediation hints, strict warning exits (`--strict-exit`, alias `--fail-on-warn`), blocking-failure indicators (`blocking_failure_count`, `has_blocking_failures`), capability guidance metadata (`pm extension --doctor` or `pm extension doctor`), and capability contract metadata (`details.capability_contract`).
-- Doctor `--trace` (with `--detail deep`) includes actionable activation trace payloads for registration validation failures (method, command, registration index, expected schema, and sanitized received payload).
+Adopt unmanaged extensions:
 
-### Health integration
+```bash
+pm extension adopt my-extension --project
+pm extension adopt-all --project
+```
 
-`pm health` includes managed extension diagnostics for project and global scope:
+## Install Sources
 
-- managed-state file path
-- managed entry count
-- managed entry summaries
-- managed-state read/schema warnings
-- update-coverage parity warnings (`extension_update_health_partial_coverage`) when loaded unmanaged extensions are action-required and update checks are partial
-- For focused extension triage, use `pm extension --doctor` for consolidated diagnostics without traversing full health payloads.
+`pm extension install` accepts:
+
+- local directories
+- GitHub HTTPS URLs
+- `github.com/<owner>/<repo>[/path]`
+- `--gh <owner>/<repo>[/path]`
+- optional `--ref <branch|tag|sha>`
+
+When a GitHub source omits a subpath, the installer accepts a repository root containing one extension manifest or exactly one extension under known extension roots.
 
 ## Manifest
 
-Every extension directory must contain a `manifest.json`:
+Every extension has `manifest.json`:
 
 ```json
 {
   "name": "pm-ext-example",
-  "version": "0.1.0",
-  "entry": "./dist/index.js",
-  "priority": 100,
-  "capabilities": [
-    "commands",
-    "parser",
-    "preflight",
-    "services",
-    "renderers",
-    "hooks",
-    "schema",
-    "importers",
-    "search"
-  ]
-}
-```
-
-- `entry` must resolve inside the extension directory (no path traversal).
-- `capabilities` declares what the extension will register. API calls that exceed declared capabilities fail activation deterministically.
-- Unknown capability names are ignored for gating but emit discovery diagnostics that include allowed-capability lists and nearest-match suggestions when confidence is high.
-- Legacy manifest capability aliases `migration` and `validation` are remapped to `schema` and emit consolidated warning `extension_capability_legacy_alias` so compatibility remains additive while migration intent stays visible.
-
-## SDK Dependency Setup
-
-External extensions should declare an explicit dependency on the pm package so `@unbrained/pm-cli/sdk` resolves at runtime.
-
-```json
-{
-  "name": "my-pm-extension",
-  "type": "module",
-  "dependencies": {
-    "@unbrained/pm-cli": "^2026.3.12"
-  }
-}
-```
-
-This keeps extension imports stable and avoids relying on internal `src/core/...` paths.
-
-## Starter Extension Reference
-
-For a complete example that demonstrates all 9 capabilities via the public SDK, see:
-
-- `docs/examples/starter-extension/`
-
-## Extension Module
-
-The entry module must export an `activate` function:
-
-```ts
-import { defineExtension, type ExtensionApi } from "@unbrained/pm-cli/sdk";
-
-export default defineExtension({
-  activate(api: ExtensionApi): void {
-    // register commands, hooks, renderers, etc.
-  },
-});
-```
-
-`activate` may be synchronous or return `Promise<void>`.
-
-## API Reference
-
-### `api.registerCommand(def)`
-
-Register a new command handler path or replace an existing core command at dispatch time.
-
-**New command path:**
-
-```ts
-api.registerCommand({
-  name: "acme sync",
-  action: "acme-sync",
-  description: "Synchronize ACME assets into PM items.",
-  intent: "Run a deterministic import/sync pass before release prep.",
-  examples: ["pm acme sync --source ./assets.json --dry-run"],
-  failure_hints: ["Ensure --source points to a readable JSON file."],
-  arguments: [
-    { name: "sourceId", required: false, description: "Optional source identifier override." },
-  ],
-  flags: [
-    { long: "--source", value_name: "path", description: "Input file path", required: true },
-    { long: "--dry-run", description: "Preview without writing items" },
-  ],
-  run: async (context) => {
-    // context.command: normalized command path
-    // context.args: string[] positional args
-    // context.options: Record<string, unknown> command-scoped flags
-    // context.global: GlobalOptions (--json/--quiet/--path/--no-extensions/--profile)
-    // context.pm_root: resolved PM root
-    return { ok: true, synced: 42 };
-  },
-});
-```
-
-If the command path matches a core command (for example `list-open`), the extension handler runs first and the core action is skipped. Command names are canonicalized (trimmed, lowercased, repeated whitespace collapsed). Handlers receive cloned snapshots so mutation cannot leak into caller state.
-
-Capability requirements:
-
-- `registerCommand(...)` requires `commands` capability.
-- Defining inline command metadata `flags` inside `registerCommand({ ... })` also requires `schema` capability (same gate as `registerFlags(...)`).
-
-Optional command metadata (`action`, `description`, `intent`, `examples`, `failure_hints`, `arguments`, and inline `flags`) is consumed by runtime help surfaces and contracts:
-
-- `pm <extension-command> --help` / `--help --json`
-- `pm contracts --command <extension-command>`
-- `pm contracts --action <extension-action>`
-
-For backward compatibility, command definitions that still use `handler` are accepted and mapped to `run`, with warning `extension_command_definition_legacy_handler_alias` to guide migration.
-
-**Override existing core command result:**
-
-```ts
-api.registerCommand("list", (context) => {
-  return {
-    ...(context.result as Record<string, unknown>),
-    _ext: "annotated",
-    command: context.command,
-    pm_root: context.pm_root,
-  };
-});
-```
-
-Result override callbacks are synchronous. Returning a Promise is ignored and emits `extension_command_override_async_unsupported:<layer>:<name>:<command>`.
-
-### `api.registerParser(command, override)`
-
-Register command-scoped parser overrides for core or dynamic command paths. Parser overrides run before command handler dispatch and can rewrite `args`, `options`, and `global` values.
-
-```ts
-api.registerParser("acme sync", (context) => {
-  return {
-    options: {
-      ...context.options,
-      limit: Number(context.options.limit),
-    },
-  };
-});
-```
-
-Notes:
-
-- Requires `parser` capability.
-- Resolution is deterministic (last registered override for the command path wins).
-- Parser handlers can be async.
-- Failed parser overrides fall back to the original command context and emit deterministic warnings.
-
-### `api.registerPreflight(override)`
-
-Register a preflight override to control command mutation gates and migration execution.
-
-```ts
-api.registerPreflight((context) => ({
-  enforce_item_format_gate: false,
-  run_preflight_item_format_sync: false,
-  run_extension_migrations: false,
-  enforce_mandatory_migration_gate: false,
-}));
-```
-
-`context.decision` contains the default gate/migration plan:
-
-- `enforce_item_format_gate`
-- `run_preflight_item_format_sync`
-- `run_extension_migrations`
-- `enforce_mandatory_migration_gate`
-
-Notes:
-
-- Requires `preflight` capability.
-- Only the latest registered preflight override is active (deterministic last-wins behavior).
-- Use this API carefully: disabling gates/migrations can bypass core safety rails.
-
-### `api.registerService(service, override)`
-
-Register service-level overrides for deep runtime behavior.
-
-```ts
-api.registerService("output_format", (context) => {
-  return JSON.stringify({
-    rendered_by: "acme-service",
-    payload: context.payload.result,
-  });
-});
-```
-
-Supported service keys:
-
-- `output_format`
-- `error_format`
-- `help_format`
-- `lock_acquire`
-- `lock_release`
-- `history_append`
-- `item_store_write`
-- `item_store_delete`
-
-Notes:
-
-- Requires `services` capability.
-- Service resolution is deterministic (last registration for each service key wins).
-- `output_format` and `error_format` are synchronous call sites; async returns are ignored with deterministic warnings.
-- `error_format` receives the final rendered error string. When callers use `--json`, that string is a JSON error envelope.
-- `help_format` applies to text help/usage rendering paths; machine-readable `--json` errors and `--help --json` payloads bypass `help_format` and emit canonical JSON diagnostics/help data directly.
-
-### `api.registerFlags(targetCommand, flags)`
-
-Declare flags for a command (displayed in `--help` for dynamic extension commands):
-
-```ts
-api.registerFlags("acme sync", [
-  { long: "--dry-run", short: "-d", description: "Simulate without writing" },
-  { long: "--org", value_name: "name", description: "Organization name", required: true },
-  { long: "--legacy-mode", enabled: false },
-  { long: "--internal-debug", visible: false },
-]);
-```
-
-Supported metadata for dynamic extension help/contract rendering:
-
-- `required: true` appends a `[required]` marker in help.
-- `enabled: false` appends a `[disabled]` marker in help.
-- `visible: false` hides the flag from dynamic help output.
-- `type` / `value_type` (`string` | `number` | `boolean`) enables runtime loose-option coercion for matching command flags.
-- Validation contract: each entry must provide at least one of `long` or `short`; optional metadata fields must match expected scalar types.
-
-Core help output appends command-level guidance with compact defaults (`Intent` + one example) and supports deep help via `--explain`. Dynamic extension commands receive flag-level rendering from both `registerFlags(...)` and `registerCommand({ flags: [...] })`; provide explicit `description` text on each flag to keep help/contracts high-signal.
-
-### `api.registerRenderer(format, renderer)`
-
-Override TOON or JSON output for a command:
-
-```ts
-api.registerRenderer("toon", (context) => {
-  if (context.command !== "stats") {
-    return `noop: ${JSON.stringify(context.result)}`;
-  }
-  return customToonFormat(context.result);
-});
-```
-
-Renderer overrides must return a string. Non-string return values are ignored and produce a deterministic `extension_renderer_invalid_result:<layer>:<name>:<format>` warning.
-
-Without a renderer override, core TOON fallback output renders the command payload directly and applies sparse compaction:
-
-- omits `null` and `undefined`
-- omits empty arrays and empty objects
-- preserves meaningful scalar values
-
-If your extension needs a different shape (or must include fields omitted by sparse fallback), register a TOON renderer override.
-
-### `api.registerImporter(name, importer)`
-
-Register an importer (also wires `<name> import` command path):
-
-```ts
-api.registerImporter("jira", async (context) => {
-  // context.registration: normalized importer name
-  // context.action: "import"
-  // context.command: command path
-  // context.options: parsed command flags
-  // context.global: GlobalOptions
-  // context.pm_root: resolved PM root
-  return { ok: true, imported: 5, skipped: 0, ids: ["pm-xxxx"], warnings: [] };
-});
-```
-
-### `api.registerExporter(name, exporter)`
-
-Register an exporter (also wires `<name> export` command path):
-
-```ts
-api.registerExporter("jira", async (context) => {
-  // context.action: "export"
-  return { ok: true, exported: 5, ids: ["pm-xxxx"], warnings: [] };
-});
-```
-
-Notes:
-
-- `registerExporter(...)` uses the same capability gate as importers. Declare `importers` in `manifest.json` to use both `registerImporter(...)` and `registerExporter(...)`.
-
-### `api.registerItemFields(fields)`
-
-Declare additional front-matter fields for schema-awareness:
-
-```ts
-api.registerItemFields([
-  { name: "acme_epic_id", type: "string", optional: true },
-]);
-```
-
-Validation contract: each field entry must include non-empty `name` and `type`; `optional` must be boolean when provided.
-
-### `api.registerItemTypes(types)`
-
-Register custom item types and per-type create/type-option rules:
-
-```ts
-api.registerItemTypes([
-  {
-    name: "Asset",
-    folder: "assets",
-    aliases: ["assets", "3d-asset"],
-    required_create_fields: ["title", "description", "status", "priority", "message"],
-    required_create_repeatables: [],
-    command_option_policies: [
-      { command: "create", option: "severity", enabled: false },
-      { command: "create", option: "reporter", enabled: false },
-      { command: "create", option: "goal", visible: false },
-      { command: "update", option: "message", required: true },
-    ],
-    options: [
-      {
-        key: "category",
-        values: ["Map", "Character", "Prop", "VFX"],
-        required: true,
-        aliases: ["asset_category"],
-      },
-      {
-        key: "pipeline",
-        values: ["Blockout", "Modeling", "Rigging", "Texturing", "Done"],
-      },
-    ],
-  },
-]);
-```
-
-Validation contract highlights:
-
-- each type entry must include non-empty `name`
-- `aliases`, `required_create_fields`, and `required_create_repeatables` must be arrays of non-empty strings when provided
-- `options[]` entries require non-empty `key`
-- `command_option_policies[]` entries require non-empty `command` and `option`
-- optional boolean toggles (`enabled`, `required`, `visible`) must be booleans when provided
-
-Notes:
-
-- Requires `schema` capability in the extension manifest.
-- Type names and aliases are resolved by the runtime type registry and become available to `--type` filters and completion.
-- Option definitions are validated by `pm create` / `pm update` through `--type-option` flags.
-- `command_option_policies` are enforced by core create/update runtime and surfaced in policy-aware help sections.
-
-### `api.registerMigration(def)`
-
-Declare a schema migration (tracked in `pm health`):
-
-```ts
-api.registerMigration({
-  id: "add-acme-epic-id",
-  description: "Add acme_epic_id field to existing items",
-  mandatory: false,
-  status: "pending",
-  run: async (pmRoot) => {
-    // migrate items; update status to "applied" when done
-  },
-});
-```
-
-Validation contract: migration definitions must be objects; when provided, `id`/`description`/`status` must be strings, `mandatory` must be boolean, and `run` must be a function.
-
-Migrations with `mandatory: true` and `status` not `"applied"` block write commands until resolved (bypass with `--force`).
-
-### `api.registerSearchProvider(provider)`
-
-Register a custom search provider:
-
-```ts
-api.registerSearchProvider({
-  name: "elastic",
-  query: async (context) => {
-    // context.query, context.mode, context.tokens
-    // context.options, context.settings, context.documents
-    return [{ id: "pm-xxxx", score: 0.95, matched_fields: ["provider:elastic"] }];
-  },
-});
-```
-
-Use `settings.search.provider` to select the active extension provider for live `pm search` execution.
-
-### `api.registerVectorStoreAdapter(adapter)`
-
-Register a custom vector store:
-
-```ts
-api.registerVectorStoreAdapter({
-  name: "pinecone",
-  upsert: async (context) => {
-    // context.points, context.settings
-  },
-  query: async (context) => {
-    // context.vector, context.limit, context.settings
-    return [{ id: "pm-xxxx", score: 0.87 }];
-  },
-});
-```
-
-Use `settings.vector_store.adapter` to select the active extension adapter for `pm search` query and `pm reindex` upsert.
-
-## Lifecycle Hooks
-
-Hooks run for every applicable core operation. Hook handlers receive cloned context snapshots — mutations do not leak back into caller state.
-
-### `api.hooks.beforeCommand(hook)`
-
-Runs before any command executes:
-
-```ts
-api.hooks.beforeCommand((ctx) => {
-  // ctx.command: string
-  // ctx.args: string[]
-  // ctx.options: Record<string,unknown>
-  // ctx.global: GlobalOptions
-  // ctx.pm_root: string
-  console.log(`[ext] before: ${ctx.command}`);
-});
-```
-
-### `api.hooks.afterCommand(hook)`
-
-Runs after a command completes (even on failure):
-
-```ts
-api.hooks.afterCommand((ctx) => {
-  // ctx.ok: boolean
-  // ctx.result?: unknown
-  // ctx.error?: string
-  // same fields as beforeCommand
-});
-```
-
-### `api.hooks.onWrite(hook)`
-
-Runs before each item file write:
-
-```ts
-api.hooks.onWrite((ctx) => {
-  // ctx.path: string
-  // ctx.scope: "project" | "global"
-  // ctx.op: string (create, update, restore, etc.)
-});
-```
-
-### `api.hooks.onRead(hook)`
-
-Runs after each item file read:
-
-```ts
-api.hooks.onRead((ctx) => {
-  // ctx.path: string
-  // ctx.scope: "project" | "global"
-});
-```
-
-### `api.hooks.onIndex(hook)`
-
-Runs during reindex/gc operations:
-
-```ts
-api.hooks.onIndex((ctx) => {
-  // ctx.mode: "keyword" | "semantic" | "hybrid" | "gc"
-  // ctx.total_items?: number
-});
-```
-
-## Health and Diagnostics
-
-`pm health` probes all loaded extensions and surfaces:
-
-- `extension_load_failed:<layer>:<name>` — manifest parse or module import error
-- `extension_load_failed_sdk_dependency_missing:<name>` — doctor detected missing `@unbrained/pm-cli` dependency resolution in extension runtime imports
-- `extension_load_failed_module_mode_mismatch:<name>` — doctor detected ESM/CJS mode mismatch (for example missing `"type": "module"` for ESM-style entrypoints)
-- `extension_activate_failed:<layer>:<name>` — exception in `activate()`
-- `extension_entry_outside_extension:<layer>:<name>` — entry path escapes directory
-- `extension_capability_unknown:<layer>:<name>:<capability>:allowed=<csv>:suggested=<capability|none>` — unknown capability in manifest with inline guidance (including legacy alias replacements where applicable)
-- `extension_capability_legacy_alias:<layer>:<name>:aliases=<csv>` — legacy manifest capability aliases were remapped (for example `migration`/`validation` -> `schema`)
-- `extension_command_definition_legacy_handler_alias:<layer>:<name>:<command>` — command definition used legacy `handler` key; runtime mapped it to `run`
-- collision warnings when multiple extensions target the same command/parser/preflight/service/renderer key (last registration wins)
-
-`pm health` and `pm extension --doctor` also surface machine-readable capability contract metadata in diagnostics payloads:
-
-- `details.capability_contract.version`
-- `details.capability_contract.capabilities`
-- `details.capability_contract.legacy_aliases`
-- parsed guidance entries in `details.capability_guidance` include `capability_contract_version`, `suggestion_source`, and `legacy_alias_target` when available
-
-Use `pm health --json` to parse diagnostics programmatically.
-
-## Disabling Extensions
-
-```bash
-pm --no-extensions list-open   # disable all extensions for this invocation
-```
-
-Or configure per-project in `.agents/pm/settings.json`:
-
-```json
-{
-  "extensions": {
-    "disabled": ["pm-ext-example"]
-  }
-}
-```
-
-## Example: Minimal Custom Command
-
-**`~/.pm-cli/extensions/hello/manifest.json`:**
-
-```json
-{
-  "name": "hello",
   "version": "0.1.0",
   "entry": "./index.js",
   "priority": 100,
@@ -676,59 +92,144 @@ Or configure per-project in `.agents/pm/settings.json`:
 }
 ```
 
-**`~/.pm-cli/extensions/hello/index.js`:**
+Rules:
 
-```js
-export function activate(api) {
-  api.registerCommand({
-    name: "hello",
-    run: async (_context) => {
-      return { message: "Hello from extension!" };
-    },
-  });
+- `entry` must stay inside the extension directory.
+- `capabilities` gates what the extension can register.
+- Unknown capabilities emit guidance.
+- Legacy capability aliases are normalized for compatibility with warnings.
+
+Capability names:
+
+- `commands`
+- `parser`
+- `preflight`
+- `services`
+- `renderers`
+- `hooks`
+- `schema`
+- `importers`
+- `search`
+
+## Minimal Extension
+
+`manifest.json`:
+
+```json
+{
+  "name": "hello",
+  "version": "0.1.0",
+  "entry": "./index.js",
+  "capabilities": ["commands"]
 }
 ```
 
+`index.js`:
+
+```js
+import { defineExtension } from "@unbrained/pm-cli/sdk";
+
+export default defineExtension({
+  activate(api) {
+    api.registerCommand({
+      name: "hello",
+      description: "Print a deterministic hello payload.",
+      intent: "verify extension command activation",
+      examples: ["pm hello"],
+      run: async () => ({ message: "hello" }),
+    });
+  },
+});
+```
+
+Run:
+
 ```bash
+pm extension install ./hello --project
 pm hello
-# => message: Hello from extension!
+```
+
+## API Reference
+
+Use [SDK](SDK.md) for typed examples. Runtime APIs include:
+
+| API | Capability | Purpose |
+|-----|------------|---------|
+| `api.registerCommand(def)` | `commands` | add or replace command handlers |
+| `api.registerParser(command, fn)` | `parser` | normalize args/options before dispatch |
+| `api.registerPreflight(fn)` | `preflight` | influence mutation gate decisions |
+| `api.registerService(name, fn)` | `services` | replace selected runtime services |
+| `api.registerRenderer(format, fn)` | `renderers` | override TOON or JSON output |
+| `api.registerImporter(name, fn)` | `importers` | add `<name> import` |
+| `api.registerExporter(name, fn)` | `importers` | add `<name> export` |
+| `api.registerFlags(command, flags)` | `schema` | describe dynamic command flags |
+| `api.registerItemFields(fields)` | `schema` | add item metadata fields |
+| `api.registerItemTypes(types)` | `schema` | add custom item types |
+| `api.registerMigration(def)` | `schema` | add schema migrations |
+| `api.registerSearchProvider(provider)` | `search` | add search provider |
+| `api.registerVectorStoreAdapter(adapter)` | `search` | add vector adapter |
+| `api.hooks.beforeCommand(fn)` | `hooks` | run before commands |
+| `api.hooks.afterCommand(fn)` | `hooks` | run after commands |
+| `api.hooks.onWrite(fn)` | `hooks` | observe writes |
+| `api.hooks.onRead(fn)` | `hooks` | observe reads |
+| `api.hooks.onIndex(fn)` | `hooks` | observe index operations |
+
+## Command Metadata
+
+Dynamic commands should include human and machine metadata:
+
+```js
+api.registerCommand({
+  name: "acme sync",
+  action: "acme-sync",
+  description: "Synchronize ACME records into pm items.",
+  intent: "run deterministic import before release prep",
+  examples: ["pm acme sync --source ./records.json --dry-run"],
+  failure_hints: ["Ensure --source points to readable JSON."],
+  flags: [
+    { long: "--source", value_name: "path", description: "Input file path", required: true },
+    { long: "--dry-run", description: "Preview without writing", type: "boolean" }
+  ],
+  run: async (context) => ({ ok: true, args: context.args }),
+});
+```
+
+Inline command flags require both `commands` and `schema` capabilities.
+
+## Service and Preflight Safety
+
+`parser`, `preflight`, and `services` are powerful. They can change command input, mutation gates, output formatting, lock behavior, history appends, and item-store writes. Only enable these capabilities for reviewed extensions.
+
+For troubleshooting:
+
+```bash
+pm --no-extensions list-open
+pm extension doctor --detail deep --trace
+pm health --check-only
 ```
 
 ## Bundled Managed Extensions
 
-`pm-cli` ships two bundled extension sources in `.agents/pm/extensions`, but they are not auto-installed in project or global scope.
+`pm-cli` ships bundled extension sources that are not auto-installed:
 
-| Extension | Alias | Commands (after install) | Purpose |
-|-----------|-------|---------------------------|---------|
-| `builtin-beads-import` | `beads` | `pm beads import` | Import Beads JSONL records into pm items |
-| `builtin-todos-import-export` | `todos` | `pm todos import`, `pm todos export` | Round-trip todos markdown format |
+| Alias | Commands after install | Purpose |
+|-------|------------------------|---------|
+| `beads` | `pm beads import` | import Beads JSONL records |
+| `todos` | `pm todos import`, `pm todos export` | round-trip todos markdown format |
 
-Install either via alias or explicit bundled path:
+Install:
 
 ```bash
-# Alias installs
 pm extension --install --project beads
 pm extension --install --project todos
-
-# Equivalent local bundled paths
-pm extension --install --project .agents/pm/extensions/beads
-pm extension --install --project .agents/pm/extensions/todos
 ```
 
-The command paths `pm beads ...` and `pm todos ...` are available only after the extension is installed and active for the selected scope.
+## Starter Extension
 
-## Pi Agent Extension
+See [examples/starter-extension](examples/starter-extension/README.md) for a compact extension that demonstrates all capability categories through the public SDK.
 
-The Pi wrapper implementation source remains at `.pi/extensions/pm-cli/index.ts` and is a Pi agent extension (not a pm-cli runtime extension managed by `pm extension`).
+## Pi Wrapper
 
-Current wrapper parity includes:
+The Pi wrapper source is `.pi/extensions/pm-cli/index.ts`. It is an agent wrapper, not a runtime extension managed by `pm extension`.
 
-- `action: "calendar"` for `pm calendar` / `pm cal` (`view`, `date`, `from`, `to`, `past`, `type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`, `format`)
-- `create`/`update` reminder forwarding via repeatable `reminder` values (`at=<iso|relative>,text=<text>`)
-- `create`/`update` custom type-option forwarding via repeatable `typeOption` values
-- `create`/`update` audit controls including `allowAuditUpdate` and dependency-only `allowAuditDepUpdate`
-- linked-test context preflight/remediation forwarding via `checkContext` and `autoPmContext` (`test` / `test-all`)
-- cache cleanup forwarding via `dryRun` and repeatable `gcScope` (`gc`)
-- extension lifecycle forwarding via `extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-doctor`, `extension-adopt`, `extension-adopt-all`, `extension-activate`, and `extension-deactivate` actions (`target`, `scope`, `github`, `ref`, `detail`, `trace`, `runtimeProbe`, `fixManagedState`, `strictExit`, `failOnWarn`)
-
-See [AGENTS.md](../AGENTS.md) section 9 for full usage details.
+Use [AGENTS.md](../AGENTS.md) for repository-specific Pi wrapper operating rules.

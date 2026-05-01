@@ -488,6 +488,7 @@ describe("executeVectorQuery", () => {
           { id: "pm-b2", vector: [0.2, 0.1], payload: { kind: "Task" } },
           { id: "pm-a1", vector: [0.8, 0.2] },
           { id: "pm-a1", vector: [0.9, 0.1], payload: { kind: "Epic" } },
+          { id: "pm-zero", vector: [0, 0] },
         ],
       ),
     ).resolves.toEqual({ status: "ok" });
@@ -516,9 +517,10 @@ describe("executeVectorQuery", () => {
         },
       },
     );
-    expect(localHits.map((hit) => hit.id)).toEqual(["pm-a1", "pm-b2"]);
+    expect(localHits.map((hit) => hit.id)).toEqual(["pm-a1", "pm-b2", "pm-zero"]);
     expect(localHits[0]?.score).toBeCloseTo(0.9939, 3);
     expect(localHits[1]?.score).toBeCloseTo(0.8944, 3);
+    expect(localHits[2]?.score).toBe(0);
     expect(localHits[0]?.payload).toEqual({ kind: "Epic" });
 
     const tiePath = `${localPath}-tie`;
@@ -529,14 +531,14 @@ describe("executeVectorQuery", () => {
           path: tiePath,
         },
         [
-          { id: "pm-b1", vector: [0.5, 9] },
-          { id: "pm-a1", vector: [0.5, 7] },
+          { id: "pm-b1", vector: [1, 0] },
+          { id: "pm-a1", vector: [1, 0] },
         ],
       ),
     ).resolves.toEqual({ status: "ok" });
     const tieHits = await executeVectorQuery({ name: "lancedb", path: tiePath }, [1, 0], 2);
     expect(tieHits.map((hit) => hit.id)).toEqual(["pm-a1", "pm-b1"]);
-    expect(tieHits[0]!.score).toBeGreaterThan(tieHits[1]!.score);
+    expect(tieHits[0]!.score).toBe(tieHits[1]!.score);
 
     await expect(
       executeVectorQuery(

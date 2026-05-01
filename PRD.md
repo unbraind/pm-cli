@@ -2,7 +2,23 @@
 
 Status: Draft v1 (planning reference; pm data and runtime behavior are authoritative)
 Project: `pm` / `pm-cli`  
-Last Updated: 2026-02-19
+Last Updated: 2026-05-01
+
+## Navigation
+
+This PRD is an archival planning reference. For current user and agent documentation, use:
+
+- [README](README.md)
+- [Documentation index](docs/README.md)
+- [Agent Guide](docs/AGENT_GUIDE.md)
+- [Command Reference](docs/COMMANDS.md)
+- [Architecture](docs/ARCHITECTURE.md)
+
+Documentation refresh tracking:
+
+- [pm-3042](.agents/pm/epics/pm-3042.toon)
+- [pm-r9gu](.agents/pm/features/pm-r9gu.toon)
+- [pm-1sb2](.agents/pm/tasks/pm-1sb2.toon)
 
 ## 1) Problem Statement
 

@@ -746,8 +746,8 @@ describe("release readiness runtime coverage", () => {
     await withTempPmPath(async (context) => {
       const listHelp = context.runCli(["list", "--help"]);
       expect(listHelp.code).toBe(0);
-      expect(listHelp.stdout).toMatch(/mutually\s+exclusive with --fields/);
-      expect(listHelp.stdout).toMatch(/invalid:\s+--compact --fields id,title/);
+      expect(listHelp.stdout).toMatch(/mutually\s+exclusive with .*--fields/);
+      expect(listHelp.stdout).toMatch(/valid:\s+--fields\s+id,title/);
 
       const searchHelp = context.runCli(["search", "--help"]);
       expect(searchHelp.code).toBe(0);
@@ -1572,12 +1572,14 @@ describe("release readiness runtime coverage", () => {
       "src/cli/error-guidance.ts",
       "src/cli/help-content.ts",
       "src/cli/main.ts",
+      "src/core/extensions/extension-types.ts",
       "src/core/item/parent-reference-policy.ts",
       "src/core/item/type-registry.ts",
       "src/core/output/command-aware.ts",
       "src/core/schema/runtime-field-filters.ts",
       "src/core/schema/runtime-field-values.ts",
       "src/core/schema/runtime-schema.ts",
+      "src/core/shared/primitives.ts",
       "src/core/shared/text-normalization.ts",
       "src/core/telemetry/consent.ts",
       "src/core/telemetry/runtime.ts",

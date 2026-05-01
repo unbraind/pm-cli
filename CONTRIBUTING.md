@@ -95,11 +95,16 @@ Behavior expectations to preserve:
 
 ## Developer Documentation
 
-For deeper context on implementation and extension development:
+Start with the [documentation index](docs/README.md). Focused pages:
 
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — source tree, item storage, mutation contract, history/restore, search, and testing internals.
-- [docs/EXTENSIONS.md](docs/EXTENSIONS.md) — full extension development guide: manifest format, ExtensionApi reference, lifecycle hooks, and a working example.
-- [docs/RELEASING.md](docs/RELEASING.md) — maintainer release procedure for calendar versioning, CI gates, npm publish, and GitHub Release automation.
+- [Quickstart](docs/QUICKSTART.md) - first repository setup and item lifecycle.
+- [Agent Guide](docs/AGENT_GUIDE.md) - canonical `pm` workflow for coding agents.
+- [Command Reference](docs/COMMANDS.md) - command families and examples.
+- [Configuration](docs/CONFIGURATION.md) - settings, output, storage, search, and validation.
+- [Testing](docs/TESTING.md) - sandbox-safe local and linked-test workflows.
+- [Architecture](docs/ARCHITECTURE.md) - source tree, storage, mutation contract, history, search, and extension host internals.
+- [Extensions](docs/EXTENSIONS.md) and [SDK](docs/SDK.md) - extension lifecycle and public SDK.
+- [Releasing](docs/RELEASING.md) - maintainer release procedure.
 
 ## Extension Development
 
@@ -139,6 +144,7 @@ When unmanaged extension state is expected to be managed, use `pm extension --do
 
 - Include focused scope and rationale.
 - Confirm all checks pass (`pnpm build && pnpm typecheck && pnpm test:coverage`).
-- Update relevant user-facing docs when behavior changes, but keep enforcement in pm data and runtime tests.
+- Update relevant user-facing docs when behavior changes, but keep enforcement in `pm` data and runtime tests.
+- Keep private operations artifacts out of tracked public docs and package output.
 - Add/maintain tests for any new behavior (100% coverage required).
 - Reference relevant `pm` item IDs in PR description.

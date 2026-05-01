@@ -1,0 +1,70 @@
+# pm-cli Documentation
+
+This directory is the public documentation home for `pm-cli`. It is organized for progressive disclosure: read the smallest page that answers the current question, then follow links only when more detail is needed.
+
+## Read Path
+
+| Reader | First page | Then read |
+|--------|------------|-----------|
+| New user | [Quickstart](QUICKSTART.md) | [Command Reference](COMMANDS.md) |
+| Coding agent | [Agent Guide](AGENT_GUIDE.md) | [Configuration](CONFIGURATION.md), then command help |
+| Maintainer | [Contributing](../CONTRIBUTING.md) | [Testing](TESTING.md), [Releasing](RELEASING.md), [Architecture](ARCHITECTURE.md) |
+| Extension author | [Extensions](EXTENSIONS.md) | [SDK](SDK.md), [starter extension](examples/starter-extension/README.md) |
+| Machine client | [Command Reference](COMMANDS.md#machine-contracts) | `pm contracts --json` |
+
+## Documentation Map
+
+- [Quickstart](QUICKSTART.md) - install, initialize, create, claim, link, test, close.
+- [Agent Guide](AGENT_GUIDE.md) - canonical agent loop, tracker linking, and token-minimal command choices.
+- [Command Reference](COMMANDS.md) - command families with examples and when to use each family.
+- [Configuration](CONFIGURATION.md) - settings, storage formats, output, search, validation, and environment variables.
+- [Testing](TESTING.md) - sandbox-safe local tests and linked-test orchestration.
+- [Architecture](ARCHITECTURE.md) - contributor internals: storage, mutation flow, search, extensions, and command contracts.
+- [Extensions](EXTENSIONS.md) - runtime extension lifecycle and API reference.
+- [SDK](SDK.md) - public import surfaces and typed authoring examples.
+- [Releasing](RELEASING.md) - maintainer release checklist and failure handling.
+- [starter extension](examples/starter-extension/README.md) - compact extension scaffold reference.
+
+Community files:
+
+- [Contributing](../CONTRIBUTING.md)
+- [Security](../SECURITY.md)
+- [Code of Conduct](../CODE_OF_CONDUCT.md)
+- [Changelog](../CHANGELOG.md)
+- [License](../LICENSE)
+
+## Agent Routing Rules
+
+1. Start with [Agent Guide](AGENT_GUIDE.md) for workflow rules.
+2. Use [Command Reference](COMMANDS.md) for command families, not exhaustive flag memory.
+3. Use `pm <command> --help --json` or `pm contracts --command <name> --flags-only --json` for exact flags.
+4. Use [Architecture](ARCHITECTURE.md) only when changing internals or debugging behavior.
+5. Use [SDK](SDK.md) and [Extensions](EXTENSIONS.md) only when authoring or troubleshooting extensions.
+
+## Tracker References
+
+This documentation structure is tracked through:
+
+- [pm-3042](../.agents/pm/epics/pm-3042.toon)
+- [pm-r9gu](../.agents/pm/features/pm-r9gu.toon)
+- [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon)
+
+When changing docs, link files back to the active item:
+
+```bash
+pm docs <item-id> --add path=docs/README.md,scope=project,note="documentation index"
+pm comments <item-id> "Docs updated; links and build verified."
+```
+
+## Public Boundary
+
+Public docs must not link to ignored local operations artifacts, unpublished evidence logs, credentials, host-specific runbooks, or private service details. Keep those materials local and out of packaged releases.
+
+## Maintenance Checklist
+
+- Keep links relative and GitHub-compatible.
+- Keep README short; move detail into focused pages.
+- Put a short "Agent Quick Context" near the top of deep docs.
+- Prefer commands that agents can copy exactly.
+- Use `pm` item IDs as durable references when docs explain tracked work.
+- Run link/search checks before closing documentation tasks.
