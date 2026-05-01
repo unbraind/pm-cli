@@ -298,6 +298,21 @@ export function renderContextMarkdown(result: ContextResult): string {
       lines.push(`- ${formatAgendaLine(event)}`);
     }
   }
+
+  const isEmpty =
+    result.summary.active_items === 0 &&
+    result.summary.blocked === 0 &&
+    result.agenda.summary.events === 0;
+  if (isEmpty) {
+    lines.push("");
+    lines.push("## Suggestions");
+    lines.push("No active work items or upcoming events. Consider:");
+    lines.push("- `pm create --type Task --title \"...\"` to add a new work item");
+    lines.push("- `pm list --status closed --limit 5` to review recent completions");
+    lines.push("- `pm search <keywords>` to find related past work");
+    lines.push("- `pm aggregate` for a full project status overview");
+  }
+
   return lines.join("\n");
 }
 
@@ -392,5 +407,15 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
       events: agendaEvents,
     },
     ...(warnings.length > 0 ? { warnings } : {}),
+    ...(activeItems.length === 0 && blockedItems.length === 0 && agendaEvents.length === 0
+      ? {
+          suggestions: [
+            'pm create --type Task --title "..." to add a new work item',
+            "pm list --status closed --limit 5 to review recent completions",
+            "pm search <keywords> to find related past work",
+            "pm aggregate for a full project status overview",
+          ],
+        }
+      : {}),
   };
 }

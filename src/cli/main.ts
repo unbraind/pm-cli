@@ -3621,10 +3621,11 @@ function registerListCommand(
     .option("--limit <n>", "Limit returned item count")
     .option("--offset <n>", "Skip the first n matching rows before limit is applied")
     .option("--include-body", "Include item body in each returned list row")
-    .option("--compact", "Render compact list projection fields (mutually exclusive with --fields)")
+    .option("--compact", "Render compact list projection fields (mutually exclusive with --brief/--fields)")
+    .option("--brief", "Ultra-compact output: id, status, type, title only (agent-optimized, mutually exclusive with --compact/--fields)")
     .option(
       "--fields <value>",
-      "Render custom comma-separated list fields (mutually exclusive with --compact; valid: --fields id,title; invalid: --compact --fields id,title)",
+      "Render custom comma-separated list fields (mutually exclusive with --compact/--brief; valid: --fields id,title)",
     )
     .option("--sort <value>", "Sort field: priority|deadline|updated_at|created_at|title|parent")
     .option("--order <value>", "Sort order: asc|desc (requires --sort)")

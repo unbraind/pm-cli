@@ -14,10 +14,11 @@ const TELEMETRY_MAX_RETRY_DELAY_MS = 3_600_000;
 const TELEMETRY_RETRY_BASE_DELAY_MS = 30_000;
 const TELEMETRY_HTTP_TIMEOUT_MS = 2_500;
 const MILLISECONDS_PER_DAY = 86_400_000;
-const TELEMETRY_MAX_EVENT_BYTES = 512_000;
+const TELEMETRY_MAX_EVENT_BYTES = 65_536;
 const TELEMETRY_SANITIZE_MAX_DEPTH = 6;
 const TELEMETRY_SANITIZE_MAX_ARRAY_ITEMS = 20;
 const TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS = 15;
+const TELEMETRY_RESULT_PREVIEW_MAX_BYTES = 8_192;
 const OTEL_TRACES_ENDPOINT_ENV = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT";
 const OTEL_BASE_ENDPOINT_ENV = "OTEL_EXPORTER_OTLP_ENDPOINT";
 const OTEL_SERVICE_NAME_ENV = "OTEL_SERVICE_NAME";
@@ -27,6 +28,13 @@ const PM_TELEMETRY_OTEL_DISABLED_ENV = "PM_TELEMETRY_OTEL_DISABLED";
 const PM_TELEMETRY_OTEL_DISABLED_VALUES = new Set(["1", "true", "yes", "on"]);
 const PM_TELEMETRY_SOURCE_CONTEXT_ENV = "PM_TELEMETRY_SOURCE_CONTEXT";
 const PM_TELEMETRY_SOURCE_CONTEXT_VALUES = ["user", "automation", "test", "dogfood", "audit_smoke"] as const;
+
+let _lastFlushPromise: Promise<void> = Promise.resolve();
+
+/** Wait for the most recent background flush to settle. Test-only helper. */
+export function waitForPendingFlush(): Promise<void> {
+  return _lastFlushPromise;
+}
 const PM_TELEMETRY_SOURCE_CONTEXT_SET = new Set<string>(PM_TELEMETRY_SOURCE_CONTEXT_VALUES);
 const BOOLEAN_TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
 const PROCESS_SESSION_ID = crypto.randomUUID();
@@ -517,8 +525,16 @@ function summarizeResult(
     const record = result as Record<string, unknown>;
     const keys = Object.keys(record).sort((left, right) => left.localeCompare(right));
     const sanitized: Record<string, unknown> = {};
+    let previewBytes = 0;
     for (const key of keys.slice(0, 25)) {
-      sanitized[key] = sanitizeValue(record[key], key, captureLevel);
+      const sanitizedValue = sanitizeValue(record[key], key, captureLevel);
+      const entrySize = JSON.stringify(sanitizedValue)?.length ?? 0;
+      if (previewBytes + entrySize > TELEMETRY_RESULT_PREVIEW_MAX_BYTES) {
+        sanitized[key] = "[preview_truncated]";
+        break;
+      }
+      previewBytes += entrySize;
+      sanitized[key] = sanitizedValue;
     }
     return {
       type: "object",
@@ -855,7 +871,7 @@ export async function startTelemetryCommand(context: TelemetryCommandContext): P
       }),
     };
     await enqueueTelemetryEvent(globalPmRoot, event);
-    await flushQueue(globalPmRoot, endpoint, retentionDays);
+    _lastFlushPromise = flushQueue(globalPmRoot, endpoint, retentionDays).catch(() => {});
     return {
       started_at: occurredAt,
       started_at_ms: Date.now(),
@@ -911,8 +927,8 @@ export async function finishTelemetryCommand(
       }),
     };
     await enqueueTelemetryEvent(activeCommand.global_pm_root, event);
-    await flushQueue(activeCommand.global_pm_root, activeCommand.endpoint, activeCommand.retention_days);
-    await exportLocalOtelSpan(activeCommand, outcome, finishedAt, durationMs);
+    _lastFlushPromise = flushQueue(activeCommand.global_pm_root, activeCommand.endpoint, activeCommand.retention_days).catch(() => {});
+    void exportLocalOtelSpan(activeCommand, outcome, finishedAt, durationMs).catch(() => {});
   } catch {
     // Telemetry must never block command execution.
   }

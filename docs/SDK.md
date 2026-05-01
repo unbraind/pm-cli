@@ -109,6 +109,201 @@ The SDK provides explicit interfaces for key surfaces including:
 
 These interfaces intentionally allow additive metadata (`[key: string]: unknown`) where extension-defined metadata is expected.
 
+## Practical Examples
+
+### Custom Search Provider
+
+Register an extension that provides embedding-based search using a custom API:
+
+```ts
+import { defineExtension } from "@unbrained/pm-cli/sdk";
+
+export default defineExtension({
+  activate(api) {
+    api.registerSearchProvider({
+      name: "my-embeddings",
+      async embed_batch(context) {
+        const response = await fetch("https://api.example.com/embed", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ inputs: context.inputs, model: context.model }),
+        });
+        const data = await response.json();
+        return data.embeddings; // number[][]
+      },
+      async query(context) {
+        return context.documents
+          .filter((doc) => context.tokens.some((t) => doc.front_matter.title?.toLowerCase().includes(t)))
+          .map((doc) => ({ id: doc.front_matter.id, score: 0.5 }));
+      },
+    });
+  },
+});
+```
+
+Manifest: `{ "capabilities": ["search"] }`
+
+### Custom Item Type with Schema
+
+Register a custom `Incident` item type with required fields:
+
+```ts
+import { defineExtension } from "@unbrained/pm-cli/sdk";
+
+export default defineExtension({
+  activate(api) {
+    api.registerItemTypes([
+      {
+        name: "Incident",
+        folder: "incidents",
+        aliases: ["incident", "inc"],
+        required_create_fields: ["title", "severity"],
+        options: [
+          { key: "severity", values: ["critical", "major", "minor", "info"], required: true },
+          { key: "service", values: ["api", "web", "worker", "db"] },
+        ],
+        command_option_policies: [
+          { command: "create", option: "severity", enabled: true, required: true, visible: true },
+        ],
+      },
+    ]);
+
+    api.registerItemFields([
+      { name: "severity", type: "string" },
+      { name: "service", type: "string", optional: true },
+      { name: "resolved_at", type: "string", optional: true },
+    ]);
+  },
+});
+```
+
+Manifest: `{ "capabilities": ["schema"] }`
+
+### Lifecycle Hooks
+
+Track item creation and mutations for audit logging:
+
+```ts
+import { defineExtension } from "@unbrained/pm-cli/sdk";
+
+export default defineExtension({
+  activate(api) {
+    api.hooks.afterCommand(async (context) => {
+      if (context.command === "create" && context.ok) {
+        console.error(`[audit] Created item via: pm ${context.command} ${context.args.join(" ")}`);
+      }
+    });
+
+    api.hooks.onWrite(async (context) => {
+      if (context.op === "create" || context.op === "update") {
+        console.error(`[audit] ${context.op}: ${context.path}`);
+      }
+    });
+  },
+});
+```
+
+Manifest: `{ "capabilities": ["hooks"] }`
+
+### Custom Vector Store Adapter
+
+Register a Pinecone-compatible vector store:
+
+```ts
+import { defineExtension } from "@unbrained/pm-cli/sdk";
+
+export default defineExtension({
+  activate(api) {
+    api.registerVectorStoreAdapter({
+      name: "pinecone",
+      async query(context) {
+        const response = await fetch(`${process.env.PINECONE_URL}/query`, {
+          method: "POST",
+          headers: {
+            "Api-Key": process.env.PINECONE_API_KEY ?? "",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ vector: context.vector, topK: context.limit }),
+        });
+        const data = await response.json();
+        return data.matches.map((m: { id: string; score: number }) => ({
+          id: m.id,
+          score: m.score,
+        }));
+      },
+      async upsert(context) {
+        await fetch(`${process.env.PINECONE_URL}/vectors/upsert`, {
+          method: "POST",
+          headers: {
+            "Api-Key": process.env.PINECONE_API_KEY ?? "",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            vectors: context.points.map((p) => ({
+              id: p.id,
+              values: p.vector,
+              metadata: p.payload,
+            })),
+          }),
+        });
+      },
+      async delete(context) {
+        await fetch(`${process.env.PINECONE_URL}/vectors/delete`, {
+          method: "POST",
+          headers: {
+            "Api-Key": process.env.PINECONE_API_KEY ?? "",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ ids: context.ids }),
+        });
+      },
+    });
+  },
+});
+```
+
+Manifest: `{ "capabilities": ["search"] }`
+
+### Command with Flags and Arguments
+
+Register a full command with typed arguments and flags:
+
+```ts
+import { defineExtension } from "@unbrained/pm-cli/sdk";
+
+export default defineExtension({
+  activate(api) {
+    api.registerCommand({
+      name: "deploy",
+      description: "Deploy items to a target environment",
+      intent: "push staged changes to production",
+      arguments: [
+        { name: "environment", required: true, description: "Target environment (staging, production)" },
+      ],
+      flags: [
+        { long: "dry-run", short: "n", description: "Preview changes without applying", type: "boolean" },
+        { long: "tag", short: "t", value_name: "tag", description: "Release tag", type: "string" },
+      ],
+      examples: [
+        "pm deploy staging",
+        "pm deploy production --dry-run",
+        "pm deploy production --tag v2.0.0",
+      ],
+      failure_hints: [
+        "Ensure the target environment is configured in settings.json",
+      ],
+      async run(context) {
+        const env = context.args[0];
+        const dryRun = context.options["dry-run"] === true;
+        return { ok: true, environment: env, dry_run: dryRun };
+      },
+    });
+  },
+});
+```
+
+Manifest: `{ "capabilities": ["commands", "schema"] }`
+
 ## Recommended Authoring Pattern
 
 - keep command handlers deterministic and JSON-like

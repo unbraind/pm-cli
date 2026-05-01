@@ -113,4 +113,4 @@ export type {
 } from "../core/extensions/loader.js";
 
 export type { GlobalOptions } from "../core/shared/command-types.js";
-export type { PmSettings } from "../types/index.js";
+export type { ItemDocument, ItemFrontMatter, ItemStatus, ItemType, PmSettings } from "../types/index.js";

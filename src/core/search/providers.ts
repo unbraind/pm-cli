@@ -1,4 +1,10 @@
 import type { PmSettings } from "../../types/index.js";
+import {
+  isFiniteNumberArray,
+  toErrorMessage,
+  toNonEmptyString,
+  trimTrailingSlashes,
+} from "../shared/primitives.js";
 
 export type EmbeddingProviderName = "openai" | "ollama";
 
@@ -66,10 +72,6 @@ type ProviderSettingsInput = {
   };
 };
 
-function trimTrailingSlashes(value: string): string {
-  return value.replaceAll(/\/+$/g, "");
-}
-
 function normalizeOpenAiEmbeddingsEndpoint(baseUrl: string): string {
   const normalizedBaseUrl = trimTrailingSlashes(baseUrl);
   const normalizedLower = normalizedBaseUrl.toLowerCase();
@@ -80,14 +82,6 @@ function normalizeOpenAiEmbeddingsEndpoint(baseUrl: string): string {
     return `${normalizedBaseUrl}/embeddings`;
   }
   return `${normalizedBaseUrl}/v1/embeddings`;
-}
-
-function toNonEmptyString(value: unknown): string | null {
-  if (typeof value !== "string") {
-    return null;
-  }
-  const normalized = value.trim();
-  return normalized.length > 0 ? normalized : null;
 }
 
 function resolveOpenAiProvider(settings: ProviderSettingsInput): EmbeddingProviderConfig | null {
@@ -152,10 +146,6 @@ function dedupeEmbeddingInputs(inputs: string[]): DedupedEmbeddingInputs {
     uniqueInputs,
     originalToUniqueIndex,
   };
-}
-
-function isFiniteNumberArray(value: unknown): value is number[] {
-  return Array.isArray(value) && value.every((entry) => typeof entry === "number" && Number.isFinite(entry));
 }
 
 interface OpenAiEmbeddingResponseEntry {
@@ -294,14 +284,6 @@ function normalizeTimeoutMs(timeoutMs: number | undefined): number {
     throw new Error("Embedding request timeout must be a positive finite number");
   }
   return Math.floor(resolved);
-}
-
-function toErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    const message = error.message.trim();
-    return message.length > 0 ? message : error.name;
-  }
-  return String(error);
 }
 
 async function readFailedResponseBody(response: EmbeddingHttpResponse): Promise<string> {

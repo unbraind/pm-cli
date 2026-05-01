@@ -517,8 +517,8 @@ describe("executeVectorQuery", () => {
       },
     );
     expect(localHits.map((hit) => hit.id)).toEqual(["pm-a1", "pm-b2"]);
-    expect(localHits[0]?.score).toBeCloseTo(0.9);
-    expect(localHits[1]?.score).toBeCloseTo(0.2);
+    expect(localHits[0]?.score).toBeCloseTo(0.9939, 3);
+    expect(localHits[1]?.score).toBeCloseTo(0.8944, 3);
     expect(localHits[0]?.payload).toEqual({ kind: "Epic" });
 
     const tiePath = `${localPath}-tie`;
@@ -534,19 +534,9 @@ describe("executeVectorQuery", () => {
         ],
       ),
     ).resolves.toEqual({ status: "ok" });
-    await expect(
-      executeVectorQuery(
-        {
-          name: "lancedb",
-          path: tiePath,
-        },
-        [1, 0],
-        2,
-      ),
-    ).resolves.toMatchObject([
-      { id: "pm-a1", score: 0.5 },
-      { id: "pm-b1", score: 0.5 },
-    ]);
+    const tieHits = await executeVectorQuery({ name: "lancedb", path: tiePath }, [1, 0], 2);
+    expect(tieHits.map((hit) => hit.id)).toEqual(["pm-a1", "pm-b1"]);
+    expect(tieHits[0]!.score).toBeGreaterThan(tieHits[1]!.score);
 
     await expect(
       executeVectorQuery(
@@ -1092,8 +1082,8 @@ describe("LanceDB local snapshot persistence", () => {
         5,
       );
       expect(reloadedHits.map((hit) => hit.id)).toEqual(["pm-a1", "pm-b2"]);
-      expect(reloadedHits[0]?.score).toBeCloseTo(0.9);
-      expect(reloadedHits[1]?.score).toBeCloseTo(0.2);
+      expect(reloadedHits[0]?.score).toBeCloseTo(0.9939, 3);
+      expect(reloadedHits[1]?.score).toBeCloseTo(0.2425, 3);
       expect(reloadedHits[0]?.payload).toEqual({ kind: "Task" });
     } finally {
       await rm(sandboxRoot, { recursive: true, force: true });

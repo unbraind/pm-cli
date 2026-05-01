@@ -1,0 +1,12 @@
+id: pm-f9s0
+title: "Architecture: Decompose extension loader types"
+description: "Extracted 587 lines of type definitions from loader.ts (2864 lines) into extension-types.ts, reducing loader to 2277 lines"
+type: Feature
+status: closed
+priority: 3
+tags[0]:
+created_at: "2026-05-01T20:39:46.479Z"
+updated_at: "2026-05-01T20:39:46.479Z"
+author: audit-agent
+parent: pm-twpc
+body: ""

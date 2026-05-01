@@ -1,0 +1,12 @@
+id: pm-sgko
+title: "Telemetry: Fix queue bloat and move flush to background"
+description: "Reduced TELEMETRY_MAX_EVENT_BYTES from 512KB to 64KB, added result preview truncation at 8KB, made flush fire-and-forget to eliminate command hot-path blocking"
+type: Feature
+status: closed
+priority: 1
+tags[0]:
+created_at: "2026-05-01T20:39:40.471Z"
+updated_at: "2026-05-01T20:39:40.471Z"
+author: audit-agent
+parent: pm-twpc
+body: ""

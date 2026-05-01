@@ -1,0 +1,12 @@
+id: pm-6js7
+title: "Telemetry: Create Grafana dashboard"
+description: "Provisioned PM CLI Telemetry Overview dashboard to Grafana with 12 panels covering events, installations, error rates, latency, source context distribution, version distribution, and usage patterns"
+type: Task
+status: closed
+priority: 3
+tags[0]:
+created_at: "2026-05-01T20:40:04.430Z"
+updated_at: "2026-05-01T20:40:04.430Z"
+author: audit-agent
+parent: pm-twpc
+body: ""

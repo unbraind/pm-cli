@@ -33,6 +33,7 @@ export interface ListOptions {
   offset?: string;
   includeBody?: boolean;
   compact?: boolean;
+  brief?: boolean;
   fields?: string;
   sort?: string;
   order?: string;
@@ -56,6 +57,7 @@ export const LIST_SORT_ORDER_VALUES = ["asc", "desc"] as const;
 export type ListSortOrder = (typeof LIST_SORT_ORDER_VALUES)[number];
 
 const DEFAULT_COMPACT_LIST_FIELDS = ["id", "title", "status", "type", "priority", "parent", "updated_at"] as const;
+const BRIEF_LIST_FIELDS = ["id", "status", "type", "title"] as const;
 
 export interface ListResult {
   items: ListedItem[];
@@ -156,10 +158,17 @@ function parseFieldSelectors(raw: string | undefined): string[] | undefined {
 
 function parseProjectionConfig(options: ListOptions): ListProjectionConfig {
   const compactRequested = options.compact === true;
+  const briefRequested = options.brief === true;
   const fieldSelectors = parseFieldSelectors(options.fields);
-  const enabledModes = Number(compactRequested) + Number(fieldSelectors !== undefined);
+  const enabledModes = Number(compactRequested) + Number(briefRequested) + Number(fieldSelectors !== undefined);
   if (enabledModes > 1) {
-    throw new PmCliError("List projection options are mutually exclusive. Use one of --compact or --fields.", EXIT_CODE.USAGE);
+    throw new PmCliError("List projection options are mutually exclusive. Use one of --compact, --brief, or --fields.", EXIT_CODE.USAGE);
+  }
+  if (briefRequested) {
+    return {
+      mode: "compact",
+      fields: [...BRIEF_LIST_FIELDS],
+    };
   }
   if (compactRequested) {
     return {

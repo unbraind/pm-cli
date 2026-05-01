@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
-import { finishTelemetryCommand, startTelemetryCommand } from "../../src/core/telemetry/runtime.js";
+import { finishTelemetryCommand, startTelemetryCommand, waitForPendingFlush } from "../../src/core/telemetry/runtime.js";
 
 const originalGlobalPath = process.env.PM_GLOBAL_PATH;
 const originalFetch = globalThis.fetch;
@@ -110,6 +110,7 @@ describe("core/telemetry/runtime", () => {
       });
 
       expect(active).not.toBeNull();
+      await waitForPendingFlush();
       const queueRaw = await fs.readFile(telemetryQueuePath(globalRoot), "utf8");
       const firstLine = queueRaw
         .split("\n")
@@ -176,6 +177,7 @@ describe("core/telemetry/runtime", () => {
           query: "user@example.com token=supersecret --password hunter2 /home/steve/private/path",
         },
       });
+      await waitForPendingFlush();
 
       const queueRaw = await fs.readFile(telemetryQueuePath(globalRoot), "utf8");
       const queuedEntries = queueRaw
@@ -235,6 +237,7 @@ describe("core/telemetry/runtime", () => {
           query: "user@example.com",
         },
       });
+      await waitForPendingFlush();
 
       const queueRaw = await fs.readFile(telemetryQueuePath(globalRoot), "utf8");
       const queuedEntries = queueRaw
@@ -302,6 +305,7 @@ describe("core/telemetry/runtime", () => {
           query: "user@example.com token=supersecret /home/steve/private/path",
         },
       });
+      await waitForPendingFlush();
 
       const queueRaw = await fs.readFile(telemetryQueuePath(globalRoot), "utf8");
       const queuedEntries = queueRaw
@@ -377,6 +381,7 @@ describe("core/telemetry/runtime", () => {
         ok: true,
         result: { items: 0 },
       });
+      await waitForPendingFlush();
 
       if (!active) {
         throw new Error("expected active telemetry context");
@@ -450,6 +455,7 @@ describe("core/telemetry/runtime", () => {
         ok: true,
         result: { count: 0, items: [] },
       });
+      await waitForPendingFlush();
 
       const queueRaw = await fs.readFile(telemetryQueuePath(globalRoot), "utf8");
       expect(queueRaw.trim()).toBe("");
@@ -524,6 +530,7 @@ describe("core/telemetry/runtime", () => {
         pm_root: "/tmp/project/.agents/pm",
       });
       expect(active).not.toBeNull();
+      await waitForPendingFlush();
       expect(fetchMock).toHaveBeenCalledTimes(1);
 
       const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
@@ -571,6 +578,7 @@ describe("core/telemetry/runtime", () => {
         ok: false,
         error: "synthetic_failure",
       });
+      await waitForPendingFlush();
 
       expect(fetchMock).toHaveBeenCalledTimes(1);
       const [requestUrl, init] = fetchMock.mock.calls[0] as [string, RequestInit];

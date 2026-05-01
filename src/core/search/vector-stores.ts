@@ -1,6 +1,12 @@
 import type { PmSettings } from "../../types/index.js";
 import { mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
+import {
+  isFiniteNumberArray,
+  toErrorMessage,
+  toNonEmptyString,
+  trimTrailingSlashes,
+} from "../shared/primitives.js";
 
 export type VectorStoreName = "qdrant" | "lancedb";
 
@@ -106,22 +112,6 @@ const LANCE_DB_LOCAL_SNAPSHOT_DIR = ".pm-cli-local-vectors";
 const LANCE_DB_LOCAL_SNAPSHOT_VERSION = 1;
 const lanceDbLocalTables = new Map<string, Map<string, VectorRecord>>();
 
-function toNonEmptyString(value: unknown): string | null {
-  if (typeof value !== "string") {
-    return null;
-  }
-  const normalized = value.trim();
-  return normalized.length > 0 ? normalized : null;
-}
-
-function trimTrailingSlashes(value: string): string {
-  return value.replaceAll(/\/+$/g, "");
-}
-
-function isFiniteNumberArray(value: unknown): value is number[] {
-  return Array.isArray(value) && value.every((entry) => typeof entry === "number" && Number.isFinite(entry));
-}
-
 function normalizeVector(value: unknown): number[] {
   if (!isFiniteNumberArray(value) || value.length === 0) {
     throw new Error("Vector values must be a non-empty numeric array");
@@ -152,14 +142,6 @@ function normalizeTimeoutMs(timeoutMs: number | undefined): number {
     throw new Error("Vector request timeout must be a positive finite number");
   }
   return Math.floor(resolved);
-}
-
-function toErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    const message = error.message.trim();
-    return message.length > 0 ? message : error.name;
-  }
-  return String(error);
 }
 
 async function readFailedResponseBody(response: VectorHttpResponse): Promise<string> {
@@ -494,12 +476,25 @@ async function persistLanceDbLocalTable(storePath: string, tableName: string, ta
   }
 }
 
-function dotProduct(left: number[], right: number[]): number {
-  let total = 0;
-  for (let index = 0; index < left.length; index += 1) {
-    total += left[index] * right[index];
+function l2Norm(vector: number[]): number {
+  let sumSq = 0;
+  for (let index = 0; index < vector.length; index += 1) {
+    sumSq += vector[index] * vector[index];
   }
-  return total;
+  return Math.sqrt(sumSq);
+}
+
+function cosineSimilarity(left: number[], right: number[]): number {
+  let dotProd = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    dotProd += left[index] * right[index];
+  }
+  const leftNorm = l2Norm(left);
+  const rightNorm = l2Norm(right);
+  if (leftNorm === 0 || rightNorm === 0) {
+    return 0;
+  }
+  return dotProd / (leftNorm * rightNorm);
 }
 
 export function resolveVectorStores(settings: PmSettings | VectorSettingsInput): VectorStoreResolution {
@@ -643,7 +638,7 @@ export async function executeVectorQuery(
       }
       hits.push({
         id: record.id,
-        score: dotProduct(queryVector, record.vector),
+        score: cosineSimilarity(queryVector, record.vector),
         ...(record.payload ? { payload: record.payload } : {}),
       });
     }

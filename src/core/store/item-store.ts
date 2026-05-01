@@ -140,51 +140,66 @@ async function listAllDocuments(
 ): Promise<ItemDocument[]> {
   const entries = Object.entries(typeToFolder) as Array<[ItemType, string]>;
   const documentsById = new Map<string, { document: ItemDocument; itemFormat: ItemFormat }>();
-  for (const [, folder] of entries) {
-    const dirPath = path.join(pmRoot, folder);
-    let files: string[] = [];
-    try {
-      files = await fs.readdir(dirPath);
-    } catch (error: unknown) {
-      if (!isErrno(error, "ENOENT")) {
-        appendWarning(warnings, `item_list_directory_read_failed:${folder}`);
+
+  const dirResults = await Promise.all(
+    entries.map(async ([, folder]) => {
+      const dirPath = path.join(pmRoot, folder);
+      try {
+        return { folder, files: await fs.readdir(dirPath) };
+      } catch (error: unknown) {
+        if (!isErrno(error, "ENOENT")) {
+          appendWarning(warnings, `item_list_directory_read_failed:${folder}`);
+        }
+        return { folder, files: [] as string[] };
       }
+    }),
+  );
+
+  const readTasks: Array<Promise<{ folder: string; file: string; document: ItemDocument; itemFormat: ItemFormat } | null>> = [];
+  for (const { folder, files } of dirResults) {
+    const dirPath = path.join(pmRoot, folder);
+    for (const file of files.filter((entry) => ITEM_FILE_EXTENSIONS.some((ext) => entry.toLowerCase().endsWith(ext)))) {
+      readTasks.push(
+        (async () => {
+          try {
+            const itemPath = path.join(dirPath, file);
+            const itemFormat = getItemFormatFromPath(itemPath) as ItemFormat;
+            const raw = await fs.readFile(itemPath, "utf8");
+            await runActiveOnReadHooks({ path: itemPath, scope: "project" });
+            const parsed = parseItemDocument(raw, {
+              format: itemFormat,
+              schema,
+              onWarning: (warning) => appendWarning(warnings, warning),
+            });
+            return { folder, file, document: parsed, itemFormat };
+          } catch {
+            appendWarning(warnings, `item_list_item_read_failed:${folder}/${file}`);
+            return null;
+          }
+        })(),
+      );
+    }
+  }
+
+  const results = await Promise.all(readTasks);
+  for (const result of results) {
+    if (!result) continue;
+    const existing = documentsById.get(result.document.front_matter.id);
+    if (!existing) {
+      documentsById.set(result.document.front_matter.id, {
+        document: result.document,
+        itemFormat: result.itemFormat,
+      });
       continue;
     }
-    for (const file of files.filter((entry) => ITEM_FILE_EXTENSIONS.some((ext) => entry.toLowerCase().endsWith(ext)))) {
-      try {
-        const itemPath = path.join(dirPath, file);
-        const itemFormat = getItemFormatFromPath(itemPath) as ItemFormat;
-        const raw = await fs.readFile(itemPath, "utf8");
-        await runActiveOnReadHooks({
-          path: itemPath,
-          scope: "project",
-        });
-        const parsed = parseItemDocument(raw, {
-          format: itemFormat,
-          schema,
-          onWarning: (warning) => appendWarning(warnings, warning),
-        });
-        const existing = documentsById.get(parsed.front_matter.id);
-        if (!existing) {
-          documentsById.set(parsed.front_matter.id, {
-            document: parsed,
-            itemFormat,
-          });
-          continue;
-        }
-        const shouldReplace = preferredFormat
-          ? itemFormat === preferredFormat && existing.itemFormat !== preferredFormat
-          : itemFormat === "toon" && existing.itemFormat !== "toon";
-        if (shouldReplace) {
-          documentsById.set(parsed.front_matter.id, {
-            document: parsed,
-            itemFormat,
-          });
-        }
-      } catch {
-        appendWarning(warnings, `item_list_item_read_failed:${folder}/${file}`);
-      }
+    const shouldReplace = preferredFormat
+      ? result.itemFormat === preferredFormat && existing.itemFormat !== preferredFormat
+      : result.itemFormat === "toon" && existing.itemFormat !== "toon";
+    if (shouldReplace) {
+      documentsById.set(result.document.front_matter.id, {
+        document: result.document,
+        itemFormat: result.itemFormat,
+      });
     }
   }
   return [...documentsById.values()]

@@ -1,0 +1,12 @@
+id: pm-h2pi
+title: "Search: Fix cosine similarity with L2 normalization"
+description: dotProduct in vector-stores.ts replaced with cosineSimilarity using proper L2 normalization for accurate semantic ranking
+type: Feature
+status: closed
+priority: 1
+tags[0]:
+created_at: "2026-05-01T20:39:38.877Z"
+updated_at: "2026-05-01T20:39:38.877Z"
+author: audit-agent
+parent: pm-twpc
+body: ""

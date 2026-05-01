@@ -1,0 +1,12 @@
+id: pm-7k9o
+title: "Docs: Add practical SDK extension examples"
+description: "Added 5 practical examples to docs/SDK.md: custom search provider, custom item type with schema, lifecycle hooks, custom vector store adapter, command with flags and arguments"
+type: Task
+status: closed
+priority: 2
+tags[0]:
+created_at: "2026-05-01T20:40:01.140Z"
+updated_at: "2026-05-01T20:40:01.140Z"
+author: audit-agent
+parent: pm-twpc
+body: ""

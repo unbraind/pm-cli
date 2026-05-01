@@ -1,0 +1,12 @@
+id: pm-twpc
+title: 2026-05-01 Full PM CLI Audit Implementation
+description: "Comprehensive audit, review, and optimization of pm CLI covering code quality, SDK, telemetry, search, agent UX, and performance"
+type: Epic
+status: closed
+priority: 1
+tags[0]:
+created_at: "2026-05-01T20:39:17.283Z"
+updated_at: "2026-05-01T20:40:12.104Z"
+author: audit-agent
+close_reason: "All 15 audit plan items completed: code quality, SDK, telemetry, search, performance, agent UX, docs, and infrastructure"
+body: ""
