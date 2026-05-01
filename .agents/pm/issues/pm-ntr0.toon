@@ -1,0 +1,28 @@
+id: pm-ntr0
+title: "Issue: Telemetry queue bloat from oversized result_summary payloads"
+description: "Telemetry events with capture_level=max include result_summary for list-all commands that can be 3-5MB per event, exceeding Cloudflare body size limits and causing queue bloat with exponential backoff retries."
+type: Issue
+status: closed
+priority: 0
+tags[4]: audit,bug,pm-cli,telemetry
+created_at: "2026-05-01T18:03:03.601Z"
+updated_at: "2026-05-01T18:20:42.097Z"
+author: audit-agent
+acceptance_criteria: result_summary payloads are bounded; queue bloat is prevented; existing oversized entries are pruned
+parent: pm-2eb3
+severity: high
+environment: cli
+repro_steps: Run pm list-all with 600+ items and capture_level=max; observe telemetry queue entry >3MB; observe Cloudflare rejecting flush with HTTP 403 error 1010
+resolution: Cap result_summary byte size or truncate nested sample values in summarizeResult()
+expected_result: Telemetry events stay under 1MB regardless of command output size
+actual_result: list-all events reach 5MB and get rejected by Cloudflare WAF
+component: core/telemetry
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-2eb3,parent,"2026-05-01T18:03:03.601Z",audit-agent,null
+comments[2]{created_at,author,text}:
+  "2026-05-01T18:03:03.601Z",audit-agent,"Evidence: 190 queue entries totaling 130MB. 59 entries over 1MB. Largest entry 5MB. Old entries have 70+ retry attempts with max backoff. Endpoint returns HTTP 403 with error code 1010 for large payloads."
+  "2026-05-01T18:20:36.393Z",audit-agent,"Fixed: Added TELEMETRY_MAX_EVENT_BYTES (512KB) pre-enqueue size guard that truncates result_summary for oversized events. Added TELEMETRY_SANITIZE_MAX_DEPTH (6) and TELEMETRY_SANITIZE_MAX_ARRAY_ITEMS (20) to bound nested value recursion. Added TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS (15) to prune entries that have failed too many times. All 1087 tests pass."
+files[1]{path,scope,note}:
+  src/core/telemetry/runtime.ts,project,summarizeResult function needs payload size cap
+close_reason: "Fixed with pre-enqueue size guard, depth-limited sanitization, and max-attempts pruning. Build passes, all 1087 tests pass."
+body: "Root cause: summarizeResult() in src/core/telemetry/runtime.ts caps arrays at 5 samples and objects at 25 keys, but nested item data within samples is unbounded. list-all with 636 items produces events that trigger Cloudflare error 1010 (HTTP 403). Queue grows to 130MB+ with entries stuck at 70+ retry attempts. Fix options: (1) cap result_summary total byte size, (2) truncate sample values, (3) add max payload size guard before enqueue."

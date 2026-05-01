@@ -1,0 +1,18 @@
+id: pm-qwe2
+title: "Feature: Core commands verified - all 10 types and lifecycle"
+description: "All core pm CLI commands verified in dogfood audit: create/get/update/append/close/delete/claim/release/list*/comments/notes/learnings/files/docs/test/search/reindex/history/activity/restore/stats/health/validate/normalize/aggregate/dedupe-audit/deps/gc/config/templates/contracts/completion/extension/calendar/context/start-task/pause-task/close-task."
+type: Feature
+status: closed
+priority: 1
+tags[4]: audit,core,pm-cli,verification
+created_at: "2026-05-01T18:03:23.556Z"
+updated_at: "2026-05-01T18:06:25.850Z"
+author: audit-agent
+acceptance_criteria: All core commands produce correct output in TOON and JSON modes
+parent: pm-2eb3
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-2eb3,parent,"2026-05-01T18:03:23.556Z",audit-agent,null
+comments[1]{created_at,author,text}:
+  "2026-05-01T18:03:23.556Z",audit-agent,"Evidence: all commands tested in temp directory /tmp/pm-dogfood-audit-Wr4jVw with PM_AUTHOR=audit-agent PM_TELEMETRY_SOURCE_CONTEXT=dogfood. Exit codes 0 for all success paths. Error envelopes with --json include actionable guidance."
+close_reason: All core commands verified in dogfood temp directory with exit code 0 for success paths and structured error envelopes for failure paths
+body: "All 10 item types created successfully: Epic, Feature, Task, Chore, Issue, Decision, Event, Reminder, Milestone, Meeting. Status aliases (in-progress -> in_progress) work. Progressive and strict create modes work. Templates save/list/show/create work. Linked tests run in sandboxed environments. Extension install/manage/doctor/init/explore work. Task lifecycle aliases work."

@@ -1,0 +1,22 @@
+id: pm-92s0
+title: "Feature: SDK exports complete with 78 public symbols"
+description: "SDK verified: 78 public exports from @unbrained/pm-cli/sdk including defineExtension, EXTENSION_CAPABILITIES (9 capabilities), PM_TOOL_ACTIONS (68 actions), PM_CORE_COMMAND_NAMES (53 commands), flag contracts for all command families, Pi wrapper contracts, and type exports."
+type: Feature
+status: closed
+priority: 1
+tags[4]: audit,pm-cli,sdk,verification
+created_at: "2026-05-01T18:04:09.832Z"
+updated_at: "2026-05-01T18:06:49.514Z"
+author: audit-agent
+acceptance_criteria: SDK exports match documentation and all extension capabilities are exercisable
+parent: pm-2eb3
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-2eb3,parent,"2026-05-01T18:04:09.832Z",audit-agent,null
+comments[1]{created_at,author,text}:
+  "2026-05-01T18:04:09.832Z",audit-agent,"Evidence: 78 SDK exports verified via dynamic import. defineExtension returns identity. Starter extension with all 9 capabilities activated with 0 errors. Extension doctor deep mode shows clean status. PM_TOOL_PARAMETERS_SCHEMA v4 schema is well-structured."
+files[3]{path,scope,note}:
+  src/sdk/index.ts,project,SDK export surface verified
+  src/sdk/cli-contracts.ts,project,CLI contract registry verified
+  docs/SDK.md,project,SDK documentation verified
+close_reason: "78 SDK exports verified via dynamic import. defineExtension identity, 9 capabilities, 68 tool actions, 53 command names, and flag contracts all match docs"
+body: "Key findings: (1) defineExtension identity helper works correctly. (2) All 9 capabilities are enumerated. (3) CLI contracts include flag metadata with aliases for all commands. (4) Starter extension activates cleanly with all capabilities. (5) SDK docs at docs/SDK.md and docs/EXTENSIONS.md are comprehensive. (6) Extension scaffold (pm extension --init) produces working starter projects. (7) Extension doctor with deep detail shows clean reports."

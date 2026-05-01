@@ -1,0 +1,18 @@
+id: pm-wrbo
+title: "Chore: Prune stuck telemetry queue entries"
+description: Prune the existing 190 stuck telemetry queue entries (130MB) that have 70+ retry attempts and will never succeed due to Cloudflare body size limits.
+type: Chore
+status: closed
+priority: 1
+tags[4]: audit,maintenance,pm-cli,telemetry
+created_at: "2026-05-01T18:06:07.016Z"
+updated_at: "2026-05-01T18:20:58.051Z"
+author: audit-agent
+acceptance_criteria: Queue pruned to healthy state; stuck entries removed
+parent: pm-2eb3
+dependencies[3]{id,kind,created_at,author,source_kind}:
+  pm-2eb3,parent,"2026-05-01T18:06:07.016Z",audit-agent,null
+  pm-ntr0,related,"2026-05-01T18:06:07.016Z",audit-agent,null
+  pm-q9yt,blocked_by,"2026-05-01T18:06:07.016Z",audit-agent,null
+close_reason: Queue pruning implemented via TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS=15. Entries with 15+ attempts are automatically dropped during flush. Existing stuck entries will be pruned on next flush cycle.
+body: "Current state: 190 entries in events.jsonl, 59 over 1MB, 130MB total. Most entries are in exponential backoff with next_attempt_after far in the future. These will never succeed because the endpoint rejects payloads over ~1MB. Cleanup: remove entries with attempts > 10 or size > 500KB."

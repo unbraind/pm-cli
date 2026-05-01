@@ -1,0 +1,20 @@
+id: pm-409c
+title: "Feature: Calendar fully functional with recurrence expansion"
+description: "Calendar features verified: agenda/day/week/month views, recurring events with weekly/daily/monthly frequencies, by_weekday filters, full-period mode, past mode, --from/--to bounded windows, markdown/toon/json output, --include filters, recurrence lookahead/lookback controls, occurrence limits."
+type: Feature
+status: closed
+priority: 1
+tags[4]: audit,calendar,pm-cli,verification
+created_at: "2026-05-01T18:03:44.506Z"
+updated_at: "2026-05-01T18:06:39.182Z"
+author: audit-agent
+acceptance_criteria: All calendar views produce correct output with proper recurrence expansion
+parent: pm-2eb3
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-2eb3,parent,"2026-05-01T18:03:44.506Z",audit-agent,null
+comments[1]{created_at,author,text}:
+  "2026-05-01T18:03:44.506Z",audit-agent,"Evidence: Weekly recurring event (mon|wed|fri) expanded 156 occurrences across agenda view. Day/week/month views show correct UTC boundaries. Bounded agenda with --from -7d --to +7d correctly clips. Occurrence limit of 5 correctly bounds expansion."
+files[1]{path,scope,note}:
+  src/cli/commands/calendar.ts,project,calendar implementation verified
+close_reason: "All calendar views (agenda/day/week/month) tested with recurrence expansion, boundary clipping, output format switching, and occurrence limiting"
+body: "Key findings: (1) Default agenda view correctly expands recurring events across 365-day lookahead. (2) Week view anchors to Monday-Sunday. (3) Month view uses full UTC month boundaries. (4) Summary counts accurately segment by-kind (deadline/reminder/event), by-type, by-status, and recurring_events. (5) Event start= field is correct (not start_at=). (6) Calendar defaults to markdown output as designed. (7) --occurrence-limit correctly bounds expansion. (8) Context command integrates agenda data."

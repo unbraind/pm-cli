@@ -1,0 +1,33 @@
+id: pm-2eb3
+title: 2026-05-01 Full PM CLI Dogfood Audit v2
+description: "Comprehensive dogfood audit of pm CLI v2026.5.1-2 covering core commands, SDK, calendar, telemetry pipeline, and extensibility. Successor to pm-23me."
+type: Epic
+status: closed
+priority: 0
+tags[7]: audit,calendar,dogfood,extensibility,pm-cli,sdk,telemetry
+created_at: "2026-05-01T18:02:37.805Z"
+updated_at: "2026-05-01T18:22:38.319Z"
+deadline: "2026-05-08T18:02:37.805Z"
+author: audit-agent
+estimated_minutes: 480
+acceptance_criteria: All audit phases documented with evidence; all issues tracked; telemetry pipeline verified end-to-end
+parent: pm-23me
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-23me,parent,"2026-05-01T18:02:37.805Z",audit-agent,null
+comments[1]{created_at,author,text}:
+  "2026-05-01T18:02:37.805Z",audit-agent,"Duplicate check: pm-23me is predecessor from 2026-04-30 and still open. This v2 audit covers the latest 2026.5.1-2 build with comprehensive end-to-end verification."
+notes[1]{created_at,author,text}:
+  "2026-05-01T18:09:09.170Z",audit-agent,"Audit methodology: all commands tested in isolated temp directory with PM_AUTHOR=audit-agent PM_TELEMETRY_SOURCE_CONTEXT=dogfood. Telemetry verified both client-side (queue/state/probe) and server-side (SSH to 192.168.1.183, Docker compose, Postgres, RabbitMQ)."
+learnings[4]{created_at,author,text}:
+  "2026-05-01T18:08:36.350Z",audit-agent,"Telemetry payloads must be bounded by total serialized size, not just element counts. summarizeResult() limits arrays to 5 samples but nested values within samples are unbounded, leading to 3-5MB events that get rejected by Cloudflare."
+  "2026-05-01T18:08:44.126Z",audit-agent,The --event flag uses start= not start_at= for the start time parameter. This is consistent with the CSV KV parser but differs from the underlying field name in the item schema.
+  "2026-05-01T18:08:51.515Z",audit-agent,"--compact and --fields are mutually exclusive list projection options. Using both produces an explicit, actionable error with examples."
+  "2026-05-01T18:08:59.335Z",audit-agent,Extension doctor with --detail deep provides comprehensive health analysis including unmanaged extension detection. Starter extension activates cleanly but shows expected unmanaged warning when copied manually.
+files[3]{path,scope,note}:
+  src/cli/commands/calendar.ts,project,Calendar views verified
+  src/core/telemetry/runtime.ts,project,"Telemetry fix: size guard + depth limit + max attempts"
+  src/sdk/index.ts,project,SDK exports verified (78 symbols)
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Full dogfood audit complete: all 10 item types verified, all core commands pass, calendar views working with recurrence, SDK has 78 exports covering 9 capabilities, telemetry pipeline verified end-to-end (29700+ events in Postgres), queue bloat bug found and fixed (pre-enqueue size guard + depth limit + max attempts), extensibility and governance fully verified. 1087 tests pass. 8/8 child items closed."
+body: "Full audit executed 2026-05-01 in isolated temp directory. All 10 item types, all views, all lifecycle commands, SDK exports, starter extension, telemetry queue/pipeline, remote stack (Grafana/Alloy/Loki/Tempo/Prometheus/RabbitMQ/Postgres), and governance features verified."

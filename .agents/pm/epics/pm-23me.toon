@@ -2,11 +2,11 @@ id: pm-23me
 title: 2026-04-30 Full PM CLI Dogfood Audit
 description: "Manual latest-build dogfood audit covering CLI UX, SDK extensibility, calendar workflows, extension customization, and remote telemetry readiness."
 type: Epic
-status: open
+status: closed
 priority: 0
 tags[7]: audit,calendar,dogfood,extensibility,pm-cli,sdk,telemetry
 created_at: "2026-04-30T19:37:11.721Z"
-updated_at: "2026-04-30T19:37:11.721Z"
+updated_at: "2026-05-01T18:07:25.214Z"
 deadline: "2026-05-02T19:37:11.721Z"
 author: codex-audit
 estimated_minutes: 360
@@ -15,4 +15,5 @@ comments[1]{created_at,author,text}:
   "2026-04-30T19:37:11.721Z",codex-audit,"Duplicate check before create: pm context --limit 10 showed no active items; pm search 'manual audit sdk calendar telemetry dogfood extensibility' returned only closed prior audits including pm-wg1d and pm-mb4n; pm list-open/list-in-progress both returned 0. Net-new scope is required for the 2026-04-30 latest-build audit."
 notes[1]{created_at,author,text}:
   "2026-04-30T19:37:11.721Z",codex-audit,Use real repository pm data only for audit tracking; all CLI dogfood project data must run in temporary PM_PATH/PM_GLOBAL_PATH sandboxes.
+close_reason: Superseded by pm-2eb3 (2026-05-01 Full PM CLI Dogfood Audit v2) which covers the latest 2026.5.1-2 build comprehensively
 body: "Audit scope: dogfood the latest pm CLI in isolated temporary projects, inspect SDK and extension ergonomics, exercise calendar and project-management workflows, verify telemetry surfaces, document findings, and remediate issues discovered during the audit."

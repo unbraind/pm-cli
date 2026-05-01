@@ -14,6 +14,10 @@ const TELEMETRY_MAX_RETRY_DELAY_MS = 3_600_000;
 const TELEMETRY_RETRY_BASE_DELAY_MS = 30_000;
 const TELEMETRY_HTTP_TIMEOUT_MS = 2_500;
 const MILLISECONDS_PER_DAY = 86_400_000;
+const TELEMETRY_MAX_EVENT_BYTES = 512_000;
+const TELEMETRY_SANITIZE_MAX_DEPTH = 6;
+const TELEMETRY_SANITIZE_MAX_ARRAY_ITEMS = 20;
+const TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS = 15;
 const OTEL_TRACES_ENDPOINT_ENV = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT";
 const OTEL_BASE_ENDPOINT_ENV = "OTEL_EXPORTER_OTLP_ENDPOINT";
 const OTEL_SERVICE_NAME_ENV = "OTEL_SERVICE_NAME";
@@ -223,6 +227,7 @@ function sanitizeValue(
   value: unknown,
   keyHint?: string,
   captureLevel: Exclude<TelemetryCaptureLevel, "minimal"> = "redacted",
+  depth = 0,
 ): unknown {
   if (keyHint && isSensitiveKey(keyHint)) {
     return "[redacted]";
@@ -236,14 +241,17 @@ function sanitizeValue(
   if (typeof value === "number" || typeof value === "boolean") {
     return value;
   }
+  if (depth >= TELEMETRY_SANITIZE_MAX_DEPTH) {
+    return "[depth_truncated]";
+  }
   if (Array.isArray(value)) {
-    return value.map((entry) => sanitizeValue(entry, undefined, captureLevel));
+    return value.slice(0, TELEMETRY_SANITIZE_MAX_ARRAY_ITEMS).map((entry) => sanitizeValue(entry, undefined, captureLevel, depth + 1));
   }
   if (typeof value === "object") {
     const record = value as Record<string, unknown>;
     const sanitized: Record<string, unknown> = {};
     for (const [key, nested] of Object.entries(record)) {
-      sanitized[key] = sanitizeValue(nested, key, captureLevel);
+      sanitized[key] = sanitizeValue(nested, key, captureLevel, depth + 1);
     }
     return sanitized;
   }
@@ -618,7 +626,13 @@ async function enqueueTelemetryEvent(globalPmRoot: string, event: TelemetryEvent
     event,
     attempts: 0,
   };
-  await appendLineAtomic(queuePath(globalPmRoot), JSON.stringify(queued));
+  let serialized = JSON.stringify(queued);
+  if (serialized.length > TELEMETRY_MAX_EVENT_BYTES) {
+    const trimmed = { ...event, payload: { ...event.payload, result_summary: { truncated: true, reason: "payload_size_exceeded", original_bytes: serialized.length } } };
+    const trimmedQueued: QueuedTelemetryEvent = { event: trimmed, attempts: 0 };
+    serialized = JSON.stringify(trimmedQueued);
+  }
+  await appendLineAtomic(queuePath(globalPmRoot), serialized);
 }
 
 function parseQueueLines(raw: string): QueuedTelemetryEvent[] {
@@ -687,7 +701,7 @@ function pruneExpiredQueueEntries(
   const retained: QueuedTelemetryEvent[] = [];
   let prunedCount = 0;
   for (const entry of entries) {
-    if (isExpiredQueueEntry(entry, cutoffMs)) {
+    if (isExpiredQueueEntry(entry, cutoffMs) || entry.attempts >= TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS) {
       prunedCount += 1;
       continue;
     }
