@@ -3,6 +3,7 @@ dist/
 coverage/
 .gemini/
 .env
+.sentryclirc
 # Local vector store and search index cache (optional, rebuilt on demand via pm reindex)
 .agents/pm/search/lancedb/
 .agents/pm/index/manifest.json

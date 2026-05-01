@@ -61,6 +61,9 @@
     "release:notes": "node scripts/generate-release-notes.mjs",
     "security:scan": "node scripts/check-secrets.mjs",
     "smoke:npx": "node scripts/smoke-npx-from-pack.mjs",
+    "sentry:inject": "sentry-cli sourcemaps inject dist/",
+    "sentry:upload": "sentry-cli sourcemaps upload --org unbrained --project pm-cli dist/",
+    "build:sentry": "pnpm build && pnpm sentry:inject && pnpm sentry:upload",
     "prepublishOnly": "pnpm build"
   },
   "keywords": [
@@ -81,6 +84,7 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@sentry/node": "^10.51.0",
     "@toon-format/toon": "^2.1.0",
     "commander": "^14.0.3",
     "fast-glob": "^3.3.3",

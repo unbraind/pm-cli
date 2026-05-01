@@ -120,6 +120,13 @@ import {
   startTelemetryCommand,
   type ActiveTelemetryCommand,
 } from "../core/telemetry/runtime.js";
+import {
+  sentryCaptureCliError,
+  sentryFinishCommandSpan,
+  sentryFlush,
+  sentrySetCommandContext,
+  sentryStartCommandSpan,
+} from "../core/sentry/helpers.js";
 import { migrateItemFilesToFormat } from "../core/store/item-format-migration.js";
 import { listAllFrontMatter } from "../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
@@ -2921,6 +2928,8 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
       global: globalOptions,
       pm_root: fallbackPmRoot,
     });
+    sentrySetCommandContext(commandPath, commandArgs, commandOptions);
+    sentryStartCommandSpan(commandPath);
     await enforceItemFormatWriteGateAndPreflightMigration(
       commandPath,
       commandOptions,
@@ -3010,6 +3019,8 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
     global: globalOptions,
     pm_root: runtimeExtensions.pmRoot,
   });
+  sentrySetCommandContext(commandPath, commandArgs, commandOptions);
+  sentryStartCommandSpan(commandPath);
 
   const hookWarnings = await runBeforeCommandHooks(runtimeExtensions.hooks, {
     command: commandPath,
@@ -3027,6 +3038,7 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
 });
 
 program.hook("postAction", async () => {
+  sentryFinishCommandSpan(true);
   await runAndClearAfterCommandHooks({ ok: true });
 });
 
@@ -5715,6 +5727,7 @@ async function main(): Promise<void> {
     }
     await program.parseAsync(invocationProcessArgv);
   } catch (error: unknown) {
+    sentryFinishCommandSpan(false, describeUnknownError(error));
     await runAndClearAfterCommandHooks({
       ok: false,
       error: describeUnknownError(error),
@@ -5727,11 +5740,13 @@ async function main(): Promise<void> {
       setActiveExtensionServices(bootstrapSnapshot?.services ?? { overrides: [] });
     }
     if (error instanceof PmCliError) {
+      sentryCaptureCliError(error);
       if (jsonErrors) {
         printError(JSON.stringify(formatPmCliErrorForJson(error.message, error.exitCode, error.context), null, 2));
       } else {
         printError(formatPmCliErrorForDisplay(error.message, error.context));
       }
+      await sentryFlush();
       process.exitCode = error.exitCode;
       return;
     }
@@ -5772,12 +5787,14 @@ async function main(): Promise<void> {
       }
     }
 
+    sentryCaptureCliError(error);
     const message = describeUnknownError(error);
     if (jsonErrors) {
       printError(JSON.stringify(formatUnknownErrorForJson(message, EXIT_CODE.GENERIC_FAILURE), null, 2));
     } else {
       printError(message);
     }
+    await sentryFlush();
     process.exitCode = EXIT_CODE.GENERIC_FAILURE;
   }
 }
