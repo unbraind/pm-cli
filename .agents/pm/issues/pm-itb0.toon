@@ -1,0 +1,15 @@
+id: pm-itb0
+title: Calendar --include scheduled alias missing (calendar summary uses 'scheduled' but filter requires 'events')
+description: "The pm calendar summary field is named 'scheduled: N' for event-kind entries, but the --include filter only accepts 'events', not 'scheduled'. Agents reading the summary output and trying --include scheduled get exit 2. Fixed by adding 'scheduled' as an accepted alias for 'events' in parseIncludeSources."
+type: Issue
+status: closed
+priority: 2
+tags[4]: agents,calendar,terminology,ux
+created_at: "2026-05-01T18:58:56.749Z"
+updated_at: "2026-05-01T18:58:58.762Z"
+author: maintainer-agent
+parent: pm-3fti
+severity: medium
+resolution: Added 'scheduled' as alias for 'events' in parseIncludeSources in calendar.ts. Updated error message to include the alias.
+close_reason: "Fixed: parseIncludeSources in calendar.ts now accepts 'scheduled' as alias for 'events'. Verified: pm cal --include scheduled works."
+body: ""

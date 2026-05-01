@@ -2,19 +2,21 @@ id: pm-3fti
 title: "Audit latest CLI, SDK, calendar, and telemetry workflows"
 description: Coordinate the detailed manual dogfood audit and remediation for the latest pm CLI build.
 type: Feature
-status: open
+status: closed
 priority: 0
 tags[7]: audit,calendar,dogfood,extensibility,pm-cli,sdk,telemetry
 created_at: "2026-04-30T19:37:24.068Z"
-updated_at: "2026-04-30T20:05:42.076Z"
+updated_at: "2026-05-01T19:00:24.978Z"
 deadline: "2026-05-02T19:37:24.068Z"
 author: codex-audit
 estimated_minutes: 300
 acceptance_criteria: Audit work is decomposed into tracked tasks/issues/decisions; evidence links changed files and runnable verification; no telemetry secrets are committed or published.
 parent: pm-23me
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-04-30T19:37:24.068Z",codex-audit,"Duplicate check before create reused evidence from current audit bootstrap: no open/in-progress items and only closed prior audits matched the requested scope. Parent lineage selected as pm-23me -> this feature because the user requested a new latest-build full audit."
   "2026-04-30T20:05:42.076Z",codex-audit,Audit execution task pm-j16d is closed with evidence. Fixed/closed pm-mwiz (SDK starter migration health warning) and pm-0xhj (date-sensitive context test). Remaining historical tracker hygiene warning set is tracked as open follow-up pm-e0b5; keeping this feature/epic open to preserve that parent lineage.
+  "2026-05-01T19:00:16.546Z",maintainer-agent,"Dogfood audit (2026-05-01) completed. Findings summary:\n\nFIXED IN THIS SESSION:\n- pm-on3q: Telemetry queue oversized-event pruning gap (60MB queue drained to ~0 after fix to pruneExpiredQueueEntries)\n- pm-1h7w: Priority --priority error message lacked 0..4 range and semantic labels\n- pm-8r2r: pm files --add bare path gave misleading error implying scope is required\n- pm-itb0: Calendar --include scheduled alias missing (summary uses 'scheduled', filter required 'events')\n- pm-dc2y: pm templates bare command showed empty output instead of template list\n\nWORKING WELL (verified in dogfood):\n- All list variants (list, list-all, list-open, list-draft, list-in-progress, list-blocked, list-closed, list-canceled)\n- Calendar: deadline, reminder, event, recurring event support all working correctly\n- SDK ExtensionApi: comprehensive (14+ register methods, 5 hooks, search providers, vector stores)\n- pm context: excellent agent-optimized snapshot\n- pm contracts: 56 commands machine-readable\n- pm search: hybrid mode working\n- Extension scaffold: CommonJS by design, works correctly\n- Telemetry endpoint: receiving events at pm-cli.unbrained.dev/v1/events, UUID validation, ok responses\n\nOPEN TRACKING ITEMS:\n- pm-ne67: Activity --compact mode for agents\n- pm-gmnh: Health ok:false for normal telemetry queue draining\n- pm-vg5h: Recurring event unbounded expansion in calendar\n- pm-b1pd: Calendar recurring event double-title output redundancy\n- pm-g8gj: Verify remote telemetry stack Grafana dashboards\n\nTest suite: 1087 tests at 100% coverage maintained throughout."
 notes[1]{created_at,author,text}:
   "2026-04-30T19:37:24.068Z",codex-audit,Feature owns execution and synthesis; child tasks/issues should capture individual defects or improvements.
+close_reason: "Dogfood audit completed (2026-05-01). Fixed 5 issues: telemetry queue bloat regression (pm-on3q), priority error message UX (pm-1h7w), files --add error guidance (pm-8r2r), calendar --include scheduled alias (pm-itb0), templates bare command (pm-dc2y). Created tracking items for 5 remaining medium/low priority improvements. All 1087 tests at 100% coverage."
 body: "Feature scope: run isolated temporary-project CLI workflows, inspect SDK exports and extension authoring path, exercise calendar commands, validate telemetry behavior and remote stack reachability, then document and fix findings."

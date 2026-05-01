@@ -1362,9 +1362,9 @@ function selectAuthor(explicitAuthor: string | undefined, settingsAuthor: string
 }
 
 function ensurePriority(rawPriority: string): 0 | 1 | 2 | 3 | 4 {
-  const parsed = parseOptionalNumber(rawPriority, "priority");
+  const parsed = parseOptionalNumber(rawPriority, "priority (expected 0..4: 0=critical, 1=high, 2=medium, 3=low, 4=minimal)");
   if (![0, 1, 2, 3, 4].includes(parsed)) {
-    throw new PmCliError("Priority must be one of 0, 1, 2, 3, or 4", EXIT_CODE.USAGE);
+    throw new PmCliError("Priority must be 0..4 (0=critical, 1=high, 2=medium, 3=low, 4=minimal)", EXIT_CODE.USAGE);
   }
   return parsed as 0 | 1 | 2 | 3 | 4;
 }

@@ -1,0 +1,11 @@
+id: pm-b1pd
+title: Calendar recurring event line has redundant double-title (item title repeated in event title field)
+description: "Calendar output for recurring events shows: 'Sprint Planning Meeting — Sprint Planning title=\"Sprint Planning\"'. The item title and event title are both shown separately, causing redundant output that makes the line harder to parse. When the event title equals the item title, one should be suppressed or the format should be adjusted."
+type: Issue
+status: open
+priority: 3
+tags[4]: agents,calendar,output,ux
+created_at: "2026-05-01T18:59:55.461Z"
+updated_at: "2026-05-01T18:59:55.461Z"
+author: maintainer-agent
+body: ""

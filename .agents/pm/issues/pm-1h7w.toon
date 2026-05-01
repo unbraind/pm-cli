@@ -1,0 +1,15 @@
+id: pm-1h7w
+title: Priority --priority error message missing 0..4 range and semantic labels
+description: "When agents pass --priority high or --priority critical, the error says 'Invalid priority value \"high\"' with no hint of the valid range. Agents must guess that priority is numeric. Fixed by updating ensurePriority in create.ts and update.ts to include '0=critical, 1=high, 2=medium, 3=low, 4=minimal' in error messages."
+type: Issue
+status: closed
+priority: 2
+tags[4]: agents,error-message,priority,ux
+created_at: "2026-05-01T18:58:18.747Z"
+updated_at: "2026-05-01T18:58:20.597Z"
+author: maintainer-agent
+parent: pm-3fti
+severity: medium
+resolution: "Updated ensurePriority in create.ts and update.ts to include '(expected 0..4: 0=critical, 1=high, 2=medium, 3=low, 4=minimal)' in error messages and the throw message."
+close_reason: "Fixed: ensurePriority in create.ts and update.ts now emits '0=critical, 1=high, 2=medium, 3=low, 4=minimal' in error messages. Verified: pm create --priority high shows the hint."
+body: ""

@@ -119,6 +119,12 @@ function findKeyValueDelimiter(segment: string): number {
 }
 
 function buildOptionSpecificKvGuidance(raw: string, optionName: string): string {
+  if (optionName === "--add" || optionName === "--add-glob") {
+    const looksLikePath = /[./\\]/.test(raw) || /\.[a-z]{1,6}$/i.test(raw.trim());
+    if (looksLikePath) {
+      return 'For file/doc paths use: path=<file-path>[,scope=project|global]. The scope field is optional and defaults to project (example: path=src/api.ts or path=README.md,scope=project). ';
+    }
+  }
   if (optionName !== "--event") {
     return "";
   }

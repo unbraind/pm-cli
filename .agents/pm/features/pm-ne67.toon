@@ -1,0 +1,12 @@
+id: pm-ne67
+title: Add --compact mode to pm activity for agent-friendly condensed output
+description: "pm activity output embeds full JSON-patch arrays per operation, making it very verbose. Agents scanning for recent changes have to parse ~100-line patch blocks. A --compact mode showing only op, id, ts, author per entry would reduce output by ~90% for common audit workflows."
+type: Feature
+status: open
+priority: 2
+tags[4]: activity,agents,output,ux
+created_at: "2026-05-01T18:59:32.119Z"
+updated_at: "2026-05-01T18:59:32.119Z"
+author: maintainer-agent
+parent: pm-3fti
+body: ""

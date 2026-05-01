@@ -1,0 +1,12 @@
+id: pm-g8gj
+title: Verify remote telemetry stack receives events and data flows to Grafana
+description: "After the oversized-event pruning fix, the telemetry queue is draining correctly (60MB→4.5MB→clearing). Need to verify: (1) the remote stack at pm-cli.unbrained.dev is ingesting events properly, (2) Grafana dashboards show event counts, (3) Alloy/Loki/Tempo/Prometheus all receiving data, (4) RabbitMQ and Postgres processing events. Note: credentials must NOT be committed to git."
+type: Task
+status: open
+priority: 1
+tags[4]: grafana,monitoring,telemetry,verification
+created_at: "2026-05-01T18:59:57.901Z"
+updated_at: "2026-05-01T18:59:57.901Z"
+deadline: "2026-05-08T18:59:57.901Z"
+author: maintainer-agent
+body: ""

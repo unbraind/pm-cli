@@ -701,7 +701,9 @@ function pruneExpiredQueueEntries(
   const retained: QueuedTelemetryEvent[] = [];
   let prunedCount = 0;
   for (const entry of entries) {
-    if (isExpiredQueueEntry(entry, cutoffMs) || entry.attempts >= TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS) {
+    const serializedSize = JSON.stringify(entry).length;
+    const oversized = serializedSize > TELEMETRY_MAX_EVENT_BYTES;
+    if (oversized || isExpiredQueueEntry(entry, cutoffMs) || entry.attempts >= TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS) {
       prunedCount += 1;
       continue;
     }

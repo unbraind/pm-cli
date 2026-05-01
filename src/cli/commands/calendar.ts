@@ -182,11 +182,11 @@ function parseIncludeSources(raw: string | undefined): Set<CalendarIncludeKind> 
       include.add("reminders");
       continue;
     }
-    if (value === "events" || value === "event") {
+    if (value === "events" || value === "event" || value === "scheduled") {
       include.add("events");
       continue;
     }
-    throw new PmCliError("Calendar include filter must be deadlines|reminders|events|all", EXIT_CODE.USAGE);
+    throw new PmCliError("Calendar include filter must be deadlines|reminders|events|scheduled|all", EXIT_CODE.USAGE);
   }
   return include;
 }

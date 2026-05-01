@@ -1,0 +1,15 @@
+id: pm-dc2y
+title: pm templates bare command shows empty output (should list templates)
+description: Running pm templates without a subcommand produces empty stdout and exit 0. Agents expecting to see a list of templates find nothing. Should default to pm templates list behavior. Fixed by adding an .action() handler to the templates command in main.ts that calls runTemplatesList.
+type: Issue
+status: closed
+priority: 3
+tags[3]: agents,templates,ux
+created_at: "2026-05-01T18:59:10.602Z"
+updated_at: "2026-05-01T18:59:12.505Z"
+author: maintainer-agent
+parent: pm-3fti
+severity: low
+resolution: Added default .action() handler to templatesCommand in main.ts that calls runTemplatesList. pm templates now outputs template list (empty set or available templates).
+close_reason: "Fixed in main.ts: templates bare command now defaults to runTemplatesList output."
+body: ""

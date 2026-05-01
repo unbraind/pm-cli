@@ -3294,7 +3294,14 @@ addExtensionScopeOptions(
   await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "deactivate");
 });
 
-const templatesCommand = program.command("templates").description("Manage reusable create templates.");
+const templatesCommand = program
+  .command("templates")
+  .description("Manage reusable create templates.")
+  .action(async () => {
+    const globalOptions = program.opts<GlobalOptions>();
+    const result = await runTemplatesList(globalOptions);
+    printResult(result, globalOptions);
+  });
 
 templatesCommand
   .command("save")
