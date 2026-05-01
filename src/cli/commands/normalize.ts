@@ -7,7 +7,7 @@ import {
 } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { toErrorMessage } from "../../core/shared/primitives.js";
+import { toErrorMessage, toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemStatus } from "../../types/index.js";
@@ -118,14 +118,6 @@ const CLOSED_BACKFILL_FIELD_RULES: Array<{
   { field: "actual_result", optionKey: "actualResult" },
 ];
 
-function toNonEmptyString(value: unknown): string | undefined {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
-}
-
 function normalizeComparableText(value: string): string {
   return value.trim().toLowerCase().replaceAll(/\s+/g, " ");
 }
@@ -161,7 +153,7 @@ function resolveLifecyclePatternPolicy(settings: LifecyclePatternSettingsSource)
 }
 
 function toMeaningfulCloseReason(value: unknown): string | undefined {
-  const normalized = toNonEmptyString(value);
+  const normalized = toNonEmptyStringOrUndefined(value);
   if (!normalized || isLowSignalText(normalized)) {
     return undefined;
   }
@@ -225,7 +217,7 @@ function buildNormalizePlan(
 
   if (!isTerminalStatus(item, statusRegistry)) {
     for (const definition of ACTIVE_CLEAR_FIELD_RULES) {
-      const currentValue = toNonEmptyString(itemRecord[definition.field]);
+      const currentValue = toNonEmptyStringOrUndefined(itemRecord[definition.field]);
       if (!currentValue) {
         continue;
       }
@@ -247,7 +239,7 @@ function buildNormalizePlan(
       });
     }
 
-    if (toNonEmptyString(itemRecord.close_reason)) {
+    if (toNonEmptyStringOrUndefined(itemRecord.close_reason)) {
       unsetFields.add("close-reason");
       changes.push({
         field: "close_reason",
@@ -261,7 +253,7 @@ function buildNormalizePlan(
   if (isTerminalDoneStatus(item, terminalDoneStatuses, statusRegistry)) {
     const closeReason = toMeaningfulCloseReason(itemRecord.close_reason);
     for (const definition of CLOSED_BACKFILL_FIELD_RULES) {
-      const currentValue = toNonEmptyString(itemRecord[definition.field]);
+      const currentValue = toNonEmptyStringOrUndefined(itemRecord[definition.field]);
       if (currentValue && !isLowSignalText(currentValue)) {
         continue;
       }

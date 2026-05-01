@@ -1,13 +1,15 @@
-import * as Sentry from "@sentry/node";
-import { captureConsoleIntegration, extraErrorDataIntegration } from "@sentry/node";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const PM_CLI_SENTRY_DSN =
-  "https://bf7ad2ec76c0051c2ee94e48e8bd6868@o4510603477712896.ingest.de.sentry.io/4511316775338064";
-
 const OPT_OUT_VALUES = new Set(["1", "true", "yes", "on"]);
+
+function isSentryDisabled(): boolean {
+  if (OPT_OUT_VALUES.has((process.env.PM_SENTRY_DISABLED ?? "").trim().toLowerCase())) return true;
+  if (OPT_OUT_VALUES.has((process.env.PM_TELEMETRY_DISABLED ?? "").trim().toLowerCase())) return true;
+  if (process.env.VITEST || process.env.VITEST_WORKER_ID) return true;
+  return false;
+}
 
 const SENSITIVE_KEY_PATTERN =
   /(?:token|secret|password|passwd|api[_-]?key|apikey|authorization|cookie|credentials|bearer|dsn)/i;
@@ -39,6 +41,14 @@ function scrubEventData(obj: Record<string, unknown>): Record<string, unknown> {
   return result;
 }
 
+type SentryLike = typeof import("@sentry/node");
+
+let _sentry: SentryLike | undefined;
+let _initDone = false;
+
+const PM_CLI_SENTRY_DSN =
+  "https://bf7ad2ec76c0051c2ee94e48e8bd6868@o4510603477712896.ingest.de.sentry.io/4511316775338064";
+
 function resolveCliVersion(): string {
   try {
     const thisFile = fileURLToPath(import.meta.url);
@@ -66,19 +76,19 @@ function resolveEnvironment(): string {
   return "production";
 }
 
-function isSentryDisabled(): boolean {
-  if (OPT_OUT_VALUES.has((process.env.PM_SENTRY_DISABLED ?? "").trim().toLowerCase())) return true;
-  if (OPT_OUT_VALUES.has((process.env.PM_TELEMETRY_DISABLED ?? "").trim().toLowerCase())) return true;
-  if (process.env.VITEST || process.env.VITEST_WORKER_ID) return true;
-  return false;
-}
+export async function ensureSentryInit(): Promise<SentryLike | undefined> {
+  if (_initDone) return _sentry;
+  _initDone = true;
 
-const dsn = process.env.SENTRY_DSN?.trim() || PM_CLI_SENTRY_DSN;
+  if (isSentryDisabled()) return undefined;
 
-if (!isSentryDisabled()) {
+  const SentryModule = await import("@sentry/node");
+  _sentry = SentryModule;
+
+  const dsn = process.env.SENTRY_DSN?.trim() || PM_CLI_SENTRY_DSN;
   const release = resolveCliVersion();
 
-  Sentry.init({
+  SentryModule.init({
     dsn,
     release: `pm-cli@${release}`,
     environment: resolveEnvironment(),
@@ -92,8 +102,8 @@ if (!isSentryDisabled()) {
     serverName: undefined,
 
     integrations: [
-      extraErrorDataIntegration({ depth: 4 }),
-      captureConsoleIntegration({ levels: ["warn", "error"] }),
+      SentryModule.extraErrorDataIntegration({ depth: 4 }),
+      SentryModule.captureConsoleIntegration({ levels: ["warn", "error"] }),
     ],
 
     initialScope: {
@@ -169,6 +179,10 @@ if (!isSentryDisabled()) {
       return breadcrumb;
     },
   });
+
+  return SentryModule;
 }
 
-export { Sentry };
+export function getSentry(): SentryLike | undefined {
+  return _sentry;
+}

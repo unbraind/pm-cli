@@ -113,6 +113,7 @@ import {
 import { refreshSearchArtifactsForMutation } from "../core/search/cache.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
+import { toNonEmptyStringOrUndefined } from "../core/shared/primitives.js";
 import { printError, printResult, writeStdout } from "../core/output/output.js";
 import { maybeRunFirstUseTelemetryPrompt } from "../core/telemetry/consent.js";
 import {
@@ -1449,16 +1450,9 @@ interface WriteGateDecision {
   forceRequested: boolean;
 }
 
-function toNonEmptyString(value: unknown): string | undefined {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
-}
 
 function resolveMigrationId(definition: Record<string, unknown>, fallbackIndex: number): string {
-  const explicit = toNonEmptyString(definition.id);
+  const explicit = toNonEmptyStringOrUndefined(definition.id);
   if (explicit) {
     return explicit;
   }
@@ -1466,7 +1460,7 @@ function resolveMigrationId(definition: Record<string, unknown>, fallbackIndex: 
 }
 
 function resolveNormalizedMigrationStatus(definition: Record<string, unknown>): string {
-  const normalized = toNonEmptyString(definition.status)?.toLowerCase();
+  const normalized = toNonEmptyStringOrUndefined(definition.status)?.toLowerCase();
   return normalized ?? "pending";
 }
 

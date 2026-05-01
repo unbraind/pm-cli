@@ -6,14 +6,15 @@ status: closed
 priority: 2
 tags[4]: audit,hygiene,pm-cli,security
 created_at: "2026-04-28T17:34:52.401Z"
-updated_at: "2026-05-01T19:29:07.625Z"
+updated_at: "2026-05-01T22:54:27.307Z"
 author: audit-agent
 parent: pm-wg1d
 severity: low
 resolution: "Resolution normalized from close_reason: Private IP references documented; linked test command in pm-cakn redacted; no credential exposure found"
 expected_result: "Expected closure outcome: Private IP references documented; linked test command in pm-cakn redacted; no credential exposure found"
 actual_result: "Actual closure outcome: Private IP references documented; linked test command in pm-cakn redacted; no credential exposure found"
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-04-28T17:36:32.951Z",audit-agent,Redacted SSH test command in pm-cakn. Added audit note to pm-mb4n. Historical comments contain private host references as audit artifacts but no credentials.
+  "2026-05-01T22:54:27.307Z",audit-agent,"2026-05-02 remediation: (1) pm-ny6y description redacted to remove private IP, (2) pm-jkip body redacted, (3) audit comments added to pm-ny6y, pm-mb4n, pm-0kjv, pm-e0b5, pm-2eb3 documenting historical IP references in append-only comments/notes, (4) check-secrets.mjs passes clean, (5) no passwords or tokens found in any tracked file."
 close_reason: Private IP references documented; linked test command in pm-cakn redacted; no credential exposure found
 body: "Files .agents/pm/tasks/pm-mb4n.toon and .agents/pm/tasks/pm-cakn.toon contain references to steve@192.168.1.183 in comment/evidence text and linked test commands. While not a credential leak (private IP, no passwords), this is unnecessary information exposure. These references were left from prior audit runs. The linked test in pm-cakn has an SSH command targeting the private host. Remediation: redact the private IP from committed pm items."

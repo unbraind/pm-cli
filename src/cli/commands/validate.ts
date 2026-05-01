@@ -18,6 +18,7 @@ import {
 } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
 import { nowIso } from "../../core/shared/time.js";
 import { listAllFrontMatterWithBody } from "../../core/store/item-store.js";
 import { getHistoryPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
@@ -163,16 +164,10 @@ function normalizeRelativeDirectoryPath(value: string): string {
   return normalized.replace(/\/+$/, "");
 }
 
-function toNonEmptyString(value: unknown): string | undefined {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
-}
+
 
 function toMeaningfulString(value: unknown): string | undefined {
-  const normalized = toNonEmptyString(value);
+  const normalized = toNonEmptyStringOrUndefined(value);
   if (!normalized) {
     return undefined;
   }
@@ -356,33 +351,33 @@ function isMetadataFieldMissing(
   statusRegistry: RuntimeStatusRegistry,
 ): boolean {
   if (field === "author") {
-    return !toNonEmptyString(item.author);
+    return !toNonEmptyStringOrUndefined(item.author);
   }
   if (field === "acceptance_criteria") {
-    return !toNonEmptyString(item.acceptance_criteria);
+    return !toNonEmptyStringOrUndefined(item.acceptance_criteria);
   }
   if (field === "estimated_minutes") {
     return !Number.isFinite(item.estimated_minutes);
   }
   if (field === "close_reason") {
-    return normalizeStatusForRegistry(item.status, statusRegistry) === statusRegistry.close_status && !toNonEmptyString(item.close_reason);
+    return normalizeStatusForRegistry(item.status, statusRegistry) === statusRegistry.close_status && !toNonEmptyStringOrUndefined(item.close_reason);
   }
   if (field === "reviewer") {
-    return !toNonEmptyString(item.reviewer);
+    return !toNonEmptyStringOrUndefined(item.reviewer);
   }
   if (field === "risk") {
-    return !toNonEmptyString(item.risk);
+    return !toNonEmptyStringOrUndefined(item.risk);
   }
   if (field === "confidence") {
     if (typeof item.confidence === "number") {
       return !Number.isFinite(item.confidence);
     }
-    return !toNonEmptyString(item.confidence);
+    return !toNonEmptyStringOrUndefined(item.confidence);
   }
   if (field === "sprint") {
-    return !toNonEmptyString(item.sprint);
+    return !toNonEmptyStringOrUndefined(item.sprint);
   }
-  return !toNonEmptyString(item.release);
+  return !toNonEmptyStringOrUndefined(item.release);
 }
 
 function resolveFileScanMode(scanMode: string | undefined): ValidateFileScanMode {
@@ -732,7 +727,7 @@ function buildResolutionCheck(
   const missingResolutionRows: Array<{ id: string; missing_fields: ResolutionFieldKey[] }> = [];
 
   for (const item of closedItems) {
-    const missingFields = RESOLUTION_FIELD_KEYS.filter((field) => !toNonEmptyString(item[field]));
+    const missingFields = RESOLUTION_FIELD_KEYS.filter((field) => !toNonEmptyStringOrUndefined(item[field]));
     if (missingFields.length === 0) {
       continue;
     }

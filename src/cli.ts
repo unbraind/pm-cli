@@ -1,3 +1,5 @@
 #!/usr/bin/env node
-import "./core/sentry/instrument.js";
-import "./cli/main.js";
+import { ensureSentryInit } from "./core/sentry/instrument.js";
+
+await ensureSentryInit();
+await import("./cli/main.js");

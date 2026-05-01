@@ -60,6 +60,10 @@ export async function executeEmbeddingBatchesWithRetry(
         break;
       } catch (error: unknown) {
         lastError = error;
+        if (attempt < runtime.maxRetries) {
+          const delayMs = Math.min(1000 * 2 ** attempt, 8000);
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
       }
     }
     if (!success) {

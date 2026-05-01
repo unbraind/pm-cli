@@ -24,6 +24,7 @@ import { EXIT_CODE, PM_CORE_REQUIRED_SUBDIRS, PM_OPTIONAL_TYPE_SUBDIRS } from ".
 import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
 import { nowIso } from "../../core/shared/time.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
 import { listAllFrontMatterWithBody } from "../../core/store/item-store.js";
@@ -392,16 +393,8 @@ function summarizeLoadedExtension(extension: LoadedExtension): Record<string, un
   return summary;
 }
 
-function toNonEmptyString(value: unknown): string | undefined {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
-}
-
 function resolveMigrationId(definition: Record<string, unknown>, fallbackIndex: number): string {
-  const explicitId = toNonEmptyString(definition.id);
+  const explicitId = toNonEmptyStringOrUndefined(definition.id);
   if (explicitId) {
     return explicitId;
   }
@@ -409,7 +402,7 @@ function resolveMigrationId(definition: Record<string, unknown>, fallbackIndex: 
 }
 
 function resolveMigrationStatus(definition: Record<string, unknown>): MigrationRuntimeStatus {
-  const rawStatus = toNonEmptyString(definition.status);
+  const rawStatus = toNonEmptyStringOrUndefined(definition.status);
   const normalized = rawStatus?.toLowerCase();
   if (normalized === "failed") {
     return "failed";
@@ -421,7 +414,7 @@ function resolveMigrationStatus(definition: Record<string, unknown>): MigrationR
 }
 
 function resolveMigrationFailureReason(definition: Record<string, unknown>): string | undefined {
-  return toNonEmptyString(definition.reason) ?? toNonEmptyString(definition.error) ?? toNonEmptyString(definition.message);
+  return toNonEmptyStringOrUndefined(definition.reason) ?? toNonEmptyStringOrUndefined(definition.error) ?? toNonEmptyStringOrUndefined(definition.message);
 }
 
 function compareMigrationEntries(left: MigrationStatusEntry, right: MigrationStatusEntry): number {

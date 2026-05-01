@@ -164,15 +164,26 @@ function buildPmCliErrorGuidance(rawMessage: string, context?: PmCliErrorContext
 
   const itemNotFound = message.match(/^Item ([^ ]+) not found$/);
   if (itemNotFound) {
+    const badId = itemNotFound[1];
+    const isPlaceholder = /^(undefined|null|<.*>|\[.*\]|{.*}|)$/.test(badId);
+    const happened = isPlaceholder
+      ? `The item ID "${badId}" looks like a placeholder or unresolved variable. Ensure the ID argument is resolved before calling pm.`
+      : `No item with id "${badId}" exists in the active tracker scope.`;
+    const nextSteps = isPlaceholder
+      ? [
+          "Check that the variable holding the item ID is defined before passing it to pm.",
+          'Use "pm list-open --limit 20" to find valid IDs.',
+        ]
+      : ["Confirm the active --path/PM_PATH scope, then retry with a valid id."];
     return applyPmCliErrorContext(
       makeGuidanceMessage({
         code: "item_not_found",
         title: "Item ID not found",
-        happened: `No item with id "${itemNotFound[1]}" exists in the active tracker scope.`,
+        happened,
         required: "Use an existing item ID from current tracker data.",
         why: "Mutation and read commands operate only on known IDs.",
         examples: ['pm list-open --limit 20', 'pm search "<keyword>" --limit 10'],
-        nextSteps: ["Confirm the active --path/PM_PATH scope, then retry with a valid id."],
+        nextSteps,
       }),
       rawMessage,
       context,
