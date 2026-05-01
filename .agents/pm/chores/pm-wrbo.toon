@@ -6,10 +6,13 @@ status: closed
 priority: 1
 tags[4]: audit,maintenance,pm-cli,telemetry
 created_at: "2026-05-01T18:06:07.016Z"
-updated_at: "2026-05-01T18:20:58.051Z"
+updated_at: "2026-05-01T19:29:07.621Z"
 author: audit-agent
 acceptance_criteria: Queue pruned to healthy state; stuck entries removed
 parent: pm-2eb3
+resolution: "Resolution normalized from close_reason: Queue pruning implemented via TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS=15. Entries with 15+ attempts are automatically dropped during flush. Existing stuck entries will be pruned on next flush cycle."
+expected_result: "Expected closure outcome: Queue pruning implemented via TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS=15. Entries with 15+ attempts are automatically dropped during flush. Existing stuck entries will be pruned on next flush cycle."
+actual_result: "Actual closure outcome: Queue pruning implemented via TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS=15. Entries with 15+ attempts are automatically dropped during flush. Existing stuck entries will be pruned on next flush cycle."
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-2eb3,parent,"2026-05-01T18:06:07.016Z",audit-agent,null
   pm-ntr0,related,"2026-05-01T18:06:07.016Z",audit-agent,null

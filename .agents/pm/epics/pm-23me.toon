@@ -6,11 +6,14 @@ status: closed
 priority: 0
 tags[7]: audit,calendar,dogfood,extensibility,pm-cli,sdk,telemetry
 created_at: "2026-04-30T19:37:11.721Z"
-updated_at: "2026-05-01T18:07:25.214Z"
+updated_at: "2026-05-01T19:29:07.476Z"
 deadline: "2026-05-02T19:37:11.721Z"
 author: codex-audit
 estimated_minutes: 360
 acceptance_criteria: "All material findings are documented in pm; any feasible defects discovered are fixed and linked; verification evidence includes build, focused tests, coverage where practical, and temp-project dogfood commands."
+resolution: "Resolution normalized from close_reason: Superseded by pm-2eb3 (2026-05-01 Full PM CLI Dogfood Audit v2) which covers the latest 2026.5.1-2 build comprehensively"
+expected_result: "Expected closure outcome: Superseded by pm-2eb3 (2026-05-01 Full PM CLI Dogfood Audit v2) which covers the latest 2026.5.1-2 build comprehensively"
+actual_result: "Actual closure outcome: Superseded by pm-2eb3 (2026-05-01 Full PM CLI Dogfood Audit v2) which covers the latest 2026.5.1-2 build comprehensively"
 comments[1]{created_at,author,text}:
   "2026-04-30T19:37:11.721Z",codex-audit,"Duplicate check before create: pm context --limit 10 showed no active items; pm search 'manual audit sdk calendar telemetry dogfood extensibility' returned only closed prior audits including pm-wg1d and pm-mb4n; pm list-open/list-in-progress both returned 0. Net-new scope is required for the 2026-04-30 latest-build audit."
 notes[1]{created_at,author,text}:

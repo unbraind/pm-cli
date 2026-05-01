@@ -1265,7 +1265,7 @@ describe("release readiness runtime coverage", () => {
 
       const activityResult = context.runCli(["activity", "--limit", "20", "--json"], { expectJson: true });
       expect(activityResult.code).toBe(0);
-      expectTopLevelKeyOrder(activityResult.json, ["activity", "count", "limit"]);
+      expectTopLevelKeyOrder(activityResult.json, ["activity", "compact", "count", "limit"]);
 
       const statsResult = context.runCli(["stats", "--json"], { expectJson: true });
       expect(statsResult.code).toBe(0);

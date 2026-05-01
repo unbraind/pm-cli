@@ -6,10 +6,12 @@ status: closed
 priority: 3
 tags[3]: agents,templates,ux
 created_at: "2026-05-01T18:59:10.602Z"
-updated_at: "2026-05-01T18:59:12.505Z"
+updated_at: "2026-05-01T19:29:07.554Z"
 author: maintainer-agent
 parent: pm-3fti
 severity: low
 resolution: Added default .action() handler to templatesCommand in main.ts that calls runTemplatesList. pm templates now outputs template list (empty set or available templates).
+expected_result: "Expected closure outcome: Fixed in main.ts: templates bare command now defaults to runTemplatesList output."
+actual_result: "Actual closure outcome: Fixed in main.ts: templates bare command now defaults to runTemplatesList output."
 close_reason: "Fixed in main.ts: templates bare command now defaults to runTemplatesList output."
 body: ""

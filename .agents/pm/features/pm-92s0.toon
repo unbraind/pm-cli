@@ -6,10 +6,13 @@ status: closed
 priority: 1
 tags[4]: audit,pm-cli,sdk,verification
 created_at: "2026-05-01T18:04:09.832Z"
-updated_at: "2026-05-01T18:06:49.514Z"
+updated_at: "2026-05-01T19:29:07.547Z"
 author: audit-agent
 acceptance_criteria: SDK exports match documentation and all extension capabilities are exercisable
 parent: pm-2eb3
+resolution: "Resolution normalized from close_reason: 78 SDK exports verified via dynamic import. defineExtension identity, 9 capabilities, 68 tool actions, 53 command names, and flag contracts all match docs"
+expected_result: "Expected closure outcome: 78 SDK exports verified via dynamic import. defineExtension identity, 9 capabilities, 68 tool actions, 53 command names, and flag contracts all match docs"
+actual_result: "Actual closure outcome: 78 SDK exports verified via dynamic import. defineExtension identity, 9 capabilities, 68 tool actions, 53 command names, and flag contracts all match docs"
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-2eb3,parent,"2026-05-01T18:04:09.832Z",audit-agent,null
 comments[1]{created_at,author,text}:

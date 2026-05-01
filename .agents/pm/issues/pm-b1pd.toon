@@ -2,10 +2,20 @@ id: pm-b1pd
 title: Calendar recurring event line has redundant double-title (item title repeated in event title field)
 description: "Calendar output for recurring events shows: 'Sprint Planning Meeting — Sprint Planning title=\"Sprint Planning\"'. The item title and event title are both shown separately, causing redundant output that makes the line harder to parse. When the event title equals the item title, one should be suppressed or the format should be adjusted."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[4]: agents,calendar,output,ux
 created_at: "2026-05-01T18:59:55.461Z"
-updated_at: "2026-05-01T18:59:55.461Z"
+updated_at: "2026-05-01T19:28:26.172Z"
 author: maintainer-agent
+resolution: Suppressed redundant event title in formatEventLine when event_title matches item_title
+expected_result: "Calendar event lines show item title once, not duplicated as both item_title and event_title"
+actual_result: formatEventLine now skips title/title= details when event_title matches item_title; only differing titles show both
+comments[1]{created_at,author,text}:
+  "2026-05-01T19:12:56.890Z",cursor-agent,"Fix applied: in formatEventLine, when event.event_title matches event.item_title (or is null), the title and title= key-value are now suppressed from the details section. The item_title in the core prefix already shows it. Only when event_title differs from item_title do we include both. Tests: 14/14 calendar-command.spec.ts passed. Build: clean."
+files[1]{path,scope,note}:
+  src/cli/commands/calendar.ts,project,"formatEventLine: suppress redundant title when event_title matches item_title"
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts,null,project,120,null,null,null,null,null,null,null,null,null,null,null,calendar unit tests
+close_reason: Calendar formatEventLine no longer duplicates item_title in the event details when event_title matches or is null. 14/14 calendar tests pass.
 body: ""

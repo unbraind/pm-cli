@@ -6,10 +6,13 @@ status: closed
 priority: 1
 tags[4]: audit,calendar,pm-cli,verification
 created_at: "2026-05-01T18:03:44.506Z"
-updated_at: "2026-05-01T18:06:39.182Z"
+updated_at: "2026-05-01T19:29:07.512Z"
 author: audit-agent
 acceptance_criteria: All calendar views produce correct output with proper recurrence expansion
 parent: pm-2eb3
+resolution: "Resolution normalized from close_reason: All calendar views (agenda/day/week/month) tested with recurrence expansion, boundary clipping, output format switching, and occurrence limiting"
+expected_result: "Expected closure outcome: All calendar views (agenda/day/week/month) tested with recurrence expansion, boundary clipping, output format switching, and occurrence limiting"
+actual_result: "Actual closure outcome: All calendar views (agenda/day/week/month) tested with recurrence expansion, boundary clipping, output format switching, and occurrence limiting"
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-2eb3,parent,"2026-05-01T18:03:44.506Z",audit-agent,null
 comments[1]{created_at,author,text}:

@@ -6,10 +6,13 @@ status: closed
 priority: 0
 tags[4]: audit,pm-cli,telemetry,verification
 created_at: "2026-05-01T18:04:41.968Z"
-updated_at: "2026-05-01T18:07:04.163Z"
+updated_at: "2026-05-01T19:29:07.455Z"
 author: audit-agent
 acceptance_criteria: "Events flow from CLI through queue, API, RabbitMQ, worker, to Postgres and are queryable in Grafana"
 parent: pm-2eb3
+resolution: "Resolution normalized from close_reason: Full telemetry pipeline verified: client queue working, endpoint probe healthy, 9 Docker containers running, 29700 events in Postgres, dogfood events visible. Queue bloat issue documented separately as pm-ntr0."
+expected_result: "Expected closure outcome: Full telemetry pipeline verified: client queue working, endpoint probe healthy, 9 Docker containers running, 29700 events in Postgres, dogfood events visible. Queue bloat issue documented separately as pm-ntr0."
+actual_result: "Actual closure outcome: Full telemetry pipeline verified: client queue working, endpoint probe healthy, 9 Docker containers running, 29700 events in Postgres, dogfood events visible. Queue bloat issue documented separately as pm-ntr0."
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-2eb3,parent,"2026-05-01T18:04:41.968Z",audit-agent,null
   pm-ntr0,related,"2026-05-01T18:04:41.968Z",audit-agent,null

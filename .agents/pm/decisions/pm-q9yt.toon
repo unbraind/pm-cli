@@ -6,10 +6,13 @@ status: closed
 priority: 0
 tags[4]: audit,decision,pm-cli,telemetry
 created_at: "2026-05-01T18:05:36.013Z"
-updated_at: "2026-05-01T18:20:53.394Z"
+updated_at: "2026-05-01T19:29:07.583Z"
 author: audit-agent
 acceptance_criteria: Decision documented with rationale and implementation plan
 parent: pm-2eb3
+resolution: "Resolution normalized from close_reason: Decided: option 3 (pre-enqueue size guard at 512KB) combined with depth-limited sanitization (max depth 6) and max-attempts pruning (15). Implemented and verified with all 1087 tests passing."
+expected_result: "Expected closure outcome: Decided: option 3 (pre-enqueue size guard at 512KB) combined with depth-limited sanitization (max depth 6) and max-attempts pruning (15). Implemented and verified with all 1087 tests passing."
+actual_result: "Actual closure outcome: Decided: option 3 (pre-enqueue size guard at 512KB) combined with depth-limited sanitization (max depth 6) and max-attempts pruning (15). Implemented and verified with all 1087 tests passing."
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-2eb3,parent,"2026-05-01T18:05:36.013Z",audit-agent,null
   pm-ntr0,blocks,"2026-05-01T18:05:36.013Z",audit-agent,null

@@ -6,10 +6,13 @@ status: closed
 priority: 1
 tags[3]: extensions,pm-cli,verification
 created_at: "2026-04-26T20:18:02.878Z"
-updated_at: "2026-04-26T20:18:30.136Z"
+updated_at: "2026-05-01T19:29:07.508Z"
 deadline: "2026-04-27T20:18:02.878Z"
 author: audit-agent
 estimated_minutes: 15
 acceptance_criteria: Extension lifecycle fully working
+resolution: "Resolution normalized from close_reason: Extension lifecycle fully working with 9 capabilities and bundled extensions"
+expected_result: "Expected closure outcome: Extension lifecycle fully working with 9 capabilities and bundled extensions"
+actual_result: "Actual closure outcome: Extension lifecycle fully working with 9 capabilities and bundled extensions"
 close_reason: Extension lifecycle fully working with 9 capabilities and bundled extensions
 body: "Verified:\\n- pm extension install beads: installs from bundled source to project scope\\n- pm extension manage: lists 1 managed extension with version, entry, capabilities\\n- pm extension doctor: summary status ok, capability contract v2, 9 capabilities\\n- ExtensionApi surface: 14 register methods + 5 hooks\\n- SDK exports defineExtension + all extension types\\n- docs/examples/starter-extension/ exists with working example\\n- Manifest validation enforces capabilities"

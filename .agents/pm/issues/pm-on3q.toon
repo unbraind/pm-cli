@@ -6,10 +6,12 @@ status: closed
 priority: 1
 tags[4]: bug,performance,regression,telemetry
 created_at: "2026-05-01T18:58:01.569Z"
-updated_at: "2026-05-01T18:58:04.609Z"
+updated_at: "2026-05-01T19:29:07.579Z"
 author: maintainer-agent
 parent: pm-3fti
 severity: high
 resolution: "Added oversized-event pruning in pruneExpiredQueueEntries: entries with serialized size > TELEMETRY_MAX_EVENT_BYTES (512KB) are now dropped during flush-phase prune, preventing them from blocking valid event flushes. Queue drained from 60MB/64 to 4.5MB/41 after first flush post-fix."
+expected_result: "Expected closure outcome: Fixed: src/core/telemetry/runtime.ts pruneExpiredQueueEntries now drops oversized events. Build passes, 1087 tests at 100% coverage."
+actual_result: "Actual closure outcome: Fixed: src/core/telemetry/runtime.ts pruneExpiredQueueEntries now drops oversized events. Build passes, 1087 tests at 100% coverage."
 close_reason: "Fixed: src/core/telemetry/runtime.ts pruneExpiredQueueEntries now drops oversized events. Build passes, 1087 tests at 100% coverage."
 body: ""

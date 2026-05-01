@@ -6,10 +6,12 @@ status: closed
 priority: 2
 tags[4]: agents,error-message,files,ux
 created_at: "2026-05-01T18:58:40.497Z"
-updated_at: "2026-05-01T18:58:43.115Z"
+updated_at: "2026-05-01T19:29:07.543Z"
 author: maintainer-agent
 parent: pm-3fti
 severity: medium
 resolution: "Added path-detection heuristic in buildOptionSpecificKvGuidance: when raw value looks like a file path and optionName is --add, the error now includes 'path=<file-path>[,scope=project|global]. The scope field is optional and defaults to project'."
+expected_result: "Expected closure outcome: Fixed: buildOptionSpecificKvGuidance in parse.ts now detects file-path-like values for --add and emits format hint. Verified working."
+actual_result: "Actual closure outcome: Fixed: buildOptionSpecificKvGuidance in parse.ts now detects file-path-like values for --add and emits format hint. Verified working."
 close_reason: "Fixed: buildOptionSpecificKvGuidance in parse.ts now detects file-path-like values for --add and emits format hint. Verified working."
 body: ""

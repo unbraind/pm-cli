@@ -118,6 +118,7 @@ const STALE_VECTORIZATION_SUMMARY_LIMIT = 25;
 const TELEMETRY_QUEUE_RELATIVE_PATH = path.join("runtime", "telemetry", "events.jsonl");
 const TELEMETRY_STATE_RELATIVE_PATH = path.join("runtime", "telemetry", "state.json");
 const TELEMETRY_ENDPOINT_PROBE_TIMEOUT_MS = 2_500;
+const TELEMETRY_QUEUE_HIGH_WATER_MARK = 500;
 
 function warningCode(value: string): string {
   const normalized = value.trim();
@@ -902,8 +903,16 @@ async function buildTelemetryCheck(
   if (queueSummary.invalidRows > 0) {
     warnings.push(`telemetry_queue_invalid_rows:${queueSummary.invalidRows}`);
   }
-  if (settings.telemetry.enabled && queueSummary.validEntries > 0) {
-    warnings.push(`telemetry_queue_pending:${queueSummary.validEntries}`);
+  const queueHasEntries = settings.telemetry.enabled && queueSummary.validEntries > 0;
+  if (queueHasEntries) {
+    const lastSuccess = runtimeState.last_successful_flush_at;
+    const lastFailure = runtimeState.last_failed_flush_at;
+    const activeFailure = lastFailure && (!lastSuccess || lastFailure > lastSuccess);
+    const neverFlushed = !lastSuccess;
+    const highWater = queueSummary.validEntries >= TELEMETRY_QUEUE_HIGH_WATER_MARK;
+    if (activeFailure || neverFlushed || highWater) {
+      warnings.push(`telemetry_queue_pending:${queueSummary.validEntries}`);
+    }
   }
   if (endpointProbe && !endpointProbe.ok) {
     if (typeof endpointProbe.status === "number") {
@@ -925,6 +934,7 @@ async function buildTelemetryCheck(
         queue_path: queuePath,
         queue_exists: queueExists,
         queue_entries: queueSummary.validEntries,
+        queue_draining: queueHasEntries && warnings.every((w) => !w.startsWith("telemetry_queue_pending:")),
         queue_invalid_rows: queueSummary.invalidRows,
         queue_rows_total: queueSummary.totalRows,
         queue_size_bytes: queueSizeBytes,

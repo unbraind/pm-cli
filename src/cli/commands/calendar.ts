@@ -131,6 +131,7 @@ export interface CalendarResult {
 const UTC_DAY_TO_WEEKDAY = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 const DEFAULT_RECURRENCE_LOOKAHEAD_DAYS = 365;
 const DEFAULT_RECURRENCE_LOOKBACK_DAYS = 365;
+const DEFAULT_EVENTS_ONLY_LOOKAHEAD_DAYS = 28;
 const MAX_RECURRENCE_OCCURRENCES = 1000;
 
 function weekdayOrderIndex(value: (typeof RECURRENCE_WEEKDAY_VALUES)[number]): number {
@@ -870,8 +871,11 @@ function formatEventLine(event: CalendarRow): string {
   if (event.kind === "event") {
     const details: string[] = [];
     const title = event.event_title ?? event.item_title;
-    details.push(title);
-    details.push(`title=${JSON.stringify(title)}`);
+    const titleDiffers = event.event_title !== null && event.event_title !== event.item_title;
+    if (titleDiffers) {
+      details.push(title);
+      details.push(`title=${JSON.stringify(title)}`);
+    }
     if (event.event_recurring) {
       details.push("(recurring)");
       details.push("recurring=true");
@@ -954,12 +958,17 @@ export async function runCalendar(options: CalendarOptions, global: GlobalOption
   const rangeBounds = buildRange(view, options, nowValue);
   const limit = parseLimit(options.limit);
   const includeSources = parseIncludeSources(options.include);
-  const recurrenceLookaheadDays = parseNonNegativeInteger(options.recurrenceLookaheadDays, "Calendar recurrence lookahead days");
+  const explicitLookahead = parseNonNegativeInteger(options.recurrenceLookaheadDays, "Calendar recurrence lookahead days");
   const recurrenceLookbackDays = parseNonNegativeInteger(options.recurrenceLookbackDays, "Calendar recurrence lookback days");
   const occurrenceLimit = parseNonNegativeInteger(options.occurrenceLimit, "Calendar occurrence limit");
   if (occurrenceLimit !== undefined && occurrenceLimit < 1) {
     throw new PmCliError("Calendar occurrence limit must be >= 1", EXIT_CODE.USAGE);
   }
+
+  const eventsOnly = includeSources.has("events") && !includeSources.has("deadlines") && !includeSources.has("reminders");
+  const hasExplicitBounds = options.to !== undefined || explicitLookahead !== undefined || occurrenceLimit !== undefined;
+  const eventsOnlyCapApplied = eventsOnly && !hasExplicitBounds;
+  const recurrenceLookaheadDays = eventsOnlyCapApplied ? DEFAULT_EVENTS_ONLY_LOOKAHEAD_DAYS : explicitLookahead;
 
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
@@ -967,6 +976,11 @@ export async function runCalendar(options: CalendarOptions, global: GlobalOption
   const runtimeFieldFilters = collectRuntimeFilterValues(options as Record<string, unknown>, runtimeFieldRegistry, "calendar");
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const listWarnings: string[] = [];
+  if (eventsOnlyCapApplied) {
+    listWarnings.push(
+      `recurring_events_default_cap_applied:${DEFAULT_EVENTS_ONLY_LOOKAHEAD_DAYS}d -- use --recurrence-lookahead-days or --to for wider range`,
+    );
+  }
   const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings, settings.schema);
   const filteredItems = filterItems(items, options, typeRegistry, statusRegistry, runtimeFieldFilters);
   const recurringWindow = buildRecurringEventWindow(

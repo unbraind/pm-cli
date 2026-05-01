@@ -6,12 +6,15 @@ status: closed
 priority: 0
 tags[4]: bug-fix,pm-cli,telemetry,testing
 created_at: "2026-04-26T20:16:29.226Z"
-updated_at: "2026-04-26T21:00:35.420Z"
+updated_at: "2026-05-01T19:29:07.563Z"
 deadline: "2026-04-27T20:16:29.226Z"
 author: audit-agent
 estimated_minutes: 5
 acceptance_criteria: Integration test passes with telemetry check in expected list
 parent: pm-lnq3
+resolution: "Resolution normalized from close_reason: Integration health assertion includes telemetry; targeted integration suite passed."
+expected_result: "Expected closure outcome: Integration health assertion includes telemetry; targeted integration suite passed."
+actual_result: "Actual closure outcome: Integration health assertion includes telemetry; targeted integration suite passed."
 comments[1]{created_at,author,text}:
   "2026-04-26T21:00:30.455Z",codex-agent,"Verified health check list includes telemetry and targeted integration suite passes (tests/integration/cli.integration.spec.ts: 62 tests)."
 files[1]{path,scope,note}:

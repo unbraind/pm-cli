@@ -6,12 +6,15 @@ status: closed
 priority: 2
 tags[3]: agent-ux,calendar,pm-cli
 created_at: "2026-04-26T20:16:53.254Z"
-updated_at: "2026-04-26T21:15:04.037Z"
+updated_at: "2026-05-01T19:29:07.537Z"
 deadline: "2026-05-03T20:16:53.254Z"
 author: audit-agent
 estimated_minutes: 30
 acceptance_criteria: Either --full-period works with agenda or error message suggests --from/--to alternative
 parent: pm-kglq
+resolution: "Resolution normalized from close_reason: Calendar agenda full-period rejection now includes actionable --from/--to guidance, with matching help-text and regression coverage."
+expected_result: "Expected closure outcome: Calendar agenda full-period rejection now includes actionable --from/--to guidance, with matching help-text and regression coverage."
+actual_result: "Actual closure outcome: Calendar agenda full-period rejection now includes actionable --from/--to guidance, with matching help-text and regression coverage."
 comments[2]{created_at,author,text}:
   "2026-04-26T21:14:06.449Z",codex-agent,"Improved agenda UX for full-period misuse: calendar now returns a constructive error explaining that --full-period applies to day/week/month and recommending --from and --to for agenda windows; help narrative tips mirror the same guidance."
   "2026-04-26T21:14:20.252Z",codex-agent,"Verification: pnpm build passed; node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/integration/help-runtime.spec.ts passed (33 tests)."

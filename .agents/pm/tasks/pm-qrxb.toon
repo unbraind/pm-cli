@@ -6,12 +6,15 @@ status: closed
 priority: 1
 tags[4]: documentation,extensions,pm-cli,sdk
 created_at: "2026-04-26T20:17:00.482Z"
-updated_at: "2026-04-26T21:05:29.373Z"
+updated_at: "2026-05-01T19:29:07.592Z"
 deadline: "2026-05-01T20:17:00.482Z"
 author: audit-agent
 estimated_minutes: 90
 acceptance_criteria: SDK.md and EXTENSIONS.md accurately reflect all public exports and capability requirements
 parent: pm-1etl
+resolution: "Resolution normalized from close_reason: SDK and extension docs now accurately document cli-contracts exports and capability requirements; SDK surface parity fixes applied and verified."
+expected_result: "Expected closure outcome: SDK and extension docs now accurately document cli-contracts exports and capability requirements; SDK surface parity fixes applied and verified."
+actual_result: "Actual closure outcome: SDK and extension docs now accurately document cli-contracts exports and capability requirements; SDK surface parity fixes applied and verified."
 comments[2]{created_at,author,text}:
   "2026-04-26T21:05:22.793Z",codex-agent,"Implemented SDK/export parity updates: docs/SDK.md now inventories public cli-contracts exports and capability constants, docs/EXTENSIONS.md now documents schema capability requirement for inline registerCommand flags and importer capability requirement for registerExporter; code parity includes exporting ExtensionCommandArgumentDefinition from sdk index and adding @deprecated annotation for CommandDefinition.handler alias."
   "2026-04-26T21:05:24.583Z",codex-agent,"Verification: pnpm build passed; node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts passed (2 tests)."

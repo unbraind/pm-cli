@@ -2,10 +2,20 @@ id: pm-vg5h
 title: pm cal --include events|scheduled expands recurring events without default cap
 description: "When using --include events (or the new --include scheduled alias) without --occurrence-limit or --to, pm calendar expands recurring events across the full lookahead window (default 365 days). A weekly recurring event generates 52+ calendar rows. Agents calling this without bounds get unexpectedly large output. Should apply a sensible default cap (e.g., 4 weeks / 28 days) for the events-only filter, or warn when expansion exceeds a threshold."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agents,calendar,performance,recurring,ux
 created_at: "2026-05-01T18:59:53.408Z"
-updated_at: "2026-05-01T18:59:53.408Z"
+updated_at: "2026-05-01T19:28:35.288Z"
 author: maintainer-agent
+resolution: Applied DEFAULT_EVENTS_ONLY_LOOKAHEAD_DAYS=28 cap for events-only calendar filter without explicit bounds
+expected_result: Events-only calendar filter uses bounded 28-day lookahead by default; explicit bounds override
+actual_result: 28-day cap applied; warning emitted; explicit --to/--occurrence-limit/--recurrence-lookahead-days preserves full 365-day default
+comments[1]{created_at,author,text}:
+  "2026-05-01T19:14:49.621Z",cursor-agent,"Fix applied: when --include resolves to events-only (no deadlines/reminders) and no explicit --to, --occurrence-limit, or --recurrence-lookahead-days is set, the recurrence lookahead now defaults to 28 days instead of 365. A warning 'recurring_events_default_cap_applied:28d' is added to the result so agents/users know the cap was applied and can override with explicit flags. When any explicit bound is provided, the full 365-day default is preserved. Tests: 14/14 calendar-command.spec.ts passed. Build: clean."
+files[1]{path,scope,note}:
+  src/cli/commands/calendar.ts,project,apply DEFAULT_EVENTS_ONLY_LOOKAHEAD_DAYS=28 cap when --include events-only without explicit bounds
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts,null,project,120,null,null,null,null,null,null,null,null,null,null,null,calendar unit tests
+close_reason: Events-only calendar filter now defaults to 28-day lookahead instead of 365 when no explicit bounds are set. Warning is emitted. Existing explicit-bound usage is unchanged. 14/14 tests pass.
 body: ""

@@ -2675,7 +2675,8 @@ function printActivityJsonStream(
   if (!writeStdout(`${JSON.stringify(metaPayload)}\n`)) {
     return;
   }
-  for (const entry of result.activity) {
+  const entries = result.compact && result.compact_activity ? result.compact_activity : result.activity;
+  for (const entry of entries) {
     if (!writeStdout(`${JSON.stringify({ type: "entry", command: "activity", entry })}\n`)) {
       return;
     }
@@ -2778,6 +2779,7 @@ function normalizeActivityOptions(options: Record<string, unknown>): {
   from?: string;
   to?: string;
   limit?: string;
+  compact?: boolean;
 } {
   const readActivityString = (target: string): string | undefined =>
     readFirstStringFromCommanderOptions(
@@ -2794,6 +2796,7 @@ function normalizeActivityOptions(options: Record<string, unknown>): {
     from: readActivityString("from"),
     to: readActivityString("to"),
     limit: readActivityString("limit"),
+    compact: options.compact === true ? true : undefined,
   };
 }
 
@@ -3914,6 +3917,7 @@ program
   .option("--from <value>", "Lower timestamp bound (ISO/date string or relative)")
   .option("--to <value>", "Upper timestamp bound (ISO/date string or relative)")
   .option("--limit <n>", "Return only the latest n activity entries")
+  .option("--compact", "Condensed output: show only id, op, ts, author, msg per entry")
   .option("--stream [mode]", "Emit line-delimited JSON rows (requires --json). Optional mode: rows|ndjson|jsonl")
   .description("Show recent activity across items.")
   .action(async (options: Record<string, unknown>, command) => {

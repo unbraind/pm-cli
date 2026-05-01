@@ -6,11 +6,14 @@ status: closed
 priority: 3
 tags[3]: agent-ux,pm-cli,update-many
 created_at: "2026-04-26T20:17:06.781Z"
-updated_at: "2026-04-26T21:19:54.464Z"
+updated_at: "2026-05-01T19:29:07.601Z"
 deadline: "2026-05-03T20:17:06.781Z"
 author: audit-agent
 estimated_minutes: 15
 acceptance_criteria: Error message includes available mutation flag list
+resolution: "Resolution normalized from close_reason: Update-many missing-mutation error now lists actionable mutation flag examples and has regression coverage."
+expected_result: "Expected closure outcome: Update-many missing-mutation error now lists actionable mutation flag examples and has regression coverage."
+actual_result: "Actual closure outcome: Update-many missing-mutation error now lists actionable mutation flag examples and has regression coverage."
 comments[2]{created_at,author,text}:
   "2026-04-26T21:19:37.962Z",codex-agent,Improved update-many no-mutation validation text to include actionable mutation flag examples (status/priority/type/tags/description/body/deadline/estimate/assignee/dependency/log/linkage/replace/clear options) so dry-run/filter-only invocations have immediate remediation guidance.
   "2026-04-26T21:19:48.163Z",codex-agent,"Verification: pnpm build passed; node scripts/run-tests.mjs test -- tests/unit/update-many-command.spec.ts passed (8 tests)."

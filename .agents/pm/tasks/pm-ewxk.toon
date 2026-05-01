@@ -6,10 +6,13 @@ status: closed
 priority: 0
 tags[4]: core,pm-cli,testing,verification
 created_at: "2026-04-26T20:18:06.100Z"
-updated_at: "2026-04-26T20:18:44.852Z"
+updated_at: "2026-05-01T19:29:07.558Z"
 deadline: "2026-04-27T20:18:06.100Z"
 author: audit-agent
 estimated_minutes: 15
 acceptance_criteria: All core commands verified with evidence
+resolution: "Resolution normalized from close_reason: All core commands verified: 1064/1065 tests pass, full CRUD lifecycle works"
+expected_result: "Expected closure outcome: All core commands verified: 1064/1065 tests pass, full CRUD lifecycle works"
+actual_result: "Actual closure outcome: All core commands verified: 1064/1065 tests pass, full CRUD lifecycle works"
 close_reason: "All core commands verified: 1064/1065 tests pass, full CRUD lifecycle works"
 body: "Test results: 78/79 test files pass, 1064/1065 tests pass. Single failure: health check assertion (fixed). All item types (Epic, Feature, Task, Issue, Chore, Decision) create and lifecycle correctly. History tracking produces deterministic hash chains. Dependency trees render. Config/governance settings persist. Progressive and strict create modes work."

@@ -21,14 +21,25 @@ export interface ActivityCommandOptions {
   from?: string;
   to?: string;
   limit?: string;
+  compact?: boolean;
 }
 
 export interface ActivityEntry extends HistoryEntry {
   id: string;
 }
 
+export interface CompactActivityEntry {
+  id: string;
+  op: string;
+  ts: string;
+  author: string;
+  msg?: string;
+}
+
 export interface ActivityResult {
   activity: ActivityEntry[];
+  compact_activity?: CompactActivityEntry[];
+  compact: boolean;
   count: number;
   limit: number | null;
 }
@@ -159,8 +170,20 @@ export async function runActivity(options: ActivityCommandOptions, global: Globa
   }
 
   const activity = limitEntries(sortActivity(combined), limit);
+  const compact = options.compact === true;
+  const compactActivity = compact
+    ? activity.map((entry): CompactActivityEntry => ({
+        id: entry.id,
+        op: entry.op,
+        ts: entry.ts,
+        author: entry.author,
+        ...(entry.message ? { msg: entry.message } : {}),
+      }))
+    : undefined;
   return {
-    activity,
+    activity: compact ? [] : activity,
+    compact_activity: compactActivity,
+    compact,
     count: activity.length,
     limit: limit ?? null,
   };

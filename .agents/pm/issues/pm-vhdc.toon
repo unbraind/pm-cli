@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: observability,pm-cli,telemetry,validation
 created_at: "2026-04-26T08:38:49.149Z"
-updated_at: "2026-04-27T19:45:18.436Z"
+updated_at: "2026-05-01T19:29:31.935Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: Ingestion path validates UUID-typed identifiers before queueing; invalid payloads are dropped/quarantined with explicit counters and do not repeatedly fail worker inserts.
@@ -16,7 +16,7 @@ expected_result: Invalid UUID telemetry payloads are rejected at ingestion and d
 actual_result: Invalid UUID payloads now return 400 with field-level detail; rejected UUID counters increment; worker drained poison backlog and queue remains at 0/0 without recurring UUID insert-failed loops.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-lnq3,parent,"2026-04-26T08:38:49.149Z",codex-agent,null
-comments[9]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-04-26T08:38:49.149Z",codex-agent,"Duplicate-check evidence: pm context --limit 10; pm search 'telemetry worker invalid uuid' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Net-new because current telemetry open items cover docs/health visibility but not ingestion boundary UUID validation and worker retry churn."
   "2026-04-26T08:42:50.281Z",codex-agent,"Remote verification evidence 2026-04-26: (telemetry-api/worker/rabbitmq/postgres/prometheus/loki/tempo/alloy/grafana); /healthz returned ok queue pm.telemetry.events; synthetic POST /v1/events accepted=1; Postgres telemetry_events count increased (9516->9519) and live command ingest confirmed (stats delta +1); DSAR export/delete scripts executed successfully for probe installation UUID. Outstanding failure signal: telemetry-worker logs repeated worker_insert_failed invalid UUID errors for non-UUID identifiers, indicating ingestion boundary lacks strict UUID validation before worker insert."
   "2026-04-26T09:56:01.971Z",codex-agent,"Remote telemetry verification 2026-04-26: all stack services are running and healthy, public /healthz and Grafana API health respond (200), and a UUID-based synthetic event command=remote-audit-smoke was accepted and persisted in Postgres. RabbitMQ queue depth remains non-zero (messages=4, messages_unacknowledged=4) while telemetry-worker logs repeatedly show worker_insert_failed invalid UUID errors for non-UUID identifiers, confirming poison-message churn when ingestion accepts malformed UUID fields."
@@ -26,6 +26,7 @@ comments[9]{created_at,author,text}:
   "2026-04-27T19:36:03.760Z",codex-agent,"Implementation 2026-04-27: patched remote telemetry-api/app.py to validate and normalize UUID fields before queue publish (event_id, installation_id, optional session_id) and added pm_telemetry_rejected_uuid_events_total field-scoped counter. Patched telemetry-api/worker.py to drop malformed UUID events with ack and explicit worker_drop_invalid_uuid_fields totals instead of nacking/requeueing. Rebuilt telemetry-api/worker images and restarted both services."
   "2026-04-27T19:36:07.070Z",codex-agent,"Verification 2026-04-27 after rollout: queue drained to messages=0/unacked=0, worker logs showed poison backlog drain via worker_drop_invalid_uuid_fields total=6 with no recurring worker_insert_failed UUID churn, invalid UUID POST now returns 400, valid UUID POST returns 200 accepted=1, and /metrics exposes pm_telemetry_rejected_uuid_events_total labels for event_id/installation_id/session_id."
   "2026-04-27T19:44:37.688Z",codex-agent,"Final evidence 2026-04-27: remote smoke checks show telemetry-api healthz ok and queue pm.telemetry.events at 0/0; worker churn no longer loops with worker_insert_failed UUID failures after boundary hardening rollout."
+  "2026-05-01T19:29:31.935Z",cursor-agent,"History drift audit: hash mismatch is from pre-history-tracking era edits. Accepted as historical legacy drift."
 notes[2]{created_at,author,text}:
   "2026-04-27T19:29:23.382Z",codex-agent,"Current failure mode is queue poison churn: invalid UUID payloads are accepted at ingress and repeatedly fail at worker insert, causing perpetual backlog growth and noisy worker logs."
   "2026-04-27T19:36:10.924Z",codex-agent,"Dual boundary hardening is now in place: ingress rejects malformed UUID payloads for new events, while worker ack-drop logic clears any legacy poison messages already in RabbitMQ without requeue loops."

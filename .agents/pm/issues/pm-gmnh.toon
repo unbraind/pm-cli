@@ -2,10 +2,21 @@ id: pm-gmnh
 title: "pm health ok:false for normal telemetry queue draining is non-actionable noise"
 description: "Health reports ok=false with warning 'telemetry_queue_pending:N' whenever there are queued telemetry events waiting for retry. This causes agents checking ok=true for a healthy tracker to always see false during normal operation. The pending queue is transient and self-healing; it should not flip overall health to false unless flush has been failing for an extended period (e.g., >1h or >X attempts)."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: agents,health,telemetry,ux
 created_at: "2026-05-01T18:59:34.597Z"
-updated_at: "2026-05-01T18:59:34.597Z"
+updated_at: "2026-05-01T19:28:43.645Z"
 author: maintainer-agent
+resolution: "Smart threshold for telemetry queue warning: active failure, never-flushed, or high-water mark (500+)"
+expected_result: Health ok=true during normal transient queue draining; ok=false only on genuine flush failures
+actual_result: "Warning suppressed during normal draining; queue_draining:true detail field added; warning fires on active failure/never-flushed/500+ entries"
+comments[1]{created_at,author,text}:
+  "2026-05-01T19:17:54.388Z",cursor-agent,"Fix applied: telemetry_queue_pending warning now only fires when (1) last_failed_flush_at > last_successful_flush_at (active failure), (2) no last_successful_flush_at exists (never-flushed), or (3) queue entries >= 500 (high-water mark). Normal transient draining now shows queue_draining:true in details without flipping ok to false. Added new test for active-failure case (26/26 health tests pass). Build: clean."
+files[2]{path,scope,note}:
+  src/cli/commands/health.ts,project,"smarter telemetry queue warning: only warn on active failure,never-flushed,or high-water mark"
+  tests/unit/health-command.spec.ts,project,updated draining test + new active-failure test
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts,null,project,120,null,null,null,null,null,null,null,null,null,null,null,health unit tests
+close_reason: "Health telemetry queue warning now uses smart threshold: active failure, never-flushed, or high-water mark (500+). Normal queue draining no longer flips ok to false. 26/26 health tests pass."
 body: ""

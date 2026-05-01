@@ -6,11 +6,14 @@ status: closed
 priority: 1
 tags[3]: calendar,pm-cli,verification
 created_at: "2026-04-26T20:18:00.294Z"
-updated_at: "2026-04-26T20:18:18.461Z"
+updated_at: "2026-05-01T19:29:07.525Z"
 deadline: "2026-04-27T20:18:00.294Z"
 author: audit-agent
 estimated_minutes: 15
 acceptance_criteria: All calendar views and formats verified
 parent: pm-kglq
+resolution: "Resolution normalized from close_reason: All calendar views and formats verified working"
+expected_result: "Expected closure outcome: All calendar views and formats verified working"
+actual_result: "Actual closure outcome: All calendar views and formats verified working"
 close_reason: All calendar views and formats verified working
 body: "Verified: agenda/day/week/month views, markdown/toon/json formats, deadlines, reminders, type/priority filters. Only issue: --full-period rejection on agenda (filed separately)."

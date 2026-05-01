@@ -276,6 +276,7 @@ describe("runHistory and runActivity", () => {
       const activity = await runActivity({}, { path: context.pmPath });
       expect(activity).toEqual({
         activity: [],
+        compact: false,
         count: 0,
         limit: null,
       });

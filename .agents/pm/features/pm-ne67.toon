@@ -2,11 +2,23 @@ id: pm-ne67
 title: Add --compact mode to pm activity for agent-friendly condensed output
 description: "pm activity output embeds full JSON-patch arrays per operation, making it very verbose. Agents scanning for recent changes have to parse ~100-line patch blocks. A --compact mode showing only op, id, ts, author per entry would reduce output by ~90% for common audit workflows."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[4]: activity,agents,output,ux
 created_at: "2026-05-01T18:59:32.119Z"
-updated_at: "2026-05-01T18:59:32.119Z"
+updated_at: "2026-05-01T19:28:54.131Z"
 author: maintainer-agent
 parent: pm-3fti
+resolution: Added --compact flag to activity command producing condensed id/op/ts/author/msg entries
+expected_result: pm activity --compact returns ~90% smaller output with only essential audit fields
+actual_result: compact_activity array emitted with id/op/ts/author/msg only; streaming mode supports compact; full activity array empty in compact mode
+comments[1]{created_at,author,text}:
+  "2026-05-01T19:21:17.943Z",cursor-agent,"Feature implemented: --compact flag on pm activity strips patch/before_hash/after_hash, returns compact_activity array with only id, op, ts, author, msg. Non-compact mode unchanged. Streaming mode supports compact entries. End-to-end verified: pm activity --compact --limit 5 --json returns condensed entries. Tests: 16/16 history-activity-command.spec.ts passed. Build: clean."
+files[3]{path,scope,note}:
+  src/cli/commands/activity.ts,project,"compact mode: CompactActivityEntry type + compact output logic"
+  src/cli/main.ts,project,wire --compact flag on activity command
+  tests/unit/history-activity-command.spec.ts,project,updated test shape for compact field
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts,null,project,120,null,null,null,null,null,null,null,null,null,null,null,activity unit tests
+close_reason: "Compact mode added to pm activity: condensed output with only id, op, ts, author, msg per entry. 16/16 tests pass."
 body: ""

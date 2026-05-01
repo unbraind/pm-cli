@@ -232,6 +232,45 @@ describe("runHealth", () => {
       );
 
       const health = await runHealth({ path: context.pmPath });
+      expect(health.ok).toBe(true);
+      expect(health.warnings).not.toEqual(expect.arrayContaining(["telemetry_queue_pending:1"]));
+
+      const telemetryCheck = health.checks.find((check) => check.name === "telemetry");
+      expect(telemetryCheck?.status).toBe("ok");
+      expect(telemetryCheck?.details).toMatchObject({
+        queue_entries: 1,
+        queue_draining: true,
+        queue_exists: true,
+        last_successful_flush_at: "2026-04-26T10:11:12.000Z",
+      });
+    });
+  });
+
+  it("warns on telemetry queue when flush is in active failure state", async () => {
+    await withTempPmPath(async (context) => {
+      const globalRoot = context.env.PM_GLOBAL_PATH as string;
+      const telemetryRuntimeDir = path.join(globalRoot, "runtime", "telemetry");
+      await mkdir(telemetryRuntimeDir, { recursive: true });
+      await writeFile(
+        path.join(telemetryRuntimeDir, "events.jsonl"),
+        `${JSON.stringify({ attempts: 3, event: { event_id: "evt-1" } })}\n`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(telemetryRuntimeDir, "state.json"),
+        `${JSON.stringify(
+          {
+            last_successful_flush_at: "2026-04-26T10:00:00.000Z",
+            last_failed_flush_at: "2026-04-26T11:00:00.000Z",
+            queue_entries: 1,
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+
+      const health = await runHealth({ path: context.pmPath });
       expect(health.ok).toBe(false);
       expect(health.warnings).toEqual(expect.arrayContaining(["telemetry_queue_pending:1"]));
 
@@ -239,8 +278,8 @@ describe("runHealth", () => {
       expect(telemetryCheck?.status).toBe("warn");
       expect(telemetryCheck?.details).toMatchObject({
         queue_entries: 1,
+        queue_draining: false,
         queue_exists: true,
-        last_successful_flush_at: "2026-04-26T10:11:12.000Z",
       });
     });
   });
