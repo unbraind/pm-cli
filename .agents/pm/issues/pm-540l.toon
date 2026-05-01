@@ -1,0 +1,16 @@
+id: pm-540l
+title: "Code duplication: toErrorMessage and toNonEmptyString across 5+ files"
+description: "toErrorMessage is defined in 5 files (lock.ts, primitives.ts, cache.ts, normalize.ts, update-many.ts) and toNonEmptyString in 5+ files despite canonical exports in primitives.ts. nowIso also duplicated in telemetry/runtime.ts."
+type: Issue
+status: closed
+priority: 2
+tags[3]: code-quality,dedup,pm-cli
+created_at: "2026-05-01T22:37:57.400Z"
+updated_at: "2026-05-01T22:41:59.940Z"
+author: audit-agent
+parent: pm-rrjv
+files[2]{path,scope,note}:
+  src/core/search/cache.ts,project,duplicated toErrorMessage
+  src/core/shared/primitives.ts,project,canonical toErrorMessage/toNonEmptyString
+close_reason: "Deduplicated toErrorMessage (from lock.ts, cache.ts) and nowIso (from runtime.ts) to use canonical imports from primitives.ts and time.ts respectively"
+body: ""

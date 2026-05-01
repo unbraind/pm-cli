@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import type { GlobalOptions } from "../shared/command-types.js";
 import { appendLineAtomic, readFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
+import { nowIso } from "../shared/time.js";
 import { resolveGlobalPmRoot } from "../store/paths.js";
 import { readSettings, writeSettings } from "../store/settings.js";
 
@@ -12,7 +13,7 @@ const TELEMETRY_SCHEMA_VERSION = 1;
 const TELEMETRY_FLUSH_BATCH_SIZE = 100;
 const TELEMETRY_MAX_RETRY_DELAY_MS = 3_600_000;
 const TELEMETRY_RETRY_BASE_DELAY_MS = 30_000;
-const TELEMETRY_HTTP_TIMEOUT_MS = 2_500;
+const TELEMETRY_HTTP_TIMEOUT_MS = 5_000;
 const MILLISECONDS_PER_DAY = 86_400_000;
 const TELEMETRY_MAX_EVENT_BYTES = 65_536;
 const TELEMETRY_SANITIZE_MAX_DEPTH = 6;
@@ -128,9 +129,6 @@ export interface TelemetryCommandContext {
   pm_root: string;
 }
 
-function nowIso(): string {
-  return new Date().toISOString();
-}
 
 function queuePath(globalPmRoot: string): string {
   return path.join(globalPmRoot, TELEMETRY_QUEUE_RELATIVE_PATH);

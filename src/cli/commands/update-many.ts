@@ -6,6 +6,7 @@ import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { toErrorMessage } from "../../core/shared/primitives.js";
 import { nowIso } from "../../core/shared/time.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -499,12 +500,6 @@ function hasListFilters(list: ListOptions, status: string | undefined): boolean 
   );
 }
 
-function toErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return String(error);
-}
 
 function resolveCheckpointAuthor(update: UpdateCommandOptions): string {
   const candidate = update.author ?? process.env.PM_AUTHOR ?? "unknown";

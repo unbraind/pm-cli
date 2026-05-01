@@ -1,0 +1,12 @@
+id: pm-nr8k
+title: "Dead code: root-level facade re-export shims unused"
+description: "Files src/output.ts, src/errors.ts, src/lock.ts, src/id.ts, src/time.ts, src/paths.ts, src/parse.ts, src/constants.ts, src/settings.ts, src/item-store.ts, src/item-format.ts, src/history.ts, src/fs-utils.ts, src/serialization.ts, src/command-types.ts are single-line re-exports of core/ modules but are never imported anywhere. Legacy shims from pre-restructure."
+type: Chore
+status: open
+priority: 3
+tags[3]: code-quality,dead-code,pm-cli
+created_at: "2026-05-01T22:38:06.573Z"
+updated_at: "2026-05-01T22:38:06.573Z"
+author: audit-agent
+parent: pm-rrjv
+body: ""

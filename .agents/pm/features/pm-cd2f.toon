@@ -1,0 +1,14 @@
+id: pm-cd2f
+title: "Performance: list/filter operations scan all 625+ item files on each invocation"
+description: "Every list/search/context/calendar command reads all item files from disk. With 625+ items, this adds 600-1000ms per invocation. A manifest index cache (invalidated on mutations via updated_at tracking) would reduce list operations to near-instant for cached reads. Telemetry confirms P50 for list-open is 732ms, P95 is 2576ms."
+type: Feature
+status: open
+priority: 1
+tags[3]: core,performance,pm-cli
+created_at: "2026-05-01T22:38:17.021Z"
+updated_at: "2026-05-01T22:39:48.910Z"
+author: audit-agent
+parent: pm-rrjv
+files[1]{path,scope,note}:
+  src/core/store/item-store.ts,project,item scan bottleneck
+body: ""

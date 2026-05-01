@@ -1,0 +1,15 @@
+id: pm-sgmb
+title: "Telemetry queue timeout: 21 events stuck with flush timeout"
+description: pm health shows 21 events stuck in telemetry queue with last_failed_flush_error='The operation was aborted due to timeout'. The 2.5s HTTP timeout (TELEMETRY_HTTP_TIMEOUT_MS) may be too aggressive for cold connections. Consider increasing to 5s or implementing connection pooling/keep-alive.
+type: Issue
+status: closed
+priority: 2
+tags[3]: pm-cli,reliability,telemetry
+created_at: "2026-05-01T22:38:45.781Z"
+updated_at: "2026-05-01T22:41:58.172Z"
+author: audit-agent
+parent: pm-rrjv
+files[1]{path,scope,note}:
+  src/core/telemetry/runtime.ts,project,flush timeout at line 14
+close_reason: Increased TELEMETRY_HTTP_TIMEOUT_MS from 2.5s to 5s in runtime.ts to resolve cold connection timeouts
+body: ""

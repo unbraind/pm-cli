@@ -2,6 +2,7 @@ import path from "node:path";
 import { getActiveExtensionRegistrations } from "../extensions/index.js";
 import { pathExists, readFileIfExists, removeFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
 import { resolveItemTypeRegistry } from "../item/type-registry.js";
+import { toErrorMessage } from "../shared/primitives.js";
 import { locateItem, readLocatedItem } from "../store/item-store.js";
 import { getSettingsPath } from "../store/paths.js";
 import { readSettings } from "../store/settings.js";
@@ -47,13 +48,6 @@ function formatInvalidationWarning(relativePath: string, error: unknown): string
   return `search_cache_invalidation_failed:${relativePath}:${String(error)}`;
 }
 
-function toErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    const message = error.message.trim();
-    return message.length > 0 ? message : error.name;
-  }
-  return String(error);
-}
 
 function toUniqueSorted(values: Iterable<string>): string[] {
   return [...new Set([...values].map((value) => value.trim()).filter((value) => value.length > 0))]

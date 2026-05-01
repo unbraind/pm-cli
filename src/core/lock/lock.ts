@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import { runActiveOnReadHooks, runActiveOnWriteHooks, runActiveServiceOverride } from "../extensions/index.js";
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
+import { toErrorMessage } from "../shared/primitives.js";
 import { getLockPath } from "../store/paths.js";
 import { nowIso } from "../shared/time.js";
 
@@ -164,12 +165,6 @@ async function handleExistingLock(
   await unlinkLockWithHook(lockPath, "lock:stale_remove");
 }
 
-function toErrorMessage(error: unknown): string {
-  if (error instanceof Error && error.message.trim().length > 0) {
-    return error.message;
-  }
-  return String(error);
-}
 
 export async function acquireLock(
   pmRoot: string,

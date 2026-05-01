@@ -1,0 +1,12 @@
+id: pm-mve5
+title: "Decision: 2026-05-02 Comprehensive Audit Results"
+description: "Comprehensive audit of pm CLI v2026.5.1-2 covering 10 phases: security, dogfooding, code quality, SDK, vector search, calendar, telemetry, Sentry, performance, and documentation. VERDICT: The pm CLI is in strong shape for a universal, agent-optimized project management tool. Key strengths: excellent error guidance UX, comprehensive extension system (9 capabilities), working hybrid semantic search (qwen3+LanceDB), calendar with 4 views/3 formats, robust telemetry pipeline (32K+ events from 1356 installs). Areas addressed: code duplication (toErrorMessage/nowIso deduplicated), telemetry timeout increased (2.5s->5s). Remaining items tracked: dead facade files, toNonEmptyString signature alignment, item-store performance (P95 2576ms for list), SDK import patterns for extensions, Sentry token scopes."
+type: Decision
+status: closed
+priority: 0
+tags[3]: audit,decision,pm-cli
+created_at: "2026-05-01T22:46:41.664Z"
+updated_at: "2026-05-01T22:46:41.664Z"
+author: audit-agent
+parent: pm-rrjv
+body: ""

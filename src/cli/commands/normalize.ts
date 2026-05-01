@@ -7,6 +7,7 @@ import {
 } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { toErrorMessage } from "../../core/shared/primitives.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemStatus } from "../../types/index.js";
@@ -306,12 +307,6 @@ function toNormalizeWarnings(ruleCounts: NormalizeRuleCount[]): string[] {
     .sort((left, right) => left.localeCompare(right));
 }
 
-function toErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return String(error);
-}
 
 export async function runNormalize(options: NormalizeCommandOptions, global: GlobalOptions): Promise<NormalizeResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);

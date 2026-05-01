@@ -1,0 +1,12 @@
+id: pm-qfuq
+title: "SDK: bundled extensions use internal imports instead of @unbrained/pm-cli/sdk"
+description: "Bundled extensions (beads, todos) import from ../../../../src/core/... instead of @unbrained/pm-cli/sdk. While valid for bundled extensions that ship with the package, this sets a bad example for third-party extension authors. Should either provide a starter template using SDK imports or document that bundled extensions intentionally use internal paths."
+type: Issue
+status: open
+priority: 2
+tags[4]: dx,extensions,pm-cli,sdk
+created_at: "2026-05-01T22:38:55.629Z"
+updated_at: "2026-05-01T22:38:55.629Z"
+author: audit-agent
+parent: pm-rrjv
+body: ""

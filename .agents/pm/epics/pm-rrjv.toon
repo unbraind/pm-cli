@@ -1,0 +1,68 @@
+id: pm-rrjv
+title: 2026-05-02 Comprehensive PM CLI Audit
+description: "Full audit covering code quality, performance, telemetry analysis, SDK review, search, calendar, and extensibility."
+type: Epic
+status: open
+priority: 0
+tags[4]: audit,dogfood,"milestone:0",pm-cli
+created_at: "2026-05-01T22:37:48.560Z"
+updated_at: "2026-05-01T22:39:38.076Z"
+author: audit-agent
+comments[1]{created_at,author,text}:
+  "2026-05-01T22:39:12.421Z",audit-agent,"AUDIT RESULTS (2026-05-02): SECURITY: PASS - No credentials in source (check-secrets.mjs confirms). Private IPs in 2 .toon files are audit artifacts only. Telemetry not documented in public docs. DOGFOOD: PASS - Full lifecycle works (init, create, claim, update, files, notes, comments, close, release). Error guidance is excellent (structured: What/Why/Required/Examples/NextSteps). TOON output is token-efficient. JSON output is machine-parseable. Calendar: 4 views x 3 formats working. SEARCH: PASS - Hybrid mode (keyword+semantic) working. Score 1.0 for exact-match queries. Ollama qwen3-embedding:0.6b + LanceDB integrated correctly. 644 vectorized entries for 625 items. CODE QUALITY: toErrorMessage duplicated in 5 files, toNonEmptyString in 5+ files, nowIso duplicated. 15 dead facade files in src/. main.ts is 237KB monolith but well-structured. TypeScript strict mode passes clean. PERFORMANCE: list P50=732ms P95=2576ms for 625 items. search P50=1544ms P95=9606ms. health P95=7783ms. Startup=600ms. TELEMETRY: 32333 events from 1356 installs. Stack healthy (9 containers). 21 events stuck with timeout. SDK: Comprehensive (117 type exports, 9 capabilities, defineExtension helper). Extensions work."
+notes[1]{created_at,author,text}:
+  "2026-05-01T22:39:30.122Z",audit-agent,"Audit methodology: (1) Security scan via check-secrets.mjs + grep for credentials (2) Sandbox dogfood in /tmp with full lifecycle exercise (3) Code quality analysis via grep for duplicated patterns (4) SDK review of exports + extension examples (5) Search verification with semantic queries against real items (6) Calendar test of all 4 views x 3 formats (7) Telemetry Postgres analysis from remote stack (8) Performance profiling via time command + telemetry P50/P95 data"
+learnings[1]{created_at,author,text}:
+  "2026-05-01T22:39:21.151Z",audit-agent,"Telemetry data from real users is the most valuable signal for prioritization. The top 3 error messages (no update flags, invalid status closed, undefined ID) each suggest specific UX improvements that would prevent confusion. Performance P95 data reveals search and health as the two highest-impact optimization targets."
+files[50]{path,scope,note}:
+  src/core/extensions/extension-types.ts,project,null
+  src/core/extensions/index.ts,project,null
+  src/core/extensions/item-fields.ts,project,null
+  src/core/extensions/loader.ts,project,null
+  src/core/extensions/runtime-registrations.ts,project,null
+  src/core/fs/fs-utils.ts,project,null
+  src/core/fs/index.ts,project,null
+  src/core/history/history-stream-policy.ts,project,null
+  src/core/history/history.ts,project,null
+  src/core/history/index.ts,project,null
+  src/core/item/id.ts,project,null
+  src/core/item/index.ts,project,null
+  src/core/item/item-format.ts,project,null
+  src/core/item/parent-reference-policy.ts,project,null
+  src/core/item/parse.ts,project,null
+  src/core/item/sprint-release-format.ts,project,null
+  src/core/item/status.ts,project,null
+  src/core/item/type-registry.ts,project,null
+  src/core/lock/index.ts,project,null
+  src/core/lock/lock.ts,project,null
+  src/core/output/command-aware.ts,project,null
+  src/core/output/output.ts,project,null
+  src/core/schema/runtime-field-filters.ts,project,null
+  src/core/schema/runtime-field-values.ts,project,null
+  src/core/schema/runtime-schema.ts,project,null
+  src/core/search/cache.ts,project,null
+  src/core/search/embedding-batches.ts,project,null
+  src/core/search/providers.ts,project,null
+  src/core/search/semantic-defaults.ts,project,null
+  src/core/search/vector-stores.ts,project,null
+  src/core/sentry/helpers.ts,project,null
+  src/core/sentry/instrument.ts,project,null
+  src/core/shared/command-types.ts,project,null
+  src/core/shared/conflict-markers.ts,project,null
+  src/core/shared/constants.ts,project,null
+  src/core/shared/errors.ts,project,null
+  src/core/shared/index.ts,project,null
+  src/core/shared/primitives.ts,project,null
+  src/core/shared/serialization.ts,project,null
+  src/core/shared/text-normalization.ts,project,null
+  src/core/shared/time.ts,project,null
+  src/core/store/index.ts,project,null
+  src/core/store/item-format-migration.ts,project,null
+  src/core/store/item-store.ts,project,null
+  src/core/store/paths.ts,project,null
+  src/core/store/settings.ts,project,null
+  src/core/telemetry/consent.ts,project,null
+  src/core/telemetry/runtime.ts,project,null
+  src/core/test/background-runs.ts,project,null
+  src/core/test/item-test-run-tracking.ts,project,null
+body: ""
