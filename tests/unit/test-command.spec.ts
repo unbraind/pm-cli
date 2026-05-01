@@ -1688,7 +1688,7 @@ describe("runTest", () => {
         id,
         {
           add: [
-            "command=node -e \"process.kill(process.pid,'SIGTERM')\",scope=project,timeout_seconds=5",
+            "command=PM_SIGNAL_TARGET=$$ node -e \"process.kill(Number(process.env.PM_SIGNAL_TARGET),'SIGTERM')\",scope=project,timeout_seconds=5",
             "command=node -e \"setTimeout(() => {}, 2000)\" && echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,scope=project,timeout_seconds=1",
             'command=node -e "process.stdout.write(\'x\'.repeat(22 * 1024 * 1024))",scope=project,timeout_seconds=20',
           ],
