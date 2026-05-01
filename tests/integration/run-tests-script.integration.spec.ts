@@ -24,7 +24,8 @@ describe("scripts/run-tests.mjs", () => {
       );
 
       const combinedOutput = `${result.stdout}\n${result.stderr}`;
-      expect(result.status).toBe(0);
+      expect(result.error, combinedOutput).toBeUndefined();
+      expect(result.status, combinedOutput).toBe(0);
       const cleanOutput = combinedOutput.replace(/\x1b\[[0-9;]*m/g, "");
       const normalizedOutput = cleanOutput.replace(/\\/g, "/");
       expect(normalizedOutput).toContain("tests/unit/status-normalization.spec.ts");

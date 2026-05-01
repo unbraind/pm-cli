@@ -31,6 +31,7 @@ async function run() {
   const pmPath = path.join(tempRoot, "project", ".agents", "pm");
   const pmGlobalPath = path.join(tempRoot, "global");
   const pnpmCommand = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
+  const vitestEntry = path.join(process.cwd(), "node_modules", "vitest", "vitest.mjs");
   const passthroughArgs = process.argv.slice(3);
   const normalizedVitestArgs =
     passthroughArgs[0] === "--" ? passthroughArgs.slice(1) : passthroughArgs;
@@ -69,8 +70,8 @@ async function run() {
 
     const vitestExitCode = await new Promise((resolve, reject) => {
       const child = spawn(
-        pnpmCommand,
-        ["exec", "vitest", "run", ...MODE_TO_VITEST_ARGS[resolved.mode], ...normalizedVitestArgs],
+        process.execPath,
+        [vitestEntry, "run", ...MODE_TO_VITEST_ARGS[resolved.mode], ...normalizedVitestArgs],
         {
           cwd: process.cwd(),
           env: baseEnv,
