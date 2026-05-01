@@ -6,17 +6,19 @@ status: in_progress
 priority: 0
 tags[6]: changelog,compatibility,migration,pm-cli,publishing,release
 created_at: "2026-05-01T08:23:13.900Z"
-updated_at: "2026-05-01T09:17:54.436Z"
+updated_at: "2026-05-01T09:30:39.785Z"
 deadline: "2026-05-02T08:23:13.900Z"
 assignee: codex-release-agent
 author: codex-release-agent
 estimated_minutes: 240
 acceptance_criteria: Previous-version tracker data migrates without loss; CHANGELOG.md and generated release notes cover changes since v2026.3.12; release workflow is documented and stable without paid GitHub features; npm/npx and bun/bunx install paths are verified after publication.
 parent: pm-3fti
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-05-01T08:23:13.900Z",codex-release-agent,"Duplicate check before create: ran pm context --limit 10,pm search 'release changelog publishing migration compatibility' --limit 10,pm list-open --limit 20,and pm list-in-progress --limit 20. Only closed release chores pm-lz4m/pm-1h88 matched the release scope; active parent lineage selected as pm-23me -> pm-3fti for latest-build audit/release work."
   "2026-05-01T08:56:27.774Z",codex-release-agent,"Release gate evidence so far: pnpm typecheck passed; pnpm version:check passed for 2026.5.1; node scripts/release-version.mjs check --tag v2026.5.1 --verify-next --date 2026.5.1 passed; pnpm security:scan found no credential-like secrets; npm pack --dry-run produced @unbrained/pm-cli@2026.5.1 tarball; pnpm release:notes generated /tmp/pm-cli-release-notes.md from CHANGELOG.md and sanitized pm data; targeted workflow/migration tests passed; pnpm test passed 81 files/1087 tests; pnpm test:coverage and node scripts/run-tests.mjs coverage both passed with 100% coverage; pnpm smoke:npx passed for 2026.5.1; pm test --run passed for pm-x6ni and pm-yvwt. Validation sweeps report only pre-existing tracker hygiene warnings tracked by pm-e0b5: 18 closed-item resolution backfills, 3 history hash mismatches, and 3 missing linked paths."
   "2026-05-01T09:17:54.436Z",codex-release-agent,"GitHub release run 25208873431 failed before publish in the coverage gate because the signal-progress test fixture let Node 20 surface SIGTERM as shell exit 143. Fixed the fixture to signal the spawned shell PID deterministically. Evidence: Node 25 and Node 20 targeted tests passed; pnpm test:coverage passed 81 files/1087 tests/100%; node scripts/run-tests.mjs coverage passed 81 files/1087 tests/100%; pm test pm-x6ni --run --progress passed 2 linked tests."
+  "2026-05-01T09:29:33.299Z",codex-release-agent,"GitHub release run 25209384334 passed build, typecheck, both coverage gates, package smoke, npx smoke, and release-note generation, then failed at npm publish with E422 provenance repository mismatch: package.json repository.url was git+https://github.com/unbrained/pm-cli.git while provenance source was https://github.com/unbraind/pm-cli. Next fix: correct package metadata to match the GitHub source before retrying publish."
+  "2026-05-01T09:30:39.785Z",codex-release-agent,"Corrected package.json repository/homepage/bugs metadata to canonical https://github.com/unbraind/pm-cli so npm provenance can verify the GitHub Actions source. Updated CHANGELOG.md and docs/RELEASING.md with the provenance requirement. Evidence: npm still reports @unbrained/pm-cli@2026.5.1 as unpublished after the failed run; npm pack --dry-run passed without repository normalization warning; pnpm release:notes generated notes; pnpm security:scan passed; pnpm typecheck passed; version policy check passed."
 notes[1]{created_at,author,text}:
   "2026-05-01T08:23:13.900Z",codex-release-agent,Release must be blocked until a temp project created with the previous published CLI version is verified against the current build for automatic migration/backward compatibility.
 files[9]{path,scope,note}:

@@ -4,13 +4,13 @@
   "description": "Git-native project management CLI for humans and agents.",
   "type": "module",
   "author": "unbrained",
-  "homepage": "https://github.com/unbrained/pm-cli#readme",
+  "homepage": "https://github.com/unbraind/pm-cli#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/unbrained/pm-cli.git"
+    "url": "git+https://github.com/unbraind/pm-cli.git"
   },
   "bugs": {
-    "url": "https://github.com/unbrained/pm-cli/issues"
+    "url": "https://github.com/unbraind/pm-cli/issues"
   },
   "bin": {
     "pm": "dist/cli.js"

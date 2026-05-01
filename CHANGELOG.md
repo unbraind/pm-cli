@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed first-mutation compatibility for trackers created by `@unbrained/pm-cli@2026.3.12`: legacy settings that omit `item_format` now auto-select the current default format and run the existing pre-mutation item-file migration instead of blocking writes, preserving existing items, linked artifacts, comments, close metadata, and history integrity.
+- Fixed npm package repository metadata so provenance publishing validates against the canonical `unbraind/pm-cli` GitHub source repository.
 
 ### Added
 - Added `scripts/generate-release-notes.mjs` and `pnpm release:notes` to generate GitHub release notes from `CHANGELOG.md` plus sanitized `pm` tracker metadata.

@@ -28,6 +28,7 @@ The release workflow enforces the package version, tag name, calendar date, and 
 - If using an Environment named `release`, keep it free-feature compatible: no paid-only reviewer or deployment-protection requirements.
 - Ensure `GITHUB_TOKEN` has the default workflow permission needed by `permissions: contents: write` for GitHub Release creation.
 - Keep npm two-factor settings compatible with automation tokens and provenance publishing.
+- Keep `package.json` repository, homepage, and bugs URLs aligned with the canonical GitHub source repository (`https://github.com/unbraind/pm-cli`); npm provenance validation rejects mismatched repository metadata.
 
 ## Local Release Checklist
 
