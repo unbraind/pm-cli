@@ -9,7 +9,7 @@ describe("scripts/run-tests.mjs", () => {
   it(
     "forwards targeted Vitest file filters in sandbox mode",
     () => {
-      const targetSpec = path.join("tests", "unit", "status-normalization.spec.ts");
+      const targetSpec = path.posix.join("tests", "unit", "status-normalization.spec.ts");
       const result = spawnSync(
         process.execPath,
         ["scripts/run-tests.mjs", "test", "--", "--reporter=verbose", targetSpec],

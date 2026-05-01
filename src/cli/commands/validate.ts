@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { realpathSync } from "node:fs";
 import type { Dirent } from "node:fs";
 import { execFile } from "node:child_process";
 import path from "node:path";
@@ -414,7 +415,9 @@ function resolveWorkspaceRoot(pmRoot: string): string {
     return path.dirname(path.dirname(resolvedPmRoot));
   }
   const resolvedCwd = path.resolve(process.cwd());
-  const relativeFromPmRoot = path.relative(resolvedPmRoot, resolvedCwd);
+  const canonicalPmRoot = realpathForWorkspaceRoot(resolvedPmRoot);
+  const canonicalCwd = realpathForWorkspaceRoot(resolvedCwd);
+  const relativeFromPmRoot = path.relative(canonicalPmRoot, canonicalCwd);
   const cwdInsidePmRoot =
     relativeFromPmRoot.length === 0 ||
     (!relativeFromPmRoot.startsWith("..") && !path.isAbsolute(relativeFromPmRoot));
@@ -423,6 +426,14 @@ function resolveWorkspaceRoot(pmRoot: string): string {
   }
   /* c8 ignore next 2 -- non-standard PM root layouts are integration-only edge cases. */
   return resolvedCwd;
+}
+
+function realpathForWorkspaceRoot(inputPath: string): string {
+  try {
+    return realpathSync.native(inputPath);
+  } catch {
+    return path.resolve(inputPath);
+  }
 }
 
 async function listFilesRecursive(basePath: string, relativePath: string, output: string[]): Promise<void> {

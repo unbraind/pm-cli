@@ -1,0 +1,33 @@
+id: pm-7d3m
+title: Stabilize post-release cross-platform CI tests
+description: Fix macOS and Windows CI regressions from post-release workflow run 25210023872 without moving the published 2026.5.1 release tag.
+type: Issue
+status: in_progress
+priority: 0
+tags[5]: ci,cross-platform,pm-cli,release,tests
+created_at: "2026-05-01T10:01:56.427Z"
+updated_at: "2026-05-01T10:12:42.617Z"
+deadline: "2026-05-02T10:01:56.427Z"
+assignee: codex-release-agent
+author: codex-release-agent
+estimated_minutes: 60
+acceptance_criteria: "Main-branch CI passes on Linux, macOS, and Windows after focused cross-platform test fixes; changed files and verification are linked; release tag v2026.5.1 remains published at the verified release commit."
+parent: pm-3fti
+comments[2]{created_at,author,text}:
+  "2026-05-01T10:01:56.427Z",codex-release-agent,"Duplicate check before create: pm context --limit 10 showed active parent pm-3fti plus tracker hygiene only; pm search 'windows macos ci path signal fixture' returned closed historical CI work only; pm list-open/list-in-progress found no active CI hardening item. Net-new issue is required for GitHub Actions run 25210023872 failures."
+  "2026-05-01T10:12:42.617Z",codex-release-agent,"Implemented cross-platform CI hardening: files discover and validate now compare canonical real paths for containment while preserving stable output; Windows-sensitive tests no longer depend on shell-only quoting or exact temp-path aliases. Evidence: node scripts/run-tests.mjs test -- failed CI suites passed 5 files/149 tests; pnpm typecheck passed; git diff --check passed; node scripts/run-tests.mjs coverage passed 81 files/1087 tests with 100% coverage; pm test pm-7d3m --run --progress passed linked test."
+notes[1]{created_at,author,text}:
+  "2026-05-01T10:01:56.427Z",codex-release-agent,Do not move or republish v2026.5.1 for test-only CI hardening after release publication.
+files[7]{path,scope,note}:
+  tests/integration/cli.integration.spec.ts,project,macOS file discovery count failure
+  tests/unit/validate-command.spec.ts,project,macOS tracker-root path alias failure
+  tests/integration/run-tests-script.integration.spec.ts,project,Windows targeted filter path failure
+  tests/unit/files-docs-command.spec.ts,project,Windows original path spelling failure
+  tests/unit/test-command.spec.ts,project,Windows shell quoting and signal fixture failures
+  src/cli/commands/files.ts,project,canonical containment for discovered file paths
+  src/cli/commands/validate.ts,project,canonical workspace-root containment for validate
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/run-tests-script.integration.spec.ts tests/unit/files-docs-command.spec.ts tests/unit/test-command.spec.ts tests/unit/validate-command.spec.ts,null,project,360,null,null,null,null,null,null,null,null,null,null,null,failed CI suites
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-momr775z-0kr7ic,test,passed,"2026-05-01T10:10:07.074Z","2026-05-01T10:12:07.559Z","2026-05-01T10:12:07.559Z",null,null,1,0,0,null,null,null
+body: GitHub Actions run 25210023872 failed after the 2026.5.1 release verification commit. macOS exposed path alias and file discovery count assumptions; Windows exposed path spelling and shell quoting assumptions. The fix must keep release artifacts unchanged and harden tests/workflow signal only.

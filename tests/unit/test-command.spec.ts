@@ -1319,7 +1319,8 @@ describe("runTest", () => {
 
       await overwriteTaskTests(context, id, [
         {
-          command: "node -e 'process.stdout.write(JSON.stringify({flag:true,nil:null,obj:{a:1},literal:\"{bad}\",count:2,label:\"ok\"}))'",
+          command:
+            "node -e \"process.stdout.write(JSON.stringify({flag:true,nil:null,obj:{a:1},literal:'{bad}',count:2,label:'ok'}))\"",
           scope: "project",
           assert_stdout_min_lines: 1,
           assert_json_field_equals: {
@@ -1684,11 +1685,16 @@ describe("runTest", () => {
   it("records progress failure reasons for timeout, max-buffer, and signal failures", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "linked-test-progress-failure-reasons");
+      const includeSignalFixture = process.platform !== "win32";
       await runTest(
         id,
         {
           add: [
-            "command=PM_SIGNAL_TARGET=$$ node -e \"process.kill(Number(process.env.PM_SIGNAL_TARGET),'SIGTERM')\",scope=project,timeout_seconds=5",
+            ...(includeSignalFixture
+              ? [
+                  "command=PM_SIGNAL_TARGET=$$ node -e \"process.kill(Number(process.env.PM_SIGNAL_TARGET),'SIGTERM')\",scope=project,timeout_seconds=5",
+                ]
+              : []),
             "command=node -e \"setTimeout(() => {}, 2000)\" && echo xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,scope=project,timeout_seconds=1",
             'command=node -e "process.stdout.write(\'x\'.repeat(22 * 1024 * 1024))",scope=project,timeout_seconds=20',
           ],
@@ -1714,17 +1720,19 @@ describe("runTest", () => {
           },
           { path: context.pmPath },
         );
-        expect(run.run_results).toHaveLength(3);
+        expect(run.run_results).toHaveLength(includeSignalFixture ? 3 : 2);
         const categories = run.run_results
           .filter((entry) => entry.status === "failed")
           .map((entry) => entry.failure_category)
           .sort();
-        expect(categories).toEqual(["max_buffer", "signal", "timeout"]);
+        expect(categories).toEqual(includeSignalFixture ? ["max_buffer", "signal", "timeout"] : ["max_buffer", "timeout"]);
 
         const stderrOutput = stderrWriteSpy.mock.calls.map((entry) => String(entry[0])).join("");
         expect(stderrOutput).toContain("reason=timeout");
         expect(stderrOutput).toContain("reason=max_buffer");
-        expect(stderrOutput).toContain("signal=SIGTERM");
+        if (includeSignalFixture) {
+          expect(stderrOutput).toContain("signal=SIGTERM");
+        }
       } finally {
         if (previousHeartbeatInterval === undefined) {
           delete process.env.PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS;

@@ -214,6 +214,14 @@ function isPathInside(parentPath: string, childPath: string): boolean {
   return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
 }
 
+async function realpathForContainment(inputPath: string): Promise<string> {
+  try {
+    return await fs.realpath(inputPath);
+  } catch {
+    return path.resolve(inputPath);
+  }
+}
+
 function linkedFileResolvedKey(linkedFile: Pick<LinkedFile, "path" | "scope">, projectRoot: string): string {
   const resolvedPath = path.isAbsolute(linkedFile.path)
     ? path.resolve(linkedFile.path)
@@ -389,8 +397,12 @@ async function resolveDiscoveredFile(
   if (!stats.isFile()) {
     return undefined;
   }
-  if (isPathInside(projectRoot, absolutePath)) {
-    const relativePath = path.relative(projectRoot, absolutePath);
+  const [canonicalProjectRoot, canonicalAbsolutePath] = await Promise.all([
+    realpathForContainment(projectRoot),
+    realpathForContainment(absolutePath),
+  ]);
+  if (isPathInside(canonicalProjectRoot, canonicalAbsolutePath)) {
+    const relativePath = path.relative(canonicalProjectRoot, canonicalAbsolutePath);
     if (!relativePath || relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
       return undefined;
     }

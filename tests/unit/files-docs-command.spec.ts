@@ -103,6 +103,10 @@ function normalizeLinkedPath(value: string): string {
   return value.split(path.sep).join("/");
 }
 
+function normalizeAnyPath(value: string): string {
+  return value.replace(/\\/g, "/");
+}
+
 async function assertAuthorResolution(
   context: TempPmContext,
   runLink: RunLinkCommand,
@@ -509,7 +513,9 @@ describe("runFiles", () => {
         const discoveredCandidate = dryRun.candidates.find((entry) => entry.path === "src/discovered.ts");
         expect(discoveredCandidate?.source_fields).toContain("body");
         expect(discoveredCandidate?.source_count).toBeGreaterThanOrEqual(2);
-        expect(discoveredCandidate?.original_paths).toContain(normalizeLinkedPath(path.join(projectRoot, "src", "discovered.ts")));
+        const discoveredOriginalPaths = (discoveredCandidate?.original_paths ?? []).map(normalizeAnyPath);
+        expect(discoveredOriginalPaths).toContain("src/discovered.ts");
+        expect(discoveredOriginalPaths.some((entry) => entry.endsWith("/src/discovered.ts"))).toBe(true);
         expect(dryRun.candidates.find((entry) => entry.path === normalizeLinkedPath(globalFile))?.scope).toBe("global");
 
         const applied = await runFilesDiscover(
