@@ -2,23 +2,26 @@ id: pm-x6ni
 title: Release @unbrained/pm-cli after 2026.3.12
 description: "Prepare, verify, publish, and document the next pm CLI release from the current main branch."
 type: Chore
-status: in_progress
+status: closed
 priority: 0
 tags[6]: changelog,compatibility,migration,pm-cli,publishing,release
 created_at: "2026-05-01T08:23:13.900Z"
-updated_at: "2026-05-01T09:30:39.785Z"
+updated_at: "2026-05-01T09:43:31.646Z"
 deadline: "2026-05-02T08:23:13.900Z"
-assignee: codex-release-agent
 author: codex-release-agent
 estimated_minutes: 240
 acceptance_criteria: Previous-version tracker data migrates without loss; CHANGELOG.md and generated release notes cover changes since v2026.3.12; release workflow is documented and stable without paid GitHub features; npm/npx and bun/bunx install paths are verified after publication.
 parent: pm-3fti
-comments[5]{created_at,author,text}:
+resolution: "Released 2026.5.1 after migration compatibility fix, release-note automation, provenance metadata correction, and successful npm/GitHub publication verification."
+expected_result: 2026.5.1 release published through GitHub workflow with npm/npx/bunx/GitHub verification and no legacy tracker data breakage.
+actual_result: "Release workflow 25209696412 succeeded; npm, npx, bunx, and GitHub Release verification all returned 2026.5.1; previous-version tracker compatibility migrated cleanly."
+comments[6]{created_at,author,text}:
   "2026-05-01T08:23:13.900Z",codex-release-agent,"Duplicate check before create: ran pm context --limit 10,pm search 'release changelog publishing migration compatibility' --limit 10,pm list-open --limit 20,and pm list-in-progress --limit 20. Only closed release chores pm-lz4m/pm-1h88 matched the release scope; active parent lineage selected as pm-23me -> pm-3fti for latest-build audit/release work."
   "2026-05-01T08:56:27.774Z",codex-release-agent,"Release gate evidence so far: pnpm typecheck passed; pnpm version:check passed for 2026.5.1; node scripts/release-version.mjs check --tag v2026.5.1 --verify-next --date 2026.5.1 passed; pnpm security:scan found no credential-like secrets; npm pack --dry-run produced @unbrained/pm-cli@2026.5.1 tarball; pnpm release:notes generated /tmp/pm-cli-release-notes.md from CHANGELOG.md and sanitized pm data; targeted workflow/migration tests passed; pnpm test passed 81 files/1087 tests; pnpm test:coverage and node scripts/run-tests.mjs coverage both passed with 100% coverage; pnpm smoke:npx passed for 2026.5.1; pm test --run passed for pm-x6ni and pm-yvwt. Validation sweeps report only pre-existing tracker hygiene warnings tracked by pm-e0b5: 18 closed-item resolution backfills, 3 history hash mismatches, and 3 missing linked paths."
   "2026-05-01T09:17:54.436Z",codex-release-agent,"GitHub release run 25208873431 failed before publish in the coverage gate because the signal-progress test fixture let Node 20 surface SIGTERM as shell exit 143. Fixed the fixture to signal the spawned shell PID deterministically. Evidence: Node 25 and Node 20 targeted tests passed; pnpm test:coverage passed 81 files/1087 tests/100%; node scripts/run-tests.mjs coverage passed 81 files/1087 tests/100%; pm test pm-x6ni --run --progress passed 2 linked tests."
   "2026-05-01T09:29:33.299Z",codex-release-agent,"GitHub release run 25209384334 passed build, typecheck, both coverage gates, package smoke, npx smoke, and release-note generation, then failed at npm publish with E422 provenance repository mismatch: package.json repository.url was git+https://github.com/unbrained/pm-cli.git while provenance source was https://github.com/unbraind/pm-cli. Next fix: correct package metadata to match the GitHub source before retrying publish."
   "2026-05-01T09:30:39.785Z",codex-release-agent,"Corrected package.json repository/homepage/bugs metadata to canonical https://github.com/unbraind/pm-cli so npm provenance can verify the GitHub Actions source. Updated CHANGELOG.md and docs/RELEASING.md with the provenance requirement. Evidence: npm still reports @unbrained/pm-cli@2026.5.1 as unpublished after the failed run; npm pack --dry-run passed without repository normalization warning; pnpm release:notes generated notes; pnpm security:scan passed; pnpm typecheck passed; version policy check passed."
+  "2026-05-01T09:42:56.467Z",codex-release-agent,"Final release evidence: GitHub Release workflow run 25209696412 completed successfully with build, typecheck, secret scan, pnpm test:coverage, sandboxed pm coverage, npm pack, npx smoke, generated release notes, artifact uploads, npm publish, and GitHub Release creation all passed. Published package verification passed: npm view @unbrained/pm-cli@2026.5.1 returned version 2026.5.1 with dist integrity sha512-Q3y0bOyv0hlsQllyPK3ThCCbucXCO9B0Elk+rV0BFqJ5vP8i7UQxd0e3Ia1E2osDRe2Qk1XYNSRZI/9nfStpKw== and unpackedSize 3809929; npx --yes @unbrained/pm-cli@2026.5.1 --version returned 2026.5.1; bun 1.3.11 bunx @unbrained/pm-cli@2026.5.1 --version returned 2026.5.1; GitHub release v2026.5.1 is published, non-draft, non-prerelease at https://github.com/unbraind/pm-cli/releases/tag/v2026.5.1. Tag v2026.5.1 points to 61f6ac6a9e2abde5f9831b75f1cd06ae1a8d67fc."
 notes[1]{created_at,author,text}:
   "2026-05-01T08:23:13.900Z",codex-release-agent,Release must be blocked until a temp project created with the previous published CLI version is verified against the current build for automatic migration/backward compatibility.
 files[9]{path,scope,note}:
@@ -37,4 +40,5 @@ tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-momogj3e-ko1amb,test,passed,"2026-05-01T08:54:51.652Z","2026-05-01T08:55:24.075Z","2026-05-01T08:55:24.075Z",null,null,1,0,0,null,null,null
   test-local-momp95hq-5oy5tw,test,passed,"2026-05-01T09:17:22.237Z","2026-05-01T09:17:39.470Z","2026-05-01T09:17:39.470Z",null,null,2,0,0,null,null,null
+close_reason: 2026.5.1 published and verified via GitHub Release workflow 25209696412; previous-version tracker migration passed; npm/npx/bunx/GitHub verification all returned 2026.5.1.
 body: ""
