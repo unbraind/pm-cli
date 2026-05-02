@@ -6,8 +6,10 @@ status: closed
 priority: 3
 tags[3]: monitoring,pm-cli,sentry
 created_at: "2026-05-01T22:38:36.842Z"
-updated_at: "2026-05-01T23:08:48.057Z"
+updated_at: "2026-05-01T23:43:55.257Z"
 author: audit-agent
 parent: pm-rrjv
+comments[1]{created_at,author,text}:
+  "2026-05-01T23:43:55.257Z",audit-agent,"2026-05-02 Sentry analysis: 8 issues total, all are PmCliError (validation errors, not crashes). PM-CLI-7/8 are audit probes. PM-CLI-1 is setup verification. Real user issues: PM-CLI-2 (no update flags), PM-CLI-3/4 (note/file parse errors), PM-CLI-5 (status via update instead of close), PM-CLI-6 (already-terminal close). Zero unhandled exceptions. Error guidance already good. Scrubbing confirmed working: no PII in any Sentry event."
 close_reason: Sentry CLI successfully queried 5 issues using SENTRY_AUTH_TOKEN with personal admin token. Token scopes are sufficient for issue list/analysis. Full analysis report created at scripts/prod/telemetry/reports/2026-05-02-sentry-analysis.md.
 body: ""

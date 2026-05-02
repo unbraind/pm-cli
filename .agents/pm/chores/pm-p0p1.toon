@@ -1,0 +1,12 @@
+id: pm-p0p1
+title: Extract shared HTTP fetch/timeout/error patterns from providers.ts and vector-stores.ts
+description: "providers.ts and vector-stores.ts share normalizeTimeoutMs, readFailedResponseBody, fetch wrappers. Extract into shared http-client utility."
+type: Chore
+status: open
+priority: 3
+tags[3]: code-quality,pm-cli,search
+created_at: "2026-05-01T23:39:02.682Z"
+updated_at: "2026-05-01T23:46:52.089Z"
+author: audit-agent
+parent: pm-nnhi
+body: ""

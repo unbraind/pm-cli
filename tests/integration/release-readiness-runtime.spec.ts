@@ -1579,6 +1579,8 @@ describe("release readiness runtime coverage", () => {
       "src/core/schema/runtime-field-filters.ts",
       "src/core/schema/runtime-field-values.ts",
       "src/core/schema/runtime-schema.ts",
+      "src/core/sentry/helpers.ts",
+      "src/core/sentry/instrument.ts",
       "src/core/shared/primitives.ts",
       "src/core/shared/text-normalization.ts",
       "src/core/telemetry/consent.ts",
