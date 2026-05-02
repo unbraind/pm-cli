@@ -6,8 +6,11 @@ status: closed
 priority: 3
 tags[3]: code-quality,dead-code,pm-cli
 created_at: "2026-05-01T22:38:06.573Z"
-updated_at: "2026-05-01T22:57:00.018Z"
+updated_at: "2026-05-02T07:15:35.119Z"
 author: audit-agent
 parent: pm-rrjv
+resolution: "Resolution normalized from close_reason: Removed 15 dead facade re-export shims: output.ts, errors.ts, lock.ts, id.ts, time.ts, paths.ts, parse.ts, constants.ts, settings.ts, item-store.ts, item-format.ts, history.ts, fs-utils.ts, serialization.ts, command-types.ts. Build passes clean."
+expected_result: "Expected closure outcome: Removed 15 dead facade re-export shims: output.ts, errors.ts, lock.ts, id.ts, time.ts, paths.ts, parse.ts, constants.ts, settings.ts, item-store.ts, item-format.ts, history.ts, fs-utils.ts, serialization.ts, command-types.ts. Build passes clean."
+actual_result: "Actual closure outcome: Removed 15 dead facade re-export shims: output.ts, errors.ts, lock.ts, id.ts, time.ts, paths.ts, parse.ts, constants.ts, settings.ts, item-store.ts, item-format.ts, history.ts, fs-utils.ts, serialization.ts, command-types.ts. Build passes clean."
 close_reason: "Removed 15 dead facade re-export shims: output.ts, errors.ts, lock.ts, id.ts, time.ts, paths.ts, parse.ts, constants.ts, settings.ts, item-store.ts, item-format.ts, history.ts, fs-utils.ts, serialization.ts, command-types.ts. Build passes clean."
 body: ""

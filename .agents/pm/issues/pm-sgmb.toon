@@ -6,9 +6,12 @@ status: closed
 priority: 2
 tags[3]: pm-cli,reliability,telemetry
 created_at: "2026-05-01T22:38:45.781Z"
-updated_at: "2026-05-01T22:41:58.172Z"
+updated_at: "2026-05-02T07:15:35.145Z"
 author: audit-agent
 parent: pm-rrjv
+resolution: "Resolution normalized from close_reason: Increased TELEMETRY_HTTP_TIMEOUT_MS from 2.5s to 5s in runtime.ts to resolve cold connection timeouts"
+expected_result: "Expected closure outcome: Increased TELEMETRY_HTTP_TIMEOUT_MS from 2.5s to 5s in runtime.ts to resolve cold connection timeouts"
+actual_result: "Actual closure outcome: Increased TELEMETRY_HTTP_TIMEOUT_MS from 2.5s to 5s in runtime.ts to resolve cold connection timeouts"
 files[1]{path,scope,note}:
   src/core/telemetry/runtime.ts,project,flush timeout at line 14
 close_reason: Increased TELEMETRY_HTTP_TIMEOUT_MS from 2.5s to 5s in runtime.ts to resolve cold connection timeouts

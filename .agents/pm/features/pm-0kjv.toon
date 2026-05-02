@@ -17,7 +17,7 @@ dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-2eb3,parent,"2026-05-01T18:04:41.968Z",audit-agent,null
   pm-ntr0,related,"2026-05-01T18:04:41.968Z",audit-agent,null
 comments[2]{created_at,author,text}:
-  "2026-05-01T18:04:41.968Z",audit-agent,"Evidence: SSH to 192.168.1.183 confirmed 9 containers running. RabbitMQ queue pm.telemetry.events has 0 pending/1 consumer. Postgres telemetry_events table has 29700 rows. Recent dogfood events visible with source_context=dogfood. Endpoint accepts valid UUID events with HTTP 200."
+  "2026-05-01T18:04:41.968Z",audit-agent,"Evidence: SSH to [redacted_host] confirmed 9 containers running. RabbitMQ queue pm.telemetry.events has 0 pending/1 consumer. Postgres telemetry_events table has 29700 rows. Recent dogfood events visible with source_context=dogfood. Endpoint accepts valid UUID events with HTTP 200."
   "2026-05-01T22:54:09.011Z",audit-agent,"SECURITY AUDIT: Historical comment contains a private IP reference from telemetry audit evidence. No credentials exposed."
 files[2]{path,scope,note}:
   src/core/telemetry/runtime.ts,project,telemetry runtime verified

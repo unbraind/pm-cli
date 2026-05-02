@@ -1,0 +1,26 @@
+id: pm-2326
+title: "Chore: 2026-05-02 Phase 3 Audit - IP scrub, dogfood, analysis tooling"
+description: "Comprehensive audit session Phase 3: scrubbed 16 files with private IP leaks, ran full dogfood test matrix (67/67 commands), created telemetry analysis tooling, verified Sentry/telemetry stack health, documented findings"
+type: Chore
+status: closed
+priority: 2
+tags[5]: audit,code-quality,pm-cli,security,telemetry
+created_at: "2026-05-02T07:25:27.182Z"
+updated_at: "2026-05-02T07:26:16.192Z"
+author: audit-agent
+acceptance_criteria: All private IPs scrubbed from git-tracked files; dogfood tests pass; telemetry stack healthy; analysis scripts created; findings documented
+parent: pm-kkmo
+resolution: "All audit phases completed: security scrub (16 files), dogfood (67/67), search verified, SDK reviewed, calendar tested, output optimized, code quality scanned, telemetry analyzed, findings documented"
+expected_result: Full audit with zero regressions found
+actual_result: "All systems functional, 8 Sentry issues are user errors not bugs, 3 unused deps/files identified for cleanup"
+notes[1]{created_at,author,text}:
+  "2026-05-02T07:25:53.015Z",audit-agent,"Audit evidence: 81 test files pass (1087 tests); dogfood matrix 67/67 in /tmp/pm-dogfood-audit-20260502-091551; search semantic/keyword/hybrid all working; Sentry has 8 PmCliError issues (all user input errors, no bugs); telemetry API healthy; TOON output 30-40% smaller than JSON."
+learnings[1]{created_at,author,text}:
+  "2026-05-02T07:25:57.073Z",audit-agent,Private IPs in pm items were from prior audit evidence that referenced SSH commands. Future evidence must use domain names only. The check-secrets.mjs catches these patterns. The command-aware.ts module is unused but contains valuable agent UX code that should be integrated.
+files[4]{path,scope,note}:
+  scripts/check-secrets.mjs,project,Secret scanner verified
+  scripts/prod/telemetry/README.md,project,Telemetry stack documentation
+  scripts/prod/telemetry/sentry-summary.sh,project,Sentry analysis script
+  scripts/prod/telemetry/stack-health.sh,project,Stack health check script
+close_reason: "Phase 3 audit complete: all 10 phases executed, findings documented, IP scrub applied, analysis tooling created"
+body: "Findings:\n1. SECURITY: Scrubbed 192.168.x.x from 16 git-tracked pm item/history files\n2. TESTS: 81 files, 1087 tests pass; 67/67 dogfood commands verified\n3. SEARCH: Semantic/keyword/hybrid all working; 643 indexed items, 0 stale\n4. CODE QUALITY: command-aware.ts unused but valuable; undici+c8 unused deps; normalizeTimeoutMs duplicated in providers.ts and vector-stores.ts\n5. TELEMETRY: Stack healthy (API healthz OK, Grafana 302); analysis scripts in scripts/prod/telemetry/\n6. SENTRY: 8 issues all PmCliError (user input); scrubbing working; 20% trace rate appropriate\n7. CALENDAR: All views/formats/filters/recurrence working\n8. SDK: All 9 capability types exported; starter extension comprehensive\n9. OUTPUT: TOON 30-40% smaller than JSON; errors include structured next_steps/examples"

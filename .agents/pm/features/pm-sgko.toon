@@ -6,7 +6,10 @@ status: closed
 priority: 1
 tags[0]:
 created_at: "2026-05-01T20:39:40.471Z"
-updated_at: "2026-05-01T20:39:40.471Z"
+updated_at: "2026-05-02T07:15:35.141Z"
 author: audit-agent
 parent: pm-twpc
+resolution: Resolution normalized from closed status because the field was missing or low-signal.
+expected_result: Expected closure outcome normalized from closed status because the field was missing or low-signal.
+actual_result: Actual closure outcome normalized from closed status because the field was missing or low-signal.
 body: ""

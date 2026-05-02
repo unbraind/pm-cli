@@ -6,9 +6,12 @@ status: closed
 priority: 2
 tags[4]: agent-ux,pm-cli,telemetry-insight,ux
 created_at: "2026-05-01T22:38:27.522Z"
-updated_at: "2026-05-01T23:08:29.020Z"
+updated_at: "2026-05-02T07:15:35.151Z"
 author: audit-agent
 parent: pm-rrjv
+resolution: "Resolution normalized from close_reason: Enhanced error guidance for top 3 telemetry error patterns: placeholder ID detection (undefined/null), --status closed redirect, and no-flags error. 214 telemetry events addressed."
+expected_result: "Expected closure outcome: Enhanced error guidance for top 3 telemetry error patterns: placeholder ID detection (undefined/null), --status closed redirect, and no-flags error. 214 telemetry events addressed."
+actual_result: "Actual closure outcome: Enhanced error guidance for top 3 telemetry error patterns: placeholder ID detection (undefined/null), --status closed redirect, and no-flags error. 214 telemetry events addressed."
 comments[1]{created_at,author,text}:
   "2026-05-01T23:08:21.921Z",audit-agent,"UX improvements from audit: (1) Error guidance for --status closed already redirects to pm close with examples. (2) No update flags error already has clear guidance listing common flags. (3) Enhanced 'Item undefined not found' to detect placeholder IDs (undefined/null/<template>) and suggest checking variable resolution before calling pm. These address the top 3 telemetry error patterns (85+73+56=214 events)."
 close_reason: "Enhanced error guidance for top 3 telemetry error patterns: placeholder ID detection (undefined/null), --status closed redirect, and no-flags error. 214 telemetry events addressed."
