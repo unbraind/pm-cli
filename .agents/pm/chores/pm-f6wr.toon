@@ -2,17 +2,21 @@ id: pm-f6wr
 title: "Performance baseline: list-open reads all 636 items front-matter on every invocation"
 description: "pm list-open takes ~4.2s for 636 items due to full front-matter scan. Evaluate cached file manifest or incremental read strategy for large corpora. Benchmark: --version ~0.8s, health ~2.5s, search ~2.3s, list-open ~4.2s, semantic reindex ~34s for 636 items."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[2]: performance,pm-cli
 created_at: "2026-05-01T23:46:06.492Z"
-updated_at: "2026-05-02T11:52:39.102Z"
+updated_at: "2026-05-02T13:04:37.440Z"
 author: audit-agent
 parent: pm-nnhi
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-kkmo,related,"2026-05-02T06:55:11.890Z",audit-agent,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-05-02T06:48:21.552Z",audit-agent,"Audit 2026-05-02: listAllDocuments reads all files from all type directories, parses each with TOON/JSON parser, runs onRead hooks, then deduplicates by ID. For 636+ items this is O(n) reads. A manifest-based approach (tracking id->path->mtime) would enable incremental reads. Calendar listAllFrontMatter has the same issue. Sentry lazy-loading confirmed working (ensureSentryInit with _initDone guard). Embedding batch retry with exponential backoff confirmed correct."
   "2026-05-02T07:46:03.822Z",audit-agent,"2026-05-02 audit: Performance measured - list-open ~0.95s, search ~1.58s (includes Ollama), context ~1.17s, calendar ~0.74s for 644 items. Acceptable but list-open could benefit from pagination/lazy-load for very large projects (1000+ items)."
   "2026-05-02T11:52:39.102Z",audit-agent,"2026-05-02 audit note: Performance issue confirmed but mitigated by current codebase size (647 items, sub-2s response). Will become important if tracker exceeds 1000+ items. No regression since last check."
+  "2026-05-02T13:04:14.460Z",agent,"Implemented persistent on-disk front-matter cache (src/core/store/front-matter-cache.ts). Cache uses mtime+size fingerprinting for incremental refresh. Context fingerprint guards against format/schema changes. Warm list-open: 61ms vs cold scan. 4 new unit tests for cache behavior."
+files[1]{path,scope,note}:
+  src/core/store/front-matter-cache.ts,project,null
+close_reason: "Completed. Persistent front-matter cache with incremental refresh and deterministic invalidation. All 1094 tests pass, warm cache list-open: 61ms."
 body: ""

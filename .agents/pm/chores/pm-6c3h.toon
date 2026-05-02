@@ -2,17 +2,25 @@ id: pm-6c3h
 title: main.ts exceeds 5000+ lines - assess decomposition into per-command registration modules
 description: "src/cli/main.ts is over 5000 lines. All command registrations, option wiring, and extension integration are in a single file. Assess splitting into per-command registration modules."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[3]: code-quality,pm-cli,tech-debt
 created_at: "2026-05-01T23:38:54.544Z"
-updated_at: "2026-05-02T11:52:33.340Z"
+updated_at: "2026-05-02T13:03:53.079Z"
 author: audit-agent
 parent: pm-nnhi
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-kkmo,related,"2026-05-02T06:55:09.114Z",audit-agent,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-05-02T06:47:41.260Z",audit-agent,"Audit 2026-05-02: main.ts is now 5796 lines. cli-contracts.ts at 2497 lines with --assignee flag repeated 15 times across contract arrays. Both are candidates for decomposition."
   "2026-05-02T07:45:49.749Z",audit-agent,"2026-05-02 audit confirms main.ts is 5796 lines. Still the only code-organization concern. All 39 command files use consistent patterns (EXIT_CODE, PmCliError). No functional urgency but would improve maintainability."
   "2026-05-02T11:52:33.340Z",audit-agent,"2026-05-02 audit confirms: main.ts is 5796 lines. Decomposition still valid. File is single registration module for all commands with shared infrastructure. Consider splitting per-command files when next significant commands are added."
+  "2026-05-02T13:03:37.800Z",agent,"Decomposed main.ts from 5797→2555 lines. Extracted 4 registration modules (register-setup.ts, register-list-query.ts, register-mutation.ts, register-operations.ts) and a shared registration-helpers.ts. All 62 integration tests pass."
+files[5]{path,scope,note}:
+  src/cli/register-list-query.ts,project,null
+  src/cli/register-mutation.ts,project,null
+  src/cli/register-operations.ts,project,null
+  src/cli/register-setup.ts,project,null
+  src/cli/registration-helpers.ts,project,null
+close_reason: "Completed. Decomposed main.ts (5797→2555 lines). Extracted 5 modules: register-setup.ts, register-list-query.ts, register-mutation.ts, register-operations.ts, registration-helpers.ts. All tests pass, dogfood verified."
 body: ""

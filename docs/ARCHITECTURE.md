@@ -18,7 +18,7 @@ Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
 
 High-level flow:
 
-1. Commander parses CLI input in `src/cli/main.ts`.
+1. Commander parses CLI input in `src/cli/main.ts` with commands registered via per-family modules (`register-setup.ts`, `register-list-query.ts`, `register-mutation.ts`, `register-operations.ts`).
 2. Command modules normalize options and call domain services.
 3. Domain services load settings, acquire locks when needed, mutate canonical item documents, and append history.
 4. Renderers emit TOON by default, JSON when requested, and markdown for calendar views.
@@ -31,6 +31,11 @@ src/
   cli.ts
   cli/
     main.ts
+    register-setup.ts
+    register-list-query.ts
+    register-mutation.ts
+    register-operations.ts
+    registration-helpers.ts
     commands/
     help-content.ts
     error-guidance.ts
@@ -44,6 +49,7 @@ src/
     output/
     search/
     store/
+      front-matter-cache.ts
     test/
     shared/
   sdk/

@@ -15,6 +15,7 @@ import { resolveItemTypeRegistry } from "../item/type-registry.js";
 import { acquireLock } from "../lock/lock.js";
 import { writeFileAtomic } from "../fs/fs-utils.js";
 import { normalizeItemId, normalizeRawItemId } from "../item/id.js";
+import { listAllDocumentsCached } from "./front-matter-cache.js";
 import { getHistoryPath, getItemFormatFromPath, getItemPath, ITEM_FILE_EXTENSIONS } from "./paths.js";
 import { resolveGovernanceKnobs } from "./settings.js";
 import { nowIso } from "../shared/time.js";
@@ -113,7 +114,7 @@ export async function listAllFrontMatter(
   warnings?: string[],
   schema?: RuntimeSchemaSettings,
 ): Promise<ItemFrontMatter[]> {
-  const documents = await listAllDocuments(pmRoot, preferredFormat, typeToFolder, warnings, schema);
+  const documents = await listAllDocumentsCached(pmRoot, preferredFormat, typeToFolder, warnings, schema);
   return documents.map((document) => document.front_matter);
 }
 

@@ -1,7 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
 import { listAllFrontMatter, locateItem, mutateItem, readLocatedItem } from "../../src/core/store/item-store.js";
+import { listAllDocumentsCached } from "../../src/core/store/front-matter-cache.js";
 import { getItemPath } from "../../src/core/store/paths.js";
 import { readSettings } from "../../src/core/store/settings.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
@@ -189,6 +191,116 @@ describe("core/store/item-store", () => {
 
       const rawAfterFailure = await fs.readFile(itemPath, "utf8");
       expect(rawAfterFailure).toBe(originalRaw);
+    });
+  });
+
+  it("populates front-matter cache on first run and reuses it on second run", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-cache-test-item";
+      await writeTaskItem(pmPath, id, { description: "cache-target" }, "toon");
+
+      const cachePath = path.join(pmPath, "runtime", "front-matter-cache.json");
+      expect(await fs.access(cachePath).then(() => true, () => false)).toBe(false);
+
+      const firstRun = await listAllFrontMatter(pmPath, "toon");
+      expect(firstRun.some((entry) => entry.id === id)).toBe(true);
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(await fs.access(cachePath).then(() => true, () => false)).toBe(true);
+
+      const cached = JSON.parse(await fs.readFile(cachePath, "utf8")) as { entries: Record<string, unknown> };
+      expect(Object.keys(cached.entries).length).toBeGreaterThan(0);
+
+      const secondRun = await listAllFrontMatter(pmPath, "toon");
+      expect(secondRun.some((entry) => entry.id === id)).toBe(true);
+      expect(secondRun.find((entry) => entry.id === id)?.description).toBe("cache-target");
+    });
+  });
+
+  it("invalidates cache when file changes", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-cache-invalidation";
+      await writeTaskItem(pmPath, id, { description: "before-change" }, "toon");
+
+      const firstRun = await listAllFrontMatter(pmPath, "toon");
+      expect(firstRun.find((entry) => entry.id === id)?.description).toBe("before-change");
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      await writeTaskItem(pmPath, id, { description: "after-change" }, "toon");
+
+      const secondRun = await listAllFrontMatter(pmPath, "toon");
+      expect(secondRun.find((entry) => entry.id === id)?.description).toBe("after-change");
+    });
+  });
+
+  it("detects context fingerprint change and rebuilds cache", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-cache-fingerprint";
+      await writeTaskItem(pmPath, id, {}, "toon");
+      await writeTaskItem(pmPath, id, {}, "json_markdown");
+
+      const toonRun = await listAllDocumentsCached(pmPath, "toon", { Task: "tasks", Issue: "issues", Chore: "chores" }, undefined, undefined);
+      expect(toonRun.length).toBeGreaterThan(0);
+
+      const mdRun = await listAllDocumentsCached(pmPath, "json_markdown", { Task: "tasks", Issue: "issues", Chore: "chores" }, undefined, undefined);
+      expect(mdRun.length).toBeGreaterThan(0);
+    });
+  });
+
+  it("prunes deleted files from cache", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const keepId = "pm-cache-keep";
+      const removeId = "pm-cache-remove";
+      await writeTaskItem(pmPath, keepId, {}, "toon");
+      await writeTaskItem(pmPath, removeId, {}, "toon");
+
+      const firstRun = await listAllFrontMatter(pmPath, "toon");
+      expect(firstRun.some((entry) => entry.id === keepId)).toBe(true);
+      expect(firstRun.some((entry) => entry.id === removeId)).toBe(true);
+
+      const removePath = getItemPath(pmPath, "Task", removeId, "toon");
+      await fs.rm(removePath);
+
+      const secondRun = await listAllFrontMatter(pmPath, "toon");
+      expect(secondRun.some((entry) => entry.id === keepId)).toBe(true);
+      expect(secondRun.some((entry) => entry.id === removeId)).toBe(false);
+    });
+  });
+
+  it("dispatches onRead hooks on cached front-matter reads", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-cache-read-hook";
+      await writeTaskItem(pmPath, id, {}, "toon");
+      const basename = `${id}.toon`;
+      const seenReads: string[] = [];
+      setActiveExtensionHooks({
+        beforeCommand: [],
+        afterCommand: [],
+        onWrite: [],
+        onRead: [
+          {
+            layer: "project",
+            name: "capture-read-paths",
+            run: (context) => {
+              seenReads.push(path.basename(context.path));
+            },
+          },
+        ],
+        onIndex: [],
+      });
+
+      try {
+        await listAllFrontMatter(pmPath, "toon");
+        const firstRunReadCount = seenReads.filter((entry) => entry === basename).length;
+        expect(firstRunReadCount).toBeGreaterThan(0);
+
+        await listAllFrontMatter(pmPath, "toon");
+        const secondRunReadCount = seenReads.filter((entry) => entry === basename).length;
+        expect(secondRunReadCount).toBeGreaterThan(firstRunReadCount);
+      } finally {
+        clearActiveExtensionHooks();
+      }
     });
   });
 });

@@ -1573,6 +1573,11 @@ describe("release readiness runtime coverage", () => {
       "src/cli/error-guidance.ts",
       "src/cli/help-content.ts",
       "src/cli/main.ts",
+      "src/cli/register-list-query.ts",
+      "src/cli/register-mutation.ts",
+      "src/cli/register-operations.ts",
+      "src/cli/register-setup.ts",
+      "src/cli/registration-helpers.ts",
       "src/core/extensions/extension-types.ts",
       "src/core/item/parent-reference-policy.ts",
       "src/core/item/type-registry.ts",
@@ -1584,6 +1589,7 @@ describe("release readiness runtime coverage", () => {
       "src/core/sentry/instrument.ts",
       "src/core/shared/primitives.ts",
       "src/core/shared/text-normalization.ts",
+      "src/core/store/front-matter-cache.ts",
       "src/core/telemetry/consent.ts",
       "src/core/telemetry/runtime.ts",
       "src/core/test/background-runs.ts",
@@ -1593,9 +1599,9 @@ describe("release readiness runtime coverage", () => {
   });
 
   it("keeps mutation-triggered search refresh wiring for test run-tracking paths", async () => {
-    const mainSource = await readRepoText("src/cli/main.ts");
-    expect(mainSource).toContain("addValues.length > 0 || removeValues.length > 0 || options.run === true");
-    expect(mainSource).toContain("ids: result.results.map((entry) => entry.id)");
+    const opsSource = await readRepoText("src/cli/register-operations.ts");
+    expect(opsSource).toContain("addValues.length > 0 || removeValues.length > 0 || options.run === true");
+    expect(opsSource).toContain("ids: result.results.map((entry) => entry.id)");
   });
 
   it("keeps release governance docs present with expected baseline markers", async () => {

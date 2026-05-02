@@ -9,6 +9,7 @@ coverage/
 .agents/pm/index/manifest.json
 .agents/pm/search/
 .agents/pm/checkpoints/
+.agents/pm/runtime/front-matter-cache.json
 .agents/pm/runtime/telemetry/
 
 # Local production operations artifacts are private and must not be committed.
