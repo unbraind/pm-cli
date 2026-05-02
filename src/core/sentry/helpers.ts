@@ -1,4 +1,5 @@
 import { getSentry } from "./instrument.js";
+import { PmCliError } from "../shared/errors.js";
 import type { Span } from "@sentry/node";
 
 let activeCommandSpan: Span | undefined;
@@ -50,6 +51,8 @@ export function sentryFinishCommandSpan(ok: boolean, error?: string): void {
 }
 
 export function sentryCaptureCliError(error: unknown): void {
+  if (!shouldCaptureCliError(error)) return;
+
   const Sentry = getSentry();
   if (!Sentry) return;
 
@@ -65,6 +68,10 @@ export function sentryCaptureCliError(error: unknown): void {
   } else {
     Sentry.captureException(new Error(String(error)));
   }
+}
+
+export function shouldCaptureCliError(error: unknown): boolean {
+  return !(error instanceof PmCliError);
 }
 
 export async function sentryFlush(): Promise<void> {

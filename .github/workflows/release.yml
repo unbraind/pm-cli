@@ -59,6 +59,25 @@ jobs:
       - name: Sandboxed PM regression (coverage)
         run: node scripts/run-tests.mjs coverage
 
+      - name: Upload Sentry sourcemaps
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: unbrained
+          SENTRY_PROJECT: pm-cli
+        run: |
+          if [ -z "${SENTRY_AUTH_TOKEN:-}" ]; then
+            echo "SENTRY_AUTH_TOKEN is not configured; skipping Sentry sourcemap upload."
+            exit 0
+          fi
+          RELEASE="pm-cli@${GITHUB_REF_NAME#v}"
+          pnpm exec sentry-cli releases new "$RELEASE" --org "$SENTRY_ORG" --project "$SENTRY_PROJECT" \
+            || pnpm exec sentry-cli releases info "$RELEASE" --org "$SENTRY_ORG" --project "$SENTRY_PROJECT"
+          pnpm exec sentry-cli releases set-commits "$RELEASE" --org "$SENTRY_ORG" --project "$SENTRY_PROJECT" --auto \
+            || pnpm exec sentry-cli releases set-commits "$RELEASE" --org "$SENTRY_ORG" --project "$SENTRY_PROJECT" --local --ignore-missing
+          pnpm sentry:inject
+          pnpm sentry:upload
+          pnpm exec sentry-cli releases finalize "$RELEASE" --org "$SENTRY_ORG" --project "$SENTRY_PROJECT"
+
       - name: Packaging smoke check
         run: npm pack --dry-run
 

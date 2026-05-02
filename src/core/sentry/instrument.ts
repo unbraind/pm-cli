@@ -49,6 +49,10 @@ let _initDone = false;
 const PM_CLI_SENTRY_DSN =
   "https://bf7ad2ec76c0051c2ee94e48e8bd6868@o4510603477712896.ingest.de.sentry.io/4511316775338064";
 
+function isExpectedCliErrorEvent(event: { exception?: { values?: Array<{ type?: string }> } }): boolean {
+  return event.exception?.values?.some((exception) => exception.type === "PmCliError") ?? false;
+}
+
 function resolveCliVersion(): string {
   try {
     const thisFile = fileURLToPath(import.meta.url);
@@ -117,6 +121,10 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
     },
 
     beforeSend(event) {
+      if (isExpectedCliErrorEvent(event)) {
+        return null;
+      }
+
       if (event.exception?.values) {
         for (const exception of event.exception.values) {
           if (exception.value) {

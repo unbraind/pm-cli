@@ -33,6 +33,7 @@ pnpm version:check
 ## One-Time Setup
 
 - Add `NPM_TOKEN` as a GitHub Environment or repository secret.
+- Add `SENTRY_AUTH_TOKEN` as an optional GitHub Environment or repository secret when Sentry release creation and sourcemap upload should run. The release workflow skips this step cleanly when the secret is absent.
 - Keep any `release` environment compatible with free GitHub features.
 - Ensure `GITHUB_TOKEN` has `contents: write` for GitHub Release creation.
 - Keep `package.json` repository, homepage, and bugs URLs aligned with `https://github.com/unbraind/pm-cli`.
@@ -95,6 +96,7 @@ git push origin v<version>
 - secret scan
 - build, typecheck, test, and coverage
 - sandboxed `pm` coverage
+- optional Sentry release metadata and sourcemap upload when `SENTRY_AUTH_TOKEN` is configured
 - npm pack dry run and npx tarball smoke test
 - generated release notes from changelog plus sanitized tracker metadata
 - artifact uploads

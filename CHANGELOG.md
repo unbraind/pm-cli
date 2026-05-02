@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026.5.2] - 2026-05-02
+
 ### Changed
 - Reworked the README and public docs into progressive, agent-oriented pages with GitHub-compatible links and `pm` tracker cross-references.
+- Hardened Sentry signal quality by suppressing expected handled `PmCliError` usage/validation failures while retaining unexpected exception capture.
+- Added optional token-gated Sentry release and sourcemap upload to the free GitHub release workflow so published CLI stack traces can resolve source context when Sentry credentials are configured.
+- Updated generated GitHub release notes so closed release-tagged `pm` evidence remains visible after the release item is completed.
 
 ### Security
 - Kept private operations material out of public docs and package output; local production operations artifacts remain ignored by git.

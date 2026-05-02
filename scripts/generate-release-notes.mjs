@@ -171,7 +171,7 @@ function formatPmSummary(items, sinceIso) {
     const title = typeof item.title === "string" ? item.title.toLowerCase() : "";
     const status = typeof item.status === "string" ? item.status : "unknown";
     const tags = Array.isArray(item.tags) ? item.tags.map((tag) => String(tag).toLowerCase()) : [];
-    if (status === "closed" || status === "canceled") {
+    if (status === "canceled") {
       return false;
     }
     return (

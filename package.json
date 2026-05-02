@@ -1,6 +1,6 @@
 {
   "name": "@unbrained/pm-cli",
-  "version": "2026.5.1-2",
+  "version": "2026.5.2",
   "description": "Git-native project management CLI for humans and agents.",
   "type": "module",
   "author": "unbrained",
@@ -62,7 +62,7 @@
     "security:scan": "node scripts/check-secrets.mjs",
     "smoke:npx": "node scripts/smoke-npx-from-pack.mjs",
     "sentry:inject": "sentry-cli sourcemaps inject dist/",
-    "sentry:upload": "sentry-cli sourcemaps upload --org unbrained --project pm-cli dist/",
+    "sentry:upload": "sentry-cli sourcemaps upload --org unbrained --project pm-cli --release \"pm-cli@$npm_package_version\" --validate dist/",
     "build:sentry": "pnpm build && pnpm sentry:inject && pnpm sentry:upload",
     "prepublishOnly": "pnpm build"
   },
@@ -93,6 +93,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@sentry/cli": "^3.4.1",
     "@types/node": "^25.6.0",
     "@vitest/coverage-v8": "^4.1.5",
     "c8": "^11.0.0",
@@ -101,6 +102,9 @@
     "vitest": "^4.1.5"
   },
   "pnpm": {
+    "onlyBuiltDependencies": [
+      "@sentry/cli"
+    ],
     "overrides": {
       "rollup": ">=4.59.0",
       "brace-expansion": ">=5.0.5",

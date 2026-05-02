@@ -551,6 +551,20 @@ describe("executeVectorQuery", () => {
       ),
     ).resolves.toEqual([]);
 
+    const dimensionWarnings: string[] = [];
+    await expect(
+      executeVectorQuery(
+        {
+          name: "lancedb",
+          path: localPath,
+        },
+        [1, 0, 0],
+        3,
+        { warnings: dimensionWarnings },
+      ),
+    ).resolves.toEqual([]);
+    expect(dimensionWarnings).toEqual(["vector_dimension_mismatch:3 records skipped (expected 3 dimensions)"]);
+
     await expect(
       executeVectorQuery(
         {
