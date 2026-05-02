@@ -1,0 +1,12 @@
+id: pm-wvhs
+title: Lower Sentry tracesSampleRate from 1.0 to 0.2 for free plan quota
+description: "Reduced tracesSampleRate in src/core/sentry/instrument.ts from 1.0 to 0.2. At 1.0, every trace was sent which rapidly exhausts free plan quota. At 0.2, we still get representative sampling while staying within limits."
+type: Task
+status: closed
+priority: 2
+tags[3]: pm-cli,sentry,telemetry
+created_at: "2026-05-02T06:54:49.849Z"
+updated_at: "2026-05-02T06:54:49.849Z"
+author: audit-agent
+parent: pm-kkmo
+body: ""

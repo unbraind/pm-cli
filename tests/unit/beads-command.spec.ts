@@ -5,7 +5,7 @@ import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runBeadsImport } from "../../.agents/pm/extensions/beads/runtime.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../dist/core/extensions/index.js";
-import { EXIT_CODE } from "../../src/constants.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import type { TempPmContext } from "../helpers/withTempPmPath.js";
 import { readJsonlFixture } from "../helpers/fixtures.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";

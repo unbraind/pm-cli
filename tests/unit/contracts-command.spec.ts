@@ -5,7 +5,7 @@ import { runContracts } from "../../src/cli/commands/contracts.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import type { GlobalOptions } from "../../src/core/shared/command-types.js";
-import { readSettings, writeSettings } from "../../src/settings.js";
+import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 const GLOBAL_OPTIONS: GlobalOptions = {

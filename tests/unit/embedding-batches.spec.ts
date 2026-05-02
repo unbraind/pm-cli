@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SETTINGS_DEFAULTS } from "../../src/constants.js";
+import { SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
 import { executeEmbeddingBatchesWithRetry } from "../../src/core/search/embedding-batches.js";
 import type { EmbeddingProviderConfig } from "../../src/core/search/providers.js";
 import type { PmSettings } from "../../src/types/index.js";

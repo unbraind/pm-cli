@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { runUpdateMany } from "../../src/cli/commands/update-many.js";
-import { EXIT_CODE } from "../../src/constants.js";
-import { PmCliError } from "../../src/errors.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 interface CreateTaskOptions {

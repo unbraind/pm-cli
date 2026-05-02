@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { EXIT_CODE } from "../../src/constants.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 const { execFileMock } = vi.hoisted(() => ({

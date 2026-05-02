@@ -8,8 +8,8 @@ import {
   runContext,
   type ContextOptions,
 } from "../../src/cli/commands/context.js";
-import { EXIT_CODE } from "../../src/constants.js";
-import { PmCliError } from "../../src/errors.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 function createContextItem(

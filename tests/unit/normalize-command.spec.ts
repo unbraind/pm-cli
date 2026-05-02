@@ -2,8 +2,8 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runNormalize } from "../../src/cli/commands/normalize.js";
-import { EXIT_CODE } from "../../src/constants.js";
-import { PmCliError } from "../../src/errors.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 interface CreateTaskOptions {

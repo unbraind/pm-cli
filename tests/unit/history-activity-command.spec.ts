@@ -5,8 +5,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import { runActivity } from "../../src/cli/commands/activity.js";
 import { readHistoryEntries, runHistory } from "../../src/cli/commands/history.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks, type ExtensionHookRegistry } from "../../src/core/extensions/index.js";
-import { EXIT_CODE } from "../../src/constants.js";
-import { PmCliError } from "../../src/errors.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 function createItem(context: TempPmContext, title: string): string {

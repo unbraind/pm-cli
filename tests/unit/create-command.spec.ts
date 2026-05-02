@@ -6,8 +6,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { runCreate, type CreateCommandOptions } from "../../src/cli/commands/create.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
 import type { ExtensionHookRegistry } from "../../src/core/extensions/loader.js";
-import { EXIT_CODE } from "../../src/constants.js";
-import { PmCliError } from "../../src/errors.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { PmCliError } from "../../src/core/shared/errors.js";
 import type { TempPmContext } from "../helpers/withTempPmPath.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 

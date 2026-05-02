@@ -3,8 +3,8 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runDelete } from "../../src/cli/commands/delete.js";
-import { EXIT_CODE } from "../../src/constants.js";
-import { PmCliError } from "../../src/errors.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 interface CreateTaskOptions {

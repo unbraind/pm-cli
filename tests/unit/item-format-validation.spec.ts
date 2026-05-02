@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { encode as encodeToon } from "@toon-format/toon";
-import { normalizeFrontMatter, parseItemDocument, serializeItemDocument } from "../../src/item-format.js";
-import { SETTINGS_DEFAULTS } from "../../src/constants.js";
+import { normalizeFrontMatter, parseItemDocument, serializeItemDocument } from "../../src/core/item/item-format.js";
+import { SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
 
 const FIXED_TS = "2026-02-22T00:00:00.000Z";
 

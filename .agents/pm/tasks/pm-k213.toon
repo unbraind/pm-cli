@@ -1,0 +1,12 @@
+id: pm-k213
+title: Add vector dimension mismatch warning counter to LanceDB queries
+description: Modified executeVectorQuery in src/core/search/vector-stores.ts to count and report dimension-mismatched records via warnings array instead of silently skipping them. Added warnings field to ExecuteVectorRequestOptions interface.
+type: Task
+status: closed
+priority: 3
+tags[3]: code-quality,pm-cli,search
+created_at: "2026-05-02T06:54:58.233Z"
+updated_at: "2026-05-02T06:54:58.233Z"
+author: audit-agent
+parent: pm-kkmo
+body: ""

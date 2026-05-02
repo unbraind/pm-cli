@@ -14,6 +14,7 @@ const RULES = [
   { name: "npm-auth-token-assignment", regex: /_authToken\s*=\s*\S+/g },
   { name: "sentry-user-token", regex: /\bsntryu_[A-Za-z0-9]{20,}\b/g },
   { name: "sentry-org-token", regex: /\bsntrys_[A-Za-z0-9_-]{20,}\b/g },
+  { name: "private-ip", regex: /\b(?:10\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|172\.(?:1[6-9]|2\d|3[01])\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|192\.168\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d))\b/g },
 ];
 
 function fail(message) {

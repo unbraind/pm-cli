@@ -4,8 +4,8 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runHealth } from "../../src/cli/commands/health.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
-import { EXIT_CODE } from "../../src/constants.js";
-import { readSettings, writeSettings } from "../../src/settings.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 const initialDisableAutoDefaults = process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS;

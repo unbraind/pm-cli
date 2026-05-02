@@ -9,8 +9,8 @@ import {
   setActiveExtensionRegistrations,
 } from "../../src/core/extensions/index.js";
 import { createEmptyExtensionRegistrationRegistry } from "../../src/core/extensions/loader.js";
-import { EXIT_CODE } from "../../src/constants.js";
-import { readSettings, writeSettings } from "../../src/settings.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import type { TempPmContext } from "../helpers/withTempPmPath.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 

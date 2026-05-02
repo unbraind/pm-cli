@@ -8,7 +8,7 @@ import {
   refreshSemanticEmbeddingsForMutatedItems,
   SEARCH_CACHE_ARTIFACT_PATHS,
 } from "../../src/core/search/cache.js";
-import { readSettings, writeSettings } from "../../src/settings.js";
+import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import type { TempPmContext } from "../helpers/withTempPmPath.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 

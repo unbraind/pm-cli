@@ -4,8 +4,8 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { runStats } from "../../src/cli/commands/stats.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
-import { EXIT_CODE } from "../../src/constants.js";
-import { PmCliError } from "../../src/errors.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 function createItem(

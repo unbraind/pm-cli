@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { SETTINGS_DEFAULTS } from "../../src/constants.js";
+import { SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
 import { resolveSettingsWithSemanticRuntimeDefaults } from "../../src/core/search/semantic-defaults.js";
 
 const { spawnSyncMock } = vi.hoisted(() => ({

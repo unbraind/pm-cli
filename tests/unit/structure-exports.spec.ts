@@ -1,21 +1,5 @@
 import { describe, expect, it } from "vitest";
 import * as cliCommands from "../../src/cli/commands/index.js";
-import * as rootCommandTypes from "../../src/command-types.js";
-import * as rootConstants from "../../src/constants.js";
-import * as rootErrors from "../../src/errors.js";
-import * as rootFsUtils from "../../src/fs-utils.js";
-import * as rootHistory from "../../src/history.js";
-import * as rootId from "../../src/id.js";
-import * as rootItemFormat from "../../src/item-format.js";
-import * as rootItemStore from "../../src/item-store.js";
-import * as rootLock from "../../src/lock.js";
-import * as rootOutput from "../../src/output.js";
-import * as rootParse from "../../src/parse.js";
-import * as rootPaths from "../../src/paths.js";
-import * as rootSerialization from "../../src/serialization.js";
-import * as rootSettings from "../../src/settings.js";
-import * as rootTime from "../../src/time.js";
-import * as rootTypes from "../../src/types.js";
 import * as coreFs from "../../src/core/fs/fs-utils.js";
 import * as coreFsIndex from "../../src/core/fs/index.js";
 import * as coreHistory from "../../src/core/history/history.js";
@@ -76,24 +60,5 @@ describe("module boundaries export surface", () => {
     expect(typeof coreSharedTime.resolveIsoOrRelative).toBe("function");
     expect(coreSharedIndex.EXIT_CODE.NOT_FOUND).toBe(3);
     expect(Array.isArray(sharedTypes.ITEM_TYPE_VALUES)).toBe(true);
-  });
-
-  it("re-exports root compatibility modules", () => {
-    expect(typeof rootCommandTypes).toBe("object");
-    expect(rootConstants.EXIT_CODE.CONFLICT).toBe(4);
-    expect(typeof rootErrors.PmCliError).toBe("function");
-    expect(typeof rootFsUtils.ensureDir).toBe("function");
-    expect(typeof rootHistory.createHistoryEntry).toBe("function");
-    expect(typeof rootId.normalizeItemId).toBe("function");
-    expect(typeof rootItemFormat.serializeItemDocument).toBe("function");
-    expect(typeof rootItemStore.locateItem).toBe("function");
-    expect(typeof rootLock.acquireLock).toBe("function");
-    expect(typeof rootOutput.formatOutput).toBe("function");
-    expect(typeof rootParse.parseTags).toBe("function");
-    expect(typeof rootPaths.resolvePmRoot).toBe("function");
-    expect(typeof rootSerialization.stableStringify).toBe("function");
-    expect(typeof rootSettings.readSettings).toBe("function");
-    expect(typeof rootTime.nowIso).toBe("function");
-    expect(Array.isArray(rootTypes.ITEM_TYPE_VALUES)).toBe(true);
   });
 });

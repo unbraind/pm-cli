@@ -7,7 +7,7 @@ import {
   setActiveExtensionServices,
 } from "../../src/core/extensions/index.js";
 import { formatOutput, printError, printResult } from "../../src/core/output/output.js";
-import { EXIT_CODE } from "../../src/constants.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
 
 describe("core/output/output", () => {
   afterEach(() => {

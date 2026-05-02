@@ -93,7 +93,7 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
     release: `pm-cli@${release}`,
     environment: resolveEnvironment(),
 
-    tracesSampleRate: 1.0,
+    tracesSampleRate: 0.2,
     enableLogs: true,
     attachStacktrace: true,
     normalizeDepth: 6,

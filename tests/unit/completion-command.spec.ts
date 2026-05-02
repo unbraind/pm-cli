@@ -6,9 +6,9 @@ import {
   runCompletion,
   type CompletionResult,
 } from "../../src/cli/commands/completion.js";
-import { EXIT_CODE } from "../../src/constants.js";
-import { PmCliError } from "../../src/errors.js";
-import { readSettings, writeSettings } from "../../src/settings.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { PmCliError } from "../../src/core/shared/errors.js";
+import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("generateBashScript", () => {

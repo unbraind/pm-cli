@@ -3,9 +3,9 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { runInit } from "../../src/cli/commands/init.js";
-import { PM_REQUIRED_SUBDIRS } from "../../src/constants.js";
+import { PM_REQUIRED_SUBDIRS } from "../../src/core/shared/constants.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks, type ExtensionHookRegistry } from "../../src/core/extensions/index.js";
-import { readSettings } from "../../src/settings.js";
+import { readSettings } from "../../src/core/store/settings.js";
 
 describe("runInit", () => {
   afterEach(() => {

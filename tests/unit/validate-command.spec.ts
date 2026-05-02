@@ -6,8 +6,8 @@ import { describe, expect, it } from "vitest";
 import { runClose } from "../../src/cli/commands/close.js";
 import { runInit } from "../../src/cli/commands/init.js";
 import { runValidate } from "../../src/cli/commands/validate.js";
-import { EXIT_CODE } from "../../src/constants.js";
-import { PmCliError } from "../../src/errors.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { PmCliError } from "../../src/core/shared/errors.js";
 import type { TempPmContext } from "../helpers/withTempPmPath.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 

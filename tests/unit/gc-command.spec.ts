@@ -4,8 +4,8 @@ import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runGc } from "../../src/cli/commands/gc.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
-import { EXIT_CODE } from "../../src/constants.js";
-import { PmCliError } from "../../src/errors.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("runGc", () => {

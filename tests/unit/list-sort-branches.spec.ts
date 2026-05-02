@@ -8,29 +8,14 @@ const readSettingsMock = vi.fn<() => Promise<unknown>>();
 const listAllFrontMatterMock = vi.fn<() => Promise<ItemFrontMatter[]>>();
 const listAllFrontMatterWithBodyMock = vi.fn<() => Promise<Array<ItemFrontMatter & { body: string }>>>();
 
-vi.mock("../../src/fs-utils.js", () => ({
-  pathExists: pathExistsMock,
-  readFileIfExists: readFileIfExistsMock,
-  writeFileAtomic: writeFileAtomicMock,
-}));
-
 vi.mock("../../src/core/fs/fs-utils.js", () => ({
   pathExists: pathExistsMock,
   readFileIfExists: readFileIfExistsMock,
   writeFileAtomic: writeFileAtomicMock,
 }));
 
-vi.mock("../../src/settings.js", () => ({
-  readSettings: readSettingsMock,
-}));
-
 vi.mock("../../src/core/store/settings.js", () => ({
   readSettings: readSettingsMock,
-}));
-
-vi.mock("../../src/item-store.js", () => ({
-  listAllFrontMatter: listAllFrontMatterMock,
-  listAllFrontMatterWithBody: listAllFrontMatterWithBodyMock,
 }));
 
 vi.mock("../../src/core/store/item-store.js", () => ({

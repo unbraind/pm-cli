@@ -8,8 +8,8 @@ import {
   runCalendar,
   type CalendarOptions,
 } from "../../src/cli/commands/calendar.js";
-import { EXIT_CODE } from "../../src/constants.js";
-import { PmCliError } from "../../src/errors.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 function createCalendarItem(

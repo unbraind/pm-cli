@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import path from "node:path";
 import type { ItemFrontMatter } from "../../src/types.js";
-import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../src/constants.js";
-import { serializeItemDocument } from "../../src/item-format.js";
+import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
+import { serializeItemDocument } from "../../src/core/item/item-format.js";
 import { readJsonFixture } from "../helpers/fixtures.js";
 
 const {

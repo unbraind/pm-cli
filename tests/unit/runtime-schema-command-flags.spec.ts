@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readSettings, writeSettings } from "../../src/settings.js";
+import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 function createTaskWithSegment(

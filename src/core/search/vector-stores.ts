@@ -92,6 +92,7 @@ export type VectorRequestFetcher = (
 export interface ExecuteVectorRequestOptions {
   timeout_ms?: number;
   fetcher?: VectorRequestFetcher;
+  warnings?: string[];
 }
 
 type VectorSettingsInput = {
@@ -630,10 +631,10 @@ export async function executeVectorQuery(
     const queryVector = normalizeVector(queryBody.vector);
     const queryLimit = normalizeLimit(queryBody.limit);
     const hits: VectorQueryHit[] = [];
+    let dimensionMismatchCount = 0;
     for (const record of table.values()) {
       if (record.vector.length !== queryVector.length) {
-        // Skip stale records with mismatched dimensions so search remains available
-        // while operators repair vector artifacts with reindex/gc workflows.
+        dimensionMismatchCount++;
         continue;
       }
       hits.push({
@@ -641,6 +642,11 @@ export async function executeVectorQuery(
         score: cosineSimilarity(queryVector, record.vector),
         ...(record.payload ? { payload: record.payload } : {}),
       });
+    }
+    if (dimensionMismatchCount > 0 && options.warnings) {
+      options.warnings.push(
+        `vector_dimension_mismatch:${dimensionMismatchCount} records skipped (expected ${queryVector.length} dimensions)`,
+      );
     }
     hits.sort((left, right) => {
       if (left.score !== right.score) {

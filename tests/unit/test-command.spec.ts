@@ -10,8 +10,8 @@ import {
   resolveLinkedTestFailureExitCode,
   runTest,
 } from "../../src/cli/commands/test.js";
-import { EXIT_CODE } from "../../src/constants.js";
-import { parseItemDocument, serializeItemDocument } from "../../src/item-format.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { parseItemDocument, serializeItemDocument } from "../../src/core/item/item-format.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 afterEach(() => {

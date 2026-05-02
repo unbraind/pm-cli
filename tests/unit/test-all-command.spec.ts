@@ -3,9 +3,9 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runTestAll } from "../../src/cli/commands/test-all.js";
-import { EXIT_CODE } from "../../src/constants.js";
-import { PmCliError } from "../../src/errors.js";
-import { parseItemDocument, serializeItemDocument } from "../../src/item-format.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { PmCliError } from "../../src/core/shared/errors.js";
+import { parseItemDocument, serializeItemDocument } from "../../src/core/item/item-format.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 afterEach(() => {

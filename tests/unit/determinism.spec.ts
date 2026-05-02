@@ -2,12 +2,12 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { appendHistoryEntry, createHistoryEntry, hashDocument, hashEmptyDocument } from "../../src/history.js";
-import { canonicalDocument, parseItemDocument, serializeItemDocument } from "../../src/item-format.js";
-import { normalizeItemId, normalizePrefix } from "../../src/id.js";
-import { parseCsvKv, parseOptionalNumber, parseTags } from "../../src/parse.js";
-import { orderObject, stableStringify } from "../../src/serialization.js";
-import { resolveIsoOrRelative } from "../../src/time.js";
+import { appendHistoryEntry, createHistoryEntry, hashDocument, hashEmptyDocument } from "../../src/core/history/history.js";
+import { canonicalDocument, parseItemDocument, serializeItemDocument } from "../../src/core/item/item-format.js";
+import { normalizeItemId, normalizePrefix } from "../../src/core/item/id.js";
+import { parseCsvKv, parseOptionalNumber, parseTags } from "../../src/core/item/parse.js";
+import { orderObject, stableStringify } from "../../src/core/shared/serialization.js";
+import { resolveIsoOrRelative } from "../../src/core/shared/time.js";
 
 describe("deterministic primitives", () => {
   it("normalizes tags and ids deterministically", () => {

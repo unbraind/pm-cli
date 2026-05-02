@@ -1,0 +1,16 @@
+id: pm-kkmo
+title: "2026-05-02 Full PM CLI Audit Phase 2: Dead Code Removal, Security Enhancement, Sentry Optimization"
+description: "Comprehensive audit session: removed 15 dead root-level facade re-exports and fixed 42 test files, enhanced check-secrets.mjs with private IP detection, lowered Sentry tracesSampleRate from 1.0 to 0.2 for free plan quota, added vector dimension mismatch warning counters, verified full lifecycle/dogfood/calendar/search/SDK, analyzed 32990 telemetry events and 8 Sentry issues."
+type: Epic
+status: closed
+priority: 1
+tags[5]: audit,code-quality,pm-cli,security,telemetry
+created_at: "2026-05-02T06:54:11.903Z"
+updated_at: "2026-05-02T07:02:03.340Z"
+author: audit-agent
+notes[1]{created_at,author,text}:
+  "2026-05-02T06:55:27.831Z",audit-agent,"Phase 0-9 complete. Code changes: removed 15 dead facade files, enhanced security scanner, lowered Sentry sample rate, added vector mismatch warnings. Audit comments added to pm-6c3h, pm-f6wr, pm-p0p1. Telemetry analysis: 32990 events from 1357 installs. Sentry analysis: 8 validation-error issues, no bugs. All 81 test files pass (1087 tests)."
+learnings[1]{created_at,author,text}:
+  "2026-05-02T06:55:30.593Z",audit-agent,"Root facade re-exports accumulate as dead code when core modules are refactored. Test imports must be updated in lockstep with module removals. Sentry free plan needs conservative tracesSampleRate. Vector dimension mismatches should be surfaced as warnings, not silently skipped."
+close_reason: "All 9 phases complete. 15 dead files removed, security scanner enhanced, Sentry sample rate optimized, vector warnings added. 81 test files, 1087 tests pass. Telemetry and Sentry data analyzed. All findings tracked as pm items."
+body: ""

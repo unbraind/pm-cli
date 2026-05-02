@@ -4,8 +4,8 @@ import path from "node:path";
 import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runUpdate } from "../../src/cli/commands/update.js";
-import { EXIT_CODE } from "../../src/constants.js";
-import { PmCliError } from "../../src/errors.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 afterEach(() => {

@@ -4,8 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runExtension, parseExtensionInstallSource, readManagedExtensionState } from "../../src/cli/commands/extension.js";
-import { EXIT_CODE } from "../../src/constants.js";
-import { readSettings, writeSettings } from "../../src/settings.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
