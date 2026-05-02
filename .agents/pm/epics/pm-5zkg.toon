@@ -1,0 +1,18 @@
+id: pm-5zkg
+title: 2026-05-02 Comprehensive PM CLI Audit (v2026.5.2)
+description: "Full audit covering code quality, search/vector, calendar, SDK, telemetry, CI/CD, and agent output optimization. All systems verified working. Key findings documented as child items."
+type: Epic
+status: closed
+priority: 0
+tags[4]: audit,code-quality,dogfood,v2026.5.2
+created_at: "2026-05-02T16:09:08.153Z"
+updated_at: "2026-05-02T16:15:40.284Z"
+author: audit-agent
+acceptance_criteria: "All phases 0-9 completed, findings documented, no regressions"
+resolution: 9-phase audit of pm CLI v2026.5.2 completed successfully. All systems verified working.
+expected_result: Complete audit coverage with all findings documented as pm items
+actual_result: "82 test files, 1095 tests pass. 3 non-critical improvement items created. No security issues or regressions found."
+comments[1]{created_at,author,text}:
+  "2026-05-02T16:11:01.960Z",audit-agent,"Audit complete. 9 phases executed: (0) Bootstrap verified v2026.5.2, security scan clean, gitignore correct. (1) Dogfood: all 10 item types, lifecycle ops, calendar, search, extensions tested in temp dir. (2a) Architecture: main.ts 2555 lines with 4 more extraction candidates. (2b) Dead code: parseLimit/parsePriority/parseType duplicated across 8+ files. (2c) Type safety: all EXIT_CODE usage correct, no process.exit() calls, silent catches documented. (2d) Performance: list 62ms, search hybrid 3.9s with 647 items. (3) Search: Ollama auto-detection, deduplication, LanceDB atomic persistence, GC all working. (4) Calendar: all views/formats/recurrence/filters working. (5) SDK: 9 capability types, starter extension comprehensive. (6) Telemetry: scrubbing thorough, queue retry with backoff, ops runbook created. (7) CI/CD: all action versions current, multi-OS/Node matrix, security scan in all workflows. (8) Agent output: TOON-first, JSON errors with next_steps/examples, contracts schema v4. (9) 3 findings documented as child items."
+close_reason: All 9 audit phases complete. 1095/1095 tests pass. 3 improvement items documented. No security issues. No regressions.
+body: ""

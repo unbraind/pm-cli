@@ -1,0 +1,18 @@
+id: pm-hb8t
+title: Duplicated parseLimit/parsePriority/parseType across 8+ command files
+description: "parseLimit is duplicated in search.ts, calendar.ts, comments.ts, dedupe-audit.ts, test-runs.ts, activity.ts, learnings.ts, history.ts, notes.ts. parsePriority duplicated in search.ts and calendar.ts. parseType duplicated in search.ts and calendar.ts. Should be extracted to a shared module in src/core/shared/ or src/cli/."
+type: Issue
+status: open
+priority: 2
+tags[4]: audit,code-quality,duplication,refactor
+created_at: "2026-05-02T16:09:16.694Z"
+updated_at: "2026-05-02T16:10:09.985Z"
+author: audit-agent
+acceptance_criteria: "All duplicated parser functions extracted to shared module, all command files import from shared"
+parent: pm-5zkg
+files[4]{path,scope,note}:
+  src/cli/commands/activity.ts,project,null
+  src/cli/commands/calendar.ts,project,null
+  src/cli/commands/comments.ts,project,null
+  src/cli/commands/search.ts,project,null
+body: ""

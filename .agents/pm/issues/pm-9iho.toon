@@ -1,0 +1,16 @@
+id: pm-9iho
+title: PmCliError events leaking to Sentry via captureConsoleIntegration
+description: "All 8 current Sentry issues are PmCliError instances (user input errors). The beforeSend filter correctly returns null for PmCliError exception events, but the captureConsoleIntegration({ levels: ['warn', 'error'] }) may be re-capturing these as console-level events when they're printed to stderr. Should either (a) add PmCliError filtering to beforeSendTransaction as well, or (b) exclude PmCliError messages from captureConsole capture."
+type: Issue
+status: open
+priority: 2
+tags[4]: audit,bug,sentry,telemetry
+created_at: "2026-05-02T16:09:35.975Z"
+updated_at: "2026-05-02T16:10:14.842Z"
+author: audit-agent
+acceptance_criteria: No PmCliError events appear in Sentry after fix
+parent: pm-5zkg
+files[2]{path,scope,note}:
+  src/core/sentry/helpers.ts,project,null
+  src/core/sentry/instrument.ts,project,null
+body: ""

@@ -1,0 +1,15 @@
+id: pm-sh6o
+title: main.ts still has 4 extraction candidates (~1325 lines)
+description: "After the register-*.ts extraction, main.ts is 2555 lines. Four more modules can be extracted: (1) extension command help utilities (lines 109-568, ~460 lines), (2) bootstrap argument parsing (lines 568-813, ~245 lines), (3) extension migration gates (lines 1211-1430, ~220 lines), (4) extension runtime loading (lines 1700-2100, ~400 lines). This is a follow-up to pm-6c3h."
+type: Issue
+status: open
+priority: 3
+tags[4]: architecture,audit,code-quality,refactor
+created_at: "2026-05-02T16:09:25.850Z"
+updated_at: "2026-05-02T16:10:12.468Z"
+author: audit-agent
+acceptance_criteria: main.ts reduced to <1200 lines with extracted modules
+parent: pm-5zkg
+files[1]{path,scope,note}:
+  src/cli/main.ts,project,null
+body: ""

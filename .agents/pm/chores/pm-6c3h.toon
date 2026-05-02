@@ -6,9 +6,12 @@ status: closed
 priority: 2
 tags[3]: code-quality,pm-cli,tech-debt
 created_at: "2026-05-01T23:38:54.544Z"
-updated_at: "2026-05-02T13:03:53.079Z"
+updated_at: "2026-05-02T16:10:29.332Z"
 author: audit-agent
 parent: pm-nnhi
+resolution: "main.ts decomposed from 5000+ lines to 2555 lines by extracting register-setup.ts, register-list-query.ts, register-mutation.ts, register-operations.ts, registration-helpers.ts"
+expected_result: main.ts reduced to manageable size with extracted registration modules
+actual_result: main.ts reduced to 2555 lines with 4 register-*.ts modules and registration-helpers.ts extracted
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-kkmo,related,"2026-05-02T06:55:09.114Z",audit-agent,null
 comments[4]{created_at,author,text}:

@@ -6,9 +6,12 @@ status: closed
 priority: 3
 tags[2]: performance,pm-cli
 created_at: "2026-05-01T23:46:06.492Z"
-updated_at: "2026-05-02T13:04:37.440Z"
+updated_at: "2026-05-02T16:10:44.440Z"
 author: audit-agent
 parent: pm-nnhi
+resolution: Front-matter cache implemented in src/core/store/front-matter-cache.ts with mtime/size-based invalidation. list command now takes 62ms for 647 items (down from 4.2s).
+expected_result: Reduced list-open latency through caching
+actual_result: "list command: 62ms with cache (vs 4.2s baseline). Front-matter cache uses sha256 context fingerprint and per-entry mtime/ctime/size validation."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-kkmo,related,"2026-05-02T06:55:11.890Z",audit-agent,null
 comments[4]{created_at,author,text}:
