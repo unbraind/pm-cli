@@ -1,18 +1,27 @@
 id: pm-sh4x
 title: "UX: Telemetry shows 84 'No update flags provided' errors - improve guidance"
-description: "Telemetry analysis shows 84 occurrences of 'No update flags provided' error. Users call pm update <ID> without specifying what to change. The error message should proactively suggest common flags (--status, --description, --body, --tags). Additionally 70 errors for 'Invalid --status value closed' - users try --status closed instead of pm close. And 56 errors for 'Item undefined not found' suggesting a caller passes no ID."
+description: "Follow-up from telemetry/manual audit: the no-update-flags guidance must not list --message as an update field because --message only annotates history. It should direct users to actual mutation flags or append/comment commands."
 type: Issue
 status: closed
 priority: 2
 tags[4]: agent-ux,pm-cli,telemetry-insight,ux
 created_at: "2026-05-01T22:38:27.522Z"
-updated_at: "2026-05-02T07:15:35.151Z"
+updated_at: "2026-05-02T11:28:43.106Z"
 author: audit-agent
+acceptance_criteria: "No-update-flags guidance lists only real update mutation fields, explains --message must be paired with a mutation, and tests cover the guidance."
 parent: pm-rrjv
-resolution: "Resolution normalized from close_reason: Enhanced error guidance for top 3 telemetry error patterns: placeholder ID detection (undefined/null), --status closed redirect, and no-flags error. 214 telemetry events addressed."
-expected_result: "Expected closure outcome: Enhanced error guidance for top 3 telemetry error patterns: placeholder ID detection (undefined/null), --status closed redirect, and no-flags error. 214 telemetry events addressed."
-actual_result: "Actual closure outcome: Enhanced error guidance for top 3 telemetry error patterns: placeholder ID detection (undefined/null), --status closed redirect, and no-flags error. 214 telemetry events addressed."
-comments[1]{created_at,author,text}:
+resolution: No-update-flags guidance now distinguishes field-changing update flags from history-only --message context.
+expected_result: Agents and users are directed to actual mutation flags or append/comment commands when update receives no fields.
+actual_result: Guidance text and regression tests cover --message pairing requirements; focused and full verification passed.
+comments[2]{created_at,author,text}:
   "2026-05-01T23:08:21.921Z",audit-agent,"UX improvements from audit: (1) Error guidance for --status closed already redirects to pm close with examples. (2) No update flags error already has clear guidance listing common flags. (3) Enhanced 'Item undefined not found' to detect placeholder IDs (undefined/null/<template>) and suggest checking variable resolution before calling pm. These address the top 3 telemetry error patterns (85+73+56=214 events)."
-close_reason: "Enhanced error guidance for top 3 telemetry error patterns: placeholder ID detection (undefined/null), --status closed redirect, and no-flags error. 214 telemetry events addressed."
+  "2026-05-02T11:28:21.016Z",codex-agent,"Evidence: telemetry/Sentry audit showed no-update-flags remains a common expected-error path. Updated guidance to explain --message labels history and must accompany a real field mutation; added error-guidance regression coverage. Verified focused guidance tests through pm test, pnpm build, pnpm typecheck, and full 100% coverage."
+files[2]{path,scope,note}:
+  src/cli/error-guidance.ts,project,no-update-flags guidance
+  tests/unit/error-guidance.spec.ts,project,guidance regression coverage
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/error-guidance.spec.ts tests/unit/sentry-helpers.spec.ts,null,project,120,null,null,null,null,null,null,null,null,null,null,null,sandbox-safe guidance and expected-error Sentry regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-moo90bwg-p7vsny,test,passed,"2026-05-02T11:18:20.597Z","2026-05-02T11:18:26.368Z","2026-05-02T11:18:26.368Z",null,null,1,0,0,null,null,null
+close_reason: No-update-flags guidance corrected; --message is no longer presented as a standalone update field; focused tests and full coverage passed.
 body: ""

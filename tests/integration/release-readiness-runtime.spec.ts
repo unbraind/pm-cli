@@ -1552,7 +1552,8 @@ describe("release readiness runtime coverage", () => {
     for (const token of ["lines: 100", "branches: 100", "functions: 100", "statements: 100"]) {
       expect(vitestConfig).toContain(token);
     }
-    expect(packageJson.scripts?.["test:coverage"]).toContain("vitest run --coverage");
+    expect(packageJson.scripts?.test).toBe("node scripts/run-tests.mjs test");
+    expect(packageJson.scripts?.["test:coverage"]).toBe("node scripts/run-tests.mjs coverage");
   });
 
   it("keeps vitest coverage include list aligned with src ts modules", async () => {

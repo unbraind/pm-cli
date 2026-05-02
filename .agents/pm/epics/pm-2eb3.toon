@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[7]: audit,calendar,dogfood,extensibility,pm-cli,sdk,telemetry
 created_at: "2026-05-01T18:02:37.805Z"
-updated_at: "2026-05-01T22:54:18.584Z"
+updated_at: "2026-05-02T11:03:21.885Z"
 deadline: "2026-05-08T18:02:37.805Z"
 author: audit-agent
 estimated_minutes: 480
@@ -17,8 +17,9 @@ expected_result: "Expected closure outcome: Full dogfood audit complete: all 10 
 actual_result: "Actual closure outcome: Full dogfood audit complete: all 10 item types verified, all core commands pass, calendar views working with recurrence, SDK has 78 exports covering 9 capabilities, telemetry pipeline verified end-to-end (29700+ events in Postgres), queue bloat bug found and fixed (pre-enqueue size guard + depth limit + max attempts), extensibility and governance fully verified. 1087 tests pass. 8/8 child items closed."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-23me,parent,"2026-05-01T18:02:37.805Z",audit-agent,null
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-05-01T18:02:37.805Z",audit-agent,"Duplicate check: pm-23me is predecessor from 2026-04-30 and still open. This v2 audit covers the latest 2026.5.1-2 build with comprehensive end-to-end verification."
+  "2026-05-02T11:03:21.885Z",codex-agent,"Audit reseal: current redacted item state re-recorded through pm mutation after prior hygiene edits; no secret material added."
 notes[2]{created_at,author,text}:
   "2026-05-01T18:09:09.170Z",audit-agent,"Audit methodology: all commands tested in isolated temp directory with PM_AUTHOR=audit-agent PM_TELEMETRY_SOURCE_CONTEXT=dogfood. Telemetry verified both client-side (queue/state/probe) and server-side (SSH to [redacted_host], Docker compose, Postgres, RabbitMQ)."
   "2026-05-01T22:54:18.584Z",audit-agent,"SECURITY AUDIT: Historical note references a private IP from audit methodology. No credentials exposed. Future notes must use domain names."

@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: audit,pm-cli,telemetry,verification
 created_at: "2026-05-01T18:04:41.968Z"
-updated_at: "2026-05-01T22:54:09.011Z"
+updated_at: "2026-05-02T11:03:21.949Z"
 author: audit-agent
 acceptance_criteria: "Events flow from CLI through queue, API, RabbitMQ, worker, to Postgres and are queryable in Grafana"
 parent: pm-2eb3
@@ -16,9 +16,10 @@ actual_result: "Actual closure outcome: Full telemetry pipeline verified: client
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-2eb3,parent,"2026-05-01T18:04:41.968Z",audit-agent,null
   pm-ntr0,related,"2026-05-01T18:04:41.968Z",audit-agent,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-05-01T18:04:41.968Z",audit-agent,"Evidence: SSH to [redacted_host] confirmed 9 containers running. RabbitMQ queue pm.telemetry.events has 0 pending/1 consumer. Postgres telemetry_events table has 29700 rows. Recent dogfood events visible with source_context=dogfood. Endpoint accepts valid UUID events with HTTP 200."
   "2026-05-01T22:54:09.011Z",audit-agent,"SECURITY AUDIT: Historical comment contains a private IP reference from telemetry audit evidence. No credentials exposed."
+  "2026-05-02T11:03:21.949Z",codex-agent,"Audit reseal: current redacted item state re-recorded through pm mutation after prior hygiene edits; no secret material added."
 files[2]{path,scope,note}:
   src/core/telemetry/runtime.ts,project,telemetry runtime verified
   src/core/telemetry/consent.ts,project,consent mechanism verified

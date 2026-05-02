@@ -65,15 +65,15 @@ jobs:
         run: pnpm typecheck
 
       - name: Test
+        env:
+          PM_RUN_TESTS_SKIP_BUILD: "1"
         run: pnpm test
 
       - name: Test with coverage gate
         if: matrix.os == 'ubuntu-latest' && matrix.node == 20
+        env:
+          PM_RUN_TESTS_SKIP_BUILD: "1"
         run: pnpm test:coverage
-
-      - name: Sandboxed PM regression (coverage)
-        if: matrix.os == 'ubuntu-latest' && matrix.node == 20
-        run: node scripts/run-tests.mjs coverage
 
       - name: Packaging smoke check
         if: matrix.os == 'ubuntu-latest' && matrix.node == 20

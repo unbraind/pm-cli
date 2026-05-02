@@ -2,6 +2,12 @@ import type { PmSettings } from "../../types/index.js";
 import { mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
 import {
+  executeSearchJsonRequest,
+  normalizeSearchHttpTimeoutMs,
+  resolveSearchHttpFetcher,
+} from "./http-client.js";
+import type { SearchHttpFetcher, SearchHttpResponse } from "./http-client.js";
+import {
   isFiniteNumberArray,
   toErrorMessage,
   toNonEmptyString,
@@ -71,23 +77,9 @@ export interface VectorUpsertResult {
   status: string;
 }
 
-export interface VectorHttpResponse {
-  ok: boolean;
-  status: number;
-  statusText: string;
-  json(): Promise<unknown>;
-  text(): Promise<string>;
-}
+export type VectorHttpResponse = SearchHttpResponse;
 
-export type VectorRequestFetcher = (
-  url: string,
-  init: {
-    method: "POST";
-    headers: Record<string, string>;
-    body: string;
-    signal: AbortSignal;
-  },
-) => Promise<VectorHttpResponse>;
+export type VectorRequestFetcher = SearchHttpFetcher<VectorHttpResponse>;
 
 export interface ExecuteVectorRequestOptions {
   timeout_ms?: number;
@@ -108,7 +100,6 @@ type VectorSettingsInput = {
 };
 
 const DEFAULT_COLLECTION = "pm_items";
-const DEFAULT_VECTOR_TIMEOUT_MS = 30_000;
 const LANCE_DB_LOCAL_SNAPSHOT_DIR = ".pm-cli-local-vectors";
 const LANCE_DB_LOCAL_SNAPSHOT_VERSION = 1;
 const lanceDbLocalTables = new Map<string, Map<string, VectorRecord>>();
@@ -125,32 +116,6 @@ function normalizeLimit(value: number): number {
     throw new Error("Vector query limit must be a positive number");
   }
   return Math.floor(value);
-}
-
-function resolveVectorFetcher(fetcher: VectorRequestFetcher | undefined): VectorRequestFetcher {
-  if (fetcher) {
-    return fetcher;
-  }
-  if (typeof globalThis.fetch === "function") {
-    return globalThis.fetch.bind(globalThis) as unknown as VectorRequestFetcher;
-  }
-  throw new Error("Vector request execution requires a fetch implementation");
-}
-
-function normalizeTimeoutMs(timeoutMs: number | undefined): number {
-  const resolved = timeoutMs ?? DEFAULT_VECTOR_TIMEOUT_MS;
-  if (!Number.isFinite(resolved) || resolved <= 0) {
-    throw new Error("Vector request timeout must be a positive finite number");
-  }
-  return Math.floor(resolved);
-}
-
-async function readFailedResponseBody(response: VectorHttpResponse): Promise<string> {
-  try {
-    return (await response.text()).replaceAll(/\s+/g, " ").trim();
-  } catch (error) {
-    return `(failed to read response body: ${toErrorMessage(error)})`;
-  }
 }
 
 function normalizeQdrantQueryResponse(payload: unknown): VectorQueryHit[] {
@@ -217,41 +182,16 @@ async function executeRemoteVectorPlan(
   fetcher: VectorRequestFetcher,
   requestKind: "query" | "upsert" | "delete",
 ): Promise<unknown> {
-  const controller = new AbortController();
-  const timeoutHandle = setTimeout(() => {
-    controller.abort();
-  }, timeoutMs);
-
-  try {
-    let response: VectorHttpResponse;
-    try {
-      response = await fetcher(endpoint, {
-        method: plan.method,
-        headers: plan.headers,
-        body: JSON.stringify(plan.body),
-        signal: controller.signal,
-      });
-    } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") {
-        throw new Error(`Vector ${requestKind} request timed out after ${timeoutMs}ms`);
-      }
-      throw new Error(`Vector ${requestKind} request execution failed: ${toErrorMessage(error)}`);
-    }
-
-    if (!response.ok) {
-      const responseBody = await readFailedResponseBody(response);
-      const detail = responseBody.length > 0 ? `: ${responseBody}` : "";
-      throw new Error(`Vector ${requestKind} request failed with status ${response.status} ${response.statusText}${detail}`);
-    }
-
-    try {
-      return await response.json();
-    } catch (error) {
-      throw new Error(`Vector ${requestKind} response JSON parse failed: ${toErrorMessage(error)}`);
-    }
-  } finally {
-    clearTimeout(timeoutHandle);
-  }
+  return await executeSearchJsonRequest({
+    endpoint,
+    method: plan.method,
+    headers: plan.headers,
+    body: plan.body,
+    timeoutMs,
+    fetcher,
+    requestLabel: `Vector ${requestKind} request`,
+    responseLabel: `Vector ${requestKind} response`,
+  });
 }
 
 function resolveQdrantStore(settings: VectorSettingsInput): QdrantVectorStoreConfig | null {
@@ -656,8 +596,8 @@ export async function executeVectorQuery(
     });
     return hits.slice(0, queryLimit);
   }
-  const timeoutMs = normalizeTimeoutMs(options.timeout_ms);
-  const fetcher = resolveVectorFetcher(options.fetcher);
+  const timeoutMs = normalizeSearchHttpTimeoutMs(options.timeout_ms, "Vector request");
+  const fetcher = resolveSearchHttpFetcher(options.fetcher, "Vector request");
   const payload = await executeRemoteVectorPlan(
     plan.target.query_target,
     {
@@ -693,8 +633,8 @@ export async function executeVectorUpsert(
     lanceDbLocalTables.set(key, table);
     return { status: "ok" };
   }
-  const timeoutMs = normalizeTimeoutMs(options.timeout_ms);
-  const fetcher = resolveVectorFetcher(options.fetcher);
+  const timeoutMs = normalizeSearchHttpTimeoutMs(options.timeout_ms, "Vector request");
+  const fetcher = resolveSearchHttpFetcher(options.fetcher, "Vector request");
   const payload = await executeRemoteVectorPlan(
     plan.target.upsert_target,
     {
@@ -737,8 +677,8 @@ export async function executeVectorDelete(
     }
     return { status: "ok" };
   }
-  const timeoutMs = normalizeTimeoutMs(options.timeout_ms);
-  const fetcher = resolveVectorFetcher(options.fetcher);
+  const timeoutMs = normalizeSearchHttpTimeoutMs(options.timeout_ms, "Vector request");
+  const fetcher = resolveSearchHttpFetcher(options.fetcher, "Vector request");
   const payload = await executeRemoteVectorPlan(
     resolveQdrantDeleteTarget(plan.target.upsert_target),
     {

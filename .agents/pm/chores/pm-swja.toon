@@ -1,0 +1,36 @@
+id: pm-swja
+title: "CI: make package test scripts sandbox-first"
+description: Align npm scripts and GitHub workflows with the sandboxed PM_PATH/PM_GLOBAL_PATH test runner so local and CI test commands are safe by default and CI avoids duplicate full coverage runs.
+type: Chore
+status: closed
+priority: 1
+tags[4]: agent-ux,ci,pm-cli,testing
+created_at: "2026-05-02T11:20:25.763Z"
+updated_at: "2026-05-02T11:29:45.337Z"
+author: codex-agent
+acceptance_criteria: "pnpm test and pnpm test:coverage use node scripts/run-tests.mjs; CI workflows skip the extra build inside test scripts after the explicit build step; redundant coverage runs are removed while sandboxed coverage remains enforced; workflow contract tests are updated."
+parent: pm-ote
+resolution: Package test scripts and GitHub workflows now use sandbox-first test execution without duplicate full coverage runs.
+expected_result: "Local pnpm test commands and CI gates preserve PM_PATH/PM_GLOBAL_PATH isolation while keeping build, typecheck, coverage, security, packaging, and release gates intact."
+actual_result: "pnpm test/test:coverage call node scripts/run-tests.mjs; workflows skip the internal rebuild after explicit build and rely on the sandboxed coverage gate; focused contract tests and full coverage passed."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-wo8,related,"2026-05-02T11:20:25.763Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-05-02T11:20:25.763Z",codex-agent,"Duplicate check: pm search sandboxed package scripts CI workflow test coverage,pm search release readiness CI workflow sandbox test scripts,and pm list-open --tag ci found only closed broad CI items (pm-wo8/pm-ote) and no open focused item for sandbox-first package scripts,so this follow-up is net-new."
+  "2026-05-02T11:28:48.901Z",codex-agent,"Evidence: package test scripts now route through node scripts/run-tests.mjs; CI/release/nightly workflows set PM_RUN_TESTS_SKIP_BUILD after explicit build and removed redundant second coverage pass. Verified upstream action tags, focused workflow/package contract tests through pm test, pnpm test package-script passthrough, pnpm typecheck, and full 100% coverage."
+  "2026-05-02T11:29:45.337Z",codex-agent,"Additional release smoke evidence after closure: npm pack --dry-run passed and pnpm smoke:npx passed against the built package."
+notes[1]{created_at,author,text}:
+  "2026-05-02T11:20:25.763Z",codex-agent,"Upstream check on 2026-05-02: checkout v6,setup-node v6,upload-artifact v7,pnpm/action-setup v6 tag exists,softprops/action-gh-release v3 tag exists."
+files[6]{path,scope,note}:
+  package.json,project,sandbox-first npm scripts
+  .github/workflows/ci.yml,project,CI test workflow optimization
+  .github/workflows/nightly.yml,project,nightly sandbox-first test workflow
+  .github/workflows/release.yml,project,release sandbox-first coverage workflow
+  tests/integration/ci-workflow-contract.spec.ts,project,workflow contract assertions
+  tests/integration/release-readiness-runtime.spec.ts,project,package script contract assertions
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/run-tests-script.integration.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,sandbox-safe CI workflow and package script contracts
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-moo96ll0-sv7pks,test,passed,"2026-05-02T11:22:39.632Z","2026-05-02T11:23:18.852Z","2026-05-02T11:23:18.852Z",null,null,1,0,0,null,null,null
+close_reason: "Sandbox-first package scripts and optimized CI workflow coverage gates implemented; focused contract tests, typecheck, and full 100% coverage passed."
+body: "Follow-up from 2026-05-02 audit. Current workflows already use latest major GitHub Actions and least-privilege permissions, but package scripts still invoke Vitest directly and CI also runs an extra sandbox coverage step."

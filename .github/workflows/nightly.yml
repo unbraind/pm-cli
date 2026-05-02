@@ -59,12 +59,12 @@ jobs:
 
       - name: Test with coverage gate
         if: matrix.node == 20
+        env:
+          PM_RUN_TESTS_SKIP_BUILD: "1"
         run: pnpm test:coverage
-
-      - name: Sandboxed PM regression (coverage)
-        if: matrix.node == 20
-        run: node scripts/run-tests.mjs coverage
 
       - name: Test
         if: matrix.node != 20
+        env:
+          PM_RUN_TESTS_SKIP_BUILD: "1"
         run: pnpm test

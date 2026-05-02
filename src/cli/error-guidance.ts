@@ -274,9 +274,18 @@ function buildPmCliErrorGuidance(rawMessage: string, context?: PmCliErrorContext
         code: "no_update_fields",
         title: "No update fields supplied",
         happened: "The update command was called without any field-changing flags.",
-        required: "Provide at least one update field such as --status, --priority, --title, --tags, or --message.",
+        required:
+          "Provide at least one field-changing flag such as --status, --priority, --title, --tags, --description, or --body. Use --message only to label a real mutation.",
         why: "pm update mutates existing item fields; no-op invocations are rejected to avoid ambiguous history.",
-        examples: ['pm update pm-a1b2 --status in_progress --message "Start implementation"'],
+        examples: [
+          'pm update pm-a1b2 --status in_progress --message "Start implementation"',
+          'pm update pm-a1b2 --description "Clarified implementation scope" --message "Clarify task intent"',
+          'pm append pm-a1b2 --body "Detailed progress notes" --message "Append progress notes"',
+        ],
+        nextSteps: [
+          "Choose the item field you intend to change, then pair that change with --message for history context.",
+          "Use pm comments, pm notes, pm learnings, or pm append when you only need to add narrative context.",
+        ],
       }),
       rawMessage,
       context,

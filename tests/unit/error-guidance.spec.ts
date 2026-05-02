@@ -60,6 +60,23 @@ describe("pm cli error guidance context plumbing", () => {
     expect(envelope.examples?.some((example) => example.includes("pm-does-not-exist"))).toBe(false);
   });
 
+  it("explains that update --message must accompany a real field mutation", () => {
+    const envelope = formatPmCliErrorForJson("No update flags provided", 2);
+
+    expect(envelope.code).toBe("no_update_fields");
+    expect(envelope.required).toContain("field-changing flag");
+    expect(envelope.required).toContain("Use --message only to label a real mutation.");
+    expect(envelope.required).not.toContain("or --message");
+    expect(envelope.examples).toEqual([
+      'pm update pm-a1b2 --status in_progress --message "Start implementation"',
+      'pm update pm-a1b2 --description "Clarified implementation scope" --message "Clarify task intent"',
+      'pm append pm-a1b2 --body "Detailed progress notes" --message "Append progress notes"',
+    ]);
+    expect(envelope.next_steps).toContain(
+      "Use pm comments, pm notes, pm learnings, or pm append when you only need to add narrative context.",
+    );
+  });
+
   it("applies runtime unknown-command guidance examples for commander errors", () => {
     const envelope = formatCommanderErrorForJson("unknown command 'beads'", "help", "Task|Issue", 2, {
       unknownCommandExamples: ["pm --help", "pm list-open --help", "pm context --help"],

@@ -58,7 +58,6 @@ describe("GitHub workflow contract", () => {
       "run: pnpm security:scan",
       "if: matrix.os == 'ubuntu-latest' && matrix.node == 20",
       "run: pnpm test:coverage",
-      "run: node scripts/run-tests.mjs coverage",
       "run: npm pack --dry-run",
       "run: pnpm smoke:npx",
       "uses: actions/upload-artifact@v7",
@@ -67,6 +66,8 @@ describe("GitHub workflow contract", () => {
       "path: coverage",
       "if-no-files-found: ignore",
     ]);
+    expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(2);
+    expect(ciWorkflow).not.toContain("Sandboxed PM regression");
 
     expectContainsNone(ciWorkflow, PUBLISH_OR_RELEASE_PATTERNS);
   });
@@ -93,10 +94,11 @@ describe("GitHub workflow contract", () => {
       "run: pnpm typecheck",
       "if: matrix.node == 20",
       "run: pnpm test:coverage",
-      "run: node scripts/run-tests.mjs coverage",
       "if: matrix.node != 20",
       "run: pnpm test",
     ]);
+    expect(nightlyWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(2);
+    expect(nightlyWorkflow).not.toContain("Sandboxed PM regression");
 
     expectContainsNone(nightlyWorkflow, PUBLISH_OR_RELEASE_PATTERNS);
   });
@@ -120,7 +122,6 @@ describe("GitHub workflow contract", () => {
       "run: pnpm build",
       "run: pnpm typecheck",
       "run: pnpm test:coverage",
-      "run: node scripts/run-tests.mjs coverage",
       "name: Upload Sentry sourcemaps",
       "SENTRY_AUTH_TOKEN",
       "SENTRY_AUTH_TOKEN is not configured",
@@ -140,5 +141,7 @@ describe("GitHub workflow contract", () => {
       "path: coverage",
       "if-no-files-found: ignore",
     ]);
+    expect(releaseWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(1);
+    expect(releaseWorkflow).not.toContain("Sandboxed PM regression");
   });
 });

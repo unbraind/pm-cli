@@ -1,7 +1,12 @@
 import type { PmSettings } from "../../types/index.js";
 import {
+  executeSearchJsonRequest,
+  normalizeSearchHttpTimeoutMs,
+  resolveSearchHttpFetcher,
+} from "./http-client.js";
+import type { SearchHttpFetcher, SearchHttpResponse } from "./http-client.js";
+import {
   isFiniteNumberArray,
-  toErrorMessage,
   toNonEmptyString,
   trimTrailingSlashes,
 } from "../shared/primitives.js";
@@ -33,30 +38,14 @@ export interface EmbeddingRequestPlan {
   body: Record<string, unknown>;
 }
 
-export interface EmbeddingHttpResponse {
-  ok: boolean;
-  status: number;
-  statusText: string;
-  json(): Promise<unknown>;
-  text(): Promise<string>;
-}
+export type EmbeddingHttpResponse = SearchHttpResponse;
 
-export type EmbeddingRequestFetcher = (
-  url: string,
-  init: {
-    method: "POST";
-    headers: Record<string, string>;
-    body: string;
-    signal: AbortSignal;
-  },
-) => Promise<EmbeddingHttpResponse>;
+export type EmbeddingRequestFetcher = SearchHttpFetcher<EmbeddingHttpResponse>;
 
 export interface ExecuteEmbeddingRequestOptions {
   timeout_ms?: number;
   fetcher?: EmbeddingRequestFetcher;
 }
-
-const DEFAULT_EMBEDDING_TIMEOUT_MS = 30_000;
 
 type ProviderSettingsInput = {
   providers?: {
@@ -268,83 +257,31 @@ export function normalizeEmbeddingResponse(provider: EmbeddingProviderConfig, re
   throw new Error("Ollama embedding response must include embedding or embeddings vectors");
 }
 
-function resolveEmbeddingFetcher(fetcher: EmbeddingRequestFetcher | undefined): EmbeddingRequestFetcher {
-  if (fetcher) {
-    return fetcher;
-  }
-  if (typeof globalThis.fetch === "function") {
-    return globalThis.fetch.bind(globalThis) as unknown as EmbeddingRequestFetcher;
-  }
-  throw new Error("Embedding request execution requires a fetch implementation");
-}
-
-function normalizeTimeoutMs(timeoutMs: number | undefined): number {
-  const resolved = timeoutMs ?? DEFAULT_EMBEDDING_TIMEOUT_MS;
-  if (!Number.isFinite(resolved) || resolved <= 0) {
-    throw new Error("Embedding request timeout must be a positive finite number");
-  }
-  return Math.floor(resolved);
-}
-
-async function readFailedResponseBody(response: EmbeddingHttpResponse): Promise<string> {
-  try {
-    return (await response.text()).replaceAll(/\s+/g, " ").trim();
-  } catch (error) {
-    return `(failed to read response body: ${toErrorMessage(error)})`;
-  }
-}
-
 export async function executeEmbeddingRequest(
   provider: EmbeddingProviderConfig,
   input: string | string[],
   options: ExecuteEmbeddingRequestOptions = {},
 ): Promise<number[][]> {
-  const timeoutMs = normalizeTimeoutMs(options.timeout_ms);
-  const fetcher = resolveEmbeddingFetcher(options.fetcher);
+  const timeoutMs = normalizeSearchHttpTimeoutMs(options.timeout_ms, "Embedding request");
+  const fetcher = resolveSearchHttpFetcher(options.fetcher, "Embedding request");
   const normalizedInputs = normalizeEmbeddingInputs(input);
   const dedupedInputs = dedupeEmbeddingInputs(normalizedInputs);
   const requestPlan = buildEmbeddingRequestPlan(provider, dedupedInputs.uniqueInputs);
-  const controller = new AbortController();
-  const timeoutHandle = setTimeout(() => {
-    controller.abort();
-  }, timeoutMs);
-
-  try {
-    let response: EmbeddingHttpResponse;
-    try {
-      response = await fetcher(requestPlan.target.endpoint, {
-        method: requestPlan.method,
-        headers: requestPlan.headers,
-        body: JSON.stringify(requestPlan.body),
-        signal: controller.signal,
-      });
-    } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") {
-        throw new Error(`Embedding request timed out after ${timeoutMs}ms`);
-      }
-      throw new Error(`Embedding request execution failed: ${toErrorMessage(error)}`);
-    }
-
-    if (!response.ok) {
-      const responseBody = await readFailedResponseBody(response);
-      const detail = responseBody.length > 0 ? `: ${responseBody}` : "";
-      throw new Error(`Embedding request failed with status ${response.status} ${response.statusText}${detail}`);
-    }
-
-    let payload: unknown;
-    try {
-      payload = await response.json();
-    } catch (error) {
-      throw new Error(`Embedding response JSON parse failed: ${toErrorMessage(error)}`);
-    }
-    const vectors = normalizeEmbeddingResponse(provider, payload);
-    if (vectors.length !== dedupedInputs.uniqueInputs.length) {
-      throw new Error(
-        `Embedding response cardinality mismatch: expected ${dedupedInputs.uniqueInputs.length} vector(s), received ${vectors.length}`,
-      );
-    }
-    return dedupedInputs.originalToUniqueIndex.map((uniqueIndex) => [...vectors[uniqueIndex]]);
-  } finally {
-    clearTimeout(timeoutHandle);
+  const payload = await executeSearchJsonRequest({
+    endpoint: requestPlan.target.endpoint,
+    method: requestPlan.method,
+    headers: requestPlan.headers,
+    body: requestPlan.body,
+    timeoutMs,
+    fetcher,
+    requestLabel: "Embedding request",
+    responseLabel: "Embedding response",
+  });
+  const vectors = normalizeEmbeddingResponse(provider, payload);
+  if (vectors.length !== dedupedInputs.uniqueInputs.length) {
+    throw new Error(
+      `Embedding response cardinality mismatch: expected ${dedupedInputs.uniqueInputs.length} vector(s), received ${vectors.length}`,
+    );
   }
+  return dedupedInputs.originalToUniqueIndex.map((uniqueIndex) => [...vectors[uniqueIndex]]);
 }

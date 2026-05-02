@@ -54,10 +54,9 @@ jobs:
         run: pnpm typecheck
 
       - name: Test with coverage gate
+        env:
+          PM_RUN_TESTS_SKIP_BUILD: "1"
         run: pnpm test:coverage
-
-      - name: Sandboxed PM regression (coverage)
-        run: node scripts/run-tests.mjs coverage
 
       - name: Upload Sentry sourcemaps
         env:

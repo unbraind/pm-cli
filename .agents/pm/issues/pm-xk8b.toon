@@ -6,16 +6,17 @@ status: closed
 priority: 2
 tags[4]: audit,hygiene,pm-cli,security
 created_at: "2026-04-28T17:34:52.401Z"
-updated_at: "2026-05-01T23:18:27.453Z"
+updated_at: "2026-05-02T11:03:22.064Z"
 author: audit-agent
 parent: pm-wg1d
 severity: low
 resolution: "Resolution normalized from close_reason: Private IP references documented; linked test command in pm-cakn redacted; no credential exposure found"
 expected_result: "Expected closure outcome: Private IP references documented; linked test command in pm-cakn redacted; no credential exposure found"
 actual_result: "Actual closure outcome: Private IP references documented; linked test command in pm-cakn redacted; no credential exposure found"
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-04-28T17:36:32.951Z",audit-agent,Redacted SSH test command in pm-cakn. Added audit note to pm-mb4n. Historical comments contain private host references as audit artifacts but no credentials.
   "2026-05-01T22:54:27.307Z",audit-agent,"2026-05-02 remediation: (1) pm-ny6y description redacted to remove private IP, (2) pm-jkip body redacted, (3) audit comments added to pm-ny6y, pm-mb4n, pm-0kjv, pm-e0b5, pm-2eb3 documenting historical IP references in append-only comments/notes, (4) check-secrets.mjs passes clean, (5) no passwords or tokens found in any tracked file."
   "2026-05-01T23:18:27.453Z",audit-agent,"2026-05-02 audit reconfirm: (1) check-secrets.mjs enhanced with sentry-user-token and sentry-org-token rules, (2) re-scan passes clean, (3) no new IP/password/token references in source code, (4) historical append-only pm item references remain as documented legacy -- no credentials were ever exposed."
+  "2026-05-02T11:03:22.064Z",codex-agent,"Audit reseal: current redacted item state re-recorded through pm mutation after prior hygiene edits; no secret material added."
 close_reason: Private IP references documented; linked test command in pm-cakn redacted; no credential exposure found
 body: "Files .agents/pm/tasks/pm-mb4n.toon and .agents/pm/tasks/pm-cakn.toon contain references to [redacted_user]@[redacted_host] in comment/evidence text and linked test commands. While not a credential leak (private IP, no passwords), this is unnecessary information exposure. These references were left from prior audit runs. The linked test in pm-cakn has an SSH command targeting the private host. Remediation: redact the private IP from committed pm items."
