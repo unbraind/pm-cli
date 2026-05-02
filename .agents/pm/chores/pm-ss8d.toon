@@ -1,0 +1,23 @@
+id: pm-ss8d
+title: "2026-05-02 Full Audit: All Systems Verified"
+description: "Comprehensive audit verifying code quality, search, calendar, SDK, telemetry, Sentry, and security across the entire pm CLI."
+type: Chore
+status: closed
+priority: 2
+tags[5]: audit,code-quality,sdk,search,telemetry
+created_at: "2026-05-02T07:46:26.652Z"
+updated_at: "2026-05-02T07:47:10.861Z"
+author: audit-agent
+acceptance_criteria: All audit phases completed and documented
+parent: pm-rrjv
+notes[1]{created_at,author,text}:
+  "2026-05-02T07:46:52.647Z",audit-agent,"Audit methodology: (1) Security sweep via check-secrets.mjs + pattern grep (2) Build verification + full test run 1087/1087 (3) Dogfood in /tmp sandbox (4) Code review of all 99 source files (5) Semantic search E2E with Ollama (6) Calendar all views+formats (7) SDK export surface verification (8) Performance timing (9) Telemetry E2E ingest test (10) Sentry issue analysis"
+learnings[1]{created_at,author,text}:
+  "2026-05-02T07:46:55.575Z",audit-agent,"The pm CLI codebase is exceptionally clean after prior audit waves. Zero any types, zero process.exit, zero dead utility duplicates. The main actionable improvements are structural (main.ts decomposition) and performance (manifest-based item loading for 1000+ projects)."
+files[4]{path,scope,note}:
+  scripts/prod/telemetry/check-stack.sh,project,stack health check script
+  scripts/prod/telemetry/query-events.sh,project,telemetry data query tool
+  scripts/prod/telemetry/README.md,project,telemetry stack documentation
+  scripts/prod/telemetry/sentry-summary.sh,project,sentry issue summary tool
+close_reason: "All 11 audit phases completed successfully. Build passes (1087/1087 tests), security clean, search working (score 0.98), calendar 4 views verified, SDK 78 exports, telemetry E2E ingest confirmed (HTTP 200), Sentry 0 code bugs."
+body: "AUDIT RESULTS (2026-05-02 v2026.5.1-2):\n\nSECURITY (PASS): check-secrets.mjs passes clean. No credentials/IPs/tokens in tracked files. Sentry beforeSend scrubs sntr[ysu]_ patterns. Telemetry sanitizeString redacts emails/tokens/paths.\n\nBUILD (PASS): pnpm build clean. TypeScript strict. 1087/1087 tests pass across 81 files.\n\nSEARCH (PASS): Hybrid mode (keyword+semantic) working. qwen3-embedding:0.6b + LanceDB. 644 items vectorized. Score 0.98 for relevant queries. Auto-indexing on mutations confirmed.\n\nCALENDAR (PASS): 4 views (agenda/day/week/month) x 3 formats (toon/json/markdown). Recurrence expansion (daily/weekly/monthly/yearly). by_weekday/by_month_day/exdates/until/count/interval all working.\n\nSDK (PASS): 78 exports including defineExtension. 56 commands in contracts. 2 extensions active (beads, todos). package.json exports resolve correctly.\n\nTELEMETRY (PASS): pm-cli.unbrained.dev accepts events (HTTP 200). pm.unbrained.dev (Grafana) accessible. Queue flush with retry/backoff working. OTel span export configured.\n\nSENTRY (PASS): 8 issues total, all PmCliError (user-facing). Zero unexpected exceptions. Free plan tracesSampleRate 0.2 appropriate. Source map pipeline working.\n\nCODE QUALITY (PASS): Zero any types. Zero process.exit(). Utilities canonical (toNonEmptyString, toErrorMessage, nowIso single definitions). 50,275 source lines across 99 files.\n\nPERFORMANCE (ACCEPTABLE): list 0.95s, search 1.58s, context 1.17s, calendar 0.74s for 644 items. Only sync I/O at startup (Sentry version + package.json).\n\nOPEN IMPROVEMENTS: (1) pm-6c3h main.ts 5796 lines decomposition, (2) pm-p0p1 HTTP fetch pattern consolidation, (3) pm-f6wr list performance for 1000+ item projects."

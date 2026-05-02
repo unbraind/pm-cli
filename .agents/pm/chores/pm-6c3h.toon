@@ -6,11 +6,12 @@ status: open
 priority: 2
 tags[3]: code-quality,pm-cli,tech-debt
 created_at: "2026-05-01T23:38:54.544Z"
-updated_at: "2026-05-02T06:55:09.120Z"
+updated_at: "2026-05-02T07:45:49.749Z"
 author: audit-agent
 parent: pm-nnhi
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-kkmo,related,"2026-05-02T06:55:09.114Z",audit-agent,null
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-05-02T06:47:41.260Z",audit-agent,"Audit 2026-05-02: main.ts is now 5796 lines. cli-contracts.ts at 2497 lines with --assignee flag repeated 15 times across contract arrays. Both are candidates for decomposition."
+  "2026-05-02T07:45:49.749Z",audit-agent,"2026-05-02 audit confirms main.ts is 5796 lines. Still the only code-organization concern. All 39 command files use consistent patterns (EXIT_CODE, PmCliError). No functional urgency but would improve maintainability."
 body: ""
