@@ -6,12 +6,13 @@ status: open
 priority: 3
 tags[2]: performance,pm-cli
 created_at: "2026-05-01T23:46:06.492Z"
-updated_at: "2026-05-02T07:46:03.822Z"
+updated_at: "2026-05-02T11:52:39.102Z"
 author: audit-agent
 parent: pm-nnhi
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-kkmo,related,"2026-05-02T06:55:11.890Z",audit-agent,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-05-02T06:48:21.552Z",audit-agent,"Audit 2026-05-02: listAllDocuments reads all files from all type directories, parses each with TOON/JSON parser, runs onRead hooks, then deduplicates by ID. For 636+ items this is O(n) reads. A manifest-based approach (tracking id->path->mtime) would enable incremental reads. Calendar listAllFrontMatter has the same issue. Sentry lazy-loading confirmed working (ensureSentryInit with _initDone guard). Embedding batch retry with exponential backoff confirmed correct."
   "2026-05-02T07:46:03.822Z",audit-agent,"2026-05-02 audit: Performance measured - list-open ~0.95s, search ~1.58s (includes Ollama), context ~1.17s, calendar ~0.74s for 644 items. Acceptable but list-open could benefit from pagination/lazy-load for very large projects (1000+ items)."
+  "2026-05-02T11:52:39.102Z",audit-agent,"2026-05-02 audit note: Performance issue confirmed but mitigated by current codebase size (647 items, sub-2s response). Will become important if tracker exceeds 1000+ items. No regression since last check."
 body: ""

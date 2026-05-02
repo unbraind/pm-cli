@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
 import { getActiveExtensionRegistrations, runActiveOnReadHooks } from "../../core/extensions/index.js";
 import {
   resolveRegisteredSearchProvider,
@@ -735,13 +736,7 @@ function requireSemanticDependencies(
   };
 }
 
-function toOptionalNonEmptyString(value: unknown): string | undefined {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-  const normalized = value.trim();
-  return normalized.length > 0 ? normalized : undefined;
-}
+const toOptionalNonEmptyString = toNonEmptyStringOrUndefined;
 
 function resolveExtensionSearchProvider(settings: PmSettings): { providerName: string; query: ExtensionSearchProviderQuery } | null {
   const registrations = getActiveExtensionRegistrations();

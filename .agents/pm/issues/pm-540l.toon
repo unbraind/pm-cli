@@ -6,16 +6,20 @@ status: closed
 priority: 2
 tags[3]: code-quality,dedup,pm-cli
 created_at: "2026-05-01T22:37:57.400Z"
-updated_at: "2026-05-02T07:15:35.021Z"
+updated_at: "2026-05-02T11:52:07.430Z"
 author: audit-agent
 parent: pm-rrjv
 resolution: "Resolution normalized from close_reason: Deduplicated toErrorMessage (from lock.ts, cache.ts) and nowIso (from runtime.ts) to use canonical imports from primitives.ts and time.ts respectively"
 expected_result: "Expected closure outcome: Deduplicated toErrorMessage (from lock.ts, cache.ts) and nowIso (from runtime.ts) to use canonical imports from primitives.ts and time.ts respectively"
 actual_result: "Actual closure outcome: Deduplicated toErrorMessage (from lock.ts, cache.ts) and nowIso (from runtime.ts) to use canonical imports from primitives.ts and time.ts respectively"
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-05-01T22:59:34.986Z",audit-agent,"Follow-up dedup completed: removed local toNonEmptyString copies from validate.ts, health.ts, main.ts, normalize.ts - all now use canonical toNonEmptyStringOrUndefined from core/shared/primitives.ts. Build passes clean."
-files[2]{path,scope,note}:
+  "2026-05-02T11:51:49.755Z",audit-agent,"Follow-up: 2026-05-02 audit discovered 3 more local toOptionalNonEmptyString copies in search.ts, reindex.ts, semantic-defaults.ts. Consolidated to use toNonEmptyStringOrUndefined and toNonEmptyString from core/shared/primitives.ts. All 1090 tests pass."
+files[5]{path,scope,note}:
+  src/cli/commands/reindex.ts,project,removed local toOptionalNonEmptyString
+  src/cli/commands/search.ts,project,removed local toOptionalNonEmptyString
   src/core/search/cache.ts,project,duplicated toErrorMessage
+  src/core/search/semantic-defaults.ts,project,removed local toOptionalNonEmptyString
   src/core/shared/primitives.ts,project,canonical toErrorMessage/toNonEmptyString
 close_reason: "Deduplicated toErrorMessage (from lock.ts, cache.ts) and nowIso (from runtime.ts) to use canonical imports from primitives.ts and time.ts respectively"
 body: ""

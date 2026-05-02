@@ -1,4 +1,5 @@
 import path from "node:path";
+import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
 import { getActiveExtensionRegistrations, runActiveOnIndexHooks, runActiveOnWriteHooks } from "../../core/extensions/index.js";
 import {
   resolveRegisteredSearchProvider,
@@ -130,13 +131,7 @@ type ExtensionVectorUpsert = (context: {
   settings: PmSettings;
 }) => Promise<void> | void;
 
-function toOptionalNonEmptyString(value: unknown): string | undefined {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-  const normalized = value.trim();
-  return normalized.length > 0 ? normalized : undefined;
-}
+const toOptionalNonEmptyString = toNonEmptyStringOrUndefined;
 
 function resolveExtensionSearchEmbedding(
   settings: PmSettings,

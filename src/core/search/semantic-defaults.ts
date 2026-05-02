@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
 import type { PmSettings } from "../../types/index.js";
+import { toNonEmptyString } from "../shared/primitives.js";
 
 const DISABLE_AUTO_DEFAULTS_ENV = "PM_DISABLE_OLLAMA_AUTO_DEFAULTS";
 const OLLAMA_MODEL_ENV = "PM_OLLAMA_MODEL";
@@ -14,13 +15,7 @@ export interface SemanticRuntimeDefaultsResolution {
   auto_ollama_defaults_applied: boolean;
 }
 
-function toOptionalNonEmptyString(value: unknown): string | null {
-  if (typeof value !== "string") {
-    return null;
-  }
-  const normalized = value.trim();
-  return normalized.length > 0 ? normalized : null;
-}
+const toOptionalNonEmptyString = toNonEmptyString;
 
 function isAutoDefaultsDisabled(): boolean {
   const raw = toOptionalNonEmptyString(process.env[DISABLE_AUTO_DEFAULTS_ENV]);
