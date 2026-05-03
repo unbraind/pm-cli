@@ -2,17 +2,19 @@ id: pm-0qv7
 title: Release @unbrained/pm-cli after 2026.5.2
 description: "Prepare, verify, and publish the next pm CLI release from changes after 2026.5.2 with backward-compatibility, telemetry/Sentry, changelog, docs, workflow, and public registry verification gates."
 type: Chore
-status: in_progress
+status: closed
 priority: 0
 tags[7]: changelog,ci,compatibility,pm-cli,release,sentry,telemetry
 created_at: "2026-05-03T18:30:09.216Z"
-updated_at: "2026-05-03T19:25:23.320Z"
+updated_at: "2026-05-03T19:34:27.710Z"
 deadline: "2026-05-04T18:30:09.216Z"
-assignee: codex-release-agent
 author: codex-release-agent
 estimated_minutes: 240
 acceptance_criteria: Temporary previous-version data migrates safely under the new build; telemetry and Sentry latest data are reviewed; release notes/changelog/docs are current and generated from pm evidence; full tests and secret scans pass; GitHub/npm/npx/bunx publish verification succeeds.
 parent: pm-rnpb
+resolution: "Release 2026.5.3 was published through the tag-driven GitHub Actions workflow and verified across npm, npx, bunx, GitHub Releases, and Sentry."
+expected_result: "A backward-compatible 2026.5.3 release is publicly available from npm and GitHub with generated release notes, passing local and CI gates."
+actual_result: GitHub Actions run 25288517005 completed successfully; npm latest resolves to 2026.5.3; npx and bunx execute 2026.5.3; GitHub release v2026.5.3 is published; Sentry release pm-cli@2026.5.3 is visible.
 comments[9]{created_at,author,text}:
   "2026-05-03T18:30:09.216Z",codex-release-agent,"Duplicate-check evidence: ran pm context --limit 10, pm search release compatibility telemetry sentry changelog 2026.5.3 --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Only prior release item pm-5jw8 was closed and open audit parent pm-rnpb covers the lineage, so a new release chore is required."
   "2026-05-03T18:39:25.526Z",codex-release-agent,"Compatibility gate passed in isolated temp project: @unbrained/pm-cli@2026.5.2 initialized and created 3 representative items with parent/dependency links, files/docs/tests, comments, notes, learnings, reminders, events, close metadata, and history. Current built CLI read and mutated legacy data, ran linked test node --version, and passed pm validate --check-resolution --check-history-drift plus pm health --check-only without item loss (3 before, 3 after). Temp root: /tmp/pm-compat-2026-5-2.00lPcA."
@@ -46,4 +48,5 @@ test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resum
   test-local-moq5towo-vo61t7,test,passed,"2026-05-03T19:19:48.937Z","2026-05-03T19:24:50.137Z","2026-05-03T19:24:50.137Z",null,null,6,0,0,null,null,null
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,release workflow source of truth
+close_reason: "Release 2026.5.3 published and verified: GitHub Actions release run 25288517005 succeeded; npm latest is 2026.5.3; npm view returned integrity metadata; npx and bunx both returned 2026.5.3; GitHub release v2026.5.3 is published; Sentry release pm-cli@2026.5.3 is visible."
 body: ""
