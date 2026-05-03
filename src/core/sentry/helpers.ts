@@ -2,6 +2,7 @@ import { getSentry } from "./instrument.js";
 import { PmCliError } from "../shared/errors.js";
 import type { TelemetryErrorCategory } from "../shared/constants.js";
 import {
+  deriveTelemetryCommandResolution,
   deriveTelemetryCommandTaxonomy,
   type TelemetryCommandResolution,
   type TelemetryResolutionStage,
@@ -95,8 +96,33 @@ export function sentryFinishCommandSpan(
   },
 ): void {
   if (!activeCommandSpan) return;
-  setSpanAttribute(activeCommandSpan, "pm.ok", ok);
-  setSpanAttribute(activeCommandSpan, "pm.exit_code", metadata?.exit_code);
+  const normalizedOk = ok ? "true" : "false";
+  const normalizedExitCode = typeof metadata?.exit_code === "number" ? String(metadata.exit_code) : undefined;
+  const Sentry = getSentry();
+  if (Sentry) {
+    Sentry.setTag("pm.ok", normalizedOk);
+    Sentry.setTag("pm.command_ok", normalizedOk);
+    if (typeof metadata?.exit_code === "number") {
+      Sentry.setTag("pm.exit_code", String(metadata.exit_code));
+      Sentry.setTag("pm.command_exit_code", String(metadata.exit_code));
+    }
+    if (typeof metadata?.error_code === "string" && metadata.error_code.trim().length > 0) {
+      Sentry.setTag("pm.error_code", metadata.error_code);
+    }
+    if (typeof metadata?.error_category === "string" && metadata.error_category.trim().length > 0) {
+      Sentry.setTag("pm.error_category", metadata.error_category);
+    }
+    if (typeof metadata?.command_resolution === "string" && metadata.command_resolution.trim().length > 0) {
+      Sentry.setTag("pm.command_resolution", metadata.command_resolution);
+    }
+    if (typeof metadata?.resolution_stage === "string" && metadata.resolution_stage.trim().length > 0) {
+      Sentry.setTag("pm.resolution_stage", metadata.resolution_stage);
+    }
+  }
+  setSpanAttribute(activeCommandSpan, "pm.ok", normalizedOk);
+  setSpanAttribute(activeCommandSpan, "pm.command_ok", normalizedOk);
+  setSpanAttribute(activeCommandSpan, "pm.exit_code", normalizedExitCode);
+  setSpanAttribute(activeCommandSpan, "pm.command_exit_code", normalizedExitCode);
   setSpanAttribute(activeCommandSpan, "pm.error_code", metadata?.error_code);
   setSpanAttribute(activeCommandSpan, "pm.error_category", metadata?.error_category);
   setSpanAttribute(activeCommandSpan, "pm.command_resolution", metadata?.command_resolution);
@@ -138,6 +164,14 @@ export function sentryLogCliUsageError(params: {
 }): void {
   const Sentry = getSentry();
   if (!Sentry) return;
+  const resolvedCommandResolution =
+    params.command_resolution ??
+    deriveTelemetryCommandResolution({
+      ok: false,
+      errorCode: params.error_code,
+      errorCategory: params.error_category,
+    });
+  const resolvedResolutionStage = params.resolution_stage ?? "unknown";
 
   const payload = {
     "pm.command": params.command,
@@ -145,8 +179,8 @@ export function sentryLogCliUsageError(params: {
     "pm.error_category": params.error_category,
     "pm.exit_code": params.exit_code,
     "pm.error_message": params.error_message,
-    "pm.command_resolution": params.command_resolution ?? "",
-    "pm.resolution_stage": params.resolution_stage ?? "",
+    "pm.command_resolution": resolvedCommandResolution,
+    "pm.resolution_stage": resolvedResolutionStage,
     "pm.source_context": params.source_context ?? "",
   };
   const loggerCandidate = (Sentry as unknown as { logger?: { warn?: (message: string, attributes?: Record<string, unknown>) => void } })
@@ -163,8 +197,8 @@ export function sentryLogCliUsageError(params: {
       "pm.error_code": params.error_code,
       "pm.error_category": params.error_category,
       "pm.exit_code": String(params.exit_code),
-      "pm.command_resolution": params.command_resolution ?? "unknown_failed",
-      "pm.resolution_stage": params.resolution_stage ?? "unknown",
+      "pm.command_resolution": resolvedCommandResolution,
+      "pm.resolution_stage": resolvedResolutionStage,
       "pm.source_context": params.source_context ?? "unknown",
     },
     extra: payload,

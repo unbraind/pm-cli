@@ -323,6 +323,8 @@ export const TELEMETRY_ERROR_CATEGORY_BY_CODE: Readonly<Record<string, Telemetry
   item_not_found: "validation",
   ownership_conflict: "conflict",
   lock_conflict: "conflict",
+  terminal_state_conflict: "conflict",
+  dependency_failed: "runtime",
   command_failed: "runtime",
   unknown_error: "runtime",
 });

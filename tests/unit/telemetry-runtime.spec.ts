@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import {
   emitTelemetryErrorEvent,
@@ -536,6 +537,101 @@ describe("core/telemetry/runtime", () => {
       expect(finishEvent?.event.payload.command_resolution).toBe("validation_failed");
       expect(finishEvent?.event.payload.resolution_stage).toBe("execute");
       expect(String(finishEvent?.event.payload.error_fingerprint ?? "")).toMatch(/^[a-f0-9]{64}$/);
+    });
+  });
+
+  it("classifies dependency failures and tracker initialization failures in command_finish payload", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      await setTelemetryCaptureLevel(globalRoot, "redacted");
+      globalThis.fetch = vi.fn(async () => {
+        throw new Error("network_down");
+      }) as unknown as typeof fetch;
+
+      const dependencyFailed = await startTelemetryCommand({
+        command: "test-all",
+        pm_version: "9.9.9-test",
+        args: ["--status", "open"],
+        options: {
+          status: "open",
+        },
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+      expect(dependencyFailed).not.toBeNull();
+      await finishTelemetryCommand(dependencyFailed, {
+        ok: false,
+        error: "linked tests failed",
+        exit_code: EXIT_CODE.DEPENDENCY_FAILED,
+      });
+
+      const trackerInitFailure = await startTelemetryCommand({
+        command: "context",
+        pm_version: "9.9.9-test",
+        args: [],
+        options: {},
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+      expect(trackerInitFailure).not.toBeNull();
+      await finishTelemetryCommand(trackerInitFailure, {
+        ok: false,
+        error: "Tracker is not initialized at /tmp/project/.agents/pm. Run pm init first.",
+        exit_code: EXIT_CODE.NOT_FOUND,
+      });
+      await waitForPendingFlush();
+
+      const queueRaw = await fs.readFile(telemetryQueuePath(globalRoot), "utf8");
+      const entries = queueRaw
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+        .map((line) =>
+          JSON.parse(line) as {
+            event: {
+              event_type: string;
+              command: string;
+              payload: {
+                ok?: boolean;
+                exit_code?: number;
+                error_code?: string;
+                error_category?: string;
+                command_resolution?: string;
+              };
+            };
+          },
+        );
+
+      const dependencyFinish = entries.find(
+        (entry) => entry.event.event_type === "command_finish" && entry.event.command === "test-all",
+      );
+      expect(dependencyFinish).toBeDefined();
+      expect(dependencyFinish?.event.payload.ok).toBe(false);
+      expect(dependencyFinish?.event.payload.exit_code).toBe(EXIT_CODE.DEPENDENCY_FAILED);
+      expect(dependencyFinish?.event.payload.error_code).toBe("dependency_failed");
+      expect(dependencyFinish?.event.payload.error_category).toBe("runtime");
+      expect(dependencyFinish?.event.payload.command_resolution).toBe("runtime_failed");
+
+      const trackerInitFinish = entries.find(
+        (entry) => entry.event.event_type === "command_finish" && entry.event.command === "context",
+      );
+      expect(trackerInitFinish).toBeDefined();
+      expect(trackerInitFinish?.event.payload.ok).toBe(false);
+      expect(trackerInitFinish?.event.payload.exit_code).toBe(EXIT_CODE.NOT_FOUND);
+      expect(trackerInitFinish?.event.payload.error_code).toBe("tracker_not_initialized");
+      expect(trackerInitFinish?.event.payload.error_category).toBe("validation");
+      expect(trackerInitFinish?.event.payload.command_resolution).toBe("validation_failed");
     });
   });
 

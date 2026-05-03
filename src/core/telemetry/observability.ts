@@ -147,6 +147,12 @@ export function inferTelemetryErrorCode(params: InferTelemetryErrorCodeParams): 
   if (message.includes("is locked")) {
     return "lock_conflict";
   }
+  if (message.includes("already terminal") && message.includes("use --force")) {
+    return "terminal_state_conflict";
+  }
+  if (message.includes("tracker is not initialized")) {
+    return "tracker_not_initialized";
+  }
   if (message.includes(" not found")) {
     return "item_not_found";
   }
@@ -159,6 +165,12 @@ export function inferTelemetryErrorCode(params: InferTelemetryErrorCodeParams): 
   if (message.startsWith("invalid ") || message.includes(" must be ")) {
     return "invalid_argument_value";
   }
+  if (message.includes("strict create mode requires concrete values for --")) {
+    return "missing_required_option";
+  }
+  if (message.includes("either as positional") && message.includes("not both")) {
+    return "invalid_command_usage";
+  }
 
   const exitCode = Number.isFinite(params.exitCode) ? Math.max(0, Math.trunc(params.exitCode ?? 0)) : undefined;
   if (exitCode === EXIT_CODE.USAGE) {
@@ -169,6 +181,9 @@ export function inferTelemetryErrorCode(params: InferTelemetryErrorCodeParams): 
   }
   if (exitCode === EXIT_CODE.CONFLICT) {
     return "lock_conflict";
+  }
+  if (exitCode === EXIT_CODE.DEPENDENCY_FAILED) {
+    return "dependency_failed";
   }
   return "command_failed";
 }

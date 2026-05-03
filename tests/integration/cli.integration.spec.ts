@@ -549,6 +549,75 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("records telemetry classifications for strict-exit runtime and parse failures", async () => {
+    await withTempPmPath(async (context) => {
+      context.env.PM_TELEMETRY_DISABLED = "0";
+      context.env.PM_TELEMETRY_OTEL_DISABLED = "1";
+      context.env.PM_TELEMETRY_PROMPT = "0";
+      context.env.PM_TELEMETRY_SOURCE_CONTEXT = "test";
+
+      const projectSettingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(projectSettingsPath, "utf8")) as {
+        telemetry: {
+          enabled: boolean;
+          endpoint: string;
+        };
+      };
+      settings.telemetry.enabled = true;
+      settings.telemetry.endpoint = "http://127.0.0.1:1/v1/events";
+      const globalSettingsPath = path.join(context.env.PM_GLOBAL_PATH as string, "settings.json");
+      await mkdir(path.dirname(globalSettingsPath), { recursive: true });
+      await writeFile(globalSettingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      await rm(path.join(context.pmPath, "events"), { recursive: true, force: true });
+
+      const strictExitHealth = context.runCli(["health", "--strict-directories", "--strict-exit", "--json"], { expectJson: true });
+      expect(strictExitHealth.code).toBe(1);
+      expect((strictExitHealth.json as { ok: boolean }).ok).toBe(false);
+
+      const parseFailure = context.runCli(["list-open", "--invalid-flag", "--json"]);
+      expect(parseFailure.code).toBe(2);
+      const parseEnvelope = parseJsonErrorEnvelope(parseFailure.stderr);
+      expect(parseEnvelope.code).toBe("unknown_option");
+
+      const globalRoot = context.env.PM_GLOBAL_PATH;
+      expect(typeof globalRoot).toBe("string");
+      const queuePath = path.join(globalRoot as string, "runtime", "telemetry", "events.jsonl");
+      const queueRaw = await readFile(queuePath, "utf8");
+      const events = queueRaw
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+        .map((line) =>
+          JSON.parse(line) as {
+            event: {
+              event_type: string;
+              command: string;
+              payload: Record<string, unknown>;
+            };
+          },
+        );
+
+      const healthFinish = events.find(
+        (entry) => entry.event.event_type === "command_finish" && entry.event.command === "health",
+      );
+      expect(healthFinish).toBeDefined();
+      expect(healthFinish?.event.payload.ok).toBe(false);
+      expect(healthFinish?.event.payload.exit_code).toBe(1);
+      expect(healthFinish?.event.payload.error_code).toBe("command_failed");
+      expect(healthFinish?.event.payload.command_resolution).toBe("runtime_failed");
+      expect(healthFinish?.event.payload.resolution_stage).toBe("execute");
+
+      const parseError = events.find(
+        (entry) => entry.event.event_type === "command_error" && entry.event.command === "list-open",
+      );
+      expect(parseError).toBeDefined();
+      expect(parseError?.event.payload.error_code).toBe("unknown_option");
+      expect(parseError?.event.payload.command_resolution).toBe("invalid_option");
+      expect(parseError?.event.payload.resolution_stage).toBe("parse");
+    });
+  });
+
   it("manages local extensions through install explore manage activate deactivate and uninstall actions", async () => {
     await withTempPmPath(async (context) => {
       const sourceDir = path.join(context.tempRoot, "local-extension-source");

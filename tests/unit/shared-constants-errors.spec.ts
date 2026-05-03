@@ -172,16 +172,20 @@ describe("shared constants and errors contracts", () => {
 
   it("classifies telemetry error codes with explicit and heuristic fallbacks", () => {
     expect(TELEMETRY_ERROR_CATEGORY_BY_CODE.no_update_fields).toBe("validation");
+    expect(TELEMETRY_ERROR_CATEGORY_BY_CODE.dependency_failed).toBe("runtime");
+    expect(TELEMETRY_ERROR_CATEGORY_BY_CODE.terminal_state_conflict).toBe("conflict");
     expect(resolveTelemetryErrorCategory(undefined)).toBe("unknown");
     expect(resolveTelemetryErrorCategory("")).toBe("unknown");
     expect(resolveTelemetryErrorCategory("lock_conflict")).toBe("conflict");
     expect(resolveTelemetryErrorCategory("item_locked_by_other_owner")).toBe("conflict");
+    expect(resolveTelemetryErrorCategory("terminal_state_conflict")).toBe("conflict");
     expect(resolveTelemetryErrorCategory("unknown_command_variant")).toBe("usage");
     expect(resolveTelemetryErrorCategory("missing_required_token")).toBe("usage");
     expect(resolveTelemetryErrorCategory("invalid_deadline")).toBe("validation");
     expect(resolveTelemetryErrorCategory("close_through_update")).toBe("validation");
     expect(resolveTelemetryErrorCategory("legacy_item_not_found")).toBe("validation");
     expect(resolveTelemetryErrorCategory("schema_validation_failed")).toBe("validation");
+    expect(resolveTelemetryErrorCategory("dependency_failed")).toBe("runtime");
     expect(resolveTelemetryErrorCategory("network_error")).toBe("runtime");
     expect(resolveTelemetryErrorCategory("command_failed")).toBe("runtime");
     expect(resolveTelemetryErrorCategory("custom_signal")).toBe("unknown");
