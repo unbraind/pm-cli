@@ -1,0 +1,20 @@
+id: pm-g4zb
+title: Dogfood full E2E lifecycle in temp sandbox
+description: "Execute complete lifecycle matrix in isolated temp project: init/create/claim/update/comments/notes/learnings/files/test/close/release across all output modes."
+type: Task
+status: closed
+priority: 1
+tags[5]: audit,dogfood,pm-cli,re-audit,ux
+created_at: "2026-05-03T12:08:37.173Z"
+updated_at: "2026-05-03T12:13:47.427Z"
+deadline: "2026-05-05T12:08:37.173Z"
+author: audit-agent
+estimated_minutes: 90
+acceptance_criteria: All lifecycle ops verified in temp sandbox. Agent output modes (TOON/JSON/quiet/help/contracts) confirmed working.
+parent: pm-476d
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-476d,parent,"2026-05-03T12:08:37.173Z",audit-agent,null
+comments[1]{created_at,author,text}:
+  "2026-05-03T12:08:37.173Z",audit-agent,"Duplicate check: predecessor pm-cu50 closed. Net-new for v2026.5.2 re-audit."
+close_reason: "Full lifecycle verified in temp sandbox: init/create/claim/update/comments/notes/learnings/files/append/close/release/search/calendar/context. TOON/JSON/help/contracts output modes confirmed working. No friction or regressions found."
+body: ""

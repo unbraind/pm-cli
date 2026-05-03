@@ -1,12 +1,12 @@
 id: pm-daft
 title: Enhance check-secrets.mjs with private IP detection rule
-description: "Added private-ip regex rule to scripts/check-secrets.mjs detecting RFC1918 addresses (10.x, 172.16-31.x, 192.168.x). Scanner now catches 32 legacy IP references in .agents/pm history/item files. No source code or config files contain private IPs."
+description: Added private-ip regex rule to scripts/check-secrets.mjs detecting RFC1918 addresses. Scanner now catches legacy IP references in .agents/pm history/item files. No source code or config files contain private IPs.
 type: Task
 status: closed
 priority: 1
 tags[2]: pm-cli,security
 created_at: "2026-05-02T06:54:29.826Z"
-updated_at: "2026-05-02T07:15:35.064Z"
+updated_at: "2026-05-03T12:11:13.259Z"
 author: audit-agent
 parent: pm-kkmo
 resolution: Resolution normalized from closed status because the field was missing or low-signal.

@@ -1,0 +1,20 @@
+id: pm-wyvu
+title: Calendar + agent output audit
+description: "Validate calendar recurrence/filters/views and agent-optimized outputs. Verify TOON-first, machine-actionable errors, token efficiency."
+type: Task
+status: closed
+priority: 2
+tags[5]: agent-output,audit,calendar,pm-cli,re-audit
+created_at: "2026-05-03T12:09:24.191Z"
+updated_at: "2026-05-03T12:29:00.698Z"
+deadline: "2026-05-06T12:09:24.191Z"
+author: audit-agent
+estimated_minutes: 60
+acceptance_criteria: Calendar views/recurrence/filters verified. Agent output is TOON-first and token-efficient.
+parent: pm-476d
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-476d,parent,"2026-05-03T12:09:24.191Z",audit-agent,null
+comments[1]{created_at,author,text}:
+  "2026-05-03T12:09:24.191Z",audit-agent,"Duplicate check: predecessor pm-937o closed. Net-new for re-audit."
+close_reason: "Calendar verified: agenda/week/month views with deadlines, recurring events, filters, markdown format all working. Agent output verified: TOON default, JSON structured errors with type/code/detail/examples/next_steps, help --json returns pm_help_v1, contracts schema v4. 14 calendar tests pass."
+body: ""

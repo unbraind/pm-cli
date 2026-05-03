@@ -1,0 +1,17 @@
+id: pm-476d
+title: 2026-05-03 Full PM CLI Re-Audit (Live Cycle)
+description: "End-to-end re-audit from scratch: dogfood, code review, SDK/extensibility, search/vector, calendar, CI/CD, telemetry/Sentry client, live remote infra analysis. Security/privacy hard gate enforced."
+type: Epic
+status: closed
+priority: 0
+tags[5]: audit,live-cycle,pm-cli,re-audit,v2026.5.2
+created_at: "2026-05-03T12:08:06.626Z"
+updated_at: "2026-05-03T12:33:33.608Z"
+deadline: "2026-05-10T12:08:06.626Z"
+author: audit-agent
+estimated_minutes: 600
+acceptance_criteria: All phases 0-9 executed with verified evidence. Security gate passes. All findings tracked as pm items. Full test suite green.
+comments[1]{created_at,author,text}:
+  "2026-05-03T12:08:06.626Z",audit-agent,"Duplicate-check evidence: pm context --limit 10 (0 active); pm list-open --limit 20 (0); pm list-in-progress --limit 20 (0); pm search re-audit 2026.5 comprehensive --limit 10 (all closed). Net-new scope: full from-scratch re-audit with live infra."
+close_reason: "Full PM CLI re-audit completed. All 8 child items closed with verified evidence across 9 phases: governance bootstrap, security gate (zero leaks), dogfood E2E (full lifecycle), code quality (1063-line main.ts, no dead code), SDK (70+ exports), search (keyword/semantic/hybrid all <2.5s), calendar (all views working), CI/CD+telemetry+Sentry (hardened workflows, 27 targeted tests), live infra (9 containers healthy, 34981 events, 0 Sentry issues). Analysis toolkit deployed to scripts/prod/telemetry/."
+body: Re-audit successor to pm-5zkg. Covers phases 0-9 with live remote infra included.

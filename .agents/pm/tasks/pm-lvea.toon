@@ -1,0 +1,20 @@
+id: pm-lvea
+title: SDK + extension platform audit and ergonomics
+description: "Validate SDK exports, contracts, extension loader, runtime registrations, and docs. Dogfood extension creation."
+type: Task
+status: closed
+priority: 2
+tags[5]: audit,extensions,pm-cli,re-audit,sdk
+created_at: "2026-05-03T12:09:00.992Z"
+updated_at: "2026-05-03T12:26:55.178Z"
+deadline: "2026-05-06T12:09:00.992Z"
+author: audit-agent
+estimated_minutes: 90
+acceptance_criteria: SDK exports comprehensive. Extension authoring path works e2e. Docs accurate.
+parent: pm-476d
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-476d,parent,"2026-05-03T12:09:00.992Z",audit-agent,null
+comments[1]{created_at,author,text}:
+  "2026-05-03T12:09:00.992Z",audit-agent,"Duplicate check: predecessor pm-937o closed. Net-new for re-audit."
+close_reason: "SDK verified: 70+ type exports covering 9 capability types. defineExtension helper works. Contracts schema v4.0.0 functional. Extension loader/runtime-registrations operational. Health check passes. SDK.md and EXTENSIONS.md accurate and up-to-date. No issues found."
+body: ""

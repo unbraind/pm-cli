@@ -1,0 +1,23 @@
+id: pm-tdo5
+title: "Decision: Re-audit final verification and system health summary"
+description: "Final verification gate and decision record: build/typecheck/tests/security scan. Summarize system health, residual risks, next iteration backlog."
+type: Decision
+status: closed
+priority: 0
+tags[5]: audit,decision,pm-cli,re-audit,v2026.5.2
+created_at: "2026-05-03T12:10:02.454Z"
+updated_at: "2026-05-03T12:33:22.764Z"
+deadline: "2026-05-08T12:10:02.454Z"
+author: audit-agent
+estimated_minutes: 30
+acceptance_criteria: Full test suite green. Security scan clean. All child items closed with evidence. Decision record captures residual risks.
+parent: pm-476d
+resolution: Full re-audit of pm-cli v2026.5.2 completed successfully. All 9 phases executed with verified evidence. System healthy.
+expected_result: "All pm CLI features functional, no regressions, infrastructure healthy"
+actual_result: "84 test files, 1177 tests pass. Build/typecheck clean. Security scan zero findings. Telemetry stack healthy (34981 events, 1367 installs). Sentry 0 unresolved issues. SDK 70+ exports. Search 2s latency. Calendar all views working."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-476d,parent,"2026-05-03T12:10:02.454Z",audit-agent,null
+comments[1]{created_at,author,text}:
+  "2026-05-03T12:10:02.454Z",audit-agent,"Duplicate check: predecessor pm-dmam closed. Net-new for re-audit closeout."
+close_reason: "Full verification gate passed: build/typecheck/1177 tests/security scan/version policy/NPX smoke all clean. All 7 child workstream items closed with evidence. Decision record captures system health, residual risks, and next-iteration backlog."
+body: "Re-audit Decision Record:\n\nSYSTEM HEALTH: All systems operational. No regressions found.\n\nVERIFICATION GATES PASSED:\n- Build + Typecheck: clean\n- Test suite: 84 files, 1177 tests, all pass\n- Security scan: zero findings\n- Version policy: 2026.5.2 valid\n- NPX smoke: pass\n- Package: 415 files\n\nFUNCTIONAL AREAS VERIFIED:\n- CLI lifecycle: init/create/claim/update/comments/notes/learnings/files/close/release\n- Output modes: TOON (default), JSON, quiet, help, contracts\n- SDK: 70+ typed exports, 9 capability types, defineExtension helper\n- Search: keyword 2.3s, semantic 2.1s, hybrid 2.0s (Ollama Qwen + LanceDB)\n- Reindex: 668 items, keyword 1.6s, semantic 35s\n- Calendar: agenda/week/month views, recurrence, filters, markdown format\n- Telemetry: enabled by default, opt-out, scrubbing, retry, queue flush\n- Sentry: PmCliError filtering, data scrubbing, DSN configured\n- CI/CD: timeout-minutes, multi-OS/Node matrix, SHA-pinned actions, provenance\n\nLIVE INFRASTRUCTURE:\n- 9 Docker containers running (healthy)\n- Telemetry API: 200 OK\n- Grafana v11.6.14: database OK\n- RabbitMQ: queue 0/0\n- Postgres: 34981 events, 1367 unique installations\n- Sentry: 0 unresolved issues, release tracked\n\nRESIDUAL RISKS:\n- command-aware.ts buildCommandAwareEnvelope is unused dead code (reserved for future)\n- Historical pm item comments contain legacy host paths (redaction notes appended, history JSONL immutable)\n\nNEXT ITERATION BACKLOG:\n- Integrate command-aware output module into live CLI commands\n- Consider search performance optimization for larger corpora"

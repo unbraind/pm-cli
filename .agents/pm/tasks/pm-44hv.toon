@@ -1,0 +1,20 @@
+id: pm-44hv
+title: CI/CD + telemetry/Sentry client re-audit
+description: "Re-audit workflow hardening, version matrix, Sentry sourcemap flow, telemetry defaults/consent/scrubbing/retry, and Sentry filtering."
+type: Task
+status: closed
+priority: 1
+tags[6]: audit,cicd,pm-cli,re-audit,sentry,telemetry
+created_at: "2026-05-03T12:09:33.467Z"
+updated_at: "2026-05-03T12:30:05.418Z"
+deadline: "2026-05-06T12:09:33.467Z"
+author: audit-agent
+estimated_minutes: 90
+acceptance_criteria: Workflows hardened. Free-tier compatible. Telemetry/Sentry client verified with tests.
+parent: pm-476d
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-476d,parent,"2026-05-03T12:09:33.467Z",audit-agent,null
+comments[1]{created_at,author,text}:
+  "2026-05-03T12:09:33.467Z",audit-agent,"Duplicate check: predecessor pm-0kd4/pm-xwl6 closed. Net-new for re-audit."
+close_reason: "CI/CD verified: all workflows have timeout-minutes, concurrency controls, minimal permissions, multi-OS/Node matrix. SHA-pinned third-party actions. Sentry sourcemap flow with graceful fallback. Release uses npm provenance. Telemetry defaults correct (enabled, max capture, opt-out). Sentry scrubbing comprehensive (tokens, emails, PmCliError filtering). All 27 targeted tests pass."
+body: ""

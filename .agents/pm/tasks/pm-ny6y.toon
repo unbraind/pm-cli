@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: deployment,gdpr,observability,pm-cli,telemetry
 created_at: "2026-04-25T21:33:07.558Z"
-updated_at: "2026-05-02T11:03:22.019Z"
+updated_at: "2026-05-03T12:11:39.699Z"
 deadline: "2026-05-02T21:33:07.558Z"
 author: codex-agent
 estimated_minutes: 900
@@ -15,7 +15,7 @@ parent: pm-5v5w
 resolution: "Completed telemetry rollout across CLI runtime, remote stack deployment, routing, backup/restore, and documentation."
 expected_result: "Telemetry ingestion, observability, routing, and operational docs are fully validated and tracked."
 actual_result: Rollout comments show end-to-end verification evidence; missing repo docs are now backfilled in this run for linked-path parity.
-comments[11]{created_at,author,text}:
+comments[12]{created_at,author,text}:
   "2026-04-25T21:33:22.735Z",codex-agent,"Execution kickoff: implementing attached telemetry+observability rollout in sequence (CLI consent/settings, telemetry runtime/exporter, tests, remote stack deployment on [redacted_host], Caddy domain wiring, backup/restore, and full E2E validation)."
   "2026-04-25T21:36:48.864Z",codex-agent,"Progress: added telemetry settings defaults/schema (enabled by default, capture_level=max, retention_days=365), config key telemetry-tracking (enabled|disabled), and first-run TTY consent prompt that persists global decision without affecting non-interactive/json/CI runs. Verification: pnpm build passed."
   "2026-04-25T21:41:03.674Z",codex-agent,"Progress: implemented telemetry runtime pipeline with command_start/command_finish events, key/value scrubbing for sensitive fields, pseudonymous installation/session identifiers, local JSONL queueing under global runtime path, retry backoff, and batched HTTPS exporter flush. Smoke checks in temporary PM_PATH/PM_GLOBAL_PATH confirmed queue population and install_id persistence."
@@ -27,6 +27,7 @@ comments[11]{created_at,author,text}:
   "2026-04-25T22:17:35.580Z",codex-agent,"Documentation complete: repo docs updated (README telemetry policy section + links, docs/ARCHITECTURE telemetry pipeline/config entries, SECURITY telemetry/privacy controls) and new docs added (docs/TELEMETRY.md, docs/operations/REMOTE_TELEMETRY_STACK.md). Remote docs added under /home/steve/container/pm-cli/docs (README, DEPLOYMENT, RUNBOOK, BACKUP_RESTORE, GDPR_DSAR) covering deployment, runbook, retention, backup/restore, and DSAR procedures."
   "2026-05-01T22:53:56.888Z",audit-agent,"SECURITY AUDIT: Historical comments in this item contain private network IP references from deployment evidence. These are internal infrastructure references and do not expose credentials. Future evidence should use domain names (pm.unbrained.dev, pm-cli.unbrained.dev) instead of private IPs."
   "2026-05-02T11:03:22.019Z",codex-agent,"Audit reseal: current redacted item state re-recorded through pm mutation after prior hygiene edits; no secret material added."
+  "2026-05-03T12:11:39.699Z",audit-agent,"author=audit-agent,created_at=now,text=SECURITY REDACTION: Prior comments and linked files reference remote host paths for deployment evidence. These are internal infrastructure references and do not expose credentials. Future evidence must use domain names and redacted paths."
 files[13]{path,scope,note}:
   src/cli/commands/config.ts,project,telemetry config key policy handling
   src/cli/help-content.ts,project,config help examples include telemetry opt-out
