@@ -152,7 +152,7 @@ jobs:
             sleep 15
           done
           for attempt in $(seq 1 10); do
-            NPX_OUTPUT="$(npm exec --yes --package "@unbrained/pm-cli@${VERSION}" -- pm --version 2>/dev/null || true)"
+            NPX_OUTPUT="$(npx --yes "@unbrained/pm-cli@${VERSION}" pm --version 2>/dev/null || true)"
             NPX_VERSION="$(printf '%s\n' "${NPX_OUTPUT}" | awk 'NF { line=$0 } END { print line }' | tr -d '\r\n')"
             if [ "${NPX_VERSION}" = "${VERSION}" ]; then
               break
