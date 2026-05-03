@@ -70,6 +70,10 @@ jobs:
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: |
+          if ! command -v sentry >/dev/null 2>&1; then
+            echo "sentry CLI is not available on this runner; skipping Sentry threshold gate."
+            exit 0
+          fi
           if [ -z "${SENTRY_AUTH_TOKEN:-}" ]; then
             echo "SENTRY_AUTH_TOKEN is not configured; skipping Sentry threshold gate."
             exit 0
