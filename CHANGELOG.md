@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026.5.3-6] - 2026-05-03
+
 ### Changed
 - Added npm/npx/bunx propagation retries to release publication verification so post-publish checks wait for registry availability instead of failing immediately on transient 404 windows.
 
