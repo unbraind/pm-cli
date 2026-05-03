@@ -295,15 +295,21 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     ],
   },
   context: {
-    why: "Builds an agent-optimized snapshot of critical active work plus near-term agenda context.",
+    why: "Builds an agent-optimized snapshot of critical active work plus near-term agenda context with progressive depth levels.",
     examples: [
       "pm context",
-      "pm ctx --limit 5 --assignee codex-agent",
-      "pm context --from +0d --to +7d --format markdown",
+      "pm ctx --depth standard --limit 10",
+      "pm ctx --depth deep --assignee codex-agent",
+      "pm ctx --section hierarchy --section progress --section blockers",
+      "pm context --depth standard --activity-limit 20 --stale-threshold 14d",
+      "pm context --from +0d --to +7d --format markdown --depth deep",
     ],
     tips: [
       "High-level focus contains Epics/Features and low-level focus contains Tasks/Issues/Chores/Event/Reminder/Milestone/Meeting.",
       "When no open or in-progress work exists, blocked items are shown as fallback context.",
+      "--depth brief (default) shows focus+agenda; standard adds hierarchy/activity/progress/workload; deep adds blockers/files/staleness/tests.",
+      "--section overrides --depth and selects specific sections: hierarchy, activity, progress, blockers, files, workload, staleness, tests.",
+      "Configure defaults via pm config project set context --default-depth standard --activity-limit 15.",
     ],
   },
   search: {

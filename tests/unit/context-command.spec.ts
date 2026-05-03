@@ -3,12 +3,14 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  parseContextDepth,
+  parseContextSections,
   renderContextMarkdown,
   resolveContextOutputFormat,
   runContext,
   type ContextOptions,
 } from "../../src/cli/commands/context.js";
-import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { SETTINGS_DEFAULTS, EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
@@ -294,6 +296,277 @@ describe("context command module", () => {
       expect(result.agenda.summary.events).toBe(0);
       const markdown = renderContextMarkdown(result);
       expect(markdown).toContain("No agenda events matched the selected filters.");
+    });
+  });
+
+  it("parseContextDepth validates and falls back to settings", () => {
+    const settings = SETTINGS_DEFAULTS.context;
+    expect(parseContextDepth(undefined, settings)).toBe("brief");
+    expect(parseContextDepth("standard", settings)).toBe("standard");
+    expect(parseContextDepth("  Deep  ", settings)).toBe("deep");
+    expect(parseContextDepth("brief", settings)).toBe("brief");
+    expect(() => parseContextDepth("invalid", settings)).toThrow(PmCliError);
+
+    const customSettings = { ...settings, default_depth: "deep" as const };
+    expect(parseContextDepth(undefined, customSettings)).toBe("deep");
+    expect(parseContextDepth("brief", customSettings)).toBe("brief");
+  });
+
+  it("parseContextSections resolves from depth and allows overrides", () => {
+    const settings = SETTINGS_DEFAULTS.context;
+    expect(parseContextSections(undefined, "brief", settings)).toEqual([]);
+    expect(parseContextSections(undefined, "standard", settings)).toEqual(["hierarchy", "activity", "progress", "workload"]);
+    const deepSections = parseContextSections(undefined, "deep", settings);
+    expect(deepSections).toContain("hierarchy");
+    expect(deepSections).toContain("blockers");
+    expect(deepSections).toContain("files");
+    expect(deepSections).toContain("staleness");
+    expect(deepSections).toContain("tests");
+
+    const overrides = parseContextSections(["hierarchy", "blockers"], "brief", settings);
+    expect(overrides).toEqual(["hierarchy", "blockers"]);
+
+    expect(() => parseContextSections(["invalid_section"], "brief", settings)).toThrow(PmCliError);
+  });
+
+  it("parseContextSections respects section settings toggles", () => {
+    const settings = {
+      ...SETTINGS_DEFAULTS.context,
+      sections: { ...SETTINGS_DEFAULTS.context.sections, hierarchy: false, activity: false },
+    };
+    const sections = parseContextSections(undefined, "standard", settings);
+    expect(sections).not.toContain("hierarchy");
+    expect(sections).not.toContain("activity");
+    expect(sections).toContain("progress");
+    expect(sections).toContain("workload");
+  });
+
+  it("--depth brief returns no additional sections", async () => {
+    await withTempPmPath(async (context) => {
+      createContextItem(context, { title: "Brief task", type: "Task", status: "open", priority: "1" });
+
+      const result = await runContext({ depth: "brief" }, { path: context.pmPath });
+      expect(result.depth).toBe("brief");
+      expect(result.sections_included).toEqual([]);
+      expect(result.hierarchy).toBeUndefined();
+      expect(result.activity).toBeUndefined();
+      expect(result.progress).toBeUndefined();
+      expect(result.workload).toBeUndefined();
+    });
+  });
+
+  it("--depth standard includes hierarchy, activity, progress, workload", async () => {
+    await withTempPmPath(async (context) => {
+      createContextItem(context, { title: "Standard epic", type: "Epic", status: "open", priority: "0" });
+      createContextItem(context, { title: "Standard task", type: "Task", status: "open", priority: "1" });
+
+      const result = await runContext({ depth: "standard", limit: "5" }, { path: context.pmPath });
+      expect(result.depth).toBe("standard");
+      expect(result.sections_included).toContain("hierarchy");
+      expect(result.sections_included).toContain("activity");
+      expect(result.sections_included).toContain("progress");
+      expect(result.sections_included).toContain("workload");
+      expect(result.hierarchy).toBeDefined();
+      expect(result.activity).toBeDefined();
+      expect(result.progress).toBeDefined();
+      expect(result.workload).toBeDefined();
+      expect(result.blockers).toBeUndefined();
+      expect(result.files).toBeUndefined();
+      expect(result.staleness).toBeUndefined();
+      expect(result.tests).toBeUndefined();
+    });
+  });
+
+  it("--depth deep includes all sections", async () => {
+    await withTempPmPath(async (context) => {
+      createContextItem(context, { title: "Deep epic", type: "Epic", status: "open", priority: "0" });
+      createContextItem(context, { title: "Deep task", type: "Task", status: "open", priority: "1" });
+
+      const result = await runContext({ depth: "deep", limit: "5" }, { path: context.pmPath });
+      expect(result.depth).toBe("deep");
+      expect(result.sections_included).toContain("hierarchy");
+      expect(result.sections_included).toContain("activity");
+      expect(result.sections_included).toContain("progress");
+      expect(result.sections_included).toContain("workload");
+      expect(result.sections_included).toContain("blockers");
+      expect(result.sections_included).toContain("files");
+      expect(result.sections_included).toContain("staleness");
+      expect(result.sections_included).toContain("tests");
+      expect(result.hierarchy).toBeDefined();
+      expect(result.tests).toBeDefined();
+      expect(result.summary.total_items).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  it("builds hierarchy with parent-child relationships and counts", async () => {
+    await withTempPmPath(async (context) => {
+      const epicId = createContextItem(context, { title: "Hierarchy epic", type: "Epic", status: "open", priority: "0" });
+      const featureArgs = [
+        "create", "--json", "--title", "Hierarchy feature",
+        "--description", "d", "--type", "Feature", "--status", "open",
+        "--priority", "1", "--tags", "context", "--body", "",
+        "--deadline", "+1d", "--estimate", "15",
+        "--acceptance-criteria", "ac",
+        "--author", "context-test", "--message", "Create feature",
+        "--assignee", "seed-assignee",
+        "--parent", epicId,
+        "--dep", `id=${epicId},kind=parent,author=context-test,created_at=now`,
+        "--comment", "author=context-test,created_at=now,text=seed",
+        "--note", "author=context-test,created_at=now,text=seed",
+        "--learning", "author=context-test,created_at=now,text=seed",
+        "--file", "path=README.md,scope=project,note=seed",
+        "--test", "command=node dist/cli.js --version,scope=project,note=seed",
+        "--doc", "path=README.md,scope=project,note=seed",
+      ];
+      const featureResult = context.runCli(featureArgs, { expectJson: true });
+      expect(featureResult.code).toBe(0);
+      const featureId = (featureResult.json as { item: { id: string } }).item.id;
+
+      const result = await runContext({ depth: "standard", limit: "10" }, { path: context.pmPath });
+      expect(result.hierarchy).toBeDefined();
+      const epicNode = result.hierarchy!.find((n) => n.id === epicId);
+      expect(epicNode).toBeDefined();
+      expect(epicNode!.children_total).toBeGreaterThanOrEqual(1);
+      expect(epicNode!.children.some((c) => c.id === featureId)).toBe(true);
+    });
+  });
+
+  it("builds progress entries for high-level items with children", async () => {
+    await withTempPmPath(async (context) => {
+      const epicId = createContextItem(context, { title: "Progress epic", type: "Epic", status: "open", priority: "0" });
+      const childArgs = [
+        "create", "--json", "--title", "Progress child",
+        "--description", "d", "--type", "Task", "--status", "open",
+        "--priority", "1", "--tags", "context", "--body", "",
+        "--deadline", "+1d", "--estimate", "15",
+        "--acceptance-criteria", "ac",
+        "--author", "context-test", "--message", "Create child",
+        "--assignee", "seed-assignee",
+        "--parent", epicId,
+        "--dep", `id=${epicId},kind=parent,author=context-test,created_at=now`,
+        "--comment", "author=context-test,created_at=now,text=seed",
+        "--note", "author=context-test,created_at=now,text=seed",
+        "--learning", "author=context-test,created_at=now,text=seed",
+        "--file", "path=README.md,scope=project,note=seed",
+        "--test", "command=node dist/cli.js --version,scope=project,note=seed",
+        "--doc", "path=README.md,scope=project,note=seed",
+      ];
+      const childResult = context.runCli(childArgs, { expectJson: true });
+      expect(childResult.code).toBe(0);
+
+      const result = await runContext({ depth: "standard", limit: "10" }, { path: context.pmPath });
+      expect(result.progress).toBeDefined();
+      expect(result.progress!.length).toBeGreaterThan(0);
+      const epicProgress = result.progress!.find((e) => e.id === epicId);
+      expect(epicProgress).toBeDefined();
+      expect(epicProgress!.total).toBeGreaterThanOrEqual(1);
+      expect(epicProgress!.completion_pct).toBeGreaterThanOrEqual(0);
+      expect(epicProgress!.completion_pct).toBeLessThanOrEqual(100);
+    });
+  });
+
+  it("builds workload grouped by assignee", async () => {
+    await withTempPmPath(async (context) => {
+      createContextItem(context, { title: "W1", type: "Task", status: "open", priority: "1", assignee: "alice" });
+      createContextItem(context, { title: "W2", type: "Task", status: "open", priority: "1", assignee: "alice" });
+      createContextItem(context, { title: "W3", type: "Task", status: "open", priority: "1", assignee: "bob" });
+
+      const result = await runContext({ depth: "standard", limit: "10" }, { path: context.pmPath });
+      expect(result.workload).toBeDefined();
+      const alice = result.workload!.find((w) => w.assignee === "alice");
+      const bob = result.workload!.find((w) => w.assignee === "bob");
+      expect(alice).toBeDefined();
+      expect(alice!.active).toBe(2);
+      expect(bob).toBeDefined();
+      expect(bob!.active).toBe(1);
+    });
+  });
+
+  it("builds test health summary from active items", async () => {
+    await withTempPmPath(async (context) => {
+      createContextItem(context, { title: "Test health task", type: "Task", status: "open", priority: "1" });
+
+      const result = await runContext({ depth: "deep", limit: "10" }, { path: context.pmPath });
+      expect(result.tests).toBeDefined();
+      expect(result.tests!.items_with_tests).toBeGreaterThanOrEqual(1);
+      expect(typeof result.tests!.recent_runs.passed).toBe("number");
+      expect(typeof result.tests!.recent_runs.failed).toBe("number");
+      expect(typeof result.tests!.recent_runs.skipped).toBe("number");
+    });
+  });
+
+  it("hot files collects linked files from active items", async () => {
+    await withTempPmPath(async (context) => {
+      createContextItem(context, { title: "Files A", type: "Task", status: "open", priority: "1" });
+      createContextItem(context, { title: "Files B", type: "Task", status: "open", priority: "1" });
+
+      const result = await runContext({ depth: "deep", limit: "10" }, { path: context.pmPath });
+      expect(result.files).toBeDefined();
+      const readmeFile = result.files!.find((f) => f.path === "README.md");
+      expect(readmeFile).toBeDefined();
+      expect(readmeFile!.references).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  it("--section overrides depth and selects only named sections", async () => {
+    await withTempPmPath(async (context) => {
+      createContextItem(context, { title: "Section override", type: "Task", status: "open", priority: "1" });
+
+      const result = await runContext(
+        { section: ["workload", "tests"], limit: "10" },
+        { path: context.pmPath },
+      );
+      expect(result.sections_included).toEqual(["workload", "tests"]);
+      expect(result.workload).toBeDefined();
+      expect(result.tests).toBeDefined();
+      expect(result.hierarchy).toBeUndefined();
+      expect(result.activity).toBeUndefined();
+      expect(result.progress).toBeUndefined();
+      expect(result.blockers).toBeUndefined();
+    });
+  });
+
+  it("renders markdown sections for standard depth", async () => {
+    await withTempPmPath(async (context) => {
+      const epicId = createContextItem(context, { title: "MD epic", type: "Epic", status: "open", priority: "0" });
+      const childArgs = [
+        "create", "--json", "--title", "MD child task",
+        "--description", "d", "--type", "Task", "--status", "open",
+        "--priority", "1", "--tags", "context", "--body", "",
+        "--deadline", "+1d", "--estimate", "15",
+        "--acceptance-criteria", "ac",
+        "--author", "context-test", "--message", "Create child",
+        "--assignee", "md-agent",
+        "--parent", epicId,
+        "--dep", `id=${epicId},kind=parent,author=context-test,created_at=now`,
+        "--comment", "author=context-test,created_at=now,text=seed",
+        "--note", "author=context-test,created_at=now,text=seed",
+        "--learning", "author=context-test,created_at=now,text=seed",
+        "--file", "path=README.md,scope=project,note=seed",
+        "--test", "command=node dist/cli.js --version,scope=project,note=seed",
+        "--doc", "path=README.md,scope=project,note=seed",
+      ];
+      const childResult = context.runCli(childArgs, { expectJson: true });
+      expect(childResult.code).toBe(0);
+
+      const result = await runContext({ depth: "standard", limit: "5" }, { path: context.pmPath });
+      const markdown = renderContextMarkdown(result);
+      expect(markdown).toContain("- depth: standard");
+      expect(markdown).toContain("## Hierarchy");
+      expect(markdown).toContain("## Recent activity");
+      expect(markdown).toContain("## Progress");
+      expect(markdown).toContain("## Workload");
+    });
+  });
+
+  it("renders markdown sections for deep depth", async () => {
+    await withTempPmPath(async (context) => {
+      createContextItem(context, { title: "Deep MD task", type: "Task", status: "open", priority: "1" });
+
+      const result = await runContext({ depth: "deep", limit: "5" }, { path: context.pmPath });
+      const markdown = renderContextMarkdown(result);
+      expect(markdown).toContain("- depth: deep");
+      expect(markdown).toContain("## Test health");
     });
   });
 });

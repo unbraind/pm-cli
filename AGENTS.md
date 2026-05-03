@@ -35,7 +35,7 @@ This document defines how coding agents must use `pm` for planning, execution, a
 Before creating any new `pm` item, always check for an existing relevant item first.
 
 - Search and list existing items before `pm create`:
-  - `pm context --limit 10`
+  - `pm context --limit 10` (brief snapshot; use `--depth standard` for hierarchy/progress/workload, `--depth deep` for full sections)
   - `pm search "<keywords>" --limit 10`
   - `pm list-open --limit 20`
   - `pm list-in-progress --limit 20`
@@ -208,6 +208,13 @@ Use release when:
 
 - Prefer default TOON output for list/search/get in agent loops.
 - Prefer `pm context --limit <n>` as the first triage snapshot when selecting next work.
+  - `--depth brief` (default) shows only focus items + agenda -- minimal tokens.
+  - `--depth standard` adds hierarchy, activity, progress, and workload sections -- recommended for medium/large projects.
+  - `--depth deep` adds blockers, hot files, staleness, and test health -- use for full project orientation or debugging.
+  - `--section <name>` (repeatable) overrides `--depth` and includes only named sections (hierarchy, activity, progress, blockers, files, workload, staleness, tests).
+  - `--activity-limit <n>` controls recent activity entries (default 10).
+  - `--stale-threshold <value>` controls staleness cutoff in days (default 7d).
+  - Configure persistent defaults via `pm config project set context --default-depth standard --activity-limit 15`.
 - Use `--json` only when strict machine parsing is required.
 - Request narrow outputs:
   - `--limit`

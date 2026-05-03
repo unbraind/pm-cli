@@ -721,6 +721,12 @@ export function normalizeContextOptions(options: Record<string, unknown>): Conte
         keys: [target],
       },
     );
+  const sectionRaw = options.section;
+  const section: string[] | undefined = Array.isArray(sectionRaw)
+    ? (sectionRaw as string[]).filter((v) => typeof v === "string" && v.trim().length > 0)
+    : typeof sectionRaw === "string" && sectionRaw.trim().length > 0
+      ? [sectionRaw]
+      : undefined;
   const normalized: Record<string, unknown> = {
     date: readContextString("date"),
     from: readContextString("from"),
@@ -735,6 +741,10 @@ export function normalizeContextOptions(options: Record<string, unknown>): Conte
     release: readContextString("release"),
     limit: readContextString("limit"),
     format: readContextString("format"),
+    depth: readContextString("depth"),
+    section: section && section.length > 0 ? section : undefined,
+    activityLimit: readContextString("activityLimit"),
+    staleThreshold: readContextString("staleThreshold"),
   };
   for (const [key, value] of Object.entries(options)) {
     if (Object.hasOwn(normalized, key)) {

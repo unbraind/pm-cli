@@ -14,6 +14,7 @@ import {
 } from "../../core/store/paths.js";
 import { readSettingsWithMetadata, writeSettings } from "../../core/store/settings.js";
 import type {
+  ContextDepth,
   GovernanceCloseValidationDefault,
   GovernanceCreateModeDefault,
   GovernanceOwnershipEnforcement,
@@ -24,6 +25,7 @@ import type {
   ValidateMetadataProfile,
   ValidateMetadataRequiredField,
 } from "../../types/index.js";
+import { CONTEXT_DEPTH_VALUES, CONTEXT_SECTION_VALUES } from "../../types/index.js";
 
 const CONFIG_SCOPE_VALUES = ["project", "global"] as const;
 type ConfigScope = (typeof CONFIG_SCOPE_VALUES)[number];
@@ -69,6 +71,7 @@ const CONFIG_KEY_VALUES = [
   "test_result_tracking",
   "telemetry-tracking",
   "telemetry_tracking",
+  "context",
 ] as const;
 type ConfigAction = "get" | "set" | "list" | "export";
 type ConfigKey =
@@ -91,7 +94,8 @@ type ConfigKey =
   | "governance_metadata_validation_profile"
   | "governance_force_required_for_stale_lock"
   | "test_result_tracking"
-  | "telemetry_tracking";
+  | "telemetry_tracking"
+  | "context";
 type HistoryMissingStreamPolicy = "auto_create" | "strict_error";
 type TestResultTrackingPolicy = "enabled" | "disabled";
 type TelemetryTrackingPolicy = "enabled" | "disabled";
@@ -109,12 +113,20 @@ type ConfigValue =
   | GovernanceCloseValidationDefault
   | GovernanceForceRequiredForStaleLockPolicy
   | TestResultTrackingPolicy
-  | TelemetryTrackingPolicy;
+  | TelemetryTrackingPolicy
+  | ContextConfigValue;
+
+interface ContextConfigValue {
+  default_depth: string;
+  activity_limit: number;
+  stale_threshold_days: number;
+  sections: Record<string, boolean>;
+}
 
 interface ConfigKeyDescriptor {
   key: ConfigKey;
   aliases: string[];
-  value_kind: "string_array" | "enum";
+  value_kind: "string_array" | "enum" | "object";
   set_flags: string[];
   summary: string;
   value: ConfigValue;
@@ -125,6 +137,17 @@ export interface ConfigCommandOptions {
   format?: string;
   policy?: string;
   clearCriteria?: boolean;
+  defaultDepth?: string;
+  activityLimit?: string;
+  staleThresholdDays?: string;
+  sectionHierarchy?: string;
+  sectionActivity?: string;
+  sectionProgress?: string;
+  sectionBlockers?: string;
+  sectionFiles?: string;
+  sectionWorkload?: string;
+  sectionStaleness?: string;
+  sectionTests?: string;
 }
 
 export interface ConfigResult {
@@ -147,6 +170,7 @@ export interface ConfigResult {
   keys?: ConfigKeyDescriptor[];
   values?: Record<ConfigKey, ConfigValue>;
   count?: number;
+  context_settings?: ContextConfigValue;
   has_explicit_item_format?: boolean;
   migration?: {
     target_format: ItemFormat;
@@ -202,6 +226,7 @@ const CONFIG_KEY_ALIASES: Record<ConfigKey, string[]> = {
   ],
   test_result_tracking: ["test-result-tracking", "test_result_tracking"],
   telemetry_tracking: ["telemetry-tracking", "telemetry_tracking"],
+  context: ["context"],
 };
 
 const CONFIG_KEY_SUMMARIES: Record<ConfigKey, string> = {
@@ -229,6 +254,7 @@ const CONFIG_KEY_SUMMARIES: Record<ConfigKey, string> = {
   governance_force_required_for_stale_lock: "Governance stale-lock force policy (enabled|disabled).",
   test_result_tracking: "Item-level linked test result persistence policy.",
   telemetry_tracking: "Telemetry usage reporting policy.",
+  context: "Context command settings (depth, section toggles, limits).",
 };
 
 const LIFECYCLE_PATTERN_CONFIG_KEYS: ConfigKey[] = [
@@ -335,6 +361,9 @@ function normalizeKey(value: string): ConfigKey {
     }
     if (value === "telemetry-tracking" || value === "telemetry_tracking") {
       return "telemetry_tracking";
+    }
+    if (value === "context") {
+      return "context";
     }
     return "definition_of_done";
   }
@@ -607,6 +636,7 @@ function readConfigValue(settings: {
   };
   testing: { record_results_to_items: boolean };
   telemetry: { enabled: boolean };
+  context: import("../../types/index.js").ContextSettings;
 }, key: ConfigKey): ConfigValue {
   if (key === "item_format") {
     return settings.item_format;
@@ -665,6 +695,14 @@ function readConfigValue(settings: {
   if (key === "telemetry_tracking") {
     return settings.telemetry.enabled ? "enabled" : "disabled";
   }
+  if (key === "context") {
+    return {
+      default_depth: settings.context.default_depth,
+      activity_limit: settings.context.activity_limit,
+      stale_threshold_days: settings.context.stale_threshold_days,
+      sections: { ...settings.context.sections },
+    } satisfies ContextConfigValue;
+  }
   return [...settings.workflow.definition_of_done];
 }
 
@@ -691,6 +729,103 @@ async function resolveSettingsTarget(
   return { pmRoot, settingsPath };
 }
 
+function parseSectionToggle(raw: string | undefined): boolean | undefined {
+  if (raw === undefined) return undefined;
+  const normalized = raw.trim().toLowerCase();
+  if (normalized === "true" || normalized === "enabled" || normalized === "on" || normalized === "1") return true;
+  if (normalized === "false" || normalized === "disabled" || normalized === "off" || normalized === "0") return false;
+  throw new PmCliError(
+    `Context section toggle must be true|false|enabled|disabled, got "${raw}"`,
+    EXIT_CODE.USAGE,
+  );
+}
+
+async function applyContextConfig(
+  settings: import("../../types/index.js").PmSettings,
+  options: ConfigCommandOptions,
+  target: { pmRoot: string; settingsPath: string },
+  scope: ConfigScope,
+  warnings: string[],
+): Promise<ConfigResult> {
+  let changed = false;
+  const ctx = settings.context;
+
+  if (options.defaultDepth !== undefined) {
+    const normalized = options.defaultDepth.trim().toLowerCase();
+    if (!CONTEXT_DEPTH_VALUES.includes(normalized as ContextDepth)) {
+      throw new PmCliError(
+        `Context --default-depth must be one of ${CONTEXT_DEPTH_VALUES.join("|")}`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    if (ctx.default_depth !== normalized) {
+      ctx.default_depth = normalized as ContextDepth;
+      changed = true;
+    }
+  }
+
+  if (options.activityLimit !== undefined) {
+    const parsed = parseInt(options.activityLimit.trim(), 10);
+    if (isNaN(parsed) || parsed <= 0) {
+      throw new PmCliError("Context --activity-limit must be a positive integer", EXIT_CODE.USAGE);
+    }
+    if (ctx.activity_limit !== parsed) {
+      ctx.activity_limit = parsed;
+      changed = true;
+    }
+  }
+
+  if (options.staleThresholdDays !== undefined) {
+    const parsed = parseInt(options.staleThresholdDays.trim(), 10);
+    if (isNaN(parsed) || parsed <= 0) {
+      throw new PmCliError("Context --stale-threshold-days must be a positive integer", EXIT_CODE.USAGE);
+    }
+    if (ctx.stale_threshold_days !== parsed) {
+      ctx.stale_threshold_days = parsed;
+      changed = true;
+    }
+  }
+
+  const sectionToggles: [string, string | undefined][] = [
+    ["hierarchy", options.sectionHierarchy],
+    ["activity", options.sectionActivity],
+    ["progress", options.sectionProgress],
+    ["blockers", options.sectionBlockers],
+    ["files", options.sectionFiles],
+    ["workload", options.sectionWorkload],
+    ["staleness", options.sectionStaleness],
+    ["tests", options.sectionTests],
+  ];
+
+  for (const [sectionName, rawValue] of sectionToggles) {
+    const toggle = parseSectionToggle(rawValue);
+    if (toggle !== undefined) {
+      const key = sectionName as keyof typeof ctx.sections;
+      if (ctx.sections[key] !== toggle) {
+        ctx.sections[key] = toggle;
+        changed = true;
+      }
+    }
+  }
+
+  if (changed) {
+    await writeSettings(target.pmRoot, settings, "config:set:context");
+  }
+
+  return withWarnings({
+    scope,
+    key: "context",
+    context_settings: {
+      default_depth: ctx.default_depth,
+      activity_limit: ctx.activity_limit,
+      stale_threshold_days: ctx.stale_threshold_days,
+      sections: { ...ctx.sections },
+    },
+    settings_path: target.settingsPath,
+    changed,
+  }, warnings);
+}
+
 export async function runConfig(
   scopeValue: string,
   actionValue: string,
@@ -709,9 +844,13 @@ export async function runConfig(
     const keys = (Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]).map((candidate) => ({
       key: candidate,
       aliases: CONFIG_KEY_ALIASES[candidate],
-      value_kind: isCriteriaConfigKey(candidate) ? ("string_array" as const) : ("enum" as const),
+      value_kind: candidate === "context"
+        ? ("object" as const)
+        : isCriteriaConfigKey(candidate) ? ("string_array" as const) : ("enum" as const),
       set_flags:
-        isCriteriaConfigKey(candidate) ? ["--criterion", "--clear-criteria"] : candidate === "item_format" ? ["--format"] : ["--policy"],
+        candidate === "context"
+          ? ["--default-depth", "--activity-limit", "--stale-threshold-days", "--section-<name>"]
+          : isCriteriaConfigKey(candidate) ? ["--criterion", "--clear-criteria"] : candidate === "item_format" ? ["--format"] : ["--policy"],
       summary: CONFIG_KEY_SUMMARIES[candidate],
       value: readConfigValue(settings, candidate),
     }));
@@ -755,6 +894,7 @@ export async function runConfig(
       governance_force_required_for_stale_lock: readConfigValue(settings, "governance_force_required_for_stale_lock"),
       test_result_tracking: readConfigValue(settings, "test_result_tracking"),
       telemetry_tracking: readConfigValue(settings, "telemetry_tracking"),
+      context: readConfigValue(settings, "context"),
     } satisfies Record<ConfigKey, ConfigValue>;
     return withWarnings(
       {
@@ -939,6 +1079,20 @@ export async function runConfig(
         scope,
         key,
         policy: settings.telemetry.enabled ? "enabled" : "disabled",
+        settings_path: target.settingsPath,
+        changed: false,
+      }, warnings);
+    }
+    if (key === "context") {
+      return withWarnings({
+        scope,
+        key,
+        context_settings: {
+          default_depth: settings.context.default_depth,
+          activity_limit: settings.context.activity_limit,
+          stale_threshold_days: settings.context.stale_threshold_days,
+          sections: { ...settings.context.sections },
+        },
         settings_path: target.settingsPath,
         changed: false,
       }, warnings);
@@ -1319,6 +1473,10 @@ export async function runConfig(
       settings_path: target.settingsPath,
       changed,
     }, warnings);
+  }
+
+  if (key === "context") {
+    return applyContextConfig(settings, options, target, scope, warnings);
   }
 
   const nextCriteria = normalizeCriteria(options.criterion, options.clearCriteria);

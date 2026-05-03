@@ -1233,6 +1233,8 @@ describe("release readiness runtime coverage", () => {
       expectTopLevelKeyOrder(contextResult.json, [
         "output_default",
         "now",
+        "depth",
+        "sections_included",
         "window",
         "filters",
         "summary",

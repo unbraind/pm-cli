@@ -188,6 +188,25 @@ const settingsSchema = z.object({
     })
     .optional(),
   schema: runtimeSchemaSettingsSchema,
+  context: z
+    .object({
+      default_depth: z.union([z.literal("brief"), z.literal("standard"), z.literal("deep")]).optional(),
+      activity_limit: z.number().int().positive().optional(),
+      stale_threshold_days: z.number().int().positive().optional(),
+      sections: z
+        .object({
+          hierarchy: z.boolean().optional(),
+          activity: z.boolean().optional(),
+          progress: z.boolean().optional(),
+          blockers: z.boolean().optional(),
+          files: z.boolean().optional(),
+          workload: z.boolean().optional(),
+          staleness: z.boolean().optional(),
+          tests: z.boolean().optional(),
+        })
+        .optional(),
+    })
+    .optional(),
   extensions: z.object({
     enabled: z.array(z.string()),
     disabled: z.array(z.string()),
@@ -487,6 +506,15 @@ function mergeSettings(raw: unknown): PmSettings {
       definitions: normalizeItemTypeDefinitions(settings.item_types?.definitions),
     },
     schema: normalizeRuntimeSchemaSettings(settings.schema ?? defaults.schema),
+    context: {
+      default_depth: settings.context?.default_depth ?? defaults.context.default_depth,
+      activity_limit: settings.context?.activity_limit ?? defaults.context.activity_limit,
+      stale_threshold_days: settings.context?.stale_threshold_days ?? defaults.context.stale_threshold_days,
+      sections: {
+        ...defaults.context.sections,
+        ...(settings.context?.sections ?? {}),
+      },
+    },
     extensions: {
       enabled: [...settings.extensions.enabled],
       disabled: [...settings.extensions.disabled],
@@ -556,6 +584,7 @@ export function serializeSettings(settings: PmSettings): string {
     "telemetry",
     "item_types",
     "schema",
+    "context",
     "extensions",
     "search",
     "providers",
@@ -611,6 +640,16 @@ export function serializeSettings(settings: PmSettings): string {
   (ordered.schema as Record<string, unknown>).workflow = orderObject(
     ((ordered.schema as Record<string, unknown>).workflow ?? {}) as Record<string, unknown>,
     ["draft_status", "open_status", "in_progress_status", "blocked_status", "close_status", "canceled_status"],
+  );
+  ordered.context = orderObject(ordered.context as Record<string, unknown>, [
+    "default_depth",
+    "activity_limit",
+    "stale_threshold_days",
+    "sections",
+  ]);
+  (ordered.context as Record<string, unknown>).sections = orderObject(
+    ((ordered.context as Record<string, unknown>).sections ?? {}) as Record<string, unknown>,
+    ["hierarchy", "activity", "progress", "blockers", "files", "workload", "staleness", "tests"],
   );
   ordered.extensions = orderObject(ordered.extensions as Record<string, unknown>, ["enabled", "disabled"]);
   ordered.search = orderObject(ordered.search as Record<string, unknown>, [

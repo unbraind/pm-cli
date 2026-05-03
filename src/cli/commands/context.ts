@@ -1,18 +1,35 @@
-import { EXIT_CODE } from "../../core/shared/constants.js";
+import { SETTINGS_DEFAULTS, EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { compareTimestampStrings } from "../../core/shared/time.js";
+import { compareTimestampStrings, nowIso } from "../../core/shared/time.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
 import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import type { ItemFrontMatter, ItemStatus } from "../../types/index.js";
+import type {
+  ContextDepth,
+  ContextSectionName,
+  ContextSettings,
+  ItemFrontMatter,
+  ItemStatus,
+  PmSettings,
+} from "../../types/index.js";
+import { CONTEXT_DEPTH_VALUES, CONTEXT_SECTION_VALUES } from "../../types/index.js";
 import { parseIntegerLimit } from "../shared-parsers.js";
 import { runCalendar, type CalendarOptions, type CalendarRow } from "./calendar.js";
 import { runList, type ListOptions } from "./list.js";
+import { runActivity, type CompactActivityEntry } from "./activity.js";
+
+// ---------------------------------------------------------------------------
+// Output format
+// ---------------------------------------------------------------------------
 
 export const CONTEXT_OUTPUT_VALUES = ["markdown", "toon", "json"] as const;
 export type ContextOutputFormat = (typeof CONTEXT_OUTPUT_VALUES)[number];
+
+// ---------------------------------------------------------------------------
+// Options
+// ---------------------------------------------------------------------------
 
 export interface ContextOptions {
   date?: string;
@@ -28,8 +45,16 @@ export interface ContextOptions {
   release?: string;
   limit?: string;
   format?: string;
+  depth?: string;
+  section?: string[];
+  activityLimit?: string;
+  staleThreshold?: string;
   [key: string]: unknown;
 }
+
+// ---------------------------------------------------------------------------
+// Focus item (unchanged from original)
+// ---------------------------------------------------------------------------
 
 export interface ContextFocusItem {
   id: string;
@@ -43,6 +68,90 @@ export interface ContextFocusItem {
   tags: string[];
   updated_at: string;
 }
+
+// ---------------------------------------------------------------------------
+// Section data types
+// ---------------------------------------------------------------------------
+
+export interface HierarchyChild {
+  id: string;
+  title: string;
+  type: string;
+  status: ItemStatus;
+  children_total: number;
+  children_closed: number;
+}
+
+export interface HierarchyNode {
+  id: string;
+  title: string;
+  type: string;
+  status: ItemStatus;
+  children_total: number;
+  children_closed: number;
+  children_open: number;
+  children_in_progress: number;
+  children_blocked: number;
+  children: HierarchyChild[];
+}
+
+export interface ProgressEntry {
+  id: string;
+  title: string;
+  type: string;
+  total: number;
+  closed: number;
+  open: number;
+  in_progress: number;
+  blocked: number;
+  completion_pct: number;
+}
+
+export interface BlockerEntry {
+  id: string;
+  title: string;
+  blocked_by: string | null;
+  blocked_by_title: string | null;
+  blocked_by_status: ItemStatus | null;
+  blocked_reason: string | null;
+  unblock_note: string | null;
+}
+
+export interface HotFile {
+  path: string;
+  references: number;
+  items: string[];
+}
+
+export interface WorkloadEntry {
+  assignee: string | null;
+  active: number;
+  in_progress: number;
+  items: string[];
+}
+
+export interface StaleEntry {
+  id: string;
+  title: string;
+  status: ItemStatus;
+  updated_at: string;
+  stale_days: number;
+}
+
+export interface TestHealthSummary {
+  items_with_tests: number;
+  items_with_recent_runs: number;
+  recent_runs: {
+    passed: number;
+    failed: number;
+    skipped: number;
+  };
+  items_failing: string[];
+}
+
+// ---------------------------------------------------------------------------
+// Agenda / summary (unchanged)
+// ---------------------------------------------------------------------------
 
 interface ContextAgendaSummary {
   events: number;
@@ -61,11 +170,20 @@ interface ContextSummary {
   high_level: number;
   low_level: number;
   agenda_events: number;
+  total_items?: number;
+  closed?: number;
+  canceled?: number;
 }
+
+// ---------------------------------------------------------------------------
+// Result
+// ---------------------------------------------------------------------------
 
 export interface ContextResult {
   output_default: "toon";
   now: string;
+  depth: ContextDepth;
+  sections_included: ContextSectionName[];
   window: {
     anchor: string;
     start: string | null;
@@ -93,11 +211,37 @@ export interface ContextResult {
     summary: ContextAgendaSummary;
     events: CalendarRow[];
   };
+  hierarchy?: HierarchyNode[];
+  activity?: CompactActivityEntry[];
+  progress?: ProgressEntry[];
+  blockers?: BlockerEntry[];
+  files?: HotFile[];
+  workload?: WorkloadEntry[];
+  staleness?: StaleEntry[];
+  tests?: TestHealthSummary;
+  suggestions?: string[];
   warnings?: string[];
 }
 
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
 const HIGH_LEVEL_TYPES = new Set<string>(["Epic", "Feature"]);
 const DEFAULT_CONTEXT_LIMIT = 10;
+
+const STANDARD_SECTIONS: ContextSectionName[] = ["hierarchy", "activity", "progress", "workload"];
+const DEEP_SECTIONS: ContextSectionName[] = [
+  ...STANDARD_SECTIONS,
+  "blockers",
+  "files",
+  "staleness",
+  "tests",
+];
+
+// ---------------------------------------------------------------------------
+// Parsers
+// ---------------------------------------------------------------------------
 
 function parseOutputFormat(raw: string | undefined): ContextOutputFormat | undefined {
   if (!raw) return undefined;
@@ -123,6 +267,64 @@ function parseContextLimit(raw: string | undefined): number {
   return parseIntegerLimit(raw, "--limit") ?? DEFAULT_CONTEXT_LIMIT;
 }
 
+export function parseContextDepth(raw: string | undefined, settings: ContextSettings): ContextDepth {
+  if (!raw) return settings.default_depth;
+  const normalized = raw.trim().toLowerCase();
+  if (!CONTEXT_DEPTH_VALUES.includes(normalized as ContextDepth)) {
+    throw new PmCliError(`Context --depth must be one of ${CONTEXT_DEPTH_VALUES.join("|")}`, EXIT_CODE.USAGE);
+  }
+  return normalized as ContextDepth;
+}
+
+export function parseContextSections(
+  raw: string[] | undefined,
+  depth: ContextDepth,
+  settings: ContextSettings,
+): ContextSectionName[] {
+  if (raw && raw.length > 0) {
+    const sections: ContextSectionName[] = [];
+    for (const value of raw) {
+      const normalized = value.trim().toLowerCase();
+      if (!CONTEXT_SECTION_VALUES.includes(normalized as ContextSectionName)) {
+        throw new PmCliError(
+          `Context --section must be one of ${CONTEXT_SECTION_VALUES.join("|")}`,
+          EXIT_CODE.USAGE,
+        );
+      }
+      if (!sections.includes(normalized as ContextSectionName)) {
+        sections.push(normalized as ContextSectionName);
+      }
+    }
+    return sections;
+  }
+  if (depth === "brief") return [];
+  const pool = depth === "deep" ? DEEP_SECTIONS : STANDARD_SECTIONS;
+  return pool.filter((section) => settings.sections[section]);
+}
+
+function parseActivityLimit(raw: string | undefined, settings: ContextSettings): number {
+  if (!raw) return settings.activity_limit;
+  return parseIntegerLimit(raw, "--activity-limit") ?? settings.activity_limit;
+}
+
+function parseStaleThresholdDays(raw: string | undefined, settings: ContextSettings): number {
+  if (!raw) return settings.stale_threshold_days;
+  const trimmed = raw.trim().toLowerCase();
+  const match = /^(\d+)d?$/.exec(trimmed);
+  if (!match) {
+    throw new PmCliError("--stale-threshold must be a number of days (e.g. 7 or 7d)", EXIT_CODE.USAGE);
+  }
+  const days = parseInt(match[1], 10);
+  if (days <= 0) {
+    throw new PmCliError("--stale-threshold must be positive", EXIT_CODE.USAGE);
+  }
+  return days;
+}
+
+// ---------------------------------------------------------------------------
+// Status helpers
+// ---------------------------------------------------------------------------
+
 function normalizeStatusForRegistry(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): ItemStatus {
   return normalizeStatusInput(status, statusRegistry) ?? status;
 }
@@ -142,6 +344,33 @@ function statusRank(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): 
   if (statusRegistry.terminal_statuses.has(normalizedStatus)) return 7;
   return 6;
 }
+
+function isTerminal(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): boolean {
+  return statusRegistry.terminal_statuses.has(normalizeStatusForRegistry(status, statusRegistry));
+}
+
+function isClosedStatus(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): boolean {
+  const closeStatus = normalizeStatusInput("closed", statusRegistry);
+  return closeStatus ? normalizeStatusForRegistry(status, statusRegistry) === closeStatus : false;
+}
+
+function isInProgressStatus(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): boolean {
+  const inProgressStatus = normalizeStatusInput("in_progress", statusRegistry);
+  return inProgressStatus ? normalizeStatusForRegistry(status, statusRegistry) === inProgressStatus : false;
+}
+
+function isOpenStatus(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): boolean {
+  const openStatus = normalizeStatusInput("open", statusRegistry) ?? statusRegistry.open_status;
+  return normalizeStatusForRegistry(status, statusRegistry) === openStatus;
+}
+
+function isBlockedStatus(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): boolean {
+  return statusRegistry.blocked_statuses.has(normalizeStatusForRegistry(status, statusRegistry));
+}
+
+// ---------------------------------------------------------------------------
+// Sorting / mapping helpers (unchanged from original)
+// ---------------------------------------------------------------------------
 
 function compareOptionalOrder(left: number | null | undefined, right: number | null | undefined): number {
   const leftValue = left ?? null;
@@ -220,6 +449,299 @@ function filterTerminalCalendarEvents(events: CalendarRow[], statusRegistry: Run
   return events.filter((event) => !statusRegistry.terminal_statuses.has(normalizeStatusForRegistry(event.item_status, statusRegistry)));
 }
 
+// ---------------------------------------------------------------------------
+// Section builders
+// ---------------------------------------------------------------------------
+
+function buildHierarchy(
+  allItems: ItemFrontMatter[],
+  activeItems: ItemFrontMatter[],
+  statusRegistry: RuntimeStatusRegistry,
+  limit: number,
+): HierarchyNode[] {
+  const itemMap = new Map<string, ItemFrontMatter>();
+  for (const item of allItems) {
+    itemMap.set(item.id, item);
+  }
+
+  const childrenByParent = new Map<string, ItemFrontMatter[]>();
+  for (const item of allItems) {
+    if (!item.parent) continue;
+    const children = childrenByParent.get(item.parent) ?? [];
+    children.push(item);
+    childrenByParent.set(item.parent, children);
+  }
+
+  const activeHighLevelIds = new Set(
+    activeItems.filter((item) => HIGH_LEVEL_TYPES.has(item.type)).map((item) => item.id),
+  );
+
+  const nodes: HierarchyNode[] = [];
+  for (const parentId of activeHighLevelIds) {
+    const parent = itemMap.get(parentId);
+    if (!parent) continue;
+    const allDescendants = collectDescendants(parentId, childrenByParent);
+    const childItems = childrenByParent.get(parentId) ?? [];
+
+    let closedCount = 0;
+    let openCount = 0;
+    let inProgressCount = 0;
+    let blockedCount = 0;
+    for (const desc of allDescendants) {
+      if (isClosedStatus(desc.status, statusRegistry)) closedCount++;
+      else if (isInProgressStatus(desc.status, statusRegistry)) inProgressCount++;
+      else if (isBlockedStatus(desc.status, statusRegistry)) blockedCount++;
+      else if (isOpenStatus(desc.status, statusRegistry)) openCount++;
+    }
+
+    const children: HierarchyChild[] = childItems
+      .sort((a, b) => compareCriticalItems(a, b, statusRegistry))
+      .slice(0, limit)
+      .map((child) => {
+        const grandchildren = collectDescendants(child.id, childrenByParent);
+        const gcClosed = grandchildren.filter((gc) => isClosedStatus(gc.status, statusRegistry)).length;
+        return {
+          id: child.id,
+          title: child.title,
+          type: child.type,
+          status: child.status,
+          children_total: grandchildren.length,
+          children_closed: gcClosed,
+        };
+      });
+
+    nodes.push({
+      id: parent.id,
+      title: parent.title,
+      type: parent.type,
+      status: parent.status,
+      children_total: allDescendants.length,
+      children_closed: closedCount,
+      children_open: openCount,
+      children_in_progress: inProgressCount,
+      children_blocked: blockedCount,
+      children,
+    });
+  }
+
+  return nodes
+    .sort((a, b) => {
+      const aParent = itemMap.get(a.id)!;
+      const bParent = itemMap.get(b.id)!;
+      return compareCriticalItems(aParent, bParent, statusRegistry);
+    })
+    .slice(0, limit);
+}
+
+function collectDescendants(
+  parentId: string,
+  childrenByParent: Map<string, ItemFrontMatter[]>,
+): ItemFrontMatter[] {
+  const result: ItemFrontMatter[] = [];
+  const stack = [parentId];
+  const visited = new Set<string>();
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    if (visited.has(current)) continue;
+    visited.add(current);
+    const children = childrenByParent.get(current) ?? [];
+    for (const child of children) {
+      result.push(child);
+      stack.push(child.id);
+    }
+  }
+  return result;
+}
+
+async function buildActivity(
+  activityLimit: number,
+  global: GlobalOptions,
+): Promise<CompactActivityEntry[]> {
+  const result = await runActivity({ compact: true, limit: String(activityLimit) }, global);
+  return result.compact_activity ?? [];
+}
+
+function buildProgress(
+  allItems: ItemFrontMatter[],
+  activeItems: ItemFrontMatter[],
+  statusRegistry: RuntimeStatusRegistry,
+  limit: number,
+): ProgressEntry[] {
+  const childrenByParent = new Map<string, ItemFrontMatter[]>();
+  for (const item of allItems) {
+    if (!item.parent) continue;
+    const children = childrenByParent.get(item.parent) ?? [];
+    children.push(item);
+    childrenByParent.set(item.parent, children);
+  }
+
+  const activeHighLevel = activeItems.filter((item) => HIGH_LEVEL_TYPES.has(item.type));
+  const entries: ProgressEntry[] = [];
+  for (const parent of activeHighLevel) {
+    const descendants = collectDescendants(parent.id, childrenByParent);
+    const total = descendants.length;
+    if (total === 0) continue;
+
+    let closed = 0;
+    let open = 0;
+    let inProgress = 0;
+    let blocked = 0;
+    for (const desc of descendants) {
+      if (isClosedStatus(desc.status, statusRegistry)) closed++;
+      else if (isInProgressStatus(desc.status, statusRegistry)) inProgress++;
+      else if (isBlockedStatus(desc.status, statusRegistry)) blocked++;
+      else if (isOpenStatus(desc.status, statusRegistry)) open++;
+    }
+
+    entries.push({
+      id: parent.id,
+      title: parent.title,
+      type: parent.type,
+      total,
+      closed,
+      open,
+      in_progress: inProgress,
+      blocked,
+      completion_pct: total > 0 ? Math.round((closed / total) * 100) : 0,
+    });
+  }
+
+  return entries
+    .sort((a, b) => a.completion_pct - b.completion_pct)
+    .slice(0, limit);
+}
+
+function buildBlockers(
+  blockedItems: ItemFrontMatter[],
+  itemMap: Map<string, ItemFrontMatter>,
+  limit: number,
+): BlockerEntry[] {
+  return blockedItems.slice(0, limit).map((item) => {
+    const blockerItem = item.blocked_by ? itemMap.get(item.blocked_by) : undefined;
+    return {
+      id: item.id,
+      title: item.title,
+      blocked_by: item.blocked_by ?? null,
+      blocked_by_title: blockerItem?.title ?? null,
+      blocked_by_status: blockerItem?.status ?? null,
+      blocked_reason: item.blocked_reason ?? null,
+      unblock_note: item.unblock_note ?? null,
+    };
+  });
+}
+
+function buildHotFiles(
+  activeItems: ItemFrontMatter[],
+  limit: number,
+): HotFile[] {
+  const fileMap = new Map<string, Set<string>>();
+  for (const item of activeItems) {
+    for (const file of item.files ?? []) {
+      const existing = fileMap.get(file.path) ?? new Set<string>();
+      existing.add(item.id);
+      fileMap.set(file.path, existing);
+    }
+  }
+
+  return [...fileMap.entries()]
+    .map(([filePath, itemIds]) => ({
+      path: filePath,
+      references: itemIds.size,
+      items: [...itemIds].sort(),
+    }))
+    .sort((a, b) => b.references - a.references)
+    .slice(0, limit);
+}
+
+function buildWorkload(
+  activeItems: ItemFrontMatter[],
+  statusRegistry: RuntimeStatusRegistry,
+  limit: number,
+): WorkloadEntry[] {
+  const groups = new Map<string | null, ItemFrontMatter[]>();
+  for (const item of activeItems) {
+    const key = item.assignee ?? null;
+    const existing = groups.get(key) ?? [];
+    existing.push(item);
+    groups.set(key, existing);
+  }
+
+  return [...groups.entries()]
+    .map(([assignee, items]) => ({
+      assignee,
+      active: items.length,
+      in_progress: items.filter((item) => isInProgressStatus(item.status, statusRegistry)).length,
+      items: items.map((item) => item.id).sort(),
+    }))
+    .sort((a, b) => b.active - a.active)
+    .slice(0, limit);
+}
+
+function buildStaleness(
+  allNonTerminal: ItemFrontMatter[],
+  staleThresholdDays: number,
+  now: string,
+  limit: number,
+): StaleEntry[] {
+  const cutoffMs = new Date(now).getTime() - staleThresholdDays * 24 * 60 * 60 * 1000;
+
+  return allNonTerminal
+    .filter((item) => new Date(item.updated_at).getTime() < cutoffMs)
+    .map((item) => ({
+      id: item.id,
+      title: item.title,
+      status: item.status,
+      updated_at: item.updated_at,
+      stale_days: Math.floor((new Date(now).getTime() - new Date(item.updated_at).getTime()) / (24 * 60 * 60 * 1000)),
+    }))
+    .sort((a, b) => b.stale_days - a.stale_days)
+    .slice(0, limit);
+}
+
+function buildTestHealth(
+  activeItems: ItemFrontMatter[],
+): TestHealthSummary {
+  let itemsWithTests = 0;
+  let itemsWithRecentRuns = 0;
+  let passed = 0;
+  let failed = 0;
+  let skipped = 0;
+  const itemsFailing: string[] = [];
+
+  for (const item of activeItems) {
+    if ((item.tests ?? []).length > 0) {
+      itemsWithTests++;
+    }
+    const runs = item.test_runs ?? [];
+    if (runs.length > 0) {
+      itemsWithRecentRuns++;
+      let itemHasFailure = false;
+      for (const run of runs) {
+        passed += run.passed ?? 0;
+        failed += run.failed ?? 0;
+        skipped += run.skipped ?? 0;
+        if ((run.failed ?? 0) > 0) {
+          itemHasFailure = true;
+        }
+      }
+      if (itemHasFailure) {
+        itemsFailing.push(item.id);
+      }
+    }
+  }
+
+  return {
+    items_with_tests: itemsWithTests,
+    items_with_recent_runs: itemsWithRecentRuns,
+    recent_runs: { passed, failed, skipped },
+    items_failing: itemsFailing.sort(),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Markdown formatting
+// ---------------------------------------------------------------------------
+
 function formatClock(timestamp: string): string {
   return `${new Date(timestamp).toISOString().slice(11, 16)}Z`;
 }
@@ -248,9 +770,16 @@ export function renderContextMarkdown(result: ContextResult): string {
   lines.push("# pm context");
   lines.push("");
   lines.push(`- now: ${result.now}`);
+  lines.push(`- depth: ${result.depth}`);
   lines.push(`- active_items: ${result.summary.active_items} (in_progress: ${result.summary.in_progress}, open: ${result.summary.open})`);
+  if (result.summary.total_items !== undefined) {
+    lines.push(`- total_items: ${result.summary.total_items} (closed: ${result.summary.closed ?? 0}, canceled: ${result.summary.canceled ?? 0})`);
+  }
   lines.push(`- agenda_events: ${result.summary.agenda_events}`);
   lines.push(`- blocked_fallback_used: ${result.summary.blocked_fallback_used}`);
+  if (result.sections_included.length > 0) {
+    lines.push(`- sections: ${result.sections_included.join(", ")}`);
+  }
   lines.push("");
 
   lines.push("## High-level focus");
@@ -292,13 +821,90 @@ export function renderContextMarkdown(result: ContextResult): string {
       lines.push(`- ${formatAgendaLine(event)}`);
     }
   }
+  lines.push("");
+
+  if (result.hierarchy && result.hierarchy.length > 0) {
+    lines.push("## Hierarchy");
+    for (const node of result.hierarchy) {
+      const pct = node.children_total > 0 ? Math.round((node.children_closed / node.children_total) * 100) : 0;
+      lines.push(`- ${node.id} ${node.type} ${node.status} "${node.title}" [${node.children_closed}/${node.children_total} done ${pct}%]`);
+      for (const child of node.children) {
+        const cpct = child.children_total > 0 ? Math.round((child.children_closed / child.children_total) * 100) : 0;
+        lines.push(`  - ${child.id} ${child.type} ${child.status} "${child.title}" [${child.children_closed}/${child.children_total} done ${cpct}%]`);
+      }
+    }
+    lines.push("");
+  }
+
+  if (result.progress && result.progress.length > 0) {
+    lines.push("## Progress");
+    for (const entry of result.progress) {
+      lines.push(`- ${entry.id} "${entry.title}" ${entry.completion_pct}% (${entry.closed}/${entry.total} closed, ${entry.in_progress} wip, ${entry.open} open, ${entry.blocked} blocked)`);
+    }
+    lines.push("");
+  }
+
+  if (result.activity && result.activity.length > 0) {
+    lines.push("## Recent activity");
+    for (const entry of result.activity) {
+      const msg = entry.msg ? ` ${entry.msg}` : "";
+      lines.push(`- ${entry.ts.slice(0, 16)}Z ${entry.id} ${entry.op} by:${entry.author}${msg}`);
+    }
+    lines.push("");
+  }
+
+  if (result.blockers && result.blockers.length > 0) {
+    lines.push("## Blockers");
+    for (const entry of result.blockers) {
+      const by = entry.blocked_by ? `blocked_by:${entry.blocked_by}(${entry.blocked_by_status ?? "?"})` : "blocked_by:-";
+      const reason = entry.blocked_reason ? ` reason:"${entry.blocked_reason}"` : "";
+      const note = entry.unblock_note ? ` unblock:"${entry.unblock_note}"` : "";
+      lines.push(`- ${entry.id} "${entry.title}" ${by}${reason}${note}`);
+    }
+    lines.push("");
+  }
+
+  if (result.files && result.files.length > 0) {
+    lines.push("## Hot files");
+    for (const file of result.files) {
+      lines.push(`- ${file.path} refs:${file.references} items:[${file.items.join(",")}]`);
+    }
+    lines.push("");
+  }
+
+  if (result.workload && result.workload.length > 0) {
+    lines.push("## Workload");
+    for (const entry of result.workload) {
+      const who = entry.assignee ?? "(unassigned)";
+      lines.push(`- ${who} active:${entry.active} wip:${entry.in_progress} items:[${entry.items.join(",")}]`);
+    }
+    lines.push("");
+  }
+
+  if (result.staleness && result.staleness.length > 0) {
+    lines.push("## Stale items");
+    for (const entry of result.staleness) {
+      lines.push(`- ${entry.id} ${entry.status} stale:${entry.stale_days}d last:${entry.updated_at.slice(0, 10)} "${entry.title}"`);
+    }
+    lines.push("");
+  }
+
+  if (result.tests) {
+    lines.push("## Test health");
+    lines.push(`- items_with_tests: ${result.tests.items_with_tests}`);
+    lines.push(`- items_with_recent_runs: ${result.tests.items_with_recent_runs}`);
+    lines.push(`- passed: ${result.tests.recent_runs.passed}, failed: ${result.tests.recent_runs.failed}, skipped: ${result.tests.recent_runs.skipped}`);
+    if (result.tests.items_failing.length > 0) {
+      lines.push(`- items_failing: [${result.tests.items_failing.join(",")}]`);
+    }
+    lines.push("");
+  }
 
   const isEmpty =
     result.summary.active_items === 0 &&
     result.summary.blocked === 0 &&
     result.agenda.summary.events === 0;
   if (isEmpty) {
-    lines.push("");
     lines.push("## Suggestions");
     lines.push("No active work items or upcoming events. Consider:");
     lines.push("- `pm create --type Task --title \"...\"` to add a new work item");
@@ -310,14 +916,37 @@ export function renderContextMarkdown(result: ContextResult): string {
   return lines.join("\n");
 }
 
+// ---------------------------------------------------------------------------
+// Main runner
+// ---------------------------------------------------------------------------
+
 export async function runContext(options: ContextOptions, global: GlobalOptions): Promise<ContextResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const settings = await readSettings(pmRoot);
+  const contextSettings = settings.context ?? SETTINGS_DEFAULTS.context;
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const limit = parseContextLimit(options.limit);
+
+  const depth = parseContextDepth(options.depth, contextSettings);
+  const sectionsIncluded = parseContextSections(options.section, depth, contextSettings);
+  const activityLimit = parseActivityLimit(options.activityLimit, contextSettings);
+  const staleThresholdDays = parseStaleThresholdDays(options.staleThreshold, contextSettings);
+
+  const needsAllItems = sectionsIncluded.some((s) =>
+    ["hierarchy", "progress", "blockers", "staleness"].includes(s),
+  );
+
   const listOptions: ListOptions = { ...(options as Record<string, unknown>), excludeTerminal: true };
   const listed = await runList(undefined, listOptions, global);
   const listedFrontMatter = listed.items as ItemFrontMatter[];
+
+  let allItems: ItemFrontMatter[] = listedFrontMatter;
+  if (needsAllItems) {
+    const allListOptions: ListOptions = { ...(options as Record<string, unknown>), excludeTerminal: false };
+    const allListed = await runList(undefined, allListOptions, global);
+    allItems = allListed.items as ItemFrontMatter[];
+  }
+
   const ranked = [...listedFrontMatter].sort((left, right) => compareCriticalItems(left, right, statusRegistry));
   const activeStatuses =
     statusRegistry.active_statuses.size > 0
@@ -361,9 +990,43 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
     : 0;
   const openCount = activeItems.filter((item) => normalizeStatusForRegistry(item.status, statusRegistry) === openStatus).length;
 
-  return {
+  const now = agenda.now;
+
+  const itemMap = new Map<string, ItemFrontMatter>();
+  for (const item of allItems) {
+    itemMap.set(item.id, item);
+  }
+
+  const allNonTerminal = allItems.filter((item) => !isTerminal(item.status, statusRegistry));
+
+  const has = (section: ContextSectionName) => sectionsIncluded.includes(section);
+
+  const hierarchy = has("hierarchy") ? buildHierarchy(allItems, activeItems, statusRegistry, limit) : undefined;
+  const activity = has("activity") ? await buildActivity(activityLimit, global) : undefined;
+  const progress = has("progress") ? buildProgress(allItems, activeItems, statusRegistry, limit) : undefined;
+  const blockersSection = has("blockers") ? buildBlockers(blockedItems, itemMap, limit) : undefined;
+  const filesSection = has("files") ? buildHotFiles(activeItems, limit) : undefined;
+  const workload = has("workload") ? buildWorkload(activeItems, statusRegistry, limit) : undefined;
+  const staleness = has("staleness") ? buildStaleness(allNonTerminal, staleThresholdDays, now, limit) : undefined;
+  const tests = has("tests") ? buildTestHealth(activeItems) : undefined;
+
+  const summaryExtras: Pick<ContextSummary, "total_items" | "closed" | "canceled"> =
+    needsAllItems
+      ? {
+          total_items: allItems.length,
+          closed: allItems.filter((i) => isClosedStatus(i.status, statusRegistry)).length,
+          canceled: allItems.filter((i) => {
+            const canceledStatus = normalizeStatusInput("canceled", statusRegistry);
+            return canceledStatus ? normalizeStatusForRegistry(i.status, statusRegistry) === canceledStatus : false;
+          }).length,
+        }
+      : {};
+
+  const result: ContextResult = {
     output_default: "toon",
-    now: agenda.now,
+    now,
+    depth,
+    sections_included: sectionsIncluded,
     window: {
       anchor: agenda.anchor,
       start: agenda.range.start,
@@ -392,6 +1055,7 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
       high_level: highLevel.length,
       low_level: lowLevel.length,
       agenda_events: agendaSummary.events,
+      ...summaryExtras,
     },
     high_level: highLevel,
     low_level: lowLevel,
@@ -400,16 +1064,25 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
       summary: agendaSummary,
       events: agendaEvents,
     },
-    ...(warnings.length > 0 ? { warnings } : {}),
-    ...(activeItems.length === 0 && blockedItems.length === 0 && agendaEvents.length === 0
-      ? {
-          suggestions: [
-            'pm create --type Task --title "..." to add a new work item',
-            "pm list --status closed --limit 5 to review recent completions",
-            "pm search <keywords> to find related past work",
-            "pm aggregate for a full project status overview",
-          ],
-        }
-      : {}),
   };
+
+  if (hierarchy) result.hierarchy = hierarchy;
+  if (activity) result.activity = activity;
+  if (progress) result.progress = progress;
+  if (blockersSection) result.blockers = blockersSection;
+  if (filesSection) result.files = filesSection;
+  if (workload) result.workload = workload;
+  if (staleness) result.staleness = staleness;
+  if (tests) result.tests = tests;
+  if (warnings.length > 0) result.warnings = warnings;
+  if (activeItems.length === 0 && blockedItems.length === 0 && agendaEvents.length === 0) {
+    result.suggestions = [
+      'pm create --type Task --title "..." to add a new work item',
+      "pm list --status closed --limit 5 to review recent completions",
+      "pm search <keywords> to find related past work",
+      "pm aggregate for a full project status overview",
+    ];
+  }
+
+  return result;
 }

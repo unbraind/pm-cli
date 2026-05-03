@@ -230,6 +230,10 @@ export function registerListQueryCommands(program: Command): void {
     .option("--release <value>", "Filter by release")
     .option("--limit <n>", "Limit focus and agenda rows per section")
     .option("--format <value>", "Context output format override: markdown|toon|json")
+    .option("--depth <value>", "Context depth: brief|standard|deep (default: settings or brief)")
+    .option("--section <value...>", "Include specific sections (repeatable; overrides --depth)")
+    .option("--activity-limit <n>", "Limit recent activity entries (default: settings or 10)")
+    .option("--stale-threshold <value>", "Staleness cutoff in days (e.g. 7 or 7d; default: settings or 7)")
     .action(async (options: Record<string, unknown>, actionCommand) => {
       const globalOptions = getGlobalOptions(actionCommand);
       const startedAt = Date.now();

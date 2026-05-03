@@ -366,6 +366,39 @@ export interface HistoryEntry {
   message?: string;
 }
 
+export const CONTEXT_DEPTH_VALUES = ["brief", "standard", "deep"] as const;
+export type ContextDepth = (typeof CONTEXT_DEPTH_VALUES)[number];
+
+export const CONTEXT_SECTION_VALUES = [
+  "hierarchy",
+  "activity",
+  "progress",
+  "blockers",
+  "files",
+  "workload",
+  "staleness",
+  "tests",
+] as const;
+export type ContextSectionName = (typeof CONTEXT_SECTION_VALUES)[number];
+
+export interface ContextSectionSettings {
+  hierarchy: boolean;
+  activity: boolean;
+  progress: boolean;
+  blockers: boolean;
+  files: boolean;
+  workload: boolean;
+  staleness: boolean;
+  tests: boolean;
+}
+
+export interface ContextSettings {
+  default_depth: ContextDepth;
+  activity_limit: number;
+  stale_threshold_days: number;
+  sections: ContextSectionSettings;
+}
+
 export interface GovernanceSettings {
   preset: GovernancePreset;
   ownership_enforcement: GovernanceOwnershipEnforcement;
@@ -456,6 +489,7 @@ export interface PmSettings {
       model: string;
     };
   };
+  context: ContextSettings;
   vector_store: {
     adapter?: string;
     qdrant: {

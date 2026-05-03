@@ -266,6 +266,21 @@ export const SETTINGS_DEFAULTS: PmSettings = {
       model: "",
     },
   },
+  context: {
+    default_depth: "brief",
+    activity_limit: 10,
+    stale_threshold_days: 7,
+    sections: {
+      hierarchy: true,
+      activity: true,
+      progress: true,
+      blockers: true,
+      files: true,
+      workload: true,
+      staleness: true,
+      tests: true,
+    },
+  },
   vector_store: {
     adapter: "",
     qdrant: {

@@ -140,6 +140,7 @@ describe("core/store/settings", () => {
         "telemetry",
         "item_types",
         "schema",
+        "context",
         "extensions",
         "search",
         "providers",

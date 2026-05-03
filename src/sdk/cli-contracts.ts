@@ -454,6 +454,10 @@ export const PI_CONTEXT_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "release", flag: "--release" },
   { param: "limit", flag: "--limit" },
   { param: "format", flag: "--format" },
+  { param: "depth", flag: "--depth" },
+  { param: "section", flag: "--section", repeatable: true },
+  { param: "activityLimit", flag: "--activity-limit" },
+  { param: "staleThreshold", flag: "--stale-threshold" },
 ];
 
 export const PI_DEPS_OPTION_CONTRACTS: PiOptionFlagContract[] = [
@@ -1400,6 +1404,9 @@ export const CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasCont
   { target: "release", keys: ["release"] },
   { target: "limit", keys: ["limit"] },
   { target: "format", keys: ["format"] },
+  { target: "depth", keys: ["depth"] },
+  { target: "activityLimit", keys: ["activityLimit", "activity_limit"] },
+  { target: "staleThreshold", keys: ["staleThreshold", "stale_threshold"] },
 ];
 
 export const ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
@@ -1664,6 +1671,10 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   groupBy: { type: "string" },
   threshold: { anyOf: [{ type: "string" }, { type: "number" }] },
   format: { type: "string" },
+  depth: { type: "string", enum: ["brief", "standard", "deep"] },
+  section: { type: "array", items: { type: "string", enum: ["hierarchy", "activity", "progress", "blockers", "files", "workload", "staleness", "tests"] } },
+  activityLimit: { anyOf: [{ type: "string" }, { type: "number" }] },
+  staleThreshold: { type: "string" },
   policy: { type: "string" },
 };
 
@@ -1738,6 +1749,7 @@ const CALENDAR_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
 const CONTEXT_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...PI_CONTEXT_OPTION_CONTRACTS.map((entry) => entry.param),
   "past",
+  "section",
 ]);
 
 const ACTIVITY_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
@@ -2431,6 +2443,22 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   activeOnly: {
     description: "Alias for runtimeOnly in contracts action payloads.",
+  },
+  depth: {
+    description: "Context depth level controlling how many sections are included (brief=focus+agenda, standard=+hierarchy/activity/progress/workload, deep=all sections).",
+    examples: ["brief", "standard", "deep"],
+  },
+  section: {
+    description: "Repeatable section selector for context; overrides --depth when provided.",
+    examples: [["hierarchy", "activity"], ["blockers", "files", "staleness"]],
+  },
+  activityLimit: {
+    description: "Maximum number of recent activity entries to include in context output.",
+    examples: [5, 10, "20"],
+  },
+  staleThreshold: {
+    description: "Staleness cutoff in days for context staleness section (e.g. 7 or 7d).",
+    examples: ["7", "14d", "30"],
   },
 };
 

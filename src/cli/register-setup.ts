@@ -132,7 +132,7 @@ export function registerSetupCommands(program: Command): void {
     .argument("<action>", "Config action: get|set|list|export")
     .argument(
       "[key]",
-      "Config key for get|set: definition-of-done|item-format|history-missing-stream-policy|sprint-release-format-policy|parent-reference-policy|metadata-validation-profile|metadata-required-fields|lifecycle-stale-blocker-reason-patterns|lifecycle-closure-like-blocked-reason-patterns|lifecycle-closure-like-resolution-patterns|lifecycle-closure-like-actual-result-patterns|governance-preset|governance-ownership-enforcement|governance-create-mode-default|governance-close-validation-default|governance-parent-reference-policy|governance-metadata-validation-profile|governance-force-required-for-stale-lock|test-result-tracking|telemetry-tracking",
+      "Config key for get|set: definition-of-done|item-format|history-missing-stream-policy|sprint-release-format-policy|parent-reference-policy|metadata-validation-profile|metadata-required-fields|lifecycle-stale-blocker-reason-patterns|lifecycle-closure-like-blocked-reason-patterns|lifecycle-closure-like-resolution-patterns|lifecycle-closure-like-actual-result-patterns|governance-preset|governance-ownership-enforcement|governance-create-mode-default|governance-close-validation-default|governance-parent-reference-policy|governance-metadata-validation-profile|governance-force-required-for-stale-lock|test-result-tracking|telemetry-tracking|context",
     )
     .option(
       "--criterion <text>",
@@ -145,6 +145,17 @@ export function registerSetupCommands(program: Command): void {
       "--policy <value>",
       "Policy key values: history-missing-stream-policy=auto_create|strict_error; sprint-release-format-policy=warn|strict_error; parent-reference-policy=warn|strict_error; governance-preset=minimal|default|strict|custom; governance-ownership-enforcement=none|warn|strict; governance-create-mode-default=progressive|strict; governance-close-validation-default=off|warn|strict; governance-parent-reference-policy=warn|strict_error; governance-metadata-validation-profile=core|strict|custom; governance-force-required-for-stale-lock=enabled|disabled; test-result-tracking=enabled|disabled; telemetry-tracking=enabled|disabled",
     )
+    .option("--default-depth <value>", "Context default depth: brief|standard|deep")
+    .option("--activity-limit <n>", "Context default activity limit")
+    .option("--stale-threshold-days <n>", "Context staleness cutoff in days")
+    .option("--section-hierarchy <value>", "Enable/disable context hierarchy section (true|false)")
+    .option("--section-activity <value>", "Enable/disable context activity section (true|false)")
+    .option("--section-progress <value>", "Enable/disable context progress section (true|false)")
+    .option("--section-blockers <value>", "Enable/disable context blockers section (true|false)")
+    .option("--section-files <value>", "Enable/disable context files section (true|false)")
+    .option("--section-workload <value>", "Enable/disable context workload section (true|false)")
+    .option("--section-staleness <value>", "Enable/disable context staleness section (true|false)")
+    .option("--section-tests <value>", "Enable/disable context tests section (true|false)")
     .description("Read or update pm settings for the current workspace or global profile.")
     .action(async (scope: string, action: string, key: string | undefined, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
@@ -159,6 +170,17 @@ export function registerSetupCommands(program: Command): void {
           format: typeof options.format === "string" ? options.format : undefined,
           policy: typeof options.policy === "string" ? options.policy : undefined,
           clearCriteria: options.clearCriteria === true,
+          defaultDepth: typeof options.defaultDepth === "string" ? options.defaultDepth : undefined,
+          activityLimit: typeof options.activityLimit === "string" ? options.activityLimit : undefined,
+          staleThresholdDays: typeof options.staleThresholdDays === "string" ? options.staleThresholdDays : undefined,
+          sectionHierarchy: typeof options.sectionHierarchy === "string" ? options.sectionHierarchy : undefined,
+          sectionActivity: typeof options.sectionActivity === "string" ? options.sectionActivity : undefined,
+          sectionProgress: typeof options.sectionProgress === "string" ? options.sectionProgress : undefined,
+          sectionBlockers: typeof options.sectionBlockers === "string" ? options.sectionBlockers : undefined,
+          sectionFiles: typeof options.sectionFiles === "string" ? options.sectionFiles : undefined,
+          sectionWorkload: typeof options.sectionWorkload === "string" ? options.sectionWorkload : undefined,
+          sectionStaleness: typeof options.sectionStaleness === "string" ? options.sectionStaleness : undefined,
+          sectionTests: typeof options.sectionTests === "string" ? options.sectionTests : undefined,
         },
         globalOptions,
       );

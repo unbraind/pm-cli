@@ -69,7 +69,7 @@ describe("runConfig", () => {
 
       const result = await runConfig("project", "list", undefined, {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot });
       expect(result.changed).toBe(false);
-      expect(result.count).toBe(20);
+      expect(result.count).toBe(21);
       expect(result.keys?.map((entry) => entry.key)).toEqual([
         "definition_of_done",
         "item_format",
@@ -91,6 +91,7 @@ describe("runConfig", () => {
         "governance_force_required_for_stale_lock",
         "test_result_tracking",
         "telemetry_tracking",
+        "context",
       ]);
       expect(result.keys?.find((entry) => entry.key === "definition_of_done")?.value).toEqual(["tests pass"]);
       expect(result.keys?.find((entry) => entry.key === "definition_of_done")?.set_flags).toEqual([
@@ -155,6 +156,21 @@ describe("runConfig", () => {
         governance_force_required_for_stale_lock: "enabled",
         test_result_tracking: "disabled",
         telemetry_tracking: "enabled",
+        context: {
+          default_depth: "brief",
+          activity_limit: 10,
+          stale_threshold_days: 7,
+          sections: {
+            hierarchy: true,
+            activity: true,
+            progress: true,
+            blockers: true,
+            files: true,
+            workload: true,
+            staleness: true,
+            tests: true,
+          },
+        },
       });
     });
   });
