@@ -140,9 +140,37 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${GITHUB_REF_NAME#v}"
-          npm view "@unbrained/pm-cli@${VERSION}" version dist.integrity dist.unpackedSize --json
-          test "$(npx --yes "@unbrained/pm-cli@${VERSION}" --version)" = "${VERSION}"
-          test "$(bunx "@unbrained/pm-cli@${VERSION}" --version)" = "${VERSION}"
+          for attempt in $(seq 1 20); do
+            if npm view "@unbrained/pm-cli@${VERSION}" version dist.integrity dist.unpackedSize --json; then
+              break
+            fi
+            if [ "$attempt" -eq 20 ]; then
+              echo "Published package metadata did not become available on npm in time."
+              exit 1
+            fi
+            echo "Waiting for npm propagation (attempt ${attempt}/20)..."
+            sleep 15
+          done
+          for attempt in $(seq 1 10); do
+            if [ "$(npx --yes "@unbrained/pm-cli@${VERSION}" --version | tr -d '\r\n')" = "${VERSION}" ]; then
+              break
+            fi
+            if [ "$attempt" -eq 10 ]; then
+              echo "npx verification failed after propagation retries."
+              exit 1
+            fi
+            sleep 10
+          done
+          for attempt in $(seq 1 10); do
+            if [ "$(bunx "@unbrained/pm-cli@${VERSION}" --version | tr -d '\r\n')" = "${VERSION}" ]; then
+              break
+            fi
+            if [ "$attempt" -eq 10 ]; then
+              echo "bunx verification failed after propagation retries."
+              exit 1
+            fi
+            sleep 10
+          done
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@218a0cad87d638dff9a0383acf010108077227f3 # v3.0.0
