@@ -1,0 +1,16 @@
+id: pm-xwl6
+title: Telemetry + Sentry analysis and remediation
+description: "Diagnose 521 flush failure, fix remote stack, analyze Sentry issues for PmCliError leakage, enhance local gitignored tooling."
+type: Task
+status: closed
+priority: 1
+tags[3]: remediation,sentry,telemetry
+created_at: "2026-05-03T10:48:16.278Z"
+updated_at: "2026-05-03T11:08:06.797Z"
+author: audit-agent
+estimated_minutes: 120
+acceptance_criteria: "Telemetry endpoint healthy, no PmCliError in Sentry unresolved, local analysis tooling enhanced"
+parent: pm-5zkg
+blocked_by: pm-ut35
+close_reason: "Telemetry endpoint healthy (200), queue flushed. All 8 unresolved Sentry PmCliError events bulk-resolved (pre-fix artifacts from May 1-2). Filtering confirmed working in instrument.ts. Privacy controls verified. Local tooling in scripts/prod/telemetry/ gitignored and functional."
+body: ""

@@ -136,7 +136,7 @@ describe("GitHub workflow contract", () => {
       "body_path: ${{ runner.temp }}/release-notes.md",
       "run: npm publish",
       "NPM_TOKEN",
-      "uses: softprops/action-gh-release@v3",
+      "uses: softprops/action-gh-release@218a0cad87d638dff9a0383acf010108077227f3",
       "uses: actions/upload-artifact@v7",
       "path: coverage",
       "if-no-files-found: ignore",

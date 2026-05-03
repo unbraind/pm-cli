@@ -17,6 +17,7 @@ jobs:
   release:
     name: Build, Test, Publish
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     environment:
       name: release
 
@@ -59,6 +60,7 @@ jobs:
         run: pnpm test:coverage
 
       - name: Upload Sentry sourcemaps
+        timeout-minutes: 5
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: unbrained
@@ -102,11 +104,12 @@ jobs:
           if-no-files-found: error
 
       - name: Publish to npm
+        timeout-minutes: 5
         run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@218a0cad87d638dff9a0383acf010108077227f3 # v3.0.0
         with:
           body_path: ${{ runner.temp }}/release-notes.md

@@ -94,15 +94,11 @@ import {
   ensureCommandPath,
 } from "./extension-command-help.js";
 import {
-  type BootstrapGlobalOptions,
-  type BootstrapHelpRequest,
   parseBootstrapGlobalOptions,
-  stripGlobalBootstrapTokens,
   applyBootstrapPagerPolicy,
   parseBootstrapHelpRequest,
   parseBootstrapCommandName,
   normalizeLegacyExtensionActionSyntax,
-  parseBootstrapTypeValue,
 } from "./bootstrap-args.js";
 import {
   type MandatoryMigrationBlocker,
@@ -111,7 +107,6 @@ import {
   enforceItemFormatWriteGateAndPreflightMigration,
   resolveMigrationId,
   resolveNormalizedMigrationStatus,
-  decideWriteGate,
 } from "./migration-gates.js";
 import {
   isKnownHelpCommandPath,
@@ -182,49 +177,7 @@ function describeUnknownError(error: unknown): string {
   return "Unknown failure";
 }
 
-function collectMutationItemIds(result: unknown): string[] {
-  if (!result || typeof result !== "object") {
-    return [];
-  }
-  const record = result as Record<string, unknown>;
-  const ids = new Set<string>();
-  const pushId = (value: unknown): void => {
-    if (typeof value !== "string") {
-      return;
-    }
-    const normalized = value.trim();
-    if (normalized.length === 0) {
-      return;
-    }
-    ids.add(normalized);
-  };
 
-  pushId(record.id);
-
-  const item = record.item;
-  if (item && typeof item === "object") {
-    pushId((item as { id?: unknown }).id);
-  }
-
-  const explicitIds = record.ids;
-  if (Array.isArray(explicitIds)) {
-    for (const candidate of explicitIds) {
-      pushId(candidate);
-    }
-  }
-
-  const items = record.items;
-  if (Array.isArray(items)) {
-    for (const candidate of items) {
-      if (!candidate || typeof candidate !== "object") {
-        continue;
-      }
-      pushId((candidate as { id?: unknown }).id);
-    }
-  }
-
-  return [...ids].sort((left, right) => left.localeCompare(right));
-}
 async function runAndClearAfterCommandHooks(outcome: { ok: boolean; error?: string }): Promise<void> {
   const telemetryRuntime = activeTelemetryCommandContext;
   activeTelemetryCommandContext = null;

@@ -1,0 +1,19 @@
+id: pm-ut35
+title: "Blocker: telemetry endpoint returning HTTP 521"
+description: pm-cli.unbrained.dev/v1/events returns HTTP 521. Local queue stuck with pending events. Remote stack needs container/Caddy diagnosis.
+type: Issue
+status: closed
+priority: 1
+tags[3]: blocker,infrastructure,telemetry
+created_at: "2026-05-03T10:47:33.204Z"
+updated_at: "2026-05-03T11:07:43.787Z"
+deadline: "2026-05-06T10:47:33.204Z"
+author: audit-agent
+estimated_minutes: 60
+acceptance_criteria: "Telemetry endpoint returns 200, queue flushes successfully"
+parent: pm-5zkg
+blocked_reason: Remote telemetry stack returning 521 - container/Caddy likely down
+severity: high
+environment: production
+close_reason: "Telemetry endpoint healthy (200 OK), queue flushed (0 entries), state.json shows last_successful_flush. 521 resolved itself - likely remote container restart."
+body: ""

@@ -1,0 +1,15 @@
+id: pm-0kd4
+title: CI/CD hardening sweep - workflows + release scripts
+description: "Audit ci.yml, release.yml, nightly.yml for reliability, supply-chain hardening, free-tier best practices. Validate packaging and release contracts."
+type: Task
+status: closed
+priority: 1
+tags[3]: audit,cicd,hardening
+created_at: "2026-05-03T10:47:42.126Z"
+updated_at: "2026-05-03T10:57:50.662Z"
+author: audit-agent
+estimated_minutes: 120
+acceptance_criteria: "All workflows pass, dependency pinning verified, provenance enabled, no deprecated actions"
+parent: pm-5zkg
+close_reason: "CI/CD hardening complete: timeout-minutes on all jobs, SHA-pinned actions, step timeouts on network ops, zero vulns, Dependabot configured"
+body: ""
