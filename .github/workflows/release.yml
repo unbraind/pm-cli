@@ -152,7 +152,9 @@ jobs:
             sleep 15
           done
           for attempt in $(seq 1 10); do
-            if [ "$(npx --yes "@unbrained/pm-cli@${VERSION}" --version | tr -d '\r\n')" = "${VERSION}" ]; then
+            NPX_OUTPUT="$(npm exec --yes --package "@unbrained/pm-cli@${VERSION}" -- pm --version 2>/dev/null || true)"
+            NPX_VERSION="$(printf '%s\n' "${NPX_OUTPUT}" | awk 'NF { line=$0 } END { print line }' | tr -d '\r\n')"
+            if [ "${NPX_VERSION}" = "${VERSION}" ]; then
               break
             fi
             if [ "$attempt" -eq 10 ]; then
@@ -162,7 +164,9 @@ jobs:
             sleep 10
           done
           for attempt in $(seq 1 10); do
-            if [ "$(bunx "@unbrained/pm-cli@${VERSION}" --version | tr -d '\r\n')" = "${VERSION}" ]; then
+            BUNX_OUTPUT="$(bunx "@unbrained/pm-cli@${VERSION}" pm --version 2>/dev/null || true)"
+            BUNX_VERSION="$(printf '%s\n' "${BUNX_OUTPUT}" | awk 'NF { line=$0 } END { print line }' | tr -d '\r\n')"
+            if [ "${BUNX_VERSION}" = "${VERSION}" ]; then
               break
             fi
             if [ "$attempt" -eq 10 ]; then
