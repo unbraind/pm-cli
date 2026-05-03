@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026.5.3-2] - 2026-05-03
+
 ### Added
 - Added a scheduled auto-release workflow (`.github/workflows/auto-release.yml`) with one-release-per-UTC-day defaults, manual same-day override controls, and a shared release pipeline driver.
 - Added release automation scripts under `scripts/release/` for changelog promotion, strict static quality checks, temporary-project backward-compatibility validation, Sentry/telemetry threshold gating, unified release gate execution, and full local pipeline orchestration.
