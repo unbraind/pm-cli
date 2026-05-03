@@ -1,0 +1,16 @@
+id: pm-jrjt
+title: 2026-05-03 latest PM CLI dogfood audit
+description: "Full latest-state audit and remediation for pm CLI extensibility, SDK, agent UX, calendar, semantic search, telemetry/Sentry, CI/CD, security hygiene, and temporary-project dogfooding."
+type: Epic
+status: open
+priority: 0
+tags[10]: agent-ux,audit,calendar,ci,dogfood,latest,pm-cli,sdk,search,telemetry
+created_at: "2026-05-03T13:19:49.829Z"
+updated_at: "2026-05-03T13:19:49.829Z"
+deadline: "2026-05-04T13:19:49.829Z"
+author: codex-audit
+estimated_minutes: 360
+acceptance_criteria: Baseline build/tests pass; temporary-project dogfood exercises core workflows; SDK/extensibility/search/calendar/telemetry/CI findings are reviewed; code fixes are linked and verified; no host credentials or tokens are tracked or recorded.
+comments[1]{created_at,author,text}:
+  "2026-05-03T13:19:49.829Z",codex-audit,"Duplicate check before create: ran pm context --limit 10,pm list-open --limit 20,pm list-in-progress --limit 20,pm search latest audit/sdk/search/calendar/telemetry/ci terms. Existing relevant items were closed prior audits; no open/in-progress item covered this latest-state request,so a new audit lineage is required."
+body: "Scope: inspect the latest checkout, run a temporary-project dogfood pass, review code quality and performance, validate SDK/extension ergonomics, search/indexing behavior, calendar output, telemetry/Sentry operations, CI/CD hygiene, and record any remediations. Sensitive operational details must stay out of tracked files and item text."

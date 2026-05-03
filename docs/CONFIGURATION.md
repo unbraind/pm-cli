@@ -45,6 +45,7 @@ Precedence:
 | `locks.ttl_seconds` | stale lock threshold |
 | `history.missing_stream` | `auto_create` or `strict_error` |
 | `testing.record_results_to_items` | persist bounded linked-test summaries |
+| `telemetry.enabled` / `telemetry.capture_level` | usage diagnostics policy; default enabled with redacted capture |
 | `validation.sprint_release_format` | `warn` or `strict_error` |
 | `validation.parent_reference` | `warn` or `strict_error` |
 | `item_types.definitions[]` | custom item types and type options |
@@ -57,6 +58,7 @@ Precedence:
 | `PM_AUTHOR` | explicit mutation author |
 | `PM_PATH` | override project tracker root for tests or sandboxes |
 | `PM_GLOBAL_PATH` | override global profile root for tests or sandboxes |
+| `PM_TELEMETRY_DISABLED` | disable telemetry and Sentry collection for the current process |
 | `PM_OLLAMA_MODEL` | choose default Ollama embedding model |
 | `PM_DISABLE_OLLAMA_AUTO_DEFAULTS` | disable implicit Ollama search defaults |
 

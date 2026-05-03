@@ -14,6 +14,8 @@ const originalTelemetryDisabled = process.env.PM_TELEMETRY_DISABLED;
 const originalTelemetryOtelDisabled = process.env.PM_TELEMETRY_OTEL_DISABLED;
 const originalTelemetrySourceContext = process.env.PM_TELEMETRY_SOURCE_CONTEXT;
 const DAY_MS = 24 * 60 * 60 * 1000;
+const PRIVATE_TEST_IP = ["192", "168", "42", "17"].join(".");
+const TEST_LOCAL_PATH = ["/home", "example", "private", "path"].join("/");
 
 function telemetryQueuePath(globalRoot: string): string {
   return path.join(globalRoot, "runtime", "telemetry", "events.jsonl");
@@ -93,7 +95,7 @@ describe("core/telemetry/runtime", () => {
           "supersecret",
           "--token=abc123",
           "user@example.com",
-          "token=inline-secret --password hunter2 /home/steve/private/path",
+          `token=inline-secret --password hunter2 ${TEST_LOCAL_PATH} ${PRIVATE_TEST_IP}`,
         ],
         options: {
           apiKey: "value",
@@ -142,7 +144,7 @@ describe("core/telemetry/runtime", () => {
         "[redacted]",
         "--token=[redacted]",
         "[redacted_email]",
-        "token=[redacted] --password [redacted] [redacted_path]",
+        "token=[redacted] --password [redacted] [redacted_path] [redacted_ip]",
       ]);
       expect(queued.event.payload.command_options.apiKey).toBe("[redacted]");
     });
@@ -272,7 +274,7 @@ describe("core/telemetry/runtime", () => {
     });
   });
 
-  it("retains non-sensitive context at max capture level while redacting secrets", async () => {
+  it("retains expanded context at max capture level while redacting secrets and local identifiers", async () => {
     await withTempGlobalRoot(async (globalRoot) => {
       await setTelemetryCaptureLevel(globalRoot, "max");
       globalThis.fetch = vi.fn(async () => {
@@ -282,10 +284,11 @@ describe("core/telemetry/runtime", () => {
       const active = await startTelemetryCommand({
         command: "search",
         pm_version: "9.9.9-test",
-        args: ["user@example.com", "/home/steve/private/path", "--token=abc123"],
+        args: ["user@example.com", TEST_LOCAL_PATH, PRIVATE_TEST_IP, "--token=abc123"],
         options: {
           contact: "user@example.com",
-          path: "/home/steve/private/path",
+          path: TEST_LOCAL_PATH,
+          host: PRIVATE_TEST_IP,
           apiKey: "top-secret",
         },
         global: {
@@ -302,7 +305,7 @@ describe("core/telemetry/runtime", () => {
       await finishTelemetryCommand(active, {
         ok: true,
         result: {
-          query: "user@example.com token=supersecret /home/steve/private/path",
+          query: `user@example.com token=supersecret ${TEST_LOCAL_PATH} ${PRIVATE_TEST_IP}`,
         },
       });
       await waitForPendingFlush();
@@ -338,15 +341,17 @@ describe("core/telemetry/runtime", () => {
       expect(startEvent?.event.payload.source_context).toMatch(/^(user|automation|test|dogfood|audit_smoke)$/);
       expect(startEvent?.event.payload.source_context_source).toMatch(/^(inferred|env_override)$/);
       expect(startEvent?.event.payload.command_args).toEqual(
-        expect.arrayContaining(["user@example.com", "/home/steve/private/path", "--token=[redacted]"]),
+        expect.arrayContaining(["[redacted_email]", "[redacted_path]", "[redacted_ip]", "--token=[redacted]"]),
       );
-      expect(startEvent?.event.payload.command_options?.contact).toBe("user@example.com");
-      expect(startEvent?.event.payload.command_options?.path).toBe("/home/steve/private/path");
+      expect(startEvent?.event.payload.command_options?.contact).toBe("[redacted_email]");
+      expect(startEvent?.event.payload.command_options?.path).toBe("[redacted_path]");
+      expect(startEvent?.event.payload.command_options?.host).toBe("[redacted_ip]");
       expect(startEvent?.event.payload.command_options?.apiKey).toBe("[redacted]");
 
       const query = String(finishEvent?.event.payload.result_summary?.preview?.query ?? "");
-      expect(query).toContain("user@example.com");
-      expect(query).toContain("/home/steve/private/path");
+      expect(query).toContain("[redacted_email]");
+      expect(query).toContain("[redacted_path]");
+      expect(query).toContain("[redacted_ip]");
       expect(query).toContain("token=[redacted]");
       expect(query).not.toContain("supersecret");
     });

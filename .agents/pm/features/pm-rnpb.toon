@@ -1,0 +1,19 @@
+id: pm-rnpb
+title: "Latest CLI quality, SDK, telemetry, search, and calendar remediation"
+description: "Feature-level tracking for the latest dogfood audit implementation pass across CLI quality, SDK/extension ergonomics, agent-optimized output, semantic search/indexing, calendar workflows, telemetry/Sentry analysis, CI/CD, and sensitive-data hygiene."
+type: Feature
+status: open
+priority: 0
+tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
+created_at: "2026-05-03T13:20:01.343Z"
+updated_at: "2026-05-03T13:20:01.343Z"
+deadline: "2026-05-04T13:20:01.343Z"
+author: codex-audit
+estimated_minutes: 300
+acceptance_criteria: Audit findings are actionable and deduplicated; changed files and verification commands are linked; temporary dogfood project validates core workflows; any discovered bugs with safe fixes are remediated and tested.
+parent: pm-jrjt
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
+comments[1]{created_at,author,text}:
+  "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
+body: "Use linked tasks and comments for evidence. Keep operational telemetry scripts and reports under ignored scripts/prod/telemetry only, and do not record secrets or private host credentials in tracked files or pm item text."

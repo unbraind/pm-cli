@@ -187,7 +187,7 @@ export const SETTINGS_DEFAULTS: PmSettings = {
   telemetry: {
     enabled: true,
     first_run_prompt_completed: false,
-    capture_level: "max",
+    capture_level: "redacted",
     endpoint: "https://pm-cli.unbrained.dev/v1/events",
     installation_id: "",
     retention_days: 365,

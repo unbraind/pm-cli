@@ -1,0 +1,29 @@
+id: pm-hfny
+title: Pin GitHub Actions to immutable SHAs
+description: "Harden CI, nightly, and release workflows by replacing mutable action version tags with the current immutable tag commit SHAs while preserving Dependabot tracking comments."
+type: Issue
+status: closed
+priority: 1
+tags[4]: ci,github-actions,pm-cli,security
+created_at: "2026-05-03T13:57:09.345Z"
+updated_at: "2026-05-03T14:03:20.014Z"
+author: codex-audit
+acceptance_criteria: "CI, nightly, and release workflows pin third-party and GitHub actions by full commit SHA with version comments; workflow contract tests assert the pinned references; targeted workflow tests pass."
+parent: pm-rnpb
+resolution: Pinned GitHub Actions workflow dependencies to immutable full commit SHAs while preserving version comments for maintainability.
+expected_result: "CI, nightly, and release workflows use immutable SHA-pinned action references and contract tests assert those references."
+actual_result: "Updated CI, nightly, and release workflows plus ci-workflow-contract tests. Workflow-contract linked test passed, no mutable @vN action references remain, security scan and full coverage passed."
+comments[2]{created_at,author,text}:
+  "2026-05-03T13:57:09.345Z",codex-audit,"Duplicate-check evidence: pm search pin GitHub Actions SHA workflows --limit 10 and pm list-open --tag ci --limit 20 found only closed CI hardening items plus the active audit feature; latest official GitHub Actions security guidance still recommends immutable full-length SHA pinning."
+  "2026-05-03T14:02:54.152Z",codex-audit,"Evidence: pinned checkout, setup-node, upload-artifact, and pnpm/action-setup workflow uses to full tag SHAs with version comments; verified no remaining workflow uses match mutable @vN action references. Linked test pm test pm-hfny --run passed. Final node scripts/run-tests.mjs coverage passed 84 files/1178 tests with 100% statements/branches/functions/lines. pnpm security:scan and git diff --check passed."
+files[4]{path,scope,note}:
+  .github/workflows/ci.yml,project,pinned CI workflow actions
+  .github/workflows/nightly.yml,project,pinned nightly workflow actions
+  .github/workflows/release.yml,project,pinned release workflow actions
+  tests/integration/ci-workflow-contract.spec.ts,project,workflow pinning contract
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,workflow-contract-regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mopu6icp-2azap4,test,passed,"2026-05-03T13:58:46.544Z","2026-05-03T13:58:52.777Z","2026-05-03T13:58:52.777Z",null,null,1,0,0,null,null,null
+close_reason: "GitHub Actions workflows are pinned to immutable SHAs, contract-tested, and full coverage/security checks passed."
+body: ""

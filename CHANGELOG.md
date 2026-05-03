@@ -9,9 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Decomposed `src/cli/main.ts` from ~5800 lines into modular command registration files: `register-setup.ts`, `register-list-query.ts`, `register-mutation.ts`, `register-operations.ts`, and shared `registration-helpers.ts`, reducing main.ts to ~2550 lines while preserving all command behavior and help text.
+- Changed the built-in telemetry capture default from `max` to `redacted` so new installs preserve agent reliability diagnostics without sending local paths or personal identifiers by default.
 
 ### Added
 - Added persistent on-disk front-matter cache (`src/core/store/front-matter-cache.ts`) for `listAllFrontMatter` operations, using mtime+size fingerprinting for incremental refresh and context-fingerprint-based invalidation when preferred format or schema changes. Warm `list-open` drops from full-scan to ~60ms for 636-item corpora.
+
+### Security
+- Hardened telemetry and Sentry scrubbing so emails, private IPs, absolute local paths, bearer values, and inline credential assignments are redacted even when higher-detail telemetry capture is explicitly selected.
 
 ## [2026.5.2] - 2026-05-02
 

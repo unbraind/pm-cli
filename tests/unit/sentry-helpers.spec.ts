@@ -5,7 +5,9 @@ import { _testOnly } from "../../src/core/sentry/instrument.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 
-const { isExpectedCliErrorEvent, isPmCliErrorBreadcrumb } = _testOnly;
+const { isExpectedCliErrorEvent, isPmCliErrorBreadcrumb, scrubString } = _testOnly;
+const PRIVATE_TEST_IP = ["192", "168", "42", "17"].join(".");
+const TEST_LOCAL_PATH = ["/home", "example", "project"].join("/");
 
 describe("sentry helpers", () => {
   it("does not capture expected CLI errors as Sentry exceptions", () => {
@@ -95,5 +97,23 @@ describe("isPmCliErrorBreadcrumb", () => {
 
   it("handles missing message", () => {
     expect(isPmCliErrorBreadcrumb({ category: "console" })).toBe(false);
+  });
+});
+
+describe("scrubString", () => {
+  it("scrubs credentials, email addresses, private IPs, and absolute paths", () => {
+    const scrubbed = scrubString(
+      `token=secret user@example.com ${PRIVATE_TEST_IP} ${TEST_LOCAL_PATH} bearer abc.def`,
+    );
+
+    expect(scrubbed).toContain("token=[scrubbed]");
+    expect(scrubbed).toContain("[scrubbed_email]");
+    expect(scrubbed).toContain("[scrubbed_ip]");
+    expect(scrubbed).toContain("[scrubbed_path]");
+    expect(scrubbed).toContain("bearer [scrubbed]");
+    expect(scrubbed).not.toContain("secret");
+    expect(scrubbed).not.toContain("user@example.com");
+    expect(scrubbed).not.toContain(PRIVATE_TEST_IP);
+    expect(scrubbed).not.toContain(TEST_LOCAL_PATH);
   });
 });

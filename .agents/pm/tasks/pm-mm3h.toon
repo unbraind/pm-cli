@@ -1,0 +1,44 @@
+id: pm-mm3h
+title: Execute latest dogfood audit and targeted fixes
+description: "Run the latest local and temporary-project pm CLI audit, analyze code quality/performance/security/UX, review telemetry and Sentry signals, fix safe high-value issues, and document evidence."
+type: Task
+status: closed
+priority: 0
+tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
+created_at: "2026-05-03T13:20:11.397Z"
+updated_at: "2026-05-03T13:55:54.650Z"
+deadline: "2026-05-04T13:20:11.397Z"
+author: codex-audit
+estimated_minutes: 240
+acceptance_criteria: Core dogfood commands work in a temporary project; source review findings are captured; changed files are linked; sandbox-safe tests and coverage are linked and run; sensitive data scan passes for tracked files and pm items.
+parent: pm-rnpb
+resolution: "Latest-state dogfood audit completed with targeted privacy hardening and regression coverage. Telemetry and Sentry scrubbing now redact paths, private-address literals, emails, bearer tokens, and inline credentials; default telemetry capture level is redacted. Core dogfood, SDK/extension docs, calendar, semantic search, CI/CD, health, and tracker hygiene were reviewed and documented."
+expected_result: "pm CLI is audited against current tree, verified in an isolated temporary project, privacy leaks are not introduced in tracked files/current item docs, search/calendar/extension/SDK/CI surfaces remain functional, and residual larger hygiene work is tracked without duplicate items."
+actual_result: "Implemented telemetry/Sentry redaction hardening, updated docs/changelog/tests, validated temp dogfood lifecycle, hybrid semantic search, calendar markdown output, health/vectorization, security scan, targeted tests, full test suite, and 100% coverage. Created follow-ups pm-xk39 and pm-xz1p for history-stream redaction and legacy linked-file hygiene."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-rnpb,parent,"2026-05-03T13:20:11.397Z",codex-audit,null
+comments[5]{created_at,author,text}:
+  "2026-05-03T13:20:11.397Z",codex-audit,"Duplicate check evidence inherited from parent lineage: current open/in-progress lists were empty and related search results were closed prior audits,so this task tracks the new latest-state execution."
+  "2026-05-03T13:25:10.236Z",codex-audit,"Dogfood evidence: temporary project at /tmp/pm-cli-dogfood-6L7tIo used sandboxed PM_PATH/PM_GLOBAL_PATH and exercised init/create hierarchy/claim/update/append/comments/notes/learnings/files/docs/test add/test run/search/calendar/context/health/validate/close/release. All commands passed; close emitted expected warn-mode readiness warning for intentionally omitted resolution metadata."
+  "2026-05-03T13:27:04.987Z",codex-audit,"Telemetry/Sentry analysis evidence: remote stack healthy, 24h telemetry count 2534, Sentry unresolved issues/logs empty, latest release has zero new groups. Seven-day telemetry shows top command volume in get/update/close/comments/search; slowest P95 commands are linked test, reindex, health, search; failure messages include local absolute paths in tracker-not-initialized errors, so telemetry redaction needs hardening for paths/PII even when capture_level=max."
+  "2026-05-03T13:34:24.293Z",codex-audit,"Security hygiene evidence: current pm item documents were scanned for provided tokens, private host IPs, and private remote operation paths. Existing current item leaks in pm-ny6y, pm-cakn, pm-vhdc, and pm-r9ei were sanitized through pm mutations; current item scan now returns no matches. Append-only history streams still contain historical pre-redaction text; direct hand-editing would break replay/hash integrity, so this needs a dedicated audited pm redaction command."
+  "2026-05-03T13:55:23.065Z",codex-audit,"Evidence: temp-project dogfood lifecycle passed; Sentry unresolved issues/logs clean; telemetry stack health and analytics reviewed; hybrid semantic search returned semantic matches; calendar week markdown rendered deadlines/events/recurrence; pm health --check-only ok including vectorization stale_items=0; node scripts/run-tests.mjs coverage passed 84 files/1178 tests with 100% statements/branches/functions/lines; pnpm security:scan passed; git diff --check passed; current pm item docs scan found no tracked sensitive host/token/password literals. Follow-ups: pm-xk39 for audited history-stream redaction, pm-xz1p for legacy linked-file validation hygiene."
+files[6]{path,scope,note}:
+  src/core/telemetry/runtime.ts,project,telemetry-redaction-audit
+  src/core/sentry/instrument.ts,project,sentry-redaction-hardening
+  src/core/shared/constants.ts,project,telemetry-default-capture-level
+  tests/unit/telemetry-runtime.spec.ts,project,telemetry-redaction-regressions
+  tests/unit/sentry-helpers.spec.ts,project,sentry-redaction-regression
+  tests/unit/health-command.spec.ts,project,telemetry-default-health-expectation
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,coverage-gate
+  node scripts/run-tests.mjs test,null,project,600,null,null,null,null,null,null,null,null,null,null,null,full-test-suite
+  node scripts/run-tests.mjs test -- tests/unit/telemetry-runtime.spec.ts tests/unit/sentry-helpers.spec.ts tests/unit/health-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,targeted-redaction-regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-moptrdw1-qapltr,test,passed,"2026-05-03T13:39:23.418Z","2026-05-03T13:47:07.153Z","2026-05-03T13:47:07.153Z",null,null,3,0,0,null,null,null
+docs[3]{path,scope,note}:
+  CHANGELOG.md,project,release-note-for-redaction-hardening
+  docs/CONFIGURATION.md,project,telemetry-opt-out-and-redacted-default
+  docs/EXTENSIONS.md,project,extension lifecycle docs audited
+close_reason: "Latest dogfood audit completed; temp-project lifecycle, telemetry/Sentry review, semantic search, calendar, CI/CD, security scan, full tests, and coverage verified; follow-ups opened for history redaction and legacy linked-file hygiene."
+body: "Execution plan: baseline build/install, temporary-project dogfood, source review across SDK/extensions/search/calendar/output/telemetry/CI, local and ignored telemetry report review, Sentry read-only inspection when CLI context permits, safe targeted fixes, linked verification. Avoid recording secrets or private infrastructure credentials."

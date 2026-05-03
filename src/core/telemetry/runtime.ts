@@ -64,6 +64,10 @@ const INLINE_SENSITIVE_FLAG_PATTERN = new RegExp(
   "giu",
 );
 const ABSOLUTE_PATH_TOKEN_PATTERN = /(^|[\s"'`(=])\/(?:[^\s"'`),;]+)/g;
+const EMAIL_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/giu;
+const BEARER_TOKEN_PATTERN = /bearer\s+[a-z0-9._=-]+/giu;
+const PRIVATE_IP_PATTERN =
+  /\b(?:10\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|172\.(?:1[6-9]|2\d|3[01])\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|192\.168\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d))\b/g;
 
 interface TelemetryEvent {
   schema_version: number;
@@ -198,10 +202,15 @@ function redactAbsolutePathTokens(input: string): string {
   );
 }
 
+function sanitizeCommonSensitiveTokens(input: string): string {
+  const withoutEmails = input.replaceAll(EMAIL_PATTERN, "[redacted_email]");
+  const withoutBearer = withoutEmails.replaceAll(BEARER_TOKEN_PATTERN, "bearer [redacted_token]");
+  return withoutBearer.replaceAll(PRIVATE_IP_PATTERN, "[redacted_ip]");
+}
+
 function sanitizeStringRedacted(input: string): string {
-  const withoutEmails = input.replaceAll(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/giu, "[redacted_email]");
-  const withoutBearer = withoutEmails.replaceAll(/bearer\s+[a-z0-9._=-]+/giu, "bearer [redacted_token]");
-  const withoutInlineSecrets = redactInlineSensitiveAssignments(withoutBearer);
+  const withoutCommonSensitiveTokens = sanitizeCommonSensitiveTokens(input);
+  const withoutInlineSecrets = redactInlineSensitiveAssignments(withoutCommonSensitiveTokens);
   const withoutAbsolutePaths = redactAbsolutePathTokens(withoutInlineSecrets);
   const trimmed = withoutAbsolutePaths.trim();
   if (trimmed.startsWith("/") && trimmed.length > 1) {
@@ -214,12 +223,17 @@ function sanitizeStringRedacted(input: string): string {
 }
 
 function sanitizeStringMax(input: string): string {
-  const withoutBearer = input.replaceAll(/bearer\s+[a-z0-9._=-]+/giu, "bearer [redacted_token]");
-  const withoutInlineSecrets = redactInlineSensitiveAssignments(withoutBearer);
-  if (withoutInlineSecrets.length > 2048) {
-    return `${withoutInlineSecrets.slice(0, 2045)}...`;
+  const withoutCommonSensitiveTokens = sanitizeCommonSensitiveTokens(input);
+  const withoutInlineSecrets = redactInlineSensitiveAssignments(withoutCommonSensitiveTokens);
+  const withoutAbsolutePaths = redactAbsolutePathTokens(withoutInlineSecrets);
+  const trimmed = withoutAbsolutePaths.trim();
+  if (trimmed.startsWith("/") && trimmed.length > 1) {
+    return "[redacted_path]";
   }
-  return withoutInlineSecrets;
+  if (withoutAbsolutePaths.length > 2048) {
+    return `${withoutAbsolutePaths.slice(0, 2045)}...`;
+  }
+  return withoutAbsolutePaths;
 }
 
 function sanitizeString(input: string, captureLevel: Exclude<TelemetryCaptureLevel, "minimal"> = "redacted"): string {

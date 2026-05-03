@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: observability,pm-cli,telemetry,validation
 created_at: "2026-04-26T08:38:49.149Z"
-updated_at: "2026-05-03T12:11:42.443Z"
+updated_at: "2026-05-03T13:54:31.143Z"
 author: codex-agent
 estimated_minutes: 180
 acceptance_criteria: Ingestion path validates UUID-typed identifiers before queueing; invalid payloads are dropped/quarantined with explicit counters and do not repeatedly fail worker inserts.
@@ -33,16 +33,14 @@ notes[2]{created_at,author,text}:
   "2026-04-27T19:36:10.924Z",codex-agent,"Dual boundary hardening is now in place: ingress rejects malformed UUID payloads for new events, while worker ack-drop logic clears any legacy poison messages already in RabbitMQ without requeue loops."
 learnings[1]{created_at,author,text}:
   "2026-04-27T19:36:14.819Z",codex-agent,"When a queue already contains poison telemetry events, API-only validation is insufficient; adding worker-side ack-drop validation prevents indefinite nack/requeue churn and restores queue drain deterministically."
-files[7]{path,scope,note}:
+files[5]{path,scope,note}:
   .agents/pm/search/operations/REMOTE_TELEMETRY_STACK.md,project,Remote telemetry stack runbook used during verification
   .gitignore,project,Telemetry runtime and search caches excluded from git
-  /home/steve/container/pm-cli/telemetry-api/app.py,project,remote ingestion UUID validation and reject counters
-  /home/steve/container/pm-cli/telemetry-api/worker.py,project,worker-side invalid UUID drop to stop requeue churn
   scripts/prod/telemetry/2026-04-27-remote-telemetry-api-app.py,project,local patch snapshot for remote app.py update
   scripts/prod/telemetry/2026-04-27-remote-telemetry-api-worker.py,project,local patch snapshot for remote worker.py update
   src/core/telemetry/runtime.ts,project,Client-side telemetry event shaping and redaction
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  ssh -o BatchMode=yes 'cd /home/steve/container/pm-cli && docker compose ps telemetry-api telemetry-worker && curl -fsS && docker compose exec -T rabbitmq rabbitmqctl list_queues name messages messages_unacknowledged',null,project,240,null,null,null,null,null,null,null,null,null,null,null,remote health and queue zero verification
+  echo remote-uuid-validation-verification-redacted,null,project,120,null,null,null,null,null,null,null,null,null,null,null,remote-health-and-queue-zero-verification-redacted
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mohllgbf-5s3s5x,test,passed,"2026-04-27T19:36:21.505Z","2026-04-27T19:36:24.027Z","2026-04-27T19:36:24.027Z",null,null,1,0,0,null,null,null
 docs[2]{path,scope,note}:

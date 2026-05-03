@@ -119,7 +119,7 @@ describe("runHealth", () => {
       expect(telemetryCheck?.status).toBe("ok");
       expect(telemetryCheck?.details).toMatchObject({
         enabled: true,
-        capture_level: "max",
+        capture_level: "redacted",
         queue_entries: 0,
         endpoint_probe: {
           attempted: false,

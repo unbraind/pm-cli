@@ -13,6 +13,12 @@ const PUBLISH_OR_RELEASE_PATTERNS = [
   "gh release",
   "npx changeset publish",
 ];
+const PINNED_ACTIONS = {
+  checkout: "uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6",
+  pnpmSetup: "uses: pnpm/action-setup@cb9c4fdd700176d874d52d64ce3b7418842cf6d3 # v6",
+  setupNode: "uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6",
+  uploadArtifact: "uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7",
+};
 
 function normalizeWorkflow(content: string): string {
   return content.replaceAll("\r\n", "\n");
@@ -51,6 +57,9 @@ describe("GitHub workflow contract", () => {
       "node: 20",
       "node: 22",
       "node: 24",
+      PINNED_ACTIONS.checkout,
+      PINNED_ACTIONS.pnpmSetup,
+      PINNED_ACTIONS.setupNode,
       "run: pnpm build",
       "run: pnpm typecheck",
       "run: pnpm test",
@@ -60,7 +69,7 @@ describe("GitHub workflow contract", () => {
       "run: pnpm test:coverage",
       "run: npm pack --dry-run",
       "run: pnpm smoke:npx",
-      "uses: actions/upload-artifact@v7",
+      PINNED_ACTIONS.uploadArtifact,
       "if: always() && matrix.os == 'ubuntu-latest' && matrix.node == 20",
       "name: coverage-node${{ matrix.node }}-${{ matrix.os }}",
       "path: coverage",
@@ -88,6 +97,9 @@ describe("GitHub workflow contract", () => {
       "- 22",
       "- 24",
       "- 25",
+      PINNED_ACTIONS.checkout,
+      PINNED_ACTIONS.pnpmSetup,
+      PINNED_ACTIONS.setupNode,
       "run: pnpm build",
       "run: pnpm version:check",
       "run: pnpm security:scan",
@@ -117,6 +129,9 @@ describe("GitHub workflow contract", () => {
       "cancel-in-progress: false",
       "environment:",
       "name: release",
+      PINNED_ACTIONS.checkout,
+      PINNED_ACTIONS.pnpmSetup,
+      PINNED_ACTIONS.setupNode,
       "run: node scripts/release-version.mjs check --tag \"${GITHUB_REF_NAME}\" --verify-next",
       "run: pnpm security:scan",
       "run: pnpm build",
@@ -137,7 +152,7 @@ describe("GitHub workflow contract", () => {
       "run: npm publish",
       "NPM_TOKEN",
       "uses: softprops/action-gh-release@218a0cad87d638dff9a0383acf010108077227f3",
-      "uses: actions/upload-artifact@v7",
+      PINNED_ACTIONS.uploadArtifact,
       "path: coverage",
       "if-no-files-found: ignore",
     ]);

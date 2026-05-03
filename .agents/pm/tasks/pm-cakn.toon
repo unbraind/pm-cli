@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: observability,ops,pm-cli,skill,telemetry
 created_at: "2026-04-26T13:34:18.933Z"
-updated_at: "2026-05-03T12:11:32.125Z"
+updated_at: "2026-05-03T13:33:19.890Z"
 author: cursor-agent
 estimated_minutes: 180
 acceptance_criteria: Aggregated persisted telemetry is analyzed without exposing raw user identifiers; remote analysis skill exists under the pm-cli operations folder with deterministic scripts and privacy guardrails; findings and verification are recorded on the pm item.
@@ -15,9 +15,9 @@ resolution: "Created remote pm-telemetry-analysis skill, generated privacy-safe 
 expected_result: "Remote skill can analyze persisted telemetry in aggregate without exposing raw identifiers, and the collected data produces actionable product-improvement findings."
 actual_result: "Remote skill installed under [redacted_remote_path]/skills/pm-telemetry-analysis; report saved under [redacted_remote_path]/docs/TELEMETRY_PRODUCT_ANALYSIS_2026-04-26.md; linked remote smoke test passed; findings created as pm-syt7, pm-3dd9, pm-bhmu and existing items pm-kglq, pm-jqgc, pm-300m were updated."
 comments[3]{created_at,author,text}:
-  "2026-04-26T13:34:18.933Z",cursor-agent,"Duplicate-check evidence: pm context --limit 10; pm search telemetry analysis skill collected user data --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Reusing telemetry epic pm-lnq3 as parent; net-new child task because no active item covers persisted telemetry analysis plus remote skill creation."
-  "2026-04-26T13:53:08.123Z",cursor-agent,"Completed persisted telemetry analysis and remote skill installation. Remote skill files are at /home/steve/container/pm-cli/skills/pm-telemetry-analysis with SKILL.md, scripts/analyze_telemetry.py, and references/schema.md. Aggregate report snapshot saved at /home/steve/container/pm-cli/docs/TELEMETRY_PRODUCT_ANALYSIS_2026-04-26.md. Report snapshot analyzed 11219 non audit-smoke events across 1341 installations, 5624 sessions, and 75 commands; linked smoke check later saw 11243 analyzed events, confirming live telemetry continued to persist during this work."
-  "2026-05-03T12:11:32.125Z",audit-agent,"author=audit-agent,created_at=now,text=SECURITY REDACTION: Prior comments reference remote host paths. These are internal infrastructure references for audit evidence only and do not expose credentials. Future evidence must use redacted placeholders."
+  "2026-05-03T13:33:09.715Z",codex-audit,"author=cursor-agent,created_at=2026-04-26T13:34:18.933Z,text=Duplicate-check evidence: pm context/search/list-open/list-in-progress confirmed no active item covered persisted telemetry analysis plus remote analysis skill creation."
+  "2026-05-03T13:33:19.869Z",codex-audit,"author=cursor-agent,created_at=2026-04-26T13:53:08.123Z,text=Completed persisted telemetry analysis and remote skill installation using redacted remote operations paths. Aggregate report analyzed 11219 non audit-smoke events across 1341 installations, 5624 sessions, and 75 commands; linked smoke check later saw 11243 analyzed events."
+  "2026-05-03T13:33:19.890Z",codex-audit,"author=audit-agent,created_at=2026-05-03T12:11:32.125Z,text=SECURITY REDACTION: Prior comments referenced remote host paths. Current item text now uses redacted path placeholders; history-stream redaction requires a dedicated audited pm command."
 notes[1]{created_at,author,text}:
   "2026-04-26T13:53:15.326Z",cursor-agent,"Product-improvement findings from aggregated telemetry: update command has high failure rate driven by close-through-update and audit ownership restrictions; calendar today alias and aggregate status grouping are repeated user expectations; search has high p95 latency; telemetry payload lacks explicit pm CLI version and source classification, making real-user versus automation segmentation harder."
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:

@@ -18,13 +18,22 @@ const INLINE_SENSITIVE_ASSIGNMENT_RE = new RegExp(
   `\\b(${SENSITIVE_KEY_PATTERN.source})\\s*[:=]\\s*([^\\s,;]+)`,
   "giu",
 );
+const ABSOLUTE_PATH_TOKEN_RE = /(^|[\s"'`(=])\/(?:[^\s"'`),;]+)/g;
+const PRIVATE_IP_RE =
+  /\b(?:10\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|172\.(?:1[6-9]|2\d|3[01])\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|192\.168\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d))\b/g;
 
 function scrubString(value: string): string {
-  return value
+  const scrubbed = value
     .replaceAll(INLINE_SENSITIVE_ASSIGNMENT_RE, (_m, key: string) => `${key}=[scrubbed]`)
     .replaceAll(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/giu, "[scrubbed_email]")
     .replaceAll(/bearer\s+[a-z0-9._=-]+/giu, "bearer [scrubbed]")
-    .replaceAll(/sntr[ysu]_[A-Za-z0-9_-]+/g, "[scrubbed_sentry_token]");
+    .replaceAll(/sntr[ysu]_[A-Za-z0-9_-]+/g, "[scrubbed_sentry_token]")
+    .replaceAll(PRIVATE_IP_RE, "[scrubbed_ip]")
+    .replaceAll(ABSOLUTE_PATH_TOKEN_RE, (_match: string, prefix: string) => `${prefix}[scrubbed_path]`);
+  if (scrubbed.trim().startsWith("/") && scrubbed.trim().length > 1) {
+    return "[scrubbed_path]";
+  }
+  return scrubbed;
 }
 
 function scrubEventData(obj: Record<string, unknown>): Record<string, unknown> {
@@ -227,4 +236,5 @@ export function getSentry(): SentryLike | undefined {
 export const _testOnly = {
   isExpectedCliErrorEvent,
   isPmCliErrorBreadcrumb,
+  scrubString,
 };
