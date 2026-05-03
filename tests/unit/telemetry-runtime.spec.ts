@@ -3,7 +3,12 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
-import { finishTelemetryCommand, startTelemetryCommand, waitForPendingFlush } from "../../src/core/telemetry/runtime.js";
+import {
+  emitTelemetryErrorEvent,
+  finishTelemetryCommand,
+  startTelemetryCommand,
+  waitForPendingFlush,
+} from "../../src/core/telemetry/runtime.js";
 
 const originalGlobalPath = process.env.PM_GLOBAL_PATH;
 const originalFetch = globalThis.fetch;
@@ -150,6 +155,73 @@ describe("core/telemetry/runtime", () => {
     });
   });
 
+  it("queues command_error telemetry with sanitized payload for parse failures", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      await setTelemetryCaptureLevel(globalRoot, "redacted");
+      globalThis.fetch = vi.fn(async () => {
+        throw new Error("network_down");
+      }) as unknown as typeof fetch;
+
+      await emitTelemetryErrorEvent({
+        command: "lst",
+        args: ["lst", "--token=abc123", "/home/steve/private/path"],
+        options: {
+          token: "abc123",
+          attemptedPath: "/home/steve/private/path",
+        },
+        global: {
+          json: false,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_version: "9.9.9-test",
+        pm_root: "/tmp/project/.agents/pm",
+        error_code: "unknown_command",
+        error_message: `unknown command 'lst' token=abc123 ${PRIVATE_TEST_IP} /home/steve/private/path`,
+        exit_code: 2,
+      });
+      await waitForPendingFlush();
+
+      const queueRaw = await fs.readFile(telemetryQueuePath(globalRoot), "utf8");
+      const entries = queueRaw
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+        .map((line) =>
+          JSON.parse(line) as {
+            attempts: number;
+            event: {
+              event_type: string;
+              command: string;
+              payload: {
+                error_code?: string;
+                error_category?: string;
+                exit_code?: number;
+                attempted_args?: string[];
+                attempted_options?: Record<string, unknown>;
+                error?: string;
+              };
+            };
+          },
+        );
+      const commandError = entries.find((entry) => entry.event.event_type === "command_error");
+      expect(commandError).toBeDefined();
+      expect(commandError?.attempts).toBe(1);
+      expect(commandError?.event.command).toBe("lst");
+      expect(commandError?.event.payload.error_code).toBe("unknown_command");
+      expect(commandError?.event.payload.error_category).toBe("usage");
+      expect(commandError?.event.payload.exit_code).toBe(2);
+      expect(commandError?.event.payload.attempted_args).toEqual(["lst", "--token=[redacted]", "[redacted_path]"]);
+      expect(commandError?.event.payload.attempted_options?.token).toBe("[redacted]");
+      expect(commandError?.event.payload.attempted_options?.attemptedPath).toBe("[redacted_path]");
+      expect(commandError?.event.payload.error).toContain("[redacted]");
+      expect(commandError?.event.payload.error).not.toContain("abc123");
+      expect(commandError?.event.payload.error).not.toContain(PRIVATE_TEST_IP);
+    });
+  });
+
   it("redacts inline secrets and paths in command_finish result summaries", async () => {
     await withTempGlobalRoot(async (globalRoot) => {
       await setTelemetryCaptureLevel(globalRoot, "redacted");
@@ -266,6 +338,9 @@ describe("core/telemetry/runtime", () => {
       expect(String(finishPayload.source_context ?? "")).toMatch(/^(user|automation|test|dogfood|audit_smoke)$/);
       expect(String(finishPayload.source_context_source ?? "")).toMatch(/^(inferred|env_override)$/);
       expect(finishPayload.ok).toBe(false);
+      expect(finishPayload.exit_code).toBe(1);
+      expect(finishPayload.error_code).toBeUndefined();
+      expect(finishPayload.error_category).toBe("unknown");
       expect(typeof finishPayload.duration_ms).toBe("number");
       expect(finishPayload.started_at).toBeUndefined();
       expect(finishPayload.result_summary).toBeUndefined();
@@ -354,6 +429,66 @@ describe("core/telemetry/runtime", () => {
       expect(query).toContain("[redacted_ip]");
       expect(query).toContain("token=[redacted]");
       expect(query).not.toContain("supersecret");
+    });
+  });
+
+  it("includes exit code and classified error metadata in command_finish payload", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      await setTelemetryCaptureLevel(globalRoot, "redacted");
+      globalThis.fetch = vi.fn(async () => {
+        throw new Error("network_down");
+      }) as unknown as typeof fetch;
+
+      const active = await startTelemetryCommand({
+        command: "update",
+        pm_version: "9.9.9-test",
+        args: ["pm-a1b2", "--status", "closed"],
+        options: {
+          status: "closed",
+        },
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+      expect(active).not.toBeNull();
+
+      await finishTelemetryCommand(active, {
+        ok: false,
+        error: 'Invalid --status value "closed"',
+        exit_code: 2,
+        error_code: "invalid_argument_value",
+      });
+      await waitForPendingFlush();
+
+      const queueRaw = await fs.readFile(telemetryQueuePath(globalRoot), "utf8");
+      const entries = queueRaw
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+        .map((line) =>
+          JSON.parse(line) as {
+            event: {
+              event_type: string;
+              payload: {
+                ok?: boolean;
+                exit_code?: number;
+                error_code?: string;
+                error_category?: string;
+              };
+            };
+          },
+        );
+      const finishEvent = entries.find((entry) => entry.event.event_type === "command_finish");
+      expect(finishEvent).toBeDefined();
+      expect(finishEvent?.event.payload.ok).toBe(false);
+      expect(finishEvent?.event.payload.exit_code).toBe(2);
+      expect(finishEvent?.event.payload.error_code).toBe("invalid_argument_value");
+      expect(finishEvent?.event.payload.error_category).toBe("validation");
     });
   });
 
@@ -611,6 +746,8 @@ describe("core/telemetry/runtime", () => {
       const attrMap = new Map(span?.attributes.map((entry) => [entry.key, entry.value]) ?? []);
       expect(attrMap.get("pm.command")?.stringValue).toBe("list-open");
       expect(attrMap.get("pm.ok")?.boolValue).toBe(false);
+      expect(attrMap.get("pm.exit_code")?.intValue).toBe("1");
+      expect(attrMap.get("pm.error_category")?.stringValue).toBe("unknown");
       expect(attrMap.get("pm.error")?.stringValue).toBe("synthetic_failure");
       expect(body.resourceSpans[0]?.resource.attributes[0]?.key).toBe("service.name");
       expect(body.resourceSpans[0]?.resource.attributes[0]?.value.stringValue).toBe("pm-cli-test");

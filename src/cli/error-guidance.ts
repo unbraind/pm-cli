@@ -23,6 +23,17 @@ export interface JsonErrorEnvelope {
   next_steps?: string[];
 }
 
+export interface ErrorClassification {
+  type: string;
+  code: string;
+  title: string;
+  detail: string;
+  required: string;
+  why?: string;
+  examples?: string[];
+  next_steps?: string[];
+}
+
 export interface CommanderGuidanceContext {
   unknownCommandExamples?: string[];
   unknownCommandNextSteps?: string[];
@@ -79,6 +90,26 @@ function guidanceToJsonEnvelope(message: GuidanceMessage, exitCode: number): Jso
     detail: message.happened,
     required: message.required,
     exit_code: exitCode,
+  };
+  if (message.why) {
+    payload.why = message.why;
+  }
+  if (message.examples && message.examples.length > 0) {
+    payload.examples = message.examples;
+  }
+  if (message.nextSteps && message.nextSteps.length > 0) {
+    payload.next_steps = message.nextSteps;
+  }
+  return payload;
+}
+
+function guidanceToClassification(message: GuidanceMessage): ErrorClassification {
+  const payload: ErrorClassification = {
+    type: message.type,
+    code: message.code,
+    title: message.title,
+    detail: message.happened,
+    required: message.required,
   };
   if (message.why) {
     payload.why = message.why;
@@ -432,6 +463,10 @@ export function formatPmCliErrorForDisplay(rawMessage: string, context?: PmCliEr
   return renderGuidanceMessage(buildPmCliErrorGuidance(rawMessage, context));
 }
 
+export function classifyPmCliError(rawMessage: string, context?: PmCliErrorContext): ErrorClassification {
+  return guidanceToClassification(buildPmCliErrorGuidance(rawMessage, context));
+}
+
 export function formatPmCliErrorForJson(rawMessage: string, exitCode: number, context?: PmCliErrorContext): JsonErrorEnvelope {
   return guidanceToJsonEnvelope(buildPmCliErrorGuidance(rawMessage, context), exitCode);
 }
@@ -445,6 +480,15 @@ export function formatCommanderErrorForDisplay(
   return renderGuidanceMessage(buildCommanderErrorGuidance(rawMessage, commandName, allowedTypes, context));
 }
 
+export function classifyCommanderError(
+  rawMessage: string,
+  commandName: string | undefined,
+  allowedTypes: string,
+  context?: CommanderGuidanceContext,
+): ErrorClassification {
+  return guidanceToClassification(buildCommanderErrorGuidance(rawMessage, commandName, allowedTypes, context));
+}
+
 export function formatCommanderErrorForJson(
   rawMessage: string,
   commandName: string | undefined,
@@ -456,7 +500,12 @@ export function formatCommanderErrorForJson(
 }
 
 export function formatUnknownErrorForJson(rawMessage: string, exitCode: number): JsonErrorEnvelope {
-  const guidance = makeGuidanceMessage({
+  const guidance = buildUnknownErrorGuidance(rawMessage);
+  return guidanceToJsonEnvelope(guidance, exitCode);
+}
+
+function buildUnknownErrorGuidance(rawMessage: string): GuidanceMessage {
+  return makeGuidanceMessage({
     code: "unknown_error",
     title: "Unhandled error",
     happened: normalizeMessage(rawMessage),
@@ -464,5 +513,8 @@ export function formatUnknownErrorForJson(rawMessage: string, exitCode: number):
     why: "Unexpected runtime failures can occur from environment or extension-level issues.",
     examples: ["pm --help", "pm health --json"],
   });
-  return guidanceToJsonEnvelope(guidance, exitCode);
+}
+
+export function classifyUnknownError(rawMessage: string): ErrorClassification {
+  return guidanceToClassification(buildUnknownErrorGuidance(rawMessage));
 }

@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import type { GlobalOptions } from "../shared/command-types.js";
 import { appendLineAtomic, readFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
+import { resolveTelemetryErrorCategory, type TelemetryErrorCategory } from "../shared/constants.js";
 import { nowIso } from "../shared/time.js";
 import { resolveGlobalPmRoot } from "../store/paths.js";
 import { readSettings, writeSettings } from "../store/settings.js";
@@ -72,7 +73,7 @@ const PRIVATE_IP_PATTERN =
 interface TelemetryEvent {
   schema_version: number;
   event_id: string;
-  event_type: "command_start" | "command_finish";
+  event_type: "command_start" | "command_finish" | "command_error";
   occurred_at: string;
   installation_id: string;
   session_id: string;
@@ -131,6 +132,28 @@ export interface TelemetryCommandContext {
   options: Record<string, unknown>;
   global: GlobalOptions;
   pm_root: string;
+}
+
+export interface TelemetryCommandOutcome {
+  ok: boolean;
+  error?: string;
+  result?: unknown;
+  exit_code?: number;
+  error_code?: string;
+  error_category?: TelemetryErrorCategory;
+}
+
+export interface TelemetryErrorEventContext {
+  command: string;
+  args: string[];
+  options: Record<string, unknown>;
+  global: GlobalOptions;
+  pm_version: string;
+  pm_root: string;
+  error_code: string;
+  error_message: string;
+  exit_code: number;
+  error_category?: TelemetryErrorCategory;
 }
 
 
@@ -332,6 +355,35 @@ function normalizePmVersion(value: string | undefined): string {
   return trimmed.length > 0 ? trimmed : "0.0.0";
 }
 
+function normalizeTelemetryErrorCode(value: string | undefined): string | undefined {
+  const normalized = value?.trim();
+  return normalized && normalized.length > 0 ? normalized : undefined;
+}
+
+function normalizeTelemetryExitCode(exitCode: number | undefined, ok: boolean): number {
+  if (Number.isFinite(exitCode)) {
+    return Math.max(0, Math.trunc(exitCode ?? 0));
+  }
+  return ok ? 0 : 1;
+}
+
+function normalizeTelemetryErrorCategory(params: {
+  ok: boolean;
+  errorCode?: string;
+  errorCategory?: TelemetryErrorCategory;
+}): TelemetryErrorCategory | undefined {
+  if (params.ok) {
+    return undefined;
+  }
+  if (typeof params.errorCategory === "string" && params.errorCategory.trim().length > 0) {
+    return params.errorCategory;
+  }
+  if (typeof params.errorCode === "string" && params.errorCode.trim().length > 0) {
+    return resolveTelemetryErrorCategory(params.errorCode);
+  }
+  return "unknown";
+}
+
 function resolveTelemetrySourceContext(globalOptions: GlobalOptions): ResolvedTelemetrySourceContext {
   const override = (process.env[PM_TELEMETRY_SOURCE_CONTEXT_ENV] ?? "").trim().toLowerCase();
   if (PM_TELEMETRY_SOURCE_CONTEXT_SET.has(override)) {
@@ -430,7 +482,7 @@ function otlpIntAttribute(key: string, value: number): { key: string; value: { i
 
 async function exportLocalOtelSpan(
   activeCommand: ActiveTelemetryCommand,
-  outcome: { ok: boolean; error?: string },
+  outcome: { ok: boolean; error?: string; exit_code?: number; error_code?: string; error_category?: TelemetryErrorCategory },
   finishedAtIso: string,
   durationMs: number,
 ): Promise<void> {
@@ -447,6 +499,13 @@ async function exportLocalOtelSpan(
 
   const serviceNameCandidate = sanitizeString((process.env[OTEL_SERVICE_NAME_ENV] ?? "").trim());
   const serviceName = serviceNameCandidate.length > 0 ? serviceNameCandidate : "pm-cli";
+  const normalizedExitCode = normalizeTelemetryExitCode(outcome.exit_code, outcome.ok);
+  const normalizedErrorCode = normalizeTelemetryErrorCode(outcome.error_code);
+  const normalizedErrorCategory = normalizeTelemetryErrorCategory({
+    ok: outcome.ok,
+    errorCode: normalizedErrorCode,
+    errorCategory: outcome.error_category,
+  });
   const attributes: Array<
     | ReturnType<typeof otlpStringAttribute>
     | ReturnType<typeof otlpBoolAttribute>
@@ -461,8 +520,15 @@ async function exportLocalOtelSpan(
     otlpStringAttribute("pm.pm_root_hash", activeCommand.pm_root_hash),
     otlpStringAttribute("pm.cwd_hash", activeCommand.cwd_hash),
     otlpBoolAttribute("pm.ok", outcome.ok),
+    otlpIntAttribute("pm.exit_code", normalizedExitCode),
     otlpIntAttribute("pm.duration_ms", durationMs),
   ];
+  if (typeof normalizedErrorCode === "string") {
+    attributes.push(otlpStringAttribute("pm.error_code", normalizedErrorCode));
+  }
+  if (typeof normalizedErrorCategory === "string") {
+    attributes.push(otlpStringAttribute("pm.error_category", normalizedErrorCategory));
+  }
   if (typeof outcome.error === "string" && outcome.error.trim().length > 0) {
     attributes.push(otlpStringAttribute("pm.error", sanitizeString(outcome.error)));
   }
@@ -601,11 +667,14 @@ function buildCommandFinishPayload(params: {
   captureLevel: TelemetryCaptureLevel;
   pmVersion: string;
   sourceContext: ResolvedTelemetrySourceContext;
-  outcome: { ok: boolean; error?: string; result?: unknown };
+  outcome: TelemetryCommandOutcome;
   durationMs: number;
   startedAt: string;
+  exitCode: number;
+  errorCode?: string;
+  errorCategory?: TelemetryErrorCategory;
 }): Record<string, unknown> {
-  const { captureLevel, pmVersion, sourceContext, outcome, durationMs, startedAt } = params;
+  const { captureLevel, pmVersion, sourceContext, outcome, durationMs, startedAt, exitCode, errorCode, errorCategory } = params;
   if (captureLevel === "minimal") {
     return {
       capture_level: captureLevel,
@@ -613,6 +682,9 @@ function buildCommandFinishPayload(params: {
       source_context: sourceContext.source_context,
       source_context_source: sourceContext.source_context_source,
       ok: outcome.ok,
+      exit_code: exitCode,
+      error_code: errorCode,
+      error_category: errorCategory,
       error: outcome.error ? sanitizeString(outcome.error, "redacted") : undefined,
       duration_ms: durationMs,
     };
@@ -623,10 +695,81 @@ function buildCommandFinishPayload(params: {
     source_context: sourceContext.source_context,
     source_context_source: sourceContext.source_context_source,
     ok: outcome.ok,
+    exit_code: exitCode,
+    error_code: errorCode,
+    error_category: errorCategory,
     error: outcome.error ? sanitizeString(outcome.error, captureLevel) : undefined,
     duration_ms: durationMs,
     started_at: startedAt,
     result_summary: summarizeResult(outcome.result, captureLevel),
+  };
+}
+
+function buildCommandErrorPayload(params: {
+  captureLevel: TelemetryCaptureLevel;
+  pmVersion: string;
+  sourceContext: ResolvedTelemetrySourceContext;
+  command: string;
+  args: string[];
+  options: Record<string, unknown>;
+  pmRootHash: string;
+  cwdHash: string;
+  installationId: string;
+  errorCode: string;
+  errorMessage: string;
+  errorCategory: TelemetryErrorCategory;
+  exitCode: number;
+}): Record<string, unknown> {
+  const {
+    captureLevel,
+    pmVersion,
+    sourceContext,
+    command,
+    args,
+    options,
+    pmRootHash,
+    cwdHash,
+    installationId,
+    errorCode,
+    errorMessage,
+    errorCategory,
+    exitCode,
+  } = params;
+  if (captureLevel === "minimal") {
+    return {
+      capture_level: captureLevel,
+      pm_version: pmVersion,
+      source_context: sourceContext.source_context,
+      source_context_source: sourceContext.source_context_source,
+      error_code: errorCode,
+      error_category: errorCategory,
+      exit_code: exitCode,
+      error: sanitizeString(errorMessage, "redacted"),
+    };
+  }
+
+  return {
+    capture_level: captureLevel,
+    pm_version: pmVersion,
+    source_context: sourceContext.source_context,
+    source_context_source: sourceContext.source_context_source,
+    attempted_command: sanitizeString(command, captureLevel),
+    attempted_args: sanitizeCommandArgs(args, captureLevel),
+    attempted_options: sanitizeValue(options, undefined, captureLevel) as Record<string, unknown>,
+    error_code: errorCode,
+    error_category: errorCategory,
+    exit_code: exitCode,
+    error: sanitizeString(errorMessage, captureLevel),
+    pm_root_hash: pmRootHash,
+    cwd_hash: cwdHash,
+    runtime: {
+      node: process.version,
+      platform: process.platform,
+      arch: process.arch,
+      hostname_hash: hashWithInstallationId(installationId, os.hostname()),
+      stdin_tty: process.stdin.isTTY === true,
+      stdout_tty: process.stdout.isTTY === true,
+    },
   };
 }
 
@@ -910,7 +1053,7 @@ export async function startTelemetryCommand(context: TelemetryCommandContext): P
 
 export async function finishTelemetryCommand(
   activeCommand: ActiveTelemetryCommand | null,
-  outcome: { ok: boolean; error?: string; result?: unknown },
+  outcome: TelemetryCommandOutcome,
 ): Promise<void> {
   if (!activeCommand) {
     return;
@@ -918,6 +1061,13 @@ export async function finishTelemetryCommand(
   try {
     const finishedAt = nowIso();
     const durationMs = Math.max(0, Date.now() - activeCommand.started_at_ms);
+    const normalizedErrorCode = normalizeTelemetryErrorCode(outcome.error_code);
+    const normalizedErrorCategory = normalizeTelemetryErrorCategory({
+      ok: outcome.ok,
+      errorCode: normalizedErrorCode,
+      errorCategory: outcome.error_category,
+    });
+    const normalizedExitCode = normalizeTelemetryExitCode(outcome.exit_code, outcome.ok);
     const event: TelemetryEvent = {
       schema_version: TELEMETRY_SCHEMA_VERSION,
       event_id: crypto.randomUUID(),
@@ -936,11 +1086,78 @@ export async function finishTelemetryCommand(
         outcome,
         durationMs,
         startedAt: activeCommand.started_at,
+        exitCode: normalizedExitCode,
+        errorCode: normalizedErrorCode,
+        errorCategory: normalizedErrorCategory,
       }),
     };
     await enqueueTelemetryEvent(activeCommand.global_pm_root, event);
     _lastFlushPromise = flushQueue(activeCommand.global_pm_root, activeCommand.endpoint, activeCommand.retention_days).catch(() => {});
-    void exportLocalOtelSpan(activeCommand, outcome, finishedAt, durationMs).catch(() => {});
+    void exportLocalOtelSpan(
+      activeCommand,
+      {
+        ...outcome,
+        exit_code: normalizedExitCode,
+        error_code: normalizedErrorCode,
+        error_category: normalizedErrorCategory,
+      },
+      finishedAt,
+      durationMs,
+    ).catch(() => {});
+  } catch {
+    // Telemetry must never block command execution.
+  }
+}
+
+export async function emitTelemetryErrorEvent(context: TelemetryErrorEventContext): Promise<void> {
+  if (telemetryDisabledByEnvironment()) {
+    return;
+  }
+  try {
+    const globalPmRoot = resolveGlobalPmRoot(process.cwd());
+    const settings = await readSettings(globalPmRoot);
+    if (!settings.telemetry.enabled) {
+      return;
+    }
+    const captureLevel = normalizeCaptureLevel(settings.telemetry.capture_level);
+    const { installationId, endpoint, retentionDays } = await ensureInstallationId(globalPmRoot);
+    const pmVersion = normalizePmVersion(context.pm_version);
+    const sourceContext = resolveTelemetrySourceContext(context.global);
+    const pmRootHash = hashWithInstallationId(installationId, context.pm_root);
+    const cwdHash = hashWithInstallationId(installationId, process.cwd());
+    const occurredAt = nowIso();
+    const normalizedErrorCode = normalizeTelemetryErrorCode(context.error_code) ?? "unknown_error";
+    const normalizedErrorCategory =
+      context.error_category ?? resolveTelemetryErrorCategory(normalizedErrorCode);
+    const normalizedExitCode = normalizeTelemetryExitCode(context.exit_code, false);
+    const normalizedCommand = context.command.trim().length > 0 ? context.command : "<unknown>";
+
+    const event: TelemetryEvent = {
+      schema_version: TELEMETRY_SCHEMA_VERSION,
+      event_id: crypto.randomUUID(),
+      event_type: "command_error",
+      occurred_at: occurredAt,
+      installation_id: installationId,
+      session_id: PROCESS_SESSION_ID,
+      command: sanitizeString(normalizedCommand, "redacted"),
+      payload: buildCommandErrorPayload({
+        captureLevel,
+        pmVersion,
+        sourceContext,
+        command: normalizedCommand,
+        args: context.args,
+        options: context.options,
+        pmRootHash,
+        cwdHash,
+        installationId,
+        errorCode: normalizedErrorCode,
+        errorCategory: normalizedErrorCategory,
+        exitCode: normalizedExitCode,
+        errorMessage: context.error_message,
+      }),
+    };
+    await enqueueTelemetryEvent(globalPmRoot, event);
+    _lastFlushPromise = flushQueue(globalPmRoot, endpoint, retentionDays).catch(() => {});
   } catch {
     // Telemetry must never block command execution.
   }

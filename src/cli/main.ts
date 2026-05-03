@@ -41,20 +41,23 @@ import {
   resolveRuntimeFieldRegistry,
   type RuntimeFieldCommand,
 } from "../core/schema/runtime-schema.js";
-import { EXIT_CODE } from "../core/shared/constants.js";
+import { EXIT_CODE, resolveTelemetryErrorCategory } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { toNonEmptyStringOrUndefined } from "../core/shared/primitives.js";
 import { printError, printResult, writeStdout } from "../core/output/output.js";
 import { maybeRunFirstUseTelemetryPrompt } from "../core/telemetry/consent.js";
 import {
+  emitTelemetryErrorEvent,
   finishTelemetryCommand,
   startTelemetryCommand,
   type ActiveTelemetryCommand,
+  type TelemetryCommandOutcome,
 } from "../core/telemetry/runtime.js";
 import {
   sentryCaptureCliError,
   sentryFinishCommandSpan,
   sentryFlush,
+  sentryLogCliUsageError,
   sentrySetCommandContext,
   sentryStartCommandSpan,
 } from "../core/sentry/helpers.js";
@@ -65,6 +68,9 @@ import type { PmSettings } from "../types/index.js";
 import { coerceLooseCommandOptionsWithFlagDefinitions, parseLooseCommandOptions } from "./extension-command-options.js";
 import { attachRichHelpText } from "./help-content.js";
 import {
+  classifyCommanderError,
+  classifyPmCliError,
+  classifyUnknownError,
   formatPmCliErrorForDisplay,
   formatPmCliErrorForJson,
   formatUnknownErrorForJson,
@@ -112,6 +118,7 @@ import {
   isKnownHelpCommandPath,
   formatCommanderUsageMessage,
   formatCommanderUsageJson,
+  resolveCommanderUsageContext,
 } from "./commander-usage.js";
 import {
   maybeRenderBootstrapJsonHelp,
@@ -178,13 +185,16 @@ function describeUnknownError(error: unknown): string {
 }
 
 
-async function runAndClearAfterCommandHooks(outcome: { ok: boolean; error?: string }): Promise<void> {
+async function runAndClearAfterCommandHooks(outcome: TelemetryCommandOutcome): Promise<void> {
   const telemetryRuntime = activeTelemetryCommandContext;
   activeTelemetryCommandContext = null;
   await finishTelemetryCommand(telemetryRuntime, {
     ok: outcome.ok,
     error: outcome.error,
     result: getActiveCommandResult(),
+    exit_code: outcome.exit_code,
+    error_code: outcome.error_code,
+    error_category: outcome.error_category,
   });
 
   const runtime = activeExtensionHookContext;
@@ -964,7 +974,7 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
 
 program.hook("postAction", async () => {
   sentryFinishCommandSpan(true);
-  await runAndClearAfterCommandHooks({ ok: true });
+  await runAndClearAfterCommandHooks({ ok: true, exit_code: EXIT_CODE.SUCCESS });
 });
 
 registerSetupCommands(program);
@@ -988,19 +998,65 @@ async function main(): Promise<void> {
     }
     await program.parseAsync(invocationProcessArgv);
   } catch (error: unknown) {
-    sentryFinishCommandSpan(false, describeUnknownError(error));
-    await runAndClearAfterCommandHooks({
-      ok: false,
-      error: describeUnknownError(error),
-    });
     const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
     const jsonErrors = bootstrapGlobal.json;
+    const bootstrapPmRoot = resolvePmRoot(process.cwd(), bootstrapGlobal.path);
+    const attemptedCommand = parseBootstrapCommandName(invocationArgv) ?? "<unknown>";
+
+    const emitTelemetryCommandError = async (params: {
+      command: string;
+      errorCode: string;
+      errorMessage: string;
+      exitCode: number;
+      options: Record<string, unknown>;
+    }) => {
+      const errorCategory = resolveTelemetryErrorCategory(params.errorCode);
+      await emitTelemetryErrorEvent({
+        command: params.command,
+        args: invocationArgv,
+        options: params.options,
+        global: bootstrapGlobal,
+        pm_version: CLI_VERSION,
+        pm_root: bootstrapPmRoot,
+        error_code: params.errorCode,
+        error_message: params.errorMessage,
+        exit_code: params.exitCode,
+        error_category: errorCategory,
+      });
+      return errorCategory;
+    };
+
     if (!bootstrapGlobal.noExtensions) {
-      const bootstrapPmRoot = resolvePmRoot(process.cwd(), bootstrapGlobal.path);
       const bootstrapSnapshot = await loadRuntimeExtensionSnapshot(bootstrapPmRoot);
       setActiveExtensionServices(bootstrapSnapshot?.services ?? { overrides: [] });
     }
+
     if (error instanceof PmCliError) {
+      const classification = classifyPmCliError(error.message, error.context);
+      const errorCategory = await emitTelemetryCommandError({
+        command: attemptedCommand,
+        errorCode: classification.code,
+        errorMessage: classification.detail,
+        exitCode: error.exitCode,
+        options: {
+          bootstrap_global_options: bootstrapGlobal,
+        },
+      });
+      sentryLogCliUsageError({
+        command: attemptedCommand,
+        error_code: classification.code,
+        error_category: errorCategory,
+        exit_code: error.exitCode,
+        error_message: classification.detail,
+      });
+      sentryFinishCommandSpan(false, error.message);
+      await runAndClearAfterCommandHooks({
+        ok: false,
+        error: error.message,
+        exit_code: error.exitCode,
+        error_code: classification.code,
+        error_category: errorCategory,
+      });
       sentryCaptureCliError(error);
       if (jsonErrors) {
         printError(JSON.stringify(formatPmCliErrorForJson(error.message, error.exitCode, error.context), null, 2));
@@ -1022,27 +1078,113 @@ async function main(): Promise<void> {
         if (helpRequest.requested && !isKnownHelpCommandPath(program, helpRequest.commandPathTokens)) {
           const unknownToken = helpRequest.commandPathTokens[0] ?? parseBootstrapCommandName(invocationArgv) ?? "<command>";
           const unknownMessage = `unknown command '${unknownToken}'`;
+          const usageContext = await resolveCommanderUsageContext(
+            { message: unknownMessage },
+            program,
+            activeRuntimeExtensionCommandDescriptors,
+          );
+          const classification = classifyCommanderError(
+            usageContext.message,
+            usageContext.commandName,
+            usageContext.allowedTypes,
+            {
+              unknownCommandExamples: usageContext.unknownCommandExamples,
+              unknownCommandNextSteps: usageContext.unknownCommandNextSteps,
+            },
+          );
+          const errorCategory = await emitTelemetryCommandError({
+            command: unknownToken,
+            errorCode: classification.code,
+            errorMessage: classification.detail,
+            exitCode: EXIT_CODE.USAGE,
+            options: {
+              bootstrap_global_options: bootstrapGlobal,
+              commander_code: code ?? "commander.helpDisplayed",
+            },
+          });
+          sentryLogCliUsageError({
+            command: unknownToken,
+            error_code: classification.code,
+            error_category: errorCategory,
+            exit_code: EXIT_CODE.USAGE,
+            error_message: classification.detail,
+          });
+          sentryFinishCommandSpan(false, unknownMessage);
+          await runAndClearAfterCommandHooks({
+            ok: false,
+            error: unknownMessage,
+            exit_code: EXIT_CODE.USAGE,
+            error_code: classification.code,
+            error_category: errorCategory,
+          });
           if (jsonErrors) {
             printError(await formatCommanderUsageJson({ message: unknownMessage }, program, activeRuntimeExtensionCommandDescriptors));
           } else {
             printError(await formatCommanderUsageMessage({ message: unknownMessage }, program, activeRuntimeExtensionCommandDescriptors));
           }
+          await sentryFlush();
           process.exitCode = EXIT_CODE.USAGE;
           return;
         }
+        sentryFinishCommandSpan(true);
+        await runAndClearAfterCommandHooks({
+          ok: true,
+          exit_code: EXIT_CODE.SUCCESS,
+        });
         process.exitCode = EXIT_CODE.SUCCESS;
         return;
       }
       if (code === "commander.version") {
+        sentryFinishCommandSpan(true);
+        await runAndClearAfterCommandHooks({
+          ok: true,
+          exit_code: EXIT_CODE.SUCCESS,
+        });
         process.exitCode = EXIT_CODE.SUCCESS;
         return;
       }
       if (code?.startsWith("commander.")) {
+        const usageContext = await resolveCommanderUsageContext(error, program, activeRuntimeExtensionCommandDescriptors);
+        const classification = classifyCommanderError(
+          usageContext.message,
+          usageContext.commandName,
+          usageContext.allowedTypes,
+          {
+            unknownCommandExamples: usageContext.unknownCommandExamples,
+            unknownCommandNextSteps: usageContext.unknownCommandNextSteps,
+          },
+        );
+        const errorCategory = await emitTelemetryCommandError({
+          command: attemptedCommand,
+          errorCode: classification.code,
+          errorMessage: classification.detail,
+          exitCode: EXIT_CODE.USAGE,
+          options: {
+            bootstrap_global_options: bootstrapGlobal,
+            commander_code: code,
+          },
+        });
+        sentryLogCliUsageError({
+          command: attemptedCommand,
+          error_code: classification.code,
+          error_category: errorCategory,
+          exit_code: EXIT_CODE.USAGE,
+          error_message: classification.detail,
+        });
+        sentryFinishCommandSpan(false, usageContext.message);
+        await runAndClearAfterCommandHooks({
+          ok: false,
+          error: usageContext.message,
+          exit_code: EXIT_CODE.USAGE,
+          error_code: classification.code,
+          error_category: errorCategory,
+        });
         if (jsonErrors) {
           printError(await formatCommanderUsageJson(error, program, activeRuntimeExtensionCommandDescriptors));
         } else {
           printError(await formatCommanderUsageMessage(error, program, activeRuntimeExtensionCommandDescriptors));
         }
+        await sentryFlush();
         process.exitCode = EXIT_CODE.USAGE;
         return;
       }
@@ -1050,6 +1192,24 @@ async function main(): Promise<void> {
 
     sentryCaptureCliError(error);
     const message = describeUnknownError(error);
+    const classification = classifyUnknownError(message);
+    const errorCategory = await emitTelemetryCommandError({
+      command: attemptedCommand,
+      errorCode: classification.code,
+      errorMessage: classification.detail,
+      exitCode: EXIT_CODE.GENERIC_FAILURE,
+      options: {
+        bootstrap_global_options: bootstrapGlobal,
+      },
+    });
+    sentryFinishCommandSpan(false, message);
+    await runAndClearAfterCommandHooks({
+      ok: false,
+      error: message,
+      exit_code: EXIT_CODE.GENERIC_FAILURE,
+      error_code: classification.code,
+      error_category: errorCategory,
+    });
     if (jsonErrors) {
       printError(JSON.stringify(formatUnknownErrorForJson(message, EXIT_CODE.GENERIC_FAILURE), null, 2));
     } else {

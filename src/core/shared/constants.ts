@@ -306,3 +306,46 @@ export const EXIT_CODE = {
   CONFLICT: 4,
   DEPENDENCY_FAILED: 5,
 } as const;
+
+export type TelemetryErrorCategory = "usage" | "validation" | "conflict" | "runtime" | "unknown";
+
+export const TELEMETRY_ERROR_CATEGORY_BY_CODE: Readonly<Record<string, TelemetryErrorCategory>> = Object.freeze({
+  unknown_command: "usage",
+  unknown_option: "usage",
+  missing_required_option: "usage",
+  missing_required_argument: "usage",
+  invalid_command_usage: "usage",
+  invalid_argument_value: "validation",
+  no_update_fields: "validation",
+  unsupported_update_option: "validation",
+  tracker_not_initialized: "validation",
+  item_not_found: "validation",
+  ownership_conflict: "conflict",
+  lock_conflict: "conflict",
+  command_failed: "runtime",
+  unknown_error: "runtime",
+});
+
+export function resolveTelemetryErrorCategory(errorCode: string | undefined): TelemetryErrorCategory {
+  const normalized = (errorCode ?? "").trim().toLowerCase();
+  if (normalized.length === 0) {
+    return "unknown";
+  }
+  const explicit = TELEMETRY_ERROR_CATEGORY_BY_CODE[normalized];
+  if (typeof explicit === "string") {
+    return explicit;
+  }
+  if (normalized.includes("conflict") || normalized.includes("locked")) {
+    return "conflict";
+  }
+  if (normalized.startsWith("unknown_") || normalized.startsWith("missing_required_")) {
+    return "usage";
+  }
+  if (normalized.startsWith("invalid_") || normalized.endsWith("_not_found") || normalized.includes("validation")) {
+    return "validation";
+  }
+  if (normalized.endsWith("_error") || normalized.endsWith("_failed")) {
+    return "runtime";
+  }
+  return "unknown";
+}
