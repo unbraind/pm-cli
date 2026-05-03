@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Relaxed tag release version policy guard in `.github/workflows/release.yml` to validate tag/version consistency without blocking same-day retry tags when a previous tag run failed before npm publication.
+- Hardened `scripts/release/run-release-pipeline.mjs` same-day retry version resolution so local retry cuts always advance beyond the currently checked-out package version when npm has not yet observed failed prior tags.
 
 ## [2026.5.3-3] - 2026-05-03
 

@@ -100,6 +100,17 @@ function bumpSameDayOrdinal(version, todayKey) {
   return `${todayKey}-${currentOrdinal + 1}`;
 }
 
+function parseCalendarVersion(version) {
+  const match = version.match(/^(\d{4}\.\d{1,2}\.\d{1,2})(?:-(\d+))?$/);
+  if (!match) {
+    return null;
+  }
+  return {
+    dateKey: match[1],
+    ordinal: match[2] ? Number(match[2]) : 1,
+  };
+}
+
 function readPackageVersion() {
   const packageJson = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8"));
   return packageJson.version;
@@ -186,8 +197,18 @@ function runPipeline() {
 
   const previousVersion = readPackageVersion();
   let targetVersion = resolveVersion(explicitVersion, allowSameDayRelease, todayKey);
-  if (allowSameDayRelease && !explicitVersion && targetVersion === previousVersion) {
-    targetVersion = bumpSameDayOrdinal(previousVersion, todayKey);
+  if (allowSameDayRelease && !explicitVersion) {
+    const previousParsed = parseCalendarVersion(previousVersion);
+    const targetParsed = parseCalendarVersion(targetVersion);
+    if (
+      previousParsed &&
+      targetParsed &&
+      previousParsed.dateKey === todayKey &&
+      targetParsed.dateKey === todayKey &&
+      targetParsed.ordinal <= previousParsed.ordinal
+    ) {
+      targetVersion = bumpSameDayOrdinal(previousVersion, todayKey);
+    }
   }
   if (!/^\d{4}\.\d{1,2}\.\d{1,2}(?:-\d+)?$/.test(targetVersion)) {
     fail(`Unsupported target version "${targetVersion}".`);
