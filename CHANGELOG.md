@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026.5.3-7] - 2026-05-03
+
 ### Changed
 - Updated release post-publish verification commands to execute the package `pm` binary explicitly (`npm exec --package ... -- pm --version` and `bunx ... pm --version`) and parse terminal line output robustly.
 
