@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Relaxed tag release version policy guard in `.github/workflows/release.yml` to validate tag/version consistency without blocking same-day retry tags when a previous tag run failed before npm publication.
+
 ## [2026.5.3-3] - 2026-05-03
 
 ### Fixed

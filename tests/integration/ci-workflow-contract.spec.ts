@@ -137,7 +137,7 @@ describe("GitHub workflow contract", () => {
       PINNED_ACTIONS.checkout,
       PINNED_ACTIONS.pnpmSetup,
       PINNED_ACTIONS.setupNode,
-      "run: node scripts/release-version.mjs check --tag \"${GITHUB_REF_NAME}\" --verify-next",
+      "run: node scripts/release-version.mjs check --tag \"${GITHUB_REF_NAME}\"",
       "run: pnpm security:scan",
       "run: pnpm build",
       "run: pnpm typecheck",

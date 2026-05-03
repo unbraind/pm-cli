@@ -43,7 +43,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Version policy + tag guard
-        run: node scripts/release-version.mjs check --tag "${GITHUB_REF_NAME}" --verify-next
+        run: node scripts/release-version.mjs check --tag "${GITHUB_REF_NAME}"
 
       - name: Secret leak scan
         run: pnpm security:scan
