@@ -59,20 +59,11 @@ Minimum coverage:
 - closed issue metadata and history drift checks
 - current-build write mutation and item-count preservation
 
-3. Review latest telemetry and Sentry data.
+3. Review private reliability signals.
 
-Use ignored private helpers and reports under `scripts/prod/telemetry/`. Do not copy hostnames, tokens, raw event payloads, or private operations detail into tracked release notes.
+Use maintainer-only local workflows for reliability checks and incident triage. Keep operational details, infrastructure topology, and raw diagnostics out of tracked release documentation and release notes.
 
-Useful commands:
-
-```bash
-bash scripts/prod/telemetry/stack-health.sh
-bash scripts/prod/telemetry/query-telemetry.sh
-bash scripts/prod/telemetry/analyze-errors.sh "24 hours"
-sentry issue list unbrained/pm-cli --query "is:unresolved" --period 14d --json --fields shortId,title,level,status,priority,count,lastSeen,isUnhandled
-```
-
-If telemetry or Sentry identifies repeated user friction, either confirm the current release already contains the remediation with regression coverage or fix it before continuing.
+If private reliability checks identify repeated user friction, either confirm the current release already contains the remediation with regression coverage or fix it before continuing.
 
 4. Update release files.
 

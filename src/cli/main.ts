@@ -53,6 +53,7 @@ import {
   type ActiveTelemetryCommand,
   type TelemetryCommandOutcome,
 } from "../core/telemetry/runtime.js";
+import { deriveTelemetryCommandResolution, type TelemetryResolutionStage } from "../core/telemetry/observability.js";
 import {
   sentryCaptureCliError,
   sentryFinishCommandSpan,
@@ -195,6 +196,8 @@ async function runAndClearAfterCommandHooks(outcome: TelemetryCommandOutcome): P
     exit_code: outcome.exit_code,
     error_code: outcome.error_code,
     error_category: outcome.error_category,
+    command_resolution: outcome.command_resolution,
+    resolution_stage: outcome.resolution_stage,
   });
 
   const runtime = activeExtensionHookContext;
@@ -863,7 +866,10 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
       global: globalOptions,
       pm_root: fallbackPmRoot,
     });
-    sentrySetCommandContext(commandPath, commandArgs, commandOptions);
+    sentrySetCommandContext(commandPath, commandArgs, commandOptions, {
+      source_context: activeTelemetryCommandContext?.source_context,
+      source_context_source: activeTelemetryCommandContext?.source_context_source,
+    });
     sentryStartCommandSpan(commandPath);
     await enforceItemFormatWriteGateAndPreflightMigration(
       commandPath,
@@ -954,7 +960,10 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
     global: globalOptions,
     pm_root: runtimeExtensions.pmRoot,
   });
-  sentrySetCommandContext(commandPath, commandArgs, commandOptions);
+  sentrySetCommandContext(commandPath, commandArgs, commandOptions, {
+    source_context: activeTelemetryCommandContext?.source_context,
+    source_context_source: activeTelemetryCommandContext?.source_context_source,
+  });
   sentryStartCommandSpan(commandPath);
 
   const hookWarnings = await runBeforeCommandHooks(runtimeExtensions.hooks, {
@@ -973,8 +982,17 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
 });
 
 program.hook("postAction", async () => {
-  sentryFinishCommandSpan(true);
-  await runAndClearAfterCommandHooks({ ok: true, exit_code: EXIT_CODE.SUCCESS });
+  sentryFinishCommandSpan(true, undefined, {
+    exit_code: EXIT_CODE.SUCCESS,
+    command_resolution: "success",
+    resolution_stage: "execute",
+  });
+  await runAndClearAfterCommandHooks({
+    ok: true,
+    exit_code: EXIT_CODE.SUCCESS,
+    command_resolution: "success",
+    resolution_stage: "execute",
+  });
 });
 
 registerSetupCommands(program);
@@ -1009,8 +1027,14 @@ async function main(): Promise<void> {
       errorMessage: string;
       exitCode: number;
       options: Record<string, unknown>;
+      resolutionStage: TelemetryResolutionStage;
     }) => {
       const errorCategory = resolveTelemetryErrorCategory(params.errorCode);
+      const commandResolution = deriveTelemetryCommandResolution({
+        ok: false,
+        errorCode: params.errorCode,
+        errorCategory,
+      });
       await emitTelemetryErrorEvent({
         command: params.command,
         args: invocationArgv,
@@ -1022,8 +1046,13 @@ async function main(): Promise<void> {
         error_message: params.errorMessage,
         exit_code: params.exitCode,
         error_category: errorCategory,
+        command_resolution: commandResolution,
+        resolution_stage: params.resolutionStage,
       });
-      return errorCategory;
+      return {
+        errorCategory,
+        commandResolution,
+      };
     };
 
     if (!bootstrapGlobal.noExtensions) {
@@ -1033,7 +1062,7 @@ async function main(): Promise<void> {
 
     if (error instanceof PmCliError) {
       const classification = classifyPmCliError(error.message, error.context);
-      const errorCategory = await emitTelemetryCommandError({
+      const { errorCategory, commandResolution } = await emitTelemetryCommandError({
         command: attemptedCommand,
         errorCode: classification.code,
         errorMessage: classification.detail,
@@ -1041,6 +1070,7 @@ async function main(): Promise<void> {
         options: {
           bootstrap_global_options: bootstrapGlobal,
         },
+        resolutionStage: "execute",
       });
       sentryLogCliUsageError({
         command: attemptedCommand,
@@ -1048,14 +1078,25 @@ async function main(): Promise<void> {
         error_category: errorCategory,
         exit_code: error.exitCode,
         error_message: classification.detail,
+        command_resolution: commandResolution,
+        resolution_stage: "execute",
+        source_context: activeTelemetryCommandContext?.source_context,
       });
-      sentryFinishCommandSpan(false, error.message);
+      sentryFinishCommandSpan(false, error.message, {
+        error_code: classification.code,
+        error_category: errorCategory,
+        exit_code: error.exitCode,
+        command_resolution: commandResolution,
+        resolution_stage: "execute",
+      });
       await runAndClearAfterCommandHooks({
         ok: false,
         error: error.message,
         exit_code: error.exitCode,
         error_code: classification.code,
         error_category: errorCategory,
+        command_resolution: commandResolution,
+        resolution_stage: "execute",
       });
       sentryCaptureCliError(error);
       if (jsonErrors) {
@@ -1092,7 +1133,7 @@ async function main(): Promise<void> {
               unknownCommandNextSteps: usageContext.unknownCommandNextSteps,
             },
           );
-          const errorCategory = await emitTelemetryCommandError({
+          const { errorCategory, commandResolution } = await emitTelemetryCommandError({
             command: unknownToken,
             errorCode: classification.code,
             errorMessage: classification.detail,
@@ -1101,6 +1142,7 @@ async function main(): Promise<void> {
               bootstrap_global_options: bootstrapGlobal,
               commander_code: code ?? "commander.helpDisplayed",
             },
+            resolutionStage: "parse",
           });
           sentryLogCliUsageError({
             command: unknownToken,
@@ -1108,17 +1150,28 @@ async function main(): Promise<void> {
             error_category: errorCategory,
             exit_code: EXIT_CODE.USAGE,
             error_message: classification.detail,
+            command_resolution: commandResolution,
+            resolution_stage: "parse",
+            source_context: activeTelemetryCommandContext?.source_context,
           });
           const renderedUsage = jsonErrors
             ? await formatCommanderUsageJson({ message: unknownMessage }, program, activeRuntimeExtensionCommandDescriptors)
             : await formatCommanderUsageMessage({ message: unknownMessage }, program, activeRuntimeExtensionCommandDescriptors);
-          sentryFinishCommandSpan(false, unknownMessage);
+          sentryFinishCommandSpan(false, unknownMessage, {
+            error_code: classification.code,
+            error_category: errorCategory,
+            exit_code: EXIT_CODE.USAGE,
+            command_resolution: commandResolution,
+            resolution_stage: "parse",
+          });
           await runAndClearAfterCommandHooks({
             ok: false,
             error: unknownMessage,
             exit_code: EXIT_CODE.USAGE,
             error_code: classification.code,
             error_category: errorCategory,
+            command_resolution: commandResolution,
+            resolution_stage: "parse",
           });
           if (jsonErrors) {
             printError(renderedUsage);
@@ -1129,19 +1182,31 @@ async function main(): Promise<void> {
           process.exitCode = EXIT_CODE.USAGE;
           return;
         }
-        sentryFinishCommandSpan(true);
+        sentryFinishCommandSpan(true, undefined, {
+          exit_code: EXIT_CODE.SUCCESS,
+          command_resolution: "success",
+          resolution_stage: "parse",
+        });
         await runAndClearAfterCommandHooks({
           ok: true,
           exit_code: EXIT_CODE.SUCCESS,
+          command_resolution: "success",
+          resolution_stage: "parse",
         });
         process.exitCode = EXIT_CODE.SUCCESS;
         return;
       }
       if (code === "commander.version") {
-        sentryFinishCommandSpan(true);
+        sentryFinishCommandSpan(true, undefined, {
+          exit_code: EXIT_CODE.SUCCESS,
+          command_resolution: "success",
+          resolution_stage: "parse",
+        });
         await runAndClearAfterCommandHooks({
           ok: true,
           exit_code: EXIT_CODE.SUCCESS,
+          command_resolution: "success",
+          resolution_stage: "parse",
         });
         process.exitCode = EXIT_CODE.SUCCESS;
         return;
@@ -1157,7 +1222,7 @@ async function main(): Promise<void> {
             unknownCommandNextSteps: usageContext.unknownCommandNextSteps,
           },
         );
-        const errorCategory = await emitTelemetryCommandError({
+        const { errorCategory, commandResolution } = await emitTelemetryCommandError({
           command: attemptedCommand,
           errorCode: classification.code,
           errorMessage: classification.detail,
@@ -1166,6 +1231,7 @@ async function main(): Promise<void> {
             bootstrap_global_options: bootstrapGlobal,
             commander_code: code,
           },
+          resolutionStage: "parse",
         });
         sentryLogCliUsageError({
           command: attemptedCommand,
@@ -1173,17 +1239,28 @@ async function main(): Promise<void> {
           error_category: errorCategory,
           exit_code: EXIT_CODE.USAGE,
           error_message: classification.detail,
+          command_resolution: commandResolution,
+          resolution_stage: "parse",
+          source_context: activeTelemetryCommandContext?.source_context,
         });
         const renderedUsage = jsonErrors
           ? await formatCommanderUsageJson(error, program, activeRuntimeExtensionCommandDescriptors)
           : await formatCommanderUsageMessage(error, program, activeRuntimeExtensionCommandDescriptors);
-        sentryFinishCommandSpan(false, usageContext.message);
+        sentryFinishCommandSpan(false, usageContext.message, {
+          error_code: classification.code,
+          error_category: errorCategory,
+          exit_code: EXIT_CODE.USAGE,
+          command_resolution: commandResolution,
+          resolution_stage: "parse",
+        });
         await runAndClearAfterCommandHooks({
           ok: false,
           error: usageContext.message,
           exit_code: EXIT_CODE.USAGE,
           error_code: classification.code,
           error_category: errorCategory,
+          command_resolution: commandResolution,
+          resolution_stage: "parse",
         });
         if (jsonErrors) {
           printError(renderedUsage);
@@ -1199,7 +1276,7 @@ async function main(): Promise<void> {
     sentryCaptureCliError(error);
     const message = describeUnknownError(error);
     const classification = classifyUnknownError(message);
-    const errorCategory = await emitTelemetryCommandError({
+    const { errorCategory, commandResolution } = await emitTelemetryCommandError({
       command: attemptedCommand,
       errorCode: classification.code,
       errorMessage: classification.detail,
@@ -1207,14 +1284,23 @@ async function main(): Promise<void> {
       options: {
         bootstrap_global_options: bootstrapGlobal,
       },
+      resolutionStage: "execute",
     });
-    sentryFinishCommandSpan(false, message);
+    sentryFinishCommandSpan(false, message, {
+      error_code: classification.code,
+      error_category: errorCategory,
+      exit_code: EXIT_CODE.GENERIC_FAILURE,
+      command_resolution: commandResolution,
+      resolution_stage: "execute",
+    });
     await runAndClearAfterCommandHooks({
       ok: false,
       error: message,
       exit_code: EXIT_CODE.GENERIC_FAILURE,
       error_code: classification.code,
       error_category: errorCategory,
+      command_resolution: commandResolution,
+      resolution_stage: "execute",
     });
     if (jsonErrors) {
       printError(JSON.stringify(formatUnknownErrorForJson(message, EXIT_CODE.GENERIC_FAILURE), null, 2));

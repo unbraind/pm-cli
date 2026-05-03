@@ -7,6 +7,14 @@ import { resolveTelemetryErrorCategory, type TelemetryErrorCategory } from "../s
 import { nowIso } from "../shared/time.js";
 import { resolveGlobalPmRoot } from "../store/paths.js";
 import { readSettings, writeSettings } from "../store/settings.js";
+import {
+  deriveTelemetryCommandResolution,
+  deriveTelemetryCommandTaxonomy,
+  inferTelemetryErrorCode,
+  type TelemetryCommandResolution,
+  type TelemetryCommandTaxonomy,
+  type TelemetryResolutionStage,
+} from "./observability.js";
 
 const TELEMETRY_QUEUE_RELATIVE_PATH = path.join("runtime", "telemetry", "events.jsonl");
 const TELEMETRY_STATE_RELATIVE_PATH = path.join("runtime", "telemetry", "state.json");
@@ -110,6 +118,7 @@ export interface ActiveTelemetryCommand {
   started_at: string;
   started_at_ms: number;
   command: string;
+  command_taxonomy: TelemetryCommandTaxonomy;
   pm_version: string;
   source_context: TelemetrySourceContext;
   source_context_source: TelemetrySourceContextSource;
@@ -141,6 +150,8 @@ export interface TelemetryCommandOutcome {
   exit_code?: number;
   error_code?: string;
   error_category?: TelemetryErrorCategory;
+  command_resolution?: TelemetryCommandResolution;
+  resolution_stage?: TelemetryResolutionStage;
 }
 
 export interface TelemetryErrorEventContext {
@@ -154,6 +165,8 @@ export interface TelemetryErrorEventContext {
   error_message: string;
   exit_code: number;
   error_category?: TelemetryErrorCategory;
+  command_resolution?: TelemetryCommandResolution;
+  resolution_stage?: TelemetryResolutionStage;
 }
 
 
@@ -418,6 +431,53 @@ function hashWithInstallationId(installationId: string, value: string): string {
   return crypto.createHash("sha256").update(`${installationId}:${value}`).digest("hex");
 }
 
+function normalizeForHash(value: unknown, depth = 0): unknown {
+  if (value === null || value === undefined) {
+    return value;
+  }
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return value;
+  }
+  if (depth >= TELEMETRY_SANITIZE_MAX_DEPTH) {
+    return "[depth_truncated]";
+  }
+  if (Array.isArray(value)) {
+    return value.slice(0, TELEMETRY_SANITIZE_MAX_ARRAY_ITEMS).map((entry) => normalizeForHash(entry, depth + 1));
+  }
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    const normalized: Record<string, unknown> = {};
+    const sortedKeys = Object.keys(record).sort((left, right) => left.localeCompare(right));
+    for (const key of sortedKeys) {
+      normalized[key] = normalizeForHash(record[key], depth + 1);
+    }
+    return normalized;
+  }
+  return String(value);
+}
+
+function hashTelemetryValue(installationId: string, value: unknown): string {
+  return hashWithInstallationId(installationId, JSON.stringify(normalizeForHash(value)));
+}
+
+function hashCommandArgs(installationId: string, args: string[]): { hashes: string[]; digest: string } {
+  return {
+    hashes: args.map((arg) => hashWithInstallationId(installationId, arg)),
+    digest: hashWithInstallationId(installationId, args.join("\u0000")),
+  };
+}
+
+function hashTelemetryErrorFingerprint(
+  installationId: string,
+  command: string,
+  errorCode: string | undefined,
+  errorMessage: string | undefined,
+): string {
+  const normalizedMessage = sanitizeString(errorMessage ?? "", "redacted");
+  const fingerprintSource = `${command}\u0000${errorCode ?? "unknown_error"}\u0000${normalizedMessage}`;
+  return hashWithInstallationId(installationId, fingerprintSource);
+}
+
 function telemetryDisabledByEnvironment(): boolean {
   return PM_TELEMETRY_DISABLED_VALUES.has((process.env[PM_TELEMETRY_DISABLED_ENV] ?? "").trim().toLowerCase());
 }
@@ -634,21 +694,37 @@ function buildCommandStartPayload(params: {
   installationId: string;
 }): Record<string, unknown> {
   const { captureLevel, context, pmVersion, sourceContext, pmRootHash, cwdHash, installationId } = params;
+  const commandTaxonomy = deriveTelemetryCommandTaxonomy(context.command);
+  const hashedArgs = hashCommandArgs(installationId, context.args);
+  const commandInvocationDigest = hashWithInstallationId(installationId, `${context.command}\u0000${context.args.join("\u0000")}`);
+  const commandOptionsDigest = hashTelemetryValue(installationId, context.options);
+  const globalOptionsDigest = hashTelemetryValue(installationId, context.global);
   if (captureLevel === "minimal") {
     return {
       capture_level: captureLevel,
       pm_version: pmVersion,
       source_context: sourceContext.source_context,
       source_context_source: sourceContext.source_context_source,
+      command_taxonomy: commandTaxonomy,
+      command_args_digest: hashedArgs.digest,
+      command_invocation_digest: commandInvocationDigest,
+      command_options_digest: commandOptionsDigest,
+      global_options_digest: globalOptionsDigest,
     };
   }
   return {
     pm_version: pmVersion,
     source_context: sourceContext.source_context,
     source_context_source: sourceContext.source_context_source,
+    command_taxonomy: commandTaxonomy,
     command_args: sanitizeCommandArgs(context.args, captureLevel),
+    command_args_hashes: hashedArgs.hashes,
+    command_args_digest: hashedArgs.digest,
+    command_invocation_digest: commandInvocationDigest,
     command_options: sanitizeValue(context.options, undefined, captureLevel) as Record<string, unknown>,
+    command_options_digest: commandOptionsDigest,
     global_options: sanitizeValue(context.global, undefined, captureLevel) as Record<string, unknown>,
+    global_options_digest: globalOptionsDigest,
     pm_root_hash: pmRootHash,
     cwd_hash: cwdHash,
     capture_level: captureLevel,
@@ -670,22 +746,50 @@ function buildCommandFinishPayload(params: {
   outcome: TelemetryCommandOutcome;
   durationMs: number;
   startedAt: string;
+  command: string;
+  installationId: string;
+  commandTaxonomy: TelemetryCommandTaxonomy;
   exitCode: number;
   errorCode?: string;
   errorCategory?: TelemetryErrorCategory;
+  commandResolution: TelemetryCommandResolution;
+  resolutionStage: TelemetryResolutionStage;
 }): Record<string, unknown> {
-  const { captureLevel, pmVersion, sourceContext, outcome, durationMs, startedAt, exitCode, errorCode, errorCategory } = params;
+  const {
+    captureLevel,
+    pmVersion,
+    sourceContext,
+    outcome,
+    durationMs,
+    startedAt,
+    command,
+    installationId,
+    commandTaxonomy,
+    exitCode,
+    errorCode,
+    errorCategory,
+    commandResolution,
+    resolutionStage,
+  } = params;
+  const errorFingerprint =
+    outcome.ok === false
+      ? hashTelemetryErrorFingerprint(installationId, command, errorCode, outcome.error)
+      : undefined;
   if (captureLevel === "minimal") {
     return {
       capture_level: captureLevel,
       pm_version: pmVersion,
       source_context: sourceContext.source_context,
       source_context_source: sourceContext.source_context_source,
+      command_taxonomy: commandTaxonomy,
+      command_resolution: commandResolution,
+      resolution_stage: resolutionStage,
       ok: outcome.ok,
       exit_code: exitCode,
       error_code: errorCode,
       error_category: errorCategory,
       error: outcome.error ? sanitizeString(outcome.error, "redacted") : undefined,
+      error_fingerprint: errorFingerprint,
       duration_ms: durationMs,
     };
   }
@@ -694,11 +798,15 @@ function buildCommandFinishPayload(params: {
     pm_version: pmVersion,
     source_context: sourceContext.source_context,
     source_context_source: sourceContext.source_context_source,
+    command_taxonomy: commandTaxonomy,
+    command_resolution: commandResolution,
+    resolution_stage: resolutionStage,
     ok: outcome.ok,
     exit_code: exitCode,
     error_code: errorCode,
     error_category: errorCategory,
     error: outcome.error ? sanitizeString(outcome.error, captureLevel) : undefined,
+    error_fingerprint: errorFingerprint,
     duration_ms: durationMs,
     started_at: startedAt,
     result_summary: summarizeResult(outcome.result, captureLevel),
@@ -710,6 +818,9 @@ function buildCommandErrorPayload(params: {
   pmVersion: string;
   sourceContext: ResolvedTelemetrySourceContext;
   command: string;
+  commandTaxonomy: TelemetryCommandTaxonomy;
+  commandResolution: TelemetryCommandResolution;
+  resolutionStage: TelemetryResolutionStage;
   args: string[];
   options: Record<string, unknown>;
   pmRootHash: string;
@@ -725,6 +836,9 @@ function buildCommandErrorPayload(params: {
     pmVersion,
     sourceContext,
     command,
+    commandTaxonomy,
+    commandResolution,
+    resolutionStage,
     args,
     options,
     pmRootHash,
@@ -735,16 +849,27 @@ function buildCommandErrorPayload(params: {
     errorCategory,
     exitCode,
   } = params;
+  const attemptedArgHashes = hashCommandArgs(installationId, args);
+  const attemptedCommandDigest = hashWithInstallationId(installationId, command);
+  const attemptedOptionsDigest = hashTelemetryValue(installationId, options);
+  const errorFingerprint = hashTelemetryErrorFingerprint(installationId, command, errorCode, errorMessage);
   if (captureLevel === "minimal") {
     return {
       capture_level: captureLevel,
       pm_version: pmVersion,
       source_context: sourceContext.source_context,
       source_context_source: sourceContext.source_context_source,
+      command_taxonomy: commandTaxonomy,
+      command_resolution: commandResolution,
+      resolution_stage: resolutionStage,
+      attempted_command_digest: attemptedCommandDigest,
+      attempted_args_digest: attemptedArgHashes.digest,
+      attempted_options_digest: attemptedOptionsDigest,
       error_code: errorCode,
       error_category: errorCategory,
       exit_code: exitCode,
       error: sanitizeString(errorMessage, "redacted"),
+      error_fingerprint: errorFingerprint,
     };
   }
 
@@ -753,13 +878,21 @@ function buildCommandErrorPayload(params: {
     pm_version: pmVersion,
     source_context: sourceContext.source_context,
     source_context_source: sourceContext.source_context_source,
+    command_taxonomy: commandTaxonomy,
+    command_resolution: commandResolution,
+    resolution_stage: resolutionStage,
     attempted_command: sanitizeString(command, captureLevel),
+    attempted_command_digest: attemptedCommandDigest,
     attempted_args: sanitizeCommandArgs(args, captureLevel),
+    attempted_args_hashes: attemptedArgHashes.hashes,
+    attempted_args_digest: attemptedArgHashes.digest,
     attempted_options: sanitizeValue(options, undefined, captureLevel) as Record<string, unknown>,
+    attempted_options_digest: attemptedOptionsDigest,
     error_code: errorCode,
     error_category: errorCategory,
     exit_code: exitCode,
     error: sanitizeString(errorMessage, captureLevel),
+    error_fingerprint: errorFingerprint,
     pm_root_hash: pmRootHash,
     cwd_hash: cwdHash,
     runtime: {
@@ -933,13 +1066,18 @@ async function flushQueue(globalPmRoot: string, endpoint: string, retentionDays:
   }
   const dueIds = new Set(dueEntries.map((entry) => entry.event.event_id));
   const attemptTime = nowIso();
+  const requestHeaders: Record<string, string> = {
+    "content-type": "application/json",
+  };
+  const ingestKey = process.env.PM_TELEMETRY_INGEST_KEY?.trim();
+  if (ingestKey) {
+    requestHeaders["x-pm-telemetry-key"] = ingestKey;
+  }
 
   try {
     const response = await fetch(normalizedEndpoint, {
       method: "POST",
-      headers: {
-        "content-type": "application/json",
-      },
+      headers: requestHeaders,
       body: JSON.stringify({
         schema_version: TELEMETRY_SCHEMA_VERSION,
         events: dueEntries.map((entry) => entry.event),
@@ -1027,10 +1165,12 @@ export async function startTelemetryCommand(context: TelemetryCommandContext): P
     };
     await enqueueTelemetryEvent(globalPmRoot, event);
     _lastFlushPromise = flushQueue(globalPmRoot, endpoint, retentionDays).catch(() => {});
+    const commandTaxonomy = deriveTelemetryCommandTaxonomy(context.command);
     return {
       started_at: occurredAt,
       started_at_ms: Date.now(),
       command: context.command,
+      command_taxonomy: commandTaxonomy,
       pm_version: pmVersion,
       source_context: sourceContext.source_context,
       source_context_source: sourceContext.source_context_source,
@@ -1061,13 +1201,28 @@ export async function finishTelemetryCommand(
   try {
     const finishedAt = nowIso();
     const durationMs = Math.max(0, Date.now() - activeCommand.started_at_ms);
-    const normalizedErrorCode = normalizeTelemetryErrorCode(outcome.error_code);
+    const normalizedErrorCode = normalizeTelemetryErrorCode(
+      inferTelemetryErrorCode({
+        ok: outcome.ok,
+        errorCode: outcome.error_code,
+        errorMessage: outcome.error,
+        exitCode: outcome.exit_code,
+      }),
+    );
     const normalizedErrorCategory = normalizeTelemetryErrorCategory({
       ok: outcome.ok,
       errorCode: normalizedErrorCode,
       errorCategory: outcome.error_category,
     });
     const normalizedExitCode = normalizeTelemetryExitCode(outcome.exit_code, outcome.ok);
+    const commandResolution =
+      outcome.command_resolution ??
+      deriveTelemetryCommandResolution({
+        ok: outcome.ok,
+        errorCode: normalizedErrorCode,
+        errorCategory: normalizedErrorCategory,
+      });
+    const resolutionStage = outcome.resolution_stage ?? "execute";
     const event: TelemetryEvent = {
       schema_version: TELEMETRY_SCHEMA_VERSION,
       event_id: crypto.randomUUID(),
@@ -1086,9 +1241,14 @@ export async function finishTelemetryCommand(
         outcome,
         durationMs,
         startedAt: activeCommand.started_at,
+        command: activeCommand.command,
+        installationId: activeCommand.installation_id,
+        commandTaxonomy: activeCommand.command_taxonomy,
         exitCode: normalizedExitCode,
         errorCode: normalizedErrorCode,
         errorCategory: normalizedErrorCategory,
+        commandResolution,
+        resolutionStage,
       }),
     };
     await enqueueTelemetryEvent(activeCommand.global_pm_root, event);
@@ -1126,11 +1286,28 @@ export async function emitTelemetryErrorEvent(context: TelemetryErrorEventContex
     const pmRootHash = hashWithInstallationId(installationId, context.pm_root);
     const cwdHash = hashWithInstallationId(installationId, process.cwd());
     const occurredAt = nowIso();
-    const normalizedErrorCode = normalizeTelemetryErrorCode(context.error_code) ?? "unknown_error";
+    const normalizedErrorCode =
+      normalizeTelemetryErrorCode(
+        inferTelemetryErrorCode({
+          ok: false,
+          errorCode: context.error_code,
+          errorMessage: context.error_message,
+          exitCode: context.exit_code,
+        }),
+      ) ?? "unknown_error";
     const normalizedErrorCategory =
       context.error_category ?? resolveTelemetryErrorCategory(normalizedErrorCode);
     const normalizedExitCode = normalizeTelemetryExitCode(context.exit_code, false);
     const normalizedCommand = context.command.trim().length > 0 ? context.command : "<unknown>";
+    const commandTaxonomy = deriveTelemetryCommandTaxonomy(normalizedCommand);
+    const commandResolution =
+      context.command_resolution ??
+      deriveTelemetryCommandResolution({
+        ok: false,
+        errorCode: normalizedErrorCode,
+        errorCategory: normalizedErrorCategory,
+      });
+    const resolutionStage = context.resolution_stage ?? "unknown";
 
     const event: TelemetryEvent = {
       schema_version: TELEMETRY_SCHEMA_VERSION,
@@ -1145,6 +1322,9 @@ export async function emitTelemetryErrorEvent(context: TelemetryErrorEventContex
         pmVersion,
         sourceContext,
         command: normalizedCommand,
+        commandTaxonomy,
+        commandResolution,
+        resolutionStage,
         args: context.args,
         options: context.options,
         pmRootHash,

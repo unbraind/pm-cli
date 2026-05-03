@@ -18,6 +18,7 @@ const originalOtelServiceName = process.env.OTEL_SERVICE_NAME;
 const originalTelemetryDisabled = process.env.PM_TELEMETRY_DISABLED;
 const originalTelemetryOtelDisabled = process.env.PM_TELEMETRY_OTEL_DISABLED;
 const originalTelemetrySourceContext = process.env.PM_TELEMETRY_SOURCE_CONTEXT;
+const originalTelemetryIngestKey = process.env.PM_TELEMETRY_INGEST_KEY;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PRIVATE_TEST_IP = ["192", "168", "42", "17"].join(".");
 const TEST_LOCAL_PATH = ["/home", "example", "private", "path"].join("/");
@@ -81,6 +82,11 @@ describe("core/telemetry/runtime", () => {
     } else {
       process.env.PM_TELEMETRY_SOURCE_CONTEXT = originalTelemetrySourceContext;
     }
+    if (originalTelemetryIngestKey === undefined) {
+      delete process.env.PM_TELEMETRY_INGEST_KEY;
+    } else {
+      process.env.PM_TELEMETRY_INGEST_KEY = originalTelemetryIngestKey;
+    }
     globalThis.fetch = originalFetch;
     vi.restoreAllMocks();
   });
@@ -133,8 +139,15 @@ describe("core/telemetry/runtime", () => {
             pm_version?: string;
             source_context?: string;
             source_context_source?: string;
+            command_taxonomy?: {
+              command_family?: string;
+            };
             command_args: string[];
+            command_args_hashes?: string[];
+            command_args_digest?: string;
             command_options: Record<string, string>;
+            command_options_digest?: string;
+            global_options_digest?: string;
           };
         };
       };
@@ -151,6 +164,11 @@ describe("core/telemetry/runtime", () => {
         "[redacted_email]",
         "token=[redacted] --password [redacted] [redacted_path] [redacted_ip]",
       ]);
+      expect(queued.event.payload.command_taxonomy?.command_family).toBe("mutation");
+      expect(queued.event.payload.command_args_hashes).toHaveLength(5);
+      expect(String(queued.event.payload.command_args_digest ?? "")).toMatch(/^[a-f0-9]{64}$/);
+      expect(String(queued.event.payload.command_options_digest ?? "")).toMatch(/^[a-f0-9]{64}$/);
+      expect(String(queued.event.payload.global_options_digest ?? "")).toMatch(/^[a-f0-9]{64}$/);
       expect(queued.event.payload.command_options.apiKey).toBe("[redacted]");
     });
   });
@@ -199,8 +217,13 @@ describe("core/telemetry/runtime", () => {
                 error_code?: string;
                 error_category?: string;
                 exit_code?: number;
+                command_resolution?: string;
+                resolution_stage?: string;
                 attempted_args?: string[];
+                attempted_args_hashes?: string[];
+                attempted_args_digest?: string;
                 attempted_options?: Record<string, unknown>;
+                attempted_options_digest?: string;
                 error?: string;
               };
             };
@@ -213,9 +236,14 @@ describe("core/telemetry/runtime", () => {
       expect(commandError?.event.payload.error_code).toBe("unknown_command");
       expect(commandError?.event.payload.error_category).toBe("usage");
       expect(commandError?.event.payload.exit_code).toBe(2);
+      expect(commandError?.event.payload.command_resolution).toBe("nonexistent_command");
+      expect(commandError?.event.payload.resolution_stage).toBe("unknown");
       expect(commandError?.event.payload.attempted_args).toEqual(["lst", "--token=[redacted]", "[redacted_path]"]);
+      expect(commandError?.event.payload.attempted_args_hashes).toHaveLength(3);
+      expect(String(commandError?.event.payload.attempted_args_digest ?? "")).toMatch(/^[a-f0-9]{64}$/);
       expect(commandError?.event.payload.attempted_options?.token).toBe("[redacted]");
       expect(commandError?.event.payload.attempted_options?.attemptedPath).toBe("[redacted_path]");
+      expect(String(commandError?.event.payload.attempted_options_digest ?? "")).toMatch(/^[a-f0-9]{64}$/);
       expect(commandError?.event.payload.error).toContain("[redacted]");
       expect(commandError?.event.payload.error).not.toContain("abc123");
       expect(commandError?.event.payload.error).not.toContain(PRIVATE_TEST_IP);
@@ -331,6 +359,12 @@ describe("core/telemetry/runtime", () => {
       expect(startEvent?.event.payload.pm_version).toBe("9.9.9-test");
       expect(startEvent?.event.payload.source_context).toMatch(/^(user|automation|test|dogfood|audit_smoke)$/);
       expect(startEvent?.event.payload.source_context_source).toMatch(/^(inferred|env_override)$/);
+      expect(String(startEvent?.event.payload.command_args_digest ?? "")).toMatch(/^[a-f0-9]{64}$/);
+      expect(String(startEvent?.event.payload.command_invocation_digest ?? "")).toMatch(/^[a-f0-9]{64}$/);
+      expect(startEvent?.event.payload.command_taxonomy).toMatchObject({
+        command_family: "query",
+        command_root: "list-open",
+      });
 
       const finishPayload = finishEvent?.event.payload ?? {};
       expect(finishPayload.capture_level).toBe("minimal");
@@ -339,11 +373,14 @@ describe("core/telemetry/runtime", () => {
       expect(String(finishPayload.source_context_source ?? "")).toMatch(/^(inferred|env_override)$/);
       expect(finishPayload.ok).toBe(false);
       expect(finishPayload.exit_code).toBe(1);
-      expect(finishPayload.error_code).toBeUndefined();
-      expect(finishPayload.error_category).toBe("unknown");
+      expect(finishPayload.error_code).toBe("command_failed");
+      expect(finishPayload.error_category).toBe("runtime");
+      expect(finishPayload.command_resolution).toBe("runtime_failed");
+      expect(finishPayload.resolution_stage).toBe("execute");
       expect(typeof finishPayload.duration_ms).toBe("number");
       expect(finishPayload.started_at).toBeUndefined();
       expect(finishPayload.result_summary).toBeUndefined();
+      expect(String(finishPayload.error_fingerprint ?? "")).toMatch(/^[a-f0-9]{64}$/);
       expect(String(finishPayload.error ?? "")).toContain("[redacted]");
       expect(String(finishPayload.error ?? "")).not.toContain("supersecret");
     });
@@ -400,6 +437,8 @@ describe("core/telemetry/runtime", () => {
                 source_context?: string;
                 source_context_source?: string;
                 command_args?: string[];
+                command_args_hashes?: string[];
+                command_args_digest?: string;
                 command_options?: Record<string, unknown>;
                 result_summary?: { preview?: Record<string, unknown> };
               };
@@ -418,6 +457,8 @@ describe("core/telemetry/runtime", () => {
       expect(startEvent?.event.payload.command_args).toEqual(
         expect.arrayContaining(["[redacted_email]", "[redacted_path]", "[redacted_ip]", "--token=[redacted]"]),
       );
+      expect(startEvent?.event.payload.command_args_hashes).toHaveLength(4);
+      expect(String(startEvent?.event.payload.command_args_digest ?? "")).toMatch(/^[a-f0-9]{64}$/);
       expect(startEvent?.event.payload.command_options?.contact).toBe("[redacted_email]");
       expect(startEvent?.event.payload.command_options?.path).toBe("[redacted_path]");
       expect(startEvent?.event.payload.command_options?.host).toBe("[redacted_ip]");
@@ -479,6 +520,9 @@ describe("core/telemetry/runtime", () => {
                 exit_code?: number;
                 error_code?: string;
                 error_category?: string;
+                command_resolution?: string;
+                resolution_stage?: string;
+                error_fingerprint?: string;
               };
             };
           },
@@ -489,6 +533,9 @@ describe("core/telemetry/runtime", () => {
       expect(finishEvent?.event.payload.exit_code).toBe(2);
       expect(finishEvent?.event.payload.error_code).toBe("invalid_argument_value");
       expect(finishEvent?.event.payload.error_category).toBe("validation");
+      expect(finishEvent?.event.payload.command_resolution).toBe("validation_failed");
+      expect(finishEvent?.event.payload.resolution_stage).toBe("execute");
+      expect(String(finishEvent?.event.payload.error_fingerprint ?? "")).toMatch(/^[a-f0-9]{64}$/);
     });
   });
 
@@ -604,6 +651,49 @@ describe("core/telemetry/runtime", () => {
       expect(settings.telemetry.installation_id.length).toBeGreaterThan(0);
       expect(settings.telemetry.enabled).toBe(true);
       expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  it("adds ingest key header when PM_TELEMETRY_INGEST_KEY is set", async () => {
+    await withTempGlobalRoot(async () => {
+      process.env.PM_TELEMETRY_INGEST_KEY = "test-ingest-key";
+      const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      const active = await startTelemetryCommand({
+        command: "list-open",
+        pm_version: "9.9.9-test",
+        args: [],
+        options: {},
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+      expect(active).not.toBeNull();
+
+      await waitForPendingFlush();
+      expect(fetchMock).toHaveBeenCalled();
+      const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      const headerValue = (() => {
+        const headers = init.headers;
+        if (!headers) {
+          return undefined;
+        }
+        if (headers instanceof Headers) {
+          return headers.get("x-pm-telemetry-key") ?? undefined;
+        }
+        if (Array.isArray(headers)) {
+          const pair = headers.find(([key]) => key.toLowerCase() === "x-pm-telemetry-key");
+          return pair?.[1];
+        }
+        return (headers as Record<string, string>)["x-pm-telemetry-key"];
+      })();
+      expect(headerValue).toBe("test-ingest-key");
     });
   });
 
@@ -747,7 +837,8 @@ describe("core/telemetry/runtime", () => {
       expect(attrMap.get("pm.command")?.stringValue).toBe("list-open");
       expect(attrMap.get("pm.ok")?.boolValue).toBe(false);
       expect(attrMap.get("pm.exit_code")?.intValue).toBe("1");
-      expect(attrMap.get("pm.error_category")?.stringValue).toBe("unknown");
+      expect(attrMap.get("pm.error_code")?.stringValue).toBe("command_failed");
+      expect(attrMap.get("pm.error_category")?.stringValue).toBe("runtime");
       expect(attrMap.get("pm.error")?.stringValue).toBe("synthetic_failure");
       expect(body.resourceSpans[0]?.resource.attributes[0]?.key).toBe("service.name");
       expect(body.resourceSpans[0]?.resource.attributes[0]?.value.stringValue).toBe("pm-cli-test");
