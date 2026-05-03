@@ -1,7 +1,8 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
-import { resolveItemTypeRegistry, resolveTypeName, type ItemTypeRegistry } from "../../core/item/type-registry.js";
+import { resolveItemTypeRegistry, type ItemTypeRegistry } from "../../core/item/type-registry.js";
+import { parseIntegerLimit, parsePriority, parseType } from "../shared-parsers.js";
 import { collectRuntimeFilterValues, matchesRuntimeFilters } from "../../core/schema/runtime-field-filters.js";
 import {
   resolveRuntimeFieldRegistry,
@@ -101,36 +102,9 @@ function sortItemsDefault(items: ListedItem[], statusRegistry: RuntimeStatusRegi
   return [...items].sort((left, right) => compareDefaultSort(left, right, statusRegistry));
 }
 
-function parsePriority(raw: string | undefined): number | undefined {
-  if (raw === undefined) return undefined;
-  const parsed = Number(raw);
-  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 4) {
-    throw new PmCliError("Priority filter must be 0..4", EXIT_CODE.USAGE);
-  }
-  return parsed;
-}
-
-function parseType(raw: string | undefined, typeRegistry: ItemTypeRegistry): ItemType | undefined {
-  if (raw === undefined) return undefined;
-  const parsed = resolveTypeName(raw, typeRegistry);
-  if (!parsed) {
-    throw new PmCliError(`Type filter must be one of ${typeRegistry.types.join("|")}`, EXIT_CODE.USAGE);
-  }
-  return parsed;
-}
-
 function parseDeadline(raw: string | undefined, fieldLabel: string): string | undefined {
   if (raw === undefined) return undefined;
   return resolveIsoOrRelative(raw, new Date(), fieldLabel);
-}
-
-function parseLimit(raw: string | undefined): number | undefined {
-  if (raw === undefined) return undefined;
-  const parsed = Number(raw);
-  if (!Number.isInteger(parsed) || parsed < 0) {
-    throw new PmCliError("Limit filter must be a non-negative integer", EXIT_CODE.USAGE);
-  }
-  return parsed;
 }
 
 function parseOffset(raw: string | undefined): number | undefined {
@@ -416,7 +390,7 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
   const effectiveOptions = explicitStatus ? { ...options, excludeTerminal: false } : options;
   const filtered = applyFilters(items, resolvedStatus, effectiveOptions, typeRegistry, statusRegistry, runtimeFieldFilters);
   const sorted = sortItems(filtered, sortField, sortOrder, statusRegistry);
-  const limit = parseLimit(options.limit);
+  const limit = parseIntegerLimit(options.limit);
   const offset = parseOffset(options.offset) ?? 0;
   const limited = limit === undefined ? sorted.slice(offset) : sorted.slice(offset, offset + limit);
   const projected = projectListItems(limited, projection);

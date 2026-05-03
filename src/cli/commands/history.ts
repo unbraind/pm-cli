@@ -12,6 +12,7 @@ import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { locateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getHistoryPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
+import { parseLimit } from "../shared-parsers.js";
 import type { HistoryEntry, HistoryPatchOp, ItemDocument } from "../../types/index.js";
 
 export interface HistoryCommandOptions {
@@ -56,15 +57,6 @@ const EMPTY_REPLAY_DOCUMENT: ReplayDocument = {
   front_matter: {},
   body: "",
 };
-
-function parseLimit(raw: string | undefined): number | undefined {
-  if (raw === undefined) return undefined;
-  const parsed = Number(raw);
-  if (!Number.isFinite(parsed) || parsed < 0) {
-    throw new PmCliError("Invalid --limit value", EXIT_CODE.USAGE);
-  }
-  return Math.floor(parsed);
-}
 
 function limitEntries<T>(values: T[], limit: number | undefined): T[] {
   if (limit === undefined) return values;

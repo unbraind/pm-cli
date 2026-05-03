@@ -1,6 +1,5 @@
 import os from "node:os";
 import { pathExists } from "../../core/fs/fs-utils.js";
-import { parseOptionalNumber } from "../../core/item/parse.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -19,6 +18,7 @@ import {
 } from "../../core/test/background-runs.js";
 import { getSettingsPath, resolveGlobalPmRoot, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
+import { parseLimit } from "../shared-parsers.js";
 
 const BACKGROUND_STATUS_VALUES: readonly BackgroundTestRunStatus[] = ["queued", "running", "passed", "failed", "stopped", "canceled"];
 const BACKGROUND_STREAM_VALUES: readonly BackgroundLogStream[] = ["stdout", "stderr", "both"];
@@ -43,17 +43,6 @@ function normalizeStream(value: string | undefined): BackgroundLogStream {
     return normalized as BackgroundLogStream;
   }
   throw new PmCliError(`Invalid --stream value "${value}"`, EXIT_CODE.USAGE);
-}
-
-function parseLimit(value: string | undefined, label: string): number | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-  const parsed = parseOptionalNumber(value, label);
-  if (!Number.isFinite(parsed) || parsed < 0) {
-    throw new PmCliError(`${label} must be a non-negative number`, EXIT_CODE.USAGE);
-  }
-  return Math.floor(parsed);
 }
 
 function resolveWhoamiFallback(): string | undefined {

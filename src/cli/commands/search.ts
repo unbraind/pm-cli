@@ -6,7 +6,8 @@ import {
   resolveRegisteredSearchProvider,
   resolveRegisteredVectorStoreAdapter,
 } from "../../core/extensions/runtime-registrations.js";
-import { resolveItemTypeRegistry, resolveTypeName, type ItemTypeRegistry } from "../../core/item/type-registry.js";
+import { resolveItemTypeRegistry, type ItemTypeRegistry } from "../../core/item/type-registry.js";
+import { parseLimit, parsePriority, parseType } from "../shared-parsers.js";
 import {
   executeEmbeddingRequest,
   resolveEmbeddingProviders,
@@ -207,36 +208,9 @@ function normalizeSearchPhrase(value: string): string {
     .trim();
 }
 
-function parsePriority(raw: string | undefined): number | undefined {
-  if (raw === undefined) return undefined;
-  const parsed = Number(raw);
-  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 4) {
-    throw new PmCliError("Priority filter must be 0..4", EXIT_CODE.USAGE);
-  }
-  return parsed;
-}
-
-function parseType(raw: string | undefined, typeRegistry: ItemTypeRegistry): ItemType | undefined {
-  if (raw === undefined) return undefined;
-  const parsed = resolveTypeName(raw, typeRegistry);
-  if (!parsed) {
-    throw new PmCliError(`Type filter must be one of ${typeRegistry.types.join("|")}`, EXIT_CODE.USAGE);
-  }
-  return parsed;
-}
-
 function parseDeadline(raw: string | undefined, fieldLabel: string): string | undefined {
   if (raw === undefined) return undefined;
   return resolveIsoOrRelative(raw, new Date(), fieldLabel);
-}
-
-function parseLimit(raw: string | undefined): number | undefined {
-  if (raw === undefined) return undefined;
-  const parsed = Number(raw);
-  if (!Number.isFinite(parsed) || parsed < 0) {
-    throw new PmCliError("Limit filter must be a non-negative number", EXIT_CODE.USAGE);
-  }
-  return Math.floor(parsed);
 }
 
 function parseFieldSelectors(raw: string | undefined): string[] | undefined {

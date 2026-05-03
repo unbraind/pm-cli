@@ -2,14 +2,28 @@ id: pm-sh6o
 title: main.ts still has 4 extraction candidates (~1325 lines)
 description: "After the register-*.ts extraction, main.ts is 2555 lines. Four more modules can be extracted: (1) extension command help utilities (lines 109-568, ~460 lines), (2) bootstrap argument parsing (lines 568-813, ~245 lines), (3) extension migration gates (lines 1211-1430, ~220 lines), (4) extension runtime loading (lines 1700-2100, ~400 lines). This is a follow-up to pm-6c3h."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[4]: architecture,audit,code-quality,refactor
 created_at: "2026-05-02T16:09:25.850Z"
-updated_at: "2026-05-02T16:10:12.468Z"
+updated_at: "2026-05-02T17:16:12.976Z"
 author: audit-agent
 acceptance_criteria: main.ts reduced to <1200 lines with extracted modules
 parent: pm-5zkg
-files[1]{path,scope,note}:
+resolution: "Extracted 5 modules from main.ts: extension-command-help.ts, bootstrap-args.ts, migration-gates.ts, commander-usage.ts, help-json-payload.ts"
+expected_result: main.ts reduced to <1200 lines with extracted modules
+actual_result: main.ts reduced from 2555 to 1110 lines (56.5% reduction); all 1117 tests pass; build clean
+comments[3]{created_at,author,text}:
+  "2026-05-02T17:07:34.710Z",cursor-agent,"Extraction round 2 complete: created commander-usage.ts (~210 lines) and help-json-payload.ts (~300 lines). main.ts reduced from 2555→1110 lines (56.5% reduction), well under the 1200-line target. Build + full test suite green. Five modules total extracted: extension-command-help.ts, bootstrap-args.ts, migration-gates.ts, commander-usage.ts, help-json-payload.ts."
+  "2026-05-02T17:10:44.637Z",cursor-agent,"Full temp-directory dogfood sweep: 25+ commands tested in isolated PM_PATH/PM_GLOBAL_PATH. All core commands pass: init, health, create, update, get, list*, search, calendar, context, history, activity, comments, notes, learnings, files, docs, test, deps, stats, validate, gc, reindex, contracts, completion, close, claim/release, start-task/pause-task/close-task, append, config, help --json. No functional regressions after modularization."
+  "2026-05-02T17:16:12.976Z",cursor-agent,"Final verification: pnpm build clean, pnpm typecheck clean, 82/82 test files pass (1117 tests), pm validate ok, pm health ok. Resolution metadata backfilled. Docs updated with lifecycle aliases."
+files[3]{path,scope,note}:
+  src/cli/commander-usage.ts,project,null
+  src/cli/help-json-payload.ts,project,null
   src/cli/main.ts,project,null
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,null
+close_reason: "main.ts reduced from 2555 to 1110 lines (56.5% reduction). Five modules extracted: extension-command-help.ts, bootstrap-args.ts, migration-gates.ts, commander-usage.ts, help-json-payload.ts. All tests green, build clean."
 body: ""

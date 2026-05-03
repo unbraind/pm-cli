@@ -169,6 +169,17 @@ describe("runDedupeAudit", () => {
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
+      await expect(
+        runDedupeAudit(
+          {
+            mode: "title_exact",
+            limit: "1.25",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 });

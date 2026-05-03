@@ -49,8 +49,33 @@ let _initDone = false;
 const PM_CLI_SENTRY_DSN =
   "https://bf7ad2ec76c0051c2ee94e48e8bd6868@o4510603477712896.ingest.de.sentry.io/4511316775338064";
 
-function isExpectedCliErrorEvent(event: { exception?: { values?: Array<{ type?: string }> } }): boolean {
-  return event.exception?.values?.some((exception) => exception.type === "PmCliError") ?? false;
+function hasPmCliErrorPrefix(value: string): boolean {
+  return /^\s*PmCliError:/.test(value);
+}
+
+function isExpectedCliErrorEvent(event: {
+  exception?: { values?: Array<{ type?: string; value?: string }> };
+  message?: string;
+  extra?: Record<string, unknown>;
+  logger?: string;
+}): boolean {
+  if (event.exception?.values?.some((ex) => ex.type === "PmCliError")) return true;
+
+  if (event.exception?.values?.some((ex) => typeof ex.value === "string" && hasPmCliErrorPrefix(ex.value)))
+    return true;
+
+  if (event.logger === "console" && typeof event.message === "string" && hasPmCliErrorPrefix(event.message))
+    return true;
+
+  return false;
+}
+
+function isPmCliErrorBreadcrumb(breadcrumb: { category?: string; message?: string }): boolean {
+  return (
+    breadcrumb.category === "console" &&
+    typeof breadcrumb.message === "string" &&
+    hasPmCliErrorPrefix(breadcrumb.message)
+  );
 }
 
 function resolveCliVersion(): string {
@@ -168,6 +193,7 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
 
     beforeSendTransaction(event) {
       if (event.breadcrumbs) {
+        event.breadcrumbs = event.breadcrumbs.filter((bc) => !isPmCliErrorBreadcrumb(bc));
         for (const breadcrumb of event.breadcrumbs) {
           if (breadcrumb.message) {
             breadcrumb.message = scrubString(breadcrumb.message);
@@ -178,6 +204,9 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
     },
 
     beforeBreadcrumb(breadcrumb) {
+      if (isPmCliErrorBreadcrumb(breadcrumb)) {
+        return null;
+      }
       if (breadcrumb.message) {
         breadcrumb.message = scrubString(breadcrumb.message);
       }
@@ -194,3 +223,8 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
 export function getSentry(): SentryLike | undefined {
   return _sentry;
 }
+
+export const _testOnly = {
+  isExpectedCliErrorEvent,
+  isPmCliErrorBreadcrumb,
+};

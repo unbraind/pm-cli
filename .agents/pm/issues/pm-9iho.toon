@@ -2,15 +2,22 @@ id: pm-9iho
 title: PmCliError events leaking to Sentry via captureConsoleIntegration
 description: "All 8 current Sentry issues are PmCliError instances (user input errors). The beforeSend filter correctly returns null for PmCliError exception events, but the captureConsoleIntegration({ levels: ['warn', 'error'] }) may be re-capturing these as console-level events when they're printed to stderr. Should either (a) add PmCliError filtering to beforeSendTransaction as well, or (b) exclude PmCliError messages from captureConsole capture."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: audit,bug,sentry,telemetry
 created_at: "2026-05-02T16:09:35.975Z"
-updated_at: "2026-05-02T16:10:14.842Z"
+updated_at: "2026-05-02T17:16:08.561Z"
 author: audit-agent
 acceptance_criteria: No PmCliError events appear in Sentry after fix
 parent: pm-5zkg
+resolution: Enhanced Sentry filtering to drop PmCliError-derived console events and breadcrumbs
+expected_result: PmCliError events no longer leak to Sentry via captureConsoleIntegration
+actual_result: "beforeSend, beforeSendTransaction, and beforeBreadcrumb now filter console-originated PmCliError events; regression tests added"
+comments[2]{created_at,author,text}:
+  "2026-05-02T16:25:40.124Z",cursor-agent,"Fix applied: broadened isExpectedCliErrorEvent to check exception.value text and console logger messages; added isPmCliErrorBreadcrumb helper; beforeBreadcrumb returns null for PmCliError console breadcrumbs; beforeSendTransaction strips PmCliError breadcrumbs. 12/12 sentry-helpers tests pass."
+  "2026-05-02T17:16:08.561Z",cursor-agent,"Final verification: pnpm build clean, pnpm typecheck clean, 82/82 test files pass (1117 tests), pm validate ok, pm health ok. Resolution metadata backfilled."
 files[2]{path,scope,note}:
   src/core/sentry/helpers.ts,project,null
   src/core/sentry/instrument.ts,project,null
+close_reason: "PmCliError events no longer leak to Sentry - filtering hardened across beforeSend, beforeSendTransaction, and beforeBreadcrumb. 12/12 regression tests pass."
 body: ""

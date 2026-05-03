@@ -1,6 +1,7 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
-import { resolveItemTypeRegistry, resolveTypeName, type ItemTypeRegistry } from "../../core/item/type-registry.js";
+import { resolveItemTypeRegistry, type ItemTypeRegistry } from "../../core/item/type-registry.js";
+import { parseIntegerLimit, parsePriority, parseType } from "../shared-parsers.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
 import { collectRuntimeFilterValues, matchesRuntimeFilters } from "../../core/schema/runtime-field-filters.js";
 import {
@@ -138,15 +139,6 @@ function weekdayOrderIndex(value: (typeof RECURRENCE_WEEKDAY_VALUES)[number]): n
   return RECURRENCE_WEEKDAY_VALUES.indexOf(value);
 }
 
-function parseLimit(raw: string | undefined): number | undefined {
-  if (raw === undefined) return undefined;
-  const parsed = Number(raw);
-  if (!Number.isInteger(parsed) || parsed < 0) {
-    throw new PmCliError("Calendar limit must be a non-negative integer", EXIT_CODE.USAGE);
-  }
-  return parsed;
-}
-
 function parseNonNegativeInteger(raw: string | undefined, label: string): number | undefined {
   if (raw === undefined) return undefined;
   const parsed = Number(raw);
@@ -219,24 +211,6 @@ export function resolveCalendarOutputFormat(options: CalendarOptions, global: Gl
     return "json";
   }
   return commandFormat ?? "markdown";
-}
-
-function parsePriority(raw: string | undefined): number | undefined {
-  if (raw === undefined) return undefined;
-  const parsed = Number(raw);
-  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 4) {
-    throw new PmCliError("Calendar priority filter must be 0..4", EXIT_CODE.USAGE);
-  }
-  return parsed;
-}
-
-function parseType(raw: string | undefined, typeRegistry: ItemTypeRegistry): ItemType | undefined {
-  if (raw === undefined) return undefined;
-  const parsed = resolveTypeName(raw, typeRegistry);
-  if (!parsed) {
-    throw new PmCliError(`Calendar type filter must be one of ${typeRegistry.types.join("|")}`, EXIT_CODE.USAGE);
-  }
-  return parsed;
 }
 
 function parseStatus(raw: string | undefined, statusRegistry: RuntimeStatusRegistry): ItemStatus | undefined {
@@ -956,7 +930,7 @@ export async function runCalendar(options: CalendarOptions, global: GlobalOption
   const nowValue = nowIso();
   const view = parseView(options.view);
   const rangeBounds = buildRange(view, options, nowValue);
-  const limit = parseLimit(options.limit);
+  const limit = parseIntegerLimit(options.limit);
   const includeSources = parseIncludeSources(options.include);
   const explicitLookahead = parseNonNegativeInteger(options.recurrenceLookaheadDays, "Calendar recurrence lookahead days");
   const recurrenceLookbackDays = parseNonNegativeInteger(options.recurrenceLookbackDays, "Calendar recurrence lookback days");

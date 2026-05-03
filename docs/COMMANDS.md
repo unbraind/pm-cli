@@ -23,7 +23,7 @@ Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
 |--------|----------|---------|
 | Bootstrap | `init`, `config`, `health` | create and inspect tracker setup |
 | Triage | `context`, `search`, `list*`, `aggregate`, `dedupe-audit` | find work and audit decomposition |
-| Lifecycle | `create`, `claim`, `update`, `append`, `close`, `release`, `delete` | mutate item state |
+| Lifecycle | `create`, `claim`, `update`, `append`, `close`, `release`, `delete`, `start-task`, `pause-task`, `close-task` | mutate item state |
 | Logs | `comments`, `notes`, `learnings`, `comments-audit` | record progress and durable context |
 | Links | `files`, `docs`, `test`, `deps` | connect items to artifacts, tests, and relationships |
 | Verification | `test`, `test-all`, `test-runs`, `validate`, `gc` | run linked tests and repository checks |
@@ -93,6 +93,16 @@ pm append <id> --body "Detailed implementation notes."
 ```
 
 Use `pm close <id> "<reason>"` instead of `pm update --status closed`.
+
+## Lifecycle Aliases
+
+Lifecycle aliases combine claim, status, and close operations into a single command:
+
+```bash
+pm start-task <id>             # claim + move to in_progress
+pm pause-task <id>             # move to open + release claim
+pm close-task <id> "<reason>"  # close + release assignment
+```
 
 ## Ownership
 

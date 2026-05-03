@@ -1022,6 +1022,7 @@ describe("calendar command module", () => {
         { view: "agenda", status: "doing" },
         { view: "agenda", priority: "9" },
         { view: "agenda", limit: "-1" },
+        { view: "agenda", limit: "1.25" },
         { view: "agenda", include: "deadlines|unknown" },
         { view: "agenda", include: " , | " },
         { view: "agenda", fullPeriod: true },

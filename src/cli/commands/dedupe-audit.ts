@@ -8,6 +8,7 @@ import { jaccardSimilarity, normalizeLowercaseWhitespace, tokenizeAlphaNumeric }
 import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { type ItemStatus } from "../../types/index.js";
+import { parseIntegerLimit } from "../shared-parsers.js";
 import { runList } from "./list.js";
 
 export const DEDUPE_AUDIT_MODES = ["title_exact", "title_fuzzy", "parent_scope"] as const;
@@ -129,17 +130,6 @@ function parseStatus(raw: string | undefined): ItemStatus | undefined {
     throw new PmCliError(`Status filter must be one of ${[...dedupeAllowedStatuses].join("|")}`, EXIT_CODE.USAGE);
   }
   return normalized as ItemStatus;
-}
-
-function parseLimit(raw: string | undefined): number | undefined {
-  if (raw === undefined) {
-    return undefined;
-  }
-  const parsed = Number(raw);
-  if (!Number.isInteger(parsed) || parsed < 0) {
-    throw new PmCliError("--limit must be a non-negative integer", EXIT_CODE.USAGE);
-  }
-  return parsed;
 }
 
 function parseThreshold(raw: string | undefined): number | undefined {
@@ -378,7 +368,7 @@ export async function runDedupeAudit(options: DedupeAuditOptions, global: Global
   dedupeTerminalStatuses = new Set(statusRegistry.terminal_statuses);
   const mode = parseMode(options.mode);
   const status = parseStatus(options.status);
-  const limit = parseLimit(options.limit);
+  const limit = parseIntegerLimit(options.limit);
   const threshold = parseThreshold(options.threshold);
   const fuzzyThreshold = threshold ?? 0.8;
 

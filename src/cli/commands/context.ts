@@ -7,6 +7,7 @@ import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../
 import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter, ItemStatus } from "../../types/index.js";
+import { parseIntegerLimit } from "../shared-parsers.js";
 import { runCalendar, type CalendarOptions, type CalendarRow } from "./calendar.js";
 import { runList, type ListOptions } from "./list.js";
 
@@ -118,15 +119,8 @@ export function resolveContextOutputFormat(options: ContextOptions, global: Glob
   return commandFormat ?? "toon";
 }
 
-function parseLimit(raw: string | undefined): number {
-  if (raw === undefined) {
-    return DEFAULT_CONTEXT_LIMIT;
-  }
-  const parsed = Number(raw);
-  if (!Number.isInteger(parsed) || parsed < 0) {
-    throw new PmCliError("Context limit must be a non-negative integer", EXIT_CODE.USAGE);
-  }
-  return parsed;
+function parseContextLimit(raw: string | undefined): number {
+  return parseIntegerLimit(raw, "--limit") ?? DEFAULT_CONTEXT_LIMIT;
 }
 
 function normalizeStatusForRegistry(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): ItemStatus {
@@ -320,7 +314,7 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
-  const limit = parseLimit(options.limit);
+  const limit = parseContextLimit(options.limit);
   const listOptions: ListOptions = { ...(options as Record<string, unknown>), excludeTerminal: true };
   const listed = await runList(undefined, listOptions, global);
   const listedFrontMatter = listed.items as ItemFrontMatter[];

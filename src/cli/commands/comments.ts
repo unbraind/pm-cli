@@ -9,6 +9,7 @@ import { createStdinTokenResolver, parseCsvKv } from "../../core/item/parse.js";
 import { locateItem, mutateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
+import { parseLimit } from "../shared-parsers.js";
 import type { Comment } from "../../types/index.js";
 
 export interface CommentsCommandOptions {
@@ -30,15 +31,6 @@ function resolveAuthor(candidate: string | undefined, fallback: string): string 
   const resolved = candidate ?? process.env.PM_AUTHOR ?? fallback;
   const trimmed = resolved.trim();
   return trimmed || "unknown";
-}
-
-function parseLimit(raw: string | undefined): number | undefined {
-  if (raw === undefined) return undefined;
-  const parsed = Number(raw);
-  if (!Number.isFinite(parsed) || parsed < 0) {
-    throw new PmCliError("Invalid --limit value", EXIT_CODE.USAGE);
-  }
-  return Math.floor(parsed);
 }
 
 function limitComments(values: Comment[], limit: number | undefined): Comment[] {
