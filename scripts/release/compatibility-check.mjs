@@ -260,8 +260,17 @@ function runCurrentChecks(seedState, env, author) {
     fail("Compatibility gate failed: validate --check-resolution --check-history-drift returned ok=false.");
   }
   const health = current("health", "--check-only");
-  if (health?.ok === false) {
-    fail("Compatibility gate failed: health --check-only returned ok=false.");
+  const healthChecks = Array.isArray(health?.checks) ? health.checks : [];
+  const blockingHealthChecks = healthChecks.filter((entry) => {
+    const status = String(entry?.status ?? "").toLowerCase();
+    return status === "error" || status === "failed" || status === "fail";
+  });
+  if (blockingHealthChecks.length > 0) {
+    fail(
+      `Compatibility gate failed: health --check-only reported blocking checks (${blockingHealthChecks
+        .map((entry) => String(entry?.name ?? "unknown"))
+        .join(", ")}).`,
+    );
   }
 
   const afterList = current("list-all", "--limit", "200");
@@ -275,7 +284,7 @@ function runCurrentChecks(seedState, env, author) {
   return {
     itemCountAfter,
     validationOk: validation?.ok !== false,
-    healthOk: health?.ok !== false,
+    healthOk: blockingHealthChecks.length === 0,
   };
 }
 

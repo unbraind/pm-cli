@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Relaxed release compatibility health evaluation so compatibility gating only blocks on failing health checks, not warning-only health states, preventing false negatives on GitHub-hosted release runs.
+
 ## [2026.5.3-2] - 2026-05-03
 
 ### Added
