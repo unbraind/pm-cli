@@ -176,22 +176,25 @@ function buildClosedBackfillValue(
   field: "resolution" | "expected_result" | "actual_result",
   closeReason: string | undefined,
 ): string {
+  const closureEvidenceSuffix = closeReason
+    ? "existing close_reason remains the detailed closure evidence."
+    : "the field was missing or low-signal.";
   if (closeReason) {
     if (field === "resolution") {
-      return `Resolution normalized from close_reason: ${closeReason}`;
+      return `Resolution normalized from closed status; ${closureEvidenceSuffix}`;
     }
     if (field === "expected_result") {
-      return `Expected closure outcome: ${closeReason}`;
+      return `Expected closure outcome normalized from closed status; ${closureEvidenceSuffix}`;
     }
-    return `Actual closure outcome: ${closeReason}`;
+    return `Actual closure outcome normalized from closed status; ${closureEvidenceSuffix}`;
   }
   if (field === "resolution") {
-    return "Resolution normalized from closed status because the field was missing or low-signal.";
+    return `Resolution normalized from closed status because ${closureEvidenceSuffix}`;
   }
   if (field === "expected_result") {
-    return "Expected closure outcome normalized from closed status because the field was missing or low-signal.";
+    return `Expected closure outcome normalized from closed status because ${closureEvidenceSuffix}`;
   }
-  return "Actual closure outcome normalized from closed status because the field was missing or low-signal.";
+  return `Actual closure outcome normalized from closed status because ${closureEvidenceSuffix}`;
 }
 
 function isTerminalStatus(item: ListedItem, statusRegistry: RuntimeStatusRegistry): boolean {

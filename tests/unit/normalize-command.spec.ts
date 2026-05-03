@@ -143,7 +143,8 @@ describe("runNormalize", () => {
       const closedId = createTask(context, "normalize-apply-closed", { tags: "normalize-apply" });
       const cleanId = createTask(context, "normalize-apply-clean", { tags: "normalize-apply" });
 
-      const closed = context.runCli(["close", closedId, "Completed normalize apply fixture", "--json"], { expectJson: true });
+      const sensitiveCloseReason = "Completed normalize apply fixture TOKEN_SENTINEL PRIVATE_IP_SENTINEL LOCAL_PATH_SENTINEL";
+      const closed = context.runCli(["close", closedId, sensitiveCloseReason, "--json"], { expectJson: true });
       expect(closed.code).toBe(0);
       await seedClosedLowSignalResolutionFields(context, closedId);
 
@@ -172,6 +173,12 @@ describe("runNormalize", () => {
       expect(String(closedItem.resolution)).toContain("Resolution normalized");
       expect(String(closedItem.expected_result)).toContain("Expected closure outcome");
       expect(String(closedItem.actual_result)).toContain("Actual closure outcome");
+      expect(String(closedItem.resolution)).not.toContain(sensitiveCloseReason);
+      expect(String(closedItem.expected_result)).not.toContain(sensitiveCloseReason);
+      expect(String(closedItem.actual_result)).not.toContain(sensitiveCloseReason);
+      expect(String(closedItem.resolution)).not.toContain("PRIVATE_IP_SENTINEL");
+      expect(String(closedItem.expected_result)).not.toContain("TOKEN_SENTINEL");
+      expect(String(closedItem.actual_result)).not.toContain("LOCAL_PATH_SENTINEL");
 
       const cleanItem = getItem(context, cleanId);
       expect(cleanItem.resolution).toBeUndefined();

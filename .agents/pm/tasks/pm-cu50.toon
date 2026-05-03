@@ -6,10 +6,13 @@ status: closed
 priority: 2
 tags[3]: agent-output,dogfood,ux
 created_at: "2026-05-03T10:47:59.802Z"
-updated_at: "2026-05-03T11:03:05.884Z"
+updated_at: "2026-05-03T19:13:52.616Z"
 author: audit-agent
 estimated_minutes: 60
 acceptance_criteria: "All lifecycle operations verified, agent-friendly outputs confirmed, friction documented"
 parent: pm-5zkg
+resolution: Resolution normalized from closed status; existing close_reason remains the detailed closure evidence.
+expected_result: Expected closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.
+actual_result: Actual closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.
 close_reason: "Full lifecycle validated in temp sandbox: init/create/claim/update/comments/notes/learnings/close all work. TOON, JSON, quiet modes confirmed. Help --json returns pm_help_v1 format with structured options/examples. Error output is fully agent-friendly with type/code/detail/next_steps/examples."
 body: ""

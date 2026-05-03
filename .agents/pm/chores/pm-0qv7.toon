@@ -1,0 +1,49 @@
+id: pm-0qv7
+title: Release @unbrained/pm-cli after 2026.5.2
+description: "Prepare, verify, and publish the next pm CLI release from changes after 2026.5.2 with backward-compatibility, telemetry/Sentry, changelog, docs, workflow, and public registry verification gates."
+type: Chore
+status: in_progress
+priority: 0
+tags[7]: changelog,ci,compatibility,pm-cli,release,sentry,telemetry
+created_at: "2026-05-03T18:30:09.216Z"
+updated_at: "2026-05-03T19:25:23.320Z"
+deadline: "2026-05-04T18:30:09.216Z"
+assignee: codex-release-agent
+author: codex-release-agent
+estimated_minutes: 240
+acceptance_criteria: Temporary previous-version data migrates safely under the new build; telemetry and Sentry latest data are reviewed; release notes/changelog/docs are current and generated from pm evidence; full tests and secret scans pass; GitHub/npm/npx/bunx publish verification succeeds.
+parent: pm-rnpb
+comments[9]{created_at,author,text}:
+  "2026-05-03T18:30:09.216Z",codex-release-agent,"Duplicate-check evidence: ran pm context --limit 10, pm search release compatibility telemetry sentry changelog 2026.5.3 --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Only prior release item pm-5jw8 was closed and open audit parent pm-rnpb covers the lineage, so a new release chore is required."
+  "2026-05-03T18:39:25.526Z",codex-release-agent,"Compatibility gate passed in isolated temp project: @unbrained/pm-cli@2026.5.2 initialized and created 3 representative items with parent/dependency links, files/docs/tests, comments, notes, learnings, reminders, events, close metadata, and history. Current built CLI read and mutated legacy data, ran linked test node --version, and passed pm validate --check-resolution --check-history-drift plus pm health --check-only without item loss (3 before, 3 after). Temp root: /tmp/pm-compat-2026-5-2.00lPcA."
+  "2026-05-03T18:48:14.789Z",codex-release-agent,"Telemetry/Sentry gate reviewed latest live data: public telemetry API and Grafana health were OK, all telemetry containers were up, RabbitMQ queue pm.telemetry.events was empty with one consumer, Postgres held 38117 events across 1374 installations, and Sentry had no unresolved 14-day issues or 24-hour issue activity. Observed published 2026.5.2 telemetry still has unknown_error command_finish rows; current unreleased telemetry classification changes and tests cover that release improvement. Private details stayed in ignored scripts/prod/telemetry reports."
+  "2026-05-03T18:48:16.987Z",codex-release-agent,"Release assets updated: package.json bumped to 2026.5.3, CHANGELOG.md gained the 2026.5.3 release section, and docs/RELEASING.md now makes previous-version compatibility and telemetry/Sentry review explicit pre-release gates while preserving the free GitHub Actions + npm provenance path."
+  "2026-05-03T18:56:35.470Z",codex-release-agent,"Verification found and fixed a commander usage regression: parse-time usage errors cleared extension services before rendering, so help_format service overrides were skipped. Updated src/cli/main.ts to render commander usage output before cleanup; focused regression passed with node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts -t applies help_format service overrides."
+  "2026-05-03T19:02:07.188Z",codex-release-agent,"Coverage gate then exposed uncovered telemetry error-category fallback branches in src/core/shared/constants.ts. Added tests/unit/shared-constants-errors.spec.ts coverage for explicit mapping plus conflict, usage, validation, runtime, and unknown heuristic fallbacks."
+  "2026-05-03T19:07:15.233Z",codex-release-agent,"Final local release gates passed after fixes: pm test pm-0qv7 --run --progress passed typecheck, secret scan, version policy, sandboxed coverage at 100% (1195 tests), npx tarball smoke, and npm pack dry run. pm health --check-only passed. Generated release notes at /tmp/pm-cli-release-notes-2026.5.3.md. Applied pm normalize --apply to backfill 16 closed-item resolution metadata gaps before release validation."
+  "2026-05-03T19:13:40.889Z",codex-release-agent,"Release hygiene fix: pm normalize no longer copies close_reason text into generated resolution, expected_result, or actual_result fields. Added normalize-command regression coverage so sensitive tokens, private IPs, and local paths in close_reason are not duplicated into normalized metadata."
+  "2026-05-03T19:25:23.320Z",codex-release-agent,"Final pre-commit gate after normalize privacy fix: pm test pm-0qv7 --run --progress passed all 6 linked checks; coverage remained 100% with 1195 tests; tracked secret scan passed; pm validate --check-resolution --check-history-drift passed; pm normalize --dry-run reported no pending rules; release notes regenerated for 2026.5.3."
+files[7]{path,scope,note}:
+  CHANGELOG.md,project,2026.5.3 release changelog
+  docs/RELEASING.md,project,release compatibility telemetry workflow documentation
+  package.json,project,release version bump
+  src/cli/commands/normalize.ts,project,normalize closed metadata privacy fix
+  src/cli/main.ts,project,commander usage help_format service cleanup-order fix
+  tests/unit/normalize-command.spec.ts,project,normalize privacy regression coverage
+  tests/unit/shared-constants-errors.spec.ts,project,telemetry error category fallback coverage
+tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  ./node_modules/.bin/tsc --noEmit -p tsconfig.json,null,project,240,null,null,null,null,null,null,null,null,null,null,null,typecheck gate
+  node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,secret scan gate
+  node scripts/release-version.mjs check --verify-next,null,project,120,null,null,null,null,null,null,null,null,null,null,null,calendar version policy gate
+  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,sandboxed full coverage gate
+  node scripts/smoke-npx-from-pack.mjs,null,project,240,null,null,null,null,null,null,null,null,null,null,null,npx tarball smoke gate
+  npm pack --dry-run,null,project,180,null,null,null,null,null,null,null,null,null,null,null,package contents smoke gate
+test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-moq4q31v-mf6wse,test,failed,"2026-05-03T18:49:14.391Z","2026-05-03T18:54:02.227Z","2026-05-03T18:54:02.227Z",null,null,5,1,0,null,null,null
+  test-local-moq4zohf-j0xggg,test,failed,"2026-05-03T18:56:43.989Z","2026-05-03T19:01:29.907Z","2026-05-03T19:01:29.907Z",null,null,5,1,0,null,null,null
+  test-local-moq560oh-81f2ho,test,passed,"2026-05-03T19:02:28.367Z","2026-05-03T19:06:25.649Z","2026-05-03T19:06:25.649Z",null,null,6,0,0,null,null,null
+  test-local-moq5mama-oogepw,test,failed,"2026-05-03T19:14:14.643Z","2026-05-03T19:19:05.026Z","2026-05-03T19:19:05.026Z",null,null,5,1,0,null,null,null
+  test-local-moq5towo-vo61t7,test,passed,"2026-05-03T19:19:48.937Z","2026-05-03T19:24:50.137Z","2026-05-03T19:24:50.137Z",null,null,6,0,0,null,null,null
+docs[1]{path,scope,note}:
+  docs/RELEASING.md,project,release workflow source of truth
+body: ""

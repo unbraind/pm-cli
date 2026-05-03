@@ -6,10 +6,13 @@ status: closed
 priority: 2
 tags[4]: calendar,sdk,search,validation
 created_at: "2026-05-03T10:48:07.858Z"
-updated_at: "2026-05-03T11:06:10.539Z"
+updated_at: "2026-05-03T19:13:52.612Z"
 author: audit-agent
 estimated_minutes: 90
 acceptance_criteria: "Semantic search works e2e with Ollama, calendar filters verified, SDK contracts are ergonomic and documented"
 parent: pm-5zkg
+resolution: Resolution normalized from closed status; existing close_reason remains the detailed closure evidence.
+expected_result: Expected closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.
+actual_result: Actual closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.
 close_reason: "Validated: keyword search (50 results), semantic search with Ollama qwen (scored results), reindex (658 items in keyword+semantic modes), calendar week/agenda views with proper structure, SDK exports comprehensive with 50+ typed contracts. All test suites pass (14 calendar, 49 search tests)."
 body: ""

@@ -7,15 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-- Decomposed `src/cli/main.ts` from ~5800 lines into modular command registration files: `register-setup.ts`, `register-list-query.ts`, `register-mutation.ts`, `register-operations.ts`, and shared `registration-helpers.ts`, reducing main.ts to ~2550 lines while preserving all command behavior and help text.
-- Changed the built-in telemetry capture default from `max` to `redacted` so new installs preserve agent reliability diagnostics without sending local paths or personal identifiers by default.
+## [2026.5.3] - 2026-05-03
 
 ### Added
+- Added progressive `pm context` depth, section, activity, staleness, and agenda controls so agents can request brief, standard, deep, or focused project snapshots without broad list scans.
+- Added detailed CLI telemetry error classification for failed command finishes, including normalized `error_code`, `error_category`, and exit-code metadata for telemetry and local OTLP spans.
+- Added regression coverage for bootstrap argument parsing, telemetry classification, Sentry helper filtering, migration gates, context output, and front-matter cache behavior.
+
+### Changed
+- Decomposed `src/cli/main.ts` from ~5800 lines into modular command registration files: `register-setup.ts`, `register-list-query.ts`, `register-mutation.ts`, `register-operations.ts`, and shared `registration-helpers.ts`, reducing main.ts to ~2550 lines while preserving all command behavior and help text.
+- Centralized command argument parsing and command registration helpers to reduce CLI surface drift across help, contracts, completion, and runtime telemetry paths.
+- Centralized shared HTTP request handling for embeddings and vector-store providers, reducing duplicated semantic search transport logic.
+- Changed the built-in telemetry capture default from `max` to `redacted` so new installs preserve agent reliability diagnostics without sending local paths or personal identifiers by default.
+- Hardened CI, nightly, and release workflows around the sandboxed test harness and release readiness contracts while preserving the free GitHub Actions release path.
+
+### Fixed
+- Hardened Sentry filtering so expected handled CLI usage/validation errors are logged as structured usage signals without reopening Sentry exception groups, while unexpected failures still capture normally.
+- Hardened `pm normalize` closed-item backfill so it satisfies resolution metadata requirements without duplicating potentially sensitive `close_reason` text into new tracked fields.
+
+### Performance
 - Added persistent on-disk front-matter cache (`src/core/store/front-matter-cache.ts`) for `listAllFrontMatter` operations, using mtime+size fingerprinting for incremental refresh and context-fingerprint-based invalidation when preferred format or schema changes. Warm `list-open` drops from full-scan to ~60ms for 636-item corpora.
 
 ### Security
 - Hardened telemetry and Sentry scrubbing so emails, private IPs, absolute local paths, bearer values, and inline credential assignments are redacted even when higher-detail telemetry capture is explicitly selected.
+- Redacted sensitive infrastructure details from tracked project metadata and kept production telemetry/Sentry release audit notes in the ignored private operations area.
 
 ## [2026.5.2] - 2026-05-02
 

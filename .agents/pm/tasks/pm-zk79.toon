@@ -6,10 +6,13 @@ status: closed
 priority: 2
 tags[3]: code-quality,refactor,tests
 created_at: "2026-05-03T10:47:51.300Z"
-updated_at: "2026-05-03T11:01:22.164Z"
+updated_at: "2026-05-03T19:13:52.659Z"
 author: audit-agent
 estimated_minutes: 90
 acceptance_criteria: "No dead code, no duplication, targeted tests added for bootstrap/commander/migration-gates/sentry filtering"
 parent: pm-5zkg
+resolution: Resolution normalized from closed status; existing close_reason remains the detailed closure evidence.
+expected_result: Expected closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.
+actual_result: Actual closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.
 close_reason: "Removed dead code (collectMutationItemIds duplicate in main.ts), cleaned unused imports (parseBootstrapTypeValue, stripGlobalBootstrapTokens, decideWriteGate, type imports), added 53 targeted unit tests for bootstrap-args and migration-gates"
 body: ""

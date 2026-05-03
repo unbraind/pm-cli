@@ -5,8 +5,10 @@ import {
   FRONT_MATTER_KEY_ORDER,
   PM_DIRNAME,
   PM_REQUIRED_SUBDIRS,
+  resolveTelemetryErrorCategory,
   SETTINGS_DEFAULTS,
   SETTINGS_FILENAME,
+  TELEMETRY_ERROR_CATEGORY_BY_CODE,
   TYPE_TO_FOLDER,
 } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
@@ -166,6 +168,22 @@ describe("shared constants and errors contracts", () => {
       CONFLICT: 4,
       DEPENDENCY_FAILED: 5,
     });
+  });
+
+  it("classifies telemetry error codes with explicit and heuristic fallbacks", () => {
+    expect(TELEMETRY_ERROR_CATEGORY_BY_CODE.no_update_fields).toBe("validation");
+    expect(resolveTelemetryErrorCategory(undefined)).toBe("unknown");
+    expect(resolveTelemetryErrorCategory("")).toBe("unknown");
+    expect(resolveTelemetryErrorCategory("lock_conflict")).toBe("conflict");
+    expect(resolveTelemetryErrorCategory("item_locked_by_other_owner")).toBe("conflict");
+    expect(resolveTelemetryErrorCategory("unknown_command_variant")).toBe("usage");
+    expect(resolveTelemetryErrorCategory("missing_required_token")).toBe("usage");
+    expect(resolveTelemetryErrorCategory("invalid_deadline")).toBe("validation");
+    expect(resolveTelemetryErrorCategory("legacy_item_not_found")).toBe("validation");
+    expect(resolveTelemetryErrorCategory("schema_validation_failed")).toBe("validation");
+    expect(resolveTelemetryErrorCategory("network_error")).toBe("runtime");
+    expect(resolveTelemetryErrorCategory("command_failed")).toBe("runtime");
+    expect(resolveTelemetryErrorCategory("custom_signal")).toBe("unknown");
   });
 
   it("constructs PmCliError with expected runtime shape", () => {

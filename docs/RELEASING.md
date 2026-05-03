@@ -34,10 +34,10 @@ pnpm version:check
 
 - Add `NPM_TOKEN` as a GitHub Environment or repository secret.
 - Add `SENTRY_AUTH_TOKEN` as an optional GitHub Environment or repository secret when Sentry release creation and sourcemap upload should run. The release workflow skips this step cleanly when the secret is absent.
-- Keep any `release` environment compatible with free GitHub features.
+- Keep any `release` environment compatible with free GitHub features. This repository is public, so environment secrets and tag/branch deployment rules are compatible with the free GitHub path; do not add paid-only release gates.
 - Ensure `GITHUB_TOKEN` has `contents: write` for GitHub Release creation.
 - Keep `package.json` repository, homepage, and bugs URLs aligned with `https://github.com/unbraind/pm-cli`.
-- Keep npm automation token settings compatible with provenance publishing.
+- Keep npm automation token settings compatible with provenance publishing. The workflow must keep `id-token: write`, a GitHub-hosted runner, and `npm publish --access public --provenance`.
 
 ## Local Release Checklist
 
@@ -47,20 +47,47 @@ pnpm version:check
 pnpm version:next
 ```
 
-2. Update release files.
+2. Verify previous-version tracker compatibility in a temporary project before release asset edits.
+
+Create representative data with the latest published package and then read, mutate, run linked tests, validate, and health-check the same temp `PM_PATH` with the current build. The temp run must use isolated `PM_PATH` and `PM_GLOBAL_PATH`; never point compatibility tests at the repository's real tracker data.
+
+Minimum coverage:
+
+- parent and dependency links
+- comments, notes, learnings, body, reminders, events
+- linked files, docs, and tests
+- closed issue metadata and history drift checks
+- current-build write mutation and item-count preservation
+
+3. Review latest telemetry and Sentry data.
+
+Use ignored private helpers and reports under `scripts/prod/telemetry/`. Do not copy hostnames, tokens, raw event payloads, or private operations detail into tracked release notes.
+
+Useful commands:
+
+```bash
+bash scripts/prod/telemetry/stack-health.sh
+bash scripts/prod/telemetry/query-telemetry.sh
+bash scripts/prod/telemetry/analyze-errors.sh "24 hours"
+sentry issue list unbrained/pm-cli --query "is:unresolved" --period 14d --json --fields shortId,title,level,status,priority,count,lastSeen,isUnhandled
+```
+
+If telemetry or Sentry identifies repeated user friction, either confirm the current release already contains the remediation with regression coverage or fix it before continuing.
+
+4. Update release files.
 
 - `package.json`
 - `pnpm-lock.yaml`
 - [CHANGELOG.md](../CHANGELOG.md)
 
-3. Generate release notes.
+5. Generate release notes.
 
 ```bash
 pnpm build
 pnpm release:notes -- --version "$(node -p 'require("./package.json").version')" --output /tmp/pm-cli-release-notes.md
 ```
 
-4. Run local gates.
+6. Run local gates.
 
 ```bash
 pnpm install
@@ -74,11 +101,7 @@ pnpm security:scan
 pnpm smoke:npx
 ```
 
-5. Verify previous-version tracker compatibility in a temporary project.
-
-Check representative items, linked files/docs/tests, comments, close metadata, health, and history drift across the previous package and current build.
-
-6. Commit, push, tag, and push the tag.
+7. Commit, push, tag, and push the tag.
 
 ```bash
 git push origin main

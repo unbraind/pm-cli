@@ -1109,6 +1109,9 @@ async function main(): Promise<void> {
             exit_code: EXIT_CODE.USAGE,
             error_message: classification.detail,
           });
+          const renderedUsage = jsonErrors
+            ? await formatCommanderUsageJson({ message: unknownMessage }, program, activeRuntimeExtensionCommandDescriptors)
+            : await formatCommanderUsageMessage({ message: unknownMessage }, program, activeRuntimeExtensionCommandDescriptors);
           sentryFinishCommandSpan(false, unknownMessage);
           await runAndClearAfterCommandHooks({
             ok: false,
@@ -1118,9 +1121,9 @@ async function main(): Promise<void> {
             error_category: errorCategory,
           });
           if (jsonErrors) {
-            printError(await formatCommanderUsageJson({ message: unknownMessage }, program, activeRuntimeExtensionCommandDescriptors));
+            printError(renderedUsage);
           } else {
-            printError(await formatCommanderUsageMessage({ message: unknownMessage }, program, activeRuntimeExtensionCommandDescriptors));
+            printError(renderedUsage);
           }
           await sentryFlush();
           process.exitCode = EXIT_CODE.USAGE;
@@ -1171,6 +1174,9 @@ async function main(): Promise<void> {
           exit_code: EXIT_CODE.USAGE,
           error_message: classification.detail,
         });
+        const renderedUsage = jsonErrors
+          ? await formatCommanderUsageJson(error, program, activeRuntimeExtensionCommandDescriptors)
+          : await formatCommanderUsageMessage(error, program, activeRuntimeExtensionCommandDescriptors);
         sentryFinishCommandSpan(false, usageContext.message);
         await runAndClearAfterCommandHooks({
           ok: false,
@@ -1180,9 +1186,9 @@ async function main(): Promise<void> {
           error_category: errorCategory,
         });
         if (jsonErrors) {
-          printError(await formatCommanderUsageJson(error, program, activeRuntimeExtensionCommandDescriptors));
+          printError(renderedUsage);
         } else {
-          printError(await formatCommanderUsageMessage(error, program, activeRuntimeExtensionCommandDescriptors));
+          printError(renderedUsage);
         }
         await sentryFlush();
         process.exitCode = EXIT_CODE.USAGE;
