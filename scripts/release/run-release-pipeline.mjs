@@ -89,6 +89,17 @@ function resolveVersion(explicitVersion, allowSameDayRelease, todayKey) {
   return version;
 }
 
+function bumpSameDayOrdinal(version, todayKey) {
+  const match = version.match(/^(\d{4}\.\d{1,2}\.\d{1,2})(?:-(\d+))?$/);
+  if (!match || match[1] !== todayKey) {
+    fail(
+      `Automatic same-day ordinal bump requires package version to use today's date (${todayKey}); current=${version}.`,
+    );
+  }
+  const currentOrdinal = match[2] ? Number(match[2]) : 1;
+  return `${todayKey}-${currentOrdinal + 1}`;
+}
+
 function readPackageVersion() {
   const packageJson = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8"));
   return packageJson.version;
@@ -173,11 +184,14 @@ function runPipeline() {
     return;
   }
 
-  const targetVersion = resolveVersion(explicitVersion, allowSameDayRelease, todayKey);
+  const previousVersion = readPackageVersion();
+  let targetVersion = resolveVersion(explicitVersion, allowSameDayRelease, todayKey);
+  if (allowSameDayRelease && !explicitVersion && targetVersion === previousVersion) {
+    targetVersion = bumpSameDayOrdinal(previousVersion, todayKey);
+  }
   if (!/^\d{4}\.\d{1,2}\.\d{1,2}(?:-\d+)?$/.test(targetVersion)) {
     fail(`Unsupported target version "${targetVersion}".`);
   }
-  const previousVersion = readPackageVersion();
 
   if (!dryRun) {
     const npm = commandFor("npm");
