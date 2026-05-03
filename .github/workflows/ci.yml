@@ -76,6 +76,15 @@ jobs:
           PM_RUN_TESTS_SKIP_BUILD: "1"
         run: pnpm test:coverage
 
+      - name: Static quality gate
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 20
+        run: pnpm quality:static
+
+      - name: Compatibility migration gate
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 20
+        timeout-minutes: 6
+        run: node scripts/release/compatibility-check.mjs --json
+
       - name: Packaging smoke check
         if: matrix.os == 'ubuntu-latest' && matrix.node == 20
         run: npm pack --dry-run

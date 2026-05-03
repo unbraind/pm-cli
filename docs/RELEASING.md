@@ -5,9 +5,10 @@ This page is for maintainers cutting npm and GitHub releases. It assumes release
 ## Agent Quick Context
 
 - Release versioning is calendar SemVer-compatible: `YYYY.M.D` or `YYYY.M.D-N`.
-- Publishing is owned by the GitHub Actions release workflow.
+- Daily release preparation is owned by the GitHub Actions auto-release workflow.
+- Publishing is owned by the tag-driven GitHub Actions release workflow.
 - Do not run manual `npm publish`.
-- Run local gates before tagging.
+- Run local parity gates before pushing release tags.
 
 Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
 
@@ -37,9 +38,34 @@ pnpm version:check
 - Keep any `release` environment compatible with free GitHub features. This repository is public, so environment secrets and tag/branch deployment rules are compatible with the free GitHub path; do not add paid-only release gates.
 - Ensure `GITHUB_TOKEN` has `contents: write` for GitHub Release creation.
 - Keep `package.json` repository, homepage, and bugs URLs aligned with `https://github.com/unbraind/pm-cli`.
-- Keep npm automation token settings compatible with provenance publishing. The workflow must keep `id-token: write`, a GitHub-hosted runner, and `npm publish --access public --provenance`.
+- Keep npm automation token settings compatible with provenance publishing. The release workflow must keep `id-token: write`, a GitHub-hosted runner, and `npm publish --access public --provenance`.
 
-## Local Release Checklist
+## Automated Daily Driver
+
+`.github/workflows/auto-release.yml` runs once per day and can also be dispatched manually.
+
+Policy:
+
+- release only when commits exist after the latest release tag
+- release at most once per UTC day by default
+- same-day follow-up release (`YYYY.M.D-N`) is manual-only via `allow_same_day_release=true`
+- release preparation must pass all quality and compatibility gates before commit+tag push
+
+Pipeline entrypoint:
+
+```bash
+node scripts/release/run-release-pipeline.mjs
+```
+
+The pipeline performs:
+
+1. change detection + one-release-per-day guard
+2. version bump + changelog promotion from `[Unreleased]`
+3. strict gates (build, typecheck, coverage, static quality, compatibility, security, smoke checks, reliability gate)
+4. release note generation from changelog + pm evidence
+5. commit and tag creation (plus optional push)
+
+## Local Release Parity Checklist
 
 1. Confirm or compute the version.
 
@@ -65,34 +91,17 @@ Use maintainer-only local workflows for reliability checks and incident triage. 
 
 If private reliability checks identify repeated user friction, either confirm the current release already contains the remediation with regression coverage or fix it before continuing.
 
-4. Update release files.
-
-- `package.json`
-- `pnpm-lock.yaml`
-- [CHANGELOG.md](../CHANGELOG.md)
-
-5. Generate release notes.
+4. Run the same release pipeline locally.
 
 ```bash
-pnpm build
-pnpm release:notes -- --version "$(node -p 'require("./package.json").version')" --output /tmp/pm-cli-release-notes.md
+# Read-only parity check
+pnpm release:pipeline:dry-run
+
+# Full local preparation (version/changelog mutation + local commit/tag)
+pnpm release:pipeline -- --telemetry-mode required
 ```
 
-6. Run local gates.
-
-```bash
-pnpm install
-pnpm build
-pnpm typecheck
-pnpm test
-pnpm test:coverage
-node scripts/run-tests.mjs coverage
-pnpm version:check
-pnpm security:scan
-pnpm smoke:npx
-```
-
-7. Commit, push, tag, and push the tag.
+5. Push branch and tag after local green.
 
 ```bash
 git push origin main
@@ -109,12 +118,16 @@ git push origin v<version>
 - version policy and tag guard
 - secret scan
 - build, typecheck, test, and coverage
+- static quality gate (complexity, duplication, dead/orphan module, file/folder hygiene)
+- temporary-project compatibility gate against latest published tracker data
+- reliability threshold gate (Sentry severity threshold, telemetry policy mode)
 - sandboxed `pm` coverage
 - optional Sentry release metadata and sourcemap upload when `SENTRY_AUTH_TOKEN` is configured
 - npm pack dry run and npx tarball smoke test
 - generated release notes from changelog plus sanitized tracker metadata
 - artifact uploads
 - `npm publish --access public --provenance`
+- post-publish npm/npx/bunx verification
 - GitHub Release creation
 
 Monitor:

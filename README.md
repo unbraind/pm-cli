@@ -17,7 +17,7 @@
 | Settings, storage, search, and output | [Configuration](docs/CONFIGURATION.md) |
 | Safe test execution and linked tests | [Testing](docs/TESTING.md) |
 | Extension authoring | [Extensions](docs/EXTENSIONS.md) and [SDK](docs/SDK.md) |
-| Maintainer release process | [Releasing](docs/RELEASING.md) |
+| Maintainer release process (daily auto-release + local parity) | [Releasing](docs/RELEASING.md) |
 | Contributor internals | [Architecture](docs/ARCHITECTURE.md) |
 
 Full documentation starts at [docs/README.md](docs/README.md).
@@ -75,6 +75,14 @@ pm list-in-progress --limit 20
 ```
 
 If no relevant item exists, create a parent lineage before child work, claim the child item, link changed files/docs/tests, and leave evidence comments before closing. The full workflow is in the [Agent Guide](docs/AGENT_GUIDE.md).
+
+## Release Automation
+
+- Daily release preparation runs in `.github/workflows/auto-release.yml`.
+- Tag-driven publishing remains in `.github/workflows/release.yml`.
+- Local parity commands:
+  - `pnpm release:pipeline:dry-run`
+  - `pnpm release:pipeline -- --telemetry-mode required`
 
 ## Core Model
 

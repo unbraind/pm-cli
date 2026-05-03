@@ -17,6 +17,7 @@ const PINNED_ACTIONS = {
   checkout: "uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6",
   pnpmSetup: "uses: pnpm/action-setup@cb9c4fdd700176d874d52d64ce3b7418842cf6d3 # v6",
   setupNode: "uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6",
+  setupBun: "uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2",
   uploadArtifact: "uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7",
 };
 
@@ -67,6 +68,8 @@ describe("GitHub workflow contract", () => {
       "run: pnpm security:scan",
       "if: matrix.os == 'ubuntu-latest' && matrix.node == 20",
       "run: pnpm test:coverage",
+      "run: pnpm quality:static",
+      "run: node scripts/release/compatibility-check.mjs --json",
       "run: npm pack --dry-run",
       "run: pnpm smoke:npx",
       PINNED_ACTIONS.uploadArtifact,
@@ -106,6 +109,8 @@ describe("GitHub workflow contract", () => {
       "run: pnpm typecheck",
       "if: matrix.node == 20",
       "run: pnpm test:coverage",
+      "run: pnpm quality:static",
+      "run: node scripts/release/compatibility-check.mjs --json",
       "if: matrix.node != 20",
       "run: pnpm test",
     ]);
@@ -137,6 +142,9 @@ describe("GitHub workflow contract", () => {
       "run: pnpm build",
       "run: pnpm typecheck",
       "run: pnpm test:coverage",
+      "run: pnpm quality:static",
+      "run: node scripts/release/compatibility-check.mjs --json",
+      "node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode off --max-critical 0 --max-high 0",
       "name: Upload Sentry sourcemaps",
       "SENTRY_AUTH_TOKEN",
       "SENTRY_AUTH_TOKEN is not configured",
@@ -149,14 +157,45 @@ describe("GitHub workflow contract", () => {
       "name: release-notes-${{ github.ref_name }}",
       "path: ${{ runner.temp }}/release-notes.md",
       "body_path: ${{ runner.temp }}/release-notes.md",
+      PINNED_ACTIONS.setupBun,
       "run: npm publish",
       "NPM_TOKEN",
+      "npx --yes \"@unbrained/pm-cli@${VERSION}\" --version",
+      "bunx \"@unbrained/pm-cli@${VERSION}\" --version",
       "uses: softprops/action-gh-release@218a0cad87d638dff9a0383acf010108077227f3",
+      "run: gh release view \"${GITHUB_REF_NAME}\" --json tagName,isDraft,isPrerelease,url",
       PINNED_ACTIONS.uploadArtifact,
       "path: coverage",
       "if-no-files-found: ignore",
     ]);
     expect(releaseWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(1);
     expect(releaseWorkflow).not.toContain("Sandboxed PM regression");
+  });
+
+  it("keeps auto-release workflow aligned with one-per-day and manual override policy", async () => {
+    const autoReleasePath = path.resolve(repoRoot, ".github/workflows/auto-release.yml");
+    const autoReleaseWorkflow = normalizeWorkflow(await readFile(autoReleasePath, "utf8"));
+
+    expectContainsAll(autoReleaseWorkflow, [
+      "schedule:",
+      "workflow_dispatch:",
+      "allow_same_day_release",
+      "dry_run",
+      "push:",
+      "telemetry_mode",
+      "permissions:",
+      "contents: write",
+      "concurrency:",
+      "cancel-in-progress: false",
+      PINNED_ACTIONS.checkout,
+      PINNED_ACTIONS.pnpmSetup,
+      PINNED_ACTIONS.setupNode,
+      "run: pnpm install --frozen-lockfile",
+      "--allow-same-day-release",
+      "--dry-run",
+      "--push",
+      "node scripts/release/run-release-pipeline.mjs",
+      "--telemetry-mode",
+    ]);
   });
 });

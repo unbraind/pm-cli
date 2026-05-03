@@ -1,0 +1,90 @@
+name: Auto Release
+
+on:
+  schedule:
+    - cron: "35 2 * * *"
+  workflow_dispatch:
+    inputs:
+      allow_same_day_release:
+        description: "Allow manual same-day follow-up release (YYYY.M.D-N)"
+        type: boolean
+        required: false
+        default: false
+      push:
+        description: "Push commit and tag to trigger publish workflow"
+        type: boolean
+        required: false
+        default: false
+      dry_run:
+        description: "Run full pipeline without mutating git history"
+        type: boolean
+        required: false
+        default: false
+      telemetry_mode:
+        description: "Telemetry gate mode"
+        type: choice
+        required: false
+        default: off
+        options:
+          - off
+          - best-effort
+          - required
+
+permissions:
+  contents: write
+
+concurrency:
+  group: auto-release-${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  auto-release:
+    name: Auto release pipeline
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@cb9c4fdd700176d874d52d64ce3b7418842cf6d3 # v6
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run auto release pipeline
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          INPUT_ALLOW_SAME_DAY_RELEASE: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_same_day_release || 'false' }}
+          INPUT_PUSH: ${{ github.event_name == 'workflow_dispatch' && inputs.push || 'true' }}
+          INPUT_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+          INPUT_TELEMETRY_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.telemetry_mode || 'off' }}
+        run: |
+          set -euo pipefail
+          if [[ "${INPUT_DRY_RUN}" == "true" && "${INPUT_PUSH}" == "true" ]]; then
+            echo "dry_run=true cannot be combined with push=true"
+            exit 2
+          fi
+
+          args=(--json --author "github-actions[bot]" --telemetry-mode "${INPUT_TELEMETRY_MODE}")
+          if [[ "${INPUT_ALLOW_SAME_DAY_RELEASE}" == "true" ]]; then
+            args+=(--allow-same-day-release)
+          fi
+          if [[ "${INPUT_DRY_RUN}" == "true" ]]; then
+            args+=(--dry-run)
+          fi
+          if [[ "${INPUT_PUSH}" == "true" ]]; then
+            args+=(--push)
+          fi
+          node scripts/release/run-release-pipeline.mjs "${args[@]}"

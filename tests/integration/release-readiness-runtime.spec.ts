@@ -1520,6 +1520,13 @@ describe("release readiness runtime coverage", () => {
     expect(packageJson.scripts?.prepublishOnly).toBe("pnpm build");
     expect(packageJson.scripts?.["version:check"]).toBe("node scripts/release-version.mjs check");
     expect(packageJson.scripts?.["version:next"]).toBe("node scripts/release-version.mjs next");
+    expect(packageJson.scripts?.["quality:static"]).toBe("node scripts/release/static-quality-gate.mjs");
+    expect(packageJson.scripts?.["release:changelog"]).toBe("node scripts/release/changelog-promote.mjs");
+    expect(packageJson.scripts?.["release:gates"]).toBe("node scripts/release/run-gates.mjs --telemetry-mode best-effort");
+    expect(packageJson.scripts?.["release:pipeline"]).toBe("node scripts/release/run-release-pipeline.mjs");
+    expect(packageJson.scripts?.["release:pipeline:dry-run"]).toBe(
+      "node scripts/release/run-release-pipeline.mjs --dry-run",
+    );
     expect(packageJson.scripts?.["security:scan"]).toBe("node scripts/check-secrets.mjs");
     expect(packageJson.scripts?.["smoke:npx"]).toBe("node scripts/smoke-npx-from-pack.mjs");
     expect(packageJson.types).toBe("dist/sdk/index.d.ts");
@@ -1599,6 +1606,7 @@ describe("release readiness runtime coverage", () => {
       "src/core/shared/text-normalization.ts",
       "src/core/store/front-matter-cache.ts",
       "src/core/telemetry/consent.ts",
+      "src/core/telemetry/observability.ts",
       "src/core/telemetry/runtime.ts",
       "src/core/test/background-runs.ts",
       "src/core/test/item-test-run-tracking.ts",
@@ -1640,8 +1648,15 @@ describe("release readiness runtime coverage", () => {
       "scripts/install.sh",
       "scripts/install.ps1",
       "scripts/release-version.mjs",
+      "scripts/release/changelog-promote.mjs",
+      "scripts/release/compatibility-check.mjs",
+      "scripts/release/static-quality-gate.mjs",
+      "scripts/release/sentry-telemetry-gate.mjs",
+      "scripts/release/run-gates.mjs",
+      "scripts/release/run-release-pipeline.mjs",
       "scripts/check-secrets.mjs",
       "scripts/smoke-npx-from-pack.mjs",
+      ".github/workflows/auto-release.yml",
     ];
 
     for (const requiredPath of requiredPaths) {
@@ -1674,6 +1689,24 @@ describe("release readiness runtime coverage", () => {
     const releaseVersionScript = await readRepoText("scripts/release-version.mjs");
     expect(releaseVersionScript).toContain("YYYY.M.D");
     expect(releaseVersionScript).toContain("verify-next");
+
+    const changelogPromoteScript = await readRepoText("scripts/release/changelog-promote.mjs");
+    expect(changelogPromoteScript).toContain("## [Unreleased]");
+    expect(changelogPromoteScript).toContain("--version");
+
+    const compatibilityScript = await readRepoText("scripts/release/compatibility-check.mjs");
+    expect(compatibilityScript).toContain("latest published");
+    expect(compatibilityScript).toContain("PM_PATH");
+    expect(compatibilityScript).toContain("PM_GLOBAL_PATH");
+
+    const staticQualityScript = await readRepoText("scripts/release/static-quality-gate.mjs");
+    expect(staticQualityScript).toContain("orphan_modules");
+    expect(staticQualityScript).toContain("duplicate_chunks");
+
+    const releasePipelineScript = await readRepoText("scripts/release/run-release-pipeline.mjs");
+    expect(releasePipelineScript).toContain("allow-same-day-release");
+    expect(releasePipelineScript).toContain("release_already_cut_today");
+    expect(releasePipelineScript).toContain("run-release-pipeline");
 
     const securityScanScript = await readRepoText("scripts/check-secrets.mjs");
     expect(securityScanScript).toContain("No credential-like secrets detected");

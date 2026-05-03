@@ -59,6 +59,23 @@ jobs:
           PM_RUN_TESTS_SKIP_BUILD: "1"
         run: pnpm test:coverage
 
+      - name: Static quality gate
+        run: pnpm quality:static
+
+      - name: Compatibility migration gate
+        timeout-minutes: 6
+        run: node scripts/release/compatibility-check.mjs --json
+
+      - name: Reliability threshold gate
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: |
+          if [ -z "${SENTRY_AUTH_TOKEN:-}" ]; then
+            echo "SENTRY_AUTH_TOKEN is not configured; skipping Sentry threshold gate."
+            exit 0
+          fi
+          node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode off --max-critical 0 --max-high 0
+
       - name: Upload Sentry sourcemaps
         timeout-minutes: 5
         env:
@@ -103,13 +120,32 @@ jobs:
           path: ${{ runner.temp }}/release-notes.md
           if-no-files-found: error
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: latest
+
       - name: Publish to npm
         timeout-minutes: 5
         run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Verify published package on npm, npx, and bunx
+        timeout-minutes: 8
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          npm view "@unbrained/pm-cli@${VERSION}" version dist.integrity dist.unpackedSize --json
+          test "$(npx --yes "@unbrained/pm-cli@${VERSION}" --version)" = "${VERSION}"
+          test "$(bunx "@unbrained/pm-cli@${VERSION}" --version)" = "${VERSION}"
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@218a0cad87d638dff9a0383acf010108077227f3 # v3.0.0
         with:
           body_path: ${{ runner.temp }}/release-notes.md
+
+      - name: Verify GitHub release metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release view "${GITHUB_REF_NAME}" --json tagName,isDraft,isPrerelease,url

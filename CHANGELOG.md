@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Added a scheduled auto-release workflow (`.github/workflows/auto-release.yml`) with one-release-per-UTC-day defaults, manual same-day override controls, and a shared release pipeline driver.
+- Added release automation scripts under `scripts/release/` for changelog promotion, strict static quality checks, temporary-project backward-compatibility validation, Sentry/telemetry threshold gating, unified release gate execution, and full local pipeline orchestration.
+- Added release automation contract coverage in `tests/integration/release-automation-contract.spec.ts`.
+
+### Changed
+- Hardened CI, nightly, and release workflows with explicit static quality and compatibility migration gates.
+- Release workflow now verifies published package availability via npm, npx, and bunx, and verifies GitHub release metadata after publication.
+- Expanded release-readiness runtime checks to cover new release scripts, package commands, and auto-release workflow presence.
+
 ## [2026.5.3] - 2026-05-03
 
 ### Added
