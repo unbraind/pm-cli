@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026.5.3-5] - 2026-05-03
+
 ### Changed
 - Hardened release workflow reliability gating so Sentry threshold checks are skipped when the runner does not provide the `sentry` CLI binary, preventing false-negative publish blocks on GitHub-hosted runners.
 
