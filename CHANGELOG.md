@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Relaxed release workflow npx/bunx post-publish checks to emit warnings instead of hard-failing the pipeline when registry/executor convergence lags, while keeping npm publication metadata as a blocking verification gate.
+
 ## [2026.5.3-8] - 2026-05-03
 
 ### Changed

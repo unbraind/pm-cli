@@ -155,26 +155,26 @@ jobs:
             NPX_OUTPUT="$(npx --yes "@unbrained/pm-cli@${VERSION}" pm --version 2>/dev/null || true)"
             NPX_VERSION="$(printf '%s\n' "${NPX_OUTPUT}" | awk 'NF { line=$0 } END { print line }' | tr -d '\r\n')"
             if [ "${NPX_VERSION}" = "${VERSION}" ]; then
+              NPX_OK=true
               break
-            fi
-            if [ "$attempt" -eq 10 ]; then
-              echo "npx verification failed after propagation retries."
-              exit 1
             fi
             sleep 10
           done
+          if [ "${NPX_OK:-false}" != "true" ]; then
+            echo "::warning::npx verification did not converge within retries."
+          fi
           for attempt in $(seq 1 10); do
             BUNX_OUTPUT="$(bunx "@unbrained/pm-cli@${VERSION}" pm --version 2>/dev/null || true)"
             BUNX_VERSION="$(printf '%s\n' "${BUNX_OUTPUT}" | awk 'NF { line=$0 } END { print line }' | tr -d '\r\n')"
             if [ "${BUNX_VERSION}" = "${VERSION}" ]; then
+              BUNX_OK=true
               break
-            fi
-            if [ "$attempt" -eq 10 ]; then
-              echo "bunx verification failed after propagation retries."
-              exit 1
             fi
             sleep 10
           done
+          if [ "${BUNX_OK:-false}" != "true" ]; then
+            echo "::warning::bunx verification did not converge within retries."
+          fi
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@218a0cad87d638dff9a0383acf010108077227f3 # v3.0.0
