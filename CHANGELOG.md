@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026.5.3-8] - 2026-05-03
+
 ### Changed
 - Updated release workflow npx verification to run the explicit package binary command (`npx @unbrained/pm-cli@<version> pm --version`) to avoid npm exec binary resolution drift on GitHub-hosted runners.
 
