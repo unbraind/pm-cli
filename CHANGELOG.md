@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Hardened release post-publish verification so npm/npx/bunx checks run from a clean temp directory and fail the release workflow if package execution does not converge.
 - Hardened the daily auto-release pipeline so `.agents/pm`-only tracker commits are ignored for publish eligibility, preventing post-release tracker closure from creating a package-only release.
+- Hardened the Sentry/telemetry release gate so GitHub runners use portable token-based Sentry API checks instead of host-local wrappers, with clearer captured-output diagnostics on gate failures.
 - Documented npm registry installs as the supported global update path and added recovery guidance for broken git-sourced global installs.
 
 ### Fixed

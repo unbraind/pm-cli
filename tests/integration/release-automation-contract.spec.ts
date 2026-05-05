@@ -7,10 +7,11 @@ import { describe, expect, it } from "vitest";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
-function runNodeScript(args: string[]) {
+function runNodeScript(args: string[], env: NodeJS.ProcessEnv = process.env) {
   return spawnSync(process.execPath, args, {
     cwd: repoRoot,
     encoding: "utf8",
+    env,
   });
 }
 
@@ -43,6 +44,35 @@ describe("release automation contract", () => {
     expect(workflow).toContain("--dry-run");
     expect(workflow).toContain("--push");
     expect(workflow).toContain("node scripts/release/run-release-pipeline.mjs");
+    expect(workflow).toContain("SENTRY_AUTH_TOKEN");
+    expect(workflow).toContain("SENTRY_PERSONAL_ADMIN_TOKEN");
+  });
+
+  it("allows the external Sentry gate to be disabled in unauthenticated automation", () => {
+    const env = { ...process.env };
+    delete env.SENTRY_AUTH_TOKEN;
+    delete env.SENTRY_ORG_TOKEN;
+    delete env.SENTRY_PERSONAL_ADMIN_TOKEN;
+
+    const result = runNodeScript([
+      "scripts/release/sentry-telemetry-gate.mjs",
+      "--json",
+      "--telemetry-mode",
+      "off",
+    ], env);
+
+    expect(result.status).toBe(0);
+    const payload = JSON.parse(result.stdout) as {
+      ok: boolean;
+      sentry: { checked: boolean; warning: string | null; access_ok: boolean };
+      telemetry: { checked: boolean; mode: string };
+    };
+    expect(payload.ok).toBe(true);
+    expect(payload.sentry.checked).toBe(false);
+    expect(payload.sentry.warning).toBe("missing_sentry_auth_token");
+    expect(payload.sentry.access_ok).toBe(true);
+    expect(payload.telemetry.checked).toBe(false);
+    expect(payload.telemetry.mode).toBe("off");
   });
 
   it("promotes changelog unreleased content into a versioned section", async () => {

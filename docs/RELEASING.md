@@ -34,7 +34,7 @@ pnpm version:check
 ## One-Time Setup
 
 - Prefer npm Trusted Publishing for `.github/workflows/release.yml` so GitHub-hosted release jobs can publish with short-lived OIDC credentials. Keep `id-token: write`, `npm publish --access public --provenance`, and the package repository URL aligned with npm's Trusted Publisher configuration. If Trusted Publishing is not configured yet, add `NPM_TOKEN` as a GitHub Environment or repository secret as the fallback publisher credential.
-- Add `SENTRY_AUTH_TOKEN` as an optional GitHub Environment or repository secret when Sentry release creation and sourcemap upload should run. The release workflow skips this step cleanly when the secret is absent.
+- Add `SENTRY_AUTH_TOKEN` as an optional GitHub Environment or repository secret when Sentry release creation and sourcemap upload should run. Add `SENTRY_PERSONAL_ADMIN_TOKEN` only when the automated Sentry issue-threshold gate needs broader issue-read access than the CI token. The release workflow skips Sentry upload cleanly when `SENTRY_AUTH_TOKEN` is absent; the auto-release workflow skips the external Sentry gate only when no Sentry token is configured and `--telemetry-mode off` is selected.
 - Keep any `release` environment compatible with free GitHub features. This repository is public, so environment secrets and tag/branch deployment rules are compatible with the free GitHub path; do not add paid-only release gates.
 - Ensure `GITHUB_TOKEN` has `contents: write` for GitHub Release creation.
 - Keep `package.json` repository, homepage, and bugs URLs aligned with `https://github.com/unbraind/pm-cli`.
@@ -51,6 +51,7 @@ Policy:
 - release at most once per UTC day by default
 - same-day follow-up release (`YYYY.M.D-N`) is manual-only via `allow_same_day_release=true`
 - release preparation must pass all quality and compatibility gates before commit+tag push
+- external Sentry checks run when a Sentry token is configured; local maintainers can make Sentry and private telemetry mandatory with `--telemetry-mode required`
 
 Pipeline entrypoint:
 

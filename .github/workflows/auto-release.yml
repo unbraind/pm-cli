@@ -70,6 +70,8 @@ jobs:
           INPUT_PUSH: ${{ github.event_name == 'workflow_dispatch' && inputs.push || 'true' }}
           INPUT_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
           INPUT_TELEMETRY_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.telemetry_mode || 'off' }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_PERSONAL_ADMIN_TOKEN: ${{ secrets.SENTRY_PERSONAL_ADMIN_TOKEN }}
         run: |
           set -euo pipefail
           if [[ "${INPUT_DRY_RUN}" == "true" && "${INPUT_PUSH}" == "true" ]]; then

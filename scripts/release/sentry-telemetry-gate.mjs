@@ -99,6 +99,87 @@ function sentrySeverityTally(issues) {
   return summary;
 }
 
+function redactedTokenCandidates() {
+  const candidates = [
+    ["SENTRY_AUTH_TOKEN", process.env.SENTRY_AUTH_TOKEN],
+    ["SENTRY_PERSONAL_ADMIN_TOKEN", process.env.SENTRY_PERSONAL_ADMIN_TOKEN],
+    ["SENTRY_ORG_TOKEN", process.env.SENTRY_ORG_TOKEN],
+  ];
+  const seen = new Set();
+  return candidates.filter(([, value]) => {
+    if (!value || seen.has(value)) {
+      return false;
+    }
+    seen.add(value);
+    return true;
+  });
+}
+
+function parseSentryProject(project) {
+  const [org, projectSlug, ...extra] = project.split("/");
+  if (!org || !projectSlug || extra.length > 0) {
+    fail(`Invalid --sentry-project value "${project}". Expected org/project.`);
+  }
+  return { org, projectSlug };
+}
+
+function buildSentryIssuesUrl(project, query, limit) {
+  const baseUrl = process.env.SENTRY_URL || process.env.SENTRY_BASE_URL || "https://sentry.io";
+  const { org, projectSlug } = parseSentryProject(project);
+  const url = new URL(`/api/0/projects/${encodeURIComponent(org)}/${encodeURIComponent(projectSlug)}/issues/`, baseUrl);
+  url.searchParams.set("query", query);
+  url.searchParams.set("limit", String(limit));
+  return url;
+}
+
+async function fetchSentryIssues(project, query, limit) {
+  const tokens = redactedTokenCandidates();
+  if (tokens.length === 0) {
+    return {
+      ok: false,
+      reason: "missing_sentry_auth_token",
+      token_source: null,
+      issues: [],
+    };
+  }
+
+  const url = buildSentryIssuesUrl(project, query, limit);
+  let lastFailure = "sentry_query_failed";
+  for (const [tokenSource, token] of tokens) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        signal: AbortSignal.timeout(15000),
+      });
+      const body = await response.text();
+      if (!response.ok) {
+        lastFailure = `sentry_api_${response.status}`;
+        continue;
+      }
+      const payload = body.trim().length > 0 ? JSON.parse(body) : [];
+      return {
+        ok: true,
+        reason: null,
+        token_source: tokenSource,
+        issues: parseIssuePayload(payload),
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      lastFailure = `sentry_query_error:${message}`;
+    }
+  }
+
+  return {
+    ok: false,
+    reason: lastFailure,
+    token_source: null,
+    issues: [],
+  };
+}
+
 function usage() {
   console.log(`Usage:
   node scripts/release/sentry-telemetry-gate.mjs [--json]
@@ -126,7 +207,7 @@ function parseNumber(value, key, fallback) {
   return parsed;
 }
 
-function main() {
+async function main() {
   const { flags } = parseFlags(process.argv.slice(2));
   if (flags.get("help") || flags.get("h")) {
     usage();
@@ -155,26 +236,17 @@ function main() {
     fail(`Unsupported --telemetry-mode value "${telemetryMode}". Use off, best-effort, or required.`);
   }
 
-  const sentryResult = runCommand(
-    "sentry",
-    [
-      "issue",
-      "list",
-      sentryProject,
-      "--query",
-      "is:unresolved level:[fatal,error]",
-      "--limit",
-      String(sentryLimit),
-      "--json",
-      "--fields",
-      "shortId,title,level,priority,status,count",
-    ],
-    { capture: true },
+  const sentryFetch = await fetchSentryIssues(
+    sentryProject,
+    "is:unresolved level:[fatal,error]",
+    sentryLimit,
   );
-  const sentryPayload = JSON.parse(sentryResult.stdout.trim() || "{}");
-  const sentryIssues = parseIssuePayload(sentryPayload);
+  const sentryIssues = sentryFetch.ok ? sentryFetch.issues : [];
   const sentrySummary = sentrySeverityTally(sentryIssues);
-  const sentryThresholdOk = sentrySummary.critical <= maxCritical && sentrySummary.high <= maxHigh;
+  const sentryAccessRequired = telemetryMode === "required" || redactedTokenCandidates().length > 0;
+  const sentryAccessOk = sentryFetch.ok || !sentryAccessRequired;
+  const sentryThresholdOk =
+    sentryAccessOk && sentrySummary.critical <= maxCritical && sentrySummary.high <= maxHigh;
 
   let telemetrySummary = {
     checked: false,
@@ -247,9 +319,13 @@ function main() {
     },
     sentry: {
       project: sentryProject,
+      checked: sentryFetch.ok,
+      warning: sentryFetch.ok ? null : sentryFetch.reason,
+      token_source: sentryFetch.ok ? sentryFetch.token_source : null,
       critical: sentrySummary.critical,
       high: sentrySummary.high,
       total: sentrySummary.total,
+      access_ok: sentryAccessOk,
       threshold_ok: sentryThresholdOk,
     },
     telemetry: telemetrySummary,

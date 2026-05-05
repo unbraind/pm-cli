@@ -6,7 +6,7 @@ status: in_progress
 priority: 0
 tags[8]: automation,ci,compatibility,github,pm-cli,release,sentry,telemetry
 created_at: "2026-05-05T18:05:05.397Z"
-updated_at: "2026-05-05T19:52:09.967Z"
+updated_at: "2026-05-05T20:23:13.078Z"
 deadline: "2026-05-06T18:05:05.397Z"
 assignee: codex-release-agent
 author: codex-release-agent
@@ -15,7 +15,7 @@ acceptance_criteria: No previous-version tracker data breaks; GitHub issues #20 
 parent: pm-rnpb
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-rnpb,parent,"2026-05-05T18:05:05.397Z",codex-release-agent,null
-comments[9]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-05-05T18:05:05.397Z",codex-release-agent,"Duplicate-check evidence: ran pm context --limit 10,pm search release 2026.5.5 auto release compatibility GitHub issue 20 frontmatter issue 21 npm install --limit 20,pm list-open --limit 30,pm list-in-progress --limit 30,and inspected prior closed release item pm-0qv7. No open release item covers this post-2026.5.4 release and GitHub bug remediation scope; parent lineage reused under pm-rnpb."
   "2026-05-05T18:50:31.436Z",codex-release-agent,"Release prep evidence: GitHub issues #20/#21 documented, Sentry unresolved/recent issue checks were empty, private telemetry review recorded under ignored scripts/prod/telemetry/reports, compatibility-check passed for 2026.5.4 data, and node scripts/release/run-gates.mjs --telemetry-mode off --json passed all gates."
   "2026-05-05T18:52:36.635Z",codex-release-agent,"Hardened daily auto-release change detection to ignore .agents/pm-only tracker commits, so post-publish evidence/closure commits do not create a new package release by themselves. Updated release docs with npm Trusted Publishing preference and token fallback policy."
@@ -25,9 +25,11 @@ comments[9]{created_at,author,text}:
   "2026-05-05T19:28:28.589Z",codex-release-agent,"Post-CI-fix evidence: reran release automation contract locally under Node 25 and Node 20; reran node scripts/release/run-gates.mjs --telemetry-mode off --json and all checks passed, including 1210 tests at 100 percent coverage, secret scan, npx smoke, npm pack dry-run, compatibility migration, and Sentry threshold gate."
   "2026-05-05T19:42:42.151Z",codex-release-agent,Auto Release run 25398237876 failed before tagging because YAML parsed unquoted telemetry_mode default off as boolean false. Quoted the workflow_dispatch choice default/options and added a contract assertion so dispatch passes --telemetry-mode off as a string.
   "2026-05-05T19:52:09.967Z",codex-release-agent,"Auto-release dispatch fix evidence: workflow contract focused tests passed (38 tests) and full node scripts/release/run-gates.mjs --telemetry-mode off --json passed after quoting telemetry_mode choice values, including 1210 tests at 100 percent coverage and the 2026.5.4 compatibility gate."
+  "2026-05-05T20:14:16.292Z",codex-maintainer,"Auto Release run 25399392231 failed after full gates reached the external Sentry/telemetry stage: the gate used a local sentry wrapper unavailable on GitHub runners and hid captured stderr. Hardening the release gate to use portable token/API behavior and clearer failure diagnostics before retry."
+  "2026-05-05T20:23:13.078Z",codex-maintainer,"External gate hardening evidence: focused release workflow regressions passed (39 tests), unauthenticated telemetry-mode off Sentry gate returns checked=false with missing_sentry_auth_token warning, local token-backed Sentry gate reports zero fatal/error issues, and node scripts/release/run-gates.mjs --telemetry-mode off --json passed all checks with 1211 tests at 100 percent coverage."
 notes[1]{created_at,author,text}:
   "2026-05-05T18:05:05.397Z",codex-release-agent,"External blockers from GitHub: issue #20 non-JSON frontmatter migration can brick workspaces; issue #21 git global install via npm can leave a broken symlink; latest nightly validation failed in the compatibility migration gate because npx published package execution could not find pm on PATH."
-files[13]{path,scope,note}:
+files[15]{path,scope,note}:
   .github/workflows/release.yml,project,strict npx bunx post-publish verification
   CHANGELOG.md,project,unreleased release notes
   README.md,project,install update guidance
@@ -41,11 +43,14 @@ files[13]{path,scope,note}:
   scripts/release/run-release-pipeline.mjs,project,ignore tracker-only commits for publish eligibility
   tests/integration/release-automation-contract.spec.ts,project,release pipeline discoverability regression
   .github/workflows/auto-release.yml,project,quoted telemetry mode workflow dispatch inputs
-tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  scripts/release/sentry-telemetry-gate.mjs,project,portable Sentry API threshold gate
+  scripts/release/run-gates.mjs,project,captured gate failure diagnostics
+tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/release/compatibility-check.mjs --json,null,project,900,null,null,null,null,null,null,null,null,null,null,null,previous-version compatibility gate
   node scripts/release/run-gates.mjs --telemetry-mode off --json,null,project,900,null,null,null,null,null,null,null,null,null,null,null,full local release gate
   node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,global 100 percent coverage gate
   node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,release automation contract regressions
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,180,null,null,null,null,null,null,null,null,null,null,null,focused release workflow regression
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,release changelog
   docs/RELEASING.md,project,release source of truth

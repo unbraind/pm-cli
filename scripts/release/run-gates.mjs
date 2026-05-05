@@ -29,7 +29,14 @@ function parseJson(stdout, context) {
 function runCheckedStep(name, command, args, options = {}) {
   const result = runCommand(command, args, { ...options, allowFailure: true });
   if (result.status !== 0) {
-    fail(`Gate failed: ${name}`, result.status);
+    const stdout = result.stdout?.trim();
+    const stderr = result.stderr?.trim();
+    const details = [
+      stdout ? `stdout:\n${stdout}` : "",
+      stderr ? `stderr:\n${stderr}` : "",
+    ].filter(Boolean);
+    const suffix = details.length > 0 ? `\n${details.join("\n")}` : "";
+    fail(`Gate failed: ${name}${suffix}`, result.status);
   }
   return result;
 }
