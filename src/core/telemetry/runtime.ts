@@ -41,10 +41,12 @@ const PM_TELEMETRY_SOURCE_CONTEXT_ENV = "PM_TELEMETRY_SOURCE_CONTEXT";
 const PM_TELEMETRY_SOURCE_CONTEXT_VALUES = ["user", "automation", "test", "dogfood", "audit_smoke"] as const;
 
 let _lastFlushPromise: Promise<void> = Promise.resolve();
+let _queueMutationPromise: Promise<unknown> = Promise.resolve();
 
 /** Wait for the most recent background flush to settle. Test-only helper. */
-export function waitForPendingFlush(): Promise<void> {
-  return _lastFlushPromise;
+export async function waitForPendingFlush(): Promise<void> {
+  await _lastFlushPromise;
+  await _queueMutationPromise;
 }
 const PM_TELEMETRY_SOURCE_CONTEXT_SET = new Set<string>(PM_TELEMETRY_SOURCE_CONTEXT_VALUES);
 const BOOLEAN_TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
@@ -937,7 +939,9 @@ async function enqueueTelemetryEvent(globalPmRoot: string, event: TelemetryEvent
     const trimmedQueued: QueuedTelemetryEvent = { event: trimmed, attempts: 0 };
     serialized = JSON.stringify(trimmedQueued);
   }
-  await appendLineAtomic(queuePath(globalPmRoot), serialized);
+  await withQueueMutation(async () => {
+    await appendLineAtomic(queuePath(globalPmRoot), serialized);
+  });
 }
 
 function parseQueueLines(raw: string): QueuedTelemetryEvent[] {
@@ -1048,6 +1052,12 @@ function sleep(milliseconds: number): Promise<void> {
   });
 }
 
+async function withQueueMutation<T>(operation: () => Promise<T>): Promise<T> {
+  const run = _queueMutationPromise.catch(() => {}).then(operation);
+  _queueMutationPromise = run.catch(() => {});
+  return run;
+}
+
 async function readCurrentQueueEntries(globalPmRoot: string): Promise<QueuedTelemetryEvent[]> {
   const raw = await readFileIfExists(queuePath(globalPmRoot));
   if (raw === null || raw.trim().length === 0) {
@@ -1061,11 +1071,13 @@ async function removeFlushedEntriesFromCurrentQueue(
   flushedIds: ReadonlySet<string>,
   retentionDays: number,
 ): Promise<QueuedTelemetryEvent[]> {
-  const currentEntries = await readCurrentQueueEntries(globalPmRoot);
-  const { entries: retainedEntries } = pruneExpiredQueueEntries(currentEntries, retentionDays);
-  const remaining = retainedEntries.filter((entry) => !flushedIds.has(entry.event.event_id));
-  await rewriteQueue(globalPmRoot, remaining);
-  return remaining;
+  return withQueueMutation(async () => {
+    const currentEntries = await readCurrentQueueEntries(globalPmRoot);
+    const { entries: retainedEntries } = pruneExpiredQueueEntries(currentEntries, retentionDays);
+    const remaining = retainedEntries.filter((entry) => !flushedIds.has(entry.event.event_id));
+    await rewriteQueue(globalPmRoot, remaining);
+    return remaining;
+  });
 }
 
 async function markFailedEntriesInCurrentQueue(
@@ -1074,22 +1086,24 @@ async function markFailedEntriesInCurrentQueue(
   attemptTime: string,
   retentionDays: number,
 ): Promise<QueuedTelemetryEvent[]> {
-  const currentEntries = await readCurrentQueueEntries(globalPmRoot);
-  const { entries: retainedEntries } = pruneExpiredQueueEntries(currentEntries, retentionDays);
-  const retried = retainedEntries.map((entry) => {
-    if (!failedIds.has(entry.event.event_id)) {
-      return entry;
-    }
-    const attempts = entry.attempts + 1;
-    return {
-      ...entry,
-      attempts,
-      last_attempt_at: attemptTime,
-      next_attempt_after: nextRetryIso(attempts),
-    };
+  return withQueueMutation(async () => {
+    const currentEntries = await readCurrentQueueEntries(globalPmRoot);
+    const { entries: retainedEntries } = pruneExpiredQueueEntries(currentEntries, retentionDays);
+    const retried = retainedEntries.map((entry) => {
+      if (!failedIds.has(entry.event.event_id)) {
+        return entry;
+      }
+      const attempts = entry.attempts + 1;
+      return {
+        ...entry,
+        attempts,
+        last_attempt_at: attemptTime,
+        next_attempt_after: nextRetryIso(attempts),
+      };
+    });
+    await rewriteQueue(globalPmRoot, retried);
+    return retried;
   });
-  await rewriteQueue(globalPmRoot, retried);
-  return retried;
 }
 
 async function flushQueue(globalPmRoot: string, endpoint: string, retentionDays: number): Promise<void> {
