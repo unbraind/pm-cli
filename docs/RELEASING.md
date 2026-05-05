@@ -52,6 +52,7 @@ Policy:
 - same-day follow-up release (`YYYY.M.D-N`) is manual-only via `allow_same_day_release=true`
 - release preparation must pass all quality and compatibility gates before commit+tag push
 - external Sentry checks run when a Sentry token is configured; local maintainers can make Sentry and private telemetry mandatory with `--telemetry-mode required`
+- after creating and pushing a new tag, auto-release dispatches `.github/workflows/release.yml` with that tag and waits for the publish workflow to finish, because GitHub does not start normal push/tag workflows from `GITHUB_TOKEN` pushes
 
 Pipeline entrypoint:
 
@@ -117,6 +118,7 @@ git push origin v<version>
 `.github/workflows/release.yml` runs on `v*.*.*` tags and handles:
 
 - full-history checkout
+- manual `workflow_dispatch` by tag for automation handoff or recovery when a tag already exists
 - pnpm install with frozen lockfile
 - version policy and tag guard
 - secret scan

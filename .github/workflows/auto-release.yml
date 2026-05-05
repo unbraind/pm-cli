@@ -31,6 +31,7 @@ on:
           - "required"
 
 permissions:
+  actions: write
   contents: write
 
 concurrency:
@@ -41,7 +42,7 @@ jobs:
   auto-release:
     name: Auto release pipeline
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     steps:
       - name: Checkout
@@ -70,6 +71,7 @@ jobs:
           INPUT_PUSH: ${{ github.event_name == 'workflow_dispatch' && inputs.push || 'true' }}
           INPUT_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
           INPUT_TELEMETRY_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.telemetry_mode || 'off' }}
+          GH_TOKEN: ${{ github.token }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_PERSONAL_ADMIN_TOKEN: ${{ secrets.SENTRY_PERSONAL_ADMIN_TOKEN }}
         run: |
@@ -89,4 +91,27 @@ jobs:
           if [[ "${INPUT_PUSH}" == "true" ]]; then
             args+=(--push)
           fi
+          PREVIOUS_TAG="$(git describe --tags --abbrev=0 2>/dev/null || true)"
           node scripts/release/run-release-pipeline.mjs "${args[@]}"
+          NEW_TAG="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+          if [[ "${INPUT_PUSH}" != "true" || "${INPUT_DRY_RUN}" == "true" || -z "${NEW_TAG}" || "${NEW_TAG}" == "${PREVIOUS_TAG}" ]]; then
+            echo "No new pushed release tag detected; publish dispatch skipped."
+            exit 0
+          fi
+
+          echo "Dispatching Release workflow for ${NEW_TAG}."
+          gh workflow run release.yml --ref main -f tag="${NEW_TAG}"
+          RELEASE_RUN_ID=""
+          for attempt in $(seq 1 30); do
+            RELEASE_RUN_ID="$(gh run list --workflow Release --event workflow_dispatch --limit 20 --json databaseId,status,createdAt \
+              | node -e 'const fs=require("fs"); const runs=JSON.parse(fs.readFileSync(0,"utf8")); const run=runs.find((entry)=>["queued","in_progress","waiting"].includes(entry.status)); if (run) console.log(run.databaseId);')"
+            if [[ -n "${RELEASE_RUN_ID}" ]]; then
+              break
+            fi
+            sleep 10
+          done
+          if [[ -z "${RELEASE_RUN_ID}" ]]; then
+            echo "Release workflow dispatch did not become visible in time."
+            exit 1
+          fi
+          gh run watch "${RELEASE_RUN_ID}" --compact --exit-status --interval 30
