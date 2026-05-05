@@ -145,7 +145,14 @@ jobs:
 
       - name: Publish to npm
         timeout-minutes: 5
-        run: npm publish --access public --provenance
+        run: |
+          set -euo pipefail
+          VERSION="${RELEASE_TAG#v}"
+          if npm view "@unbrained/pm-cli@${VERSION}" version --json >/dev/null 2>&1; then
+            echo "@unbrained/pm-cli@${VERSION} is already published; skipping npm publish."
+            exit 0
+          fi
+          npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -197,6 +204,7 @@ jobs:
       - name: Create GitHub release
         uses: softprops/action-gh-release@218a0cad87d638dff9a0383acf010108077227f3 # v3.0.0
         with:
+          tag_name: ${{ env.RELEASE_TAG }}
           body_path: ${{ runner.temp }}/release-notes.md
 
       - name: Verify GitHub release metadata

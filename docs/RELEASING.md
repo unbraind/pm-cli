@@ -131,7 +131,7 @@ git push origin v<version>
 - npm pack dry run and npx tarball smoke test
 - generated release notes from changelog plus sanitized tracker metadata
 - artifact uploads
-- `npm publish --access public --provenance`
+- `npm publish --access public --provenance`, skipped on retry when the exact version is already present on npm
 - post-publish npm/npx/bunx verification
 - GitHub Release creation
 
@@ -159,5 +159,5 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
 
 - If local gates fail, fix and rerun before tagging.
 - If the tag workflow fails before npm publish, confirm no package was published before moving or replacing a tag.
-- If npm publish succeeds but GitHub Release creation fails, recreate only the GitHub Release after verifying the tag and package.
+- If npm publish succeeds but GitHub Release creation fails, rerun `.github/workflows/release.yml` with `workflow_dispatch` and `tag=v<version>`; the workflow skips duplicate npm publish, reruns public verification, and creates the GitHub Release for the existing tag.
 - Record failure evidence and remediation in the release `pm` item.
