@@ -6,7 +6,7 @@ status: in_progress
 priority: 0
 tags[8]: automation,ci,compatibility,github,pm-cli,release,sentry,telemetry
 created_at: "2026-05-05T18:05:05.397Z"
-updated_at: "2026-05-05T21:23:48.813Z"
+updated_at: "2026-05-05T21:42:26.367Z"
 deadline: "2026-05-06T18:05:05.397Z"
 assignee: codex-release-agent
 author: codex-release-agent
@@ -15,7 +15,7 @@ acceptance_criteria: No previous-version tracker data breaks; GitHub issues #20 
 parent: pm-rnpb
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-rnpb,parent,"2026-05-05T18:05:05.397Z",codex-release-agent,null
-comments[16]{created_at,author,text}:
+comments[18]{created_at,author,text}:
   "2026-05-05T18:05:05.397Z",codex-release-agent,"Duplicate-check evidence: ran pm context --limit 10,pm search release 2026.5.5 auto release compatibility GitHub issue 20 frontmatter issue 21 npm install --limit 20,pm list-open --limit 30,pm list-in-progress --limit 30,and inspected prior closed release item pm-0qv7. No open release item covers this post-2026.5.4 release and GitHub bug remediation scope; parent lineage reused under pm-rnpb."
   "2026-05-05T18:50:31.436Z",codex-release-agent,"Release prep evidence: GitHub issues #20/#21 documented, Sentry unresolved/recent issue checks were empty, private telemetry review recorded under ignored scripts/prod/telemetry/reports, compatibility-check passed for 2026.5.4 data, and node scripts/release/run-gates.mjs --telemetry-mode off --json passed all gates."
   "2026-05-05T18:52:36.635Z",codex-release-agent,"Hardened daily auto-release change detection to ignore .agents/pm-only tracker commits, so post-publish evidence/closure commits do not create a new package release by themselves. Updated release docs with npm Trusted Publishing preference and token fallback policy."
@@ -32,9 +32,11 @@ comments[16]{created_at,author,text}:
   "2026-05-05T21:01:02.871Z",codex-maintainer,"Release retry 25401715352 failed before npm publish at Sentry issue threshold: GitHub SENTRY_AUTH_TOKEN is present but lacks issue-read scope and returned sentry_api_403. Adjusting release workflow so GitHub-hosted issue threshold requires SENTRY_PERSONAL_ADMIN_TOKEN, while SENTRY_AUTH_TOKEN remains for release/sourcemap upload. Focused workflow contracts, YAML parse, and tracked secret scan pass."
   "2026-05-05T21:10:19.818Z",codex-maintainer,"Release retry 25402097202 successfully published npm package 2026.5.5 with provenance and passed npm/npx/bunx verification, then failed only at GitHub Release creation because workflow_dispatch runs need explicit tag_name. Updated release workflow to pass tag_name and skip duplicate npm publish when the target version already exists, making retry safe. Focused workflow contracts, YAML parse, and tracked secret scan pass."
   "2026-05-05T21:23:48.813Z",codex-maintainer,Main CI run 25402563846 failed only on Windows Node 20 because the linked-test timeout regression completed correctly but exceeded a brittle <3s elapsed assertion during Windows process teardown. Made the assertion platform-aware while preserving bounded completion coverage.
+  "2026-05-05T21:41:20.841Z",codex-release-maintainer,"CI follow-up: run 25403152347 exposed a Windows telemetry queue race where a successful background flush could rewrite over an event appended by finishTelemetryCommand. Updated src/core/telemetry/runtime.ts to remove flushed IDs from the latest queue contents and retry transient Windows queue rewrites; added tests/unit/telemetry-runtime.spec.ts regression coverage. Focused telemetry test passed locally."
+  "2026-05-05T21:42:26.367Z",codex-release-maintainer,"Evidence: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/telemetry-runtime.spec.ts tests/unit/test-all-command.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts passed (50 tests); pnpm build passed; node scripts/check-secrets.mjs passed; git diff --check passed."
 notes[1]{created_at,author,text}:
   "2026-05-05T18:05:05.397Z",codex-release-agent,"External blockers from GitHub: issue #20 non-JSON frontmatter migration can brick workspaces; issue #21 git global install via npm can leave a broken symlink; latest nightly validation failed in the compatibility migration gate because npx published package execution could not find pm on PATH."
-files[16]{path,scope,note}:
+files[18]{path,scope,note}:
   .github/workflows/release.yml,project,strict npx bunx post-publish verification
   CHANGELOG.md,project,unreleased release notes
   README.md,project,install update guidance
@@ -51,12 +53,15 @@ files[16]{path,scope,note}:
   scripts/release/sentry-telemetry-gate.mjs,project,portable Sentry API threshold gate
   scripts/release/run-gates.mjs,project,captured gate failure diagnostics
   tests/unit/test-all-command.spec.ts,project,Windows timeout regression stability
-tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  src/core/telemetry/runtime.ts,project,Windows-safe telemetry queue flush race fix
+  tests/unit/telemetry-runtime.spec.ts,project,regression coverage for in-flight flush append preservation
+tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/release/compatibility-check.mjs --json,null,project,900,null,null,null,null,null,null,null,null,null,null,null,previous-version compatibility gate
   node scripts/release/run-gates.mjs --telemetry-mode off --json,null,project,900,null,null,null,null,null,null,null,null,null,null,null,full local release gate
   node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,global 100 percent coverage gate
   node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,release automation contract regressions
   PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,180,null,null,null,null,null,null,null,null,null,null,null,focused release workflow regression
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/telemetry-runtime.spec.ts tests/unit/test-all-command.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused release and Windows CI stabilization regression
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,release changelog
   docs/RELEASING.md,project,release source of truth

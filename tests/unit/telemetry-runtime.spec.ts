@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { setTimeout as sleep } from "node:timers/promises";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
@@ -38,6 +39,16 @@ async function withTempGlobalRoot(run: (globalRoot: string) => Promise<void>): P
   } finally {
     await fs.rm(tempRoot, { recursive: true, force: true });
   }
+}
+
+async function waitForFetchCalls(fetchMock: { mock: { calls: unknown[] } }, count: number): Promise<void> {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    if (fetchMock.mock.calls.length >= count) {
+      return;
+    }
+    await sleep(10);
+  }
+  throw new Error(`Timed out waiting for ${count} telemetry fetch call(s)`);
 }
 
 async function setTelemetryCaptureLevel(globalRoot: string, level: "minimal" | "redacted" | "max"): Promise<void> {
@@ -746,6 +757,51 @@ describe("core/telemetry/runtime", () => {
       const settings = await readSettings(globalRoot);
       expect(settings.telemetry.installation_id.length).toBeGreaterThan(0);
       expect(settings.telemetry.enabled).toBe(true);
+      expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  it("keeps events appended while a successful flush request is in flight", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      let resolveFirstFetch: ((response: Response) => void) | undefined;
+      const firstFetch = new Promise<Response>((resolve) => {
+        resolveFirstFetch = resolve;
+      });
+      const fetchMock = vi.fn(async () => {
+        if (fetchMock.mock.calls.length === 1) {
+          return firstFetch;
+        }
+        return new Response("{}", { status: 200 });
+      });
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      const active = await startTelemetryCommand({
+        command: "list-open",
+        pm_version: "9.9.9-test",
+        args: [],
+        options: {},
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+      expect(active).not.toBeNull();
+      await waitForFetchCalls(fetchMock, 1);
+
+      await finishTelemetryCommand(active, {
+        ok: true,
+        result: { count: 0, items: [] },
+      });
+      resolveFirstFetch?.(new Response("{}", { status: 200 }));
+      await waitForPendingFlush();
+      await sleep(50);
+
+      const queueRaw = await fs.readFile(telemetryQueuePath(globalRoot), "utf8");
+      expect(queueRaw.trim()).toBe("");
       expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(2);
     });
   });

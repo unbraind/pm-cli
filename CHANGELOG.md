@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Stabilized the linked-test timeout regression on Windows runners by keeping bounded-completion coverage while allowing slower process teardown.
+- Fixed telemetry queue flushing to preserve events appended while another flush is in flight on Windows runners.
 
 ## [2026.5.5] - 2026-05-05
 

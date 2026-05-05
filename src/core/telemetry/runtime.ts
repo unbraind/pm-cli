@@ -29,6 +29,7 @@ const TELEMETRY_SANITIZE_MAX_DEPTH = 6;
 const TELEMETRY_SANITIZE_MAX_ARRAY_ITEMS = 20;
 const TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS = 15;
 const TELEMETRY_RESULT_PREVIEW_MAX_BYTES = 8_192;
+const TELEMETRY_QUEUE_REWRITE_RETRY_DELAYS_MS = [25, 50, 100, 200] as const;
 const OTEL_TRACES_ENDPOINT_ENV = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT";
 const OTEL_BASE_ENDPOINT_ENV = "OTEL_EXPORTER_OTLP_ENDPOINT";
 const OTEL_SERVICE_NAME_ENV = "OTEL_SERVICE_NAME";
@@ -1018,7 +1019,77 @@ function pruneExpiredQueueEntries(
 
 async function rewriteQueue(globalPmRoot: string, entries: QueuedTelemetryEvent[]): Promise<void> {
   const serialized = entries.map((entry) => JSON.stringify(entry)).join("\n");
-  await writeFileAtomic(queuePath(globalPmRoot), serialized.length > 0 ? `${serialized}\n` : "");
+  const contents = serialized.length > 0 ? `${serialized}\n` : "";
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      await writeFileAtomic(queuePath(globalPmRoot), contents);
+      return;
+    } catch (error: unknown) {
+      const retryDelay = TELEMETRY_QUEUE_REWRITE_RETRY_DELAYS_MS[attempt];
+      if (retryDelay === undefined || !isRetryableQueueRewriteError(error)) {
+        throw error;
+      }
+      await sleep(retryDelay);
+    }
+  }
+}
+
+function isRetryableQueueRewriteError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null || !("code" in error)) {
+    return false;
+  }
+  const code = (error as { code?: unknown }).code;
+  return code === "EACCES" || code === "EBUSY" || code === "EPERM";
+}
+
+function sleep(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
+}
+
+async function readCurrentQueueEntries(globalPmRoot: string): Promise<QueuedTelemetryEvent[]> {
+  const raw = await readFileIfExists(queuePath(globalPmRoot));
+  if (raw === null || raw.trim().length === 0) {
+    return [];
+  }
+  return parseQueueLines(raw);
+}
+
+async function removeFlushedEntriesFromCurrentQueue(
+  globalPmRoot: string,
+  flushedIds: ReadonlySet<string>,
+  retentionDays: number,
+): Promise<QueuedTelemetryEvent[]> {
+  const currentEntries = await readCurrentQueueEntries(globalPmRoot);
+  const { entries: retainedEntries } = pruneExpiredQueueEntries(currentEntries, retentionDays);
+  const remaining = retainedEntries.filter((entry) => !flushedIds.has(entry.event.event_id));
+  await rewriteQueue(globalPmRoot, remaining);
+  return remaining;
+}
+
+async function markFailedEntriesInCurrentQueue(
+  globalPmRoot: string,
+  failedIds: ReadonlySet<string>,
+  attemptTime: string,
+  retentionDays: number,
+): Promise<QueuedTelemetryEvent[]> {
+  const currentEntries = await readCurrentQueueEntries(globalPmRoot);
+  const { entries: retainedEntries } = pruneExpiredQueueEntries(currentEntries, retentionDays);
+  const retried = retainedEntries.map((entry) => {
+    if (!failedIds.has(entry.event.event_id)) {
+      return entry;
+    }
+    const attempts = entry.attempts + 1;
+    return {
+      ...entry,
+      attempts,
+      last_attempt_at: attemptTime,
+      next_attempt_after: nextRetryIso(attempts),
+    };
+  });
+  await rewriteQueue(globalPmRoot, retried);
+  return retried;
 }
 
 async function flushQueue(globalPmRoot: string, endpoint: string, retentionDays: number): Promise<void> {
@@ -1087,30 +1158,8 @@ async function flushQueue(globalPmRoot: string, endpoint: string, retentionDays:
     if (!response.ok) {
       throw new Error(`telemetry_flush_http_${response.status}`);
     }
-    const remaining = retainedEntries.filter((entry) => !dueIds.has(entry.event.event_id));
-    await rewriteQueue(globalPmRoot, remaining);
-    await writeRuntimeState(globalPmRoot, {
-      endpoint: normalizedEndpoint,
-      queue_entries: remaining.length,
-      last_attempted_flush_at: attemptTime,
-      last_successful_flush_at: attemptTime,
-      last_failed_flush_at: undefined,
-      last_failed_flush_error: undefined,
-    });
   } catch (error: unknown) {
-    const retried = retainedEntries.map((entry) => {
-      if (!dueIds.has(entry.event.event_id)) {
-        return entry;
-      }
-      const attempts = entry.attempts + 1;
-      return {
-        ...entry,
-        attempts,
-        last_attempt_at: attemptTime,
-        next_attempt_after: nextRetryIso(attempts),
-      };
-    });
-    await rewriteQueue(globalPmRoot, retried);
+    const retried = await markFailedEntriesInCurrentQueue(globalPmRoot, dueIds, attemptTime, retentionDays);
     const errorMessage = (() => {
       if (error instanceof Error) {
         return sanitizeString(error.message, "redacted");
@@ -1120,6 +1169,34 @@ async function flushQueue(globalPmRoot: string, endpoint: string, retentionDays:
     await writeRuntimeState(globalPmRoot, {
       endpoint: normalizedEndpoint,
       queue_entries: retried.length,
+      last_attempted_flush_at: attemptTime,
+      last_failed_flush_at: attemptTime,
+      last_failed_flush_error: errorMessage,
+    });
+    return;
+  }
+
+  try {
+    const remaining = await removeFlushedEntriesFromCurrentQueue(globalPmRoot, dueIds, retentionDays);
+    await writeRuntimeState(globalPmRoot, {
+      endpoint: normalizedEndpoint,
+      queue_entries: remaining.length,
+      last_attempted_flush_at: attemptTime,
+      last_successful_flush_at: attemptTime,
+      last_failed_flush_at: undefined,
+      last_failed_flush_error: undefined,
+    });
+  } catch (error: unknown) {
+    const errorMessage = (() => {
+      if (error instanceof Error) {
+        return sanitizeString(error.message, "redacted");
+      }
+      return "telemetry_flush_failed";
+    })();
+    const currentEntries = await readCurrentQueueEntries(globalPmRoot).catch(() => retainedEntries);
+    await writeRuntimeState(globalPmRoot, {
+      endpoint: normalizedEndpoint,
+      queue_entries: currentEntries.length,
       last_attempted_flush_at: attemptTime,
       last_failed_flush_at: attemptTime,
       last_failed_flush_error: errorMessage,
