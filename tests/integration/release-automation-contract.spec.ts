@@ -1,9 +1,9 @@
 import { spawnSync } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { promoteUnreleasedSection } from "../../scripts/release/changelog-promote.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
@@ -43,7 +43,7 @@ describe("release automation contract", () => {
     expect(workflow).toContain("node scripts/release/run-release-pipeline.mjs");
   });
 
-  it("promotes changelog unreleased content into a versioned section", () => {
+  it("promotes changelog unreleased content into a versioned section", async () => {
     const source = `# Changelog
 
 ## [Unreleased]
@@ -56,10 +56,27 @@ describe("release automation contract", () => {
 ### Changed
 - Existing item.
 `;
-    const promoted = promoteUnreleasedSection(source, "2026.5.4", "2026-05-04");
-    expect(promoted).toContain("## [Unreleased]");
-    expect(promoted).toContain("## [2026.5.4] - 2026-05-04");
-    expect(promoted).toContain("- New CLI release gate.");
+    const tempRoot = await mkdtemp(path.join(tmpdir(), "pm-release-contract-"));
+    const changelogPath = path.join(tempRoot, "CHANGELOG.md");
+    await writeFile(changelogPath, source, "utf8");
+    try {
+      const result = runNodeScript([
+        "scripts/release/changelog-promote.mjs",
+        "--version",
+        "2026.5.4",
+        "--date",
+        "2026-05-04",
+        "--file",
+        changelogPath,
+      ]);
+      expect(result.status).toBe(0);
+      const promoted = await readFile(changelogPath, "utf8");
+      expect(promoted).toContain("## [Unreleased]");
+      expect(promoted).toContain("## [2026.5.4] - 2026-05-04");
+      expect(promoted).toContain("- New CLI release gate.");
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
   });
 
   it("keeps release pipeline and gate scripts discoverable through help output", () => {
