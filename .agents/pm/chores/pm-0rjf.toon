@@ -2,20 +2,22 @@ id: pm-0rjf
 title: Release @unbrained/pm-cli after 2026.5.4
 description: "Prepare, verify, and publish the next pm CLI release after 2026.5.4 with compatibility migration gates, GitHub issue remediation, telemetry/Sentry review, changelog/docs updates, local CI/CD parity, and public npm/npx/bunx/GitHub verification."
 type: Chore
-status: in_progress
+status: closed
 priority: 0
 tags[8]: automation,ci,compatibility,github,pm-cli,release,sentry,telemetry
 created_at: "2026-05-05T18:05:05.397Z"
-updated_at: "2026-05-05T21:42:26.367Z"
+updated_at: "2026-05-05T21:58:04.080Z"
 deadline: "2026-05-06T18:05:05.397Z"
-assignee: codex-release-agent
 author: codex-release-agent
 estimated_minutes: 360
 acceptance_criteria: No previous-version tracker data breaks; GitHub issues #20 and #21 are documented and resolved or explicitly triaged; scheduled auto-release and release workflows only publish after strict green gates and actual changes; changelog and release notes are generated from pm evidence; npm/npx/bunx/GitHub publish verification succeeds.
 parent: pm-rnpb
+resolution: "Released v2026.5.5 with compatibility migration fixes, GitHub issue remediation, daily auto-release hardening, strict publish verification, telemetry/Sentry review, and Windows CI stabilization."
+expected_result: "The release publishes only after strict local and GitHub gates pass, previous-version data migrates safely, npm/npx/bunx/GitHub/Sentry verification succeeds, and GitHub issues #20/#21 are closed."
+actual_result: "v2026.5.5 published and verified on npm, npx, bunx, GitHub Release, and Sentry; compatibility gate passed; final main CI run 25403938563 passed; GitHub issues #20/#21 closed."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-rnpb,parent,"2026-05-05T18:05:05.397Z",codex-release-agent,null
-comments[18]{created_at,author,text}:
+comments[19]{created_at,author,text}:
   "2026-05-05T18:05:05.397Z",codex-release-agent,"Duplicate-check evidence: ran pm context --limit 10,pm search release 2026.5.5 auto release compatibility GitHub issue 20 frontmatter issue 21 npm install --limit 20,pm list-open --limit 30,pm list-in-progress --limit 30,and inspected prior closed release item pm-0qv7. No open release item covers this post-2026.5.4 release and GitHub bug remediation scope; parent lineage reused under pm-rnpb."
   "2026-05-05T18:50:31.436Z",codex-release-agent,"Release prep evidence: GitHub issues #20/#21 documented, Sentry unresolved/recent issue checks were empty, private telemetry review recorded under ignored scripts/prod/telemetry/reports, compatibility-check passed for 2026.5.4 data, and node scripts/release/run-gates.mjs --telemetry-mode off --json passed all gates."
   "2026-05-05T18:52:36.635Z",codex-release-agent,"Hardened daily auto-release change detection to ignore .agents/pm-only tracker commits, so post-publish evidence/closure commits do not create a new package release by themselves. Updated release docs with npm Trusted Publishing preference and token fallback policy."
@@ -34,6 +36,7 @@ comments[18]{created_at,author,text}:
   "2026-05-05T21:23:48.813Z",codex-maintainer,Main CI run 25402563846 failed only on Windows Node 20 because the linked-test timeout regression completed correctly but exceeded a brittle <3s elapsed assertion during Windows process teardown. Made the assertion platform-aware while preserving bounded completion coverage.
   "2026-05-05T21:41:20.841Z",codex-release-maintainer,"CI follow-up: run 25403152347 exposed a Windows telemetry queue race where a successful background flush could rewrite over an event appended by finishTelemetryCommand. Updated src/core/telemetry/runtime.ts to remove flushed IDs from the latest queue contents and retry transient Windows queue rewrites; added tests/unit/telemetry-runtime.spec.ts regression coverage. Focused telemetry test passed locally."
   "2026-05-05T21:42:26.367Z",codex-release-maintainer,"Evidence: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/telemetry-runtime.spec.ts tests/unit/test-all-command.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts passed (50 tests); pnpm build passed; node scripts/check-secrets.mjs passed; git diff --check passed."
+  "2026-05-05T21:56:25.738Z",codex-release-maintainer,"Final release evidence: v2026.5.5 published and verified on npm, npx, bunx, GitHub Release, and Sentry; Release workflow run 25402568781 succeeded; final main CI run 25403938563 succeeded across Ubuntu Node 20/22/24, macOS Node 20, and Windows Node 20; GitHub issues #20 and #21 closed as completed."
 notes[1]{created_at,author,text}:
   "2026-05-05T18:05:05.397Z",codex-release-agent,"External blockers from GitHub: issue #20 non-JSON frontmatter migration can brick workspaces; issue #21 git global install via npm can leave a broken symlink; latest nightly validation failed in the compatibility migration gate because npx published package execution could not find pm on PATH."
 files[18]{path,scope,note}:
@@ -65,4 +68,5 @@ tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,release changelog
   docs/RELEASING.md,project,release source of truth
+close_reason: "v2026.5.5 released and verified across npm, npx, bunx, GitHub, Sentry, compatibility, telemetry, and CI"
 body: ""
