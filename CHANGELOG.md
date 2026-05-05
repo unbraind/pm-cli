@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026.5.5] - 2026-05-05
+
 ### Added
 - Added mixed-frontmatter compatibility coverage to the release gate so previous-version `json_markdown` workspaces with YAML wrappers before JSON item data are migrated in a temp project before release.
 - Added `--repair` to bundled install scripts to clear stale global `pm` shims before reinstalling from the npm registry.
