@@ -1119,9 +1119,7 @@ export async function runConfig(
     const nextFormat = normalizeItemFormat(options.format);
     const changed = settings.item_format !== nextFormat || !metadata.has_explicit_item_format;
     let migration: ConfigResult["migration"] = undefined;
-    settings.item_format = nextFormat;
     if (changed) {
-      await writeSettings(target.pmRoot, settings, "config:set:item_format");
       const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
       const migrated = await migrateItemFilesToFormat(
         target.pmRoot,
@@ -1137,6 +1135,8 @@ export async function runConfig(
         removed: migrated.removed,
         warnings: migrated.warnings,
       };
+      settings.item_format = nextFormat;
+      await writeSettings(target.pmRoot, settings, "config:set:item_format");
     }
     return withWarnings({
       scope,

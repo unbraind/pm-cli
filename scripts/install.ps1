@@ -1,7 +1,8 @@
 param(
   [string]$Version = "latest",
   [string]$Prefix = "",
-  [string]$PackageName = ""
+  [string]$PackageName = "",
+  [switch]$Repair
 )
 
 Set-StrictMode -Version Latest
@@ -62,6 +63,16 @@ if (Use-LiteralInstallSpec $PackageName) {
 } else {
   $installSpec = "$PackageName@$Version"
 }
+
+if ($Repair) {
+  Write-Host "Repairing existing global pm install..."
+  $repairArgs = @("uninstall", "-g", "@unbrained/pm-cli")
+  if ($Prefix -ne "") {
+    $repairArgs += @("--prefix", $Prefix)
+  }
+  & npm @repairArgs *> $null
+}
+
 Write-Host "Installing or updating $installSpec..."
 # --force keeps repeated installer runs idempotent when pm shim already exists.
 $npmArgs = @("install", "-g", "--force", $installSpec)

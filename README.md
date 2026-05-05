@@ -32,6 +32,8 @@ pm --version
 pm --help
 ```
 
+Use the npm registry package for global installs and updates. Avoid `npm install -g` from the GitHub git URL for routine updates; npm can leave a stale global shim when replacing git-sourced installs. If that happens, run `bash scripts/install.sh --repair` from a checkout or `npm uninstall -g @unbrained/pm-cli && npm install -g @unbrained/pm-cli`.
+
 Project-local invocation also works:
 
 ```bash

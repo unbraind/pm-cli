@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { commandFor, fail, flagBool, flagString, parseFlags, repoRoot, runCommand } from "./utils.mjs";
@@ -18,8 +18,9 @@ function parseJson(stdout, context) {
   }
 }
 
-function runJsonCommand(command, args, env, context) {
+function runJsonCommand(command, args, env, context, cwd = repoRoot) {
   const result = runCommand(command, args, {
+    cwd,
     env,
     capture: true,
   });
@@ -39,13 +40,31 @@ function resolvePublishedVersion(explicitVersion) {
   return version;
 }
 
+async function prependYamlFrontMatter(filePath) {
+  const raw = await readFile(filePath, "utf8");
+  await writeFile(
+    filePath,
+    `---\ntitle: "{legacy-yaml-wrapper}"\ntype: document\n---\n${raw}`,
+    "utf8",
+  );
+}
+
 async function seedLegacyData(baseVersion, tempRoot, env, author) {
   const npx = commandFor("npx");
   const packageSpec = `@unbrained/pm-cli@${baseVersion}`;
+  const projectRoot = path.join(tempRoot, "project");
+  await mkdir(projectRoot, { recursive: true });
   const legacy = (...args) =>
-    runJsonCommand(npx, ["--yes", packageSpec, ...args, "--json"], env, `legacy command: ${args.join(" ")}`);
+    runJsonCommand(
+      npx,
+      ["--yes", packageSpec, ...args, "--json"],
+      env,
+      `legacy command: ${args.join(" ")}`,
+      projectRoot,
+    );
 
   legacy("init");
+  legacy("config", "project", "set", "item-format", "--format", "json_markdown");
 
   const taskCreate = legacy(
     "create",
@@ -99,7 +118,6 @@ async function seedLegacyData(baseVersion, tempRoot, env, author) {
     fail("Legacy create did not return a valid issue id.");
   }
 
-  const projectRoot = path.join(tempRoot, "project");
   await mkdir(path.join(projectRoot, "docs"), { recursive: true });
   await writeFile(path.join(projectRoot, "README.md"), "# Compatibility Fixture\n", "utf8");
   await writeFile(path.join(projectRoot, "docs", "compat.md"), "Compatibility docs fixture.\n", "utf8");
@@ -205,8 +223,10 @@ async function seedLegacyData(baseVersion, tempRoot, env, author) {
   );
 
   const before = legacy("list-all", "--limit", "200");
+  await prependYamlFrontMatter(path.join(env.PM_PATH, "tasks", `${taskId}.md`));
   return {
     baseVersion,
+    projectRoot,
     taskId,
     issueId,
     itemCountBefore: Number(before?.count ?? 0),
@@ -215,7 +235,8 @@ async function seedLegacyData(baseVersion, tempRoot, env, author) {
 
 function runCurrentChecks(seedState, env, author) {
   const distCli = path.join(repoRoot, "dist", "cli.js");
-  const current = (...args) => runJsonCommand(process.execPath, [distCli, ...args, "--json"], env, args.join(" "));
+  const current = (...args) =>
+    runJsonCommand(process.execPath, [distCli, ...args, "--json"], env, args.join(" "), seedState.projectRoot);
 
   const commentsBefore = current("comments", seedState.taskId);
   if (!Array.isArray(commentsBefore?.comments) || commentsBefore.comments.length === 0) {
@@ -232,6 +253,11 @@ function runCurrentChecks(seedState, env, author) {
   const testsBefore = current("test", seedState.taskId);
   if (!Array.isArray(testsBefore?.tests) || testsBefore.tests.length === 0) {
     fail("Compatibility gate failed: expected legacy linked tests to survive current build read path.");
+  }
+
+  const migration = current("config", "project", "set", "item-format", "--format", "toon");
+  if (!Array.isArray(migration?.migration?.migrated) || !migration.migration.migrated.includes(seedState.taskId)) {
+    fail("Compatibility gate failed: mixed-frontmatter markdown item did not migrate to TOON.");
   }
 
   current(
@@ -285,6 +311,7 @@ function runCurrentChecks(seedState, env, author) {
     itemCountAfter,
     validationOk: validation?.ok !== false,
     healthOk: blockingHealthChecks.length === 0,
+    migrationWarnings: Array.isArray(migration?.migration?.warnings) ? migration.migration.warnings : [],
   };
 }
 
@@ -326,6 +353,7 @@ then validates migration/read/write compatibility with the current local build.
       item_count_after: currentSummary.itemCountAfter,
       validation_ok: currentSummary.validationOk,
       health_ok: currentSummary.healthOk,
+      migration_warnings: currentSummary.migrationWarnings,
       keep_temp: keepTemp,
     };
 

@@ -34,6 +34,10 @@ Runs the end-to-end release preparation pipeline:
 3) strict quality/compatibility/reliability gates
 4) release-notes generation
 5) commit/tag/push (unless dry-run)
+
+Commits that only update .agents/pm tracker state are ignored for publish
+eligibility so post-release item closure does not trigger another package
+release.
 `);
 }
 
@@ -57,6 +61,25 @@ function getCommitCountSince(lastTag) {
   }
   const result = git(["rev-list", "--count", `${lastTag}..HEAD`]);
   return Number(result.stdout.trim() || "0");
+}
+
+function getChangedFilesSince(lastTag) {
+  if (!lastTag) {
+    const result = git(["ls-files"]);
+    return result.stdout
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+  }
+  const result = git(["diff", "--name-only", `${lastTag}..HEAD`]);
+  return result.stdout
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+}
+
+function isReleaseRelevantPath(filePath) {
+  return !filePath.startsWith(".agents/pm/");
 }
 
 function listTodayTags(todayKey) {
@@ -177,6 +200,25 @@ function runPipeline() {
     return;
   }
 
+  const changedFilesSinceLastTag = getChangedFilesSince(lastTag);
+  const releaseRelevantFiles = changedFilesSinceLastTag.filter(isReleaseRelevantPath);
+  if (releaseRelevantFiles.length === 0) {
+    const result = {
+      ok: true,
+      skipped: true,
+      reason: "tracker_only_changes_since_last_tag",
+      last_tag: lastTag,
+      commits_since_last_tag: commitsSinceLastTag,
+      ignored_change_paths: changedFilesSinceLastTag,
+    };
+    if (outputJson) {
+      process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    } else {
+      console.log("Only .agents/pm tracker changes exist since the last release tag. Skipping release pipeline.");
+    }
+    return;
+  }
+
   const todayKey = utcDateKey();
   const tagsToday = listTodayTags(todayKey);
   if (!allowSameDayRelease && tagsToday.length > 0) {
@@ -271,6 +313,7 @@ function runPipeline() {
     target_version: targetVersion,
     tag: tagName,
     commits_since_last_tag: commitsSinceLastTag,
+    release_relevant_files: releaseRelevantFiles,
     last_tag: lastTag,
     release_notes_output: path.relative(repoRoot, path.resolve(releaseNotesOutput)),
     gates,

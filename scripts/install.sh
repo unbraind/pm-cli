@@ -4,17 +4,19 @@ set -euo pipefail
 PACKAGE_NAME="${PM_CLI_PACKAGE:-@unbrained/pm-cli}"
 TARGET_VERSION="latest"
 PREFIX=""
+REPAIR="false"
 
 usage() {
   cat <<'EOF'
 Install or update @unbrained/pm-cli globally via npm.
 
 Usage:
-  bash scripts/install.sh [--version <tag>] [--prefix <dir>]
+  bash scripts/install.sh [--version <tag>] [--prefix <dir>] [--repair]
 
 Options:
   --version <tag>   Package tag/version to install (default: latest)
   --prefix <dir>    npm global prefix override
+  --repair          Uninstall the registry package first to clear a stale global shim
   -h, --help        Show this help message
 EOF
 }
@@ -68,6 +70,10 @@ while [[ $# -gt 0 ]]; do
       PREFIX="$2"
       shift 2
       ;;
+    --repair)
+      REPAIR="true"
+      shift
+      ;;
     -h|--help)
       usage
       exit 0
@@ -88,6 +94,16 @@ if is_literal_install_spec "$PACKAGE_NAME"; then
 else
   INSTALL_SPEC="${PACKAGE_NAME}@${TARGET_VERSION}"
 fi
+
+if [[ "$REPAIR" == "true" ]]; then
+  REPAIR_CMD=(npm uninstall -g @unbrained/pm-cli)
+  if [[ -n "$PREFIX" ]]; then
+    REPAIR_CMD+=(--prefix "$PREFIX")
+  fi
+  echo "Repairing existing global pm install..."
+  "${REPAIR_CMD[@]}" >/dev/null 2>&1 || true
+fi
+
 # Force is required for idempotent reruns when an existing pm shim already exists.
 INSTALL_CMD=(npm install -g --force "$INSTALL_SPEC")
 if [[ -n "$PREFIX" ]]; then

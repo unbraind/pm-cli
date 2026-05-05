@@ -954,12 +954,38 @@ export function splitFrontMatter(content: string): { frontMatter: string; body: 
   return { frontMatter, body };
 }
 
+function stripLeadingYamlDocument(content: string): { content: string; stripped: boolean } {
+  const normalizedContent = content.charCodeAt(0) === 0xfeff ? content.slice(1) : content;
+  const opener = normalizedContent.match(/^[ \t]*---[ \t]*(?:\r?\n|$)/);
+  if (!opener) {
+    return { content: normalizedContent, stripped: false };
+  }
+
+  let cursor = opener[0].length;
+  while (cursor < normalizedContent.length) {
+    const nextNewline = normalizedContent.indexOf("\n", cursor);
+    const lineEnd = nextNewline === -1 ? normalizedContent.length : nextNewline;
+    const line = normalizedContent.slice(cursor, lineEnd).replace(/\r$/, "");
+    const afterLine = nextNewline === -1 ? lineEnd : lineEnd + 1;
+    if (line.trim() === "---") {
+      return { content: normalizedContent.slice(afterLine).replace(/^\s+/, ""), stripped: true };
+    }
+    cursor = afterLine;
+  }
+
+  return { content: normalizedContent, stripped: false };
+}
+
 function parseJsonMarkdownItemDocument(
   content: string,
   runtimeContext?: RuntimeSchemaValidationContext,
   options: Pick<ItemDocumentFormatOptions, "schema" | "onWarning"> = {},
 ): ItemDocument {
-  const { frontMatter, body } = splitFrontMatter(content);
+  const normalized = stripLeadingYamlDocument(content);
+  if (normalized.stripped) {
+    options.onWarning?.("json_markdown_leading_yaml_frontmatter_ignored");
+  }
+  const { frontMatter, body } = splitFrontMatter(normalized.content);
   if (!frontMatter) {
     const trimmed = content.trimStart();
     if (trimmed.startsWith("{")) {

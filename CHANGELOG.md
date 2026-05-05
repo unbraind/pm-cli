@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Added mixed-frontmatter compatibility coverage to the release gate so previous-version `json_markdown` workspaces with YAML wrappers before JSON item data are migrated in a temp project before release.
+- Added `--repair` to bundled install scripts to clear stale global `pm` shims before reinstalling from the npm registry.
+
+### Changed
+- Hardened release post-publish verification so npm/npx/bunx checks run from a clean temp directory and fail the release workflow if package execution does not converge.
+- Hardened the daily auto-release pipeline so `.agents/pm`-only tracker commits are ignored for publish eligibility, preventing post-release tracker closure from creating a package-only release.
+- Documented npm registry installs as the supported global update path and added recovery guidance for broken git-sourced global installs.
+
+### Fixed
+- Fixed item-format migration to ignore leading YAML wrappers before JSON front matter, continue past unreadable item files with deterministic warnings, and avoid writing `item_format` settings before migration completes.
+
 ## [2026.5.4] - 2026-05-04
 
 ### Changed

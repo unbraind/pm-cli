@@ -151,8 +151,10 @@ jobs:
             echo "Waiting for npm propagation (attempt ${attempt}/20)..."
             sleep 15
           done
+          VERIFY_TMP="$(mktemp -d)"
+          trap 'rm -rf "$VERIFY_TMP"' EXIT
           for attempt in $(seq 1 10); do
-            NPX_OUTPUT="$(npx --yes "@unbrained/pm-cli@${VERSION}" pm --version 2>/dev/null || true)"
+            NPX_OUTPUT="$(cd "$VERIFY_TMP" && npx --yes --package "@unbrained/pm-cli@${VERSION}" -- pm --version 2>/dev/null || true)"
             NPX_VERSION="$(printf '%s\n' "${NPX_OUTPUT}" | awk 'NF { line=$0 } END { print line }' | tr -d '\r\n')"
             if [ "${NPX_VERSION}" = "${VERSION}" ]; then
               NPX_OK=true
@@ -161,10 +163,11 @@ jobs:
             sleep 10
           done
           if [ "${NPX_OK:-false}" != "true" ]; then
-            echo "::warning::npx verification did not converge within retries."
+            echo "npx verification did not converge within retries."
+            exit 1
           fi
           for attempt in $(seq 1 10); do
-            BUNX_OUTPUT="$(bunx "@unbrained/pm-cli@${VERSION}" pm --version 2>/dev/null || true)"
+            BUNX_OUTPUT="$(cd "$VERIFY_TMP" && bunx --bun "@unbrained/pm-cli@${VERSION}" pm --version 2>/dev/null || true)"
             BUNX_VERSION="$(printf '%s\n' "${BUNX_OUTPUT}" | awk 'NF { line=$0 } END { print line }' | tr -d '\r\n')"
             if [ "${BUNX_VERSION}" = "${VERSION}" ]; then
               BUNX_OK=true
@@ -173,7 +176,8 @@ jobs:
             sleep 10
           done
           if [ "${BUNX_OK:-false}" != "true" ]; then
-            echo "::warning::bunx verification did not converge within retries."
+            echo "bunx verification did not converge within retries."
+            exit 1
           fi
 
       - name: Create GitHub release

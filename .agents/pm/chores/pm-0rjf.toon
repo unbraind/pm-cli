@@ -1,0 +1,47 @@
+id: pm-0rjf
+title: Release @unbrained/pm-cli after 2026.5.4
+description: "Prepare, verify, and publish the next pm CLI release after 2026.5.4 with compatibility migration gates, GitHub issue remediation, telemetry/Sentry review, changelog/docs updates, local CI/CD parity, and public npm/npx/bunx/GitHub verification."
+type: Chore
+status: in_progress
+priority: 0
+tags[8]: automation,ci,compatibility,github,pm-cli,release,sentry,telemetry
+created_at: "2026-05-05T18:05:05.397Z"
+updated_at: "2026-05-05T19:08:07.637Z"
+deadline: "2026-05-06T18:05:05.397Z"
+assignee: codex-release-agent
+author: codex-release-agent
+estimated_minutes: 360
+acceptance_criteria: No previous-version tracker data breaks; GitHub issues #20 and #21 are documented and resolved or explicitly triaged; scheduled auto-release and release workflows only publish after strict green gates and actual changes; changelog and release notes are generated from pm evidence; npm/npx/bunx/GitHub publish verification succeeds.
+parent: pm-rnpb
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-rnpb,parent,"2026-05-05T18:05:05.397Z",codex-release-agent,null
+comments[5]{created_at,author,text}:
+  "2026-05-05T18:05:05.397Z",codex-release-agent,"Duplicate-check evidence: ran pm context --limit 10,pm search release 2026.5.5 auto release compatibility GitHub issue 20 frontmatter issue 21 npm install --limit 20,pm list-open --limit 30,pm list-in-progress --limit 30,and inspected prior closed release item pm-0qv7. No open release item covers this post-2026.5.4 release and GitHub bug remediation scope; parent lineage reused under pm-rnpb."
+  "2026-05-05T18:50:31.436Z",codex-release-agent,"Release prep evidence: GitHub issues #20/#21 documented, Sentry unresolved/recent issue checks were empty, private telemetry review recorded under ignored scripts/prod/telemetry/reports, compatibility-check passed for 2026.5.4 data, and node scripts/release/run-gates.mjs --telemetry-mode off --json passed all gates."
+  "2026-05-05T18:52:36.635Z",codex-release-agent,"Hardened daily auto-release change detection to ignore .agents/pm-only tracker commits, so post-publish evidence/closure commits do not create a new package release by themselves. Updated release docs with npm Trusted Publishing preference and token fallback policy."
+  "2026-05-05T19:00:25.963Z",codex-release-agent,"Evidence update after release-loop hardening: focused release automation regressions passed (34 tests), pm validate --check-resolution --check-history-drift passed, pm health --check-only passed, pm normalize --dry-run found no changes, git diff --check passed, and full node scripts/release/run-gates.mjs --telemetry-mode off --json passed with 1210 tests and 100 percent coverage."
+  "2026-05-05T19:08:07.637Z",codex-release-agent,"Final pre-commit gate evidence: reran focused release automation regressions after deletion-aware tracker-only guard (34 tests passed) and reran node scripts/release/run-gates.mjs --telemetry-mode off --json. All checks passed, including 1210 tests at 100 percent coverage, secret scan, package smoke, and 2026.5.4 compatibility migration."
+notes[1]{created_at,author,text}:
+  "2026-05-05T18:05:05.397Z",codex-release-agent,"External blockers from GitHub: issue #20 non-JSON frontmatter migration can brick workspaces; issue #21 git global install via npm can leave a broken symlink; latest nightly validation failed in the compatibility migration gate because npx published package execution could not find pm on PATH."
+files[12]{path,scope,note}:
+  .github/workflows/release.yml,project,strict npx bunx post-publish verification
+  CHANGELOG.md,project,unreleased release notes
+  README.md,project,install update guidance
+  docs/QUICKSTART.md,project,install repair guidance
+  docs/RELEASING.md,project,release workflow source of truth
+  scripts/release/compatibility-check.mjs,project,previous-version compatibility gate
+  scripts/install.sh,project,unix repair install path
+  scripts/install.ps1,project,windows repair install path
+  tests/integration/ci-workflow-contract.spec.ts,project,workflow contract regression
+  tests/integration/release-readiness-runtime.spec.ts,project,release readiness regression
+  scripts/release/run-release-pipeline.mjs,project,ignore tracker-only commits for publish eligibility
+  tests/integration/release-automation-contract.spec.ts,project,release pipeline discoverability regression
+tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/release/compatibility-check.mjs --json,null,project,900,null,null,null,null,null,null,null,null,null,null,null,previous-version compatibility gate
+  node scripts/release/run-gates.mjs --telemetry-mode off --json,null,project,900,null,null,null,null,null,null,null,null,null,null,null,full local release gate
+  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,global 100 percent coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,release automation contract regressions
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,release changelog
+  docs/RELEASING.md,project,release source of truth
+body: ""

@@ -1679,12 +1679,16 @@ describe("release readiness runtime coverage", () => {
     expect(installSh).toContain("Installed pm version:");
     expect(installSh).toContain("@unbrained/pm-cli");
     expect(installSh).toContain("--force");
+    expect(installSh).toContain("--repair");
+    expect(installSh).toContain("npm uninstall -g @unbrained/pm-cli");
 
     const installPs1 = await readRepoText("scripts/install.ps1");
     expect(installPs1).toContain("$pmExecutable --version");
     expect(installPs1).toContain("Installed pm version:");
     expect(installPs1).toContain('@unbrained/pm-cli');
     expect(installPs1).toContain('"--force"');
+    expect(installPs1).toContain("[switch]$Repair");
+    expect(installPs1).toContain('"uninstall", "-g", "@unbrained/pm-cli"');
 
     const releaseVersionScript = await readRepoText("scripts/release-version.mjs");
     expect(releaseVersionScript).toContain("YYYY.M.D");
@@ -1698,6 +1702,8 @@ describe("release readiness runtime coverage", () => {
     expect(compatibilityScript).toContain("latest published");
     expect(compatibilityScript).toContain("PM_PATH");
     expect(compatibilityScript).toContain("PM_GLOBAL_PATH");
+    expect(compatibilityScript).toContain("prependYamlFrontMatter");
+    expect(compatibilityScript).toContain("projectRoot");
 
     const staticQualityScript = await readRepoText("scripts/release/static-quality-gate.mjs");
     expect(staticQualityScript).toContain("orphan_modules");
@@ -1706,6 +1712,8 @@ describe("release readiness runtime coverage", () => {
     const releasePipelineScript = await readRepoText("scripts/release/run-release-pipeline.mjs");
     expect(releasePipelineScript).toContain("allow-same-day-release");
     expect(releasePipelineScript).toContain("release_already_cut_today");
+    expect(releasePipelineScript).toContain("tracker_only_changes_since_last_tag");
+    expect(releasePipelineScript).toContain(".agents/pm/");
     expect(releasePipelineScript).toContain("run-release-pipeline");
 
     const securityScanScript = await readRepoText("scripts/check-secrets.mjs");

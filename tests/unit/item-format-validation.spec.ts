@@ -36,8 +36,28 @@ describe("item-format front-matter validation", () => {
     expect(parsed.body).toBe("Body");
   });
 
+  it("ignores legacy YAML wrappers before JSON front matter", () => {
+    const warnings: string[] = [];
+    const parsed = parseItemDocument(`\uFEFF---\ntitle: "{legacy-yaml-wrapper}"\n---\n  ${buildSource()}`, {
+      onWarning: (warning) => warnings.push(warning),
+    });
+    expect(parsed.front_matter.id).toBe("pm-validate");
+    expect(parsed.body).toBe("Body");
+    expect(warnings).toEqual(["json_markdown_leading_yaml_frontmatter_ignored"]);
+  });
+
+  it("accepts a UTF-8 BOM before JSON front matter without YAML warnings", () => {
+    const warnings: string[] = [];
+    const parsed = parseItemDocument(`\uFEFF${buildSource()}`, {
+      onWarning: (warning) => warnings.push(warning),
+    });
+    expect(parsed.front_matter.id).toBe("pm-validate");
+    expect(warnings).toEqual([]);
+  });
+
   it("throws when JSON front matter is missing", () => {
     expect(() => parseItemDocument("Body only")).toThrow("missing JSON front matter");
+    expect(() => parseItemDocument("---\nyaml without closing marker")).toThrow("missing JSON front matter");
   });
 
   it("throws when JSON front matter is malformed", () => {

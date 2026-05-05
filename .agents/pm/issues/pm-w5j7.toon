@@ -1,0 +1,33 @@
+id: pm-w5j7
+title: "GitHub #20: resilient mixed-frontmatter item-format migration"
+description: "Document and fix GitHub issue #20: item-format migration must not crash or brick a workspace when json_markdown item files include non-JSON/YAML frontmatter before the JSON item block."
+type: Issue
+status: in_progress
+priority: 0
+tags[6]: bug,compatibility,github,item-format,migration,pm-cli
+created_at: "2026-05-05T18:05:26.674Z"
+updated_at: "2026-05-05T18:50:24.426Z"
+deadline: "2026-05-06T18:05:26.674Z"
+assignee: codex-release-agent
+author: codex-release-agent
+estimated_minutes: 120
+acceptance_criteria: A temp previous-version workspace containing clean JSON-frontmatter and YAML-prepended item markdown migrates or is recoverably handled without bricking create/update/list; regression tests cover the mixed-frontmatter case; GitHub issue #20 is closed with release evidence.
+parent: pm-0rjf
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-0rjf,parent,"2026-05-05T18:05:26.674Z",codex-release-agent,null
+comments[2]{created_at,author,text}:
+  "2026-05-05T18:05:26.674Z",codex-release-agent,"Duplicate-check evidence: ran pm search GitHub issue 20 non JSON frontmatter migration crashes bricked workspace --limit 10. Results were closed historical migration items,not an open tracker for GitHub issue #20,so this issue item records the external bug."
+  "2026-05-05T18:50:24.426Z",codex-release-agent,"Implemented resilient json_markdown migration for YAML-prepended item markdown, moved item-format settings write after migration, and added temp previous-version compatibility coverage. Evidence: focused unit tests passed, compatibility-check passed against 2026.5.4 fixture, full run-gates passed with 100 percent coverage."
+notes[1]{created_at,author,text}:
+  "2026-05-05T18:05:26.674Z",codex-release-agent,"GitHub issue #20 reports pm config project set item-format --format toon failing with Invalid item front matter: missing JSON front matter when md files include YAML frontmatter,then blocking pm create/update/config until manual cleanup."
+files[6]{path,scope,note}:
+  src/core/item/item-format.ts,project,json_markdown yaml wrapper parsing
+  src/core/store/item-format-migration.ts,project,recoverable migration skip warnings
+  src/cli/commands/config.ts,project,settings write after successful migration
+  scripts/release/compatibility-check.mjs,project,mixed-frontmatter compatibility fixture
+  tests/unit/item-format-migration.spec.ts,project,migration regression coverage
+  tests/unit/item-format-validation.spec.ts,project,format parser regression coverage
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/release/compatibility-check.mjs --json,null,project,900,null,null,null,null,null,null,null,null,null,null,null,published-version mixed-frontmatter migration gate
+  node scripts/run-tests.mjs test -- tests/unit/item-format-validation.spec.ts tests/unit/item-format-migration.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,mixed-frontmatter parser and migration regressions
+body: ""

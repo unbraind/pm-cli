@@ -32,6 +32,49 @@ async function writeTaskWithFormat(pmPath: string, id: string, format: ItemForma
 }
 
 describe("migrateItemFilesToFormat", () => {
+  it("migrates json markdown items with leading YAML wrappers into TOON", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      await writeTaskWithFormat(pmPath, "pm-yaml-wrapper", "json_markdown", "yaml-wrapped-source");
+      const markdownPath = getItemPath(pmPath, "Task", "pm-yaml-wrapper", "json_markdown");
+      const original = await fs.readFile(markdownPath, "utf8");
+      await fs.writeFile(
+        markdownPath,
+        `---\ntitle: "{legacy-yaml-wrapper}"\ntype: document\n---\n${original}`,
+        "utf8",
+      );
+      const toonPath = getItemPath(pmPath, "Task", "pm-yaml-wrapper", "toon");
+
+      const result = await migrateItemFilesToFormat(pmPath, "toon");
+      expect(result.migrated).toContain("pm-yaml-wrapper");
+      expect(result.removed).toEqual(["tasks/pm-yaml-wrapper.md"]);
+      expect(result.warnings).toContain(
+        "item_format_migration_parse_warning:pm-yaml-wrapper:json_markdown_leading_yaml_frontmatter_ignored",
+      );
+      await expect(fs.access(markdownPath)).rejects.toBeDefined();
+
+      const parsed = parseItemDocument(await fs.readFile(toonPath, "utf8"), { format: "toon" });
+      expect(parsed.front_matter.description).toBe("yaml-wrapped-source");
+      expect(parsed.body).toBe("Body pm-yaml-wrapper");
+    });
+  });
+
+  it("continues migration when an item file is unreadable", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      await writeTaskWithFormat(pmPath, "pm-good", "json_markdown", "good-source");
+      const badPath = getItemPath(pmPath, "Task", "pm-bad", "json_markdown");
+      await fs.mkdir(path.dirname(badPath), { recursive: true });
+      await fs.writeFile(badPath, "not item front matter\n", "utf8");
+
+      const result = await migrateItemFilesToFormat(pmPath, "toon");
+      expect(result.scanned).toBe(2);
+      expect(result.migrated).toEqual(["pm-good"]);
+      expect(result.removed).toEqual(["tasks/pm-good.md"]);
+      expect(result.warnings.some((warning) => warning.startsWith("item_format_migration_skipped:tasks/pm-bad.md:"))).toBe(true);
+      await expect(fs.access(getItemPath(pmPath, "Task", "pm-good", "toon"))).resolves.toBeUndefined();
+      await expect(fs.access(badPath)).resolves.toBeUndefined();
+    });
+  });
+
   it("migrates markdown-only task files into TOON and removes markdown variants", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       await writeTaskWithFormat(pmPath, "pm-md-only", "json_markdown", "markdown-source");

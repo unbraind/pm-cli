@@ -33,7 +33,7 @@ pnpm version:check
 
 ## One-Time Setup
 
-- Add `NPM_TOKEN` as a GitHub Environment or repository secret.
+- Prefer npm Trusted Publishing for `.github/workflows/release.yml` so GitHub-hosted release jobs can publish with short-lived OIDC credentials. Keep `id-token: write`, `npm publish --access public --provenance`, and the package repository URL aligned with npm's Trusted Publisher configuration. If Trusted Publishing is not configured yet, add `NPM_TOKEN` as a GitHub Environment or repository secret as the fallback publisher credential.
 - Add `SENTRY_AUTH_TOKEN` as an optional GitHub Environment or repository secret when Sentry release creation and sourcemap upload should run. The release workflow skips this step cleanly when the secret is absent.
 - Keep any `release` environment compatible with free GitHub features. This repository is public, so environment secrets and tag/branch deployment rules are compatible with the free GitHub path; do not add paid-only release gates.
 - Ensure `GITHUB_TOKEN` has `contents: write` for GitHub Release creation.
@@ -47,6 +47,7 @@ pnpm version:check
 Policy:
 
 - release only when commits exist after the latest release tag
+- ignore `.agents/pm`-only tracker commits for publish eligibility so post-release evidence and closure updates do not create a package release by themselves
 - release at most once per UTC day by default
 - same-day follow-up release (`YYYY.M.D-N`) is manual-only via `allow_same_day_release=true`
 - release preparation must pass all quality and compatibility gates before commit+tag push
@@ -82,6 +83,7 @@ Minimum coverage:
 - parent and dependency links
 - comments, notes, learnings, body, reminders, events
 - linked files, docs, and tests
+- json_markdown items with external YAML wrappers before JSON front matter
 - closed issue metadata and history drift checks
 - current-build write mutation and item-count preservation
 
@@ -141,12 +143,14 @@ gh run watch <run-id> --exit-status
 
 ```bash
 npm view @unbrained/pm-cli@<version> version dist.integrity dist.unpackedSize --json
-npx --yes @unbrained/pm-cli@<version> --version
-bunx @unbrained/pm-cli@<version> --version
+npx --yes --package @unbrained/pm-cli@<version> -- pm --version
+bunx --bun @unbrained/pm-cli@<version> pm --version
 gh release view v<version> --json tagName,name,isDraft,isPrerelease,url
 ```
 
 The executable remains `pm` even though the npm package is scoped.
+
+Use the npm registry package for maintainer global updates. Do not use `npm install -g https://github.com/unbraind/pm-cli.git` as the normal update path; npm can leave a stale shim while replacing git-sourced global installs. If a workstation is already in that state, run `bash scripts/install.sh --repair` or `npm uninstall -g @unbrained/pm-cli && npm install -g @unbrained/pm-cli@latest`.
 
 ## Failure Handling
 

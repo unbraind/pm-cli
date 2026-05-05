@@ -69,6 +69,7 @@ describe("release automation contract", () => {
     expect(pipelineHelp.stdout).toContain("--dry-run");
     expect(pipelineHelp.stdout).toContain("--push");
     expect(pipelineHelp.stdout).toContain("--telemetry-mode");
+    expect(pipelineHelp.stdout).toContain(".agents/pm tracker state");
 
     const gatesHelp = runNodeScript(["scripts/release/run-gates.mjs", "--help"]);
     expect(gatesHelp.status).toBe(0);

@@ -1,0 +1,35 @@
+id: pm-drje
+title: "GitHub #21: document resilient global git-install recovery"
+description: "Document and remediate GitHub issue #21: npm global install from the GitHub repository can fail with ENOTEMPTY and leave a broken pm symlink on reinstall."
+type: Issue
+status: in_progress
+priority: 1
+tags[6]: bug,docs,github,install,npm,pm-cli
+created_at: "2026-05-05T18:05:44.169Z"
+updated_at: "2026-05-05T18:50:27.864Z"
+deadline: "2026-05-06T18:05:44.169Z"
+assignee: codex-release-agent
+author: codex-release-agent
+estimated_minutes: 90
+acceptance_criteria: The supported install/update path avoids broken global git symlink states or gives a deterministic recovery command; release/local docs and tests cover the install guidance; GitHub issue #21 is closed or updated with evidence.
+parent: pm-0rjf
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-0rjf,parent,"2026-05-05T18:05:44.169Z",codex-release-agent,null
+comments[2]{created_at,author,text}:
+  "2026-05-05T18:05:44.169Z",codex-release-agent,"Duplicate-check evidence: ran pm search GitHub issue 21 npm install global git broken symlink ENOTEMPTY --limit 10. Results were closed install/history items,not an open tracker for GitHub issue #21,so this issue item records the external bug."
+  "2026-05-05T18:50:27.864Z",codex-release-agent,"Documented registry-first global install/update path and added --repair install-script cleanup for stale git-source global installs. Evidence: release-readiness regression passed, full run-gates passed, clean npx and bunx published-package smoke checks passed from /tmp."
+notes[1]{created_at,author,text}:
+  "2026-05-05T18:05:44.169Z",codex-release-agent,"GitHub issue #21 reports npm install -g from the git repo can fail during reinstall and leave pm pointing to a deleted npm temp git clone. This is package-manager behavior,but the CLI release docs should make npm registry install/update the supported path and provide safe cleanup guidance for git-source installs."
+files[6]{path,scope,note}:
+  scripts/install.sh,project,repair mode for stale global installs
+  scripts/install.ps1,project,repair mode for stale global installs
+  README.md,project,supported registry update path
+  docs/QUICKSTART.md,project,supported registry update path
+  docs/RELEASING.md,project,release install guidance
+  tests/integration/release-readiness-runtime.spec.ts,project,install repair docs regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,install repair guidance regression
+docs[2]{path,scope,note}:
+  docs/QUICKSTART.md,project,global install guidance
+  README.md,project,global install guidance
+body: ""

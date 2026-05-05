@@ -19,6 +19,14 @@ npm install -g @unbrained/pm-cli
 pm --version
 ```
 
+For updates, use the registry package again:
+
+```bash
+npm install -g @unbrained/pm-cli@latest
+```
+
+Do not use the GitHub git URL as the normal global update path. If a previous git-sourced install left a stale `pm` shim, run `bash scripts/install.sh --repair` from a checkout or uninstall the package before reinstalling from npm.
+
 For one-off use:
 
 ```bash

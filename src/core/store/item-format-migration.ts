@@ -28,6 +28,10 @@ function normalizeRelativePath(pmRoot: string, absolutePath: string): string {
   return path.relative(pmRoot, absolutePath).replaceAll("\\", "/");
 }
 
+function errorSummary(error: unknown): string {
+  return String(error).replaceAll(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 120);
+}
+
 export async function migrateItemFilesToFormat(
   pmRoot: string,
   targetFormat: ItemFormat,
@@ -74,35 +78,45 @@ export async function migrateItemFilesToFormat(
       scanned += 1;
       const sourcePath = (variants[targetFormat] ?? variants[alternateFormat]) as string;
       const sourceFormat = sourcePath === variants[targetFormat] ? targetFormat : alternateFormat;
-      const sourceRaw = await fs.readFile(sourcePath, "utf8");
-      const parsedDocument = parseItemDocument(sourceRaw, { format: sourceFormat, schema });
-      const targetPath = getItemPath(pmRoot, itemType, itemId, targetFormat, typeToFolder);
-      const serializedTarget = serializeItemDocument(parsedDocument, { format: targetFormat, schema });
-      const existingTargetRaw = await readFileIfExists(targetPath);
-      if (existingTargetRaw !== serializedTarget) {
-        await writeFileAtomic(targetPath, serializedTarget);
-        warnings.push(
-          ...(await runActiveOnWriteHooks({
-            path: targetPath,
-            scope: "project",
-            op,
-          })),
-        );
-        migratedIds.add(itemId);
-      }
+      try {
+        const sourceRaw = await fs.readFile(sourcePath, "utf8");
+        const parsedDocument = parseItemDocument(sourceRaw, {
+          format: sourceFormat,
+          schema,
+          onWarning: (warning) => warnings.push(`item_format_migration_parse_warning:${itemId}:${warning}`),
+        });
+        const targetPath = getItemPath(pmRoot, itemType, itemId, targetFormat, typeToFolder);
+        const serializedTarget = serializeItemDocument(parsedDocument, { format: targetFormat, schema });
+        const existingTargetRaw = await readFileIfExists(targetPath);
+        if (existingTargetRaw !== serializedTarget) {
+          await writeFileAtomic(targetPath, serializedTarget);
+          warnings.push(
+            ...(await runActiveOnWriteHooks({
+              path: targetPath,
+              scope: "project",
+              op,
+            })),
+          );
+          migratedIds.add(itemId);
+        }
 
-      const alternatePath = variants[alternateFormat];
-      if (alternatePath && alternatePath !== targetPath && (await pathExists(alternatePath))) {
-        await removeFileIfExists(alternatePath);
-        removedPaths.add(normalizeRelativePath(pmRoot, alternatePath));
+        const alternatePath = variants[alternateFormat];
+        if (alternatePath && alternatePath !== targetPath && (await pathExists(alternatePath))) {
+          await removeFileIfExists(alternatePath);
+          removedPaths.add(normalizeRelativePath(pmRoot, alternatePath));
+          warnings.push(
+            ...(await runActiveOnWriteHooks({
+              path: alternatePath,
+              scope: "project",
+              op: `${op}:remove`,
+            })),
+          );
+          migratedIds.add(itemId);
+        }
+      } catch (error) {
         warnings.push(
-          ...(await runActiveOnWriteHooks({
-            path: alternatePath,
-            scope: "project",
-            op: `${op}:remove`,
-          })),
+          `item_format_migration_skipped:${normalizeRelativePath(pmRoot, sourcePath)}:${errorSummary(error)}`,
         );
-        migratedIds.add(itemId);
       }
     }
   }
