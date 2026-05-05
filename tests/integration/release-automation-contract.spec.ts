@@ -37,6 +37,8 @@ describe("release automation contract", () => {
     expect(workflow).toContain("allow_same_day_release:");
     expect(workflow).toContain("dry_run:");
     expect(workflow).toContain("push:");
+    expect(workflow).toContain('default: "off"');
+    expect(workflow).toContain('- "off"');
     expect(workflow).toContain("--allow-same-day-release");
     expect(workflow).toContain("--dry-run");
     expect(workflow).toContain("--push");

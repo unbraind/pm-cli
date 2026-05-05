@@ -24,11 +24,11 @@ on:
         description: "Telemetry gate mode"
         type: choice
         required: false
-        default: off
+        default: "off"
         options:
-          - off
-          - best-effort
-          - required
+          - "off"
+          - "best-effort"
+          - "required"
 
 permissions:
   contents: write
