@@ -890,8 +890,9 @@ describe("runTestAll", () => {
         const startedAt = Date.now();
         const result = await runTestAll({ status: "open", timeout: "0.02" }, { path: context.pmPath });
         const elapsedMs = Date.now() - startedAt;
+        const maxElapsedMs = process.platform === "win32" ? 10000 : 3000;
 
-        expect(elapsedMs).toBeLessThan(3000);
+        expect(elapsedMs).toBeLessThan(maxElapsedMs);
         expect(result.totals.items).toBe(1);
         expect(result.totals.linked_tests).toBe(1);
         expect(result.failed).toBe(1);

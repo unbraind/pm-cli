@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clarified GitHub-hosted Sentry issue-threshold gating so release uploads can use CI-scoped Sentry tokens while issue-read checks require `SENTRY_PERSONAL_ADMIN_TOKEN`.
 - Made the Release workflow retry-safe after partial publication by skipping `npm publish` when the target version already exists and by passing the explicit release tag to GitHub Release creation.
 
+### Fixed
+- Stabilized the linked-test timeout regression on Windows runners by keeping bounded-completion coverage while allowing slower process teardown.
+
 ## [2026.5.5] - 2026-05-05
 
 ### Added
