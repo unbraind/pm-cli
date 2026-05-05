@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Hardened daily auto-release publishing so a newly pushed tag dispatches and waits for the tag-aware Release workflow, avoiding `GITHUB_TOKEN` push-trigger suppression.
+- Clarified GitHub-hosted Sentry issue-threshold gating so release uploads can use CI-scoped Sentry tokens while issue-read checks require `SENTRY_PERSONAL_ADMIN_TOKEN`.
 
 ## [2026.5.5] - 2026-05-05
 

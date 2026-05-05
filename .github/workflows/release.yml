@@ -88,8 +88,8 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_PERSONAL_ADMIN_TOKEN: ${{ secrets.SENTRY_PERSONAL_ADMIN_TOKEN }}
         run: |
-          if [ -z "${SENTRY_AUTH_TOKEN:-}" ] && [ -z "${SENTRY_PERSONAL_ADMIN_TOKEN:-}" ]; then
-            echo "SENTRY_AUTH_TOKEN is not configured; skipping Sentry threshold gate."
+          if [ -z "${SENTRY_PERSONAL_ADMIN_TOKEN:-}" ]; then
+            echo "SENTRY_PERSONAL_ADMIN_TOKEN is not configured; skipping Sentry issue threshold gate."
             exit 0
           fi
           node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode off --max-critical 0 --max-high 0
