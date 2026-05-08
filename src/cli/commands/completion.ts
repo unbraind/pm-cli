@@ -198,7 +198,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("init scaffold install uninstall explore manage doctor adopt adopt-all activate deactivate --init --scaffold --install --uninstall --explore --manage --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --trace --runtime-probe --fix-managed-state --strict-exit --fail-on-warn --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    comments)",
-    `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-comment --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --stdin --file --limit --author --message --allow-audit-comment --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    comments-audit)",
     `      COMPREPLY=(${compgen("--status --type --tag --priority --parent --sprint --release --assignee --assignee-filter --limit-items --limit --full-history --latest --json --quiet --path --no-extensions --no-pager --profile --help")})`,
@@ -727,6 +727,8 @@ _pm() {
         comments)
           _arguments \\
             '--add[Add one entry (plain text, text=<value>, markdown pairs, or - for stdin)]:text' \\
+            '--stdin[Read comment text from stdin (supports multiline markdown)]' \\
+            '--file[Read comment text from file (supports multiline markdown)]:path' \\
             '--limit[Return only latest n entries]:number' \\
             '--author[Entry author (falls back to PM_AUTHOR/settings)]:author' \\
             '--message[History message]:message' \\
@@ -1394,6 +1396,8 @@ complete -c pm -n '__fish_seen_subcommand_from deps' -l summary -d 'Return count
 
 # comments / notes / learnings flags
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l add -d 'Add one entry (text=<value> or plain text)' -r
+complete -c pm -n '__fish_seen_subcommand_from comments' -l stdin -d 'Read comment text from stdin (supports multiline markdown)'
+complete -c pm -n '__fish_seen_subcommand_from comments' -l file -d 'Read comment text from file (supports multiline markdown)' -r
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l limit -d 'Return only latest n entries' -r
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l author -d 'Entry author' -r
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l message -d 'History message' -r

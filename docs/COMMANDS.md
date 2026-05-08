@@ -118,11 +118,13 @@ pm release <id> --allow-audit-release --author <you>
 
 ```bash
 pm comments <id> "Implemented command parsing fix."
+printf '%s\n' '## Verification summary' '- Linux pass' '- macOS pass' | pm comments <id> --stdin
+pm comments <id> --file docs/release-evidence.md
 pm notes <id> --add "Keep renderer changes isolated to TOON output."
 pm learnings <id> --add "Use runtime contracts instead of duplicating flag lists."
 ```
 
-Use comments for progress and evidence, notes for implementation context, and learnings for durable future guidance.
+Use comments for progress and evidence, notes for implementation context, and learnings for durable future guidance. For comments, choose exactly one input source (`[text]`, `--add`, `--stdin`, or `--file`) per invocation.
 
 ## Linked Artifacts
 

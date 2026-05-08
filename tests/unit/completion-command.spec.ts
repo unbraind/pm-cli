@@ -196,13 +196,24 @@ describe("generateBashScript", () => {
 
   it("includes comments mutation metadata flags in bash completion", () => {
     const script = generateBashScript();
-    expect(script).toContain("--add --limit --author --message --allow-audit-comment --force");
+    expect(script).toContain("--add --stdin --file --limit --author --message --allow-audit-comment --force");
+    expect(script).toContain("--stdin");
+    expect(script).toContain("--file");
     expect(script).toContain("--allow-audit-comment");
     expect(script).toContain("--allow-audit-note");
     expect(script).toContain("--allow-audit-learning");
     expect(script).toContain(
       "--status --type --tag --priority --parent --sprint --release --assignee --assignee-filter --limit-items --limit --full-history --latest",
     );
+
+    const zshScript = generateZshScript();
+    expect(zshScript).toContain("--stdin[Read comment text from stdin (supports multiline markdown)]");
+    expect(zshScript).toContain("--file[Read comment text from file (supports multiline markdown)]:path");
+
+    const fishScript = generateFishScript();
+    expect(fishScript).toContain("__fish_seen_subcommand_from comments");
+    expect(fishScript).toContain("-l stdin -d 'Read comment text from stdin (supports multiline markdown)'");
+    expect(fishScript).toContain("-l file -d 'Read comment text from file (supports multiline markdown)'");
   });
 
   it("includes notes/learnings audit alias flags in zsh and fish completion", () => {

@@ -561,8 +561,10 @@ export function registerMutationCommands(program: Command): void {
   program
     .command("comments")
     .argument("<id>", "Item id")
-    .argument("[text]", "Optional comment text shorthand (equivalent to --add; use - for stdin)")
+    .argument("[text]", "Optional comment text shorthand (equivalent to --add)")
     .option("--add <text>", "Add one comment entry (plain text fallback, text=<value>, markdown pairs, or - for stdin; CSV-like key fragments are preserved as plain text unless text is explicit)")
+    .option("--stdin", "Read comment text from stdin (supports multiline markdown)")
+    .option("--file <path>", "Read comment text from file (supports multiline markdown)")
     .option("--limit <n>", "Return only latest n comments")
     .option("--author [value]", "Comment author (optional; falls back to PM_AUTHOR/settings)")
     .option("--message <value>", "History message")
@@ -574,19 +576,34 @@ export function registerMutationCommands(program: Command): void {
       const startedAt = Date.now();
       const addFromOption = typeof options.add === "string" ? options.add : undefined;
       const addFromPositional = typeof text === "string" ? text : undefined;
-      if (addFromOption !== undefined && addFromPositional !== undefined) {
-        throw new PmCliError("Specify comment text either as positional [text] or with --add, not both", EXIT_CODE.USAGE);
+      const readFromStdin = options.stdin === true;
+      const readFromFile = typeof options.file === "string" ? options.file : undefined;
+      const sourceCount =
+        Number(addFromOption !== undefined) +
+        Number(addFromPositional !== undefined) +
+        Number(readFromStdin) +
+        Number(readFromFile !== undefined);
+      if (sourceCount > 1) {
+        if (addFromOption !== undefined && addFromPositional !== undefined && !readFromStdin && readFromFile === undefined) {
+          throw new PmCliError("Specify comment text either as positional [text] or with --add, not both", EXIT_CODE.USAGE);
+        }
+        throw new PmCliError(
+          "Specify comment text with exactly one source: positional [text], --add, --stdin, or --file",
+          EXIT_CODE.USAGE,
+        );
       }
       const add = addFromOption ?? addFromPositional;
       const result = await runComments(id, {
         add,
+        stdin: readFromStdin,
+        file: readFromFile,
         limit: typeof options.limit === "string" ? options.limit : undefined,
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
         allowAuditComment: Boolean(options.allowAuditComment),
         force: Boolean(options.force),
       }, globalOptions);
-      if (typeof add === "string") {
+      if (typeof add === "string" || readFromStdin || readFromFile !== undefined) {
         await invalidateSearchCachesForMutation(globalOptions, result);
       }
       printResult(result, globalOptions);

@@ -370,12 +370,16 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   comments: {
     why: "Adds or reviews lightweight status updates linked to an item.",
     examples: [
+      'pm comments pm-a1b2 "Verified fix on Linux and macOS"',
       'pm comments pm-a1b2 --add "Verified fix on Linux and macOS"',
+      'printf "%s\\n" "## Verification" "- linux pass" "- mac pass" | pm comments pm-a1b2 --stdin',
+      'pm comments pm-a1b2 --file docs/release-evidence.md --author "codex-agent"',
       'pm comments pm-a1b2 --add "text: verification note with commas, key-like words, and parser details"',
       'pm comments pm-a1b2 --add "Follow-up needed after review" --author "codex-agent" --force',
       "pm comments pm-a1b2 --limit 10",
     ],
     tips: [
+      "Use exactly one comment source at a time: positional [text], --add, --stdin, or --file.",
       "Use --force when adding comments to items currently assigned to a different owner.",
       "When --add payload resembles CSV-like key fragments (for example text=hello,scope:project), plain-text fallback is intentional; use explicit text=..., markdown text: ..., or stdin token - for structured intent.",
     ],

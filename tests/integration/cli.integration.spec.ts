@@ -2461,6 +2461,40 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(conflictingCommentArgs.code).toBe(2);
       expect(conflictingCommentArgs.stderr).toContain("Specify comment text either as positional [text] or with --add, not both");
 
+      const conflictingCommentSources = context.runCli(["comments", id, "--add", "flag comment", "--stdin"]);
+      expect(conflictingCommentSources.code).toBe(2);
+      expect(conflictingCommentSources.stderr).toContain(
+        "Specify comment text with exactly one source: positional [text], --add, --stdin, or --file",
+      );
+
+      const commentFilePath = path.join(context.tempRoot, "comments-multiline.md");
+      const fileMarkdown = "## File Markdown Comment\n\n- detail one\n- detail two\n";
+      await writeFile(commentFilePath, fileMarkdown, "utf8");
+      const addCommentFile = context.runCli(
+        ["comments", id, "--json", "--file", commentFilePath, "--author", "integration-test", "--message", "Add file comment"],
+        { expectJson: true },
+      );
+      expect(addCommentFile.code).toBe(0);
+      const addCommentFileJson = addCommentFile.json as { comments: Array<{ text: string; author: string }> };
+      expect(addCommentFileJson.comments.at(-1)?.text).toBe(fileMarkdown);
+      expect(addCommentFileJson.comments.at(-1)?.author).toBe("integration-test");
+
+      const stdinMarkdown = "### Stdin Markdown Comment\n\n- step one\n- step two\n";
+      const addCommentStdin = spawnSync(
+        process.execPath,
+        [distCliPath(), "comments", id, "--stdin", "--json", "--author", "integration-test", "--message", "Add stdin comment"],
+        {
+          cwd: process.cwd(),
+          env: context.env,
+          encoding: "utf8",
+          input: stdinMarkdown,
+        },
+      );
+      expect(addCommentStdin.status).toBe(0);
+      const addCommentStdinJson = JSON.parse(addCommentStdin.stdout) as { comments: Array<{ text: string; author: string }> };
+      expect(addCommentStdinJson.comments.at(-1)?.text).toBe(stdinMarkdown);
+      expect(addCommentStdinJson.comments.at(-1)?.author).toBe("integration-test");
+
       const listComments = context.runCli(["comments", id, "--json", "--limit", "1"], { expectJson: true });
       expect(listComments.code).toBe(0);
 

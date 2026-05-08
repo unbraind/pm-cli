@@ -238,7 +238,7 @@ describe("contracts command runtime", () => {
         command: "update-many",
         flags: ["--acceptance_criteria", "--definition_of_ready", "--why_now", "--customer_impact"],
       },
-      { command: "comments", flags: ["--add", "--allow-audit-comment"] },
+      { command: "comments", flags: ["--add", "--stdin", "--file", "--allow-audit-comment"] },
       { command: "comments-audit", flags: ["--assignee-filter", "--limit-items", "--limit", "--full-history", "--latest"] },
       { command: "notes", flags: ["--add", "--limit", "--author", "--message", "--allow-audit-note", "--allow-audit-comment", "--force"] },
       {
@@ -347,7 +347,11 @@ describe("contracts command runtime", () => {
     expect(commentsAction.commands).toEqual(["comments"]);
     expect(commentsAction.command_flags?.map((entry) => entry.command)).toEqual(["comments"]);
     expect(commentsAction.command_flags?.[0]?.flags).toEqual(
-      expect.arrayContaining([expect.objectContaining({ flag: "--allow-audit-comment" })]),
+      expect.arrayContaining([
+        expect.objectContaining({ flag: "--stdin" }),
+        expect.objectContaining({ flag: "--file" }),
+        expect.objectContaining({ flag: "--allow-audit-comment" }),
+      ]),
     );
 
     const testRunsListAction = await runContracts({ action: "test-runs-list", flagsOnly: true }, GLOBAL_OPTIONS);

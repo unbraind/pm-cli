@@ -1541,6 +1541,24 @@ describe("Pi agent extension wrapper for pm", () => {
 
     expect(
       buildPmCliArgs({
+        action: "comments",
+        id: "pm-a1b2",
+        stdin: true,
+        author: "pi-bot",
+      }),
+    ).toEqual(["--json", "comments", "pm-a1b2", "--stdin", "--author", "pi-bot"]);
+
+    expect(
+      buildPmCliArgs({
+        action: "comments",
+        id: "pm-a1b2",
+        file: "notes/comment.md",
+        author: "pi-bot",
+      }),
+    ).toEqual(["--json", "comments", "pm-a1b2", "--file", "notes/comment.md", "--author", "pi-bot"]);
+
+    expect(
+      buildPmCliArgs({
         action: "notes",
         id: "pm-a1b2",
         text: "capture implementation note",

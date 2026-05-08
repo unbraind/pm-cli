@@ -291,7 +291,7 @@ const REQUIRED_TEST_FLAGS = [
   "--message",
   "--force",
 ];
-const REQUIRED_COMMENTS_FLAGS = ["--add", "--limit", "--author", "--message", "--allow-audit-comment", "--force"];
+const REQUIRED_COMMENTS_FLAGS = ["--add", "--stdin", "--file", "--limit", "--author", "--message", "--allow-audit-comment", "--force"];
 const REQUIRED_COMMENTS_AUDIT_FLAGS = [
   "--status",
   "--type",

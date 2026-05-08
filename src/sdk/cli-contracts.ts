@@ -560,6 +560,8 @@ export const COMMENTS_AUDIT_FLAG_CONTRACTS: CliFlagContract[] = [
 
 export const COMMENTS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--add" },
+  { flag: "--stdin" },
+  { flag: "--file" },
   { flag: "--limit" },
   { flag: "--author" },
   { flag: "--message" },
@@ -1628,6 +1630,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   collapse: { type: "string", enum: ["none", "repeated"] },
   summary: { type: "boolean" },
   shell: { type: "string", enum: ["bash", "zsh", "fish"] },
+  stdin: { type: "boolean" },
   file: { type: "string" },
   preserveSourceIds: { type: "boolean" },
   folder: { type: "string" },
@@ -1832,7 +1835,10 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   close: { required: ["id", "text"], optional: ["validateClose", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   delete: { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   append: { required: ["id", "body"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
-  comments: { required: ["id"], optional: ["text", "add", "limit", "allowAuditComment", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
+  comments: {
+    required: ["id"],
+    optional: ["text", "add", "stdin", "file", "limit", "allowAuditComment", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
+  },
   "comments-audit": {
     optional: [
       "status",
@@ -2324,6 +2330,13 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   allowAuditComment: {
     description: "For comments action, allow non-owner append-only comment audits without requiring --force.",
+  },
+  stdin: {
+    description: "When true for comments action, read comment text from piped stdin (supports multiline markdown).",
+  },
+  file: {
+    description: "Path to input file for actions that read payload text (for example comments --file or beads-import --file).",
+    examples: ["notes/comment.md", "import.json"],
   },
   allowAuditUpdate: {
     description: "Allow non-owner metadata-only update audits without requiring --force.",

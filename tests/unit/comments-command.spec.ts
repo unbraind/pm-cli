@@ -137,6 +137,20 @@ describe("runComments", () => {
     });
   });
 
+  it("rejects conflicting comment input sources", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-conflicting-input-sources");
+      await expect(runComments(id, { add: "flag text", stdin: true }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runComments(id, { stdin: true, file: path.join(context.pmPath, "comment.md") }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
   it("resolves author from explicit input, env fallback, settings fallback, and unknown fallback", async () => {
     await withTempPmPath(async (context) => {
       const explicitId = createTask(context, "comments-explicit-author");
@@ -255,6 +269,43 @@ describe("runComments", () => {
 
       const result = await runComments(id, { add: "-" }, { path: context.pmPath });
       expect(result.comments.at(-1)?.text).toBe("from stdin");
+    });
+  });
+
+  it("accepts --stdin payload for multiline markdown comment text", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-stdin-markdown");
+      const markdown = "# Investigation\n\n- verify branch state\n- add evidence\n";
+      const stdin = new PassThrough();
+      stdin.end(markdown);
+      Object.defineProperty(stdin, "isTTY", { value: false, configurable: true });
+      vi.spyOn(process, "stdin", "get").mockReturnValue(stdin as unknown as NodeJS.ReadStream);
+
+      const result = await runComments(id, { stdin: true }, { path: context.pmPath });
+      expect(result.comments.at(-1)?.text).toBe(markdown);
+    });
+  });
+
+  it("accepts --file payload for multiline markdown comment text", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-file-markdown");
+      const filePath = path.join(context.pmPath, "comment-markdown.md");
+      const markdown = "## Detailed Note\n\nThis is a multiline markdown payload.\n- bullet one\n- bullet two\n";
+      await writeFile(filePath, markdown, "utf8");
+
+      const result = await runComments(id, { file: filePath }, { path: context.pmPath });
+      expect(result.comments.at(-1)?.text).toBe(markdown);
+    });
+  });
+
+  it("rejects missing --file path input", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-file-missing");
+      await expect(
+        runComments(id, { file: path.join(context.pmPath, "missing-comment.md") }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 

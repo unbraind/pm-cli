@@ -203,6 +203,7 @@ export interface PmToolParameters {
   preserveSourceIds?: boolean;
   folder?: string;
   text?: string;
+  stdin?: boolean;
   add?: string[];
   addGlob?: string[];
   remove?: string[];
@@ -775,6 +776,10 @@ export function buildPmCliArgs(params: PmToolParameters): string[] {
     case "comments":
       args.push("comments", requireString(params.id, "id", action));
       pushOption(args, "--add", params.text ?? params.add?.[0]);
+      if (params.stdin) {
+        args.push("--stdin");
+      }
+      pushOption(args, "--file", params.file);
       pushOption(args, "--limit", params.limit);
       if (params.allowAuditComment) {
         args.push("--allow-audit-comment");

@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
@@ -14,6 +15,8 @@ import type { Comment } from "../../types/index.js";
 
 export interface CommentsCommandOptions {
   add?: string;
+  stdin?: boolean;
+  file?: string;
   limit?: string;
   author?: string;
   message?: string;
@@ -61,6 +64,62 @@ function parseCommentTextInput(raw: string): string {
   }
 }
 
+interface ResolvedCommentInput {
+  mode: "list" | "add" | "stdin" | "file";
+  value?: string;
+}
+
+function isErrnoError(error: unknown): error is NodeJS.ErrnoException {
+  return typeof error === "object" && error !== null && "code" in error;
+}
+
+async function resolveCommentInput(
+  options: CommentsCommandOptions,
+  stdinResolver: ReturnType<typeof createStdinTokenResolver>,
+): Promise<ResolvedCommentInput> {
+  const hasAdd = options.add !== undefined;
+  const hasStdin = options.stdin === true;
+  const hasFile = typeof options.file === "string";
+  const sourceCount = Number(hasAdd) + Number(hasStdin) + Number(hasFile);
+  if (sourceCount === 0) {
+    return { mode: "list" };
+  }
+  if (sourceCount > 1) {
+    throw new PmCliError("Specify comment text using only one input source: --add, --stdin, or --file", EXIT_CODE.USAGE);
+  }
+  if (hasAdd) {
+    const addInput = await stdinResolver.resolveValue(options.add, "--add");
+    return {
+      mode: "add",
+      value: addInput ?? "",
+    };
+  }
+  if (hasStdin) {
+    const stdinInput = await stdinResolver.resolveValue("-", "--stdin");
+    return {
+      mode: "stdin",
+      value: stdinInput ?? "",
+    };
+  }
+  const filePath = options.file?.trim() ?? "";
+  if (!filePath) {
+    throw new PmCliError("--file path cannot be empty", EXIT_CODE.USAGE);
+  }
+  try {
+    const fileInput = await readFile(filePath, "utf8");
+    return {
+      mode: "file",
+      value: fileInput,
+    };
+  } catch (error: unknown) {
+    if (isErrnoError(error) && error.code === "ENOENT") {
+      throw new PmCliError(`--file path not found: ${filePath}`, EXIT_CODE.USAGE);
+    }
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new PmCliError(`Failed to read --file path "${filePath}": ${detail}`, EXIT_CODE.USAGE);
+  }
+}
+
 export async function runComments(id: string, options: CommentsCommandOptions, global: GlobalOptions): Promise<CommentsResult> {
   const stdinResolver = createStdinTokenResolver();
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
@@ -70,8 +129,9 @@ export async function runComments(id: string, options: CommentsCommandOptions, g
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const limit = parseLimit(options.limit);
+  const commentInput = await resolveCommentInput(options, stdinResolver);
 
-  if (options.add === undefined) {
+  if (commentInput.mode === "list") {
     const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
     if (!located) {
       throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
@@ -86,10 +146,10 @@ export async function runComments(id: string, options: CommentsCommandOptions, g
   }
 
   const author = resolveAuthor(options.author, settings.author_default);
-  const addInput = await stdinResolver.resolveValue(options.add, "--add");
-  const text = parseCommentTextInput(addInput ?? "");
-  if (!text) {
-    throw new PmCliError("--add text cannot be empty", EXIT_CODE.USAGE);
+  const text = commentInput.mode === "add" ? parseCommentTextInput(commentInput.value ?? "") : (commentInput.value ?? "");
+  if (!text.trim()) {
+    const inputFlag = commentInput.mode === "add" ? "--add" : commentInput.mode === "stdin" ? "--stdin" : "--file";
+    throw new PmCliError(`${inputFlag} text cannot be empty`, EXIT_CODE.USAGE);
   }
 
   let result: Awaited<ReturnType<typeof mutateItem>>;
