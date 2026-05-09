@@ -17,7 +17,7 @@
       "source": {
         "kind": "local",
         "input": "builtin-beads-import",
-        "location": "/home/steve/GITHUB_RELEASE/pm-cli/.agents/pm/extensions/beads"
+        "location": ".agents/pm/extensions/beads"
       }
     },
     {
@@ -35,7 +35,7 @@
       "source": {
         "kind": "local",
         "input": "builtin-todos-import-export",
-        "location": "/home/steve/GITHUB_RELEASE/pm-cli/.agents/pm/extensions/todos"
+        "location": ".agents/pm/extensions/todos"
       }
     }
   ]

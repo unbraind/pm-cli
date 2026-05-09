@@ -26,6 +26,17 @@ const RULES = [
     regex:
       /\b(?:password|passphrase)\s*[:=]\s*(?:(?!<|\$\{|\$\()[A-Za-z0-9!@#$%^&*._+\-=]{8,}|"(?!<|\$\{|\$\()[^"]{8,}"|'(?!<|\$\{|\$\()[^']{8,}')/gi,
   },
+  {
+    name: "absolute-home-path",
+    regex: /(?:^|[\s"'`(=])\/home\/[A-Za-z0-9._-]+\/[^\s"'`),;]+/g,
+    excludeFiles: /^(?:tests\/|examples\/)/,
+  },
+  {
+    name: "user-at-private-host",
+    regex:
+      /\b[A-Za-z0-9._-]+@(?:10\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|172\.(?:1[6-9]|2\d|3[01])\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|192\.168\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d))\b/g,
+    excludeFiles: /^(?:tests\/|examples\/)/,
+  },
 ];
 
 function fail(message) {
@@ -91,6 +102,13 @@ function run() {
 
     const content = buffer.toString("utf8");
     for (const rule of RULES) {
+      if (rule.includeFiles && !rule.includeFiles.test(file)) {
+        continue;
+      }
+      if (rule.excludeFiles && rule.excludeFiles.test(file)) {
+        continue;
+      }
+      rule.regex.lastIndex = 0;
       const matches = content.matchAll(rule.regex);
       for (const match of matches) {
         const index = match.index ?? 0;

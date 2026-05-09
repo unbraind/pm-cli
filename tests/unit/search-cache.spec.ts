@@ -328,6 +328,56 @@ describe("core/search/cache", () => {
     });
   });
 
+  it("bounds oversized semantic refresh corpus input before embedding", async () => {
+    await withTempPmPath(async (context) => {
+      const itemId = createSeedItem(context, "x".repeat(20_000));
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
+      await writeSettings(context.pmPath, settings);
+
+      const originalFetch = globalThis.fetch;
+      const inputLengths: number[] = [];
+      globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
+        const target = String(url);
+        if (target.endsWith("/v1/embeddings")) {
+          const body = JSON.parse(String(init?.body ?? "{}")) as { input?: string | string[] };
+          const inputs = Array.isArray(body.input) ? body.input : [body.input ?? ""];
+          inputLengths.push(...inputs.map((entry) => entry.length));
+          return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            json: async () => ({ data: inputs.map((_entry, index) => ({ index, embedding: [index + 0.1, index + 0.2] })) }),
+            text: async () => "",
+          } as unknown as Response;
+        }
+        if (target.endsWith("/collections/pm_items/points?wait=true")) {
+          return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            json: async () => ({ result: { status: "acknowledged" } }),
+            text: async () => "",
+          } as unknown as Response;
+        }
+        throw new Error(`Unexpected fetch target: ${target}`);
+      }) as typeof globalThis.fetch;
+
+      try {
+        const result = await refreshSemanticEmbeddingsForMutatedItems(context.pmPath, [itemId]);
+        expect(result.refreshed).toEqual([itemId]);
+        expect(result.warnings).toEqual([]);
+        expect(inputLengths).toHaveLength(1);
+        expect(inputLengths[0]).toBeGreaterThan(300);
+        expect(inputLengths[0]).toBeLessThanOrEqual(8_000);
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+  });
+
   it("sorts refreshed document ids deterministically before embedding and upsert", async () => {
     await withTempPmPath(async (context) => {
       const itemA = createSeedItem(context, "Semantic sort A");

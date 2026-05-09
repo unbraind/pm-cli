@@ -7,7 +7,7 @@ import { locateItem, readLocatedItem } from "../store/item-store.js";
 import { getSettingsPath } from "../store/paths.js";
 import { readSettings } from "../store/settings.js";
 import { executeEmbeddingBatchesWithRetry } from "./embedding-batches.js";
-import { buildSearchCorpus } from "./corpus.js";
+import { buildSemanticCorpusInput } from "./corpus.js";
 import { resolveEmbeddingProviders } from "./providers.js";
 import type { EmbeddingProviderConfig } from "./providers.js";
 import { resolveSettingsWithSemanticRuntimeDefaults } from "./semantic-defaults.js";
@@ -146,10 +146,6 @@ export async function writeVectorizationStatusLedger(pmRoot: string, entries: Re
   await writeFileAtomic(ledgerPath, serialized);
 }
 
-function buildSemanticCorpusInput(document: ItemDocument): string {
-  return JSON.stringify(buildSearchCorpus(document));
-}
-
 function buildVectorPayload(item: ItemFrontMatter): Record<string, unknown> {
   return {
     id: item.id,
@@ -277,7 +273,11 @@ async function refreshLocatedSemanticVectors(
   }
 
   try {
-    const corpusInputs = documents.map((entry) => buildSemanticCorpusInput(entry.document));
+    const corpusInputs = documents.map((entry) =>
+      buildSemanticCorpusInput(entry.document, {
+        providerName: provider.name,
+      }),
+    );
     const embeddingResult = await executeEmbeddingBatchesWithRetry(provider, settings, corpusInputs);
     await executeVectorUpsert(
       vectorStore,

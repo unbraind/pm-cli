@@ -7,7 +7,7 @@ import {
 } from "../../core/extensions/runtime-registrations.js";
 import { pathExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { buildSearchCorpus } from "../../core/search/corpus.js";
+import { buildSearchCorpus, buildSemanticCorpusInput } from "../../core/search/corpus.js";
 import { executeEmbeddingBatchesWithRetry } from "../../core/search/embedding-batches.js";
 import { writeVectorizationStatusLedger } from "../../core/search/cache.js";
 import { resolveEmbeddingProviders } from "../../core/search/providers.js";
@@ -24,7 +24,6 @@ import type { ItemDocument, PmSettings } from "../../types/index.js";
 
 const MANIFEST_PATH = "index/manifest.json";
 const EMBEDDINGS_PATH = "search/embeddings.jsonl";
-const MAX_SEMANTIC_CORPUS_INPUT_CHARACTERS = 200;
 
 export interface ReindexOptions {
   mode?: string;
@@ -93,14 +92,6 @@ function buildKeywordRecord(document: ItemDocument, mode: "keyword" | "semantic"
     updated_at: item.updated_at,
     corpus: buildSearchCorpus(document),
   };
-}
-
-function buildSemanticCorpusInput(document: ItemDocument): string {
-  const serialized = JSON.stringify((buildKeywordRecord(document, "semantic") as { corpus: Record<string, unknown> }).corpus);
-  if (serialized.length <= MAX_SEMANTIC_CORPUS_INPUT_CHARACTERS) {
-    return serialized;
-  }
-  return `${serialized.slice(0, MAX_SEMANTIC_CORPUS_INPUT_CHARACTERS)}...[semantic corpus truncated]`;
 }
 
 type ExtensionEmbedBatch = (context: {
@@ -297,7 +288,8 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
   const vectorizationLedgerEntries: Record<string, string> = {};
   if (mode !== "keyword" && documents.length > 0) {
     emitReindexProgress(progressEnabled, `embedding_start items=${documents.length}`);
-    const corpusInputs = documents.map((document) => buildSemanticCorpusInput(document));
+    const semanticProviderName = activeEmbeddingProvider?.name ?? extensionEmbedding?.name;
+    const corpusInputs = documents.map((document) => buildSemanticCorpusInput(document, { providerName: semanticProviderName }));
     let vectors: number[][] = [];
     if (extensionEmbedding) {
       try {

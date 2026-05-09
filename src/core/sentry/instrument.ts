@@ -19,18 +19,40 @@ const INLINE_SENSITIVE_ASSIGNMENT_RE = new RegExp(
   "giu",
 );
 const ABSOLUTE_PATH_TOKEN_RE = /(^|[\s"'`(=])\/(?:[^\s"'`),;]+)/g;
+const FILE_URL_PATH_RE = /file:\/\/\/?[^\s"'`),;]+/giu;
+const WINDOWS_PATH_TOKEN_RE = /\b[A-Za-z]:\\[^\s"'`),;]+/g;
 const PRIVATE_IP_RE =
   /\b(?:10\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|172\.(?:1[6-9]|2\d|3[01])\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|192\.168\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d))\b/g;
+const PATH_FIELD_KEY_PATTERN = /(?:^|[_-])(path|filename|file|module|cwd|dir|directory|location|source|script)s?$/i;
 
-function scrubString(value: string): string {
+function looksLikeFilesystemPath(value: string): boolean {
+  const normalized = value.trim();
+  if (normalized.length === 0) {
+    return false;
+  }
+  if (normalized.startsWith("/") || normalized.startsWith("file://")) {
+    return true;
+  }
+  if (/^[A-Za-z]:\\/.test(normalized) || normalized.startsWith("\\\\")) {
+    return true;
+  }
+  return normalized.includes("/home/");
+}
+
+function scrubString(value: string, keyHint?: string): string {
+  if (keyHint && PATH_FIELD_KEY_PATTERN.test(keyHint) && looksLikeFilesystemPath(value)) {
+    return "[scrubbed_path]";
+  }
   const scrubbed = value
     .replaceAll(INLINE_SENSITIVE_ASSIGNMENT_RE, (_m, key: string) => `${key}=[scrubbed]`)
     .replaceAll(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/giu, "[scrubbed_email]")
     .replaceAll(/bearer\s+[a-z0-9._=-]+/giu, "bearer [scrubbed]")
     .replaceAll(/sntr[ysu]_[A-Za-z0-9_-]+/g, "[scrubbed_sentry_token]")
     .replaceAll(PRIVATE_IP_RE, "[scrubbed_ip]")
+    .replaceAll(FILE_URL_PATH_RE, "[scrubbed_path]")
+    .replaceAll(WINDOWS_PATH_TOKEN_RE, "[scrubbed_path]")
     .replaceAll(ABSOLUTE_PATH_TOKEN_RE, (_match: string, prefix: string) => `${prefix}[scrubbed_path]`);
-  if (scrubbed.trim().startsWith("/") && scrubbed.trim().length > 1) {
+  if (looksLikeFilesystemPath(scrubbed)) {
     return "[scrubbed_path]";
   }
   return scrubbed;
@@ -42,12 +64,50 @@ function scrubEventData(obj: Record<string, unknown>): Record<string, unknown> {
     if (SENSITIVE_KEY_PATTERN.test(key)) {
       result[key] = "[scrubbed]";
     } else if (typeof value === "string") {
-      result[key] = scrubString(value);
+      result[key] = scrubString(value, key);
+    } else if (Array.isArray(value)) {
+      result[key] = value.map((entry) => {
+        if (typeof entry === "string") {
+          return scrubString(entry, key);
+        }
+        if (entry && typeof entry === "object") {
+          return scrubEventData(entry as Record<string, unknown>);
+        }
+        return entry;
+      });
+    } else if (value && typeof value === "object") {
+      result[key] = scrubEventData(value as Record<string, unknown>);
     } else {
       result[key] = value;
     }
   }
   return result;
+}
+
+function scrubStackFrame(frame: Record<string, unknown>): void {
+  for (const key of ["filename", "absPath", "abs_path", "module"]) {
+    const rawValue = frame[key];
+    if (typeof rawValue === "string") {
+      frame[key] = scrubString(rawValue, key);
+    }
+  }
+  const contextLine = frame.context_line;
+  if (typeof contextLine === "string") {
+    frame.context_line = scrubString(contextLine, "context_line");
+  }
+  for (const key of ["pre_context", "post_context"]) {
+    const context = frame[key];
+    if (!Array.isArray(context)) {
+      continue;
+    }
+    frame[key] = context.map((entry) => (typeof entry === "string" ? scrubString(entry, key) : entry));
+  }
+  if (frame.vars && typeof frame.vars === "object") {
+    frame.vars = scrubEventData(frame.vars as Record<string, unknown>);
+  }
+  if (frame.data && typeof frame.data === "object") {
+    frame.data = scrubEventData(frame.data as Record<string, unknown>);
+  }
 }
 
 type SentryLike = typeof import("@sentry/node");
@@ -158,17 +218,21 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
       if (isExpectedCliErrorEvent(event)) {
         return null;
       }
+      if (event.message) {
+        event.message = scrubString(event.message, "message");
+      }
+      if (event.transaction) {
+        event.transaction = scrubString(event.transaction, "transaction");
+      }
 
       if (event.exception?.values) {
         for (const exception of event.exception.values) {
           if (exception.value) {
-            exception.value = scrubString(exception.value);
+            exception.value = scrubString(exception.value, "value");
           }
           if (exception.stacktrace?.frames) {
             for (const frame of exception.stacktrace.frames) {
-              if (frame.vars) {
-                frame.vars = scrubEventData(frame.vars as Record<string, unknown>);
-              }
+              scrubStackFrame(frame as unknown as Record<string, unknown>);
             }
           }
         }
@@ -196,6 +260,15 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
           }
         }
       }
+      if (event.request && typeof event.request === "object") {
+        event.request = scrubEventData(event.request as Record<string, unknown>) as typeof event.request;
+      }
+      if (event.user && typeof event.user === "object") {
+        event.user = scrubEventData(event.user as Record<string, unknown>) as typeof event.user;
+      }
+      if (event.tags && typeof event.tags === "object") {
+        event.tags = scrubEventData(event.tags as Record<string, unknown>) as typeof event.tags;
+      }
 
       return event;
     },
@@ -205,7 +278,17 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
         event.breadcrumbs = event.breadcrumbs.filter((bc) => !isPmCliErrorBreadcrumb(bc));
         for (const breadcrumb of event.breadcrumbs) {
           if (breadcrumb.message) {
-            breadcrumb.message = scrubString(breadcrumb.message);
+            breadcrumb.message = scrubString(breadcrumb.message, "message");
+          }
+          if (breadcrumb.data && typeof breadcrumb.data === "object") {
+            breadcrumb.data = scrubEventData(breadcrumb.data as Record<string, unknown>);
+          }
+        }
+      }
+      if (event.contexts) {
+        for (const [ctxKey, ctx] of Object.entries(event.contexts)) {
+          if (ctx && typeof ctx === "object") {
+            event.contexts![ctxKey] = scrubEventData(ctx as Record<string, unknown>);
           }
         }
       }
@@ -217,7 +300,7 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
         return null;
       }
       if (breadcrumb.message) {
-        breadcrumb.message = scrubString(breadcrumb.message);
+        breadcrumb.message = scrubString(breadcrumb.message, "message");
       }
       if (breadcrumb.data && typeof breadcrumb.data === "object") {
         breadcrumb.data = scrubEventData(breadcrumb.data as Record<string, unknown>);
@@ -237,4 +320,5 @@ export const _testOnly = {
   isExpectedCliErrorEvent,
   isPmCliErrorBreadcrumb,
   scrubString,
+  scrubEventData,
 };

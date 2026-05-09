@@ -426,6 +426,50 @@ describe("runSearch", () => {
     }
   });
 
+  it("falls back to keyword mode for implicit configured hybrid search timeouts", async () => {
+    const configuredItem = makeFrontMatter({
+      id: "pm-configured-timeout-fallback",
+      title: "token configured timeout",
+      description: "token timeout description",
+      tags: ["token"],
+    });
+    readSettingsMock.mockResolvedValue({
+      providers: {
+        openai: {
+          base_url: "https://api.example.test/v1",
+          model: "text-embedding-3-small",
+          api_key: "",
+        },
+      },
+      vector_store: {
+        qdrant: {
+          url: "https://qdrant.example.test:6333",
+          api_key: "",
+        },
+      },
+    } as unknown as { id_prefix: string });
+    listAllFrontMatterMock.mockResolvedValue([configuredItem]);
+    readFileMock.mockResolvedValue(serializeDocument(configuredItem, "token body"));
+
+    const fetchMock = vi.fn(async () => {
+      throw new Error("Embedding request timed out after 8000ms");
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+    try {
+      const { runSearch } = await import("../../src/cli/commands/search.js");
+      const implicitResult = await runSearch("token", {}, { path: "/tmp/pm-search" });
+      expect(implicitResult.mode).toBe("keyword");
+      expect(implicitResult.count).toBe(1);
+      expect(implicitResult.warnings).toContain("search_implicit_semantic_fallback:timeout:using_keyword_mode");
+      await expect(runSearch("token", { mode: "hybrid" }, { path: "/tmp/pm-search" })).rejects.toThrow(
+        "Embedding request execution failed",
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it("returns deterministic empty semantic and hybrid results for limit=0 without embedding/vector requests", async () => {
     const semanticSettings = {
       providers: {

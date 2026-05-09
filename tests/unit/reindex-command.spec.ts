@@ -485,9 +485,9 @@ describe("runReindex", () => {
     });
   });
 
-  it("truncates oversized semantic corpus inputs before embedding", async () => {
+  it("bounds oversized semantic corpus inputs before embedding", async () => {
     await withTempPmPath(async (context) => {
-      createSeedItem(context, "Huge Semantic Corpus", "x".repeat(1_000), false);
+      createSeedItem(context, "Huge Semantic Corpus", "x".repeat(20_000), false);
 
       const settings = await readSettings(context.pmPath);
       settings.providers.openai.base_url = "https://api.example.test/v1";
@@ -532,7 +532,8 @@ describe("runReindex", () => {
         const result = await runReindex({ mode: "semantic" }, { path: context.pmPath });
         expect(result.ok).toBe(true);
         expect(embeddedInputLengths).toHaveLength(1);
-        expect(embeddedInputLengths[0]).toBeLessThan(300);
+        expect(embeddedInputLengths[0]).toBeGreaterThan(300);
+        expect(embeddedInputLengths[0]).toBeLessThanOrEqual(8_000);
       } finally {
         globalThis.fetch = originalFetch;
       }

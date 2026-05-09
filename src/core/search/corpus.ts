@@ -1,5 +1,9 @@
 import type { ItemDocument, ItemFrontMatter } from "../../types/index.js";
 
+export const DEFAULT_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS = 8_000;
+export const OLLAMA_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS = 3_200;
+export const SEMANTIC_CORPUS_TRUNCATION_SUFFIX = "...[semantic corpus truncated]";
+
 function compactParts(parts: Array<string | boolean | number | null | undefined>): string {
   return parts
     .map((part) => (part === undefined || part === null ? "" : String(part).trim()))
@@ -50,4 +54,38 @@ export function buildSearchCorpus(document: ItemDocument): Record<string, unknow
       kind: entry.kind,
     })),
   };
+}
+
+function resolveSemanticCorpusInputMaxCharacters(candidate: number | undefined): number {
+  if (Number.isFinite(candidate) && Number(candidate) > 0) {
+    return Math.floor(Number(candidate));
+  }
+  return DEFAULT_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS;
+}
+
+export function resolveSemanticCorpusInputCharacterLimit(providerName: string | undefined): number {
+  if (providerName?.trim().toLowerCase() === "ollama") {
+    return OLLAMA_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS;
+  }
+  return DEFAULT_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS;
+}
+
+export interface SemanticCorpusInputOptions {
+  providerName?: string;
+  maxCharacters?: number;
+}
+
+export function buildSemanticCorpusInput(document: ItemDocument, options: SemanticCorpusInputOptions = {}): string {
+  const serialized = JSON.stringify(buildSearchCorpus(document));
+  const maxCharacters = resolveSemanticCorpusInputMaxCharacters(
+    options.maxCharacters ?? resolveSemanticCorpusInputCharacterLimit(options.providerName),
+  );
+  if (serialized.length <= maxCharacters) {
+    return serialized;
+  }
+  if (maxCharacters <= SEMANTIC_CORPUS_TRUNCATION_SUFFIX.length) {
+    return SEMANTIC_CORPUS_TRUNCATION_SUFFIX.slice(0, maxCharacters);
+  }
+  const keepLength = Math.max(0, maxCharacters - SEMANTIC_CORPUS_TRUNCATION_SUFFIX.length);
+  return `${serialized.slice(0, keepLength)}${SEMANTIC_CORPUS_TRUNCATION_SUFFIX}`;
 }

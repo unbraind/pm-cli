@@ -5,7 +5,7 @@ import { _testOnly } from "../../src/core/sentry/instrument.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 
-const { isExpectedCliErrorEvent, isPmCliErrorBreadcrumb, scrubString } = _testOnly;
+const { isExpectedCliErrorEvent, isPmCliErrorBreadcrumb, scrubString, scrubEventData } = _testOnly;
 const PRIVATE_TEST_IP = ["192", "168", "42", "17"].join(".");
 const TEST_LOCAL_PATH = ["/home", "example", "project"].join("/");
 
@@ -115,5 +115,61 @@ describe("scrubString", () => {
     expect(scrubbed).not.toContain("user@example.com");
     expect(scrubbed).not.toContain(PRIVATE_TEST_IP);
     expect(scrubbed).not.toContain(TEST_LOCAL_PATH);
+  });
+});
+
+describe("scrubEventData", () => {
+  it("scrubs nested stack frame path-bearing fields and frame context strings", () => {
+    const scrubbed = scrubEventData({
+      exception: {
+        values: [
+          {
+            stacktrace: {
+              frames: [
+                {
+                  filename: `${TEST_LOCAL_PATH}/dist/index.js`,
+                  absPath: `${TEST_LOCAL_PATH}/dist/index.js`,
+                  module: `file://${TEST_LOCAL_PATH}/dist/index.js`,
+                  context_line: `Error from ${TEST_LOCAL_PATH}/src/index.ts`,
+                  pre_context: [`at ${TEST_LOCAL_PATH}/src/index.ts:10:2`],
+                  vars: {
+                    cwd: TEST_LOCAL_PATH,
+                    nested: {
+                      source_path: `${TEST_LOCAL_PATH}/src/index.ts`,
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    });
+    const serialized = JSON.stringify(scrubbed);
+    expect(serialized).toContain("[scrubbed_path]");
+    expect(serialized).not.toContain(TEST_LOCAL_PATH);
+  });
+
+  it("recursively scrubs sensitive-key values in nested objects and arrays", () => {
+    const scrubbed = scrubEventData({
+      outer: {
+        details: [
+          {
+            api_key: "abc123",
+            token_value: "secret-token",
+          },
+        ],
+      },
+    });
+    expect(scrubbed).toEqual({
+      outer: {
+        details: [
+          {
+            api_key: "[scrubbed]",
+            token_value: "[scrubbed]",
+          },
+        ],
+      },
+    });
   });
 });

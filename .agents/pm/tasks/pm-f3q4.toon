@@ -49,7 +49,7 @@ comments[6]{created_at,author,text}:
   "2026-03-05T15:34:40.851Z",maintainer-agent,"Docs-first update complete: PRD.md and README.md now include create/restore item-history write paths in implemented hook lifecycle call-site coverage before command-path code changes."
   "2026-03-05T15:36:15.576Z",maintainer-agent,"Implemented code changes: create and restore command paths now dispatch onWrite hooks for both item files and history streams, and surface aggregated hook warnings in command results."
   "2026-03-05T15:45:37.215Z",maintainer-agent,"Evidence: pm test pm-f3q4 --run --timeout 2400 --json passed (linked_tests=2, passed=2, failed=0, skipped=0). pm test-all --status in_progress --timeout 2400 --json passed (items=1, linked_tests=2, passed=2, failed=0, skipped=0). pm test-all --status closed --timeout 2400 --json passed (items=74, linked_tests=226, passed=60, failed=0, skipped=166). Coverage proof from sandboxed coverage runs remained 100% lines/branches/functions/statements. Follow-up items created: none."
-  "2026-03-05T15:46:20.465Z",maintainer-agent,"Post-close release-readiness check: rebuilt project and refreshed global install from current repo state (pnpm build && npm install -g /home/steve/GITHUB_RELEASE/pm-cli), then verified pm --version=0.1.0."
+  "2026-03-05T15:46:20.465Z",maintainer-agent,"Post-close release-readiness check: rebuilt project and refreshed global install from current repo state (pnpm build && npm install -g [redacted_path]), then verified pm --version=0.1.0."
 notes[1]{created_at,author,text}:
   "2026-03-05T15:33:46.422Z",maintainer-agent,Implement docs-first then update command code and targeted unit coverage.
 learnings[1]{created_at,author,text}:

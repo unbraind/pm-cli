@@ -81,8 +81,8 @@ const DEFAULT_COMPACT_SEARCH_FIELDS = [
 const LONG_QUERY_TOKEN_THRESHOLD = 2;
 const LONG_QUERY_TITLE_EXACT_BONUS = 120;
 const LONG_QUERY_PHRASE_MULTIPLIER = 6;
-const IMPLICIT_AUTO_HYBRID_EMBEDDING_TIMEOUT_MS = 8_000;
-const IMPLICIT_AUTO_HYBRID_VECTOR_TIMEOUT_MS = 8_000;
+const IMPLICIT_HYBRID_EMBEDDING_TIMEOUT_MS = 8_000;
+const IMPLICIT_HYBRID_VECTOR_TIMEOUT_MS = 8_000;
 
 export interface SearchHit {
   item: ItemFrontMatter;
@@ -1124,8 +1124,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
         }
       }
       if (hits === keywordHits) {
-        const implicitAutoHybridMode =
-          runtimeDefaultsResolution.auto_ollama_defaults_applied && !modeWasExplicit && effectiveMode === "hybrid";
+        const implicitHybridMode = !modeWasExplicit && effectiveMode === "hybrid";
         const { provider, vectorStore } = requireSemanticDependencies(
           effectiveMode,
           providerResolution,
@@ -1144,17 +1143,16 @@ export async function runSearch(query: string, options: SearchOptions, global: G
           vectorStore,
           extensionVectorAdapter,
           settings,
-          ...(implicitAutoHybridMode
+          ...(implicitHybridMode
             ? {
-                embeddingTimeoutMs: IMPLICIT_AUTO_HYBRID_EMBEDDING_TIMEOUT_MS,
-                vectorQueryTimeoutMs: IMPLICIT_AUTO_HYBRID_VECTOR_TIMEOUT_MS,
+                embeddingTimeoutMs: IMPLICIT_HYBRID_EMBEDDING_TIMEOUT_MS,
+                vectorQueryTimeoutMs: IMPLICIT_HYBRID_VECTOR_TIMEOUT_MS,
               }
             : {}),
         });
       }
     } catch (error: unknown) {
-      const canFallbackToKeyword =
-        runtimeDefaultsResolution.auto_ollama_defaults_applied && !modeWasExplicit && effectiveMode === "hybrid";
+      const canFallbackToKeyword = !modeWasExplicit && effectiveMode === "hybrid";
       if (!canFallbackToKeyword) {
         throw error;
       }

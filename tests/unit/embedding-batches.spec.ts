@@ -182,6 +182,32 @@ describe("executeEmbeddingBatchesWithRetry", () => {
     }
   });
 
+  it("truncates oversized embedding inputs before dispatch for bounded provider runtimes", async () => {
+    const originalFetch = globalThis.fetch;
+    const inputLengths: number[] = [];
+    globalThis.fetch = (async (_url: unknown, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body ?? "{}")) as { input?: string | string[] };
+      const inputs = Array.isArray(body.input) ? body.input : [body.input ?? ""];
+      inputLengths.push(...inputs.map((entry) => entry.length));
+      return {
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: async () => ({ embeddings: inputs.map((_entry, index) => [index + 0.1, index + 0.2]) }),
+        text: async () => "",
+      } as unknown as Response;
+    }) as typeof globalThis.fetch;
+
+    try {
+      const result = await executeEmbeddingBatchesWithRetry(OLLAMA_PROVIDER, buildSettings(4, 0), ["x".repeat(5_000)]);
+      expect(result.vectors).toHaveLength(1);
+      expect(result.warnings).toEqual(["search_embedding_input_truncated:count=1:max_characters=3200"]);
+      expect(inputLengths).toEqual([3_200]);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it("throws deterministic error when retries are exhausted", async () => {
     const originalFetch = globalThis.fetch;
     let attempts = 0;

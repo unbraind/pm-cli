@@ -2,6 +2,11 @@ import type { PmSettings } from "../../types/index.js";
 import { executeEmbeddingRequest } from "./providers.js";
 import type { EmbeddingProviderConfig } from "./providers.js";
 import { toErrorMessage } from "../shared/primitives.js";
+import {
+  DEFAULT_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS,
+  OLLAMA_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS,
+  SEMANTIC_CORPUS_TRUNCATION_SUFFIX,
+} from "./corpus.js";
 
 export interface EmbeddingBatchExecutionResult {
   vectors: number[][];
@@ -12,6 +17,7 @@ interface EmbeddingBatchRuntime {
   batchSize: number;
   maxRetries: number;
   maxBatchInputCharacters: number;
+  maxInputCharacters: number;
 }
 
 function resolveBatchRuntime(settings: PmSettings): EmbeddingBatchRuntime {
@@ -19,7 +25,12 @@ function resolveBatchRuntime(settings: PmSettings): EmbeddingBatchRuntime {
   const maxRetriesCandidate = settings.search.scanner_max_batch_retries;
   const batchSize = Number.isFinite(batchSizeCandidate) && batchSizeCandidate > 0 ? Math.floor(batchSizeCandidate) : 1;
   const maxRetries = Number.isFinite(maxRetriesCandidate) && maxRetriesCandidate >= 0 ? Math.floor(maxRetriesCandidate) : 0;
-  return { batchSize, maxRetries, maxBatchInputCharacters: Number.POSITIVE_INFINITY };
+  return {
+    batchSize,
+    maxRetries,
+    maxBatchInputCharacters: Number.POSITIVE_INFINITY,
+    maxInputCharacters: DEFAULT_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS,
+  };
 }
 
 function createBatches(inputs: string[], batchSize: number, maxBatchInputCharacters: number): string[][] {
@@ -50,8 +61,17 @@ function resolveProviderBatchRuntime(provider: EmbeddingProviderConfig, runtime:
   }
   return {
     ...runtime,
-    maxBatchInputCharacters: 3_200,
+    maxBatchInputCharacters: OLLAMA_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS,
+    maxInputCharacters: OLLAMA_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS,
   };
+}
+
+function truncateInputForRuntime(input: string, maxInputCharacters: number): string {
+  if (!Number.isFinite(maxInputCharacters) || maxInputCharacters <= 0 || input.length <= maxInputCharacters) {
+    return input;
+  }
+  const keepLength = Math.max(0, maxInputCharacters - SEMANTIC_CORPUS_TRUNCATION_SUFFIX.length);
+  return `${input.slice(0, keepLength)}${SEMANTIC_CORPUS_TRUNCATION_SUFFIX}`.slice(0, maxInputCharacters);
 }
 
 function isEmbeddingTimeoutError(error: unknown): boolean {
@@ -111,9 +131,20 @@ export async function executeEmbeddingBatchesWithRetry(
     };
   }
   const runtime = resolveProviderBatchRuntime(provider, resolveBatchRuntime(settings));
-  const batches = createBatches(inputs, runtime.batchSize, runtime.maxBatchInputCharacters);
-  const vectors: number[][] = [];
   const warnings: string[] = [];
+  let truncatedInputCount = 0;
+  const normalizedInputs = inputs.map((input) => {
+    const normalized = truncateInputForRuntime(input, runtime.maxInputCharacters);
+    if (normalized.length < input.length) {
+      truncatedInputCount += 1;
+    }
+    return normalized;
+  });
+  if (truncatedInputCount > 0) {
+    warnings.push(`search_embedding_input_truncated:count=${truncatedInputCount}:max_characters=${runtime.maxInputCharacters}`);
+  }
+  const batches = createBatches(normalizedInputs, runtime.batchSize, runtime.maxBatchInputCharacters);
+  const vectors: number[][] = [];
   for (let batchIndex = 0; batchIndex < batches.length; batchIndex += 1) {
     const batch = batches[batchIndex];
     vectors.push(...(await executeBatchWithAdaptiveSplit(provider, batch, String(batchIndex + 1), runtime.maxRetries, warnings)));
