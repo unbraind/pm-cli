@@ -330,7 +330,14 @@ describe("core/search/cache", () => {
 
   it("bounds oversized semantic refresh corpus input before embedding", async () => {
     await withTempPmPath(async (context) => {
-      const itemId = createSeedItem(context, "x".repeat(20_000));
+      const itemId = createSeedItem(context, "Oversized semantic corpus source");
+      const oversizedCommentChunk = "x".repeat(900);
+      for (let index = 0; index < 12; index += 1) {
+        const commentResult = context.runCli(["comments", "--json", itemId, `${oversizedCommentChunk}-${index}`], {
+          expectJson: true,
+        });
+        expect(commentResult.code).toBe(0);
+      }
       const settings = await readSettings(context.pmPath);
       settings.providers.openai.base_url = "https://api.example.test/v1";
       settings.providers.openai.model = "text-embedding-3-small";
