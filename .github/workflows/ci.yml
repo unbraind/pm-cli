@@ -95,8 +95,6 @@ jobs:
 
       - name: Claude Code plugin smoke
         if: matrix.os == 'ubuntu-latest' && matrix.node == 20
-        env:
-          PM_RUN_TESTS_SKIP_BUILD: "1"
         run: node scripts/smoke-claude-plugin.mjs
 
       - name: Upload coverage artifact
