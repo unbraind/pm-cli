@@ -78,7 +78,7 @@ export async function runNotes(id: string, options: NotesCommandOptions, global:
       throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
     }
     const loaded = await readLocatedItem(located, { schema: settings.schema });
-    const notes = limitNotes(loaded.document.front_matter.notes ?? [], limit);
+    const notes = limitNotes(loaded.document.metadata.notes ?? [], limit);
     return {
       id: located.id,
       notes,
@@ -105,13 +105,13 @@ export async function runNotes(id: string, options: NotesCommandOptions, global:
       force: options.force,
       bypassAssigneeConflict: Boolean(options.allowAuditNote || options.allowAuditComment),
       mutate(document) {
-        const notes = document.front_matter.notes ?? [];
+        const notes = document.metadata.notes ?? [];
         notes.push({
           created_at: nowIso(),
           author,
           text,
         });
-        document.front_matter.notes = notes;
+        document.metadata.notes = notes;
         return { changedFields: ["notes"] };
       },
     });

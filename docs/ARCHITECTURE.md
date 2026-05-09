@@ -125,7 +125,7 @@ body: |
   Implementation notes.
 ```
 
-Alternative format is JSON-front-matter markdown. `front_matter` is the internal TypeScript model key; TOON stores the same metadata as top-level fields.
+Legacy JSON-front-matter markdown files are read only for one-way migration into TOON. Runtime internals use `metadata` as the item metadata model key.
 
 Built-in item types:
 

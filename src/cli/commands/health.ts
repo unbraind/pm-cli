@@ -992,7 +992,7 @@ async function buildHistoryDriftCheck(
     }
     const { body, ...frontMatter } = item;
     const currentHash = hashDocument({
-      front_matter: frontMatter,
+      metadata: frontMatter,
       body,
     });
     if (latestAfterHash !== currentHash) {

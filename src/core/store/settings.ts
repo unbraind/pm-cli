@@ -69,6 +69,7 @@ const runtimeStatusDefinitionSchema = z.object({
 
 const runtimeFieldDefinitionSchema = z.object({
   key: z.string(),
+  metadata_key: z.string().optional(),
   front_matter_key: z.string().optional(),
   cli_flag: z.string().optional(),
   cli_aliases: z.array(z.string()).optional(),
@@ -459,7 +460,7 @@ function mergeSettings(raw: unknown): PmSettings {
   return {
     ...defaults,
     ...settings,
-    item_format: settings.item_format ?? defaults.item_format,
+    item_format: settings.item_format === "json_markdown" ? "toon" : (settings.item_format ?? defaults.item_format),
     locks: { ...defaults.locks, ...settings.locks },
     output: { ...defaults.output, ...settings.output },
     history: { ...defaults.history, ...(settings.history ?? {}) },
@@ -536,6 +537,7 @@ export function serializeSettings(settings: PmSettings): string {
   const governance = resolveGovernanceKnobs(settings);
   const normalizedSettings: PmSettings = {
     ...settings,
+    item_format: "toon",
     validation: {
       ...settings.validation,
       parent_reference: governance.parent_reference,
@@ -726,6 +728,9 @@ export async function readSettingsWithMetadata(pmRoot: string): Promise<Settings
         has_explicit_item_format: hasExplicitItemFormat(parsed),
       },
       warnings: [
+        ...(validated.data.item_format === "json_markdown"
+          ? ["settings_item_format_legacy_json_markdown_coerced_to_toon"]
+          : []),
         ...schemaScaffold.created_paths.map((createdPath) => `runtime_schema_bootstrap_created:${createdPath}`),
         ...loadedSchemaSections.warnings,
       ],

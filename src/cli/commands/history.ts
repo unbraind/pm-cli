@@ -49,12 +49,12 @@ export interface HistoryResult {
 }
 
 interface ReplayDocument {
-  front_matter: Record<string, unknown>;
+  metadata: Record<string, unknown>;
   body: string;
 }
 
 const EMPTY_REPLAY_DOCUMENT: ReplayDocument = {
-  front_matter: {},
+  metadata: {},
   body: "",
 };
 
@@ -71,10 +71,15 @@ function patchPathToChangedField(path: string): string {
   if (path === "/body" || path.startsWith("/body/")) {
     return "body";
   }
-  if (path === "/front_matter" || path.startsWith("/front_matter/")) {
-    const segment = path.replace(/^\/front_matter\/?/, "").split("/")[0];
+  if (
+    path === "/metadata" ||
+    path.startsWith("/metadata/") ||
+    path === "/front_matter" ||
+    path.startsWith("/front_matter/")
+  ) {
+    const segment = path.replace(/^\/(?:metadata|front_matter)\/?/, "").split("/")[0];
     if (!segment) {
-      return "front_matter";
+      return "metadata";
     }
     return decodeJsonPointerSegment(segment);
   }
@@ -104,32 +109,56 @@ function buildDiffEntries(entries: HistoryEntry[], startIndex: number): HistoryD
 
 function replayHash(document: ReplayDocument): string {
   const itemDocument: ItemDocument = {
-    front_matter: document.front_matter as unknown as ItemDocument["front_matter"],
+    metadata: document.metadata as unknown as ItemDocument["metadata"],
     body: document.body,
   };
   return hashDocument(itemDocument);
 }
 
+function normalizeReplayPatchPath(path: string): string {
+  if (path === "/front_matter") {
+    return "/metadata";
+  }
+  if (path.startsWith("/front_matter/")) {
+    return `/metadata/${path.slice("/front_matter/".length)}`;
+  }
+  return path;
+}
+
+function normalizeReplayPatchOps(patch: HistoryPatchOp[]): HistoryPatchOp[] {
+  return patch.map((operation) => ({
+    ...operation,
+    path: normalizeReplayPatchPath(operation.path),
+    from: operation.from ? normalizeReplayPatchPath(operation.from) : undefined,
+  }));
+}
+
 function applyHistoryPatch(current: ReplayDocument, patch: HistoryPatchOp[], entryNumber: number): ReplayDocument {
   try {
-    const applied = jsonPatch.applyPatch(structuredClone(current), patch as jsonPatch.Operation[], true, false).newDocument as unknown;
+    const normalizedPatch = normalizeReplayPatchOps(patch);
+    const applied = jsonPatch.applyPatch(
+      structuredClone(current),
+      normalizedPatch as jsonPatch.Operation[],
+      true,
+      false,
+    ).newDocument as unknown;
     if (
       typeof applied !== "object" ||
       applied === null ||
-      !("front_matter" in applied) ||
+      !("metadata" in applied) ||
       !("body" in applied) ||
       typeof (applied as { body: unknown }).body !== "string" ||
-      typeof (applied as { front_matter: unknown }).front_matter !== "object" ||
-      (applied as { front_matter: unknown }).front_matter === null
+      typeof (applied as { metadata: unknown }).metadata !== "object" ||
+      (applied as { metadata: unknown }).metadata === null
     ) {
       throw new PmCliError(
         `History replay produced an invalid document shape at entry ${entryNumber}.`,
         EXIT_CODE.GENERIC_FAILURE,
       );
     }
-    const replay = applied as { front_matter: Record<string, unknown>; body: string };
+    const replay = applied as { metadata: Record<string, unknown>; body: string };
     return {
-      front_matter: replay.front_matter,
+      metadata: replay.metadata,
       body: replay.body,
     };
   } catch {

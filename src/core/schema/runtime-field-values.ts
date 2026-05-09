@@ -154,7 +154,7 @@ export function collectRuntimeCreateFieldValues(
       }
       continue;
     }
-    values[definition.front_matter_key] = coerceRuntimeFieldValue(definition, rawValue);
+    values[definition.metadata_key] = coerceRuntimeFieldValue(definition, rawValue);
   }
   return {
     values,
@@ -172,7 +172,7 @@ export function collectRuntimeUpdateFieldValues(
     if (rawValue === undefined) {
       continue;
     }
-    values[definition.front_matter_key] = coerceRuntimeFieldValue(definition, rawValue);
+    values[definition.metadata_key] = coerceRuntimeFieldValue(definition, rawValue);
   }
   return values;
 }

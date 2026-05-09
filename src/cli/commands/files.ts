@@ -346,7 +346,7 @@ function collectTextReferences(value: unknown, fieldPath: string, references: Te
 
 function collectItemTextReferences(document: ItemDocument): TextReference[] {
   const references: TextReference[] = [];
-  collectTextReferences(document.front_matter, "front_matter", references);
+  collectTextReferences(document.metadata, "metadata", references);
   collectTextReferences(document.body, "body", references);
   return references;
 }
@@ -418,7 +418,7 @@ async function resolveDiscoveredFile(
 }
 
 async function discoverReferencedFiles(document: ItemDocument, projectRoot: string): Promise<FilesDiscoveryCandidate[]> {
-  const existingResolvedKeys = new Set((document.front_matter.files ?? []).map((entry) => linkedFileResolvedKey(entry, projectRoot)));
+  const existingResolvedKeys = new Set((document.metadata.files ?? []).map((entry) => linkedFileResolvedKey(entry, projectRoot)));
   const grouped = new Map<
     string,
     {
@@ -492,7 +492,7 @@ export async function runFiles(id: string, options: FilesCommandOptions, global:
       throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
     }
     const loaded = await readLocatedItem(located, { schema: settings.schema });
-    const files = loaded.document.front_matter.files ?? [];
+    const files = loaded.document.metadata.files ?? [];
     return {
       id: located.id,
       files,
@@ -521,7 +521,7 @@ export async function runFiles(id: string, options: FilesCommandOptions, global:
     message: options.message,
     force: options.force,
     mutate(document) {
-      const next = [...(document.front_matter.files ?? [])];
+      const next = [...(document.metadata.files ?? [])];
       let migrationCount = 0;
       if (migrations.length > 0) {
         for (let index = 0; index < next.length; index += 1) {
@@ -559,9 +559,9 @@ export async function runFiles(id: string, options: FilesCommandOptions, global:
       const deduped = dedupeLinkedFiles(next);
       const normalized = options.appendStable ? deduped : sortLinkedFiles(deduped);
       if (normalized.length > 0) {
-        document.front_matter.files = normalized;
+        document.metadata.files = normalized;
       } else {
-        delete document.front_matter.files;
+        delete document.metadata.files;
       }
       return { changedFields: ["files"], warnings: migrationCount > 0 ? [`path_migrations_applied:${migrationCount}`] : [] };
     },
@@ -610,7 +610,7 @@ export async function runFilesDiscover(
   const note = options.note?.trim() || "discovered from item text";
 
   if (!requestedApply || addableCandidates.length === 0) {
-    const files = loaded.document.front_matter.files ?? [];
+    const files = loaded.document.metadata.files ?? [];
     return {
       id: located.id,
       files,
@@ -642,7 +642,7 @@ export async function runFilesDiscover(
     message: options.message ?? "Discover referenced file links",
     force: options.force,
     mutate(document) {
-      const next = [...(document.front_matter.files ?? [])];
+      const next = [...(document.metadata.files ?? [])];
       const existingResolvedKeys = new Set(next.map((entry) => linkedFileResolvedKey(entry, process.cwd())));
       const appliedAdds: LinkedFile[] = [];
       for (const add of discoveredAdds) {
@@ -657,9 +657,9 @@ export async function runFilesDiscover(
       const deduped = dedupeLinkedFiles(next);
       const normalized = options.appendStable ? deduped : sortLinkedFiles(deduped);
       if (normalized.length > 0) {
-        document.front_matter.files = normalized;
+        document.metadata.files = normalized;
       } else {
-        delete document.front_matter.files;
+        delete document.metadata.files;
       }
       return {
         changedFields: appliedAdds.length > 0 ? ["files"] : [],

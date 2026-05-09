@@ -87,13 +87,13 @@ export async function runGet(id: string, global: GlobalOptions): Promise<GetResu
     history = [];
   }
   return {
-    item: loaded.document.front_matter,
+    item: loaded.document.metadata,
     body: loaded.document.body,
     linked: {
-      files: loaded.document.front_matter.files ?? [],
-      tests: loaded.document.front_matter.tests ?? [],
-      docs: loaded.document.front_matter.docs ?? [],
+      files: loaded.document.metadata.files ?? [],
+      tests: loaded.document.metadata.tests ?? [],
+      docs: loaded.document.metadata.docs ?? [],
     },
-    claim_state: resolveClaimStateContext(loaded.document.front_matter.assignee, history),
+    claim_state: resolveClaimStateContext(loaded.document.metadata.assignee, history),
   };
 }

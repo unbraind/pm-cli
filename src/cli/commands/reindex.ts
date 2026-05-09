@@ -78,14 +78,14 @@ async function loadDocuments(
   return items.map((item) => {
     const { body, ...frontMatter } = item;
     return {
-      front_matter: frontMatter,
+      metadata: frontMatter,
       body,
     };
   });
 }
 
 function buildKeywordRecord(document: ItemDocument, mode: "keyword" | "semantic" | "hybrid"): Record<string, unknown> {
-  const item = document.front_matter;
+  const item = document.metadata;
   return {
     id: item.id,
     mode,
@@ -272,11 +272,11 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
     generated_at: generatedAt,
     total_items: documents.length,
     items: documents.map((document) => ({
-      id: document.front_matter.id,
-      type: document.front_matter.type,
-      status: document.front_matter.status,
-      priority: document.front_matter.priority,
-      updated_at: document.front_matter.updated_at,
+      id: document.metadata.id,
+      type: document.metadata.type,
+      status: document.metadata.status,
+      priority: document.metadata.priority,
+      updated_at: document.metadata.updated_at,
     })),
   };
 
@@ -325,14 +325,14 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
       );
     }
     const points = documents.map((document, index) => ({
-      id: document.front_matter.id,
+      id: document.metadata.id,
       vector: assertVector(vectors[index], `reindex embeddings output at index ${index}`),
       payload: {
-        id: document.front_matter.id,
-        type: document.front_matter.type,
-        status: document.front_matter.status,
-        priority: document.front_matter.priority,
-        updated_at: document.front_matter.updated_at,
+        id: document.metadata.id,
+        type: document.metadata.type,
+        status: document.metadata.status,
+        priority: document.metadata.priority,
+        updated_at: document.metadata.updated_at,
       },
     }));
     if (extensionVectorUpsert) {
@@ -370,7 +370,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
       );
     }
     for (const document of documents) {
-      vectorizationLedgerEntries[document.front_matter.id] = document.front_matter.updated_at;
+      vectorizationLedgerEntries[document.metadata.id] = document.metadata.updated_at;
     }
   }
   emitReindexProgress(progressEnabled, "writing keyword artifacts");

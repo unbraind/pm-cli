@@ -341,7 +341,7 @@ function resolveRuntimeUnsetDefinition(
     }
     const candidates = new Set<string>([
       definition.key,
-      definition.front_matter_key,
+      definition.metadata_key,
       definition.cli_flag.replaceAll("-", "_"),
       definition.cli_flag,
       ...definition.cli_aliases.map((alias) => alias.replaceAll("-", "_")),
@@ -352,7 +352,7 @@ function resolveRuntimeUnsetDefinition(
     }
     return {
       optionKey: definition.key,
-      frontMatterKey: definition.front_matter_key,
+      frontMatterKey: definition.metadata_key,
     };
   }
   return undefined;
@@ -1463,21 +1463,21 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     mutate(document) {
       const changedFields: string[] = [];
       const warnings: string[] = [];
-      let activeTypeName = resolveTypeName(document.front_matter.type, typeRegistry) ?? document.front_matter.type;
+      let activeTypeName = resolveTypeName(document.metadata.type, typeRegistry) ?? document.metadata.type;
 
       if (options.title !== undefined) {
-        document.front_matter.title = options.title;
+        document.metadata.title = options.title;
         changedFields.push("title");
       }
       if (options.description !== undefined) {
-        document.front_matter.description = options.description;
+        document.metadata.description = options.description;
         changedFields.push("description");
       }
       if (options.body !== undefined) {
         document.body = options.body;
         changedFields.push("body");
       }
-      const previousStatus = document.front_matter.status;
+      const previousStatus = document.metadata.status;
       const previousStatusNormalized = normalizeStatusInput(previousStatus, statusRegistry) ?? previousStatus;
       if (options.status !== undefined) {
         const status = parseStatus(options.status, statusRegistry);
@@ -1499,34 +1499,34 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
             },
           );
         }
-        document.front_matter.status = status;
+        document.metadata.status = status;
         if (status === statusRegistry.canceled_status) {
-          delete document.front_matter.assignee;
+          delete document.metadata.assignee;
         }
         changedFields.push("status");
       }
       if (options.closeReason !== undefined || clearFrontMatterKeys.has("close_reason")) {
         if (clearFrontMatterKeys.has("close_reason")) {
-          delete document.front_matter.close_reason;
+          delete document.metadata.close_reason;
         } else {
           const closeReason = options.closeReason!.trim();
           if (closeReason.length === 0) {
             throw new PmCliError("--close-reason must not be empty", EXIT_CODE.USAGE);
           }
-          document.front_matter.close_reason = closeReason;
+          document.metadata.close_reason = closeReason;
         }
         changedFields.push("close_reason");
       } else if (
         options.status !== undefined &&
         previousStatusNormalized === statusRegistry.close_status &&
-        document.front_matter.status !== statusRegistry.canceled_status &&
-        document.front_matter.close_reason !== undefined
+        document.metadata.status !== statusRegistry.canceled_status &&
+        document.metadata.close_reason !== undefined
       ) {
-        delete document.front_matter.close_reason;
+        delete document.metadata.close_reason;
         changedFields.push("close_reason");
       }
       if (options.priority !== undefined) {
-        document.front_matter.priority = ensurePriority(options.priority);
+        document.metadata.priority = ensurePriority(options.priority);
         changedFields.push("priority");
       }
       if (options.type !== undefined) {
@@ -1537,35 +1537,35 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
             EXIT_CODE.USAGE,
           );
         }
-        document.front_matter.type = resolvedTypeName;
+        document.metadata.type = resolvedTypeName;
         activeTypeName = resolvedTypeName;
         changedFields.push("type");
       }
       enforceUpdateOptionsByType(activeTypeName, options, typeRegistry);
       if (options.typeOption !== undefined || clearFrontMatterKeys.has("type_options")) {
         if (clearFrontMatterKeys.has("type_options")) {
-          delete document.front_matter.type_options;
+          delete document.metadata.type_options;
         } else {
           const parsedTypeOptions = parseTypeOptionEntries(options.typeOption!);
           const validation = validateTypeOptions(activeTypeName, parsedTypeOptions, typeRegistry);
           if (validation.errors.length > 0) {
             throw new PmCliError(validation.errors.join("; "), EXIT_CODE.USAGE);
           }
-          document.front_matter.type_options = validation.normalized;
+          document.metadata.type_options = validation.normalized;
         }
         changedFields.push("type_options");
-      } else if (options.type !== undefined && document.front_matter.type_options !== undefined) {
-        const validation = validateTypeOptions(activeTypeName, document.front_matter.type_options, typeRegistry);
+      } else if (options.type !== undefined && document.metadata.type_options !== undefined) {
+        const validation = validateTypeOptions(activeTypeName, document.metadata.type_options, typeRegistry);
         if (validation.errors.length > 0) {
           throw new PmCliError(
             `Current type options are incompatible with type "${activeTypeName}". ${validation.errors.join("; ")}. Use --clear-type-options to clear them.`,
             EXIT_CODE.USAGE,
           );
         }
-        document.front_matter.type_options = validation.normalized;
+        document.metadata.type_options = validation.normalized;
       }
       if (options.dep !== undefined || options.depRemove !== undefined || clearFrontMatterKeys.has("dependencies")) {
-        let nextDependencies = clearFrontMatterKeys.has("dependencies") ? [] : [...(document.front_matter.dependencies ?? [])];
+        let nextDependencies = clearFrontMatterKeys.has("dependencies") ? [] : [...(document.metadata.dependencies ?? [])];
         if (dependencyUpdates.additions.length > 0) {
           const seen = new Set(nextDependencies.map((entry) => dependencyKey(entry)));
           for (const addition of dependencyUpdates.additions) {
@@ -1583,41 +1583,41 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
           );
         }
         if (nextDependencies.length === 0) {
-          delete document.front_matter.dependencies;
+          delete document.metadata.dependencies;
         } else {
-          document.front_matter.dependencies = nextDependencies;
+          document.metadata.dependencies = nextDependencies;
         }
         changedFields.push("dependencies");
       }
       if (options.comment !== undefined || clearFrontMatterKeys.has("comments")) {
         if (clearFrontMatterKeys.has("comments") || !commentUpdates.values || commentUpdates.values.length === 0) {
-          delete document.front_matter.comments;
+          delete document.metadata.comments;
         } else {
-          document.front_matter.comments = [...(document.front_matter.comments ?? []), ...(commentUpdates.values as Comment[])];
+          document.metadata.comments = [...(document.metadata.comments ?? []), ...(commentUpdates.values as Comment[])];
         }
         changedFields.push("comments");
       }
       if (options.note !== undefined || clearFrontMatterKeys.has("notes")) {
         if (clearFrontMatterKeys.has("notes") || !noteUpdates.values || noteUpdates.values.length === 0) {
-          delete document.front_matter.notes;
+          delete document.metadata.notes;
         } else {
-          document.front_matter.notes = [...(document.front_matter.notes ?? []), ...(noteUpdates.values as LogNote[])];
+          document.metadata.notes = [...(document.metadata.notes ?? []), ...(noteUpdates.values as LogNote[])];
         }
         changedFields.push("notes");
       }
       if (options.learning !== undefined || clearFrontMatterKeys.has("learnings")) {
         if (clearFrontMatterKeys.has("learnings") || !learningUpdates.values || learningUpdates.values.length === 0) {
-          delete document.front_matter.learnings;
+          delete document.metadata.learnings;
         } else {
-          document.front_matter.learnings = [...(document.front_matter.learnings ?? []), ...(learningUpdates.values as LogNote[])];
+          document.metadata.learnings = [...(document.metadata.learnings ?? []), ...(learningUpdates.values as LogNote[])];
         }
         changedFields.push("learnings");
       }
       if (options.file !== undefined || clearFrontMatterKeys.has("files")) {
         if (clearFrontMatterKeys.has("files") || !fileUpdates.values || fileUpdates.values.length === 0) {
-          delete document.front_matter.files;
+          delete document.metadata.files;
         } else {
-          const nextFiles = [...(document.front_matter.files ?? [])];
+          const nextFiles = [...(document.metadata.files ?? [])];
           const seen = new Set(nextFiles.map((entry) => fileKey(entry)));
           for (const entry of fileUpdates.values) {
             const key = fileKey(entry);
@@ -1627,14 +1627,14 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
             nextFiles.push(entry);
             seen.add(key);
           }
-          document.front_matter.files = nextFiles;
+          document.metadata.files = nextFiles;
         }
         changedFields.push("files");
       }
       if (options.test !== undefined || clearFrontMatterKeys.has("tests")) {
         if (clearFrontMatterKeys.has("tests") && options.replaceTests === true) {
           if (!testUpdates.values || testUpdates.values.length === 0) {
-            delete document.front_matter.tests;
+            delete document.metadata.tests;
           } else {
             const replacementTests: LinkedTest[] = [];
             const seen = new Set<string>();
@@ -1646,12 +1646,12 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
               replacementTests.push(entry);
               seen.add(key);
             }
-            document.front_matter.tests = replacementTests;
+            document.metadata.tests = replacementTests;
           }
         } else if (clearFrontMatterKeys.has("tests") || !testUpdates.values || testUpdates.values.length === 0) {
-          delete document.front_matter.tests;
+          delete document.metadata.tests;
         } else {
-          const nextTests = [...(document.front_matter.tests ?? [])];
+          const nextTests = [...(document.metadata.tests ?? [])];
           const seen = new Set(nextTests.map((entry) => testKey(entry)));
           for (const entry of testUpdates.values) {
             const key = testKey(entry);
@@ -1661,15 +1661,15 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
             nextTests.push(entry);
             seen.add(key);
           }
-          document.front_matter.tests = nextTests;
+          document.metadata.tests = nextTests;
         }
         changedFields.push("tests");
       }
       if (options.doc !== undefined || clearFrontMatterKeys.has("docs")) {
         if (clearFrontMatterKeys.has("docs") || !docUpdates.values || docUpdates.values.length === 0) {
-          delete document.front_matter.docs;
+          delete document.metadata.docs;
         } else {
-          const nextDocs = [...(document.front_matter.docs ?? [])];
+          const nextDocs = [...(document.metadata.docs ?? [])];
           const seen = new Set(nextDocs.map((entry) => docKey(entry)));
           for (const entry of docUpdates.values) {
             const key = docKey(entry);
@@ -1679,27 +1679,27 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
             nextDocs.push(entry);
             seen.add(key);
           }
-          document.front_matter.docs = nextDocs;
+          document.metadata.docs = nextDocs;
         }
         changedFields.push("docs");
       }
       if (options.tags !== undefined || clearFrontMatterKeys.has("tags")) {
-        document.front_matter.tags = clearFrontMatterKeys.has("tags") ? [] : parseTags(options.tags!);
+        document.metadata.tags = clearFrontMatterKeys.has("tags") ? [] : parseTags(options.tags!);
         changedFields.push("tags");
       }
       if (options.deadline !== undefined || clearFrontMatterKeys.has("deadline")) {
         if (clearFrontMatterKeys.has("deadline")) {
-          delete document.front_matter.deadline;
+          delete document.metadata.deadline;
         } else {
-          document.front_matter.deadline = resolveIsoOrRelative(options.deadline!, new Date(), "deadline");
+          document.metadata.deadline = resolveIsoOrRelative(options.deadline!, new Date(), "deadline");
         }
         changedFields.push("deadline");
       }
       if (options.estimatedMinutes !== undefined || clearFrontMatterKeys.has("estimated_minutes")) {
         if (clearFrontMatterKeys.has("estimated_minutes")) {
-          delete document.front_matter.estimated_minutes;
+          delete document.metadata.estimated_minutes;
         } else {
-          document.front_matter.estimated_minutes = parseOptionalNumber(
+          document.metadata.estimated_minutes = parseOptionalNumber(
             options.estimatedMinutes!,
             "estimated-minutes",
           );
@@ -1708,290 +1708,290 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
       }
       if (options.acceptanceCriteria !== undefined || clearFrontMatterKeys.has("acceptance_criteria")) {
         if (clearFrontMatterKeys.has("acceptance_criteria")) {
-          delete document.front_matter.acceptance_criteria;
+          delete document.metadata.acceptance_criteria;
         } else {
-          document.front_matter.acceptance_criteria = options.acceptanceCriteria;
+          document.metadata.acceptance_criteria = options.acceptanceCriteria;
         }
         changedFields.push("acceptance_criteria");
       }
       if (options.definitionOfReady !== undefined || clearFrontMatterKeys.has("definition_of_ready")) {
         if (clearFrontMatterKeys.has("definition_of_ready")) {
-          delete document.front_matter.definition_of_ready;
+          delete document.metadata.definition_of_ready;
         } else {
-          document.front_matter.definition_of_ready = options.definitionOfReady!.trim();
+          document.metadata.definition_of_ready = options.definitionOfReady!.trim();
         }
         changedFields.push("definition_of_ready");
       }
       const orderRaw = options.order ?? options.rank;
       if (orderRaw !== undefined || clearFrontMatterKeys.has("order")) {
         if (clearFrontMatterKeys.has("order")) {
-          delete document.front_matter.order;
+          delete document.metadata.order;
         } else {
           const parsedOrder = parseOptionalNumber(orderRaw!, "order");
           if (!Number.isInteger(parsedOrder)) {
             throw new PmCliError("Order must be an integer", EXIT_CODE.USAGE);
           }
-          document.front_matter.order = parsedOrder;
+          document.metadata.order = parsedOrder;
         }
         changedFields.push("order");
       }
       if (options.goal !== undefined || clearFrontMatterKeys.has("goal")) {
         if (clearFrontMatterKeys.has("goal")) {
-          delete document.front_matter.goal;
+          delete document.metadata.goal;
         } else {
-          document.front_matter.goal = options.goal!.trim();
+          document.metadata.goal = options.goal!.trim();
         }
         changedFields.push("goal");
       }
       if (options.objective !== undefined || clearFrontMatterKeys.has("objective")) {
         if (clearFrontMatterKeys.has("objective")) {
-          delete document.front_matter.objective;
+          delete document.metadata.objective;
         } else {
-          document.front_matter.objective = options.objective!.trim();
+          document.metadata.objective = options.objective!.trim();
         }
         changedFields.push("objective");
       }
       if (options.value !== undefined || clearFrontMatterKeys.has("value")) {
         if (clearFrontMatterKeys.has("value")) {
-          delete document.front_matter.value;
+          delete document.metadata.value;
         } else {
-          document.front_matter.value = options.value!.trim();
+          document.metadata.value = options.value!.trim();
         }
         changedFields.push("value");
       }
       if (options.impact !== undefined || clearFrontMatterKeys.has("impact")) {
         if (clearFrontMatterKeys.has("impact")) {
-          delete document.front_matter.impact;
+          delete document.metadata.impact;
         } else {
-          document.front_matter.impact = options.impact!.trim();
+          document.metadata.impact = options.impact!.trim();
         }
         changedFields.push("impact");
       }
       if (options.outcome !== undefined || clearFrontMatterKeys.has("outcome")) {
         if (clearFrontMatterKeys.has("outcome")) {
-          delete document.front_matter.outcome;
+          delete document.metadata.outcome;
         } else {
-          document.front_matter.outcome = options.outcome!.trim();
+          document.metadata.outcome = options.outcome!.trim();
         }
         changedFields.push("outcome");
       }
       if (options.whyNow !== undefined || clearFrontMatterKeys.has("why_now")) {
         if (clearFrontMatterKeys.has("why_now")) {
-          delete document.front_matter.why_now;
+          delete document.metadata.why_now;
         } else {
-          document.front_matter.why_now = options.whyNow!.trim();
+          document.metadata.why_now = options.whyNow!.trim();
         }
         changedFields.push("why_now");
       }
       if (options.assignee !== undefined || clearFrontMatterKeys.has("assignee")) {
         if (clearFrontMatterKeys.has("assignee")) {
-          delete document.front_matter.assignee;
+          delete document.metadata.assignee;
         } else {
           if (options.assignee!.trim() === "") {
             throw new PmCliError("--assignee must not be empty. Use --unset assignee to clear it.", EXIT_CODE.USAGE);
           }
-          document.front_matter.assignee = options.assignee!.trim();
+          document.metadata.assignee = options.assignee!.trim();
         }
         changedFields.push("assignee");
       }
       if (options.parent !== undefined || clearFrontMatterKeys.has("parent")) {
         if (clearFrontMatterKeys.has("parent")) {
-          delete document.front_matter.parent;
+          delete document.metadata.parent;
         } else {
-          document.front_matter.parent = resolvedParentValue as string;
+          document.metadata.parent = resolvedParentValue as string;
         }
         changedFields.push("parent");
       }
       if (options.reviewer !== undefined || clearFrontMatterKeys.has("reviewer")) {
         if (clearFrontMatterKeys.has("reviewer")) {
-          delete document.front_matter.reviewer;
+          delete document.metadata.reviewer;
         } else {
-          document.front_matter.reviewer = options.reviewer!.trim();
+          document.metadata.reviewer = options.reviewer!.trim();
         }
         changedFields.push("reviewer");
       }
       if (options.risk !== undefined || clearFrontMatterKeys.has("risk")) {
         if (clearFrontMatterKeys.has("risk")) {
-          delete document.front_matter.risk;
+          delete document.metadata.risk;
         } else {
-          document.front_matter.risk = ensureEnum(normalizeRiskInput(options.risk!), RISK_VALUES, "risk");
+          document.metadata.risk = ensureEnum(normalizeRiskInput(options.risk!), RISK_VALUES, "risk");
         }
         changedFields.push("risk");
       }
       if (options.confidence !== undefined || clearFrontMatterKeys.has("confidence")) {
         if (clearFrontMatterKeys.has("confidence")) {
-          delete document.front_matter.confidence;
+          delete document.metadata.confidence;
         } else {
-          document.front_matter.confidence = parseConfidenceInput(options.confidence!);
+          document.metadata.confidence = parseConfidenceInput(options.confidence!);
         }
         changedFields.push("confidence");
       }
       if (options.sprint !== undefined || clearFrontMatterKeys.has("sprint")) {
         if (clearFrontMatterKeys.has("sprint")) {
-          delete document.front_matter.sprint;
+          delete document.metadata.sprint;
         } else {
           const sprintValidation = validateSprintOrReleaseValue("sprint", options.sprint!, sprintReleasePolicy);
-          document.front_matter.sprint = sprintValidation.value;
+          document.metadata.sprint = sprintValidation.value;
           warnings.push(...sprintValidation.warnings);
         }
         changedFields.push("sprint");
       }
       if (options.release !== undefined || clearFrontMatterKeys.has("release")) {
         if (clearFrontMatterKeys.has("release")) {
-          delete document.front_matter.release;
+          delete document.metadata.release;
         } else {
           const releaseValidation = validateSprintOrReleaseValue("release", options.release!, sprintReleasePolicy);
-          document.front_matter.release = releaseValidation.value;
+          document.metadata.release = releaseValidation.value;
           warnings.push(...releaseValidation.warnings);
         }
         changedFields.push("release");
       }
       if (options.blockedBy !== undefined || clearFrontMatterKeys.has("blocked_by")) {
         if (clearFrontMatterKeys.has("blocked_by")) {
-          delete document.front_matter.blocked_by;
+          delete document.metadata.blocked_by;
         } else {
-          document.front_matter.blocked_by = options.blockedBy!.trim();
+          document.metadata.blocked_by = options.blockedBy!.trim();
         }
         changedFields.push("blocked_by");
       }
       if (options.blockedReason !== undefined || clearFrontMatterKeys.has("blocked_reason")) {
         if (clearFrontMatterKeys.has("blocked_reason")) {
-          delete document.front_matter.blocked_reason;
+          delete document.metadata.blocked_reason;
         } else {
-          document.front_matter.blocked_reason = options.blockedReason!.trim();
+          document.metadata.blocked_reason = options.blockedReason!.trim();
         }
         changedFields.push("blocked_reason");
       }
       if (options.unblockNote !== undefined || clearFrontMatterKeys.has("unblock_note")) {
         if (clearFrontMatterKeys.has("unblock_note")) {
-          delete document.front_matter.unblock_note;
+          delete document.metadata.unblock_note;
         } else {
-          document.front_matter.unblock_note = options.unblockNote!.trim();
+          document.metadata.unblock_note = options.unblockNote!.trim();
         }
         changedFields.push("unblock_note");
       }
       if (options.reporter !== undefined || clearFrontMatterKeys.has("reporter")) {
         if (clearFrontMatterKeys.has("reporter")) {
-          delete document.front_matter.reporter;
+          delete document.metadata.reporter;
         } else {
-          document.front_matter.reporter = options.reporter!.trim();
+          document.metadata.reporter = options.reporter!.trim();
         }
         changedFields.push("reporter");
       }
       if (options.severity !== undefined || clearFrontMatterKeys.has("severity")) {
         if (clearFrontMatterKeys.has("severity")) {
-          delete document.front_matter.severity;
+          delete document.metadata.severity;
         } else {
-          document.front_matter.severity = ensureEnum(normalizeSeverityInput(options.severity!), ISSUE_SEVERITY_VALUES, "severity");
+          document.metadata.severity = ensureEnum(normalizeSeverityInput(options.severity!), ISSUE_SEVERITY_VALUES, "severity");
         }
         changedFields.push("severity");
       }
       if (options.environment !== undefined || clearFrontMatterKeys.has("environment")) {
         if (clearFrontMatterKeys.has("environment")) {
-          delete document.front_matter.environment;
+          delete document.metadata.environment;
         } else {
-          document.front_matter.environment = options.environment!.trim();
+          document.metadata.environment = options.environment!.trim();
         }
         changedFields.push("environment");
       }
       if (options.reproSteps !== undefined || clearFrontMatterKeys.has("repro_steps")) {
         if (clearFrontMatterKeys.has("repro_steps")) {
-          delete document.front_matter.repro_steps;
+          delete document.metadata.repro_steps;
         } else {
-          document.front_matter.repro_steps = options.reproSteps!.trim();
+          document.metadata.repro_steps = options.reproSteps!.trim();
         }
         changedFields.push("repro_steps");
       }
       if (options.resolution !== undefined || clearFrontMatterKeys.has("resolution")) {
         if (clearFrontMatterKeys.has("resolution")) {
-          delete document.front_matter.resolution;
+          delete document.metadata.resolution;
         } else {
-          document.front_matter.resolution = options.resolution!.trim();
+          document.metadata.resolution = options.resolution!.trim();
         }
         changedFields.push("resolution");
       }
       if (options.expectedResult !== undefined || clearFrontMatterKeys.has("expected_result")) {
         if (clearFrontMatterKeys.has("expected_result")) {
-          delete document.front_matter.expected_result;
+          delete document.metadata.expected_result;
         } else {
-          document.front_matter.expected_result = options.expectedResult!.trim();
+          document.metadata.expected_result = options.expectedResult!.trim();
         }
         changedFields.push("expected_result");
       }
       if (options.actualResult !== undefined || clearFrontMatterKeys.has("actual_result")) {
         if (clearFrontMatterKeys.has("actual_result")) {
-          delete document.front_matter.actual_result;
+          delete document.metadata.actual_result;
         } else {
-          document.front_matter.actual_result = options.actualResult!.trim();
+          document.metadata.actual_result = options.actualResult!.trim();
         }
         changedFields.push("actual_result");
       }
       if (options.affectedVersion !== undefined || clearFrontMatterKeys.has("affected_version")) {
         if (clearFrontMatterKeys.has("affected_version")) {
-          delete document.front_matter.affected_version;
+          delete document.metadata.affected_version;
         } else {
-          document.front_matter.affected_version = options.affectedVersion!.trim();
+          document.metadata.affected_version = options.affectedVersion!.trim();
         }
         changedFields.push("affected_version");
       }
       if (options.fixedVersion !== undefined || clearFrontMatterKeys.has("fixed_version")) {
         if (clearFrontMatterKeys.has("fixed_version")) {
-          delete document.front_matter.fixed_version;
+          delete document.metadata.fixed_version;
         } else {
-          document.front_matter.fixed_version = options.fixedVersion!.trim();
+          document.metadata.fixed_version = options.fixedVersion!.trim();
         }
         changedFields.push("fixed_version");
       }
       if (options.component !== undefined || clearFrontMatterKeys.has("component")) {
         if (clearFrontMatterKeys.has("component")) {
-          delete document.front_matter.component;
+          delete document.metadata.component;
         } else {
-          document.front_matter.component = options.component!.trim();
+          document.metadata.component = options.component!.trim();
         }
         changedFields.push("component");
       }
       if (options.regression !== undefined || clearFrontMatterKeys.has("regression")) {
         if (clearFrontMatterKeys.has("regression")) {
-          delete document.front_matter.regression;
+          delete document.metadata.regression;
         } else {
-          document.front_matter.regression = parseRegressionInput(options.regression!);
+          document.metadata.regression = parseRegressionInput(options.regression!);
         }
         changedFields.push("regression");
       }
       if (options.customerImpact !== undefined || clearFrontMatterKeys.has("customer_impact")) {
         if (clearFrontMatterKeys.has("customer_impact")) {
-          delete document.front_matter.customer_impact;
+          delete document.metadata.customer_impact;
         } else {
-          document.front_matter.customer_impact = options.customerImpact!.trim();
+          document.metadata.customer_impact = options.customerImpact!.trim();
         }
         changedFields.push("customer_impact");
       }
       if (options.reminder !== undefined || clearFrontMatterKeys.has("reminders")) {
         if (clearFrontMatterKeys.has("reminders")) {
-          delete document.front_matter.reminders;
+          delete document.metadata.reminders;
         } else {
-          document.front_matter.reminders = parseReminderEntries(options.reminder!, nowValue);
+          document.metadata.reminders = parseReminderEntries(options.reminder!, nowValue);
         }
         changedFields.push("reminders");
       }
       if (options.event !== undefined || clearFrontMatterKeys.has("events")) {
         if (clearFrontMatterKeys.has("events")) {
-          delete document.front_matter.events;
+          delete document.metadata.events;
         } else {
-          document.front_matter.events = parseEventEntries(options.event!, nowValue);
+          document.metadata.events = parseEventEntries(options.event!, nowValue);
         }
         changedFields.push("events");
       }
 
       for (const definition of runtimeFieldRegistry.definitions) {
-        if (!clearFrontMatterKeys.has(definition.front_matter_key)) {
+        if (!clearFrontMatterKeys.has(definition.metadata_key)) {
           continue;
         }
-        if ((document.front_matter as Record<string, unknown>)[definition.front_matter_key] === undefined) {
+        if ((document.metadata as Record<string, unknown>)[definition.metadata_key] === undefined) {
           continue;
         }
-        delete (document.front_matter as Record<string, unknown>)[definition.front_matter_key];
-        changedFields.push(definition.front_matter_key);
+        delete (document.metadata as Record<string, unknown>)[definition.metadata_key];
+        changedFields.push(definition.metadata_key);
       }
 
       const runtimeFieldUpdates = collectRuntimeUpdateFieldValues(options as Record<string, unknown>, runtimeFieldRegistry);
@@ -1999,16 +1999,16 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         if (clearFrontMatterKeys.has(fieldKey)) {
           continue;
         }
-        if (JSON.stringify((document.front_matter as Record<string, unknown>)[fieldKey]) === JSON.stringify(fieldValue)) {
+        if (JSON.stringify((document.metadata as Record<string, unknown>)[fieldKey]) === JSON.stringify(fieldValue)) {
           continue;
         }
-        (document.front_matter as Record<string, unknown>)[fieldKey] = fieldValue;
+        (document.metadata as Record<string, unknown>)[fieldKey] = fieldValue;
         changedFields.push(fieldKey);
       }
 
       try {
         applyRegisteredItemFieldDefaultsAndValidation(
-          document.front_matter as unknown as Record<string, unknown>,
+          document.metadata as unknown as Record<string, unknown>,
           getActiveExtensionRegistrations(),
         );
       } catch (error: unknown) {

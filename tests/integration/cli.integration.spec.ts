@@ -3932,11 +3932,10 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
   it("auto-selects default item_format and migrates legacy settings on first mutation", async () => {
     await withTempPmPath(async (context) => {
-      const setMarkdown = context.runCli(
-        ["config", "project", "set", "item-format", "--format", "json_markdown", "--json"],
-        { expectJson: true },
-      );
-      expect(setMarkdown.code).toBe(0);
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const legacySettings = JSON.parse(await readFile(settingsPath, "utf8")) as Record<string, unknown>;
+      legacySettings.item_format = "json_markdown";
+      await writeFile(settingsPath, `${JSON.stringify(legacySettings, null, 2)}\n`, "utf8");
 
       const createResult = context.runCli(
         [
@@ -3989,9 +3988,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const createdId = (createResult.json as { item: { id: string } }).item.id;
       const markdownPath = path.join(context.pmPath, "tasks", `${createdId}.md`);
       const toonPath = path.join(context.pmPath, "tasks", `${createdId}.toon`);
-      await expect(readFile(markdownPath, "utf8")).resolves.toContain(createdId);
+      await expect(readFile(toonPath, "utf8")).resolves.toContain(createdId);
+      await expect(readFile(markdownPath, "utf8")).rejects.toBeDefined();
 
-      const settingsPath = path.join(context.pmPath, "settings.json");
       const settings = JSON.parse(await readFile(settingsPath, "utf8")) as Record<string, unknown>;
       delete settings.item_format;
       await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
@@ -4113,12 +4112,6 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
   it("auto-migrates item files before mutation when settings item_format is manually changed", async () => {
     await withTempPmPath(async (context) => {
-      const setMarkdown = context.runCli(
-        ["config", "project", "set", "item-format", "--format", "json_markdown", "--json"],
-        { expectJson: true },
-      );
-      expect(setMarkdown.code).toBe(0);
-
       const createResult = context.runCli(
         [
           "create",
@@ -4170,11 +4163,21 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const createdId = (createResult.json as { item: { id: string } }).item.id;
       const markdownPath = path.join(context.pmPath, "tasks", `${createdId}.md`);
       const toonPath = path.join(context.pmPath, "tasks", `${createdId}.toon`);
+      await expect(readFile(toonPath, "utf8")).resolves.toContain(createdId);
+
+      const getCreated = context.runCli(["get", createdId, "--json"], { expectJson: true });
+      expect(getCreated.code).toBe(0);
+      const getCreatedJson = getCreated.json as { item: Record<string, unknown>; body: string };
+      await writeFile(
+        markdownPath,
+        `${JSON.stringify(getCreatedJson.item, null, 2)}\n\n${getCreatedJson.body}\n`,
+        "utf8",
+      );
       await expect(readFile(markdownPath, "utf8")).resolves.toContain(createdId);
 
       const settingsPath = path.join(context.pmPath, "settings.json");
       const settings = JSON.parse(await readFile(settingsPath, "utf8")) as Record<string, unknown>;
-      settings.item_format = "toon";
+      settings.item_format = "json_markdown";
       await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
 
       const updateResult = context.runCli(
@@ -4194,6 +4197,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(updateResult.code).toBe(0);
       await expect(readFile(toonPath, "utf8")).resolves.toContain(createdId);
       await expect(readFile(markdownPath, "utf8")).rejects.toBeDefined();
+
+      const updatedSettings = JSON.parse(await readFile(settingsPath, "utf8")) as { item_format?: string };
+      expect(updatedSettings.item_format).toBe("json_markdown");
     });
   });
 

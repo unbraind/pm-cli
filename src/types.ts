@@ -225,6 +225,10 @@ export interface RuntimeStatusDefinition {
 
 export interface RuntimeFieldDefinition {
   key: string;
+  metadata_key?: string;
+  /**
+   * @deprecated Use metadata_key.
+   */
   front_matter_key?: string;
   cli_flag?: string;
   cli_aliases?: string[];
@@ -280,7 +284,7 @@ export interface ItemTestRunSummary {
   fail_on_skipped_triggered?: boolean;
 }
 
-export interface ItemFrontMatter {
+export interface ItemMetadata {
   id: string;
   title: string;
   description: string;
@@ -344,8 +348,13 @@ export interface ItemFrontMatter {
   [key: string]: unknown;
 }
 
+/**
+ * @deprecated Use ItemMetadata.
+ */
+export type ItemFrontMatter = ItemMetadata;
+
 export interface ItemDocument {
-  front_matter: ItemFrontMatter;
+  metadata: ItemMetadata;
   body: string;
 }
 

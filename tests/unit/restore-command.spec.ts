@@ -10,7 +10,7 @@ import { createHistoryEntry } from "../../src/core/history/history.js";
 import { stableStringify, sha256Hex } from "../../src/core/shared/serialization.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
-import type { HistoryEntry, ItemFrontMatter } from "../../src/types.js";
+import type { HistoryEntry, ItemMetadata } from "../../src/types.js";
 import { readJsonFixture } from "../helpers/fixtures.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
@@ -373,9 +373,9 @@ describe("runRestore", () => {
       const id = createRestoreFixture(context, "Mismatched ID Item");
       const get = context.runCli(["get", id, "--json"], { expectJson: true });
       expect(get.code).toBe(0);
-      const getJson = get.json as { item: ItemFrontMatter; body: string };
+      const getJson = get.json as { item: ItemMetadata; body: string };
       const mismatchedDocument = {
-        front_matter: {
+        metadata: {
           ...getJson.item,
           id: "pm-different",
         },
@@ -386,7 +386,7 @@ describe("runRestore", () => {
         author: "test-author",
         op: "create",
         before: {
-          front_matter: {} as ItemFrontMatter,
+          metadata: {} as ItemMetadata,
           body: "",
         },
         after: mismatchedDocument,
@@ -501,7 +501,7 @@ describe("runRestore", () => {
         message: expect.stringContaining("op=replace"),
       });
       await expect(runRestore(id, "1", {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
-        message: expect.stringContaining("path=/front_matter/missing"),
+        message: expect.stringContaining("path=/metadata/missing"),
       });
 
       const validTarget = {

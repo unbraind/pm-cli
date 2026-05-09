@@ -1,4 +1,4 @@
-import type { ItemDocument, ItemFrontMatter } from "../../types/index.js";
+import type { ItemDocument, ItemMetadata } from "../../types/index.js";
 
 export const DEFAULT_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS = 8_000;
 export const OLLAMA_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS = 3_200;
@@ -11,11 +11,11 @@ function compactParts(parts: Array<string | boolean | number | null | undefined>
     .join(" ");
 }
 
-export function buildReminderCorpus(item: ItemFrontMatter): string[] {
+export function buildReminderCorpus(item: ItemMetadata): string[] {
   return (item.reminders ?? []).map((reminder) => compactParts([reminder.at, reminder.text]));
 }
 
-export function buildEventCorpus(item: ItemFrontMatter): string[] {
+export function buildEventCorpus(item: ItemMetadata): string[] {
   return (item.events ?? []).map((event) =>
     compactParts([
       event.start_at,
@@ -37,7 +37,7 @@ export function buildEventCorpus(item: ItemFrontMatter): string[] {
 }
 
 export function buildSearchCorpus(document: ItemDocument): Record<string, unknown> {
-  const item = document.front_matter;
+  const item = document.metadata;
   return {
     title: item.title,
     description: item.description,

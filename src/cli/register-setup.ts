@@ -140,7 +140,7 @@ export function registerSetupCommands(program: Command): void {
       collect,
     )
     .option("--clear-criteria", "Clear criteria-list keys for config set operations")
-    .option("--format <value>", "Item format for item-format key: toon|json_markdown")
+    .option("--format <value>", "Item format for item-format key: toon")
     .option(
       "--policy <value>",
       "Policy key values: history-missing-stream-policy=auto_create|strict_error; sprint-release-format-policy=warn|strict_error; parent-reference-policy=warn|strict_error; governance-preset=minimal|default|strict|custom; governance-ownership-enforcement=none|warn|strict; governance-create-mode-default=progressive|strict; governance-close-validation-default=off|warn|strict; governance-parent-reference-policy=warn|strict_error; governance-metadata-validation-profile=core|strict|custom; governance-force-required-for-stale-lock=enabled|disabled; test-result-tracking=enabled|disabled; telemetry-tracking=enabled|disabled",

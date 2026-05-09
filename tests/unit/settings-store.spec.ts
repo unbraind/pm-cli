@@ -246,10 +246,10 @@ describe("core/store/settings", () => {
       expect(legacyRead.metadata.has_explicit_item_format).toBe(false);
 
       const settings = structuredClone(SETTINGS_DEFAULTS);
-      settings.item_format = "json_markdown";
+      settings.item_format = "toon";
       await writeSettings(pmRoot, settings);
       const explicitRead = await readSettingsWithMetadata(pmRoot);
-      expect(explicitRead.settings.item_format).toBe("json_markdown");
+      expect(explicitRead.settings.item_format).toBe("toon");
       expect(explicitRead.metadata.has_explicit_item_format).toBe(true);
     });
   });

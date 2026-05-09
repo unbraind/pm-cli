@@ -77,7 +77,7 @@ export interface RuntimeStatusDefinitionResolved {
 
 export interface RuntimeFieldDefinitionResolved {
   key: string;
-  front_matter_key: string;
+  metadata_key: string;
   cli_flag: string;
   cli_aliases: string[];
   description?: string;
@@ -209,7 +209,7 @@ function normalizeRuntimeFieldDefinition(definition: RuntimeFieldDefinition): Ru
   if (!key) {
     return null;
   }
-  const frontMatterKey = normalizeStatusToken(definition.front_matter_key ?? key);
+  const metadataKey = normalizeStatusToken(definition.metadata_key ?? definition.front_matter_key ?? key);
   const cliFlag = normalizeCliToken(definition.cli_flag ?? keyToDefaultCliFlag(key));
   if (!cliFlag) {
     return null;
@@ -232,7 +232,7 @@ function normalizeRuntimeFieldDefinition(definition: RuntimeFieldDefinition): Ru
   const requiredTypes = normalizeStringList(definition.required_types);
   return {
     key,
-    front_matter_key: frontMatterKey,
+    metadata_key: metadataKey,
     cli_flag: cliFlag,
     cli_aliases: cliAliases,
     description: description && description.length > 0 ? description : undefined,
@@ -298,7 +298,7 @@ export function normalizeRuntimeSchemaSettings(schema: Partial<RuntimeSchemaSett
     })),
     fields: normalizedFields.map((definition) => ({
       key: definition.key,
-      front_matter_key: definition.front_matter_key !== definition.key ? definition.front_matter_key : undefined,
+      metadata_key: definition.metadata_key !== definition.key ? definition.metadata_key : undefined,
       cli_flag: definition.cli_flag !== keyToDefaultCliFlag(definition.key) ? definition.cli_flag : undefined,
       cli_aliases: definition.cli_aliases.length > 0 ? [...definition.cli_aliases] : undefined,
       description: definition.description,

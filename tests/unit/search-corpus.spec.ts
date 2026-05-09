@@ -6,9 +6,9 @@ import {
   resolveSemanticCorpusInputCharacterLimit,
   SEMANTIC_CORPUS_TRUNCATION_SUFFIX,
 } from "../../src/core/search/corpus.js";
-import type { ItemDocument, ItemFrontMatter } from "../../src/types.js";
+import type { ItemDocument, ItemMetadata } from "../../src/types.js";
 
-function makeFrontMatter(id: string): ItemFrontMatter {
+function makeMetadata(id: string): ItemMetadata {
   return {
     id,
     title: id,
@@ -24,7 +24,7 @@ function makeFrontMatter(id: string): ItemFrontMatter {
 
 function makeDocument(id: string, body: string): ItemDocument {
   return {
-    front_matter: makeFrontMatter(id),
+    metadata: makeMetadata(id),
     body,
   };
 }

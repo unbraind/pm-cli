@@ -145,8 +145,8 @@ export default defineExtension({
       name: "example-search",
       async query(context) {
         return context.documents
-          .filter((doc) => doc.front_matter.title?.toLowerCase().includes(context.query.toLowerCase()))
-          .map((doc) => ({ id: doc.front_matter.id, score: 0.5, matched_fields: ["title"] }));
+          .filter((doc) => doc.metadata.title?.toLowerCase().includes(context.query.toLowerCase()))
+          .map((doc) => ({ id: doc.metadata.id, score: 0.5, matched_fields: ["title"] }));
       },
     });
   },

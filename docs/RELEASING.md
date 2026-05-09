@@ -87,7 +87,7 @@ Minimum coverage:
 - parent and dependency links
 - comments, notes, learnings, body, reminders, events
 - linked files, docs, and tests
-- json_markdown items with external YAML wrappers before JSON front matter
+- legacy markdown item files (including external YAML wrappers before JSON front matter) migrating cleanly to TOON
 - closed issue metadata and history drift checks
 - current-build write mutation and item-count preservation
 

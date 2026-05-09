@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { encode as encodeToon } from "@toon-format/toon";
-import { normalizeFrontMatter, parseItemDocument, serializeItemDocument } from "../../src/core/item/item-format.js";
+import {
+  normalizeFrontMatter,
+  parseItemDocument as parseRawItemDocument,
+  serializeItemDocument,
+  type ItemDocumentFormatOptions,
+} from "../../src/core/item/item-format.js";
 import { SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
 
 const FIXED_TS = "2026-02-22T00:00:00.000Z";
@@ -28,11 +33,15 @@ function runtimeSchemaOverrides(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function parseItemDocument(content: string, options: ItemDocumentFormatOptions = {}) {
+  return parseRawItemDocument(content, { format: "json_markdown", ...options });
+}
+
 describe("item-format front-matter validation", () => {
   it("parses and normalizes valid front matter", () => {
     const parsed = parseItemDocument(buildSource());
-    expect(parsed.front_matter.id).toBe("pm-validate");
-    expect(parsed.front_matter.tags).toEqual(["alpha", "beta"]);
+    expect(parsed.metadata.id).toBe("pm-validate");
+    expect(parsed.metadata.tags).toEqual(["alpha", "beta"]);
     expect(parsed.body).toBe("Body");
   });
 
@@ -41,7 +50,7 @@ describe("item-format front-matter validation", () => {
     const parsed = parseItemDocument(`\uFEFF---\ntitle: "{legacy-yaml-wrapper}"\n---\n  ${buildSource()}`, {
       onWarning: (warning) => warnings.push(warning),
     });
-    expect(parsed.front_matter.id).toBe("pm-validate");
+    expect(parsed.metadata.id).toBe("pm-validate");
     expect(parsed.body).toBe("Body");
     expect(warnings).toEqual(["json_markdown_leading_yaml_frontmatter_ignored"]);
   });
@@ -51,7 +60,7 @@ describe("item-format front-matter validation", () => {
     const parsed = parseItemDocument(`\uFEFF${buildSource()}`, {
       onWarning: (warning) => warnings.push(warning),
     });
-    expect(parsed.front_matter.id).toBe("pm-validate");
+    expect(parsed.metadata.id).toBe("pm-validate");
     expect(warnings).toEqual([]);
   });
 
@@ -92,7 +101,7 @@ describe("item-format front-matter validation", () => {
 
   it("accepts in-progress status alias and normalizes to canonical status", () => {
     const parsed = parseItemDocument(buildSource({ status: "in-progress" }));
-    expect(parsed.front_matter.status).toBe("in_progress");
+    expect(parsed.metadata.status).toBe("in_progress");
   });
 
   it("accepts custom statuses when provided via runtime schema", () => {
@@ -110,7 +119,7 @@ describe("item-format front-matter validation", () => {
       },
     });
     const parsed = parseItemDocument(buildSource({ status: "review" }), { schema });
-    expect(parsed.front_matter.status).toBe("review");
+    expect(parsed.metadata.status).toBe("review");
   });
 
   it("enforces runtime field types for TOON metadata values", () => {
@@ -157,7 +166,7 @@ describe("item-format front-matter validation", () => {
       schema,
       onWarning: (warning) => warnings.push(warning),
     });
-    expect((parsed.front_matter as Record<string, unknown>).mystery_field).toBe("x");
+    expect((parsed.metadata as Record<string, unknown>).mystery_field).toBe("x");
     expect(warnings).toEqual(["item_unknown_schema_fields:mystery_field"]);
   });
 
@@ -186,7 +195,7 @@ describe("item-format front-matter validation", () => {
       }),
     );
 
-    expect(parsed.front_matter.reminders).toEqual([
+    expect(parsed.metadata.reminders).toEqual([
       { at: "2026-02-22T10:00:00.000Z", text: "first reminder" },
       { at: "2026-02-23T10:00:00.000Z", text: "alpha reminder" },
       { at: "2026-02-23T10:00:00.000Z", text: "second reminder" },
@@ -252,7 +261,7 @@ describe("item-format front-matter validation", () => {
       }),
     );
 
-    expect(parsed.front_matter.events).toEqual([
+    expect(parsed.metadata.events).toEqual([
       {
         start_at: "2026-02-23T09:00:00.000Z",
         end_at: "2026-02-23T09:30:00.000Z",
@@ -743,39 +752,39 @@ describe("item-format front-matter validation", () => {
       }),
     );
 
-    expect(parsed.front_matter.closed_at).toBe("2026-02-22T01:02:03.123456789+01:00");
-    expect(parsed.front_matter.source_type).toBe("bug");
-    expect(parsed.front_matter.source_owner).toBe("owner-a");
-    expect(parsed.front_matter.design).toBe("Design body");
-    expect(parsed.front_matter.external_ref).toBe("EXT-1");
-    expect(parsed.front_matter.dependencies?.map((entry) => entry.source_kind)).toEqual(["a-rel", "z-rel"]);
+    expect(parsed.metadata.closed_at).toBe("2026-02-22T01:02:03.123456789+01:00");
+    expect(parsed.metadata.source_type).toBe("bug");
+    expect(parsed.metadata.source_owner).toBe("owner-a");
+    expect(parsed.metadata.design).toBe("Design body");
+    expect(parsed.metadata.external_ref).toBe("EXT-1");
+    expect(parsed.metadata.dependencies?.map((entry) => entry.source_kind)).toEqual(["a-rel", "z-rel"]);
   });
 
   it("parses and normalizes confidence values", () => {
     const numeric = parseItemDocument(buildSource({ confidence: 42 }));
-    expect(numeric.front_matter.confidence).toBe(42);
+    expect(numeric.metadata.confidence).toBe(42);
 
     const medAlias = parseItemDocument(buildSource({ confidence: "med" }));
-    expect(medAlias.front_matter.confidence).toBe("medium");
+    expect(medAlias.metadata.confidence).toBe("medium");
 
     const textLevel = parseItemDocument(buildSource({ confidence: "high" }));
-    expect(textLevel.front_matter.confidence).toBe("high");
+    expect(textLevel.metadata.confidence).toBe("high");
   });
 
   it("parses and normalizes severity values", () => {
     const medAlias = parseItemDocument(buildSource({ severity: "med" }));
-    expect(medAlias.front_matter.severity).toBe("medium");
+    expect(medAlias.metadata.severity).toBe("medium");
 
     const textLevel = parseItemDocument(buildSource({ severity: "high" }));
-    expect(textLevel.front_matter.severity).toBe("high");
+    expect(textLevel.metadata.severity).toBe("high");
   });
 
   it("parses regression boolean values", () => {
     const regressionTrue = parseItemDocument(buildSource({ regression: true }));
-    expect(regressionTrue.front_matter.regression).toBe(true);
+    expect(regressionTrue.metadata.regression).toBe(true);
 
     const regressionFalse = parseItemDocument(buildSource({ regression: false }));
-    expect(regressionFalse.front_matter.regression).toBe(false);
+    expect(regressionFalse.metadata.regression).toBe(false);
   });
 
   it("throws on invalid confidence values", () => {
@@ -807,7 +816,7 @@ describe("item-format front-matter validation", () => {
   it("drops invalid confidence text during direct normalize fallback", () => {
     const parsed = parseItemDocument(buildSource({ confidence: "low" }));
     const normalized = normalizeFrontMatter({
-      ...(parsed.front_matter as Record<string, unknown>),
+      ...(parsed.metadata as Record<string, unknown>),
       confidence: "unknown",
     } as unknown as Parameters<typeof normalizeFrontMatter>[0]);
     expect(normalized.confidence).toBeUndefined();
@@ -816,7 +825,7 @@ describe("item-format front-matter validation", () => {
   it("drops invalid severity text during direct normalize fallback", () => {
     const parsed = parseItemDocument(buildSource({ severity: "low" }));
     const normalized = normalizeFrontMatter({
-      ...(parsed.front_matter as Record<string, unknown>),
+      ...(parsed.metadata as Record<string, unknown>),
       severity: "urgent",
     } as unknown as Parameters<typeof normalizeFrontMatter>[0]);
     expect(normalized.severity).toBeUndefined();
@@ -857,8 +866,8 @@ describe("item-format front-matter validation", () => {
     expect(serializedToon.startsWith("id: ")).toBe(true);
     const parsedToon = parseItemDocument(serializedToon, { format: "toon" });
     expect(parsedToon).toEqual({
-      front_matter: {
-        ...source.front_matter,
+      metadata: {
+        ...source.metadata,
         tags: ["alpha", "beta"],
         confidence: "medium",
       },
@@ -882,8 +891,8 @@ describe("item-format front-matter validation", () => {
       ].join("\n"),
       { format: "toon" },
     );
-    expect(parsed.front_matter.id).toBe("pm-root-item");
-    expect(parsed.front_matter.tags).toEqual(["alpha", "beta"]);
+    expect(parsed.metadata.id).toBe("pm-root-item");
+    expect(parsed.metadata.tags).toEqual(["alpha", "beta"]);
     expect(parsed.body).toBe("Root object body");
   });
 
@@ -904,8 +913,8 @@ describe("item-format front-matter validation", () => {
       ].join("\n"),
       { format: "toon" },
     );
-    expect(parsed.front_matter.id).toBe("pm-legacy-wrapped");
-    expect(parsed.front_matter.tags).toEqual(["alpha", "beta"]);
+    expect(parsed.metadata.id).toBe("pm-legacy-wrapped");
+    expect(parsed.metadata.tags).toEqual(["alpha", "beta"]);
     expect(parsed.body).toBe("Legacy body");
   });
 
@@ -942,7 +951,7 @@ describe("item-format front-matter validation", () => {
         description: String.raw`Escaped quote \" and escaped slash \\ in text`,
       }),
     );
-    expect(parsed.front_matter.description).toContain("Escaped quote");
+    expect(parsed.metadata.description).toContain("Escaped quote");
   });
 
   it("defaults TOON body to empty string when body is omitted", () => {

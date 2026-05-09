@@ -137,7 +137,7 @@ export async function runComments(id: string, options: CommentsCommandOptions, g
       throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
     }
     const loaded = await readLocatedItem(located, { schema: settings.schema });
-    const comments = limitComments(loaded.document.front_matter.comments ?? [], limit);
+    const comments = limitComments(loaded.document.metadata.comments ?? [], limit);
     return {
       id: located.id,
       comments,
@@ -164,13 +164,13 @@ export async function runComments(id: string, options: CommentsCommandOptions, g
       force: options.force,
       bypassAssigneeConflict: Boolean(options.allowAuditComment),
       mutate(document) {
-        const comments = document.front_matter.comments ?? [];
+        const comments = document.metadata.comments ?? [];
         comments.push({
           created_at: nowIso(),
           author,
           text,
         });
-        document.front_matter.comments = comments;
+        document.metadata.comments = comments;
         return { changedFields: ["comments"] };
       },
     });

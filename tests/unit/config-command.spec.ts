@@ -398,12 +398,14 @@ describe("runConfig", () => {
   it("sets and gets project item-format and migrates item files to the configured format", async () => {
     await withTempRoot(async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
-      const settings = structuredClone(SETTINGS_DEFAULTS);
-      settings.item_format = "json_markdown";
-      await writeSettings(pmRoot, settings);
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+      const legacySettingsPath = path.join(pmRoot, "settings.json");
+      const legacySettings = JSON.parse(await fs.readFile(legacySettingsPath, "utf8")) as Record<string, unknown>;
+      delete legacySettings.item_format;
+      await fs.writeFile(legacySettingsPath, `${JSON.stringify(legacySettings, null, 2)}\n`, "utf8");
 
       const document: ItemDocument = canonicalDocument({
-        front_matter: {
+        metadata: {
           id: "pm-config-format",
           title: "Config migration",
           description: "Migrate file format",
@@ -459,6 +461,11 @@ describe("runConfig", () => {
       });
       await expect(
         runConfig("project", "set", "item-format", { format: "markdown" }, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runConfig("project", "set", "item-format", { format: "json_markdown" }, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot }),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });

@@ -103,31 +103,29 @@ export async function runClose(
     message: options.message,
     force: options.force,
     mutate(document) {
-      if (isTerminal(document.front_matter.status, statusRegistry) && !options.force) {
-        throw new PmCliError(`Item ${document.front_matter.id} is already terminal; use --force to close again.`, EXIT_CODE.CONFLICT);
+      if (isTerminal(document.metadata.status, statusRegistry) && !options.force) {
+        throw new PmCliError(`Item ${document.metadata.id} is already terminal; use --force to close again.`, EXIT_CODE.CONFLICT);
       }
       const mutationWarnings: string[] = [];
       if (validateCloseMode !== "off") {
-        const missingFields = findMissingCloseValidationFields(document.front_matter);
+        const missingFields = findMissingCloseValidationFields(document.metadata);
         if (missingFields.length > 0) {
           if (validateCloseMode === "strict") {
             throw new PmCliError(
-              `Cannot close item ${document.front_matter.id}: missing ${missingFields.join(", ")}. Populate fields or use --validate-close warn.`,
+              `Cannot close item ${document.metadata.id}: missing ${missingFields.join(", ")}. Populate fields or use --validate-close warn.`,
               EXIT_CODE.USAGE,
             );
           }
-          mutationWarnings.push(
-            `close_validation_missing_fields:${document.front_matter.id}:${missingFields.join(",")}`,
-          );
+          mutationWarnings.push(`close_validation_missing_fields:${document.metadata.id}:${missingFields.join(",")}`);
         }
       }
 
-      document.front_matter.status = statusRegistry.close_status;
-      document.front_matter.close_reason = closeReason;
+      document.metadata.status = statusRegistry.close_status;
+      document.metadata.close_reason = closeReason;
 
       const changedFields = ["status", "close_reason"];
-      if (document.front_matter.assignee !== undefined) {
-        delete document.front_matter.assignee;
+      if (document.metadata.assignee !== undefined) {
+        delete document.metadata.assignee;
         changedFields.push("assignee");
       }
 

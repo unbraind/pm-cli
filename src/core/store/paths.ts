@@ -52,7 +52,7 @@ export function getItemPath(
   pmRoot: string,
   type: ItemType,
   id: string,
-  itemFormat: ItemFormat = "json_markdown",
+  itemFormat: ItemFormat = "toon",
   typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
 ): string {
   return path.join(getTypeDirPath(pmRoot, type, typeToFolder), `${id}${ITEM_FILE_EXTENSION_BY_FORMAT[itemFormat]}`);

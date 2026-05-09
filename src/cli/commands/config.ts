@@ -397,10 +397,16 @@ function normalizeCriteria(values: string[] | undefined, clearCriteria: boolean 
 
 function normalizeItemFormat(value: string | undefined): ItemFormat {
   const normalized = value?.trim().toLowerCase();
-  if (normalized === "toon" || normalized === "json_markdown") {
-    return normalized;
+  if (normalized === "toon") {
+    return "toon";
   }
-  throw new PmCliError('Config set item-format requires --format with one of: toon, json_markdown', EXIT_CODE.USAGE);
+  if (normalized === "json_markdown") {
+    throw new PmCliError(
+      "Config set item-format no longer accepts json_markdown. Markdown item files are legacy read/migration input only.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  throw new PmCliError("Config set item-format requires --format toon", EXIT_CODE.USAGE);
 }
 
 function normalizeHistoryMissingStreamPolicy(value: string | undefined): HistoryMissingStreamPolicy {

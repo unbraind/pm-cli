@@ -244,7 +244,7 @@ async function collectSemanticRefreshWorkload(
     try {
       const loaded = await readLocatedItem(located, { schema });
       documents.push({
-        id: loaded.document.front_matter.id,
+        id: loaded.document.metadata.id,
         document: loaded.document,
       });
     } catch (error: unknown) {
@@ -284,7 +284,7 @@ async function refreshLocatedSemanticVectors(
       documents.map((entry, index) => ({
         id: entry.id,
         vector: embeddingResult.vectors[index],
-        payload: buildVectorPayload(entry.document.front_matter),
+        payload: buildVectorPayload(entry.document.metadata),
       })),
     );
     return {
@@ -385,7 +385,7 @@ export async function refreshSemanticEmbeddingsForMutatedItems(
   const refreshedEntries = Object.fromEntries(
     workload.documents
       .filter((entry) => refreshedIdSet.has(entry.id))
-      .map((entry) => [entry.id, entry.document.front_matter.updated_at]),
+      .map((entry) => [entry.id, entry.document.metadata.updated_at]),
   );
   const ledgerWarnings: string[] = [];
   if (Object.keys(refreshedEntries).length > 0 || workload.missingIds.length > 0) {

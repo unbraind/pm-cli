@@ -82,7 +82,7 @@ export async function runLearnings(
       throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
     }
     const loaded = await readLocatedItem(located, { schema: settings.schema });
-    const learnings = limitLearnings(loaded.document.front_matter.learnings ?? [], limit);
+    const learnings = limitLearnings(loaded.document.metadata.learnings ?? [], limit);
     return {
       id: located.id,
       learnings,
@@ -109,13 +109,13 @@ export async function runLearnings(
       force: options.force,
       bypassAssigneeConflict: Boolean(options.allowAuditLearning || options.allowAuditComment),
       mutate(document) {
-        const learnings = document.front_matter.learnings ?? [];
+        const learnings = document.metadata.learnings ?? [];
         learnings.push({
           created_at: nowIso(),
           author,
           text,
         });
-        document.front_matter.learnings = learnings;
+        document.metadata.learnings = learnings;
         return { changedFields: ["learnings"] };
       },
     });

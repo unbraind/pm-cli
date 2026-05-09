@@ -61,11 +61,11 @@ export async function runClaim(
     message: options.message,
     force,
     mutate(document) {
-      previousAssignee = document.front_matter.assignee ?? null;
-      if (statusIsTerminal(document.front_matter.status, statusRegistry) && !force) {
-        throw new PmCliError(`Cannot claim terminal item ${document.front_matter.id} without --force`, EXIT_CODE.CONFLICT);
+      previousAssignee = document.metadata.assignee ?? null;
+      if (statusIsTerminal(document.metadata.status, statusRegistry) && !force) {
+        throw new PmCliError(`Cannot claim terminal item ${document.metadata.id} without --force`, EXIT_CODE.CONFLICT);
       }
-      document.front_matter.assignee = author;
+      document.metadata.assignee = author;
       return { changedFields: ["assignee"] };
     },
   });
@@ -104,11 +104,11 @@ export async function runRelease(
       force,
       bypassAssigneeConflict: Boolean(options.allowAuditRelease),
       mutate(document) {
-        previousAssignee = document.front_matter.assignee ?? null;
+        previousAssignee = document.metadata.assignee ?? null;
         if (!previousAssignee) {
           return { changedFields: [] };
         }
-        delete document.front_matter.assignee;
+        delete document.metadata.assignee;
         return { changedFields: ["assignee"] };
       },
     });

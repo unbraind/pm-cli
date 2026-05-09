@@ -40,7 +40,7 @@ Precedence:
 |---------|---------|
 | `id_prefix` | generated item ID prefix, default `pm-` |
 | `author_default` | fallback mutation author |
-| `item_format` | `toon` or `json_markdown` item files |
+| `item_format` | item storage format (`toon` writes; legacy markdown is read/migrate only) |
 | `output.default_format` | default renderer, usually `toon` |
 | `locks.ttl_seconds` | stale lock threshold |
 | `history.missing_stream` | `auto_create` or `strict_error` |
@@ -70,13 +70,7 @@ TOON is the default:
 pm config project set item-format --format toon
 ```
 
-JSON-front-matter markdown is also supported:
-
-```bash
-pm config project set item-format --format json_markdown
-```
-
-Changing item format runs migration on item files. History stays JSONL.
+Markdown item files are treated as legacy migration input only. Mutations always write TOON files, and history stays JSONL.
 
 ## Output Format
 

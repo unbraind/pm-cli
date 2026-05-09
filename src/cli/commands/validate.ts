@@ -23,7 +23,7 @@ import { nowIso } from "../../core/shared/time.js";
 import { listAllFrontMatterWithBody } from "../../core/store/item-store.js";
 import { getHistoryPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import type { ItemFrontMatter, ValidateMetadataProfile, ValidateMetadataRequiredField } from "../../types/index.js";
+import type { ItemMetadata, ValidateMetadataProfile, ValidateMetadataRequiredField } from "../../types/index.js";
 import { extractReferencedPmItemIdsFromCommand } from "./test.js";
 
 type ValidateCheckName = "metadata" | "resolution" | "lifecycle" | "files" | "command_references" | "history_drift";
@@ -1216,7 +1216,7 @@ async function buildHistoryDriftCheck(pmRoot: string, items: ItemWithBody[]): Pr
     /* c8 ignore stop */
     const { body, ...frontMatter } = item;
     const currentHash = hashDocument({
-      front_matter: frontMatter as ItemFrontMatter,
+      metadata: frontMatter as ItemMetadata,
       body,
     });
     if (currentHash !== latestAfterHash) {

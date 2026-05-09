@@ -42,7 +42,7 @@ import type {
   Comment,
   Dependency,
   ItemDocument,
-  ItemFrontMatter,
+  ItemMetadata,
   ItemStatus,
   LinkedDoc,
   LinkedFile,
@@ -133,7 +133,7 @@ export interface CreateCommandOptions {
 }
 
 export interface CreateResult {
-  item: ItemFrontMatter;
+  item: ItemMetadata;
   changed_fields: string[];
   warnings: string[];
 }
@@ -411,7 +411,7 @@ function resolveRuntimeCreateUnsetDefinition(
     }
     const candidates = new Set<string>([
       definition.key,
-      definition.front_matter_key,
+      definition.metadata_key,
       definition.cli_flag.replaceAll("-", "_"),
       definition.cli_flag,
       ...definition.cli_aliases.map((alias) => alias.replaceAll("-", "_")),
@@ -422,7 +422,7 @@ function resolveRuntimeCreateUnsetDefinition(
     }
     return {
       optionKey: definition.key,
-      frontMatterKey: definition.front_matter_key,
+      frontMatterKey: definition.metadata_key,
     };
   }
   return undefined;
@@ -989,7 +989,7 @@ function parseEvents(raw: string[] | undefined, nowValue: string): { values: Cal
   return { values, explicitEmpty: false };
 }
 
-function buildChangedFields(frontMatter: ItemFrontMatter, explicitUnsets: string[]): string[] {
+function buildChangedFields(frontMatter: ItemMetadata, explicitUnsets: string[]): string[] {
   const changed = [
     ...FRONT_MATTER_KEY_ORDER.filter((key) => frontMatter[key] !== undefined),
     "body",
@@ -1887,7 +1887,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const description = requireStringOption(resolvedOptions.description, "--description");
   const body = resolvedOptions.body ?? "";
 
-  const frontMatter: ItemFrontMatter = normalizeFrontMatter({
+  const frontMatter: ItemMetadata = normalizeFrontMatter({
     id,
     title,
     description,
@@ -1952,12 +1952,15 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     throw new PmCliError(error instanceof Error ? error.message : "Invalid extension item field values", EXIT_CODE.USAGE);
   }
 
-  const afterDocument: ItemDocument = canonicalDocument({
-    front_matter: frontMatter,
-    body,
-  }, { schema: settings.schema });
+  const afterDocument: ItemDocument = canonicalDocument(
+    {
+      metadata: frontMatter,
+      body,
+    },
+    { schema: settings.schema },
+  );
   const beforeDocument: ItemDocument = {
-    front_matter: {} as ItemFrontMatter,
+    metadata: {} as ItemMetadata,
     body: "",
   };
 

@@ -4,16 +4,16 @@ import { createHash } from "node:crypto";
 import { runActiveOnReadHooks } from "../extensions/index.js";
 import { parseItemDocument } from "../item/item-format.js";
 import { ITEM_FILE_EXTENSIONS, getItemFormatFromPath } from "./paths.js";
-import type { ItemDocument, ItemFormat, ItemFrontMatter, ItemType, RuntimeSchemaSettings } from "../../types/index.js";
+import type { ItemDocument, ItemFormat, ItemMetadata, ItemType, RuntimeSchemaSettings } from "../../types/index.js";
 
-const CACHE_VERSION = 2;
-const CACHE_FILENAME = "front-matter-cache.json";
+const CACHE_VERSION = 3;
+const CACHE_FILENAME = "metadata-cache.json";
 
 interface CachedEntry {
   mtime_ms: number;
   ctime_ms: number;
   size: number;
-  front_matter: ItemFrontMatter;
+  metadata: ItemMetadata;
   body_length: number;
 }
 
@@ -71,7 +71,7 @@ function appendWarning(warnings: string[] | undefined, warning: string): void {
 }
 
 /**
- * List all item documents using a persistent on-disk front-matter cache.
+ * List all item documents using a persistent on-disk metadata cache.
  * Only parses files whose mtime/size have changed since the last cached run.
  */
 export async function listAllDocumentsCached(
@@ -128,7 +128,7 @@ export async function listAllDocumentsCached(
             const { size } = stat;
             const cached = previousEntries[relativePath];
 
-            let frontMatter: ItemFrontMatter;
+            let metadata: ItemMetadata;
             let bodyLength: number;
             const itemFormat = getItemFormatFromPath(filePath) as ItemFormat;
 
@@ -136,7 +136,7 @@ export async function listAllDocumentsCached(
             await runActiveOnReadHooks({ path: filePath, scope: "project" });
 
             if (cached && cached.mtime_ms === mtimeMs && cached.ctime_ms === ctimeMs && cached.size === size) {
-              frontMatter = cached.front_matter;
+              metadata = cached.metadata;
               bodyLength = cached.body_length;
             } else {
               const raw = await fs.readFile(filePath, "utf8");
@@ -145,7 +145,7 @@ export async function listAllDocumentsCached(
                 schema,
                 onWarning: (w) => appendWarning(warnings, w),
               });
-              frontMatter = parsed.front_matter;
+              metadata = parsed.metadata;
               bodyLength = parsed.body.length;
             }
 
@@ -153,14 +153,14 @@ export async function listAllDocumentsCached(
               mtime_ms: mtimeMs,
               ctime_ms: ctimeMs,
               size,
-              front_matter: frontMatter,
+              metadata,
               body_length: bodyLength,
             };
 
-            const existing = documentsById.get(frontMatter.id);
+            const existing = documentsById.get(metadata.id);
             if (!existing) {
-              documentsById.set(frontMatter.id, {
-                document: { front_matter: frontMatter, body: "" },
+              documentsById.set(metadata.id, {
+                document: { metadata, body: "" },
                 itemFormat,
               });
             } else {
@@ -168,8 +168,8 @@ export async function listAllDocumentsCached(
                 ? itemFormat === preferredFormat && existing.itemFormat !== preferredFormat
                 : itemFormat === "toon" && existing.itemFormat !== "toon";
               if (shouldReplace) {
-                documentsById.set(frontMatter.id, {
-                  document: { front_matter: frontMatter, body: "" },
+                documentsById.set(metadata.id, {
+                  document: { metadata, body: "" },
                   itemFormat,
                 });
               }
@@ -191,6 +191,6 @@ export async function listAllDocumentsCached(
   }).catch(() => {});
 
   return [...documentsById.values()]
-    .sort((left, right) => left.document.front_matter.id.localeCompare(right.document.front_matter.id))
+    .sort((left, right) => left.document.metadata.id.localeCompare(right.document.metadata.id))
     .map((entry) => entry.document);
 }

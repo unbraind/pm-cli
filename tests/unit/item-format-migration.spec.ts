@@ -10,7 +10,7 @@ import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 function buildTaskDocument(id: string, description: string): ItemDocument {
   return canonicalDocument({
-    front_matter: {
+    metadata: {
       id,
       title: `Title ${id}`,
       description,
@@ -53,7 +53,7 @@ describe("migrateItemFilesToFormat", () => {
       await expect(fs.access(markdownPath)).rejects.toBeDefined();
 
       const parsed = parseItemDocument(await fs.readFile(toonPath, "utf8"), { format: "toon" });
-      expect(parsed.front_matter.description).toBe("yaml-wrapped-source");
+      expect(parsed.metadata.description).toBe("yaml-wrapped-source");
       expect(parsed.body).toBe("Body pm-yaml-wrapper");
     });
   });
@@ -88,7 +88,7 @@ describe("migrateItemFilesToFormat", () => {
       await expect(fs.access(markdownPath)).rejects.toBeDefined();
 
       const parsed = parseItemDocument(await fs.readFile(toonPath, "utf8"), { format: "toon" });
-      expect(parsed.front_matter.description).toBe("markdown-source");
+      expect(parsed.metadata.description).toBe("markdown-source");
     });
   });
 
@@ -105,24 +105,19 @@ describe("migrateItemFilesToFormat", () => {
       await expect(fs.access(toonPath)).resolves.toBeUndefined();
 
       const parsed = parseItemDocument(await fs.readFile(toonPath, "utf8"), { format: "toon" });
-      expect(parsed.front_matter.description).toBe("toon-version");
+      expect(parsed.metadata.description).toBe("toon-version");
     });
   });
 
-  it("migrates TOON-only task files into markdown when configured for json_markdown", async () => {
+  it("rejects markdown migration targets because markdown writes are legacy read-only", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       await writeTaskWithFormat(pmPath, "pm-toon-only", "toon", "toon-source");
-      const markdownPath = getItemPath(pmPath, "Task", "pm-toon-only", "json_markdown");
       const toonPath = getItemPath(pmPath, "Task", "pm-toon-only", "toon");
 
-      const result = await migrateItemFilesToFormat(pmPath, "json_markdown");
-      expect(result.target_format).toBe("json_markdown");
-      expect(result.migrated).toContain("pm-toon-only");
-      await expect(fs.access(markdownPath)).resolves.toBeUndefined();
-      await expect(fs.access(toonPath)).rejects.toBeDefined();
-
-      const parsed = parseItemDocument(await fs.readFile(markdownPath, "utf8"), { format: "json_markdown" });
-      expect(parsed.front_matter.description).toBe("toon-source");
+      await expect(migrateItemFilesToFormat(pmPath, "json_markdown")).rejects.toThrow(
+        "Only toon item-format migration targets are supported",
+      );
+      await expect(fs.access(toonPath)).resolves.toBeUndefined();
     });
   });
 

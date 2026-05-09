@@ -16,7 +16,7 @@ export function collectRuntimeFilterValues(
     if (rawValue === undefined) {
       continue;
     }
-    filters[definition.front_matter_key] = coerceRuntimeFieldValue(definition, rawValue);
+    filters[definition.metadata_key] = coerceRuntimeFieldValue(definition, rawValue);
   }
   return filters;
 }

@@ -18,7 +18,7 @@ import { listAllFrontMatter, locateItem, readLocatedItem } from "../../../../src
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../../../src/core/store/paths.js";
 import { readSettings } from "../../../../src/core/store/settings.js";
 import { CONFIDENCE_TEXT_VALUES, ISSUE_SEVERITY_VALUES, RISK_VALUES } from "../../../../src/types/index.js";
-import type { ItemDocument, ItemFrontMatter, ItemStatus, ItemType, PmSettings } from "../../../../src/types/index.js";
+import type { ItemDocument, ItemMetadata, ItemStatus, ItemType, PmSettings } from "../../../../src/types/index.js";
 
 const DEFAULT_TODOS_FOLDER = ".pi/todos";
 
@@ -133,7 +133,7 @@ function toPriority(value: unknown): PriorityValue {
   return 2;
 }
 
-function toConfidence(value: unknown): ItemFrontMatter["confidence"] | undefined {
+function toConfidence(value: unknown): ItemMetadata["confidence"] | undefined {
   if (typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 100) {
     return value;
   }
@@ -258,7 +258,7 @@ function normalizeBody(body: string): string {
 
 function emptyDocument(): ItemDocument {
   return {
-    front_matter: {} as ItemFrontMatter,
+    metadata: {} as ItemMetadata,
     body: "",
   };
 }
@@ -336,10 +336,10 @@ async function importTodoCandidate(candidate: ParsedTodoCandidate, runtime: Todo
   if (located) {
     return { warning: `todos_import_item_exists:${id}` };
   }
-  const itemPath = getItemPath(runtime.pmRoot, type, id, runtime.settings.item_format, runtime.typeToFolder);
+  const itemPath = getItemPath(runtime.pmRoot, type, id, "toon", runtime.typeToFolder);
 
   const afterDocument = canonicalDocument({
-    front_matter: normalizeFrontMatter({
+    metadata: normalizeFrontMatter({
       id,
       title,
       description: toNonEmptyString(candidate.frontMatter.description) ?? "",
@@ -391,7 +391,7 @@ async function importTodoCandidate(candidate: ParsedTodoCandidate, runtime: Todo
       files: Array.isArray(candidate.frontMatter.files) ? (candidate.frontMatter.files as any[]) : undefined,
       docs: Array.isArray(candidate.frontMatter.docs) ? (candidate.frontMatter.docs as any[]) : undefined,
       tests: Array.isArray(candidate.frontMatter.tests) ? (candidate.frontMatter.tests as any[]) : undefined,
-    } as ItemFrontMatter),
+    } as ItemMetadata),
     body: candidate.body,
   });
 
@@ -400,7 +400,7 @@ async function importTodoCandidate(candidate: ParsedTodoCandidate, runtime: Todo
   try {
     const releaseLock = await acquireLock(runtime.pmRoot, id, runtime.settings.locks.ttl_seconds, runtime.author);
     try {
-      await writeFileAtomic(itemPath, serializeItemDocument(afterDocument, { format: runtime.settings.item_format }));
+      await writeFileAtomic(itemPath, serializeItemDocument(afterDocument, { format: "toon" }));
       try {
         const historyEntry = createHistoryEntry({
           nowIso: nowIso(),
@@ -538,11 +538,11 @@ export async function runTodosExport(options: TodosExportOptions, global: Global
 
     try {
       const { document } = await readLocatedItem(located);
-      const todoFrontMatter: Record<string, unknown> = { ...document.front_matter };
+      const todoFrontMatter: Record<string, unknown> = { ...document.metadata };
       const frontMatter = JSON.stringify(todoFrontMatter, null, 2);
       const body = normalizeBody(document.body);
       const serialized = body.length > 0 ? `${frontMatter}\n\n${body}\n` : `${frontMatter}\n`;
-      const exportPath = path.join(destinationFolder, `${document.front_matter.id}.md`);
+      const exportPath = path.join(destinationFolder, `${document.metadata.id}.md`);
       await writeFileAtomic(exportPath, serialized);
       warnings.push(
         ...(await runActiveOnWriteHooks({
@@ -551,7 +551,7 @@ export async function runTodosExport(options: TodosExportOptions, global: Global
           op: "todos:export",
         })),
       );
-      ids.push(document.front_matter.id);
+      ids.push(document.metadata.id);
       exported += 1;
     } catch {
       warnings.push(`todos_export_read_failed:${item.id}`);

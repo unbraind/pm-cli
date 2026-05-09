@@ -361,7 +361,7 @@ function ensureInitHasRun(pmRoot) {
 }
 function emptyDocument() {
     return {
-        front_matter: {},
+        metadata: {},
         body: "",
     };
 }
@@ -520,7 +520,7 @@ export async function runBeadsImport(options, global) {
             finalBody += (finalBody ? "\n\n" : "") + "## External Reference\n" + externalRef;
         }
         const afterDocument = canonicalDocument({
-            front_matter: frontMatter,
+            metadata: frontMatter,
             body: finalBody,
         });
         const existing = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
@@ -529,12 +529,12 @@ export async function runBeadsImport(options, global) {
             skipped += 1;
             continue;
         }
-        const itemPath = getItemPath(pmRoot, type, id, settings.item_format, typeRegistry.type_to_folder);
+        const itemPath = getItemPath(pmRoot, type, id, "toon", typeRegistry.type_to_folder);
         const historyPath = getHistoryPath(pmRoot, id);
         try {
             const releaseLock = await acquireLock(pmRoot, id, settings.locks.ttl_seconds, author);
             try {
-                await writeFileAtomic(itemPath, serializeItemDocument(afterDocument, { format: settings.item_format }));
+                await writeFileAtomic(itemPath, serializeItemDocument(afterDocument, { format: "toon" }));
                 try {
                     const entry = createHistoryEntry({
                         nowIso: nowIso(),

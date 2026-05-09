@@ -187,7 +187,7 @@ function normalizeBody(body) {
 }
 function emptyDocument() {
     return {
-        front_matter: {},
+        metadata: {},
         body: "",
     };
 }
@@ -254,9 +254,9 @@ async function importTodoCandidate(candidate, runtime) {
     if (located) {
         return { warning: `todos_import_item_exists:${id}` };
     }
-    const itemPath = getItemPath(runtime.pmRoot, type, id, runtime.settings.item_format, runtime.typeToFolder);
+    const itemPath = getItemPath(runtime.pmRoot, type, id, "toon", runtime.typeToFolder);
     const afterDocument = canonicalDocument({
-        front_matter: normalizeFrontMatter({
+        metadata: normalizeFrontMatter({
             id,
             title,
             description: toNonEmptyString(candidate.frontMatter.description) ?? "",
@@ -316,7 +316,7 @@ async function importTodoCandidate(candidate, runtime) {
     try {
         const releaseLock = await acquireLock(runtime.pmRoot, id, runtime.settings.locks.ttl_seconds, runtime.author);
         try {
-            await writeFileAtomic(itemPath, serializeItemDocument(afterDocument, { format: runtime.settings.item_format }));
+            await writeFileAtomic(itemPath, serializeItemDocument(afterDocument, { format: "toon" }));
             try {
                 const historyEntry = createHistoryEntry({
                     nowIso: nowIso(),
@@ -442,18 +442,18 @@ export async function runTodosExport(options, global) {
         }
         try {
             const { document } = await readLocatedItem(located);
-            const todoFrontMatter = { ...document.front_matter };
+            const todoFrontMatter = { ...document.metadata };
             const frontMatter = JSON.stringify(todoFrontMatter, null, 2);
             const body = normalizeBody(document.body);
             const serialized = body.length > 0 ? `${frontMatter}\n\n${body}\n` : `${frontMatter}\n`;
-            const exportPath = path.join(destinationFolder, `${document.front_matter.id}.md`);
+            const exportPath = path.join(destinationFolder, `${document.metadata.id}.md`);
             await writeFileAtomic(exportPath, serialized);
             warnings.push(...(await runActiveOnWriteHooks({
                 path: exportPath,
                 scope: "project",
                 op: "todos:export",
             })));
-            ids.push(document.front_matter.id);
+            ids.push(document.metadata.id);
             exported += 1;
         }
         catch {

@@ -178,12 +178,12 @@ describe("core/item/item-format additional branch coverage", () => {
     expect(normalized.docs).toBeUndefined();
 
     const serialized = serializeItemDocument({
-      front_matter: baseFrontMatter(),
+      metadata: baseFrontMatter(),
       body: undefined as unknown as string,
     });
     expect(serialized.endsWith("\n")).toBe(true);
     const canonical = canonicalDocument({
-      front_matter: baseFrontMatter(),
+      metadata: baseFrontMatter(),
       body: undefined as unknown as string,
     });
     expect(canonical.body).toBe("");

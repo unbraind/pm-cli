@@ -115,7 +115,7 @@ export async function listAllFrontMatter(
   schema?: RuntimeSchemaSettings,
 ): Promise<ItemFrontMatter[]> {
   const documents = await listAllDocumentsCached(pmRoot, preferredFormat, typeToFolder, warnings, schema);
-  return documents.map((document) => document.front_matter);
+  return documents.map((document) => document.metadata);
 }
 
 export async function listAllFrontMatterWithBody(
@@ -127,7 +127,7 @@ export async function listAllFrontMatterWithBody(
 ): Promise<Array<ItemFrontMatter & { body: string }>> {
   const documents = await listAllDocuments(pmRoot, preferredFormat, typeToFolder, warnings, schema);
   return documents.map((document) => ({
-    ...document.front_matter,
+    ...document.metadata,
     body: document.body,
   }));
 }
@@ -185,9 +185,9 @@ async function listAllDocuments(
   const results = await Promise.all(readTasks);
   for (const result of results) {
     if (!result) continue;
-    const existing = documentsById.get(result.document.front_matter.id);
+    const existing = documentsById.get(result.document.metadata.id);
     if (!existing) {
-      documentsById.set(result.document.front_matter.id, {
+      documentsById.set(result.document.metadata.id, {
         document: result.document,
         itemFormat: result.itemFormat,
       });
@@ -197,14 +197,14 @@ async function listAllDocuments(
       ? result.itemFormat === preferredFormat && existing.itemFormat !== preferredFormat
       : result.itemFormat === "toon" && existing.itemFormat !== "toon";
     if (shouldReplace) {
-      documentsById.set(result.document.front_matter.id, {
+      documentsById.set(result.document.metadata.id, {
         document: result.document,
         itemFormat: result.itemFormat,
       });
     }
   }
   return [...documentsById.values()]
-    .sort((left, right) => left.document.front_matter.id.localeCompare(right.document.front_matter.id))
+    .sort((left, right) => left.document.metadata.id.localeCompare(right.document.metadata.id))
     .map((entry) => entry.document);
 }
 
@@ -243,7 +243,7 @@ export async function mutateItem(params: {
       warnings: parseWarnings,
     });
 
-    const assigned = document.front_matter.assignee?.trim();
+    const assigned = document.metadata.assignee?.trim();
     const governance = resolveGovernanceKnobs(params.settings);
     const bypassAssigneeConflict =
       params.op === "claim" ||
@@ -278,17 +278,18 @@ export async function mutateItem(params: {
     const beforeDocument = canonicalDocument(document, { schema: params.settings.schema });
     const mutableDocument = canonicalDocument(structuredClone(document), { schema: params.settings.schema });
     const mutation = params.mutate(mutableDocument);
-    mutableDocument.front_matter.updated_at = nowIso();
+    mutableDocument.metadata.updated_at = nowIso();
     const afterDocument = canonicalDocument(mutableDocument, { schema: params.settings.schema });
+    const targetItemFormat: ItemFormat = "toon";
     const serializedAfter = serializeItemDocument(afterDocument, {
-      format: located.item_format,
+      format: targetItemFormat,
       schema: params.settings.schema,
     });
     const targetItemPath = getItemPath(
       params.pmRoot,
-      afterDocument.front_matter.type,
+      afterDocument.metadata.type,
       located.id,
-      located.item_format,
+      targetItemFormat,
       typeToFolder,
     );
     const historyPath = getHistoryPath(params.pmRoot, located.id);
@@ -299,7 +300,7 @@ export async function mutateItem(params: {
       source_item_path: located.itemPath,
       target_item_path: targetItemPath,
       history_path: historyPath,
-      item_format: located.item_format,
+      item_format: targetItemFormat,
       before: beforeDocument,
       after: afterDocument,
       contents: serializedAfter,
@@ -331,7 +332,7 @@ export async function mutateItem(params: {
       await fs.rm(located.itemPath);
     }
     const entry = createHistoryEntry({
-      nowIso: afterDocument.front_matter.updated_at,
+      nowIso: afterDocument.metadata.updated_at,
       author: params.author,
       op: params.op,
       before: beforeDocument,
@@ -364,7 +365,7 @@ export async function mutateItem(params: {
     ];
 
     return {
-      item: afterDocument.front_matter,
+      item: afterDocument.metadata,
       body: afterDocument.body,
       changedFields: mutation.changedFields,
       warnings: [
@@ -410,7 +411,7 @@ export async function deleteItem(params: {
       warnings: parseWarnings,
     });
 
-    const assigned = document.front_matter.assignee?.trim();
+    const assigned = document.metadata.assignee?.trim();
     const governance = resolveGovernanceKnobs(params.settings);
     const hasOwnershipConflict = assigned && assigned !== params.author && !params.force;
     if (hasOwnershipConflict) {
@@ -496,7 +497,7 @@ export async function deleteItem(params: {
     ];
 
     return {
-      item: beforeDocument.front_matter,
+      item: beforeDocument.metadata,
       changedFields: ["deleted"],
       warnings: [...parseWarnings, ...historyPolicy.warnings, ...serviceDeleteOverride.warnings, ...hookWarnings],
     };

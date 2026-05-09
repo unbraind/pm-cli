@@ -51,10 +51,10 @@ export async function appendTrackedTestRunSummary(options: {
     message: options.message,
     force: false,
     mutate(document) {
-      const current = document.front_matter.test_runs ?? [];
+      const current = document.metadata.test_runs ?? [];
       const next = normalizeTrackedTestRunSummaries([...current, options.entry]);
       const bounded = next.length > historyLimit ? next.slice(next.length - historyLimit) : next;
-      document.front_matter.test_runs = bounded;
+      document.metadata.test_runs = bounded;
       return { changedFields: ["test_runs"] };
     },
   });

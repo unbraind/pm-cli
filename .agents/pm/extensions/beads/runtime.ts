@@ -16,7 +16,7 @@ import { isTimestampLiteral, nowIso } from "../../../../src/core/shared/time.js"
 import { locateItem } from "../../../../src/core/store/item-store.js";
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../../../src/core/store/paths.js";
 import { readSettings } from "../../../../src/core/store/settings.js";
-import type { Dependency, ItemDocument, ItemFrontMatter, ItemStatus, ItemType, LogNote, LinkedFile, LinkedTest, LinkedDoc } from "../../../../src/types/index.js";
+import type { Dependency, ItemDocument, ItemMetadata, ItemStatus, ItemType, LogNote, LinkedFile, LinkedTest, LinkedDoc } from "../../../../src/types/index.js";
 import { DEPENDENCY_KIND_VALUES } from "../../../../src/types/index.js";
 
 const PRIMARY_AUTO_DISCOVERY_FILES = [
@@ -445,7 +445,7 @@ function ensureInitHasRun(pmRoot: string): Promise<void> {
 
 function emptyDocument(): ItemDocument {
   return {
-    front_matter: {} as ItemFrontMatter,
+    metadata: {} as ItemMetadata,
     body: "",
   };
 }
@@ -633,7 +633,7 @@ export async function runBeadsImport(options: BeadsImportOptions, global: Global
       finalBody += (finalBody ? "\n\n" : "") + "## External Reference\n" + externalRef;
     }
     const afterDocument = canonicalDocument({
-      front_matter: frontMatter,
+      metadata: frontMatter,
       body: finalBody,
     });
     const existing = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
@@ -642,13 +642,13 @@ export async function runBeadsImport(options: BeadsImportOptions, global: Global
       skipped += 1;
       continue;
     }
-    const itemPath = getItemPath(pmRoot, type, id, settings.item_format, typeRegistry.type_to_folder);
+    const itemPath = getItemPath(pmRoot, type, id, "toon", typeRegistry.type_to_folder);
 
     const historyPath = getHistoryPath(pmRoot, id);
     try {
       const releaseLock = await acquireLock(pmRoot, id, settings.locks.ttl_seconds, author);
       try {
-        await writeFileAtomic(itemPath, serializeItemDocument(afterDocument, { format: settings.item_format }));
+        await writeFileAtomic(itemPath, serializeItemDocument(afterDocument, { format: "toon" }));
         try {
           const entry = createHistoryEntry({
             nowIso: nowIso(),

@@ -275,7 +275,7 @@ export async function runDocs(id: string, options: DocsCommandOptions, global: G
       throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
     }
     const loaded = await readLocatedItem(located, { schema: settings.schema });
-    const docs = loaded.document.front_matter.docs ?? [];
+    const docs = loaded.document.metadata.docs ?? [];
     return {
       id: located.id,
       docs,
@@ -304,7 +304,7 @@ export async function runDocs(id: string, options: DocsCommandOptions, global: G
     message: options.message,
     force: options.force,
     mutate(document) {
-      const next = [...(document.front_matter.docs ?? [])];
+      const next = [...(document.metadata.docs ?? [])];
       let migrationCount = 0;
       if (migrations.length > 0) {
         for (let index = 0; index < next.length; index += 1) {
@@ -346,9 +346,9 @@ export async function runDocs(id: string, options: DocsCommandOptions, global: G
         })),
       );
       if (deduped.length > 0) {
-        document.front_matter.docs = deduped;
+        document.metadata.docs = deduped;
       } else {
-        delete document.front_matter.docs;
+        delete document.metadata.docs;
       }
       return { changedFields: ["docs"], warnings: migrationCount > 0 ? [`path_migrations_applied:${migrationCount}`] : [] };
     },

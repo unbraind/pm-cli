@@ -272,7 +272,7 @@ function parseTokens(query: string): string[] {
 }
 
 function collectExactPhraseFields(document: ItemDocument): string[] {
-  const item = document.front_matter;
+  const item = document.metadata;
   return [
     item.title,
     item.description,
@@ -303,7 +303,7 @@ function applyExactQueryFilters(
     return items;
   }
   return items.filter((document) => {
-    if (options.titleExact && normalizeSearchPhrase(document.front_matter.title) !== normalizedQuery) {
+    if (options.titleExact && normalizeSearchPhrase(document.metadata.title) !== normalizedQuery) {
       return false;
     }
     if (options.phraseExact && !documentContainsExactPhrase(document, normalizedQuery)) {
@@ -326,7 +326,7 @@ function applyFilters(
   const deadlineAfter = parseDeadline(options.deadlineAfter, "deadline-after");
 
   return items.filter((document) => {
-    const item = document.front_matter;
+    const item = document.metadata;
     if (typeFilter && item.type !== typeFilter) return false;
     if (tagFilter && !item.tags.includes(tagFilter)) return false;
     if (priorityFilter !== undefined && item.priority !== priorityFilter) return false;
@@ -410,7 +410,7 @@ async function loadLinkedCorpus(
   projectRoot: string,
   globalRoot: string,
 ): Promise<string> {
-  const linkedPaths = collectLinkedPaths(document.front_matter);
+  const linkedPaths = collectLinkedPaths(document.metadata);
   const chunks: string[] = [];
   const projectContainmentRoot = await resolveContainmentRoot(projectRoot);
   const globalContainmentRoot = await resolveContainmentRoot(globalRoot);
@@ -468,7 +468,7 @@ function scoreDocument(
   linkedCorpus: string,
   tuning: SearchTuning,
 ): SearchHit | null {
-  const item = document.front_matter;
+  const item = document.metadata;
   const titleTokenCounts = new Map<string, number>();
   for (const token of tokenizeForExactTokenMatch(item.title)) {
     titleTokenCounts.set(token, (titleTokenCounts.get(token) ?? 0) + 1);
@@ -567,7 +567,7 @@ function buildHybridLexicalScore(
     document,
     tokens,
     normalizedQuery,
-    includeLinked ? linkedCorpusById.get(document.front_matter.id) ?? "" : "",
+    includeLinked ? linkedCorpusById.get(document.metadata.id) ?? "" : "",
     tuning,
   );
 }
@@ -804,7 +804,7 @@ function normalizeExtensionProviderHits(
         : [`provider:${providerName}`];
     seen.add(id);
     hits.push({
-      item: document.front_matter,
+      item: document.metadata,
       score,
       matched_fields: matchedFields,
     });
@@ -828,7 +828,7 @@ function buildSemanticHits(
     }
     semanticScores.set(vectorHit.id, vectorHit.score);
     semanticHits.push({
-      item: document.front_matter,
+      item: document.metadata,
       score: vectorHit.score,
       matched_fields: ["semantic"],
     });
@@ -868,7 +868,7 @@ function combineHybridHits(
         matchedFields.add(field);
       }
       return {
-        item: document.front_matter,
+        item: document.metadata,
         score: combinedScore,
         matched_fields: [...matchedFields].sort((a, b) => a.localeCompare(b)),
       };
@@ -925,7 +925,7 @@ async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promi
       EXIT_CODE.USAGE,
     );
   }
-  const filteredById = new Map(context.filteredDocuments.map((document) => [document.front_matter.id, document]));
+  const filteredById = new Map(context.filteredDocuments.map((document) => [document.metadata.id, document]));
   const { semanticHits, semanticScores } = buildSemanticHits(vectorHits, filteredById);
   if (context.requestedMode === "semantic") {
     return semanticHits;
@@ -1052,7 +1052,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   });
   const loadedDocuments = await loadDocuments(
     pmRoot,
-    settings.item_format ?? "json_markdown",
+    settings.item_format ?? "toon",
     typeRegistry.type_to_folder,
     settings.schema,
   );
@@ -1072,7 +1072,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   const linkedCorpusById = new Map<string, string>();
   if (includeLinked && (effectiveMode === "keyword" || effectiveMode === "hybrid")) {
     for (const document of filteredDocuments) {
-      linkedCorpusById.set(document.front_matter.id, await loadLinkedCorpus(document, projectRoot, globalRoot));
+      linkedCorpusById.set(document.metadata.id, await loadLinkedCorpus(document, projectRoot, globalRoot));
     }
   }
 
@@ -1098,7 +1098,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
           warnings,
         );
       }
-      const filteredById = new Map(filteredDocuments.map((document) => [document.front_matter.id, document]));
+      const filteredById = new Map(filteredDocuments.map((document) => [document.metadata.id, document]));
       const canUseBuiltInSemantic =
         providerResolution.active !== null && (vectorResolution.active !== null || extensionVectorAdapter !== null);
       if (extensionSearchProvider) {

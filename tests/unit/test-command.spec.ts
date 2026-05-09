@@ -119,7 +119,7 @@ async function loadTaskFrontMatter(context: TempPmContext, id: string): Promise<
     source = await readFile(taskPath, "utf8");
   }
   const format = taskPath.endsWith(".toon") ? "toon" : "json_markdown";
-  return parseItemDocument(source, { format }).front_matter as unknown as Record<string, unknown>;
+  return parseItemDocument(source, { format }).metadata as unknown as Record<string, unknown>;
 }
 
 async function overwriteTaskTests(
@@ -139,7 +139,7 @@ async function overwriteTaskTests(
   }
   const format = taskPath.endsWith(".toon") ? "toon" : "json_markdown";
   const parsed = parseItemDocument(source, { format });
-  parsed.front_matter.tests = tests as unknown as never;
+  parsed.metadata.tests = tests as unknown as never;
   await writeFile(taskPath, serializeItemDocument(parsed, { format }), "utf8");
 }
 

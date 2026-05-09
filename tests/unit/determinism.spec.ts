@@ -56,7 +56,7 @@ describe("deterministic primitives", () => {
     expect(stableStringify({ z: 1, a: { y: 2, x: 3 } })).toBe('{"a":{"x":3,"y":2},"z":1}');
 
     const serialized = serializeItemDocument({
-      front_matter: {
+      metadata: {
         id: "pm-ab1",
         title: "Title",
         description: "Description",
@@ -70,13 +70,13 @@ describe("deterministic primitives", () => {
       body: "Body",
     });
     const parsed = parseItemDocument(serialized);
-    expect(parsed.front_matter.tags).toEqual(["alpha", "beta"]);
+    expect(parsed.metadata.tags).toEqual(["alpha", "beta"]);
     expect(parsed.body).toBe("Body");
   });
 
   it("creates deterministic history hashes and patches", () => {
     const before = canonicalDocument({
-      front_matter: {
+      metadata: {
         id: "pm-a1",
         title: "Before",
         description: "Before",
@@ -90,8 +90,8 @@ describe("deterministic primitives", () => {
       body: "",
     });
     const after = canonicalDocument({
-      front_matter: {
-        ...before.front_matter,
+      metadata: {
+        ...before.metadata,
         title: "After",
         updated_at: "2026-02-18T00:10:00.000Z",
       },
@@ -113,12 +113,12 @@ describe("deterministic primitives", () => {
       },
       {
         op: "replace",
-        path: "/front_matter/updated_at",
+        path: "/metadata/updated_at",
         value: "2026-02-18T00:10:00.000Z",
       },
       {
         op: "replace",
-        path: "/front_matter/title",
+        path: "/metadata/title",
         value: "After",
       },
     ]);
@@ -126,7 +126,7 @@ describe("deterministic primitives", () => {
     expect(entry.after_hash).toBe(hashDocument(after));
 
     const reorderedBefore = canonicalDocument({
-      front_matter: {
+      metadata: {
         tags: ["a"],
         priority: 1,
         status: "open",
@@ -140,7 +140,7 @@ describe("deterministic primitives", () => {
       body: "",
     });
     const reorderedAfter = canonicalDocument({
-      front_matter: {
+      metadata: {
         updated_at: "2026-02-18T00:10:00.000Z",
         title: "After",
         created_at: "2026-02-18T00:00:00.000Z",
@@ -179,7 +179,7 @@ describe("deterministic primitives", () => {
       updated_at: "2026-02-18T00:05:00.000Z",
     };
     const before = canonicalDocument({
-      front_matter: {
+      metadata: {
         ...baseFrontMatter,
         tests: [
           {
@@ -192,7 +192,7 @@ describe("deterministic primitives", () => {
       body: "",
     });
     const after = canonicalDocument({
-      front_matter: {
+      metadata: {
         ...baseFrontMatter,
         updated_at: "2026-02-18T00:06:00.000Z",
         tests: [
@@ -215,12 +215,12 @@ describe("deterministic primitives", () => {
     });
     expect(entry.patch).toContainEqual({
       op: "add",
-      path: "/front_matter/tests/0/pm_context_mode",
+      path: "/metadata/tests/0/pm_context_mode",
       value: "schema",
     });
     expect(
       entry.patch.some(
-        (operation) => operation.op === "replace" && operation.path === "/front_matter/tests/0/pm_context_mode",
+        (operation) => operation.op === "replace" && operation.path === "/metadata/tests/0/pm_context_mode",
       ),
     ).toBe(false);
   });
@@ -232,13 +232,13 @@ describe("deterministic primitives", () => {
     expect(first).toMatch(/^[0-9a-f]{64}$/);
   });
 
-  it("treats missing body as empty string for empty front matter hashing", () => {
+  it("treats missing body as empty string for empty metadata hashing", () => {
     const withMissingBody = hashDocument({
-      front_matter: {} as never,
+      metadata: {} as never,
       body: undefined as unknown as string,
     });
     const withEmptyBody = hashDocument({
-      front_matter: {} as never,
+      metadata: {} as never,
       body: "",
     });
     expect(withMissingBody).toBe(withEmptyBody);
@@ -249,7 +249,7 @@ describe("deterministic primitives", () => {
     const historyPath = path.join(tempDir, "pm-a1.jsonl");
 
     const baseDocument = canonicalDocument({
-      front_matter: {
+      metadata: {
         id: "pm-a1",
         title: "Initial",
         description: "Initial",
@@ -263,16 +263,16 @@ describe("deterministic primitives", () => {
       body: "",
     });
     const secondDocument = canonicalDocument({
-      front_matter: {
-        ...baseDocument.front_matter,
+      metadata: {
+        ...baseDocument.metadata,
         title: "Second",
         updated_at: "2026-02-18T00:05:00.000Z",
       },
       body: "first update",
     });
     const thirdDocument = canonicalDocument({
-      front_matter: {
-        ...secondDocument.front_matter,
+      metadata: {
+        ...secondDocument.metadata,
         title: "Third",
         updated_at: "2026-02-18T00:10:00.000Z",
       },

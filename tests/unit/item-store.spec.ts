@@ -9,7 +9,7 @@ import { readSettings } from "../../src/core/store/settings.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { parseItemDocument, serializeItemDocument } from "../../src/core/item/item-format.js";
-import type { ItemDocument, ItemFormat, ItemFrontMatter } from "../../src/types/index.js";
+import type { ItemDocument, ItemFormat, ItemMetadata } from "../../src/types/index.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 const FIXED_TS = "2026-02-20T00:00:00.000Z";
@@ -17,10 +17,10 @@ const FIXED_TS = "2026-02-20T00:00:00.000Z";
 async function writeTaskItem(
   pmRoot: string,
   id: string,
-  overrides: Partial<ItemFrontMatter> = {},
-  format: ItemFormat = "json_markdown",
+  overrides: Partial<ItemMetadata> = {},
+  format: ItemFormat = "toon",
 ): Promise<{ itemPath: string; document: ItemDocument }> {
-  const frontMatter: ItemFrontMatter = {
+  const metadata: ItemMetadata = {
     id,
     title: `Title ${id}`,
     description: "original description",
@@ -33,7 +33,7 @@ async function writeTaskItem(
     ...overrides,
   };
   const document: ItemDocument = {
-    front_matter: frontMatter,
+    metadata,
     body: "seed body",
   };
   const itemPath = getItemPath(pmRoot, "Task", id, format);
@@ -90,12 +90,12 @@ describe("core/store/item-store", () => {
       const locatedToon = await locateItem(pmPath, id, "pm-", "toon");
       expect(locatedToon?.item_format).toBe("toon");
       const loadedToon = await readLocatedItem(locatedToon as NonNullable<typeof locatedToon>);
-      expect(loadedToon.document.front_matter.description).toBe("toon-description");
+      expect(loadedToon.document.metadata.description).toBe("toon-description");
 
       const locatedMarkdown = await locateItem(pmPath, id, "pm-", "json_markdown");
       expect(locatedMarkdown?.item_format).toBe("json_markdown");
       const loadedMarkdown = await readLocatedItem(locatedMarkdown as NonNullable<typeof locatedMarkdown>);
-      expect(loadedMarkdown.document.front_matter.description).toBe("markdown-description");
+      expect(loadedMarkdown.document.metadata.description).toBe("markdown-description");
     });
   });
 
@@ -153,7 +153,7 @@ describe("core/store/item-store", () => {
           op: "update",
           author: "unit-author",
           mutate: (document) => {
-            document.front_matter.description = "mutated description";
+            document.metadata.description = "mutated description";
             return { changedFields: ["description"] };
           },
         }),
@@ -161,7 +161,7 @@ describe("core/store/item-store", () => {
 
       const rawAfterFailure = await fs.readFile(itemPath, "utf8");
       expect(rawAfterFailure).toBe(originalRaw);
-      expect(parseItemDocument(rawAfterFailure).front_matter.description).toBe("original description");
+      expect(parseItemDocument(rawAfterFailure).metadata.description).toBe("original description");
     });
   });
 
@@ -181,7 +181,7 @@ describe("core/store/item-store", () => {
           op: "update",
           author: "unit-author",
           mutate: (document) => {
-            document.front_matter.description = "should not persist";
+            document.metadata.description = "should not persist";
             return { changedFields: ["description"] };
           },
         }),
@@ -199,7 +199,7 @@ describe("core/store/item-store", () => {
       const id = "pm-cache-test-item";
       await writeTaskItem(pmPath, id, { description: "cache-target" }, "toon");
 
-      const cachePath = path.join(pmPath, "runtime", "front-matter-cache.json");
+      const cachePath = path.join(pmPath, "runtime", "metadata-cache.json");
       expect(await fs.access(cachePath).then(() => true, () => false)).toBe(false);
 
       const firstRun = await listAllFrontMatter(pmPath, "toon");

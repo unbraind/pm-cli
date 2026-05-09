@@ -800,6 +800,7 @@ describe("runSearch", () => {
     });
     listAllFrontMatterMock.mockResolvedValueOnce([calendarHeavy]);
     readFileMock.mockResolvedValueOnce(serializeDocument(calendarHeavy, ""));
+    readFileMock.mockResolvedValueOnce(serializeDocument(calendarHeavy, ""));
     const calendarSearch = await runSearch("roadmap reminder room-token all day", { mode: "keyword" }, { path: "/tmp/pm-search" });
     expect(calendarSearch.count).toBe(1);
     expect(calendarSearch.items[0].item.id).toBe("pm-calendar");
@@ -1766,7 +1767,7 @@ describe("runSearch", () => {
       if (targetPath.endsWith(".toon")) {
         return serializeItemDocument(
           {
-            front_matter: fallbackItem,
+            metadata: fallbackItem,
             body: "fallback toon body",
           },
           { format: "toon" },

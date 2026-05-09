@@ -1,7 +1,7 @@
 import jsonPatch from "fast-json-patch";
 import fs from "node:fs/promises";
 import { pathExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
-import { appendHistoryEntry, createHistoryEntry } from "../../core/history/history.js";
+import { appendHistoryEntry, createHistoryEntry, hashDocument } from "../../core/history/history.js";
 import { enforceHistoryStreamPolicyForItem } from "../../core/history/history-stream-policy.js";
 import { normalizeItemId, normalizeRawItemId } from "../../core/item/id.js";
 import { canonicalDocument, serializeItemDocument } from "../../core/item/item-format.js";
@@ -11,16 +11,16 @@ import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../../core/shared/constants.j
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
-import { orderObject, sha256Hex, stableStringify } from "../../core/shared/serialization.js";
+import { orderObject } from "../../core/shared/serialization.js";
 import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../core/extensions/index.js";
 import { locateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import type { HistoryEntry, HistoryPatchOp, ItemDocument, ItemFrontMatter } from "../../types/index.js";
+import type { HistoryEntry, HistoryPatchOp, ItemDocument, ItemMetadata } from "../../types/index.js";
 import { readHistoryEntries } from "./history.js";
 
 interface CanonicalReplayDocument {
-  front_matter: Record<string, unknown>;
+  metadata: Record<string, unknown>;
   body: string;
 }
 
@@ -44,7 +44,7 @@ export interface RestoreCommandOptions {
 }
 
 export interface RestoreResult {
-  item: ItemFrontMatter;
+  item: ItemMetadata;
   restored_from: {
     kind: "version" | "timestamp";
     target: string;
@@ -57,7 +57,7 @@ export interface RestoreResult {
 }
 
 const EMPTY_REPLAY_DOCUMENT: CanonicalReplayDocument = {
-  front_matter: {},
+  metadata: {},
   body: "",
 };
 
@@ -68,16 +68,16 @@ function toAuthor(candidate: string | undefined, defaultAuthor: string): string 
 }
 
 function toReplayDocument(document: ItemDocument): CanonicalReplayDocument {
-  if (!document.front_matter || Object.keys(document.front_matter).length === 0) {
+  if (!document.metadata || Object.keys(document.metadata).length === 0) {
     return {
-      front_matter: {},
+      metadata: {},
       body: document.body ?? "",
     };
   }
   const canonical = canonicalDocument(document);
   return {
-    front_matter: orderObject(
-      canonical.front_matter as unknown as Record<string, unknown>,
+    metadata: orderObject(
+      canonical.metadata as unknown as Record<string, unknown>,
       FRONT_MATTER_KEY_ORDER,
     ),
     body: canonical.body,
@@ -85,7 +85,28 @@ function toReplayDocument(document: ItemDocument): CanonicalReplayDocument {
 }
 
 function replayHash(document: CanonicalReplayDocument): string {
-  return sha256Hex(stableStringify(document));
+  return hashDocument({
+    metadata: document.metadata as unknown as ItemMetadata,
+    body: document.body,
+  });
+}
+
+function normalizeReplayPatchPath(path: string): string {
+  if (path === "/front_matter") {
+    return "/metadata";
+  }
+  if (path.startsWith("/front_matter/")) {
+    return `/metadata/${path.slice("/front_matter/".length)}`;
+  }
+  return path;
+}
+
+function normalizeReplayPatchOps(patch: HistoryPatchOp[]): HistoryPatchOp[] {
+  return patch.map((operation) => ({
+    ...operation,
+    path: normalizeReplayPatchPath(operation.path),
+    from: operation.from ? normalizeReplayPatchPath(operation.from) : undefined,
+  }));
 }
 
 function ensureReplayTarget(target: string, history: HistoryEntry[]): ResolvedRestoreTarget {
@@ -191,29 +212,30 @@ function applyHistoryPatch(
   entryOp: string,
 ): CanonicalReplayDocument {
   try {
+    const normalizedPatch = normalizeReplayPatchOps(patch);
     const applied = jsonPatch.applyPatch(
       structuredClone(current),
-      patch as jsonPatch.Operation[],
+      normalizedPatch as jsonPatch.Operation[],
       true,
       false,
     ).newDocument as unknown;
     if (
       typeof applied !== "object" ||
       applied === null ||
-      !("front_matter" in applied) ||
+      !("metadata" in applied) ||
       !("body" in applied) ||
       typeof (applied as { body: unknown }).body !== "string" ||
-      typeof (applied as { front_matter: unknown }).front_matter !== "object" ||
-      (applied as { front_matter: unknown }).front_matter === null
+      typeof (applied as { metadata: unknown }).metadata !== "object" ||
+      (applied as { metadata: unknown }).metadata === null
     ) {
       throw new PmCliError(
         `History replay produced an invalid document shape at entry ${entryNumber}.`,
         EXIT_CODE.GENERIC_FAILURE,
       );
     }
-    const replay = applied as { front_matter: Record<string, unknown>; body: string };
+    const replay = applied as { metadata: Record<string, unknown>; body: string };
     return {
-      front_matter: replay.front_matter,
+      metadata: replay.metadata,
       body: replay.body,
     };
   } catch (error: unknown) {
@@ -267,7 +289,7 @@ function ensureMaterializedRestoreTarget(
   replayDocument: CanonicalReplayDocument,
   target: ResolvedRestoreTarget,
 ): CanonicalReplayDocument {
-  if (Object.keys(replayDocument.front_matter).length > 0) {
+  if (Object.keys(replayDocument.metadata).length > 0) {
     return replayDocument;
   }
   throw new PmCliError(
@@ -278,14 +300,14 @@ function ensureMaterializedRestoreTarget(
 
 function replayCurrentDocument(history: HistoryEntry[]): ItemDocument {
   const currentReplay = replayToTarget(history, history.length - 1);
-  if (Object.keys(currentReplay.front_matter).length === 0) {
+  if (Object.keys(currentReplay.metadata).length === 0) {
     return {
-      front_matter: {} as ItemFrontMatter,
+      metadata: {} as ItemMetadata,
       body: currentReplay.body,
     };
   }
   return canonicalDocument({
-    front_matter: currentReplay.front_matter as unknown as ItemFrontMatter,
+    metadata: currentReplay.metadata as unknown as ItemMetadata,
     body: currentReplay.body,
   });
 }
@@ -342,7 +364,7 @@ function changedFields(beforeDocument: ItemDocument, afterDocument: ItemDocument
       fields.add("body");
       continue;
     }
-    const segment = op.path.replace(/^\/front_matter\/?/, "").split("/")[0];
+    const segment = op.path.replace(/^\/(?:metadata|front_matter)\/?/, "").split("/")[0];
     fields.add(segment.replaceAll("~1", "/").replaceAll("~0", "~"));
   }
 
@@ -371,14 +393,17 @@ export async function runRestore(
 
   const resolvedTarget = ensureReplayTarget(target, history);
   const replayDocument = ensureMaterializedRestoreTarget(replayToTarget(history, resolvedTarget.historyIndex), resolvedTarget);
-  const restoredDocument = canonicalDocument({
-    front_matter: replayDocument.front_matter as unknown as ItemFrontMatter,
-    body: replayDocument.body,
-  }, { schema: settings.schema });
+  const restoredDocument = canonicalDocument(
+    {
+      metadata: replayDocument.metadata as unknown as ItemMetadata,
+      body: replayDocument.body,
+    },
+    { schema: settings.schema },
+  );
 
-  if (restoredDocument.front_matter.id !== resolvedId) {
+  if (restoredDocument.metadata.id !== resolvedId) {
     throw new PmCliError(
-      `Restore target resolved to item ${restoredDocument.front_matter.id}, expected ${resolvedId}.`,
+      `Restore target resolved to item ${restoredDocument.metadata.id}, expected ${resolvedId}.`,
       EXIT_CODE.GENERIC_FAILURE,
     );
   }
@@ -395,7 +420,7 @@ export async function runRestore(
 
   try {
     const existingItemPath = subject.located?.itemPath ?? null;
-    const itemFormat = subject.located?.item_format ?? settings.item_format;
+    const itemFormat = "toon";
     let resolvedCurrentDocument: ItemDocument;
     let resolvedOriginalRaw: string | null = null;
     if (subject.located) {
@@ -405,7 +430,7 @@ export async function runRestore(
     } else {
       resolvedCurrentDocument = replayCurrentDocument(history);
     }
-    const assigned = resolvedCurrentDocument.front_matter.assignee?.trim();
+    const assigned = resolvedCurrentDocument.metadata.assignee?.trim();
     const ownershipWarnings: string[] = [];
     const hasOwnershipConflict = assigned && assigned !== author && !options.force;
     if (hasOwnershipConflict) {
@@ -423,7 +448,7 @@ export async function runRestore(
     const serializedRestore = serializeItemDocument(restoredDocument, { format: itemFormat, schema: settings.schema });
     const restoredItemPath = getItemPath(
       pmRoot,
-      restoredDocument.front_matter.type,
+      restoredDocument.metadata.type,
       resolvedId,
       itemFormat,
       typeRegistry.type_to_folder,
@@ -470,7 +495,7 @@ export async function runRestore(
 
     const targetEntry = history[resolvedTarget.historyIndex];
     return {
-      item: restoredDocument.front_matter,
+      item: restoredDocument.metadata,
       restored_from: {
         kind: resolvedTarget.kind,
         target: resolvedTarget.raw,

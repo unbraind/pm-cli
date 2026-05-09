@@ -1,10 +1,15 @@
 import jsonPatch from "fast-json-patch";
-import { EMPTY_CANONICAL_DOCUMENT, FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
+import { FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
 import { runActiveServiceOverride } from "../extensions/index.js";
 import { appendLineAtomic } from "../fs/fs-utils.js";
 import { canonicalDocument } from "../item/item-format.js";
 import { orderObject, sha256Hex, stableStringify } from "../shared/serialization.js";
 import type { HistoryEntry, HistoryPatchOp, ItemDocument } from "../../types/index.js";
+
+const EMPTY_LEGACY_HASH_DOCUMENT = {
+  front_matter: {},
+  body: "",
+};
 
 function decodeJsonPointer(path: string): string[] {
   if (!path || path === "/") {
@@ -57,7 +62,7 @@ function isDefinedPointerPath(document: unknown, path: string): boolean {
 }
 
 function normalizeHistoryPatchOps(
-  beforeDocument: { front_matter: Record<string, unknown>; body: string },
+  beforeDocument: { metadata: Record<string, unknown>; body: string },
   patch: HistoryPatchOp[],
 ): HistoryPatchOp[] {
   const normalized: HistoryPatchOp[] = [];
@@ -79,20 +84,33 @@ function normalizeHistoryPatchOps(
 }
 
 function canonicalHashDocument(document: ItemDocument): { front_matter: Record<string, unknown>; body: string } {
-  const hasFrontMatter = document.front_matter && Object.keys(document.front_matter).length > 0;
-  if (!hasFrontMatter) {
+  const hasMetadata = document.metadata && Object.keys(document.metadata).length > 0;
+  if (!hasMetadata) {
     return {
       front_matter: {},
       body: document.body ?? "",
     };
   }
   const canonical = canonicalDocument(document);
-  const orderedFrontMatter = orderObject(
-    canonical.front_matter as unknown as Record<string, unknown>,
-    FRONT_MATTER_KEY_ORDER,
-  );
+  const orderedFrontMatter = orderObject(canonical.metadata as unknown as Record<string, unknown>, FRONT_MATTER_KEY_ORDER);
   return {
     front_matter: orderedFrontMatter,
+    body: canonical.body,
+  };
+}
+
+function canonicalPatchDocument(document: ItemDocument): { metadata: Record<string, unknown>; body: string } {
+  const hasMetadata = document.metadata && Object.keys(document.metadata).length > 0;
+  if (!hasMetadata) {
+    return {
+      metadata: {},
+      body: document.body ?? "",
+    };
+  }
+  const canonical = canonicalDocument(document);
+  const orderedMetadata = orderObject(canonical.metadata as unknown as Record<string, unknown>, FRONT_MATTER_KEY_ORDER);
+  return {
+    metadata: orderedMetadata,
     body: canonical.body,
   };
 }
@@ -102,7 +120,7 @@ export function hashDocument(document: ItemDocument): string {
 }
 
 export function hashEmptyDocument(): string {
-  return sha256Hex(stableStringify(EMPTY_CANONICAL_DOCUMENT));
+  return sha256Hex(stableStringify(EMPTY_LEGACY_HASH_DOCUMENT));
 }
 
 export function createHistoryEntry(params: {
@@ -113,18 +131,20 @@ export function createHistoryEntry(params: {
   after: ItemDocument;
   message?: string;
 }): HistoryEntry {
-  const beforeCanonical = canonicalHashDocument(params.before);
-  const afterCanonical = canonicalHashDocument(params.after);
-  const rawPatch = jsonPatch.compare(beforeCanonical, afterCanonical) as HistoryPatchOp[];
-  const patch = normalizeHistoryPatchOps(beforeCanonical, rawPatch);
+  const beforeHashCanonical = canonicalHashDocument(params.before);
+  const afterHashCanonical = canonicalHashDocument(params.after);
+  const beforePatchCanonical = canonicalPatchDocument(params.before);
+  const afterPatchCanonical = canonicalPatchDocument(params.after);
+  const rawPatch = jsonPatch.compare(beforePatchCanonical, afterPatchCanonical) as HistoryPatchOp[];
+  const patch = normalizeHistoryPatchOps(beforePatchCanonical, rawPatch);
 
   return {
     ts: params.nowIso,
     author: params.author,
     op: params.op,
     patch,
-    before_hash: sha256Hex(stableStringify(beforeCanonical)),
-    after_hash: sha256Hex(stableStringify(afterCanonical)),
+    before_hash: sha256Hex(stableStringify(beforeHashCanonical)),
+    after_hash: sha256Hex(stableStringify(afterHashCanonical)),
     message: params.message === undefined ? undefined : params.message,
   };
 }

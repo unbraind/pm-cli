@@ -4,7 +4,7 @@ import type {
   Comment,
   Dependency,
   ItemDocument,
-  ItemFrontMatter,
+  ItemMetadata,
   RuntimeSchemaSettings,
   ItemTestRunSummary,
   LinkedDoc,
@@ -181,7 +181,7 @@ function assertValidRecurrenceRule(recurrence: unknown): void {
 function assertValidFrontMatter(
   frontMatter: unknown,
   runtimeContext?: RuntimeSchemaValidationContext,
-): asserts frontMatter is ItemFrontMatter {
+): asserts frontMatter is ItemMetadata {
   assertFrontMatterCondition(
     typeof frontMatter === "object" && frontMatter !== null && !Array.isArray(frontMatter),
     "front matter must be an object",
@@ -350,22 +350,22 @@ function assertValidFrontMatter(
 
   if (runtimeContext?.fieldRegistry) {
     for (const definition of runtimeContext.fieldRegistry.definitions) {
-      const fieldValue = record[definition.front_matter_key];
+      const fieldValue = record[definition.metadata_key];
       if (fieldValue === undefined) {
         if (runtimeFieldRequiredForType(definition, itemType as string)) {
-          validationError(`missing required schema field: ${definition.front_matter_key}`);
+          validationError(`missing required schema field: ${definition.metadata_key}`);
         }
         continue;
       }
       try {
-        record[definition.front_matter_key] = coerceRuntimeFieldValue(
+        record[definition.metadata_key] = coerceRuntimeFieldValue(
           definition,
           fieldValue,
-          `metadata field "${definition.front_matter_key}"`,
+          `metadata field "${definition.metadata_key}"`,
         );
       } catch (error: unknown) {
         validationError(
-          error instanceof Error ? error.message.replace(/^Invalid\s+/u, "") : `invalid ${definition.front_matter_key} value`,
+          error instanceof Error ? error.message.replace(/^Invalid\s+/u, "") : `invalid ${definition.metadata_key} value`,
         );
       }
     }
@@ -374,7 +374,7 @@ function assertValidFrontMatter(
   if (runtimeContext && runtimeContext.unknownFieldPolicy !== "allow") {
     const knownKeys = new Set(STATIC_FRONT_MATTER_FIELD_SET);
     for (const definition of runtimeContext.fieldRegistry?.definitions ?? []) {
-      knownKeys.add(definition.front_matter_key);
+      knownKeys.add(definition.metadata_key);
     }
     const unknownKeys = Object.keys(record).filter((key) => !knownKeys.has(key)).sort((left, right) => left.localeCompare(right));
     if (unknownKeys.length > 0) {
@@ -750,7 +750,7 @@ function normalizeBody(body: string): string {
   return body.replace(/^\n+/, "").replace(/\s+$/, "");
 }
 
-function normalizeConfidenceValue(value: ItemFrontMatter["confidence"] | undefined): ItemFrontMatter["confidence"] | undefined {
+function normalizeConfidenceValue(value: ItemMetadata["confidence"] | undefined): ItemMetadata["confidence"] | undefined {
   if (value === undefined) {
     return undefined;
   }
@@ -767,7 +767,7 @@ function normalizeConfidenceValue(value: ItemFrontMatter["confidence"] | undefin
   return undefined;
 }
 
-function normalizeSeverityValue(value: ItemFrontMatter["severity"] | undefined): ItemFrontMatter["severity"] | undefined {
+function normalizeSeverityValue(value: ItemMetadata["severity"] | undefined): ItemMetadata["severity"] | undefined {
   if (value === undefined) {
     return undefined;
   }
@@ -782,15 +782,15 @@ function normalizeSeverityValue(value: ItemFrontMatter["severity"] | undefined):
 }
 
 export function normalizeFrontMatter(
-  frontMatter: ItemFrontMatter,
+  frontMatter: ItemMetadata,
   options: Pick<ItemDocumentFormatOptions, "schema" | "onWarning"> = {},
-): ItemFrontMatter {
+): ItemMetadata {
   const runtimeContext = resolveRuntimeSchemaValidationContext(options);
   const normalizedStatus = normalizeStatusInput(frontMatter.status, runtimeContext?.statusRegistry) ?? frontMatter.status;
   const tags = Array.from(new Set(frontMatter.tags.map((tag) => tag.trim().toLowerCase()).filter(Boolean))).sort((a, b) =>
     a.localeCompare(b),
   );
-  const normalized: ItemFrontMatter = {
+  const normalized: ItemMetadata = {
     id: frontMatter.id,
     title: frontMatter.title,
     description: frontMatter.description,
@@ -862,14 +862,14 @@ export function normalizeFrontMatter(
 
   if (runtimeContext?.fieldRegistry) {
     for (const definition of runtimeContext.fieldRegistry.definitions) {
-      const currentValue = (normalized as unknown as Record<string, unknown>)[definition.front_matter_key];
+      const currentValue = (normalized as unknown as Record<string, unknown>)[definition.metadata_key];
       if (currentValue === undefined) {
         continue;
       }
-      (normalized as unknown as Record<string, unknown>)[definition.front_matter_key] = coerceRuntimeFieldValue(
+      (normalized as unknown as Record<string, unknown>)[definition.metadata_key] = coerceRuntimeFieldValue(
         definition,
         currentValue,
-        `metadata field "${definition.front_matter_key}"`,
+        `metadata field "${definition.metadata_key}"`,
       );
     }
   }
@@ -877,7 +877,7 @@ export function normalizeFrontMatter(
   if (runtimeContext && runtimeContext.unknownFieldPolicy !== "allow") {
     const knownKeys = new Set(STATIC_FRONT_MATTER_FIELD_SET);
     for (const definition of runtimeContext.fieldRegistry?.definitions ?? []) {
-      knownKeys.add(definition.front_matter_key);
+      knownKeys.add(definition.metadata_key);
     }
     const unknownKeys = Object.keys(normalized as unknown as Record<string, unknown>)
       .filter((key) => !knownKeys.has(key))
@@ -897,7 +897,7 @@ export function normalizeFrontMatter(
   return normalized;
 }
 
-function orderFrontMatter(frontMatter: ItemFrontMatter): Record<string, unknown> {
+function orderFrontMatter(frontMatter: ItemMetadata): Record<string, unknown> {
   return orderObject(frontMatter as unknown as Record<string, unknown>, FRONT_MATTER_KEY_ORDER);
 }
 
@@ -1003,7 +1003,7 @@ function parseJsonMarkdownItemDocument(
   assertValidFrontMatter(parsed, runtimeContext);
 
   return {
-    front_matter: normalizeFrontMatter(parsed, options),
+    metadata: normalizeFrontMatter(parsed, options),
     body: normalizeBody(body),
   };
 }
@@ -1032,7 +1032,7 @@ function parseToonItemDocument(
       "TOON item document body must be a string",
     );
     return {
-      front_matter: normalizeFrontMatter(record.front_matter, options),
+      metadata: normalizeFrontMatter(record.front_matter, options),
       body: normalizeBody(typeof record.body === "string" ? record.body : ""),
     };
   }
@@ -1044,7 +1044,7 @@ function parseToonItemDocument(
   );
   assertValidFrontMatter(frontMatterRecord, runtimeContext);
   return {
-    front_matter: normalizeFrontMatter(frontMatterRecord, options),
+    metadata: normalizeFrontMatter(frontMatterRecord, options),
     body: normalizeBody(typeof body === "string" ? body : ""),
   };
 }
@@ -1053,7 +1053,7 @@ function serializeJsonMarkdownItemDocument(
   document: ItemDocument,
   options: Pick<ItemDocumentFormatOptions, "schema" | "onWarning"> = {},
 ): string {
-  const normalizedFrontMatter = normalizeFrontMatter(document.front_matter, options);
+  const normalizedFrontMatter = normalizeFrontMatter(document.metadata, options);
   const orderedFrontMatter = orderFrontMatter(normalizedFrontMatter);
   const serializedFrontMatter = JSON.stringify(orderedFrontMatter, null, 2);
   const normalizedBody = normalizeBody(document.body ?? "");
@@ -1067,7 +1067,7 @@ function serializeToonItemDocument(
   document: ItemDocument,
   options: Pick<ItemDocumentFormatOptions, "schema" | "onWarning"> = {},
 ): string {
-  const normalizedFrontMatter = normalizeFrontMatter(document.front_matter, options);
+  const normalizedFrontMatter = normalizeFrontMatter(document.metadata, options);
   const orderedFrontMatter = orderFrontMatter(normalizedFrontMatter);
   const normalizedBody = normalizeBody(document.body ?? "");
   return `${encodeToon({ ...orderedFrontMatter, body: normalizedBody })}\n`;
@@ -1088,7 +1088,7 @@ export function parseItemDocument(content: string, options: ItemDocumentFormatOp
       },
     );
   }
-  const format = options.format ?? "json_markdown";
+  const format = options.format ?? "toon";
   const runtimeContext = resolveRuntimeSchemaValidationContext(options);
   return format === "toon"
     ? parseToonItemDocument(content, runtimeContext, options)
@@ -1096,13 +1096,13 @@ export function parseItemDocument(content: string, options: ItemDocumentFormatOp
 }
 
 export function serializeItemDocument(document: ItemDocument, options: ItemDocumentFormatOptions = {}): string {
-  const format = options.format ?? "json_markdown";
+  const format = options.format ?? "toon";
   return format === "toon" ? serializeToonItemDocument(document, options) : serializeJsonMarkdownItemDocument(document, options);
 }
 
 export function canonicalDocument(document: ItemDocument, options: Pick<ItemDocumentFormatOptions, "schema" | "onWarning"> = {}): ItemDocument {
   return {
-    front_matter: normalizeFrontMatter(document.front_matter, options),
+    metadata: normalizeFrontMatter(document.metadata, options),
     body: normalizeBody(document.body ?? ""),
   };
 }

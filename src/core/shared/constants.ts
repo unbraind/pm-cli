@@ -294,7 +294,7 @@ export const SETTINGS_DEFAULTS: PmSettings = {
 };
 
 export const EMPTY_CANONICAL_DOCUMENT = {
-  front_matter: {},
+  metadata: {},
   body: "",
 };
 

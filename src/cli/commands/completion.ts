@@ -863,7 +863,7 @@ _pm() {
           _arguments \\
             '--criterion[Criteria value for definition-of-done metadata-required-fields or lifecycle pattern keys (repeatable for set)]:criterion' \\
             '--clear-criteria[Clear config criteria-list key values]' \\
-            '--format[Item format for item-format key]:format:(toon json_markdown)' \\
+            '--format[Item format for item-format key]:format:(toon)' \\
             '--policy[Policy value for supported policy keys]:policy' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -1517,7 +1517,7 @@ complete -c pm -n '__fish_seen_subcommand_from validate' -l check-command-refere
 complete -c pm -n '__fish_seen_subcommand_from init' -l preset -d 'Governance preset for new setups' -r -a 'minimal default strict'
 complete -c pm -n '__fish_seen_subcommand_from config' -l criterion -d 'Criteria value for definition-of-done metadata-required-fields or lifecycle pattern keys (repeatable for set)' -r
 complete -c pm -n '__fish_seen_subcommand_from config' -l clear-criteria -d 'Clear config criteria-list key values'
-complete -c pm -n '__fish_seen_subcommand_from config' -l format -d 'Item format for item-format key' -r -a 'toon json_markdown'
+complete -c pm -n '__fish_seen_subcommand_from config' -l format -d 'Item format for item-format key' -r -a 'toon'
 complete -c pm -n '__fish_seen_subcommand_from config' -l policy -d 'Policy value for supported policy keys' -r
 complete -c pm -n '__fish_seen_subcommand_from health' -l strict-directories -d 'Treat optional item-type directories as required failures'
 complete -c pm -n '__fish_seen_subcommand_from health' -l check-only -d 'Run read-only health diagnostics without refreshing vectors'

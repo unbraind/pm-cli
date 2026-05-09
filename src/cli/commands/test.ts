@@ -2037,7 +2037,7 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
       message: options.message,
       force: options.force,
       mutate(document) {
-        const next = [...(document.front_matter.tests ?? [])];
+        const next = [...(document.metadata.tests ?? [])];
         for (const add of adds) {
           const exists = next.some(
             (entry) =>
@@ -2058,7 +2058,7 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
             }
           }
         }
-        document.front_matter.tests = next;
+        document.metadata.tests = next;
         return { changedFields: ["tests"] };
       },
     });
@@ -2071,7 +2071,7 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
     }
     itemId = located.id;
     const loaded = await readLocatedItem(located, { schema: settings.schema });
-    tests = loaded.document.front_matter.tests ?? [];
+    tests = loaded.document.metadata.tests ?? [];
   }
 
   let defaultTimeoutSeconds: number | undefined;

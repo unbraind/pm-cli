@@ -111,7 +111,7 @@ describe("shared constants and errors contracts", () => {
       "close_reason",
     ]);
     expect(EMPTY_CANONICAL_DOCUMENT).toEqual({
-      front_matter: {},
+      metadata: {},
       body: "",
     });
   });

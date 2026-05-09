@@ -20,8 +20,8 @@ export interface ItemFormatMigrationResult {
   warnings: string[];
 }
 
-function alternateItemFormat(targetFormat: ItemFormat): ItemFormat {
-  return targetFormat === "toon" ? "json_markdown" : "toon";
+function alternateItemFormat(_targetFormat: ItemFormat): ItemFormat {
+  return "json_markdown";
 }
 
 function normalizeRelativePath(pmRoot: string, absolutePath: string): string {
@@ -39,6 +39,9 @@ export async function migrateItemFilesToFormat(
   typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
   schema?: RuntimeSchemaSettings,
 ): Promise<ItemFormatMigrationResult> {
+  if (targetFormat !== "toon") {
+    throw new Error("Only toon item-format migration targets are supported. Markdown item files are legacy read-only input.");
+  }
   const migratedIds = new Set<string>();
   const removedPaths = new Set<string>();
   const warnings: string[] = [];

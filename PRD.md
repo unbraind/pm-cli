@@ -73,7 +73,7 @@ Existing trackers either rely on hosted backends, store state in non-diff-friend
 
 From `todos.ts`:
 
-- Item file format = JSON front-matter at file start, blank line, then markdown body.
+- Legacy import format = JSON front-matter at file start, blank line, then markdown body.
 - ID normalization accepts optional `#` and optional prefix.
 - Claim/release is represented in-record (`assignee`).
 - Locking model:
@@ -246,16 +246,16 @@ Constraints:
 
 ## 7) Item File Format
 
-Each item is one document at `<type-folder>/<id>.toon` (default) or `<type-folder>/<id>.md` (JSON+Markdown alternative).
+Each item is one TOON document at `<type-folder>/<id>.toon`. Legacy `<type-folder>/<id>.md` files are read only for migration.
 
 Format:
 
-1. TOON root-object metadata keys (default) or JSON object metadata block (markdown format).
-2. Optional `body` field / markdown body.
+1. TOON root-object metadata keys.
+2. Optional `body` field.
 
 ### 7.1 Canonical item-metadata schema
 
-`front_matter` remains the internal field name in TypeScript (`ItemDocument.front_matter`), but TOON documents store the same metadata as top-level keys.
+`metadata` is the internal TypeScript field name (`ItemDocument.metadata`), and TOON documents store the same metadata as top-level keys.
 
 Required fields:
 
@@ -500,7 +500,7 @@ Canonical patch document shape:
 
 ```json
 {
-  "front_matter": { "...": "..." },
+  "metadata": { "...": "..." },
   "body": "markdown text"
 }
 ```
@@ -517,7 +517,7 @@ Canonical patch document shape:
 
 1. Resolve item or matching history stream for ID and load full history.
 2. Replay patches from initial create through target version/timestamp.
-3. Rebuild exact canonical document (`front_matter` + `body`).
+3. Rebuild exact canonical document (`metadata` + `body`).
 4. Write item atomically.
 5. Append a `restore` history event with patch from pre-restore state to restored state.
 
@@ -717,7 +717,7 @@ Help and error UX note:
 - `pm restore <ID> <TIMESTAMP|VERSION>`
 - `pm config <project|global> set definition-of-done --criterion <text>`
 - `pm config <project|global> get definition-of-done`
-- `pm config <project|global> set item-format --format toon|json_markdown`
+- `pm config <project|global> set item-format --format toon`
 - `pm config <project|global> get item-format`
 - `pm config <project|global> set history-missing-stream-policy --policy auto_create|strict_error`
 - `pm config <project|global> get history-missing-stream-policy`
@@ -970,7 +970,7 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 | `pm calendar` / `pm cal` | `--view agenda|day|week|month`, `--date`, `--from`/`--to` (agenda), `--past`, `--full-period` (day/week/month only), list-like filters (`type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`), source controls (`--include`), and recurrence bounds (`--recurrence-lookahead-days`, `--recurrence-lookback-days`, `--occurrence-limit`) | `{ view, output_default, now, anchor, range, filters, summary, events, days }` where `range` includes period metadata (`period_start`, `period_end`, `full_period`), `summary` includes deterministic aggregate breakdown fields (`by_kind`, `by_type`, `by_status`, `recurring_events`), and markdown output includes rich event detail tokens by default |
 | `pm context` / `pm ctx` | `--date`, `--from`/`--to`, `--past`, list-like filters (`type`, `tag`, `priority`, `assignee`, `sprint`, `release`, `limit`), `--format` | `{ output_default, now, window, filters, summary, high_level, low_level, blocked_fallback, agenda }` (defaults to TOON unless `--format` or `--json` override) |
 | `pm beads import [--file <path\|->] [--preserve-source-ids]` | optional Beads JSONL source path (`.beads/issues.jsonl` auto-discovered first, then `issues.jsonl`; implicit `sync_base.jsonl` fallback is refused as unsafe; `--file -` requires piped stdin and fails fast on interactive TTY stdin) | `{ ok, source, imported, skipped, ids, warnings }` |
-| `pm todos import --folder <path?>` | optional todos markdown source folder (defaults to `.pi/todos`); preserves canonical optional `ItemFrontMatter` metadata when present and applies deterministic defaults for missing PM fields | `{ ok, folder, imported, skipped, ids, warnings }` |
+| `pm todos import --folder <path?>` | optional todos markdown source folder (defaults to `.pi/todos`); preserves canonical optional `ItemMetadata` fields when present and applies deterministic defaults for missing PM fields | `{ ok, folder, imported, skipped, ids, warnings }` |
 | `pm todos export --folder <path?>` | optional todos markdown destination folder (defaults to `.pi/todos`) | `{ ok, folder, exported, ids, warnings }` |
 | `pm create ...` | required `--title` + `--description` + `--type`; strict mode is default (`--create-mode strict`) and enforces type-governed required options; progressive mode (`--create-mode progressive`) supports staged omission of type-level required create fields/repeatables; optional `--template` reusable defaults | `{ item, changed_fields, warnings }` |
 | `pm templates save <NAME> ...` | template name + create-compatible option payload (subset of create flags, including repeatable entries) | `{ name, path, template, saved_at }` |
@@ -1010,7 +1010,7 @@ Contract compatibility policy keeps command names/flags/aliases stable while all
 
 List command row projection:
 
-- Default `list*` rows contain `ItemFrontMatter` fields only.
+- Default `list*` rows contain `ItemMetadata` fields only.
 - `--compact` projects deterministic compact fields (`id`, `title`, `status`, `type`, `priority`, `parent`, `updated_at`).
 - `--fields <csv>` projects caller-selected list fields.
 - With `--include-body`, each row additionally includes `body` and `filters.include_body` is `true` (`null` when omitted in JSON; omitted in sparse TOON).
@@ -1027,8 +1027,8 @@ Examples:
 
 - `list*`:
   - `{ items, count, filters, now }`
-  - default rows: `ItemFrontMatter`
-  - with `--include-body`: `ItemFrontMatter + body`
+  - default rows: `ItemMetadata`
+  - with `--include-body`: `ItemMetadata + body`
 - `search`:
   - `{ query, mode, items, count, filters, now }`
 - `get`:
@@ -1369,7 +1369,7 @@ Behavior:
   - `title -> title`
   - `body -> body`
   - imported IDs, including hierarchical suffixes such as `pm-legacy.1.2`, are preserved verbatim when provided in todos front matter
-  - canonical PM front-matter fields round-trip when present, including planning/workflow metadata (`definition_of_ready`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `why_now`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blocked_by`, `blocked_reason`, `unblock_note`) and issue metadata (`reporter`, `severity`, `environment`, `repro_steps`, `resolution`, `expected_result`, `actual_result`, `affected_version`, `fixed_version`, `component`, `regression`, `customer_impact`)
+  - canonical PM metadata fields round-trip when present, including planning/workflow metadata (`definition_of_ready`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `why_now`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blocked_by`, `blocked_reason`, `unblock_note`) and issue metadata (`reporter`, `severity`, `environment`, `repro_steps`, `resolution`, `expected_result`, `actual_result`, `affected_version`, `fixed_version`, `component`, `regression`, `customer_impact`)
   - `confidence`, `risk`, and `severity` text aliases normalize deterministically (`med -> medium`)
 - Missing PM fields get deterministic defaults:
   - `description = ""`
@@ -1653,7 +1653,7 @@ Definition of Done:
 Checklist:
 
 - [x] Item schema model + validation
-- [x] Parser/serializer for markdown item files
+- [x] Parser/serializer for TOON item files plus legacy markdown migration reader
 - [x] ID generation + normalization
 - [x] Lock acquire/release with TTL and conflict handling
 - [x] Core commands: init/create/get/update/append/claim/release/close/delete complete
@@ -1750,6 +1750,6 @@ Definition of Done:
   - unknown values retained in import metadata notes if lossy mapping is required
 - Hierarchical IDs from imports are preserved verbatim; new IDs generated by core default to flat `prefix-token`.
 - TOON formatting follows deterministic encoding with stable object keys; internal serializer may use a thin compatibility layer to ensure strict consistency across Node versions.
-- For `create`, `before_hash` is computed from canonical empty document: `{ "front_matter": {}, "body": "" }`.
+- For `create`, `before_hash` is computed from the legacy-compatible canonical empty hash document: `{ "front_matter": {}, "body": "" }` (history patch payloads use `metadata` paths).
 - If create item write succeeds but history append fails, implementation MUST rollback the new item file before returning failure.
 - ID normalization helper behavior (`#` prefix, missing configured prefix, case-insensitive input) is required in core utilities even before all commands expose it.
