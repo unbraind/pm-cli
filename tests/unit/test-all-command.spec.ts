@@ -267,6 +267,7 @@ describe("runTestAll", () => {
       });
 
       const openOnly = await runTestAll({ status: "open", timeout: "30" }, { path: context.pmPath });
+      expect(openOnly.ok).toBe(false);
       expect(openOnly.totals.items).toBe(3);
       expect(openOnly.totals.linked_tests).toBe(3);
       expect(openOnly.passed).toBeGreaterThanOrEqual(1);
@@ -306,10 +307,12 @@ describe("runTestAll", () => {
         },
         { path: context.pmPath },
       );
+      expect(result.ok).toBe(true);
       expect(result.totals.items).toBe(1);
       expect(result.totals.linked_tests).toBe(1);
       expect(result.failed).toBe(0);
       expect(result.passed).toBe(1);
+      expect(result.results[0]?.ok).toBe(true);
       expect(result.results[0]?.run_results[0]?.stdout ?? "").toContain("run-level|0|1|true");
     });
   });

@@ -566,6 +566,7 @@ describe("runTest", () => {
       ]);
 
       const result = await runTest(id, { run: true, timeout: "20" }, { path: context.pmPath });
+      expect(result.ok).toBe(true);
       expect(result.changed).toBe(false);
       expect(result.count).toBe(6);
       expect(result.run_results).toHaveLength(6);
@@ -960,6 +961,7 @@ describe("runTest", () => {
         },
         { path: context.pmPath },
       );
+      expect(run.ok).toBe(false);
       expect(run.changed).toBe(false);
       expect(run.count).toBe(4);
       expect(run.run_results).toHaveLength(4);

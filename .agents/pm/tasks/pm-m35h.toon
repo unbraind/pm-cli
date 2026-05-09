@@ -1,0 +1,46 @@
+id: pm-m35h
+title: 2026-05-09 latest-build full pm CLI dogfood audit and remediation
+description: "Execute the latest-build full pm CLI audit in an isolated temporary project, review SDK/extensibility/calendar/search/agent UX/CI/telemetry/Sentry/security hygiene, remediate safe findings, and verify before push."
+type: Task
+status: closed
+priority: 0
+tags[11]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,sentry,telemetry
+created_at: "2026-05-08T23:20:45.388Z"
+updated_at: "2026-05-09T10:36:09.900Z"
+deadline: "2026-05-09T23:20:45.388Z"
+author: codex-audit
+estimated_minutes: 360
+acceptance_criteria: Temp-project dogfood covers core workflows; semantic/vector search and calendar are exercised; SDK/extensibility/agent-output/CI/security/telemetry/Sentry are reviewed; safe fixes are linked and tested; no private host credentials or tokens are tracked or recorded; changes are committed and pushed with checks reviewed.
+parent: pm-rnpb
+resolution: "Audit completed with semantic search reliability fixes, agent-friendly JSON ok fields, regression coverage, and tracked secret hygiene verification."
+expected_result: "Latest-build dogfood audit verifies core CLI, calendar, extension, search, PM tracking, CI, telemetry, Sentry, and secret-hygiene surfaces with safe remediations committed."
+actual_result: "Temp-project dogfood, semantic smoke, telemetry/Sentry review, full coverage, typecheck, build, static quality, package smoke, compatibility, validation, health, and secret scans passed; full forced repo hybrid reindex was stopped after local Ollama remained CPU-bound, with health reporting zero stale vectors."
+comments[6]{created_at,author,text}:
+  "2026-05-08T23:20:45.388Z",codex-audit,"Duplicate-check evidence: ran pm context --limit 10,pm search dogfood audit telemetry sentry semantic search SDK calendar extensibility CI --limit 10,pm list-in-progress --limit 20,pm list-open --limit 20,and pm search 2026-05-08 2026-05-09 latest-build temp-project dogfood audit remediate --limit 10. Found open parent feature pm-rnpb and only closed prior execution tasks,so this dated execution task is required without duplicating parent scope."
+  "2026-05-08T23:21:03.597Z",codex-audit,"Started latest-build audit. Bootstrap passed: npm install -g ., pm --version 2026.5.6, node v25.9.0, pnpm 10.33.0, pnpm build passed."
+  "2026-05-08T23:22:52.929Z",codex-audit,"Dogfood finding: initial temp script tried unsupported init/config flags and pm returned structured, actionable unknown-option/tracker-not-initialized guidance. Rerunning with strict set -e and supported commands for clean evidence."
+  "2026-05-08T23:24:04.190Z",codex-audit,"Dogfood finding: strict temp run confirmed extension scaffold/install/doctor/ping works, but also showed agents must not assume sequential item IDs. pm generated random IDs and parent mutation warned on a guessed pm-0002 parent, so the next run uses --json plus jq ID capture."
+  "2026-05-09T00:19:55.795Z",codex-audit,"Evidence: temp dogfood lifecycle passed at /tmp/pm-cli-dogfood-json-2reGLF with extension init/install/doctor/ping, create/claim/update/append/comments/notes/learnings/files/docs/test/list/context/calendar/search/reindex keyword/health/validate/test-run/close/release. Semantic smoke passed at /tmp/pm-cli-semantic-smoke-lsx8RU with local Ollama/Qwen hybrid reindex and semantic search. Full repository forced hybrid reindex was stopped after remaining CPU-bound on 679 items; health reports no stale vectors, and Sentry PM-CLI-9 drove the payload-cap/adaptive-split fix."
+  "2026-05-09T00:20:38.871Z",codex-audit,"Verification evidence: focused tests passed for embedding-batches/reindex/test/test-all and release-readiness-runtime; pnpm typecheck passed; pnpm build passed; node scripts/run-tests.mjs coverage passed 1219/1219 with 100% statements/branches/functions/lines; pnpm quality:static passed; node scripts/check-secrets.mjs passed; npm pack --dry-run passed; pnpm smoke:npx passed; compatibility-check.mjs --json passed; pm validate --check-resolution --check-history-drift passed; pm health --check-only reports ok with Ollama + LanceDB active and zero stale vectors."
+files[10]{path,scope,note}:
+  src/cli/commands/reindex.ts,project,semantic corpus truncation for Ollama reindex reliability
+  src/cli/commands/test-all.ts,project,agent JSON ok field for pm test-all
+  src/cli/commands/test.ts,project,agent JSON ok field for pm test
+  src/core/search/embedding-batches.ts,project,Ollama embedding batch payload cap and timeout split
+  tests/unit/embedding-batches.spec.ts,project,embedding timeout and payload cap regressions
+  tests/unit/reindex-command.spec.ts,project,semantic corpus truncation regression
+  tests/unit/test-all-command.spec.ts,project,pm test-all ok field regression
+  tests/unit/test-command.spec.ts,project,pm test ok field regression
+  CHANGELOG.md,project,unreleased audit fix notes
+  tests/integration/release-readiness-runtime.spec.ts,project,runtime JSON key-order contract for ok fields
+tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,tracked secret scan
+  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,full coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,runtime key-order contract
+  node scripts/run-tests.mjs test -- tests/unit/embedding-batches.spec.ts tests/unit/reindex-command.spec.ts tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused regression coverage for audit fixes
+  pnpm build,null,project,180,null,null,null,null,null,null,null,null,null,null,null,compiled CLI verification
+  pnpm typecheck,null,project,180,null,null,null,null,null,null,null,null,null,null,null,TypeScript API contract verification
+docs[1]{path,scope,note}:
+  CHANGELOG.md,project,release-facing change record
+close_reason: Latest-build dogfood audit completed; semantic search reliability and agent JSON outputs remediated; verification gates passed; tracked secret scan clean.
+body: ""

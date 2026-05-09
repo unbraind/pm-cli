@@ -42,6 +42,7 @@ export interface TestAllCommandOptions {
 }
 
 export interface TestAllItemResult {
+  ok: boolean;
   id: string;
   status: ItemStatus;
   test_count: number;
@@ -53,6 +54,7 @@ export interface TestAllItemResult {
 }
 
 export interface TestAllResult {
+  ok: boolean;
   totals: {
     items: number;
     linked_tests: number;
@@ -361,6 +363,7 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
       }
     }
     results.push({
+      ok: summary.failed === 0 && !(options.failOnSkipped === true && summary.skipped > 0),
       id: item.id,
       status: item.status,
       test_count: tests.length,
@@ -385,6 +388,7 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
   }
 
   return {
+    ok: failed === 0 && failOnSkippedTriggered !== true,
     totals: {
       items: filteredItems.length,
       linked_tests: linkedTests,

@@ -35,6 +35,12 @@ const PROVIDER: EmbeddingProviderConfig = {
   model: "text-embedding-3-small",
 };
 
+const OLLAMA_PROVIDER: EmbeddingProviderConfig = {
+  name: "ollama",
+  base_url: "http://localhost:11434",
+  model: "qwen3-embedding:0.6b",
+};
+
 describe("executeEmbeddingBatchesWithRetry", () => {
   it("returns deterministic empty output for empty input", async () => {
     const result = await executeEmbeddingBatchesWithRetry(PROVIDER, buildSettings(2, 1), []);
@@ -107,6 +113,70 @@ describe("executeEmbeddingBatchesWithRetry", () => {
       expect(result.warnings).toEqual([]);
       expect(result.vectors).toEqual([[0.1, 0.2]]);
       expect(attempts).toBe(1);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("splits timed-out batches to keep local embedding reindex resilient", async () => {
+    const originalFetch = globalThis.fetch;
+    const sizes: number[] = [];
+    globalThis.fetch = (async (_url: unknown, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body ?? "{}")) as { input?: string | string[] };
+      const count = Array.isArray(body.input) ? body.input.length : 1;
+      sizes.push(count);
+      if (count > 1) {
+        const error = new Error("Embedding request timed out after 30000ms");
+        error.name = "AbortError";
+        throw error;
+      }
+      return {
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: async () => ({ data: [{ index: 0, embedding: [count, sizes.length] }] }),
+        text: async () => "",
+      } as unknown as Response;
+    }) as typeof globalThis.fetch;
+
+    try {
+      const result = await executeEmbeddingBatchesWithRetry(PROVIDER, buildSettings(4, 0), ["alpha", "beta", "gamma"]);
+      expect(result.vectors).toHaveLength(3);
+      expect(sizes).toEqual([3, 2, 1, 1, 1]);
+      expect(result.warnings).toEqual([
+        "search_embedding_batch_split_after_timeout:batch=1:size=3:parts=2|1",
+        "search_embedding_batch_split_after_timeout:batch=1.1:size=2:parts=1|1",
+      ]);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("caps Ollama batch payload size before dispatching embeddings", async () => {
+    const originalFetch = globalThis.fetch;
+    const sizes: number[] = [];
+    globalThis.fetch = (async (_url: unknown, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body ?? "{}")) as { input?: string | string[] };
+      const inputs = Array.isArray(body.input) ? body.input : [body.input ?? ""];
+      sizes.push(inputs.length);
+      return {
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: async () => ({ embeddings: inputs.map((_entry, index) => [index + 0.1, index + 0.2]) }),
+        text: async () => "",
+      } as unknown as Response;
+    }) as typeof globalThis.fetch;
+
+    try {
+      const result = await executeEmbeddingBatchesWithRetry(
+        OLLAMA_PROVIDER,
+        buildSettings(32, 0),
+        ["a".repeat(2000), "b".repeat(2000), "c".repeat(1000)],
+      );
+      expect(result.vectors).toHaveLength(3);
+      expect(sizes).toEqual([1, 2]);
+      expect(result.warnings).toEqual([]);
     } finally {
       globalThis.fetch = originalFetch;
     }

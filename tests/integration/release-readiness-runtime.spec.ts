@@ -1215,7 +1215,7 @@ describe("release readiness runtime coverage", () => {
 
       const testResult = context.runCli(["test", createdId, "--json"], { expectJson: true });
       expect(testResult.code).toBe(0);
-      expectTopLevelKeyOrder(testResult.json, ["id", "tests", "run_results", "failure_categories", "changed", "count"]);
+      expectTopLevelKeyOrder(testResult.json, ["ok", "id", "tests", "run_results", "failure_categories", "changed", "count"]);
 
       const listResult = context.runCli(["list-open", "--limit", "20", "--json"], { expectJson: true });
       expect(listResult.code).toBe(0);
@@ -1285,7 +1285,7 @@ describe("release readiness runtime coverage", () => {
         expectJson: true,
       });
       expect(testAllResult.code).toBe(0);
-      expectTopLevelKeyOrder(testAllResult.json, ["totals", "failed", "passed", "skipped", "results"]);
+      expectTopLevelKeyOrder(testAllResult.json, ["ok", "totals", "failed", "passed", "skipped", "results"]);
 
       const restoreResult = context.runCli(
         ["restore", createdId, "1", "--author", "test-author", "--message", "restore", "--json"],

@@ -1,6 +1,7 @@
 import type { PmSettings } from "../../types/index.js";
 import { executeEmbeddingRequest } from "./providers.js";
 import type { EmbeddingProviderConfig } from "./providers.js";
+import { toErrorMessage } from "../shared/primitives.js";
 
 export interface EmbeddingBatchExecutionResult {
   vectors: number[][];
@@ -10,6 +11,7 @@ export interface EmbeddingBatchExecutionResult {
 interface EmbeddingBatchRuntime {
   batchSize: number;
   maxRetries: number;
+  maxBatchInputCharacters: number;
 }
 
 function resolveBatchRuntime(settings: PmSettings): EmbeddingBatchRuntime {
@@ -17,15 +19,84 @@ function resolveBatchRuntime(settings: PmSettings): EmbeddingBatchRuntime {
   const maxRetriesCandidate = settings.search.scanner_max_batch_retries;
   const batchSize = Number.isFinite(batchSizeCandidate) && batchSizeCandidate > 0 ? Math.floor(batchSizeCandidate) : 1;
   const maxRetries = Number.isFinite(maxRetriesCandidate) && maxRetriesCandidate >= 0 ? Math.floor(maxRetriesCandidate) : 0;
-  return { batchSize, maxRetries };
+  return { batchSize, maxRetries, maxBatchInputCharacters: Number.POSITIVE_INFINITY };
 }
 
-function createBatches(inputs: string[], batchSize: number): string[][] {
+function createBatches(inputs: string[], batchSize: number, maxBatchInputCharacters: number): string[][] {
   const batches: string[][] = [];
-  for (let index = 0; index < inputs.length; index += batchSize) {
-    batches.push(inputs.slice(index, index + batchSize));
+  let currentBatch: string[] = [];
+  let currentCharacters = 0;
+  for (const input of inputs) {
+    const wouldExceedCount = currentBatch.length >= batchSize;
+    const wouldExceedCharacters =
+      currentBatch.length > 0 &&
+      Number.isFinite(maxBatchInputCharacters) &&
+      currentCharacters + input.length > maxBatchInputCharacters;
+    if (wouldExceedCount || wouldExceedCharacters) {
+      batches.push(currentBatch);
+      currentBatch = [];
+      currentCharacters = 0;
+    }
+    currentBatch.push(input);
+    currentCharacters += input.length;
   }
+  batches.push(currentBatch);
   return batches;
+}
+
+function resolveProviderBatchRuntime(provider: EmbeddingProviderConfig, runtime: EmbeddingBatchRuntime): EmbeddingBatchRuntime {
+  if (provider.name !== "ollama") {
+    return runtime;
+  }
+  return {
+    ...runtime,
+    maxBatchInputCharacters: 3_200,
+  };
+}
+
+function isEmbeddingTimeoutError(error: unknown): boolean {
+  const message = toErrorMessage(error).toLowerCase();
+  return message.includes("timed out") || message.includes("timeout");
+}
+
+async function executeBatchWithAdaptiveSplit(
+  provider: EmbeddingProviderConfig,
+  batch: string[],
+  batchLabel: string,
+  maxRetries: number,
+  warnings: string[],
+): Promise<number[][]> {
+  let lastError: unknown = null;
+  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    try {
+      const batchVectors = await executeEmbeddingRequest(provider, batch);
+      if (attempt > 0) {
+        warnings.push(
+          `search_embedding_batch_retry_succeeded:batch=${batchLabel}:attempt=${attempt + 1}:size=${batch.length}`,
+        );
+      }
+      return batchVectors;
+    } catch (error: unknown) {
+      lastError = error;
+      if (isEmbeddingTimeoutError(error) && batch.length > 1) {
+        const midpoint = Math.ceil(batch.length / 2);
+        const left = batch.slice(0, midpoint);
+        const right = batch.slice(midpoint);
+        warnings.push(
+          `search_embedding_batch_split_after_timeout:batch=${batchLabel}:size=${batch.length}:parts=${left.length}|${right.length}`,
+        );
+        return [
+          ...(await executeBatchWithAdaptiveSplit(provider, left, `${batchLabel}.1`, maxRetries, warnings)),
+          ...(await executeBatchWithAdaptiveSplit(provider, right, `${batchLabel}.2`, maxRetries, warnings)),
+        ];
+      }
+      if (attempt < maxRetries) {
+        const delayMs = Math.min(1000 * 2 ** attempt, 8000);
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+  throw new Error(`Embedding batch ${batchLabel} failed after ${maxRetries + 1} attempt(s): ${toErrorMessage(lastError)}`);
 }
 
 export async function executeEmbeddingBatchesWithRetry(
@@ -39,38 +110,13 @@ export async function executeEmbeddingBatchesWithRetry(
       warnings: [],
     };
   }
-  const runtime = resolveBatchRuntime(settings);
-  const batches = createBatches(inputs, runtime.batchSize);
+  const runtime = resolveProviderBatchRuntime(provider, resolveBatchRuntime(settings));
+  const batches = createBatches(inputs, runtime.batchSize, runtime.maxBatchInputCharacters);
   const vectors: number[][] = [];
   const warnings: string[] = [];
   for (let batchIndex = 0; batchIndex < batches.length; batchIndex += 1) {
     const batch = batches[batchIndex];
-    let success = false;
-    let lastError: unknown = null;
-    for (let attempt = 0; attempt <= runtime.maxRetries; attempt += 1) {
-      try {
-        const batchVectors = await executeEmbeddingRequest(provider, batch);
-        vectors.push(...batchVectors);
-        if (attempt > 0) {
-          warnings.push(
-            `search_embedding_batch_retry_succeeded:batch=${batchIndex + 1}:attempt=${attempt + 1}:size=${batch.length}`,
-          );
-        }
-        success = true;
-        break;
-      } catch (error: unknown) {
-        lastError = error;
-        if (attempt < runtime.maxRetries) {
-          const delayMs = Math.min(1000 * 2 ** attempt, 8000);
-          await new Promise((resolve) => setTimeout(resolve, delayMs));
-        }
-      }
-    }
-    if (!success) {
-      throw new Error(
-        `Embedding batch ${batchIndex + 1} failed after ${runtime.maxRetries + 1} attempt(s): ${String(lastError)}`,
-      );
-    }
+    vectors.push(...(await executeBatchWithAdaptiveSplit(provider, batch, String(batchIndex + 1), runtime.maxRetries, warnings)));
   }
   return {
     vectors,

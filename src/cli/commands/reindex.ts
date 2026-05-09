@@ -23,6 +23,7 @@ import type { ItemDocument, PmSettings } from "../../types/index.js";
 
 const MANIFEST_PATH = "index/manifest.json";
 const EMBEDDINGS_PATH = "search/embeddings.jsonl";
+const MAX_SEMANTIC_CORPUS_INPUT_CHARACTERS = 200;
 
 export interface ReindexOptions {
   mode?: string;
@@ -107,7 +108,11 @@ function buildKeywordRecord(document: ItemDocument, mode: "keyword" | "semantic"
 }
 
 function buildSemanticCorpusInput(document: ItemDocument): string {
-  return JSON.stringify((buildKeywordRecord(document, "semantic") as { corpus: Record<string, unknown> }).corpus);
+  const serialized = JSON.stringify((buildKeywordRecord(document, "semantic") as { corpus: Record<string, unknown> }).corpus);
+  if (serialized.length <= MAX_SEMANTIC_CORPUS_INPUT_CHARACTERS) {
+    return serialized;
+  }
+  return `${serialized.slice(0, MAX_SEMANTIC_CORPUS_INPUT_CHARACTERS)}...[semantic corpus truncated]`;
 }
 
 type ExtensionEmbedBatch = (context: {

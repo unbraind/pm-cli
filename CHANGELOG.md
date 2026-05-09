@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Added top-level `ok` fields to `pm test --run --json` and `pm test-all --json` so agents can gate linked-test execution without parsing every result row.
+- Capped and truncated semantic reindex embedding payloads for local Ollama providers, with adaptive timeout splitting, to avoid full-corpus reindex failures on large item bodies.
+
 ## [2026.5.6] - 2026-05-06
 
 ### Changed

@@ -188,6 +188,7 @@ export interface TestRunResult {
 }
 
 export interface TestResult {
+  ok: boolean;
   id: string;
   tests: LinkedTest[];
   run_results: TestRunResult[];
@@ -2165,6 +2166,7 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
   }
 
   return {
+    ok: runResults.every((entry) => entry.status !== "failed") && failOnSkippedTriggered !== true,
     id: itemId,
     tests,
     run_results: runResults,

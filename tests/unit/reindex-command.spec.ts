@@ -485,6 +485,60 @@ describe("runReindex", () => {
     });
   });
 
+  it("truncates oversized semantic corpus inputs before embedding", async () => {
+    await withTempPmPath(async (context) => {
+      createSeedItem(context, "Huge Semantic Corpus", "x".repeat(50_000), false);
+
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
+      await writeSettings(context.pmPath, settings);
+
+      const originalFetch = globalThis.fetch;
+      const embeddedInputLengths: number[] = [];
+      globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
+        const target = String(url);
+        if (target.endsWith("/v1/embeddings")) {
+          const body = JSON.parse(String(init?.body ?? "{}")) as { input?: string[] | string };
+          const inputs = Array.isArray(body.input) ? body.input : [body.input ?? ""];
+          embeddedInputLengths.push(...inputs.map((input) => input.length));
+          return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            json: async () => ({
+              data: inputs.map((_input, index) => ({
+                index,
+                embedding: [index + 0.1, index + 0.2],
+              })),
+            }),
+            text: async () => "",
+          } as unknown as Response;
+        }
+        if (target.endsWith("/collections/pm_items/points?wait=true")) {
+          return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            json: async () => ({ result: { status: "acknowledged" } }),
+            text: async () => "",
+          } as unknown as Response;
+        }
+        throw new Error(`Unexpected fetch target: ${target}`);
+      }) as typeof globalThis.fetch;
+
+      try {
+        const result = await runReindex({ mode: "semantic" }, { path: context.pmPath });
+        expect(result.ok).toBe(true);
+        expect(embeddedInputLengths).toHaveLength(1);
+        expect(embeddedInputLengths[0]).toBeLessThan(300);
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+  });
+
   it("dispatches active read/write/index hooks and reports hook warnings", async () => {
     await withTempPmPath(async (context) => {
       createSeedItem(context, "Hook Reindex Item", "hook body", false);
