@@ -368,7 +368,9 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  const message = error instanceof Error ? error.message : String(error);
-  fail(`Docs/skills gate crashed: ${message}`, 1);
-});
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    const message = error instanceof Error ? error.message : String(error);
+    fail(`Docs/skills gate crashed: ${message}`, 1);
+  });
+}

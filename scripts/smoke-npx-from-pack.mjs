@@ -21,7 +21,7 @@ function run() {
   }
 
   try {
-    const version = execFileSync(npx, ["--yes", `./${tarball}`, "--version"], {
+    const version = execFileSync(npx, ["--yes", "--package", `./${tarball}`, "pm", "--version"], {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
     }).trim();

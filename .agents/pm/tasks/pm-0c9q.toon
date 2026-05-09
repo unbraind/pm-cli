@@ -6,17 +6,18 @@ status: in_progress
 priority: 0
 tags[6]: agent-ux,codex,mcp,plugin,pm-cli,skills
 created_at: "2026-05-09T15:54:11.396Z"
-updated_at: "2026-05-09T16:45:56.502Z"
+updated_at: "2026-05-09T16:59:25.128Z"
 assignee: pi-agent
 author: codex-agent
 acceptance_criteria: Pi can install the package via local/package source; native pm tool covers pm CLI feature actions without shelling out to pm; bundled skills/prompts/resources are discovered by Pi; tests verify action mapping and package/resource shape; docs explain installation and workflows.
 parent: pm-rnpb
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-05-09T15:54:11.396Z",codex-agent,"Duplicate-check evidence: ran pm context --limit 10,pm search codex plugin native mcp extension --limit 10,pm list-open --limit 20,and pm list-in-progress --limit 20. Existing pm-4z9m is docs/skills modernization and does not package a Codex plugin/MCP server,so this is net-new child scope under pm-rnpb."
   "2026-05-09T16:10:37.829Z",codex-agent,"Evidence: implemented native Codex plugin with pm-mcp MCP server, repo marketplace, bundled skills/commands/docs, and package inclusion. Verification passed: codex plugin marketplace add <repo-root> on Codex 0.130.0; pm-mcp initialize; native MCP smoke; pm linked tests (focused packaging suite, smoke, build); full coverage 89 files/1242 tests with 100%; quality:static; quality:docs-skills; check-secrets; npm pack --dry-run includes dist/mcp and plugin files. pm validate/health only report pre-existing history drift warnings on pm-54d, pm-f3q4, pm-fdla, pm-mb4n, pm-tq1."
   "2026-05-09T16:43:27.587Z",pi-agent,"Evidence: implemented official installable Pi package manifest and native Pi extension at pi/extensions/pm-cli/index.js. The extension imports dist/pi/native.js and calls pm command modules directly instead of shelling out to pm; added Pi skills/prompts/docs and removed legacy project-local CLI wrapper. Verified: pnpm build; focused native Pi tests; pnpm quality:docs-skills; pnpm quality:static; node scripts/run-tests.mjs coverage (89 files, 1234 tests, 100% coverage); pnpm security:scan; npm pack --dry-run includes pi resources and dist/pi/native.js; local Pi install smoke via PI_OFFLINE=1 pi install -l . and pi -e . /pm-actions exited 0."
   "2026-05-09T16:45:56.502Z",pi-agent,"CI remediation: GitHub CI failed at frozen pnpm install because package.json peerDependencies changed without pnpm-lock.yaml. Ran pnpm install --lockfile-only and linked pnpm-lock.yaml."
-files[30]{path,scope,note}:
+  "2026-05-09T16:59:25.128Z",pi-agent,"CI remediation: fixed npx tarball smoke for multi-bin packages by using npx --package <tarball> pm --version, and made docs-skills gate import-safe so unit tests can import helpers without executing the gate on Windows. Verified focused docs/Pi tests, pnpm smoke:npx, and pnpm quality:docs-skills."
+files[32]{path,scope,note}:
   src/mcp/server.ts,project,native MCP server
   plugins/pm-cli-codex/.codex-plugin/plugin.json,project,Codex plugin manifest
   plugins/pm-cli-codex/.mcp.json,project,Codex MCP config
@@ -47,6 +48,8 @@ files[30]{path,scope,note}:
   pi/prompts/pm-workflow.md,project,Pi workflow prompt
   docs/PI_PACKAGE.md,project,official Pi package docs
   pnpm-lock.yaml,project,peer dependency lockfile sync for Pi package manifest
+  scripts/smoke-npx-from-pack.mjs,project,tarball npx smoke supports multiple bins
+  scripts/release/docs-skills-gate.mjs,project,import-safe docs gate for Windows tests
 tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,full coverage
   node scripts/run-tests.mjs test -- tests/unit/docs-skills-gate.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused plugin packaging regression

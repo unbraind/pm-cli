@@ -1,0 +1,16 @@
+{
+  "name": "pm-cli-marketplace",
+  "description": "pm CLI plugins for Claude Code and AI coding agents — native project management integration.",
+  "owner": {
+    "name": "unbrained",
+    "url": "https://github.com/unbraind/pm-cli"
+  },
+  "plugins": [
+    {
+      "name": "pm-cli-claude",
+      "description": "Native pm CLI integration for Claude Code with MCP tools, workflow skills, slash commands, and session context injection.",
+      "version": "1.0.0",
+      "source": "./"
+    }
+  ]
+}
