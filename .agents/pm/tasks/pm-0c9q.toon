@@ -1,0 +1,52 @@
+id: pm-0c9q
+title: Create native Codex plugin for pm CLI
+description: "Package pm CLI for Codex as an installable plugin with native MCP access, skills, docs, workflows, and installation verification so Codex can use pm without shelling out to the pm CLI for core operations."
+type: Task
+status: in_progress
+priority: 0
+tags[6]: agent-ux,codex,mcp,plugin,pm-cli,skills
+created_at: "2026-05-09T15:54:11.396Z"
+updated_at: "2026-05-09T16:13:02.400Z"
+assignee: codex-agent
+author: codex-agent
+acceptance_criteria: Codex plugin manifest and marketplace entry exist; bundled MCP server exposes pm operations without invoking the pm CLI; skills/docs/workflows cover core pm usage; install and MCP smoke tests pass; local gates and GitHub checks are green.
+parent: pm-rnpb
+comments[2]{created_at,author,text}:
+  "2026-05-09T15:54:11.396Z",codex-agent,"Duplicate-check evidence: ran pm context --limit 10,pm search codex plugin native mcp extension --limit 10,pm list-open --limit 20,and pm list-in-progress --limit 20. Existing pm-4z9m is docs/skills modernization and does not package a Codex plugin/MCP server,so this is net-new child scope under pm-rnpb."
+  "2026-05-09T16:10:37.829Z",codex-agent,"Evidence: implemented native Codex plugin with pm-mcp MCP server, repo marketplace, bundled skills/commands/docs, and package inclusion. Verification passed: codex plugin marketplace add <repo-root> on Codex 0.130.0; pm-mcp initialize; native MCP smoke; pm linked tests (focused packaging suite, smoke, build); full coverage 89 files/1242 tests with 100%; quality:static; quality:docs-skills; check-secrets; npm pack --dry-run includes dist/mcp and plugin files. pm validate/health only report pre-existing history drift warnings on pm-54d, pm-f3q4, pm-fdla, pm-mb4n, pm-tq1."
+files[23]{path,scope,note}:
+  src/mcp/server.ts,project,native MCP server
+  plugins/pm-cli-codex/.codex-plugin/plugin.json,project,Codex plugin manifest
+  plugins/pm-cli-codex/.mcp.json,project,Codex MCP config
+  .agents/plugins/marketplace.json,project,repo plugin marketplace
+  scripts/smoke-codex-plugin-mcp.mjs,project,native MCP smoke test
+  docs/CODEX_PLUGIN.md,project,Codex plugin docs
+  plugins/pm-cli-codex/assets/pm-cli-small.svg,project,null
+  plugins/pm-cli-codex/commands/pm-audit.md,project,null
+  plugins/pm-cli-codex/commands/pm-close-task.md,project,null
+  plugins/pm-cli-codex/commands/pm-start-task.md,project,null
+  plugins/pm-cli-codex/README.md,project,null
+  plugins/pm-cli-codex/scripts/pm-mcp-server.mjs,project,null
+  plugins/pm-cli-codex/skills/pm-auditor/agents/openai.yaml,project,null
+  plugins/pm-cli-codex/skills/pm-auditor/SKILL.md,project,null
+  plugins/pm-cli-codex/skills/pm-native/agents/openai.yaml,project,null
+  plugins/pm-cli-codex/skills/pm-native/SKILL.md,project,null
+  plugins/pm-cli-codex/skills/pm-release/agents/openai.yaml,project,null
+  plugins/pm-cli-codex/skills/pm-release/SKILL.md,project,null
+  package.json,project,pm-mcp bin and smoke script
+  README.md,project,Codex plugin docs route
+  docs/README.md,project,Codex plugin docs route
+  tests/integration/release-readiness-runtime.spec.ts,project,coverage include allowlist for MCP server binary
+  scripts/release/static-quality-gate.mjs,project,allow pm-mcp binary entrypoint in orphan-module gate
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/docs-skills-gate.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused plugin packaging regression
+  node scripts/smoke-codex-plugin-mcp.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,native Codex MCP smoke
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,TypeScript build includes pm-mcp
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-moyj9k4k-65fwnv,test,passed,"2026-05-09T16:03:06.962Z","2026-05-09T16:03:14.852Z","2026-05-09T16:03:14.852Z",null,null,2,0,0,null,null,null
+  test-local-moyjislx-sgyqb4,test,passed,"2026-05-09T16:09:35.127Z","2026-05-09T16:10:25.749Z","2026-05-09T16:10:25.749Z",null,null,3,0,0,null,null,null
+  test-local-moyjm5h6-toiery,test,passed,"2026-05-09T16:12:10.259Z","2026-05-09T16:13:02.394Z","2026-05-09T16:13:02.394Z",null,null,3,0,0,null,null,null
+docs[2]{path,scope,note}:
+  docs/CODEX_PLUGIN.md,project,native Codex plugin install and tool docs
+  plugins/pm-cli-codex/README.md,project,plugin-local README
+body: ""

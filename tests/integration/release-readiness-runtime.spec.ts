@@ -1614,6 +1614,7 @@ describe("release readiness runtime coverage", () => {
       "src/core/telemetry/runtime.ts",
       "src/core/test/background-runs.ts",
       "src/core/test/item-test-run-tracking.ts",
+      "src/mcp/server.ts",
       "src/sdk/cli-contracts.ts",
     ]);
   });

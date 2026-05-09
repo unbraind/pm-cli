@@ -194,6 +194,7 @@ function checkOrphanSourceModules(files) {
   const entryAllowList = new Set([
     "src/cli.ts",
     "src/cli/main.ts",
+    "src/mcp/server.ts",
     "src/sdk/index.ts",
     "src/types/index.ts",
     "src/core/output/command-aware.ts",

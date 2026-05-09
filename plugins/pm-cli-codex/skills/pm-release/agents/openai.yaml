@@ -1,0 +1,6 @@
+interface:
+  display_name: "pm Release"
+  short_description: "Run pm release workflows with linked evidence"
+  icon_small: "./assets/pm-cli-small.svg"
+  icon_large: "./assets/pm-cli-small.svg"
+  default_prompt: "Use native pm tools to prepare, gate, publish-check, and document this pm-cli release."

@@ -17,6 +17,7 @@
 | Settings, storage, search, and output | [Configuration](docs/CONFIGURATION.md) |
 | Safe test execution and linked tests | [Testing](docs/TESTING.md) |
 | Extension authoring | [Extensions](docs/EXTENSIONS.md) and [SDK](docs/SDK.md) |
+| Codex native integration | [Codex Plugin](docs/CODEX_PLUGIN.md) |
 | Maintainer release process (daily auto-release + local parity) | [Releasing](docs/RELEASING.md) |
 | Contributor internals | [Architecture](docs/ARCHITECTURE.md) |
 

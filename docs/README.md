@@ -22,6 +22,7 @@ pm guide release --json
 | Coding agent | [Agent Guide](AGENT_GUIDE.md) | [Configuration](CONFIGURATION.md), then command help |
 | Maintainer | [Contributing](../CONTRIBUTING.md) | [Testing](TESTING.md), [Releasing](RELEASING.md), [Architecture](ARCHITECTURE.md) |
 | Extension author | [Extensions](EXTENSIONS.md) | [SDK](SDK.md), [starter extension](examples/starter-extension/README.md) |
+| Codex user | [Codex Plugin](CODEX_PLUGIN.md) | [Agent Guide](AGENT_GUIDE.md), then [Command Reference](COMMANDS.md) |
 | Machine client | `pm guide commands` | [Command Reference](COMMANDS.md#machine-contracts), then `pm contracts --json` |
 
 ## Documentation Map
@@ -34,6 +35,7 @@ pm guide release --json
 - [Architecture](ARCHITECTURE.md) - contributor internals: storage, mutation flow, search, extensions, and command contracts.
 - [Extensions](EXTENSIONS.md) - runtime extension lifecycle and API reference.
 - [SDK](SDK.md) - public import surfaces and typed authoring examples.
+- [Codex Plugin](CODEX_PLUGIN.md) - native MCP plugin install, tools, skills, and safety notes.
 - [Releasing](RELEASING.md) - maintainer release checklist and failure handling.
 - [starter extension](examples/starter-extension/README.md) - compact extension scaffold reference.
 

@@ -1,0 +1,6 @@
+interface:
+  display_name: "pm Native"
+  short_description: "Track Codex work through native pm MCP tools"
+  icon_small: "./assets/pm-cli-small.svg"
+  icon_large: "./assets/pm-cli-small.svg"
+  default_prompt: "Use native pm tools to orient, claim, implement, verify, and close this task without shelling out to pm."

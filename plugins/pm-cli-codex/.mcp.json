@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "pm-cli-native": {
+      "command": "node",
+      "args": [
+        "./scripts/pm-mcp-server.mjs"
+      ],
+      "env": {
+        "PM_AUTHOR": "codex-agent"
+      },
+      "note": "Native pm-cli MCP server. It imports pm command modules directly and does not spawn the pm CLI for tool calls."
+    }
+  }
+}

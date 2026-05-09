@@ -13,7 +13,8 @@
     "url": "https://github.com/unbraind/pm-cli/issues"
   },
   "bin": {
-    "pm": "dist/cli.js"
+    "pm": "dist/cli.js",
+    "pm-mcp": "dist/mcp/server.js"
   },
   "types": "dist/sdk/index.d.ts",
   "exports": {
@@ -45,6 +46,7 @@
     "AGENTS.md",
     "PRD.md",
     "docs/**",
+    "plugins/**",
     ".agents/skills/**",
     ".agents/pm/extensions/**",
     "scripts/install.sh",
@@ -59,6 +61,7 @@
     "test:coverage": "node scripts/run-tests.mjs coverage",
     "quality:static": "node scripts/release/static-quality-gate.mjs",
     "quality:docs-skills": "node scripts/release/docs-skills-gate.mjs",
+    "smoke:codex-plugin": "node scripts/smoke-codex-plugin-mcp.mjs",
     "version:check": "node scripts/release-version.mjs check",
     "version:next": "node scripts/release-version.mjs next",
     "release:notes": "node scripts/generate-release-notes.mjs",

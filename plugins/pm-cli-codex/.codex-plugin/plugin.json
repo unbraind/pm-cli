@@ -1,0 +1,45 @@
+{
+  "name": "pm-cli-codex",
+  "version": "1.0.0",
+  "description": "Native Codex integration for pm-cli with bundled MCP tools, skills, commands, and agent workflows.",
+  "author": {
+    "name": "unbrained",
+    "url": "https://github.com/unbraind/pm-cli"
+  },
+  "homepage": "https://github.com/unbraind/pm-cli/tree/main/plugins/pm-cli-codex",
+  "repository": "https://github.com/unbraind/pm-cli",
+  "license": "MIT",
+  "keywords": [
+    "pm-cli",
+    "codex",
+    "mcp",
+    "project-management",
+    "agents",
+    "tasks",
+    "workflows"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "pm CLI",
+    "shortDescription": "Native pm tracker tools and agent workflows",
+    "longDescription": "Use pm CLI from Codex through native MCP tools instead of shelling out to the pm command. The plugin bundles tracker operations, skills, command prompts, and subagent workflow guidance for planning, execution, validation, release, and audit work.",
+    "developerName": "unbrained",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/unbraind/pm-cli",
+    "privacyPolicyURL": "https://github.com/unbraind/pm-cli/blob/main/SECURITY.md",
+    "termsOfServiceURL": "https://github.com/unbraind/pm-cli/blob/main/LICENSE",
+    "defaultPrompt": [
+      "Use pm CLI to orient, claim, track, verify, and close this repository task"
+    ],
+    "composerIcon": "./assets/pm-cli-small.svg",
+    "logo": "./assets/pm-cli-small.svg",
+    "screenshots": [],
+    "brandColor": "#2563EB"
+  }
+}
