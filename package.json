@@ -46,12 +46,14 @@
     "AGENTS.md",
     "PRD.md",
     "docs/**",
+    ".claude-plugin/**",
     "plugins/**",
     "pi/**",
     ".agents/skills/**",
     ".agents/pm/extensions/**",
     "scripts/install.sh",
-    "scripts/install.ps1"
+    "scripts/install.ps1",
+    "marketplace.json"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -63,6 +65,7 @@
     "quality:static": "node scripts/release/static-quality-gate.mjs",
     "quality:docs-skills": "node scripts/release/docs-skills-gate.mjs",
     "smoke:codex-plugin": "node scripts/smoke-codex-plugin-mcp.mjs",
+    "smoke:claude-plugin": "node scripts/smoke-claude-plugin.mjs",
     "version:check": "node scripts/release-version.mjs check",
     "version:next": "node scripts/release-version.mjs next",
     "release:notes": "node scripts/generate-release-notes.mjs",

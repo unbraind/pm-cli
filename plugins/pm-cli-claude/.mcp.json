@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "pm-cli-native": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/pm-mcp-server.mjs"],
+      "env": {
+        "PM_AUTHOR": "claude-code-agent"
+      },
+      "note": "Native pm-cli MCP server. Imports pm command modules directly — no pm shell invocation needed."
+    }
+  }
+}

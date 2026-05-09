@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "pm-cli-native": {
+      "command": "node",
+      "args": ["./plugins/pm-cli-claude/scripts/pm-mcp-server.mjs"],
+      "env": {
+        "PM_AUTHOR": "claude-code-agent"
+      },
+      "note": "Native pm-cli MCP server for Claude Code. Uses the repo build when present, falls back to npx @unbrained/pm-cli."
+    }
+  }
+}

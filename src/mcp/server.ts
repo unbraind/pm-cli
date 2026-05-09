@@ -433,6 +433,13 @@ async function handleRequest(request: JsonRpcRequest): Promise<Record<string, un
       protocolVersion: "2025-06-18",
       capabilities: { tools: {} },
       serverInfo: { name: "pm-cli-native", version: "1.0.0" },
+      instructions:
+        "You have access to native pm CLI tools for git-based project management. " +
+        "Use pm_context or pm_search before creating new work. " +
+        "Prefer narrow tools (pm_context, pm_list, pm_get, pm_search, pm_create, pm_update, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_test, pm_validate, pm_health, pm_contracts, pm_guide) over pm_run when they cover the operation. " +
+        "Use pm_run with an explicit action for calendar, activity, aggregate, dedupe-audit, normalize, reindex, history, stats, append, notes, learnings, test-all, gc, and template operations. " +
+        "Set author to 'claude-code-agent' on all mutations. " +
+        "Do not pass path during real repository tracking — only pass path for sandbox or test runs.",
     };
   }
   if (request.method === "tools/list") {
