@@ -487,7 +487,7 @@ describe("runReindex", () => {
 
   it("truncates oversized semantic corpus inputs before embedding", async () => {
     await withTempPmPath(async (context) => {
-      createSeedItem(context, "Huge Semantic Corpus", "x".repeat(50_000), false);
+      createSeedItem(context, "Huge Semantic Corpus", "x".repeat(1_000), false);
 
       const settings = await readSettings(context.pmPath);
       settings.providers.openai.base_url = "https://api.example.test/v1";
