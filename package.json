@@ -47,6 +47,7 @@
     "PRD.md",
     "docs/**",
     "plugins/**",
+    "pi/**",
     ".agents/skills/**",
     ".agents/pm/extensions/**",
     "scripts/install.sh",
@@ -84,14 +85,39 @@
     "git-native",
     "typescript",
     "task-tracker",
-    "coding-agents"
+    "coding-agents",
+    "pi-package",
+    "pi-extension"
   ],
   "license": "MIT",
   "publishConfig": {
     "access": "public"
   },
+  "pi": {
+    "extensions": [
+      "./pi/extensions/pm-cli/index.js"
+    ],
+    "skills": [
+      "./pi/skills"
+    ],
+    "prompts": [
+      "./pi/prompts"
+    ]
+  },
   "engines": {
     "node": ">=20"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    },
+    "typebox": {
+      "optional": true
+    }
   },
   "dependencies": {
     "@sentry/node": "^10.51.0",

@@ -17,6 +17,7 @@
 | Settings, storage, search, and output | [Configuration](docs/CONFIGURATION.md) |
 | Safe test execution and linked tests | [Testing](docs/TESTING.md) |
 | Extension authoring | [Extensions](docs/EXTENSIONS.md) and [SDK](docs/SDK.md) |
+| Pi native package | [Pi Package](docs/PI_PACKAGE.md) |
 | Codex native integration | [Codex Plugin](docs/CODEX_PLUGIN.md) |
 | Maintainer release process (daily auto-release + local parity) | [Releasing](docs/RELEASING.md) |
 | Contributor internals | [Architecture](docs/ARCHITECTURE.md) |
@@ -49,6 +50,14 @@ Project-local invocation also works:
 ```bash
 npx @unbrained/pm-cli --help
 ```
+
+For Pi, install the native package integration after publish:
+
+```bash
+pi install npm:@unbrained/pm-cli
+```
+
+This registers a native `pm` tool, Pi skills, and prompt templates without requiring Pi to run the `pm` shell command.
 
 ## 60 Second Example
 
