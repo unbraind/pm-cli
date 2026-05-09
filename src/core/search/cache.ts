@@ -7,6 +7,7 @@ import { locateItem, readLocatedItem } from "../store/item-store.js";
 import { getSettingsPath } from "../store/paths.js";
 import { readSettings } from "../store/settings.js";
 import { executeEmbeddingBatchesWithRetry } from "./embedding-batches.js";
+import { buildSearchCorpus } from "./corpus.js";
 import { resolveEmbeddingProviders } from "./providers.js";
 import type { EmbeddingProviderConfig } from "./providers.js";
 import { resolveSettingsWithSemanticRuntimeDefaults } from "./semantic-defaults.js";
@@ -146,21 +147,7 @@ export async function writeVectorizationStatusLedger(pmRoot: string, entries: Re
 }
 
 function buildSemanticCorpusInput(document: ItemDocument): string {
-  const item = document.front_matter;
-  return JSON.stringify({
-    title: item.title,
-    description: item.description,
-    tags: item.tags,
-    status: item.status,
-    body: document.body,
-    comments: (item.comments ?? []).map((entry) => entry.text),
-    notes: (item.notes ?? []).map((entry) => entry.text),
-    learnings: (item.learnings ?? []).map((entry) => entry.text),
-    dependencies: (item.dependencies ?? []).map((entry) => ({
-      id: entry.id,
-      kind: entry.kind,
-    })),
-  });
+  return JSON.stringify(buildSearchCorpus(document));
 }
 
 function buildVectorPayload(item: ItemFrontMatter): Record<string, unknown> {

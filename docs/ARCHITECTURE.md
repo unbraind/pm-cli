@@ -223,7 +223,7 @@ Search supports:
 - semantic mode, when an embedding provider and vector store are available
 - hybrid mode, combining keyword and semantic results
 
-Keyword scoring uses weighted fields such as title, description, tags, status, body, comments, notes, learnings, and dependencies.
+Keyword scoring uses weighted fields such as title, description, tags, status, body, comments, notes, learnings, reminders, events, and dependencies. Semantic indexing uses the same core corpus so calendar-heavy work remains discoverable through normal search and reindex flows.
 
 Runtime semantic components can come from built-ins or extensions:
 

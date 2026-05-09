@@ -7,6 +7,7 @@ import {
 } from "../../core/extensions/runtime-registrations.js";
 import { pathExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
+import { buildSearchCorpus } from "../../core/search/corpus.js";
 import { executeEmbeddingBatchesWithRetry } from "../../core/search/embedding-batches.js";
 import { writeVectorizationStatusLedger } from "../../core/search/cache.js";
 import { resolveEmbeddingProviders } from "../../core/search/providers.js";
@@ -90,20 +91,7 @@ function buildKeywordRecord(document: ItemDocument, mode: "keyword" | "semantic"
     id: item.id,
     mode,
     updated_at: item.updated_at,
-    corpus: {
-      title: item.title,
-      description: item.description,
-      tags: item.tags,
-      status: item.status,
-      body: document.body,
-      comments: (item.comments ?? []).map((entry) => entry.text),
-      notes: (item.notes ?? []).map((entry) => entry.text),
-      learnings: (item.learnings ?? []).map((entry) => entry.text),
-      dependencies: (item.dependencies ?? []).map((entry) => ({
-        id: entry.id,
-        kind: entry.kind,
-      })),
-    },
+    corpus: buildSearchCorpus(document),
   };
 }
 

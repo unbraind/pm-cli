@@ -96,6 +96,8 @@ function makeFrontMatter(overrides: Partial<ItemFrontMatter> & Pick<ItemFrontMat
     comments: overrides.comments,
     notes: overrides.notes,
     learnings: overrides.learnings,
+    reminders: overrides.reminders,
+    events: overrides.events,
     files: overrides.files,
     tests: overrides.tests,
     docs: overrides.docs,
@@ -731,6 +733,33 @@ describe("runSearch", () => {
       deadline_after: "2026-02-19T00:00:00.000Z",
       limit: "1.9",
     });
+
+    const calendarHeavy = makeFrontMatter({
+      id: "pm-calendar",
+      title: "calendar workflow",
+      reminders: [{ at: "2026-02-18T09:00:00.000Z", text: "agent reminder token" }],
+      events: [
+        {
+          start_at: "2026-02-18T10:00:00.000Z",
+          end_at: "2026-02-18T11:00:00.000Z",
+          title: "roadmap sync token",
+          description: "calendar event description token",
+          location: "room-token",
+          all_day: true,
+        },
+        {
+          start_at: "2026-02-18T12:00:00.000Z",
+          title: "regular event token",
+          all_day: false,
+        },
+      ],
+    });
+    listAllFrontMatterMock.mockResolvedValueOnce([calendarHeavy]);
+    readFileMock.mockResolvedValueOnce(serializeDocument(calendarHeavy, ""));
+    const calendarSearch = await runSearch("roadmap reminder room-token all day", { mode: "keyword" }, { path: "/tmp/pm-search" });
+    expect(calendarSearch.count).toBe(1);
+    expect(calendarSearch.items[0].item.id).toBe("pm-calendar");
+    expect(calendarSearch.items[0].matched_fields).toEqual(["events", "reminders"]);
 
     listAllFrontMatterMock.mockResolvedValue([matching]);
     readFileMock.mockResolvedValue(serializeDocument(matching, "bodytoken"));

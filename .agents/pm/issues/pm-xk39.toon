@@ -1,12 +1,13 @@
 id: pm-xk39
 title: Add audited history-stream redaction command
-description: "Implement a first-class pm mutation for redacting sensitive strings from append-only history streams without hand-editing JSONL files, preserving replay integrity by recomputing affected history hashes or recording a verifiable redaction marker."
+description: "Implement a first-class pm mutation for redacting sensitive strings from append-only history streams without hand-editing JSONL files, preserving replay integrity by recomputing affected history hashes or recording a verifiable redaction marker. Reopened because the 2026-05-09 audit still found private infrastructure paths in historical JSONL streams while current item files are mostly sanitized."
 type: Issue
-status: closed
+status: open
 priority: 1
 tags[5]: history,pm-cli,privacy,redaction,security
 created_at: "2026-05-03T13:34:41.813Z"
-updated_at: "2026-05-03T19:13:52.650Z"
+updated_at: "2026-05-09T11:46:59.452Z"
+assignee: codex-agent
 author: codex-audit
 acceptance_criteria: A supported pm command can redact configured literals/patterns from item files and history streams; history drift validation remains meaningful after redaction; redaction operations are themselves auditable; secret scans can include history streams without false failures from known private operations paths.
 parent: pm-rnpb
@@ -15,7 +16,8 @@ expected_result: Expected closure outcome normalized from closed status; existin
 actual_result: Actual closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-rnpb,parent,"2026-05-03T13:34:41.813Z",codex-audit,null
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-05-03T13:34:41.813Z",codex-audit,"Duplicate-check evidence: pm search history stream redaction command redact private path history drift --limit 10 found only closed history/security items; current audit discovered remaining private remote paths in historical JSONL streams after current item docs were sanitized."
-close_reason: "Canceled: item no longer needed"
+  "2026-05-09T11:21:19.310Z",codex-agent,"2026-05-09 duplicate-check evidence: pm search tracker history privacy redaction private paths --limit 10 found this existing item as the canonical match. Current scan found no raw IP/password/token values in non-history tracked files; current pm item files only mention Sentry token variable names, but historical JSONL streams still include private remote paths from older telemetry operations. Do not hand-edit history; implement audited redaction support or migrate history safely."
+  "2026-05-09T11:46:59.452Z",codex-agent,"Evidence 2026-05-09: privacy scan confirmed current tracked source/docs/workflows and current item files do not contain raw host/IP/password/token values from this request, but older append-only history streams still contain private infrastructure paths. This remains open because current pm policy forbids direct history rewrites; next work must add an audited redaction command or equivalent safe migration."
 body: ""

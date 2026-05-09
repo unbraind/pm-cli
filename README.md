@@ -105,10 +105,6 @@ This documentation refresh is tracked through `pm`:
 
 Docs should link to relevant `pm` items, and `pm` items should link back to changed docs through `pm docs`.
 
-## Privacy Boundary
-
-Private production operations material is local-only, gitignored, and intentionally not linked from public documentation or packaged release files. Keep public docs focused on user-facing CLI behavior and safe contribution workflows.
-
 ## License
 
 [MIT](LICENSE)

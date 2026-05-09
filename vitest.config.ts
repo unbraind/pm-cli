@@ -67,6 +67,7 @@ export default defineConfig({
         "src/core/output/output.ts",
         "src/core/shared/command-types.ts",
         "src/core/search/cache.ts",
+        "src/core/search/corpus.ts",
         "src/core/search/embedding-batches.ts",
         "src/core/search/http-client.ts",
         "src/core/search/providers.ts",

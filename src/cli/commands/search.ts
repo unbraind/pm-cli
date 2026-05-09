@@ -22,6 +22,7 @@ import {
   type VectorStoreConfig,
   type VectorStoreResolution,
 } from "../../core/search/vector-stores.js";
+import { buildEventCorpus, buildReminderCorpus } from "../../core/search/corpus.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
@@ -77,7 +78,7 @@ const DEFAULT_COMPACT_SEARCH_FIELDS = [
   "matched_fields",
 ] as const;
 
-const LONG_QUERY_TOKEN_THRESHOLD = 4;
+const LONG_QUERY_TOKEN_THRESHOLD = 2;
 const LONG_QUERY_TITLE_EXACT_BONUS = 120;
 const LONG_QUERY_PHRASE_MULTIPLIER = 6;
 const IMPLICIT_AUTO_HYBRID_EMBEDDING_TIMEOUT_MS = 8_000;
@@ -281,6 +282,8 @@ function collectExactPhraseFields(document: ItemDocument): string[] {
     (item.comments ?? []).map((entry) => entry.text).join(" "),
     (item.notes ?? []).map((entry) => entry.text).join(" "),
     (item.learnings ?? []).map((entry) => entry.text).join(" "),
+    buildReminderCorpus(item).join(" "),
+    buildEventCorpus(item).join(" "),
     (item.dependencies ?? []).map((entry) => `${entry.id} ${entry.kind}`).join(" "),
   ];
 }
@@ -452,6 +455,8 @@ export interface SearchTuning {
   comments_weight: number;
   notes_weight: number;
   learnings_weight: number;
+  reminders_weight: number;
+  events_weight: number;
   dependencies_weight: number;
   linked_content_weight: number;
 }
@@ -477,6 +482,8 @@ function scoreDocument(
     { name: "comments", value: (item.comments ?? []).map((entry) => entry.text).join(" "), weight: tuning.comments_weight },
     { name: "notes", value: (item.notes ?? []).map((entry) => entry.text).join(" "), weight: tuning.notes_weight },
     { name: "learnings", value: (item.learnings ?? []).map((entry) => entry.text).join(" "), weight: tuning.learnings_weight },
+    { name: "reminders", value: buildReminderCorpus(item).join(" "), weight: tuning.reminders_weight },
+    { name: "events", value: buildEventCorpus(item).join(" "), weight: tuning.events_weight },
     {
       name: "dependencies",
       value: (item.dependencies ?? []).map((entry) => `${entry.id} ${entry.kind}`).join(" "),
@@ -617,6 +624,8 @@ export function resolveSearchTuning(settings: unknown): SearchTuning {
     comments_weight: 1,
     notes_weight: 1,
     learnings_weight: 1,
+    reminders_weight: 2,
+    events_weight: 2,
     dependencies_weight: 3,
     linked_content_weight: 1,
   };
@@ -640,6 +649,8 @@ export function resolveSearchTuning(settings: unknown): SearchTuning {
     comments_weight: resolveWeight(tuning.comments_weight, defaults.comments_weight),
     notes_weight: resolveWeight(tuning.notes_weight, defaults.notes_weight),
     learnings_weight: resolveWeight(tuning.learnings_weight, defaults.learnings_weight),
+    reminders_weight: resolveWeight(tuning.reminders_weight, defaults.reminders_weight),
+    events_weight: resolveWeight(tuning.events_weight, defaults.events_weight),
     dependencies_weight: resolveWeight(tuning.dependencies_weight, defaults.dependencies_weight),
     linked_content_weight: resolveWeight(tuning.linked_content_weight, defaults.linked_content_weight),
   };
