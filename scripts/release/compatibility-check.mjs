@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { commandFor, fail, flagBool, flagString, parseFlags, repoRoot, runCommand } from "./utils.mjs";
@@ -64,7 +64,6 @@ async function seedLegacyData(baseVersion, tempRoot, env, author) {
     );
 
   legacy("init");
-  legacy("config", "project", "set", "item-format", "--format", "json_markdown");
 
   const taskCreate = legacy(
     "create",
@@ -223,7 +222,16 @@ async function seedLegacyData(baseVersion, tempRoot, env, author) {
   );
 
   const before = legacy("list-all", "--limit", "200");
-  await prependYamlFrontMatter(path.join(env.PM_PATH, "tasks", `${taskId}.md`));
+  const taskSnapshot = legacy("get", taskId);
+  const taskMarkdownPath = path.join(env.PM_PATH, "tasks", `${taskId}.md`);
+  const taskToonPath = path.join(env.PM_PATH, "tasks", `${taskId}.toon`);
+  await writeFile(
+    taskMarkdownPath,
+    `${JSON.stringify(taskSnapshot.item, null, 2)}\n\n${typeof taskSnapshot.body === "string" ? taskSnapshot.body : ""}\n`,
+    "utf8",
+  );
+  await rm(taskToonPath, { force: true });
+  await prependYamlFrontMatter(taskMarkdownPath);
   return {
     baseVersion,
     projectRoot,
@@ -233,7 +241,19 @@ async function seedLegacyData(baseVersion, tempRoot, env, author) {
   };
 }
 
-function runCurrentChecks(seedState, env, author) {
+async function pathExistsAbsolute(targetPath) {
+  try {
+    await stat(targetPath);
+    return true;
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+      return false;
+    }
+    throw error;
+  }
+}
+
+async function runCurrentChecks(seedState, env, author) {
   const distCli = path.join(repoRoot, "dist", "cli.js");
   const current = (...args) =>
     runJsonCommand(process.execPath, [distCli, ...args, "--json"], env, args.join(" "), seedState.projectRoot);
@@ -255,11 +275,6 @@ function runCurrentChecks(seedState, env, author) {
     fail("Compatibility gate failed: expected legacy linked tests to survive current build read path.");
   }
 
-  const migration = current("config", "project", "set", "item-format", "--format", "toon");
-  if (!Array.isArray(migration?.migration?.migrated) || !migration.migration.migrated.includes(seedState.taskId)) {
-    fail("Compatibility gate failed: mixed-frontmatter markdown item did not migrate to TOON.");
-  }
-
   current(
     "update",
     seedState.taskId,
@@ -270,6 +285,14 @@ function runCurrentChecks(seedState, env, author) {
     "--message",
     "current-build compatibility mutation",
   );
+  const taskToonPath = path.join(env.PM_PATH, "tasks", `${seedState.taskId}.toon`);
+  const taskMarkdownPath = path.join(env.PM_PATH, "tasks", `${seedState.taskId}.md`);
+  if (!(await pathExistsAbsolute(taskToonPath))) {
+    fail("Compatibility gate failed: mixed-frontmatter markdown item did not migrate to TOON.");
+  }
+  if (await pathExistsAbsolute(taskMarkdownPath)) {
+    fail("Compatibility gate failed: markdown item variant persisted after TOON migration.");
+  }
   current(
     "comments",
     seedState.taskId,
@@ -311,7 +334,7 @@ function runCurrentChecks(seedState, env, author) {
     itemCountAfter,
     validationOk: validation?.ok !== false,
     healthOk: blockingHealthChecks.length === 0,
-    migrationWarnings: Array.isArray(migration?.migration?.warnings) ? migration.migration.warnings : [],
+    migrationWarnings: [],
   };
 }
 
@@ -342,7 +365,7 @@ then validates migration/read/write compatibility with the current local build.
 
   try {
     const seedState = await seedLegacyData(baseVersion, tempRoot, env, author);
-    const currentSummary = runCurrentChecks(seedState, env, author);
+    const currentSummary = await runCurrentChecks(seedState, env, author);
     const summary = {
       ok: true,
       base_version: baseVersion,
