@@ -1,6 +1,7 @@
 # Releasing `@unbrained/pm-cli`
 
 This page is for maintainers cutting npm and GitHub releases. It assumes release work is tracked with `pm`.
+For local progressive-disclosure routing, use `pm guide release`.
 
 ## Agent Quick Context
 
@@ -9,6 +10,7 @@ This page is for maintainers cutting npm and GitHub releases. It assumes release
 - Publishing is owned by the tag-driven GitHub Actions release workflow.
 - Do not run manual `npm publish`.
 - Run local parity gates before pushing release tags.
+- Use `pm guide release --json` for machine-readable release docs routing.
 
 Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
 
@@ -64,7 +66,7 @@ The pipeline performs:
 
 1. change detection + one-release-per-day guard
 2. version bump + changelog promotion from `[Unreleased]`
-3. strict gates (build, typecheck, coverage, static quality, compatibility, security, smoke checks, reliability gate)
+3. strict gates (build, typecheck, docs/skills freshness, coverage, static quality, compatibility, security, smoke checks, reliability gate)
 4. release note generation from changelog + pm evidence
 5. commit and tag creation (plus optional push)
 

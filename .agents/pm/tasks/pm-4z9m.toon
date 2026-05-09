@@ -1,0 +1,69 @@
+id: pm-4z9m
+title: Implement pm guide docs and skills modernization
+description: "Deliver agent-first docs/skills modernization with in-CLI guide routing, progressive disclosure help, harness compatibility docs, and anti-staleness gates."
+type: Task
+status: in_progress
+priority: 0
+tags[5]: agent-ux,docs,pm-cli,progressive-disclosure,skills
+created_at: "2026-05-09T15:01:04.019Z"
+updated_at: "2026-05-09T15:45:24.435Z"
+assignee: codex-agent
+author: codex-agent
+acceptance_criteria: pm guide command exists with index/topic/json rendering; docs+skills updated with progressive disclosure; stale-docs gate enforced; tests and release checks pass.
+parent: pm-rnpb
+comments[2]{created_at,author,text}:
+  "2026-05-09T15:01:04.019Z",codex-agent,"Duplicate-check evidence: ran pm context --limit 10,pm search docs skills guide --limit 10,pm list-open --limit 20,and pm list-in-progress --limit 20. Existing similar docs efforts were already closed,so this request needs a new dedicated task under pm-rnpb."
+  "2026-05-09T15:45:24.435Z",codex-agent,"Workstreams complete: docs routed through pm guide topics; added agentskills-compliant bundles (pm-developer, pm-user, pm-extensions, pm-sdk) plus harness matrix; implemented scripts/release/docs-skills-gate.mjs and wired quality:docs-skills + run-gates step. Verification: focused regression suite (165 tests) passed; docs-skills gate passed; full release gates passed with --skip-telemetry-sentry; baseline run without skip failed only on external Sentry high-issue threshold (2 highs, telemetry ok)."
+files[40]{path,scope,note}:
+  .agents/skills/HARNESS_COMPATIBILITY.md,project,null
+  .agents/skills/pm-developer/references/COMMAND_PLAYBOOK.md,project,null
+  .agents/skills/pm-developer/references/PROMPTS.md,project,null
+  .agents/skills/pm-developer/SKILL.md,project,null
+  .agents/skills/pm-extensions/references/LIFECYCLE.md,project,null
+  .agents/skills/pm-extensions/references/TROUBLESHOOTING.md,project,null
+  .agents/skills/pm-extensions/SKILL.md,project,null
+  .agents/skills/pm-sdk/references/INTEGRATION_CHECKLIST.md,project,null
+  .agents/skills/pm-sdk/references/PROMPTS.md,project,null
+  .agents/skills/pm-sdk/SKILL.md,project,null
+  .agents/skills/pm-user/references/PROMPTS.md,project,null
+  .agents/skills/pm-user/references/WORKFLOWS.md,project,null
+  .agents/skills/pm-user/SKILL.md,project,null
+  .agents/skills/README.md,project,null
+  docs/AGENT_GUIDE.md,project,agent routing and skills references
+  docs/COMMANDS.md,project,guide command routing references
+  docs/EXTENSIONS.md,project,extensions guide routing
+  docs/QUICKSTART.md,project,quickstart guide routing
+  docs/README.md,project,guide topic routing map
+  docs/RELEASING.md,project,release docs-skills gate references
+  docs/SDK.md,project,sdk guide routing
+  package.json,project,publish and quality docs-skills gate wiring
+  README.md,project,guide-routing entrypoint
+  scripts/release/docs-skills-gate.mjs,project,docs and skills staleness gate
+  scripts/release/run-gates.mjs,project,release gates include docs-skills
+  src/cli/commands/completion.ts,project,guide completion wiring
+  src/cli/commands/contracts.ts,project,guide flag contracts mapping
+  src/cli/commands/guide.ts,project,guide command implementation
+  src/cli/commands/index.ts,project,guide command exports
+  src/cli/guide-topics.ts,project,guide topic registry
+  src/cli/help-content.ts,project,guide help narrative
+  src/cli/register-list-query.ts,project,guide command registration
+  src/sdk/cli-contracts.ts,project,guide contracts and command catalog
+  tests/integration/help-runtime.spec.ts,project,guide help runtime coverage
+  tests/integration/release-automation-contract.spec.ts,project,release scripts include docs-skills gate
+  tests/integration/release-readiness-runtime.spec.ts,project,release readiness expectations for guide/docs-skills paths
+  tests/unit/completion-command.spec.ts,project,guide completion coverage
+  tests/unit/contracts-command.spec.ts,project,guide contracts flag coverage
+  tests/unit/docs-skills-gate.spec.ts,project,docs-skills gate helper tests
+  tests/unit/guide-command.spec.ts,project,guide command unit coverage
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/release/docs-skills-gate.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,docs and skills staleness gate
+  node scripts/release/run-gates.mjs --telemetry-mode best-effort --skip-telemetry-sentry,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,full release gates minus external sentry threshold
+  node scripts/run-tests.mjs test -- tests/unit/guide-command.spec.ts tests/unit/docs-skills-gate.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused guide/docs-skills regression suite
+docs[6]{path,scope,note}:
+  .agents/skills/HARNESS_COMPATIBILITY.md,project,harness compatibility docs
+  .agents/skills/README.md,project,skills index
+  docs/AGENT_GUIDE.md,project,agent workflow docs
+  docs/COMMANDS.md,project,command routing docs
+  docs/README.md,project,topic map
+  README.md,project,root docs routing
+body: ""

@@ -2,6 +2,18 @@
 
 This directory is the public documentation home for `pm-cli`. It is organized for progressive disclosure: read the smallest page that answers the current question, then follow links only when more detail is needed.
 
+## CLI Guide Router
+
+`pm guide` exposes the same documentation routes from inside the CLI:
+
+```bash
+pm guide
+pm guide quickstart
+pm guide commands --depth standard
+pm guide sdk --depth deep --format markdown
+pm guide release --json
+```
+
 ## Read Path
 
 | Reader | First page | Then read |
@@ -10,7 +22,7 @@ This directory is the public documentation home for `pm-cli`. It is organized fo
 | Coding agent | [Agent Guide](AGENT_GUIDE.md) | [Configuration](CONFIGURATION.md), then command help |
 | Maintainer | [Contributing](../CONTRIBUTING.md) | [Testing](TESTING.md), [Releasing](RELEASING.md), [Architecture](ARCHITECTURE.md) |
 | Extension author | [Extensions](EXTENSIONS.md) | [SDK](SDK.md), [starter extension](examples/starter-extension/README.md) |
-| Machine client | [Command Reference](COMMANDS.md#machine-contracts) | `pm contracts --json` |
+| Machine client | `pm guide commands` | [Command Reference](COMMANDS.md#machine-contracts), then `pm contracts --json` |
 
 ## Documentation Map
 
@@ -24,6 +36,19 @@ This directory is the public documentation home for `pm-cli`. It is organized fo
 - [SDK](SDK.md) - public import surfaces and typed authoring examples.
 - [Releasing](RELEASING.md) - maintainer release checklist and failure handling.
 - [starter extension](examples/starter-extension/README.md) - compact extension scaffold reference.
+
+## Guide Topic Map
+
+| `pm guide` topic | Primary docs |
+|------------------|--------------|
+| `quickstart` | [Quickstart](QUICKSTART.md), [Command Reference](COMMANDS.md) |
+| `commands` | [Command Reference](COMMANDS.md), [Configuration](CONFIGURATION.md) |
+| `workflows` | [Agent Guide](AGENT_GUIDE.md), [Testing](TESTING.md) |
+| `sdk` | [SDK](SDK.md), [Architecture](ARCHITECTURE.md) |
+| `extensions` | [Extensions](EXTENSIONS.md), [starter extension](examples/starter-extension/README.md) |
+| `skills` | [Agent Guide](AGENT_GUIDE.md) plus `.agents/skills/*` |
+| `harnesses` | [Agent Guide](AGENT_GUIDE.md) plus `.agents/skills/HARNESS_COMPATIBILITY.md` |
+| `release` | [Releasing](RELEASING.md), [CHANGELOG](../CHANGELOG.md) |
 
 Community files:
 

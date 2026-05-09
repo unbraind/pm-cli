@@ -41,6 +41,7 @@ describe("contracts command runtime", () => {
     expect(result.commands).toContain("aggregate");
     expect(result.commands).toContain("dedupe-audit");
     expect(result.commands).toContain("normalize");
+    expect(result.commands).toContain("guide");
     expect((result.action_availability ?? []).some((entry) => entry.action === "create" && entry.invocable)).toBe(true);
     expect(result.command_flags?.some((entry) => entry.command === "contracts")).toBe(true);
     expect(result.command_flags?.find((entry) => entry.command === "aggregate")?.flags).toEqual(
@@ -248,6 +249,7 @@ describe("contracts command runtime", () => {
       { command: "files", flags: ["--add", "--add-glob", "--list", "--append-stable", "--validate-paths", "--audit"] },
       { command: "docs", flags: ["--add", "--add-glob", "--validate-paths", "--audit"] },
       { command: "history", flags: ["--limit", "--diff", "--verify"] },
+      { command: "guide", flags: ["--list", "--format", "--depth"] },
       { command: "config", flags: ["--criterion", "--clear-criteria", "--format", "--policy"] },
       { command: "restore", flags: ["--author", "--message", "--force"] },
       { command: "delete", flags: ["--author", "--message", "--force"] },

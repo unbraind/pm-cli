@@ -62,6 +62,7 @@ describe("generateBashScript", () => {
       "validate",
       "gc",
       "contracts",
+      "guide",
       "claim",
       "release",
       "start-task",
@@ -356,6 +357,14 @@ describe("generateBashScript", () => {
     expect(script).toContain("--format");
   });
 
+  it("includes guide topic flags and values", () => {
+    const script = generateBashScript();
+    expect(script).toContain("guide)");
+    expect(script).toContain("--list --format --depth");
+    expect(script).toContain("quickstart");
+    expect(script).toContain("harnesses");
+  });
+
   it("includes shell names for completion sub-completion", () => {
     const script = generateBashScript();
     expect(script).toContain("bash zsh fish");
@@ -398,6 +407,7 @@ describe("generateZshScript", () => {
     expect(script).toContain("extension:Manage extension lifecycle operations");
     expect(script).toContain("create:Create a new project management item");
     expect(script).toContain("completion:Generate shell completion");
+    expect(script).toContain("guide:Browse local progressive-disclosure guides");
     expect(script).toContain("normalize:Normalize lifecycle metadata with dry-run planning or apply mode");
     expect(script).toContain("contracts:Show machine-readable command and schema contracts");
     expect(script).toContain("start-task:Lifecycle alias to claim and set in_progress");
@@ -469,6 +479,13 @@ describe("generateZshScript", () => {
     expect(script).toContain("--to");
     expect(script).toContain("--past");
     expect(script).toContain("markdown toon json");
+  });
+
+  it("includes zsh guide flags", () => {
+    const script = generateZshScript();
+    expect(script).toContain("guide)");
+    expect(script).toContain("--list[Show guide topic index]");
+    expect(script).toContain("--depth[Guide detail depth]");
   });
 
   it("includes strict health flags in zsh completion", () => {
@@ -548,6 +565,7 @@ describe("generateFishScript", () => {
       ["get", "Show item details"],
       ["search", "Search items"],
       ["completion", "Generate shell completion"],
+      ["guide", "progressive-disclosure guides"],
       ["normalize", "Normalize lifecycle metadata"],
       ["contracts", "machine-readable command and schema contracts"],
       ["health", "project tracker health"],
@@ -692,6 +710,13 @@ describe("generateFishScript", () => {
     expect(script).toContain("-l to");
     expect(script).toContain("-l past");
     expect(script).toContain("-l format");
+  });
+
+  it("includes fish guide completions", () => {
+    const script = generateFishScript();
+    expect(script).toContain("__fish_seen_subcommand_from guide");
+    expect(script).toContain("-l list");
+    expect(script).toContain("-l depth");
   });
 
   it("includes deterministic tag choices for fish --tag flags", () => {

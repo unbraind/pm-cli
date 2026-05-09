@@ -9,6 +9,7 @@ Extensions add commands, schema, renderers, importers/exporters, search adapters
 - Declare only the capabilities your extension uses.
 - Run `pm extension doctor --detail deep --trace` for activation failures.
 - Use `--no-extensions` to isolate core behavior during incident triage.
+- Use `pm guide extensions --depth standard` for local docs routing.
 
 Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
 

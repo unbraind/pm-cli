@@ -23,6 +23,7 @@ describe("release automation contract", () => {
     };
     expect(packageJson.scripts).toBeDefined();
     expect(packageJson.scripts?.["quality:static"]).toBe("node scripts/release/static-quality-gate.mjs");
+    expect(packageJson.scripts?.["quality:docs-skills"]).toBe("node scripts/release/docs-skills-gate.mjs");
     expect(packageJson.scripts?.["release:changelog"]).toBe("node scripts/release/changelog-promote.mjs");
     expect(packageJson.scripts?.["release:gates"]).toBe("node scripts/release/run-gates.mjs --telemetry-mode best-effort");
     expect(packageJson.scripts?.["release:pipeline"]).toBe("node scripts/release/run-release-pipeline.mjs");
@@ -127,5 +128,9 @@ describe("release automation contract", () => {
     expect(gatesHelp.status).toBe(0);
     expect(gatesHelp.stdout).toContain("--skip-compatibility");
     expect(gatesHelp.stdout).toContain("--skip-telemetry-sentry");
+
+    const docsSkillsHelp = runNodeScript(["scripts/release/docs-skills-gate.mjs", "--help"]);
+    expect(docsSkillsHelp.status).toBe(0);
+    expect(docsSkillsHelp.stdout).toContain("docs and .agents/skills freshness");
   });
 });

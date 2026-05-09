@@ -33,6 +33,17 @@ export { runDelete, type DeleteCommandOptions, type DeleteResult } from "./delet
 export { runDeps, DEPS_FORMAT_VALUES, type DepsCommandOptions, type DepsFormat, type DepsResult } from "./deps.js";
 export { runDedupeAudit, DEDUPE_AUDIT_MODES, type DedupeAuditMode, type DedupeAuditOptions, type DedupeAuditResult } from "./dedupe-audit.js";
 export { runDocs } from "./docs.js";
+export {
+  GUIDE_DEPTH_VALUES,
+  GUIDE_OUTPUT_VALUES,
+  renderGuideMarkdown,
+  resolveGuideOutputFormat,
+  runGuide,
+  type GuideDepth,
+  type GuideOptions,
+  type GuideOutputFormat,
+  type GuideResult,
+} from "./guide.js";
 export { runExtension, type ExtensionCommandOptions, type ExtensionCommandResult } from "./extension.js";
 export { runFiles, runFilesDiscover } from "./files.js";
 export { runGc } from "./gc.js";

@@ -5,6 +5,7 @@ import {
   runCalendar,
   runContext,
   runDedupeAudit,
+  runGuide,
   runGet,
   runHistory,
   runList,
@@ -12,8 +13,10 @@ import {
   runSearch,
   renderCalendarMarkdown,
   renderContextMarkdown,
+  renderGuideMarkdown,
   resolveCalendarOutputFormat,
   resolveContextOutputFormat,
+  resolveGuideOutputFormat,
 } from "./commands/index.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -209,6 +212,49 @@ export function registerListQueryCommands(program: Command): void {
       }
       if (globalOptions.profile) {
         printError(`profile:command=calendar took_ms=${Date.now() - startedAt}`);
+      }
+    });
+
+  program
+    .command("guide")
+    .argument("[topic]", "Guide topic ID (for example: quickstart, commands, workflows, sdk, extensions, skills)")
+    .description("Browse local progressive-disclosure guides without leaving the CLI.")
+    .option("--list", "Show guide topic index (default when topic is omitted)")
+    .option("--format <value>", "Guide output format override: markdown|toon|json")
+    .option("--depth <value>", "Guide detail depth: brief|standard|deep (default: brief)")
+    .action(async (topic: string | undefined, options: Record<string, unknown>, actionCommand) => {
+      const globalOptions = getGlobalOptions(actionCommand);
+      const startedAt = Date.now();
+      const result = await runGuide(
+        {
+          topic,
+          list: options.list === true,
+          format: typeof options.format === "string" ? options.format : undefined,
+          depth: typeof options.depth === "string" ? options.depth : undefined,
+        },
+        globalOptions,
+      );
+      const outputFormat = resolveGuideOutputFormat(
+        {
+          topic,
+          list: options.list === true,
+          format: typeof options.format === "string" ? options.format : undefined,
+          depth: typeof options.depth === "string" ? options.depth : undefined,
+        },
+        globalOptions,
+      );
+      if (outputFormat === "markdown") {
+        if (!globalOptions.quiet) {
+          writeStdout(`${renderGuideMarkdown(result)}\n`);
+        }
+      } else {
+        printResult(result, {
+          ...globalOptions,
+          json: outputFormat === "json",
+        });
+      }
+      if (globalOptions.profile) {
+        printError(`profile:command=guide took_ms=${Date.now() - startedAt}`);
       }
     });
 

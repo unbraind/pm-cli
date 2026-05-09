@@ -104,6 +104,7 @@ export const PM_CORE_COMMAND_NAMES = [
   "list-canceled",
   "aggregate",
   "dedupe-audit",
+  "guide",
   "calendar",
   "cal",
   "context",
@@ -1164,6 +1165,12 @@ export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--release" },
   { flag: "--limit" },
   { flag: "--format" },
+];
+
+export const GUIDE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--list" },
+  { flag: "--format" },
+  { flag: "--depth" },
 ];
 
 export const DEPS_FLAG_CONTRACTS: CliFlagContract[] = [

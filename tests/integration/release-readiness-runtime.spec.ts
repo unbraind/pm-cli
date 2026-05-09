@@ -1507,6 +1507,7 @@ describe("release readiness runtime coverage", () => {
       "README.md",
       "LICENSE",
       "docs/**",
+      ".agents/skills/**",
       ".agents/pm/extensions/**",
       "scripts/install.sh",
       "scripts/install.ps1",
@@ -1521,6 +1522,7 @@ describe("release readiness runtime coverage", () => {
     expect(packageJson.scripts?.["version:check"]).toBe("node scripts/release-version.mjs check");
     expect(packageJson.scripts?.["version:next"]).toBe("node scripts/release-version.mjs next");
     expect(packageJson.scripts?.["quality:static"]).toBe("node scripts/release/static-quality-gate.mjs");
+    expect(packageJson.scripts?.["quality:docs-skills"]).toBe("node scripts/release/docs-skills-gate.mjs");
     expect(packageJson.scripts?.["release:changelog"]).toBe("node scripts/release/changelog-promote.mjs");
     expect(packageJson.scripts?.["release:gates"]).toBe("node scripts/release/run-gates.mjs --telemetry-mode best-effort");
     expect(packageJson.scripts?.["release:pipeline"]).toBe("node scripts/release/run-release-pipeline.mjs");
@@ -1577,12 +1579,14 @@ describe("release readiness runtime coverage", () => {
       "src/cli/commands/aggregate.ts",
       "src/cli/commands/comments-audit.ts",
       "src/cli/commands/dedupe-audit.ts",
+      "src/cli/commands/guide.ts",
       "src/cli/commands/normalize.ts",
       "src/cli/commands/templates.ts",
       "src/cli/commands/test-runs.ts",
       "src/cli/commands/update-many.ts",
       "src/cli/error-guidance.ts",
       "src/cli/extension-command-help.ts",
+      "src/cli/guide-topics.ts",
       "src/cli/help-content.ts",
       "src/cli/help-json-payload.ts",
       "src/cli/main.ts",
@@ -1650,6 +1654,7 @@ describe("release readiness runtime coverage", () => {
       "scripts/release-version.mjs",
       "scripts/release/changelog-promote.mjs",
       "scripts/release/compatibility-check.mjs",
+      "scripts/release/docs-skills-gate.mjs",
       "scripts/release/static-quality-gate.mjs",
       "scripts/release/sentry-telemetry-gate.mjs",
       "scripts/release/run-gates.mjs",

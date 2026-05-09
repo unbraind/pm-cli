@@ -42,6 +42,7 @@ import {
   EXTENSION_FLAG_CONTRACTS,
   FILES_FLAG_CONTRACTS,
   GC_FLAG_CONTRACTS,
+  GUIDE_FLAG_CONTRACTS,
   GLOBAL_FLAG_CONTRACTS,
   HEALTH_FLAG_CONTRACTS,
   HISTORY_FLAG_CONTRACTS,
@@ -711,6 +712,9 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   }
   if (command === "deps") {
     return DEPS_FLAG_CONTRACTS;
+  }
+  if (command === "guide") {
+    return GUIDE_FLAG_CONTRACTS;
   }
   if (command === "reindex") {
     return REINDEX_FLAG_CONTRACTS;

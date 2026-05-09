@@ -9,6 +9,7 @@ Use this page to get from a clean repository to a tracked, verified item.
 - Claim before implementation.
 - Link changed files, docs, and tests to the item.
 - Close only after evidence is recorded.
+- Use `pm guide quickstart` or `pm guide workflows` when you need local docs routing.
 
 Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
 

@@ -67,6 +67,9 @@ function main() {
   runCheckedStep("typecheck", pnpm, ["typecheck"]);
   checks.push({ name: "typecheck", ok: true });
 
+  runCheckedStep("docs-skills-gate", process.execPath, ["scripts/release/docs-skills-gate.mjs"]);
+  checks.push({ name: "docs-skills-gate", ok: true });
+
   runCheckedStep("static-quality-gate", process.execPath, ["scripts/release/static-quality-gate.mjs"]);
   checks.push({ name: "static-quality-gate", ok: true });
 

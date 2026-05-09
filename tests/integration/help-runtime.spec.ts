@@ -34,6 +34,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(compactHelp.stdout).toContain("Need deeper rationale and more examples?");
       expect(compactHelp.stdout).toContain("Re-run with --explain.");
       expect(compactHelp.stdout).toContain("--no-pager");
+      expect(compactHelp.stdout).toContain("guide");
 
       const explicitNoPagerHelp = context.runCli(["--help", "--no-pager"]);
       expect(explicitNoPagerHelp.code).toBe(0);
@@ -44,6 +45,25 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(detailedHelp.stdout).toContain("Why use this command:");
       expect(detailedHelp.stdout).toContain("Examples:");
       expect(detailedHelp.stdout).toContain("Tips:");
+    });
+  });
+
+  it("exposes guide command help and JSON payload routing", async () => {
+    await withTempPmPath(async (context) => {
+      const help = context.runCli(["guide", "--help"]);
+      expect(help.code).toBe(0);
+      expect(help.stdout).toContain("Usage: pm guide [options] [topic]");
+      expect(help.stdout).toContain("--list");
+      expect(help.stdout).toContain("--depth");
+
+      const topic = context.runCli(["guide", "skills", "--json"], { expectJson: true });
+      expect(topic.code).toBe(0);
+      const payload = topic.json as {
+        mode: string;
+        topic?: { id: string };
+      };
+      expect(payload.mode).toBe("topic");
+      expect(payload.topic?.id).toBe("skills");
     });
   });
 

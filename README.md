@@ -22,6 +22,15 @@
 
 Full documentation starts at [docs/README.md](docs/README.md).
 
+Use local in-CLI routing when an agent should stay inside terminal context:
+
+```bash
+pm guide
+pm guide quickstart
+pm guide commands --depth standard
+pm guide skills --depth deep --format markdown
+```
+
 ## Install
 
 `pm-cli` requires Node.js 20 or newer.
@@ -78,6 +87,8 @@ pm list-in-progress --limit 20
 
 If no relevant item exists, create a parent lineage before child work, claim the child item, link changed files/docs/tests, and leave evidence comments before closing. The full workflow is in the [Agent Guide](docs/AGENT_GUIDE.md).
 
+For token-aware local routing, use `pm guide workflows` and then drill into related topics (`commands`, `skills`, `release`) only when needed.
+
 ## Release Automation
 
 - Daily release preparation runs in `.github/workflows/auto-release.yml`.
@@ -94,6 +105,7 @@ If no relevant item exists, create a parent lineage before child work, claim the
 - Built-in types include `Epic`, `Feature`, `Task`, `Chore`, `Issue`, `Decision`, `Event`, `Reminder`, `Milestone`, and `Meeting`.
 - Output defaults to sparse TOON. Use `--json` for strict parsing.
 - `pm contracts` is the machine-readable command and schema contract surface for agents.
+- `pm guide` is the local progressive-disclosure docs and skills index for agents.
 
 ## Tracker References
 

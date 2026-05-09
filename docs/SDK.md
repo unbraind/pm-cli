@@ -7,6 +7,7 @@ The public SDK is exported from `@unbrained/pm-cli/sdk`. Use it for extension au
 - Primary import: `@unbrained/pm-cli/sdk`.
 - Runtime extension lifecycle is documented in [Extensions](EXTENSIONS.md).
 - Exact command/action contracts are available through `pm contracts`.
+- Local deep-dive routing is available through `pm guide sdk --depth deep`.
 
 Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
 

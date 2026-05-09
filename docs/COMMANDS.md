@@ -6,12 +6,14 @@ This is a task-oriented command guide. For exact flags, use runtime help because
 pm <command> --help
 pm <command> --help --json
 pm contracts --command <command> --flags-only --json
+pm guide commands --depth standard
 ```
 
 ## Agent Quick Context
 
 - Prefer `pm context`, `pm search`, and narrow list commands before mutation.
 - Prefer TOON for reading and `--json` for strict parsing.
+- Use `pm guide <topic>` for local docs routing before opening deeper pages.
 - Use `pm contracts` for machine clients.
 - Every mutation writes history.
 
@@ -30,7 +32,7 @@ Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
 | History | `history`, `activity`, `restore`, `stats` | inspect and recover item state |
 | Calendar | `calendar`, `cal` | project deadlines, reminders, and events |
 | Extensions | `extension`, extension command groups | install, manage, and run extension commands |
-| Machines | `contracts`, `completion`, `help` | expose stable command contracts and shell helpers |
+| Machines | `guide`, `contracts`, `completion`, `help` | local docs routing plus command contracts and shell helpers |
 
 ## Bootstrap
 

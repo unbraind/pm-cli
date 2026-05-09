@@ -281,6 +281,20 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     ],
     tips: ["Use title_exact for strict collisions, title_fuzzy for near-duplicates, and parent_scope for child-level collisions."],
   },
+  guide: {
+    why: "Routes local progressive-disclosure documentation so agents can fetch only the context they need.",
+    examples: [
+      "pm guide",
+      "pm guide quickstart",
+      "pm guide commands --depth standard",
+      "pm guide skills --depth deep --format markdown",
+      "pm guide release --json",
+    ],
+    tips: [
+      "Use brief depth for minimal token footprint, standard for excerpted docs, and deep for full local document rendering.",
+      "Use --list to force topic index output even when topic parsing is ambiguous.",
+    ],
+  },
   calendar: {
     why: "Provides deadline/reminder/event scheduling views for planning and coordination.",
     examples: [
@@ -540,9 +554,15 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
 
 export const ROOT_HELP_BUNDLE: HelpBundle = {
   why: "Provides deterministic project management workflows for humans and coding agents.",
-  examples: ["pm init", "pm list-open --limit 10", 'pm create --title "..." --description "..." --type Task --status open --priority 1 --message "..." --create-mode progressive'],
+  examples: [
+    "pm init",
+    "pm guide",
+    "pm list-open --limit 10",
+    'pm create --title "..." --description "..." --type Task --status open --priority 1 --message "..." --create-mode progressive',
+  ],
   tips: [
     "Use <command> --help for command-specific guidance and examples.",
+    "Use pm guide for local docs and skills routing with progressive disclosure.",
     "Use --json for machine parsing and integration flows.",
     "Use --no-pager to force direct help output in CI and other non-interactive shells.",
   ],

@@ -9,6 +9,7 @@ import {
   CONTEXT_FLAG_CONTRACTS,
   CREATE_FLAG_CONTRACTS,
   DEPS_FLAG_CONTRACTS,
+  GUIDE_FLAG_CONTRACTS,
   GLOBAL_FLAG_CONTRACTS,
   HEALTH_FLAG_CONTRACTS,
   INIT_FLAG_CONTRACTS,
@@ -21,6 +22,7 @@ import {
   toCompletionFlagString,
 } from "../../sdk/cli-contracts.js";
 import { BUILTIN_ITEM_TYPE_VALUES } from "../../types/index.js";
+import { listGuideTopicIds } from "../guide-topics.js";
 
 export type CompletionShell = "bash" | "zsh" | "fish";
 
@@ -52,12 +54,14 @@ const ACTIVITY_FLAGS = toCompletionFlagString(ACTIVITY_FLAG_CONTRACTS);
 const CALENDAR_FLAGS = toCompletionFlagString(CALENDAR_FLAG_CONTRACTS);
 const CONTEXT_FLAGS = toCompletionFlagString(CONTEXT_FLAG_CONTRACTS);
 const DEPS_FLAGS = toCompletionFlagString(DEPS_FLAG_CONTRACTS);
+const GUIDE_FLAGS = toCompletionFlagString(GUIDE_FLAG_CONTRACTS);
 const SEARCH_FLAGS = toCompletionFlagString(SEARCH_FLAG_CONTRACTS);
 const HEALTH_FLAGS = toCompletionFlagString(HEALTH_FLAG_CONTRACTS);
 const INIT_FLAGS = toCompletionFlagString(INIT_FLAG_CONTRACTS);
 const CONTRACTS_FLAGS = toCompletionFlagString(CONTRACTS_FLAG_CONTRACTS);
 const COMPLETION_FLAGS = toCompletionFlagString(COMPLETION_FLAG_CONTRACTS);
 const COMPLETION_SHELL_CHOICES = `${COMPLETION_FLAGS} bash zsh fish`;
+const GUIDE_TOPIC_CHOICES = joinCompletionValues(listGuideTopicIds());
 
 const MUTATION_FLAGS = "--author --message --force --json --quiet --path --no-extensions --no-pager --profile --help";
 const CLOSE_MUTATION_FLAGS = "--author --message --validate-close --force --json --quiet --path --no-extensions --no-pager --profile --help";
@@ -182,6 +186,9 @@ export function generateBashScript(
     "    context|ctx)",
     `      COMPREPLY=(${compgen(contextFlags)})`,
     "      ;;",
+    "    guide)",
+    `      COMPREPLY=(${compgen(`${GUIDE_FLAGS} ${GUIDE_TOPIC_CHOICES}`)})`,
+    "      ;;",
     "    search)",
     `      COMPREPLY=(${compgen(searchFlags)})`,
     "      ;;",
@@ -281,6 +288,7 @@ export function generateZshScript(
 ): string {
   const cmds = ALL_COMMANDS.map((c) => `'${c}'`).join(" ");
   const typeChoices = itemTypes.join(" ");
+  const guideTopicChoices = GUIDE_TOPIC_CHOICES;
   const tagChoices = joinCompletionValues(tags);
   const useEagerTagExpansion = eagerTagExpansion || tags.length > 0;
   const zshTagChoices = useEagerTagExpansion ? tagChoices : '${(f)"$(_pm_tag_choices)"}';
@@ -322,6 +330,7 @@ _pm_commands() {
     'list-canceled:List canceled items with optional filters'
     'aggregate:Aggregate grouped item counts for governance queries'
     'dedupe-audit:Audit potential duplicate items and emit merge suggestions'
+    'guide:Browse local progressive-disclosure guides'
     'calendar:Show calendar views for deadlines and reminders'
     'cal:Alias for calendar'
     'context:Show a token-efficient project context snapshot'
@@ -667,6 +676,15 @@ _pm() {
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
+        guide)
+          _arguments \\
+            '1:topic:(${guideTopicChoices})' \\
+            '--list[Show guide topic index]' \\
+            '--format[Output override]:(markdown toon json)' \\
+            '--depth[Guide detail depth]:(brief standard deep)' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
         search)
           _arguments \\
             '--mode[Search mode]:(keyword semantic hybrid)' \\
@@ -998,6 +1016,7 @@ export function generateFishScript(
   const listCmds = ALL_COMMANDS.filter((command) => command === "list" || command.startsWith("list-")).join(" ");
   const noSubcommandList = ALL_COMMANDS.join(" ");
   const typeChoices = itemTypes.join(" ");
+  const guideTopicChoices = GUIDE_TOPIC_CHOICES;
   const tagChoices = joinCompletionValues(tags);
   const useEagerTagExpansion = eagerTagExpansion || tags.length > 0;
   const fishTagChoices = useEagerTagExpansion ? `'${tagChoices}'` : "'(__pm_tag_choices)'";
@@ -1063,6 +1082,7 @@ complete -c pm -n __pm_no_subcommand -a list-closed   -d 'List closed items with
 complete -c pm -n __pm_no_subcommand -a list-canceled -d 'List canceled items with optional filters'
 complete -c pm -n __pm_no_subcommand -a aggregate     -d 'Aggregate grouped item counts for governance queries'
 complete -c pm -n __pm_no_subcommand -a dedupe-audit  -d 'Audit potential duplicate items and emit merge suggestions'
+complete -c pm -n __pm_no_subcommand -a guide         -d 'Browse local progressive-disclosure guides'
 complete -c pm -n __pm_no_subcommand -a calendar      -d 'Show deadline/reminder calendar views'
 complete -c pm -n __pm_no_subcommand -a cal           -d 'Alias for calendar'
 complete -c pm -n __pm_no_subcommand -a context       -d 'Show a token-efficient project context snapshot'
@@ -1366,6 +1386,12 @@ complete -c pm -n '__fish_seen_subcommand_from context ctx' -l sprint    -d 'Fil
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l release   -d 'Filter by release' -r
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l limit     -d 'Limit focus and agenda rows per section' -r
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l format    -d 'Output override' -r -a 'markdown toon json'
+
+# guide flags
+complete -c pm -n '__fish_seen_subcommand_from guide' -l list      -d 'Show guide topic index'
+complete -c pm -n '__fish_seen_subcommand_from guide' -l format    -d 'Output override' -r -a 'markdown toon json'
+complete -c pm -n '__fish_seen_subcommand_from guide' -l depth     -d 'Guide detail depth' -r -a 'brief standard deep'
+complete -c pm -n '__fish_seen_subcommand_from guide' -a '${guideTopicChoices}' -d 'Guide topic'
 
 # reindex flags
 complete -c pm -n '__fish_seen_subcommand_from reindex' -l mode -d 'Reindex mode' -r -a 'keyword semantic hybrid'
