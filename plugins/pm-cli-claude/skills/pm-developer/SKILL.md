@@ -12,10 +12,36 @@ Use this skill for implementation work that changes code, docs, tests, or releas
 1. **Orient** — `pm_context` then `pm_search` for relevant existing items.
 2. **Decide** — reuse an existing item when one matches; create only when needed.
 3. **Claim** — `pm_claim` before any substantial edits.
-4. **Implement** — make the changes, link files/docs/tests as you go.
-5. **Verify** — run linked tests plus local quality gates.
-6. **Evidence** — `pm_comments` with what changed and what passed.
-7. **Close** — `pm_close` then `pm_release`.
+4. **Sync TUI** — call `TaskCreate` to mirror the pm item in Claude Code's task panel (see Hybrid TUI Sync).
+5. **Implement** — make the changes, link files/docs/tests as you go.
+6. **Verify** — run linked tests plus local quality gates.
+7. **Evidence** — `pm_comments` with what changed and what passed.
+8. **Close** — `pm_close` then `pm_release` then `TaskUpdate(completed)`.
+
+## Hybrid TUI Sync
+
+pm is the **persistent store**. Claude Code's task panel is the **live session view**.
+
+### After pm_claim (or pm_create when starting fresh)
+
+```
+TaskCreate:
+  subject: "[pm-xxxx] <item title>"
+  description: "Tracking pm item pm-xxxx. AC: <acceptance_criteria>"
+  activeForm: "Implementing pm-xxxx"
+```
+
+Save the returned `taskId`. Then:
+
+```
+TaskUpdate: { taskId: <saved>, status: "in_progress" }
+```
+
+### After pm_close + pm_release
+
+```
+TaskUpdate: { taskId: <saved>, status: "completed" }
+```
 
 ## Step-by-Step MCP Calls
 
@@ -30,6 +56,8 @@ Use this skill for implementation work that changes code, docs, tests, or releas
 { "tool": "pm_claim", "args": { "id": "pm-xxxx", "author": "claude-code-agent" } }
 { "tool": "pm_update", "args": { "id": "pm-xxxx", "author": "claude-code-agent", "options": { "status": "in_progress" } } }
 ```
+
+Then immediately: `TaskCreate` → `TaskUpdate(in_progress)` as shown above.
 
 ### 3. Link Evidence (during implementation)
 ```json
@@ -53,6 +81,8 @@ Use this skill for implementation work that changes code, docs, tests, or releas
 { "tool": "pm_close", "args": { "id": "pm-xxxx", "reason": "Implementation complete. Acceptance criteria met.", "author": "claude-code-agent" } }
 { "tool": "pm_release", "args": { "id": "pm-xxxx", "author": "claude-code-agent" } }
 ```
+
+Then: `TaskUpdate: { taskId: <saved>, status: "completed" }`
 
 ## Verification Defaults
 
@@ -82,3 +112,5 @@ When no existing item matches:
   }
 }
 ```
+
+Then call `TaskCreate` + `TaskUpdate(in_progress)` after claiming.

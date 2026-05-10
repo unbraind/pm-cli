@@ -14,7 +14,22 @@ Use this skill when decomposing features, organizing backlogs, triaging incoming
 3. **Decompose** — break large items into Epic → Feature → Task hierarchy.
 4. **Prioritize** — use `pm_update` to set priority (`0`=critical … `4`=minimal).
 5. **Link parents** — always set `parent` on child items via `pm_update`.
-6. **Validate** — `pm_validate` after batch creates to check consistency.
+6. **Sync TUI** — call `TaskCreate` for any item you claim during this session (see Hybrid TUI Sync).
+7. **Validate** — `pm_validate` after batch creates to check consistency.
+
+## Hybrid TUI Sync
+
+pm is the **persistent store**. Claude Code's task panel is the **live session view**.
+
+When you claim a planning item or start active decomposition work:
+```
+TaskCreate:
+  subject: "[pm-xxxx] Plan: <epic/feature title>"
+  description: "Planning pm-xxxx — decomposing into child items"
+  activeForm: "Planning pm-xxxx"
+```
+Save the `taskId`. Call `TaskUpdate(in_progress)` when active.
+Call `TaskUpdate(completed)` when the planning item is closed.
 
 ## MCP Call Patterns
 

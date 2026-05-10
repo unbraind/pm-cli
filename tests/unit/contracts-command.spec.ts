@@ -30,7 +30,7 @@ async function createProjectExtension(
 describe("contracts command runtime", () => {
   it("returns schema, actions, command flags, and alias surfaces", async () => {
     const result = await runContracts({}, GLOBAL_OPTIONS);
-    expect(result.schema_version).toBe("4.0.0");
+    expect(result.schema_version).toBe("4.0.1");
     expect(result.schema_id).toContain("tool-parameters-v4");
     expect(result.selected.runtime_only).toBe(false);
     expect(result.actions ?? []).toContain("contracts");

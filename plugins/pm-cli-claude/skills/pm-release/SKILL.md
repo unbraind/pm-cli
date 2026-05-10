@@ -10,7 +10,7 @@ Use for release preparation, publication, and post-release verification.
 ## Release Loop
 
 1. **Find or create** the release pm item (after duplicate check with `pm_search`).
-2. **Claim** it and link release docs, changelog, and gate scripts.
+2. **Claim** it — then call `TaskCreate` to show the release in Claude Code's task panel.
 3. **Run local gates** before tagging:
    - `pnpm build` — clean build
    - `node scripts/run-tests.mjs coverage` — full coverage gate
@@ -19,7 +19,23 @@ Use for release preparation, publication, and post-release verification.
 4. **Tag and push** — let CI run.
 5. **Verify GitHub checks** — `gh run list --limit 5` after push.
 6. **Record evidence** with `pm_comments`.
-7. **Close and release** the pm item.
+7. **Close and release** the pm item, then `TaskUpdate(completed)`.
+
+## Hybrid TUI Sync
+
+### After claiming the release item
+```
+TaskCreate:
+  subject: "[pm-xxxx] Release: <version>"
+  description: "Release gate tracking for pm-xxxx"
+  activeForm: "Running release gates"
+```
+Save the `taskId`. Then `TaskUpdate(in_progress)`.
+
+### After pm_close + pm_release
+```
+TaskUpdate: { taskId: <saved>, status: "completed" }
+```
 
 ## MCP Calls
 
@@ -44,7 +60,7 @@ Use for release preparation, publication, and post-release verification.
     "id": "pm-xxxx",
     "author": "claude-code-agent",
     "options": {
-      "add": "Release evidence: build ok. 1087 tests pass. 100% coverage. pm validate ok. GitHub CI green. npm publish ok."
+      "add": "Release evidence: build ok. Tests pass. 100% coverage. pm validate ok. GitHub CI green. npm publish ok."
     }
   }
 }

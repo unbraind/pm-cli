@@ -27,9 +27,9 @@ pi --no-extensions -e .
 
 The root `package.json` declares the Pi manifest:
 
-- `pi.extensions`: `pi/extensions/pm-cli/index.js`
-- `pi.skills`: `pi/skills`
-- `pi.prompts`: `pi/prompts`
+- `pi.extensions`: `.pi/extensions/pm-cli/index.js`
+- `pi.skills`: `.pi/skills`
+- `pi.prompts`: `.pi/prompts`
 
 The extension registers:
 

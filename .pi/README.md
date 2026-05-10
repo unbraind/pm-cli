@@ -19,8 +19,8 @@ pi -e .
 
 Resources exposed by `package.json`:
 
-- `pi/extensions/pm-cli/index.js` — native Pi extension registering the `pm` tool and slash commands.
-- `pi/skills/*` — Pi skills for native pm workflows and release validation.
-- `pi/prompts/*` — prompt templates for pm-tracked work.
+- `.pi/extensions/pm-cli/index.js` — native Pi extension registering the `pm` tool and slash commands.
+- `.pi/skills/*` — Pi skills for native pm workflows and release validation.
+- `.pi/prompts/*` — prompt templates for pm-tracked work.
 
 The extension imports the built package from `dist/`, so run `pnpm build` before local install or before publishing.

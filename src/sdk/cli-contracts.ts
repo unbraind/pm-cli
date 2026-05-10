@@ -2540,6 +2540,55 @@ export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
   $id: "https://unbrained.dev/schemas/pm-cli/tool-parameters-v4.schema.json",
   title: "pm-cli Pi wrapper parameters (action-scoped strict schema)",
-  "x-schema-version": "4.0.0",
+  "x-schema-version": "4.0.1",
+  type: "object",
   oneOf: PM_TOOL_ACTIONS.map((action) => buildActionScopedToolSchema(action)),
 };
+
+function toProviderCompatibleParameterDefinition(key: string, definition: unknown): Record<string, unknown> {
+  const decorated = decorateToolParameterDefinition(key, definition);
+  if (typeof decorated.type === "string") {
+    return decorated;
+  }
+  const anyOf = Array.isArray(decorated.anyOf) ? (decorated.anyOf as Array<Record<string, unknown>>) : [];
+  const firstTypedVariant = anyOf.find((variant) => typeof variant.type === "string");
+  if (firstTypedVariant) {
+    const { anyOf: _anyOf, ...rest } = decorated;
+    return {
+      ...rest,
+      type: firstTypedVariant.type,
+    };
+  }
+  const { anyOf: _anyOf, ...rest } = decorated;
+  return {
+    ...rest,
+    type: "string",
+  };
+}
+
+function buildProviderCompatiblePiToolSchema(): Record<string, unknown> {
+  const properties: Record<string, unknown> = {
+    action: {
+      type: "string",
+      description: PM_TOOL_PARAMETER_METADATA.action?.description ?? "Tool action to execute.",
+    },
+    options: {
+      type: "object",
+      additionalProperties: true,
+      description: "Advanced command options object forwarded to the selected pm action.",
+    },
+  };
+  for (const key of Object.keys(PM_TOOL_PARAMETER_PROPERTIES).sort()) {
+    properties[key] = toProviderCompatibleParameterDefinition(key, PM_TOOL_PARAMETER_PROPERTIES[key]);
+  }
+  return {
+    title: "pm-cli Pi tool parameters (provider-compatible flat schema)",
+    "x-schema-version": "1.0.0",
+    type: "object",
+    additionalProperties: false,
+    required: ["action"],
+    properties,
+  };
+}
+
+export const PM_PI_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = buildProviderCompatiblePiToolSchema();

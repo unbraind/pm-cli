@@ -45,7 +45,7 @@ if (explicitServer && (await exists(explicitServer))) {
   if (repoServer) {
     await import(pathToFileURL(repoServer).href);
   } else {
-    const child = spawn("npx", ["-y", "@unbrained/pm-cli@latest", "pm-mcp"], {
+    const child = spawn("npx", ["-y", "--package=@unbrained/pm-cli@latest", "pm-mcp"], {
       stdio: "inherit",
       env: process.env,
     });

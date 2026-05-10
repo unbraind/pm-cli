@@ -24,10 +24,45 @@ Use this skill for all pm-tracked work. Prefer native MCP tools over shell `pm` 
 1. **Orient** — run `pm_context`, `pm_search`, and `pm_list` before creating new work.
 2. **Reuse** — claim an existing item when one matches instead of creating a duplicate.
 3. **Claim** — call `pm_claim` with `author: "claude-code-agent"` before substantial edits.
-4. **Link evidence** — call `pm_files`, `pm_docs`, `pm_test` as work progresses.
-5. **Add comments** — `pm_comments` for progress notes and verification results.
-6. **Verify** — run `pm_validate` and project tests before closing.
-7. **Close** — `pm_close` with reason, then `pm_release`.
+4. **Sync TUI** — after claiming, call `TaskCreate` to mirror the item in Claude Code's task panel (see Hybrid TUI Sync below).
+5. **Link evidence** — call `pm_files`, `pm_docs`, `pm_test` as work progresses.
+6. **Add comments** — `pm_comments` for progress notes and verification results.
+7. **Verify** — run `pm_validate` and project tests before closing.
+8. **Close** — `pm_close` with reason, then `pm_release`, then `TaskUpdate(completed)`.
+
+## Hybrid TUI Sync
+
+pm is the **persistent store** (cross-session). Claude Code's task panel is the **live session view**.
+
+### When claiming or creating an item
+
+Call `TaskCreate` immediately after `pm_claim` (or after `pm_create` if starting fresh):
+
+```
+TaskCreate:
+  subject: "[pm-xxxx] <item title>"
+  description: "Tracking pm item pm-xxxx. AC: <acceptance_criteria if set>"
+  activeForm: "Implementing pm-xxxx"
+```
+
+Save the returned `taskId` — you'll need it for `TaskUpdate` calls later in this session.
+
+### When setting in_progress
+
+Call `TaskUpdate` with `status: "in_progress"` using the `taskId` from above.
+
+### When closing
+
+Call `pm_close` then `pm_release`, then immediately call:
+```
+TaskUpdate:
+  taskId: <saved taskId>
+  status: "completed"
+```
+
+### Blocked items
+
+If a pm item becomes blocked, call `TaskUpdate` with `status: "in_progress"` and add "(BLOCKED)" to the subject so it's visible in the panel.
 
 ## Tool Call Shape
 

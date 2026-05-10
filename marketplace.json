@@ -1,6 +1,6 @@
 {
   "name": "pm-cli",
-  "description": "pm CLI plugins for Claude Code and AI coding agents — native git-based project management integration.",
+  "description": "Official marketplace for pm CLI — native git-based project management for Claude Code and AI coding agents.",
   "owner": {
     "name": "unbrained",
     "url": "https://github.com/unbraind/pm-cli"
@@ -8,8 +8,8 @@
   "plugins": [
     {
       "name": "pm-cli",
-      "description": "Native pm CLI integration for Claude Code — 18 MCP tools, 5 workflow skills, 9 slash commands, and session context injection for git-based project management without leaving Claude Code.",
-      "version": "1.0.0",
+      "description": "Native pm CLI integration for Claude Code — 18 MCP tools, 5 workflow skills, 14 slash commands, hybrid TUI task tracking, session context injection, and a coordination subagent for git-based project management without leaving Claude Code.",
+      "version": "1.2.0",
       "source": "./plugins/pm-cli-claude",
       "author": {
         "name": "unbrained",
@@ -25,7 +25,9 @@
         "tasks",
         "agents",
         "workflows",
-        "git-native"
+        "git-native",
+        "task-tracker",
+        "ai"
       ]
     }
   ]

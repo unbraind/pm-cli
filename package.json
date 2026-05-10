@@ -48,7 +48,7 @@
     "docs/**",
     ".claude-plugin/**",
     "plugins/**",
-    "pi/**",
+    ".pi/**",
     ".agents/skills/**",
     ".agents/pm/extensions/**",
     "scripts/install.sh",
@@ -98,13 +98,13 @@
   },
   "pi": {
     "extensions": [
-      "./pi/extensions/pm-cli/index.js"
+      "./.pi/extensions/pm-cli/index.js"
     ],
     "skills": [
-      "./pi/skills"
+      "./.pi/skills"
     ],
     "prompts": [
-      "./pi/prompts"
+      "./.pi/prompts"
     ]
   },
   "engines": {

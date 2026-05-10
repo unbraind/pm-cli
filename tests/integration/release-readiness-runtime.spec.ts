@@ -1508,7 +1508,7 @@ describe("release readiness runtime coverage", () => {
       "README.md",
       "LICENSE",
       "docs/**",
-      "pi/**",
+      ".pi/**",
       ".agents/skills/**",
       ".agents/pm/extensions/**",
       "scripts/install.sh",
@@ -1550,9 +1550,9 @@ describe("release readiness runtime coverage", () => {
     expect(packageJson.name).toBe("@unbrained/pm-cli");
     expect(packageJson.publishConfig?.access).toBe("public");
     expect(packageJson.pi).toMatchObject({
-      extensions: ["./pi/extensions/pm-cli/index.js"],
-      skills: ["./pi/skills"],
-      prompts: ["./pi/prompts"],
+      extensions: ["./.pi/extensions/pm-cli/index.js"],
+      skills: ["./.pi/skills"],
+      prompts: ["./.pi/prompts"],
     });
     expect(packageJson.repository?.type).toBe("git");
     expect(packageJson.repository?.url).toContain("github.com");

@@ -8,7 +8,8 @@ Native pm CLI integration for Claude Code. Use pm project management tools direc
 |-----------|----------------|
 | **18 MCP tools** | Full pm surface: context, search, list, get, create, update, claim, release, close, comments, files, docs, test, validate, health, contracts, guide + `pm_run` for everything else |
 | **5 skills** | `pm-workflow`, `pm-developer`, `pm-release`, `pm-audit`, `pm-planner` — auto-loaded as Claude Code skills |
-| **9 slash commands** | `/pm-status`, `/pm-start-task`, `/pm-close-task`, `/pm-triage`, `/pm-audit`, `/pm-search`, `/pm-new`, `/pm-list`, `/pm-calendar` |
+| **14 slash commands** | Full lifecycle coverage — status, start, close, triage, audit, search, new, list, calendar, developer, planner, release, workflow, init |
+| **Hybrid TUI tracking** | pm items sync to Claude Code's task panel — pm is the persistent store, the task panel is the live session view |
 | **Session hook** | Injects active pm item summary at session start when pm is initialized |
 | **pm-coordinator agent** | Subagent for coordinating multi-item and batch operations |
 
@@ -17,11 +18,18 @@ Native pm CLI integration for Claude Code. Use pm project management tools direc
 ### Option A: Plugin marketplace (recommended)
 
 ```
-/plugin marketplace add unbraind/pm-cli
 /plugin install pm-cli@pm-cli
 ```
 
-This clones the repository, reads the marketplace catalog, and installs the plugin including all MCP tools, skills, slash commands, and the session hook — no separate download needed.
+This installs the plugin including all MCP tools, skills, slash commands, hybrid TUI tracking, and the session hook in one step.
+
+To add the marketplace first (if not already configured):
+
+```bash
+claude plugin marketplace add /path/to/pm-cli
+# or from GitHub:
+# claude plugin marketplace add unbraind/pm-cli
+```
 
 ### Option B: Global MCP server via Claude Code CLI (MCP tools only)
 
@@ -58,25 +66,45 @@ Can you show me the current pm project status?
 → Claude uses pm_context + pm_run(calendar) automatically
 
 Start working on the authentication bug.
-→ Claude searches pm, finds or creates an item, claims it
+→ Claude searches pm, finds or creates an item, claims it, syncs to task panel
 
 Close pm-xxxx — the fix is complete.
-→ Claude runs /pm-close-task pm-xxxx with evidence linking
+→ Claude runs /pm-close-task pm-xxxx with evidence linking, closes pm item, marks task panel entry completed
 ```
+
+## Hybrid TUI Task Tracking
+
+pm items automatically sync to Claude Code's task panel during active sessions:
+
+- **pm** = persistent cross-session store (git-native, tracked in `.agents/pm/`)
+- **Claude Code task panel** = live session view with spinners and status
+
+When you `/pm-start-task` or `/pm-developer`:
+1. The pm item is claimed (`pm_claim`)
+2. A matching entry appears in Claude Code's task panel with a spinner (`TaskCreate`)
+3. Work progresses; evidence is linked in pm
+4. On `/pm-close-task`, pm is closed AND the task panel entry shows ✔ completed
+
+This means you get full history in pm (survives restarts, visible in `pm list`) and live visual feedback in the Claude Code session.
 
 ## Slash Commands
 
 | Command | What it does |
 |---------|-------------|
 | `/pm-status` | Quick status snapshot — active items + calendar |
-| `/pm-start-task [id or keywords]` | Find, claim, and start a pm item |
-| `/pm-close-task [id]` | Verify, evidence, close, and release an item |
+| `/pm-start-task [id or keywords]` | Find, claim, and start a pm item (with TUI sync) |
+| `/pm-close-task [id]` | Verify, evidence, close, and release an item (marks TUI completed) |
 | `/pm-triage <request>` | Triage a new request into pm tracking |
-| `/pm-audit` | Full repository audit with findings |
+| `/pm-audit` | Full repository audit with findings (TUI tracked) |
 | `/pm-search <query>` | Search pm items by keywords, tags, or status |
 | `/pm-new <title>` | Quick-create a new pm item (with duplicate check) |
 | `/pm-list [filter]` | List active or filtered pm items |
 | `/pm-calendar [view]` | Show upcoming deadlines and calendar events |
+| `/pm-developer [id or keywords]` | Full developer loop — claim, implement, verify, close |
+| `/pm-planner [scope]` | Plan and decompose work — survey, create hierarchy, prioritize |
+| `/pm-release [version or id]` | Release gates — build, tests, coverage, CI, publish |
+| `/pm-workflow [id or description]` | General pm workflow loop with TUI tracking |
+| `/pm-init [project name]` | Initialize pm in the current project |
 
 ## Skills
 
@@ -120,6 +148,21 @@ Close pm-xxxx — the fix is complete.
 
 **`pm_run` actions:** `init`, `calendar`, `activity`, `aggregate`, `dedupe-audit`, `normalize`, `reindex`, `extension`, `history`, `stats`, `append`, `notes`, `learnings`, `test-all`, `comments-audit`, `gc`, `templates-list`, `templates-save`, `templates-show`, `test-runs-list`, `test-runs-status`, `test-runs-logs`, `test-runs-stop`, `test-runs-resume`, `config`, `completion`
 
+## Hybrid TUI Sync Pattern
+
+All skills and commands implement this pattern for every claimed item:
+
+```
+1. pm_claim → [pm stores claim]
+2. TaskCreate { subject: "[pm-xxxx] title", activeForm: "Working on pm-xxxx" }
+   → [spinner appears in Claude Code task panel]
+3. TaskUpdate { status: "in_progress" }
+4. ... do work, link evidence in pm ...
+5. pm_close → pm_release → [pm stores closure]
+6. TaskUpdate { status: "completed" }
+   → [✔ appears in Claude Code task panel]
+```
+
 ## Safety
 
 - Never pass `path` during real repository tracking — only use it for sandbox/test runs.
@@ -131,7 +174,7 @@ Close pm-xxxx — the fix is complete.
 
 - Node.js ≥ 20
 - pm CLI available via npx (auto-resolved) or installed globally: `npm install -g @unbrained/pm-cli`
-- Project initialized with `pm init`
+- Project initialized with `pm init` (or use `/pm-init`)
 
 ## Links
 
