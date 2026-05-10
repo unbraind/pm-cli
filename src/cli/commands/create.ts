@@ -475,11 +475,14 @@ function parseDependencies(
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
   assertNoLegacyNoneTokens(raw, "--dep", "Use --clear-deps to clear dependencies.");
   const values: Dependency[] = raw.map((entry) => {
-    const kv = parseCsvKv(entry, "--dep");
+    const trimmedEntry = entry.trim();
+    const kv = looksLikeStructuredEntry(trimmedEntry, ["id", "kind", "author", "created_at"])
+      ? parseCsvKv(entry, "--dep")
+      : { id: trimmedEntry, kind: "related" };
     const id = parseOptionalString(kv.id);
     const kind = parseOptionalString(kv.kind);
     if (!id || !kind) {
-      throw new PmCliError("--dep requires id and kind", EXIT_CODE.USAGE);
+      throw new PmCliError("--dep requires id and kind, or a bare item id to create a related dependency", EXIT_CODE.USAGE);
     }
     if (id.trim().toLowerCase() === "undefined") {
       throw new PmCliError(
@@ -495,6 +498,14 @@ function parseDependencies(
     };
   });
   return { values, explicitEmpty: false };
+}
+
+function looksLikeStructuredEntry(raw: string, keys: readonly string[]): boolean {
+  if (raw.startsWith("```") || raw.includes("\n")) {
+    return true;
+  }
+  const keyPattern = keys.map((key) => key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  return new RegExp(`^(?:[-*+]\\s+)?(?:${keyPattern})\\s*[:=]`, "i").test(raw);
 }
 
 export function parseLogSeed(
@@ -527,17 +538,18 @@ export function parseLogSeed(
     try {
       kv = parseCsvKv(entry, optionName);
     } catch (error: unknown) {
-      if (optionName === "--comment") {
+      if (optionName === "--comment" || optionName === "--note" || optionName === "--learning") {
         return buildPlainTextCommentSeed();
       }
       throw error;
     }
     const unsupportedKeys = Object.keys(kv).filter((key) => !LOG_SEED_ALLOWED_KEYS.has(key));
     if (unsupportedKeys.length > 0) {
-      if (optionName === "--comment" && !trimmedEntry.includes(",") && !trimmedEntry.includes("\n")) {
-        return buildPlainTextCommentSeed();
-      }
-      throw new PmCliError(buildInvalidLogSeedKeysMessage(optionName, unsupportedKeys), EXIT_CODE.USAGE);
+      return {
+        created_at: parseCreatedAt(kv.created_at, nowValue),
+        author: parseOptionalString(kv.author) ?? fallbackAuthor,
+        text: trimmedEntry,
+      };
     }
     const text = kv.text ?? "";
     if (text === "") {
@@ -556,9 +568,12 @@ export function parseFiles(raw: string[] | undefined): { values: LinkedFile[] | 
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
   assertNoLegacyNoneTokens(raw, "--file", "Use --clear-files to clear linked files.");
   const values = raw.map((entry) => {
-    const kv = parseCsvKv(entry, "--file");
+    const trimmedEntry = entry.trim();
+    const kv = looksLikeStructuredEntry(trimmedEntry, ["path", "scope", "note"])
+      ? parseCsvKv(entry, "--file")
+      : { path: trimmedEntry };
     if (!kv.path) {
-      throw new PmCliError("--file requires path=<value>", EXIT_CODE.USAGE);
+      throw new PmCliError("--file requires path=<value> or a bare file path", EXIT_CODE.USAGE);
     }
     return {
       path: kv.path,
@@ -770,11 +785,32 @@ export function parseTests(raw: string[] | undefined): { values: LinkedTest[] | 
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
   assertNoLegacyNoneTokens(raw, "--test", "Use --clear-tests to clear linked tests.");
   const values = raw.map((entry) => {
-    const kv = parseCsvKv(entry, "--test");
+    const trimmedEntry = entry.trim();
+    const kv = looksLikeStructuredEntry(trimmedEntry, [
+      "command",
+      "path",
+      "scope",
+      "timeout",
+      "timeout_seconds",
+      "pm_context_mode",
+      "env_set",
+      "env_clear",
+      "shared_host_safe",
+      "assert_stdout_contains",
+      "assert_stdout_regex",
+      "assert_stderr_contains",
+      "assert_stderr_regex",
+      "assert_stdout_min_lines",
+      "assert_json_field_equals",
+      "assert_json_field_gte",
+      "note",
+    ])
+      ? parseCsvKv(entry, "--test")
+      : { command: trimmedEntry };
     const command = parseOptionalString(kv.command);
     const filePath = parseOptionalString(kv.path);
     if (!command) {
-      throw new PmCliError("--test requires command=<value> (path=<value> is optional metadata)", EXIT_CODE.USAGE);
+      throw new PmCliError("--test requires command=<value> or a bare command (path=<value> is optional metadata)", EXIT_CODE.USAGE);
     }
     const timeoutSecondsRaw = parseOptionalString(kv.timeout_seconds);
     const timeoutAliasRaw = parseOptionalString(kv.timeout);
@@ -808,9 +844,12 @@ export function parseDocs(raw: string[] | undefined): { values: LinkedDoc[] | un
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
   assertNoLegacyNoneTokens(raw, "--doc", "Use --clear-docs to clear linked docs.");
   const values = raw.map((entry) => {
-    const kv = parseCsvKv(entry, "--doc");
+    const trimmedEntry = entry.trim();
+    const kv = looksLikeStructuredEntry(trimmedEntry, ["path", "scope", "note"])
+      ? parseCsvKv(entry, "--doc")
+      : { path: trimmedEntry };
     if (!kv.path) {
-      throw new PmCliError("--doc requires path=<value>", EXIT_CODE.USAGE);
+      throw new PmCliError("--doc requires path=<value> or a bare doc path", EXIT_CODE.USAGE);
     }
     return {
       path: kv.path,

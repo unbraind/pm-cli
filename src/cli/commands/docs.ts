@@ -74,12 +74,20 @@ function ensureScope(raw: string | undefined): LinkScope {
   return value;
 }
 
+function looksLikeStructuredPathEntry(raw: string): boolean {
+  if (raw.startsWith("```") || raw.includes("\n")) {
+    return true;
+  }
+  return /^(?:[-*+]\s+)?(?:path|scope|note)\s*[:=]/i.test(raw);
+}
+
 function parseAddEntries(raw: string[] | undefined): LinkedDoc[] {
   if (!raw) return [];
   return raw.map((entry) => {
-    const kv = parseCsvKv(entry, "--add");
+    const trimmed = entry.trim();
+    const kv = looksLikeStructuredPathEntry(trimmed) ? parseCsvKv(entry, "--add") : { path: trimmed };
     if (!kv.path) {
-      throw new PmCliError("--add requires path=<value>", EXIT_CODE.USAGE);
+      throw new PmCliError("--add requires path=<value> or a bare doc path", EXIT_CODE.USAGE);
     }
     return {
       path: kv.path,

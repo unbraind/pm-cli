@@ -903,6 +903,65 @@ describe("runCreate", () => {
     });
   });
 
+  it("accepts intuitive rich agent seed inputs without dropping metadata", async () => {
+    await withTempPmPath(async (context) => {
+      const parent = await runCreate(
+        baseCreateOptions({
+          title: "intuitive-parent",
+          description: "parent for bare dependency seed",
+          createMode: "progressive",
+        }),
+        { path: context.pmPath },
+      );
+
+      const result = await runCreate(
+        baseCreateOptions({
+          title: "intuitive-agent-seeds",
+          createMode: "progressive",
+          dep: [parent.item.id],
+          comment: ["author=agent,text=Implemented parser fallback,scope=project,evidence=manual dogfood"],
+          note: ["Agent note with comma, scope: project, and retry context"],
+          learning: ["text=Keep the first rich agent payload intact,source=dogfood"],
+          file: ["src/cli/commands/create.ts"],
+          test: ["node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts"],
+          doc: ["README.md"],
+        }),
+        { path: context.pmPath },
+      );
+
+      expect(result.item.dependencies).toEqual([
+        expect.objectContaining({
+          id: parent.item.id,
+          kind: "related",
+        }),
+      ]);
+      expect(result.item.comments?.[0]).toMatchObject({
+        author: "agent",
+        text: "author=agent,text=Implemented parser fallback,scope=project,evidence=manual dogfood",
+      });
+      expect(result.item.notes?.[0]?.text).toBe("Agent note with comma, scope: project, and retry context");
+      expect(result.item.learnings?.[0]?.text).toBe("text=Keep the first rich agent payload intact,source=dogfood");
+      expect(result.item.files).toEqual([
+        expect.objectContaining({
+          path: "src/cli/commands/create.ts",
+          scope: "project",
+        }),
+      ]);
+      expect(result.item.tests).toEqual([
+        expect.objectContaining({
+          command: "node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts",
+          scope: "project",
+        }),
+      ]);
+      expect(result.item.docs).toEqual([
+        expect.objectContaining({
+          path: "README.md",
+          scope: "project",
+        }),
+      ]);
+    });
+  });
+
   it("parses linked-test runtime directives and assertion metadata in create seeds", async () => {
     await withTempPmPath(async (context) => {
       const result = await runCreate(
@@ -1279,27 +1338,36 @@ describe("runCreate", () => {
     });
   });
 
-  it("rejects ambiguous unquoted key-like continuations for log seed text", async () => {
+  it("preserves ambiguous unquoted key-like continuations for log seed text", async () => {
     await withTempPmPath(async (context) => {
       for (const field of ["comment", "note", "learning"] as const) {
         const overrides: Partial<CreateCommandOptions> = {
           title: `create-ambiguous-${field}-seed`,
         };
         overrides[field] = ["author=seed-author,text=hello,scope:project"];
-        await expect(runCreate(baseCreateOptions(overrides), { path: context.pmPath })).rejects.toThrow(
-          "supports only author, created_at, and text seed fields",
+        const result = await runCreate(baseCreateOptions(overrides), { path: context.pmPath });
+        const entries = result.item[`${field}s` as "comments" | "notes" | "learnings"];
+        expect(entries?.at(0)).toEqual(
+          expect.objectContaining({
+            author: "seed-author",
+            text: "author=seed-author,text=hello,scope:project",
+          }),
         );
       }
 
-      await expect(
-        runCreate(
-          baseCreateOptions({
-            title: "create-ambiguous-comment-seed-multiple-keys",
-            comment: ["author=seed-author,text=hello,scope:project,priority:1"],
-          }),
-          { path: context.pmPath },
-        ),
-      ).rejects.toThrow("Found unsupported keys");
+      const preserved = await runCreate(
+        baseCreateOptions({
+          title: "create-ambiguous-comment-seed-multiple-keys",
+          comment: ["author=seed-author,text=hello,scope:project,priority:1"],
+        }),
+        { path: context.pmPath },
+      );
+      expect(preserved.item.comments?.at(0)).toEqual(
+        expect.objectContaining({
+          author: "seed-author",
+          text: "author=seed-author,text=hello,scope:project,priority:1",
+        }),
+      );
     });
   });
 

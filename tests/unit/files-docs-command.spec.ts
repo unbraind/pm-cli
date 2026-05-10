@@ -262,6 +262,22 @@ describe("runFiles", () => {
     });
   });
 
+  it("accepts bare file paths for agent-friendly add entries", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "files-bare-add");
+      const result = await runFiles(id, { add: ["README.md"], message: "add bare file path" }, { path: context.pmPath });
+
+      expect(result.changed).toBe(true);
+      expect(result.count).toBe(1);
+      expect(result.files).toEqual([
+        expect.objectContaining({
+          path: "README.md",
+          scope: "project",
+        }),
+      ]);
+    });
+  });
+
   it("resolves mutation author from explicit/env/settings/unknown fallbacks", async () => {
     await withTempPmPath(async (context) => {
       await assertAuthorResolution(context, runFiles, "path=README.md,scope=project", "files");
@@ -645,6 +661,22 @@ describe("runDocs", () => {
       );
       expect(removed.count).toBe(0);
       expect(removed.changed).toBe(true);
+    });
+  });
+
+  it("accepts bare doc paths for agent-friendly add entries", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "docs-bare-add");
+      const result = await runDocs(id, { add: ["README.md"], message: "add bare doc path" }, { path: context.pmPath });
+
+      expect(result.changed).toBe(true);
+      expect(result.count).toBe(1);
+      expect(result.docs).toEqual([
+        expect.objectContaining({
+          path: "README.md",
+          scope: "project",
+        }),
+      ]);
     });
   });
 

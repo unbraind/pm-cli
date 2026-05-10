@@ -1014,14 +1014,22 @@ function getRuntimeSafetySkipReason(command: string): string | undefined {
   return 'Linked test command skipped: Linked test commands must not invoke "pm test-all"; this creates recursive orchestration.';
 }
 
+function looksLikeStructuredLinkedTestEntry(raw: string): boolean {
+  if (raw.startsWith("```") || raw.includes("\n")) {
+    return true;
+  }
+  return /^(?:[-*+]\s+)?(?:command|path|scope|timeout|timeout_seconds|pm_context_mode|env_set|env_clear|shared_host_safe|assert_stdout_contains|assert_stdout_regex|assert_stderr_contains|assert_stderr_regex|assert_stdout_min_lines|assert_json_field_equals|assert_json_field_gte|note)\s*[:=]/i.test(raw);
+}
+
 function parseAddEntries(raw: string[] | undefined): LinkedTest[] {
   if (!raw) return [];
   return raw.map((entry) => {
-    const kv = parseCsvKv(entry, "--add");
+    const trimmed = entry.trim();
+    const kv = looksLikeStructuredLinkedTestEntry(trimmed) ? parseCsvKv(entry, "--add") : { command: trimmed };
     const command = kv.command?.trim() || undefined;
     const filePath = kv.path?.trim() || undefined;
     if (!command) {
-      throw new PmCliError("--add requires command=<value> (path=<value> is optional metadata)", EXIT_CODE.USAGE);
+      throw new PmCliError("--add requires command=<value> or a bare command (path=<value> is optional metadata)", EXIT_CODE.USAGE);
     }
     if (command) {
       assertNoRecursiveTestAllCommand(command);

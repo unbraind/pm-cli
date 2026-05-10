@@ -844,6 +844,22 @@ describe("runTest", () => {
     });
   });
 
+  it("accepts bare commands for agent-friendly linked test entries", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "bare-test-command");
+      const result = await runTest(id, { add: ["pnpm build"], message: "add bare command" }, { path: context.pmPath });
+
+      expect(result.changed).toBe(true);
+      expect(result.count).toBe(1);
+      expect(result.tests).toEqual([
+        expect.objectContaining({
+          command: "pnpm build",
+          scope: "project",
+        }),
+      ]);
+    });
+  });
+
   it("accepts markdown and stdin token payloads for add/remove entries", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "test-markdown-stdin");

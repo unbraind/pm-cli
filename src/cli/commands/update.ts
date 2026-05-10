@@ -876,17 +876,25 @@ function parseOptionalDependencyString(value: string | undefined): string | unde
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
+function looksLikeStructuredDependencyEntry(raw: string): boolean {
+  if (raw.startsWith("```") || raw.includes("\n")) {
+    return true;
+  }
+  return /^(?:[-*+]\s+)?(?:id|kind|author|created_at|source_kind)\s*[:=]/i.test(raw);
+}
+
 function parseDependencyAdditions(raw: string[] | undefined, prefix: string, nowIso: string): ParsedDependencyUpdates {
   if (!raw) {
     return { additions: [] };
   }
   assertNoLegacyNoneTokens(raw, "--dep", "Use --clear-deps to clear dependencies.");
   const additions: Dependency[] = raw.map((entry) => {
-    const kv = parseCsvKv(entry, "--dep");
+    const trimmedEntry = entry.trim();
+    const kv = looksLikeStructuredDependencyEntry(trimmedEntry) ? parseCsvKv(entry, "--dep") : { id: trimmedEntry, kind: "related" };
     const id = kv.id?.trim();
     const kind = kv.kind?.trim();
     if (!id || !kind) {
-      throw new PmCliError("--dep requires id and kind", EXIT_CODE.USAGE);
+      throw new PmCliError("--dep requires id and kind, or a bare item id to add a related dependency", EXIT_CODE.USAGE);
     }
     if (id.toLowerCase() === "undefined") {
       throw new PmCliError(
