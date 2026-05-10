@@ -66,6 +66,7 @@ import {
   sentrySetCommandContext,
   sentryStartCommandSpan,
 } from "../core/sentry/helpers.js";
+import { ensureSentryInit } from "../core/sentry/instrument.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
@@ -473,6 +474,10 @@ async function runAndClearAfterCommandHooks(outcome: TelemetryCommandOutcome): P
   if (runtime.profileEnabled && hookWarnings.length > 0) {
     printError(`profile:extensions hook_warnings=${formatHookWarnings(hookWarnings)}`);
   }
+}
+
+async function ensureSentryForErrorReporting(): Promise<void> {
+  await ensureSentryInit();
 }
 
 function extractCommandScopedOptions(
@@ -1325,6 +1330,7 @@ async function main(): Promise<void> {
         },
         resolutionStage: "execute",
       });
+      await ensureSentryForErrorReporting();
       sentryLogCliUsageError({
         command: attemptedCommand,
         error_code: classification.code,
@@ -1402,6 +1408,7 @@ async function main(): Promise<void> {
             },
             resolutionStage: "parse",
           });
+          await ensureSentryForErrorReporting();
           sentryLogCliUsageError({
             command: unknownToken,
             error_code: classification.code,
@@ -1496,6 +1503,7 @@ async function main(): Promise<void> {
           },
           resolutionStage: "parse",
         });
+        await ensureSentryForErrorReporting();
         sentryLogCliUsageError({
           command: attemptedCommand,
           error_code: classification.code,
@@ -1536,6 +1544,7 @@ async function main(): Promise<void> {
       }
     }
 
+    await ensureSentryForErrorReporting();
     sentryCaptureCliError(error);
     const message = describeUnknownError(error);
     const classification = classifyUnknownError(message);

@@ -1574,11 +1574,13 @@ describe("release readiness runtime coverage", () => {
     expect(packageJson.scripts?.["test:coverage"]).toBe("node scripts/run-tests.mjs coverage");
   });
 
-  it("keeps Sentry startup non-blocking for fast CLI commands", async () => {
+  it("keeps Sentry startup lazy for fast CLI commands", async () => {
     const cliEntrypoint = await readRepoText("src/cli.ts");
+    const mainSource = await readRepoText("src/cli/main.ts");
 
-    expect(cliEntrypoint).toContain("void ensureSentryInit().catch");
+    expect(cliEntrypoint).not.toContain("ensureSentryInit");
     expect(cliEntrypoint).not.toContain("await ensureSentryInit()");
+    expect(mainSource).toContain("ensureSentryForErrorReporting");
   });
 
   it("keeps vitest coverage include list aligned with src ts modules", async () => {
