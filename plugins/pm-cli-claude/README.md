@@ -1,6 +1,6 @@
 # pm CLI — Claude Code Plugin
 
-Native pm CLI integration for Claude Code. Use pm project management tools directly through Claude Code's MCP protocol — no shell invocations, no context switching.
+Native pm CLI integration for Claude Code. Use pm project management tools directly through Claude Code's MCP protocol — no shell invocations, no context switching, no `pm` CLI required.
 
 ## What's Included
 
@@ -9,29 +9,37 @@ Native pm CLI integration for Claude Code. Use pm project management tools direc
 | **18 MCP tools** | Full pm surface: context, search, list, get, create, update, claim, release, close, comments, files, docs, test, validate, health, contracts, guide + `pm_run` for everything else |
 | **5 skills** | `pm-workflow`, `pm-developer`, `pm-release`, `pm-audit`, `pm-planner` — auto-loaded as Claude Code skills |
 | **14 slash commands** | Full lifecycle coverage — status, start, close, triage, audit, search, new, list, calendar, developer, planner, release, workflow, init |
+| **3 subagents** | `pm-coordinator` (batch/multi-item), `pm-triage-agent` (duplicate-safe item creation), `pm-verification-agent` (evidence + close readiness), and a `pm-delivery-chain` orchestrator |
 | **Hybrid TUI tracking** | pm items sync to Claude Code's task panel — pm is the persistent store, the task panel is the live session view |
-| **Session hook** | Injects active pm item summary at session start when pm is initialized |
-| **pm-coordinator agent** | Subagent for coordinating multi-item and batch operations |
+| **Session hook** | Injects active pm item summary at session start when pm is initialized (uses native modules, no CLI required) |
 
 ## Installation
 
-### Option A: Plugin marketplace (recommended)
+### Option A: Plugin marketplace — canonical install (recommended)
+
+```
+/plugin install pm-cli@pm
+```
+
+First time: add the marketplace if it's not configured yet:
+
+```bash
+claude plugin marketplace add /path/to/pm-cli
+# or after npm publish:
+# claude plugin marketplace add unbraind/pm-cli
+```
+
+This installs all 18 MCP tools, 5 skills, 14 slash commands, 3 subagents, hybrid TUI tracking, and the session hook in one step.
+
+### Option B: Legacy marketplace alias (also works)
 
 ```
 /plugin install pm-cli@pm-cli
 ```
 
-This installs the plugin including all MCP tools, skills, slash commands, hybrid TUI tracking, and the session hook in one step.
+Both `pm` and `pm-cli` marketplace IDs resolve to the same plugin.
 
-To add the marketplace first (if not already configured):
-
-```bash
-claude plugin marketplace add /path/to/pm-cli
-# or from GitHub:
-# claude plugin marketplace add unbraind/pm-cli
-```
-
-### Option B: Global MCP server via Claude Code CLI (MCP tools only)
+### Option C: Global MCP server via Claude Code CLI (MCP tools only)
 
 ```bash
 claude mcp add --transport stdio pm-cli-native -- npx -y @unbrained/pm-cli pm-mcp
@@ -39,9 +47,9 @@ claude mcp add --transport stdio pm-cli-native -- npx -y @unbrained/pm-cli pm-mc
 
 This gives you the 18 MCP tools but not the skills, slash commands, or session hook.
 
-### Option C: Direct `.mcp.json` (project-scoped MCP only)
+### Option D: Direct `.mcp.json` (project-scoped MCP only)
 
-Add to your project's `.mcp.json` for MCP tools in a single project:
+Add to your project's `.mcp.json`:
 
 ```json
 {
@@ -70,6 +78,9 @@ Start working on the authentication bug.
 
 Close pm-xxxx — the fix is complete.
 → Claude runs /pm-close-task pm-xxxx with evidence linking, closes pm item, marks task panel entry completed
+
+Triage this request: add dark mode toggle to settings screen
+→ Claude spawns pm-triage-agent, checks duplicates, creates pm item with AC, hands off to /pm-developer
 ```
 
 ## Hybrid TUI Task Tracking
@@ -115,6 +126,20 @@ This means you get full history in pm (survives restarts, visible in `pm list`) 
 | `pm-release` | Release preparation — gates, tagging, publish |
 | `pm-audit` | Repository health audits — validate, dedupe, aggregate |
 | `pm-planner` | Planning — decompose epics, prioritize backlog, triage |
+
+## Subagents
+
+| Agent | Role |
+|-------|------|
+| `pm-coordinator` | Multi-item and batch coordination — batch updates, audit workflows, release gate sequences |
+| `pm-triage-agent` | Duplicate-safe item creation — orient, search, establish lineage, produce implementation-ready item |
+| `pm-verification-agent` | Closure evidence — read item, check AC, run tests, validate, produce structured close recommendation |
+| `pm-delivery-chain` | End-to-end orchestrator — runs triage → implement → verify as a single tracked loop |
+
+Use subagents via Claude Code's built-in `Agent` tool:
+```
+Spawn pm-triage-agent to set up the pm item for: add OAuth2 login support
+```
 
 ## MCP Tools Reference
 
@@ -163,6 +188,22 @@ All skills and commands implement this pattern for every claimed item:
    → [✔ appears in Claude Code task panel]
 ```
 
+## Session Context Injection
+
+At session start, the hook runs natively (no `pm` CLI required):
+- Walks up directories to find `dist/pi/native.js` in the repo checkout
+- Falls back to `npx @unbrained/pm-cli` if no local dist is found
+- Injects a compact summary of in-progress/open/blocked items
+
+Example output:
+```
+pm tracker: 2 in_progress, 1 open
+  • [pm-abc1] Add OAuth2 login (in_progress)
+  • [pm-abc2] Fix test flakiness (in_progress)
+  • [pm-abc3] Update docs (open)
+Use pm_context tool or /pm-status for full details.
+```
+
 ## Safety
 
 - Never pass `path` during real repository tracking — only use it for sandbox/test runs.
@@ -173,12 +214,12 @@ All skills and commands implement this pattern for every claimed item:
 ## Requirements
 
 - Node.js ≥ 20
-- pm CLI available via npx (auto-resolved) or installed globally: `npm install -g @unbrained/pm-cli`
+- pm CLI resolved automatically via local dist (in repo) or `npx @unbrained/pm-cli` (no global install needed)
 - Project initialized with `pm init` (or use `/pm-init`)
 
 ## Links
 
 - [pm CLI docs](https://github.com/unbraind/pm-cli/tree/main/docs)
-- [Command reference](https://github.com/unbraind/pm-cli/blob/main/docs/COMMANDS.md)
 - [Architecture guide](https://github.com/unbraind/pm-cli/blob/main/docs/ARCHITECTURE.md)
+- [Extension guide](https://github.com/unbraind/pm-cli/blob/main/docs/EXTENSIONS.md)
 - [CHANGELOG](https://github.com/unbraind/pm-cli/blob/main/CHANGELOG.md)

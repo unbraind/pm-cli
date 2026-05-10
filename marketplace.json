@@ -1,5 +1,5 @@
 {
-  "name": "pm-cli",
+  "name": "pm",
   "description": "Official marketplace for pm CLI — native git-based project management for Claude Code and AI coding agents.",
   "owner": {
     "name": "unbrained",
@@ -8,8 +8,8 @@
   "plugins": [
     {
       "name": "pm-cli",
-      "description": "Native pm CLI integration for Claude Code — 18 MCP tools, 5 workflow skills, 14 slash commands, hybrid TUI task tracking, session context injection, and a coordination subagent for git-based project management without leaving Claude Code.",
-      "version": "1.2.0",
+      "description": "Native pm CLI integration for Claude Code — 18 MCP tools, 5 workflow skills, 14 slash commands, 3 subagents, hybrid TUI task tracking, session context injection, and coordination subagents for git-based project management without leaving Claude Code.",
+      "version": "1.3.0",
       "source": "./plugins/pm-cli-claude",
       "author": {
         "name": "unbrained",

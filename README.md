@@ -51,13 +51,21 @@ Project-local invocation also works:
 npx @unbrained/pm-cli --help
 ```
 
+For Claude Code, install the native plugin (no `pm` CLI required):
+
+```
+/plugin install pm-cli@pm
+```
+
+This registers 18 MCP tools, 5 workflow skills, 14 slash commands, 3 subagents, hybrid TUI tracking, and a session-start context hook — all without shelling out to the `pm` CLI.
+
 For Pi, install the native package integration after publish:
 
 ```bash
 pi install npm:@unbrained/pm-cli
 ```
 
-This registers a native `pm` tool, Pi skills, and prompt templates without requiring Pi to run the `pm` shell command.
+This registers a native `pm` tool, custom TUI panels/renderers (`/pm-board`, `/pm-item`, `/pm-history`), Pi skills, prompt templates, and optional pi-subagents setup without requiring Pi to run the `pm` shell command.
 
 ## 60 Second Example
 
