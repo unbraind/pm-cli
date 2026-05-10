@@ -67,11 +67,12 @@ for (const relPath of pluginFiles) {
 }
 console.log(`Plugin file structure: ${pluginFiles.length} files verified`);
 
-// Verify marketplace.json name is "pm-cli" and plugin name matches plugin.json
+// Verify marketplace.json name is "pm" and plugin name matches plugin.json.
+// The marketplace is the repo-level catalog; the plugin entry remains pm-cli.
 const { readFileSync } = await import("node:fs");
 const rootMarketplace = JSON.parse(readFileSync(path.join(repoRoot, ".claude-plugin", "marketplace.json"), "utf-8"));
-if (rootMarketplace.name !== "pm-cli") {
-  throw new Error(`Root marketplace.json name must be "pm-cli", got "${rootMarketplace.name}"`);
+if (rootMarketplace.name !== "pm") {
+  throw new Error(`Root marketplace.json name must be "pm", got "${rootMarketplace.name}"`);
 }
 const marketplacePluginName = rootMarketplace.plugins?.[0]?.name;
 if (marketplacePluginName !== "pm-cli") {

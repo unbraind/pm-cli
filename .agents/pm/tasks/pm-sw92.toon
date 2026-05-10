@@ -1,0 +1,27 @@
+id: pm-sw92
+title: Fix Claude plugin smoke marketplace contract
+description: Align the Claude plugin smoke check with the current root marketplace manifest contract so pushed main CI can pass.
+type: Task
+status: closed
+priority: 0
+tags[4]: ci,claude,plugin,pm-cli
+created_at: "2026-05-10T09:01:58.202Z"
+updated_at: "2026-05-10T09:03:13.142Z"
+author: codex-agent
+acceptance_criteria: Claude plugin smoke check passes locally; CI for pushed main is green; changed smoke contract is linked with evidence.
+parent: pm-0c9q
+resolution: Updated the Claude plugin smoke script to match the canonical root marketplace name pm while still validating plugin entry name pm-cli.
+expected_result: CI Claude plugin smoke accepts the current marketplace manifest and continues to catch plugin-name drift.
+actual_result: Local smoke and integration contract tests pass through pm linked-test execution.
+comments[2]{created_at,author,text}:
+  "2026-05-10T09:01:58.202Z",codex-agent,"Duplicate-check evidence: CI for f566796 failed in Claude Code plugin smoke; ran pm search Claude plugin smoke marketplace name pm-cli pm --limit 10 and found pm-0c9q as the active plugin parent plus closed historical items. This child tracks the focused CI contract fix without taking over unrelated pi-agent edits."
+  "2026-05-10T09:02:42.920Z",codex-agent,"Evidence: aligned scripts/smoke-claude-plugin.mjs with the existing integration contract where the root marketplace name is pm and the contained plugin remains pm-cli. Verification passed: node scripts/smoke-claude-plugin.mjs; node scripts/run-tests.mjs test -- tests/integration/claude-plugin-contract.spec.ts."
+files[1]{path,scope,note}:
+  scripts/smoke-claude-plugin.mjs,project,marketplace name smoke contract
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/claude-plugin-contract.spec.ts,null,project,180,null,null,null,null,null,null,null,null,null,null,null,marketplace contract regression
+  node scripts/smoke-claude-plugin.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,Claude plugin smoke
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mozjovwu-s98y57,test,passed,"2026-05-10T09:02:48.984Z","2026-05-10T09:02:56.142Z","2026-05-10T09:02:56.142Z",null,null,2,0,0,null,null,null
+close_reason: Claude plugin smoke marketplace contract fixed and linked tests passed.
+body: ""
