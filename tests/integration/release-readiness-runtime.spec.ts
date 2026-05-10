@@ -1581,12 +1581,14 @@ describe("release readiness runtime coverage", () => {
     const uncoveredFiles = sourceFiles.filter((filePath) => !matchesAnyPattern(filePath, includePatterns));
     expect(uncoveredFiles.sort((left, right) => left.localeCompare(right))).toEqual([
       "src/cli.ts",
+      "src/cli/argv-utils.ts",
       "src/cli/bootstrap-args.ts",
       "src/cli/commander-usage.ts",
       "src/cli/commands/aggregate.ts",
       "src/cli/commands/comments-audit.ts",
       "src/cli/commands/dedupe-audit.ts",
       "src/cli/commands/guide.ts",
+      "src/cli/commands/metadata-normalizers.ts",
       "src/cli/commands/normalize.ts",
       "src/cli/commands/templates.ts",
       "src/cli/commands/test-runs.ts",
@@ -1613,6 +1615,7 @@ describe("release readiness runtime coverage", () => {
       "src/core/schema/runtime-schema.ts",
       "src/core/sentry/helpers.ts",
       "src/core/sentry/instrument.ts",
+      "src/core/shared/levenshtein.ts",
       "src/core/shared/primitives.ts",
       "src/core/shared/text-normalization.ts",
       "src/core/store/front-matter-cache.ts",

@@ -73,6 +73,11 @@ import type { PmSettings } from "../types/index.js";
 import { coerceLooseCommandOptionsWithFlagDefinitions, parseLooseCommandOptions } from "./extension-command-options.js";
 import { attachRichHelpText } from "./help-content.js";
 import {
+  extractProvidedOptionFlags,
+  normalizeLongOptionFlag,
+  renderPmCommand,
+} from "./argv-utils.js";
+import {
   classifyCommanderError,
   classifyPmCliError,
   classifyUnknownError,
@@ -205,38 +210,8 @@ function describeUnknownError(error: unknown): string {
   return "Unknown failure";
 }
 
-function normalizeLongOptionFlag(token: string): string | undefined {
-  if (!token.startsWith("--")) {
-    return undefined;
-  }
-  const key = token.includes("=") ? token.slice(0, token.indexOf("=")) : token;
-  return `--${key
-    .slice(2)
-    .replace(/_/g, "-")
-    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
-    .toLowerCase()}`;
-}
-
-function extractProvidedOptionFlags(argv: string[]): string[] {
-  const provided = new Set<string>();
-  for (const token of argv) {
-    const normalized = normalizeLongOptionFlag(token);
-    if (normalized) {
-      provided.add(normalized);
-    }
-  }
-  return [...provided].sort((left, right) => left.localeCompare(right));
-}
-
-function quoteCommandArg(arg: string): string {
-  if (/^[A-Za-z0-9._:/@=-]+$/.test(arg)) {
-    return arg;
-  }
-  return `"${arg.replace(/(["\\$`])/g, "\\$1")}"`;
-}
-
 function renderAttemptedCommand(argv: string[]): string {
-  return `pm ${argv.map((token) => quoteCommandArg(token)).join(" ")}`;
+  return renderPmCommand(argv);
 }
 
 function inferMissingFieldsFromErrorMessage(message: string): string[] | undefined {

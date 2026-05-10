@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: history,pm-cli,privacy,redaction,security
 created_at: "2026-05-03T13:34:41.813Z"
-updated_at: "2026-05-09T13:58:47.018Z"
+updated_at: "2026-05-10T20:47:54.527Z"
 assignee: codex-agent
 author: codex-audit
 acceptance_criteria: A supported pm command can redact configured literals/patterns from item files and history streams; history drift validation remains meaningful after redaction; redaction operations are themselves auditable; secret scans can include history streams without false failures from known private operations paths.

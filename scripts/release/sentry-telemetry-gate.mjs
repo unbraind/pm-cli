@@ -99,6 +99,46 @@ function sentrySeverityTally(issues) {
   return summary;
 }
 
+const KNOWN_IGNORED_CONSOLE_ISSUE_PATTERNS = [
+  "[starter-extension] activating",
+  "[starter-extension] all 8 capabilities registered.",
+  "[starter-extension] commands:",
+  "[starter] preflight check for workspace",
+  "[starter] output_format service override active",
+  "[pm-ext-ts-starter] activating",
+  "[pm-ext-ts-starter] all capabilities registered.",
+  "run `pm init` first to initialise a pm workspace",
+];
+
+function issueTextValue(issue) {
+  const metadata = issue && typeof issue === "object" ? issue.metadata : null;
+  const metadataValue = metadata && typeof metadata.value === "string" ? metadata.value : "";
+  const title = issue && typeof issue.title === "string" ? issue.title : "";
+  return `${title}\n${metadataValue}`.toLowerCase();
+}
+
+function isIgnoredConsoleNoiseIssue(issue) {
+  const logger = String(issue?.logger ?? "").toLowerCase();
+  if (logger !== "console") {
+    return false;
+  }
+  const combinedText = issueTextValue(issue);
+  return KNOWN_IGNORED_CONSOLE_ISSUE_PATTERNS.some((pattern) => combinedText.includes(pattern));
+}
+
+function partitionSentryIssuesForGate(issues) {
+  const relevant = [];
+  const ignored = [];
+  for (const issue of issues) {
+    if (isIgnoredConsoleNoiseIssue(issue)) {
+      ignored.push(issue);
+      continue;
+    }
+    relevant.push(issue);
+  }
+  return { relevant, ignored };
+}
+
 function redactedTokenCandidates() {
   const candidates = [
     ["SENTRY_AUTH_TOKEN", process.env.SENTRY_AUTH_TOKEN],
@@ -242,7 +282,8 @@ async function main() {
     sentryLimit,
   );
   const sentryIssues = sentryFetch.ok ? sentryFetch.issues : [];
-  const sentrySummary = sentrySeverityTally(sentryIssues);
+  const sentryPartition = partitionSentryIssuesForGate(sentryIssues);
+  const sentrySummary = sentrySeverityTally(sentryPartition.relevant);
   const sentryAccessRequired = telemetryMode === "required" || redactedTokenCandidates().length > 0;
   const sentryAccessOk = sentryFetch.ok || !sentryAccessRequired;
   const sentryThresholdOk =
@@ -325,6 +366,11 @@ async function main() {
       critical: sentrySummary.critical,
       high: sentrySummary.high,
       total: sentrySummary.total,
+      ignored_noise_total: sentryPartition.ignored.length,
+      ignored_noise_short_ids: sentryPartition.ignored
+        .map((issue) => issue?.shortId)
+        .filter((value) => typeof value === "string")
+        .slice(0, 25),
       access_ok: sentryAccessOk,
       threshold_ok: sentryThresholdOk,
     },
@@ -335,11 +381,11 @@ async function main() {
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   } else if (ok) {
     console.log(
-      `Sentry/telemetry gate passed (critical=${sentrySummary.critical}, high=${sentrySummary.high}, telemetry_mode=${telemetryMode}).`,
+      `Sentry/telemetry gate passed (critical=${sentrySummary.critical}, high=${sentrySummary.high}, ignored_noise=${sentryPartition.ignored.length}, telemetry_mode=${telemetryMode}).`,
     );
   } else {
     console.error(
-      `Sentry/telemetry gate failed (critical=${sentrySummary.critical}, high=${sentrySummary.high}, telemetry_mode=${telemetryMode}).`,
+      `Sentry/telemetry gate failed (critical=${sentrySummary.critical}, high=${sentrySummary.high}, ignored_noise=${sentryPartition.ignored.length}, telemetry_mode=${telemetryMode}).`,
     );
   }
 

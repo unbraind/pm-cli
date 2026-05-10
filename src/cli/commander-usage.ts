@@ -22,6 +22,12 @@ import {
   parseBootstrapGlobalOptions,
   parseBootstrapCommandName,
 } from "./bootstrap-args.js";
+import {
+  extractProvidedOptionFlags,
+  normalizeLongFlag,
+  renderPmCommand,
+} from "./argv-utils.js";
+import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
 import type { ExtensionCommandHelpDescriptor } from "./extension-command-help.js";
 
 export const BUILTIN_TYPE_HELP_VALUES = BUILTIN_ITEM_TYPE_VALUES.join("|");
@@ -82,39 +88,12 @@ export function scoreCommandPathMatch(commandPath: string, queryToken: string): 
   return Number.POSITIVE_INFINITY;
 }
 
-function normalizeLongFlag(flag: string): string {
-  return `--${flag
-    .replace(/^--?/, "")
-    .replace(/_/g, "-")
-    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
-    .toLowerCase()}`;
-}
-
 function toComparableFlag(flag: string): string {
   return normalizeLongFlag(flag).slice(2).replace(/-/g, "");
 }
 
-function extractProvidedOptionFlags(argv: string[]): string[] {
-  const provided = new Set<string>();
-  for (const token of argv) {
-    if (!token.startsWith("--")) {
-      continue;
-    }
-    const key = token.includes("=") ? token.slice(0, token.indexOf("=")) : token;
-    provided.add(normalizeLongFlag(key));
-  }
-  return [...provided].sort((left, right) => left.localeCompare(right));
-}
-
-function quoteCommandArg(arg: string): string {
-  if (/^[A-Za-z0-9._:/@=-]+$/.test(arg)) {
-    return arg;
-  }
-  return `"${arg.replace(/(["\\$`])/g, "\\$1")}"`;
-}
-
 function renderAttemptedCommand(argv: string[]): string {
-  return `pm ${argv.map((token) => quoteCommandArg(token)).join(" ")}`;
+  return renderPmCommand(argv);
 }
 
 function collectKnownLongFlags(commandName: string | undefined): string[] {
@@ -131,43 +110,6 @@ function collectKnownLongFlags(commandName: string | undefined): string[] {
     }
   }
   return [...flags].sort((left, right) => left.localeCompare(right));
-}
-
-function levenshteinDistanceWithinLimit(left: string, right: string, limit: number): number | null {
-  if (left === right) {
-    return 0;
-  }
-  if (Math.abs(left.length - right.length) > limit) {
-    return null;
-  }
-  const previous = new Array<number>(right.length + 1);
-  const current = new Array<number>(right.length + 1);
-  for (let column = 0; column <= right.length; column += 1) {
-    previous[column] = column;
-  }
-  for (let row = 1; row <= left.length; row += 1) {
-    current[0] = row;
-    let rowMin = current[0];
-    for (let column = 1; column <= right.length; column += 1) {
-      const cost = left[row - 1] === right[column - 1] ? 0 : 1;
-      const substitution = previous[column - 1] + cost;
-      const insertion = current[column - 1] + 1;
-      const deletion = previous[column] + 1;
-      const candidate = Math.min(substitution, insertion, deletion);
-      current[column] = candidate;
-      if (candidate < rowMin) {
-        rowMin = candidate;
-      }
-    }
-    if (rowMin > limit) {
-      return null;
-    }
-    for (let column = 0; column <= right.length; column += 1) {
-      previous[column] = current[column];
-    }
-  }
-  const result = previous[right.length];
-  return result <= limit ? result : null;
 }
 
 function suggestNearestLongFlags(unknownOption: string, knownFlags: string[]): string[] {

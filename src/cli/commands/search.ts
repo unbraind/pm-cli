@@ -392,6 +392,11 @@ interface ContainmentRoot {
   realpath: string;
 }
 
+interface LinkedCorpusRoots {
+  projectContainmentRoot: ContainmentRoot | null;
+  globalContainmentRoot: ContainmentRoot | null;
+}
+
 async function resolveContainmentRoot(root: string): Promise<ContainmentRoot | null> {
   const resolved = path.resolve(root);
   try {
@@ -405,17 +410,25 @@ async function resolveContainmentRoot(root: string): Promise<ContainmentRoot | n
   }
 }
 
+async function resolveLinkedCorpusRoots(projectRoot: string, globalRoot: string): Promise<LinkedCorpusRoots> {
+  const [projectContainmentRoot, globalContainmentRoot] = await Promise.all([
+    resolveContainmentRoot(projectRoot),
+    resolveContainmentRoot(globalRoot),
+  ]);
+  return {
+    projectContainmentRoot,
+    globalContainmentRoot,
+  };
+}
+
 async function loadLinkedCorpus(
   document: ItemDocument,
-  projectRoot: string,
-  globalRoot: string,
+  roots: LinkedCorpusRoots,
 ): Promise<string> {
   const linkedPaths = collectLinkedPaths(document.metadata);
   const chunks: string[] = [];
-  const projectContainmentRoot = await resolveContainmentRoot(projectRoot);
-  const globalContainmentRoot = await resolveContainmentRoot(globalRoot);
   for (const linkedPath of linkedPaths) {
-    const containmentRoot = linkedPath.scope === "global" ? globalContainmentRoot : projectContainmentRoot;
+    const containmentRoot = linkedPath.scope === "global" ? roots.globalContainmentRoot : roots.projectContainmentRoot;
     if (!containmentRoot) {
       continue;
     }
@@ -1071,8 +1084,12 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   const globalRoot = resolveGlobalPmRoot(projectRoot);
   const linkedCorpusById = new Map<string, string>();
   if (includeLinked && (effectiveMode === "keyword" || effectiveMode === "hybrid")) {
-    for (const document of filteredDocuments) {
-      linkedCorpusById.set(document.metadata.id, await loadLinkedCorpus(document, projectRoot, globalRoot));
+    const linkedCorpusRoots = await resolveLinkedCorpusRoots(projectRoot, globalRoot);
+    const linkedCorpusEntries = await Promise.all(
+      filteredDocuments.map(async (document) => [document.metadata.id, await loadLinkedCorpus(document, linkedCorpusRoots)] as const),
+    );
+    for (const [id, corpus] of linkedCorpusEntries) {
+      linkedCorpusById.set(id, corpus);
     }
   }
 

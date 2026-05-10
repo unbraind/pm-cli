@@ -37,6 +37,12 @@ import { locateItem } from "../../core/store/item-store.js";
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { loadCreateTemplateOptions } from "./templates.js";
+import {
+  normalizeRiskInput,
+  normalizeSeverityInput,
+  parseConfidenceInput,
+  parseRegressionInput,
+} from "./metadata-normalizers.js";
 import type {
   CalendarEvent,
   Comment,
@@ -52,7 +58,6 @@ import type {
   Reminder,
 } from "../../types/index.js";
 import {
-  CONFIDENCE_TEXT_VALUES,
   DEPENDENCY_KIND_VALUES,
   ISSUE_SEVERITY_VALUES,
   RECURRENCE_FREQUENCY_VALUES,
@@ -317,42 +322,6 @@ function parseStatusValue(value: string, statusRegistry: RuntimeStatusRegistry):
     throw new PmCliError(`Invalid status value "${value}". Allowed: ${allowedStatuses.join(", ")}`, EXIT_CODE.USAGE);
   }
   return normalized;
-}
-
-function normalizeRiskInput(value: string): string {
-  const trimmed = value.trim();
-  return trimmed.toLowerCase() === "med" ? "medium" : trimmed;
-}
-
-function normalizeSeverityInput(value: string): string {
-  const trimmed = value.trim();
-  return trimmed.toLowerCase() === "med" ? "medium" : trimmed;
-}
-
-function parseConfidenceInput(value: string): number | "low" | "medium" | "high" {
-  const trimmed = value.trim().toLowerCase();
-  if (trimmed === "med") {
-    return "medium";
-  }
-  if (CONFIDENCE_TEXT_VALUES.includes(trimmed as (typeof CONFIDENCE_TEXT_VALUES)[number])) {
-    return trimmed as (typeof CONFIDENCE_TEXT_VALUES)[number];
-  }
-  const parsed = parseOptionalNumber(value, "confidence");
-  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 100) {
-    throw new PmCliError("Confidence must be an integer 0..100 or one of low|med|medium|high", EXIT_CODE.USAGE);
-  }
-  return parsed;
-}
-
-function parseRegressionInput(value: string): boolean {
-  const normalized = value.trim().toLowerCase();
-  if (normalized === "true" || normalized === "1") {
-    return true;
-  }
-  if (normalized === "false" || normalized === "0") {
-    return false;
-  }
-  throw new PmCliError("Regression must be one of true|false|1|0", EXIT_CODE.USAGE);
 }
 
 function parseCreatedAt(value: string | undefined, currentIso: string): string {

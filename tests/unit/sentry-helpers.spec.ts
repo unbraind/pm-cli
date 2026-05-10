@@ -5,7 +5,14 @@ import { _testOnly } from "../../src/core/sentry/instrument.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 
-const { isExpectedCliErrorEvent, isPmCliErrorBreadcrumb, scrubString, scrubEventData } = _testOnly;
+const {
+  isExpectedCliErrorEvent,
+  isKnownNoisyConsoleEvent,
+  isPmCliErrorBreadcrumb,
+  isKnownNoisyConsoleBreadcrumb,
+  scrubString,
+  scrubEventData,
+} = _testOnly;
 const PRIVATE_TEST_IP = ["192", "168", "42", "17"].join(".");
 const TEST_LOCAL_PATH = ["/home", "example", "project"].join("/");
 
@@ -97,6 +104,35 @@ describe("isPmCliErrorBreadcrumb", () => {
 
   it("handles missing message", () => {
     expect(isPmCliErrorBreadcrumb({ category: "console" })).toBe(false);
+  });
+});
+
+describe("noisy console starter filtering", () => {
+  it("filters known starter extension console noise events", () => {
+    expect(
+      isKnownNoisyConsoleEvent({
+        logger: "console",
+        message: "[starter-extension] Commands: pm starter greet, pm starter summary",
+      }),
+    ).toBe(true);
+  });
+
+  it("keeps unrelated console errors for triage", () => {
+    expect(
+      isKnownNoisyConsoleEvent({
+        logger: "console",
+        message: "TypeError: Cannot read properties of undefined",
+      }),
+    ).toBe(false);
+  });
+
+  it("filters known noisy console breadcrumbs", () => {
+    expect(
+      isKnownNoisyConsoleBreadcrumb({
+        category: "console",
+        message: "[pm-ext-ts-starter] Activating…",
+      }),
+    ).toBe(true);
   });
 });
 

@@ -24,6 +24,16 @@ const WINDOWS_PATH_TOKEN_RE = /\b[A-Za-z]:\\[^\s"'`),;]+/g;
 const PRIVATE_IP_RE =
   /\b(?:10\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|172\.(?:1[6-9]|2\d|3[01])\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|192\.168\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d))\b/g;
 const PATH_FIELD_KEY_PATTERN = /(?:^|[_-])(path|filename|file|module|cwd|dir|directory|location|source|script)s?$/i;
+const KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS = [
+  "[starter-extension] activating",
+  "[starter-extension] all 8 capabilities registered.",
+  "[starter-extension] commands:",
+  "[starter] preflight check for workspace",
+  "[starter] output_format service override active",
+  "[pm-ext-ts-starter] activating",
+  "[pm-ext-ts-starter] all capabilities registered.",
+  "run `pm init` first to initialise a pm workspace",
+] as const;
 
 function looksLikeFilesystemPath(value: string): boolean {
   const normalized = value.trim();
@@ -122,6 +132,31 @@ function hasPmCliErrorPrefix(value: string): boolean {
   return /^\s*PmCliError:/.test(value);
 }
 
+function isKnownNoisyConsoleMessage(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  if (normalized.length === 0) {
+    return false;
+  }
+  return KNOWN_NOISY_CONSOLE_MESSAGE_PATTERNS.some((pattern) => normalized.includes(pattern));
+}
+
+function isKnownNoisyConsoleEvent(event: {
+  logger?: string;
+  message?: string;
+  exception?: { values?: Array<{ value?: string }> };
+}): boolean {
+  if (event.logger !== "console") {
+    return false;
+  }
+  if (typeof event.message === "string" && isKnownNoisyConsoleMessage(event.message)) {
+    return true;
+  }
+  return (
+    Array.isArray(event.exception?.values) &&
+    event.exception.values.some((entry) => typeof entry.value === "string" && isKnownNoisyConsoleMessage(entry.value))
+  );
+}
+
 function isExpectedCliErrorEvent(event: {
   exception?: { values?: Array<{ type?: string; value?: string }> };
   message?: string;
@@ -145,6 +180,10 @@ function isPmCliErrorBreadcrumb(breadcrumb: { category?: string; message?: strin
     typeof breadcrumb.message === "string" &&
     hasPmCliErrorPrefix(breadcrumb.message)
   );
+}
+
+function isKnownNoisyConsoleBreadcrumb(breadcrumb: { category?: string; message?: string }): boolean {
+  return breadcrumb.category === "console" && typeof breadcrumb.message === "string" && isKnownNoisyConsoleMessage(breadcrumb.message);
 }
 
 function resolveCliVersion(): string {
@@ -215,7 +254,7 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
     },
 
     beforeSend(event) {
-      if (isExpectedCliErrorEvent(event)) {
+      if (isExpectedCliErrorEvent(event) || isKnownNoisyConsoleEvent(event)) {
         return null;
       }
       if (event.message) {
@@ -275,7 +314,9 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
 
     beforeSendTransaction(event) {
       if (event.breadcrumbs) {
-        event.breadcrumbs = event.breadcrumbs.filter((bc) => !isPmCliErrorBreadcrumb(bc));
+        event.breadcrumbs = event.breadcrumbs.filter(
+          (bc) => !isPmCliErrorBreadcrumb(bc) && !isKnownNoisyConsoleBreadcrumb(bc),
+        );
         for (const breadcrumb of event.breadcrumbs) {
           if (breadcrumb.message) {
             breadcrumb.message = scrubString(breadcrumb.message, "message");
@@ -296,7 +337,7 @@ export async function ensureSentryInit(): Promise<SentryLike | undefined> {
     },
 
     beforeBreadcrumb(breadcrumb) {
-      if (isPmCliErrorBreadcrumb(breadcrumb)) {
+      if (isPmCliErrorBreadcrumb(breadcrumb) || isKnownNoisyConsoleBreadcrumb(breadcrumb)) {
         return null;
       }
       if (breadcrumb.message) {
@@ -318,7 +359,9 @@ export function getSentry(): SentryLike | undefined {
 
 export const _testOnly = {
   isExpectedCliErrorEvent,
+  isKnownNoisyConsoleEvent,
   isPmCliErrorBreadcrumb,
+  isKnownNoisyConsoleBreadcrumb,
   scrubString,
   scrubEventData,
 };

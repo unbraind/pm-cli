@@ -1,4 +1,5 @@
 import type { PmCliErrorContext, PmCliErrorRecoveryPayload } from "../core/shared/errors.js";
+import { renderPmCommand } from "./argv-utils.js";
 
 interface GuidanceMessage {
   code: string;
@@ -443,18 +444,11 @@ function commandExampleForRequiredOption(commandName: string | undefined, option
   return [`pm ${commandName ?? "<command>"} --help`];
 }
 
-function quoteCommandArg(arg: string): string {
-  if (/^[A-Za-z0-9._:/@=-]+$/.test(arg)) {
-    return arg;
-  }
-  return `"${arg.replace(/(["\\$`])/g, "\\$1")}"`;
-}
-
 function renderPmCommandFromArgs(argv: string[] | undefined): string | undefined {
   if (!Array.isArray(argv) || argv.length === 0) {
     return undefined;
   }
-  return `pm ${argv.map((arg) => quoteCommandArg(arg)).join(" ")}`;
+  return renderPmCommand(argv);
 }
 
 function normalizeOptionFlags(values: string[] | undefined): string[] | undefined {
