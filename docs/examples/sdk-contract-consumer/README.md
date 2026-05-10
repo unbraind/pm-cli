@@ -29,7 +29,15 @@ Expected output shape:
   "action": "create",
   "required_parameters": ["title", "description", "type", "status", "priority", "message"],
   "optional_parameters": ["template", "createMode", "schedulePreset"],
-  "any_of_required_groups": []
+  "any_of_required_groups": [],
+  "runtime_available": true,
+  "policy_state": null,
+  "compatibility": {
+    "current": "v2",
+    "previous": ["v1"],
+    "breaking_strategy": "versioned_breaking"
+  },
+  "manifest_versions": [1, 2]
 }
 ```
 
@@ -38,6 +46,7 @@ You can inspect any action:
 ```bash
 node inspect-contracts.mjs update
 node inspect-contracts.mjs extension
+node inspect-contracts.mjs extension-reload
 ```
 
 ## Why This Pattern Works
@@ -45,3 +54,4 @@ node inspect-contracts.mjs extension
 - Uses `isPmToolAction()` for strict action validation.
 - Uses `PM_TOOL_ACTION_PARAMETER_CONTRACTS` for deterministic required/optional metadata.
 - Uses runtime `pm contracts --json` so extension-provided actions and command availability are reflected.
+- Includes policy-state and compatibility metadata so CI/app callers can gate behavior during v1 -> v2 migrations.

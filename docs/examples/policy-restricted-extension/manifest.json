@@ -2,5 +2,20 @@
   "name": "policy-restricted-extension",
   "version": "0.1.0",
   "entry": "./index.js",
+  "manifest_version": 2,
+  "trusted": true,
+  "provenance": {
+    "source": "docs/examples/policy-restricted-extension",
+    "verified": true
+  },
+  "sandbox_profile": "restricted",
+  "permissions": {
+    "fs_read": true,
+    "fs_write": false,
+    "network": false,
+    "env_read": true,
+    "env_write": false,
+    "process_spawn": false
+  },
   "capabilities": ["commands", "hooks", "services"]
 }

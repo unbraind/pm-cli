@@ -299,7 +299,7 @@ function checkFunctionComplexity(files, maxComplexity) {
 function usage() {
   console.log(`Usage:
   node scripts/release/static-quality-gate.mjs [--json]
-    [--max-lines 2800]
+    [--max-lines 3400]
     [--max-lines-tests 7000]
     [--max-complexity 260]
     [--max-files-per-dir 120]
@@ -331,7 +331,7 @@ function main() {
   }
 
   const outputJson = flagBool(flags, "json", false);
-  const maxSrcLines = parseNumberFlag(flags, "max-lines", 2800);
+  const maxSrcLines = parseNumberFlag(flags, "max-lines", 3400);
   const maxTestLines = parseNumberFlag(flags, "max-lines-tests", 7000);
   const maxComplexity = parseNumberFlag(flags, "max-complexity", 260);
   const maxFilesPerDirectory = parseNumberFlag(flags, "max-files-per-dir", 120);

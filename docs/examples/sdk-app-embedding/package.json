@@ -1,0 +1,9 @@
+{
+  "name": "pm-sdk-app-embedding-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node run-embedded-pm.mjs",
+    "reload": "node run-embedded-pm.mjs extension-reload"
+  }
+}

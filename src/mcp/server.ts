@@ -112,7 +112,7 @@ const TOOLS: ToolDefinition[] = [
         action: {
           type: "string",
           description:
-            "Operation name: init, context, list, get, search, create, update, delete, claim, release, close, comments, notes, learnings, files, files-discover, docs, deps, test, test-all, validate, health, contracts, completion, config, calendar, activity, aggregate, dedupe-audit, normalize, reindex, extension, history, stats, append, update-many, comments-audit, gc, templates-list, templates-save, templates-show, test-runs-list, test-runs-status, test-runs-logs, test-runs-stop, test-runs-resume.",
+            "Operation name: init, context, list, get, search, create, update, delete, claim, release, close, comments, notes, learnings, files, files-discover, docs, deps, test, test-all, validate, health, contracts, completion, config, calendar, activity, aggregate, dedupe-audit, normalize, reindex, extension, extension-reload, history, stats, append, update-many, comments-audit, gc, templates-list, templates-save, templates-show, test-runs-list, test-runs-status, test-runs-logs, test-runs-stop, test-runs-resume.",
         },
         id: idSchema,
         query: { type: "string", description: "Search query for action=search." },
@@ -335,6 +335,8 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       return runReindex(options, global);
     case "extension":
       return runExtension(readString(args, "target") ?? readString(options, "target"), options, global);
+    case "extension-reload":
+      return runExtension(undefined, { ...options, reload: true }, global);
     case "delete":
       return runDelete(id ?? readRequiredString(options, "id"), options, global);
     case "deps":

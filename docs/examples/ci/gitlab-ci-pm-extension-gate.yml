@@ -1,0 +1,41 @@
+image: node:22
+
+stages:
+  - build
+  - contracts
+  - extension_gate
+  - test
+
+before_script:
+  - corepack enable
+  - corepack prepare pnpm@10 --activate
+  - pnpm install --frozen-lockfile
+
+build:
+  stage: build
+  script:
+    - pnpm build
+
+contracts:
+  stage: contracts
+  script:
+    - node dist/cli.js contracts --schema-only --json > contracts-schema.json
+    - node dist/cli.js contracts --command extension --flags-only --json > contracts-extension-flags.json
+    - node dist/cli.js contracts --json > contracts-runtime.json
+  artifacts:
+    paths:
+      - contracts-schema.json
+      - contracts-extension-flags.json
+      - contracts-runtime.json
+
+extension_gate:
+  stage: extension_gate
+  script:
+    - node dist/cli.js extension --reload --project --json
+    - node dist/cli.js extension --doctor --project --detail summary --strict-exit --json
+
+test:
+  stage: test
+  script:
+    - node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/extension-loader.spec.ts tests/unit/extension-command.spec.ts
+    - node scripts/run-tests.mjs coverage

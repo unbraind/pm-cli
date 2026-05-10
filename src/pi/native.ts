@@ -169,13 +169,23 @@ function resolvePackageRoot(): string {
   return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 }
 
-async function loadBundledExtensionRuntime(name: "beads" | "todos"): Promise<Record<string, unknown>> {
+let bundledExtensionRuntimeReloadEpoch = 0;
+
+async function loadBundledExtensionRuntime(
+  name: "beads" | "todos",
+  options?: { cacheBust?: boolean },
+): Promise<Record<string, unknown>> {
   const runtimePath = path.join(resolvePackageRoot(), ".agents", "pm", "extensions", name, "runtime.js");
-  return import(pathToFileURL(runtimePath).href) as Promise<Record<string, unknown>>;
+  const runtimeUrl = new URL(pathToFileURL(runtimePath).href);
+  if (options?.cacheBust === true) {
+    bundledExtensionRuntimeReloadEpoch += 1;
+    runtimeUrl.searchParams.set("pm_ext_reload", `${name}-${bundledExtensionRuntimeReloadEpoch}-${Date.now()}`);
+  }
+  return import(runtimeUrl.href) as Promise<Record<string, unknown>>;
 }
 
 async function runBeadsImport(options: Record<string, unknown>, global: GlobalOptions): Promise<unknown> {
-  const runtime = await loadBundledExtensionRuntime("beads");
+  const runtime = await loadBundledExtensionRuntime("beads", { cacheBust: options.reload === true });
   const runner = runtime.runBeadsImport;
   if (typeof runner !== "function") {
     throw new PmCliError("Bundled beads runtime is missing runBeadsImport().", 1);
@@ -184,7 +194,7 @@ async function runBeadsImport(options: Record<string, unknown>, global: GlobalOp
 }
 
 async function runTodosImport(options: Record<string, unknown>, global: GlobalOptions): Promise<unknown> {
-  const runtime = await loadBundledExtensionRuntime("todos");
+  const runtime = await loadBundledExtensionRuntime("todos", { cacheBust: options.reload === true });
   const runner = runtime.runTodosImport;
   if (typeof runner !== "function") {
     throw new PmCliError("Bundled todos runtime is missing runTodosImport().", 1);
@@ -193,7 +203,7 @@ async function runTodosImport(options: Record<string, unknown>, global: GlobalOp
 }
 
 async function runTodosExport(options: Record<string, unknown>, global: GlobalOptions): Promise<unknown> {
-  const runtime = await loadBundledExtensionRuntime("todos");
+  const runtime = await loadBundledExtensionRuntime("todos", { cacheBust: options.reload === true });
   const runner = runtime.runTodosExport;
   if (typeof runner !== "function") {
     throw new PmCliError("Bundled todos runtime is missing runTodosExport().", 1);
@@ -220,6 +230,7 @@ export async function runNativePmAction(args: NativePmArgs): Promise<unknown> {
       case "extension-uninstall": return runExtension(requiredString(args, "target", action), { ...options, uninstall: true }, global);
       case "extension-explore": return runExtension(undefined, { ...options, explore: true }, global);
       case "extension-manage": return runExtension(undefined, { ...options, manage: true }, global);
+      case "extension-reload": return runExtension(undefined, { ...options, reload: true }, global);
       case "extension-doctor": return runExtension(undefined, { ...options, doctor: true }, global);
       case "extension-adopt": return runExtension(requiredString(args, "target", action), { ...options, adopt: true }, global);
       case "extension-adopt-all": return runExtension(undefined, { ...options, adoptAll: true }, global);

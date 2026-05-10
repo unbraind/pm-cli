@@ -175,12 +175,22 @@ describe("core/store/settings", () => {
       expectOrderedObjectKeys(parsed.extensions, ["enabled", "disabled", "policy"]);
       expectOrderedObjectKeys((parsed.extensions as Record<string, unknown>).policy, [
         "mode",
+        "trust_mode",
+        "require_provenance",
+        "trusted_extensions",
+        "default_sandbox_profile",
         "allowed_extensions",
         "blocked_extensions",
         "allowed_capabilities",
         "blocked_capabilities",
         "allowed_surfaces",
         "blocked_surfaces",
+        "allowed_commands",
+        "blocked_commands",
+        "allowed_actions",
+        "blocked_actions",
+        "allowed_services",
+        "blocked_services",
         "extension_overrides",
       ]);
       expectOrderedObjectKeys(parsed.search, [

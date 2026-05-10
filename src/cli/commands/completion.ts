@@ -202,7 +202,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--criterion --clear-criteria --format --policy --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    extension)",
-    `      COMPREPLY=(${compgen("init scaffold install uninstall explore manage doctor adopt adopt-all activate deactivate --init --scaffold --install --uninstall --explore --manage --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --trace --runtime-probe --fix-managed-state --strict-exit --fail-on-warn --json --quiet --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("init scaffold install uninstall explore manage reload doctor adopt adopt-all activate deactivate --init --scaffold --install --uninstall --explore --manage --reload --watch --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --trace --runtime-probe --fix-managed-state --strict-exit --fail-on-warn --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    comments)",
     `      COMPREPLY=(${compgen("--add --stdin --file --limit --author --message --allow-audit-comment --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
@@ -962,13 +962,15 @@ _pm() {
           ;;
         extension)
           _arguments \\
-            '1:extension_action:(init scaffold install uninstall explore manage doctor adopt adopt-all activate deactivate)' \\
+            '1:extension_action:(init scaffold install uninstall explore manage reload doctor adopt adopt-all activate deactivate)' \\
             '--init[Generate a starter extension scaffold at target path]' \\
             '--scaffold[Alias for --init]' \\
             '--install[Install extension from local path or GitHub source]' \\
             '--uninstall[Uninstall extension by name]' \\
             '--explore[List discovered extensions for selected scope]' \\
             '--manage[List managed extensions with update metadata]' \\
+            '--reload[Reload extensions with cache-busted module imports]' \\
+            '--watch[Enable watch mode with --reload]' \\
             '--doctor[Run consolidated extension diagnostics (summary/deep)]' \\
             '--adopt[Adopt an unmanaged extension into managed metadata]' \\
             '--adopt-all[Adopt all unmanaged extensions into managed metadata]' \\
@@ -1548,13 +1550,15 @@ complete -c pm -n '__fish_seen_subcommand_from completion' -a 'bash zsh fish' -d
 complete -c pm -n '__fish_seen_subcommand_from templates' -a 'save list show' -d 'Templates command'
 
 # extension lifecycle flags
-complete -c pm -n '__fish_seen_subcommand_from extension' -a 'init scaffold install uninstall explore manage doctor adopt adopt-all activate deactivate' -d 'Extension action subcommand'
+complete -c pm -n '__fish_seen_subcommand_from extension' -a 'init scaffold install uninstall explore manage reload doctor adopt adopt-all activate deactivate' -d 'Extension action subcommand'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l init -d 'Generate starter extension scaffold'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l scaffold -d 'Alias for --init'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l install -d 'Install extension from local path or GitHub source'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l uninstall -d 'Uninstall extension by name'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l explore -d 'List discovered extensions for selected scope'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l manage -d 'List managed extensions with update metadata'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l reload -d 'Reload extensions with cache-busted module imports'
+complete -c pm -n '__fish_seen_subcommand_from extension' -l watch -d 'Enable watch mode with --reload'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l doctor -d 'Run consolidated extension diagnostics'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l adopt -d 'Adopt an unmanaged extension into managed metadata'
 complete -c pm -n '__fish_seen_subcommand_from extension' -l adopt-all -d 'Adopt all unmanaged extensions into managed metadata'

@@ -5,6 +5,8 @@ import {
   KNOWN_EXTENSION_CAPABILITIES,
   KNOWN_EXTENSION_POLICY_MODES,
   KNOWN_EXTENSION_POLICY_SURFACES,
+  KNOWN_EXTENSION_SANDBOX_PROFILES,
+  KNOWN_EXTENSION_TRUST_MODES,
   type ExtensionApi,
   type ExtensionManifest,
 } from "../core/extensions/loader.js";
@@ -24,8 +26,12 @@ export type ExtensionCapability = (typeof EXTENSION_CAPABILITIES)[number];
  */
 export const EXTENSION_POLICY_MODES = KNOWN_EXTENSION_POLICY_MODES;
 export const EXTENSION_POLICY_SURFACES = KNOWN_EXTENSION_POLICY_SURFACES;
+export const EXTENSION_TRUST_MODES = KNOWN_EXTENSION_TRUST_MODES;
+export const EXTENSION_SANDBOX_PROFILES = KNOWN_EXTENSION_SANDBOX_PROFILES;
 export type ExtensionPolicyMode = (typeof EXTENSION_POLICY_MODES)[number];
 export type ExtensionPolicySurface = (typeof EXTENSION_POLICY_SURFACES)[number];
+export type ExtensionTrustMode = (typeof EXTENSION_TRUST_MODES)[number];
+export type ExtensionSandboxProfile = (typeof EXTENSION_SANDBOX_PROFILES)[number];
 
 /**
  * Versioned capability contract metadata emitted by runtime diagnostics.
@@ -75,6 +81,8 @@ export type {
   ExtensionManifest,
   ExtensionGovernancePolicy,
   ExtensionPolicyOverride,
+  ExtensionProvenanceMetadata,
+  ExtensionRuntimePermissionDeclaration,
   ExtensionSearchMode,
   ExtensionParserRegistry,
   ExtensionPreflightRegistry,

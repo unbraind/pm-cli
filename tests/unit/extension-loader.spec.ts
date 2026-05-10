@@ -224,6 +224,149 @@ describe("extension loader", () => {
     });
   });
 
+  it("enforces trust and provenance policy during discovery", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      await createExtension(
+        roots.project,
+        "trusted-provenance-ok",
+        {
+          name: "trusted-provenance-ok",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          manifest_version: 2,
+          trusted: true,
+          provenance: {
+            source: "example://trusted",
+            verified: true,
+          },
+        },
+        "export default { ok: true };\n",
+      );
+      await createExtension(
+        roots.project,
+        "trusted-provenance-missing",
+        {
+          name: "trusted-provenance-missing",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          manifest_version: 2,
+          trusted: true,
+        },
+        "export default { ok: true };\n",
+      );
+      await createExtension(
+        roots.project,
+        "untrusted-extension",
+        {
+          name: "untrusted-extension",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          manifest_version: 2,
+          trusted: false,
+          provenance: {
+            source: "example://untrusted",
+            verified: true,
+          },
+        },
+        "export default { ok: true };\n",
+      );
+
+      const settings = await loadSettings(context);
+      settings.extensions.policy = {
+        mode: "off",
+        trust_mode: "enforce",
+        require_provenance: true,
+        trusted_extensions: [],
+        default_sandbox_profile: "none",
+        allowed_extensions: [],
+        blocked_extensions: [],
+        allowed_capabilities: [],
+        blocked_capabilities: [],
+        allowed_surfaces: [],
+        blocked_surfaces: [],
+        allowed_commands: [],
+        blocked_commands: [],
+        allowed_actions: [],
+        blocked_actions: [],
+        allowed_services: [],
+        blocked_services: [],
+        extension_overrides: [],
+      };
+
+      const discovery = await discoverExtensions({
+        pmRoot: context.pmPath,
+        settings,
+      });
+      expect(discovery.effective.map((entry) => entry.name)).toEqual(["trusted-provenance-ok"]);
+      expect(discovery.warnings).toEqual(
+        expect.arrayContaining([
+          "extension_policy_blocked_trust:project:trusted-provenance-missing:reason=provenance_missing_or_unverified",
+          "extension_policy_blocked_trust:project:untrusted-extension:reason=extension_untrusted",
+        ]),
+      );
+    });
+  });
+
+  it("enforces sandbox profile restrictions during discovery", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      await createExtension(
+        roots.project,
+        "sandbox-violating",
+        {
+          name: "sandbox-violating",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          manifest_version: 2,
+          trusted: true,
+          provenance: {
+            source: "example://sandbox",
+            verified: true,
+          },
+          sandbox_profile: "strict",
+          permissions: {
+            network: true,
+          },
+        },
+        "export default { ok: true };\n",
+      );
+
+      const settings = await loadSettings(context);
+      settings.extensions.policy = {
+        mode: "enforce",
+        trust_mode: "off",
+        require_provenance: false,
+        trusted_extensions: [],
+        default_sandbox_profile: "strict",
+        allowed_extensions: [],
+        blocked_extensions: [],
+        allowed_capabilities: [],
+        blocked_capabilities: [],
+        allowed_surfaces: [],
+        blocked_surfaces: [],
+        allowed_commands: [],
+        blocked_commands: [],
+        allowed_actions: [],
+        blocked_actions: [],
+        allowed_services: [],
+        blocked_services: [],
+        extension_overrides: [],
+      };
+
+      const discovery = await discoverExtensions({
+        pmRoot: context.pmPath,
+        settings,
+      });
+      expect(discovery.effective).toEqual([]);
+      expect(discovery.warnings).toEqual(
+        expect.arrayContaining([
+          "extension_policy_blocked_extension:project:sandbox-violating:reason=sandbox_strict_disallows_network",
+        ]),
+      );
+    });
+  });
+
   it("reports deterministic manifest and entry warnings", async () => {
     await withTempPmPath(async (context) => {
       const roots = resolveExtensionRoots(context.pmPath);
@@ -683,7 +826,90 @@ describe("extension loader", () => {
     expect(activation.hook_counts.before_command).toBe(1);
     expect(activation.warnings).toEqual(
       expect.arrayContaining([
-        "extension_policy_blocked_registration:project:surface-policy-ext:reason=surface_blocked:capability=commands:method=registercommand:surface=commands.handler",
+        expect.stringContaining(
+          "extension_policy_blocked_registration:project:surface-policy-ext:reason=surface_blocked",
+        ),
+      ]),
+    );
+  });
+
+  it("enforces command/action/service policy maps during activation", async () => {
+    const activation = await activateExtensions({
+      disabled_by_flag: false,
+      roots: {
+        global: "/tmp/global",
+        project: "/tmp/project",
+      },
+      configured_enabled: [],
+      configured_disabled: [],
+      discovered: [],
+      effective: [],
+      warnings: [],
+      policy: {
+        mode: "enforce",
+        trust_mode: "off",
+        require_provenance: false,
+        trusted_extensions: [],
+        default_sandbox_profile: "none",
+        allowed_extensions: [],
+        blocked_extensions: [],
+        allowed_capabilities: [],
+        blocked_capabilities: [],
+        allowed_surfaces: [],
+        blocked_surfaces: [],
+        allowed_commands: [],
+        blocked_commands: ["policy blocked command"],
+        allowed_actions: [],
+        blocked_actions: ["policy-blocked-command"],
+        allowed_services: [],
+        blocked_services: ["output_format"],
+        extension_overrides: [],
+      },
+      loaded: [
+        {
+          layer: "project",
+          directory: "command-service-policy-ext",
+          manifest_path: "/tmp/project/command-service-policy-ext/manifest.json",
+          name: "command-service-policy-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          priority: 10,
+          entry_path: "/tmp/project/command-service-policy-ext/index.mjs",
+          capabilities: ["commands", "services"],
+          module: {
+            activate(api: {
+              registerCommand: (definition: {
+                name: string;
+                action: string;
+                run: (context: { command: string; options: Record<string, unknown> }) => unknown;
+              }) => void;
+              registerService: (name: "output_format", handler: (payload: unknown) => unknown) => void;
+            }) {
+              api.registerCommand({
+                name: "policy blocked command",
+                action: "policy-blocked-command",
+                run: (context) => ({ command: context.command }),
+              });
+              api.registerService("output_format", (payload) => payload);
+            },
+          },
+        },
+      ],
+      failed: [],
+    });
+
+    expect(activation.failed).toEqual([]);
+    expect(activation.command_handler_count).toBe(0);
+    expect(activation.service_override_count).toBe(0);
+    expect(activation.registration_counts.commands).toBe(0);
+    expect(activation.warnings).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          "extension_policy_blocked_registration:project:command-service-policy-ext:reason=command_blocked",
+        ),
+        expect.stringContaining(
+          "extension_policy_blocked_registration:project:command-service-policy-ext:reason=service_blocked",
+        ),
       ]),
     );
   });

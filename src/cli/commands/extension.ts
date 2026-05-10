@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { activateExtensions, loadExtensions } from "../../core/extensions/index.js";
+import { activateExtensions, loadExtensions, nextExtensionReloadToken } from "../../core/extensions/index.js";
 import {
   EXTENSION_CAPABILITY_CONTRACT,
   KNOWN_EXTENSION_CAPABILITIES,
@@ -38,6 +38,7 @@ export type ExtensionCommandAction =
   | "uninstall"
   | "explore"
   | "manage"
+  | "reload"
   | "doctor"
   | "adopt"
   | "adopt-all"
@@ -52,6 +53,7 @@ export interface ExtensionCommandOptions {
   uninstall?: boolean;
   explore?: boolean;
   manage?: boolean;
+  reload?: boolean;
   doctor?: boolean;
   init?: boolean;
   scaffold?: boolean;
@@ -69,6 +71,7 @@ export interface ExtensionCommandOptions {
   ref?: string;
   detail?: string;
   trace?: boolean;
+  watch?: boolean;
   runtimeProbe?: boolean;
   fixManagedState?: boolean;
 }
@@ -280,47 +283,94 @@ function summarizePolicyWarnings(warnings: string[]): {
 
 function buildExtensionPolicyDetails(policy: PmSettings["extensions"]["policy"]): {
   mode: "off" | "warn" | "enforce";
+  trust_mode: "off" | "warn" | "enforce";
+  require_provenance: boolean;
+  trusted_extensions: string[];
+  default_sandbox_profile: "none" | "restricted" | "strict";
   allowed_extensions: string[];
   blocked_extensions: string[];
   allowed_capabilities: string[];
   blocked_capabilities: string[];
   allowed_surfaces: string[];
   blocked_surfaces: string[];
+  allowed_commands: string[];
+  blocked_commands: string[];
+  allowed_actions: string[];
+  blocked_actions: string[];
+  allowed_services: string[];
+  blocked_services: string[];
   extension_overrides: Array<{
     name: string;
     disabled?: boolean;
+    require_trusted?: boolean;
+    require_provenance?: boolean;
+    sandbox_profile?: "none" | "restricted" | "strict";
     allowed_capabilities?: string[];
     blocked_capabilities?: string[];
     allowed_surfaces?: string[];
     blocked_surfaces?: string[];
+    allowed_commands?: string[];
+    blocked_commands?: string[];
+    allowed_actions?: string[];
+    blocked_actions?: string[];
+    allowed_services?: string[];
+    blocked_services?: string[];
   }>;
 } {
   const overrides = (policy.extension_overrides ?? [])
     .map((override) => ({
       name: override.name.trim(),
       disabled: override.disabled === true ? true : undefined,
+      require_trusted: override.require_trusted === true ? true : undefined,
+      require_provenance: override.require_provenance === true ? true : undefined,
+      sandbox_profile: override.sandbox_profile,
       allowed_capabilities: normalizeStringList(override.allowed_capabilities ?? []),
       blocked_capabilities: normalizeStringList(override.blocked_capabilities ?? []),
       allowed_surfaces: normalizeStringList(override.allowed_surfaces ?? []),
       blocked_surfaces: normalizeStringList(override.blocked_surfaces ?? []),
+      allowed_commands: normalizeStringList(override.allowed_commands ?? []),
+      blocked_commands: normalizeStringList(override.blocked_commands ?? []),
+      allowed_actions: normalizeStringList(override.allowed_actions ?? []),
+      blocked_actions: normalizeStringList(override.blocked_actions ?? []),
+      allowed_services: normalizeStringList(override.allowed_services ?? []),
+      blocked_services: normalizeStringList(override.blocked_services ?? []),
     }))
     .filter((override) => override.name.length > 0)
     .sort((left, right) => left.name.localeCompare(right.name));
   return {
     mode: policy.mode,
+    trust_mode: policy.trust_mode,
+    require_provenance: policy.require_provenance === true,
+    trusted_extensions: normalizeStringList(policy.trusted_extensions ?? []),
+    default_sandbox_profile: policy.default_sandbox_profile ?? "none",
     allowed_extensions: normalizeStringList(policy.allowed_extensions ?? []),
     blocked_extensions: normalizeStringList(policy.blocked_extensions ?? []),
     allowed_capabilities: normalizeStringList(policy.allowed_capabilities ?? []),
     blocked_capabilities: normalizeStringList(policy.blocked_capabilities ?? []),
     allowed_surfaces: normalizeStringList(policy.allowed_surfaces ?? []),
     blocked_surfaces: normalizeStringList(policy.blocked_surfaces ?? []),
+    allowed_commands: normalizeStringList(policy.allowed_commands ?? []),
+    blocked_commands: normalizeStringList(policy.blocked_commands ?? []),
+    allowed_actions: normalizeStringList(policy.allowed_actions ?? []),
+    blocked_actions: normalizeStringList(policy.blocked_actions ?? []),
+    allowed_services: normalizeStringList(policy.allowed_services ?? []),
+    blocked_services: normalizeStringList(policy.blocked_services ?? []),
     extension_overrides: overrides.map((override) => ({
       name: override.name,
       ...(override.disabled === true ? { disabled: true } : {}),
+      ...(override.require_trusted === true ? { require_trusted: true } : {}),
+      ...(override.require_provenance === true ? { require_provenance: true } : {}),
+      ...(override.sandbox_profile ? { sandbox_profile: override.sandbox_profile } : {}),
       ...(override.allowed_capabilities.length > 0 ? { allowed_capabilities: override.allowed_capabilities } : {}),
       ...(override.blocked_capabilities.length > 0 ? { blocked_capabilities: override.blocked_capabilities } : {}),
       ...(override.allowed_surfaces.length > 0 ? { allowed_surfaces: override.allowed_surfaces } : {}),
       ...(override.blocked_surfaces.length > 0 ? { blocked_surfaces: override.blocked_surfaces } : {}),
+      ...(override.allowed_commands.length > 0 ? { allowed_commands: override.allowed_commands } : {}),
+      ...(override.blocked_commands.length > 0 ? { blocked_commands: override.blocked_commands } : {}),
+      ...(override.allowed_actions.length > 0 ? { allowed_actions: override.allowed_actions } : {}),
+      ...(override.blocked_actions.length > 0 ? { blocked_actions: override.blocked_actions } : {}),
+      ...(override.allowed_services.length > 0 ? { allowed_services: override.allowed_services } : {}),
+      ...(override.blocked_services.length > 0 ? { blocked_services: override.blocked_services } : {}),
     })),
   };
 }
@@ -694,6 +744,7 @@ function resolveAction(target: string | undefined, options: ExtensionCommandOpti
     options.uninstall ? "uninstall" : null,
     options.explore ? "explore" : null,
     options.manage ? "manage" : null,
+    options.reload ? "reload" : null,
     options.doctor ? "doctor" : null,
     options.init ? "init" : null,
     options.scaffold ? "init" : null,
@@ -706,11 +757,14 @@ function resolveAction(target: string | undefined, options: ExtensionCommandOpti
     if (typeof target === "string" && target.trim().toLowerCase() === "doctor") {
       return "doctor";
     }
+    if (typeof target === "string" && target.trim().toLowerCase() === "reload") {
+      return "reload";
+    }
     if (typeof target === "string" && (target.trim().toLowerCase() === "init" || target.trim().toLowerCase() === "scaffold")) {
       return "init";
     }
     throw new PmCliError(
-      "One action flag is required. Use one of: --install, --uninstall, --explore, --manage, --doctor, --init/--scaffold, --adopt, --adopt-all, --activate, --deactivate.",
+      "One action flag is required. Use one of: --install, --uninstall, --explore, --manage, --reload, --doctor, --init/--scaffold, --adopt, --adopt-all, --activate, --deactivate.",
       EXIT_CODE.USAGE,
     );
   }
@@ -1754,6 +1808,9 @@ export async function runExtension(
   if (options.trace === true && action !== "doctor") {
     throw new PmCliError("--trace is only valid with --doctor.", EXIT_CODE.USAGE);
   }
+  if (options.watch === true && action !== "reload") {
+    throw new PmCliError("--watch is only valid with --reload.", EXIT_CODE.USAGE);
+  }
   if (options.runtimeProbe === true && action !== "manage") {
     throw new PmCliError("--runtime-probe is only valid with --manage.", EXIT_CODE.USAGE);
   }
@@ -1763,6 +1820,9 @@ export async function runExtension(
   const normalizedTarget = (() => {
     const normalizedInput = target?.trim().toLowerCase();
     if (action === "doctor" && normalizedInput === "doctor") {
+      return undefined;
+    }
+    if (action === "reload" && normalizedInput === "reload") {
       return undefined;
     }
     const inferredInitAlias =
@@ -1816,6 +1876,55 @@ export async function runExtension(
         "Run extension diagnostics: pm extension --doctor --project --detail summary",
       ],
     });
+  }
+
+  if (action === "reload") {
+    if (normalizedTarget !== undefined) {
+      throw new PmCliError('Action "reload" does not accept a target argument.', EXIT_CODE.USAGE);
+    }
+    const settings = await readSettings(resolvedRoots.settings_root);
+    const reloadToken = nextExtensionReloadToken();
+    const reloaded = await loadExtensions({
+      pmRoot: resolvedRoots.settings_root,
+      settings,
+      cwd: process.cwd(),
+      noExtensions: global.noExtensions,
+      reload_token: reloadToken,
+      cache_bust: true,
+    });
+    warnings.push(...reloaded.warnings);
+    const activation = await activateExtensions(reloaded);
+    warnings.push(...activation.warnings);
+    const details = {
+      reload: {
+        token: reloadToken,
+        cache_bust: true,
+        watch: options.watch === true,
+      },
+      loaded_count: reloaded.loaded.length,
+      failed_count: reloaded.failed.length,
+      activated_count: Math.max(0, reloaded.loaded.length - activation.failed.length),
+      activation_failed_count: activation.failed.length,
+      loaded_extensions: reloaded.loaded.map((entry) => ({
+        name: entry.name,
+        layer: entry.layer,
+        version: entry.version,
+      })),
+      failed_extensions: reloaded.failed.map((entry) => ({
+        name: entry.name,
+        layer: entry.layer,
+        error: entry.error,
+      })),
+      activation_failures: activation.failed.map((entry) => ({
+        name: entry.name,
+        layer: entry.layer,
+        error: entry.error,
+      })),
+    };
+    if (options.watch === true) {
+      warnings.push("extension_reload_watch_hint:watch_mode_requested_non_interactive_single_pass_only");
+    }
+    return withResult(details);
   }
 
   if (action === "install") {
@@ -2183,12 +2292,22 @@ export async function runExtension(
     const normalizedWarnings = [...triage.warnings];
     const policySummary = {
       mode: loadResult.policy.mode,
+      trust_mode: loadResult.policy.trust_mode,
+      require_provenance: loadResult.policy.require_provenance,
+      default_sandbox_profile: loadResult.policy.default_sandbox_profile,
+      trusted_extensions_count: loadResult.policy.trusted_extensions.length,
       allowed_extensions_count: loadResult.policy.allowed_extensions.length,
       blocked_extensions_count: loadResult.policy.blocked_extensions.length,
       allowed_capabilities_count: loadResult.policy.allowed_capabilities.length,
       blocked_capabilities_count: loadResult.policy.blocked_capabilities.length,
       allowed_surfaces_count: loadResult.policy.allowed_surfaces.length,
       blocked_surfaces_count: loadResult.policy.blocked_surfaces.length,
+      allowed_commands_count: loadResult.policy.allowed_commands.length,
+      blocked_commands_count: loadResult.policy.blocked_commands.length,
+      allowed_actions_count: loadResult.policy.allowed_actions.length,
+      blocked_actions_count: loadResult.policy.blocked_actions.length,
+      allowed_services_count: loadResult.policy.allowed_services.length,
+      blocked_services_count: loadResult.policy.blocked_services.length,
       extension_override_count: loadResult.policy.extension_overrides.length,
     };
     const capabilityGuidance = collectUnknownCapabilityGuidance(normalizedWarnings);

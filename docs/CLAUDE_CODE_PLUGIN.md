@@ -162,12 +162,14 @@ pnpm smoke:codex-plugin
 pm contracts --schema-only --json
 pm contracts --command extension --flags-only --json
 pm extension --doctor --project --detail summary --strict-exit
+pm extension --reload --project
 ```
 
 Why this matters:
 
 - `pm contracts` is extension-aware and reflects active runtime action/flag surfaces.
 - `extension --doctor` now includes policy diagnostics and deterministic warning codes.
+- `extension --reload` provides cache-busted module reload for extension dev loops.
 - `--strict-exit` turns warning states into CI-failing exits when governance gates require it.
 
 ### Validate manifests
@@ -205,6 +207,7 @@ When extension governance policy is configured (`settings.extensions.policy`), p
 
 - `extension_policy_violation_*` warnings in warn mode
 - `extension_policy_blocked_*` warnings in enforce mode
+- `extension_policy_*_trust` warnings for trust/provenance gates
 - policy summary counters under `extension doctor` details (`summary.policy` + `triage.policy_*`)
 
 This enables contract-safe and policy-safe automation without falling back to shell heuristics.

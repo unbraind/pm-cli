@@ -34,6 +34,14 @@ jobs:
         run: |
           pm contracts --schema-only --json > contracts-schema.json
           pm contracts --command extension --flags-only --json > contracts-extension-flags.json
+          pm contracts --json > contracts-runtime.json
+
+      - name: Verify extension contract compatibility metadata
+        run: |
+          node -e 'const fs=require("node:fs");const c=JSON.parse(fs.readFileSync("contracts-runtime.json","utf8"));if(!c.extension_contracts?.compatibility){throw new Error("missing extension compatibility metadata");}'
+
+      - name: Reload extensions
+        run: pm extension --reload --project --json
 
       - name: Extension governance diagnostics gate
         run: pm extension --doctor --project --detail summary --strict-exit

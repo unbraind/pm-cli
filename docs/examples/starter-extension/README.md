@@ -30,7 +30,13 @@ pm extension --install --project .agents/pm/extensions/starter-extension
 # 4) Run a starter command
 pm starter ping --name "agent"
 
-# 5) Verify runtime health
+# 5) Reload extension modules after edits
+pm extension --reload --project
+
+# 6) Optional watch-mode semantics
+pm extension --reload --project --watch
+
+# 7) Verify runtime health
 pm extension --doctor --project --detail summary
 ```
 
@@ -39,6 +45,7 @@ Expected outcomes:
 - `pm starter ping` returns deterministic output (plain text when starter service overrides output formatting).
 - `extension --doctor` shows `details.summary.status` as `ok` or `warn`.
 - If `warn`, inspect `details.summary.warning_codes` and `details.triage.remediation`.
+- `extension --reload` returns deterministic load/activation diagnostics for cache-busted imports.
 
 ## Policy-Restricted Variant
 

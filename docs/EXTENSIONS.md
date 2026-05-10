@@ -1,5 +1,250 @@
 # Extensions
 
+Extensions let you add or override `pm` runtime behavior without modifying core `pm-cli`.
+
+This guide is the authoritative reference for:
+
+- manifest `v1` and `v2` contracts
+- governance policy (`extensions.policy`) controls
+- trust/provenance and sandbox restrictions
+- manual reload and watch-mode workflows
+- migration from policy-only setups to enterprise controls
+
+## Quick Start
+
+```bash
+# 1) Scaffold an extension
+pm extension --init ./my-extension
+
+# 2) Install in project scope
+pm extension --install --project ./my-extension
+
+# 3) Run diagnostics
+pm extension --doctor --project --detail summary
+
+# 4) Reload runtime modules after local edits
+pm extension --reload --project
+```
+
+## Delta From Previous Scope
+
+Compared to the previous policy-only extension surface, this release adds:
+
+- **Manifest v2 metadata** for trust, provenance, sandbox profile, and runtime permission declarations.
+- **Policy v2 controls** for trust mode, provenance requirement, sandbox defaults, and command/action/service allow/block maps.
+- **Registration enforcement upgrades** so command/action/service restrictions are evaluated at registration boundaries.
+- **Hot reload controls** via cache-busted extension reload (`pm extension --reload`) with watch-mode semantics (`--watch`).
+- **Contracts metadata upgrades** for trust/sandbox compatibility information in `pm contracts`.
+
+## Extension Locations
+
+- Project scope: `.agents/pm/extensions/<name>/`
+- Global scope: `~/.pm-cli/extensions/<name>/`
+- Project entries override global entries when command paths collide.
+
+Overrides:
+
+- `PM_PATH`: project tracker root override
+- `PM_GLOBAL_PATH`: global profile root override
+
+## Manifest Contract
+
+### Manifest v1 (still supported)
+
+```json
+{
+  "name": "my-ext",
+  "version": "0.1.0",
+  "entry": "./index.js",
+  "priority": 100,
+  "capabilities": ["commands"]
+}
+```
+
+### Manifest v2 (recommended)
+
+```json
+{
+  "name": "my-ext",
+  "version": "0.2.0",
+  "entry": "./index.js",
+  "priority": 100,
+  "manifest_version": 2,
+  "trusted": true,
+  "provenance": {
+    "source": "github://org/repo/path",
+    "verified": true
+  },
+  "sandbox_profile": "restricted",
+  "permissions": {
+    "fs_read": true,
+    "fs_write": false,
+    "network": false,
+    "env_read": true,
+    "env_write": false,
+    "process_spawn": false
+  },
+  "capabilities": ["commands", "hooks"]
+}
+```
+
+### Capability Values
+
+- `commands`
+- `parser`
+- `preflight`
+- `services`
+- `renderers`
+- `hooks`
+- `schema`
+- `importers`
+- `search`
+
+## Governance Policy v2
+
+Policy is configured under `settings.json` -> `extensions.policy`.
+
+```json
+{
+  "extensions": {
+    "policy": {
+      "mode": "enforce",
+      "trust_mode": "warn",
+      "require_provenance": true,
+      "trusted_extensions": ["policy-restricted-extension"],
+      "default_sandbox_profile": "restricted",
+      "allowed_extensions": [],
+      "blocked_extensions": [],
+      "allowed_capabilities": [],
+      "blocked_capabilities": ["services"],
+      "allowed_surfaces": [],
+      "blocked_surfaces": ["commands.override"],
+      "allowed_commands": [],
+      "blocked_commands": ["dangerous command"],
+      "allowed_actions": [],
+      "blocked_actions": ["dangerous-command"],
+      "allowed_services": [],
+      "blocked_services": ["output_format"],
+      "extension_overrides": [
+        {
+          "name": "policy-restricted-extension",
+          "require_trusted": true,
+          "require_provenance": true,
+          "sandbox_profile": "strict",
+          "allowed_surfaces": ["commands.handler", "hooks.beforecommand"],
+          "blocked_surfaces": ["services.override"]
+        }
+      ]
+    }
+  }
+}
+```
+
+### Mode Semantics
+
+- `mode`: `off|warn|enforce` for extension/capability/surface/command/action/service restrictions
+- `trust_mode`: `off|warn|enforce` for trust checks
+- `default_sandbox_profile`: `none|restricted|strict`
+
+### Sandbox Profiles
+
+Sandbox profiles are policy-driven gates evaluated against manifest permission declarations:
+
+- `none`: no sandbox permission gating
+- `restricted`: blocks sensitive writes/spawn (`process_spawn`, `env_write`)
+- `strict`: blocks spawn/network/write-style permissions (`process_spawn`, `network`, `fs_write`, `env_write`)
+
+If a non-`none` profile is active and manifest permissions are missing, a deterministic policy warning/block is emitted.
+
+### Surface Tokens
+
+Supported `allowed_surfaces` / `blocked_surfaces` values:
+
+- `commands.override`
+- `commands.handler`
+- `hooks.beforecommand`
+- `hooks.aftercommand`
+- `hooks.onwrite`
+- `hooks.onread`
+- `hooks.onindex`
+- `schema.flags`
+- `schema.itemfields`
+- `schema.itemtypes`
+- `schema.migrations`
+- `parser.override`
+- `preflight.override`
+- `services.override`
+- `renderers.override`
+- `importers.importer`
+- `importers.exporter`
+- `search.provider`
+- `search.vectorstore`
+
+## Hot Reload
+
+### Manual reload
+
+```bash
+pm extension --reload --project
+```
+
+This runs extension discovery/load with cache-busted import URLs and returns deterministic load/activation diagnostics.
+
+### Watch mode
+
+```bash
+pm extension --reload --project --watch
+```
+
+`--watch` enables watch-mode semantics for reload workflows. In non-interactive automation, it executes a deterministic single-pass reload and emits a watch hint warning.
+
+## Diagnostics and Warning Codes
+
+Common warning prefixes:
+
+- `extension_policy_violation_extension`
+- `extension_policy_violation_capability`
+- `extension_policy_violation_registration`
+- `extension_policy_violation_trust`
+- `extension_policy_blocked_extension`
+- `extension_policy_blocked_capability`
+- `extension_policy_blocked_registration`
+- `extension_policy_blocked_trust`
+
+Use:
+
+```bash
+pm extension --doctor --project --detail deep --trace
+```
+
+for full activation traces.
+
+## Migration (v1 -> v2)
+
+1. Keep existing manifest fields unchanged.
+2. Add `manifest_version: 2`.
+3. Add `trusted`, `provenance`, `sandbox_profile`, and `permissions`.
+4. Extend `extensions.policy` with trust/sandbox/command-action-service fields.
+5. Run:
+
+```bash
+pm contracts --json
+pm extension --doctor --project --detail summary --strict-exit
+```
+
+6. Fix any policy warnings before enforcing (`mode=enforce`, `trust_mode=enforce`).
+
+## Runnable Examples
+
+- `docs/examples/starter-extension/`
+- `docs/examples/policy-restricted-extension/`
+- `docs/examples/sdk-contract-consumer/`
+- `docs/examples/sdk-app-embedding/`
+- `docs/examples/ci/github-actions-pm-extension-gate.yml`
+- `docs/examples/ci/gitlab-ci-pm-extension-gate.yml`
+- `docs/examples/ci/jenkins-pm-extension-gate.Jenkinsfile`
+# Extensions
+
 Extensions let you add or override `pm` runtime behavior without editing core `pm-cli` sources. They are loaded at runtime, gated by manifest capabilities, and now support granular governance policies for capability/surface allow/block controls.
 
 ## Quick Start

@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "inspect:create": "node inspect-contracts.mjs create",
-    "inspect:update": "node inspect-contracts.mjs update"
+    "inspect:update": "node inspect-contracts.mjs update",
+    "inspect:reload": "node inspect-contracts.mjs extension-reload"
   }
 }

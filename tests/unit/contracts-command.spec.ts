@@ -38,6 +38,7 @@ describe("contracts command runtime", () => {
     expect(result.actions ?? []).toContain("dedupe-audit");
     expect(result.actions ?? []).toContain("normalize");
     expect(result.actions ?? []).toContain("guide");
+    expect(result.actions ?? []).toContain("extension-reload");
     expect(result.commands).toContain("contracts");
     expect(result.commands).toContain("aggregate");
     expect(result.commands).toContain("dedupe-audit");
@@ -58,6 +59,14 @@ describe("contracts command runtime", () => {
       services: expect.arrayContaining(["output_format", "history_append"]),
       policy_modes: expect.arrayContaining(["off", "warn", "enforce"]),
       policy_surfaces: expect.arrayContaining(["commands.handler", "hooks.beforecommand", "search.provider"]),
+      trust_modes: expect.arrayContaining(["off", "warn", "enforce"]),
+      sandbox_profiles: expect.arrayContaining(["none", "restricted", "strict"]),
+      manifest_versions: [1, 2],
+      compatibility: {
+        current: "v2",
+        previous: ["v1"],
+        breaking_strategy: "versioned_breaking",
+      },
     });
   });
 
@@ -415,6 +424,11 @@ describe("contracts command runtime", () => {
         disabled_reason: "extensions_disabled",
         command_path: "beads import",
         cli_exposed: false,
+        policy_state: {
+          mode: "off",
+          trust_mode: "off",
+          default_sandbox_profile: "none",
+        },
       },
     ]);
     const oneOf = (result.schema?.oneOf ?? []) as Array<{ properties?: { action?: { const?: string } } }>;

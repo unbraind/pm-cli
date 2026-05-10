@@ -46,6 +46,10 @@ export type PmExtensionServiceNameContract = (typeof PM_EXTENSION_SERVICE_NAME_C
 
 export const PM_EXTENSION_POLICY_MODE_CONTRACTS = ["off", "warn", "enforce"] as const;
 export type PmExtensionPolicyModeContract = (typeof PM_EXTENSION_POLICY_MODE_CONTRACTS)[number];
+export const PM_EXTENSION_TRUST_MODE_CONTRACTS = ["off", "warn", "enforce"] as const;
+export type PmExtensionTrustModeContract = (typeof PM_EXTENSION_TRUST_MODE_CONTRACTS)[number];
+export const PM_EXTENSION_SANDBOX_PROFILE_CONTRACTS = ["none", "restricted", "strict"] as const;
+export type PmExtensionSandboxProfileContract = (typeof PM_EXTENSION_SANDBOX_PROFILE_CONTRACTS)[number];
 
 export const PM_EXTENSION_POLICY_SURFACE_CONTRACTS = [
   "commands.override",
@@ -180,6 +184,7 @@ export const PM_TOOL_ACTIONS = [
   "extension-uninstall",
   "extension-explore",
   "extension-manage",
+  "extension-reload",
   "extension-doctor",
   "extension-adopt",
   "extension-adopt-all",
@@ -692,6 +697,8 @@ export const EXTENSION_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--uninstall" },
   { flag: "--explore" },
   { flag: "--manage" },
+  { flag: "--reload" },
+  { flag: "--watch" },
   { flag: "--doctor" },
   { flag: "--adopt" },
   { flag: "--adopt-all" },
@@ -1632,6 +1639,8 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   sharedHostSafe: { type: "boolean" },
   detail: { type: "string", enum: ["summary", "deep"] },
   trace: { type: "boolean" },
+  reload: { type: "boolean" },
+  watch: { type: "boolean" },
   runtimeProbe: { type: "boolean" },
   fixManagedState: { type: "boolean" },
   pmContext: { type: "string", enum: ["schema", "tracker", "auto"] },
@@ -1856,6 +1865,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   "extension-uninstall": { required: ["target"], optional: ["scope"] },
   "extension-explore": { optional: ["scope"] },
   "extension-manage": { optional: ["scope", "runtimeProbe", "fixManagedState"] },
+  "extension-reload": { optional: ["scope", "watch"] },
   "extension-doctor": { optional: ["scope", "detail", "trace", "fixManagedState", "strictExit", "failOnWarn"] },
   "extension-adopt": { required: ["target"], optional: ["scope", "github", "ref"] },
   "extension-adopt-all": { optional: ["scope"] },
@@ -1872,6 +1882,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
       "uninstall",
       "explore",
       "manage",
+      "reload",
       "doctor",
       "adopt",
       "adoptAll",
@@ -1881,6 +1892,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
       "fixManagedState",
       "detail",
       "trace",
+      "watch",
       "strictExit",
       "failOnWarn",
     ],
@@ -2102,6 +2114,12 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   trace: {
     description: "When true for extension-doctor, include actionable registration traces in deep diagnostics.",
+  },
+  reload: {
+    description: "When true for extension action payloads, trigger cache-busted extension module reload.",
+  },
+  watch: {
+    description: "When true for extension-reload/extension action payloads, enable watch mode semantics.",
   },
   runtimeProbe: {
     description: "When true for extension-manage, run a doctor-like runtime activation probe for parity fields.",

@@ -91,6 +91,47 @@ describe("extension command runtime", () => {
       await expect(
         runExtension(undefined, { explore: true, project: true, fixManagedState: true }, { path: context.pmPath }),
       ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runExtension(undefined, { explore: true, project: true, watch: true }, { path: context.pmPath }),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+    });
+  });
+
+  it("executes extension reload with cache-busted runtime diagnostics", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceDir = path.join(context.tempRoot, "reload-source-ext");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(
+        path.join(sourceDir, "manifest.json"),
+        `${JSON.stringify(
+          {
+            name: "reload-source-ext",
+            version: "1.0.0",
+            entry: "./index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+      await writeFile(path.join(sourceDir, "index.js"), "export default { activate() {} };\n", "utf8");
+
+      await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
+      const reloaded = await runExtension(undefined, { reload: true, watch: true, project: true }, { path: context.pmPath });
+
+      expect(reloaded.action).toBe("reload");
+      expect(reloaded.details).toMatchObject({
+        reload: {
+          cache_bust: true,
+          watch: true,
+        },
+      });
+      const loadedCount = (reloaded.details as { loaded_count?: number }).loaded_count ?? 0;
+      expect(loadedCount).toBeGreaterThan(0);
+      expect(reloaded.warnings).toEqual(
+        expect.arrayContaining(["extension_reload_watch_hint:watch_mode_requested_non_interactive_single_pass_only"]),
+      );
     });
   });
 

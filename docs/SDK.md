@@ -1,5 +1,136 @@
 # SDK
 
+The supported programmatic surface is `@unbrained/pm-cli/sdk`.
+
+Use this for:
+
+- extension authoring (`defineExtension`)
+- command/action schema discovery (`PM_TOOL_PARAMETERS_SCHEMA`)
+- runtime action contracts (`PM_TOOL_ACTION_PARAMETER_CONTRACTS`)
+- capability/policy/trust/sandbox contract constants
+
+Do not import private `src/core/...` modules from external integrations.
+
+## Install
+
+```bash
+npm install @unbrained/pm-cli
+```
+
+## Key Exports
+
+### Extension Authoring
+
+- `defineExtension`
+- `EXTENSION_CAPABILITIES`
+- `EXTENSION_POLICY_MODES`
+- `EXTENSION_POLICY_SURFACES`
+- `EXTENSION_TRUST_MODES`
+- `EXTENSION_SANDBOX_PROFILES`
+- `EXTENSION_CAPABILITY_CONTRACT`
+- `EXTENSION_CAPABILITY_CONTRACT_VERSION`
+- `EXTENSION_CAPABILITY_LEGACY_ALIASES`
+
+### Command/Action Contracts
+
+- `PM_CORE_COMMAND_NAMES`
+- `PM_TOOL_ACTIONS`
+- `PM_TOOL_PARAMETERS_SCHEMA`
+- `PM_PI_TOOL_PARAMETERS_SCHEMA`
+- `PM_TOOL_ACTION_PARAMETER_CONTRACTS`
+
+### Extension Runtime Contract Constants
+
+- `PM_EXTENSION_CAPABILITY_CONTRACTS`
+- `PM_EXTENSION_SERVICE_NAME_CONTRACTS`
+- `PM_EXTENSION_POLICY_MODE_CONTRACTS`
+- `PM_EXTENSION_POLICY_SURFACE_CONTRACTS`
+- `PM_EXTENSION_TRUST_MODE_CONTRACTS`
+- `PM_EXTENSION_SANDBOX_PROFILE_CONTRACTS`
+
+### Type Guards
+
+- `isPmToolAction`
+- `isPmExtensionCapabilityContract`
+- `isPmExtensionServiceNameContract`
+- `isPmExtensionPolicyModeContract`
+- `isPmExtensionPolicySurfaceContract`
+
+## Extension Example
+
+```ts
+import { defineExtension } from "@unbrained/pm-cli/sdk";
+
+export default defineExtension({
+  activate(api) {
+    api.registerCommand({
+      name: "release audit",
+      action: "release-audit",
+      description: "Collect release-readiness diagnostics.",
+      intent: "Produce deterministic gate payloads for CI.",
+      run: async (context) => ({
+        ok: true,
+        command: context.command,
+      }),
+    });
+  },
+});
+```
+
+## Contracts-First Automation Pattern
+
+```ts
+import { PM_TOOL_ACTION_PARAMETER_CONTRACTS, isPmToolAction } from "@unbrained/pm-cli/sdk";
+import { spawnSync } from "node:child_process";
+
+const action = "extension-reload";
+if (!isPmToolAction(action)) throw new Error("Unsupported action");
+const contract = PM_TOOL_ACTION_PARAMETER_CONTRACTS[action];
+console.log(contract.required, contract.optional);
+
+const contracts = spawnSync("pm", ["contracts", "--json"], { encoding: "utf8" });
+if (contracts.status !== 0) throw new Error(contracts.stderr);
+```
+
+## Runtime Metadata Added For v2
+
+`pm contracts --json` now includes richer extension metadata:
+
+- `extension_contracts.trust_modes`
+- `extension_contracts.sandbox_profiles`
+- `extension_contracts.manifest_versions`
+- `extension_contracts.compatibility`
+- `action_availability[].policy_state` for extension-backed actions
+
+Use these fields to gate CI and to route compatibility behavior in embedded runtimes.
+
+## Versioned-Breaking Compatibility
+
+Current contract compatibility model:
+
+- `manifest` current: `v2`
+- supported previous: `v1`
+- strategy: `versioned_breaking`
+
+Recommended migration flow:
+
+1. read runtime contracts (`pm contracts --json`)
+2. branch behavior by compatibility metadata
+3. migrate manifests/policy to v2
+4. enforce trust/sandbox policy gates in CI
+
+## Runnable Examples
+
+- contracts consumer: `docs/examples/sdk-contract-consumer/`
+- app embedding runner: `docs/examples/sdk-app-embedding/`
+- CI gates: `docs/examples/ci/`
+
+## Related Docs
+
+- `docs/EXTENSIONS.md`
+- `docs/CLAUDE_CODE_PLUGIN.md`
+# SDK
+
 The stable integration surface is `@unbrained/pm-cli/sdk`. Use it for extension authoring, action/flag contract discovery, and deterministic app/CI automation.
 
 ## Install

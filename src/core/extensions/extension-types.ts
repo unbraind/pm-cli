@@ -26,6 +26,10 @@ export const EXTENSION_CAPABILITY_CONTRACT = Object.freeze({
 
 export const KNOWN_EXTENSION_POLICY_MODES = ["off", "warn", "enforce"] as const;
 export type ExtensionPolicyMode = (typeof KNOWN_EXTENSION_POLICY_MODES)[number];
+export const KNOWN_EXTENSION_TRUST_MODES = ["off", "warn", "enforce"] as const;
+export type ExtensionTrustMode = (typeof KNOWN_EXTENSION_TRUST_MODES)[number];
+export const KNOWN_EXTENSION_SANDBOX_PROFILES = ["none", "restricted", "strict"] as const;
+export type ExtensionSandboxProfile = (typeof KNOWN_EXTENSION_SANDBOX_PROFILES)[number];
 
 export const KNOWN_EXTENSION_POLICY_SURFACES = [
   "commands.override",
@@ -50,23 +54,58 @@ export const KNOWN_EXTENSION_POLICY_SURFACES = [
 ] as const;
 export type ExtensionPolicySurface = (typeof KNOWN_EXTENSION_POLICY_SURFACES)[number];
 
+export interface ExtensionProvenanceMetadata {
+  source?: string;
+  signature?: string;
+  attestation?: string;
+  verified?: boolean;
+}
+
+export interface ExtensionRuntimePermissionDeclaration {
+  fs_read?: boolean;
+  fs_write?: boolean;
+  network?: boolean;
+  env_read?: boolean;
+  env_write?: boolean;
+  process_spawn?: boolean;
+}
+
 export interface ExtensionPolicyOverride {
   name: string;
   disabled?: boolean;
+  require_trusted?: boolean;
+  require_provenance?: boolean;
+  sandbox_profile?: ExtensionSandboxProfile;
   allowed_capabilities?: string[];
   blocked_capabilities?: string[];
   allowed_surfaces?: string[];
   blocked_surfaces?: string[];
+  allowed_commands?: string[];
+  blocked_commands?: string[];
+  allowed_actions?: string[];
+  blocked_actions?: string[];
+  allowed_services?: string[];
+  blocked_services?: string[];
 }
 
 export interface ExtensionGovernancePolicy {
   mode: ExtensionPolicyMode;
+  trust_mode: ExtensionTrustMode;
+  require_provenance: boolean;
+  trusted_extensions: string[];
+  default_sandbox_profile: ExtensionSandboxProfile;
   allowed_extensions: string[];
   blocked_extensions: string[];
   allowed_capabilities: string[];
   blocked_capabilities: string[];
   allowed_surfaces: string[];
   blocked_surfaces: string[];
+  allowed_commands: string[];
+  blocked_commands: string[];
+  allowed_actions: string[];
+  blocked_actions: string[];
+  allowed_services: string[];
+  blocked_services: string[];
   extension_overrides: ExtensionPolicyOverride[];
 }
 
@@ -79,6 +118,11 @@ export interface ExtensionManifest {
   entry: string;
   priority: number;
   capabilities: string[];
+  manifest_version?: number;
+  trusted?: boolean;
+  provenance?: ExtensionProvenanceMetadata;
+  sandbox_profile?: ExtensionSandboxProfile;
+  permissions?: ExtensionRuntimePermissionDeclaration;
   legacy_capability_aliases?: LegacyExtensionCapabilityAliasMapping[];
 }
 
@@ -104,6 +148,11 @@ export interface EffectiveExtension {
   entry: string;
   priority: number;
   entry_path: string;
+  manifest_version?: number;
+  trusted?: boolean;
+  provenance?: ExtensionProvenanceMetadata;
+  sandbox_profile?: ExtensionSandboxProfile;
+  permissions?: ExtensionRuntimePermissionDeclaration;
   capabilities?: string[];
 }
 
@@ -705,6 +754,8 @@ export interface DiscoverExtensionsOptions {
   settings: PmSettings;
   cwd?: string;
   noExtensions?: boolean;
+  reload_token?: string;
+  cache_bust?: boolean;
 }
 
 export interface ActivatableExtension {

@@ -10,9 +10,11 @@ import {
 import { getSettingsPath } from "./paths.js";
 import { orderObject } from "../shared/serialization.js";
 import type {
+  ExtensionSandboxProfile,
   ExtensionPolicyMode,
   ExtensionPolicyOverrideSettings,
   ExtensionPolicySettings,
+  ExtensionTrustMode,
   GovernanceSettings,
   ItemTypeCommandOptionPolicy,
   ItemTypeDefinition,
@@ -140,21 +142,40 @@ const governanceSettingsSchema = z
 const extensionPolicyOverrideSchema = z.object({
   name: z.string(),
   disabled: z.boolean().optional(),
+  require_trusted: z.boolean().optional(),
+  require_provenance: z.boolean().optional(),
+  sandbox_profile: z.union([z.literal("none"), z.literal("restricted"), z.literal("strict")]).optional(),
   allowed_capabilities: z.array(z.string()).optional(),
   blocked_capabilities: z.array(z.string()).optional(),
   allowed_surfaces: z.array(z.string()).optional(),
   blocked_surfaces: z.array(z.string()).optional(),
+  allowed_commands: z.array(z.string()).optional(),
+  blocked_commands: z.array(z.string()).optional(),
+  allowed_actions: z.array(z.string()).optional(),
+  blocked_actions: z.array(z.string()).optional(),
+  allowed_services: z.array(z.string()).optional(),
+  blocked_services: z.array(z.string()).optional(),
 });
 
 const extensionPolicySchema = z
   .object({
     mode: z.union([z.literal("off"), z.literal("warn"), z.literal("enforce")]).optional(),
+    trust_mode: z.union([z.literal("off"), z.literal("warn"), z.literal("enforce")]).optional(),
+    require_provenance: z.boolean().optional(),
+    trusted_extensions: z.array(z.string()).optional(),
+    default_sandbox_profile: z.union([z.literal("none"), z.literal("restricted"), z.literal("strict")]).optional(),
     allowed_extensions: z.array(z.string()).optional(),
     blocked_extensions: z.array(z.string()).optional(),
     allowed_capabilities: z.array(z.string()).optional(),
     blocked_capabilities: z.array(z.string()).optional(),
     allowed_surfaces: z.array(z.string()).optional(),
     blocked_surfaces: z.array(z.string()).optional(),
+    allowed_commands: z.array(z.string()).optional(),
+    blocked_commands: z.array(z.string()).optional(),
+    allowed_actions: z.array(z.string()).optional(),
+    blocked_actions: z.array(z.string()).optional(),
+    allowed_services: z.array(z.string()).optional(),
+    blocked_services: z.array(z.string()).optional(),
     extension_overrides: z.array(extensionPolicyOverrideSchema).optional(),
   })
   .optional();
@@ -374,6 +395,20 @@ function normalizeExtensionPolicyMode(value: ExtensionPolicyMode | undefined): E
   return SETTINGS_DEFAULTS.extensions.policy.mode;
 }
 
+function normalizeExtensionTrustMode(value: ExtensionTrustMode | undefined): ExtensionTrustMode {
+  if (value === "off" || value === "warn" || value === "enforce") {
+    return value;
+  }
+  return SETTINGS_DEFAULTS.extensions.policy.trust_mode;
+}
+
+function normalizeExtensionSandboxProfile(value: ExtensionSandboxProfile | undefined): ExtensionSandboxProfile {
+  if (value === "none" || value === "restricted" || value === "strict") {
+    return value;
+  }
+  return SETTINGS_DEFAULTS.extensions.policy.default_sandbox_profile;
+}
+
 function normalizeExtensionPolicyOverride(
   override: ExtensionPolicyOverrideSettings,
 ): ExtensionPolicyOverrideSettings | null {
@@ -387,10 +422,25 @@ function normalizeExtensionPolicyOverride(
   if (override.disabled === true) {
     normalized.disabled = true;
   }
+  if (override.require_trusted === true) {
+    normalized.require_trusted = true;
+  }
+  if (override.require_provenance === true) {
+    normalized.require_provenance = true;
+  }
+  if (override.sandbox_profile !== undefined) {
+    normalized.sandbox_profile = normalizeExtensionSandboxProfile(override.sandbox_profile);
+  }
   const allowedCapabilities = normalizeLowerStringList(override.allowed_capabilities);
   const blockedCapabilities = normalizeLowerStringList(override.blocked_capabilities);
   const allowedSurfaces = normalizeLowerStringList(override.allowed_surfaces);
   const blockedSurfaces = normalizeLowerStringList(override.blocked_surfaces);
+  const allowedCommands = normalizeLowerStringList(override.allowed_commands);
+  const blockedCommands = normalizeLowerStringList(override.blocked_commands);
+  const allowedActions = normalizeLowerStringList(override.allowed_actions);
+  const blockedActions = normalizeLowerStringList(override.blocked_actions);
+  const allowedServices = normalizeLowerStringList(override.allowed_services);
+  const blockedServices = normalizeLowerStringList(override.blocked_services);
   if (allowedCapabilities.length > 0) {
     normalized.allowed_capabilities = allowedCapabilities;
   }
@@ -402,6 +452,24 @@ function normalizeExtensionPolicyOverride(
   }
   if (blockedSurfaces.length > 0) {
     normalized.blocked_surfaces = blockedSurfaces;
+  }
+  if (allowedCommands.length > 0) {
+    normalized.allowed_commands = allowedCommands;
+  }
+  if (blockedCommands.length > 0) {
+    normalized.blocked_commands = blockedCommands;
+  }
+  if (allowedActions.length > 0) {
+    normalized.allowed_actions = allowedActions;
+  }
+  if (blockedActions.length > 0) {
+    normalized.blocked_actions = blockedActions;
+  }
+  if (allowedServices.length > 0) {
+    normalized.allowed_services = allowedServices;
+  }
+  if (blockedServices.length > 0) {
+    normalized.blocked_services = blockedServices;
   }
   return normalized;
 }
@@ -424,12 +492,22 @@ function normalizeExtensionPolicySettings(policy: Partial<ExtensionPolicySetting
   const defaults = SETTINGS_DEFAULTS.extensions.policy;
   return {
     mode: normalizeExtensionPolicyMode(policy?.mode),
+    trust_mode: normalizeExtensionTrustMode(policy?.trust_mode),
+    require_provenance: policy?.require_provenance === true,
+    trusted_extensions: normalizeLowerStringList(policy?.trusted_extensions ?? defaults.trusted_extensions),
+    default_sandbox_profile: normalizeExtensionSandboxProfile(policy?.default_sandbox_profile),
     allowed_extensions: normalizeLowerStringList(policy?.allowed_extensions ?? defaults.allowed_extensions),
     blocked_extensions: normalizeLowerStringList(policy?.blocked_extensions ?? defaults.blocked_extensions),
     allowed_capabilities: normalizeLowerStringList(policy?.allowed_capabilities ?? defaults.allowed_capabilities),
     blocked_capabilities: normalizeLowerStringList(policy?.blocked_capabilities ?? defaults.blocked_capabilities),
     allowed_surfaces: normalizeLowerStringList(policy?.allowed_surfaces ?? defaults.allowed_surfaces),
     blocked_surfaces: normalizeLowerStringList(policy?.blocked_surfaces ?? defaults.blocked_surfaces),
+    allowed_commands: normalizeLowerStringList(policy?.allowed_commands ?? defaults.allowed_commands),
+    blocked_commands: normalizeLowerStringList(policy?.blocked_commands ?? defaults.blocked_commands),
+    allowed_actions: normalizeLowerStringList(policy?.allowed_actions ?? defaults.allowed_actions),
+    blocked_actions: normalizeLowerStringList(policy?.blocked_actions ?? defaults.blocked_actions),
+    allowed_services: normalizeLowerStringList(policy?.allowed_services ?? defaults.allowed_services),
+    blocked_services: normalizeLowerStringList(policy?.blocked_services ?? defaults.blocked_services),
     extension_overrides: normalizeExtensionPolicyOverrides(policy?.extension_overrides ?? defaults.extension_overrides),
   };
 }
@@ -772,12 +850,22 @@ export function serializeSettings(settings: PmSettings): string {
     (((ordered.extensions as Record<string, unknown>).policy ?? {}) as Record<string, unknown>),
     [
       "mode",
+      "trust_mode",
+      "require_provenance",
+      "trusted_extensions",
+      "default_sandbox_profile",
       "allowed_extensions",
       "blocked_extensions",
       "allowed_capabilities",
       "blocked_capabilities",
       "allowed_surfaces",
       "blocked_surfaces",
+      "allowed_commands",
+      "blocked_commands",
+      "allowed_actions",
+      "blocked_actions",
+      "allowed_services",
+      "blocked_services",
       "extension_overrides",
     ],
   );
@@ -787,10 +875,19 @@ export function serializeSettings(settings: PmSettings): string {
     orderObject((entry ?? {}) as Record<string, unknown>, [
       "name",
       "disabled",
+      "require_trusted",
+      "require_provenance",
+      "sandbox_profile",
       "allowed_capabilities",
       "blocked_capabilities",
       "allowed_surfaces",
       "blocked_surfaces",
+      "allowed_commands",
+      "blocked_commands",
+      "allowed_actions",
+      "blocked_actions",
+      "allowed_services",
+      "blocked_services",
     ]),
   );
   ordered.search = orderObject(ordered.search as Record<string, unknown>, [

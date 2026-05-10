@@ -54,7 +54,9 @@ import {
   PM_EXTENSION_CAPABILITY_CONTRACTS,
   PM_EXTENSION_POLICY_MODE_CONTRACTS,
   PM_EXTENSION_POLICY_SURFACE_CONTRACTS,
+  PM_EXTENSION_SANDBOX_PROFILE_CONTRACTS,
   PM_EXTENSION_SERVICE_NAME_CONTRACTS,
+  PM_EXTENSION_TRUST_MODE_CONTRACTS,
   PM_CORE_COMMAND_NAMES,
   PM_TOOL_ACTIONS,
   PM_TOOL_PARAMETERS_SCHEMA,
@@ -129,6 +131,14 @@ export interface ContractsResult {
     services: string[];
     policy_modes: string[];
     policy_surfaces: string[];
+    trust_modes: string[];
+    sandbox_profiles: string[];
+    manifest_versions: number[];
+    compatibility: {
+      current: string;
+      previous: string[];
+      breaking_strategy: string;
+    };
   };
 }
 
@@ -143,6 +153,11 @@ export interface ContractsActionAvailability {
   disabled_reason: string | null;
   command_path: string | null;
   cli_exposed: boolean;
+  policy_state?: {
+    mode: string;
+    trust_mode: string;
+    default_sandbox_profile: string;
+  };
 }
 
 interface RuntimeExtensionActionProbe {
@@ -150,6 +165,11 @@ interface RuntimeExtensionActionProbe {
   disabledReason: string | null;
   commandDefinitions: RegisteredExtensionCommandDefinition[];
   flagRegistrations: RegisteredExtensionFlagDefinitions[];
+  policyState: {
+    mode: string;
+    trust_mode: string;
+    default_sandbox_profile: string;
+  };
 }
 
 interface ExtensionCommandContract {
@@ -571,12 +591,18 @@ function buildExtensionActionSchemaBranch(contract: ExtensionCommandContract): R
 }
 
 async function resolveRuntimeExtensionActionProbe(global: GlobalOptions): Promise<RuntimeExtensionActionProbe> {
+  const defaultPolicyState = {
+    mode: SETTINGS_DEFAULTS.extensions.policy.mode,
+    trust_mode: SETTINGS_DEFAULTS.extensions.policy.trust_mode,
+    default_sandbox_profile: SETTINGS_DEFAULTS.extensions.policy.default_sandbox_profile,
+  };
   if (global.noExtensions) {
     return {
       handlers: new Set<string>(),
       disabledReason: "extensions_disabled",
       commandDefinitions: [],
       flagRegistrations: [],
+      policyState: defaultPolicyState,
     };
   }
 
@@ -587,6 +613,7 @@ async function resolveRuntimeExtensionActionProbe(global: GlobalOptions): Promis
       disabledReason: null,
       commandDefinitions: [],
       flagRegistrations: [],
+      policyState: defaultPolicyState,
     };
   }
 
@@ -610,6 +637,11 @@ async function resolveRuntimeExtensionActionProbe(global: GlobalOptions): Promis
       disabledReason: null,
       commandDefinitions: activationResult.registrations.commands,
       flagRegistrations: activationResult.registrations.flags,
+      policyState: {
+        mode: loadResult.policy.mode,
+        trust_mode: loadResult.policy.trust_mode,
+        default_sandbox_profile: loadResult.policy.default_sandbox_profile,
+      },
     };
   } catch {
     return {
@@ -617,6 +649,7 @@ async function resolveRuntimeExtensionActionProbe(global: GlobalOptions): Promis
       disabledReason: "extension_runtime_probe_failed",
       commandDefinitions: [],
       flagRegistrations: [],
+      policyState: defaultPolicyState,
     };
   }
 }
@@ -683,6 +716,11 @@ function resolveActionAvailability(
     disabled_reason: invocable ? null : runtimeProbe.disabledReason ?? "extension_command_not_registered",
     command_path: descriptor.command_path,
     cli_exposed: extensionCommandAvailable,
+    policy_state: {
+      mode: runtimeProbe.policyState.mode,
+      trust_mode: runtimeProbe.policyState.trust_mode,
+      default_sandbox_profile: runtimeProbe.policyState.default_sandbox_profile,
+    },
   };
 }
 
@@ -1188,6 +1226,14 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
       services: [...PM_EXTENSION_SERVICE_NAME_CONTRACTS],
       policy_modes: [...PM_EXTENSION_POLICY_MODE_CONTRACTS],
       policy_surfaces: [...PM_EXTENSION_POLICY_SURFACE_CONTRACTS],
+      trust_modes: [...PM_EXTENSION_TRUST_MODE_CONTRACTS],
+      sandbox_profiles: [...PM_EXTENSION_SANDBOX_PROFILE_CONTRACTS],
+      manifest_versions: [1, 2],
+      compatibility: {
+        current: "v2",
+        previous: ["v1"],
+        breaking_strategy: "versioned_breaking",
+      },
     },
   };
 

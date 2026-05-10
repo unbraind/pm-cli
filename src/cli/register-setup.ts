@@ -22,6 +22,7 @@ type ExtensionSubcommandAction =
   | "uninstall"
   | "explore"
   | "manage"
+  | "reload"
   | "doctor"
   | "adopt"
   | "adopt-all"
@@ -49,6 +50,7 @@ function normalizeExtensionOptions(
     uninstall: isForcedAction("uninstall") || readBoolean("uninstall"),
     explore: isForcedAction("explore") || readBoolean("explore"),
     manage: isForcedAction("manage") || readBoolean("manage"),
+    reload: isForcedAction("reload") || readBoolean("reload"),
     doctor: isForcedAction("doctor") || readBoolean("doctor"),
     adopt: isForcedAction("adopt") || readBoolean("adopt"),
     adoptAll: isForcedAction("adopt-all") || readBoolean("adoptAll", "adopt_all", "adopt-all"),
@@ -62,6 +64,7 @@ function normalizeExtensionOptions(
     ref: readString("ref"),
     detail: readString("detail"),
     trace: readBoolean("trace"),
+    watch: readBoolean("watch"),
     runtimeProbe: readBoolean("runtimeProbe", "runtime_probe", "runtime-probe"),
     fixManagedState: readBoolean("fixManagedState", "fix_managed_state", "fix-managed-state"),
     strictExit: readBoolean("strictExit", "strict_exit", "strict-exit"),
@@ -199,6 +202,8 @@ export function registerSetupCommands(program: Command): void {
     .option("--uninstall", "Uninstall an installed extension")
     .option("--explore", "List discovered extensions in selected scope")
     .option("--manage", "List managed extensions with update-check metadata")
+    .option("--reload", "Reload extensions with cache-busted module imports")
+    .option("--watch", "Use watch mode with --reload")
     .option("--doctor", "Run consolidated extension diagnostics (summary/deep modes)")
     .option("--adopt", "Adopt an existing unmanaged extension into managed metadata")
     .option("--adopt-all", "Adopt all unmanaged extensions into managed metadata")
@@ -263,6 +268,15 @@ export function registerSetupCommands(program: Command): void {
       .description("List managed extensions with update-check metadata."),
   ).action(async (_options: Record<string, unknown>, command) => {
     await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "manage");
+  });
+
+  addExtensionScopeOptions(
+    extensionCommand
+      .command("reload")
+      .option("--watch", "Use watch mode for repeated reload checks")
+      .description("Reload extensions with cache-busted module imports."),
+  ).action(async (_options: Record<string, unknown>, command) => {
+    await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "reload");
   });
 
   addExtensionScopeOptions(

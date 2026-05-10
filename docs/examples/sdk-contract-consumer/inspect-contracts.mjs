@@ -26,6 +26,11 @@ const availableActions = Array.isArray(contracts.actions) ? contracts.actions : 
 if (!availableActions.includes(requestedAction)) {
   throw new Error(`Action "${requestedAction}" is not currently invocable in this runtime.`);
 }
+const actionAvailability = Array.isArray(contracts.action_availability)
+  ? contracts.action_availability.find((entry) => entry?.action === requestedAction) ?? null
+  : null;
+const extensionContracts =
+  contracts.extension_contracts && typeof contracts.extension_contracts === "object" ? contracts.extension_contracts : null;
 
 const actionContract = PM_TOOL_ACTION_PARAMETER_CONTRACTS[requestedAction];
 const payload = {
@@ -33,6 +38,10 @@ const payload = {
   required_parameters: actionContract.required ?? [],
   optional_parameters: actionContract.optional ?? [],
   any_of_required_groups: actionContract.anyOfRequired ?? [],
+  runtime_available: actionAvailability?.available === true,
+  policy_state: actionAvailability?.policy_state ?? null,
+  compatibility: extensionContracts?.compatibility ?? null,
+  manifest_versions: extensionContracts?.manifest_versions ?? [],
 };
 
 process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);

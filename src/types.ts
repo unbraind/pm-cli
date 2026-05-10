@@ -419,24 +419,45 @@ export interface GovernanceSettings {
 }
 
 export type ExtensionPolicyMode = "off" | "warn" | "enforce";
+export type ExtensionTrustMode = "off" | "warn" | "enforce";
+export type ExtensionSandboxProfile = "none" | "restricted" | "strict";
 
 export interface ExtensionPolicyOverrideSettings {
   name: string;
   disabled?: boolean;
+  require_trusted?: boolean;
+  require_provenance?: boolean;
+  sandbox_profile?: ExtensionSandboxProfile;
   allowed_capabilities?: string[];
   blocked_capabilities?: string[];
   allowed_surfaces?: string[];
   blocked_surfaces?: string[];
+  allowed_commands?: string[];
+  blocked_commands?: string[];
+  allowed_actions?: string[];
+  blocked_actions?: string[];
+  allowed_services?: string[];
+  blocked_services?: string[];
 }
 
 export interface ExtensionPolicySettings {
   mode: ExtensionPolicyMode;
+  trust_mode: ExtensionTrustMode;
+  require_provenance: boolean;
+  trusted_extensions: string[];
+  default_sandbox_profile: ExtensionSandboxProfile;
   allowed_extensions: string[];
   blocked_extensions: string[];
   allowed_capabilities: string[];
   blocked_capabilities: string[];
   allowed_surfaces: string[];
   blocked_surfaces: string[];
+  allowed_commands: string[];
+  blocked_commands: string[];
+  allowed_actions: string[];
+  blocked_actions: string[];
+  allowed_services: string[];
+  blocked_services: string[];
   extension_overrides: ExtensionPolicyOverrideSettings[];
 }
 

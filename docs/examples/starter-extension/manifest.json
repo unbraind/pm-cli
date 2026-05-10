@@ -3,6 +3,21 @@
   "version": "0.1.0",
   "description": "SDK-first starter extension demonstrating all pm extension capabilities.",
   "entry": "./index.js",
+  "manifest_version": 2,
+  "trusted": true,
+  "provenance": {
+    "source": "docs/examples/starter-extension",
+    "verified": true
+  },
+  "sandbox_profile": "none",
+  "permissions": {
+    "fs_read": true,
+    "fs_write": true,
+    "network": false,
+    "env_read": true,
+    "env_write": false,
+    "process_spawn": false
+  },
   "capabilities": [
     "commands",
     "parser",
